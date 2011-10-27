@@ -8,5 +8,5 @@ define nnint as [[int]]
 void ::main(System sys,[string] args):
     iis = [[1,2,3],[3,4,5]]
     iis = flattern(iis)
-    sys.out.println(str(iis))
+    sys.out.println(toString(iis))
 

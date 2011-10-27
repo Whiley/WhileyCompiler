@@ -10,5 +10,5 @@ int g(int(int) func):
     return func(1234)
     
 void ::main(System sys,[string] args):
-    sys.out.println(str(g(&f1)))
-    sys.out.println(str(g(&f2)))
+    sys.out.println(toString(g(&f1)))
+    sys.out.println(toString(g(&f2)))

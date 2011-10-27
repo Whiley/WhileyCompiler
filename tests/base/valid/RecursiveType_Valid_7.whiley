@@ -11,4 +11,4 @@ expr parseIdentifier():
 
 void ::main(System sys,[string] args):
     e = parseTerm()
-    sys.out.println(str(e))
+    sys.out.println(toString(e))

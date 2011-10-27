@@ -17,8 +17,8 @@ int test(Func f, int arg):
     
 void ::main(System sys,[string] args):
     x = test({read: &id},123)
-    sys.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))
     x = test({read: &id},12545)
-    sys.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))
     x = test({read: &id},-11)
-    sys.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))

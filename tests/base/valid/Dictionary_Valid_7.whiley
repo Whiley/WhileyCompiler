@@ -8,4 +8,4 @@ void ::main(System sys,[string] args):
         sys.out.println("GOT HERE")
     else:
         env = get({"x"->1,"y"->2})
-        sys.out.println(str(env))
+        sys.out.println(toString(env))

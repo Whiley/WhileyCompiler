@@ -4,4 +4,4 @@ real f(real x):
     return (0.0 - x)
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(f(1.234)))
+    sys.out.println(toString(f(1.234)))

@@ -9,13 +9,13 @@ int|null indexOf(char c1, string str):
     return null
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(indexOf('H',"Hello World")))
-    sys.out.println(str(indexOf('e',"Hello World")))
-    sys.out.println(str(indexOf('l',"Hello World")))
-    sys.out.println(str(indexOf('o',"Hello World")))
-    sys.out.println(str(indexOf(' ',"Hello World")))
-    sys.out.println(str(indexOf('W',"Hello World")))
-    sys.out.println(str(indexOf('r',"Hello World")))
-    sys.out.println(str(indexOf('d',"Hello World")))
-    sys.out.println(str(indexOf('z',"Hello World")))
-    sys.out.println(str(indexOf('1',"Hello World")))
+    sys.out.println(toString(indexOf('H',"Hello World")))
+    sys.out.println(toString(indexOf('e',"Hello World")))
+    sys.out.println(toString(indexOf('l',"Hello World")))
+    sys.out.println(toString(indexOf('o',"Hello World")))
+    sys.out.println(toString(indexOf(' ',"Hello World")))
+    sys.out.println(toString(indexOf('W',"Hello World")))
+    sys.out.println(toString(indexOf('r',"Hello World")))
+    sys.out.println(toString(indexOf('d',"Hello World")))
+    sys.out.println(toString(indexOf('z',"Hello World")))
+    sys.out.println(toString(indexOf('1',"Hello World")))

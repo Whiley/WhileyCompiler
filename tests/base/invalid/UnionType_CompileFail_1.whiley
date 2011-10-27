@@ -11,6 +11,6 @@ void ::main(System sys,[string] args):
         x = 1.23
     else:
         x = 1
-    sys.out.println(str(x))
+    sys.out.println(toString(x))
     f(x)
 

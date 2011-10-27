@@ -9,4 +9,4 @@ bool f(R1 r1, R2 r2):
 void ::main(System sys,[string] args):
     r1 = { x: 1}
     r2 = { x: 1, y: 2 }
-    sys.out.println(str(f(r1,r2)))
+    sys.out.println(toString(f(r1,r2)))

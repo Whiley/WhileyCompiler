@@ -21,10 +21,10 @@ define SExpr as SyntaxError | Expr
 
 void ::main(System sys,[string] args):
     e,s = parseTerm({input: "123", pos: 0})
-    sys.out.println(str(e))
+    sys.out.println(toString(e))
     e,s = parseTerm({input: "abc", pos: 0})
     if e is SyntaxError: 
         sys.out.println(e.err)
     else:
-        sys.out.println(str(e))
+        sys.out.println(toString(e))
 

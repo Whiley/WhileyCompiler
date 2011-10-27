@@ -8,6 +8,6 @@ bytes f(int b):
 void ::main(System sys,[string] args):
     b = 1
     bs = f(b)
-    sys.out.println(str(bs))
+    sys.out.println(toString(bs))
     bs = {b1:b,b2:b}
-    sys.out.println(str(bs))
+    sys.out.println(toString(bs))

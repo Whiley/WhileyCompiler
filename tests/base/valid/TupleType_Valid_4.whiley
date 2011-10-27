@@ -8,4 +8,4 @@ Tup2 f(Tup1 x):
 
 void ::main(System sys,[string] args):
     x = f((1,2))
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

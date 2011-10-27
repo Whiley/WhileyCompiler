@@ -95,6 +95,6 @@ define D3 as { col: 4, row: 3 }
 
 void ::main(System sys,[string] args):
     r = clearRowExcept(A1,H1,startingChessBoard)
-    sys.out.println("GOT: " + str(r))
+    sys.out.println("GOT: " + toString(r))
     r = clearRowExcept(A3,D3,startingChessBoard)
-    sys.out.println("GOT: " + str(r))
+    sys.out.println("GOT: " + toString(r))

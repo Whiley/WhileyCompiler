@@ -18,4 +18,4 @@ C2 ::i(C3 x):
 
 void ::main(System sys, [string] args):
     x = f(null)
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

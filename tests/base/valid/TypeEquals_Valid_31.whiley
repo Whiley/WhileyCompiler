@@ -9,5 +9,5 @@ int f(T x):
         return x
 
 public void ::main(System sys, [string] args):
-    sys.out.println("RESULT: " + String.str(f([1,2,3,4])))
-    sys.out.println("RESULT: " + String.str(f(123)))
+    sys.out.println("RESULT: " + String.toString(f([1,2,3,4])))
+    sys.out.println("RESULT: " + String.toString(f(123)))

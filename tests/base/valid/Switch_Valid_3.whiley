@@ -9,7 +9,7 @@ int f(real x):
     return 10
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(f(1.23)))
-    sys.out.println(str(f(2.01)))
-    sys.out.println(str(f(3)))
-    sys.out.println(str(f(-1)))
+    sys.out.println(toString(f(1.23)))
+    sys.out.println(toString(f(2.01)))
+    sys.out.println(toString(f(3)))
+    sys.out.println(toString(f(-1)))

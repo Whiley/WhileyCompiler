@@ -9,9 +9,9 @@ int f(real x) throws string:
 
 void ::main(System sys,[string] args):
     try:
-        sys.out.println(str(f(1)))
-        sys.out.println(str(f(0)))
-        sys.out.println(str(f(-1)))
+        sys.out.println(toString(f(1)))
+        sys.out.println(toString(f(0)))
+        sys.out.println(toString(f(-1)))
     catch(string e):
         sys.out.println("CAUGHT EXCEPTION: " + e)
     sys.out.println("DONE")        

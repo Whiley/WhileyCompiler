@@ -9,5 +9,5 @@ int toInt([int] ls):
 
 public void ::main(System sys, [string] args):
     ls = [1,2,3,4]
-    s = String.str(toInt(ls))
+    s = String.toString(toInt(ls))
     sys.out.println(s)

@@ -9,5 +9,5 @@ int f(tupper y):
 
 void ::main(System sys,[string] args):
     x = {op:1,il:1}
-    sys.out.println(str(x))
+    sys.out.println(toString(x))
     f(x)

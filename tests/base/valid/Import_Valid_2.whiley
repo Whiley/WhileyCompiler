@@ -6,4 +6,4 @@ int f(Type.nat x):
     return x-1
 
 public void ::main(System sys,[string] args):
-    sys.out.println(String.str(f(1)))
+    sys.out.println(String.toString(f(1)))

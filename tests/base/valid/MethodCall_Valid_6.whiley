@@ -11,4 +11,4 @@ wmcr6tup System::f(Proc x, int y):
 
 void ::main(System sys,[string] args):
     proc = spawn { state: 1 }
-    sys.out.println(str(sys.f(proc,1)))
+    sys.out.println(toString(sys.f(proc,1)))

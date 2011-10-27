@@ -6,7 +6,7 @@ define num as {1,2,3,4}
 
 string f(num x):
     y = x
-    return str(y)
+    return toString(y)
 
 string g(int x, nat z):
     return f(z)

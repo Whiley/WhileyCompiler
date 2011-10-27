@@ -23,8 +23,8 @@ void ::main(System sys, [string] args):
     // first, push items into queue
     for item in items:
         q.put(item)
-        sys.out.println("PUT: " + String.str(item))
+        sys.out.println("PUT: " + String.toString(item))
     // second, retrieve items back from queue
     while !q.isEmpty():
-        sys.out.println("GET: " + String.str(q.get()))
+        sys.out.println("GET: " + String.toString(q.get()))
     

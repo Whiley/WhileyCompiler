@@ -6,7 +6,7 @@ string getMessage(imsg m):
     if m is {string msg}:
         return m.msg
     else:
-        return str(m)
+        return toString(m)
 
 void ::main(System sys,[string] args):
     sys.out.println(getMessage({msg:"HELLO WORLD"}))

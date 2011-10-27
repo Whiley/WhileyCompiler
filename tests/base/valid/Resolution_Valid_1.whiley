@@ -5,4 +5,4 @@ int f(int b):
 
 void ::main(System sys,[string] args):
     b = f(10)
-    sys.out.println(str(b))
+    sys.out.println(toString(b))

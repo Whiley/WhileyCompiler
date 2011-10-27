@@ -6,9 +6,9 @@ define pState as process state
 void pState::send(int x, System sys):
     this.x = x
     assert *this.x == x
-    sys.out.println(str(*this))
+    sys.out.println(toString(*this))
     sys.out.println("sent")
-    sys.out.println(str(x))
+    sys.out.println(toString(x))
 
 void ::main(System sys,[string] args):
     ps = spawn {x:1,y:2}

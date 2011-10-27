@@ -9,4 +9,4 @@ int System::get():
     return 1
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(f(this),1))
+    sys.out.println(toString(f(this),1))

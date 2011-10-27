@@ -11,7 +11,7 @@ define BRANCH as {branchCode op, int16 offset}
 define byteCode as STORE | BRANCH
 
 string f(byteCode b):
-    return str(b)
+    return toString(b)
 
 void ::main(System sys,[string] args):
     b = {op:0,index:1}

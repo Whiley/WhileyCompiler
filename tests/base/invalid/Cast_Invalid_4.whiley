@@ -8,5 +8,5 @@ R3 f(R1|R2 i):
     return (R3) i
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(f({x:123542.0, y:123})))
+    sys.out.println(toString(f({x:123542.0, y:123})))
     

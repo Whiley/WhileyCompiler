@@ -11,4 +11,4 @@ define nint as null|int
 void ::main(System sys,[string] args):
     ls = [[1,2,3],[4,5,6],[7,8,9]]
     ls = move(0,1,ls)
-    sys.out.println(str(ls))
+    sys.out.println(toString(ls))

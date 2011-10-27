@@ -14,8 +14,8 @@ int id(int x):
 void ::main(System sys,[string] args):
     p = spawn { func: &id }
     x = p.test(123)
-    sys.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))
     x = p.test(12545)
-    sys.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))
     x = p.test(-11)
-    sys.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))

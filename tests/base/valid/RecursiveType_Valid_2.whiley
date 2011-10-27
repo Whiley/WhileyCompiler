@@ -5,4 +5,4 @@ define expr as int | binop
 
 void ::main(System sys,[string] args):
     e = 123
-    sys.out.println(str(e))
+    sys.out.println(toString(e))

@@ -9,4 +9,4 @@ Type.nat f(int x):
         return x
 
 public void ::main(System sys,[string] args):
-    sys.out.println(String.str(f(1)))
+    sys.out.println(String.toString(f(1)))

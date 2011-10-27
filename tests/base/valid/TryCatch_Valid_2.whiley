@@ -12,7 +12,7 @@ void ::missed(System sys,int x) throws string:
     try:
         f(x)
     catch(int e):
-        sys.out.println("CAUGHT EXCEPTION (int): " + String.str(e))
+        sys.out.println("CAUGHT EXCEPTION (int): " + String.toString(e))
 
 void ::main(System sys,[string] args):
     try:

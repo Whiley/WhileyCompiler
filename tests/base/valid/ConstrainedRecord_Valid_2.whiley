@@ -11,5 +11,5 @@ int f(UNIT x):
 
 void ::main(System sys,[string] args):
     bytes = f({op:NOP})
-    sys.out.println(str(bytes))
+    sys.out.println(toString(bytes))
 

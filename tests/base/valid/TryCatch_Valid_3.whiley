@@ -14,7 +14,7 @@ void ::g(System sys, int x):
     catch(string e):
         sys.out.println("CAUGHT EXCEPTION (string): " + e)
     catch(int e):
-        sys.out.println("CAUGHT EXCEPTION (int): " + String.str(e))
+        sys.out.println("CAUGHT EXCEPTION (int): " + String.toString(e))
     
 
 void ::main(System sys,[string] args):

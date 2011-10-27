@@ -27,7 +27,7 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
-public native string str(any item):
+public native string toString(any item):
 
 // find first index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED

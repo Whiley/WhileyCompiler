@@ -6,4 +6,4 @@ int f([string] r):
 void ::main(System sys,[string] args):
     r = args + [1]
     f(r)
-    sys.out.println(str(r))
+    sys.out.println(toString(r))

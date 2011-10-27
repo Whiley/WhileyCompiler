@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string g(int z):
-    return str(z)
+    return toString(z)
 
 string f(int x):
     y = x + 1

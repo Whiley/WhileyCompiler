@@ -10,6 +10,6 @@ int f(expr e):
     
 void ::main(System sys,[string] args):
     x = f({err:"Hello World"})
-    sys.out.println(str(x))
+    sys.out.println(toString(x))
     x = f({op:1,lhs:{err:"Gotcha"}})
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

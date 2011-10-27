@@ -29,5 +29,5 @@ public void ::main(System sys,[string] args):
         if e is SyntaxError:
             sys.out.println("syntax error: " + e.err)
         else:
-            sys.out.println(str(e))
+            sys.out.println(toString(e))
         i = i + 1

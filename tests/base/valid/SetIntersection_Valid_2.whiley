@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string f({int} xs, {int} ys, {int} zs):
-    return str(xs)
+    return toString(xs)
 
 string g({int} ys):
     return f(ys,ys,ys)

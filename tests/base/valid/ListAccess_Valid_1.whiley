@@ -8,4 +8,4 @@ void f([int] x):
 void ::main(System sys,[string] args):
     arr = [1,2,3]
     f(arr)
-    sys.out.println(str(arr[0]))
+    sys.out.println(toString(arr[0]))

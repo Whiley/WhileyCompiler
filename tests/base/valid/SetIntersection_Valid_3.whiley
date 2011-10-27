@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string f({int} xs):
-    return str(xs)
+    return toString(xs)
 
 string g({int} ys):
     return f(ys ∩ {1,2})

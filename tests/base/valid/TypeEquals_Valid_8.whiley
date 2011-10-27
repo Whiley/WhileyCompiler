@@ -6,9 +6,9 @@ define expr as pos|neg|[int]
 
 string f(expr e):
     if e is pos && e > 0:
-        return "POSITIVE: " + str(e)
+        return "POSITIVE: " + toString(e)
     else if e is neg:
-        return "NEGATIVE: " + str(e)
+        return "NEGATIVE: " + toString(e)
     else:
         return "OTHER"
 

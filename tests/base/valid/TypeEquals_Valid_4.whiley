@@ -8,7 +8,7 @@ define expr as {int}|bool
 string f(expr e):
     if e is {int}:
         t = g(e)
-        return "GOT: " + str(t)
+        return "GOT: " + toString(t)
     else:
         return "GOT SOMETHING ELSE?"
 

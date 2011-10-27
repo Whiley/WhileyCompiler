@@ -8,4 +8,4 @@ void MyProc::inc(int i):
 void ::main(System sys,[string] args):
     mproc = spawn { x:1 }
     mproc.inc(10)
-    sys.out.println(str(*mproc.x))
+    sys.out.println(toString(*mproc.x))

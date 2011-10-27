@@ -10,8 +10,8 @@ bool run(int n, int x):
 
 void ::main(System sys,[string] args):
     b1 = run(10,4)
-    sys.out.println("b1=" + str(b1))
+    sys.out.println("b1=" + toString(b1))
     b2 = run(10,-1)
-    sys.out.println("b2=" + str(b2))
+    sys.out.println("b2=" + toString(b2))
     b3 = run(10,11)
-    sys.out.println("b3=" + str(b3))
+    sys.out.println("b3=" + toString(b3))

@@ -17,5 +17,5 @@ int g(int d):
     return y(123)
     
 void ::main(System sys,[string] args):    
-    sys.out.println(str(g(0)))    
-    sys.out.println(str(g(1)))
+    sys.out.println(toString(g(0)))    
+    sys.out.println(toString(g(1)))

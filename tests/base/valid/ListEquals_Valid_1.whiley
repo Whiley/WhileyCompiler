@@ -7,8 +7,8 @@ string f([int] xs, [real] ys):
         return "NOT EQUAL"
 
 void System::g([int] xs, [real] ys):
-    this.out.println(str(xs))
-    this.out.println(str(ys))
+    this.out.println(toString(xs))
+    this.out.println(toString(ys))
     this.out.println(f(xs,ys))
 
 void ::main(System sys,[string] args):

@@ -4,7 +4,7 @@ import * from whiley.lang.*
 define IntReal as int|real
 
 string f(IntReal y):
-    return str(y)
+    return toString(y)
 
 void ::main(System sys,[string] args):
     x = 123

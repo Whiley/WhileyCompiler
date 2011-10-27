@@ -14,8 +14,8 @@ void ::main(System sys,[string] args):
     m1[2] = 4
     m2[1] = 23498
     
-    sys.out.println(str(get(1,m1)))
-    sys.out.println(str(get(2,m1)))
-    sys.out.println(str(get(1,m2)))
-    sys.out.println(str(get(1,m3)))
-    sys.out.println(str(get(3,m3)))
+    sys.out.println(toString(get(1,m1)))
+    sys.out.println(toString(get(2,m1)))
+    sys.out.println(toString(get(1,m2)))
+    sys.out.println(toString(get(1,m3)))
+    sys.out.println(toString(get(3,m3)))

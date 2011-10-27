@@ -9,7 +9,7 @@ real f(Expr x):
         return x
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(f([1,2,3])))
-    sys.out.println(str(f([1.0,2.0,3.0])))
-    sys.out.println(str(f(1)))
-    sys.out.println(str(f(1.234)))
+    sys.out.println(toString(f([1,2,3])))
+    sys.out.println(toString(f([1.0,2.0,3.0])))
+    sys.out.println(toString(f(1)))
+    sys.out.println(toString(f(1.234)))

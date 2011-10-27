@@ -260,4 +260,4 @@ define constants as [
 
 public void ::main(System sys,[string] args):
     for b in constants:
-        sys.out.println(str(b))
+        sys.out.println(toString(b))

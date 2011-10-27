@@ -8,6 +8,6 @@ void pState::f():
 
 void ::main(System sys,[string] args):
     p = spawn {x:1,y:2}
-    sys.out.println(str()*p)
+    sys.out.println(toString()*p)
     p.f()
-    sys.out.println(str()*p)
+    sys.out.println(toString()*p)

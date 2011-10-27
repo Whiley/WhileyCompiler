@@ -3,7 +3,7 @@ import * from whiley.lang.*
 define intlist as int|[int]
 
 string f([intlist] l):    
-    return str(l)
+    return toString(l)
 
 void ::main(System sys,[string] args):
     if |args| == 0:

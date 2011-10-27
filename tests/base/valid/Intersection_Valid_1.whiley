@@ -7,4 +7,4 @@ int size(EmptyList l):
 
 void ::main(System sys, [string] args):
     list = []
-    sys.out.println(str(size(list)))
+    sys.out.println(toString(size(list)))

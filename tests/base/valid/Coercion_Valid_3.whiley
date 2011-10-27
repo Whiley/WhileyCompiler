@@ -4,4 +4,4 @@ int f(char x):
     return x
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(f('H')))
+    sys.out.println(toString(f('H')))

@@ -760,21 +760,31 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		if (to.equals(from)) {
 			afterInsertions.remove(index);
-		} else if(Type.isExplicitCoerciveSubtype(to,from)) {					
-			afterInsertions.put(index,
-					new Block.Entry(Code.Convert(from, to), elem.attributes()));
 		} else if(to == Type.T_STRING) {
 			// this indicates a string conversion is required
 			Type.Function ft = (Type.Function) Type.Function(Type.T_STRING,
 					Type.T_VOID,Type.T_ANY);
 			NameID name = new NameID(ModuleID.fromString("whiley.lang.String"),
-					"str");
+					"toString");
 			Code code = Code.Invoke(ft,name,true);
 			afterInsertions.put(index,
 					new Block.Entry(code, elem.attributes()));
 		} else {
-			syntaxError(errorMessage(ErrorMessages.SUBTYPE_ERROR,to,from),filename,elem);
+			afterInsertions.put(index,
+					new Block.Entry(Code.Convert(from, to), elem.attributes()));
 		}
+		
+		// this method *should* be structured as follows:
+		
+//		if (to.equals(from)) {
+//			///
+//		} else if(Type.isExplicitCoerciveSubtype(to,from)) {					
+//			...
+//		} else if(to == Type.T_STRING) {
+//			...
+//		} else {
+//			...
+//		}
 	}	
 	
 	public Env join(Env env1, Env env2) {

@@ -13,4 +13,4 @@ int f(uRec1Rec2 r):
 void ::main(System sys,[string] args):
     rec = { x: 1, y: 1}
     ans = f(rec)
-    sys.out.println(str(ans))
+    sys.out.println(toString(ans))

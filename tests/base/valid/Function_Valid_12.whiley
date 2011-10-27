@@ -13,4 +13,4 @@ void ::main(System sys,[string] args):
     if |args| == 0:
         a = f(b)
     x = g(a,b)
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

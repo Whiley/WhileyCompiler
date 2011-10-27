@@ -13,8 +13,8 @@ int sum(LinkedList ls):
 
 void ::main(System sys,[string] args):
     ls = { val: true, next: null}
-    sys.out.println(str(sum(ls)))
+    sys.out.println(toString(sum(ls)))
     ls = { val: true, next: ls}
-    sys.out.println(str(sum(ls)))
+    sys.out.println(toString(sum(ls)))
     ls = { val: false, next: ls}
-    sys.out.println(str(sum(ls)))
+    sys.out.println(toString(sum(ls)))

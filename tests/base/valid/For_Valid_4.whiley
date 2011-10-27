@@ -11,5 +11,5 @@ import * from whiley.lang.*
 void ::main(System sys,[string] args):
     dict = {1->2,3->4,4->5}
     k,v = f(dict)
-    sys.out.println(str(k))
-    sys.out.println(str(v))        
+    sys.out.println(toString(k))
+    sys.out.println(toString(v))        

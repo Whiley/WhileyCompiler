@@ -5,4 +5,4 @@ import * from whiley.lang.*
 
 void ::main(System sys,[string] args):
     x = f(1)
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

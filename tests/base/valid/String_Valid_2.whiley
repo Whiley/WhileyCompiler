@@ -10,8 +10,8 @@ public bool has(char c1, string str):
 
 void ::main(System sys,[string] args):
     s = "Hello World"
-    sys.out.println(str(has('l',s)))
-    sys.out.println(str(has('e',s)))
-    sys.out.println(str(has('h',s)))
-    sys.out.println(str(has('z',s)))
-    sys.out.println(str(has('H',s)))
+    sys.out.println(toString(has('l',s)))
+    sys.out.println(toString(has('e',s)))
+    sys.out.println(toString(has('h',s)))
+    sys.out.println(toString(has('z',s)))
+    sys.out.println(toString(has('H',s)))

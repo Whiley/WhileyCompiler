@@ -13,10 +13,10 @@ int g(int x):
 void ::main(System sys,[string] args):
     x = 1
     try:
-        sys.out.println(str(f(1)))
+        sys.out.println(toString(f(1)))
         x = 1.02
-        sys.out.println(str(f(0)))
-        sys.out.println(str(f(-1)))
+        sys.out.println(toString(f(0)))
+        sys.out.println(toString(f(-1)))
     catch(int e):
         sys.out.println("CAUGHT EXCEPTION: " + g(x))
     sys.out.println("DONE")        

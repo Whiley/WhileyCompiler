@@ -7,6 +7,6 @@ bool isChar(any x):
         return false
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(isChar('c')))
-    sys.out.println(str(isChar(1)))
-    sys.out.println(str(isChar([1,2,3])))
+    sys.out.println(toString(isChar('c')))
+    sys.out.println(toString(isChar(1)))
+    sys.out.println(toString(isChar([1,2,3])))

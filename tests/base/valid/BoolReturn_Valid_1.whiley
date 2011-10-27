@@ -4,4 +4,4 @@ bool pred():
     return false
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(pred()))
+    sys.out.println(pred())

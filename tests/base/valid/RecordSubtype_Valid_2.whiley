@@ -12,4 +12,4 @@ void ::main(System sys,[string] args):
     list = { data: 1, next: null}
     list = { data: null, next: list}
     ans = f(list)
-    sys.out.println(str(ans))
+    sys.out.println(toString(ans))
