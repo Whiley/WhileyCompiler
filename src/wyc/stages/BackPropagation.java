@@ -41,7 +41,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
 
 public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
-	private static final HashMap<Integer,Block.Entry> afterInsertions = new HashMap<Integer,Block.Entry>();
+	private static final HashMap<Integer,Block> afterInsertions = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
 	public BackPropagation(ModuleLoader loader) {
@@ -85,9 +85,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			} else {
 				nbody.append(body.get(i));
 			}
-			Block.Entry afterInsertion = afterInsertions.get(i);			
-			if(afterInsertion != null) {								
-				nbody.append(afterInsertion);				
+			Block afters = afterInsertions.get(i);			
+			if(afters != null) {								
+				nbody.append(afters);				
 			} 							
 		}
 		
@@ -761,19 +761,21 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		if (to.equals(from)) {
 			afterInsertions.remove(index);
 		} else if(to == Type.T_STRING) {
-			// this indicates a string conversion is required
-			
-			/**
-			 * FIXME: bug here, since we need to convert the from operand!
-			 */
-			
-			Pair<Type.Function,NameID> p = choseToString(from);			
-			Code code = Code.Invoke(p.first(),p.second(),true);
-			afterInsertions.put(index,
-					new Block.Entry(code, elem.attributes()));
+			// this indicates a string conversion is required			
+			Pair<Type.Function, NameID> p = choseToString(from);
+			to = p.first().params().get(0);
+
+			Block block = new Block(0);
+			if (!from.equals(to)) {
+				block.append(Code.Convert(from, to), elem.attributes());
+			}
+			block.append(Code.Invoke(p.first(), p.second(), true),
+					elem.attributes());
+			afterInsertions.put(index, block);
 		} else {
-			afterInsertions.put(index,
-					new Block.Entry(Code.Convert(from, to), elem.attributes()));
+			Block block = new Block(0);
+			block.append(Code.Convert(from, to), elem.attributes());
+			afterInsertions.put(index,block);
 		}
 		
 		// this method *should* be structured as follows:
