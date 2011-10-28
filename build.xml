@@ -2,7 +2,10 @@
   <property name="version" value="0.3.11"/>
 
   <target name="compile">
-    <javac debug="true" srcdir="src" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
+    <javac debug="true" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"> 
+      <src path="src"/>
+      <src path="stdlib"/>
+    </javac>
   </target>
 
   <target name="wyjc" depends="compile">
@@ -50,6 +53,7 @@
     <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
     <fileset dir="." includes="examples/**/*.whiley"/>
     <fileset dir="." includes="stdlib/**/*.whiley"/>
+    <fileset dir="." includes="stdlib/**/*.java"/>
     <fileset dir=".">
       <include name="bin/wyjc"/>
       <include name="bin/whiley"/>
