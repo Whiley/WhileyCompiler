@@ -1,5 +1,13 @@
 package whiley.lang
 
+public define LilEndian as 0
+public define BigEndian as 1
+
+public define Endian as {
+    LilEndian,
+    BigEndian
+}
+
 // convert a byte into a string
 string toString(byte b):
     r = "b"
@@ -22,6 +30,21 @@ int toUnsignedInt(byte b):
         b = b >> 1
         base = base * 2
     return r    
+
+// Convert a byte into an unsigned int using a given endianness.
+int toUnsignedInt(byte b, Endian endian):
+    if endian == LilEndian:
+        return toUnsignedInt(b)
+    else:        
+        // big endian
+        r = 0
+        base = 1
+        while b != 0b:
+            if (b & 10000000b) == 10000000b:
+                r = r + base
+            b = b << 1
+            base = base * 2
+        return r    
 
 // Convert a byte array into an unsigned int assuming a little endian
 // form for both individual bytes, and the array as a whole
