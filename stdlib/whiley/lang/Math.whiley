@@ -39,3 +39,8 @@ real min(real a, real b):
     else:
         return a
 
+// not sure what to do with negative exponents
+int pow(int base, int exponent) requires exponent > 0:
+    for i in 0..exponent:
+        base = base * base
+    return base
