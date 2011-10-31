@@ -2,6 +2,10 @@ package wyil.transforms;
 
 import java.util.*;
 
+
+import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
+
 import wyc.stages.BackPropagation.Env;
 import wyil.ModuleLoader;
 import wyil.lang.Block;
@@ -111,9 +115,14 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Code.Store store = (Code.Store) code;
 			environment = new Env(environment);
 			environment.remove(store.slot);
+		} else if(code instanceof Code.Update) {
+			Code.Update update = (Code.Update) code;
+			if(!environment.contains(update.slot)) {
+				syntaxError(errorMessage(DEAD_CODE),
+						filename, entry);				
+			}
 		} else {
 			// what else?
-			// update bytecodes access slot directly
 			// iftype bytecodes access slot directly
 		}
 		

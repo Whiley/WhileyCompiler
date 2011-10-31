@@ -45,22 +45,23 @@ public class ErrorMessages {
 	public static final int VARIABLE_ALREADY_DEFINED = 20;
 	public static final int DUPLICATE_DEFAULT_LABEL = 21;
 	public static final int DUPLICATE_CASE_LABEL = 22;
-	public static final int UNREACHABLE_CODE = 23;
-	public static final int RECEIVER_NOT_PROCESS = 24;
-	public static final int PROCESS_NOT_PERMITTED_IN_FUNCTION = 25;
-	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 26;
-	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 27;
-	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 28;
-	public static final int PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION = 29;
-	public static final int SUBTYPE_ERROR = 30;
-	public static final int INCOMPARABLE_OPERANDS = 31;
-	public static final int RECORD_TYPE_REQUIRED = 32;
-	public static final int RECORD_MISSING_FIELD = 33;
-	public static final int RETURN_FROM_VOID = 34;
-	public static final int MISSING_RETURN_VALUE = 35;
-	public static final int BRANCH_ALWAYS_TAKEN = 36;
-	public static final int AMBIGUOUS_COERCION = 37;
-	public static final int MUST_DECLARE_THROWN_EXCEPTION = 38;
+	public static final int DEAD_CODE = 23;
+	public static final int UNREACHABLE_CODE = 24;
+	public static final int RECEIVER_NOT_PROCESS = 25;
+	public static final int PROCESS_NOT_PERMITTED_IN_FUNCTION = 26;
+	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 27;
+	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 28;
+	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 29;
+	public static final int PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION = 30;
+	public static final int SUBTYPE_ERROR = 31;
+	public static final int INCOMPARABLE_OPERANDS = 32;
+	public static final int RECORD_TYPE_REQUIRED = 33;
+	public static final int RECORD_MISSING_FIELD = 34;
+	public static final int RETURN_FROM_VOID = 35;
+	public static final int MISSING_RETURN_VALUE = 36;
+	public static final int BRANCH_ALWAYS_TAKEN = 37;
+	public static final int AMBIGUOUS_COERCION = 38;
+	public static final int MUST_DECLARE_THROWN_EXCEPTION = 39;
 	
 		private final static String[] messages = {			
 			"cyclic constant expression",
@@ -86,7 +87,8 @@ public class ErrorMessages {
 			"variable $0 already defined",
 			"duplicate default label",
 			"duplicate case label",
-			"unreachable code",
+			"dead-code encountered (i.e. this statement has no effect)",
+			"unreachable code encountered (i.e. execution can never reach this statement)",
 			"method receiver must have process type",
 			"process not permitted in function",
 			"message send not permitted in function",
