@@ -44,9 +44,22 @@ public class Util {
 					System.err.println("===========================================");
 					System.err.println("CLONING STATS");
 					System.err.println("===========================================");
-					System.err.println("list clones: " + nlist_clones + " / " + (nlist_clones+nlist_strong_updates) + " (cost: " + nlist_clones_nelems + ")");
-					System.err.println("dictionary clones: " + ndict_clones +  " / " + (ndict_clones+ndict_strong_updates) + " (cost: " + ndict_clones_nelems + ")");
-					System.err.println("record clones: " + nrecord_clones +  " / " + (nrecord_clones+nrecord_strong_updates)+ " (" + nrecord_clones_nfields + ")");					
+					System.err.println("set clones: " + nset_clones + " / "
+							+ (nset_clones + nset_strong_updates) + " (cost: "
+							+ nset_clones_nelems + ", max: " + nset_max_count
+							+ ")");
+					System.err.println("list clones: " + nlist_clones + " / "
+							+ (nlist_clones + nlist_strong_updates)
+							+ " (cost: " + nlist_clones_nelems + ", max: "
+							+ nlist_max_count + ")");
+					System.err.println("dictionary clones: " + ndict_clones
+							+ " / " + (ndict_clones + ndict_strong_updates)
+							+ " (cost: " + ndict_clones_nelems + ", max: "
+							+ ndict_max_count + ")");
+					System.err.println("record clones: " + nrecord_clones
+							+ " / " + (nrecord_clones + nrecord_strong_updates)
+							+ " (" + nrecord_clones_nfields + ", max: "
+							+ nrecord_max_count + ")");				
 				}
 			});
 		}
@@ -55,12 +68,19 @@ public class Util {
 	static int nlist_clones = 0;
 	static int nlist_strong_updates = 0;
 	static int nlist_clones_nelems = 0;
+	static int nlist_max_count = 0;
+	static int nset_clones = 0;
+	static int nset_strong_updates = 0;
+	static int nset_clones_nelems = 0;
+	static int nset_max_count = 0;
 	static int ndict_clones = 0;	
 	static int ndict_clones_nelems = 0;
 	static int ndict_strong_updates = 0;
+	static int ndict_max_count = 0;
 	static int nrecord_clones = 0;
 	static int nrecord_strong_updates = 0;
 	static int nrecord_clones_nfields = 0;
+	static int nrecord_max_count = 0;
 
 	public static Method functionRef(String clazz, String name) {
 		try {
@@ -215,15 +235,19 @@ public class Util {
 		if(obj instanceof List) {
 			List list = (List) obj;
 			list.refCount++;
+			nlist_max_count = Math.max(nlist_max_count,list.refCount);
 		} else if(obj instanceof Record) {
 			Record rec = (Record) obj;			
 			rec.refCount++;
+			nrecord_max_count = Math.max(nrecord_max_count,rec.refCount);
 		} else if(obj instanceof Set) {
 			Set set = (Set) obj;
 			set.refCount++;			
+			nset_max_count = Math.max(nset_max_count,set.refCount);
 		} else if(obj instanceof Dictionary) {
 			Dictionary dict = (Dictionary) obj;
 			dict.refCount++;			
+			ndict_max_count = Math.max(ndict_max_count,dict.refCount);
 		} 
 		return obj;
 	}
