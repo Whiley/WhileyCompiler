@@ -1203,7 +1203,7 @@ public class ClassFileBuilder {
 		// check that the Move bytecode is, in fact, doing what it should (i.e.
 		// the register in question is actually dead).
 		bytecodes.add(new Bytecode.LoadConst(1.0F));
-		bytecodes.add(new Bytecode.Store(c.slot, new JvmType.Null()));
+		bytecodes.add(new Bytecode.Store(c.slot, T_FLOAT));
 	}
 		
 	public void translate(Code.DictLength c, Entry stmt, int freeSlot,
