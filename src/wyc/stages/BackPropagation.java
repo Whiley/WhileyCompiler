@@ -53,7 +53,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return type;		
 	}
 	
-	public Env initialStore() {				
+	@Override
+	public Env lastStore() {				
 		Env environment = new Env();		
 
 		for (int i = 0; i < methodCase.body().numSlots(); i++) {
@@ -72,7 +73,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		afterInsertions.clear();
 		rewrites.clear();
 		
-		Env environment = initialStore();		
+		Env environment = lastStore();		
 		propagate(0,mcase.body().size(), environment);	
 		
 		// At this point, we apply the inserts
