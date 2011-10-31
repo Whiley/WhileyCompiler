@@ -120,6 +120,10 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment.add(load.slot);
 		} else if(code instanceof Code.Store) {
 			Code.Store store = (Code.Store) code;
+			// FIXME: should I report an error or warning here?			
+//			if(!environment.contains(store.slot)) {
+//				deadcode.add(index);					
+//			} 			
 			environment = new Env(environment);
 			environment.remove(store.slot);
 		} else if(code instanceof Code.Update) {

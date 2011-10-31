@@ -566,8 +566,6 @@ public class ClassFileBuilder {
 	public void translate(Code.Store c, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType type = convertType(c.type);
-		// TODO: do we need this dec refs?
-		//addDecRefs(c.type,bytecodes);		
 		bytecodes.add(new Bytecode.Store(c.slot, type));				
 	}
 
@@ -2667,7 +2665,9 @@ public class ClassFileBuilder {
 			}
 			return false;
 		} else {
-			return t instanceof Type.List || t instanceof Type.Dictionary
+			// FIXME: what about negations?
+			return t instanceof Type.Any || t instanceof Type.List
+					|| t instanceof Type.Set || t instanceof Type.Dictionary
 					|| t instanceof Type.Record;
 		}
 	}
@@ -2699,30 +2699,7 @@ public class ClassFileBuilder {
 	public static void addIncRefs(Type.Dictionary type, ArrayList<Bytecode> bytecodes) {				
 		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP);			
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
-	}
-	
-	public static void addDecRefs(Type type, ArrayList<Bytecode> bytecodes) {
-		if(isRefCounted(type)){			
-			JvmType jtype = convertType(type);
-			JvmType.Function ftype = new JvmType.Function(jtype,jtype);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));
-		}
-	}
-	
-	public static void addDecRefs(Type.List type, ArrayList<Bytecode> bytecodes) {				
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);			
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));		
-	}
-	
-	public static void addDecRefs(Type.Record type, ArrayList<Bytecode> bytecodes) {				
-		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD);			
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));		
-	}
-	
-	public static void addDecRefs(Type.Dictionary type, ArrayList<Bytecode> bytecodes) {				
-		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP);			
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));		
-	}
+	}		
 	
 	/**
 	 * The construct method provides a generic way to construct a Java object.

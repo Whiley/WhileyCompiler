@@ -11,7 +11,7 @@ public final class Set extends java.util.HashSet {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1; 
 
 	// ================================================================================
 	// Generic Operations
@@ -49,87 +49,179 @@ public final class Set extends java.util.HashSet {
 	// ================================================================================	 	
 	
 	public static boolean subset(Set lhs, Set rhs) {
+		Util.decRefs(lhs);
+		Util.decRefs(rhs);
 		return rhs.containsAll(lhs) && rhs.size() > lhs.size();
 	}
 	
 	public static boolean subsetEq(Set lhs, Set rhs) {
+		Util.decRefs(lhs);
+		Util.decRefs(rhs);
 		return rhs.containsAll(lhs);
 	}
 	
 	public static Set union(Set lhs, Set rhs) {
-		Set items = new Set(lhs);
-		items.addAll(rhs);
+		if(lhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(rhs);
+		} else if(rhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(lhs);
+			Set tmp = rhs;
+			rhs = lhs;
+			lhs = tmp;
+		} else {
+			Util.nset_clones++;
+			Util.nset_clones_nelems += lhs.size();
+			Util.decRefs(lhs);
+			Util.decRefs(rhs);
+			lhs = new Set(lhs);
+		}		
+		lhs.addAll(rhs);
 		for(Object o : rhs) {
 			Util.incRefs(o);
 		}
-		return items;
+		return lhs;
 	}
 	
 	public static Set union(Set lhs, Object rhs) {
-		Set set = new Set(lhs);
-		set.add(rhs);
+		if(lhs.refCount == 1) {
+			Util.nset_strong_updates++;						
+		} else {
+			Util.decRefs(lhs);
+			lhs = new Set(lhs);			
+		}
+		lhs.add(rhs);
 		Util.incRefs(rhs);
-		return set;
+		return lhs;
 	}
 	
 	public static Set union(Object lhs, Set rhs) {
-		Set set = new Set(rhs);
-		set.add(lhs);
+		if(rhs.refCount == 1) {
+			Util.nset_strong_updates++;						
+		} else {
+			Util.decRefs(rhs);
+			rhs = new Set(rhs);			
+		}		
+		rhs.add(lhs);
 		Util.incRefs(lhs);
-		return set;
+		return rhs;
 	}
 	
 	public static Set difference(Set lhs, Set rhs) {
-		Set items = new Set(lhs);
-		items.removeAll(rhs);
+		if(lhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(rhs);
+		} else {
+			Util.nset_clones++;
+			Util.nset_clones_nelems += lhs.size();
+			Util.decRefs(lhs);
+			Util.decRefs(rhs);
+			lhs = new Set(lhs);
+		}			
+		lhs.removeAll(rhs);
 		for(Object o : rhs) {
 			Util.decRefs(o); // because of constructor increment	
 		}
-		return items;
+		return lhs;
 	}
 	
 	public static Set difference(Set lhs, Object rhs) {
-		Set set = new Set(lhs);
-		set.remove(rhs);
+		if(lhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(rhs);
+		} else {
+			Util.nset_clones++;
+			Util.nset_clones_nelems += lhs.size();
+			Util.decRefs(lhs);
+			Util.decRefs(rhs);
+			lhs = new Set(lhs);
+		}	
+		lhs.remove(rhs);
 		Util.decRefs(rhs); // because of constructor increment		
-		return set;
+		return lhs;
 	}	
 	
 	public static Set intersect(Set lhs, Set rhs) {
-		Set set = new Set(); 		
-		for(Object o : lhs) {
-			if(rhs.contains(o)) {
-				Util.incRefs(o);
-				set.add(o);
+		if(lhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(rhs);
+		} else if(rhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(lhs);
+			Set tmp = rhs;
+			rhs = lhs;
+			lhs = tmp;
+		} else {
+			Util.nset_clones++;
+			Util.nset_clones_nelems += lhs.size();
+			Util.decRefs(lhs);
+			Util.decRefs(rhs);
+			lhs = new Set(lhs);
+		}	
+		lhs.retainAll(rhs);
+		for(Object o : rhs) {
+			if(!lhs.contains(o)) {
+				Util.decRefs(o);				
 			}
 		}
-		return set;
+		return lhs;
 	}
 	
 	public static Set intersect(Set lhs, Object rhs) {
-		Set set = new Set(); 		
+		if(lhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(rhs);
+		} else {
+			Util.nset_clones++;
+			Util.nset_clones_nelems += lhs.size();
+			Util.decRefs(lhs);
+			Util.decRefs(rhs);
+			lhs = new Set(lhs);
+		}
 		
-		if(lhs.contains(rhs)) {
+		for(Object o : lhs) {
+			Util.decRefs(o);
+		}
+		
+		lhs.clear();
+		
+		if(lhs.contains(rhs)) {			
 			Util.incRefs(rhs);
-			set.add(rhs);
+			lhs.add(rhs);
 		} 
 				
-		return set;
+		return lhs;
 	}
 	
 	public static Set intersect(Object lhs, Set rhs) {
-		Set set = new Set(); 		
+		if(rhs.refCount == 1) {
+			Util.nset_strong_updates++;			
+			Util.decRefs(lhs);
+		} else {
+			Util.nset_clones++;
+			Util.nset_clones_nelems += rhs.size();
+			Util.decRefs(rhs);
+			Util.decRefs(lhs);
+			rhs = new Set(rhs);
+		}
 		
-		if(rhs.contains(lhs)) {
+		for(Object o : rhs) {
+			Util.decRefs(o);
+		}
+		
+		rhs.clear();
+		
+		if(rhs.contains(lhs)) {			
 			Util.incRefs(lhs);
-			set.add(lhs);
-		} 		
-		
-		return set;
+			rhs.add(lhs);
+		} 
+				
+		return rhs;
 	}	
 	
 	public static BigInteger length(Set set) {
-		set.refCount--;
+		Util.decRefs(set);
 		return BigInteger.valueOf(set.size());
 	}
 }

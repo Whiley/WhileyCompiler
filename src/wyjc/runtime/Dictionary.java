@@ -65,7 +65,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 		if(dict.refCount > 1) {
 			Util.ndict_clones++;
 			Util.ndict_clones_nelems += dict.size();
-			dict.refCount--;
+			Util.decRefs(dict);
 			dict = new Dictionary(dict);			
 		} else {
 			Util.ndict_strong_updates++;
@@ -81,7 +81,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	}
 	
 	public static BigInteger length(Dictionary dict) {
-		dict.refCount--;
+		Util.decRefs(dict);
 		return BigInteger.valueOf(dict.size());
 	}
 	
