@@ -26,6 +26,9 @@ public final class List extends java.util.ArrayList {
 	
 	List(java.util.Collection items) {
 		super(items);			
+		for(Object o : items) {
+			Util.incRefs(o);
+		}
 	}
 	
 	public String toString() {
@@ -46,7 +49,8 @@ public final class List extends java.util.ArrayList {
 	// ================================================================================	 
 		
 	public static Object get(List list, BigInteger index) {		
-		return list.get(index.intValue());
+		Object item = list.get(index.intValue());
+		return Util.incRefs(item);		
 	}
 			
 	public static List set(List list, final BigInteger index, final Object value) {
@@ -55,11 +59,7 @@ public final class List extends java.util.ArrayList {
 			Util.nlist_clones_nelems += list.size();
 			// in this case, we need to clone the list in question
 			list.refCount--;
-			List nlist = new List(list);
-			for(Object item : nlist) {
-				Util.incRefs(item);
-			}
-			list = nlist;
+			list = new List(list);						
 		} else {
 			Util.nlist_strong_updates++;
 		}
@@ -70,6 +70,7 @@ public final class List extends java.util.ArrayList {
 	}
 	
 	public static List sublist(final List list, final BigInteger start, final BigInteger end) {
+		list.refCount--; 		
 		int st = start.intValue();
 		int en = end.intValue();	
 		List r;		
@@ -87,29 +88,41 @@ public final class List extends java.util.ArrayList {
 		return r;		
 	}
 	
-	public static BigInteger length(List list) {
+	public static BigInteger length(List list) {		
+		list.refCount--; 
 		return BigInteger.valueOf(list.size());
 	}
 	
-	public static List append(final List lhs, final List rhs) {		
+	public static List append(final List lhs, final List rhs) {	
+		lhs.refCount--; 
+		rhs.refCount--; 
 		List r = new List(lhs);
 		r.addAll(rhs);
+		
+		for(Object o : rhs) {
+			Util.incRefs(o);
+		}
+		
 		return r;
 	}
 	
-	public static List append(final List list, final Object item) {
+	public static List append(final List list, final Object item) {	
+		list.refCount--; 		
 		List r = new List(list);
 		r.add(item);
+		Util.incRefs(item);
 		return r;
 	}
 	
-	public static List append(final Object item, final List list) {
+	public static List append(final Object item, final List list) {	
+		list.refCount--; 	
 		List r = new List(list);
 		r.add(0,item);
+		Util.incRefs(item);
 		return r;
 	}
 	
-	public static int size(final List list) {
+	public static int size(final List list) {		
 		return list.size();
 	}
 	

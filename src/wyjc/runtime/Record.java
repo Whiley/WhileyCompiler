@@ -9,12 +9,15 @@ public final class Record extends HashMap<String,Object> {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1; // TODO: implement proper reference counting
 	
 	public Record() {}
 	
 	Record(HashMap<String,Object> r) {
 		super(r);
+		for(Object item : r.values()) {
+			Util.incRefs(item);
+		}
 	}
 	
 	// ================================================================================
@@ -42,18 +45,17 @@ public final class Record extends HashMap<String,Object> {
 	// ================================================================================	 	
 
 	public static Object get(final Record record, final String field) {
-		return record.get(field);
+		Object item = record.get(field);
+		Util.incRefs(item);
+		return item;
 	}
 	
 	public static Record put(Record record, final String field, final Object value) {		
 		if(record.refCount > 1) {
 			Util.nrecord_clones++;
 			Util.nrecord_clones_nfields += record.size();
-			Record nrecord = new Record(record);
-			for(Object e : nrecord.values()) {
-				Util.incRefs(e);
-			}
-			record = nrecord;
+			record.refCount--;
+			record = new Record(record);			
 		} else {
 			Util.nrecord_strong_updates++;
 		}
@@ -64,6 +66,7 @@ public final class Record extends HashMap<String,Object> {
 	}
 	
 	public static int size(Record record) {
+		record.refCount--;
 		return record.size();
 	}	
 }

@@ -564,7 +564,8 @@ public class ClassFileBuilder {
 	public void translate(Code.Store c, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType type = convertType(c.type);
-		//addIncRefs(c.type,bytecodes);		
+		// TODO: do we need this dec refs?
+		//addDecRefs(c.type,bytecodes);		
 		bytecodes.add(new Bytecode.Store(c.slot, type));				
 	}
 
@@ -1185,6 +1186,7 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		addIncRefs(c.type,bytecodes);
 	}
 	
 	public void translate(Code.DictLength c, Entry stmt, int freeSlot,
@@ -1218,14 +1220,14 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.ListLength c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,WHILEYLIST);						
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "length",
 				ftype, Bytecode.STATIC));								
 	}
 	
 	public void translate(Code.SubList c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {						
+			ArrayList<Bytecode> bytecodes) {	
 		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
 				BIG_INTEGER, BIG_INTEGER);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
@@ -1233,20 +1235,20 @@ public class ClassFileBuilder {
 	}	
 	
 	public void translate(Code.ListLoad c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				WHILEYLIST, BIG_INTEGER);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-				Bytecode.STATIC));
+				Bytecode.STATIC));		
 		addReadConversion(c.type.element(), bytecodes);
 	}
 	
 	public void translate(Code.FieldLoad c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes) {		
 		bytecodes.add(new Bytecode.LoadConst(c.field));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
-		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));				
-		addReadConversion(c.fieldType(),bytecodes);
+		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));						
+		addReadConversion(c.fieldType(),bytecodes);		
 	}
 
 	public void translate(Code.BinOp c, Block.Entry stmt, int freeSlot,
@@ -1442,8 +1444,9 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Store(freeSlot + 1, valueT));
 			bytecodes.add(new Bytecode.Load(freeSlot, WHILEYMAP));
 			bytecodes.add(new Bytecode.Swap());
-			addWriteConversion(c.type.key(), bytecodes);
+			addWriteConversion(c.type.key(), bytecodes);			
 			bytecodes.add(new Bytecode.Load(freeSlot + 1, valueT));
+			// FIXME: need write conversion here?
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
@@ -1463,7 +1466,7 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, JAVA_LANG_OBJECT);		
 		for(int i=0;i!=c.nargs;++i) {			
 			bytecodes.add(new Bytecode.Swap());			
-			addWriteConversion(c.type.element(),bytecodes);
+			addWriteConversion(c.type.element(),bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
 					Bytecode.STATIC));			
 		}
@@ -1502,7 +1505,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Swap());
 			bytecodes.add(new Bytecode.LoadConst(key));
 			bytecodes.add(new Bytecode.Swap());
-			addWriteConversion(et,bytecodes);
+			addWriteConversion(et,bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));						
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
@@ -1512,41 +1515,27 @@ public class ClassFileBuilder {
 	
 	protected void translate(Code.NewSet c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYSET, freeSlot, bytecodes);		
-		JvmType.Function ftype = new JvmType.Function(T_BOOL,
-				JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYSET));		
+		JvmType.Function ftype = new JvmType.Function(WHILEYSET,
+				JAVA_LANG_OBJECT,WHILEYSET);
 		
 		for(int i=0;i!=c.nargs;++i) {
-			bytecodes.add(new Bytecode.Load(freeSlot,WHILEYSET));
-			bytecodes.add(new Bytecode.Swap());			
-			addWriteConversion(c.type.element(),bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));
-			// FIXME: there is a bug here for bool lists
-			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
+			addWriteConversion(c.type.element(),bytecodes);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"union",ftype,Bytecode.STATIC));
 		}
-		
-		bytecodes.add(new Bytecode.Load(freeSlot,WHILEYSET));
 	}
 	
 	protected void translate(Code.NewTuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYTUPLE, freeSlot, bytecodes);
-		JvmType.Function ftype = new JvmType.Function(T_BOOL,
-				JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYTUPLE));		
-		
+		JvmType.Function ftype = new JvmType.Function(WHILEYTUPLE,
+				JAVA_LANG_OBJECT,WHILEYTUPLE);
+					
 		ArrayList<Type> types = new ArrayList<Type>(c.type.elements());
 		Collections.reverse(types);
 		
 		for(Type type : types) {
-			bytecodes.add(new Bytecode.Load(freeSlot,WHILEYTUPLE));
-			bytecodes.add(new Bytecode.Swap());			
-			addWriteConversion(type,bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"add",ftype,Bytecode.VIRTUAL));
-			// FIXME: there is a bug here for bool lists
-			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
+			addWriteConversion(type,bytecodes);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"add",ftype,Bytecode.STATIC));
 		}
-		
-		bytecodes.add(new Bytecode.Load(freeSlot,WHILEYTUPLE));
 		
 		// At this stage, we have a problem. We've added the elements into the
 		// tuple in reverse order. For simplicity, I simply call reverse at this
@@ -2652,9 +2641,18 @@ public class ClassFileBuilder {
 	 * @return
 	 */
 	public static boolean isRefCounted(Type t) {
-		return t != Type.T_BOOL && t != Type.T_INT && t != Type.T_REAL
-				&& t != Type.T_STRING
-				&& !Type.isSubtype(Type.Process(Type.T_ANY), t); 
+		if (t instanceof Type.Union) {
+			Type.Union n = (Type.Union) t;
+			for (Type b : n.bounds()) {
+				if (isRefCounted(b)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			return t instanceof Type.List || t instanceof Type.Dictionary
+					|| t instanceof Type.Record;
+		}
 	}
 
 	/**
@@ -2664,11 +2662,49 @@ public class ClassFileBuilder {
 	 * @param bytecodes
 	 */
 	public static void addIncRefs(Type type, ArrayList<Bytecode> bytecodes) {
-		if(isRefCounted(type)){
+		if(isRefCounted(type)){			
 			JvmType jtype = convertType(type);
 			JvmType.Function ftype = new JvmType.Function(jtype,jtype);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
 		}
+	}
+	
+	public static void addIncRefs(Type.List type, ArrayList<Bytecode> bytecodes) {				
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
+	}
+	
+	public static void addIncRefs(Type.Record type, ArrayList<Bytecode> bytecodes) {				
+		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
+	}
+	
+	public static void addIncRefs(Type.Dictionary type, ArrayList<Bytecode> bytecodes) {				
+		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
+	}
+	
+	public static void addDecRefs(Type type, ArrayList<Bytecode> bytecodes) {
+		if(isRefCounted(type)){			
+			JvmType jtype = convertType(type);
+			JvmType.Function ftype = new JvmType.Function(jtype,jtype);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));
+		}
+	}
+	
+	public static void addDecRefs(Type.List type, ArrayList<Bytecode> bytecodes) {				
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));		
+	}
+	
+	public static void addDecRefs(Type.Record type, ArrayList<Bytecode> bytecodes) {				
+		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));		
+	}
+	
+	public static void addDecRefs(Type.Dictionary type, ArrayList<Bytecode> bytecodes) {				
+		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"decRefs",ftype,Bytecode.STATIC));		
 	}
 	
 	/**

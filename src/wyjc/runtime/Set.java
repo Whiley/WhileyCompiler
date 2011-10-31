@@ -21,8 +21,11 @@ public final class Set extends java.util.HashSet {
 			
 	}
 	
-	private Set(java.util.Collection c) {
-		super(c);
+	private Set(java.util.Collection items) {
+		super(items);
+		for(Object o : items) {
+			Util.incRefs(o);
+		}
 	}	
 	
 	public String toString() {
@@ -54,32 +57,41 @@ public final class Set extends java.util.HashSet {
 	}
 	
 	public static Set union(Set lhs, Set rhs) {
-		Set set = new Set(lhs);
-		set.addAll(rhs);
-		return set;
+		Set items = new Set(lhs);
+		items.addAll(rhs);
+		for(Object o : rhs) {
+			Util.incRefs(o);
+		}
+		return items;
 	}
 	
 	public static Set union(Set lhs, Object rhs) {
 		Set set = new Set(lhs);
 		set.add(rhs);
+		Util.incRefs(rhs);
 		return set;
 	}
 	
 	public static Set union(Object lhs, Set rhs) {
 		Set set = new Set(rhs);
 		set.add(lhs);
+		Util.incRefs(lhs);
 		return set;
 	}
 	
 	public static Set difference(Set lhs, Set rhs) {
-		Set set = new Set(lhs);
-		set.removeAll(rhs);
-		return set;
+		Set items = new Set(lhs);
+		items.removeAll(rhs);
+		for(Object o : rhs) {
+			Util.decRefs(o); // because of constructor increment	
+		}
+		return items;
 	}
 	
 	public static Set difference(Set lhs, Object rhs) {
 		Set set = new Set(lhs);
 		set.remove(rhs);
+		Util.decRefs(rhs); // because of constructor increment		
 		return set;
 	}	
 	
@@ -87,6 +99,7 @@ public final class Set extends java.util.HashSet {
 		Set set = new Set(); 		
 		for(Object o : lhs) {
 			if(rhs.contains(o)) {
+				Util.incRefs(o);
 				set.add(o);
 			}
 		}
@@ -97,6 +110,7 @@ public final class Set extends java.util.HashSet {
 		Set set = new Set(); 		
 		
 		if(lhs.contains(rhs)) {
+			Util.incRefs(rhs);
 			set.add(rhs);
 		} 
 				
@@ -107,6 +121,7 @@ public final class Set extends java.util.HashSet {
 		Set set = new Set(); 		
 		
 		if(rhs.contains(lhs)) {
+			Util.incRefs(lhs);
 			set.add(lhs);
 		} 		
 		
@@ -114,6 +129,7 @@ public final class Set extends java.util.HashSet {
 	}	
 	
 	public static BigInteger length(Set set) {
+		set.refCount--;
 		return BigInteger.valueOf(set.size());
 	}
 }

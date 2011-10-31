@@ -11,7 +11,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1; // TODO: implement proper reference counting
 
 	// ================================================================================
 	// Generic Operations
@@ -23,6 +23,10 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	
 	Dictionary(Dictionary dict) {
 		super(dict);
+		for(Map.Entry e : dict.entrySet()) {
+			Util.incRefs(e.getKey());
+			Util.incRefs(e.getValue());
+		}
 	}
 	
 	public String toString() {
@@ -50,21 +54,19 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	// Dictionary Operations
 	// ================================================================================	 	
 
-	public static Object get(Dictionary dict, Object key) {
-		return dict.get(key);
+	public static Object get(Dictionary dict, Object key) {		
+		Object item = dict.get(key);
+		Util.decRefs(key);
+		Util.incRefs(item);
+		return item;
 	}
 	
 	public static Dictionary put(Dictionary dict, Object key, Object value) {
 		if(dict.refCount > 1) {
 			Util.ndict_clones++;
 			Util.ndict_clones_nelems += dict.size();
-			Dictionary ndict = new Dictionary(dict);
-			HashMap<Object,Object> tmp = ndict;
-			for(Map.Entry e : tmp.entrySet()) {
-				Util.incRefs(e.getKey());
-				Util.incRefs(e.getValue());
-			}
-			dict = ndict;
+			dict.refCount--;
+			dict = new Dictionary(dict);			
 		} else {
 			Util.ndict_strong_updates++;
 		}
@@ -79,6 +81,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	}
 	
 	public static BigInteger length(Dictionary dict) {
+		dict.refCount--;
 		return BigInteger.valueOf(dict.size());
 	}
 	

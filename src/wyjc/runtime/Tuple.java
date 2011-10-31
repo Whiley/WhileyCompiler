@@ -26,18 +26,18 @@ public final class Tuple extends java.util.ArrayList {
 	
 	Tuple(java.util.Collection items) {
 		super(items);			
+		for(Object item : items) {
+			Util.incRefs(item);
+		}
 	}
 	
 	Tuple(Object... items) {
 		super();
-		for(Object o : items) {
-			add(o);
+		for(Object item : items) {
+			add(item);
+			Util.incRefs(item);
 		}
-	}
-	
-	public boolean add(Object o) {		
-		return super.add(o);
-	}
+	}	
 		
 	public String toString() {
 		String r = "(";
@@ -55,20 +55,24 @@ public final class Tuple extends java.util.ArrayList {
 	// ================================================================================
 	// List Operations
 	// ================================================================================	 
-		
+	
+	public static Tuple add(Object item, Tuple list) {		
+		Util.incRefs(item);
+		list.add(item);
+		return list;		
+	}
+	
 	public static Object get(Tuple list, BigInteger index) {		
-		return list.get(index.intValue());
+		Object item = list.get(index.intValue());
+		Util.incRefs(item);
+		return item;
 	}
 			
 	public static Tuple set(Tuple list, final BigInteger index, final Object value) {
 		if(list.refCount > 1) {			
 			// in this case, we need to clone the list in question
 			list.refCount--;
-			Tuple nlist = new Tuple(list);
-			for(Object item : nlist) {
-				Util.incRefs(item);
-			}
-			list = nlist;
+			list = new Tuple(list);						
 		}
 		Object v = list.set(index.intValue(),value);
 		Util.decRefs(v);
@@ -76,6 +80,7 @@ public final class Tuple extends java.util.ArrayList {
 		return list;
 	}
 	
+	/*
 	public static Tuple sublist(final Tuple list, final BigInteger start, final BigInteger end) {
 		int st = start.intValue();
 		int en = end.intValue();
@@ -85,8 +90,10 @@ public final class Tuple extends java.util.ArrayList {
 		}
 		return r;		
 	}
+	*/
 	
 	public static BigInteger length(Tuple list) {
+		list.refCount--;
 		return BigInteger.valueOf(list.size());
 	}
 	
