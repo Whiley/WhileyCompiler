@@ -121,10 +121,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 				syntaxError(errorMessage(DEAD_CODE),
 						filename, entry);				
 			}
-		} else {
-			// what else?
-			// iftype bytecodes access slot directly
-		}
+		} 
 		
 		return environment;
 	}
@@ -138,7 +135,13 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	@Override
 	public Env propagate(int index,
 			Code.IfType code, Entry stmt, Env trueEnv, Env falseEnv) {
-		return join(trueEnv,falseEnv);
+		Env r = join(trueEnv,falseEnv);
+		
+		if(code.slot >= 0) {
+			r.add(code.slot);
+		}
+		
+		return r;
 	}
 	
 	@Override
@@ -194,12 +197,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		return environment;		
 	}
 	
-	private Env join(Env env1, Env env2) {
-		if (env2 == null) {
-			return env1;
-		} else if (env1 == null) {
-			return env2;
-		}
+	private Env join(Env env1, Env env2) {		
 		// implements set union
 		Env r = new Env(env1);
 		r.addAll(env2);
