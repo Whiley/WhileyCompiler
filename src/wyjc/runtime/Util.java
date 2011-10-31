@@ -41,24 +41,24 @@ public class Util {
 		if(debug) {
 			Runtime.getRuntime().addShutdownHook(new Thread(){
 				public void run() {
-					System.err.println("===========================================");
+					System.err.println("==================================================");
 					System.err.println("CLONING STATS");
-					System.err.println("===========================================");
-					System.err.println("set clones: " + nset_clones + " / "
-							+ (nset_clones + nset_strong_updates) + " (cost: "
+					System.err.println("==================================================");
+					System.err.println("set clones:        " + nset_clones + " / "
+							+ (nset_clones + nset_strong_updates) + "\t(cost: "
 							+ nset_clones_nelems + ", max: " + nset_max_count
 							+ ")");
-					System.err.println("list clones: " + nlist_clones + " / "
+					System.err.println("list clones:       " + nlist_clones + " / "
 							+ (nlist_clones + nlist_strong_updates)
-							+ " (cost: " + nlist_clones_nelems + ", max: "
+							+ "\t(cost: " + nlist_clones_nelems + ", max: "
 							+ nlist_max_count + ")");
 					System.err.println("dictionary clones: " + ndict_clones
 							+ " / " + (ndict_clones + ndict_strong_updates)
-							+ " (cost: " + ndict_clones_nelems + ", max: "
+							+ "\t(cost: " + ndict_clones_nelems + ", max: "
 							+ ndict_max_count + ")");
-					System.err.println("record clones: " + nrecord_clones
+					System.err.println("record clones:     " + nrecord_clones
 							+ " / " + (nrecord_clones + nrecord_strong_updates)
-							+ " (" + nrecord_clones_nfields + ", max: "
+							+ "\t(cost:" + nrecord_clones_nfields + ", max: "
 							+ nrecord_max_count + ")");				
 				}
 			});
