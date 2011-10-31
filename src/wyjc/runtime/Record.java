@@ -47,11 +47,15 @@ public final class Record extends HashMap<String,Object> {
 	
 	public static Record put(Record record, final String field, final Object value) {		
 		if(record.refCount > 1) {
+			Util.nrecord_clones++;
+			Util.nrecord_clones_nfields += record.size();
 			Record nrecord = new Record(record);
 			for(Object e : nrecord.values()) {
 				Util.incRefs(e);
 			}
 			record = nrecord;
+		} else {
+			Util.nrecord_strong_updates++;
 		}
 		Object val = record.put(field, value);
 		Util.decRefs(val);

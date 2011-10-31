@@ -56,6 +56,8 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	
 	public static Dictionary put(Dictionary dict, Object key, Object value) {
 		if(dict.refCount > 1) {
+			Util.ndict_clones++;
+			Util.ndict_clones_nelems += dict.size();
 			Dictionary ndict = new Dictionary(dict);
 			HashMap<Object,Object> tmp = ndict;
 			for(Map.Entry e : tmp.entrySet()) {
@@ -63,6 +65,8 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 				Util.incRefs(e.getValue());
 			}
 			dict = ndict;
+		} else {
+			Util.ndict_strong_updates++;
 		}
 		Object val = dict.put(key, value);
 		if(val != null) {

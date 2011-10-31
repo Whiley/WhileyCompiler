@@ -35,7 +35,7 @@ import wyil.lang.Value;
 
 public class Util {
 
-	private static final boolean debug = false;
+	private static final boolean debug = true;
 	
 	static { 
 		if(debug) {
@@ -44,17 +44,23 @@ public class Util {
 					System.err.println("===========================================");
 					System.err.println("CLONING STATS");
 					System.err.println("===========================================");
-					System.err.println("list clones: " + nlist_clones);
-					System.err.println("set clones: " + nset_clones);
-					System.err.println("record clones: " + nrecord_clones);
+					System.err.println("list clones: " + nlist_clones + " / " + (nlist_clones+nlist_strong_updates) + " (cost: " + nlist_clones_nelems + ")");
+					System.err.println("dictionary clones: " + ndict_clones +  " / " + (ndict_clones+ndict_strong_updates) + " (cost: " + ndict_clones_nelems + ")");
+					System.err.println("record clones: " + nrecord_clones +  " / " + (nrecord_clones+nrecord_strong_updates)+ " (" + nrecord_clones_nfields + ")");					
 				}
 			});
 		}
 	}	
-	
-	private static int nlist_clones = 0;
-	private static int nset_clones = 0;
-	private static int nrecord_clones = 0;
+		
+	static int nlist_clones = 0;
+	static int nlist_strong_updates = 0;
+	static int nlist_clones_nelems = 0;
+	static int ndict_clones = 0;	
+	static int ndict_clones_nelems = 0;
+	static int ndict_strong_updates = 0;
+	static int nrecord_clones = 0;
+	static int nrecord_strong_updates = 0;
+	static int nrecord_clones_nfields = 0;
 
 	public static Method functionRef(String clazz, String name) {
 		try {
@@ -200,7 +206,7 @@ public class Util {
 	}
 		
 	/**
-	 * Increment the reference count for this object. In some cases, this may
+	 * Increment the reference count for an object. In some cases, this may
 	 * have no effect. In other cases, the current reference count will be
 	 * maintained and in-place updates can only occur when the reference count is
 	 * one.

@@ -51,6 +51,8 @@ public final class List extends java.util.ArrayList {
 			
 	public static List set(List list, final BigInteger index, final Object value) {
 		if(list.refCount > 1) {			
+			Util.nlist_clones++;
+			Util.nlist_clones_nelems += list.size();
 			// in this case, we need to clone the list in question
 			list.refCount--;
 			List nlist = new List(list);
@@ -58,6 +60,8 @@ public final class List extends java.util.ArrayList {
 				Util.incRefs(item);
 			}
 			list = nlist;
+		} else {
+			Util.nlist_strong_updates++;
 		}
 		Object v = list.set(index.intValue(),value);
 		Util.decRefs(v);
