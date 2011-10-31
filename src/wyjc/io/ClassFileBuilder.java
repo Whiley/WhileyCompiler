@@ -1155,6 +1155,7 @@ public class ClassFileBuilder {
 				}
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);
 				bytecodes.add(new Bytecode.LoadConst(i));
+				// TODO: turn into static method call
 				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", ftype,
 						Bytecode.VIRTUAL));
 				addReadConversion(elem,bytecodes);

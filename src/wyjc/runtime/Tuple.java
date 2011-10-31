@@ -80,39 +80,9 @@ public final class Tuple extends java.util.ArrayList {
 		return list;
 	}
 	
-	/*
-	public static Tuple sublist(final Tuple list, final BigInteger start, final BigInteger end) {
-		int st = start.intValue();
-		int en = end.intValue();
-		Tuple r = new Tuple(en-st);
-		for (int i = st; i != en; ++i) {
-			r.add(list.get(i));
-		}
-		return r;		
-	}
-	*/
-	
 	public static BigInteger length(Tuple list) {
 		list.refCount--;
 		return BigInteger.valueOf(list.size());
-	}
-	
-	public static Tuple append(final Tuple lhs, final Tuple rhs) {		
-		Tuple r = new Tuple(lhs);
-		r.addAll(rhs);
-		return r;
-	}
-	
-	public static Tuple append(final Tuple list, final Object item) {
-		Tuple r = new Tuple(list);
-		r.add(item);
-		return r;
-	}
-	
-	public static Tuple append(final Object item, final Tuple list) {
-		Tuple r = new Tuple(list);
-		r.add(0,item);
-		return r;
 	}
 	
 	public static int size(final Tuple list) {
