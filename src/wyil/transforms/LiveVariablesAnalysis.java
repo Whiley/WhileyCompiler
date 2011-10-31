@@ -73,6 +73,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		stores = new HashMap<String,Env>();
 		afterInserts.clear();
 		rewrites.clear();
+		deadcode.clear();
 		Block body = mcase.body();
 		Env environment = lastStore();		
 		propagate(0,body.size(), environment);	
