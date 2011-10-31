@@ -58,6 +58,23 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	
 	@Override
 	public Env propagate(int index, Entry entry, Env environment) {		
+		Code code = entry.code;
+		if(code instanceof Code.Load) {
+			Code.Load load = (Code.Load) code;
+			environment = new Env(environment);
+			environment.add(load.slot);
+		} else if(code instanceof Code.Store) {
+			Code.Store store = (Code.Store) code;
+			environment = new Env(environment);
+			environment.remove(store.slot);
+		} else {
+			// what else?
+			// update bytecodes access slot directly
+			// iftype bytecodes access slot directly
+		}
+		
+		System.out.println("[" + index + "] - " + environment);
+		
 		return environment;
 	}
 	
@@ -118,7 +135,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		environment = join(environment,newEnv);
 		
 		if(loop instanceof Code.ForAll) {
-			Code.ForAll fall = (Code.ForAll) loop; 											
+			Code.ForAll fall = (Code.ForAll) loop; 		
+			// FIXME: is the following really necessary?
+			environment.remove(fall.slot);
 		} 		
 		
 		return environment;		
