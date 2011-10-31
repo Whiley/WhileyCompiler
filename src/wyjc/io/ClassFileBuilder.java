@@ -478,6 +478,8 @@ public class ClassFileBuilder {
 				 translate((Load)code,freeSlot,bytecodes);
 			} else if(code instanceof Loop) {
 				 translate((Loop)code,freeSlot,bytecodes);
+			} else if(code instanceof Move) {
+				 translate((Move)code,freeSlot,bytecodes);
 			} else if(code instanceof Update) {
 				 translate((Update)code,freeSlot,bytecodes);
 			} else if(code instanceof NewDict) {
@@ -1190,6 +1192,20 @@ public class ClassFileBuilder {
 		addIncRefs(c.type,bytecodes);
 	}
 	
+	public void translate(Code.Move c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		// a move does not need to increment the reference count, since the
+		// register is no longer usable after this point.
+		
+		// TODO: the following codes are not strictly necessary, and clearly
+		// lead to less efficient bytecode. Therefore, at some point, they
+		// should be remove. However, they do provide useful debugging code to
+		// check that the Move bytecode is, in fact, doing what it should (i.e.
+		// the register in question is actually dead).
+		bytecodes.add(new Bytecode.LoadConst(1.0F));
+		bytecodes.add(new Bytecode.Store(c.slot, new JvmType.Null()));
+	}
+		
 	public void translate(Code.DictLength c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,WHILEYMAP);						

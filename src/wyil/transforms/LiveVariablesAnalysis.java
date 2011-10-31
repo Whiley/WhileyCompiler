@@ -4,6 +4,7 @@ import java.util.*;
 
 import wyc.stages.BackPropagation.Env;
 import wyil.ModuleLoader;
+import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Module;
 import wyil.lang.Type;
@@ -37,7 +38,9 @@ import wyil.util.dfa.*;
  * 
  */
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env>{
-
+	private static final HashMap<Integer,Block.Entry> afterInserts = new HashMap<Integer,Block.Entry>();
+	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
+	
 	public LiveVariablesAnalysis(ModuleLoader loader) {
 		super(loader);
 	}	
@@ -57,10 +60,51 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env lastStore() { return EMPTY_ENV; }
 	
 	@Override
+	public Module.Case propagate(Module.Case mcase) {		
+
+		// TODO: back propagate through pre- and post-conditions
+		
+		methodCase = mcase;
+		stores = new HashMap<String,Env>();
+		afterInserts.clear();
+		rewrites.clear();
+		
+		Env environment = lastStore();		
+		propagate(0,mcase.body().size(), environment);	
+		
+		// At this point, we apply the inserts
+		Block body = mcase.body();
+		Block nbody = new Block(body.numInputs());		
+		for(int i=0;i!=body.size();++i) {
+			Block.Entry rewrite = rewrites.get(i);			
+			if(rewrite != null) {								
+				nbody.append(rewrite);				
+			} else {
+				nbody.append(body.get(i));
+			}
+			Block.Entry afters = afterInserts.get(i);			
+			if(afters != null) {								
+				nbody.append(afters);				
+			} 							
+		}
+		
+		return new Module.Case(nbody, mcase.precondition(),
+				mcase.postcondition(), mcase.locals(), mcase.attributes());
+	}
+	
+	@Override
 	public Env propagate(int index, Entry entry, Env environment) {		
 		Code code = entry.code;
 		if(code instanceof Code.Load) {
 			Code.Load load = (Code.Load) code;
+			if(!environment.contains(load.slot)) {
+				rewrites.put(
+						index,
+						new Block.Entry(Code.Move(load.type, load.slot), entry
+								.attributes()));				
+			} else {
+				rewrites.put(index, null);
+			}
 			environment = new Env(environment);
 			environment.add(load.slot);
 		} else if(code instanceof Code.Store) {
@@ -72,8 +116,6 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			// update bytecodes access slot directly
 			// iftype bytecodes access slot directly
 		}
-		
-		System.out.println("[" + index + "] - " + environment);
 		
 		return environment;
 	}
@@ -149,13 +191,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		} else if (env1 == null) {
 			return env2;
 		}
-		// implements set intersection
-		Env r = new Env();
-		for(Integer i : env1) {
-			if(env2.contains(i)) {
-				r.add(i);
-			}
-		}
+		// implements set union
+		Env r = new Env(env1);
+		r.addAll(env2);
 		return r;
 	}
 	

@@ -41,7 +41,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
 
 public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
-	private static final HashMap<Integer,Block> afterInsertions = new HashMap<Integer,Block>();
+	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
 	public BackPropagation(ModuleLoader loader) {
@@ -70,7 +70,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		methodCase = mcase;
 		stores = new HashMap<String,Env>();
-		afterInsertions.clear();
+		afterInserts.clear();
 		rewrites.clear();
 		
 		Env environment = lastStore();		
@@ -86,7 +86,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			} else {
 				nbody.append(body.get(i));
 			}
-			Block afters = afterInsertions.get(i);			
+			Block afters = afterInserts.get(i);			
 			if(afters != null) {								
 				nbody.append(afters);				
 			} 							
@@ -100,7 +100,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Code code = entry.code;			
 		
 		// reset the rewrites for this code, in case it changes
-		afterInsertions.remove(index);
+		afterInserts.remove(index);
 		
 		environment = (Env) environment.clone();
 		
@@ -760,7 +760,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void coerceAfter(Type to, Type from, int index, SyntacticElement elem) {					
 		
 		if (to.equals(from)) {
-			afterInsertions.remove(index);
+			afterInserts.remove(index);
 		} else if(to == Type.T_STRING) {
 			// this indicates a string conversion is required			
 			Pair<Type.Function, NameID> p = choseToString(from);
@@ -772,11 +772,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			}
 			block.append(Code.Invoke(p.first(), p.second(), true),
 					elem.attributes());
-			afterInsertions.put(index, block);
+			afterInserts.put(index, block);
 		} else {
 			Block block = new Block(0);
 			block.append(Code.Convert(from, to), elem.attributes());
-			afterInsertions.put(index,block);
+			afterInserts.put(index,block);
 		}
 		
 		// this method *should* be structured as follows:

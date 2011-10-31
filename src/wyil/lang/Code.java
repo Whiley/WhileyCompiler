@@ -157,7 +157,8 @@ public abstract class Code {
 	}
 	
 	/**
-	 * Construct a <code>load</code> bytecode which reads a given register.
+	 * Construct a <code>load</code> bytecode which pushes a given register onto
+	 * the stack.
 	 * 
 	 * @param type
 	 *            --- record type.
@@ -171,6 +172,21 @@ public abstract class Code {
 	
 	public static ListLength ListLength(Type.List type) {
 		return get(new ListLength(type));
+	}
+	
+	/**
+	 * Construct a <code>move</code> bytecode which moves a given register onto
+	 * the stack. The register contents of the register are voided after this
+	 * operation.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param reg
+	 *            --- reg to load.
+	 * @return
+	 */
+	public static Move Move(Type type, int reg) {
+		return get(new Move(type,reg));
 	}
 	
 	public static SubList SubList(Type.List type) {
@@ -1485,6 +1501,51 @@ public abstract class Code {
 	
 		public String toString() {
 			return toString("load " + slot,type);
+		}	
+	}		
+	
+	public static final class Move extends Code {		
+		public final Type type;
+		public final int slot;		
+		
+		private Move(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
+		}
+		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Move(type, nslot);
+			} else {
+				return this;
+			}
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return slot; 
+			} else { 
+				return type.hashCode() + slot;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Move) {
+				Move i = (Move) o;
+				return slot == i.slot
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("move " + slot,type);
 		}	
 	}		
 	
