@@ -44,6 +44,7 @@ import wyil.util.dfa.*;
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env>{
 	private static final HashMap<Integer,Block.Entry> afterInserts = new HashMap<Integer,Block.Entry>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
+	private static final HashSet<Integer> deadcode = new HashSet<Integer>();
 	
 	public LiveVariablesAnalysis(ModuleLoader loader) {
 		super(loader);
@@ -72,12 +73,17 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		stores = new HashMap<String,Env>();
 		afterInserts.clear();
 		rewrites.clear();
-		
-		Env environment = lastStore();		
-		propagate(0,mcase.body().size(), environment);	
-		
-		// At this point, we apply the inserts
 		Block body = mcase.body();
+		Env environment = lastStore();		
+		propagate(0,body.size(), environment);	
+		
+		// First, check and report any dead-code
+		for(Integer i : deadcode) {
+			syntaxError(errorMessage(DEAD_CODE),
+					filename, body.get(i));		
+		}
+		
+		// At this point, we apply the inserts	
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry rewrite = rewrites.get(i);			
@@ -118,8 +124,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		} else if(code instanceof Code.Update) {
 			Code.Update update = (Code.Update) code;
 			if(!environment.contains(update.slot)) {
-				syntaxError(errorMessage(DEAD_CODE),
-						filename, entry);				
+				deadcode.add(index);					
+			} else {
+				deadcode.remove(index);
 			}
 		} 
 		
@@ -181,7 +188,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		
 		do {			
 			// iterate until a fixed point reached
-			oldEnv = newEnv != null ? newEnv : environment;
+			oldEnv = newEnv != null ? newEnv : EMPTY_ENV;
 			newEnv = propagate(start+1,end, oldEnv);
 			
 		} while (!newEnv.equals(oldEnv));
