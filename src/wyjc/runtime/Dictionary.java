@@ -109,13 +109,18 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	
 	/**
 	 * This method is not intended for public consumption. It is used internally
-	 * by the compiler during object construction only.
+	 * by the compiler during imperative updates only.
 	 * 
 	 * @param list
 	 * @param item
 	 * @return
 	 */
 	public static Object internal_get(Dictionary dict, Object key) {	
-		return dict.get(key);						
+		Util.decRefs(key);
+		Object item = dict.get(key);
+		if(dict.refCount > 1) {
+			Util.incRefs(item);			
+		} 
+		return item;
 	}
 }

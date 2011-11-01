@@ -189,14 +189,18 @@ public final class List extends java.util.ArrayList {
 	
 	/**
 	 * This method is not intended for public consumption. It is used internally
-	 * by the compiler during object construction only.
+	 * by the compiler during imperative updates only.
 	 * 
 	 * @param list
 	 * @param item
 	 * @return
 	 */
 	public static Object internal_get(List list, BigInteger index) {		
-		return list.get(index.intValue());			
+		Object item = list.get(index.intValue());
+		if(list.refCount > 1) {
+			Util.incRefs(item);			
+		} 
+		return item;
 	}
 	
 	public static java.util.Iterator iterator(List list) {

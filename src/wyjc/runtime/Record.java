@@ -66,12 +66,11 @@ public final class Record extends HashMap<String,Object> {
 		return record;
 	}
 	
-	public static int size(Record record) {
-		Util.decRefs(record);
-		return record.size();
-	}	
-	
 	public static Object internal_get(final Record record, final String field) {
-		return record.get(field);		
+		Object item = record.get(field);
+		if(record.refCount > 1) {
+			Util.incRefs(item);
+		}
+		return item;		
 	}
 }
