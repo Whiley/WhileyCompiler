@@ -235,7 +235,6 @@ public final class Set extends java.util.HashSet {
 	 */
 	public static Set internal_add(Set lhs, Object rhs) {		
 		lhs.add(rhs);
-		Util.incRefs(rhs);
 		return lhs;
 	}
 }

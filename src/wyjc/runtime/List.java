@@ -184,7 +184,6 @@ public final class List extends java.util.ArrayList {
 	 */
 	public static List internal_add(List list, final Object item) {			
 		list.add(item);
-		Util.incRefs(item);
 		return list;
 	}
 	

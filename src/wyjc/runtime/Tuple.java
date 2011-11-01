@@ -86,7 +86,6 @@ public final class Tuple extends java.util.ArrayList {
 	 */
 	public static Tuple internal_add(Tuple lhs, Object rhs) {		
 		lhs.add(rhs);
-		Util.incRefs(rhs);
 		return lhs;
 	}
 }
