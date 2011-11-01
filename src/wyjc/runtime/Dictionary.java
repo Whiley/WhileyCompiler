@@ -54,9 +54,10 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	// Dictionary Operations
 	// ================================================================================	 	
 
-	public static Object get(Dictionary dict, Object key) {		
-		Object item = dict.get(key);
+	public static Object get(Dictionary dict, Object key) {	
+		Util.decRefs(dict);
 		Util.decRefs(key);
+		Object item = dict.get(key);		
 		Util.incRefs(item);
 		return item;
 	}

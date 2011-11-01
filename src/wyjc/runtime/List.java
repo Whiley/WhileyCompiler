@@ -49,7 +49,8 @@ public final class List extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 		
-	public static Object get(List list, BigInteger index) {		
+	public static Object get(List list, BigInteger index) {
+		Util.decRefs(list);
 		Object item = list.get(index.intValue());
 		return Util.incRefs(item);		
 	}
