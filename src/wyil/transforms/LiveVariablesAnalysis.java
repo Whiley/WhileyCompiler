@@ -182,19 +182,24 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 
-		environment = new Env(environment); 
-
+		 
 		Env oldEnv = null;
 		Env newEnv = null;
 		
+		if(loop instanceof Code.ForAll) {
+			environment = new Env(environment);	
+		} else {
+			environment = EMPTY_ENV;
+		}
+		
 		do {			
 			// iterate until a fixed point reached
-			oldEnv = newEnv != null ? newEnv : EMPTY_ENV;
+			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv, handlers);
 			
 		} while (!newEnv.equals(oldEnv));
 		
-		environment = join(environment,newEnv);
+		environment = newEnv;
 		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 		
