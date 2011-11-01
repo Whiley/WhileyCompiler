@@ -59,7 +59,14 @@ public class Util {
 					System.err.println("record clones:     " + nrecord_clones
 							+ " / " + (nrecord_clones + nrecord_strong_updates)
 							+ "\t(cost:" + nrecord_clones_nfields + ", max: "
-							+ nrecord_max_count + ")");				
+							+ nrecord_max_count + ")");		
+					long totalClones = nlist_clones + nset_clones + ndict_clones + nrecord_clones;
+					long totalStrongUpdates = nlist_strong_updates + nset_strong_updates + ndict_strong_updates + nrecord_strong_updates;
+					double ratio = totalClones;
+					ratio = 100 * (ratio / (totalClones+totalStrongUpdates));
+					System.err.println("--------------------------------------------------");
+					System.err.println("Total clones: " + totalClones + " / " + (totalClones+totalStrongUpdates) + " (" + ratio + "%)");
+					
 				}
 			});
 		}
