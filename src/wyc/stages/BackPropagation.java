@@ -48,7 +48,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		super(loader);
 	}
 	
-	public Module.TypeDef transform(Module.TypeDef type) {		
+	@Override
+	public Module.TypeDef propagate(Module.TypeDef type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}
@@ -64,6 +65,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;				
 	}
 	
+	@Override
 	public Module.Case propagate(Module.Case mcase) {		
 
 		// TODO: back propagate through pre- and post-conditions
@@ -74,7 +76,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		rewrites.clear();
 		
 		Env environment = lastStore();		
-		propagate(0,mcase.body().size(), environment);	
+		propagate(0,mcase.body().size(), environment, Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
@@ -96,6 +98,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 
+	@Override
 	public Env propagate(int index, Entry entry, Env environment) {						
 		Code code = entry.code;			
 		
@@ -189,7 +192,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
 		} else {			
-			internalFailure("unknown wyil code",filename,entry);
+			internalFailure("unknown wyil code (" + code + ")",filename,entry);
 			return null;
 		}	
 		
@@ -659,6 +662,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.push(code.type);
 	}	
 	
+	@Override
 	public Env propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env trueEnv, Env falseEnv) {
 		
@@ -688,6 +692,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;
 	}
 	
+	@Override
 	public Env propagate(int index,
 			Code.IfType code, Entry stmt, Env trueEnv, Env falseEnv) {
 		
@@ -702,6 +707,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;
 	}
 	
+	@Override
 	public Env propagate(int index, Code.Switch sw,
 			Entry stmt, List<Env> environments, Env defEnv) {
 		
@@ -716,22 +722,20 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;
 	}
 	
-	public Env propagate(int index, Code.TryCatch sw, Entry stmt,
-			List<Env> environments, Env defEnv) {
-
-		Env environment = defEnv;
-
-		for (int i = 0; i != sw.catches.size(); ++i) {
-			Env catchEnvironment = (Env) environments.get(i).clone();
-			catchEnvironment.pop(); // exception type
-			environment = join(environment, catchEnvironment);
+	@Override
+	protected Env propagate(Type handler, Env normalEnv, Env exceptionEnv) {
+		exceptionEnv = exceptionEnv.clone();
+		exceptionEnv.pop(); // pop handler
+		// now, make sure we don't interfere with the normal flow.
+		while(exceptionEnv.size() < normalEnv.size()) {
+			exceptionEnv.add(Type.T_ANY);
 		}
-
-		return environment;
+		return join(normalEnv, exceptionEnv);
 	}
-	
+		
+	@Override
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment) {
+			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 
 		environment = new Env(environment); 
 
@@ -741,7 +745,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv);
+			newEnv = propagate(start+1,end, oldEnv, handlers);
 			
 		} while (!newEnv.equals(oldEnv));
 		

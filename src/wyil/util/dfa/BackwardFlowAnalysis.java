@@ -28,6 +28,7 @@ package wyil.util.dfa;
 import static wyil.util.SyntaxError.internalFailure;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,18 +85,18 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
 		T last = lastStore();						
-		propagate(0, mcase.body().size(), last);		
+		propagate(0, mcase.body().size(), last, Collections.EMPTY_LIST);		
 		return mcase;
 	}		
 	
-	protected T propagate(int start, int end, T store) {
+	protected T propagate(int start, int end, T store, List<Pair<Type,String>> handlers) {
 		Block block = methodCase.body();
 		
 		for(int i=end-1;i>=start;--i) {						
 			Entry stmt = block.get(i);						
 			try {				
 				Code code = stmt.code;
-
+				
 				// First, check for a label which may have incoming information.
 				if (code instanceof Code.LoopEnd) {					
 					Code.Loop loop = null;
@@ -116,7 +117,28 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 						}						
 					}			
 					
-					store = propagate(i, loopEnd, loop, stmt, store);															
+					store = propagate(i, loopEnd, loop, stmt, store, handlers);															
+					continue;
+				} else if (code instanceof Code.TryEnd) {					
+					Code.TryCatch tc = null;
+					String label = ((Code.TryEnd) code).label;
+					stores.put(label,store);
+					// now, identify the try-catch body.
+					int tcEnd = i;
+					while (--i >= 0) {						
+						stmt = block.get(i);
+						if (stmt.code instanceof Code.TryCatch) {
+							tc = (Code.TryCatch) stmt.code;
+							if (label.equals(tc.target)) {
+								// start of loop body found
+								break;
+							}
+						}						
+					}			
+					ArrayList<Pair<Type, String>> nhandlers = new ArrayList<Pair<Type, String>>(
+							handlers);
+					nhandlers.addAll(0, tc.catches);					
+					store = propagate(i+1, tcEnd, store, nhandlers);															
 					continue;
 				} else if (code instanceof Code.Label) {
 					Code.Label l = (Code.Label) code;
@@ -140,20 +162,6 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					T defStore = stores.get(sw.defaultTarget);
 					
 					store = propagate(i, sw, stmt, swStores, defStore);																				
-				} else if (code instanceof Code.TryCatch) {
-					
-					// FIXME: this is fundamentally broken since an exception
-					// can arise at (in principle) any bytecode.
-					
-					Code.TryCatch sw = (Code.TryCatch) code;
-					
-					ArrayList<T> swStores = new ArrayList<T>();
-					for(int j=0;j!=sw.catches.size();++j){
-						String target = sw.catches.get(j).second();
-						swStores.add(stores.get(target));
-					}
-					
-					store = propagate(i, sw, stmt, swStores, store);																				
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					store = stores.get(gto.target);					
@@ -161,6 +169,8 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					// This indicates a sequential statement was encountered.					
 					store = propagate(i, stmt, store);									
 				}
+				
+				store = mergeHandlers(i,code,store,handlers,stores);
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
@@ -171,6 +181,46 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		return store;
 	}
 
+	protected T mergeHandlers(int index, Code code, T store, List<Pair<Type, String>> handlers,
+			Map<String, T> stores) {
+		if(code instanceof Code.Throw) {
+			Code.Throw t = (Code.Throw) code;	
+			return mergeHandler(t.type,store,handlers,stores);
+		} else if(code instanceof Code.IndirectInvoke) {
+			Code.IndirectInvoke i = (Code.IndirectInvoke) code;			
+			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
+		} else if(code instanceof Code.Invoke) {
+			Code.Invoke i = (Code.Invoke) code;	
+			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
+		} else if(code instanceof Code.IndirectSend) {
+			Code.IndirectSend i = (Code.IndirectSend) code;
+			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
+		} else if(code instanceof Code.Send) {
+			Code.Send i = (Code.Send) code;			
+			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
+		}
+		return store;
+	}
+	
+	protected T mergeHandler(Type type, T store, List<Pair<Type, String>> handlers,
+			Map<String, T> stores) {
+		for(Pair<Type,String> p : handlers) {
+			Type handler = p.first();			
+			T exceptionStore = stores.get(p.second());
+			if(exceptionStore == null) {
+				continue;
+			} else if(Type.isSubtype(handler,type)) {
+				return propagate(handler,store,exceptionStore);				
+			} else if(Type.isSubtype(type, handler)) {
+				store = propagate(handler,store,exceptionStore);				
+				// not completely subsumed
+				type = Type.intersect(type,Type.Negation(handler));
+			} 
+		}
+		
+		return store;
+	}
+	
 	/**
 	 * <p>
 	 * Propagate back from a conditional branch. This produces a potentially
@@ -244,28 +294,6 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 
 	/**
 	 * <p>
-	 * Propagate back from a try-catch multi-way branch. This accepts multiple
-	 * stores --- one for each of the various branches.
-	 * </p>
-	 * 
-	 * @param index
-	 *            --- the index of this bytecode in the method's block
-	 * @param tc
-	 *            --- the code of this statement
-	 * @param entry
-	 *            --- block entry for this bytecode
-	 * @param stores
-	 *            --- abstract stores coming from the various branches.
-	 *            statement.
-	 * @param defStore
-	 *            --- abstract store coming from default branch
-	 * @return
-	 */
-	protected abstract T propagate(int index, Code.TryCatch tc, Entry entry,
-			List<T> stores, T defStore);
-
-	/**
-	 * <p>
 	 * Propagate back from a loop statement, producing a store which holds true
 	 * immediately before the statement
 	 * </p>
@@ -284,7 +312,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 * @return
 	 */
 	protected abstract T propagate(int start, int end, Code.Loop code, Entry stmt,
-			T store);
+			T store, List<Pair<Type,String>> handlers);
 
 	/**
 	 * <p>
@@ -303,6 +331,19 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 */
 	protected abstract T propagate(int index, Entry stmt, T store);
 
+	/**
+	 * Propagate from an exception handler.
+	 * 
+	 * @param handler
+	 *            --- type of handler catching exception
+	 * @param normalStore
+	 *            --- store from non-exception flow
+	 * @param exceptionStore
+	 *            --- store from exception flow
+	 * @return
+	 */
+	protected abstract T propagate(Type handler, T normalStore, T exceptionStore);
+	
 	/**
 	 * Generate the store which holds true immediately after the last statement
 	 * of the method-case body.  By default, this is null and the first return

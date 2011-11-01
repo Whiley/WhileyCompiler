@@ -13,6 +13,7 @@ import wyil.lang.Code;
 import wyil.lang.Module;
 import wyil.lang.Type;
 import wyil.lang.Block.Entry;
+import wyil.util.Pair;
 import wyil.util.dfa.*;
 
 /**
@@ -50,7 +51,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		super(loader);
 	}	
 	
-	public Module.TypeDef transform(Module.TypeDef type) {		
+	@Override
+	public Module.TypeDef propagate(Module.TypeDef type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}
@@ -76,7 +78,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		deadcode.clear();
 		Block body = mcase.body();
 		Env environment = lastStore();		
-		propagate(0,body.size(), environment);	
+		propagate(0,body.size(), environment, Collections.EMPTY_LIST);	
 		
 		// First, check and report any dead-code
 		for(Integer i : deadcode) {
@@ -149,6 +151,11 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 	
 	@Override
+	protected Env propagate(Type handler, Env normalEnv, Env exceptionEnv) {
+		return join(normalEnv, exceptionEnv);
+	}
+	
+	@Override
 	public Env propagate(int index,
 			Code.IfType code, Entry stmt, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
@@ -171,24 +178,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		
 		return environment;
 	}
-	
-	@Override
-	public Env propagate(int index, Code.TryCatch sw, Entry stmt,
-			List<Env> environments, Env defEnv) {
-		// this is of course completely broken.
-
-		Env environment = defEnv;
-
-		for (int i = 0; i != sw.catches.size(); ++i) {
-			Env catchEnvironment = (Env) environments.get(i).clone();
-			environment = join(environment, catchEnvironment);
-		}
-
-		return environment;
-	}
-	
+		
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment) {
+			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 
 		environment = new Env(environment); 
 
@@ -198,7 +190,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : EMPTY_ENV;
-			newEnv = propagate(start+1,end, oldEnv);
+			newEnv = propagate(start+1,end, oldEnv, handlers);
 			
 		} while (!newEnv.equals(oldEnv));
 		

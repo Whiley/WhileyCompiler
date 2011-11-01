@@ -439,6 +439,10 @@ public abstract class Code {
 		return get(new TryCatch(target, catches));
 	}
 	
+	public static TryEnd TryEnd(String label) {
+		return get(new TryEnd(label));
+	}
+	
 	public static Negate Negate(Type type) {
 		return get(new Negate(type));
 	}		
@@ -2554,6 +2558,41 @@ public abstract class Code {
 			return "trycatch " + table;
 		}
 	}
+	
+	/**
+	 * Marks the end of a try-catch block.
+	 * @author djp
+	 *
+	 */
+	public static final class TryEnd extends Label {
+		TryEnd(String label) {
+			super(label);
+		}
+		
+		public TryEnd relabel(Map<String,String> labels) {
+			String nlabel = labels.get(label);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return TryEnd(nlabel);
+			}
+		}
+		
+		public int hashCode() {
+			return label.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof TryEnd) {
+				TryEnd e = (TryEnd) o;
+				return e.label.equals(label);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "tryend " + label;
+		}
+	}	
 	
 	public static final class Negate extends Code {
 		public final Type type;		

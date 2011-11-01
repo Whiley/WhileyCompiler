@@ -1074,14 +1074,18 @@ public class ModuleBuilder {
 		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
 		for(Stmt.Catch c : s.catches) {
 			int freeReg = allocate(c.variable,environment);
-			String lab = Block.freshLabel();
+			Code.Label lab;
+			
 			if(endLab == null) {
-				endLab = lab;
+				endLab = Block.freshLabel();
+				lab = Code.TryEnd(endLab);
+			} else {
+				lab = Code.Label(Block.freshLabel());
 			}
 			Pair<Type,Block> pt = resolve(c.type);
 			// TODO: deal with exception type constraints
-			catches.add(new Pair<Type,String>(pt.first(),lab));
-			cblk.append(Code.Label(lab), attributes(c));
+			catches.add(new Pair<Type,String>(pt.first(),lab.label));
+			cblk.append(lab, attributes(c));
 			cblk.append(Code.Store(pt.first(), freeReg), attributes(c));
 			for (Stmt st : c.stmts) {
 				cblk.append(resolve(st, environment));
