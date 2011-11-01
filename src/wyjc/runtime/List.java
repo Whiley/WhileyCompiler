@@ -1,6 +1,7 @@
 package wyjc.runtime;
 
 import java.math.BigInteger;
+import java.util.Collections;
 
 
 public final class List extends java.util.ArrayList {		
@@ -70,22 +71,52 @@ public final class List extends java.util.ArrayList {
 	}
 	
 	public static List sublist(final List list, final BigInteger start, final BigInteger end) {
-		Util.decRefs(list);		
 		int st = start.intValue();
 		int en = end.intValue();	
-		List r;		
-		if(st <= en) {
-			r = new List(en-st);
-			for (int i = st; i != en; ++i) {
-				r.add(list.get(i));
-			}	
-		} else {
-			r = new List(st-en);
-			for (int i = st; i != en; --i) {
-				r.add(list.get(i-1));
+		
+		if(list.refCount == 1) {
+			if(st <= en) {
+				for(int i=0;i!=st;++i) {
+					Util.decRefs(list.get(i));
+				}
+				for(int i=en;i!=list.size();++i) {
+					Util.decRefs(list.get(i));
+				}
+				list.removeRange(0,st);
+				list.removeRange(en,list.size());
+				return list;
+			} else {
+				for(int i=0;i!=en;++i) {
+					Util.decRefs(list.get(i));
+				}
+				for(int i=st;i!=list.size();++i) {
+					Util.decRefs(list.get(i));
+				}
+				list.removeRange(0,en);
+				list.removeRange(st,list.size());
+				Collections.reverse(list);
+				return list;
 			}
-		}		
-		return r;		
+		} else {			
+			Util.decRefs(list);	
+			List r;		
+			if(st <= en) {
+				r = new List(en-st);
+				for (int i = st; i != en; ++i) {
+					Object item = list.get(i);
+					Util.incRefs(item);
+					r.add(item);
+				}	
+			} else {
+				r = new List(st-en);
+				for (int i = st; i != en; --i) {
+					Object item = list.get(i);
+					Util.incRefs(item);
+					r.add(item);					
+				}
+			}					
+			return r;	
+		}							
 	}
 	
 	public static BigInteger length(List list) {		
