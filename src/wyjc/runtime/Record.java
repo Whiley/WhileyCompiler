@@ -45,6 +45,7 @@ public final class Record extends HashMap<String,Object> {
 	// ================================================================================	 	
 
 	public static Object get(final Record record, final String field) {
+		Util.decRefs(record);
 		Object item = record.get(field);
 		Util.incRefs(item);
 		return item;

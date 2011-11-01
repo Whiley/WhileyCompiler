@@ -56,7 +56,8 @@ public final class Tuple extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 	
-	public static Object get(Tuple list, BigInteger index) {		
+	public static Object get(Tuple list, BigInteger index) {
+		Util.decRefs(list);
 		Object item = list.get(index.intValue());
 		Util.incRefs(item);
 		return item;
