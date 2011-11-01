@@ -10,7 +10,7 @@ public final class Tuple extends java.util.ArrayList {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1;
 	
 	// ================================================================================
 	// Generic Operations
@@ -56,33 +56,15 @@ public final class Tuple extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 	
-	public static Tuple add(Tuple list,Object item) {		
-		Util.incRefs(item);
-		list.add(item);
-		return list;		
-	}
-	
 	public static Object get(Tuple list, BigInteger index) {		
 		Object item = list.get(index.intValue());
 		Util.incRefs(item);
 		return item;
 	}
-			
-	public static Tuple set(Tuple list, final BigInteger index, final Object value) {
-		if(list.refCount > 1) {			
-			// in this case, we need to clone the list in question
-			list.refCount--;
-			list = new Tuple(list);						
-		}
-		Object v = list.set(index.intValue(),value);
-		Util.decRefs(v);
-		Util.incRefs(value);
-		return list;
-	}
-	
-	public static BigInteger length(Tuple list) {
-		list.refCount--;
-		return BigInteger.valueOf(list.size());
+		
+	public static BigInteger length(Tuple tuple) {
+		Util.decRefs(tuple);
+		return BigInteger.valueOf(tuple.size());
 	}
 	
 	public static int size(final Tuple list) {
@@ -92,4 +74,18 @@ public final class Tuple extends java.util.ArrayList {
 	public static java.util.Iterator iterator(Tuple list) {
 		return list.iterator();
 	}		
+	
+	/**
+	 * This method is not intended for public consumption. It is used internally
+	 * by the compiler during object construction only.
+	 * 
+	 * @param list
+	 * @param item
+	 * @return
+	 */
+	public static Tuple internal_add(Tuple lhs, Object rhs) {		
+		lhs.add(rhs);
+		Util.incRefs(rhs);
+		return lhs;
+	}
 }

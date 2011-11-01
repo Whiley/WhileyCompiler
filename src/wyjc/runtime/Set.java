@@ -224,4 +224,18 @@ public final class Set extends java.util.HashSet {
 		Util.decRefs(set);
 		return BigInteger.valueOf(set.size());
 	}
+	
+	/**
+	 * This method is not intended for public consumption. It is used internally
+	 * by the compiler during object construction only.
+	 * 
+	 * @param list
+	 * @param item
+	 * @return
+	 */
+	public static Set internal_add(Set lhs, Object rhs) {		
+		lhs.add(rhs);
+		Util.incRefs(rhs);
+		return lhs;
+	}
 }

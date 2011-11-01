@@ -248,7 +248,10 @@ public class Util {
 			Dictionary dict = (Dictionary) obj;
 			dict.refCount++;			
 			ndict_max_count = Math.max(ndict_max_count,dict.refCount);
-		} 
+		} else if(obj instanceof Tuple) {
+			Tuple tuple = (Tuple) obj;
+			tuple.refCount++;			
+		}
 		return obj;
 	}
 
@@ -268,6 +271,11 @@ public class Util {
 	}
 	
 	public static Dictionary incRefs(Dictionary obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
+	public static Tuple incRefs(Tuple obj) {
 		obj.refCount++;
 		return obj;
 	}
@@ -312,6 +320,14 @@ public class Util {
 					decRefs(e.getValue());
 				}
 			}
+		} else if(obj instanceof Tuple) {
+			Tuple tuple = (Tuple) obj;
+			tuple.refCount--;			
+			if(tuple.refCount == 0) {
+				for(Object o : tuple) {
+					decRefs(o);
+				}
+			}
 		} 
 	}
 
@@ -348,6 +364,15 @@ public class Util {
 			for(Map.Entry e : dict.entrySet()) {
 				decRefs(e.getKey());
 				decRefs(e.getValue());
+			}
+		}
+	}
+	
+	public static void decRefs(Tuple tuple) {		
+		tuple.refCount--;
+		if(tuple.refCount == 0) {
+			for(Object o : tuple) {
+				decRefs(o);
 			}
 		}
 	}

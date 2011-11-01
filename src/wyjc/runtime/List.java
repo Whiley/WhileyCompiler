@@ -142,6 +142,20 @@ public final class List extends java.util.ArrayList {
 		return list.size();
 	}
 	
+	/**
+	 * This method is not intended for public consumption. It is used internally
+	 * by the compiler during object construction only.
+	 * 
+	 * @param list
+	 * @param item
+	 * @return
+	 */
+	public static List internal_add(List list, final Object item) {			
+		list.add(item);
+		Util.incRefs(item);
+		return list;
+	}
+	
 	public static java.util.Iterator iterator(List list) {
 		return list.iterator();
 	}		

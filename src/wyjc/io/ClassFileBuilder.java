@@ -1482,7 +1482,7 @@ public class ClassFileBuilder {
 		for(int i=0;i!=c.nargs;++i) {			
 			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(c.type.element(),bytecodes);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_add", ftype,
 					Bytecode.STATIC));			
 		}
 		
@@ -1536,7 +1536,7 @@ public class ClassFileBuilder {
 		for(int i=0;i!=c.nargs;++i) {
 			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(c.type.element(),bytecodes);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"union",ftype,Bytecode.STATIC));
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"internal_add",ftype,Bytecode.STATIC));
 		}
 	}
 	
@@ -1551,7 +1551,7 @@ public class ClassFileBuilder {
 		for(Type type : types) {
 			bytecodes.add(new Bytecode.Swap());	
 			addWriteConversion(type,bytecodes);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"add",ftype,Bytecode.STATIC));
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"internal_add",ftype,Bytecode.STATIC));
 		}
 		
 		// At this stage, we have a problem. We've added the elements into the
@@ -2669,8 +2669,8 @@ public class ClassFileBuilder {
 		} else {
 			// FIXME: what about negations?
 			return t instanceof Type.Any || t instanceof Type.List
-					|| t instanceof Type.Set || t instanceof Type.Dictionary
-					|| t instanceof Type.Record;
+					|| t instanceof Type.Tuple || t instanceof Type.Set
+					|| t instanceof Type.Dictionary || t instanceof Type.Record;
 		}
 	}
 
