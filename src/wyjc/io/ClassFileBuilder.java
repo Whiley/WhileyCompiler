@@ -596,7 +596,7 @@ public class ClassFileBuilder {
 		}
 
 		bytecodes.add(new Bytecode.Load(code.slot, convertType(code.beforeType)));
-
+		
 		multiStoreHelper(code.afterType, code.level - 1, code.fields.iterator(),
 				indexSlot, val_t, freeSlot, bytecodes);
 		bytecodes.add(new Bytecode.Store(code.slot, convertType(code.afterType)));
@@ -631,7 +631,7 @@ public class ClassFileBuilder {
 				addWriteConversion(dict.key(),bytecodes);				
 				JvmType.Function ftype = new JvmType.Function(
 						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
+				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "internal_get", ftype,
 					Bytecode.STATIC));				
 				addReadConversion(dict.value(),bytecodes);
 				multiStoreHelper(dict.value(),level-1,fields,indexSlot+1,val_t,freeSlot,bytecodes);
@@ -669,7 +669,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Load(indexSlot,BIG_INTEGER));				
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 						WHILEYLIST,BIG_INTEGER);
-				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_get", ftype,
 						Bytecode.STATIC));				
 				addReadConversion(list.element(),bytecodes);
 				multiStoreHelper(list.element(),level-1,fields,indexSlot+1,val_t,freeSlot,bytecodes);				
@@ -692,7 +692,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));				
 				bytecodes.add(new Bytecode.LoadConst(field));				
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"internal_get",ftype,Bytecode.STATIC));
 				addReadConversion(rec.fields().get(field),bytecodes);
 				multiStoreHelper(rec.fields().get(field),level-1,fields,indexSlot,val_t,freeSlot,bytecodes);				
 				bytecodes.add(new Bytecode.LoadConst(field));
@@ -1156,6 +1156,10 @@ public class ClassFileBuilder {
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);
 				bytecodes.add(new Bytecode.LoadConst(i));
 				// TODO: turn into static method call
+				// NOTE: this is interesting since we should really be
+				// decrementing the reference count. However, it's safe not to
+				// do this since the destructure is "consuming" the tuple
+				// anyway.
 				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", ftype,
 						Bytecode.VIRTUAL));
 				addReadConversion(elem,bytecodes);

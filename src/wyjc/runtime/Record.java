@@ -70,4 +70,8 @@ public final class Record extends HashMap<String,Object> {
 		Util.decRefs(record);
 		return record.size();
 	}	
+	
+	public static Object internal_get(final Record record, final String field) {
+		return record.get(field);		
+	}
 }

@@ -106,4 +106,16 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 			return new Tuple(e.getKey(),e.getValue());
 		}
 	}
+	
+	/**
+	 * This method is not intended for public consumption. It is used internally
+	 * by the compiler during object construction only.
+	 * 
+	 * @param list
+	 * @param item
+	 * @return
+	 */
+	public static Object internal_get(Dictionary dict, Object key) {	
+		return dict.get(key);						
+	}
 }
