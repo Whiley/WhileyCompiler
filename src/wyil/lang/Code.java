@@ -1626,10 +1626,12 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof ForAll) {
+			if (o instanceof ForAll) {
 				ForAll f = (ForAll) o;
-				return target.equals(f.target) && type.equals(f.type)
-						&& slot == f.slot && modifies.equals(f.modifies);
+				return target.equals(f.target)
+						&& (type == f.type || (type != null && type
+								.equals(f.type))) && slot == f.slot
+						&& modifies.equals(f.modifies);
 			}
 			return false;
 		}
