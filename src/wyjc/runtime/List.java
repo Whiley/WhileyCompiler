@@ -97,12 +97,6 @@ public final class List extends java.util.ArrayList {
 		if(lhs.refCount == 1) {
 			Util.nlist_strong_updates++;			
 			Util.decRefs(rhs);
-		} else if(rhs.refCount == 1) {
-			Util.nlist_strong_updates++;			
-			Util.decRefs(lhs);
-			List tmp = rhs;
-			rhs = lhs;
-			lhs = tmp;			
 		} else {
 			Util.nlist_clones++;
 			Util.nlist_clones_nelems += lhs.size();
