@@ -724,13 +724,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	@Override
 	protected Env propagate(Type handler, Env normalEnv, Env exceptionEnv) {
-		exceptionEnv = exceptionEnv.clone();
-		exceptionEnv.pop(); // pop handler
-		// now, make sure we don't interfere with the normal flow.
-		while(exceptionEnv.size() < normalEnv.size()) {
-			exceptionEnv.add(Type.T_ANY);
-		}
-		return join(normalEnv, exceptionEnv);
+		// FIXME: if there are any constraints coming from the exceptional
+		// environment, then we need to translate them into coercions at the
+		// beginning of the catch handler.
+		return normalEnv;
 	}
 		
 	@Override
