@@ -45,23 +45,15 @@ public class Util {
 					System.err.println("CLONING STATS");
 					System.err.println("==================================================");
 					System.err.println("set clones:        " + nset_clones + " / "
-							+ (nset_clones + nset_strong_updates) + "\t(cost: "
-							+ nset_clones_nelems + ", max: " + nset_max_count
-							+ ")");
+							+ (nset_clones + nset_inplace_updates));
 					System.err.println("list clones:       " + nlist_clones + " / "
-							+ (nlist_clones + nlist_strong_updates)
-							+ "\t(cost: " + nlist_clones_nelems + ", max: "
-							+ nlist_max_count + ")");
+							+ (nlist_clones + nlist_inplace_updates));
 					System.err.println("dictionary clones: " + ndict_clones
-							+ " / " + (ndict_clones + ndict_strong_updates)
-							+ "\t(cost: " + ndict_clones_nelems + ", max: "
-							+ ndict_max_count + ")");
+							+ " / " + (ndict_clones + ndict_inplace_updates));
 					System.err.println("record clones:     " + nrecord_clones
-							+ " / " + (nrecord_clones + nrecord_strong_updates)
-							+ "\t(cost:" + nrecord_clones_nfields + ", max: "
-							+ nrecord_max_count + ")");		
+							+ " / " + (nrecord_clones + nrecord_strong_updates));		
 					long totalClones = nlist_clones + nset_clones + ndict_clones + nrecord_clones;
-					long totalStrongUpdates = nlist_strong_updates + nset_strong_updates + ndict_strong_updates + nrecord_strong_updates;
+					long totalStrongUpdates = nlist_inplace_updates + nset_inplace_updates + ndict_inplace_updates + nrecord_strong_updates;
 					double ratio = totalClones;
 					ratio = 100 * (ratio / (totalClones+totalStrongUpdates));
 					System.err.println("--------------------------------------------------");
@@ -73,20 +65,13 @@ public class Util {
 	}	
 		
 	static int nlist_clones = 0;
-	static int nlist_strong_updates = 0;
-	static int nlist_clones_nelems = 0;
-	static int nlist_max_count = 0;
+	static int nlist_inplace_updates = 0;
 	static int nset_clones = 0;
-	static int nset_strong_updates = 0;
-	static int nset_clones_nelems = 0;
-	static int nset_max_count = 0;
+	static int nset_inplace_updates = 0;
 	static int ndict_clones = 0;	
-	static int ndict_clones_nelems = 0;
-	static int ndict_strong_updates = 0;
-	static int ndict_max_count = 0;
+	static int ndict_inplace_updates = 0;
 	static int nrecord_clones = 0;
 	static int nrecord_strong_updates = 0;
-	static int nrecord_clones_nfields = 0;
 	static int nrecord_max_count = 0;
 
 	public static Method functionRef(String clazz, String name) {
@@ -242,7 +227,6 @@ public class Util {
 		if(obj instanceof List) {
 			List list = (List) obj;
 			list.refCount++;
-			nlist_max_count = Math.max(nlist_max_count,list.refCount);
 		} else if(obj instanceof Record) {
 			Record rec = (Record) obj;			
 			rec.refCount++;
@@ -250,11 +234,9 @@ public class Util {
 		} else if(obj instanceof Set) {
 			Set set = (Set) obj;
 			set.refCount++;			
-			nset_max_count = Math.max(nset_max_count,set.refCount);
 		} else if(obj instanceof Dictionary) {
 			Dictionary dict = (Dictionary) obj;
-			dict.refCount++;			
-			ndict_max_count = Math.max(ndict_max_count,dict.refCount);
+			dict.refCount++;						
 		} else if(obj instanceof Tuple) {
 			Tuple tuple = (Tuple) obj;
 			tuple.refCount++;			

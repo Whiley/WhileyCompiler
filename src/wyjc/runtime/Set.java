@@ -62,17 +62,16 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set union(Set lhs, Set rhs) {
 		if(lhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else if(rhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(lhs);
 			Set tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.nset_clones++;
-			Util.nset_clones_nelems += lhs.size();
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -86,8 +85,9 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set union(Set lhs, Object rhs) {
 		if(lhs.refCount == 1) {
-			Util.nset_strong_updates++;						
+			Util.nset_inplace_updates++;						
 		} else {
+			Util.nset_clones++;
 			Util.decRefs(lhs);
 			lhs = new Set(lhs);			
 		}
@@ -98,8 +98,9 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set union(Object lhs, Set rhs) {
 		if(rhs.refCount == 1) {
-			Util.nset_strong_updates++;						
+			Util.nset_inplace_updates++;						
 		} else {
+			Util.nset_clones++;
 			Util.decRefs(rhs);
 			rhs = new Set(rhs);			
 		}		
@@ -110,11 +111,10 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set difference(Set lhs, Set rhs) {
 		if(lhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else {
-			Util.nset_clones++;
-			Util.nset_clones_nelems += lhs.size();
+			Util.nset_clones++;			
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -128,11 +128,10 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set difference(Set lhs, Object rhs) {
 		if(lhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else {
 			Util.nset_clones++;
-			Util.nset_clones_nelems += lhs.size();
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -144,17 +143,16 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set intersect(Set lhs, Set rhs) {
 		if(lhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else if(rhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(lhs);
 			Set tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.nset_clones++;
-			Util.nset_clones_nelems += lhs.size();
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -170,11 +168,10 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set intersect(Set lhs, Object rhs) {
 		if(lhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else {
 			Util.nset_clones++;
-			Util.nset_clones_nelems += lhs.size();
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -196,11 +193,10 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set intersect(Object lhs, Set rhs) {
 		if(rhs.refCount == 1) {
-			Util.nset_strong_updates++;			
+			Util.nset_inplace_updates++;			
 			Util.decRefs(lhs);
 		} else {
 			Util.nset_clones++;
-			Util.nset_clones_nelems += rhs.size();
 			Util.decRefs(rhs);
 			Util.decRefs(lhs);
 			rhs = new Set(rhs);

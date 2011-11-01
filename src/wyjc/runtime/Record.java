@@ -54,7 +54,6 @@ public final class Record extends HashMap<String,Object> {
 	public static Record put(Record record, final String field, final Object value) {		
 		if(record.refCount > 1) {
 			Util.nrecord_clones++;
-			Util.nrecord_clones_nfields += record.size();
 			Util.decRefs(record);
 			record = new Record(record);			
 		} else {
