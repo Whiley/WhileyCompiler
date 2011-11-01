@@ -1531,9 +1531,10 @@ public class ClassFileBuilder {
 	protected void translate(Code.NewSet c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYSET, freeSlot, bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(WHILEYSET,
-				JAVA_LANG_OBJECT,WHILEYSET);
+				WHILEYSET,JAVA_LANG_OBJECT);
 		
 		for(int i=0;i!=c.nargs;++i) {
+			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(c.type.element(),bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"union",ftype,Bytecode.STATIC));
 		}
@@ -1542,12 +1543,13 @@ public class ClassFileBuilder {
 	protected void translate(Code.NewTuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYTUPLE, freeSlot, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(WHILEYTUPLE,
-				JAVA_LANG_OBJECT,WHILEYTUPLE);
+				WHILEYTUPLE,JAVA_LANG_OBJECT);
 					
 		ArrayList<Type> types = new ArrayList<Type>(c.type.elements());
 		Collections.reverse(types);
 		
 		for(Type type : types) {
+			bytecodes.add(new Bytecode.Swap());	
 			addWriteConversion(type,bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"add",ftype,Bytecode.STATIC));
 		}

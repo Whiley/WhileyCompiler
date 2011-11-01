@@ -56,7 +56,7 @@ public final class Tuple extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 	
-	public static Tuple add(Object item, Tuple list) {		
+	public static Tuple add(Tuple list,Object item) {		
 		Util.incRefs(item);
 		list.add(item);
 		return list;		
