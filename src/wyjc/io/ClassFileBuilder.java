@@ -554,6 +554,8 @@ public class ClassFileBuilder {
 			String name = "constant$" + id;
 			JvmType type = convertType(constant.type());
 			bytecodes.add(new Bytecode.GetField(owner, name, type, Bytecode.STATIC));
+			// the following is necessary to prevent in-place updates of our
+			// constants!
 			addIncRefs(constant.type(),bytecodes);
 		}		
 	}
