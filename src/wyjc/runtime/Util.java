@@ -36,14 +36,18 @@ import wyil.lang.Value;
 public class Util {
 
 	private static final boolean debug = true;
+	private static long startTime;
 	
 	static { 
 		if(debug) {
+			startTime = System.currentTimeMillis();
 			Runtime.getRuntime().addShutdownHook(new Thread(){
 				public void run() {
+					long totalTime = System.currentTimeMillis() - startTime;
 					System.err.println("==================================================");
-					System.err.println("CLONING STATS");
+					System.err.println("STATS");
 					System.err.println("==================================================");
+					System.err.println("Time: " + totalTime + "ms");
 					System.err.println("set clones:        " + nset_clones + " / "
 							+ (nset_clones + nset_inplace_updates));
 					System.err.println("list clones:       " + nlist_clones + " / "
