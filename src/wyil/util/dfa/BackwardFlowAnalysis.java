@@ -166,7 +166,12 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					store = stores.get(gto.target);					
 				} else {
-					// This indicates a sequential statement was encountered.					
+					// This indicates a sequential statement was encountered.
+					if (code instanceof Code.Fail
+							|| code instanceof Code.Return
+							|| code instanceof Code.Throw) {
+						store = lastStore();
+					}
 					store = propagate(i, stmt, store);									
 				}
 				

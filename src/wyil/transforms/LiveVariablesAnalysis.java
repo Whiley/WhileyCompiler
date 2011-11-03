@@ -69,8 +69,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	@Override
 	public Module.Case propagate(Module.Case mcase) {		
 
-		// TODO: back propagate through pre- and post-conditions
-		
+		// TODO: back propagate through pre- and post-conditions		
 		methodCase = mcase;
 		stores = new HashMap<String,Env>();
 		afterInserts.clear();
@@ -107,7 +106,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	
 	@Override
 	public Env propagate(int index, Entry entry, Env environment) {		
-		Code code = entry.code;
+		Code code = entry.code;		
 		if(code instanceof Code.Load) {
 			Code.Load load = (Code.Load) code;
 			if(!environment.contains(load.slot)) {
