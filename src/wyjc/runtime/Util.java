@@ -73,10 +73,10 @@ public class Util {
 					ratio = 100 * (ratio / (totalClones+totalStrongUpdates));
 					long totalElems = nset_elems + nlist_elems + ndict_elems + nrecord_elems; 
 					avg = totalElems;
-					avg = (avg / (totalClones))*100;
+					avg = (avg / (totalClones));
 					System.err.println("--------------------------------------------------");
 					System.err.println("Total clones: " + totalClones + " / " + (totalClones+totalStrongUpdates) + " (" + ratio + "%)");
-					System.err.println("Average Clone Size: " + totalElems + " / " + totalClones + " (" + avg + "%)");
+					System.err.println("Average Clone Size: " + totalElems + " / " + totalClones + " (" + avg + ")");
 					
 				}
 			});
