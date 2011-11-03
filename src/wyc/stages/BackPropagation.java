@@ -760,7 +760,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void coerceAfter(Type to, Type from, int index, SyntacticElement elem) {					
 		
-		if (to.equals(from)) {
+		if (to.equals(from) || to == Type.T_VOID) {
 			afterInserts.remove(index);
 		} else if(to == Type.T_STRING) {
 			// this indicates a string conversion is required			
