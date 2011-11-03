@@ -100,8 +100,7 @@ public final class List extends java.util.ArrayList {
 				Collections.reverse(list);
 				return list;
 			}
-		} else {		
-			Util.countClone(list);
+		} else {					
 			Util.decRefs(list);	
 			List r;		
 			if(st <= en) {
@@ -119,6 +118,7 @@ public final class List extends java.util.ArrayList {
 					r.add(item);					
 				}
 			}					
+			Util.countClone(r);
 			return r;	
 		}							
 	}
