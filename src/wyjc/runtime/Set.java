@@ -61,6 +61,9 @@ public final class Set extends java.util.HashSet {
 	}
 	
 	public static Set union(Set lhs, Set rhs) {
+		Util.countRefs(lhs);
+		Util.countRefs(rhs);
+		
 		if(lhs.refCount == 1) {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
@@ -84,6 +87,8 @@ public final class Set extends java.util.HashSet {
 	}
 	
 	public static Set union(Set lhs, Object rhs) {
+		Util.countRefs(lhs);
+		
 		if(lhs.refCount == 1) {
 			Util.nset_inplace_updates++;						
 		} else {
@@ -97,6 +102,8 @@ public final class Set extends java.util.HashSet {
 	}
 	
 	public static Set union(Object lhs, Set rhs) {
+		Util.countRefs(rhs);
+		
 		if(rhs.refCount == 1) {
 			Util.nset_inplace_updates++;						
 		} else {
@@ -110,6 +117,9 @@ public final class Set extends java.util.HashSet {
 	}
 	
 	public static Set difference(Set lhs, Set rhs) {
+		Util.countRefs(lhs);
+		Util.countRefs(rhs);
+		
 		if(lhs.refCount == 1) {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
@@ -127,6 +137,7 @@ public final class Set extends java.util.HashSet {
 	}
 	
 	public static Set difference(Set lhs, Object rhs) {
+		Util.countRefs(lhs);
 		if(lhs.refCount == 1) {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
@@ -142,6 +153,8 @@ public final class Set extends java.util.HashSet {
 	}	
 	
 	public static Set intersect(Set lhs, Set rhs) {
+		Util.countRefs(lhs);
+		Util.countRefs(rhs);
 		if(lhs.refCount == 1) {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
@@ -167,6 +180,8 @@ public final class Set extends java.util.HashSet {
 	}
 	
 	public static Set intersect(Set lhs, Object rhs) {
+		Util.countRefs(lhs);
+		
 		if(lhs.refCount == 1) {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
@@ -191,7 +206,9 @@ public final class Set extends java.util.HashSet {
 		return lhs;
 	}
 	
-	public static Set intersect(Object lhs, Set rhs) {
+	public static Set intersect(Object lhs, Set rhs) {		
+		Util.countRefs(rhs);
+		
 		if(rhs.refCount == 1) {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(lhs);

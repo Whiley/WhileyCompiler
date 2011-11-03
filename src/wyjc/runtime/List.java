@@ -49,13 +49,14 @@ public final class List extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 		
-	public static Object get(List list, BigInteger index) {
+	public static Object get(List list, BigInteger index) {		
 		Util.decRefs(list);
 		Object item = list.get(index.intValue());
 		return Util.incRefs(item);		
 	}
 			
 	public static List set(List list, final BigInteger index, final Object value) {
+		Util.countRefs(list);
 		if(list.refCount > 1) {			
 			Util.nlist_clones++;
 			// in this case, we need to clone the list in question
@@ -71,6 +72,7 @@ public final class List extends java.util.ArrayList {
 	}
 	
 	public static List sublist(final List list, final BigInteger start, final BigInteger end) {
+		Util.countRefs(list);
 		int st = start.intValue();
 		int en = end.intValue();	
 		
@@ -111,7 +113,7 @@ public final class List extends java.util.ArrayList {
 				}	
 			} else {
 				r = new List(st-en);
-				for (int i = st; i != en; --i) {
+				for (int i = (st-1); i >= en; --i) {
 					Object item = list.get(i);
 					Util.incRefs(item);
 					r.add(item);					
@@ -121,12 +123,14 @@ public final class List extends java.util.ArrayList {
 		}							
 	}
 	
-	public static BigInteger length(List list) {		
+	public static BigInteger length(List list) {				
 		Util.decRefs(list);
 		return BigInteger.valueOf(list.size());
 	}
 	
-	public static List append(List lhs, List rhs) {			
+	public static List append(List lhs, List rhs) {
+		Util.countRefs(lhs);
+		Util.countRefs(rhs);
 		if(lhs.refCount == 1) {
 			Util.nlist_inplace_updates++;			
 			Util.decRefs(rhs);
@@ -146,7 +150,8 @@ public final class List extends java.util.ArrayList {
 		return lhs;
 	}
 	
-	public static List append(List list, final Object item) {	
+	public static List append(List list, final Object item) {
+		Util.countRefs(list);
 		if(list.refCount == 1) {
 			Util.nlist_inplace_updates++;						
 		} else { 
@@ -159,7 +164,8 @@ public final class List extends java.util.ArrayList {
 		return list;
 	}
 	
-	public static List append(final Object item, List list) {	
+	public static List append(final Object item, List list) {
+		Util.countRefs(list);
 		if(list.refCount == 1) {
 			Util.nlist_inplace_updates++;						
 		} else { 

@@ -48,6 +48,9 @@ public class Util {
 					System.err.println("STATS");
 					System.err.println("==================================================");
 					System.err.println("Time: " + totalTime + "ms");
+					double avg = total_ref_count;
+					avg = avg / total_population;
+					System.err.println("Avg Reference Count: " + avg);
 					System.err.println("set clones:        " + nset_clones + " / "
 							+ (nset_clones + nset_inplace_updates));
 					System.err.println("list clones:       " + nlist_clones + " / "
@@ -67,7 +70,9 @@ public class Util {
 			});
 		}
 	}	
-		
+	
+	static long total_ref_count = 0;
+	static long total_population = 0; // number of objects in question
 	static int nlist_clones = 0;
 	static int nlist_inplace_updates = 0;
 	static int nset_clones = 0;
@@ -78,6 +83,26 @@ public class Util {
 	static int nrecord_strong_updates = 0;
 	static int nrecord_max_count = 0;
 
+	public static void countRefs(List l) {
+		total_ref_count += l.refCount;
+		total_population++;
+	}
+	
+	public static void countRefs(Set l) {
+		total_ref_count += l.refCount;
+		total_population++;
+	}
+	
+	public static void countRefs(Dictionary l) {
+		total_ref_count += l.refCount;
+		total_population++;
+	}
+	
+	public static void countRefs(Record l) {
+		total_ref_count += l.refCount;
+		total_population++;
+	}
+	
 	public static Method functionRef(String clazz, String name) {
 		try {
 			Class cl = Class.forName(clazz);
