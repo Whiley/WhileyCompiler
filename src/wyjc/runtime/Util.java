@@ -32,10 +32,13 @@ import java.util.Collections;
 import java.util.Map;
 
 import wyil.lang.Value;
+import wyil.util.Pair;
 
 public class Util {
 
 	private static final boolean debug = true;
+	private static final boolean logRefCounts = true;
+	private static final ArrayList<Object[]> refCounts = new ArrayList();
 	private static long startTime;
 	
 	static { 
@@ -48,10 +51,7 @@ public class Util {
 					System.err.println("STATS");
 					System.err.println("==================================================");
 					System.err.println("Time: " + totalTime + "ms");
-					double avg = total_ref_count;
-					avg = avg / total_population;
-					System.err.println("Avg Reference Count: " + avg);
-					avg = nset_elems;
+					double avg = nset_elems;
 					avg = avg / nset_clones;
 					System.err.println("set clones:        " + nset_clones + " / "
 							+ (nset_clones + nset_inplace_updates) + " (" + avg + ")");
@@ -77,7 +77,15 @@ public class Util {
 					System.err.println("--------------------------------------------------");
 					System.err.println("Total clones: " + totalClones + " / " + (totalClones+totalStrongUpdates) + " (" + ratio + "%)");
 					System.err.println("Average Clone Size: " + totalElems + " / " + totalClones + " (" + avg + ")");
-					
+					avg = total_ref_count;
+					avg = avg / total_population;
+					System.err.println("Avg Reference Count: " + avg);	
+					System.err.println("--------------------------------------------------");
+					if(logRefCounts) {
+						for(Object[] p : refCounts) {
+							System.err.println(System.identityHashCode(p[0]) + " : " + p[1]);
+						}
+					}
 				}
 			});
 		}
@@ -101,21 +109,33 @@ public class Util {
 	public static void countRefs(List l) {
 		total_ref_count += l.refCount;		
 		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
 	}
 	
 	public static void countRefs(Set l) {
 		total_ref_count += l.refCount;		
 		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
 	}
 	
 	public static void countRefs(Dictionary l) {
 		total_ref_count += l.refCount;		
 		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
 	}
 	
 	public static void countRefs(Record l) {
 		total_ref_count += l.refCount;
 		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
 	}
 	
 	public static void countClone(List l) {
