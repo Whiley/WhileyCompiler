@@ -65,7 +65,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	public static Dictionary put(Dictionary dict, Object key, Object value) {
 		Util.countRefs(dict);
 		if(dict.refCount > 1) {
-			Util.ndict_clones++;
+			Util.countClone(dict);
 			Util.decRefs(dict);
 			dict = new Dictionary(dict);			
 		} else {

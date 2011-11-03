@@ -74,7 +74,7 @@ public final class Set extends java.util.HashSet {
 			rhs = lhs;
 			lhs = tmp;
 		} else {
-			Util.nset_clones++;
+			Util.countClone(lhs);
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -92,7 +92,7 @@ public final class Set extends java.util.HashSet {
 		if(lhs.refCount == 1) {
 			Util.nset_inplace_updates++;						
 		} else {
-			Util.nset_clones++;
+			Util.countClone(lhs);
 			Util.decRefs(lhs);
 			lhs = new Set(lhs);			
 		}
@@ -107,7 +107,7 @@ public final class Set extends java.util.HashSet {
 		if(rhs.refCount == 1) {
 			Util.nset_inplace_updates++;						
 		} else {
-			Util.nset_clones++;
+			Util.countClone(rhs);
 			Util.decRefs(rhs);
 			rhs = new Set(rhs);			
 		}		
@@ -124,7 +124,7 @@ public final class Set extends java.util.HashSet {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else {
-			Util.nset_clones++;			
+			Util.countClone(lhs);
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -142,7 +142,7 @@ public final class Set extends java.util.HashSet {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else {
-			Util.nset_clones++;
+			Util.countClone(lhs);
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -165,7 +165,7 @@ public final class Set extends java.util.HashSet {
 			rhs = lhs;
 			lhs = tmp;
 		} else {
-			Util.nset_clones++;
+			Util.countClone(lhs);
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -186,7 +186,7 @@ public final class Set extends java.util.HashSet {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else {
-			Util.nset_clones++;
+			Util.countClone(lhs);
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new Set(lhs);
@@ -213,7 +213,7 @@ public final class Set extends java.util.HashSet {
 			Util.nset_inplace_updates++;			
 			Util.decRefs(lhs);
 		} else {
-			Util.nset_clones++;
+			Util.countClone(rhs);
 			Util.decRefs(rhs);
 			Util.decRefs(lhs);
 			rhs = new Set(rhs);

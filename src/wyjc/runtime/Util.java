@@ -51,56 +51,91 @@ public class Util {
 					double avg = total_ref_count;
 					avg = avg / total_population;
 					System.err.println("Avg Reference Count: " + avg);
+					avg = nset_elems;
+					avg = avg / nset_clones;
 					System.err.println("set clones:        " + nset_clones + " / "
-							+ (nset_clones + nset_inplace_updates));
+							+ (nset_clones + nset_inplace_updates) + " (" + avg + ")");
+					avg = nlist_elems;
+					avg = avg / nlist_clones;
 					System.err.println("list clones:       " + nlist_clones + " / "
-							+ (nlist_clones + nlist_inplace_updates));
+							+ (nlist_clones + nlist_inplace_updates)+ " (" + avg + ")");
+					avg = ndict_elems;
+					avg = avg / ndict_clones;
 					System.err.println("dictionary clones: " + ndict_clones
-							+ " / " + (ndict_clones + ndict_inplace_updates));
+							+ " / " + (ndict_clones + ndict_inplace_updates)+ " (" + avg + ")");
+					avg = nrecord_elems;
+					avg = avg / nrecord_clones;
 					System.err.println("record clones:     " + nrecord_clones
-							+ " / " + (nrecord_clones + nrecord_strong_updates));		
+							+ " / " + (nrecord_clones + nrecord_strong_updates)+ " (" + avg + ")");		
 					long totalClones = nlist_clones + nset_clones + ndict_clones + nrecord_clones;
 					long totalStrongUpdates = nlist_inplace_updates + nset_inplace_updates + ndict_inplace_updates + nrecord_strong_updates;
 					double ratio = totalClones;
 					ratio = 100 * (ratio / (totalClones+totalStrongUpdates));
+					long totalElems = nset_elems + nlist_elems + ndict_elems + nrecord_elems; 
+					avg = totalElems;
+					avg = (avg / (totalClones))*100;
 					System.err.println("--------------------------------------------------");
 					System.err.println("Total clones: " + totalClones + " / " + (totalClones+totalStrongUpdates) + " (" + ratio + "%)");
+					System.err.println("Average Clone Size: " + totalElems + " / " + totalClones + " (" + avg + "%)");
 					
 				}
 			});
 		}
 	}	
 	
-	static long total_ref_count = 0;
-	static long total_population = 0; // number of objects in question
-	static int nlist_clones = 0;
+	private static long total_ref_count = 0;	
+	private static long total_population = 0; // number of update operations
+	private static int nlist_clones = 0;
+	private static long nlist_elems = 0;
 	static int nlist_inplace_updates = 0;
-	static int nset_clones = 0;
+	private static int nset_clones = 0;
+	private static long nset_elems = 0;
 	static int nset_inplace_updates = 0;
-	static int ndict_clones = 0;	
+	private static int ndict_clones = 0;
+	private static long ndict_elems = 0;
 	static int ndict_inplace_updates = 0;
-	static int nrecord_clones = 0;
+	private static int nrecord_clones = 0;
+	private static long nrecord_elems = 0;
 	static int nrecord_strong_updates = 0;
-	static int nrecord_max_count = 0;
 
 	public static void countRefs(List l) {
-		total_ref_count += l.refCount;
+		total_ref_count += l.refCount;		
 		total_population++;
 	}
 	
 	public static void countRefs(Set l) {
-		total_ref_count += l.refCount;
+		total_ref_count += l.refCount;		
 		total_population++;
 	}
 	
 	public static void countRefs(Dictionary l) {
-		total_ref_count += l.refCount;
+		total_ref_count += l.refCount;		
 		total_population++;
 	}
 	
 	public static void countRefs(Record l) {
 		total_ref_count += l.refCount;
 		total_population++;
+	}
+	
+	public static void countClone(List l) {
+		nlist_clones ++;		
+		nlist_elems += l.size();
+	}
+	
+	public static void countClone(Set l) {
+		nset_clones ++;		
+		nset_elems += l.size();
+	}
+	
+	public static void countClone(Dictionary l) {
+		ndict_clones ++;		
+		ndict_elems += l.size();
+	}
+	
+	public static void countClone(Record l) {
+		nrecord_clones ++;		
+		nrecord_elems += l.size();
 	}
 	
 	public static Method functionRef(String clazz, String name) {
@@ -258,8 +293,7 @@ public class Util {
 			list.refCount++;
 		} else if(obj instanceof Record) {
 			Record rec = (Record) obj;			
-			rec.refCount++;
-			nrecord_max_count = Math.max(nrecord_max_count,rec.refCount);
+			rec.refCount++;			
 		} else if(obj instanceof Set) {
 			Set set = (Set) obj;
 			set.refCount++;			

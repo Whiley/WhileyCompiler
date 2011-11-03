@@ -58,7 +58,7 @@ public final class List extends java.util.ArrayList {
 	public static List set(List list, final BigInteger index, final Object value) {
 		Util.countRefs(list);
 		if(list.refCount > 1) {			
-			Util.nlist_clones++;
+			Util.countClone(list);			
 			// in this case, we need to clone the list in question
 			Util.decRefs(list);			
 			list = new List(list);						
@@ -101,7 +101,7 @@ public final class List extends java.util.ArrayList {
 				return list;
 			}
 		} else {		
-			Util.nlist_clones++;
+			Util.countClone(list);
 			Util.decRefs(list);	
 			List r;		
 			if(st <= en) {
@@ -135,7 +135,7 @@ public final class List extends java.util.ArrayList {
 			Util.nlist_inplace_updates++;			
 			Util.decRefs(rhs);
 		} else {
-			Util.nlist_clones++;
+			Util.countClone(lhs);
 			Util.decRefs(lhs);
 			Util.decRefs(rhs);
 			lhs = new List(lhs);				
@@ -155,7 +155,7 @@ public final class List extends java.util.ArrayList {
 		if(list.refCount == 1) {
 			Util.nlist_inplace_updates++;						
 		} else { 
-			Util.nlist_clones++;
+			Util.countClone(list);
 			Util.decRefs(list); 		
 			list = new List(list);
 		}
@@ -169,7 +169,7 @@ public final class List extends java.util.ArrayList {
 		if(list.refCount == 1) {
 			Util.nlist_inplace_updates++;						
 		} else { 
-			Util.nlist_clones++;
+			Util.countClone(list);
 			Util.decRefs(list);			 	
 			list = new List(list);
 		}
