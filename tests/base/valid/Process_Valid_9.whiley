@@ -12,7 +12,7 @@ Actor ::createActor(int n):
     row = []
     for j in 0..n:
         m = createActor(j)
-        row = row + m
+        row = row + [m]
     return row
 
 void ::main(System sys,[string] args):
