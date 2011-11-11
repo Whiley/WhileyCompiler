@@ -302,19 +302,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
 		
-		if(lhs_set || rhs_set) {
-			environment.push(lhs);
-			environment.push(rhs);
-			switch(v.bop) {
-				case ADD:			
-					return inferSetUnion(OpDir.UNIFORM, stmt, environment);					
-				case SUB:										
-					return inferSetDifference(OpDir.UNIFORM, stmt, environment);
-				default:
-					syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
-					result = null;
-			}						
-		} else if(lhs_str || rhs_str) {			
+		if(lhs_str || rhs_str) {			
 			Code.OpDir dir;
 			
 			if(lhs_str && rhs_str) {				
@@ -338,25 +326,26 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			
 			result = Type.T_STRING;
-		} else if(lhs_list || rhs_list) {
+		} else if(lhs_set || rhs_set) {
+			environment.push(lhs);
+			environment.push(rhs);
+			switch(v.bop) {
+				case ADD:			
+					return inferSetUnion(OpDir.UNIFORM, stmt, environment);					
+				case SUB:										
+					return inferSetDifference(OpDir.UNIFORM, stmt, environment);
+				default:
+					syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
+					result = null;
+			}						
+		} else if(lhs_list && rhs_list) {
 			Type.List type;
-			Code.OpDir dir;
-			
-			if(lhs_list && rhs_list) {				
-				dir = OpDir.UNIFORM;
-			} else if(lhs_list) {
-				rhs = Type.List(rhs);
-				dir = OpDir.LEFT;
-			} else {
-				lhs = Type.List(lhs);				
-				dir = OpDir.RIGHT;
-			}
 			
 			type = Type.effectiveListType(Type.Union(lhs,rhs));
 			
 			switch(v.bop) {				
 				case ADD:																				
-					code = Code.ListAppend(type,dir);
+					code = Code.ListAppend(type,OpDir.UNIFORM);
 					break;
 				default:
 					syntaxError("Invalid list operation: " + v.bop,filename,stmt);		
