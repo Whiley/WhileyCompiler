@@ -241,8 +241,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecordConversion_Valid_1_RuntimeTest() { runTest("RecordConversion_Valid_1"); }
  @Test public void RecordCoercion_Valid_1_RuntimeTest() { runTest("RecordCoercion_Valid_1"); }
  @Test public void RecordDefine_Valid_1_RuntimeTest() { runTest("RecordDefine_Valid_1"); }
- @Test public void RecordSubtype_Valid_1_RuntimeTest() { runTest("RecordSubtype_Valid_1"); }
- @Test public void RecordSubtype_Valid_2_RuntimeTest() { runTest("RecordSubtype_Valid_2"); }
+ @Ignore("Known Issue") @Test public void RecordSubtype_Valid_1_RuntimeTest() { runTest("RecordSubtype_Valid_1"); }
+ @Ignore("Known Issue") @Test public void RecordSubtype_Valid_2_RuntimeTest() { runTest("RecordSubtype_Valid_2"); }
  @Test public void RecursiveType_Valid_1_RuntimeTest() { runTest("RecursiveType_Valid_1"); }
  @Test public void RecursiveType_Valid_2_RuntimeTest() { runTest("RecursiveType_Valid_2"); }
  @Test public void RecursiveType_Valid_3_RuntimeTest() { runTest("RecursiveType_Valid_3"); }
