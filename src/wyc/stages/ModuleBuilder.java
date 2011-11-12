@@ -1105,23 +1105,32 @@ public class ModuleBuilder {
 				
 		Block blk = new Block(environment.size());
 		
-		blk.append(Code.Loop(label, Collections.EMPTY_SET),
-				attributes(s));
-				
+		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
 			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not satisfied"), attributes(s));
+			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
+		blk.append(Code.Loop(label, Collections.EMPTY_SET),
+				attributes(s));
+				
 		blk.append(resolveCondition(label, invert(s.condition), environment));
 
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
-					
+				
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
 		blk.append(Code.End(label));
 
 		return blk;
@@ -1132,13 +1141,29 @@ public class ModuleBuilder {
 				
 		Block blk = new Block(environment.size());
 		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
-	
+		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
 		blk.append(resolveCondition(label, invert(s.condition), environment));
 
 		
@@ -1149,7 +1174,18 @@ public class ModuleBuilder {
 	
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
-		Block blk = resolve(s.source,environment);	
+		
+		Block blk = new Block(1);
+		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
+		blk.append(resolve(s.source,environment));	
 		int freeSlot = allocate(environment);
 		if(s.variables.size() > 1) {
 			// this is the destructuring case			
@@ -1172,6 +1208,14 @@ public class ModuleBuilder {
 			blk.append(resolve(st, environment));
 		}		
 		scopes.pop(); // break
+		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
 		blk.append(Code.End(label), attributes(s));		
 
 		return blk;
