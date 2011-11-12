@@ -201,6 +201,26 @@ public final class Block implements Iterable<Block.Entry> {
 		}
 	}
 
+	public Block relabel() {
+		HashMap<String,String> labels = new HashMap<String,String>();
+		
+		for (Entry s : this) {
+			if (s.code instanceof Code.Label) {
+				Code.Label l = (Code.Label) s.code;
+				labels.put(l.label, freshLabel());
+			}
+		}
+		
+		Block block = new Block(numInputs);
+		// Finally, apply the binding and relabel any labels as well.
+		for(Entry s : this) {
+			Code ncode = s.code.relabel(labels);
+			block.append(ncode,s.attributes());
+		}
+		
+		return block;
+	}
+	
 	// ===================================================================
 	// Append Methods
 	// ===================================================================

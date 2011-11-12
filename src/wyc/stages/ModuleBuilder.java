@@ -468,18 +468,18 @@ public class ModuleBuilder {
 	 */
 	protected Pair<Type, Block> expandType(NameID key,
 			HashMap<NameID, Type> cache) throws ResolveError {
-		
+				
 		Type cached = cache.get(key);
 		Pair<Type,Block> t = types.get(key);
 		
 		if (cached != null) {			
 			return new Pair<Type,Block>(cached, new Block(1));
-		} else if(t != null) {
-			return t;
+		} else if(t != null) {			
+			return new Pair<Type,Block>(t.first(),t.second().relabel());
 		} else if (!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
-			Module.TypeDef td = mi.type(key.name());
+			Module.TypeDef td = mi.type(key.name());	
 			return new Pair<Type,Block>(td.type(),td.constraint());
 		}
 
