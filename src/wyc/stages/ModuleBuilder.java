@@ -475,16 +475,12 @@ public class ModuleBuilder {
 		if (cached != null) {			
 			return new Pair<Type,Block>(cached, new Block(1));
 		} else if(t != null) {			
-			Block blk = t.second();
-			if(blk != null) { blk = blk.relabel(); }
-			return new Pair<Type,Block>(t.first(),blk);
+			return new Pair<Type,Block>(t.first(),t.second());
 		} else if (!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());	
-			Block blk = td.constraint();
-			if(blk != null) { blk = blk.relabel(); }
-			return new Pair<Type,Block>(td.type(),blk);
+			return new Pair<Type,Block>(td.type(),td.constraint());
 		}
 
 		// following is needed to terminate any recursion
@@ -542,7 +538,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second()));				
+				blk.append(shiftBlock(1,p.second().relabel()));				
 				blk.append(Code.End(label));
 			}		
 			return new Pair<Type,Block>(Type.List(p.first()),blk);			
@@ -556,7 +552,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second()));				
+				blk.append(shiftBlock(1,p.second().relabel()));				
 				blk.append(Code.End(label));
 			}						
 			return new Pair<Type,Block>(Type.Set(p.first()),blk);					
@@ -591,7 +587,7 @@ public class ModuleBuilder {
 					blk.append(Code.Load(null, Code.THIS_SLOT));
 					blk.append(Code.FieldLoad(null, e.getKey()));
 					blk.append(Code.Store(null, Code.THIS_SLOT+1));
-					blk.append(shiftBlock(1,p.second()));								
+					blk.append(shiftBlock(1,p.second().relabel()));								
 				}	
 				types.put(e.getKey(), p.first());				
 			}
@@ -2025,7 +2021,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second()));				
+				blk.append(shiftBlock(1,p.second().relabel()));				
 				blk.append(Code.End(label));
 			}	
 			return new Pair<Type,Block>(Type.List(p.first()),blk);			
@@ -2039,7 +2035,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second()));				
+				blk.append(shiftBlock(1,p.second().relabel()));				
 				blk.append(Code.End(label));
 			}	
 			return new Pair<Type,Block>(Type.Set(p.first()),blk);			
@@ -2072,7 +2068,7 @@ public class ModuleBuilder {
 					blk.append(Code.Load(null, Code.THIS_SLOT));
 					blk.append(Code.FieldLoad(null, e.getKey()));
 					blk.append(Code.Store(null, Code.THIS_SLOT+1));
-					blk.append(shiftBlock(1,p.second()));								
+					blk.append(shiftBlock(1,p.second().relabel()));								
 				}
 				types.put(e.getKey(), p.first());				
 			}
