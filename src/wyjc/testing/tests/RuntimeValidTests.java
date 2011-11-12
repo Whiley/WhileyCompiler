@@ -65,13 +65,13 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Char_Valid_5_RuntimeTest() { runTest("Char_Valid_5"); }
  @Test public void Char_Valid_6_RuntimeTest() { runTest("Char_Valid_6"); }
  @Test public void Char_Valid_7_RuntimeTest() { runTest("Char_Valid_7"); }
- @Ignore("Known Bug") @Test public void Contractive_Valid_1_RuntimeTest() { runTest("Contractive_Valid_1"); }
+ @Ignore("Known Issue") @Test public void Contractive_Valid_1_RuntimeTest() { runTest("Contractive_Valid_1"); }
  @Test public void Contractive_Valid_2_RuntimeTest() { runTest("Contractive_Valid_2"); }
  @Test public void Coercion_Valid_1_RuntimeTest() { runTest("Coercion_Valid_1"); }
  @Test public void Coercion_Valid_2_RuntimeTest() { runTest("Coercion_Valid_2"); }
  @Test public void Coercion_Valid_3_RuntimeTest() { runTest("Coercion_Valid_3"); }
  @Test public void Coercion_Valid_4_RuntimeTest() { runTest("Coercion_Valid_4"); }
- @Ignore("Known Bug") @Test public void Coercion_Valid_5_RuntimeTest() { runTest("Coercion_Valid_5"); }
+ @Ignore("Known Issue") @Test public void Coercion_Valid_5_RuntimeTest() { runTest("Coercion_Valid_5"); }
  @Test public void Coercion_Valid_6_RuntimeTest() { runTest("Coercion_Valid_6"); }
  @Test public void Coercion_Valid_7_RuntimeTest() { runTest("Coercion_Valid_7"); }
  @Test public void Coercion_Valid_8_RuntimeTest() { runTest("Coercion_Valid_8"); }
@@ -136,11 +136,11 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Function_Valid_10_RuntimeTest() { runTest("Function_Valid_10"); } 
  @Test public void Function_Valid_12_RuntimeTest() { runTest("Function_Valid_12"); }
  @Test public void FunctionRef_Valid_1_RuntimeTest() { runTest("FunctionRef_Valid_1"); }
- @Ignore("Known Bug") @Test public void FunctionRef_Valid_2_RuntimeTest() { runTest("FunctionRef_Valid_2"); }
- @Ignore("Known Bug") @Test public void FunctionRef_Valid_3_RuntimeTest() { runTest("FunctionRef_Valid_3"); }
+ @Ignore("Known Issue") @Test public void FunctionRef_Valid_2_RuntimeTest() { runTest("FunctionRef_Valid_2"); }
+ @Ignore("Known Issue") @Test public void FunctionRef_Valid_3_RuntimeTest() { runTest("FunctionRef_Valid_3"); }
  @Test public void FunctionRef_Valid_4_RuntimeTest() { runTest("FunctionRef_Valid_4"); }
  @Test public void FunctionRef_Valid_5_RuntimeTest() { runTest("FunctionRef_Valid_5"); }
- @Ignore("Known Bug") @Test public void FunctionRef_Valid_6_RuntimeTest() { runTest("FunctionRef_Valid_6"); } 
+ @Ignore("Known Issue") @Test public void FunctionRef_Valid_6_RuntimeTest() { runTest("FunctionRef_Valid_6"); } 
  @Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
  @Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
  @Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
@@ -200,7 +200,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void MethodCall_Valid_5_RuntimeTest() { runTest("MethodCall_Valid_5"); }
  @Test public void MethodCall_Valid_6_RuntimeTest() { runTest("MethodCall_Valid_6"); }
  @Test public void MethodCall_Valid_7_RuntimeTest() { runTest("MethodCall_Valid_7"); }
- @Ignore("Known Bug") @Test public void MethodCall_Valid_8_RuntimeTest() { runTest("MethodCall_Valid_8"); }
+ @Ignore("Known Issue") @Test public void MethodCall_Valid_8_RuntimeTest() { runTest("MethodCall_Valid_8"); }
  @Test public void MethodRef_Valid_1_RuntimeTest() { runTest("MethodRef_Valid_1"); }
  @Test public void MethodRef_Valid_2_RuntimeTest() { runTest("MethodRef_Valid_2"); }
  @Test public void NegationType_Valid_1_RuntimeTest() { runTest("NegationType_Valid_1"); }
@@ -222,7 +222,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Process_Valid_10_RuntimeTest() { runTest("Process_Valid_10"); }
  @Test public void Process_Valid_11_RuntimeTest() { runTest("Process_Valid_11"); }
  @Test public void Process_Valid_12_RuntimeTest() { runTest("Process_Valid_12"); }
- @Ignore("Known Bug") @Test public void Process_Valid_13_RuntimeTest() { runTest("Process_Valid_13"); }
+ @Ignore("Known Issue") @Test public void Process_Valid_13_RuntimeTest() { runTest("Process_Valid_13"); }
  @Test public void RealConst_Valid_1_RuntimeTest() { runTest("RealConst_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { runTest("RealDiv_Valid_2"); }
