@@ -3,7 +3,6 @@ package wyjc.runtime;
 import java.math.BigInteger;
 import java.util.Collections;
 
-
 public final class List extends java.util.ArrayList {		
 	/**
 	 * The reference count is use to indicate how many variables are currently
