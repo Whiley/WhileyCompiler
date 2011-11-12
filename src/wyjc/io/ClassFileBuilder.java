@@ -2484,7 +2484,7 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));
-		addCheckCast(convertType(fromType.element()),bytecodes);		
+		addReadConversion(fromType.element(),bytecodes);
 		addCoercion(fromType.element(), toType.element(), freeSlot,
 				constants, bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
