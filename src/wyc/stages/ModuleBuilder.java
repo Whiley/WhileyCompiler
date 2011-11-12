@@ -1101,12 +1101,20 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolve(While s, HashMap<String,Integer> environment) {		
-		String label = Block.freshLabel();				
+		String label = Block.freshLabel();									
 				
 		Block blk = new Block(environment.size());
 		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
+				
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not satisfied"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
 		
 		blk.append(resolveCondition(label, invert(s.condition), environment));
 

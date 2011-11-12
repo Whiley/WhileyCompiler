@@ -177,10 +177,9 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void VarDecl_CompileFail_4_StaticTest() { contextFailTest("VarDecl_CompileFail_4"); }
  @Test public void Void_CompileFail_1_StaticTest() { contextFailTest("Void_CompileFail_1"); }
  @Test public void Void_CompileFail_2_StaticTest() { contextFailTest("Void_CompileFail_2"); }
- @Test public void While_CompileFail_1_RuntimeFailTest() { runtimeFailTest("While_CompileFail_1"); }
- @Test public void While_CompileFail_2_RuntimeFailTest() { runtimeFailTest("While_CompileFail_2"); }
- @Test public void While_CompileFail_3_RuntimeFailTest() { runtimeFailTest("While_CompileFail_3"); }
- @Test public void While_CompileFail_4_RuntimeFailTest() { runtimeFailTest("While_CompileFail_4"); }
- @Test public void While_CompileFail_6_RuntimeFailTest() { runtimeFailTest("While_CompileFail_6"); }
- @Test public void While_CompileFail_7_RuntimeFailTest() { runtimeFailTest("While_CompileFail_7"); }
+ @Test public void While_CompileFail_1_RuntimeFailTest() { contextFailTest("While_CompileFail_1"); }
+ @Test public void While_CompileFail_2_RuntimeFailTest() { contextFailTest("While_CompileFail_2"); }
+ @Test public void While_CompileFail_3_RuntimeFailTest() { contextFailTest("While_CompileFail_3"); }
+ @Test public void While_CompileFail_4_RuntimeFailTest() { contextFailTest("While_CompileFail_4"); } 
+ @Test public void While_CompileFail_7_RuntimeFailTest() { contextFailTest("While_CompileFail_7"); }
 }
