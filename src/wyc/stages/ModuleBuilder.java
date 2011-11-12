@@ -570,6 +570,7 @@ public class ModuleBuilder {
 			ArrayList<Type> types = new ArrayList<Type>();				
 			
 			int i=1;
+			int tt_types_size = tt.types.size();
 			for (UnresolvedType e : tt.types) {				
 				Pair<Type,Block> p = expandType(e, filename, cache);
 				types.add(p.first());
@@ -579,8 +580,9 @@ public class ModuleBuilder {
 						blk = new Block(1);
 						blk.append(Code.Load(null,0));
 						blk.append(Code.Destructure(null));
-						for (int j=0;j!=tt.types.size();++j) {
-							blk.append(Code.Store(null,j+1));
+						// note that we must reverse the order here
+						for (int j=tt_types_size;j>0;--j) {
+							blk.append(Code.Store(null,j));
 						}						
 					}						
 					blk.append(shiftBlock(i,p.second()));	
