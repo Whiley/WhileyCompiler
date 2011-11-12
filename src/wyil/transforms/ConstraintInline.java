@@ -170,8 +170,8 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {		
-		Block precondition = findPrecondition(code.name,code.type);
-		if(precondition != null) {
+		Block precondition = findPrecondition(code.name,code.type);		
+		if(precondition != null) {			
 			Block blk = new Block(0);
 			List<Type> paramTypes = code.type.params();
 			
@@ -185,11 +185,12 @@ public class ConstraintInline implements Transform {
 			
 			blk.importExternal(precondition,binding);
 			
-			for(int i=0;i<paramTypes.size();++i) {
+			for(int i=0;i<paramTypes.size();++i) {				
 				blk.append(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
 			return blk;
 		}
+		
 		return null;
 	}		
 	

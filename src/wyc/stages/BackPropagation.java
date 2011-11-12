@@ -103,8 +103,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Code code = entry.code;							
 		
 		// reset the rewrites for this code, in case it changes
-		afterInserts.remove(index);
-		
+		afterInserts.remove(index);		
 		environment = (Env) environment.clone();
 		
 		if(code instanceof Assert) {
@@ -388,7 +387,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public void infer(int index, Code.Load code, Block.Entry entry,
-			Env environment) {
+			Env environment) {		
 		Type req = environment.pop();
 		coerceAfter(req,code.type,index,entry);
 		environment.set(code.slot,code.type);		
@@ -717,8 +716,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			environment = join(environment,environments.get(i));
 		} 
 		
-		environment.push(sw.type);
-		
+		environment.push(sw.type);		
 		return environment;
 	}
 	
@@ -858,7 +856,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			for(int i=env.size();i!=env2.size();++i) {
 				env.add(env2.get(i));
 			}
-		}
+		}				
 		
 		return env;
 	}

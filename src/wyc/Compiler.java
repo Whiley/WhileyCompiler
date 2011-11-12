@@ -79,10 +79,9 @@ public class Compiler implements Logger {
 		List<Module> modules = buildModules(wyfiles);				
 		for(Module m : modules) {
 			loader.register(m);
-		}
-		for(Module m : modules) {
-			finishCompilation(m);
-		}
+		}		
+		
+		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
 		logTotalTime("Compiled " + files.size() + " file(s)",endTime-startTime);
@@ -120,12 +119,16 @@ public class Compiler implements Logger {
 	 * 
 	 * @param wf
 	 */
-	public void finishCompilation(Module module) throws IOException {				
+	public void finishCompilation(List<Module> modules) throws IOException {				
 		// Register the updated file
-		loader.register(module);
+		for(Module module : modules) {
+			loader.register(module);
+		}
 		
 		for(Transform stage : stages) {
-			process(module,stage);
+			for(Module module : modules) {
+				process(module,stage);
+			}
 		}		
 	}
 	
