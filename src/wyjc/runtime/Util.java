@@ -36,8 +36,8 @@ import wyil.util.Pair;
 
 public class Util {
 
-	private static final boolean debug = true;
-	private static final boolean logRefCounts = true;
+	private static final boolean debug = false;
+	private static final boolean logRefCounts = false;
 	private static final ArrayList<Object[]> refCounts = new ArrayList();
 	private static long startTime;
 	
@@ -83,7 +83,7 @@ public class Util {
 					System.err.println("--------------------------------------------------");
 					if(logRefCounts) {
 						for(Object[] p : refCounts) {
-							System.err.println(System.identityHashCode(p[0]) + " : " + p[1]);
+							System.out.println(System.identityHashCode(p[0]) + " : " + p[1]);
 						}
 					}
 				}
