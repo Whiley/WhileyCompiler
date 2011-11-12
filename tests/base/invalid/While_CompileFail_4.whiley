@@ -5,7 +5,7 @@ int sum([int] ls):
     r = 0
     // now do the reverse!
     while i < |ls|:
-        r = r + ls[i]
+        r = r + [ls[i]]
         r = []
         i = i + 1
     return r

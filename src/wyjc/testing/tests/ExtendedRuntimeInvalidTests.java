@@ -126,13 +126,8 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void UnionType_Invalid_1_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_1"); }
  @Test public void UnionType_Invalid_2_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_2"); }
  @Test public void UnionType_Invalid_3_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_3"); } 
- @Test public void VarDecl_Invalid_1_RuntimeFailTest() { runtimeFailTest("VarDecl_Invalid_1"); }
- @Test public void While_CompileFail_1_RuntimeFailTest() { runtimeFailTest("While_CompileFail_1"); }
- @Test public void While_CompileFail_2_RuntimeFailTest() { runtimeFailTest("While_CompileFail_2"); }
- @Test public void While_CompileFail_3_RuntimeFailTest() { runtimeFailTest("While_CompileFail_3"); }
- @Test public void While_CompileFail_4_RuntimeFailTest() { runtimeFailTest("While_CompileFail_4"); }
- @Test public void While_CompileFail_6_RuntimeFailTest() { runtimeFailTest("While_CompileFail_6"); }
- @Test public void While_CompileFail_7_RuntimeFailTest() { runtimeFailTest("While_CompileFail_7"); }
+ @Test public void VarDecl_Invalid_1_RuntimeFailTest() { runtimeFailTest("VarDecl_Invalid_1"); }  
+
  @Test public void While_Invalid_2_RuntimeFailTest() { runtimeFailTest("While_Invalid_2"); }
  @Test public void While_Invalid_3_RuntimeFailTest() { runtimeFailTest("While_Invalid_3"); }
  @Test public void While_Invalid_4_RuntimeFailTest() { runtimeFailTest("While_Invalid_4"); }
