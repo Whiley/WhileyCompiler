@@ -538,7 +538,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second().relabel()));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}		
 			return new Pair<Type,Block>(Type.List(p.first()),blk);			
@@ -552,7 +552,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second().relabel()));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}						
 			return new Pair<Type,Block>(Type.Set(p.first()),blk);					
@@ -587,7 +587,7 @@ public class ModuleBuilder {
 					blk.append(Code.Load(null, Code.THIS_SLOT));
 					blk.append(Code.FieldLoad(null, e.getKey()));
 					blk.append(Code.Store(null, Code.THIS_SLOT+1));
-					blk.append(shiftBlock(1,p.second().relabel()));								
+					blk.append(shiftBlock(1,p.second()));								
 				}	
 				types.put(e.getKey(), p.first());				
 			}
@@ -2021,7 +2021,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second().relabel()));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
 			return new Pair<Type,Block>(Type.List(p.first()),blk);			
@@ -2035,7 +2035,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(shiftBlock(1,p.second().relabel()));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
 			return new Pair<Type,Block>(Type.Set(p.first()),blk);			
@@ -2068,7 +2068,7 @@ public class ModuleBuilder {
 					blk.append(Code.Load(null, Code.THIS_SLOT));
 					blk.append(Code.FieldLoad(null, e.getKey()));
 					blk.append(Code.Store(null, Code.THIS_SLOT+1));
-					blk.append(shiftBlock(1,p.second().relabel()));								
+					blk.append(shiftBlock(1,p.second()));								
 				}
 				types.put(e.getKey(), p.first());				
 			}
@@ -2291,7 +2291,7 @@ public class ModuleBuilder {
 			Code code = e.code.remap(binding);
 			nblock.append(code,e.attributes());
 		}
-		return nblock;
+		return nblock.relabel();
 	}
 	
 	/**
