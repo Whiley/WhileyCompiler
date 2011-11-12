@@ -100,7 +100,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 
 	@Override
 	public Env propagate(int index, Entry entry, Env environment) {						
-		Code code = entry.code;			
+		Code code = entry.code;							
 		
 		// reset the rewrites for this code, in case it changes
 		afterInserts.remove(index);
@@ -829,11 +829,37 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if (env1 == null) {
 			return env2;
 		}
+		
 		Env env = new Env();
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
 			env.add(Type.Union(env1.get(i), env2.get(i)));
 		}
 
+		/**
+		 * <p>
+		 * The following may seem strange, but it's necessary to support
+		 * constraint failures which can happen in the middle of expressions. In
+		 * such case, a conditional is inserted by the "constraint inline"
+		 * phase, where it fails on one side but succeeds on the other. Stack
+		 * requirements may be present from the succeeding branch and we need to
+		 * propagate those backwards still.
+		 * </p>
+		 * <p>
+		 * There are possibly other ways this could be handled. For example, we
+		 * might use null to signal that a particular branch is heading
+		 * immediately into a fail statement.
+		 * </p>
+		 */		
+		if(env1.size() > env2.size()) {
+			for(int i=env.size();i!=env1.size();++i) {
+				env.add(env1.get(i));
+			}
+		} else if(env2.size() > env1.size()) {
+			for(int i=env.size();i!=env2.size();++i) {
+				env.add(env2.get(i));
+			}
+		}
+		
 		return env;
 	}
 	
