@@ -118,6 +118,8 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void Subtype_CompileFail_7_RuntimeFailTest() { runtimeFailTest("Subtype_CompileFail_7"); }
  @Test public void Subtype_CompileFail_8_RuntimeFailTest() { runtimeFailTest("Subtype_CompileFail_8"); }
  @Test public void Subtype_CompileFail_9_RuntimeFailTest() { runtimeFailTest("Subtype_CompileFail_9"); }
+ @Test public void Tuple_Invalid_1_RuntimeFailTest() { runtimeFailTest("Tuple_Invalid_1"); }
+ @Test public void Tuple_Invalid_2_RuntimeFailTest() { runtimeFailTest("Tuple_Invalid_2"); }
  @Test public void TupleAssign_Invalid_1_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_1"); }
  @Test public void TupleAssign_Invalid_2_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_2"); }
  @Test public void TupleAssign_Invalid_3_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_3"); }
