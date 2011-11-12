@@ -475,12 +475,16 @@ public class ModuleBuilder {
 		if (cached != null) {			
 			return new Pair<Type,Block>(cached, new Block(1));
 		} else if(t != null) {			
-			return new Pair<Type,Block>(t.first(),t.second().relabel());
+			Block blk = t.second();
+			if(blk != null) { blk = blk.relabel(); }
+			return new Pair<Type,Block>(t.first(),blk);
 		} else if (!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());	
-			return new Pair<Type,Block>(td.type(),td.constraint());
+			Block blk = td.constraint();
+			if(blk != null) { blk = blk.relabel(); }
+			return new Pair<Type,Block>(td.type(),blk);
 		}
 
 		// following is needed to terminate any recursion
