@@ -639,7 +639,9 @@ public class ModuleBuilder {
 			} else {
 				blk = null;
 			}
-								
+			
+			blk = null;
+			
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {				
@@ -2201,12 +2203,7 @@ public class ModuleBuilder {
 				if(p.second() != null) {
 					constraints = true;
 					String nextLabel = Block.freshLabel();
-					String skipLabel = Block.freshLabel();
-					// TODO: we could use a negation type here. This would avoid
-					// the need for the skip label.
-					blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), skipLabel));
-					blk.append(Code.Goto(nextLabel));
-					blk.append(Code.Label(skipLabel));
+					blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
 					blk.append(chainBlock(nextLabel,p.second()));
 					blk.append(Code.Goto(exitLabel));
 					blk.append(Code.Label(nextLabel));
@@ -2222,6 +2219,11 @@ public class ModuleBuilder {
 				blk = null;
 			}
 
+			
+			blk = null;
+			
+			
+			
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {
