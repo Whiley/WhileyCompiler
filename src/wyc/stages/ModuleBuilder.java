@@ -2117,13 +2117,30 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			ArrayList<Type> types = new ArrayList<Type>();						
+			ArrayList<Type> types = new ArrayList<Type>();		
+			Block blk = null;
+			int i=1;
+			int tt_types_size = tt.types.size();
 			for (UnresolvedType e : tt.types) {				
 				Pair<Type,Block> p = resolve(e);
-				// TODO: fix tuple constraints
-				types.add(p.first());				
-			}
-			return new Pair<Type,Block>(Type.Tuple(types),null);			
+				types.add(p.first());
+				if(p.second() != null) {
+					if(blk == null) {
+						// create block lazily
+						blk = new Block(1);
+						blk.append(Code.Load(null,0));
+						blk.append(Code.Destructure(null));
+						// note that we must reverse the order here
+						for (int j=tt_types_size;j>0;--j) {
+							blk.append(Code.Store(null,j));
+						}						
+					}						
+					blk.append(shiftBlock(i,p.second()));	
+				}
+				i=i+1;
+			}			
+			
+			return new Pair<Type,Block>(Type.Tuple(types),blk);			
 		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();	
