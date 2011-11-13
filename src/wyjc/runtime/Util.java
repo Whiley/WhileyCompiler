@@ -623,93 +623,193 @@ public class Util {
 		return false;
 	}
 
-	public static boolean instanceOf(List ol, Type t) {
-		Type.List tl = (Type.List) t;
-		Type el = tl.element;
-		if(el.kind == K_ANY) {
-			return true;
-		} else if(el.kind == K_VOID) {
-			return ol.isEmpty();
+	/**
+	 * This method gets called when we're testing a list object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a list or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(List object, Type type) {
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
 		} else {
-			for(Object elem : ol) { 
-				if(!instanceOf(elem,el)) {
-					return false;
+			Type.List tl = (Type.List) type;
+			Type el = tl.element;
+			if(el.kind == K_ANY) {
+				return true;
+			} else if(el.kind == K_VOID) {
+				return object.isEmpty();
+			} else {
+				for(Object elem : object) { 
+					if(!instanceOf(elem,el)) {
+						return false;
+					}
 				}
+				return true;
 			}
-			return true;
-		}		
+		}
 	}
 	
-	public static boolean instanceOf(Set ol, Type t) {
-		Type.Set tl = (Type.Set) t;
-		Type el = tl.element;
-		if(el.kind == K_ANY) {
-			return true;
-		} else if(el.kind == K_VOID) {
-			return ol.isEmpty();
+	/**
+	 * This method gets called when we're testing a set object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a set or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Set object, Type type) {
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
 		} else {
-			for(Object elem : ol) { 
-				if(!instanceOf(elem,el)) {
+			Type.Set tl = (Type.Set) type;
+			Type el = tl.element;
+			if(el.kind == K_ANY) {
+				return true;
+			} else if(el.kind == K_VOID) {
+				return object.isEmpty();
+			} else {
+				for(Object elem : object) { 
+					if(!instanceOf(elem,el)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+	}
+	
+	/**
+	 * This method gets called when we're testing a dictionary object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a dictionary or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Dictionary object, Type type) {		
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
+		} else {
+			Type.Dictionary tl = (Type.Dictionary) type;
+			Type key = tl.key;
+			Type value = tl.value;
+
+			if (key.kind == K_ANY && value.kind == K_ANY) {
+				return true;						
+			} else if(key.kind == K_VOID || value.kind == K_VOID) {
+				return object.isEmpty();
+			} else {
+				for (java.util.Map.Entry<Object, Object> elem : object
+						.entrySet()) {
+					if (!instanceOf(elem.getKey(), key)
+							|| !instanceOf(elem.getValue(), value)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+	}
+	
+	/**
+	 * This method gets called when we're testing a record object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a list, since again the test would already
+	 * have been eliminated. In fact, the type can only be a record or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Record object, Type type) {
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
+		} else {
+			Type.Record tl = (Type.Record) type;
+			String[] names = tl.names;
+			Type[] types = tl.types;
+			for(int i=0;i!=names.length;++i) {
+				String name = names[i];
+				if(object.containsKey(name)) {
+					Type fieldType = types[i];
+					Object val = object.get(name);						
+					if(!instanceOf(val,fieldType)) {
+						return false;
+					} 
+				} else {				
 					return false;
 				}
 			}
 			return true;
 		}
-	}
-	
-	public static boolean instanceOf(Dictionary ol, Type t) {		
-		Type.Dictionary tl = (Type.Dictionary) t;
-		Type key = tl.key;
-		Type value = tl.value;
-		
-		if (key.kind == K_ANY && value.kind == K_ANY) {
-			return true;						
-		} else if(key.kind == K_VOID || value.kind == K_VOID) {
-			return ol.isEmpty();
-		} else {
-			for (java.util.Map.Entry<Object, Object> elem : ol
-					.entrySet()) {
-				if (!instanceOf(elem.getKey(), key)
-						|| !instanceOf(elem.getValue(), value)) {
-					return false;
-				}
-			}
-			return true;
-		}
-	}
-	
-	public static boolean instanceOf(Record ol, Type t) {			
-		Type.Record tl = (Type.Record) t;
-		String[] names = tl.names;
-		Type[] types = tl.types;
-		for(int i=0;i!=names.length;++i) {
-			String name = names[i];
-			if(ol.containsKey(name)) {
-				Type type = types[i];
-				Object val = ol.get(name);						
-				if(!instanceOf(val,type)) {
-					return false;
-				} 
-			} else {				
-				return false;
-			}
-		}
-		return true;
 	}	
 	
-	public static boolean instanceOf(Tuple ol, Type t) {				
-		Type.Tuple tl = (Type.Tuple) t;
-		Type[] types = tl.types;
-		if(types.length == ol.size()) {	
-			int i=0;
-			for(Object o : ol) { 
-				if(!instanceOf(o,types[i++])) {
-					return false;
+	/**
+	 * This method gets called when we're testing a tuple object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a tuple or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Tuple object, Type type) {				
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
+		} else {
+			Type.Tuple tl = (Type.Tuple) type;
+			Type[] types = tl.types;
+			if(types.length == object.size()) {	
+				int i=0;
+				for(Object o : object) { 
+					if(!instanceOf(o,types[i++])) {
+						return false;
+					}
 				}
+				return true;					
 			}
-			return true;					
+			return false;
 		}
-		return false;
 	}		
 	
 	public static final Comparator COMPARATOR = new Comparator();
