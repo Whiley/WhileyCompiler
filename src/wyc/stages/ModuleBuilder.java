@@ -615,7 +615,10 @@ public class ModuleBuilder {
 			Block blk = new Block(1);
 			String exitLabel = Block.freshLabel();
 			boolean constraints = false;
-			for (UnresolvedType b : ut.bounds) {				
+			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
+			for (int i=0;i!=ut_bounds.size();++i) {
+				boolean lastBound = (i+1) == ut_bounds.size(); 
+				UnresolvedType b = ut_bounds.get(i);
 				Pair<Type,Block> p = expandType(b, filename, cache);
 				Type bt = p.first();
  
@@ -624,11 +627,13 @@ public class ModuleBuilder {
 				if(p.second() != null) {
 					constraints = true;
 					String nextLabel = Block.freshLabel();
-					blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
+					if(!lastBound) {
+						blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
+					}
 					blk.append(chainBlock(nextLabel,p.second()));
 					blk.append(Code.Goto(exitLabel));
 					blk.append(Code.Label(nextLabel));
-				} else {
+				} else if(!lastBound) {									
 					blk.append(Code.IfType(null, Code.THIS_SLOT, bt, exitLabel));
 				}
 			}
@@ -639,8 +644,6 @@ public class ModuleBuilder {
 			} else {
 				blk = null;
 			}
-			
-			blk = null;
 			
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
@@ -2194,7 +2197,10 @@ public class ModuleBuilder {
 			Block blk = new Block(1);
 			String exitLabel = Block.freshLabel();
 			boolean constraints = false;
-			for (UnresolvedType b : ut.bounds) {				
+			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
+			for (int i=0;i!=ut_bounds.size();++i) {
+				boolean lastBound = (i+1) == ut_bounds.size(); 
+				UnresolvedType b = ut_bounds.get(i);
 				Pair<Type,Block> p = resolve(b);
 				Type bt = p.first();
  
@@ -2203,11 +2209,13 @@ public class ModuleBuilder {
 				if(p.second() != null) {
 					constraints = true;
 					String nextLabel = Block.freshLabel();
-					blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
+					if(!lastBound) {
+						blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
+					}
 					blk.append(chainBlock(nextLabel,p.second()));
 					blk.append(Code.Goto(exitLabel));
 					blk.append(Code.Label(nextLabel));
-				} else {
+				} else if(!lastBound) {									
 					blk.append(Code.IfType(null, Code.THIS_SLOT, bt, exitLabel));
 				}
 			}
@@ -2218,11 +2226,6 @@ public class ModuleBuilder {
 			} else {
 				blk = null;
 			}
-
-			
-			blk = null;
-			
-			
 			
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);

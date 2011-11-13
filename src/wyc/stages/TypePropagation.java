@@ -1255,8 +1255,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
-			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, methodCase
-					.body().get(index));
+			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, stmt);
 		} else if (glb == Type.T_VOID) {				
 			// DEFINITE FALSE CASE	
 			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs_t, code.test),
