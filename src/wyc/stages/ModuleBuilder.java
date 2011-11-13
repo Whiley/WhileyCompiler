@@ -473,7 +473,7 @@ public class ModuleBuilder {
 		Pair<Type,Block> t = types.get(key);
 		
 		if (cached != null) {			
-			return new Pair<Type,Block>(cached, new Block(1));
+			return new Pair<Type,Block>(cached, null);
 		} else if(t != null) {			
 			return new Pair<Type,Block>(t.first(),t.second());
 		} else if (!modules.contains(key.module())) {			
@@ -500,8 +500,7 @@ public class ModuleBuilder {
 					t.first()), t.second());
 		}
 		
-		Block blk = null;
-		blk = t.second();
+		Block blk = t.second();
 		if (ut.second() != null) {
 			String trueLabel = Block.freshLabel();
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -627,14 +626,19 @@ public class ModuleBuilder {
 				if(p.second() != null) {
 					constraints = true;
 					String nextLabel = Block.freshLabel();
-					if(!lastBound) {
-						blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
+					if (!lastBound) {
+						blk.append(
+								Code.IfType(null, Code.THIS_SLOT,
+										Type.Negation(bt), nextLabel),
+								attributes(t));
 					}
 					blk.append(chainBlock(nextLabel,p.second()));
 					blk.append(Code.Goto(exitLabel));
 					blk.append(Code.Label(nextLabel));
 				} else if(!lastBound) {									
-					blk.append(Code.IfType(null, Code.THIS_SLOT, bt, exitLabel));
+					blk.append(
+							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
+							attributes(t));
 				}
 			}
 			
@@ -2210,13 +2214,18 @@ public class ModuleBuilder {
 					constraints = true;
 					String nextLabel = Block.freshLabel();
 					if(!lastBound) {
-						blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
+						blk.append(
+								Code.IfType(null, Code.THIS_SLOT,
+										Type.Negation(bt), nextLabel),
+								attributes(t));
 					}
 					blk.append(chainBlock(nextLabel,p.second()));
 					blk.append(Code.Goto(exitLabel));
 					blk.append(Code.Label(nextLabel));
 				} else if(!lastBound) {									
-					blk.append(Code.IfType(null, Code.THIS_SLOT, bt, exitLabel));
+					blk.append(
+							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
+							attributes(t));
 				}
 			}
 			
