@@ -611,14 +611,35 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.Record(types),blk);						
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			Block blk = null;
 			HashSet<Type> bounds = new HashSet<Type>();
-			for(int i=0;i!=ut.bounds.size();++i) {
-				UnresolvedType b = ut.bounds.get(i);
+			Block blk = new Block(1);
+			String exitLabel = Block.freshLabel();
+			boolean constraints = false;
+			for (UnresolvedType b : ut.bounds) {				
 				Pair<Type,Block> p = expandType(b, filename, cache);
-				// TODO: add union constraints
-				bounds.add(p.first());							
-			}			
+				Type bt = p.first();
+ 
+				bounds.add(bt);	
+				
+				if(p.second() != null) {
+					constraints = true;
+					String nextLabel = Block.freshLabel();
+					blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), nextLabel));
+					blk.append(chainBlock(nextLabel,p.second()));
+					blk.append(Code.Goto(exitLabel));
+					blk.append(Code.Label(nextLabel));
+				} else {
+					blk.append(Code.IfType(null, Code.THIS_SLOT, bt, exitLabel));
+				}
+			}
+			
+			if(constraints) {
+				blk.append(Code.Fail("type constraint not satisfied"),attributes(ut));
+				blk.append(Code.Label(exitLabel));
+			} else {
+				blk = null;
+			}
+								
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {				
@@ -2167,17 +2188,44 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.Negation(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			HashSet<Type> bounds = new HashSet<Type>();			
+			HashSet<Type> bounds = new HashSet<Type>();	
+			Block blk = new Block(1);
+			String exitLabel = Block.freshLabel();
+			boolean constraints = false;
 			for (UnresolvedType b : ut.bounds) {				
 				Pair<Type,Block> p = resolve(b);
-				// TODO: fix union constraints
-				bounds.add(p.first());						
+				Type bt = p.first();
+ 
+				bounds.add(bt);	
+				
+				if(p.second() != null) {
+					constraints = true;
+					String nextLabel = Block.freshLabel();
+					String skipLabel = Block.freshLabel();
+					// TODO: we could use a negation type here. This would avoid
+					// the need for the skip label.
+					blk.append(Code.IfType(null, Code.THIS_SLOT, Type.Negation(bt), skipLabel));
+					blk.append(Code.Goto(nextLabel));
+					blk.append(Code.Label(skipLabel));
+					blk.append(chainBlock(nextLabel,p.second()));
+					blk.append(Code.Goto(exitLabel));
+					blk.append(Code.Label(nextLabel));
+				} else {
+					blk.append(Code.IfType(null, Code.THIS_SLOT, bt, exitLabel));
+				}
+			}
+			
+			if(constraints) {
+				blk.append(Code.Fail("type constraint not satisfied"),attributes(ut));
+				blk.append(Code.Label(exitLabel));
+			} else {
+				blk = null;
 			}
 
 			if (bounds.size() == 1) {
-				return new Pair<Type,Block>(bounds.iterator().next(),null);
+				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {
-				return new Pair<Type,Block>(Type.Union(bounds),null);
+				return new Pair<Type,Block>(Type.Union(bounds),blk);
 			}			
 		} else if(t instanceof UnresolvedType.Intersection) {
 			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
@@ -2376,6 +2424,28 @@ public class ModuleBuilder {
 		for(Block.Entry e : blk) {
 			Code code = e.code.remap(binding);
 			nblock.append(code,e.attributes());
+		}
+		return nblock.relabel();
+	}
+	
+	/**
+	 * The chainBlock method takes a block and replaces every fail statement
+	 * with a goto to a given label. This is useful for handling constraints in
+	 * union types, since if the constraint is not met that doesn't mean its
+	 * game over.
+	 * 
+	 * @param target
+	 * @param blk
+	 * @return
+	 */
+	public static Block chainBlock(String target, Block blk) {	
+		Block nblock = new Block(blk.numInputs());
+		for (Block.Entry e : blk) {
+			if (e.code instanceof Code.Fail) {
+				nblock.append(Code.Goto(target), e.attributes());
+			} else {
+				nblock.append(e.code, e.attributes());
+			}
 		}
 		return nblock.relabel();
 	}

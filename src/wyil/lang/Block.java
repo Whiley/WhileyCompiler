@@ -221,6 +221,27 @@ public final class Block implements Iterable<Block.Entry> {
 		return block;
 	}
 	
+	
+	/**
+	 * This method updates the source attributes for all statements in a block.
+	 * This is typically done in conjunction with a substitution, when we're
+	 * inlining constraints from e.g. pre- and post-conditions.
+	 * 
+	 * @param block
+	 * @param nsrc
+	 * @return
+	 */
+	public static Block resource(Block block, Attribute.Source nsrc) {
+		if(block == null) {
+			return null;
+		}
+		Block nblock = new Block(block.numInputs());
+		for(Entry e : block) {
+			nblock.append(e.code,nsrc);
+		}
+		return nblock;
+	}
+	
 	// ===================================================================
 	// Append Methods
 	// ===================================================================

@@ -34,6 +34,30 @@ import java.util.Map;
 import wyil.lang.Value;
 import wyil.util.Pair;
 
+import static wyil.lang.Type.K_VOID;
+import static wyil.lang.Type.K_ANY;
+import static wyil.lang.Type.K_META;
+import static wyil.lang.Type.K_NULL;
+import static wyil.lang.Type.K_BOOL;
+import static wyil.lang.Type.K_BYTE;
+import static wyil.lang.Type.K_CHAR;
+import static wyil.lang.Type.K_INT;
+import static wyil.lang.Type.K_RATIONAL;
+import static wyil.lang.Type.K_STRING;
+import static wyil.lang.Type.K_TUPLE;
+import static wyil.lang.Type.K_SET;
+import static wyil.lang.Type.K_LIST;
+import static wyil.lang.Type.K_DICTIONARY;
+import static wyil.lang.Type.K_PROCESS;
+import static wyil.lang.Type.K_PROCESS;
+import static wyil.lang.Type.K_RECORD;
+import static wyil.lang.Type.K_UNION;
+import static wyil.lang.Type.K_NEGATION;
+import static wyil.lang.Type.K_FUNCTION;
+import static wyil.lang.Type.K_EXISTENTIAL;
+import static wyil.lang.Type.K_LABEL;
+
+
 public class Util {
 
 	private static final boolean debug = false;
@@ -454,33 +478,33 @@ public class Util {
 	 */
 	public static boolean instanceOf(Object obj, Type t) {			
 		switch(t.kind) {
-			case Type.K_ANY:
+			case K_ANY:
 				return true;
-			case Type.K_VOID:
+			case K_VOID:
 				return false;
-			case Type.K_NULL:
+			case K_NULL:
 				return obj == null;
-			case Type.K_BOOL:
+			case K_BOOL:
 				return obj instanceof Boolean;
-			case Type.K_BYTE:
+			case K_BYTE:
 				return obj instanceof Byte;
-			case Type.K_CHAR:
+			case K_CHAR:
 				return obj instanceof Character;
-			case Type.K_INT:
+			case K_INT:
 				return obj instanceof BigInteger;
-			case Type.K_RATIONAL:
+			case K_RATIONAL:
 				return obj instanceof BigRational;
-			case Type.K_STRING:
+			case K_STRING:
 				return obj instanceof String;
-			case Type.K_LIST:
+			case K_LIST:
 			{
 				if(obj instanceof List) {
 					List ol = (List) obj;
 					Type.List tl = (Type.List) t;
 					Type el = tl.element;
-					if(el.kind == Type.K_ANY) {
+					if(el.kind == K_ANY) {
 						return true;
-					} else if(el.kind == Type.K_VOID) {
+					} else if(el.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
 						for(Object elem : ol) { 
@@ -493,15 +517,15 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_SET:
+			case K_SET:
 			{
 				if(obj instanceof Set) {
 					Set ol = (Set) obj;
 					Type.Set tl = (Type.Set) t;
 					Type el = tl.element;
-					if(el.kind == Type.K_ANY) {
+					if(el.kind == K_ANY) {
 						return true;
-					} else if(el.kind == Type.K_VOID) {
+					} else if(el.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
 						for(Object elem : ol) { 
@@ -514,7 +538,7 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_TUPLE:
+			case K_TUPLE:
 			{				
 				if(obj instanceof Tuple) {
 					Tuple ol = (Tuple) obj;
@@ -532,7 +556,7 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_DICTIONARY:
+			case K_DICTIONARY:
 			{
 				if(obj instanceof Dictionary) {
 					Dictionary ol = (Dictionary) obj;
@@ -540,9 +564,9 @@ public class Util {
 					Type key = tl.key;
 					Type value = tl.value;
 					
-					if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
+					if (key.kind == K_ANY && value.kind == K_ANY) {
 						return true;						
-					} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
+					} else if(key.kind == K_VOID || value.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
 						for (java.util.Map.Entry<Object, Object> elem : ol
@@ -557,7 +581,7 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_RECORD:
+			case K_RECORD:
 			{
 				if(obj instanceof Record) {
 					Record ol = (Record) obj;
@@ -580,7 +604,12 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_UNION:
+			case K_NEGATION:
+			{
+				Type.Negation not = (Type.Negation) t;
+				return !instanceOf(obj,not.element);
+			}
+			case K_UNION:
 			{
 				Type.Union un = (Type.Union) t;
 				for(Type bound : un.bounds) {
@@ -597,9 +626,9 @@ public class Util {
 	public static boolean instanceOf(List ol, Type t) {
 		Type.List tl = (Type.List) t;
 		Type el = tl.element;
-		if(el.kind == Type.K_ANY) {
+		if(el.kind == K_ANY) {
 			return true;
-		} else if(el.kind == Type.K_VOID) {
+		} else if(el.kind == K_VOID) {
 			return ol.isEmpty();
 		} else {
 			for(Object elem : ol) { 
@@ -614,9 +643,9 @@ public class Util {
 	public static boolean instanceOf(Set ol, Type t) {
 		Type.Set tl = (Type.Set) t;
 		Type el = tl.element;
-		if(el.kind == Type.K_ANY) {
+		if(el.kind == K_ANY) {
 			return true;
-		} else if(el.kind == Type.K_VOID) {
+		} else if(el.kind == K_VOID) {
 			return ol.isEmpty();
 		} else {
 			for(Object elem : ol) { 
@@ -633,9 +662,9 @@ public class Util {
 		Type key = tl.key;
 		Type value = tl.value;
 		
-		if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
+		if (key.kind == K_ANY && value.kind == K_ANY) {
 			return true;						
-		} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
+		} else if(key.kind == K_VOID || value.kind == K_VOID) {
 			return ol.isEmpty();
 		} else {
 			for (java.util.Map.Entry<Object, Object> elem : ol
