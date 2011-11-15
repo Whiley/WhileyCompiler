@@ -72,3 +72,8 @@ int round(real x):
         return floor(x+0.5)
     else:
         return ceil(x-0.5)
+
+// The constant PI to 20 decimal places.  Whilst this is clearly an
+// approximation, it should be sufficient for most purposes.
+define PI as 3.14159265358979323846 
+
