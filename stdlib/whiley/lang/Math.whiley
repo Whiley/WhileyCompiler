@@ -45,3 +45,27 @@ int pow(int base, int exponent) requires exponent > 0:
     for i in 0 .. exponent:
         r = r * base
     return r
+    
+// round an arbitrary number x to the largest integer
+// not greater than x 
+int floor(real x):
+	num,den = x
+	r = num / den  
+	if x < 0: 	 
+    	return r - 1 
+    return r 
+
+    
+// round an arbitrary number x to the smallest integer
+// not smaller than x 
+int ceil(real x):
+	num,den = x
+	r = num / den  
+	if x > 0: 	 
+    	return r + 1 
+    return r 
+    
+// round an arbitrary number to the nearest decimal
+int round(real x):
+	num,den = x
+    return num
