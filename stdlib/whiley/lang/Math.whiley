@@ -47,25 +47,33 @@ int pow(int base, int exponent) requires exponent > 0:
     return r
     
 // round an arbitrary number x to the largest integer
-// not greater than x 
+// not greater than x .
 int floor(real x):
-	num,den = x
-	r = num / den  
-	if x < 0: 	 
-    	return r - 1 
+    num,den = x
+    r = num / den  
+    if x < 0 && den != 1: 	 
+        return r - 1 
     return r 
 
     
 // round an arbitrary number x to the smallest integer
-// not smaller than x 
+// not smaller than x.
 int ceil(real x):
-	num,den = x
-	r = num / den  
-	if x > 0: 	 
-    	return r + 1 
+    num,den = x
+    r = num / den  
+    if x > 0 && den != 1: 	 
+        return r + 1 
     return r 
-    
-// round an arbitrary number to the nearest decimal
+
+// round an arbitrary number to the nearest integer, following the
+// "round half up" protocol.
+int roundUp(real x):
+    return floor(x+0.5)
+
+// round an arbitrary number to the nearest integer, following the
+// "round half away from zero" protocol.
 int round(real x):
-	num,den = x
-    return num
+    if x >= 0:
+        return floor(x+0.5)
+    else:
+        return ceil(x-0.5)
