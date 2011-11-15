@@ -66,11 +66,6 @@ int ceil(real x):
     return r 
 
 // round an arbitrary number to the nearest integer, following the
-// "round half up" protocol.
-int roundUp(real x):
-    return floor(x+0.5)
-
-// round an arbitrary number to the nearest integer, following the
 // "round half away from zero" protocol.
 int round(real x):
     if x >= 0:
