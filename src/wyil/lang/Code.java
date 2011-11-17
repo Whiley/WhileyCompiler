@@ -795,7 +795,7 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof SetLength) {
+			if (o instanceof DictLength) {
 				DictLength setop = (DictLength) o;
 				return (type == setop.type || (type != null && type
 						.equals(setop.type)));
@@ -2324,7 +2324,7 @@ public abstract class Code {
 			return 101;
 		}
 		public boolean equals(Object o) {
-			return o instanceof Debug;
+			return o instanceof Skip;
 		}
 		public String toString() {
 			return "skip";

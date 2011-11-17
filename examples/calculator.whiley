@@ -167,7 +167,7 @@ define State as { string input, int pos }
     start = st.pos
     while st.pos < |st.input| && isDigit(st.input[st.pos]):
         st.pos = st.pos + 1    
-    return String.toInt(st.input[start..st.pos]), st
+    return Int.parse(st.input[start..st.pos]), st
 
 (Expr, State) parseList(State st) throws SyntaxError:    
     st.pos = st.pos + 1 // skip '['

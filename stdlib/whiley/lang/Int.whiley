@@ -25,7 +25,7 @@
 
 package whiley.lang
 
-define Error as { string msg }
+import * from whiley.lang.Errors
 
 define digits as [
     '0','1','2','3','4','5','6','7','8','9',
@@ -81,5 +81,17 @@ public [byte] toUnsignedBytes(int v) requires v >= 0:
 public byte toSignedByte(int v) requires -128 <= v && v <= 127:
     if v < 0:
         v = v + 256
-    return Int.toUnsignedByte(v) 
+    return Int.toUnsignedByte(v)
+    
+
+// parse a string representation of an integer value
+public int parse(string input) throws SyntaxError:
+    r = 0
+    for i in 0..|input|:
+        c = input[i]
+        r = r * 10
+        if !Char.isDigit(c):
+            throw SyntaxError("invalid number string",i,i)
+        r = r + (c - '0')
+    return r
     

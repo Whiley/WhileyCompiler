@@ -293,6 +293,7 @@ public final class TypeAlgorithms {
 						children = removeIndex(i, children);
 						state.children = children;
 						changed = true;
+						break;
 					}
 					case Type.K_UNION :
 						return flattenChildren(index, state, automata);

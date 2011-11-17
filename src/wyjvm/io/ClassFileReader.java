@@ -1791,7 +1791,7 @@ public final class ClassFileReader {
 	 * @author David J. Pearce
 	 * 
 	 */
-	protected class ClassConstant {
+	protected static class ClassConstant {
 		private String name;
 		
 		public ClassConstant(String n) {
