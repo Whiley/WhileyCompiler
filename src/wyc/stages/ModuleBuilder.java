@@ -643,8 +643,8 @@ public class ModuleBuilder {
 				
 				if(p.second() != null) {					
 					constraints = true;
-					String nextLabel = Block.freshLabel();
-					if (!lastBound) {
+					String nextLabel = Block.freshLabel();					
+					if (!lastBound) {						
 						blk.append(
 								Code.IfType(null, Code.THIS_SLOT,
 										Type.Negation(bt), nextLabel),
