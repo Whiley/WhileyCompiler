@@ -119,6 +119,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void RealAdd_CompileFail_1_StaticTest() { contextFailTest("RealAdd_CompileFail_1"); }
  @Test public void RealDiv_CompileFail_1_StaticTest() { contextFailTest("RealDiv_CompileFail_1"); }
  @Test public void Record_CompileFail_1_StaticTest() { contextFailTest("Record_Invalid_1"); }
+ @Test public void Record_CompileFail_2_StaticTest() { contextFailTest("Record_Invalid_2"); }
  @Test public void RecursiveType_Invalid_4_StaticTest() { contextFailTest("RecursiveType_Invalid_4"); }
  @Test public void RecursiveType_Invalid_5_StaticTest() { contextFailTest("RecursiveType_Invalid_5"); }
  @Test public void RecursiveType_Invalid_6_StaticTest() { contextFailTest("RecursiveType_Invalid_6"); }
