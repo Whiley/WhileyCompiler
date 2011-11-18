@@ -65,6 +65,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void Function_CompileFail_4_StaticTest() { contextFailTest("Function_CompileFail_4"); }
  @Test public void Function_Invalid_5_StaticTest() { contextFailTest("Function_Invalid_5"); }
  @Ignore("Known Issue") @Test public void Function_Invalid_6_StaticTest() { contextFailTest("Function_Invalid_6"); }
+ @Test public void Function_Invalid_7_StaticTest() { contextFailTest("Function_Invalid_7"); }
  @Test public void FunctionRef_CompileFail_1_StaticTest() { contextFailTest("FunctionRef_Invalid_1"); }
  @Test public void FunctionRef_CompileFail_2_StaticTest() { contextFailTest("FunctionRef_Invalid_2"); }
  @Test public void FunctionRef_CompileFail_3_StaticTest() { contextFailTest("FunctionRef_Invalid_3"); }

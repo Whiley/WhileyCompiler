@@ -489,10 +489,15 @@ public class ModuleBuilder {
 			Module.TypeDef td = mi.type(key.name());	
 			return new Pair<Type,Block>(td.type(),td.constraint());
 		} else if(constants.containsKey(key)) {
-			// this case happen if the key corresponds to something declared in
-			// the file which is not, in fact, a type. For example, a constant
-			// or function declaration.			
+			// this case happen if the key corresponds to a constant declared in
+			// the file which is not, in fact, a type. 
 			syntaxError(errorMessage(ErrorMessages.INVALID_CONSTANT_AS_TYPE),
+					filename, elem);
+		} else if(!unresolved.containsKey(key)) {
+			// this case happen if the key corresponds to a function or method declared in
+			// the file (which is definitely not a type).
+			syntaxError(
+					errorMessage(ErrorMessages.INVALID_FUNCTION_OR_METHOD_AS_TYPE),
 					filename, elem);
 		}
 
