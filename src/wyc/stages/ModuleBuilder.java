@@ -641,7 +641,7 @@ public class ModuleBuilder {
  
 				bounds.add(bt);	
 				
-				if(p.second() != null) {
+				if(p.second() != null) {					
 					constraints = true;
 					String nextLabel = Block.freshLabel();
 					if (!lastBound) {
