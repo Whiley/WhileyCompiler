@@ -23,16 +23,17 @@ package wyil.util;
 public class ErrorMessages {
 	
 	public static final int CYCLIC_CONSTANT_DECLARATION = 0;
-	public static final int INVALID_CONSTANT_EXPRESSION = 1;
-	public static final int INVALID_BOOLEAN_EXPRESSION = 2;
-	public static final int INVALID_NUMERIC_EXPRESSION = 3;
-	public static final int INVALID_BINARY_EXPRESSION = 4;	
-	public static final int INVALID_LIST_EXPRESSION = 5;
-	public static final int INVALID_SET_EXPRESSION = 6;
-	public static final int INVALID_SET_OR_LIST_EXPRESSION = 7;
-	public static final int INVALID_DICTIONARY_EXPRESSION = 8;
-	public static final int INVALID_LVAL_EXPRESSION = 9;
-	public static final int INVALID_DESTRUCTURE_EXPRESSION = 10;
+	public static final int INVALID_CONSTANT_AS_TYPE = 1;
+	public static final int INVALID_CONSTANT_EXPRESSION = 2;
+	public static final int INVALID_BOOLEAN_EXPRESSION = 3;
+	public static final int INVALID_NUMERIC_EXPRESSION = 4;
+	public static final int INVALID_BINARY_EXPRESSION = 5;	
+	public static final int INVALID_LIST_EXPRESSION = 6;
+	public static final int INVALID_SET_EXPRESSION = 7;
+	public static final int INVALID_SET_OR_LIST_EXPRESSION = 8;
+	public static final int INVALID_DICTIONARY_EXPRESSION = 9;
+	public static final int INVALID_LVAL_EXPRESSION = 10;
+	public static final int INVALID_DESTRUCTURE_EXPRESSION = 11;
 	public static final int INVALID_TUPLE_LVAL = 12;
 	public static final int INVALID_MODULE_ACCESS = 13;
 	public static final int INVALID_PACKAGE_ACCESS = 14;	
@@ -63,8 +64,9 @@ public class ErrorMessages {
 	public static final int AMBIGUOUS_COERCION = 38;
 	public static final int MUST_DECLARE_THROWN_EXCEPTION = 39;
 	
-		private final static String[] messages = {			
+		private final static String[] messages = {						
 			"cyclic constant expression",
+			"constant cannot be used as type",
 			"invalid constant expression",
 			"invalid boolean expression",
 			"invalid numeric expression",

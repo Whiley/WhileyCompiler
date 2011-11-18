@@ -437,6 +437,11 @@ public class ModuleBuilder {
 					unresolved.put(key, new Pair<UnresolvedType,Expr>(td.type,td.constraint));
 					srcs.put(key, d);
 					filemap.put(key, f);
+				} else if (d instanceof ConstDecl) {
+					ConstDecl td = (ConstDecl) d;					
+					NameID key = new NameID(f.module, td.name());									
+					srcs.put(key, d);
+					filemap.put(key, f);
 				}
 			}
 		}
@@ -445,7 +450,8 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Pair<Type,Block> t = expandType(key, cache);				
+				Pair<Type, Block> t = expandType(key, cache,
+						filemap.get(key).filename, srcs.get(key));				
 				types.put(key, new Pair<Type,Block>(t.first(),t.second()));				
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
@@ -467,20 +473,27 @@ public class ModuleBuilder {
 	 * @throws ResolveError
 	 */
 	protected Pair<Type, Block> expandType(NameID key,
-			HashMap<NameID, Type> cache) throws ResolveError {
+			HashMap<NameID, Type> cache, String filename, SyntacticElement elem)
+			throws ResolveError {
 				
 		Type cached = cache.get(key);
 		Pair<Type,Block> t = types.get(key);
 		
-		if (cached != null) {			
+		if (cached != null) {						
 			return new Pair<Type,Block>(cached, null);
-		} else if(t != null) {			
+		} else if(t != null) {						
 			return new Pair<Type,Block>(t.first(),t.second());
 		} else if (!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());	
 			return new Pair<Type,Block>(td.type(),td.constraint());
+		} else if(constants.containsKey(key)) {
+			// this case happen if the key corresponds to something declared in
+			// the file which is not, in fact, a type. For example, a constant
+			// or function declaration.			
+			syntaxError(errorMessage(ErrorMessages.INVALID_CONSTANT_AS_TYPE),
+					filename, elem);
 		}
 
 		// following is needed to terminate any recursion
@@ -693,7 +706,7 @@ public class ModuleBuilder {
 
 			try {
 				// need to check for existential case				
-				return expandType(name, cache);															
+				return expandType(name, cache, filename, dt);															
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filename, t, rex);
 				return null;
