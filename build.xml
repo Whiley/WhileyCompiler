@@ -1,4 +1,4 @@
-<project name="whiley" default="stdlib">  
+<project name="whiley" default="wyjc">  
   <property name="version" value="0.3.11"/>
 
   <target name="compile">
@@ -8,20 +8,8 @@
     </javac>
   </target>
 
-  <target name="wyjc" depends="compile">
-    <buildnumber file="build.num"/>
-    <mkdir dir="tmp"/>
-    <manifest file="tmp/MANIFEST.MF">
-      <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Main-Class" value="wyjc.Main"/>
-      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
-    </manifest>
-    <jar destfile="lib/wyjc.jar" basedir="src" includes="wyil/**/*.class,wyc/**/*,wyjc/**/*.class,wyone/**/*.class,wyjvm/**/*.class,wyautl/**/*.class," manifest="tmp/MANIFEST.MF"/>
-    <delete dir="tmp"/>
-  </target>
-
-  <target name="stdlib" depends="wyjc">
-    <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
+  <target name="stdlib" depends="compile">
+    <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
     <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="lib/wyjc.jar"/> 
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 
@@ -31,7 +19,22 @@
     </jar>
   </target>
 
-  <target name="distjar" depends="stdlib">
+  <target name="wyjc" depends="stdlib">
+    <buildnumber file="build.num"/>
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyjc.Main"/>
+      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+    </manifest>
+    <jar destfile="lib/wyjc.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="src" includes="wyil/**/*.class,wyc/**/*,wyjc/**/*.class,wyone/**/*.class,wyjvm/**/*.class,wyautl/**/*.class"/>
+      <fileset dir="stdlib" includes="whiley/**/*.class"/>
+    </jar>
+    <delete dir="tmp"/>
+  </target>
+  
+  <target name="distjar" depends="wyjc">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
@@ -46,7 +49,7 @@
     <delete dir="tmp"/>
   </target>
 
-  <target name="distsrc" depends="stdlib">
+  <target name="distsrc" depends="wyjc">
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
     <fileset dir="." includes="src/wyc/**/*.java,src/wyjc/**/*.java,src/wyjvm/**/*.java,src/wyil/**/*.java,src/wyautl/**/*.java"/>
