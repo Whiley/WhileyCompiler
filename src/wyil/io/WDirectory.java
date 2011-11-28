@@ -42,12 +42,18 @@ public class WDirectory implements WSystem.PackageItem {
 					contents.add(new WDirectory(pid.append(file.getName()),
 							file, root));
 				} else if (file.isFile()) {						
-					ModuleReader reader = root.getModuleReader(file
-							.getName());
+					String filename = file.getName();
+					String suffix = "";
+					int pos = filename.lastIndexOf('.');
+					if (pos > 0) {
+						suffix = filename.substring(pos+1);
+						filename = filename.substring(0, pos);						
+					}					
+					
+					ModuleReader reader = root.getModuleReader(suffix);
 					if (reader != null) {
-						// TODO: module name is completely broken?
-						contents.add(new WFile(new ModuleID(pid, file
-								.getName()), file, reader));
+						contents.add(new WFile(new ModuleID(pid, filename),
+								file, reader));
 					}
 				}
 			}

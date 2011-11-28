@@ -77,12 +77,7 @@ public class WSystem {
 		suffixMap.put(suffix, reader);
 	}
 	
-	protected ModuleReader getModuleReader(String filename) {		
-		int idx = filename.lastIndexOf('.');
-		if(idx > 0) {
-			String suffix = filename.substring(idx+1);
-			return suffixMap.get(suffix);			
-		}		
-		return null;
+	protected ModuleReader getModuleReader(String suffix) {		
+		return suffixMap.get(suffix);					
 	}
 }
