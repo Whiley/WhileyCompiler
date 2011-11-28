@@ -73,6 +73,9 @@ public class WSystem {
 		
 	private HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();
 
+	public void register(String suffix, ModuleReader reader) {
+		suffixMap.put(suffix, reader);
+	}
 	
 	protected ModuleReader getModuleReader(String filename) {		
 		int idx = filename.lastIndexOf('.');
