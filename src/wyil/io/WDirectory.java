@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
 /**
@@ -41,12 +42,15 @@ public class WDirectory implements WSystem.PackageItem {
 				if (filter.accept(file)) {
 					if (file.isDirectory()) {
 						// TODO: need to modify filter
-						contents.add(new WDirectory(pid.append(file
-								.getName()), file, filter, root));
+						contents.add(new WDirectory(pid.append(file.getName()),
+								file, filter, root));
 					} else if (file.isFile()) {
-						WSystem.Item item = root.createFromSuffix(pid, file);
-						if (item != null) {
-							contents.add(item);
+						ModuleReader reader = root.getModuleReader(file
+								.getName());
+						if (reader != null) {
+							// TODO: module name is completely broken?
+							contents.add(new WFile(new ModuleID(pid, file
+									.getName()), file, reader));
 						}
 					}
 				}

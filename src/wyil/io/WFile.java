@@ -3,6 +3,7 @@ package wyil.io;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import wyil.lang.Module;
 import wyil.lang.ModuleID;

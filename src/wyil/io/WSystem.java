@@ -67,37 +67,18 @@ public class WSystem {
 		public Module read() throws IOException;		
 	}
 	
-	public interface ItemCreator {
-		public Item create(PkgID root, File file);
-	}
-	
 	// =============================================================
 	// Body
 	// =============================================================
 		
-	private HashMap<String,ItemCreator> suffixMap = new HashMap<String,ItemCreator>();
+	private HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();
 
-	/**
-	 * <p>
-	 * Create a WhileyPath Item from a file based on its suffix. This allows the
-	 * user to specify different creators for different suffixes in a system.
-	 * For example, in the whiley-to-java compiler, we want the "class" suffix
-	 * to create items for reading whiley modules from class files.
-	 * </p>
-	 * 
-	 * @param root
-	 * @param file
-	 * @return
-	 */
-	protected Item createFromSuffix(PkgID root, File file) {		
-		String filename = file.getName();
+	
+	protected ModuleReader getModuleReader(String filename) {		
 		int idx = filename.lastIndexOf('.');
 		if(idx > 0) {
 			String suffix = filename.substring(idx+1);
-			ItemCreator creator = suffixMap.get(suffix);
-			if(creator != null) {				
-				return creator.create(root, file);
-			}
+			return suffixMap.get(suffix);			
 		}		
 		return null;
 	}

@@ -1,9 +1,7 @@
 package wyil;
 
 import java.util.*;
-import java.io.*;
-
-import wyil.lang.*;
+import wyil.io.*;
 
 /**
  * <p>
@@ -13,23 +11,13 @@ import wyil.lang.*;
  * 
  */
 public class WhileyPath {
-		
-	// =============================================================
-	// Body
-	// =============================================================
-	
-	private ArrayList<WhileyPath.Item> items;	
-	
-	public WhileyPath() {
-		items = new ArrayList<WhileyPath.Item>();
-		suffixMap = new HashMap<String,ItemCreator>();
-	}
+	private ArrayList<WSystem.Item> items = new ArrayList<WSystem.Item>();
 
-	public List<WhileyPath.Item> items() {
+	public List<WSystem.Item> items() {
 		return Collections.unmodifiableList(items);
 	}
-	
-	public void add(WhileyPath.Item item) {
+
+	public void add(WSystem.Item item) {
 		items.add(item);
 	}
 }
