@@ -27,7 +27,7 @@ package wyil.transforms;
 
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.Transform;
 import wyil.util.*;
 import wyil.util.dfa.*;
@@ -59,7 +59,7 @@ import static wyil.util.ErrorMessages.*;
 public class DefiniteAssignment extends
 		ForwardFlowAnalysis<HashSet<Integer>> implements Transform {
 	
-	public DefiniteAssignment(ModuleLoader loader) {
+	public DefiniteAssignment(ModuleTable loader) {
 		super(loader);
 	}
 	

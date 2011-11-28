@@ -42,7 +42,7 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public class ModuleLoader {
+public class ModuleTable {
 	/**
 	 * The Closed World Assumption indicates whether or not we should attempt to
 	 * compile source files that we encouter.
@@ -143,14 +143,14 @@ public class ModuleLoader {
 	 */
 	private Logger logger;
 	
-	public ModuleLoader(Collection<String> whileypath, ClassFileLoader loader,
+	public ModuleTable(Collection<String> whileypath, ClassFileLoader loader,
 			Logger logger) {
 		this.logger = logger;
 		this.whileypath = new ArrayList<String>(whileypath);
 		this.moduleReader = loader;
 	}
 	
-	public ModuleLoader(Collection<String> whileypath, ClassFileLoader loader) {
+	public ModuleTable(Collection<String> whileypath, ClassFileLoader loader) {
 		this.logger = Logger.NULL;
 		this.whileypath = new ArrayList<String>(whileypath);
 		this.moduleReader = loader;

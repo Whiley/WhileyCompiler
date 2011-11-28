@@ -7,7 +7,7 @@ import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 import wyc.stages.BackPropagation.Env;
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Module;
@@ -47,7 +47,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	private static final HashSet<Integer> deadcode = new HashSet<Integer>();
 	
-	public LiveVariablesAnalysis(ModuleLoader loader) {
+	public LiveVariablesAnalysis(ModuleTable loader) {
 		super(loader);
 	}	
 	

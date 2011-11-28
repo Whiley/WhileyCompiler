@@ -26,10 +26,10 @@
 package wyil.lang;
 
 import java.util.*;
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.util.*;
 
-public class Module extends ModuleLoader.Skeleton {	
+public class Module extends ModuleTable.Skeleton {	
 	private final String filename;
 	private HashMap<Pair<String,Type.Function>,Method> methods;
 	private HashMap<String,TypeDef> types;

@@ -8,6 +8,7 @@ import java.util.*;
 import wyc.stages.BackPropagation;
 import wyc.stages.TypePropagation;
 import wyil.*;
+import wyil.io.WyilFileWriter;
 import wyil.transforms.*;
 
 /**
@@ -30,7 +31,7 @@ public class Pipeline {
 	 * The module loader is passed to a given transform when it is instantiated.
 	 * In some special cases, a transform will want access to the module loader.
 	 */
-	private final ModuleLoader loader;
+	private final ModuleTable loader;
 
 	/**
 	 * The list of stage templates which make up this pipeline. When the
@@ -39,7 +40,7 @@ public class Pipeline {
 	private final ArrayList<Template> stages;
 	
 	public Pipeline(List<Template> stages,
-			ModuleLoader loader) {		
+			ModuleTable loader) {		
 		this.stages = new ArrayList<Template>(stages);
 		this.loader = loader;
 	}
@@ -152,13 +153,13 @@ public class Pipeline {
 		 * 
 		 * @return
 		 */
-		public Transform instantiate(ModuleLoader loader) {			
+		public Transform instantiate(ModuleTable loader) {			
 			Transform stage;
 			
 			// first, instantiate the transform
 			try {				
 				Constructor<? extends Transform> c = clazz.getConstructor(
-						ModuleLoader.class);
+						ModuleTable.class);
 				stage = (Transform) c.newInstance(loader);
 										
 			} catch (NoSuchMethodException e) {

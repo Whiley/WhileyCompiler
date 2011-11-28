@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.util.*;
@@ -70,7 +70,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 */
 	private final HashMap<Integer,Block> rewrites = new HashMap<Integer,Block>();
 	
-	public TypePropagation(ModuleLoader loader) {
+	public TypePropagation(ModuleTable loader) {
 		super(loader);
 	}
 	

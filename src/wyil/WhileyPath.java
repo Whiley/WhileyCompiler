@@ -12,47 +12,24 @@ import wyil.lang.*;
  * @author djp
  * 
  */
-public interface WhileyPath {
-
+public class WhileyPath {
+		
 	// =============================================================
-	// Interfaces
+	// Body
 	// =============================================================
 	
-	/**
-	 * An item represents anything which may be on the WHILEYPATH.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public interface Item {
-		/**
-		 * Refresh after something changed. This gives an opportunity for
-		 * directories on the path to reload themselves, etc.
-		 */
-		public void refresh() throws IOException;
+	private ArrayList<WhileyPath.Item> items;	
+	
+	public WhileyPath() {
+		items = new ArrayList<WhileyPath.Item>();
+		suffixMap = new HashMap<String,ItemCreator>();
 	}
 
-	/**
-	 * A folder represents a collection of items on the path.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public interface PackageItem extends Item {
-		public PkgID id();
-
-		/**
-		 * Open the folder and see what things are inside.
-		 */
-		public Collection<Item> list() throws IOException;
+	public List<WhileyPath.Item> items() {
+		return Collections.unmodifiableList(items);
 	}
-
-	public interface ModuleItem extends Item {
-		public ModuleID id();
-		
-		/**
-		 * Open the source file for reading.
-		 */
-		public Module read() throws IOException;		
-	}		
+	
+	public void add(WhileyPath.Item item) {
+		items.add(item);
+	}
 }

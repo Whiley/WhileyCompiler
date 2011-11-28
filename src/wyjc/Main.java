@@ -169,7 +169,7 @@ public class Main {
 
 			// now construct a pipline and initialise the compiler		
 			ClassFileLoader classLoader = new ClassFileLoader();
-			ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
+			ModuleTable moduleLoader = new ModuleTable(whileypath, classLoader);
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
 			Pipeline pipeline = new Pipeline(templates, moduleLoader);

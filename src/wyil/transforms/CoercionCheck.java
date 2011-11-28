@@ -45,10 +45,10 @@ import wyil.util.*;
  * @author David J. Pearce
  */
 public class CoercionCheck implements Transform {
-	private final ModuleLoader loader;
+	private final ModuleTable loader;
 	private String filename;
 
-	public CoercionCheck(ModuleLoader loader) {
+	public CoercionCheck(ModuleTable loader) {
 		this.loader = loader;
 	}
 	

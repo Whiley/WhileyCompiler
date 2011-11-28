@@ -1,4 +1,4 @@
-package wyil;
+package wyil.io;
 
 import java.io.*;
 import wyil.lang.*;
@@ -15,7 +15,7 @@ import wyil.lang.*;
  * 
  */
 public interface ModuleReader {
-	
+
 	/**
 	 * Read a given given module from an input stream.
 	 * 

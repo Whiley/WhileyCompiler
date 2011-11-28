@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.transforms;
+package wyil.io;
 
 import java.io.*;
 import java.util.*;
@@ -31,7 +31,7 @@ import java.util.*;
 import wyc.stages.TypePropagation.Env;
 import wyil.lang.*;
 import wyil.lang.Module.*;
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.Transform;
 
 public class WyilFileWriter implements Transform {
@@ -40,7 +40,7 @@ public class WyilFileWriter implements Transform {
 	private boolean writeAttributes;
 	private boolean writeSlots;
 		
-	public WyilFileWriter(ModuleLoader loader) {
+	public WyilFileWriter(ModuleTable loader) {
 
 	}
 	

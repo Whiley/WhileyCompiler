@@ -1,8 +1,9 @@
-package wyil;
+package wyc;
 
 import java.io.InputStream;
 import java.util.List;
 
+import wyil.WhileyPath;
 import wyil.lang.*;
 import wyil.util.ResolveError;
 

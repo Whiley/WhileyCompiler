@@ -29,7 +29,7 @@ import java.util.*;
 
 import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.util.*;
 import wyil.lang.*;
 import wyc.lang.*;
@@ -41,11 +41,11 @@ import wyc.stages.WhileyLexer.Ampersand;
 import wyc.util.*;
 
 public class NameResolution {
-	private final ModuleLoader loader;	
+	private final ModuleTable loader;	
 	private String filename;
 	private ModuleID module;
 	
-	public NameResolution(ModuleLoader loader) {
+	public NameResolution(ModuleTable loader) {
 		this.loader = loader;
 	}
 	
@@ -588,7 +588,7 @@ public class NameResolution {
 			PackageAccess pa = (PackageAccess) sg.lhs;			
 			try {				
 				ModuleID mid = new ModuleID(pa.pid,sg.name);
-				ModuleLoader.Skeleton m = loader.loadSkeleton(mid);
+				ModuleTable.Skeleton m = loader.loadSkeleton(mid);
 				return new ModuleAccess(mid);
 			} catch(ResolveError err) {}
 			PkgID pid = pa.pid.append(sg.name);			
@@ -602,7 +602,7 @@ public class NameResolution {
 			// this indicates we're constructing a constant access
 			ModuleAccess ma = (ModuleAccess) sg.lhs;			
 			try {				
-				ModuleLoader.Skeleton m = loader.loadSkeleton(ma.mid);				
+				ModuleTable.Skeleton m = loader.loadSkeleton(ma.mid);				
 				if(m.hasName(sg.name)) {
 					return new ExternalAccess(new NameID(ma.mid,sg.name));
 				}				

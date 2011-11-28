@@ -35,10 +35,10 @@ import wyc.lang.*;
 import wyc.stages.*;
 
 public class Compiler implements Logger {	
-	protected ModuleLoader loader;
+	protected ModuleTable loader;
 	protected ArrayList<Transform> stages;
 
-	public Compiler(ModuleLoader loader, List<Transform> stages) {
+	public Compiler(ModuleTable loader, List<Transform> stages) {
 		this.loader = loader;		
 		this.stages = new ArrayList<Transform>(stages);				
 	}

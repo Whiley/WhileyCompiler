@@ -32,7 +32,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyc.stages.TypePropagation.Env;
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
@@ -44,7 +44,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
-	public BackPropagation(ModuleLoader loader) {
+	public BackPropagation(ModuleTable loader) {
 		super(loader);
 	}
 	

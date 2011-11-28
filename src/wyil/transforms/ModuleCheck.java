@@ -27,7 +27,7 @@ package wyil.transforms;
 
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wyil.ModuleTable;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
@@ -56,10 +56,10 @@ import static wyil.util.ErrorMessages.*;
  * 
  */
 public class ModuleCheck implements Transform {
-	private final ModuleLoader loader;
+	private final ModuleTable loader;
 	private String filename;
 
-	public ModuleCheck(ModuleLoader loader) {
+	public ModuleCheck(ModuleTable loader) {
 		this.loader = loader;
 	}
 	
