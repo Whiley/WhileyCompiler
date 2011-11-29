@@ -36,6 +36,20 @@ public class Main {
 	public static final int SYNTAX_ERROR=1;
 	public static final int INTERNAL_FAILURE=2;
 	
+	public static final FilenameFilter BINARY_FILTER = new FilenameFilter() {
+		public boolean accept(File file, String filename) {
+			// FIXME: should really be ".wyil"
+			return filename.endsWith(".class");
+		}
+	};
+	
+	public static final FilenameFilter SOURCE_FILTER = new FilenameFilter() {
+		public boolean accept(File file, String filename) {
+			// FIXME: should really be ".wyil" || ".whiley"
+			return filename.endsWith(".class") || filename.endsWith(".whiley");
+		}
+	};
+	
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -78,10 +92,13 @@ public class Main {
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("whileypath", "wp", PATHLIST,
-					"Specify where to find whiley files",
+					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", PATHLIST,
-					"Specify where to find whiley standard library files",
+					"Specify where to find whiley standard library files",					
+					new ArrayList<String>()),
+			new OptArg("sourcepath", "sp", PATHLIST,
+					"Specify where to find whiley (source) files",
 					new ArrayList<String>()),
 			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("C", PIPELINECONFIGURE,
@@ -121,7 +138,7 @@ public class Main {
 						// "."
 						jarfile += "stdlib";
 					}
-					bootpath.add(new JarFileRoot(jarfile));
+					bootpath.add(new JarFileRoot(jarfile,BINARY_FILTER));
 				}				
 			} catch(Exception e) {
 				// just ignore.
@@ -136,18 +153,20 @@ public class Main {
 	 * @param items
 	 * @return
 	 */
-	private static List<Path.Root> initialisePathRoots(List<String> roots, boolean verbose) {
+	private static List<Path.Root> initialisePathRoots(List<String> roots,
+			FilenameFilter filter, boolean verbose) {
 		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
-		for(String root : roots) {
+		for (String root : roots) {
 			try {
-				if(root.endsWith(".jar")) {
-					nitems.add(new JarFileRoot(root));
+				if (root.endsWith(".jar")) {
+					nitems.add(new JarFileRoot(root, filter));
 				} else {
-					nitems.add(new DirectoryRoot(root));
+					nitems.add(new DirectoryRoot(root, filter));
 				}
-			} catch(IOException e) {
-				if(verbose) {
-					System.err.println("Warning: " + root + " is not a valid package root");
+			} catch (IOException e) {
+				if (verbose) {
+					System.err.println("Warning: " + root
+							+ " is not a valid package root");
 				}
 			}
 		}
@@ -182,20 +201,20 @@ public class Main {
 				
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
-		List<Path.Root> whileypath = initialisePathRoots((ArrayList) values.get("whileypath"),verbose);
-		List<Path.Root> bootpath = initialisePathRoots((ArrayList) values.get("bootpath"),verbose);
+		List<Path.Root> sourcepath = initialisePathRoots((ArrayList) values.get("sourcepath"),SOURCE_FILTER,verbose);
+		List<Path.Root> whileypath = initialisePathRoots((ArrayList) values.get("whileypath"),BINARY_FILTER,verbose);
+		List<Path.Root> bootpath = initialisePathRoots((ArrayList) values.get("bootpath"),BINARY_FILTER,verbose);
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
 		try {			
 			// initialise the boot path appropriately
 			initialiseBootPath(bootpath);
 
-			// now initialise the whiley path
-			whileypath.add(0,new DirectoryRoot("."));
+			// now initialise the whiley path			
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			ModuleLoader moduleLoader = new ModuleLoader(whileypath);
+			ModuleLoader moduleLoader = new ModuleLoader(sourcepath,whileypath);
 			moduleLoader.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));

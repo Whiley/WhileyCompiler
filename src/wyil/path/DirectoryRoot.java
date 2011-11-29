@@ -16,38 +16,63 @@ import wyil.lang.PkgID;
  */
 public class DirectoryRoot implements Path.Root {
 	private final java.io.File dir;	
+	private final FilenameFilter filter;
 
-	public DirectoryRoot(String dir) throws IOException {
-		this.dir = new File(dir);		
+	/**
+	 * Construct a directory root from a filesystem path expressed as a string,
+	 * and an appropriate file filter. In converting the path to a File object,
+	 * an IOException may arise if it is an invalid path.
+	 * 
+	 * @param path
+	 *            --- location of directory on filesystem, expressed as a native
+	 *            path (i.e. separated using File.separatorChar, etc)
+	 * @param filter
+	 *            --- filter which determines what constitutes a valid entry for
+	 *            this directory.
+	 * @throws IOException
+	 */
+	public DirectoryRoot(String path, FilenameFilter filter) throws IOException {
+		this.dir = new File(path);		
+		this.filter = filter;
 	}
 	
-	public DirectoryRoot(java.io.File dir) {
-		this.dir = dir;				
+	/**
+	 * Construct a directory root from a given directory and file filter.
+	 * 
+	 * @param file
+	 *            --- location of directory on filesystem.
+	 * @param filter
+	 *            --- filter which determines what constitutes a valid entry for
+	 *            this directory.
+	 */
+	public DirectoryRoot(java.io.File dir, FilenameFilter filter) {
+		this.dir = dir;
+		this.filter = filter;
 	}
 	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {
-		File location = new File(dir + pkg.fileName());
-		
+		File location = new File(dir + File.separator + pkg.fileName());
+
 		if (location.exists() && location.isDirectory()) {
 			ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
-			
-			// FIXME: update to search for whiley files as well
-			
-			for (File file : location.listFiles()) {
+
+			for (File file : location.listFiles(filter)) {
 				String filename = file.getName();
-				if (filename.endsWith(".class")) {
-					String name = filename.substring(0, filename.length() - 6);
-					ModuleID mid = new ModuleID(pkg, name);
-					entries.add(new Entry(mid, file));
-				}
+				String name = filename.substring(0, filename.lastIndexOf('.'));
+				ModuleID mid = new ModuleID(pkg, name);
+				entries.add(new Entry(mid, file));
 			}
-			
+
 			return entries;
 		} else {
 			return Collections.EMPTY_LIST;
 		}
 	}
 
+	public String toString() {
+		return dir.getPath();
+	}
+	
 	/**
 	 * A WFile is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a

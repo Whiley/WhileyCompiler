@@ -52,8 +52,14 @@ public class ModuleLoader {
 	private boolean closedWorldAssumption = true;
 	
 	/**
-	 * The whiley path is a list of locations which must be searched in
+	 * The source path is a list of locations which must be searched in
 	 * ascending order for whiley files.
+	 */
+	private ArrayList<Path.Root> sourcepath;
+	
+	/**
+	 * The whiley path is a list of locations which must be searched in
+	 * ascending order for wyil files.
 	 */
 	private ArrayList<Path.Root> whileypath;
 	
@@ -124,13 +130,15 @@ public class ModuleLoader {
 	 */
 	private Logger logger;
 	
-	public ModuleLoader(Collection<Path.Root> whileypath, Logger logger) {
+	public ModuleLoader(Collection<Path.Root> sourcepath, Collection<Path.Root> whileypath, Logger logger) {
 		this.logger = logger;
+		this.sourcepath = new ArrayList<Path.Root>(sourcepath);
 		this.whileypath = new ArrayList<Path.Root>(whileypath);		
 	}
 	
-	public ModuleLoader(Collection<Path.Root> whileypath) {
+	public ModuleLoader(Collection<Path.Root> sourcepath, Collection<Path.Root> whileypath) {
 		this.logger = Logger.NULL;
+		this.sourcepath = new ArrayList<Path.Root>(sourcepath);
 		this.whileypath = new ArrayList<Path.Root>(whileypath);		
 	}
 	
@@ -195,12 +203,11 @@ public class ModuleLoader {
 	 *             if it couldn't resolve the name
 	 */
 	public NameID resolveAsName(String name, List<Import> imports)
-			throws ResolveError {	
-		
+			throws ResolveError {			
 		for (Import imp : imports) {
 			if(imp.matchName(name)) {
 				for(ModuleID mid : matchImport(imp)) {
-					try {														
+					try {						
 						Skeleton mi = loadSkeleton(mid);											
 						if (mi.hasName(name)) {
 							return new NameID(mid,name);
@@ -395,31 +402,42 @@ public class ModuleLoader {
      * @param pkg --- the package to look for
      * @return
      */
-	private void resolvePackage(PkgID pkg) throws ResolveError {			
+	private void resolvePackage(PkgID pkg) throws ResolveError {							
 		// First, check if we have already resolved this package.						
 		if(packages.containsKey(pkg)) {
 			return;
-		} else if(failedPackages.contains(pkg)) {
+		} else if(failedPackages.contains(pkg)) {			
 			// yes, it's already been resolved but it doesn't exist.
 			throw new ResolveError("package not found: " + pkg);
 		}
 
 		HashSet<ModuleID> contents = new HashSet<ModuleID>();
 		try {
-			// package has not been previously resolved, so try whileypath.
-				
+			// package not been previously resolved, so first try sourcepath.
+			for (Path.Root c : sourcepath) {
+				// load package contents
+				for(Path.Entry item : c.list(pkg)) {
+					if(!filetable.containsKey(item)) {
+						filetable.put(item.id(), item);
+						contents.add(item.id());
+					} 
+				}
+			}
+			// second, try whileypath.
 			for (Path.Root c : whileypath) {
 				// load package contents
-				for(Path.Entry item : c.list(pkg)) {				
-					filetable.put(item.id(), item);
-					contents.add(item.id());
+				for(Path.Entry item : c.list(pkg)) {
+					if(!filetable.containsKey(item)) {
+						filetable.put(item.id(), item);
+						contents.add(item.id());
+					}
 				}
 			}
 		} catch(IOException e) {
 			// silently ignore.
 		}
 				
-		if(!contents.isEmpty()) {			
+		if(!contents.isEmpty()) {	
 			packages.put(pkg,contents);
 		} else {
 			failedPackages.add(pkg);

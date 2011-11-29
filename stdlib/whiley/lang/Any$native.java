@@ -8,8 +8,8 @@ public class Any$native {
 			return "\"" + o + "\"";
 		} else if(o instanceof java.lang.Character) {
 			return "\'" + o + "\'";
-		} else if(o instanceof Byte) {
-			Byte b = (Byte) o;
+		} else if(o instanceof java.lang.Byte) {
+			java.lang.Byte b = (java.lang.Byte) o;
 			return toString((byte)b);
 		} else {
 			return o.toString();

@@ -1,17 +1,11 @@
 package wyil.path;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.*;
 
-import wyil.io.ModuleReader;
-import wyil.lang.Module;
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
@@ -23,13 +17,16 @@ import wyil.lang.PkgID;
  */
 public class JarFileRoot implements Path.Root {
 	private final JarFile jf;	
+	private final FilenameFilter filter;
 	
-	public JarFileRoot(String dir) throws IOException {
+	public JarFileRoot(String dir, FilenameFilter filter) throws IOException {
 		this.jf = new JarFile(dir);		
+		this.filter = filter;
 	}
 	
-	public JarFileRoot(JarFile dir) {
+	public JarFileRoot(JarFile dir, FilenameFilter filter) {
 		this.jf = dir;				
+		this.filter = filter;
 	}
 
 	public List<Path.Entry> list(PkgID pkg) throws IOException {
@@ -39,19 +36,26 @@ public class JarFileRoot implements Path.Root {
 		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();
 			String filename = e.getName();
-			int pos = filename.lastIndexOf('/');
-			String tmp = filename.substring(0, pos);
-			if (tmp.equals(pkgname) && filename.endsWith(".class")) {
-				// strip suffix
-				filename = filename.substring(pos + 1, filename.length() - 6);
-				ModuleID mid = new ModuleID(pkg, filename);
-				contents.add(new Entry(mid, jf, e));
+			if (filter.accept(null, filename)) {
+				int pos = filename.lastIndexOf('/');
+				String tmp = filename.substring(0, pos);
+				if (tmp.equals(pkgname) && filename.endsWith(".class")) {
+					// strip suffix
+					filename = filename.substring(pos + 1,
+							filename.length() - 6);
+					ModuleID mid = new ModuleID(pkg, filename);
+					contents.add(new Entry(mid, jf, e));
+				}
 			}
 		}
 
 		return contents;
 	}
-		
+	
+	public String toString() {
+		return jf.getName();
+	}
+	
 	public static class Entry implements Path.Entry {
 		private final ModuleID mid;
 		private final JarFile parent;

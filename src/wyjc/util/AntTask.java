@@ -28,7 +28,17 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
+import wyc.Compiler;
+import wyc.Pipeline;
+import wyil.ModuleLoader;
+import wyil.Transform;
+import wyil.path.DirectoryRoot;
+import wyil.path.Path;
+import wyil.util.SyntaxError;
+import wyil.util.SyntaxError.InternalFailure;
 import wyjc.Main;
+import wyjc.io.ClassFileLoader;
+import wyjc.transforms.ClassWriter;
 
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -55,12 +65,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  */
 public class AntTask extends MatchingTask {
 	private File srcdir;
-	private boolean noVerificationChecks = false;
 	private boolean verbose = false;
-	
-	public void setNvc(boolean b) {		
-		noVerificationChecks=b;
-	}
 		
     public void setSrcdir (File srcdir) {
         this.srcdir = srcdir;
@@ -76,35 +81,94 @@ public class AntTask extends MatchingTask {
         }
         log("dir = " + srcdir, Project.MSG_DEBUG);
 
-        DirectoryScanner ds = getDirectoryScanner(srcdir);
-        String[] files = ds.getIncludedFiles();        
-        
-        // Now, construct the parameters list for whiley.Main.run
-        int nparams = files.length;
-        if(noVerificationChecks) { nparams ++; }        
-        ArrayList<String> params = new ArrayList<String>();        
-        if(noVerificationChecks) { params.add("-Nvc"); }        
-        if(verbose) { params.add("-verbose"); }
-        int nfiles = 0;
-        for(String f : files) {
-        	String fname = srcdir.getPath() + File.separatorChar + f;
-        	File srcfile = new File(fname);
-        	File classfile = new File(fname.replace(".whiley",".class"));
-        	if(srcfile.lastModified() > classfile.lastModified()) {
-        		params.add(fname);
-        		nfiles++;
-        	}
-        }
-        
-        if(nfiles > 0) {
-        	log("Compiling " + nfiles + " source file(s)");
-        	// Finally, run the whiley compiler        	
-			int exitCode = new Main().run(params.toArray(new String[params.size()]));        
-
-        	if(exitCode != 0) {
+       
+        ArrayList<File> srcfiles = findSourceFiles();
+        if(!srcfiles.isEmpty()) {
+        	log("Compiling " + srcfiles.size() + " source file(s)"); 	
+	                	        	
+        	if(!compile(srcfiles)) {
         		throw new BuildException("compilation errors");
-        	}
+        	}        	
         }
+        
         srcdir = null; // release file
+    }
+    
+	protected ArrayList<File> findSourceFiles() {
+		DirectoryScanner ds = getDirectoryScanner(srcdir);
+		ArrayList<File> srcfiles = new ArrayList<File>();
+
+		for (String f : ds.getIncludedFiles()) {
+			String fname = srcdir.getPath() + File.separatorChar + f;
+			File srcfile = new File(fname);
+			File classfile = new File(fname.replace(".whiley", ".class"));
+			if (srcfile.lastModified() > classfile.lastModified()) {
+				srcfiles.add(srcfile);
+			}
+		}
+
+		return srcfiles;
+	}
+    
+    protected boolean compile(ArrayList<File> srcfiles) {
+    	try {
+    		// first, initialise sourcepath and whileypath
+    		List<Path.Root> sourcepath = initialiseSourcePath();
+    		List<Path.Root> whileypath = initialiseWhileyPath();
+
+    		// second, construct the module loader
+    		ModuleLoader moduleLoader = new ModuleLoader(sourcepath,whileypath);
+    		moduleLoader.setModuleReader("class",  new ClassFileLoader());
+    		
+    		// third, initialise the pipeline
+    		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
+    		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
+    		Pipeline pipeline = new Pipeline(templates, moduleLoader);		
+    		List<Transform> stages = pipeline.instantiate();
+    		
+    		// fourth initialise the compiler
+    		Compiler compiler = new Compiler(moduleLoader,stages);		
+    		moduleLoader.setLogger(compiler);		
+
+    		if(verbose) {			
+    			compiler.setLogOut(System.err);
+    		}
+
+    		// finally, compile away!
+    		compiler.compile(srcfiles);
+    		
+    		return true;
+    	} catch (InternalFailure e) {
+    		e.outputSourceError(System.err);
+    		if (verbose) {
+    			e.printStackTrace(System.err);
+    		}
+    		return false;
+    	} catch (SyntaxError e) {
+    		e.outputSourceError(System.err);
+    		if (verbose) {
+    			e.printStackTrace(System.err);
+    		}
+    		return false;
+    	} catch (Throwable e) {
+    		System.err.println("internal failure: " + e.getMessage());
+    		if (verbose) {
+    			e.printStackTrace(System.err);
+    		}
+    		return false;
+    	}
+    }
+    
+    protected List<Path.Root> initialiseSourcePath() {
+    	ArrayList<Path.Root> sourcepath = new ArrayList<Path.Root>();
+    	sourcepath.add(new DirectoryRoot(srcdir, wyjc.Main.SOURCE_FILTER));    	
+    	return sourcepath;
+    }
+    
+    protected List<Path.Root> initialiseWhileyPath() {
+    	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
+    	// FIXME: what's the best way to do this?
+    	wyjc.Main.initialiseBootPath(whileypath);
+    	return whileypath;
     }
 }
