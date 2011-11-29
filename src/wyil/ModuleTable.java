@@ -51,49 +51,45 @@ public class ModuleTable {
 	private boolean closedWorldAssumption = true;
 	
 	/**
-     * The whiley path is a list of directories which must be
-     * searched in ascending order for whiley files.
-     */
+	 * The whiley path is a list of locations which must be searched in
+	 * ascending order for whiley files.
+	 */
 	private ArrayList<WContainer> whileypath;
 	
 	/**
-     * A map from module names in the form "xxx.yyy" to module objects. This is
-     * the master cache of modules which have been loaded during the compilation
-     * process. Once a module has been entered into the moduletable, it will not
-     * be loaded again.
-     */
-	private HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();  
-	
+	 * A map from module identifiers to module objects. This is the master cache
+	 * of modules which have been loaded during the compilation process. Once a
+	 * module has been entered into the moduletable, it will not be loaded
+	 * again.
+	 */
+	private HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
+
 	/**
-     * A map from module names in the form "xxx.yyy" to skeleton objects. This
-     * is required to permit preregistration of source files during compilation.
-     */
+	 * A map from module identifiers to skeleton objects. This is required to
+	 * permit preregistration of source files during compilation.
+	 */
 	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
 
 	/**
-	 * The module reader is responsible for actually reading module files off
-	 * the file system and parsing them. Depending upon what the target platform
-	 * is, the actual loader will vary.
+	 * A map from module identifiers to file system locations. This helps us to
+	 * quickly find and load a given module. Once the module is loaded, it will
+	 * be placed into the moduletable.
 	 */
-	private final ClassFileLoader moduleReader;
+	private HashMap<ModuleID,WModule> filetable = new HashMap<ModuleID,WModule>();
+
+	/**
+	 * This identifies which packages have had their contents fully resolved.
+	 * All items in a resolved package must have been loaded into the filetable.
+	 */
+	private HashMap<PkgID, HashSet<ModuleID>> packages = new HashMap<PkgID, HashSet<ModuleID>>();
 	
 	/**
-	 * A Package object contains information about a particular package,
-	 * including the following information:
-	 * 
-	 * 1) where it can be found on the file system (either a directory).
-	 * 
-	 * 2) what modules it contains.
-	 * 
-	 */
-	private static final class Package {
-		/**
-		 * The modules field maps those modules contained in this package to
-		 * their module item for reading.
-		 */
-		public final HashMap<String,WModule> modules = new HashMap<String,WModule>();				
-	}
-
+     * The failed packages set is a collection of packages which have been
+     * requested, but are known not to exist. The purpose of this cache is
+     * simply to speed up package resolution.
+     */
+	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
+	
 	/**
 	 * Provides basic information regarding what names are defined within a
 	 * module. It represents the minimal knowledge regarding a module that we
@@ -116,36 +112,20 @@ public class ModuleTable {
 
 		public abstract boolean hasName(String name);
 	}
-	
-	/**
-     * The packages map maps each package to its PackageInfo record. This means
-     * we can quickly identify packages will have already been loaded.
-     */
-	private final HashMap<PkgID, Package> packages = new HashMap<PkgID, Package>();
-	
-	/**
-     * The failed packages set is a collection of packages which have been
-     * requested, but are known not to exist. The purpose of this cache is
-     * simply to speek up package resolution.
-     */
-	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
-	
+		
 	/**
 	 * The logger is used to log messages from the module loader.
 	 */
 	private Logger logger;
 	
-	public ModuleTable(Collection<WContainer> whileypath, ClassFileLoader loader,
-			Logger logger) {
+	public ModuleTable(Collection<WContainer> whileypath, Logger logger) {
 		this.logger = logger;
-		this.whileypath = new ArrayList<WContainer>(whileypath);
-		this.moduleReader = loader;
+		this.whileypath = new ArrayList<WContainer>(whileypath);		
 	}
 	
-	public ModuleTable(Collection<WContainer> whileypath, ClassFileLoader loader) {
+	public ModuleTable(Collection<WContainer> whileypath) {
 		this.logger = Logger.NULL;
-		this.whileypath = new ArrayList<WContainer>(whileypath);
-		this.moduleReader = loader;
+		this.whileypath = new ArrayList<WContainer>(whileypath);		
 	}
 	
 	public void setClosedWorldAssumption(boolean flag) {
@@ -170,21 +150,15 @@ public class ModuleTable {
 	 */
 	public boolean isPackage(PkgID pkg) {
 		try {
-			return resolvePackage(pkg) != null;
+			resolvePackage(pkg);
+			return packages.containsKey(pkg);
 		} catch(ResolveError e) {
 			return false;
 		}
 	}	
 	
 	public void preregister(Skeleton skeleton, String filename) {		
-		skeletontable.put(skeleton.id(), skeleton);
-		File parent = new File(filename).getParentFile();
-		if(parent == null) {
-			// this is necessary, since parent might be null if this is the
-			// default package.
-			parent = new File(".");
-		} 
-		addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);		
+		skeletontable.put(skeleton.id(), skeleton);			
 	}
 	
 	public void register(Module module) {			
@@ -296,28 +270,24 @@ public class ModuleTable {
 	 */
 	public Module loadModule(ModuleID module) throws ResolveError {		
 		Module m = moduletable.get(module);
+		
 		if(m != null) {
 			return m; // module was previously loaded and cached
 		}
 			
 		// module has not been previously loaded.
-		Package pkg = resolvePackage(module.pkg());		
-		// check for error
-		if(pkg == null) {			
-			throw new ResolveError("Unable to find package: " + module.pkg());
-		} else {
-			try {
-				// ok, now look for module inside package.
-				m = loadModule(module,pkg);
-				if(m == null) {					
-					throw new ResolveError("Unable to find module: " + module);
-				}
-			} catch(IOException io) {				
-				throw new ResolveError("Unable to find module: " + module,io);
-			}
-		}
+		resolvePackage(module.pkg());						
 		
-		return m;		
+		try {
+			// ok, now look for module inside package.
+			WModule wmod = filetable.get(module);
+			if(wmod == null) {
+				throw new ResolveError("Unable to find module: " + module);
+			}
+			return readModuleInfo(wmod);				
+		} catch(IOException io) {				
+			throw new ResolveError("Unable to find module: " + module,io);
+		}	
 	}
 	
 	/**
@@ -343,93 +313,19 @@ public class ModuleTable {
 		}
 		
 		// module has not been previously loaded.
-		Package pkg = resolvePackage(module.pkg());
-		// check for error
-		if(pkg == null) {
-			throw new ResolveError("Unable to find package: " + module.pkg());
-		} else {
-			try {
-				// ok, now look for module inside package.
-				skeleton = loadSkeleton(module,pkg);
-				if(skeleton == null) {
-					throw new ResolveError("Unable to find module: " + module);
-				}
-			} catch(IOException io) {
-				throw new ResolveError("Unagle to find module: " + module,io);
-			}
-		}
-		
-		return skeleton;		
-	}
-	
-	private Skeleton loadSkeleton(ModuleID module, Package pkg) throws ResolveError, IOException {		
-		String filename = module.fileName();	
-		String jarname = filename.replace(File.separatorChar,'/') + ".class";
-
-		for(WContainer location : pkg.locations) {			
-			if (location.getName().endsWith(".jar")) {
-				// location is a jar file
-				JarFile jf = new JarFile(location);				
-				JarEntry je = jf.getJarEntry(jarname);
-				if (je == null) { continue; }  								
-				Module mi = readModuleInfo(module, jarname, jf.getInputStream(je));
-				if(mi != null) { return mi; }
-			} else {
-				File classFile = new File(location.getPath(),filename + ".class");					
-				File srcFile = new File(location.getPath(),filename + ".whiley");
-
-				if(classFile.exists()) {															
-					// Here, there is no sourcefile, but there is a
-					// classfile.
-					// So, no need to compile --- just load the class file!
-					Module mi = readModuleInfo(module, classFile.getPath(), new FileInputStream(classFile));
-					if(mi != null) {
-						return mi;
-					}
-				}			
-			}
-		}
-
-		throw new ResolveError("unable to find module: " + module);
-	}
-
-	/**
-	 * This method attempts to read a whiley module from a given package. A
-	 * resolve error is thrown if the module cannot be found or otherwise
-	 * loaded.
-	 * 
-	 * @param module
-	 *            The module to load
-	 * @param pkgIngo
-	 *            Information about the including package, in particular where
-	 *            it can be located on the file system.
-	 * @return
-	 */
-	private Module loadModule(ModuleID module, Package pkg)
-			throws ResolveError, IOException {			
-		String filename = module.fileName();	
-		String jarname = filename.replace(File.separatorChar,'/') + ".class";
-		
-		for(WContainer location : pkg.locations) {			
-			if (location.getName().endsWith(".jar")) {
-				// location is a jar file				
-				JarFile jf = new JarFile(location);				
-				JarEntry je = jf.getJarEntry(jarname);
-				if (je == null) { continue; }  								
-				return readModuleInfo(module, jarname, jf.getInputStream(je));
-			} else {
-				File classFile = new File(location.getPath(),filename + ".class");									
-				if(classFile.exists()) {															
-					// Here, there is no sourcefile, but there is a classfile.
-					// So, no need to compile --- just load the class file!
-					return readModuleInfo(module, jarname, new FileInputStream(classFile));					
-				}			
-			}
-		}
+		resolvePackage(module.pkg());
 				
-		throw new ResolveError("unable to find module: " + module);
-	}
-	
+		try {
+			WModule wmod = filetable.get(module);
+			if(wmod == null) {
+				throw new ResolveError("Unable to find module: " + module);
+			}
+			return readModuleInfo(wmod);
+		} catch(IOException io) {
+			throw new ResolveError("Unagle to find module: " + module,io);
+		}			
+	}	
+
 	/**
 	 * This method takes a given import declaration, and expands it to find all
 	 * matching modules.
@@ -441,10 +337,10 @@ public class ModuleTable {
 		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
 		for (PkgID pid : matchPackage(imp.pkg)) {
 			try {
-				Package pkgInfo = resolvePackage(pid);
-				for (String n : pkgInfo.modules) {					
-					if (imp.matchModule(n)) {
-						matches.add(new ModuleID(pid, n));
+				resolvePackage(pid);;				
+				for (ModuleID m : packages.get(pid)) {					
+					if (imp.matchModule(m.module())) {
+						matches.add(m);
 					}
 				}
 			} catch (ResolveError ex) {
@@ -465,8 +361,7 @@ public class ModuleTable {
 	private List<PkgID> matchPackage(PkgID pkg) {
 		ArrayList<PkgID> matches = new ArrayList<PkgID>();
 		try {
-			// TODO: this needs to be correct to support more interesting regexes.
-			Package p = resolvePackage(pkg);
+			resolvePackage(pkg);
 			matches.add(pkg);
 		} catch(ResolveError er) {}
 		return matches;
@@ -478,152 +373,43 @@ public class ModuleTable {
      * @param pkg --- the package to look for
      * @return
      */
-	private Package resolvePackage(PkgID pkg) throws ResolveError {			
+	private void resolvePackage(PkgID pkg) throws ResolveError {			
 		// First, check if we have already resolved this package.						
-		Package pkgInfo = packages.get(pkg);				
-		
-		if(pkgInfo != null) {			
-			return pkgInfo;
+		if(packages.containsKey(pkg)) {
+			return;
 		} else if(failedPackages.contains(pkg)) {
 			// yes, it's already been resolved but it doesn't exist.
 			throw new ResolveError("package not found: " + pkg);
 		}
 
-		// TODO: don't revisit items on the WhileyPath.
-		
 		// package has not been previously resolved, so try whileypath.
-		for (WContainer item : whileypath) {
-			searchForPackages(item,item);
-			pkgInfo = packages.get(pkg);
-			if(pkgInfo != null) {
-				return pkgInfo;
-			}			
+		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
+		for (WContainer c : whileypath) {
+			// load package contents
+			for(WItem item : c.list(pkg)) {
+				if(item instanceof WModule) {					
+					WModule mod = (WModule) item; 
+					filetable.put(mod.id(), mod);
+					contents.add(mod.id());
+				}			
+			}
 		}
 				
-		failedPackages.add(pkg);
-		throw new ResolveError("package not found: " + pkg);
-	}
-
-	/**
-	 * Recursively traverse the item hierarchy searching for packages. Every
-	 * package found is then associated with the corresponding item. This way,
-	 * we can speed the process of loading items from the path in future.
-	 * 
-	 * @param item
-	 */
-	private void searchForPackages(WContainer parent, WItem item) {
-		if (item instanceof WModule) {
-			WModule mi = (WModule) item;
-			ModuleID mid = mi.id();
-			addPackageItem(mid.pkg(), mid.module(), parent);
-		} else if (item instanceof WContainer) {
-			WContainer pi = (WContainer) item;
-			addPackageItem(pi.id(), null, pi);
-			try {
-				for (WItem subitem : pi.list()) {
-					searchForPackages(pi,subitem);
-				}
-			} catch(IOException e) {
-				// silently ignore ;)
-			}
-		}
-	}
-	
-	private Module readModuleInfo(ModuleID module, String filename,
-			InputStream input) throws IOException {
-		long time = System.currentTimeMillis();		
-		
-		// TODO: the following line should be removed in the near future.
-		Module mi = moduleReader.read(module, filename, input);
-
-		if (mi != null) {
-			logger.logTimedMessage("Loaded " + filename,
-					System.currentTimeMillis() - time);
-
-			// observe that createModule will return null if the
-			// class file is *not* from whiley source file. In such
-			// case, we simply ignore the class file altogether.
-			moduletable.put(module, mi);
-			return mi;
+		if(!contents.isEmpty()) {			
+			packages.put(pkg,contents);
 		} else {
-			logger.logTimedMessage("Ignored " + filename,
-					System.currentTimeMillis() - time);
-			return null;
+			failedPackages.add(pkg);
+			throw new ResolveError("package not found: " + pkg);
 		}
+	}	
+	
+	private Module readModuleInfo(WModule moduleInfo) throws IOException {
+		long time = System.currentTimeMillis();
+
+		Module mi = moduleInfo.read();
+		logger.logTimedMessage("Loaded " + mi.id(), System.currentTimeMillis()
+				- time);
+		moduletable.put(mi.id(), mi);
+		return mi;
 	} 	
-	
-	/**
-	 * This adds a module to the module table. 
-	 * 
-	 * @param pkg
-	 *            The name of the module package
-	 * @param name
-	 *            The name of the module to be added
-	 * @param location
-	 *            The location of the enclosing package. This is either a jar
-	 *            file, or a directory.
-	 */
-	private void addPackageItem(PkgID pkg, String name, WContainer pkgLocation) {
-		Package items = packages.get(pkg);
-		if (items == null) {						
-			items = new Package();			
-			packages.put(pkg, items);
-		} 
-
-		if(name != null) {
-			// add the class in question
-			items.modules.add(name);
-		}
-		
-		// now, add the location (if it wasn't already added)  
-		if(!items.locations.contains(pkgLocation)) {			
-			items.locations.add(pkgLocation);
-		}		
-
-		// Finally, add all enclosing packages of this package as
-		// well. Otherwise, isPackage("whiley") can fails even when we know
-		// about a particular package such as "whiley.lang".
-		for(int i=0;i<=pkg.size()-1;++i) {
-			PkgID p = pkg.subpkg(0,i);			
-			if (packages.get(p) == null) {
-				packages.put(p, new Package());
-			}
-		}
-	}
-	
-	/**
-	 * Given a path string of the form "xxx.yyy.zzz" this returns the parent
-	 * component (i.e. "xxx.yyy"). If you supply "xxx", then the path parent is
-	 * "". However, the path parent of "" is null.
-	 * 
-	 * @param pkg
-	 * @return
-	 */
-	private String pathParent(String pkg) {
-		if(pkg.equals("")) {
-			return null;
-		}
-		int idx = pkg.lastIndexOf('.');
-		if(idx == -1) {
-			return "";
-		} else {
-			return pkg.substring(0,idx);
-		}
-	}		
-	
-	/**
-	 * Given a path string of the form "xxx.yyy.zzz" this returns the child
-	 * component (i.e. "zzz")
-	 * 
-	 * @param pkg
-	 * @return
-	 */
-	private String pathChild(String pkg) {
-		int idx = pkg.lastIndexOf('.');
-		if(idx == -1) {
-			return pkg;
-		} else {
-			return pkg.substring(idx+1);
-		}
-	}
 }
