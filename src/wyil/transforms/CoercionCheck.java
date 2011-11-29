@@ -2,6 +2,7 @@ package wyil.transforms;
 
 import java.util.*;
 import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.ErrorMessages.*;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
@@ -41,7 +42,7 @@ import wyil.util.*;
  * left-hand side to either of the two options in the right-hand side.  
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  */
 public class CoercionCheck implements Transform {
 	private final ModuleLoader loader;
@@ -119,7 +120,7 @@ public class CoercionCheck implements Transform {
 		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
 			Type.Dictionary t1 = (Type.Dictionary) from;
 			Type.Set t2 = (Type.Set) to;
-			Type.Tuple tup = Type.T_TUPLE(t1.key(),t1.value());
+			Type tup = Type.Tuple(t1.key(),t1.value());
 			check(tup,t2.element(),visited,elem);
 		} else if(from instanceof Type.List && to instanceof Type.Set) {
 			Type.List t1 = (Type.List) from;
@@ -147,9 +148,9 @@ public class CoercionCheck implements Transform {
 				Type e2 = t2_elements.get(s);
 				check(e1,e2,visited,elem);
 			}			
-		} else if(from instanceof Type.Fun && to instanceof Type.Fun) {
-			Type.Fun t1 = (Type.Fun) from;
-			Type.Fun t2 = (Type.Fun) to;
+		} else if(from instanceof Type.Function && to instanceof Type.Function) {
+			Type.Function t1 = (Type.Function) from;
+			Type.Function t2 = (Type.Function) to;
 			List<Type> t1_elements = t1.params(); 
 			List<Type> t2_elements = t2.params();			
 			for(int i=0;i!=t1_elements.size();++i) {
@@ -169,7 +170,7 @@ public class CoercionCheck implements Transform {
 			// First, check for identical type (i.e. no coercion necessary)
 			
 			for(Type b : t2.bounds()) {
-				if(Type.isomorphic(from, b)) {
+				if(from.equals(b)) {
 					// no problem
 					return;
 				}
@@ -181,9 +182,8 @@ public class CoercionCheck implements Transform {
 			for(Type b : t2.bounds()) {
 				if(Type.isSubtype(b,from)) {
 					if(match != null) {
-						// found ambiguity
-						syntaxError("ambiguous coercion (" + from + " => "
-								+ to, filename, elem);
+						// found ambiguity						
+						syntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), filename, elem);
 					} else {
 						check(from,b,visited,elem);
 						match = b;						
@@ -199,7 +199,7 @@ public class CoercionCheck implements Transform {
 			// Third, test for single coercive match
 			
 			for(Type b : t2.bounds()) {
-				if(Type.isCoerciveSubtype(b,from)) {
+				if(Type.isImplicitCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						syntaxError("ambiguous coercion (" + from + " => "

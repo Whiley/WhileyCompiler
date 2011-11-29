@@ -1,20 +1,22 @@
+import * from whiley.lang.*
+
 int f(int x, int y):
     return x % y    
 
-void System::main([string] args):
-    out.println(str(f(10,5)))
-    out.println(str(f(10,4)))
-    out.println(str(f(1,4)))
-    out.println(str(f(103,2)))
-    out.println(str(f(-10,5)))
-    out.println(str(f(-10,4)))
-    out.println(str(f(-1,4)))
-    out.println(str(f(-103,2)))
-    out.println(str(f(-10,-5)))
-    out.println(str(f(-10,-4)))
-    out.println(str(f(-1,-4)))
-    out.println(str(f(-103,-2)))
-    out.println(str(f(10,-5)))
-    out.println(str(f(10,-4)))
-    out.println(str(f(1,-4)))
-    out.println(str(f(103,-2)))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(f(10,5)))
+    sys.out.println(toString(f(10,4)))
+    sys.out.println(toString(f(1,4)))
+    sys.out.println(toString(f(103,2)))
+    sys.out.println(toString(f(-10,5)))
+    sys.out.println(toString(f(-10,4)))
+    sys.out.println(toString(f(-1,4)))
+    sys.out.println(toString(f(-103,2)))
+    sys.out.println(toString(f(-10,-5)))
+    sys.out.println(toString(f(-10,-4)))
+    sys.out.println(toString(f(-1,-4)))
+    sys.out.println(toString(f(-103,-2)))
+    sys.out.println(toString(f(10,-5)))
+    sys.out.println(toString(f(10,-4)))
+    sys.out.println(toString(f(1,-4)))
+    sys.out.println(toString(f(103,-2)))

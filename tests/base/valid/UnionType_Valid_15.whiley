@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define nlist as int|[nat]
 
 nlist f(int i, [nlist] xs):
@@ -6,6 +8,6 @@ nlist f(int i, [nlist] xs):
     else:
         return xs[i]
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f(2, [2,3,4])    
-    out.println(str(x))
+    sys.out.println(toString(x))

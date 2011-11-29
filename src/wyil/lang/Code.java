@@ -28,6 +28,15 @@ package wyil.lang;
 import java.util.*;
 import wyil.util.*;
 
+/**
+ * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
+ * stack-based bytecodes, similar to the Java Virtual Machine. Bytecodes may
+ * push/pop values from the stack, and store/load them from the local variable
+ * array.
+ * 
+ * @author djp
+ * 
+ */
 public abstract class Code {
 	public final static int THIS_SLOT = 0;
 	
@@ -55,7 +64,7 @@ public abstract class Code {
 	 * Construct a <code>const</code> bytecode which loads a given constant
 	 * onto the stack.
 	 * 
-	 * @param type
+	 * @param afterType
 	 *            --- record type.
 	 * @param field
 	 *            --- field to write.
@@ -75,6 +84,10 @@ public abstract class Code {
 		return get(new Destructure(from));
 	}
 	
+	public static DictLength DictLength(Type.Dictionary type) {
+		return get(new DictLength(type));
+	}
+	
 	/**
 	 * Construct a <code>dictload</code> bytecode which reads the value
 	 * associated with a given key in a dictionary.
@@ -87,14 +100,10 @@ public abstract class Code {
 		return get(new DictLoad(type));
 	}
 	
-	public static End End(String label) {
-		return get(new End(label));
+	public static LoopEnd End(String label) {
+		return get(new LoopEnd(label));
 	}
 	
-	public static ExternJvm ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
-		return get(new ExternJvm(bytecodes));
-	}
-
 	/**
 	 * Construct a <code>fail</code> bytecode which indicates a runtime failure.
 	 * 
@@ -139,7 +148,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Invoke Invoke(Type.Fun fun, NameID name, boolean retval) {
+	public static Invoke Invoke(Type.Function fun, NameID name, boolean retval) {
 		return get(new Invoke(fun,name,retval));
 	}
 
@@ -287,7 +296,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Meth meth, boolean synchronous, boolean retval) {
+	public static IndirectSend IndirectSend(Type.Method meth, boolean synchronous, boolean retval) {
 		return get(new IndirectSend(meth,synchronous,retval));
 	}
 	
@@ -299,7 +308,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectInvoke IndirectInvoke(Type.Fun fun, boolean retval) {
+	public static IndirectInvoke IndirectInvoke(Type.Function fun, boolean retval) {
 		return get(new IndirectInvoke(fun,retval));
 	}
 	
@@ -353,7 +362,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Meth meth, NameID name, boolean synchronous, boolean retval) {
+	public static Send Send(Type.Method meth, NameID name, boolean synchronous, boolean retval) {
 		return get(new Send(meth,name,synchronous,retval));
 	}	
 	
@@ -391,12 +400,27 @@ public abstract class Code {
 	 * Construct a <code>throw</code> bytecode which pops a value off the
 	 * stack and throws it.
 	 * 
-	 * @param type
+	 * @param afterType
 	 *            --- value type to throw 
 	 * @return
 	 */
 	public static Throw Throw(Type t) {
 		return get(new Throw(t));
+	}
+	
+	/**
+	 * Construct a <code>trycatch</code> bytecode which defines a region of
+	 * bytecodes which are covered by one or more catch handles. 
+	 * 
+	 * @param target
+	 *            --- identifies end-of-block label.
+	 * @param catches
+	 *            --- map from types to destination labels.
+	 * @return
+	 */
+	public static TryCatch TryCatch(String target,
+			Collection<Pair<Type, String>> catches) {
+		return get(new TryCatch(target, catches));
 	}
 	
 	public static Negate Negate(Type type) {
@@ -415,14 +439,15 @@ public abstract class Code {
 	 * Construct a <code>update</code> bytecode which writes a value into a
 	 * compound structure, as determined by a given access path.
 	 * 
-	 * @param type
+	 * @param afterType
 	 *            --- record type.
 	 * @param field
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
-		return get(new Update(type,slot,level,fields));
+	public static Update Update(Type beforeType, Type afterType, int slot,
+			int level, Collection<String> fields) {
+		return get(new Update(beforeType, afterType, slot, level, fields));
 	}
 
 	public static Void Void(Type type, int slot) {
@@ -462,7 +487,13 @@ public abstract class Code {
 	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================
-	
+
+	/**
+	 * Indicates the start of a code block representing an assertion. This
+	 * includes assertions arising from type invariants, as well as
+	 * method/function pre- and post-conditions. The target identifies the label
+	 * terminating this block.
+	 */
 	public static final class Assert extends Code {
 		public final String target;
 		
@@ -532,10 +563,20 @@ public abstract class Code {
 	};
 
 	/**
-	 * A binary operation (e.g. +,-,*,/) takes two items off the stack and
-	 * pushes a single result.
+	 * <p>
+	 * A binary operation takes two items off the stack and pushes a single
+	 * result. The binary operators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
+	 * be either integers or reals (but not one or the other). A value of the
+	 * same type is produced.</li>
+	 * <li><i>range</i></li>
+	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
+	 * <li><i>leftshift,rightshift</i></li>
+	 * </ul>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class BinOp extends Code {		
@@ -573,21 +614,27 @@ public abstract class Code {
 	}
 
 	/**
-	 * A catch bytecode is similar to a switch. It identifies a block within
-	 * which exception handlers are active.
+	 * <p>
+	 * Pops a value from the stack, converts it to a given type and pushes it
+	 * back on. This bytecode is the only way to change the type of a value.
+	 * It's purpose is to simplify implementations which have different
+	 * representations of data types.
+	 * </p>
 	 * 
-	 * @author djp
+	 * <p>
+	 * In many cases, this bytecode may correspond to a nop on the hardware.
+	 * Consider converting from <code>[any]</code> to <code>any</code>. On the
+	 * JVM, <code>any</code> translates to <code>Object</code>, whilst
+	 * <code>[any]</code> translates to <code>List</code> (which is an instance
+	 * of <code>Object</code>). Thus, no conversion is necessary since
+	 * <code>List</code> can safely flow into <code>Object</code>.  
+	 * </p>
 	 * 
-	 */
-	public static final class Catch extends Code {
-		
-	}
-
-	/**
-	 * A convert operation represents a conversion from a value of one type to
-	 * another. The purpose of the conversion bytecode is to make it easy for
-	 * implementations which have different representations of data types to
-	 * convert between them.
+	 * <p>
+	 * A convert bytecode must be inserted whenever the type of a variable
+	 * changes. This includes at control-flow meet points, when the value is
+	 * passed as a parameter, assigned to a field, etc.
+	 * </p>
 	 */
 	public static final class Convert extends Code {
 		public final Type from;
@@ -622,13 +669,13 @@ public abstract class Code {
 			return "convert " + from + " to " + to;
 		}
 	}
-	
+
 	/**
-	 * A const bytecode pushes a constant value onto the stack. This includes
-	 * integer constants, rational constants, list constants, set constants,
-	 * dictionary constants, function constants, etc.
+	 * Pushes a constant value onto the stack. This includes integer constants,
+	 * rational constants, list constants, set constants, dictionary constants,
+	 * function constants, etc.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Const extends Code {		
@@ -655,6 +702,16 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Pops a string from the stack and writes it to the debug console. This
+	 * bytecode is not intended to form part of the programs operation. Rather,
+	 * it is to facilitate debugging within functions (since they cannot have
+	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
+	 * nop.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Debug extends Code {
 		Debug() {}
 		public int hashCode() {
@@ -669,9 +726,10 @@ public abstract class Code {
 	}
 
 	/**
-	 * A destructure operation takes a compound value and "destructures" it into
-	 * multiple values. For example, a rational can be destructured into two
-	 * integers. Or, an n-tuple can be structured into n values.
+	 * Pops a compound value from the stack "destructures" it into multiple
+	 * values which are pushed back on the stack. For example, a rational can be
+	 * destructured into two integers (the <i>numerator</i> and
+	 * <i>denominator</i>). Or, an n-tuple can be destructured into n values.
 	 */
 	public static final class Destructure extends Code {
 		public final Type type;
@@ -700,7 +758,44 @@ public abstract class Code {
 			return "destructure " + type;
 		}
 	}
+
+	public static final class DictLength extends Code {				
+		public final Type.Dictionary type;
+		
+		private DictLength(Type.Dictionary type) {
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 558723; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetLength) {
+				DictLength setop = (DictLength) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("dictlength",type);
+		}
+	}
 	
+	/**
+	 * Pops a key and dictionary from the stack, and looks up the value for that
+	 * key in the dictionary. If no value exists, a dictionary fault is raised.
+	 * Otherwise, the value is pushed onto the stack.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class DictLoad extends Code {
 		public final Type.Dictionary type;				
 		
@@ -729,12 +824,17 @@ public abstract class Code {
 		}	
 	}	
 	
-	public static final class End extends Label {
-		End(String label) {
+	/**
+	 * Marks the end of a loop block.
+	 * @author djp
+	 *
+	 */
+	public static final class LoopEnd extends Label {
+		LoopEnd(String label) {
 			super(label);
 		}
 		
-		public End relabel(Map<String,String> labels) {
+		public LoopEnd relabel(Map<String,String> labels) {
 			String nlabel = labels.get(label);
 			if(nlabel == null) {
 				return this;
@@ -747,8 +847,8 @@ public abstract class Code {
 			return label.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof End) {
-				End e = (End) o;
+			if(o instanceof LoopEnd) {
+				LoopEnd e = (LoopEnd) o;
 				return e.label.equals(label);
 			}
 			return false;
@@ -757,29 +857,15 @@ public abstract class Code {
 		public String toString() {
 			return "end " + label;
 		}
-	}
-	
-	public static final class ExternJvm extends Code {
-		public final List<wyjvm.lang.Bytecode> bytecodes;
-		
-		ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
-			this.bytecodes = new ArrayList(bytecodes);
-		}
-		public int hashCode() {
-			return bytecodes.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof ExternJvm) {
-				ExternJvm e = (ExternJvm) o;
-				return e.bytecodes.equals(bytecodes);
-			}
-			return false;
-		}
-		public String toString() {
-			return "externjvm";
-		}
-	}
-	
+	}	
+
+	/**
+	 * Raises an assertion failure fault with the given message. Fail bytecodes
+	 * may only appear within assertion blocks.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Fail extends Code {
 		public final String msg;
 		
@@ -802,12 +888,12 @@ public abstract class Code {
 			return "fail \"" + msg + "\"";
 		}		
 	}
-	
+
 	/**
-	 * The fieldload bytecode pops a record alias from the stack and reads the
-	 * value from the given field, pusing it back onto the stack.
+	 * Pops a record from the stack and pushes the value from the given
+	 * field back on.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class FieldLoad extends Code {
@@ -848,7 +934,19 @@ public abstract class Code {
 			return toString("fieldload " + field,type);			
 		}	
 	}
-	
+
+	/**
+	 * <p>
+	 * Branches unconditionally to the given label.
+	 * </p>
+	 * 
+	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
+	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Goto extends Code {
 		public final String target;
 		
@@ -880,7 +978,32 @@ public abstract class Code {
 			return "goto " + target;		
 		}		
 	}
-	
+
+	/**
+	 * <p>
+	 * Branches conditionally to the given label, by popping two operands from
+	 * the stack and comparing them. The possible comparators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>equals (eq) and not-equals (ne)</i>. Both operands must have the
+	 * given type.</li>
+	 * <li><i>less-than (lt), less-than-or-equals (le), greater-than (gt) and
+	 * great-than-or-equals (ge).</i> Both operands must have the given type,
+	 * which additionally must by either <code>char</code>, <code>int</code> or
+	 * <code>real</code>.</li>
+	 * <li><i>element of (in).</i> The second operand must be a set whose
+	 * element type is that of the first.</li>
+	 * <li><i>subset (ss) and subset-equals (sse)</i>. Both operands must have
+	 * the given type, which additionally must be a set.</li>
+	 * </ul>
+	 *  
+	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
+	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class IfGoto extends Code {
 		public final Type type;
 		public final COp op;
@@ -1027,18 +1150,18 @@ public abstract class Code {
 	
 		public String toString() {
 			if(slot >= 0) {
-				return toString("if" + test + " " + slot + " goto " + target,type);
-			} else {
-				return toString("if" + test + " goto " + target,type);
+				return toString("if " + slot + " is " + test + " goto " + target,type);
+			} else {				
+				return toString("if " + test + " goto " + target,type);
 			}
 		}
 	}
 	
 	public static final class IndirectInvoke extends Code {		
-		public final Type.Fun type;
+		public final Type.Function type;
 		public final boolean retval;
 		
-		private IndirectInvoke(Type.Fun type, boolean retval) {
+		private IndirectInvoke(Type.Function type, boolean retval) {
 			this.type = type;
 			this.retval = retval;
 		}
@@ -1073,9 +1196,9 @@ public abstract class Code {
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
-		 public final Type.Meth type;
+		 public final Type.Method type;
 			
-		 private IndirectSend(Type.Meth type, boolean synchronous, boolean retval) {
+		 private IndirectSend(Type.Method type, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.synchronous = synchronous;
 			 this.retval = retval;
@@ -1128,11 +1251,11 @@ public abstract class Code {
 	}
 	
 	public static final class Invoke extends Code {		
-		public final Type.Fun type;
+		public final Type.Function type;
 		public final NameID name;
 		public final boolean retval;
 				
-		private Invoke(Type.Fun type, NameID name, boolean retval) {
+		private Invoke(Type.Function type, NameID name, boolean retval) {
 			this.type = type;
 			this.name = name;
 			this.retval = retval;
@@ -1451,19 +1574,179 @@ public abstract class Code {
 		}		
 	}
 
+	/**
+	 * Represents a type which may appear on the left of an assignment
+	 * expression. Lists, Dictionaries, Strings, Records and Processes are the
+	 * only valid types for an lval.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static abstract class LVal {
+		protected Type type;
+		
+		public LVal(Type t) {
+			this.type = t;
+		}
+		
+		public Type rawType() {
+			return type;
+		}
+	}
 	
-	public static final class Update extends Code {
-		public final Type type;
+	/**
+	 * An LVal with dictionary type.
+	 * @author djp
+	 *
+	 */
+	public static final class DictLVal extends LVal {
+		public DictLVal(Type t) {
+			super(t);			
+			if(Type.effectiveDictionaryType(t) == null) {
+				throw new IllegalArgumentException("Invalid Dictionary Type");
+			}
+		}
+		
+		public Type.Dictionary type() {			
+			return Type.effectiveDictionaryType(type);
+		}
+	}
+	
+	/**
+	 * An LVal with list type.
+	 * @author djp
+	 *
+	 */
+	public static final class ListLVal extends LVal {
+		public ListLVal(Type t) {
+			super(t);
+			if(Type.effectiveListType(t) == null) {
+				throw new IllegalArgumentException("Invalid List Type");
+			}
+		}
+		
+		public Type.List type() {
+			return Type.effectiveListType(type);
+		}
+	}
+	
+	/**
+	 * An LVal with string type.
+	 * @author djp
+	 *
+	 */
+	public static final class StringLVal extends LVal {
+		public StringLVal() {
+			super(Type.T_STRING);			
+		}		
+	}
+	
+	/**
+	 * An LVal with record type.
+	 * @author djp
+	 *
+	 */
+	public static final class RecordLVal extends LVal {
+		public final String field;
+		
+		public RecordLVal(Type t, String field) {
+			super(t);
+			this.field = field;
+			Type.Record rt = Type.effectiveRecordType(t);
+			if(rt == null || !rt.fields().containsKey(field)) {
+				throw new IllegalArgumentException("Invalid Record Type");
+			}		
+		}
+		
+		public Type.Record type() {
+			return Type.effectiveRecordType(type);
+		}
+	}
+	
+	private static final class UpdateIterator implements Iterator<LVal> {		
+		private final ArrayList<String> fields;
+		private Type iter;
+		private int fieldIndex;	
+		private int index;
+		
+		public UpdateIterator(Type type, int level, ArrayList<String> fields) {
+			this.fields = fields;
+			this.iter = type;
+			this.index = level;
+			
+			// TODO: sort out this hack
+			if(Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
+				Type.Process p = (Type.Process) iter;
+				iter = p.element();
+			}	
+		}
+		
+		public LVal next() {
+			Type raw = iter;
+			index--;
+			if(Type.isSubtype(Type.T_STRING,iter)) {
+				iter = Type.T_CHAR;
+				return new StringLVal();
+			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
+				Type.List list = Type.effectiveListType(iter);											
+				iter = list.element();
+				return new ListLVal(raw);
+			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
+				// this indicates a dictionary access, rather than a list access			
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
+				iter = dict.value();	
+				return new DictLVal(raw);
+			} else  if(Type.effectiveRecordType(iter) != null) {
+				Type.Record rec = Type.effectiveRecordType(iter);				
+				String field = fields.get(fieldIndex++);
+				iter = rec.fields().get(field);
+				return new RecordLVal(raw,field);
+			} else {
+				throw new IllegalArgumentException("Invalid type for Code.Update");
+			}
+		}
+		
+		public boolean hasNext() {
+			return index > 0;
+		}
+		
+		public void remove() {
+			throw new UnsupportedOperationException("UpdateIterator is unmodifiable");
+		}
+	}
+
+	/**
+	 * <p>
+	 * Pops a compound structure, zero or more indices and a value from the
+	 * stack and updates the compound structure with the given value. Valid
+	 * compound structures are lists, dictionaries, strings, records and
+	 * processes.
+	 * </p>
+	 * <p>
+	 * Ideally, this operation is done in-place, meaning the operation is
+	 * constant time. However, to support Whiley's value semantics this bytecode
+	 * may require (in some cases) a clone of the underlying data-structure.
+	 * Thus, the worst-case runtime of this operation is linear in the size of
+	 * the compound structure.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Update extends Code implements Iterable<LVal> {
+		public final Type beforeType;
+		public final Type afterType;
 		public final int level;
 		public final int slot;
 		public final ArrayList<String> fields;
 
-		private Update(Type type, int slot, int level, Collection<String> fields) {
+		private Update(Type beforeType, Type afterType, int slot, int level, Collection<String> fields) {
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
 			}
-			this.type = type;
+			this.beforeType = beforeType;
+			this.afterType = afterType;
 			this.slot = slot;
 			this.level = level;
 			this.fields = new ArrayList<String>(fields);
@@ -1473,28 +1756,74 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
+		public Iterator<LVal> iterator() {			
+			return new UpdateIterator(afterType,level,fields);
+		}
+				
+		/**
+		 * Extract the type for the right-hand side of this assignment.
+		 * @return
+		 */
+		public Type rhs() {
+			Type iter = afterType;
+			
+			// TODO: sort out this hack
+			if (Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
+				Type.Process p = (Type.Process) iter;
+				iter = p.element();
+			}
+			
+			int fieldIndex = 0;
+			for (int i = 0; i != level; ++i) {
+				if (Type.isSubtype(Type.T_STRING, iter)) {
+					iter = Type.T_CHAR;
+				} else if (Type.isSubtype(Type.List(Type.T_ANY), iter)) {
+					Type.List list = Type.effectiveListType(iter);
+					iter = list.element();
+				} else if (Type.isSubtype(
+						Type.Dictionary(Type.T_ANY, Type.T_ANY), iter)) {
+					// this indicates a dictionary access, rather than a list
+					// access
+					Type.Dictionary dict = Type.effectiveDictionaryType(iter);
+					iter = dict.value();
+				} else if (Type.effectiveRecordType(iter) != null) {
+					Type.Record rec = Type.effectiveRecordType(iter);
+					String field = fields.get(fieldIndex++);
+					iter = rec.fields().get(field);
+				} else {
+					throw new IllegalArgumentException(
+							"Invalid type for Code.Update");
+				}
+			}
+			return iter;
+		}
+		
 		public Code remap(Map<Integer,Integer> binding) {
 			Integer nslot = binding.get(slot);
 			if(nslot != null) {
-				return Code.Update(type, nslot, level, fields);
+				return Code.Update(beforeType, afterType, nslot, level, fields);
 			} else {
 				return this;
 			}
 		}
 				
 		public int hashCode() {
-			if(type == null) {
+			if(afterType == null) {
 				return level + fields.hashCode();
 			} else {
-				return type.hashCode() + slot + level + fields.hashCode();
+				return afterType.hashCode() + slot + level + fields.hashCode();
 			}
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Update) {
 				Update i = (Update) o;
-				return (i.type == type || (type != null && type.equals(i.type)))
-						&& level == i.level && slot == i.slot && fields.equals(i.fields);
+				return (i.beforeType == beforeType || (beforeType != null && beforeType
+						.equals(i.beforeType)))
+						&& (i.afterType == afterType || (afterType != null && afterType
+								.equals(i.afterType)))
+						&& level == i.level
+						&& slot == i.slot && fields.equals(i.fields);
 			}
 			return false;
 		}
@@ -1509,7 +1838,7 @@ public abstract class Code {
 				firstTime=false;
 				fs += f;
 			}
-			return toString("multistore " + slot + " #" + level + fs,type);
+			return toString("update " + slot + " #" + level + fs,beforeType,afterType);
 		}
 	}
 
@@ -2047,9 +2376,9 @@ public abstract class Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
 		 public final NameID name;
-		 public final Type.Meth type;
+		 public final Type.Method type;
 			
-		 private Send(Type.Meth type, NameID name, boolean synchronous, boolean retval) {
+		 private Send(Type.Method type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;
@@ -2107,6 +2436,61 @@ public abstract class Code {
 	
 		public String toString() {
 			return toString("throw",type);
+		}
+	}
+	
+	public static final class TryCatch extends Code {		
+		public final String target;
+		public final ArrayList<Pair<Type,String>> catches;
+
+		TryCatch(String target, Collection<Pair<Type,String>> catches) {						
+			this.catches = new ArrayList<Pair<Type,String>>(catches);
+			this.target = target;
+		}
+	
+		public TryCatch relabel(Map<String,String> labels) {
+			ArrayList<Pair<Type,String>> nbranches = new ArrayList();
+			for(Pair<Type,String> p : catches) {
+				String nlabel = labels.get(p.second());
+				if(nlabel == null) {
+					nbranches.add(p);
+				} else {
+					nbranches.add(new Pair(p.first(),nlabel));
+				}
+			}
+			
+			String ntarget = labels.get(target);
+			if(ntarget != null) {
+				return TryCatch(ntarget,nbranches);
+			} else {
+				return TryCatch(target,nbranches);
+			}
+		}
+		
+		public int hashCode() {
+			return target.hashCode() + catches.hashCode();			
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof TryCatch) {
+				TryCatch ig = (TryCatch) o;
+				return target.equals(ig.target)
+						&& catches.equals(ig.catches);						
+			}
+			return false;
+		}
+
+		public String toString() {
+			String table = "";
+			boolean firstTime = true;
+			for (Pair<Type, String> p : catches) {
+				if (!firstTime) {
+					table += ", ";
+				}
+				firstTime = false;
+				table += p.first() + "->" + p.second();
+			}
+			return "trycatch " + table;
 		}
 	}
 	
@@ -2228,7 +2612,7 @@ public abstract class Code {
 	
 	/**
 	 * The void bytecode is used to indicate that a given register is no longer live.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Void extends Code {
@@ -2278,7 +2662,14 @@ public abstract class Code {
 		}
 	}
 	
-
+	public static String toString(String str, Type before, Type after) {
+		if(before == null || after == null) {
+			return str + " : ?";
+		} else {
+			return str + " : " + before + " => " + after;
+		}
+	}
+	
 	private static final ArrayList<Code> values = new ArrayList<Code>();
 	private static final HashMap<Code,Integer> cache = new HashMap<Code,Integer>();
 	

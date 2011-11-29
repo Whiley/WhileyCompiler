@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define PAWN as 0
 define KNIGHT as 1 
 define BISHOP as 2
@@ -43,11 +45,11 @@ define D3 as { col: 3, row: 2 }
 
 define H1 as { col: 8, row: 1 }
 
-string move2str(Move m):
+string move2toString(Move m):
     if m is SingleTake: 
-        return piece2str(m.piece) + pos2str(m.from) + "x" + piece2str(m.taken) + pos2str(m.to)
+        return piece2toString(m.piece) + pos2str(m.from) + "x" + piece2str(m.taken) + pos2str(m.to)
     else if m is SingleMove:
-        return piece2str(m.piece) + pos2str(m.from) + "-" + pos2str(m.to)   
+        return piece2toString(m.piece) + pos2str(m.from) + "-" + pos2str(m.to)   
     else if m is CastleMove:
         if m.kingSide:
             return "O-O"
@@ -55,22 +57,22 @@ string move2str(Move m):
             return "O-O-O"
     else:
         // check move
-        return move2str(m.check) + "+"  
+        return move2toString(m.check) + "+"  
 
-string piece2str(Piece p):
+string piece2toString(Piece p):
     if p.kind == PAWN:
         return ""
     else:
         return "" + PIECE_CHARS[p.kind]
 
-string pos2str(Pos p):
+string pos2toString(Pos p):
     return "" + ('a' + p.col) + ('1' + p.row)
 
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     m = {piece: WHITE_PAWN, from: A2, to: A1 }
-    out.println(move2str(m))
+    sys.out.println(move2toString(m))
     m = {piece: WHITE_KNIGHT, from: A2, to: A1 }
-    out.println(move2str(m))
+    sys.out.println(move2toString(m))
     m = {piece: WHITE_QUEEN, from: A2, to: A1, taken: BLACK_KING }
-    out.println(move2str(m))
+    sys.out.println(move2toString(m))

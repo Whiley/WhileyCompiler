@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 bool run(int n, int x):
     solution = true
     for i in 0..n:
@@ -6,10 +8,10 @@ bool run(int n, int x):
             break
     return solution
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     b1 = run(10,4)
-    out.println("b1=" + str(b1))
+    sys.out.println("b1=" + toString(b1))
     b2 = run(10,-1)
-    out.println("b2=" + str(b2))
+    sys.out.println("b2=" + toString(b2))
     b3 = run(10,11)
-    out.println("b3=" + str(b3))
+    sys.out.println("b3=" + toString(b3))

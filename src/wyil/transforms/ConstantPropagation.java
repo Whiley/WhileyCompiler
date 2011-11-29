@@ -25,7 +25,7 @@
 
 package wyil.transforms;
 
-import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -72,7 +72,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: propagate constants through pre- and post-conditions.
 		
 		Env environment = initialStore();		
-		propagate(0,mcase.body().size(), environment);	
+		propagate(0,mcase.body().size(), environment, Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
@@ -122,6 +122,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	*/
 	
 
+	@Override
 	public Env propagate(int index, Entry entry, Env environment) {						
 		Code code = entry.code;			
 		
@@ -144,8 +145,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Destructure)code,entry,environment);
 		} else if(code instanceof DictLoad) {
 			infer(index,(DictLoad)code,entry,environment);
-		} else if(code instanceof ExternJvm) {
-			// skip
 		} else if(code instanceof Fail) {
 			// skip
 		} else if(code instanceof FieldLoad) {
@@ -215,7 +214,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
 		} else {
-			syntaxError("unknown wyil code encountered: " + code,filename,entry);
+			internalFailure("unknown wyil code encountered: " + code,filename,entry);
 			return null;
 		}	
 		
@@ -437,8 +436,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			environment.pop();
 		}
 		
-		if(code.type instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) code.type;
+		if(code.type instanceof Type.Method) {
+			Type.Method mt = (Type.Method) code.type;
 			if(mt.receiver() != null) {
 				environment.pop();
 			}
@@ -996,6 +995,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(result);
 	}	
 	
+	@Override
 	public Pair<Env, Env> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
@@ -1009,6 +1009,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return new Pair(environment, environment);
 	}
 	
+	@Override
 	public Pair<Env, Env> propagate(int index,
 			Code.IfType code, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
@@ -1020,6 +1021,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return new Pair(environment, environment);
 	}
 	
+	@Override
 	public List<Env> propagate(int index, Code.Switch sw,
 			Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
@@ -1033,9 +1035,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		return stores;
 	}
-		
+
+	@Override
+	public Env propagate(Type handler, Env environment) {		
+		Env catchEnvironment = (Env) environment.clone();		
+		catchEnvironment.push(null); // the exception value
+		return catchEnvironment;
+	}
+	
+	@Override
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment) {
+			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 		
 		environment = new Env(environment);
 		
@@ -1062,7 +1072,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		do {						
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv);									
+			newEnv = propagate(start+1,end, oldEnv, handlers);									
 		} while (!newEnv.equals(oldEnv));
 		
 		return join(environment,newEnv);		

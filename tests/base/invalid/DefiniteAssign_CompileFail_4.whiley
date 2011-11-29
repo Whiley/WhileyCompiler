@@ -1,6 +1,8 @@
-void System::f(string a):
-    out.println(a)
+import * from whiley.lang.*
 
-void System::main([string] args):
-    out.println("HELLO")
+void System::f(string a):
+    sys.out.println(a)
+
+void ::main(System sys,[string] args):
+    sys.out.println("HELLO")
     x.f("WORLD")

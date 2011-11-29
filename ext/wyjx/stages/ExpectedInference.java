@@ -56,7 +56,7 @@ import wyjx.attributes.*;
  * statements.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ExpectedInference extends BackwardFlowAnalysis<Boolean> {

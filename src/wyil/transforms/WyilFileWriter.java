@@ -64,6 +64,7 @@ public class WyilFileWriter implements Transform {
 		out.println("source-file: " + module.filename());
 		out.println();
 		for(ConstDef cd : module.constants()) {
+			writeModifiers(cd.modifiers(),out);
 			out.println("define " + cd.name() + " as " + cd.constant());
 		}
 		if(!module.constants().isEmpty()) {
@@ -73,6 +74,7 @@ public class WyilFileWriter implements Transform {
 			Type t = td.type();			
 			String t_str;			
 			t_str = t.toString();
+			writeModifiers(td.modifiers(),out);
 			out.println("define " + td.name() + " as " + t_str);
 			Block constraint = td.constraint();
 			if(constraint != null) {
@@ -105,14 +107,15 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	public void write(Case mcase, Method method, PrintWriter out) {
-		Type.Fun ft = method.type(); 
+		writeModifiers(method.modifiers(),out);
+		Type.Function ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
 		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
 		
 		int li = 0;
-		if(ft instanceof Type.Meth) {			
-			Type.Meth mt = (Type.Meth) ft;
+		if(ft instanceof Type.Method) {			
+			Type.Method mt = (Type.Method) ft;
 			if(mt.receiver() != null) {
 				out.print(mt.receiver());
 				li++;
@@ -178,7 +181,7 @@ public class WyilFileWriter implements Transform {
 	
 	public void write(int indent, Block blk, List<String> locals, PrintWriter out) {
 		for(Block.Entry s : blk) {
-			if(s.code instanceof Code.End) {				
+			if(s.code instanceof Code.LoopEnd) {				
 				--indent;
 			} else if(s.code instanceof Code.Label) { 
 				write(indent-1,s.code,s.attributes(),locals,out);
@@ -199,8 +202,8 @@ public class WyilFileWriter implements Transform {
 		tabIndent(indent+1,out);
 	
 		// First, write out code	
-		if(c instanceof Code.End) {
-			Code.End cend = (Code.End)c;
+		if(c instanceof Code.LoopEnd) {
+			Code.LoopEnd cend = (Code.LoopEnd)c;
 			if(writeLabels) {
 				line = "end " + cend.label;
 			} else {
@@ -223,11 +226,11 @@ public class WyilFileWriter implements Transform {
 				firstTime=false;
 				fs += f;
 			}
-			line = "multistore " + getLocal(store.slot,locals) + " #" + store.level + fs + " : " + store.type;
+			line = "update " + getLocal(store.slot,locals) + " #" + store.level + fs + " : " + store.beforeType + " => " + store.afterType;
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
-				line = "if" + iftype.test + " " + getLocal(iftype.slot,locals)
+				line = "if " + getLocal(iftype.slot,locals) + " is " + iftype.test
 						+ " goto " + iftype.target + " : " + iftype.type;
 			} else {
 				line = c.toString();
@@ -265,6 +268,13 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		out.println();
+	}
+	
+	public static void writeModifiers(List<Modifier> modifiers, PrintWriter out) {		
+		for(Modifier m : modifiers) {						
+			out.print(m.toString());
+			out.print(" ");
+		}
 	}
 	
 	public static String getLocal(int index, List<String> locals) {

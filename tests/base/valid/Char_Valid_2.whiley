@@ -1,9 +1,11 @@
+import * from whiley.lang.*
+
 char iof(string s, int i):
     return s[i]
 
-void System::main([string] args):
-    out.println(str(iof("Hello",0)))
-    out.println(str(iof("Hello",1)))
-    out.println(str(iof("Hello",2)))
-    out.println(str(iof("Hello",3)))
-    out.println(str(iof("Hello",4)))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(iof("Hello",0)))
+    sys.out.println(toString(iof("Hello",1)))
+    sys.out.println(toString(iof("Hello",2)))
+    sys.out.println(toString(iof("Hello",3)))
+    sys.out.println(toString(iof("Hello",4)))

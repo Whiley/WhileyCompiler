@@ -1,4 +1,6 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     if |args| > 0:
         arr = [1,2,4]
     else:
@@ -6,4 +8,4 @@ void System::main([string] args):
     assert arr[0] < |arr|
     assert arr[1] < |arr|
     assert arr[2] != |arr|
-    debug str(arr[0])
+    debug toString(arr[0])

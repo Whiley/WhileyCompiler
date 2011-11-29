@@ -1,10 +1,12 @@
+import * from whiley.lang.*
+
 string f({int} xs) requires |xs| < 3:
-    return str(xs)
+    return toString(xs)
 
 string g({int} ys):
     return f(ys ∩ {1,2})
 
-void System::main([string] args):
-    out.println(g({}))
-    out.println(g({2,3,4,5,6}))
-    out.println(g({2,6}))
+void ::main(System sys,[string] args):
+    sys.out.println(g({}))
+    sys.out.println(g({2,3,4,5,6}))
+    sys.out.println(g({2,6}))

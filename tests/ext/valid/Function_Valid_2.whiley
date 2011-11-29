@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 define fr2nat as int where $ >= 0
 
 string f(fr2nat x):
-    return str(x)
+    return toString(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     y = 1
-    out.println(f(y))
+    sys.out.println(f(y))

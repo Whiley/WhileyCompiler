@@ -32,7 +32,6 @@ import java.util.*;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.lang.*;
-import wyc.lang.Stmt;
 import wyc.lang.WhileyFile.*;
 import wyc.util.*;
 import wyjc.runtime.BigRational;
@@ -120,6 +119,20 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("import");
 		
+		// first, check if from is used
+		String name = null;
+		if ((index + 1) < tokens.size()
+				&& tokens.get(index + 1).text.equals("from")) {
+			Token t = tokens.get(index);
+			if (t.text.equals("*")) {
+				match(Star.class);
+				name = "*";
+			} else {
+				name = matchIdentifier().text;
+			}
+			matchIdentifier();
+		}
+				
 		ArrayList<String> pkg = new ArrayList<String>();
 		pkg.add(matchIdentifier().text);
 		
@@ -136,10 +149,13 @@ public class WhileyParser {
 			}
 		}
 		
+		String module = pkg.get(pkg.size()-1);
+		pkg.remove(pkg.size()-1);		
+				
 		int end = index;
 		matchEndLine();
 		
-		return new ImportDecl(pkg, sourceAttr(start, end - 1));
+		return new ImportDecl(pkg, module, name, sourceAttr(start, end - 1));
 	}
 	
 	private FunDecl parseFunction(List<Modifier> modifiers) {			
@@ -231,7 +247,7 @@ public class WhileyParser {
 		
 		// Ok, failed parsing type constructor. So, backtrack and try for
 		// expression.
-		index = mid;	
+		index = mid;		
 		Expr e = parseCondition(false);
 		int end = index;
 		matchEndLine();		
@@ -245,6 +261,10 @@ public class WhileyParser {
 				&& isModifier((lookahead = tokens.get(index)))) {
 			if(lookahead.text.equals("public")) {
 				mods.add(Modifier.PUBLIC);
+			} else if(lookahead.text.equals("native")) {
+				mods.add(Modifier.NATIVE);
+			} else if(lookahead.text.equals("export")) {
+				mods.add(Modifier.EXPORT);
 			} 
 			index = index + 1;
 		}
@@ -253,7 +273,8 @@ public class WhileyParser {
 	
 	public String[] modifiers = {
 			"public",
-			"visible"
+			"export",
+			"native"			
 	};
 	
 	public boolean isModifier(Token tok) {
@@ -278,6 +299,19 @@ public class WhileyParser {
 		}
 		
 		return stmts;
+	}
+	
+	private void parseIndent(int indent) {
+		if(index < tokens.size()) {
+			Token t = tokens.get(index);
+			if(t instanceof Tabs && ((Tabs)t).ntabs == indent) {
+				index = index + 1;	
+			} else {
+				syntaxError("unexpected end-of-block",t);	
+			}
+		} else {
+			throw new SyntaxError("unexpected end-of-file",filename,index,index);
+		}		
 	}
 	
 	private Tabs getIndent() {
@@ -343,16 +377,18 @@ public class WhileyParser {
 			return parseIf(indent);
 		} else if(token.text.equals("switch")) {			
 			return parseSwitch(indent);
+		} else if(token.text.equals("try")) {			
+			return parseTryCatch(indent);
 		} else if(token.text.equals("break")) {			
 			return parseBreak(indent);
 		} else if(token.text.equals("throw")) {			
 			return parseThrow(indent);
+		} else if(token.text.equals("do")) {			
+			return parseDoWhile(indent);
 		} else if(token.text.equals("while")) {			
 			return parseWhile(indent);
 		} else if(token.text.equals("for")) {			
 			return parseFor(indent);
-		} else if(token.text.equals("extern")) {			
-			return parseExtern(indent);
 		} else if(token.text.equals("spawn")) {			
 			return parseSpawn();
 		} else if ((index + 1) < tokens.size()
@@ -468,22 +504,27 @@ public class WhileyParser {
 		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,end-1));
 	}
 	
-	public Stmt.Case parseCase(int indent) {
+	private Stmt.Case parseCase(int indent) {
 		checkNotEof();
 		int start = index;
-		Expr condition;
+		List<Expr> values;
 		if(index < tokens.size() && tokens.get(index).text.equals("default")) {				
 			matchKeyword("default");
-			condition = null;
+			values = Collections.EMPTY_LIST;			
 		} else {
 			matchKeyword("case");
-			condition = parseCondition(false);
+			values = new ArrayList<Expr>();
+			values.add(parseCondition(false));
+			while(index < tokens.size() && tokens.get(index) instanceof Comma) {				
+				match(Comma.class);
+				values.add(parseCondition(false));
+			}
 		}		
 		match(Colon.class);
 		int end = index;
 		matchEndLine();		
 		List<Stmt> stmts = parseBlock(indent+1);
-		return new Stmt.Case(condition,stmts,sourceAttr(start,end-1));
+		return new Stmt.Case(values,stmts,sourceAttr(start,end-1));
 	}
 	
 	private ArrayList<Stmt.Case> parseCaseBlock(int indent) {
@@ -510,6 +551,52 @@ public class WhileyParser {
 		matchEndLine();
 		ArrayList<Stmt.Case> cases = parseCaseBlock(indent+1);		
 		return new Stmt.Switch(c, cases, sourceAttr(start,end-1));
+	}
+	
+	private Stmt.Catch parseCatch(int indent) {
+		checkNotEof();
+		int start = index;		
+		matchKeyword("catch");
+		match(LeftBrace.class);
+		UnresolvedType type = parseType();
+		String variable = matchIdentifier().text;
+		match(RightBrace.class);
+		match(Colon.class);
+		int end = index;
+		matchEndLine();		
+		List<Stmt> stmts = parseBlock(indent+1);
+		return new Stmt.Catch(type,variable,stmts,sourceAttr(start,end-1));
+	}
+	
+	private ArrayList<Stmt.Catch> parseCatchBlock(int indent) {
+		Tabs tabs = null;
+		
+		tabs = getIndent();
+		
+		ArrayList<Stmt.Catch> catches = new ArrayList<Stmt.Catch>();
+		while(tabs != null && tabs.ntabs >= indent) {
+			index = index + 1; // skip tabs
+			if(index < tokens.size() && tokens.get(index).text.equals("catch")) {				
+				catches.add(parseCatch(indent));			
+				tabs = getIndent();
+			} else {
+				index = index - 1; // undo
+				break;
+			}
+		}
+		
+		return catches;
+	}
+	
+	private Stmt parseTryCatch(int indent) {
+		int start = index;
+		matchKeyword("try");									
+		match(Colon.class);
+		int end = index;
+		matchEndLine();
+		List<Stmt> blk = parseBlock(indent+1);
+		List<Stmt.Catch> catches = parseCatchBlock(indent);		
+		return new Stmt.TryCatch(blk, catches, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseThrow(int indent) {
@@ -546,6 +633,26 @@ public class WhileyParser {
 		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
 	}
 	
+	private Stmt parseDoWhile(int indent) {
+		int start = index;
+		matchKeyword("do");						
+		Expr invariant = null;
+		if (tokens.get(index).text.equals("where")) {
+			matchKeyword("where");
+			invariant = parseCondition(false);
+		}
+		match(Colon.class);
+		int end = index;
+		matchEndLine();
+		List<Stmt> blk = parseBlock(indent+1);								
+		parseIndent(indent);
+		matchKeyword("while");
+		Expr condition = parseCondition(false);
+		matchEndLine();
+		
+		return new Stmt.DoWhile(condition,invariant,blk, sourceAttr(start,end-1));
+	}
+	
 	private Stmt parseFor(int indent) {
 		int start = index;
 		matchKeyword("for");				
@@ -569,37 +676,6 @@ public class WhileyParser {
 
 		return new Stmt.For(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}
-	
-	private Stmt parseExtern(int indent) {
-		int start = index;
-		matchKeyword("extern");
-		Token tok = tokens.get(index++);
-		if(!tok.text.equals("jvm")) {
-			syntaxError("unsupported extern language: " + tok,tok);
-		}		
-		match(Colon.class);
-		int end = index;
-		matchEndLine();
-		Tabs tabs = null;
-		
-		if(tokens.get(index) instanceof Tabs) {
-			tabs = (Tabs) tokens.get(index);
-		}
-		indent = indent + 1;
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		while(tabs != null && tabs.ntabs == indent) {												
-			index = index + 1;
-			bytecodes.add(parseBytecode());								
-			tabs = null;
-			if(index < tokens.size() && tokens.get(index) instanceof Tabs) {
-				tabs = (Tabs) tokens.get(index);
-			} else {
-				tabs = null;
-			}
-		}
-		
-		return new Stmt.ExternJvm(bytecodes,sourceAttr(start,end-1));
-	}		
 	
 	private Bytecode parseBytecode() {
 		String line = "";
@@ -919,7 +995,7 @@ public class WhileyParser {
 			match(token.getClass());
 			ops.add(addSubOp(token));
 			exprs.add(parseMulDivExpression());	
-			ends.add(index);
+			ends.add(index-1);
 		}
 		
 		Expr result = exprs.get(0);
@@ -1001,83 +1077,85 @@ public class WhileyParser {
 		int ostart = index;		
 		Expr lhs = parseTerm();
 		
-		Token lookahead = tokens.get(index);
-		
-		while (lookahead instanceof LeftSquare 
-				|| lookahead instanceof Dot
-				|| lookahead instanceof Shreak
-				|| lookahead instanceof LeftBrace) {
-			ostart = start;
-			start = index;
-			if(lookahead instanceof LeftSquare) {
-				match(LeftSquare.class);				
-				
-				lookahead = tokens.get(index);
-				
-				if (lookahead instanceof DotDot) {
-					// this indicates a sublist without a starting expression;
-					// hence, start point defaults to zero
-					match(DotDot.class);
-					
+		if(index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+
+			while (lookahead instanceof LeftSquare 
+					|| lookahead instanceof Dot
+					|| lookahead instanceof Shreak
+					|| lookahead instanceof LeftBrace) {
+				ostart = start;
+				start = index;
+				if(lookahead instanceof LeftSquare) {
+					match(LeftSquare.class);				
+
 					lookahead = tokens.get(index);
-					Expr end = parseAddSubExpression();
-					match(RightSquare.class);
-					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
-							index - 1), lhs, new Expr.Constant(Value
-							.V_INTEGER(BigInteger.ZERO), sourceAttr(start,
-							index - 1)), end);
-				}
-				
-				Expr rhs = parseAddSubExpression();
-				
-				lookahead = tokens.get(index);
-				if(lookahead instanceof DotDot) {					
-					match(DotDot.class);
-					
-					lookahead = tokens.get(index);
-					Expr end;
-					if(lookahead instanceof RightSquare) {
-						// In this case, no end of the slice has been provided.
-						// Therefore, it is taken to be the length of the source
-						// expression.						
-						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
-								.attribute(Attribute.Source.class));
-					} else {
-						end = parseBitwiseExpression(false);						
+
+					if (lookahead instanceof DotDot) {
+						// this indicates a sublist without a starting expression;
+						// hence, start point defaults to zero
+						match(DotDot.class);
+
+						lookahead = tokens.get(index);
+						Expr end = parseAddSubExpression();
+						match(RightSquare.class);
+						return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
+								index - 1), lhs, new Expr.Constant(Value
+										.V_INTEGER(BigInteger.ZERO), sourceAttr(start,
+												index - 1)), end);
 					}
-					match(RightSquare.class);
-					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
-							start, index - 1), lhs, rhs, end);
+
+					Expr rhs = parseAddSubExpression();
+
+					lookahead = tokens.get(index);
+					if(lookahead instanceof DotDot) {					
+						match(DotDot.class);
+
+						lookahead = tokens.get(index);
+						Expr end;
+						if(lookahead instanceof RightSquare) {
+							// In this case, no end of the slice has been provided.
+							// Therefore, it is taken to be the length of the source
+							// expression.						
+							end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
+									.attribute(Attribute.Source.class));
+						} else {
+							end = parseBitwiseExpression(false);						
+						}
+						match(RightSquare.class);
+						lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
+								start, index - 1), lhs, rhs, end);
+					} else {
+						match(RightSquare.class);							
+						lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
+								index - 1));
+					}
+				} else if(lookahead instanceof Dot) {				
+					match(Dot.class);
+					int tmp = index;
+					String name = matchIdentifier().text; 	
+					if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+						// this indicates a method invocation.
+						index = tmp; // slight backtrack
+						Expr.Invoke ivk = parseInvokeExpr();							
+						lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
+								true, sourceAttr(
+										ostart, index - 1));				
+					} else {
+						lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
+					}
 				} else {
-					match(RightSquare.class);							
-					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
-							index - 1));
-				}
-			} else if(lookahead instanceof Dot) {				
-				match(Dot.class);
-				int tmp = index;
-				String name = matchIdentifier().text; 	
-				if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-					// this indicates a method invocation.
-					index = tmp; // slight backtrack
+					match(Shreak.class);								 						
 					Expr.Invoke ivk = parseInvokeExpr();							
 					lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
-							true, sourceAttr(
-									ostart, index - 1));				
-				} else {
-					lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
+							false, sourceAttr(
+									ostart, index - 1));								
 				}
-			} else {
-				match(Shreak.class);								 						
-				Expr.Invoke ivk = parseInvokeExpr();							
-				lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
-						false, sourceAttr(
-								ostart, index - 1));								
-			}
-			if(index < tokens.size()) {
-				lookahead = tokens.get(index);	
-			} else {
-				lookahead = null;
+				if(index < tokens.size()) {
+					lookahead = tokens.get(index);	
+				} else {
+					lookahead = null;
+				}
 			}
 		}
 		
@@ -1127,7 +1205,7 @@ public class WhileyParser {
 		} else if(token.text.equals("spawn")) {
 			return parseSpawn();			
 		} else if (token instanceof Identifier) {
-			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
+			return new Expr.UnknownVariable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof WhileyLexer.Byte) {			
 			byte val = match(WhileyLexer.Byte.class).value;
@@ -1280,7 +1358,13 @@ public class WhileyParser {
 		if(token instanceof RightCurly) {
 			match(RightCurly.class);			
 			// empty set definition
-			Value v = Value.V_SET(new ArrayList<Value>()); 
+			Value v = Value.V_SET(Collections.EMPTY_LIST); 
+			return new Expr.Constant(v, sourceAttr(start, index - 1));
+		} else if(token instanceof RightArrow) {
+			match(RightArrow.class);		
+			match(RightCurly.class);			
+			// empty dictionary definition
+			Value v = Value.V_DICTIONARY(Collections.EMPTY_SET); 
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
 		}
 		
@@ -1301,9 +1385,9 @@ public class WhileyParser {
 			// this is a dictionary constructor					
 			return parseDictionaryVal(start,exprs.get(0));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
-				&& exprs.get(0) instanceof Expr.Variable) {
+				&& exprs.get(0) instanceof Expr.UnknownVariable) {
 			// this is a record constructor
-			Expr.Variable v = (Expr.Variable)exprs.get(0); 
+			Expr.UnknownVariable v = (Expr.UnknownVariable)exprs.get(0); 
 			return parseRecordVal(start,v.var);
 		}
 		
@@ -1333,8 +1417,8 @@ public class WhileyParser {
 				if(v instanceof Expr.BinOp) {
 					Expr.BinOp eof = (Expr.BinOp) v;					
 					if (eof.op == Expr.BOp.ELEMENTOF
-							&& eof.lhs instanceof Expr.Variable) {
-						String var = ((Expr.Variable) eof.lhs).var;
+							&& eof.lhs instanceof Expr.UnknownVariable) {
+						String var = ((Expr.UnknownVariable) eof.lhs).var;
 						if (vars.contains(var)) {
 							syntaxError(
 									"variable "
@@ -1479,23 +1563,8 @@ public class WhileyParser {
 	
 	private UnresolvedType parseType() {
 		int start = index;
-		UnresolvedType t = parseBaseType();		
-		
-		// Now, attempt to look for union or intersection types.
-		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
-			// this is a union type
-			ArrayList<UnresolvedType.NonUnion> types = new ArrayList<UnresolvedType.NonUnion>();
-			types.add((UnresolvedType.NonUnion) t);
-			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
-				match(Bar.class);
-				// the following is needed because the lexer filter cannot
-				// distinguish between a lengthof operator, and union type.
-				skipWhiteSpace();
-				t = parseBaseType();
-				types.add((UnresolvedType.NonUnion) t);
-			}
-			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
-		} else if ((index + 1) < tokens.size()
+		UnresolvedType t = parseUnionIntersectionType();
+		if ((index + 1) < tokens.size()
 				&& tokens.get(index) instanceof ColonColon
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// this is a headless method type
@@ -1553,6 +1622,84 @@ public class WhileyParser {
 			return new UnresolvedType.Fun(t, receiver, types, sourceAttr(start, index - 1));
 		} else {
 			return t;
+		}
+	}
+	
+	private UnresolvedType parseUnionIntersectionType() {
+		int start = index;
+		UnresolvedType t = parseNegationType();
+		// Now, attempt to look for negation, union or intersection types.
+		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
+			// this is a union type
+			ArrayList<UnresolvedType.NonUnion> types = new ArrayList<UnresolvedType.NonUnion>();
+			types.add((UnresolvedType.NonUnion) t);
+			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
+				match(Bar.class);
+				// the following is needed because the lexer filter cannot
+				// distinguish between a lengthof operator, and union type.
+				skipWhiteSpace();
+				t = parseNegationType();
+				types.add((UnresolvedType.NonUnion) t);
+			}
+			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof Ampersand) {
+			// this is an intersection type
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			types.add(t);
+			while (index < tokens.size()
+					&& tokens.get(index) instanceof Ampersand) {
+				match(Ampersand.class);
+				// the following is needed because the lexer filter cannot
+				// distinguish between a lengthof operator, and union type.
+				skipWhiteSpace();
+				t = parseNegationType();
+				types.add(t);
+			}
+			return new UnresolvedType.Intersection(types, sourceAttr(start,
+					index - 1));
+		} else {
+			return t;
+		}
+	}
+	
+	private UnresolvedType parseNegationType() {
+		int start = index;				
+		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {			
+			// this is a negation type
+			match(Shreak.class);
+			return new UnresolvedType.Not(parseNegationType(),sourceAttr(start, index - 1));
+		} else {
+			return parseBraceType();
+		}
+	}
+	
+	private UnresolvedType parseBraceType() {			
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			// tuple type or bracketed type
+			int start = index;
+			match(LeftBrace.class);
+			UnresolvedType t = parseType();
+			skipWhiteSpace();
+			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				// tuple type
+				ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+				types.add(t);				
+				while (index < tokens.size()
+						&& tokens.get(index) instanceof Comma) {					
+					match(Comma.class);
+					types.add(parseType());
+					skipWhiteSpace();
+				}
+				match(RightBrace.class);
+				return new UnresolvedType.Tuple(types, sourceAttr(start, index - 1));
+			} else {
+				// bracketed type
+				match(RightBrace.class);
+				return t;
+			}			
+		} else {
+			return parseBaseType();
 		}
 	}
 	
@@ -1666,34 +1813,18 @@ public class WhileyParser {
 			match(RightSquare.class);
 			t = new UnresolvedType.List(t,sourceAttr(start,index-1));
 		} else {		
-			Identifier id = matchIdentifier();			
-			t = new UnresolvedType.Named(id.text,sourceAttr(start,index-1));			
+			ArrayList<String> names = new ArrayList<String>();
+			names.add(matchIdentifier().text);			
+			while(index < tokens.size() && tokens.get(index) instanceof Dot) {
+				match(Dot.class);
+				names.add(matchIdentifier().text);
+			}
+			t = new UnresolvedType.Named(names,sourceAttr(start,index-1));			
 		}		
 		
 		return t;
 	}		
 	
-	private boolean isTypeStart() {
-		checkNotEof();
-		Token token = tokens.get(index);
-		if(token instanceof Keyword) {
-			return token.text.equals("int") || token.text.equals("void")
-					|| token.text.equals("bool") || token.text.equals("real")
-					|| token.text.equals("?") || token.text.equals("*")
-					|| token.text.equals("process");			
-		} else if(token instanceof LeftBrace) {
-			// Left brace is a difficult situation, since it can represent the
-			// start of a tuple expression or the start of a typle lval.
-			int tmp = index;
-			match(LeftBrace.class);
-			boolean r = isTypeStart();
-			index = tmp;
-			return r;
-		} else {
-			return token instanceof LeftCurly || token instanceof LeftSquare;
-		}
-	}
-
 	private void skipWhiteSpace() {
 		while (index < tokens.size() && isWhiteSpace(tokens.get(index))) {
 			index++;
@@ -1752,19 +1883,19 @@ public class WhileyParser {
 	
 	private void matchEndLine() {
 		while(index < tokens.size()) {
-			Token t = tokens.get(index++);			
+			Token t = tokens.get(index++);
 			if(t instanceof NewLine) {
 				break;
 			} else if(!(t instanceof LineComment) && !(t instanceof BlockComment) &&!(t instanceof Tabs)) {
-				syntaxError("syntax error",t);
+				syntaxError("unexpected token encountered (" + t.text + ")",t);
 			}			
 		}
 	}
 	
-	private Attribute.Source sourceAttr(int start, int end) {
-		Token t1 = tokens.get(start);
+	private Attribute.Source sourceAttr(int start, int end) {		
+		Token t1 = tokens.get(start);				
 		Token t2 = tokens.get(end);
-		return new Attribute.Source(t1.start,t2.end());
+		return new Attribute.Source(t1.start,t2.end(),t1.line);
 	}
 	
 	private void syntaxError(String msg, Expr e) {

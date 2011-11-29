@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define R1 as { int x }
 define R2 as { int x, int y }
 
@@ -11,8 +13,8 @@ int f(bool flag, [int] list):
             r = r - pos
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     r1 = f(true,[1,2,3,4,5,6,7,8,9,10])
     r2 = f(false,[1,2,3,4,5,6,7,8,9,10])
-    out.println(str(r1))
-    out.println(str(r2))
+    sys.out.println(toString(r1))
+    sys.out.println(toString(r2))

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define State as { string input, int pos }
 define Expr as real | { string id }
 define SyntaxError as { string err }
@@ -17,12 +19,12 @@ define SExpr as SyntaxError | Expr
         st.pos = st.pos + 1    
     return n, st
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e,s = parseTerm({input: "123", pos: 0})
-    out.println(str(e))
+    sys.out.println(toString(e))
     e,s = parseTerm({input: "abc", pos: 0})
     if e is SyntaxError: 
-        out.println(e.err)
+        sys.out.println(e.err)
     else:
-        out.println(str(e))
+        sys.out.println(toString(e))
 

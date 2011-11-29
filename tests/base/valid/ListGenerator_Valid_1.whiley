@@ -1,9 +1,11 @@
-void System::f([int] x):
-    z = |x|
-    out.println(str(z))
-    out.println(str(x[z-1]))
+import * from whiley.lang.*
 
-void System::main([string] args):
+void ::f(System sys, [int] x):
+    z = |x|
+    sys.out.println(toString(z))
+    sys.out.println(toString(x[z-1]))
+
+void ::main(System sys,[string] args):
      arr = [1,2,3]
      // following line should block
-     this.f(arr)
+     f(sys,arr)

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define constants as [
 	10000000b,
 	10000001b,
@@ -256,8 +258,8 @@ define constants as [
 	01111110b
 ]
 
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     for i in constants:
-        out.print("~" + str(i))
-        out.print(" = ")
-        out.println(str(~i))
+        sys.out.print("~" + toString(i))
+        sys.out.print(" = ")
+        sys.out.println(toString(~i))

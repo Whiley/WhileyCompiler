@@ -1,6 +1,8 @@
-string f([int] x):
-     return str(|x|)
+import * from whiley.lang.*
 
-void System::main([string] args):
+string f([int] x):
+     return toString(|x|)
+
+void ::main(System sys,[string] args):
      arr = [[1,2,3]]
-     out.println(f(arr[0]))
+     sys.out.println(f(arr[0]))

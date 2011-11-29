@@ -1,7 +1,9 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
      xs = {1,2,3,4}
      ys = xs ∪ {5,1}
-     out.println(str(xs))
+     sys.out.println(toString(xs))
      xs = xs ∪ {6}
-     out.println(str(xs))
-     out.println(str(ys))
+     sys.out.println(toString(xs))
+     sys.out.println(toString(ys))

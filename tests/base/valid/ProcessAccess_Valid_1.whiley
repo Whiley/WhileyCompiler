@@ -1,15 +1,17 @@
+import * from whiley.lang.*
+
 define etype as {int mode, int rest}
 define Ptype as process etype
 
 (int,string) Ptype::get():
     this.mode = 1
     this.rest = 123
-    return this.mode,str(*this)
+    return this.mode,toString(*this)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = spawn {mode:1,rest:2}
-    out.println(str(*p))
+    sys.out.println(toString(*p))
     x,s = p.get()
-    out.println(s)
-    out.println(str(*p))
-    out.println(str(x))
+    sys.out.println(s)
+    sys.out.println(toString(*p))
+    sys.out.println(toString(x))

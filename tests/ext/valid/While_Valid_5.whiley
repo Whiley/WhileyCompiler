@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 [int] extract([int] ls) ensures |$| > 0:
     i = 0
     r = [1]
@@ -7,8 +9,8 @@
         i = i + 1
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rs = extract([1,2,3,4,5,6,7])
-    out.println(str(rs))
+    sys.out.println(toString(rs))
     rs = extract([])
-    out.println(str(rs))
+    sys.out.println(toString(rs))

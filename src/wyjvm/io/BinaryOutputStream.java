@@ -108,19 +108,16 @@ public class BinaryOutputStream extends OutputStream {
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write_uv(int w) throws IOException {
-		if(w >= 0 && w <= 7) {
-			write_un(w,4);
-		} else if(w >= 0 && w <= 63){
-			write_un(8|((w>>3)&7),4);
-			write_un(w&7,4);
-		} else if(w >= 0 && w <= 511){
-			write_un(8|((w>>6)&7),4);
-			write_un(8|((w>>3)&7),4);
-			write_un(w&7,4);
-		} else {
-			throw new RuntimeException("Need to implement general case for write_uv");
-		}
+	public void write_uv(int w) throws IOException {		
+		do {
+			int t = w & 7;
+			w = w >> 3;
+			if(w != 0) {
+				write_un(8|t,4);
+			} else {
+				write_un(t,4);
+			}
+		} while(w != 0);		
 	}	
 	
 	/**
@@ -133,12 +130,12 @@ public class BinaryOutputStream extends OutputStream {
 		int mask = 1;
 		for(int i=0;i<n;++i) {
 			boolean bit = (bits & mask) != 0;
-			writeBit(bit);
+			write_bit(bit);
 			mask = mask << 1;
 		}		
 	}	
 	
-	public void writeBit(boolean bit) throws IOException {
+	public void write_bit(boolean bit) throws IOException {
 		value = value >> 1;
 		if(bit) {
 			value |= 128;
@@ -152,11 +149,36 @@ public class BinaryOutputStream extends OutputStream {
 	}
 		
 	public void close() throws IOException {
-		if(count != 0) {					
-			value = value >> (8-count);					
+		if(count != 0) {				
+			// In this case, we're closing but we have a number of bits left to
+			// write. This means we have to pad out the remainder of a byte.
+			// Instead of padding with zeros, I pad with ones. The reason for
+			// this is that it forces an EOF when reading back in with read_uv().
+			value = value >> (8-count);
+			int mask = 0xff & ((~0) << count);						
+			value = value | mask;			
 			output.write(value);
 		}
 		output.close();
+	}
+	
+	public static String bin2str(int v) {
+		if(v == 0) {
+			return "0";
+		}
+		int mask = 1 << 31;
+		String r = "";
+		boolean leading = true;
+		for(int i=0;i!=32;++i) {
+			if((v&mask) != 0) {
+				r = r + "1";
+				leading=false;
+			} else if(!leading) {
+				r = r + "0";
+			}
+			v = v << 1;
+		}
+		return r;
 	}
 	
 	public static void main(String[] argss) {

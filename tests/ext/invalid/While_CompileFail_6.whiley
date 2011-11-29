@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 [int] extract([int] ls):
     i = 0
     r = [1]
@@ -7,6 +9,6 @@
         i = i + 1
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rs = extract([-2,-3,1,2,-23,3,2345,4,5])
-    debug str(rs)
+    debug toString(rs)

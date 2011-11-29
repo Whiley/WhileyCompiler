@@ -35,11 +35,11 @@ import wyil.lang.*;
 import wyil.util.*;
 
 /**
- * The module loader is a critical component of the Whiley compiler. It is
- * responsible for finding whiley modules on the WHILEYPATH, and retaining
- * information about them which can be used to compile other whiley files.
+ * Responsible for locating whiley modules on the WHILEYPATH, and retaining
+ * information about them which can be used to compile other whiley files. This
+ * is a critical component of the Whiley compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ModuleLoader {
@@ -103,12 +103,12 @@ public class ModuleLoader {
 	}
 
 	/**
-	 * A module Skeleton provides basic information regarding what names are
-	 * defined within a module. It represents the minimal knowledge regarding a
-	 * module that we can have. Skeletons are used early on in the compilation
-	 * process to help with name resolution.
+	 * Provides basic information regarding what names are defined within a
+	 * module. It represents the minimal knowledge regarding a module that we
+	 * can have. Skeletons are used early on in the compilation process to help
+	 * with name resolution.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public abstract static class Skeleton {
@@ -187,12 +187,17 @@ public class ModuleLoader {
 	public void preregister(Skeleton skeleton, String filename) {		
 		skeletontable.put(skeleton.id(), skeleton);
 		File parent = new File(filename).getParentFile();
-		addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);								 
+		if(parent == null) {
+			// this is necessary, since parent might be null if this is the
+			// default package.
+			parent = new File(".");
+		} 
+		addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);		
 	}
 	
 	public void register(Module module) {			
 		moduletable.put(module.id(), module);	
-	}
+	}		
 	
 	/**
 	 * This methods attempts to resolve the correct package for a named item,
@@ -200,31 +205,25 @@ public class ModuleLoader {
 	 * loading modules as necessary from the whileypath and/or compiling modules
 	 * for which only source code is currently available.
 	 * 
-	 * @param module
+	 * @param name
 	 *            A module name without package specifier.
 	 * @param imports
-	 *            A list of packages to search through. Packages are searched in
-	 *            order of appearance.
+	 *            A list of import declarations to search through. Imports are
+	 *            searched in order of appearance.
 	 * @return The resolved package.
 	 * @throws ModuleNotFoundException
-	 *             if it couldn't resolve the module
+	 *             if it couldn't resolve the name
 	 */
-	public ModuleID resolve(String name, List<PkgID> imports)
-			throws ResolveError {									
-		for (PkgID pkg : imports) {				
-			if(pkg.size() > 0 && pkg.last().equals("*")) {				
-				pkg = pkg.subpkg(0, pkg.size()-1);
-				if(!isPackage(pkg)) {					
-					continue; // sanity check
-				}								
-				Package p = resolvePackage(pkg);
-				
-				for (String n : p.modules) {					
-					try {
-						ModuleID mid = new ModuleID(pkg,n);									
+	public NameID resolveAsName(String name, List<Import> imports)
+			throws ResolveError {	
+		
+		for (Import imp : imports) {
+			if(imp.matchName(name)) {
+				for(ModuleID mid : matchImport(imp)) {
+					try {														
 						Skeleton mi = loadSkeleton(mid);					
 						if (mi.hasName(name)) {
-							return mid;
+							return new NameID(mid,name);
 						} 					
 					} catch(ResolveError rex) {
 						// ignore. This indicates we simply couldn't resolve
@@ -232,26 +231,77 @@ public class ModuleLoader {
                         // file.						
 					}
 				}
-			} else if(pkg.size() > 0) {
-				try {
-					String pkgname = pkg.last();
-					pkg = pkg.subpkg(0, pkg.size()-1);
-					ModuleID mid = new ModuleID(pkg,pkgname);												
-					Skeleton mi = loadSkeleton(mid);					
-					if (mi.hasName(name)) {
-						return mid;
-					} 	
-				} catch(ResolveError rex) {
-					// ignore. This indicates we simply couldn't resolve
-					// this module. For example, if it wasn't a whiley class
-					// file.
-				}
 			}
 		}
 		
 		throw new ResolveError("name not found: " + name);
 	}
+	
+	public NameID resolveAsName(List<String> names, List<Import> imports) throws ResolveError {
+		if(names.size() == 1) {
+			return resolveAsName(names.get(0),imports);
+		} else if(names.size() == 2) {
+			String name = names.get(1);
+			ModuleID mid = resolveAsModule(names.get(0),imports);
+			Skeleton mi = loadSkeleton(mid);					
+			if (mi.hasName(name)) {
+				return new NameID(mid,name);
+			} 
+		} else {
+			String name = names.get(names.size()-1);
+			String module = names.get(names.size()-2);
+			PkgID pkg = new PkgID(names.subList(0,names.size()-2));
+			ModuleID mid = new ModuleID(pkg,module);
+			Skeleton mi = loadSkeleton(mid);					
+			if (mi.hasName(name)) {
+				return new NameID(mid,name);
+			}
+		}
 		
+		String name = null;
+		for(String n : names) {
+			if(name != null) {
+				name = name + "." + n;
+			} else {
+				name = n;
+			}			
+		}
+		throw new ResolveError("name not found: " + name);
+	}
+	
+	/**
+	 * This method attempts to resolve the given name as a module name, given a
+	 * list of imports.
+	 * 
+	 * @param name
+	 * @param imports
+	 * @return
+	 * @throws ResolveError
+	 */
+	public ModuleID resolveAsModule(String name, List<Import> imports)
+			throws ResolveError {
+		
+		for (Import imp : imports) {
+			for(ModuleID mid : matchImport(imp)) {				
+				if(mid.module().equals(name)) {
+					return mid;
+				}
+			}
+		}
+		
+		
+		throw new ResolveError("module not found: " + name);
+	}
+	
+	/**
+	 * This method attempts to load a whiley module. The module is searched for
+	 * on the WHILEYPATH. A resolve error is thrown if the module cannot be
+	 * found or otherwise loaded.
+	 * 
+	 * @param module
+	 *            The module to load
+	 * @return the loaded module
+	 */
 	public Module loadModule(ModuleID module) throws ResolveError {		
 		Module m = moduletable.get(module);
 		if(m != null) {
@@ -259,25 +309,37 @@ public class ModuleLoader {
 		}
 			
 		// module has not been previously loaded.
-		Package pkg = resolvePackage(module.pkg());
+		Package pkg = resolvePackage(module.pkg());		
 		// check for error
-		if(pkg == null) {
+		if(pkg == null) {			
 			throw new ResolveError("Unable to find package: " + module.pkg());
 		} else {
 			try {
 				// ok, now look for module inside package.
 				m = loadModule(module,pkg);
-				if(m == null) {
+				if(m == null) {					
 					throw new ResolveError("Unable to find module: " + module);
 				}
-			} catch(IOException io) {
-				throw new ResolveError("Unagle to find module: " + module,io);
+			} catch(IOException io) {				
+				throw new ResolveError("Unable to find module: " + module,io);
 			}
 		}
 		
 		return m;		
 	}
 	
+	/**
+	 * This method attempts to load a whiley module skeleton. A skeleton
+	 * provides signature information about a module. For example, the signature
+	 * of all methods. However, a skeleton does not provide access to a methods
+	 * body. The skeleton is looked up in the internal skeleton table. If not
+	 * found there, then the WHILEYPATH is searched. A resolve error is thrown
+	 * if the module cannot be found or otherwise loaded.
+	 * 
+	 * @param module
+	 *            The module skeleton to load
+	 * @return the loaded module
+	 */
 	public Skeleton loadSkeleton(ModuleID module) throws ResolveError {
 		Skeleton skeleton = skeletontable.get(module);
 		if(skeleton != null) {
@@ -340,13 +402,15 @@ public class ModuleLoader {
 	}
 
 	/**
-	 * This method attempts to read a whiley module from a given package.
+	 * This method attempts to read a whiley module from a given package. A
+	 * resolve error is thrown if the module cannot be found or otherwise
+	 * loaded.
 	 * 
 	 * @param module
 	 *            The module to load
 	 * @param pkgIngo
-	 *            Information about the including package, in particular
-	 *            where it can be located on the file system.
+	 *            Information about the including package, in particular where
+	 *            it can be located on the file system.
 	 * @return
 	 */
 	private Module loadModule(ModuleID module, Package pkg)
@@ -354,7 +418,7 @@ public class ModuleLoader {
 		String filename = module.fileName();	
 		String jarname = filename.replace(File.separatorChar,'/') + ".class";
 		
-		for(File location : pkg.locations) {
+		for(File location : pkg.locations) {			
 			if (location.getName().endsWith(".jar")) {
 				// location is a jar file				
 				JarFile jf = new JarFile(location);				
@@ -362,8 +426,7 @@ public class ModuleLoader {
 				if (je == null) { continue; }  								
 				return readModuleInfo(module, jarname, jf.getInputStream(je));
 			} else {
-				File classFile = new File(location.getPath(),filename + ".class");					
-				
+				File classFile = new File(location.getPath(),filename + ".class");									
 				if(classFile.exists()) {															
 					// Here, there is no sourcefile, but there is a classfile.
 					// So, no need to compile --- just load the class file!
@@ -371,8 +434,50 @@ public class ModuleLoader {
 				}			
 			}
 		}
-		
+				
 		throw new ResolveError("unable to find module: " + module);
+	}
+	
+	/**
+	 * This method takes a given import declaration, and expands it to find all
+	 * matching modules.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	private List<ModuleID> matchImport(Import imp) {
+		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
+		for (PkgID pid : matchPackage(imp.pkg)) {
+			try {
+				Package pkgInfo = resolvePackage(pid);
+				for (String n : pkgInfo.modules) {					
+					if (imp.matchModule(n)) {
+						matches.add(new ModuleID(pid, n));
+					}
+				}
+			} catch (ResolveError ex) {
+				// dead code
+			}
+		}
+		return matches;
+	}
+	
+	/**
+	 * This method takes a given package id from an import declaration, and
+	 * expands it to find all matching packages. Note, the package id may
+	 * contain various wildcard characters to match multiple actual packages.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	private List<PkgID> matchPackage(PkgID pkg) {
+		ArrayList<PkgID> matches = new ArrayList<PkgID>();
+		try {
+			// TODO: this needs to be correct to support more interesting regexes.
+			Package p = resolvePackage(pkg);
+			matches.add(pkg);
+		} catch(ResolveError er) {}
+		return matches;
 	}
 	
 	/**
@@ -407,7 +512,7 @@ public class ModuleLoader {
 				}				
 			} else {			
 				// this is a jar file
-				try {
+				try {					
 					JarFile jf = new JarFile(dir);
 					for (Enumeration<JarEntry> e = jf.entries(); e
 							.hasMoreElements();) {
@@ -422,11 +527,11 @@ public class ModuleLoader {
 							String pkgName = pathParent(entryName);
 							String moduleName = pathChild(entryName);
 
-							// now add to package map
+							// now add to package map							
 							addPackageItem(new PkgID(pkgName.split("\\.")),
 									moduleName, new File(dir));
 						}
-					}
+					}					
 					
 					pkgInfo = packages.get(pkg);
 					if(pkgInfo != null) {						
@@ -449,22 +554,20 @@ public class ModuleLoader {
 		long time = System.currentTimeMillis();		
 		
 		// TODO: the following line should be removed in the near future.
-		Module mi = moduleReader.read(module,filename,input);
+		Module mi = moduleReader.read(module, filename, input);
 
-		if(mi != null) {
-			logger.logTimedMessage("Loaded " + filename, System
-					.currentTimeMillis()
-					- time);				
+		if (mi != null) {
+			logger.logTimedMessage("Loaded " + filename,
+					System.currentTimeMillis() - time);
 
 			// observe that createModule will return null if the
 			// class file is *not* from whiley source file. In such
 			// case, we simply ignore the class file altogether.
-			moduletable.put(module,mi);
+			moduletable.put(module, mi);
 			return mi;
 		} else {
-			logger.logTimedMessage("Ignored " + filename, System
-					.currentTimeMillis()
-					- time);	
+			logger.logTimedMessage("Ignored " + filename,
+					System.currentTimeMillis() - time);
 			return null;
 		}
 	} 
@@ -487,7 +590,7 @@ public class ModuleLoader {
 					addPackageItem(pkg, name, new File(root));					
 				} else if (file.endsWith(".class")) {					
 					// strip  off ".class" to get module name
-					String name = file.substring(0,file.length()-6);
+					String name = file.substring(0,file.length()-6);					
 					addPackageItem(pkg, name, new File(root));					
 				}
 			}
@@ -524,16 +627,14 @@ public class ModuleLoader {
 
 		// Finally, add all enclosing packages of this package as
 		// well. Otherwise, isPackage("whiley") can fails even when we know about
-		// a particular package.
-		for(int i=0;i<pkg.size()-1;++i) {
-			PkgID p = pkg.subpkg(0,i);
+		// a particular package.		
+		for(int i=0;i<=pkg.size()-1;++i) {
+			PkgID p = pkg.subpkg(0,i);			
 			if (packages.get(p) == null) {
 				packages.put(p, new Package());
 			}
 		}
 	}
-	
-	
 	
 	/**
 	 * Given a path string of the form "xxx.yyy.zzz" this returns the parent

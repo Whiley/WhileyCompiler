@@ -9,6 +9,7 @@ import wyc.Compiler;
 import wyc.util.*;
 import wyil.*;
 import wyil.util.*;
+import static wyil.util.SyntaxError.*;
 import static wyc.util.OptArg.*;
 import wyjc.io.*;
 import wyjc.transforms.*;
@@ -18,7 +19,7 @@ import wyjc.transforms.*;
  * options, construct an appropriate pipeline and then instantiate the Whiley
  * Compiler to generate class files.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class Main {
@@ -31,6 +32,10 @@ public class Main {
 	
 	public static int threadCount;
 
+	public static final int SUCCESS=0;
+	public static final int SYNTAX_ERROR=1;
+	public static final int INTERNAL_FAILURE=2;
+	
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -184,31 +189,37 @@ public class Main {
 				compiler.setLogOut(System.err);
 			}
 		
-		// finally, let's compile some files!!!
+			// finally, let's compile some files!!!
 		
 			ArrayList<File> files = new ArrayList<File>();
 			for (String file : args) {
 				files.add(new File(file));
 			}
 			compiler.compile(files);
+		} catch (InternalFailure e) {
+			e.outputSourceError(errout);
+			if (verbose) {
+				e.printStackTrace(errout);
+			}
+			return INTERNAL_FAILURE;
 		} catch (SyntaxError e) {
 			e.outputSourceError(errout);
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
-			return 1;
+			return SYNTAX_ERROR;
 		} catch (Throwable e) {
 			errout.println("internal failure: " + e.getMessage());
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
-			return 2;
+			return INTERNAL_FAILURE;
 		}
 		
-		return 0;
+		return SUCCESS;
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
 		System.exit(new Main().run(args));
 	}
 }

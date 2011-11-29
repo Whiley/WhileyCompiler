@@ -32,7 +32,7 @@ public interface Logger {
 	 * that a given stage has been completed in a certain amount of time.
 	 * 
 	 * @param msg
-	 * @param time
+	 * @param time --- total time taken for stage
 	 */
 	public void logTimedMessage(String msg, long time);
 

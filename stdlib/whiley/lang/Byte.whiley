@@ -1,5 +1,16 @@
 package whiley.lang
 
+// convert a byte into a string
+string toString(byte b):
+    r = "b"
+    for i in 0..8:
+        if (b & 00000001b) == 00000001b:
+            r = "1" + r
+        else:
+            r = "0" + r
+        b = b >> 1	
+    return r
+
 // Convert a byte into an unsigned int.  This assumes a little endian
 // encoding.
 int toUnsignedInt(byte b):
@@ -38,6 +49,10 @@ int toInt(byte b):
         return -(256-r)
     else:
         return r    
+
+// Convert a byte into a unicode character.
+char toChar(byte b):
+    return (char) toUnsignedInt(b)
 
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole

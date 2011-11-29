@@ -1,7 +1,9 @@
+import * from whiley.lang.*
+
 define dummy as process {int x}
 
 void dummy::f(int x):
-    out.println(str(x))
+    sys.out.println(toString(x))
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     this.f(1)

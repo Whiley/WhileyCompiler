@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int f(real x):
     switch x:
         case 1.23:
@@ -6,8 +8,8 @@ int f(real x):
             return -1
     return 10
 
-void System::main([string] args):
-    out.println(str(f(1.23)))
-    out.println(str(f(2.01)))
-    out.println(str(f(3)))
-    out.println(str(f(-1)))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(f(1.23)))
+    sys.out.println(toString(f(2.01)))
+    sys.out.println(toString(f(3)))
+    sys.out.println(toString(f(-1)))

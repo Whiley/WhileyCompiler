@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 // this is a comment!
 define odd as { 1,3,5 }
 define even as { 2,4,6 }
@@ -8,7 +10,7 @@ even f(oddeven x):
         return 2
     return x
     
-void System::main([string] args):
+void ::main(System sys,[string] args):
     y = 1
     y = f(1)
-    out.println(str(y))
+    sys.out.println(toString(y))

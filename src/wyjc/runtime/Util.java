@@ -25,6 +25,7 @@
 
 package wyjc.runtime;
 
+import java.lang.reflect.Method;
 import java.math.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +56,20 @@ public class Util {
 	private static int nset_clones = 0;
 	private static int nrecord_clones = 0;
 
+	public static Method functionRef(String clazz, String name) {
+		try {
+			Class cl = Class.forName(clazz);
+			for(Method m : cl.getDeclaredMethods()) {
+				if(m.getName().equals(name)) {
+					return m;
+				}
+			}
+			throw new RuntimeException("Method Not Found: " + clazz + ":" + name);
+		} catch(ClassNotFoundException e) {
+			throw new RuntimeException("Class Not Found: " + clazz);
+		}
+	}
+	
 	public static String append(final String lhs, final String rhs) {		
 		return lhs + rhs;
 	}
@@ -172,43 +187,7 @@ public class Util {
 	 */
 	public static boolean equals(Object o1, Object o2) {
 		return (o1 != null && o1.equals(o2)) || (o1 == o2);
-	}
-	
-	/**
-	 * Convert a given Whiley object into a string
-	 * @param o
-	 * @return
-	 */
-	public static String str(Object o) {
-		if(o == null) {
-			return "null";
-		} else if(o instanceof String) {
-			String s = (String) o;
-			return "\"" + s + "\"";
-		} else if(o instanceof Character) {
-			Character s = (Character) o;
-			return "\'" + s + "\'";
-		} else if(o instanceof Byte) {
-			Byte b = (Byte) o;
-			return str(b.byteValue());
-		} else {
-			return o.toString();
-		}
-	}
-	
-	public static String str(byte b) {
-		String r = "b";
-		byte v = b;
-		for(int i=0;i!=8;++i) {
-			if((v&0x1) == 1) {
-				r = "1" + r;
-			} else {
-				r = "0" + r;
-			}
-			v = (byte) (v >>> 1);
-		}
-		return r;
-	}
+	}		
 	
 	/**
 	 * The following method is used for printing debug output arising from debug
@@ -555,6 +534,8 @@ public class Util {
 			return o2 == null ? 0 : -1;				
 		} else if(o1 instanceof Boolean) {
 			return compare((Boolean)o1,o2);
+		} else if(o1 instanceof Character) {			
+			return compare((Character)o1,o2);
 		} else if(o1 instanceof BigInteger) {			
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof BigRational) {
@@ -585,6 +566,17 @@ public class Util {
 		}
 	}
 
+	public static int compare(Character o1, Object o2) {
+		if(o2 == null) {
+			return 1;
+		} else if(o2 instanceof Character) {
+			Character c2 = (Character) o2;
+			return o1.compareTo(c2);
+		} else {
+			return -1;
+		}
+	}
+	
 	public static int compare(BigInteger o1, Object o2) {
 		if(o2 == null || o2 instanceof Boolean) {
 			return 1;

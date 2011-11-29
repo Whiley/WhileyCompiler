@@ -25,27 +25,11 @@
 
 package whiley.lang
 
-public string str(any item):
-    if item is null:
-        return "null"
-    else if item is string:
-        return "\"" + item + "\""
-    else if item is char:
-        return "\'" + item + "\'"
-    else if item is byte:
-        extern jvm:
-            iload 0
-            invokestatic wyjc/runtime/Util.str:(B)Ljava/lang/String;
-            areturn
-    extern jvm:
-        aload 0
-        invokevirtual java/lang/Object.toString:()Ljava/lang/String;
-        areturn
-    return "DUMMY" // dead code
+import * from whiley.lang.Errors
 
 // find first index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED
-public int|null indexOf(char c, string str):
+public int|null indexOf(string str, char c):
     i = 0
     while i < |str|:
         if str[i] == c:
@@ -53,7 +37,7 @@ public int|null indexOf(char c, string str):
         i = i + 1
     return null
 
-public int|null indexOf(char c, int start, string str):
+public int|null indexOf(string str, char c, int start):
     i = start
     while i < |str|:
         if str[i] == c:
@@ -63,7 +47,7 @@ public int|null indexOf(char c, int start, string str):
 
 // find last index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED
-public int|null lastIndexOf(char c, string str):
+public int|null lastIndexOf(string str, char c):
     i = |str|
     while i > 0:
         i = i - 1
@@ -73,7 +57,7 @@ public int|null lastIndexOf(char c, string str):
 
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED
-public string replace(char old, char new, string str):
+public string replace(string str, char old, char new):
     i = 0
     while i < |str|:
         if str[i] == old:
@@ -83,8 +67,27 @@ public string replace(char old, char new, string str):
 
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
-public string ascii2str([byte] data):
+public string fromASCII([byte] data):
     r = ""
     for b in data:
-        r = r + toUnsignedInt(b)
+        r = r + Byte.toChar(b)
     return r    
+
+// FIXME: this method is completely broken!
+public [byte] toUTF8(string s):
+    r = []
+    for c in s:
+        // the following line is fatally flawed!
+        r = r + [Int.toUnsignedByte(c)]
+    return r
+
+// Convert a string into an integer
+public int toInt(string input) throws SyntaxError:
+    r = 0
+    for i in 0..|input|:
+        c = input[i]
+        r = r * 10
+        if !Char.isDigit(c):
+            throw SyntaxError("invalid number string",i,i)
+        r = r + (c - '0')
+    return r

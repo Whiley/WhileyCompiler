@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int sumOver([int] ls):
     i = 0
     sum = 0
@@ -7,6 +9,6 @@ int sumOver([int] ls):
         i = i + 1
     return sum
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rs = sumOver([-2,-3,1,2,-23,3,2345,4,5])
-    debug str(rs)
+    debug toString(rs)

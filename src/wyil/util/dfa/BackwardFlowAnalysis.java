@@ -25,7 +25,7 @@
 
 package wyil.util.dfa;
 
-import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.SyntaxError.internalFailure;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,7 +77,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		for (Module.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new Module.Method(method.name(), method.type(), cases);
+		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	public Module.Case propagate(Module.Case mcase) {
@@ -97,9 +97,9 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 				Code code = stmt.code;
 
 				// First, check for a label which may have incoming information.
-				if (code instanceof Code.End) {					
+				if (code instanceof Code.LoopEnd) {					
 					Code.Loop loop = null;
-					String label = ((Code.End) code).label;
+					String label = ((Code.LoopEnd) code).label;
 					// first, save the store since it might be needed for break
 					// statements.
 					stores.put(label,store);
@@ -132,16 +132,28 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 				} else if (code instanceof Code.Switch) {
 					Code.Switch sw = (Code.Switch) code;
 					
-					// assert r.second().size() == nsw.branches.size()
-					Code.Switch nsw = (Code.Switch) stmt.code;
 					ArrayList<T> swStores = new ArrayList<T>();
-					for(int j=0;j!=nsw.branches.size();++j){
-						String target = nsw.branches.get(j).second();
+					for(int j=0;j!=sw.branches.size();++j){
+						String target = sw.branches.get(j).second();
 						swStores.add(stores.get(target));
 					}
 					T defStore = stores.get(sw.defaultTarget);
 					
 					store = propagate(i, sw, stmt, swStores, defStore);																				
+				} else if (code instanceof Code.TryCatch) {
+					
+					// FIXME: this is fundamentally broken since an exception
+					// can arise at (in principle) any bytecode.
+					
+					Code.TryCatch sw = (Code.TryCatch) code;
+					
+					ArrayList<T> swStores = new ArrayList<T>();
+					for(int j=0;j!=sw.catches.size();++j){
+						String target = sw.catches.get(j).second();
+						swStores.add(stores.get(target));
+					}
+					
+					store = propagate(i, sw, stmt, swStores, store);																				
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					store = stores.get(gto.target);					
@@ -152,7 +164,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				syntaxError("internal failure", filename, stmt, ex);
+				internalFailure("internal failure", filename, stmt, ex);
 			}
 		}
 		
@@ -230,6 +242,27 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected abstract T propagate(int index, Code.Switch sw, Entry entry,
 			List<T> stores, T defStore);
 
+	/**
+	 * <p>
+	 * Propagate back from a try-catch multi-way branch. This accepts multiple
+	 * stores --- one for each of the various branches.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
+	 * @param tc
+	 *            --- the code of this statement
+	 * @param entry
+	 *            --- block entry for this bytecode
+	 * @param stores
+	 *            --- abstract stores coming from the various branches.
+	 *            statement.
+	 * @param defStore
+	 *            --- abstract store coming from default branch
+	 * @return
+	 */
+	protected abstract T propagate(int index, Code.TryCatch tc, Entry entry,
+			List<T> stores, T defStore);
 
 	/**
 	 * <p>

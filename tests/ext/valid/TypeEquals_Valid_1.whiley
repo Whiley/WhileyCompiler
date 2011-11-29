@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define bop as {int x, int y} where x > 0
 define expr as int|bop
 
@@ -7,9 +9,9 @@ string f(expr e):
     else:
         return "GOT BOB"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = 1
-    out.println(f(e))
+    sys.out.println(f(e))
     e = {x:1,y:2}
-    out.println(f(e))
+    sys.out.println(f(e))
  

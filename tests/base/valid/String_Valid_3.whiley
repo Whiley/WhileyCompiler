@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED
 public string repl(char old, char new, string str):
@@ -8,7 +10,7 @@ public string repl(char old, char new, string str):
         i = i + 1
     return str    
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     s = "Hello World"
     s = repl('l','1',s)
-    out.println(s)
+    sys.out.println(s)

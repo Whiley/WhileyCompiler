@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 define R1 as { real x }
 
 real f(int i):
     return (real) i
 
-void System::main([string] args):
-    out.println(str(f(1)))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(f(1)))
     

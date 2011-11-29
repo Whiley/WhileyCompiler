@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int|null indexOf(char c1, string str):
     i = 0
     for c2 in str:
@@ -6,14 +8,14 @@ int|null indexOf(char c1, string str):
         i = i + 1
     return null
 
-void System::main([string] args):
-    out.println(str(indexOf('H',"Hello World")))
-    out.println(str(indexOf('e',"Hello World")))
-    out.println(str(indexOf('l',"Hello World")))
-    out.println(str(indexOf('o',"Hello World")))
-    out.println(str(indexOf(' ',"Hello World")))
-    out.println(str(indexOf('W',"Hello World")))
-    out.println(str(indexOf('r',"Hello World")))
-    out.println(str(indexOf('d',"Hello World")))
-    out.println(str(indexOf('z',"Hello World")))
-    out.println(str(indexOf('1',"Hello World")))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(indexOf('H',"Hello World")))
+    sys.out.println(toString(indexOf('e',"Hello World")))
+    sys.out.println(toString(indexOf('l',"Hello World")))
+    sys.out.println(toString(indexOf('o',"Hello World")))
+    sys.out.println(toString(indexOf(' ',"Hello World")))
+    sys.out.println(toString(indexOf('W',"Hello World")))
+    sys.out.println(toString(indexOf('r',"Hello World")))
+    sys.out.println(toString(indexOf('d',"Hello World")))
+    sys.out.println(toString(indexOf('z',"Hello World")))
+    sys.out.println(toString(indexOf('1',"Hello World")))

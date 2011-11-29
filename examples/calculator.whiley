@@ -1,4 +1,6 @@
-import whiley.io.*
+import * from whiley.lang.*
+import * from whiley.io.File
+import SyntaxError from whiley.lang.Errors
 
 // ====================================================
 // A simple calculator for expressions
@@ -41,7 +43,9 @@ define Stmt as Print | Set
 // Expression Evaluator
 // ====================================================
 
-Value evaluate(Expr e, {string->Value} env) throws Error:
+define RuntimeError as { string msg }
+
+Value evaluate(Expr e, {string->Value} env) throws RuntimeError:
     if e is int:
         return e
     else if e is Var:
@@ -81,11 +85,11 @@ Value evaluate(Expr e, {string->Value} env) throws Error:
 // Expression Parser
 // ====================================================
 
-define SyntaxError as { string err }
 define State as { string input, int pos }
 
 // Top-level parse method
 (Stmt,State) parse(State st) throws SyntaxError:
+    start = st.pos
     keyword,st = parseIdentifier(st)
     switch keyword.id:
         case "print":
@@ -97,7 +101,7 @@ define State as { string input, int pos }
             e,st = parseAddSubExpr(st)
             return {lhs: v.id, rhs: e},st
         default:
-            throw {err:"unknown statement: " + keyword.id}
+            throw SyntaxError("unknown statement",start,st.pos-1)
 
 (Expr, State) parseAddSubExpr(State st) throws SyntaxError:    
     // First, pass left-hand side    
@@ -140,7 +144,7 @@ define State as { string input, int pos }
     return (lhs,st)
 
 (Expr, State) parseTerm(State st) throws SyntaxError:
-    st = parseWhiteSpace(st)    
+    st = parseWhiteSpace(st)        
     if st.pos < |st.input|:
         if isLetter(st.input[st.pos]):
             return parseIdentifier(st)
@@ -148,7 +152,7 @@ define State as { string input, int pos }
             return parseNumber(st)
         else if st.input[st.pos] == '[':
             return parseList(st)
-    throw ({err:"expecting number or variable"},st)
+    throw SyntaxError("expecting number or variable",st.pos,st.pos)
 
 (Var, State) parseIdentifier(State st):    
     txt = ""
@@ -158,12 +162,12 @@ define State as { string input, int pos }
         st.pos = st.pos + 1
     return ({id:txt}, st)
 
-(Expr, State) parseNumber(State st):    
+(Expr, State) parseNumber(State st) throws SyntaxError:    
     // inch forward until end of identifier reached
     start = st.pos
     while st.pos < |st.input| && isDigit(st.input[st.pos]):
         st.pos = st.pos + 1    
-    return str2int(st.input[start..st.pos]), st
+    return String.toInt(st.input[start..st.pos]), st
 
 (Expr, State) parseList(State st) throws SyntaxError:    
     st.pos = st.pos + 1 // skip '['
@@ -172,7 +176,7 @@ define State as { string input, int pos }
     firstTime = true
     while st.pos < |st.input| && st.input[st.pos] != ']':
         if !firstTime && st.input[st.pos] != ',':
-            throw {err: "expecting comma"}
+            throw SyntaxError("expecting comma",st.pos,st.pos)
         else if !firstTime:
             st.pos = st.pos + 1 // skip ','
         firstTime = false
@@ -197,20 +201,25 @@ bool isWhiteSpace(char c):
 // Main Method
 // ====================================================
 
-public void System::main([string] args):
-    file = this.openReader(args[0])
-    input = ascii2str(file.read())
+public void ::main(System sys, [string] args):
+    file = File.Reader(args[0])
+    input = String.fromASCII(file.read())
 
-    if(|args| > 0):
-        env = {"$"->0} 
-        st = {pos: 0, input: input}
-        while st.pos < |st.input|:
-            s,st = parse(st)
-            r = evaluate(s.rhs,env)
-            if s is Set:
-                env[s.lhs] = r
-            else:
-                out.println(str(r))
-            st = parseWhiteSpace(st)
+    if(|args| == 0):
+        sys.out.println("no parameter provided!")
     else:
-        out.println("no parameter provided!")
+        try:
+            env = {"$"->0} 
+            st = {pos: 0, input: input}
+            while st.pos < |st.input|:
+                s,st = parse(st)
+                r = evaluate(s.rhs,env)
+                if s is Set:
+                    env[s.lhs] = r
+                else:
+                    sys.out.println(r)
+                st = parseWhiteSpace(st)
+        catch(RuntimeError e1):
+            sys.out.println("runtime error: " + e1.msg)
+        catch(SyntaxError e2):
+            sys.out.println("syntax error: " + e2.msg)

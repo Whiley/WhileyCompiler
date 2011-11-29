@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define nat as int
 
 nat sum([nat] ls):
@@ -8,7 +10,7 @@ nat sum([nat] ls):
         i = i + 1
     return sum
 
-void System::main([string] args):
-    out.println(str(sum([])))
-    out.println(str(sum([1,2,3])))
-    out.println(str(sum([12387,98123,12398,12309,0])))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(sum([])))
+    sys.out.println(toString(sum([1,2,3])))
+    sys.out.println(toString(sum([12387,98123,12398,12309,0])))

@@ -26,21 +26,20 @@
 package wyc.lang;
 
 import wyil.lang.*;
-import wyil.lang.Type;
 
 /**
  * An attribute is simply a piece of information that we may wish to
  * attached to a syntactic element,
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface Attributes {
 
 	public static final class Fun implements Attribute {
-		public final wyil.lang.Type.Fun type;
+		public final wyil.lang.Type.Function type;
 
-		public Fun(wyil.lang.Type.Fun type) {
+		public Fun(wyil.lang.Type.Function type) {
 			this.type = type;
 		}
 	}
@@ -53,11 +52,12 @@ public interface Attributes {
 		}
 	}
 	
-	public static final class Alias implements Attribute {
-		public final Expr alias;
+	public static final class Name implements Attribute {
+		public final NameID name;
 		
-		public Alias(Expr alias) {
-			this.alias = alias;
+		public Name(NameID name) {
+			this.name = name;
 		}
-	}	
+	}
+	
 }

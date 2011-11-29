@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define ADD as 1
 define SUB as 2
 define MUL as 3
@@ -8,6 +10,6 @@ define expr as int | binop
 expr f(expr e):
     return e
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e1 = {op:0, left:{op:MUL,left:2,right:2}, right:2}
-    debug str(f(e1))
+    debug toString(f(e1))

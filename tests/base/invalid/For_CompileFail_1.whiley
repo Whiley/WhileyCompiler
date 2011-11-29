@@ -1,4 +1,6 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     st = "Hello World"
     for st in args:
-        out.println(st)
+        sys.out.println(st)

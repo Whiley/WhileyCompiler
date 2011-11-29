@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 [void] extract([int] ls):
     i = 0
     r = [1]

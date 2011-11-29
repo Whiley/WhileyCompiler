@@ -31,7 +31,7 @@ import wyil.util.*;
 
 public class Module extends ModuleLoader.Skeleton {	
 	private final String filename;
-	private HashMap<Pair<String,Type.Fun>,Method> methods;
+	private HashMap<Pair<String,Type.Function>,Method> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
 	
@@ -44,13 +44,13 @@ public class Module extends ModuleLoader.Skeleton {
 		this.filename = filename;
 		
 		// first, init the caches
-		this.methods = new HashMap<Pair<String,Type.Fun>, Method>();
+		this.methods = new HashMap<Pair<String,Type.Function>, Method>();
 		this.types = new HashMap<String, TypeDef>();
 		this.constants = new HashMap<String, ConstDef>();
 		
 		// second, build the caches
 		for(Method m : methods) {
-			Pair<String,Type.Fun> p = new Pair<String,Type.Fun>(m.name(),m.type());
+			Pair<String,Type.Function> p = new Pair<String,Type.Function>(m.name(),m.type());
 			Method tmp = this.methods.get(p);
 			if (tmp != null) {
 				throw new IllegalArgumentException(
@@ -100,7 +100,7 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public List<Method> method(String name) {
 		ArrayList<Method> r = new ArrayList<Method>();
-		for(Pair<String,Type.Fun> p : methods.keySet()) {
+		for(Pair<String,Type.Function> p : methods.keySet()) {
 			if(p.first().equals(name)) {
 				r.add(methods.get(p));
 			}
@@ -108,8 +108,8 @@ public class Module extends ModuleLoader.Skeleton {
 		return r;
 	}
 	
-	public Method method(String name, Type.Fun ft) {
-		return methods.get(new Pair<String, Type.Fun>(name, ft));
+	public Method method(String name, Type.Function ft) {
+		return methods.get(new Pair<String, Type.Function>(name, ft));
 	}
 	
 	public Collection<Module.Method> methods() {
@@ -117,7 +117,7 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public void add(Module.Method m) {
-		Pair<String,Type.Fun> p = new Pair<String,Type.Fun>(m.name(),m.type());
+		Pair<String,Type.Function> p = new Pair<String,Type.Function>(m.name(),m.type());
 		this.methods.put(p,m);
 	}
 	
@@ -135,23 +135,32 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public static class TypeDef extends SyntacticElement.Impl {
+		private List<Modifier> modifiers;
 		private String name;
 		private Type type;		
 		private Block constraint;
 
-		public TypeDef(String name, Type type, Block constraint, Attribute... attributes) {
+		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+				Block constraint, Attribute... attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.type = type;
 			this.constraint = constraint;
 		}
 
-		public TypeDef(String name, Type type, Block constraint, Collection<Attribute> attributes) {
+		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+				Block constraint, Collection<Attribute> attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
-			this.type = type;						
+			this.type = type;
 			this.constraint = constraint;
 		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
+		}				
 		
 		public String name() {
 			return name;
@@ -167,19 +176,26 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public static class ConstDef extends SyntacticElement.Impl {
+		private List<Modifier> modifiers;
 		private String name;		
 		private Value constant;
 		
-		public ConstDef(String name, Value constant,  Attribute... attributes) {
+		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Attribute... attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.constant = constant;
 		}
 		
-		public ConstDef(String name, Value constant,  Collection<Attribute> attributes) {
+		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Collection<Attribute> attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.constant = constant;
+		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
 		}
 		
 		public String name() {
@@ -192,33 +208,41 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 		
 	public static class Method extends SyntacticElement.Impl {
+		private List<Modifier> modifiers;
 		private String name;		
-		private Type.Fun type;
+		private Type.Function type;		
 		private List<Case> cases;		
 				
-		public Method(String name, Type.Fun type,
-				Collection<Case> cases, Attribute... attributes) {
+		public Method(Collection<Modifier> modifiers, String name,
+				Type.Function type, Collection<Case> cases,
+				Attribute... attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.type = type;
 			this.cases = Collections
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
-		public Method(String name, Type.Fun type,
+		public Method(Collection<Modifier> modifiers, String name, Type.Function type,
 				Collection<Case> cases, Collection<Attribute> attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.type = type;
 			this.cases = Collections
 					.unmodifiableList(new ArrayList<Case>(cases));
+		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
 		}
 		
 		public String name() {
 			return name;
 		}
 		
-		public Type.Fun type() {
+		public Type.Function type() {
 			return type;
 		}
 
@@ -227,11 +251,20 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 
 		public boolean isFunction() {
-			return !(type instanceof Type.Meth);
+			return !(type instanceof Type.Method);
 		}
 		
 		public boolean isPublic() {
+				// TODO: fixme!
 			return true;
+		}
+		
+		public boolean isNative() {
+			return modifiers.contains(Modifier.NATIVE);
+		}
+		
+		public boolean isExport() {
+			return modifiers.contains(Modifier.EXPORT);
 		}
 	}	
 	

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define expr as {int}|bool
 
 string f(expr e):
@@ -6,9 +8,9 @@ string f(expr e):
     else:
         return "GOT BOOL"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = true
-    out.println(f(e))
+    sys.out.println(f(e))
     e = {1,2,3,4}
-    out.println(f(e))
+    sys.out.println(f(e))
  

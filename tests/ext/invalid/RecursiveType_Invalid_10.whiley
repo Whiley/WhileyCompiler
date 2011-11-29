@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define LinkedList as int | {LinkedList next, int data}
 
 define posLink as {posList next, nat data}
@@ -9,8 +11,8 @@ nat sum(LinkedList list):
     else:
         return list.data + sum(list.next)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     l = { next:1, data:1 }
-    debug str(sum(l))
+    debug toString(sum(l))
     l = { next:l, data:-2 }
-    debug str(sum(l))    
+    debug toString(sum(l))    

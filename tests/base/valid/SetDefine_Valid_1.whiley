@@ -1,5 +1,7 @@
+import * from whiley.lang.*
+
 define pintset as {int}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = {1,2}
-    out.println(str(p))
+    sys.out.println(toString(p))

@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 define fr3nat as int
 
 string f(int x):
-    return str(x)
+    return toString(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     y = 234987234987234982304980130982398723
-    out.println(f(y))
+    sys.out.println(f(y))

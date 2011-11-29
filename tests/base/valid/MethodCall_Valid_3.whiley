@@ -1,7 +1,8 @@
-void System::f(int x):
-    out.println(str(x))
+import * from whiley.lang.*
 
-void System::main([string] args):
-    // the following line should be an internal message send
-    this.f(1)
-    out.print("")
+void System::f(int x):
+    this.out.println(toString(x))
+
+void ::main(System sys,[string] args):
+    sys.f(1)
+    sys.out.print("")

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define state as {string input, int pos} where pos >= 0 && pos <= |input|
 
 state parseWhiteSpace(state st):
@@ -10,7 +12,7 @@ state parseTerm(state st):
     st = parseWhiteSpace(st)
     return st
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     st = {input:"  Hello",pos:0}
     st = parseTerm(st)
-    out.println(str(st))
+    sys.out.println(toString(st))

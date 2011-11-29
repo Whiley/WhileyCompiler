@@ -104,7 +104,7 @@ public interface JvmType extends Comparable<JvmType> {
      * The Void type is used to represent "void" types, found in method
      * declarations.
      * 
-     * @author djp
+     * @author David J. Pearce
      * 
      */
 	public static class Void implements Primitive {		
@@ -136,7 +136,7 @@ public interface JvmType extends Comparable<JvmType> {
 	}
 	/**
 	 * Represents the Java type "boolean"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Bool implements Primitive {		
@@ -170,7 +170,7 @@ public interface JvmType extends Comparable<JvmType> {
 
 	/**
 	 * Represents the Java type "byte"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Byte implements Primitive {
@@ -204,7 +204,7 @@ public interface JvmType extends Comparable<JvmType> {
 	
 	/**
 	 * Represents the Java type "char"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Char implements Primitive {
@@ -238,7 +238,7 @@ public interface JvmType extends Comparable<JvmType> {
 	
 	/**
 	 * Represents the Java type "short"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Short implements Primitive {
@@ -273,7 +273,7 @@ public interface JvmType extends Comparable<JvmType> {
 
 	/**
 	 * Represents the Java type "int"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Int implements Primitive {
@@ -308,7 +308,7 @@ public interface JvmType extends Comparable<JvmType> {
 	
 	/**
 	 * Represents the Java type "long"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Long implements Primitive {
@@ -343,7 +343,7 @@ public interface JvmType extends Comparable<JvmType> {
 	
 	/**
 	 * Represents the Java type "float"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Float implements Primitive {
@@ -379,7 +379,7 @@ public interface JvmType extends Comparable<JvmType> {
 	
 	/**
 	 * Represents the Java type "double"
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Double implements Primitive {
@@ -418,7 +418,7 @@ public interface JvmType extends Comparable<JvmType> {
      * the elements held in the array. For example, in "int[]", the element type
      * is int.
      * 
-     * @author djp
+     * @author David J. Pearce
      */
 	public static class Array implements Reference {		
 		private final JvmType element;
@@ -468,26 +468,30 @@ public interface JvmType extends Comparable<JvmType> {
 	/**
      * This represents a reference to a class. E.g. java.lang.String
      * 
-     * @author djp
+     * @author David J. Pearce
      * 
      */
 	public static class Clazz implements Reference {		
 		private final String pkg;
 		private final List<Pair<String, List<JvmType.Reference>>> components;
 		
-		public Clazz(String pkg, List<Pair<String, List<JvmType.Reference>>> components) {
+		public Clazz(String pkg,
+				List<Pair<String, List<JvmType.Reference>>> components) {
 			if (components == null) {
 				throw new IllegalArgumentException(
 						"Supplied class components type cannot be null.");
 			}
 			this.pkg = pkg;
 			this.components = components;
-		}		
-		
-		public Clazz(String pkg, String clazz) {
+		}
+
+		public Clazz(String pkg, String... components) {
 			this.pkg = pkg;
-			components = new ArrayList<Pair<String,List<JvmType.Reference>>>();
-			components.add(new Pair(clazz,new ArrayList<JvmType.Reference>()));
+			this.components = new ArrayList<Pair<String, List<JvmType.Reference>>>();
+			for (String c : components) {
+				this.components.add(new Pair<String, List<JvmType.Reference>>(
+						c, new ArrayList<JvmType.Reference>()));
+			}
 		}
 		
 		public List<Pair<String, List<JvmType.Reference>>> components() {
@@ -604,7 +608,7 @@ public interface JvmType extends Comparable<JvmType> {
      * 
      *  void printAll(Collection<? extends MyClass> { ... }
      * 
-     * @author djp
+     * @author David J. Pearce
      * 
      */
 	public static class Wildcard implements Reference {
@@ -725,7 +729,7 @@ public interface JvmType extends Comparable<JvmType> {
      * Represents a Generic type variable. For example, the T in class ArrayList<T> {
      * ... }
      * 
-     * @author djp
+     * @author David J. Pearce
      * 
      */
 	public static class Variable implements Reference {
@@ -808,7 +812,7 @@ public interface JvmType extends Comparable<JvmType> {
 	 * which is *both* an instance of T1 and an instance of T2. Thus, we always
 	 * have that T1 :> T1 & T2 and T2 :> T1 & T2.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 */
 	public static class Intersection implements Reference {
 		private final ArrayList<JvmType.Reference> bounds;
@@ -899,7 +903,7 @@ public interface JvmType extends Comparable<JvmType> {
 	 * Represents the type of a method.  For example, the following method
 	 * 
 	 * void m(int x) { ... } has type "void(int)" 
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Function implements JvmType {

@@ -1,14 +1,16 @@
+import * from whiley.lang.*
+
 define IntList as {int op, [real] rest}|{int op, int mode}
 
 string f(IntList y):
-    return str(y)
+    return toString(y)
 
 string g({int op, int mode} z):
-    return str(z)
+    return toString(z)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {op:1, rest:[1.23]}
-    out.println(f(x))
+    sys.out.println(f(x))
     x = {op:1.23, mode: 0}
     x.op = 123 // OK
-    out.println(g(x))
+    sys.out.println(g(x))

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define TYPE as null|int
 
 int f([TYPE] xs, TYPE p):
@@ -8,6 +10,6 @@ int f([TYPE] xs, TYPE p):
         r = r + 1
     return -1
 
-void System::main([string] args):
-    out.println(str(f([null,1,2],null)))
-    out.println(str(f([1,2,null,10],10)))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(f([null,1,2],null)))
+    sys.out.println(toString(f([1,2,null,10],10)))

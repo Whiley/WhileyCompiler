@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define frf1nat as int where $ >= 0
 
 void f(frf1nat y):
@@ -6,6 +8,6 @@ void f(frf1nat y):
 void f(int x):
     debug "F(INT)"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f(-1)
     f(1)

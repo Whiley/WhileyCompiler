@@ -1,10 +1,12 @@
-int f(int x) requires x >= 0:
-    return x
+import * from whiley.lang.*
 
 int f(int x) requires x >= 0:
     return x
 
-void System::main([string] args):    
-    debug str(f(1))
+int f(int x) requires x >= 0:
+    return x
+
+void ::main(System sys,[string] args):    
+    debug toString(f(1))
     
     

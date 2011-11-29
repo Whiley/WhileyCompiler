@@ -31,11 +31,10 @@ import wyil.util.*;
 
 /**
  * <p>
- * A Block is the foundation of the Whiley Intermediate Language. A Block
- * represents a complete sequence of bytecode instructions. For example, every
+ * Represents a complete sequence of bytecode instructions. For example, every
  * method body is a single Block. Likewise, the constraint for a give type is a
  * Block. Finally, a Block permits attributes to be attached to every bytecode
- * in the block. An example attribute is one for holding the location of the
+ * it contains. An example attribute is one for holding the location of the
  * source code which generated the bytecode.
  * </p>
  * 
@@ -73,7 +72,7 @@ import wyil.util.*;
  * </ul>
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class Block implements Iterable<Block.Entry> {
@@ -362,10 +361,10 @@ public final class Block implements Iterable<Block.Entry> {
 	}
 
 	/**
-	 * An Entry object represents a bytecode and those attributes currently
+	 * Represents an individual bytecode and those attributes currently
 	 * associated with it (if any) in the block.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Entry extends SyntacticElement.Impl {

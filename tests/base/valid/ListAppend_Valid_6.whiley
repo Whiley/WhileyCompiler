@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define plistv6 as [int]
 
 int f(plistv6 xs):
@@ -6,6 +8,6 @@ int f(plistv6 xs):
 int g(plistv6 left, plistv6 right):
     return f(left + right)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     r = g([1,2,3],[6,7,8])
-    out.println(str(r))
+    sys.out.println(toString(r))

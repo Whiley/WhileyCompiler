@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define SyntaxError as {string msg}
 
 string f(int x):
@@ -15,6 +17,6 @@ string f(int x):
 SyntaxError syntaxError(string errorMessage):
     return {msg: errorMessage}
 
-void System::main([string] args):
-    out.println(f(0))
-    out.println(f(1))
+void ::main(System sys,[string] args):
+    sys.out.println(f(0))
+    sys.out.println(f(1))

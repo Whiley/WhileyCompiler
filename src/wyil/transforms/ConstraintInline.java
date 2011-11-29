@@ -5,6 +5,7 @@ import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import static wyil.util.SyntaxError.*;
@@ -22,7 +23,7 @@ import wyjc.runtime.BigRational;
  * cases is the dispatch target.</li>
  * </ol>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ConstraintInline implements Transform {
@@ -61,7 +62,7 @@ public class ConstraintInline implements Transform {
 			constraint = nconstraint;
 		}
 		
-		return new Module.TypeDef(type.name(), type.type(), constraint,
+		return new Module.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
 				type.attributes());
 	}
 	
@@ -70,7 +71,7 @@ public class ConstraintInline implements Transform {
 		for(Module.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new Module.Method(method.name(), method.type(), cases);
+		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {	
@@ -152,7 +153,9 @@ public class ConstraintInline implements Transform {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
 		} catch(ResolveError e) {
-			syntaxError("internal failure",filename,entry,e);
+			syntaxError(e.getMessage(),filename,entry,e);
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,entry,e);
 		}
 		
 		return null;
@@ -220,10 +223,10 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
-				Type.Fun mtype = method.type();	
+				Type.Function mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Type.Meth
-						&& ((Type.Meth) mtype).receiver() != null) {
+				if (mtype instanceof Type.Method
+						&& ((Type.Method) mtype).receiver() != null) {
 					binding.put(pIndex++, Code.THIS_SLOT);
 				}
 				int shadowIndex = methodCase.body().numSlots();
@@ -325,10 +328,10 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.Fun fun) throws ResolveError {
+	protected Block findPrecondition(NameID name, Type.Function fun) throws ResolveError {
 		Module m = loader.loadModule(name.module());				
 		Module.Method method = m.method(name.name(),fun);
-		
+	
 		for(Module.Case c : method.cases()) {
 			// FIXME: this is a hack for now
 			return c.precondition();

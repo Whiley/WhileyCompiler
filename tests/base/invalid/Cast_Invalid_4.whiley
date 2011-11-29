@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define R1 as { real x, int y }
 define R2 as { int x, real y }
 define R3 as { int x, int y }
@@ -5,6 +7,6 @@ define R3 as { int x, int y }
 R3 f(R1|R2 i):
     return (R3) i
 
-void System::main([string] args):
-    out.println(str(f({x:123542.0, y:123})))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(f({x:123542.0, y:123})))
     

@@ -36,6 +36,7 @@ public class WhileyLexer {
 	private String filename;
 	private String input;
 	private int pos;
+	private int line;
 	
 	public WhileyLexer(String filename) throws IOException {
 		this(new InputStreamReader(new FileInputStream(filename),"UTF8"));
@@ -62,6 +63,7 @@ public class WhileyLexer {
 	public List<Token> scan() {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		pos = 0;
+		line = 1;
 		
 		while(pos < input.length()) {
 			char c = input.charAt(pos);
@@ -78,10 +80,10 @@ public class WhileyLexer {
 				tokens.add(scanIdentifier());
 			} else if (c == '\r' && (pos + 1) < input.length()
 					&& input.charAt(pos + 1) == '\n') {
-				tokens.add(new NewLine("\r\n",pos));
+				tokens.add(new NewLine("\r\n",pos,line++));
 				pos+=2;
 			} else if(c == '\n') {				
-				tokens.add(new NewLine("\n",pos++));				
+				tokens.add(new NewLine("\n",pos++,line++));				
 			} else if(c == '\t') {
 				tokens.add(scanTabs());
 			} else if(Character.isWhitespace(c)) {				
@@ -99,7 +101,7 @@ public class WhileyLexer {
 		while(pos < input.length() && input.charAt(pos) != '\n') {
 			pos++;
 		}
-		return new LineComment(input.substring(start,pos),start);
+		return new LineComment(input.substring(start,pos),start,line);
 	}
 	
 	public Token scanBlockComment() {
@@ -109,7 +111,7 @@ public class WhileyLexer {
 		}
 		pos++;
 		pos++;
-		return new BlockComment(input.substring(start,pos),start);
+		return new BlockComment(input.substring(start,pos),start,line);
 	}
 	
 	public Token scanDigits() {		
@@ -128,13 +130,13 @@ public class WhileyLexer {
 				// this is case for range e.g. 0..1
 				pos = pos - 1;
 				BigInteger r = new BigInteger(input.substring(start, pos));
-				return new Int(r,input.substring(start,pos),start);
+				return new Int(r,input.substring(start,pos),start,line);
 			}
 			while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 				pos = pos + 1;
 			}			
 			BigRational r = new BigRational(input.substring(start, pos));
-			return new Real(r,input.substring(start,pos),start);
+			return new Real(r,input.substring(start,pos),start,line);
 		} else if(pos < input.length() && input.charAt(pos) == 'b') {
 			// indicates a binary literal
 			if((pos - start) > 8) {
@@ -153,10 +155,10 @@ public class WhileyLexer {
 				}				
 			}
 			pos = pos + 1;
-			return new Byte((byte)val,input.substring(start,pos),start);
+			return new Byte((byte)val,input.substring(start,pos),start,line);
 		} else {
 			BigInteger r = new BigInteger(input.substring(start, pos));
-			return new Int(r,input.substring(start,pos),start);			
+			return new Int(r,input.substring(start,pos),start,line);			
 		}		
 	}
 	
@@ -178,7 +180,7 @@ public class WhileyLexer {
 			base = base.multiply(sixteen);
 		}
 		
-		return new Int(r,input.substring(start,pos),start);						
+		return new Int(r,input.substring(start,pos),start,line);						
 	}
 	
 	public int hexDigit(char c) {
@@ -220,7 +222,7 @@ public class WhileyLexer {
 			syntaxError("unexpected end-of-character",pos);
 		}
 		pos = pos + 1;
-		return new Char(c,input.substring(start,pos),start);
+		return new Char(c,input.substring(start,pos),start,line);
 	}
 	
 	public Token scanString() {
@@ -269,7 +271,7 @@ public class WhileyLexer {
 				}
 			} else if (c == '"') {				
 				String v = input.substring(start,++pos);
-				return new Strung(buf.toString(),v, start);
+				return new Strung(buf.toString(),v, start,line);
 			} else {			
 				buf.append(c);
 			}
@@ -325,57 +327,57 @@ public class WhileyLexer {
 		if(c == '.') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '.') {
 				pos += 2;
-				return new DotDot(pos-2);
+				return new DotDot(pos-2,line);
 			} else {
-				return new Dot(pos++);
+				return new Dot(pos++,line);
 			}
 		} else if(c == ',') {
-			return new Comma(pos++);
+			return new Comma(pos++,line);
 		} else if(c == ':') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == ':') {
 				pos += 2;
-				return new ColonColon(pos-2);
+				return new ColonColon(pos-2,line);
 			} else {
-				return new Colon(pos++);				
+				return new Colon(pos++,line);				
 			}			
 		} else if(c == ';') {
-			return new SemiColon(pos++);
+			return new SemiColon(pos++,line);
 		} else if(c == '(') {
-			return new LeftBrace(pos++);
+			return new LeftBrace(pos++,line);
 		} else if(c == ')') {
-			return new RightBrace(pos++);
+			return new RightBrace(pos++,line);
 		} else if(c == '[') {
-			return new LeftSquare(pos++);
+			return new LeftSquare(pos++,line);
 		} else if(c == ']') {
-			return new RightSquare(pos++);
+			return new RightSquare(pos++,line);
 		} else if(c == '{') {
-			return new LeftCurly(pos++);
+			return new LeftCurly(pos++,line);
 		} else if(c == '}') {
-			return new RightCurly(pos++);
+			return new RightCurly(pos++,line);
 		} else if(c == '+') {
-			return new Plus(pos++);
+			return new Plus(pos++,line);
 		} else if(c == '-') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
 				pos += 2;
-				return new RightArrow("->",pos-2);
+				return new RightArrow("->",pos-2,line);
 			} else {
-				return new Minus(pos++);				
+				return new Minus(pos++,line);				
 			}			
 		} else if(c == '*') {
-			return new Star(pos++);
+			return new Star(pos++,line);
 		} else if(c == '&') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '&') {
 				pos += 2;
-				return new LogicalAnd("&&",pos-2);
+				return new LogicalAnd("&&",pos-2,line);
 			} else {
-				return new Ampersand("&",pos++);
+				return new Ampersand("&",pos++,line);
 			}
 		} else if(c == '|') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '|') {
 				pos += 2;
-				return new LogicalOr("||",pos-2);
+				return new LogicalOr("||",pos-2,line);
 			} else {
-				return new Bar(pos++);
+				return new Bar(pos++,line);
 			}
 		} else if(c == '/') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '/') {
@@ -383,80 +385,80 @@ public class WhileyLexer {
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '*') {
 				return scanBlockComment();
 			} {
-				return new RightSlash(pos++);
+				return new RightSlash(pos++,line);
 			}
 		} else if(c == '%') {
-			return new Percent(pos++);			
+			return new Percent(pos++,line);			
 		} else if(c == '^') {
-			return new Caret(pos++);			
+			return new Caret(pos++,line);			
 		} else if(c == '~') {
-			return new Tilde(pos++);			
+			return new Tilde(pos++,line);			
 		} else if(c == '!') {			
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
-				return new NotEquals("!=",pos-2);
+				return new NotEquals("!=",pos-2,line);
 			} else {
-				return new Shreak(pos++);				
+				return new Shreak(pos++,line);				
 			}			
 		} else if(c == '?') {						
-			return new Question(pos++);							
+			return new Question(pos++,line);							
 		} else if(c == '=') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
-				return new EqualsEquals(pos-2);
+				return new EqualsEquals(pos-2,line);
 			} else {
-				return new Equals(pos++);				
+				return new Equals(pos++,line);				
 			}
 		} else if(c == '<') {
 			if((pos+2) < input.length() && input.charAt(pos+1) == '-' && input.charAt(pos+2) == '>') {
 				pos += 3;				
-				return new LeftRightArrow("<->",pos-3);
+				return new LeftRightArrow("<->",pos-3,line);
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '-') {
 				pos += 2;
-				return new LeftArrow("<-",pos-2);
+				return new LeftArrow("<-",pos-2,line);
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
-				return new LessEquals("<=",pos-2);
+				return new LessEquals("<=",pos-2,line);
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '<') {
 				pos += 2;
-				return new LeftLeftAngle(pos-2);
+				return new LeftLeftAngle(pos-2,line);
 			} else {
-				return new LeftAngle(pos++);
+				return new LeftAngle(pos++,line);
 			}
 		} else if(c == '>') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
-				return new GreaterEquals(">=",pos - 2);
+				return new GreaterEquals(">=",pos - 2,line);
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
 				pos += 2;
-				return new RightRightAngle(pos - 2);
+				return new RightRightAngle(pos - 2,line);
 			} else {
-				return new RightAngle(pos++);
+				return new RightAngle(pos++,line);
 			}
 		} else if(c == UC_LESSEQUALS) {
-			return new LessEquals(""+UC_LESSEQUALS,pos++);
+			return new LessEquals(""+UC_LESSEQUALS,pos++,line);
 		} else if(c == UC_GREATEREQUALS) {
-			return new GreaterEquals(""+UC_GREATEREQUALS,pos++);
+			return new GreaterEquals(""+UC_GREATEREQUALS,pos++,line);
 		} else if(c == UC_SETUNION) {
-			return new Union(""+UC_SETUNION,pos++);
+			return new Union(""+UC_SETUNION,pos++,line);
 		} else if(c == UC_SETINTERSECTION) {
-			return new Intersection(""+UC_SETINTERSECTION,pos++);
+			return new Intersection(""+UC_SETINTERSECTION,pos++,line);
 		} else if(c == UC_ELEMENTOF) {
-			return new ElemOf(""+UC_ELEMENTOF,pos++);
+			return new ElemOf(""+UC_ELEMENTOF,pos++,line);
 		} else if(c == UC_SUBSET) {
-			return new Subset(""+UC_SUBSET,pos++);
+			return new Subset(""+UC_SUBSET,pos++,line);
 		} else if(c == UC_SUBSETEQ) {
-			return new SubsetEquals(""+UC_SUBSETEQ,pos++);
+			return new SubsetEquals(""+UC_SUBSETEQ,pos++,line);
 		} else if(c == UC_SUPSET) {
-			return new Supset(""+UC_SUPSET,pos++);
+			return new Supset(""+UC_SUPSET,pos++,line);
 		} else if(c == UC_SUPSETEQ) {
-			return new SupsetEquals(""+UC_SUPSETEQ,pos++);
+			return new SupsetEquals(""+UC_SUPSETEQ,pos++,line);
 		} else if(c == UC_EMPTYSET) {
-			return new EmptySet(""+UC_EMPTYSET,pos++);
+			return new EmptySet(""+UC_EMPTYSET,pos++,line);
 		} else if(c == UC_LOGICALOR) {
-			return new LogicalOr(""+UC_LOGICALOR,pos++);
+			return new LogicalOr(""+UC_LOGICALOR,pos++,line);
 		} else if(c == UC_LOGICALAND) {
-			return new LogicalAnd(""+UC_LOGICALAND,pos++);
+			return new LogicalAnd(""+UC_LOGICALAND,pos++,line);
 		} 
 				
 		syntaxError("unknown operator encountered: " + c);
@@ -475,6 +477,7 @@ public class WhileyLexer {
 		"any",
 		"byte",
 		"char",
+		"catch",
 		"int",
 		"real",
 		"string",
@@ -488,6 +491,7 @@ public class WhileyLexer {
 		"default",
 		"throw",
 		"throws",
+		"do",
 		"while",
 		"else",
 		"where",
@@ -503,8 +507,11 @@ public class WhileyLexer {
 		"import",
 		"package",
 		"public",
+		"native",
+		"export",
 		"extern",
-		"spawn"
+		"spawn",
+		"try"
 	};
 	
 	public Token scanIdentifier() {
@@ -518,23 +525,23 @@ public class WhileyLexer {
 		// now, check for keywords
 		for(String keyword : keywords) {
 			if(keyword.equals(text)) {
-				return new Keyword(text,start);
+				return new Keyword(text,start,line);
 			}
 		}
 		
 		// now, check for text operators
 		if(text.equals("in")) {
-			return new ElemOf(text,start);
+			return new ElemOf(text,start,line);
 		} else if(text.equals("no")) {
-			return new None(text,start);
+			return new None(text,start,line);
 		} else if(text.equals("some")) {
-			return new Some(text,start);
+			return new Some(text,start,line);
 		} else if(text.equals("is")) {			
-			return new TypeEquals(start);			 
+			return new TypeEquals(start,line);			 
 		}
 	
 		// otherwise, must be identifier
-		return new Identifier(text,start);
+		return new Identifier(text,start,line);
 	}
 	
 	public Token scanTabs() {
@@ -544,7 +551,7 @@ public class WhileyLexer {
 			pos++;
 			ntabs++;
 		}
-		return new Tabs(input.substring(start, pos), ntabs, start);	
+		return new Tabs(input.substring(start, pos), ntabs, start,line);	
 	}
 	
 	public void skipWhitespace(List<Token> tokens) {		
@@ -554,7 +561,7 @@ public class WhileyLexer {
 		}
 		int ts = (pos - start) / 4;
 		if(ts > 0) {			
-			tokens.add(new Tabs(input.substring(start,pos),ts,start));
+			tokens.add(new Tabs(input.substring(start,pos),ts,start,line));
 		}
 		while (pos < input.length() && input.charAt(pos) != '\n'
 				&& input.charAt(pos) != '\r'
@@ -573,11 +580,13 @@ public class WhileyLexer {
 	
 	public static abstract class Token {
 		public final String text;
-		public final int start;		
+		public final int start;
+		public final int line;		
 		
-		public Token(String text, int pos) {
+		public Token(String text, int pos, int line) {
 			this.text = text;
-			this.start = pos;			
+			this.start = pos;
+			this.line = line;
 		}
 			
 		public int end() {
@@ -587,215 +596,215 @@ public class WhileyLexer {
 	
 	public static class Real extends Token {
 		public final BigRational value;
-		public Real(BigRational r, String text, int pos) { 
-			super(text,pos);
+		public Real(BigRational r, String text, int pos, int line) { 
+			super(text,pos,line);
 			value = r;
 		}
 	}
 	public static class Byte extends Token {
 		public final byte value;
-		public Byte(byte r, String text, int pos) { 
-			super(text,pos);
+		public Byte(byte r, String text, int pos, int line) { 
+			super(text,pos,line);
 			value = r;
 		}
 	}
 	public static class Char extends Token {
 		public final char value;
-		public Char(char r, String text, int pos) { 
-			super(text,pos);
+		public Char(char r, String text, int pos, int line) { 
+			super(text,pos,line);
 			value = r;
 		}
 	}
 	public static class Int extends Token {
 		public final BigInteger value;
-		public Int(BigInteger r, String text, int pos) { 
-			super(text,pos);
+		public Int(BigInteger r, String text, int pos, int line) { 
+			super(text,pos,line);
 			value = r;
 		}
 	}
 	public static class Identifier extends Token {
-		public Identifier(String text, int pos) { super(text,pos); }
+		public Identifier(String text, int pos, int line) { super(text,pos,line); }
 	}
 	public static class Strung extends Token {
 		public final String string;
-		public Strung(String string, String text, int pos) { 
-			super(text,pos);
+		public Strung(String string, String text, int pos, int line) { 
+			super(text,pos,line);
 			this.string = string;
 		}
 	}	
 	public static class Keyword extends Token {
-		public Keyword(String text, int pos) { super(text,pos); }
+		public Keyword(String text, int pos, int line) { super(text,pos,line); }
 	}
 	public static class NewLine extends Token {
-		public NewLine(String text, int pos) { super(text,pos); }
+		public NewLine(String text, int pos, int line) { super(text,pos,line); }
 	}	
 	public static class Tabs extends Token {
 		public int ntabs;
-		public Tabs(String text, int ntabs, int pos) { 
-			super(text,pos);
+		public Tabs(String text, int ntabs, int pos, int line) { 
+			super(text,pos,line);
 			this.ntabs = ntabs; 
 		}		
 	}	
 	public static class LineComment extends Token {
-		public LineComment(String text, int pos) { super(text,pos);	}
+		public LineComment(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class BlockComment extends Token {
-		public BlockComment(String text, int pos) { super(text,pos);	}
+		public BlockComment(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class Caret extends Token {
-		public Caret(int pos) { super("^",pos);	}
+		public Caret(int pos, int line) { super("^",pos,line);	}
 	}
 	public static class Comma extends Token {
-		public Comma(int pos) { super(",",pos);	}
+		public Comma(int pos, int line) { super(",",pos,line);	}
 	}
 	public static class Colon extends Token {
-		public Colon(int pos) { super(":",pos);	}
+		public Colon(int pos, int line) { super(":",pos,line);	}
 	}
 	public static class ColonColon extends Token {
-		public ColonColon(int pos) { super("::",pos);	}
+		public ColonColon(int pos, int line) { super("::",pos,line);	}
 	}
 	public static class SemiColon extends Token {
-		public SemiColon(int pos) { super(";",pos);	}
+		public SemiColon(int pos, int line) { super(";",pos,line);	}
 	}
 	public static class LeftBrace extends Token {
-		public LeftBrace(int pos) { super("(",pos);	}
+		public LeftBrace(int pos, int line) { super("(",pos,line);	}
 	}
 	public static class RightBrace extends Token {
-		public RightBrace(int pos) { super(")",pos);	}
+		public RightBrace(int pos, int line) { super(")",pos,line);	}
 	}
 	public static class LeftSquare extends Token {
-		public LeftSquare(int pos) { super("[",pos);	}
+		public LeftSquare(int pos, int line) { super("[",pos,line);	}
 	}
 	public static class RightSquare extends Token {
-		public RightSquare(int pos) { super("]",pos);	}
+		public RightSquare(int pos, int line) { super("]",pos,line);	}
 	}
 	public static class LeftAngle extends Token {
-		public LeftAngle(int pos) { super("<",pos);	}
+		public LeftAngle(int pos, int line) { super("<",pos,line);	}
 	}
 	public static class LeftLeftAngle extends Token {
-		public LeftLeftAngle(int pos) { super("<<",pos);	}
+		public LeftLeftAngle(int pos, int line) { super("<<",pos,line);	}
 	}
 	public static class RightAngle extends Token {
-		public RightAngle(int pos) { super(">",pos);	}
+		public RightAngle(int pos, int line) { super(">",pos,line);	}
 	}
 	public static class RightRightAngle extends Token {
-		public RightRightAngle(int pos) { super(">>",pos);	}
+		public RightRightAngle(int pos, int line) { super(">>",pos,line);	}
 	}
 	public static class LeftCurly extends Token {
-		public LeftCurly(int pos) { super("{",pos);	}
+		public LeftCurly(int pos, int line) { super("{",pos,line);	}
 	}
 	public static class RightCurly extends Token {
-		public RightCurly(int pos) { super("}",pos);	}
+		public RightCurly(int pos, int line) { super("}",pos,line);	}
 	}
 	public static class Plus extends Token {
-		public Plus(int pos) { super("+",pos);	}
+		public Plus(int pos, int line) { super("+",pos,line);	}
 	}
 	public static class Minus extends Token {
-		public Minus(int pos) { super("-",pos);	}
+		public Minus(int pos, int line) { super("-",pos,line);	}
 	}
 	public static class Star extends Token {
-		public Star(int pos) { super("*",pos);	}
+		public Star(int pos, int line) { super("*",pos,line);	}
 	}
 	public static class Percent extends Token {
-		public Percent(int pos) { super("%",pos);	}
+		public Percent(int pos, int line) { super("%",pos,line);	}
 	}
 	public static class LeftSlash extends Token {
-		public LeftSlash(int pos) { super("\\",pos);	}
+		public LeftSlash(int pos, int line) { super("\\",pos,line);	}
 	}
 	public static class RightSlash extends Token {
-		public RightSlash(int pos) { super("/",pos);	}
+		public RightSlash(int pos, int line) { super("/",pos,line);	}
 	}
 	public static class Tilde extends Token {
-		public Tilde(int pos) { super("~",pos);	}
+		public Tilde(int pos, int line) { super("~",pos,line);	}
 	}
 	public static class Shreak extends Token {
-		public Shreak(int pos) { super("!",pos);	}
+		public Shreak(int pos, int line) { super("!",pos,line);	}
 	}
 	public static class Question extends Token {
-		public Question(int pos) { super("?",pos);	}
+		public Question(int pos, int line) { super("?",pos,line);	}
 	}
 	public static class Dot extends Token {
-		public Dot(int pos) { super(".",pos);	}
+		public Dot(int pos, int line) { super(".",pos,line);	}
 	}
 	public static class DotDot extends Token {
-		public DotDot(int pos) { super("..",pos);	}
+		public DotDot(int pos, int line) { super("..",pos,line);	}
 	}
 	public static class Bar extends Token {
-		public Bar(int pos) { super("|",pos);	}
+		public Bar(int pos, int line) { super("|",pos,line);	}
 	}	
 	public static class Equals extends Token {
-		public Equals(int pos) { super("=",pos);	}
+		public Equals(int pos, int line) { super("=",pos,line);	}
 	}
 	public static class EqualsEquals extends Token {
-		public EqualsEquals(int pos) { super("==",pos);	}
+		public EqualsEquals(int pos, int line) { super("==",pos,line);	}
 	}
 	public static class NotEquals extends Token {
-		public NotEquals(String text, int pos) { super(text,pos);	}
+		public NotEquals(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class LessEquals extends Token {
-		public LessEquals(String text, int pos) { super(text,pos);	}
+		public LessEquals(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class GreaterEquals extends Token {
-		public GreaterEquals(String text, int pos) { super(text,pos);	}
+		public GreaterEquals(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class TypeEquals extends Token {
-		public TypeEquals(int pos) { super("is",pos);	}
+		public TypeEquals(int pos, int line) { super("is",pos,line);	}
 	}
 	public static class None extends Token {
-		public None(String text, int pos) { super(text,pos);	}
+		public None(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class Some extends Token {
-		public Some(String text, int pos) { super(text,pos);	}
+		public Some(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class ElemOf extends Token {
-		public ElemOf(String text, int pos) { super(text,pos);	}
+		public ElemOf(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class Union extends Token {
-		public Union(String text, int pos) { super(text,pos);	}
+		public Union(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class Intersection extends Token {
-		public Intersection(String text, int pos) { super(text,pos);	}
+		public Intersection(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class EmptySet extends Token {
-		public EmptySet(String text, int pos) { super(text,pos);	}
+		public EmptySet(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class Subset extends Token {
-		public Subset(String text, int pos) { super(text,pos);	}
+		public Subset(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class Supset extends Token {
-		public Supset(String text, int pos) { super(text,pos);	}
+		public Supset(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class SubsetEquals extends Token {
-		public SubsetEquals(String text, int pos) { super(text,pos);	}
+		public SubsetEquals(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class SupsetEquals extends Token {
-		public SupsetEquals(String text, int pos) { super(text,pos);	}
+		public SupsetEquals(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class LogicalAnd extends Token {
-		public LogicalAnd(String text, int pos) { super(text,pos);	}
+		public LogicalAnd(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class LogicalOr extends Token {
-		public LogicalOr(String text, int pos) { super(text,pos);	}
+		public LogicalOr(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class LogicalNot extends Token {
-		public LogicalNot(String text, int pos) { super(text,pos);	}
+		public LogicalNot(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class Ampersand extends Token {
-		public Ampersand(String text, int pos) { super(text,pos);	}
+		public Ampersand(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class BitwiseOr extends Token {
-		public BitwiseOr(String text, int pos) { super(text,pos);	}
+		public BitwiseOr(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class BitwiseNot extends Token {
-		public BitwiseNot(String text, int pos) { super(text,pos);	}
+		public BitwiseNot(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class LeftRightArrow extends Token {
-		public LeftRightArrow(String text, int pos) { super(text,pos);	}
+		public LeftRightArrow(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class LeftArrow extends Token {
-		public LeftArrow(String text, int pos) { super(text,pos);	}
+		public LeftArrow(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class RightArrow extends Token {
-		public RightArrow(String text, int pos) { super(text,pos);	}
+		public RightArrow(String text, int pos, int line) { super(text,pos,line);	}
 	}
 }

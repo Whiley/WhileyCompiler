@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define state as {string input, int pos}
 
 char f(state st):
@@ -6,7 +8,7 @@ char f(state st):
             return st.input[st.pos]
     return ' '
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     c = f({input:"hello",pos:0})
-    out.println(str(c))
+    sys.out.println(toString(c))
  

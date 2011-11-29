@@ -1,6 +1,8 @@
+import * from whiley.lang.*
+
 define nat as int where $ >= 0
 define expr as nat | {int op, expr left, expr right}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = 14897
-    out.println(str(e))
+    sys.out.println(toString(e))

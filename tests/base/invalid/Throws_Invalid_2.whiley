@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Error as {string msg}
 define WrongError as {int msg}
 

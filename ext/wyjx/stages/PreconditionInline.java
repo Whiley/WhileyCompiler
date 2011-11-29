@@ -53,7 +53,7 @@ import static wyil.util.SyntaxError.*;
  * <li>To inline preconditions for division and list access expressions</li>
  * </ol>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class PreconditionInline implements ModuleTransform {

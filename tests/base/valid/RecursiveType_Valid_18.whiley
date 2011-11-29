@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 // expression tree
 define Expr as int | real |  // constant
     [Expr] |           // list constructor
@@ -32,8 +34,8 @@ null|Value evaluate(Expr e):
         else:
             return null // stuck
 
-public void System::main([string] args):
-    out.println(str(evaluate(123)))
-    out.println(str(evaluate({src: [112,212332,342], index:0})))
-    out.println(str(evaluate({src: [112312,-289712,312242], index:2})))
-    out.println(str(evaluate([123,223,323])))
+public void ::main(System sys,[string] args):
+    sys.out.println(toString(evaluate(123)))
+    sys.out.println(toString(evaluate({src: [112,212332,342], index:0})))
+    sys.out.println(toString(evaluate({src: [112312,-289712,312242], index:2})))
+    sys.out.println(toString(evaluate([123,223,323])))

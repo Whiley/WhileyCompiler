@@ -1,9 +1,11 @@
+import * from whiley.lang.*
+
 string f([int] a) requires |a| > 0:
      a[0] = 5
-     return str(a)
+     return toString(a)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      b = [1,2,3]
-     out.println(str(b))
-     out.println(f(b))
-     out.println(str(b))
+     sys.out.println(toString(b))
+     sys.out.println(f(b))
+     sys.out.println(toString(b))

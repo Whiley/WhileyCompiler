@@ -1,5 +1,7 @@
+import * from whiley.lang.*
+
 void f(int x):
     asdkljkljg(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f(1)

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Proc as process { int(int) func }
 
 int Proc::func(int x):
@@ -9,11 +11,11 @@ int Proc::test(int arg):
 int id(int x):
     return x
     
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = spawn { func: &id }
     x = p.test(123)
-    out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))
     x = p.test(12545)
-    out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))
     x = p.test(-11)
-    out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + toString(x))

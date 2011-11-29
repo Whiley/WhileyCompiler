@@ -1,12 +1,14 @@
+import * from whiley.lang.*
+
 // this is a comment!
 define IntReal as int|real
 
 string f(IntReal y):
-    return str(y)
+    return toString(y)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = 123
-    out.println(f(x))
+    sys.out.println(f(x))
     x = 1.234
-    out.println(f(x))
+    sys.out.println(f(x))
 

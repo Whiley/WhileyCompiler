@@ -1,8 +1,10 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     left = [1,2]
     right = [3,4]
     r = left + right
     left = left + [6]
-    out.println(str(left))
-    out.println(str(right))
-    out.println(str(r))
+    sys.out.println(toString(left))
+    sys.out.println(toString(right))
+    sys.out.println(toString(r))

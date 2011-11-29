@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 // this is a comment!
 string f({int} xs):
-    return str(xs)
+    return toString(xs)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ys = {1,2,3}
     zs = ys
-    out.println(f(zs))
+    sys.out.println(f(zs))

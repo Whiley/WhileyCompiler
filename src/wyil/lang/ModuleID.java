@@ -33,7 +33,7 @@ import java.util.*;
  * module name. The purpose of the UMI is to provide a uniform way of referring
  * to modules throughout the compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ModuleID {

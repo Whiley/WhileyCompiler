@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 int f([int] xs) requires no { x in xs | x < 0}:
     return |xs|
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     left = [1,2,3]
     right = [5,6,7]
     r = f(left + right)
-    out.println(str(r))
+    sys.out.println(toString(r))

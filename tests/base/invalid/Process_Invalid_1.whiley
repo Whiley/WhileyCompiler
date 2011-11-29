@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define MyProc1 as process { int data }
 define MyProc2 as process { any data }
 
@@ -10,8 +12,8 @@ int MyProc1::get():
 MyProc1 System::create(int data):
     return spawn {data: data}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p2 = this.create(1)
     p2.set(1.23)
-    out.println(str(p2.get()))
+    sys.out.println(toString(p2.get()))
 

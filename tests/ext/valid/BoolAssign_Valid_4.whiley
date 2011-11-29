@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int f(int x, int y) requires x>=0 && y>=0, ensures $>0:
     a = true
     
@@ -9,5 +11,5 @@ int f(int x, int y) requires x>=0 && y>=0, ensures $>0:
     else:
         return 123
 
-void System::main([string] args):
-    out.println(str(1))
+void ::main(System sys,[string] args):
+    sys.out.println(toString(1))

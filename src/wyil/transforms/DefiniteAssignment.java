@@ -34,6 +34,7 @@ import wyil.util.dfa.*;
 import wyil.lang.*;
 import static wyil.lang.Block.*;
 import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 
 /**
  * <p>
@@ -52,7 +53,7 @@ import static wyil.util.SyntaxError.*;
  * In the above example, variable z is used in the return statement before it
  * has been defined any value. This is considered a syntax error in whiley.
  * </p>
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class DefiniteAssignment extends
@@ -66,9 +67,9 @@ public class DefiniteAssignment extends
 		HashSet<Integer> defined = new HashSet<Integer>();
 		
 		int diff = 0;
-		
-		if(method.type() instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) method.type();
+						
+		if(method.type() instanceof Type.Method) {
+			Type.Method mt = (Type.Method) method.type();
 			if(mt.receiver() != null) {
 				defined.add(diff);
 				diff++;
@@ -92,7 +93,7 @@ public class DefiniteAssignment extends
 		} else if(code instanceof Code.Load) {
 			Code.Load load = (Code.Load) code;
 			if(!in.contains(load.slot)) {
-				syntaxError("variable might not be initialised",
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 						filename, entry);
 			}
 		}		
@@ -100,18 +101,21 @@ public class DefiniteAssignment extends
 		return in;
 	}
 		
+	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, HashSet<Integer> in) {
 		// nothing to do here
 		return new Pair(in, in);
 	}
-	
+
+	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfType iftype, Entry stmt, HashSet<Integer> in) {
 		// nothing to do here
 		return new Pair(in,in);
 	}
 	
+	@Override
 	public List<HashSet<Integer>> propagate(int index, Code.Switch sw,
 			Entry stmt, HashSet<Integer> in) {
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
@@ -120,18 +124,24 @@ public class DefiniteAssignment extends
 		}
 		return stores;
 	}
-		
+
+	@Override
+	public HashSet<Integer> propagate(Type handler, HashSet<Integer> in) {
+		return in;
+	}
+	
+	@Override
 	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
-			Entry stmt, HashSet<Integer> in) {
-		
-		if(loop instanceof Code.ForAll) {
+			Entry stmt, HashSet<Integer> in, List<Pair<Type, String>> handlers) {
+
+		if (loop instanceof Code.ForAll) {
 			in = new HashSet<Integer>(in);
 			Code.ForAll fall = (Code.ForAll) loop;
 			in.add(fall.slot);
-		} 
-		
-		HashSet<Integer> r = propagate(start+1,end,in);
-		return join(in,r);		
+		}
+
+		HashSet<Integer> r = propagate(start + 1, end, in, handlers);
+		return join(in, r);
 	}
 	
 	protected HashSet<Integer> join(HashSet<Integer> s1, HashSet<Integer> s2) {		

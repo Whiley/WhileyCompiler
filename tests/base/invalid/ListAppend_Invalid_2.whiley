@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 [string] f([string] args):
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     l = [1,2,3]
     r = args + l
     f(r)
-    out.println(str(r))
+    sys.out.println(toString(r))

@@ -1,4 +1,6 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     b = 01b
     i = b * 2
-    out.println(str(i))
+    sys.out.println(toString(i))

@@ -36,7 +36,7 @@ public final class Set extends java.util.HashSet {
 				r = r + ", ";
 			}
 			firstTime=false;
-			r = r + Util.str(o);
+			r = r + whiley.lang.Any$native.toString(o);
 		}
 		return r + "}";
 	} 

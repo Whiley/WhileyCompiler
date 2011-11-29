@@ -1,7 +1,9 @@
+import * from whiley.lang.*
+
 define sr5nat as int
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {f:1}
     x.f = 2
-    out.println(str(x))
+    sys.out.println(toString(x))
     

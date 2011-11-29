@@ -1,12 +1,14 @@
+import * from whiley.lang.*
+
 define intlist as int|[int]
 
 string f([intlist] l):    
-    return str(l)
+    return toString(l)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     if |args| == 0:
         x = [1,2,3]
     else:
         x = [[1],[2,3],[5]]
     x[0] = 1
-    out.println(f(x))
+    sys.out.println(f(x))

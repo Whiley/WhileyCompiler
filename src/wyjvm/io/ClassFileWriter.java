@@ -74,7 +74,7 @@ public class ClassFileWriter {
 		output.write_u2(poolMap.get(Constant.buildClass(cfile.type())));
 		if (cfile.superClass() != null) {
 			output.write_u2(poolMap.get(Constant.buildClass(cfile.superClass())));
-		}
+		} 
 		output.write_u2(cfile.interfaces().size());
 		for (JvmType.Reference i : cfile.interfaces()) {
 			output.write_u2(poolMap.get(Constant.buildClass(i)));

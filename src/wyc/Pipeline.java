@@ -15,7 +15,7 @@ import wyil.transforms.*;
  * intermediate language (wyil). A pipeline is instantiated before being used to
  * create an instance of Compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class Pipeline {
@@ -46,17 +46,18 @@ public class Pipeline {
 
 	public static final List<Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Template>() {
-				{
+				{					
+					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));					
 					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
-					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));
-					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));
+					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));		
+					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));					
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					// Constant Propagation is disabled as there are some
 					// serious problems with that phase.
 					//add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
-					add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));										
-					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));					
+					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
+					//add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 				}
 			});
 
@@ -70,10 +71,11 @@ public class Pipeline {
 		register(BackPropagation.class);
 		register(DefiniteAssignment.class);
 		register(ConstantPropagation.class);
-		register(FunctionCheck.class);
+		register(ModuleCheck.class);
 		register(ConstraintInline.class);
 		register(CoercionCheck.class);
 		register(WyilFileWriter.class);
+		register(DeadCodeElimination.class);
 	}
 	
 	/**
@@ -127,7 +129,7 @@ public class Pipeline {
 	 * A template is an uninstantiated pipeline stage. This contains all of the
 	 * necessary information to instantiate the stage.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 */
 	public static class Template {					
 		Class<? extends Transform> clazz;
@@ -226,7 +228,7 @@ public class Pipeline {
 	 * The pipeline modifier captures a requested adjustment to the compilation
 	 * pipeline.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 */
 	public static class Modifier {
 		public final POP op;

@@ -1,6 +1,8 @@
+import * from whiley.lang.*
+
 define dr2point as {real x, real y}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      p = {x:1.0,y:2.23}
-     out.println(str(p))
+     sys.out.println(toString(p))
 

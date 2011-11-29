@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 import whiley.io.*
 
 define table as [
@@ -14,6 +16,6 @@ int g(int d):
     y = table[d]
     return y(123)
     
-void System::main([string] args):    
-    out.println(str(g(0)))    
-    out.println(str(g(1)))
+void ::main(System sys,[string] args):    
+    sys.out.println(toString(g(0)))    
+    sys.out.println(toString(g(1)))

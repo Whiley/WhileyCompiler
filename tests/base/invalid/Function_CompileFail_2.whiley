@@ -1,8 +1,10 @@
-void f(int x):
-    out.println()"FIRST"
+import * from whiley.lang.*
 
 void f(int x):
-    out.println()"SECOND"
+    sys.out.println()"FIRST"
 
-void System::main([string] args):
-    out.println()"NOUT"
+void f(int x):
+    sys.out.println()"SECOND"
+
+void ::main(System sys,[string] args):
+    sys.out.println()"NOUT"

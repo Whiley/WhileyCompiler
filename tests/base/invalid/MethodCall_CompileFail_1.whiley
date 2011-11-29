@@ -1,5 +1,7 @@
-void f(int x):
-    out.println(str(x))
+import * from whiley.lang.*
 
-void System::main([string] args):
+void f(int x):
+    sys.out.println(toString(x))
+
+void ::main(System sys,[string] args):
     this.f(1)
