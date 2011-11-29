@@ -31,7 +31,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyc.stages.TypePropagation.Env;
-import wyil.ModuleTable;
+import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
@@ -43,7 +43,7 @@ import wyjc.runtime.BigRational;
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
-	public ConstantPropagation(ModuleTable loader) {
+	public ConstantPropagation(ModuleLoader loader) {
 		super(loader);
 	}
 		

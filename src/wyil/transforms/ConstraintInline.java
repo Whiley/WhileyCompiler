@@ -27,10 +27,10 @@ import wyjc.runtime.BigRational;
  * 
  */
 public class ConstraintInline implements Transform {
-	private final ModuleTable loader;	
+	private final ModuleLoader loader;	
 	private String filename;
 	
-	public ConstraintInline(ModuleTable loader) {
+	public ConstraintInline(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	

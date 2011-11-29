@@ -18,7 +18,7 @@ import wyil.util.Pair;
  */
 public class DeadCodeElimination implements Transform {
 
-	public DeadCodeElimination(ModuleTable loader) {
+	public DeadCodeElimination(ModuleLoader loader) {
 		
 	}
 	

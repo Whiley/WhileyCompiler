@@ -31,7 +31,7 @@ import java.util.*;
 import wyc.stages.TypePropagation.Env;
 import wyil.lang.*;
 import wyil.lang.Module.*;
-import wyil.ModuleTable;
+import wyil.ModuleLoader;
 import wyil.Transform;
 
 public class WyilFileWriter implements Transform {
@@ -40,7 +40,7 @@ public class WyilFileWriter implements Transform {
 	private boolean writeAttributes;
 	private boolean writeSlots;
 		
-	public WyilFileWriter(ModuleTable loader) {
+	public WyilFileWriter(ModuleLoader loader) {
 
 	}
 	

@@ -34,21 +34,21 @@ import java.util.List;
 import java.util.Map;
 
 import wyc.stages.TypePropagation.Env;
-import wyil.ModuleTable;
+import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.util.*;
 import static wyil.lang.Block.*;
 
 public abstract class ForwardFlowAnalysis<T> implements Transform {
-	protected ModuleTable loader;
+	protected ModuleLoader loader;
 	protected String filename;
 	protected Module.Method method;
 	protected Module.Case methodCase;
 	protected Block block;
 	protected HashMap<String,T> stores;
 	
-	public ForwardFlowAnalysis(ModuleTable loader) {
+	public ForwardFlowAnalysis(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	

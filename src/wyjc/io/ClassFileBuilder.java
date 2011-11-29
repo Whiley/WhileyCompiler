@@ -56,11 +56,11 @@ public class ClassFileBuilder {
 	protected int CLASS_VERSION = 49;
 	protected int WHILEY_MINOR_VERSION;
 	protected int WHILEY_MAJOR_VERSION;
-	protected ModuleTable loader;	
+	protected ModuleLoader loader;	
 	protected String filename;
 	protected JvmType.Clazz owner;
 	
-	public ClassFileBuilder(ModuleTable loader, int whileyMajorVersion, int whileyMinorVersion) {
+	public ClassFileBuilder(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
 		this.WHILEY_MINOR_VERSION = whileyMinorVersion;
 		this.WHILEY_MAJOR_VERSION = whileyMajorVersion;

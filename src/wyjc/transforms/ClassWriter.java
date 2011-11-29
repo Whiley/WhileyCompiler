@@ -29,7 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-import wyil.ModuleTable;
+import wyil.ModuleLoader;
 import wyil.lang.Module;
 import wyil.util.Logger;
 import wyil.*;
@@ -48,7 +48,7 @@ public class ClassWriter implements Transform {
 	// properly. 
 	private boolean deadCode = false;
 	
-	public ClassWriter(ModuleTable loader) {
+	public ClassWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
 				wyjc.Main.MINOR_VERSION);
 	}	

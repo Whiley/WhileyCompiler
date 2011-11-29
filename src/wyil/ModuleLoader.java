@@ -44,7 +44,7 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public class ModuleTable {
+public class ModuleLoader {
 	/**
 	 * The Closed World Assumption indicates whether or not we should attempt to
 	 * compile source files that we encouter.
@@ -124,12 +124,12 @@ public class ModuleTable {
 	 */
 	private Logger logger;
 	
-	public ModuleTable(Collection<Path.Root> whileypath, Logger logger) {
+	public ModuleLoader(Collection<Path.Root> whileypath, Logger logger) {
 		this.logger = logger;
 		this.whileypath = new ArrayList<Path.Root>(whileypath);		
 	}
 	
-	public ModuleTable(Collection<Path.Root> whileypath) {
+	public ModuleLoader(Collection<Path.Root> whileypath) {
 		this.logger = Logger.NULL;
 		this.whileypath = new ArrayList<Path.Root>(whileypath);		
 	}
@@ -201,7 +201,7 @@ public class ModuleTable {
 			if(imp.matchName(name)) {
 				for(ModuleID mid : matchImport(imp)) {
 					try {														
-						Skeleton mi = loadSkeleton(mid);					
+						Skeleton mi = loadSkeleton(mid);											
 						if (mi.hasName(name)) {
 							return new NameID(mid,name);
 						} 					
@@ -294,11 +294,15 @@ public class ModuleTable {
 		
 		try {
 			// ok, now look for module inside package.
-			Path.Entry wmod = filetable.get(module);
-			if(wmod == null) {
+			Path.Entry entry = filetable.get(module);
+			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
-			return readModuleInfo(wmod);				
+			m = readModuleInfo(entry);
+			if(m == null) {
+				throw new ResolveError("Unable to find module: " + module);
+			}
+			return m;						
 		} catch(IOException io) {				
 			throw new ResolveError("Unable to find module: " + module,io);
 		}	
@@ -334,7 +338,11 @@ public class ModuleTable {
 			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
-			return readModuleInfo(entry);
+			m = readModuleInfo(entry);
+			if(m == null) {
+				throw new ResolveError("Unable to find module: " + module);
+			}
+			return m;
 		} catch(IOException io) {
 			throw new ResolveError("Unagle to find module: " + module,io);
 		}			

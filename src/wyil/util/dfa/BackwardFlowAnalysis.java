@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wyil.ModuleTable;
+import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
@@ -41,13 +41,13 @@ import wyil.util.*;
 import static wyil.lang.Block.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
-	protected ModuleTable loader;
+	protected ModuleLoader loader;
 	protected String filename;
 	protected Module.Method method;
 	protected Module.Case methodCase;
 	protected HashMap<String,T> stores;
 	
-	public BackwardFlowAnalysis(ModuleTable loader) {
+	public BackwardFlowAnalysis(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	

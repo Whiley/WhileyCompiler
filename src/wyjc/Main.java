@@ -195,7 +195,7 @@ public class Main {
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			ModuleTable moduleLoader = new ModuleTable(whileypath);
+			ModuleLoader moduleLoader = new ModuleLoader(whileypath);
 			moduleLoader.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));

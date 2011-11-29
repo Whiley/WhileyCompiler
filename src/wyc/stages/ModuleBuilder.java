@@ -29,7 +29,7 @@ import java.util.*;
 
 import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
-import wyil.ModuleTable;
+import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wyc.lang.*;
@@ -39,7 +39,7 @@ import wyc.lang.Stmt.*;
 import wyc.lang.Expr.*;
 
 public class ModuleBuilder {
-	private final ModuleTable loader;	
+	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
 	private HashMap<NameID, List<Type.Function>> functions;
@@ -58,7 +58,7 @@ public class ModuleBuilder {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public ModuleBuilder(ModuleTable loader) {
+	public ModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;		
 	}
 

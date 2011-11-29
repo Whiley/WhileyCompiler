@@ -40,7 +40,7 @@ public class JvmBytecodeWriter implements Transform {
 	private final boolean validate = true;
 	private final boolean deadCode = true;
 	
-	public JvmBytecodeWriter(ModuleTable loader) {
+	public JvmBytecodeWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
 				wyjc.Main.MINOR_VERSION);
 	}
