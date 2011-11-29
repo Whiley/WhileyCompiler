@@ -54,7 +54,7 @@ public class ModuleTable {
      * The whiley path is a list of directories which must be
      * searched in ascending order for whiley files.
      */
-	private ArrayList<WSystem.Item> whileypath;
+	private ArrayList<WContainer> whileypath;
 	
 	/**
      * A map from module names in the form "xxx.yyy" to module objects. This is
@@ -100,7 +100,7 @@ public class ModuleTable {
 		 * a jar file, or a directory. The order of locations found is
 		 * important --- those which come first have higher priority.
 		 */
-		public final ArrayList<File> locations = new ArrayList<File>();
+		public final ArrayList<WContainer> locations = new ArrayList<WContainer>();
 	}
 
 	/**
@@ -144,16 +144,16 @@ public class ModuleTable {
 	 */
 	private Logger logger;
 	
-	public ModuleTable(Collection<WSystem.Item> whileypath, ClassFileLoader loader,
+	public ModuleTable(Collection<WContainer> whileypath, ClassFileLoader loader,
 			Logger logger) {
 		this.logger = logger;
-		this.whileypath = new ArrayList<WSystem.Item>(whileypath);
+		this.whileypath = new ArrayList<WContainer>(whileypath);
 		this.moduleReader = loader;
 	}
 	
-	public ModuleTable(Collection<WSystem.Item> whileypath, ClassFileLoader loader) {
+	public ModuleTable(Collection<WContainer> whileypath, ClassFileLoader loader) {
 		this.logger = Logger.NULL;
-		this.whileypath = new ArrayList<WSystem.Item>(whileypath);
+		this.whileypath = new ArrayList<WContainer>(whileypath);
 		this.moduleReader = loader;
 	}
 	
@@ -375,7 +375,7 @@ public class ModuleTable {
 		String filename = module.fileName();	
 		String jarname = filename.replace(File.separatorChar,'/') + ".class";
 
-		for(File location : pkg.locations) {			
+		for(WContainer location : pkg.locations) {			
 			if (location.getName().endsWith(".jar")) {
 				// location is a jar file
 				JarFile jf = new JarFile(location);				
@@ -419,7 +419,7 @@ public class ModuleTable {
 		String filename = module.fileName();	
 		String jarname = filename.replace(File.separatorChar,'/') + ".class";
 		
-		for(File location : pkg.locations) {			
+		for(WContainer location : pkg.locations) {			
 			if (location.getName().endsWith(".jar")) {
 				// location is a jar file				
 				JarFile jf = new JarFile(location);				
@@ -501,8 +501,8 @@ public class ModuleTable {
 		// TODO: don't revisit items on the WhileyPath.
 		
 		// package has not been previously resolved, so try whileypath.
-		for (WSystem.Item item : whileypath) {
-			searchForPackages(item);
+		for (WContainer item : whileypath) {
+			searchForPackages(item,item);
 			pkgInfo = packages.get(pkg);
 			if(pkgInfo != null) {
 				return pkgInfo;
@@ -520,17 +520,17 @@ public class ModuleTable {
 	 * 
 	 * @param item
 	 */
-	private void searchForPackages(WSystem.Item item) {
-		if (item instanceof WSystem.ModuleItem) {
-			WSystem.ModuleItem mi = (WSystem.ModuleItem) item;
+	private void searchForPackages(WContainer parent, WItem item) {
+		if (item instanceof WModule) {
+			WModule mi = (WModule) item;
 			ModuleID mid = mi.id();
-			addPackageItem(mid.pkg(), mid.module(), null);
-		} else if (item instanceof WSystem.PackageItem) {
-			WSystem.PackageItem pi = (WSystem.PackageItem) item;
-			addPackageItem(pi.id(), null, null);
+			addPackageItem(mid.pkg(), mid.module(), parent);
+		} else if (item instanceof WContainer) {
+			WContainer pi = (WContainer) item;
+			addPackageItem(pi.id(), null, pi);
 			try {
-				for (WSystem.Item subitem : pi.list()) {
-					searchForPackages(subitem);
+				for (WItem subitem : pi.list()) {
+					searchForPackages(pi,subitem);
 				}
 			} catch(IOException e) {
 				// silently ignore ;)
@@ -572,7 +572,7 @@ public class ModuleTable {
 	 *            The location of the enclosing package. This is either a jar
 	 *            file, or a directory.
 	 */
-	private void addPackageItem(PkgID pkg, String name, WSystem.Item pkgLocation) {
+	private void addPackageItem(PkgID pkg, String name, WContainer pkgLocation) {
 		Package items = packages.get(pkg);
 		if (items == null) {						
 			items = new Package();			
