@@ -87,20 +87,11 @@ public class ModuleTable {
 	 * 
 	 */
 	private static final class Package {
-		
 		/**
-         * The modules field contains the names of those modules contained in
-         * this package.
-         */
-		public final HashSet<String> modules = new HashSet<String>();
-				
-		/**
-		 * The locations list contains the list of locations that have been
-		 * identified for a particular package. Each location identifies either
-		 * a jar file, or a directory. The order of locations found is
-		 * important --- those which come first have higher priority.
+		 * The modules field maps those modules contained in this package to
+		 * their module item for reading.
 		 */
-		public final ArrayList<WContainer> locations = new ArrayList<WContainer>();
+		public final HashMap<String,WModule> modules = new HashMap<String,WModule>();				
 	}
 
 	/**
