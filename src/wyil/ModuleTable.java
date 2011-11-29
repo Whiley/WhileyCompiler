@@ -31,6 +31,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import wyjc.io.ClassFileLoader; // to be deprecated
+import wyil.io.*;
 import wyil.lang.*;
 import wyil.util.*;
 
@@ -53,7 +54,7 @@ public class ModuleTable {
      * The whiley path is a list of directories which must be
      * searched in ascending order for whiley files.
      */
-	private ArrayList<String> whileypath;
+	private ArrayList<WSystem.Item> whileypath;
 	
 	/**
      * A map from module names in the form "xxx.yyy" to module objects. This is
@@ -143,16 +144,16 @@ public class ModuleTable {
 	 */
 	private Logger logger;
 	
-	public ModuleTable(Collection<String> whileypath, ClassFileLoader loader,
+	public ModuleTable(Collection<WSystem.Item> whileypath, ClassFileLoader loader,
 			Logger logger) {
 		this.logger = logger;
-		this.whileypath = new ArrayList<String>(whileypath);
+		this.whileypath = new ArrayList<WSystem.Item>(whileypath);
 		this.moduleReader = loader;
 	}
 	
-	public ModuleTable(Collection<String> whileypath, ClassFileLoader loader) {
+	public ModuleTable(Collection<WSystem.Item> whileypath, ClassFileLoader loader) {
 		this.logger = Logger.NULL;
-		this.whileypath = new ArrayList<String>(whileypath);
+		this.whileypath = new ArrayList<WSystem.Item>(whileypath);
 		this.moduleReader = loader;
 	}
 	
@@ -497,56 +498,44 @@ public class ModuleTable {
 			throw new ResolveError("package not found: " + pkg);
 		}
 
-		// package has not been previously resolved.
-		String filePkg = pkg.fileName();
+		// TODO: don't revisit items on the WhileyPath.
 		
-		// Second, try whileypath
-		for (String dir : whileypath) {			
-			// check if whileypath entry is a jarfile or a directory		
-			if (!dir.endsWith(".jar")) {
-				// dir is not a Jar file, so I assume it's a directory.				
-				pkgInfo = lookForPackage(dir,pkg,filePkg);
-				if(pkgInfo != null) {					
-					packages.put(pkg,pkgInfo);
-					return pkgInfo;
-				}				
-			} else {			
-				// this is a jar file
-				try {					
-					JarFile jf = new JarFile(dir);
-					for (Enumeration<JarEntry> e = jf.entries(); e
-							.hasMoreElements();) {
-						JarEntry je = e.nextElement();
-						String entryName = je.getName();
-						if (entryName.endsWith(".class")) {
-							// now strip off ".class"
-							entryName = entryName.substring(0, entryName
-									.length() - 6);
-							entryName = entryName.replace("/", ".");
-							// strip off package information
-							String pkgName = pathParent(entryName);
-							String moduleName = pathChild(entryName);
-
-							// now add to package map							
-							addPackageItem(new PkgID(pkgName.split("\\.")),
-									moduleName, new File(dir));
-						}
-					}					
-					
-					pkgInfo = packages.get(pkg);
-					if(pkgInfo != null) {						
-						return pkgInfo;
-					}
-						
-				} catch (IOException e) {
-					// jarfile listed on classpath doesn't exist!
-					// So, silently ignore it (this is what javac does).
-				}
-			}
+		// package has not been previously resolved, so try whileypath.
+		for (WSystem.Item item : whileypath) {
+			searchForPackages(item);
+			pkgInfo = packages.get(pkg);
+			if(pkgInfo != null) {
+				return pkgInfo;
+			}			
 		}
 				
 		failedPackages.add(pkg);
 		throw new ResolveError("package not found: " + pkg);
+	}
+
+	/**
+	 * Recursively traverse the item hierarchy searching for packages. Every
+	 * package found is then associated with the corresponding item. This way,
+	 * we can speed the process of loading items from the path in future.
+	 * 
+	 * @param item
+	 */
+	private void searchForPackages(WSystem.Item item) {
+		if (item instanceof WSystem.ModuleItem) {
+			WSystem.ModuleItem mi = (WSystem.ModuleItem) item;
+			ModuleID mid = mi.id();
+			addPackageItem(mid.pkg(), mid.module(), null);
+		} else if (item instanceof WSystem.PackageItem) {
+			WSystem.PackageItem pi = (WSystem.PackageItem) item;
+			addPackageItem(pi.id(), null, null);
+			try {
+				for (WSystem.Item subitem : pi.list()) {
+					searchForPackages(subitem);
+				}
+			} catch(IOException e) {
+				// silently ignore ;)
+			}
+		}
 	}
 	
 	private Module readModuleInfo(ModuleID module, String filename,
@@ -570,34 +559,7 @@ public class ModuleTable {
 					System.currentTimeMillis() - time);
 			return null;
 		}
-	} 
-	
-	/**
-     * This traverses the directory tree, starting from dir, looking for class
-     * or java files. There's probably a bug if the directory tree is cyclic!
-     */
-	private Package lookForPackage(String root, PkgID pkg, String filepkg) {				
-		if(root.equals("")) {
-			root = ".";
-		}				
-		
-		File f = new File(root + File.separatorChar + filepkg);				
-		if (f.isDirectory()) {			
-			for (String file : f.list()) {				
-				if (!closedWorldAssumption && file.endsWith(".whiley")) {
-					// strip  off ".whiley" to get module name
-					String name = file.substring(0,file.length()-7);
-					addPackageItem(pkg, name, new File(root));					
-				} else if (file.endsWith(".class")) {					
-					// strip  off ".class" to get module name
-					String name = file.substring(0,file.length()-6);					
-					addPackageItem(pkg, name, new File(root));					
-				}
-			}
-		}
-
-		return packages.get(pkg);
-	}
+	} 	
 	
 	/**
 	 * This adds a module to the module table. 
@@ -610,15 +572,17 @@ public class ModuleTable {
 	 *            The location of the enclosing package. This is either a jar
 	 *            file, or a directory.
 	 */
-	private void addPackageItem(PkgID pkg, String name, File pkgLocation) {
+	private void addPackageItem(PkgID pkg, String name, WSystem.Item pkgLocation) {
 		Package items = packages.get(pkg);
 		if (items == null) {						
 			items = new Package();			
 			packages.put(pkg, items);
 		} 
 
-		// add the class in question
-		items.modules.add(name);
+		if(name != null) {
+			// add the class in question
+			items.modules.add(name);
+		}
 		
 		// now, add the location (if it wasn't already added)  
 		if(!items.locations.contains(pkgLocation)) {			
@@ -626,8 +590,8 @@ public class ModuleTable {
 		}		
 
 		// Finally, add all enclosing packages of this package as
-		// well. Otherwise, isPackage("whiley") can fails even when we know about
-		// a particular package.		
+		// well. Otherwise, isPackage("whiley") can fails even when we know
+		// about a particular package such as "whiley.lang".
 		for(int i=0;i<=pkg.size()-1;++i) {
 			PkgID p = pkg.subpkg(0,i);			
 			if (packages.get(p) == null) {

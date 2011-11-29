@@ -19,26 +19,24 @@ import wyil.lang.PkgID;
  * @author djp
  *
  */
-public class WJar implements WSystem.PackageItem {
+public class WJar implements WContainer {
 	private final PkgID pid;
 	private final JarFile jf;	
-	private final WSystem root;
-	private ArrayList<WSystem.Item> contents;
+	private ArrayList<WItem> contents;
 	
-	public WJar(PkgID pid, JarFile dir, WSystem root) {
+	public WJar(PkgID pid, JarFile dir) {
 		this.pid = pid;
-		this.jf = dir;		
-		this.root = root;
+		this.jf = dir;				
 	}
 
 	public PkgID id() {
 		return pid;
 	}
 	
-	public List<WSystem.Item> list() throws IOException {
+	public List<WItem> list() throws IOException {
 		if(contents == null) {
 			Enumeration<JarEntry> entries = jf.entries();
-			contents = new ArrayList<WSystem.Item>(); 
+			contents = new ArrayList<WItem>(); 
 			while(entries.hasMoreElements()) {
 				JarEntry e = entries.nextElement();
 				String filename = e.getName();				
@@ -49,7 +47,7 @@ public class WJar implements WSystem.PackageItem {
 					filename = filename.substring(0, pos);						
 				}		
 				
-				ModuleReader reader = root.getModuleReader(suffix);
+				ModuleReader reader = WSystem.getModuleReader(suffix);
 				if(reader != null) {
 					// Now, construct the package id
 					String[] split = filename.split("\\/");
@@ -70,33 +68,34 @@ public class WJar implements WSystem.PackageItem {
 		contents = null;
 	}
 	
-	public static class Entry implements WSystem.ModuleItem {
+	public static class Entry implements WModule {
 		private final ModuleID mid;
 		private final JarFile parent;
-		private final JarEntry entry;		
+		private final JarEntry entry;
 		private final ModuleReader reader;
-		
-		public Entry(ModuleID mid, JarFile parent, JarEntry entry, ModuleReader reader) {
+
+		public Entry(ModuleID mid, JarFile parent, JarEntry entry,
+				ModuleReader reader) {
 			this.mid = mid;
 			this.parent = parent;
 			this.entry = entry;
 			this.reader = reader;
 		}
-		
+
 		public ModuleID id() {
 			return mid;
 		}
-		
+
 		public Module read() throws IOException {
 			return reader.read(mid, parent.getInputStream(entry));
 		}
-		
+
 		public void close() throws IOException {
-			
+
 		}
-		
+
 		public void refresh() throws IOException {
-			
+
 		}
 	}
 }

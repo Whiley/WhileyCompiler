@@ -16,7 +16,7 @@ import wyil.lang.ModuleID;
  * @author djp
  * 
  */
-public class WFile implements WSystem.ModuleItem {
+public class WFile implements WModule {
 	private final ModuleID mid;
 	private final File file;		
 	private final ModuleReader reader;

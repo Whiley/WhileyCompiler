@@ -19,38 +19,6 @@ import wyil.lang.PkgID;
  * 
  */
 public class WSystem {
-	// =============================================================
-	// Interfaces
-	// =============================================================
-	
-	/**
-	 * An item represents anything which may be on the WHILEYPATH.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public interface Item {
-		/**
-		 * Refresh after something changed. This gives an opportunity for
-		 * directories on the path to reload themselves, etc.
-		 */
-		public void refresh() throws IOException;
-	}
-
-	/**
-	 * A package item represents a collection of items on the path.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public interface PackageItem extends Item {
-		public PkgID id();
-
-		/**
-		 * Open the folder and see what things are inside.
-		 */
-		public Collection<Item> list() throws IOException;
-	}
 
 	/**
 	 * A module item represents a single item on the path.
@@ -58,26 +26,18 @@ public class WSystem {
 	 * @author djp
 	 * 
 	 */
-	public interface ModuleItem extends Item {
-		public ModuleID id();
-		
-		/**
-		 * Open the source file for reading.
-		 */
-		public Module read() throws IOException;		
-	}
 	
 	// =============================================================
 	// Body
 	// =============================================================
 		
-	private HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();
+	private static final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();
 
-	public void register(String suffix, ModuleReader reader) {
+	public static void register(String suffix, ModuleReader reader) {
 		suffixMap.put(suffix, reader);
 	}
 	
-	protected ModuleReader getModuleReader(String suffix) {		
+	public static ModuleReader getModuleReader(String suffix) {		
 		return suffixMap.get(suffix);					
 	}
 }

@@ -17,30 +17,28 @@ import wyil.lang.PkgID;
  * @author djp
  * 
  */
-public class WDirectory implements WSystem.PackageItem {
+public class WDirectory implements WContainer {
 	private final PkgID pid;
-	private final File dir;
-	private final WSystem root;
-	private ArrayList<WSystem.Item> contents;	
+	private final File dir;	
+	private ArrayList<WItem> contents;	
 
-	public WDirectory(PkgID pid, File dir, WSystem root) {
+	public WDirectory(PkgID pid, File dir) {
 		this.pid = pid;
-		this.dir = dir;		
-		this.root = root;
+		this.dir = dir;				
 	}
 
 	public PkgID id() {
 		return pid;
 	}
 
-	public List<WSystem.Item> list() throws IOException {
+	public List<WItem> list() throws IOException {
 		if (contents == null) {
-			contents = new ArrayList<WSystem.Item>();
+			contents = new ArrayList<WItem>();
 			for (File file : dir.listFiles()) {				
 				if (file.isDirectory()) {
 					// TODO: need to modify filter
 					contents.add(new WDirectory(pid.append(file.getName()),
-							file, root));
+							file));
 				} else if (file.isFile()) {						
 					String filename = file.getName();
 					String suffix = "";
@@ -50,7 +48,7 @@ public class WDirectory implements WSystem.PackageItem {
 						filename = filename.substring(0, pos);						
 					}					
 					
-					ModuleReader reader = root.getModuleReader(suffix);
+					ModuleReader reader = WSystem.getModuleReader(suffix);
 					if (reader != null) {
 						contents.add(new WFile(new ModuleID(pid, filename),
 								file, reader));
