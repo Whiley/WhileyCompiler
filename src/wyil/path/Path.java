@@ -2,16 +2,14 @@ package wyil.path;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
+import java.util.*;
 
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
 public class Path {
 	
-	public interface Root {
-		public PkgID id();
-
+	public interface Root {		
 		/**
 		 * Open the folder and see what things are inside.
 		 */
@@ -35,6 +33,12 @@ public class Path {
 		 * @return
 		 */
 		public String suffix();
+		
+		/**
+		 * Return a string indicating the location of this entry.  
+		 * @return
+		 */
+		public String location();
 		
 		/**
 		 * Open the source file for reading.

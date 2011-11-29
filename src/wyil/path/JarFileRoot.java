@@ -22,43 +22,33 @@ import wyil.lang.PkgID;
  *
  */
 public class JarFileRoot implements Path.Root {
-	private final PkgID pid;
 	private final JarFile jf;	
 	
-	public JarFileRoot(PkgID pid, JarFile dir) {
-		this.pid = pid;
+	public JarFileRoot(String dir) throws IOException {
+		this.jf = new JarFile(dir);		
+	}
+	
+	public JarFileRoot(JarFile dir) {
 		this.jf = dir;				
 	}
 
-	public PkgID id() {
-		return pid;
-	}
-	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {
-		
+		String pkgname = pkg.toString().replace('.', '/');
 		Enumeration<JarEntry> entries = jf.entries();
-		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>(); 
-		while(entries.hasMoreElements()) {
+		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>();
+		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();
-			String filename = e.getName();				
-			String suffix = "";
-			int pos = filename.lastIndexOf('.');
-			if (pos > 0) {
-				suffix = filename.substring(pos+1);
-				filename = filename.substring(0, pos);						
-			}		
-			
-			// Now, construct the package id
-			String[] split = filename.split("\\/");
-			PkgID pkg = pid;
-			for (int i = 0; i != split.length - 1; ++i) {						
-				pkg = pkg.append(split[i]);
-			}					
-			// Then, the module id
-			ModuleID mid = new ModuleID(pkg,split[split.length - 1]);		
-			contents.add(new Entry(mid, jf, e));			
-		}		
-		
+			String filename = e.getName();
+			int pos = filename.lastIndexOf('/');
+			String tmp = filename.substring(0, pos);
+			if (tmp.equals(pkgname) && filename.endsWith(".class")) {
+				// strip suffix
+				filename = filename.substring(pos + 1, filename.length() - 6);
+				ModuleID mid = new ModuleID(pkg, filename);
+				contents.add(new Entry(mid, jf, e));
+			}
+		}
+
 		return contents;
 	}
 		
@@ -77,6 +67,10 @@ public class JarFileRoot implements Path.Root {
 			return mid;
 		}
 
+		public String location() {
+			return parent.getName();
+		}
+		
 		public String suffix() {
 			String suffix = "";
 			String filename = entry.getName();

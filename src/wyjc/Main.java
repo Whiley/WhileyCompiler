@@ -3,11 +3,13 @@ package wyjc;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
+import java.util.jar.JarFile;
 
 import wyc.Pipeline;
 import wyc.Compiler;
 import wyc.util.*;
 import wyil.*;
+import wyil.path.*;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
 import static wyc.util.OptArg.*;
@@ -98,7 +100,7 @@ public class Main {
 	 * 
 	 * @param bootpath
 	 */
-	public static void initialiseBootpath(ArrayList<String> bootpath) {
+	public static void initialiseBootPath(List<Path.Root> bootpath) {
 		if(bootpath.isEmpty()) {
 		
 			//
@@ -119,7 +121,7 @@ public class Main {
 						// "."
 						jarfile += "stdlib";
 					}
-					bootpath.add(jarfile);
+					bootpath.add(new JarFileRoot(jarfile));
 				}				
 			} catch(Exception e) {
 				// just ignore.
@@ -127,6 +129,31 @@ public class Main {
 		}
 	}
 
+	/**
+	 * The following is just a helper method. It assumes the list given contains
+	 * the names of directories or jarfiles on the filesystem.
+	 * 
+	 * @param items
+	 * @return
+	 */
+	private static List<Path.Root> initialisePathRoots(List<String> roots, boolean verbose) {
+		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
+		for(String root : roots) {
+			try {
+				if(root.endsWith(".jar")) {
+					nitems.add(new JarFileRoot(root));
+				} else {
+					nitems.add(new DirectoryRoot(root));
+				}
+			} catch(IOException e) {
+				if(verbose) {
+					System.err.println("Warning: " + root + " is not a valid package root");
+				}
+			}
+		}
+		return nitems;
+	}
+	
 	/**
 	 * The run method is responsible for processing command-line arguments and
 	 * constructing an appropriate Compiler instance.
@@ -154,22 +181,22 @@ public class Main {
 		}
 				
 		// read out option values
-		ArrayList<String> whileypath = (ArrayList) values.get("whileypath");
-		ArrayList<String> bootpath = (ArrayList) values.get("bootpath");
-		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 
 		boolean verbose = values.containsKey("verbose");
+		List<Path.Root> whileypath = initialisePathRoots((ArrayList) values.get("whileypath"),verbose);
+		List<Path.Root> bootpath = initialisePathRoots((ArrayList) values.get("bootpath"),verbose);
+		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
 		try {			
 			// initialise the boot path appropriately
-			initialiseBootpath(bootpath);
+			initialiseBootPath(bootpath);
 
 			// now initialise the whiley path
-			whileypath.add(0,".");
+			whileypath.add(0,new DirectoryRoot("."));
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			ClassFileLoader classLoader = new ClassFileLoader();
-			ModuleTable moduleLoader = new ModuleTable(whileypath, classLoader);
+			ModuleTable moduleLoader = new ModuleTable(whileypath);
+			moduleLoader.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
 			Pipeline pipeline = new Pipeline(templates, moduleLoader);

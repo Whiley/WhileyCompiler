@@ -15,21 +15,37 @@ import wyil.lang.PkgID;
  * 
  */
 public class DirectoryRoot implements Path.Root {
-	private final PkgID pid;
 	private final java.io.File dir;	
 
-	public DirectoryRoot(PkgID pid, java.io.File dir) {
-		this.pid = pid;
+	public DirectoryRoot(String dir) throws IOException {
+		this.dir = new File(dir);		
+	}
+	
+	public DirectoryRoot(java.io.File dir) {
 		this.dir = dir;				
 	}
-
-	public PkgID id() {
-		return pid;
-	}
-
+	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {
-		pkg.fileName();
-		return null;
+		File location = new File(dir + pkg.fileName());
+		
+		if (location.exists() && location.isDirectory()) {
+			ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
+			
+			// FIXME: update to search for whiley files as well
+			
+			for (File file : location.listFiles()) {
+				String filename = file.getName();
+				if (filename.endsWith(".class")) {
+					String name = filename.substring(0, filename.length() - 6);
+					ModuleID mid = new ModuleID(pkg, name);
+					entries.add(new Entry(mid, file));
+				}
+			}
+			
+			return entries;
+		} else {
+			return Collections.EMPTY_LIST;
+		}
 	}
 
 	/**
@@ -51,6 +67,10 @@ public class DirectoryRoot implements Path.Root {
 		
 		public ModuleID id() {
 			return mid;
+		}
+		
+		public String location() {
+			return file.getPath();
 		}
 		
 		public String suffix() {

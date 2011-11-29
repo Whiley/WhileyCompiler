@@ -94,7 +94,7 @@ public class ModuleTable {
 	/**
 	 * The suffix map maps suffixes to module readers for those suffixes.
 	 */
-	private static final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
+	private final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
 	
 	/**
 	 * Provides basic information regarding what names are defined within a
@@ -146,11 +146,11 @@ public class ModuleTable {
 		this.logger = logger;
 	}
 	
-	public static void setModuleReader(String suffix, ModuleReader reader) {
+	public void setModuleReader(String suffix, ModuleReader reader) {
 		suffixMap.put(suffix, reader);
 	}
 	
-	public static ModuleReader getModuleReader(String suffix) {		
+	public ModuleReader getModuleReader(String suffix) {		
 		return suffixMap.get(suffix);					
 	}
 	
@@ -330,11 +330,11 @@ public class ModuleTable {
 		resolvePackage(module.pkg());
 				
 		try {
-			PathUnit wmod = filetable.get(module);
-			if(wmod == null) {
+			Path.Entry entry = filetable.get(module);
+			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
-			return readModuleInfo(wmod);
+			return readModuleInfo(entry);
 		} catch(IOException io) {
 			throw new ResolveError("Unagle to find module: " + module,io);
 		}			
@@ -396,17 +396,19 @@ public class ModuleTable {
 			throw new ResolveError("package not found: " + pkg);
 		}
 
-		// package has not been previously resolved, so try whileypath.
-		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
-		for (PathContainer c : whileypath) {
-			// load package contents
-			for(PathItem item : c.list(pkg)) {
-				if(item instanceof PathUnit) {					
-					PathUnit mod = (PathUnit) item; 
-					filetable.put(mod.id(), mod);
-					contents.add(mod.id());
-				}			
+		HashSet<ModuleID> contents = new HashSet<ModuleID>();
+		try {
+			// package has not been previously resolved, so try whileypath.
+				
+			for (Path.Root c : whileypath) {
+				// load package contents
+				for(Path.Entry item : c.list(pkg)) {				
+					filetable.put(item.id(), item);
+					contents.add(item.id());
+				}
 			}
+		} catch(IOException e) {
+			// silently ignore.
 		}
 				
 		if(!contents.isEmpty()) {			
@@ -417,13 +419,13 @@ public class ModuleTable {
 		}
 	}	
 	
-	private Module readModuleInfo(PathUnit moduleInfo) throws IOException {
+	private Module readModuleInfo(Path.Entry entry) throws IOException {
 		long time = System.currentTimeMillis();
-
-		Module mi = moduleInfo.read();
-		logger.logTimedMessage("Loaded " + mi.id(), System.currentTimeMillis()
-				- time);
+		ModuleReader reader = suffixMap.get(entry.suffix());
+		Module mi = reader.read(entry.id(), entry.contents());
+		logger.logTimedMessage("Loaded " + entry.location() + ":" + mi.id(),
+				System.currentTimeMillis() - time);
 		moduletable.put(mi.id(), mi);
 		return mi;
-	} 	
+	}
 }

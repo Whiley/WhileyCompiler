@@ -11,7 +11,7 @@
   <target name="stdlib" depends="compile">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
     <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="lib/wyjc.jar"/> 
-    <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
+    <wyjc verbose="true" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 
     <jar destfile="lib/wyrt.jar">
       <fileset dir="src" includes="wyjc/runtime/**/*.class"/>
@@ -19,7 +19,7 @@
     </jar>
   </target>
 
-  <target name="wyjc" depends="stdlib">
+  <target name="wyjc" depends="compile">
     <buildnumber file="build.num"/>
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
