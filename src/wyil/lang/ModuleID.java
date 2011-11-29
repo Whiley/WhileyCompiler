@@ -59,8 +59,8 @@ public class ModuleID {
 		this.module = module;
 	}
 	
-	public static ModuleID fromString(String pkg) {
-		String[] split = pkg.split("\\.");
+	public static ModuleID fromString(String module) {
+		String[] split = module.split("\\.");
 		ArrayList<String> pkgs = new ArrayList<String>();
 		for (int i = 0; i != split.length - 1; ++i) {
 			pkgs.add(split[i]);

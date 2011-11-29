@@ -41,12 +41,25 @@ public class WJar implements WSystem.PackageItem {
 			contents = new ArrayList<WSystem.Item>(); 
 			while(entries.hasMoreElements()) {
 				JarEntry e = entries.nextElement();
-				String name = e.getName();
-				ModuleReader reader = root.getModuleReader(name);
+				String filename = e.getName();				
+				String suffix = "";
+				int pos = filename.lastIndexOf('.');
+				if (pos > 0) {
+					suffix = filename.substring(pos+1);
+					filename = filename.substring(0, pos);						
+				}		
+				
+				ModuleReader reader = root.getModuleReader(suffix);
 				if(reader != null) {
-					// TODO: module name is completely broken?
-					contents.add(new Entry(new ModuleID(pid, name), jf, e,
-							reader));
+					// Now, construct the package id
+					String[] split = filename.split("\\/");
+					PkgID pkg = pid;
+					for (int i = 0; i != split.length - 1; ++i) {						
+						pkg = pkg.append(split[i]);
+					}					
+					// Then, the module id
+					ModuleID mid = new ModuleID(pkg,split[split.length - 1]);		
+					contents.add(new Entry(mid, jf, e, reader));
 				}				
 			}
 		}
@@ -54,7 +67,7 @@ public class WJar implements WSystem.PackageItem {
 	}
 	
 	public void refresh() {
-		
+		contents = null;
 	}
 	
 	public static class Entry implements WSystem.ModuleItem {
