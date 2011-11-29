@@ -33,6 +33,7 @@ import java.util.jar.JarFile;
 import wyjc.io.ClassFileLoader; // to be deprecated
 import wyil.io.*;
 import wyil.lang.*;
+import wyil.path.Path;
 import wyil.util.*;
 
 /**
@@ -54,7 +55,7 @@ public class ModuleTable {
 	 * The whiley path is a list of locations which must be searched in
 	 * ascending order for whiley files.
 	 */
-	private ArrayList<WContainer> whileypath;
+	private ArrayList<Path.Root> whileypath;
 	
 	/**
 	 * A map from module identifiers to module objects. This is the master cache
@@ -75,7 +76,7 @@ public class ModuleTable {
 	 * quickly find and load a given module. Once the module is loaded, it will
 	 * be placed into the moduletable.
 	 */
-	private HashMap<ModuleID,WModule> filetable = new HashMap<ModuleID,WModule>();
+	private HashMap<ModuleID,Path.Entry> filetable = new HashMap<ModuleID,Path.Entry>();
 
 	/**
 	 * This identifies which packages have had their contents fully resolved.
@@ -89,6 +90,11 @@ public class ModuleTable {
      * simply to speed up package resolution.
      */
 	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
+	
+	/**
+	 * The suffix map maps suffixes to module readers for those suffixes.
+	 */
+	private static final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
 	
 	/**
 	 * Provides basic information regarding what names are defined within a
@@ -118,14 +124,14 @@ public class ModuleTable {
 	 */
 	private Logger logger;
 	
-	public ModuleTable(Collection<WContainer> whileypath, Logger logger) {
+	public ModuleTable(Collection<Path.Root> whileypath, Logger logger) {
 		this.logger = logger;
-		this.whileypath = new ArrayList<WContainer>(whileypath);		
+		this.whileypath = new ArrayList<Path.Root>(whileypath);		
 	}
 	
-	public ModuleTable(Collection<WContainer> whileypath) {
+	public ModuleTable(Collection<Path.Root> whileypath) {
 		this.logger = Logger.NULL;
-		this.whileypath = new ArrayList<WContainer>(whileypath);		
+		this.whileypath = new ArrayList<Path.Root>(whileypath);		
 	}
 	
 	public void setClosedWorldAssumption(boolean flag) {
@@ -139,7 +145,15 @@ public class ModuleTable {
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
-		
+	
+	public static void setModuleReader(String suffix, ModuleReader reader) {
+		suffixMap.put(suffix, reader);
+	}
+	
+	public static ModuleReader getModuleReader(String suffix) {		
+		return suffixMap.get(suffix);					
+	}
+	
 	/**
 	 * This function checks whether the supplied package exists or not.
 	 * 
@@ -280,7 +294,7 @@ public class ModuleTable {
 		
 		try {
 			// ok, now look for module inside package.
-			WModule wmod = filetable.get(module);
+			Path.Entry wmod = filetable.get(module);
 			if(wmod == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
@@ -316,7 +330,7 @@ public class ModuleTable {
 		resolvePackage(module.pkg());
 				
 		try {
-			WModule wmod = filetable.get(module);
+			PathUnit wmod = filetable.get(module);
 			if(wmod == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
@@ -384,11 +398,11 @@ public class ModuleTable {
 
 		// package has not been previously resolved, so try whileypath.
 		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
-		for (WContainer c : whileypath) {
+		for (PathContainer c : whileypath) {
 			// load package contents
-			for(WItem item : c.list(pkg)) {
-				if(item instanceof WModule) {					
-					WModule mod = (WModule) item; 
+			for(PathItem item : c.list(pkg)) {
+				if(item instanceof PathUnit) {					
+					PathUnit mod = (PathUnit) item; 
 					filetable.put(mod.id(), mod);
 					contents.add(mod.id());
 				}			
@@ -403,7 +417,7 @@ public class ModuleTable {
 		}
 	}	
 	
-	private Module readModuleInfo(WModule moduleInfo) throws IOException {
+	private Module readModuleInfo(PathUnit moduleInfo) throws IOException {
 		long time = System.currentTimeMillis();
 
 		Module mi = moduleInfo.read();
