@@ -423,9 +423,14 @@ public class ModuleTable {
 		long time = System.currentTimeMillis();
 		ModuleReader reader = suffixMap.get(entry.suffix());
 		Module mi = reader.read(entry.id(), entry.contents());
-		logger.logTimedMessage("Loaded " + entry.location() + ":" + mi.id(),
-				System.currentTimeMillis() - time);
-		moduletable.put(mi.id(), mi);
+		if(mi != null) {
+			logger.logTimedMessage("Loaded " + entry.location() + ":" + entry.id(),
+					System.currentTimeMillis() - time);
+			moduletable.put(mi.id(), mi);
+		} else {
+			logger.logTimedMessage("Ignored " + entry.location() + ":" + entry.id(),
+					System.currentTimeMillis() - time);
+		}
 		return mi;
 	}
 }
