@@ -417,17 +417,18 @@ public class ModuleLoader {
 			for (Path.Root c : sourcepath) {
 				// load package contents
 				for(Path.Entry item : c.list(pkg)) {
-					if(!filetable.containsKey(item)) {
+					Path.Entry old = filetable.get(item.id());
+					if (old == null || item.lastModified() > old.lastModified()) {
 						filetable.put(item.id(), item);
 						contents.add(item.id());
-					} 
+					}
 				}
 			}
 			// second, try whileypath.
 			for (Path.Root c : whileypath) {
 				// load package contents
 				for(Path.Entry item : c.list(pkg)) {
-					if(!filetable.containsKey(item)) {
+					if(!filetable.containsKey(item.id())) {
 						filetable.put(item.id(), item);
 						contents.add(item.id());
 					}

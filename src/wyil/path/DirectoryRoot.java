@@ -98,6 +98,10 @@ public class DirectoryRoot implements Path.Root {
 			return file.getPath();
 		}
 		
+		public long lastModified() {
+			return file.lastModified();
+		}
+		
 		public String suffix() {
 			String filename = file.getName();
 			String suffix = "";

@@ -75,6 +75,10 @@ public class JarFileRoot implements Path.Root {
 			return parent.getName();
 		}
 		
+		public long lastModified() {
+			return entry.getTime();
+		}
+		
 		public String suffix() {
 			String suffix = "";
 			String filename = entry.getName();

@@ -41,6 +41,12 @@ public class Path {
 		public String location();
 		
 		/**
+		 * 
+		 * @return
+		 */
+		public long lastModified();
+		
+		/**
 		 * Open the source file for reading.
 		 */
 		public InputStream contents() throws IOException;
