@@ -1,7 +1,10 @@
-void System::main([string] args):
-    i = this.var()
-    out!println(i)
-    out!println(i)
+import toString from whiley.lang.Any
+import * from whiley.lang.System
+
+void ::main(System sys, [string] args):
+    i = sys.var()
+    sys.out!println(i)
+    sys.out!println(i)
 
 string System::var():
-    return str(1)
+    return toString(1)

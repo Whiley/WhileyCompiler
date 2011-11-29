@@ -246,17 +246,15 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.MonitorEnter());
 		
 		// Get the System::main method out.
-		Type.Function wyft = (Type.Function) Type.Method(WHILEY_SYSTEM_T,
-				Type.T_VOID, Type.List(Type.T_STRING));
-//		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T,
-//				Type.List(Type.T_STRING));
+		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID,
+				Type.T_VOID, WHILEY_SYSTEM_T,	Type.List(Type.T_STRING));
 		JvmType.Function ftype =
 		    new JvmType.Function(JAVA_LANG_REFLECT_METHOD, JAVA_LANG_STRING,
 		        JAVA_LANG_STRING);
 		codes.add(new Bytecode.LoadConst(owner.toString()));
 	  codes.add(new Bytecode.LoadConst(nameMangle("main", wyft)));
-//		codes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,
-//		    Bytecode.STATIC));
+		codes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
+		    Bytecode.STATIC));
 		
 		// Create the System::main arguments list.
 		codes.add(new Bytecode.LoadConst(2));

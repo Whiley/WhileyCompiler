@@ -1,5 +1,8 @@
-void System::main([string] args):
-    out!println(this.self())
+import toString from whiley.lang.Any
+import * from whiley.lang.System
+
+void ::main(System sys, [string] args):
+    sys.out!println(sys.self())
 
 string System::self():
-    return str(1)
+    return toString(1)
