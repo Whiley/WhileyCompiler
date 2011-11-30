@@ -146,6 +146,22 @@ public class Main {
 			}
 		}
 	}
+	
+	/**
+	 * In the case that no explicit source path is provided as a command-line
+	 * argument, then "." is used as the source path. This mirrors the behaviour
+	 * of "javac". What it means, however, is that if you're compiling from
+	 * somewhere other than the package root, then you can quickly get into
+	 * problems.
+	 * 
+	 * @param sourcepath
+	 * @throws IOException
+	 */
+	public static void initialiseSourcePath(List<Path.Root> sourcepath) throws IOException {
+		if(sourcepath.isEmpty()) {
+			sourcepath.add(new DirectoryRoot(".",SOURCE_FILTER));
+		}
+	}
 
 	/**
 	 * The following is just a helper method. It assumes the list given contains
@@ -211,6 +227,9 @@ public class Main {
 			// initialise the boot path appropriately
 			initialiseBootPath(bootpath);
 
+			// initialise the source path appropriately
+			initialiseSourcePath(sourcepath);
+			
 			// now initialise the whiley path			
 			whileypath.addAll(bootpath);
 

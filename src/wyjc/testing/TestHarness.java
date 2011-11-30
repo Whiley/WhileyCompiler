@@ -32,7 +32,7 @@ import java.io.*;
 import wyjc.Main;
 
 public class TestHarness {
-	private String srcPath;    // path to source files	
+	private String sourcepath;    // path to source files	
 	private String outputPath; // path to output files
 	private String outputExtension; // the extension of output files
 	
@@ -50,7 +50,7 @@ public class TestHarness {
 	 */
 	public TestHarness(String srcPath, String outputPath,
 			String outputExtension) {
-		this.srcPath = srcPath.replace('/', File.separatorChar);
+		this.sourcepath = srcPath.replace('/', File.separatorChar);
 		this.outputPath = outputPath.replace('/', File.separatorChar);
 		this.outputExtension = outputExtension;		
 	}
@@ -63,28 +63,22 @@ public class TestHarness {
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void runTest(String name, String... params) {				
-		final String[] args = new String[3 + params.length];
-		args[0] = "-wp";
-		args[1] = "lib/wyrt.jar";		
-		for (int i = 0; i != params.length; ++i) {
-			args[i + 2] = params[i];
-		}
-		args[args.length - 1] = srcPath + File.separatorChar + name + ".whiley";
+	protected void runTest(String name, String... params) {						
+		String filename = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if (new Main().run(args) != 0) {
+		if (compile("-sp",sourcepath,"-wp", "lib/wyrt.jar",filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
-			String output = run(srcPath, name, args);
+			String output = run(sourcepath, name);
 			compare(output, outputPath + File.separatorChar + name + "."
 					+ outputExtension);
 		}
 	}
 	
 	protected void contextFailTest(String name) {				
-		name = srcPath + File.separatorChar + name + ".whiley";
+		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-wp", "lib/wyrt.jar",name);
+		int r = compile("-sp",sourcepath,"-wp", "lib/wyrt.jar",name);
 		
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
@@ -94,12 +88,12 @@ public class TestHarness {
 	}
 		
 	protected void runtimeFailTest(String name) {				
-		String fullName = srcPath + File.separatorChar + name + ".whiley";
+		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-wp", "lib/wyrt.jar",fullName) != 0) { 
+		if(compile("-sp",sourcepath,"-wp", "lib/wyrt.jar",fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
-			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				
+			String output = run(sourcepath,name);				
 			if(output != null) {
 				fail("test should have failed at runtime!");
 			}
@@ -110,7 +104,7 @@ public class TestHarness {
 		return new Main().run(args);
 	}
 	
-	private static String run(String path, String name, String... args) {
+	private static String run(String path, String name) {
 		try {
 			// We need to have
 			String classpath = "../../../" + File.pathSeparator + "."
