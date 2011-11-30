@@ -34,13 +34,13 @@ import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
 
-public class Compiler implements Logger {	
-	protected ModuleLoader loader;
+public class Compiler implements Logger {		
+	protected NameResolver resolver;	
 	protected ArrayList<Transform> stages;
 
-	public Compiler(ModuleLoader loader, List<Transform> stages) {
-		this.loader = loader;		
-		this.stages = new ArrayList<Transform>(stages);				
+	public Compiler(NameResolver resolver, List<Transform> stages) {
+		this.resolver = resolver;
+		this.stages = new ArrayList<Transform>(stages);
 	}
 	
 	/**
@@ -69,7 +69,7 @@ public class Compiler implements Logger {
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
 			wyfiles.add(wf);			
-			loader.preregister(wf.skeleton(),wf.filename);			
+			resolver.preregister(wf.skeleton());			
 		}
 				
 		for (WhileyFile m : wyfiles) {
@@ -78,7 +78,7 @@ public class Compiler implements Logger {
 		
 		List<Module> modules = buildModules(wyfiles);				
 		for(Module m : modules) {
-			loader.register(m);
+			resolver.register(m);
 		}		
 		
 		finishCompilation(modules);		
@@ -122,7 +122,7 @@ public class Compiler implements Logger {
 	public void finishCompilation(List<Module> modules) throws IOException {				
 		// Register the updated file
 		for(Module module : modules) {
-			loader.register(module);
+			resolver.register(module);
 		}
 		
 		for(Transform stage : stages) {
@@ -169,7 +169,7 @@ public class Compiler implements Logger {
 	
 	protected void resolveNames(WhileyFile m) {
 		long start = System.currentTimeMillis();		
-		new NameResolution(loader).resolve(m);
+		new NameResolution(resolver).resolve(m);
 		logTimedMessage("[" + m.filename + "] resolved names",
 				System.currentTimeMillis() - start);		
 		
@@ -177,7 +177,7 @@ public class Compiler implements Logger {
 	
 	protected List<Module> buildModules(List<WhileyFile> files) {		
 		long start = System.currentTimeMillis();		
-		List<Module> modules = new ModuleBuilder(loader).resolve(files);
+		List<Module> modules = new ModuleBuilder(resolver).resolve(files);
 		logTimedMessage("built modules",
 				System.currentTimeMillis() - start);
 		return modules;		

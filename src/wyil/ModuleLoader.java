@@ -46,22 +46,16 @@ import wyil.util.*;
  */
 public class ModuleLoader {
 	/**
-	 * The Closed World Assumption indicates whether or not we should attempt to
-	 * compile source files that we encouter.
-	 */
-	private boolean closedWorldAssumption = true;
-	
-	/**
 	 * The source path is a list of locations which must be searched in
 	 * ascending order for whiley files.
 	 */
-	private ArrayList<Path.Root> sourcepath;
+	protected ArrayList<Path.Root> sourcepath;
 	
 	/**
 	 * The whiley path is a list of locations which must be searched in
 	 * ascending order for wyil files.
 	 */
-	private ArrayList<Path.Root> whileypath;
+	protected ArrayList<Path.Root> whileypath;
 	
 	/**
 	 * A map from module identifiers to module objects. This is the master cache
@@ -69,38 +63,38 @@ public class ModuleLoader {
 	 * module has been entered into the moduletable, it will not be loaded
 	 * again.
 	 */
-	private HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
+	protected HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
 
 	/**
 	 * A map from module identifiers to skeleton objects. This is required to
 	 * permit preregistration of source files during compilation.
 	 */
-	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
+	protected HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
 
 	/**
 	 * A map from module identifiers to file system locations. This helps us to
 	 * quickly find and load a given module. Once the module is loaded, it will
 	 * be placed into the moduletable.
 	 */
-	private HashMap<ModuleID,Path.Entry> filetable = new HashMap<ModuleID,Path.Entry>();
+	protected HashMap<ModuleID,Path.Entry> filetable = new HashMap<ModuleID,Path.Entry>();
 
 	/**
 	 * This identifies which packages have had their contents fully resolved.
 	 * All items in a resolved package must have been loaded into the filetable.
 	 */
-	private HashMap<PkgID, HashSet<ModuleID>> packages = new HashMap<PkgID, HashSet<ModuleID>>();
+	protected HashMap<PkgID, HashSet<ModuleID>> packages = new HashMap<PkgID, HashSet<ModuleID>>();
 	
 	/**
      * The failed packages set is a collection of packages which have been
      * requested, but are known not to exist. The purpose of this cache is
      * simply to speed up package resolution.
      */
-	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
+	protected final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
 	
 	/**
 	 * The suffix map maps suffixes to module readers for those suffixes.
 	 */
-	private final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
+	protected final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
 	
 	/**
 	 * Provides basic information regarding what names are defined within a
@@ -142,10 +136,6 @@ public class ModuleLoader {
 		this.whileypath = new ArrayList<Path.Root>(whileypath);		
 	}
 	
-	public void setClosedWorldAssumption(boolean flag) {
-		closedWorldAssumption = flag;
-	}
-	
 	/**
 	 * Set the logger for this module loader.
 	 * @param logger
@@ -154,131 +144,40 @@ public class ModuleLoader {
 		this.logger = logger;
 	}
 	
+	/**
+	 * Associate a given module reader with a given suffix.
+	 * 
+	 * @param suffix
+	 *            --- filename extension of reader to associate with.
+	 * @param reader
+	 */
 	public void setModuleReader(String suffix, ModuleReader reader) {
 		suffixMap.put(suffix, reader);
 	}
-	
-	public ModuleReader getModuleReader(String suffix) {		
-		return suffixMap.get(suffix);					
-	}
-	
+		
 	/**
-	 * This function checks whether the supplied package exists or not.
+	 * Register a given skeleton with this loader. This ensures that when
+	 * skeleton requests are made, this skeleton will be used instead of
+	 * searching for it on the whileypath.
 	 * 
-	 * @param pkg
-	 *            The package whose existence we want to check for.
-	 * 
-	 * @return true if the package exists, false otherwise.
+	 * @param skeleton
+	 *            --- skeleton to preregister.
 	 */
-	public boolean isPackage(PkgID pkg) {
-		try {
-			resolvePackage(pkg);
-			return packages.containsKey(pkg);
-		} catch(ResolveError e) {
-			return false;
-		}
-	}	
-	
-	public void preregister(Skeleton skeleton, String filename) {		
+	public void preregister(Skeleton skeleton) {		
 		skeletontable.put(skeleton.id(), skeleton);			
 	}
 	
+	/**
+	 * Register a given module with this loader. This ensures that when requests
+	 * are made for this module, this will be returned instead of searching for
+	 * it on the whileypath.
+	 * 
+	 * @param module
+	 *            --- module to register.
+	 */
 	public void register(Module module) {			
 		moduletable.put(module.id(), module);	
 	}		
-	
-	/**
-	 * This methods attempts to resolve the correct package for a named item,
-	 * given a list of imports. Resolving the correct package may require
-	 * loading modules as necessary from the whileypath and/or compiling modules
-	 * for which only source code is currently available.
-	 * 
-	 * @param name
-	 *            A module name without package specifier.
-	 * @param imports
-	 *            A list of import declarations to search through. Imports are
-	 *            searched in order of appearance.
-	 * @return The resolved package.
-	 * @throws ModuleNotFoundException
-	 *             if it couldn't resolve the name
-	 */
-	public NameID resolveAsName(String name, List<Import> imports)
-			throws ResolveError {			
-		for (Import imp : imports) {
-			if(imp.matchName(name)) {
-				for(ModuleID mid : matchImport(imp)) {
-					try {						
-						Skeleton mi = loadSkeleton(mid);											
-						if (mi.hasName(name)) {
-							return new NameID(mid,name);
-						} 					
-					} catch(ResolveError rex) {
-						// ignore. This indicates we simply couldn't resolve
-                        // this module. For example, if it wasn't a whiley class
-                        // file.						
-					}
-				}
-			}
-		}
-		
-		throw new ResolveError("name not found: " + name);
-	}
-	
-	public NameID resolveAsName(List<String> names, List<Import> imports) throws ResolveError {
-		if(names.size() == 1) {
-			return resolveAsName(names.get(0),imports);
-		} else if(names.size() == 2) {
-			String name = names.get(1);
-			ModuleID mid = resolveAsModule(names.get(0),imports);
-			Skeleton mi = loadSkeleton(mid);					
-			if (mi.hasName(name)) {
-				return new NameID(mid,name);
-			} 
-		} else {
-			String name = names.get(names.size()-1);
-			String module = names.get(names.size()-2);
-			PkgID pkg = new PkgID(names.subList(0,names.size()-2));
-			ModuleID mid = new ModuleID(pkg,module);
-			Skeleton mi = loadSkeleton(mid);					
-			if (mi.hasName(name)) {
-				return new NameID(mid,name);
-			}
-		}
-		
-		String name = null;
-		for(String n : names) {
-			if(name != null) {
-				name = name + "." + n;
-			} else {
-				name = n;
-			}			
-		}
-		throw new ResolveError("name not found: " + name);
-	}
-	
-	/**
-	 * This method attempts to resolve the given name as a module name, given a
-	 * list of imports.
-	 * 
-	 * @param name
-	 * @param imports
-	 * @return
-	 * @throws ResolveError
-	 */
-	public ModuleID resolveAsModule(String name, List<Import> imports)
-			throws ResolveError {
-		
-		for (Import imp : imports) {
-			for(ModuleID mid : matchImport(imp)) {				
-				if(mid.module().equals(name)) {
-					return mid;
-				}
-			}
-		}
-		
-		
-		throw new ResolveError("module not found: " + name);
-	}
 	
 	/**
 	 * This method attempts to load a whiley module. The module is searched for
@@ -354,55 +253,17 @@ public class ModuleLoader {
 			throw new ResolveError("Unagle to find module: " + module,io);
 		}			
 	}	
-
-	/**
-	 * This method takes a given import declaration, and expands it to find all
-	 * matching modules.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	private List<ModuleID> matchImport(Import imp) {
-		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
-		for (PkgID pid : matchPackage(imp.pkg)) {
-			try {
-				resolvePackage(pid);;				
-				for (ModuleID m : packages.get(pid)) {					
-					if (imp.matchModule(m.module())) {
-						matches.add(m);
-					}
-				}
-			} catch (ResolveError ex) {
-				// dead code
-			}
-		}
-		return matches;
-	}
 	
 	/**
-	 * This method takes a given package id from an import declaration, and
-	 * expands it to find all matching packages. Note, the package id may
-	 * contain various wildcard characters to match multiple actual packages.
+	 * This method searches the WHILEYPATH looking for a matching package. If
+	 * the package is found, it's contents are loaded. Otherwise, a resolve
+	 * error is thrown.
 	 * 
-	 * @param imp
+	 * @param pkg
+	 *            --- the package to look for
 	 * @return
 	 */
-	private List<PkgID> matchPackage(PkgID pkg) {
-		ArrayList<PkgID> matches = new ArrayList<PkgID>();
-		try {
-			resolvePackage(pkg);
-			matches.add(pkg);
-		} catch(ResolveError er) {}
-		return matches;
-	}
-	
-	/**
-     * This method searches the WHILEYPATH looking for a matching package.
-     * 
-     * @param pkg --- the package to look for
-     * @return
-     */
-	private void resolvePackage(PkgID pkg) throws ResolveError {							
+	public void resolvePackage(PkgID pkg) throws ResolveError {							
 		// First, check if we have already resolved this package.						
 		if(packages.containsKey(pkg)) {
 			return;

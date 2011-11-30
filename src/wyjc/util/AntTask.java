@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wyc.Compiler;
+import wyc.NameResolver;
 import wyc.Pipeline;
 import wyil.ModuleLoader;
 import wyil.Transform;
@@ -117,18 +118,18 @@ public class AntTask extends MatchingTask {
     		List<Path.Root> whileypath = initialiseWhileyPath();
 
     		// second, construct the module loader
-    		ModuleLoader moduleLoader = new ModuleLoader(sourcepath,whileypath);
-    		moduleLoader.setModuleReader("class",  new ClassFileLoader());
+    		NameResolver resolver = new NameResolver(sourcepath,whileypath);
+    		resolver.setModuleReader("class",  new ClassFileLoader());
     		
     		// third, initialise the pipeline
     		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
     		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-    		Pipeline pipeline = new Pipeline(templates, moduleLoader);		
+    		Pipeline pipeline = new Pipeline(templates, resolver);		
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the compiler
-    		Compiler compiler = new Compiler(moduleLoader,stages);		
-    		moduleLoader.setLogger(compiler);		
+    		Compiler compiler = new Compiler(resolver,stages);		
+    		resolver.setLogger(compiler);		
 
     		if(verbose) {			
     			compiler.setLogOut(System.err);

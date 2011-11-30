@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.jar.JarFile;
 
+import wyc.NameResolver;
 import wyc.Pipeline;
 import wyc.Compiler;
 import wyc.util.*;
@@ -214,17 +215,17 @@ public class Main {
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			ModuleLoader moduleLoader = new ModuleLoader(sourcepath,whileypath);
-			moduleLoader.setModuleReader("class",  new ClassFileLoader());
+			NameResolver resolver = new NameResolver(sourcepath,whileypath);
+			resolver.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-			Pipeline pipeline = new Pipeline(templates, moduleLoader);
+			Pipeline pipeline = new Pipeline(templates, resolver);
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
 			}
 			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(moduleLoader,stages);		
-			moduleLoader.setLogger(compiler);		
+			Compiler compiler = new Compiler(resolver,stages);		
+			resolver.setLogger(compiler);		
 
 			if(verbose) {			
 				compiler.setLogOut(System.err);
