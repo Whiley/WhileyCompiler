@@ -35,6 +35,7 @@ import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.path.DirectoryRoot;
 import wyil.path.Path;
+import wyil.path.SourceDirectoryRoot;
 import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
 import wyjc.Main;
@@ -162,7 +163,7 @@ public class AntTask extends MatchingTask {
     
     protected List<Path.Root> initialiseSourcePath() {
     	ArrayList<Path.Root> sourcepath = new ArrayList<Path.Root>();
-    	sourcepath.add(new DirectoryRoot(srcdir, wyjc.Main.SOURCE_FILTER));    	
+    	sourcepath.add(new SourceDirectoryRoot(srcdir));    	
     	return sourcepath;
     }
     

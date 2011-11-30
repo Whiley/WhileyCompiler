@@ -14,10 +14,9 @@ import wyil.lang.PkgID;
  * @author djp
  * 
  */
-public class DirectoryRoot implements Path.Root {
+public abstract class DirectoryRoot implements Path.Root {
 	private final java.io.File dir;	
-	private final FilenameFilter filter;
-
+	
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
 	 * and an appropriate file filter. In converting the path to a File object,
@@ -31,9 +30,8 @@ public class DirectoryRoot implements Path.Root {
 	 *            this directory.
 	 * @throws IOException
 	 */
-	public DirectoryRoot(String path, FilenameFilter filter) throws IOException {
-		this.dir = new File(path);		
-		this.filter = filter;
+	public DirectoryRoot(String path) throws IOException {
+		this.dir = new File(path);				
 	}
 	
 	/**
@@ -45,9 +43,13 @@ public class DirectoryRoot implements Path.Root {
 	 *            --- filter which determines what constitutes a valid entry for
 	 *            this directory.
 	 */
-	public DirectoryRoot(java.io.File dir, FilenameFilter filter) {
+	public DirectoryRoot(java.io.File dir) {
 		this.dir = dir;
-		this.filter = filter;
+	}
+	
+	public boolean exists(PkgID pkg) throws IOException {
+		File location = new File(dir + File.separator + pkg.fileName());
+		return location.exists() && location.isDirectory();
 	}
 	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {
@@ -56,11 +58,11 @@ public class DirectoryRoot implements Path.Root {
 		if (location.exists() && location.isDirectory()) {
 			ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
 
-			for (File file : location.listFiles(filter)) {
+			for (File file : location.listFiles(filter())) {
 				String filename = file.getName();
 				String name = filename.substring(0, filename.lastIndexOf('.'));
 				ModuleID mid = new ModuleID(pkg, name);
-				entries.add(new Entry(mid, file));
+				entries.add(new Entry(mid, file));				
 			}
 
 			return entries;
@@ -68,10 +70,24 @@ public class DirectoryRoot implements Path.Root {
 			return Collections.EMPTY_LIST;
 		}
 	}
+	
+	public Entry lookup(ModuleID mid) throws IOException {
+		File location = new File(dir + File.separator + mid.fileName()
+				+ suffix());
+		if (location.exists()) {
+			return new Entry(mid, location);
+		} else {
+			return null; // not found
+		}
+	}
 
 	public String toString() {
 		return dir.getPath();
 	}
+	
+	public abstract FileFilter filter();
+	
+	public abstract String suffix();
 	
 	/**
 	 * A WFile is a file on the file system which represents a Whiley module. The

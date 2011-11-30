@@ -1,5 +1,6 @@
 package wyc;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -154,14 +155,19 @@ public class NameResolver extends ModuleLoader {
 		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
 		for (PkgID pid : matchPackage(imp.pkg)) {
 			try {
-				resolvePackage(pid);;				
-				for (ModuleID m : packages.get(pid)) {					
-					if (imp.matchModule(m.module())) {
-						matches.add(m);
+				resolvePackage(pid);
+				for(Path.Root root : packageroots.get(pid)) {
+					for (Path.Entry e : root.list(pid)) {
+						ModuleID m = e.id();
+						if (imp.matchModule(m.module())) {
+							matches.add(m);
+						}
 					}
 				}
 			} catch (ResolveError ex) {
 				// dead code
+			} catch (IOException ex) {
+				// FIXME
 			}
 		}
 		return matches;

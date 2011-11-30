@@ -15,20 +15,30 @@ import wyil.lang.PkgID;
  * @author djp
  *
  */
-public class JarFileRoot implements Path.Root {
+public final class JarFileRoot implements Path.Root {
 	private final JarFile jf;	
-	private final FilenameFilter filter;
 	
-	public JarFileRoot(String dir, FilenameFilter filter) throws IOException {
+	public JarFileRoot(String dir) throws IOException {
 		this.jf = new JarFile(dir);		
-		this.filter = filter;
 	}
 	
-	public JarFileRoot(JarFile dir, FilenameFilter filter) {
+	public JarFileRoot(JarFile dir) {
 		this.jf = dir;				
-		this.filter = filter;
 	}
 
+	public boolean exists(PkgID pkg) throws IOException {
+		String pkgname = pkg.toString().replace('.', '/');
+		Enumeration<JarEntry> entries = jf.entries();
+		while (entries.hasMoreElements()) {
+			JarEntry e = entries.nextElement();
+			String filename = e.getName();
+			if(filename.startsWith(pkgname)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {
 		String pkgname = pkg.toString().replace('.', '/');
 		Enumeration<JarEntry> entries = jf.entries();
@@ -36,10 +46,10 @@ public class JarFileRoot implements Path.Root {
 		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();
 			String filename = e.getName();
-			if (filter.accept(null, filename)) {
+			if(filename.endsWith(".class")) {				
 				int pos = filename.lastIndexOf('/');
 				String tmp = filename.substring(0, pos);
-				if (tmp.equals(pkgname) && filename.endsWith(".class")) {
+				if (tmp.equals(pkgname)) {
 					// strip suffix
 					filename = filename.substring(pos + 1,
 							filename.length() - 6);
@@ -50,6 +60,16 @@ public class JarFileRoot implements Path.Root {
 		}
 
 		return contents;
+	}
+	
+	public Entry lookup(ModuleID mid) throws IOException {
+		String filename = mid.toString().replace('.', '/') + ".class";
+		JarEntry entry = jf.getJarEntry(filename);
+		if(entry != null) {
+			return new Entry(mid,jf,entry);
+		} else {
+			return null;
+		}
 	}
 	
 	public String toString() {

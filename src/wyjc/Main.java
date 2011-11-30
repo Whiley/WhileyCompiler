@@ -37,20 +37,6 @@ public class Main {
 	public static final int SYNTAX_ERROR=1;
 	public static final int INTERNAL_FAILURE=2;
 	
-	public static final FilenameFilter BINARY_FILTER = new FilenameFilter() {
-		public boolean accept(File file, String filename) {
-			// FIXME: should really be ".wyil"
-			return filename.endsWith(".class");
-		}
-	};
-	
-	public static final FilenameFilter SOURCE_FILTER = new FilenameFilter() {
-		public boolean accept(File file, String filename) {
-			// FIXME: should really be ".wyil" || ".whiley"
-			return filename.endsWith(".class") || filename.endsWith(".whiley");
-		}
-	};
-	
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -142,7 +128,7 @@ public class Main {
 						// "."
 						jarfile += "stdlib";
 					}
-					bootpath.add(new JarFileRoot(jarfile,BINARY_FILTER));
+					bootpath.add(new JarFileRoot(jarfile));
 				}				
 			} catch(Exception e) {
 				// just ignore.
@@ -162,7 +148,7 @@ public class Main {
 	 */
 	public static void initialiseSourcePath(List<Path.Root> sourcepath) throws IOException {
 		if(sourcepath.isEmpty()) {
-			sourcepath.add(new DirectoryRoot(".",SOURCE_FILTER));
+			sourcepath.add(new SourceDirectoryRoot("."));
 		}
 	}
 
@@ -174,14 +160,16 @@ public class Main {
 	 * @return
 	 */
 	private static List<Path.Root> initialisePathRoots(List<String> roots,
-			FilenameFilter filter, boolean verbose) {
+			boolean source, boolean verbose) {
 		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
 		for (String root : roots) {
 			try {
 				if (root.endsWith(".jar")) {
-					nitems.add(new JarFileRoot(root, filter));
+					nitems.add(new JarFileRoot(root));
+				} else if(source) {
+					nitems.add(new BinaryDirectoryRoot(root));
 				} else {
-					nitems.add(new DirectoryRoot(root, filter));
+					nitems.add(new SourceDirectoryRoot(root));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -222,9 +210,9 @@ public class Main {
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
 		String outputdir = (String) values.get("outputdir");
-		List<Path.Root> sourcepath = initialisePathRoots((ArrayList) values.get("sourcepath"),SOURCE_FILTER,verbose);
-		List<Path.Root> whileypath = initialisePathRoots((ArrayList) values.get("whileypath"),BINARY_FILTER,verbose);
-		List<Path.Root> bootpath = initialisePathRoots((ArrayList) values.get("bootpath"),BINARY_FILTER,verbose);
+		List<Path.Root> sourcepath = initialisePathRoots((ArrayList) values.get("sourcepath"),true,verbose);
+		List<Path.Root> whileypath = initialisePathRoots((ArrayList) values.get("whileypath"),false,verbose);
+		List<Path.Root> bootpath = initialisePathRoots((ArrayList) values.get("bootpath"),false,verbose);
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
 		try {			

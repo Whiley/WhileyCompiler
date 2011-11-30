@@ -72,18 +72,11 @@ public class ModuleLoader {
 	protected HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
 
 	/**
-	 * A map from module identifiers to file system locations. This helps us to
-	 * quickly find and load a given module. Once the module is loaded, it will
-	 * be placed into the moduletable.
-	 */
-	protected HashMap<ModuleID,Path.Entry> filetable = new HashMap<ModuleID,Path.Entry>();
-
-	/**
 	 * This identifies which packages have had their contents fully resolved.
 	 * All items in a resolved package must have been loaded into the filetable.
 	 */
-	protected HashMap<PkgID, HashSet<ModuleID>> packages = new HashMap<PkgID, HashSet<ModuleID>>();
-	
+	protected HashMap<PkgID, ArrayList<Path.Root>> packageroots = new HashMap<PkgID, ArrayList<Path.Root>>();
+
 	/**
      * The failed packages set is a collection of packages which have been
      * requested, but are known not to exist. The purpose of this cache is
@@ -199,8 +192,14 @@ public class ModuleLoader {
 		resolvePackage(module.pkg());						
 		
 		try {
-			// ok, now look for module inside package.
-			Path.Entry entry = filetable.get(module);
+			// ok, now look for module inside package roots.
+			Path.Entry entry = null;
+			for(Path.Root root : packageroots.get(module.pkg())) {
+				entry = root.lookup(module);
+				if(entry != null) {
+					break;
+				}
+			}			
 			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
@@ -240,7 +239,14 @@ public class ModuleLoader {
 		resolvePackage(module.pkg());
 				
 		try {
-			Path.Entry entry = filetable.get(module);
+			// ok, now look for skeleton inside package roots.
+			Path.Entry entry = null;
+			for(Path.Root root : packageroots.get(module.pkg())) {
+				entry = root.lookup(module);
+				if(entry != null) {
+					break;
+				}
+			}
 			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
@@ -265,42 +271,35 @@ public class ModuleLoader {
 	 */
 	public void resolvePackage(PkgID pkg) throws ResolveError {							
 		// First, check if we have already resolved this package.						
-		if(packages.containsKey(pkg)) {
+		if(packageroots.containsKey(pkg)) {
 			return;
 		} else if(failedPackages.contains(pkg)) {			
 			// yes, it's already been resolved but it doesn't exist.
 			throw new ResolveError("package not found: " + pkg);
 		}
 
-		HashSet<ModuleID> contents = new HashSet<ModuleID>();
+		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		try {
 			// package not been previously resolved, so first try sourcepath.
 			for (Path.Root c : sourcepath) {
-				// load package contents
-				for(Path.Entry item : c.list(pkg)) {
-					Path.Entry old = filetable.get(item.id());
-					if (old == null || item.lastModified() > old.lastModified()) {
-						filetable.put(item.id(), item);
-						contents.add(item.id());
-					}
-				}
+				if(c.exists(pkg)) {
+					System.out.println("FOUND ROOT " + pkg + ", " + c);
+					roots.add(c);
+				}				
 			}
 			// second, try whileypath.
 			for (Path.Root c : whileypath) {
-				// load package contents
-				for(Path.Entry item : c.list(pkg)) {
-					if(!filetable.containsKey(item.id())) {
-						filetable.put(item.id(), item);
-						contents.add(item.id());
-					}
+				if(c.exists(pkg)) {
+					System.out.println("FOUND ROOT " + pkg + ", " + c);
+					roots.add(c);
 				}
 			}
 		} catch(IOException e) {
 			// silently ignore.
 		}
 				
-		if(!contents.isEmpty()) {	
-			packages.put(pkg,contents);
+		if(!roots.isEmpty()) {	
+			packageroots.put(pkg,roots);
 		} else {
 			failedPackages.add(pkg);
 			throw new ResolveError("package not found: " + pkg);

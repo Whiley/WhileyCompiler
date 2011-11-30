@@ -10,10 +10,30 @@ import wyil.lang.PkgID;
 public class Path {
 	
 	public interface Root {		
+		
 		/**
-		 * Open the folder and see what things are inside.
+		 * Check whether or not a given package is contained.
 		 */
-		public Collection<Entry> list(PkgID pkg) throws IOException;
+		public boolean exists(PkgID pid) throws IOException;
+		
+		/**
+		 * Lookup a given module.
+		 * 
+		 * @param mid
+		 *            --- id of module to lookup.
+		 * @return
+		 * @throws IOException
+		 */
+		public Entry lookup(ModuleID mid) throws IOException;
+		
+		/**
+		 * List contents of a given package.
+		 * 
+		 * @param pid
+		 * @return
+		 * @throws IOException
+		 */
+		public Collection<Entry> list(PkgID pid) throws IOException;
 	}
 	
 	/**
