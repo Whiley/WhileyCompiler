@@ -166,7 +166,7 @@ public class NameResolver extends ModuleLoader {
 				}
 			} catch (ResolveError ex) {
 				// dead code
-			} catch (IOException ex) {
+			} catch (Exception ex) {
 				// FIXME
 			}
 		}

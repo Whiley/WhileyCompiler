@@ -208,8 +208,10 @@ public class ModuleLoader {
 				throw new ResolveError("Unable to find module: " + module);
 			}
 			return m;						
-		} catch(IOException io) {				
-			throw new ResolveError("Unable to find module: " + module,io);
+		} catch(RuntimeException e) {
+			throw e;
+		} catch(Exception e) {				
+			throw new ResolveError("Unable to find module: " + module,e);
 		}	
 	}
 	
@@ -255,9 +257,11 @@ public class ModuleLoader {
 				throw new ResolveError("Unable to find module: " + module);
 			}
 			return m;
-		} catch(IOException io) {
-			throw new ResolveError("Unagle to find module: " + module,io);
-		}			
+		} catch(RuntimeException e) {
+			throw e;
+		} catch(Exception e) {				
+			throw new ResolveError("Unable to find module: " + module,e);
+		}		
 	}	
 	
 	/**
@@ -292,7 +296,9 @@ public class ModuleLoader {
 					roots.add(c);
 				}
 			}
-		} catch(IOException e) {
+		} catch(RuntimeException e) {
+			throw e;
+		} catch(Exception e) {							
 			// silently ignore.
 		}
 				

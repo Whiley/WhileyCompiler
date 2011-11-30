@@ -14,7 +14,7 @@ public class Path {
 		/**
 		 * Check whether or not a given package is contained.
 		 */
-		public boolean exists(PkgID pid) throws IOException;
+		public boolean exists(PkgID pid) throws Exception;
 		
 		/**
 		 * Lookup a given module.
@@ -24,7 +24,7 @@ public class Path {
 		 * @return
 		 * @throws IOException
 		 */
-		public Entry lookup(ModuleID mid) throws IOException;
+		public Entry lookup(ModuleID mid) throws Exception;
 		
 		/**
 		 * List contents of a given package.
@@ -33,7 +33,7 @@ public class Path {
 		 * @return
 		 * @throws IOException
 		 */
-		public Collection<Entry> list(PkgID pid) throws IOException;
+		public Collection<Entry> list(PkgID pid) throws Exception;
 	}
 	
 	/**
