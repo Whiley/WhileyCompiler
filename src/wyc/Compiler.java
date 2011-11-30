@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wyil.*;
+import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.lang.*;
@@ -91,9 +92,9 @@ public class Compiler implements Logger {
 		
 	/**
 	 * This method simply parses a whiley file into an abstract syntax tree. It
-	 * makes little effort to check whether or not the file is syntactically. In
-	 * particular, it does not determine the correct type of all declarations,
-	 * expressions, etc.
+	 * makes little effort to check whether or not the file is syntactically
+	 * correct. In particular, it does not determine the correct type of all
+	 * declarations, expressions, etc.
 	 * 
 	 * @param file
 	 * @return
