@@ -25,6 +25,7 @@
 
 package wyjc.transforms;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
@@ -41,6 +42,7 @@ import wyjvm.util.Validation;
 
 public class ClassWriter implements Transform {
 	private ClassFileBuilder classBuilder;
+	private File outputDirectory = null;
 	private boolean validate = true;
 	
 	// FIXME: deadCode elimination is currently unsafe because the
@@ -61,6 +63,15 @@ public class ClassWriter implements Transform {
 		deadCode = flag;
 	}
 	
+	public void setOutputDirectory(String dir) {
+		outputDirectory = new File(dir);
+		if (!outputDirectory.exists()) {
+			throw new RuntimeException("directory not found: " + dir);
+		} else if (!outputDirectory.isDirectory()) {
+			throw new RuntimeException("not a directory: " + dir);
+		}
+	}
+	
 	public void apply(Module m) throws IOException {		
 		ClassFile file = classBuilder.build(m);		
 		
@@ -76,9 +87,17 @@ public class ClassWriter implements Transform {
 			// eliminate any dead code that was introduced.		
 			new DeadCodeElimination().apply(file);
 		}
-		
+				
 		// calculate filename
-		String filename = m.filename().replace(".whiley", ".class");		
+		String filename;
+		if(outputDirectory == null) {
+			// when no output directory is set, simply write back to the same
+			// place the source file was in.
+			filename = m.filename().replace(".whiley", ".class");
+		} else {			
+			filename = m.id().fileName().replace('.', File.separatorChar) + ".class";
+			filename = outputDirectory + File.separator + filename;			
+		}
 		FileOutputStream out = new FileOutputStream(filename);		
 		ClassFileWriter writer = new ClassFileWriter(out,null);			
 		writer.write(file);					

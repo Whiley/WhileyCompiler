@@ -83,6 +83,30 @@ public class Pipeline {
 	}
 	
 	/**
+	 * Set a specific option on a given pipeline stage. The previous value of
+	 * this option is returned, or null if there is none.
+	 * 
+	 * @param clazz
+	 * @param name
+	 * @param value
+	 * @return
+	 */
+	public Object setOption(Class<? extends Transform> clazz, String name,
+			Object value) {
+		for (Template template : stages) {
+			if (template.clazz == clazz) {
+				Map<String,Object> options = template.options;
+				if(options == Collections.EMPTY_MAP) { 
+					options = new HashMap<String,Object>();
+					template.options = options;
+				}
+				return options.put(name, value);
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * Apply a list of modifiers in the order of appearance. Modifiers may
 	 * remove stages, add new stages or reconfigure existing stages.
 	 * 
@@ -137,7 +161,7 @@ public class Pipeline {
 	 */
 	public static class Template {					
 		Class<? extends Transform> clazz;
-		public final Map<String,Object> options;
+		public Map<String,Object> options;
 		
 		public Template(Class<? extends Transform> clazz, 
 				Map<String, Object> options) {

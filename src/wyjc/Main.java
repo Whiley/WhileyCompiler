@@ -101,6 +101,9 @@ public class Main {
 			new OptArg("sourcepath", "sp", PATHLIST,
 					"Specify where to find whiley (source) files",
 					new ArrayList<String>()),
+			new OptArg("outputdir", "d", STRING,
+					"Specify where to place generated class files",
+					null),
 			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("C", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
@@ -218,6 +221,7 @@ public class Main {
 				
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
+		String outputdir = (String) values.get("outputdir");
 		List<Path.Root> sourcepath = initialisePathRoots((ArrayList) values.get("sourcepath"),SOURCE_FILTER,verbose);
 		List<Path.Root> whileypath = initialisePathRoots((ArrayList) values.get("whileypath"),BINARY_FILTER,verbose);
 		List<Path.Root> bootpath = initialisePathRoots((ArrayList) values.get("bootpath"),BINARY_FILTER,verbose);
@@ -237,11 +241,19 @@ public class Main {
 			NameResolver resolver = new NameResolver(sourcepath,whileypath);
 			resolver.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
+			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
+
 			Pipeline pipeline = new Pipeline(templates, resolver);
+			
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
 			}
+			
+			if (outputdir != null) {
+				pipeline.setOption(ClassWriter.class, "outputDirectory",
+						outputdir);
+			}
+			
 			List<Transform> stages = pipeline.instantiate();
 			Compiler compiler = new Compiler(resolver,stages);		
 			resolver.setLogger(compiler);		
