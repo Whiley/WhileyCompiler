@@ -15,4 +15,4 @@ plt f(int x) requires x >= 0:
     return g(x)
 
 void ::main(System sys,[string] args):
-    debug toString(f(0))
+    debug Any.toString(f(0))

@@ -12,7 +12,7 @@ int f(intlist x):
 
 void ::main(System sys,[string] args):
     x = f([1,2,3])
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
     x = f(123)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
 

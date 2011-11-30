@@ -12,4 +12,4 @@ int f(int x, int y) requires x>=0 && y>=0, ensures $>0:
         return 123
 
 void ::main(System sys,[string] args):
-    sys.out.println(toString(1))
+    sys.out.println(Any.toString(1))

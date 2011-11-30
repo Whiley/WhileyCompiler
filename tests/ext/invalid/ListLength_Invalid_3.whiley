@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 int f(int x) requires x+1 > 0, ensures $ < 0:
-    debug toString(x)
+    debug Any.toString(x)
     return -1
 
 void ::main(System sys,[string] args):

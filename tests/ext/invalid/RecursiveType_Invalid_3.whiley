@@ -8,4 +8,4 @@ expr f(expr e):
 
 void ::main(System sys,[string] args):
     e = -1
-    debug toString(f(e))
+    debug Any.toString(f(e))

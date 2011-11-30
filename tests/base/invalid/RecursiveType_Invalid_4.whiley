@@ -7,4 +7,4 @@ expr f(expr e):
 
 void ::main(System sys,[string] args):
     e = {op:1,left:"HELLO",right:2}
-    sys.out.println(toString(f(e)))
+    sys.out.println(Any.toString(f(e)))

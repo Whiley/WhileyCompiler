@@ -5,4 +5,4 @@ void ::main(System sys,[string] args):
     while(j < |args|):
         i = 1
         j = j + 1
-    debug toString(i)
+    debug Any.toString(i)

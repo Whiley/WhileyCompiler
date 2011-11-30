@@ -8,5 +8,5 @@ int f(int x):
 void ::main(System sys,[string] args):
      p = {x:1.0,y:2.23}
      x = f(p.y)
-     sys.out.println(toString(x))
+     sys.out.println(Any.toString(x))
 

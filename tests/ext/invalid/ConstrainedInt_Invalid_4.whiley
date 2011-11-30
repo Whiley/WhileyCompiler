@@ -10,4 +10,4 @@ c4nat f():
     return h() * 2
 
 void ::main(System sys,[string] args):
-    debug toString(f())
+    debug Any.toString(f())

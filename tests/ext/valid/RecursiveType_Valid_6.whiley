@@ -13,5 +13,5 @@ void ::main(System sys,[string] args):
     bop2 = bop1
     e1 = bop1
     e2 = {op:SUB,left:bop1,right:2}
-    sys.out.println(toString(e1))
-    sys.out.println(toString(e2))
+    sys.out.println(Any.toString(e1))
+    sys.out.println(Any.toString(e2))

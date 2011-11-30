@@ -16,9 +16,9 @@ int g(int x, int y) requires x>=0 && y>=0, ensures $>0:
 
 
 void ::main(System sys,[string] args):
-    sys.out.println(toString(f(1,1)))
-    sys.out.println(toString(f(0,0)))
-    sys.out.println(toString(f(4,345)))
-    sys.out.println(toString(g(1,1)))
-    sys.out.println(toString(g(0,0)))
-    sys.out.println(toString(g(4,345)))
+    sys.out.println(Any.toString(f(1,1)))
+    sys.out.println(Any.toString(f(0,0)))
+    sys.out.println(Any.toString(f(4,345)))
+    sys.out.println(Any.toString(g(1,1)))
+    sys.out.println(Any.toString(g(0,0)))
+    sys.out.println(Any.toString(g(4,345)))

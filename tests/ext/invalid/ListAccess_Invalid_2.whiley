@@ -6,19 +6,19 @@ void f([int] x, int i) requires |x| > 0:
     y = x[i]
     z = x[i]
     assert y == z
-    debug toString(y)
-    debug toString(z)
+    debug Any.toString(y)
+    debug Any.toString(z)
 
 void ::main(System sys,[string] args):
     arr = [1,2,3]
     f(arr, 1)
-    debug toString(arr)    
+    debug Any.toString(arr)    
     f(arr, 2)
-    debug toString(arr)
+    debug Any.toString(arr)
     arr = [123]
     f(arr, 3)
-    debug toString(arr)
+    debug Any.toString(arr)
     arr = [123,22,2]
     f(arr, -1)
-    debug toString(arr)
+    debug Any.toString(arr)
     f(arr, 4)

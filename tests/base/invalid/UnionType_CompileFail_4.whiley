@@ -9,8 +9,8 @@ define IntRealList as [int]|[real]
 void ::main(System sys,[string] args):
     x = [1,2,3] // INT LIST
     ys = x      // OK
-    sys.out.println(toString(ys))
+    sys.out.println(Any.toString(ys))
     x[0] = 1.23 // NOT OK
     zs = f(x)
-    sys.out.println(toString(zs))
+    sys.out.println(Any.toString(zs))
 

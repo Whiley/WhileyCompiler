@@ -8,4 +8,4 @@ int f(junk x):
 
 void ::main(System sys,[string] args):
     x = 1
-    sys.out.println(toString(f(x)))
+    sys.out.println(Any.toString(f(x)))

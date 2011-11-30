@@ -8,4 +8,4 @@ c2nat f(c2nat x):
     return x
 
 void ::main(System sys,[string] args):
-    debug toString(f(9))
+    debug Any.toString(f(9))

@@ -8,4 +8,4 @@ pirf3nat f(int x):
     return x
 
 void ::main(System sys,[string] args):
-    debug toString(f(11))
+    debug Any.toString(f(11))

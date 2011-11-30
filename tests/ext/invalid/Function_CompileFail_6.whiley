@@ -10,6 +10,6 @@ int f(bnat x):
     return x
 
 void ::main(System sys,[string] args):    
-    debug toString(f(1))
+    debug Any.toString(f(1))
     
     

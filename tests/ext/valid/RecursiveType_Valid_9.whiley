@@ -12,4 +12,4 @@ expr f(posExpr e1):
 
 void ::main(System sys,[string] args):
     e = f({lhs:{lhs:1,rhs:2},rhs:1})
-    sys.out.println(toString(e))
+    sys.out.println(Any.toString(e))

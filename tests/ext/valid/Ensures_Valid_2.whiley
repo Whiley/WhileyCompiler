@@ -6,5 +6,5 @@ int f(int x) ensures $ > x:
 
 void ::main(System sys,[string] args):
     y = f(1)
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(y))
     

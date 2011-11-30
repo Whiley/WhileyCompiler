@@ -7,7 +7,7 @@ define msg2 as {int index}
 define msgType as msg1 | msg2
 
 string f(msgType m):
-    return toString(m)
+    return Any.toString(m)
 
 void ::main(System sys,[string] args):
     x = {op:11,data:[]}

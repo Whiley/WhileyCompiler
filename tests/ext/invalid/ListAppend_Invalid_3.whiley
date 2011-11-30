@@ -11,4 +11,4 @@ void ::main(System sys,[string] args):
     else:
         left = [1,2,3]
     r = f(left + right)
-    debug toString(r)
+    debug Any.toString(r)

@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string f({int} xs, {int} ys, {int} zs) requires zs == xs ∪ ys:
-    return toString(xs)
+    return Any.toString(xs)
 
 string g({int} ys):
     return f(ys,ys,ys)

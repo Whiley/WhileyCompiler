@@ -8,5 +8,5 @@ int sum({nat} xs) ensures $ >= 0:
 
 void ::main(System sys,[string] args):
     z = sum({1,2,3,4,5})
-    sys.out.println(toString(z))
+    sys.out.println(Any.toString(z))
     

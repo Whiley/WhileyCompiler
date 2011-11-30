@@ -6,6 +6,6 @@ void ::main(System sys,[string] args):
     x = {f1:2, f2:3}
     y = {f1:1, f2:3}
     x.f1 = 1
-    debug toString(x)
-    debug toString(y)  
+    debug Any.toString(x)
+    debug Any.toString(y)  
     assert x != y

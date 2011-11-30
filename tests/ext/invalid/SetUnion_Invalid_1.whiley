@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 void f({int} xs) requires |xs| > 0:
-    debug toString(xs)
+    debug Any.toString(xs)
 
 void g({int} ys, {int} zs):
     f(ys ∪ zs)
