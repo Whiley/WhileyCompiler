@@ -282,15 +282,13 @@ public class ModuleLoader {
 		try {
 			// package not been previously resolved, so first try sourcepath.
 			for (Path.Root c : sourcepath) {
-				if(c.exists(pkg)) {
-					System.out.println("FOUND ROOT " + pkg + ", " + c);
+				if(c.exists(pkg)) {					
 					roots.add(c);
 				}				
 			}
 			// second, try whileypath.
 			for (Path.Root c : whileypath) {
-				if(c.exists(pkg)) {
-					System.out.println("FOUND ROOT " + pkg + ", " + c);
+				if(c.exists(pkg)) {					
 					roots.add(c);
 				}
 			}

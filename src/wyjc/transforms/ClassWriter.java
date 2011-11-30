@@ -63,7 +63,7 @@ public class ClassWriter implements Transform {
 		deadCode = flag;
 	}
 	
-	public void setOutputDirectory(String dir) {
+	public void setOutputDirectory(String dir) {		
 		outputDirectory = new File(dir);
 		if (!outputDirectory.exists()) {
 			throw new RuntimeException("directory not found: " + dir);

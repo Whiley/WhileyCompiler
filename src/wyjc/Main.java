@@ -146,10 +146,25 @@ public class Main {
 	 * @param sourcepath
 	 * @throws IOException
 	 */
-	public static void initialiseSourcePath(List<Path.Root> sourcepath) throws IOException {
-		if(sourcepath.isEmpty()) {
-			sourcepath.add(new SourceDirectoryRoot("."));
+	public static ArrayList<Path.Root> initialiseSourceRoots(
+			List<String> sourcepath, BinaryDirectoryRoot outputDirectory,
+			boolean verbose) throws IOException {
+		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
+		if (sourcepath.isEmpty()) {
+			nitems.add(new SourceDirectoryRoot(".", outputDirectory));
+		} else {			
+			for (String root : sourcepath) {
+				try {
+					nitems.add(new SourceDirectoryRoot(root,outputDirectory));					
+				} catch (IOException e) {
+					if (verbose) {
+						System.err.println("Warning: " + root
+								+ " is not a valid package root");
+					}
+				}
+			}			
 		}
+		return nitems;
 	}
 
 	/**
@@ -159,17 +174,15 @@ public class Main {
 	 * @param items
 	 * @return
 	 */
-	private static List<Path.Root> initialisePathRoots(List<String> roots,
-			boolean source, boolean verbose) {
+	private static List<Path.Root> initialiseBinaryRoots(List<String> roots,
+			boolean verbose) {
 		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
 		for (String root : roots) {
 			try {
 				if (root.endsWith(".jar")) {
 					nitems.add(new JarFileRoot(root));
-				} else if(source) {
-					nitems.add(new BinaryDirectoryRoot(root));
 				} else {
-					nitems.add(new SourceDirectoryRoot(root));
+					nitems.add(new BinaryDirectoryRoot(root));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -210,17 +223,24 @@ public class Main {
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
 		String outputdir = (String) values.get("outputdir");
-		List<Path.Root> sourcepath = initialisePathRoots((ArrayList) values.get("sourcepath"),true,verbose);
-		List<Path.Root> whileypath = initialisePathRoots((ArrayList) values.get("whileypath"),false,verbose);
-		List<Path.Root> bootpath = initialisePathRoots((ArrayList) values.get("bootpath"),false,verbose);
+						
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
-		try {			
+		try {											
 			// initialise the boot path appropriately
+			List<Path.Root> bootpath = initialiseBinaryRoots((ArrayList) values.get("bootpath"),verbose);
 			initialiseBootPath(bootpath);
 
+			// initialise the whiley path appropriately
+			List<Path.Root> whileypath = initialiseBinaryRoots((ArrayList) values.get("whileypath"),verbose);	
+			
 			// initialise the source path appropriately
-			initialiseSourcePath(sourcepath);
+			BinaryDirectoryRoot bindir = null;
+			if (outputdir != null) {
+				bindir = new BinaryDirectoryRoot(outputdir);
+			}
+			List<Path.Root> sourcepath = initialiseSourceRoots(
+					(ArrayList) values.get("sourcepath"), bindir, verbose);
 			
 			// now initialise the whiley path			
 			whileypath.addAll(bootpath);

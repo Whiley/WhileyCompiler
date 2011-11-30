@@ -33,7 +33,7 @@ import wyc.NameResolver;
 import wyc.Pipeline;
 import wyil.ModuleLoader;
 import wyil.Transform;
-import wyil.path.DirectoryRoot;
+import wyil.path.BinaryDirectoryRoot;
 import wyil.path.Path;
 import wyil.path.SourceDirectoryRoot;
 import wyil.util.SyntaxError;
@@ -67,12 +67,17 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  */
 public class AntTask extends MatchingTask {
 	private File srcdir;
+	private File destdir;
 	private boolean verbose = false;
 		
     public void setSrcdir (File srcdir) {
         this.srcdir = srcdir;
     }
 
+    public void setDestdir (File destdir) {
+        this.destdir = destdir;
+    }
+    
     public void setVerbose(boolean b) {
     	verbose=b;
     }
@@ -99,12 +104,18 @@ public class AntTask extends MatchingTask {
 	protected ArrayList<File> findSourceFiles() {
 		DirectoryScanner ds = getDirectoryScanner(srcdir);
 		ArrayList<File> srcfiles = new ArrayList<File>();
-
-		for (String f : ds.getIncludedFiles()) {
-			String fname = srcdir.getPath() + File.separatorChar + f;
-			File srcfile = new File(fname);
-			File classfile = new File(fname.replace(".whiley", ".class"));
-			if (srcfile.lastModified() > classfile.lastModified()) {
+		
+		for (String f : ds.getIncludedFiles()) {			
+			File srcfile = new File(srcdir.getPath() + File.separatorChar + f);
+			File bindir;
+			if (destdir != null) {
+				bindir = destdir;
+			} else {
+				bindir = srcdir;
+			}
+			File binfile = new File(bindir.getPath() + File.separatorChar
+					+ f.replace(".whiley", ".class"));
+			if (srcfile.lastModified() > binfile.lastModified()) {
 				srcfiles.add(srcfile);
 			}
 		}
@@ -125,7 +136,11 @@ public class AntTask extends MatchingTask {
     		// third, initialise the pipeline
     		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
     		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-    		Pipeline pipeline = new Pipeline(templates, resolver);		
+    		Pipeline pipeline = new Pipeline(templates, resolver);
+    		if(destdir != null) {
+    			pipeline.setOption(ClassWriter.class, "outputDirectory",
+					destdir.getPath());
+    		}
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the compiler
@@ -161,9 +176,13 @@ public class AntTask extends MatchingTask {
     	}
     }
     
-    protected List<Path.Root> initialiseSourcePath() {
+    protected List<Path.Root> initialiseSourcePath() throws IOException {
     	ArrayList<Path.Root> sourcepath = new ArrayList<Path.Root>();
-    	sourcepath.add(new SourceDirectoryRoot(srcdir));    	
+    	BinaryDirectoryRoot bindir = null;
+    	if(destdir != null) {
+    		bindir = new BinaryDirectoryRoot(destdir);
+    	}
+    	sourcepath.add(new SourceDirectoryRoot(srcdir,bindir));    	
     	return sourcepath;
     }
     
