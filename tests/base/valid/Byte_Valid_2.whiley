@@ -261,6 +261,6 @@ define constants as [
 public void ::main(System sys,[string] args):
     for i in constants:
         for j in constants:
-            sys.out.print(toString(i) + " & ")
-            sys.out.print(toString(j) + " = ")
-            sys.out.println(toString(i&j))
+            sys.out.print(Any.toString(i) + " & ")
+            sys.out.print(Any.toString(j) + " = ")
+            sys.out.println(Any.toString(i&j))

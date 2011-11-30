@@ -5,6 +5,6 @@ void ::main(System sys,[string] args):
     right = [3,4]
     r = left + right
     left = left + [6]
-    sys.out.println(toString(left))
-    sys.out.println(toString(right))
-    sys.out.println(toString(r))
+    sys.out.println(Any.toString(left))
+    sys.out.println(Any.toString(right))
+    sys.out.println(Any.toString(r))

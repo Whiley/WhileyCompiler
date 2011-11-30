@@ -13,4 +13,4 @@ even f(oddeven x):
 void ::main(System sys,[string] args):
     y = 1
     y = f(1)
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(y))

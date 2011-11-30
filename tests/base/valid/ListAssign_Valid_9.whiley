@@ -24,4 +24,4 @@ Board f(Board board):
 
 void ::main(System sys,[string] args):
     r1 = {rows: [WHITE_PAWN], flag: false }
-    sys.out.println(toString(f(r1)))
+    sys.out.println(Any.toString(f(r1)))

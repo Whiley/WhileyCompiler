@@ -8,4 +8,4 @@ import * from whiley.lang.*
 
 void ::main(System sys,[string] args):
     xs = append("abcdefghijklmnopqrstuvwxyz")
-    sys.out.println(toString(xs))
+    sys.out.println(Any.toString(xs))

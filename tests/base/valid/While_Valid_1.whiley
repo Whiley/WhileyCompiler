@@ -11,4 +11,4 @@ import * from whiley.lang.*
 
 void ::main(System sys,[string] args):
     rs = reverse([1,2,3,4,5])
-    sys.out.println(toString(rs))
+    sys.out.println(Any.toString(rs))

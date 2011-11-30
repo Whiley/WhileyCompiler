@@ -8,6 +8,6 @@ bool test([real] xs, [int] ys):
 
 void ::main(System sys,[string] args):
     s = test([1.2,2.3,3.4],[1,2,3,4,5,6,7,8])
-    sys.out.println(toString(s))
+    sys.out.println(Any.toString(s))
     s = test([1.2,2.3,3.4],[])
-    sys.out.println(toString(s))
+    sys.out.println(Any.toString(s))

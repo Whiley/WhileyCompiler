@@ -9,7 +9,7 @@ int f(Rec2 rec):
 
 void ::main(System sys,[string] args):
     rec = {x: 1}
-    sys.out.println(toString(rec))
+    sys.out.println(Any.toString(rec))
     num = f(rec)
-    sys.out.println(toString(rec))
-    sys.out.println(toString(num))
+    sys.out.println(Any.toString(rec))
+    sys.out.println(Any.toString(num))

@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string f([int] xs):
-    return toString(xs)
+    return Any.toString(xs)
 
 void ::main(System sys,[string] args):
     sys.out.println(f([1,4]))

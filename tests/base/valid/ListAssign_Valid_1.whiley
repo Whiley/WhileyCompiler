@@ -5,6 +5,6 @@ void ::main(System sys,[string] args):
     arr2 = arr1
     arr2[2] = 2
     assert arr2[2] != |arr1|
-    sys.out.println(toString(arr1))
-    sys.out.println(toString(arr2))
+    sys.out.println(Any.toString(arr1))
+    sys.out.println(Any.toString(arr2))
     

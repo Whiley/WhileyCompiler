@@ -19,7 +19,7 @@ void ::main(System sys,[string] args):
     l3 = [l2]
     l4 = [l3]
     
-    sys.out.println(toString(maxDepth(l1)))
-    sys.out.println(toString(maxDepth(l2)))
-    sys.out.println(toString(maxDepth(l3)))
-    sys.out.println(toString(maxDepth(l4)))
+    sys.out.println(Any.toString(maxDepth(l1)))
+    sys.out.println(Any.toString(maxDepth(l2)))
+    sys.out.println(Any.toString(maxDepth(l3)))
+    sys.out.println(Any.toString(maxDepth(l4)))

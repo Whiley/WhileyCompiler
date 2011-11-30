@@ -10,4 +10,4 @@ DL2 update(DL1 ls):
 void ::main(System sys,[string] args):
     x = {0->1, 1->2}
     x = update(x)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))

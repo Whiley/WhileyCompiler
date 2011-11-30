@@ -11,6 +11,6 @@ int f(Expr e):
 
 void ::main(System sys,[string] args):
     v = f([1.0,2.0,3.0])
-    sys.out.println(toString(v))
+    sys.out.println(Any.toString(v))
     v = f(1.234)
-    sys.out.println(toString(v))
+    sys.out.println(Any.toString(v))

@@ -8,7 +8,7 @@ tac2tb f(tac2ta x):
 
 void ::main(System sys,[string] args):
     x = {f1:2,f2:3}
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
     x.f1 = 1
     y = f(x)
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(y))

@@ -7,4 +7,4 @@ Contractive f(Contractive x):
 
 void ::main(System sys, [string] args):
     x = f(null)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))

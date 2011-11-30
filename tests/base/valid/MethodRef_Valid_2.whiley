@@ -24,6 +24,6 @@ void ::main(System sys,[string] args):
     target = reader.thus
     method = reader.read
     data = target.method(5)
-    sys.out.println(toString(data))
+    sys.out.println(Any.toString(data))
 
 

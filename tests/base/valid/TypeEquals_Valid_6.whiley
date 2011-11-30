@@ -6,7 +6,7 @@ define tup as {expr lhs, int p}
 
 string f(tup t):
     if t.lhs is plist && |t.lhs| > 0 && t.lhs[0] == 0:
-        return "MATCH" + toString(t.lhs)
+        return "MATCH" + Any.toString(t.lhs)
     else:
         return "NO MATCH"
 

@@ -5,5 +5,5 @@ void ::main(System sys,[string] args):
         x = 1
     else:
         x = [1,2,3]
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
 

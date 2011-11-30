@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 string f({int} xs):
     if |xs| > 0:
-        return toString(xs)
+        return Any.toString(xs)
     else:
         return "FAILED"
 

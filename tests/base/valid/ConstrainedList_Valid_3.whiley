@@ -13,5 +13,5 @@ int sum(posintlist ls):
 
 void ::main(System sys,[string] args):
     c = sum([1,2,3,4,5,6,7])
-    sys.out.println(toString(c))
+    sys.out.println(Any.toString(c))
     

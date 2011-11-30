@@ -67,7 +67,7 @@ public class NameResolver extends ModuleLoader {
 	 *             if it couldn't resolve the name
 	 */
 	public NameID resolveAsName(String name, List<Import> imports)
-			throws ResolveError {
+			throws ResolveError {		
 		for (Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {

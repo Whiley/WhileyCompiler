@@ -4,10 +4,10 @@ import * from whiley.lang.*
 define IntList as int|[int]
 
 void System::f(int y):
-    this.out.println(toString(y))
+    this.out.println(Any.toString(y))
 
 void System::g([int] z):
-    this.out.println(toString(z))
+    this.out.println(Any.toString(z))
 
 void ::main(System sys,[string] args):
     x = 123

@@ -7,6 +7,6 @@ bytes f(int a):
     return bs
 
 void ::main(System sys,[string] args):
-    sys.out.println(toString(f(1)))
-    sys.out.println(toString(f(2)))
-    sys.out.println(toString(f(9)))
+    sys.out.println(Any.toString(f(1)))
+    sys.out.println(Any.toString(f(2)))
+    sys.out.println(Any.toString(f(9)))

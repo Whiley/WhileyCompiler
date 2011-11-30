@@ -15,6 +15,6 @@ int ::test(MyMeth m, MyProc proc):
 void ::main(System sys,[string] args):
     p = spawn { position: 0 }
     r = test(&read,p)
-    sys.out.println(toString(r))
+    sys.out.println(Any.toString(r))
 
 

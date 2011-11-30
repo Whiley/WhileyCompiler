@@ -25,6 +25,6 @@ void ::main(System sys,[string] args):
     ls = { data: 1, next: null}
     ls = { data: 2, next: ls}
     ls = { data: 3, next: ls}
-    sys.out.println(toString(sum_1(ls)))
-    sys.out.println(toString(sum_2(ls)))
-    sys.out.println(toString(sum_3(ls)))
+    sys.out.println(Any.toString(sum_1(ls)))
+    sys.out.println(Any.toString(sum_2(ls)))
+    sys.out.println(Any.toString(sum_3(ls)))

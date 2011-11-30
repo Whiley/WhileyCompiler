@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
 void ::main(System sys,[string] args):
-     sys.out.println(toString(1))
+     sys.out.println(Any.toString(1))

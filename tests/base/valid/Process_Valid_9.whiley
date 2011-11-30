@@ -20,4 +20,4 @@ void ::main(System sys,[string] args):
     r = 0
     for i in 0..|actors|:
         r = r + actors[i].get()
-    sys.out.println(toString(r))
+    sys.out.println(Any.toString(r))

@@ -4,7 +4,7 @@ define realtup as {real op}
 
 string f(realtup t):
     x = t.op
-    return toString(t)
+    return Any.toString(t)
 
 void ::main(System sys,[string] args):
     t = {op:1}

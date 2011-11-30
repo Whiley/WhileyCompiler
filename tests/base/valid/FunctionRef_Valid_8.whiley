@@ -11,8 +11,8 @@ int test(int(int) read, int arg):
     
 void ::main(System sys,[string] args):
     x = test(&id,1)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
     x = test(&id,123)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
     x = test(&id,223)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))

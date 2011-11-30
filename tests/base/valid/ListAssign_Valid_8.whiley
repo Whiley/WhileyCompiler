@@ -11,5 +11,5 @@ import * from whiley.lang.*
 void ::main(System sys,[string] args):
     ls = [[1,2,3,4]]
     ls,nls = f(ls)
-    sys.out.println(toString(ls))
-    sys.out.println(toString(nls))
+    sys.out.println(Any.toString(ls))
+    sys.out.println(Any.toString(nls))

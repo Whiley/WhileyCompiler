@@ -6,4 +6,4 @@ define btup as {int op, int index}
     return [b.op,b.index]
 
 void ::main(System sys,[string] args):
-    sys.out.println(toString(f({op:1,index:2})))
+    sys.out.println(Any.toString(f({op:1,index:2})))

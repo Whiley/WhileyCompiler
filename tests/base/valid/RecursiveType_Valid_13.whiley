@@ -11,4 +11,4 @@ void ::main(System sys,[string] args):
     if v is [Expr]:
         sys.out.println("GOT LIST")
     else:
-        sys.out.println(toString(v))
+        sys.out.println(Any.toString(v))
