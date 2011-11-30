@@ -63,7 +63,7 @@ public class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public List<WhileyFile> compile(List<File> files) throws IOException {
+	public List<WhileyFile> compile(List<File> files) throws Exception {
 		long startTime = System.currentTimeMillis();
 		
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
@@ -120,7 +120,7 @@ public class Compiler implements Logger {
 	 * 
 	 * @param wf
 	 */
-	public void finishCompilation(List<Module> modules) throws IOException {				
+	public void finishCompilation(List<Module> modules) throws Exception {				
 		// Register the updated file
 		for(Module module : modules) {
 			resolver.register(module);
@@ -133,7 +133,7 @@ public class Compiler implements Logger {
 		}		
 	}
 	
-	protected void process(Module module, Transform stage) throws IOException {
+	protected void process(Module module, Transform stage) throws Exception {
 		long start = System.currentTimeMillis();		
 		String name = name(stage.getClass().getSimpleName());		
 		

@@ -310,7 +310,7 @@ public class ModuleLoader {
 		}
 	}	
 	
-	private Module readModuleInfo(Path.Entry entry) throws IOException {
+	private Module readModuleInfo(Path.Entry entry) throws Exception {
 		long time = System.currentTimeMillis();
 		ModuleReader reader = suffixMap.get(entry.suffix());
 		Module mi = reader.read(entry.id(), entry.contents());

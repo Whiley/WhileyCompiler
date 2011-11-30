@@ -69,6 +69,6 @@ public class Path {
 		/**
 		 * Open the source file for reading.
 		 */
-		public InputStream contents() throws IOException;
+		public InputStream contents() throws Exception;
 	}
 }
