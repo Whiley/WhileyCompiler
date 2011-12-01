@@ -632,7 +632,7 @@ public class ModuleBuilder {
 			Block blk = new Block(1);
 			String exitLabel = Block.freshLabel();
 			boolean constraints = false;
-			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
+			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;			
 			for (int i=0;i!=ut_bounds.size();++i) {
 				boolean lastBound = (i+1) == ut_bounds.size(); 
 				UnresolvedType b = ut_bounds.get(i);
@@ -642,7 +642,7 @@ public class ModuleBuilder {
 				bounds.add(bt);	
 				
 				if(p.second() != null) {					
-					constraints = true;
+					//constraints = true;
 					String nextLabel = Block.freshLabel();					
 					if (!lastBound) {						
 						blk.append(
