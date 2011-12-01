@@ -450,16 +450,17 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Pair<Type, Block> t = expandType(key, cache,
-						filemap.get(key).filename, srcs.get(key));				
-				types.put(key, new Pair<Type,Block>(t.first(),t.second()));				
+				Pair<Type, Block> p = expandType(key, cache,
+						filemap.get(key).filename, srcs.get(key));	
+				
+				types.put(key, new Pair<Type,Block>(p.first(),p.second()));				
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
 			}
 		}
 	}
-
+		
 	/**
 	 * This is a deeply complex method!
 	 * 
@@ -641,19 +642,28 @@ public class ModuleBuilder {
  
 				bounds.add(bt);	
 				
-				if(p.second() != null) {					
-					//constraints = true;
-					String nextLabel = Block.freshLabel();					
-					if (!lastBound) {						
-						blk.append(
-								Code.IfType(null, Code.THIS_SLOT,
-										Type.Negation(bt), nextLabel),
-								attributes(t));
-					}
-					blk.append(chainBlock(nextLabel,p.second()));
-					blk.append(Code.Goto(exitLabel));
-					blk.append(Code.Label(nextLabel));
-				} else if(!lastBound) {									
+				if(p.second() != null) {
+					// In this case, there are constraints so we check the
+					// negated type and branch over the constraint test if we
+					// don't have the require type.  
+					
+					// TODO: in principle, the following should work. However,
+					// it's broken in the case of recurisve types being used in
+					// the type tests. This should be resolvable when we support
+					// proper named types, since we won't be expanding fully at
+					// this stage.
+//					constraints = true;
+//					String nextLabel = Block.freshLabel();												
+//					blk.append(
+//							Code.IfType(null, Code.THIS_SLOT,
+//									Type.Negation(bt), nextLabel),
+//									attributes(t));					
+//					blk.append(chainBlock(nextLabel,p.second()));
+//					blk.append(Code.Goto(exitLabel));
+//					blk.append(Code.Label(nextLabel));
+				} else {	
+					// In this case, there are no constraints so we can use a
+					// direct type test.
 					blk.append(
 							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
 							attributes(t));
