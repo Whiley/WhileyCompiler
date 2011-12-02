@@ -587,23 +587,18 @@ public class ModuleBuilder {
 			Block blk = null;						
 			ArrayList<Type> types = new ArrayList<Type>();				
 			
-			int i=1;
-			int tt_types_size = tt.types.size();
+			int i=0;			
 			for (UnresolvedType e : tt.types) {				
 				Pair<Type,Block> p = expandType(e, filename, cache);
 				types.add(p.first());
-				if(p.second() != null) {
+				if(p.second() != null) {					
 					if(blk == null) {
-						// create block lazily
 						blk = new Block(1);
-						blk.append(Code.Load(null,0));
-						blk.append(Code.Destructure(null));
-						// note that we must reverse the order here
-						for (int j=tt_types_size;j>0;--j) {
-							blk.append(Code.Store(null,j), attributes(t));
-						}						
-					}						
-					blk.append(shiftBlock(i,p.second()));	
+					}					
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.TupleLoad(null, i), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
+					blk.append(shiftBlock(1,p.second()));
 				}
 				i=i+1;
 			}			
@@ -2177,23 +2172,18 @@ public class ModuleBuilder {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			ArrayList<Type> types = new ArrayList<Type>();		
 			Block blk = null;
-			int i=1;
-			int tt_types_size = tt.types.size();
+			int i=0;			
 			for (UnresolvedType e : tt.types) {				
 				Pair<Type,Block> p = resolve(e);
 				types.add(p.first());
 				if(p.second() != null) {
 					if(blk == null) {
-						// create block lazily
 						blk = new Block(1);
-						blk.append(Code.Load(null,0), attributes(t));
-						blk.append(Code.Destructure(null), attributes(t));
-						// note that we must reverse the order here
-						for (int j=tt_types_size;j>0;--j) {
-							blk.append(Code.Store(null,j), attributes(t));
-						}						
-					}						
-					blk.append(shiftBlock(i,p.second()));	
+					}					
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.TupleLoad(null, i), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
+					blk.append(shiftBlock(1,p.second()));					
 				}
 				i=i+1;
 			}			

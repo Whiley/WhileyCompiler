@@ -443,6 +443,18 @@ public abstract class Code {
 		return get(new TryEnd(label));
 	}
 	
+	/**
+	 * Construct a <code>tupleload</code> bytecode which reads the value
+	 * at a given index in a tuple
+	 * 
+	 * @param type
+	 *            --- dictionary type.
+	 * @return
+	 */
+	public static TupleLoad TupleLoad(Type.Tuple type, int index) {
+		return get(new TupleLoad(type,index));
+	}
+	
 	public static Negate Negate(Type type) {
 		return get(new Negate(type));
 	}		
@@ -750,6 +762,8 @@ public abstract class Code {
 	 * values which are pushed back on the stack. For example, a rational can be
 	 * destructured into two integers (the <i>numerator</i> and
 	 * <i>denominator</i>). Or, an n-tuple can be destructured into n values.
+	 * 
+	 * Probably should be deprecated in favour of tupeload bytecode.
 	 */
 	public static final class Destructure extends Code {
 		public final Type type;
@@ -1728,7 +1742,7 @@ public abstract class Code {
 		public Type.Record type() {
 			return Type.effectiveRecordType(type);
 		}
-	}
+	}	
 	
 	private static final class UpdateIterator implements Iterator<LVal> {		
 		private final ArrayList<String> fields;
@@ -2681,6 +2695,36 @@ public abstract class Code {
 		public String toString() {
 			return toString("spawn",type);
 		}
+	}
+	
+	public static final class TupleLoad extends Code {
+		public final Type.Tuple type;
+		public final int index;
+		
+		private TupleLoad(Type.Tuple type, int index) {
+			this.type = type;
+			this.index = index;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof TupleLoad) {
+				TupleLoad i = (TupleLoad) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("tupleload " + index,type);
+		}	
 	}
 	
 	public static final class ProcLoad extends Code {
