@@ -183,6 +183,7 @@ public class ConstraintInline implements Transform {
 				binding.put(i,freeSlot+i);
 			}
 			
+			precondition = Block.resource(precondition, elem.attribute(Attribute.Source.class));
 			blk.importExternal(precondition,binding);
 			
 			for(int i=0;i<paramTypes.size();++i) {				
@@ -234,6 +235,7 @@ public class ConstraintInline implements Transform {
 				for(Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
+				postcondition = Block.resource(postcondition,elem.attribute(Attribute.Source.class));
 				blk.importExternal(postcondition,binding);
 				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 				return blk;
