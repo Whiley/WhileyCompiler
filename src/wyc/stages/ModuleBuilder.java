@@ -1265,12 +1265,12 @@ public class ModuleBuilder {
 		if(s.variables.size() > 1) {
 			// this is the destructuring case			
 			blk.append(Code.ForAll(null, freeSlot, label, Collections.EMPTY_SET), attributes(s));
-			blk.append(Code.Load(null, freeSlot));
-			blk.append(Code.Destructure(null));
+			blk.append(Code.Load(null, freeSlot), attributes(s));
+			blk.append(Code.Destructure(null), attributes(s));
 			for(int i=s.variables.size();i>0;--i) {
 				String var = s.variables.get(i-1);
 				int varReg = allocate(var,environment);
-				blk.append(Code.Store(null, varReg));
+				blk.append(Code.Store(null, varReg), attributes(s));
 			}										
 		} else {
 			// easy case.
@@ -2145,9 +2145,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
@@ -2159,9 +2159,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
@@ -2186,11 +2186,11 @@ public class ModuleBuilder {
 					if(blk == null) {
 						// create block lazily
 						blk = new Block(1);
-						blk.append(Code.Load(null,0));
-						blk.append(Code.Destructure(null));
+						blk.append(Code.Load(null,0), attributes(t));
+						blk.append(Code.Destructure(null), attributes(t));
 						// note that we must reverse the order here
 						for (int j=tt_types_size;j>0;--j) {
-							blk.append(Code.Store(null,j));
+							blk.append(Code.Store(null,j), attributes(t));
 						}						
 					}						
 					blk.append(shiftBlock(i,p.second()));	
@@ -2209,9 +2209,9 @@ public class ModuleBuilder {
 					if(blk == null) {
 						blk = new Block(1);
 					}					
-					blk.append(Code.Load(null, Code.THIS_SLOT));
-					blk.append(Code.FieldLoad(null, e.getKey()));
-					blk.append(Code.Store(null, Code.THIS_SLOT+1));
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.FieldLoad(null, e.getKey()), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
 					blk.append(shiftBlock(1,p.second()));								
 				}
 				types.put(e.getKey(), p.first());				
@@ -2230,8 +2230,7 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			boolean constraints = false;
 			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
-			for (int i=0;i!=ut_bounds.size();++i) {
-				boolean lastBound = (i+1) == ut_bounds.size(); 
+			for (int i=0;i!=ut_bounds.size();++i) {				
 				UnresolvedType b = ut_bounds.get(i);
 				Pair<Type,Block> p = resolve(b);
 				Type bt = p.first();
@@ -2239,18 +2238,26 @@ public class ModuleBuilder {
 				bounds.add(bt);	
 				
 				if(p.second() != null) {
-					constraints = true;
-					String nextLabel = Block.freshLabel();
-					if(!lastBound) {
-						blk.append(
-								Code.IfType(null, Code.THIS_SLOT,
-										Type.Negation(bt), nextLabel),
-								attributes(t));
-					}
-					blk.append(chainBlock(nextLabel,p.second()));
-					blk.append(Code.Goto(exitLabel));
-					blk.append(Code.Label(nextLabel));
-				} else if(!lastBound) {									
+					// In this case, there are constraints so we check the
+					// negated type and branch over the constraint test if we
+					// don't have the require type.  
+
+					// TODO: in principle, the following should work. However,
+					// it's broken in the case of recurisve types being used in
+					// the type tests. This should be resolvable when we support
+					// proper named types, since we won't be expanding fully at
+					// this stage.
+					//					
+//					constraints = true;
+//					String nextLabel = Block.freshLabel();				
+//					blk.append(
+//							Code.IfType(null, Code.THIS_SLOT,
+//									Type.Negation(bt), nextLabel),
+//									attributes(t));					
+//					blk.append(chainBlock(nextLabel,p.second()));
+//					blk.append(Code.Goto(exitLabel));
+//					blk.append(Code.Label(nextLabel));
+				} else {									
 					blk.append(
 							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
 							attributes(t));

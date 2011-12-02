@@ -119,19 +119,20 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					continue;
 				} else if (code instanceof Code.Loop) {
 					Code.Loop loop = (Code.Loop) code;
+					Block.Entry nEntry = entry;
 					int s = i;
 					// Note, I could make this more efficient!					
 					while (++i < block.size()) {
-						entry = block.get(i);
-						if (entry.code instanceof Code.Label) {
-							Code.Label l = (Code.Label) entry.code;
+						nEntry = block.get(i);
+						if (nEntry.code instanceof Code.Label) {
+							Code.Label l = (Code.Label) nEntry.code;
 							if (l.label.equals(loop.target)) {
 								// end of loop body found
 								break;
 							}
 						}						
 					}
-					store = propagate(s, i, loop, entry, store, handlers);										
+					store = propagate(s, i, loop, entry, store, handlers);					
 					continue;
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
