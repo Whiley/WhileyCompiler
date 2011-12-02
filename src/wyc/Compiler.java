@@ -142,10 +142,11 @@ public class Compiler implements Logger {
 		long memory = runtime.freeMemory();
 		String name = name(stage.getClass().getSimpleName());		
 		
-		try {			
-			stage.apply(module);
+		try {						
+			stage.apply(module);			
 			logTimedMessage("[" + module.filename() + "] applied "
-					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());			
+					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());
+			System.gc();
 		} catch (RuntimeException ex) {
 			logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
@@ -199,12 +200,14 @@ public class Compiler implements Logger {
 	public void logTimedMessage(String msg, long time, long memory) {
 		logout.print(msg);
 		logout.print(" ");
-		memory = memory / 1024;
+		double mem = memory;
+		mem = mem / (1024*1024);
+		memory = (long) mem;
 		String stats = " [" + Long.toString(time) + "ms";
 		if(memory > 0) {
-			stats += "+" + Long.toString(memory) + "kb]";
+			stats += "+" + Long.toString(memory) + "mb]";
 		} else if(memory < 0) {
-			stats += Long.toString(memory) + "kb]";
+			stats += Long.toString(memory) + "mb]";
 		} else {
 			stats += "]";
 		}
@@ -226,11 +229,14 @@ public class Compiler implements Logger {
 		logout.print(msg);
 		logout.print(" ");
 
+		double mem = memory;
+		mem = mem / (1024*1024);
+		memory = (long) mem;
 		String stats = " [" + Long.toString(time) + "ms";
 		if(memory > 0) {
-			stats += "+" + Long.toString(memory) + "kb]";
+			stats += "+" + Long.toString(memory) + "mb]";
 		} else if(memory < 0) {
-			stats += Long.toString(memory) + "kb]";
+			stats += Long.toString(memory) + "mb]";
 		} else {
 			stats += "]";
 		}

@@ -615,15 +615,15 @@ public class ModuleBuilder {
 			HashMap<String, Type> types = new HashMap<String, Type>();								
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
 				Pair<Type,Block> p = expandType(e.getValue(), filename, cache); 
-				if (p.second() != null) {
-					if(blk == null) {
-						blk = new Block(1);
-					}					
-					blk.append(Code.Load(null, Code.THIS_SLOT));
-					blk.append(Code.FieldLoad(null, e.getKey()));
-					blk.append(Code.Store(null, Code.THIS_SLOT+1));
-					blk.append(shiftBlock(1,p.second()));								
-				}	
+//				if (p.second() != null) {
+//					if(blk == null) {
+//						blk = new Block(1);
+//					}					
+//					blk.append(Code.Load(null, Code.THIS_SLOT));
+//					blk.append(Code.FieldLoad(null, e.getKey()));
+//					blk.append(Code.Store(null, Code.THIS_SLOT+1));
+//					blk.append(shiftBlock(1,p.second()));								
+//				}	
 				types.put(e.getKey(), p.first());				
 			}
 			return new Pair<Type,Block>(Type.Record(types),blk);						
