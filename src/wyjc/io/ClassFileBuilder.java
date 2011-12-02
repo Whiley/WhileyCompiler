@@ -528,6 +528,8 @@ public class ClassFileBuilder {
 				 translate((Spawn)code,freeSlot,bytecodes);
 			} else if(code instanceof Throw) {
 				 translate((Throw)code,freeSlot,bytecodes);
+			} else if(code instanceof TupleLoad) {
+				 translate((TupleLoad)code,freeSlot,bytecodes);
 			} else {
 				internalFailure("unknown wyil code encountered (" + code + ")", filename, entry);
 			}
@@ -729,6 +731,16 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYEXCEPTION, "<init>", ftype,
 				Bytecode.SPECIAL));		
 		bytecodes.add(new Bytecode.Throw());
+	}
+	
+	public void translate(Code.TupleLoad c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+				WHILEYTUPLE, T_INT);
+		bytecodes.add(new Bytecode.LoadConst(c.index));		
+		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", ftype,
+				Bytecode.STATIC));		
+		addReadConversion(c.type.elements().get(c.index), bytecodes);
 	}
 	
 	public void translate(Code.Switch c, Block.Entry entry, int freeSlot,

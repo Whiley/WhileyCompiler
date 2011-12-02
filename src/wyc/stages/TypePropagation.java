@@ -161,11 +161,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				tmp.add(Type.T_VOID);
 			}
 
-			System.out.println("Environment: " + tmp);
-			for(Block.Entry entry : postcondition) {
-				System.out.println("> " + entry.code);
-			}
-			
 			postcondition = doPropagation(postcondition,tmp);
 		}
 		
@@ -279,6 +274,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Spawn)code,entry,environment);
 		} else if(code instanceof Throw) {
 			code = infer((Throw)code,entry,environment);
+		} else if(code instanceof TupleLoad) {
+			code = infer((TupleLoad)code,entry,environment);
 		} else {
 			internalFailure("Unknown wyil code encountered: " + code,filename,entry);
 			return null;
@@ -1180,6 +1177,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.Throw(val);
 	}
 	
+	protected Code infer(TupleLoad e, Entry stmt, Env environment) {		
+		Type src = environment.pop();
+		// FIXME: should have an effecitve tuple type here
+		Type.Tuple tuple = checkType(src,Type.Tuple.class,stmt);
+		List<Type> elements = tuple.elements();
+		if(e.index < 0 || e.index >= elements.size()) {
+			syntaxError("invalid tuple index",filename,stmt);
+			return null;
+		}
+		environment.push(elements.get(e.index));
+		return Code.TupleLoad(tuple,e.index);		
+	}
+	
 	protected Pair<Env, Env> propagate(int index, Code.IfGoto code, Entry stmt,
 			Env environment) {
 		environment = (Env) environment.clone();
@@ -1331,7 +1341,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.Dictionary d = (Type.Dictionary) src_t;			
 			elem_t = Type.Tuple(d.key(),d.value());
 		} else {
-			System.out.println("TYPE: " + src_t);
 			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);			
 			return null; // deadcode
 		}
