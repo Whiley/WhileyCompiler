@@ -311,16 +311,19 @@ public class ModuleLoader {
 	}	
 	
 	private Module readModuleInfo(Path.Entry entry) throws Exception {
+		Runtime runtime = Runtime.getRuntime();
 		long time = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
 		ModuleReader reader = suffixMap.get(entry.suffix());
 		Module mi = reader.read(entry.id(), entry.contents());
+		
 		if(mi != null) {
 			logger.logTimedMessage("Loaded " + entry.location() + ":" + entry.id(),
-					System.currentTimeMillis() - time);
+					System.currentTimeMillis() - time, memory - runtime.freeMemory());
 			moduletable.put(mi.id(), mi);
 		} else {
 			logger.logTimedMessage("Ignored " + entry.location() + ":" + entry.id(),
-					System.currentTimeMillis() - time);
+					System.currentTimeMillis() - time, memory - runtime.freeMemory());
 		}
 		return mi;
 	}
