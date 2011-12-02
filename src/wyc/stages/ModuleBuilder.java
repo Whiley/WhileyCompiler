@@ -553,9 +553,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}		
@@ -567,9 +567,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}						
@@ -600,7 +600,7 @@ public class ModuleBuilder {
 						blk.append(Code.Destructure(null));
 						// note that we must reverse the order here
 						for (int j=tt_types_size;j>0;--j) {
-							blk.append(Code.Store(null,j));
+							blk.append(Code.Store(null,j), attributes(t));
 						}						
 					}						
 					blk.append(shiftBlock(i,p.second()));	
@@ -619,9 +619,9 @@ public class ModuleBuilder {
 					if(blk == null) {
 						blk = new Block(1);
 					}					
-					blk.append(Code.Load(null, Code.THIS_SLOT));
-					blk.append(Code.FieldLoad(null, e.getKey()));
-					blk.append(Code.Store(null, Code.THIS_SLOT+1));
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.FieldLoad(null, e.getKey()), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
 					blk.append(shiftBlock(1,p.second()));								
 				}	
 				types.put(e.getKey(), p.first());				
