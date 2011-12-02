@@ -201,8 +201,10 @@ public class Compiler implements Logger {
 		logout.print(" ");
 		memory = memory / 1024;
 		String stats = " [" + Long.toString(time) + "ms";
-		if(memory != 0) {
+		if(memory > 0) {
 			stats += "+" + Long.toString(memory) + "kb]";
+		} else if(memory < 0) {
+			stats += Long.toString(memory) + "kb]";
 		} else {
 			stats += "]";
 		}
@@ -225,8 +227,10 @@ public class Compiler implements Logger {
 		logout.print(" ");
 
 		String stats = " [" + Long.toString(time) + "ms";
-		if(memory != 0) {
+		if(memory > 0) {
 			stats += "+" + Long.toString(memory) + "kb]";
+		} else if(memory < 0) {
+			stats += Long.toString(memory) + "kb]";
 		} else {
 			stats += "]";
 		}
