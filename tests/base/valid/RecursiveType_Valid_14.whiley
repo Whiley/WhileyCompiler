@@ -18,8 +18,8 @@ void ::main(System sys,[string] args):
     se3 = {lhs: se2, data: 45}
     e1 = [se1]
     e2 = [e1,se1,se2]
-    sys.out.println(Any.toString(se1))
-    sys.out.println(Any.toString(se2))
-    sys.out.println(Any.toString(se3))
-    sys.out.println(Any.toString(e1))
-    sys.out.println(Any.toString(e2))
+    sys.out.println(toString(se1))
+    sys.out.println(toString(se2))
+    sys.out.println(toString(se3))
+    sys.out.println(toString(e1))
+    sys.out.println(toString(e2))
