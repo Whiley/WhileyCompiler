@@ -3,7 +3,7 @@ import * from whiley.lang.*
 define Expr as real | { Expr lhs, int data } | [Expr]
 define SubExpr as real | { SubExpr lhs, int data }
 
-string Any.toString(Expr e):
+string toString(Expr e):
     if e is SubExpr:
         if e is real:
             return Any.toString(e)
