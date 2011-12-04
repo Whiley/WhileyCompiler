@@ -110,6 +110,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void NegationType_Invalid_2_RuntimeTest() { contextFailTest("NegationType_Invalid_2"); }
  @Test public void NegationType_Invalid_3_RuntimeTest() { contextFailTest("NegationType_Invalid_3"); }
  @Test public void OpenRecord_CompileFail_1_StaticTest() { contextFailTest("OpenRecord_Invalid_1"); }
+ @Test public void OpenRecord_CompileFail_2_StaticTest() { contextFailTest("OpenRecord_Invalid_2"); }
  @Test public void Process_Invalid_1_StaticTest() { contextFailTest("Process_Invalid_1"); }
  @Ignore("Known Issue") @Test public void Process_Invalid_2_StaticTest() { contextFailTest("Process_Invalid_2"); }
  @Test public void Process_Invalid_3_StaticTest() { contextFailTest("Process_Invalid_3"); }
