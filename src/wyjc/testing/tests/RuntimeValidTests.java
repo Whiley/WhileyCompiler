@@ -360,6 +360,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_30_RuntimeTest() { runTest("TypeEquals_Valid_30"); }
  @Test public void TypeEquals_Valid_31_RuntimeTest() { runTest("TypeEquals_Valid_31"); }
  @Test public void TypeEquals_Valid_32_RuntimeTest() { runTest("TypeEquals_Valid_32"); }
+ @Test public void TypeEquals_Valid_33_RuntimeTest() { runTest("TypeEquals_Valid_33"); }
  @Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
  @Test public void UnionType_Valid_4_RuntimeTest() { runTest("UnionType_Valid_4"); }
