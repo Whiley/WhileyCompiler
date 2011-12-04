@@ -331,7 +331,7 @@ public class ModuleBuilder {
 			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2);
 		} else if(Type.isSubtype(Type.List(Type.T_ANY, false), lub)) {
 			return evaluate(bop,(Value.List)v1,(Value.List)v2);
-		} else if(Type.isSubtype(Type.Set(Type.T_ANY), lub)) {
+		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false), lub)) {
 			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
 		} 
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),filename,bop);
@@ -573,7 +573,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}						
-			return new Pair<Type,Block>(Type.Set(p.first()),blk);					
+			return new Pair<Type,Block>(Type.Set(p.first(),false),blk);					
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;	
 			Block blk = null;
@@ -2160,7 +2160,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
-			return new Pair<Type,Block>(Type.Set(p.first()),blk);			
+			return new Pair<Type,Block>(Type.Set(p.first(),false),blk);			
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;			
 			Pair<Type,Block> key = resolve(st.key);

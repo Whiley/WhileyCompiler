@@ -49,6 +49,10 @@ public final class TypeAlgorithms {
 				NameID nid1 = (NameID) s1.data;
 				NameID nid2 = (NameID) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
+			} else if(s1.kind == Type.K_LIST || s1.kind == Type.K_SET){
+				Boolean nid1 = (Boolean) s1.data;
+				Boolean nid2 = (Boolean) s2.data;				
+				return nid1.toString().compareTo(nid2.toString());
 			} else {
 				String str1 = (String) s1.data;
 				String str2 = (String) s2.data;
@@ -656,7 +660,19 @@ public final class TypeAlgorithms {
 			case Type.K_LIST:
 			case Type.K_SET:
 			case Type.K_DICTIONARY: {								
-				// e.g. [T1] & [T2] => [T1&T2]				
+				// e.g. [T1] & [T2] => [T1&T2]			
+				Object myData;
+				if (fromState.kind == Type.K_LIST || fromState.kind == Type.K_SET) {
+					// [T1]  & [T2]  => [T1&T2]
+					// [T1+] & [T2]  => [T1&T2+]
+					// [T1]  & [T2+] => [T1&T2]
+					// [T1+] & [T2+] => [T1&T2+]
+					boolean fromNonEmpty = (Boolean) fromState.data;
+					boolean toNonEmpty = (Boolean) toState.data;
+					myData = fromNonEmpty | toNonEmpty;
+				} else {
+					myData = fromState.data;
+				}
 				int[] fromChildren = fromState.children;
 				int[] toChildren = toState.children;
 				int[] myChildren = new int[fromChildren.length];
@@ -666,7 +682,7 @@ public final class TypeAlgorithms {
 					myChildren[i] = intersect(fromChild, true, from,
 							toChild, true, to, allocations, states);
 				}				
-				myState = new Automata.State(fromState.kind, fromState.data,
+				myState = new Automata.State(fromState.kind, myData,
 						true, myChildren);
 				break;
 			}							
@@ -808,6 +824,20 @@ public final class TypeAlgorithms {
 			case Type.K_SET:
 			case Type.K_DICTIONARY: {				
 				// (T1,T2) & !(T3,T4) => (T1 & !T3, T2) | (T1, T2 & !T4) 
+				
+				Object myData;
+				if (fromState.kind == Type.K_LIST || fromState.kind == Type.K_SET) {
+					// [T1]  & ![T2]  => [T1&!T2+]
+					// [T1+] & ![T2]  => [T1&!T2+]
+					// [T1]  & ![T2+] => [T1&!T2]
+					// [T1+] & ![T2+] => [T1&!T2+]
+					boolean fromNonEmpty = (Boolean) fromState.data;
+					boolean toNonEmpty = (Boolean) toState.data;
+					myData = fromNonEmpty || !toNonEmpty;
+				} else {
+					myData = fromState.data;
+				}
+				
 				int[] fromChildren = fromState.children;
 				int[] toChildren = toState.children;
 				int[] tmpChildren = new int[fromChildren.length];
@@ -829,7 +859,7 @@ public final class TypeAlgorithms {
 						}
 					}
 					myChildren[i] = states.size();
-					states.add(new Automata.State(fromState.kind, fromState.data,
+					states.add(new Automata.State(fromState.kind, myData,
 							true, myChildChildren));
 				}				
 				myState = new Automata.State(Type.K_UNION, null,
@@ -973,6 +1003,20 @@ public final class TypeAlgorithms {
 			case Type.K_SET:
 			case Type.K_DICTIONARY: {
 				// !(T1,T2) & (T3,T4) => (!T1 & T3, T2) | (T3, !T2 & T4) 
+				
+				Object myData;
+				if (fromState.kind == Type.K_LIST || fromState.kind == Type.K_SET) {
+					// ![T1]  & [T2]  => [!T1&T2+]
+					// ![T1+] & [T2]  => [!T1&T2]
+					// ![T1]  & [T2+] => [!T1&T2+]
+					// ![T1+] & [T2+] => [!T1&T2+]
+					boolean fromNonEmpty = (Boolean) fromState.data;
+					boolean toNonEmpty = (Boolean) toState.data;
+					myData = !fromNonEmpty || toNonEmpty;
+				} else {
+					myData = fromState.data;
+				}
+				
 				int[] fromChildren = fromState.children;
 				int[] toChildren = toState.children;
 				int[] tmpChildren = new int[fromChildren.length];
@@ -994,7 +1038,7 @@ public final class TypeAlgorithms {
 						}
 					}
 					myChildren[i] = states.size();
-					states.add(new Automata.State(fromState.kind, fromState.data,
+					states.add(new Automata.State(fromState.kind, myData,
 							true, myChildChildren));
 				}				
 				myState = new Automata.State(Type.K_UNION, null,
@@ -1127,7 +1171,7 @@ public final class TypeAlgorithms {
 			case Type.K_RECORD:
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
-			case Type.K_METHOD: {
+			case Type.K_METHOD: {				
 				// e.g. ![int] & ![real] => !([int]|[real])
 				int childIndex = states.size();						
 				states.add(null);

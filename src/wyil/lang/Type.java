@@ -93,8 +93,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Set(Type element) {
-		return construct(K_SET, null, element);			
+	public static final Type Set(Type element, boolean nonEmpty) {
+		return construct(K_SET, nonEmpty, element);
 	}
 	
 	/**
@@ -397,7 +397,7 @@ public abstract class Type {
 					fields.add(readString());
 				}
 				state.data = fields;			
-			}  else if(state.kind == Type.K_LIST) { 
+			}  else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) { 
 				boolean nonEmpty = reader.read_bit();				
 				state.data = nonEmpty;			
 			}
@@ -449,7 +449,7 @@ public abstract class Type {
 				for(String field : fields) {
 					writeString(field);
 				}					
-			} else if(state.kind == Type.K_LIST) {
+			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
 				writer.write_bit((Boolean) state.data);							
 			}						
 		}
@@ -607,7 +607,9 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = (Set) Set(Union(r.element(),br.element()));
+					Type element = Union(r.element(),br.element());
+					boolean nonEmpty = r.nonEmpty() & br.nonEmpty();
+					r = (Set) Set(element,nonEmpty);					
 				}
 			}			
 			return r;
@@ -1010,7 +1012,10 @@ public abstract class Type {
 		public Type element() {			
 			int elemIdx = automata.states[0].children[0];
 			return construct(Automatas.extract(automata,elemIdx));			
-		}		
+		}
+		boolean nonEmpty() {
+			return (Boolean) automata.states[0].data;
+		}
 	}
 
 	/**
@@ -1325,11 +1330,20 @@ public abstract class Type {
 			return "real";
 		case K_STRING:
 			return "string";
-		case K_SET:
-			middle = "{" + toString(state.children[0], visited, headers, automata)
-					+ "}";
+		case K_SET: {
+			boolean nonEmpty = (Boolean) state.data;
+			if (nonEmpty) {
+				middle = "{"
+						+ toString(state.children[0], visited, headers,
+								automata) + "+}";
+			} else {
+				middle = "{"
+						+ toString(state.children[0], visited, headers,
+								automata) + "}";
+			}
 			break;
-		case K_LIST:
+		}
+		case K_LIST: {
 			boolean nonEmpty = (Boolean) state.data;
 			if(nonEmpty) {
 				middle = "[" + toString(state.children[0], visited, headers, automata)
@@ -1338,7 +1352,8 @@ public abstract class Type {
 				middle = "[" + toString(state.children[0], visited, headers, automata)
 						+ "]";
 			}
-			break;		
+			break;
+		}
 		case K_EXISTENTIAL:
 			middle = "?" + state.data.toString();
 			break;

@@ -173,7 +173,7 @@ public class TypeParser {
 				return Record(fields);					
 			}
 			match("}");
-			return Set(elem);
+			return Set(elem,false);
 		}
 		default:
 		{

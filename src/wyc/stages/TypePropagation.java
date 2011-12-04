@@ -298,8 +298,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 
-		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY),rhs);		
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhs);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhs);		
 		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhs);
 		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhs);
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
@@ -943,7 +943,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem = Type.Union(elem,environment.pop());						
 		}
 		
-		Type.Set type = checkType(Type.Set(elem),Type.Set.class,stmt);
+		Type.Set type = checkType(Type.Set(elem,false),Type.Set.class,stmt);
 		environment.push(type);
 		return Code.NewSet(type,e.nargs);
 	}
@@ -1001,7 +1001,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),src)) {
 			environment.add(Type.T_INT);
 			return Code.ListLength(Type.effectiveListType(src));
-		} else if(Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY),src)) {
+		} else if(Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY,false),src)) {
 			environment.add(Type.T_INT);
 			return Code.SetLength(Type.effectiveSetType(src));
 		} else if(Type.isImplicitCoerciveSubtype(Type.Dictionary(Type.T_ANY,Type.T_ANY),src)) {			
@@ -1064,8 +1064,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY),rhs);			
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY,false),lhs);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY,false),rhs);			
 		
 		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
 			if(lhs_set && rhs_set) {
@@ -1079,9 +1079,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				result = null;
 			}						
 		} else if(dir == OpDir.LEFT && lhs_set) {
-			result = Type.Union(lhs,Type.Set(rhs));
+			result = Type.Union(lhs,Type.Set(rhs,false));
 		} else if(dir == OpDir.RIGHT && rhs_set) {
-			result = Type.Union(Type.Set(lhs),rhs);			
+			result = Type.Union(Type.Set(lhs,false),rhs);			
 		} else {
 			syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);			
 			return null; // dead-code
@@ -1096,8 +1096,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY),rhs);			
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY,false),lhs);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY,false),rhs);			
 		
 		if(lhs_set || rhs_set) {				
 			if(lhs_set && rhs_set) {
@@ -1128,7 +1128,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY,false),lhs);
 					
 		
 		if(lhs_set) {	
@@ -1242,7 +1242,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}	
 		case SUBSET:
 		case SUBSETEQ:						
-			checkIsSubtype(Type.Set(Type.T_ANY),lub,stmt);			
+			checkIsSubtype(Type.Set(Type.T_ANY,false),lub,stmt);			
 			break;		
 		}
 		
