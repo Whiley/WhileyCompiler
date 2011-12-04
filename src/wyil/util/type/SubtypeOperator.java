@@ -165,7 +165,7 @@ public class SubtypeOperator {
 			}
 			// === Homogenous Compound States ===
 			case K_SET:
-			case K_LIST:
+			case K_LIST:			
 				// != below not ||. This is because lists and sets can intersect
 				// on the empty list/set.
 				if(fromSign != toSign) {					

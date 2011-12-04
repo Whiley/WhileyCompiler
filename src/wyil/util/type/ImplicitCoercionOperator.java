@@ -57,7 +57,7 @@ public class ImplicitCoercionOperator extends SubtypeOperator {
 				}
 			}
 			return true;
-		} else if(fromKind == K_DICTIONARY && toKind == K_LIST) {
+		} else if (fromKind == K_DICTIONARY && toKind == K_LIST) {
 			if (!fromSign || !toSign) {
 				// nary nodes
 				int fromKey = fromState.children[0];
@@ -81,7 +81,7 @@ public class ImplicitCoercionOperator extends SubtypeOperator {
 				} 
 			}
 			return fromSign == toSign;
-		} else if(fromKind == K_LIST && toKind == K_STRING) {			
+		} else if (fromKind == K_LIST && toKind == K_STRING) {			
 			if (!fromSign || !toSign) {
 				// TO DO: this is a bug here for cases when the element type is e.g. int|real
 				int fromChild = fromState.children[0];				

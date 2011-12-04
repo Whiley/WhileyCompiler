@@ -1768,7 +1768,7 @@ public abstract class Code {
 			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				return new StringLVal();
-			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.List(Type.T_ANY,false),iter)) {			
 				Type.List list = Type.effectiveListType(iter);											
 				iter = list.element();
 				return new ListLVal(raw);
@@ -1858,7 +1858,7 @@ public abstract class Code {
 			for (int i = 0; i != level; ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
-				} else if (Type.isSubtype(Type.List(Type.T_ANY), iter)) {
+				} else if (Type.isSubtype(Type.List(Type.T_ANY,false), iter)) {
 					Type.List list = Type.effectiveListType(iter);
 					iter = list.element();
 				} else if (Type.isSubtype(

@@ -217,7 +217,7 @@ public class ClassFileBuilder {
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
 		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T,
-						Type.List(Type.T_STRING));
+						Type.List(Type.T_STRING, false));
 		JvmType.Function ft3 = convertFunType(wyft);		
 		// The following is a little bit of hack. Basically we flush the stdout
 		// channel on exit
@@ -666,7 +666,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));						
 			
-		} else if(Type.isSubtype(Type.List(Type.T_ANY),type)) {
+		} else if(Type.isSubtype(Type.List(Type.T_ANY, false),type)) {
 			Type.List list = Type.effectiveListType(type);				
 										
 			if(level != 0) {

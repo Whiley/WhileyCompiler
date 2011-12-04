@@ -142,7 +142,7 @@ public class TypeParser {
 			match("[");
 			Type elem = parse(typeVariables);
 			match("]");
-			return List(elem);
+			return List(elem, false);
 		}
 		case '{':
 		{

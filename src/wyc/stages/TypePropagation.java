@@ -300,8 +300,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
 		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY),rhs);		
-		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY),lhs);
-		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY),rhs);
+		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhs);
+		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhs);
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
 		
@@ -369,7 +369,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else if(v.bop == BOp.RANGE) {
 				checkIsSubtype(Type.T_INT,lhs,stmt);
 				checkIsSubtype(Type.T_INT,rhs,stmt);
-				result = Type.List(Type.T_INT);
+				result = Type.List(Type.T_INT, false);
 			} else if(v.bop == BOp.REM) {
 				// remainder is a special case which requires both operands to
 				// be integers.
@@ -711,7 +711,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_INT,idx,stmt);
 				checkIsSubtype(Type.T_CHAR,val,stmt);	
 				iter = Type.T_CHAR;				
-			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.List(Type.T_ANY, false),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
 					syntaxError(errorMessage(INVALID_LIST_EXPRESSION),
@@ -780,13 +780,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nelement = inferAfterType(Type.T_CHAR, newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
 			return oldtype;
-		} else if(Type.isSubtype(Type.List(Type.T_ANY),oldtype)) {		
+		} else if(Type.isSubtype(Type.List(Type.T_ANY, false),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = inferAfterType(list.element(), newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);
 			// FIXME: this is overly conservative.
-			return Type.List(Type.Union(list.element(),nelement));		
+			return Type.List(Type.Union(list.element(),nelement), false);		
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
@@ -842,13 +842,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nelement = inferBeforeType(Type.T_CHAR, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
 			return oldtype;
-		} else if(Type.isSubtype(Type.List(Type.T_ANY),oldtype)) {		
+		} else if(Type.isSubtype(Type.List(Type.T_ANY, false),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = inferBeforeType(list.element(), level - 1,
 					fieldLevel, fields, indexLevel, indices);
 			// FIXME: this is overly conservative.
-			return Type.List(Type.Union(list.element(),nelement));		
+			return Type.List(Type.Union(list.element(),nelement), false);		
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
@@ -930,7 +930,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem = Type.Union(elem,environment.pop());						
 		}
 		
-		Type.List type = checkType(Type.List(elem),Type.List.class,stmt);
+		Type.List type = checkType(Type.List(elem, false),Type.List.class,stmt);
 		environment.push(type);
 		return Code.NewList(type,e.nargs);
 	}
@@ -998,7 +998,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(Type.isImplicitCoerciveSubtype(Type.T_STRING,src)) {
 			environment.add(Type.T_INT);
 			return Code.StringLength();
-		} else if(Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY),src)) {
+		} else if(Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),src)) {
 			environment.add(Type.T_INT);
 			return Code.ListLength(Type.effectiveListType(src));
 		} else if(Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY),src)) {
@@ -1025,7 +1025,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
 			r = Code.SubString();
 		} else {
-			checkIsSubtype(Type.List(Type.T_ANY),src,stmt);
+			checkIsSubtype(Type.List(Type.T_ANY, false),src,stmt);
 			r = Code.SubList(Type.effectiveListType(src));
 		}
 		

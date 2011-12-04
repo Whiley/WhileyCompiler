@@ -377,7 +377,7 @@ public abstract class Value implements Comparable<Value> {
 			for(Value arg : values) {
 				t = Type.Union(t,arg.type());
 			}
-			return Type.List(t);			
+			return Type.List(t, !values.isEmpty());			
 		}
 		public int hashCode() {
 			return values.hashCode();

@@ -102,10 +102,10 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type List(Type element) {
-		return construct(K_LIST, null, element);				
+	public static final Type List(Type element, boolean nonEmpty) {
+		return construct(K_LIST, nonEmpty, element);
 	}
-	
+
 	/**
 	 * Construct a dictionary type using the given key and value types.
 	 * 
@@ -397,6 +397,9 @@ public abstract class Type {
 					fields.add(readString());
 				}
 				state.data = fields;			
+			}  else if(state.kind == Type.K_LIST) { 
+				boolean nonEmpty = reader.read_bit();				
+				state.data = nonEmpty;			
 			}
 			return state;
 		}
@@ -446,6 +449,8 @@ public abstract class Type {
 				for(String field : fields) {
 					writeString(field);
 				}					
+			} else if(state.kind == Type.K_LIST) {
+				writer.write_bit((Boolean) state.data);							
 			}						
 		}
 		
@@ -615,7 +620,7 @@ public abstract class Type {
 			return (Type.List) t;
 		} else if (t instanceof Type.Union) {			
 			Union ut = (Type.Union) t;
-			List r = null;
+			List r = null;			
 			for (Type b : ut.bounds()) {
 				if (!(b instanceof List)) {
 					return null;
@@ -624,7 +629,9 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = (List) List(Union(r.element(),br.element()));
+					Type element = Union(r.element(),br.element());
+					boolean nonEmpty = r.nonEmpty() & br.nonEmpty();
+					r = (List) List(element,nonEmpty);
 				}
 			}			
 			return r;
@@ -1018,10 +1025,15 @@ public abstract class Type {
 		private List(Automata automata) {
 			super(automata);
 		}
+		
 		public Type element() {			
 			int elemIdx = automata.states[0].children[0];
 			return construct(Automatas.extract(automata,elemIdx));	
-		}		
+		}
+		
+		boolean nonEmpty() {
+			return (Boolean) automata.states[0].data;
+		}
 	}
 
 	/**
@@ -1318,9 +1330,15 @@ public abstract class Type {
 					+ "}";
 			break;
 		case K_LIST:
-			middle = "[" + toString(state.children[0], visited, headers, automata)
-					+ "]";
-			break;
+			boolean nonEmpty = (Boolean) state.data;
+			if(nonEmpty) {
+				middle = "[" + toString(state.children[0], visited, headers, automata)
+						+ "+]";
+			} else {
+				middle = "[" + toString(state.children[0], visited, headers, automata)
+						+ "]";
+			}
+			break;		
 		case K_EXISTENTIAL:
 			middle = "?" + state.data.toString();
 			break;
@@ -1766,17 +1784,17 @@ public abstract class Type {
 	public static final byte K_STRING = 9;
 	public static final byte K_TUPLE = 10;
 	public static final byte K_SET = 11;
-	public static final byte K_LIST = 12;
+	public static final byte K_LIST = 12;	
 	public static final byte K_DICTIONARY = 13;	
-	public static final byte K_PROCESS = 14;
-	public static final byte K_RECORD = 15;
+	public static final byte K_PROCESS = 14;	
+	public static final byte K_RECORD = 15;	
 	public static final byte K_UNION = 16;
-	public static final byte K_NEGATION = 18;
-	public static final byte K_FUNCTION = 19;
-	public static final byte K_METHOD = 20;
-	public static final byte K_HEADLESS = 21; // headless method
-	public static final byte K_EXISTENTIAL = 22;
-	public static final byte K_LABEL = 23;	
+	public static final byte K_NEGATION = 17;
+	public static final byte K_FUNCTION = 18;
+	public static final byte K_METHOD = 19;
+	public static final byte K_HEADLESS = 20; // headless method
+	public static final byte K_EXISTENTIAL = 21;
+	public static final byte K_LABEL = 22;	
 		
 	private static final ArrayList<Automata> values = new ArrayList<Automata>();
 	private static final HashMap<Automata,Integer> cache = new HashMap<Automata,Integer>();

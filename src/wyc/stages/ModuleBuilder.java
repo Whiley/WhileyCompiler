@@ -329,7 +329,7 @@ public class ModuleBuilder {
 			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
 			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2);
-		} else if(Type.isSubtype(Type.List(Type.T_ANY), lub)) {
+		} else if(Type.isSubtype(Type.List(Type.T_ANY, false), lub)) {
 			return evaluate(bop,(Value.List)v1,(Value.List)v2);
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY), lub)) {
 			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
@@ -559,7 +559,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}		
-			return new Pair<Type,Block>(Type.List(p.first()),blk);			
+			return new Pair<Type,Block>(Type.List(p.first(), false),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
@@ -2146,7 +2146,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
-			return new Pair<Type,Block>(Type.List(p.first()),blk);			
+			return new Pair<Type,Block>(Type.List(p.first(), false),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;	
 			Pair<Type,Block> p = resolve(st.element);
