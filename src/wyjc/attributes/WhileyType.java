@@ -70,7 +70,7 @@ public class WhileyType implements BytecodeAttribute {
 			Automata automata = Type.destruct(type);
 			for (int i = 0; i != automata.size(); ++i) {
 				Automata.State s = automata.states[i];
-				if (s.kind == Type.K_EXISTENTIAL) {
+				if (s.kind == Type.K_NOMINAL) {
 					NameID name = (NameID) s.data;
 					Constant.Utf8 utf8 = new Constant.Utf8(name.module()
 							.toString());
@@ -137,7 +137,7 @@ public class WhileyType implements BytecodeAttribute {
 				
 		public Automata.State readState() throws IOException {
 			Automata.State state = super.readState();			
-			if (state.kind == Type.K_EXISTENTIAL) {
+			if (state.kind == Type.K_NOMINAL) {
 				String modstr = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
 				ModuleID mid = ModuleID.fromString(modstr);
@@ -171,7 +171,7 @@ public class WhileyType implements BytecodeAttribute {
 		
 		public void write(Automata.State state) throws IOException {
 			super.write(state);
-			if(state.kind == Type.K_EXISTENTIAL) {
+			if(state.kind == Type.K_NOMINAL) {
 				NameID name = (NameID) state.data;
 				Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
 				writer.write_uv(constantPool.get(utf8));

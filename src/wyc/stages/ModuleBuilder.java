@@ -702,7 +702,7 @@ public class ModuleBuilder {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
 			ModuleID mid = ut.attribute(Attributes.Module.class).module;			
 			// TODO: need to fix existentials
-			return new Pair<Type,Block>(Type.Existential(new NameID(mid,"1")),null);							
+			return new Pair<Type,Block>(Type.Nominal(new NameID(mid,"1")),null);							
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Block blk = null;
@@ -2285,7 +2285,7 @@ public class ModuleBuilder {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
 			ModuleID mid = ut.attribute(Attributes.Module.class).module;
 			// TODO: need to fix existentials
-			return new Pair<Type,Block>(Type.Existential(new NameID(mid,"1")),null);							
+			return new Pair<Type,Block>(Type.Nominal(new NameID(mid,"1")),null);							
 		} else if(t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Block blk = null;

@@ -80,12 +80,12 @@ public abstract class Type {
 		return construct(K_PROCESS, null, element);				
 	}
 	
-	public static final Existential Existential(NameID name) {
+	public static final Nominal Nominal(NameID name) {
 		if (name == null) {
 			throw new IllegalArgumentException(
-					"existential name cannot be null");
+					"nominal name cannot be null");
 		}
-		return new Existential(name);
+		return new Nominal(name);
 	}
 	
 	/**
@@ -386,7 +386,7 @@ public abstract class Type {
 		}
 		public Automata.State readState() throws IOException {
 			Automata.State state = super.readState();
-			if (state.kind == Type.K_EXISTENTIAL) {				
+			if (state.kind == Type.K_NOMINAL) {				
 				String module = readString();
 				String name = readString();
 				state.data = new NameID(ModuleID.fromString(module), name);
@@ -439,7 +439,7 @@ public abstract class Type {
 		
 		public void write(Automata.State state) throws IOException {
 			super.write(state);			
-			if (state.kind == Type.K_EXISTENTIAL) {
+			if (state.kind == Type.K_NOMINAL) {
 				NameID name = (NameID) state.data;
 				writeString(name.module().toString());
 				writeString(name.name());
@@ -899,14 +899,14 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Existential extends Leaf {
+	public static final class Nominal extends Leaf {
 		private NameID nid;
-		private Existential(NameID name) {
+		private Nominal(NameID name) {
 			nid = name;
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Existential) {
-				Existential e = (Existential) o;
+			if(o instanceof Nominal) {
+				Nominal e = (Nominal) o;
 				return nid.equals(e.nid);
 			}
 			return false;
@@ -1354,7 +1354,7 @@ public abstract class Type {
 			}
 			break;
 		}
-		case K_EXISTENTIAL:
+		case K_NOMINAL:
 			middle = "?" + state.data.toString();
 			break;
 		case K_PROCESS:
@@ -1555,8 +1555,8 @@ public abstract class Type {
 			return K_STRING;
 		} else if(leaf instanceof Type.Meta) {
 			return K_META;
-		} else if(leaf instanceof Type.Existential) {
-			return K_EXISTENTIAL;
+		} else if(leaf instanceof Type.Nominal) {
+			return K_NOMINAL;
 		} else {
 			// should be dead code
 			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
@@ -1607,8 +1607,8 @@ public abstract class Type {
 		case K_STRING:
 			type = T_STRING;
 			break;
-		case K_EXISTENTIAL:			
-			type = new Existential((NameID) root.data);
+		case K_NOMINAL:			
+			type = new Nominal((NameID) root.data);
 			break;
 		case K_TUPLE:
 			type = new Tuple(automata);
@@ -1715,8 +1715,8 @@ public abstract class Type {
 		if (t instanceof Leaf) {
 			int kind = leafKind((Leaf) t);
 			Object data = null;
-			if (t instanceof Existential) {
-				Existential x = (Existential) t;
+			if (t instanceof Nominal) {
+				Nominal x = (Nominal) t;
 				data = x.nid;
 			}
 			State state = new State(kind, data, true, Automata.NOCHILDREN);
@@ -1808,7 +1808,7 @@ public abstract class Type {
 	public static final byte K_FUNCTION = 18;
 	public static final byte K_METHOD = 19;
 	public static final byte K_HEADLESS = 20; // headless method
-	public static final byte K_EXISTENTIAL = 21;
+	public static final byte K_NOMINAL = 21;
 	public static final byte K_LABEL = 22;	
 		
 	private static final ArrayList<Automata> values = new ArrayList<Automata>();

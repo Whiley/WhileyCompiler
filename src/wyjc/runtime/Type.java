@@ -23,7 +23,7 @@ import static wyil.lang.Type.K_RECORD;
 import static wyil.lang.Type.K_UNION;
 import static wyil.lang.Type.K_NEGATION;
 import static wyil.lang.Type.K_FUNCTION;
-import static wyil.lang.Type.K_EXISTENTIAL;
+import static wyil.lang.Type.K_NOMINAL;
 import static wyil.lang.Type.K_LABEL;
 
 public class Type {

@@ -2741,14 +2741,14 @@ public class ClassFileBuilder {
 	}		 	
 		
 	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
-			.Process(Type.Existential(new NameID(new ModuleID(new PkgID(
+			.Process(Type.Nominal(new NameID(new ModuleID(new PkgID(
 					"whiley", "lang"), "System"), "1")));
 
 	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
 			.Process(Type.Record(new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
-					put("rest", Type.Existential(new NameID(new ModuleID(
+					put("rest", Type.Nominal(new NameID(new ModuleID(
 							new PkgID("whiley", "lang"), "System"), "1")));
 				}
 			}));

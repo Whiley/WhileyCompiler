@@ -139,7 +139,7 @@ public class SubtypeOperator {
 			case K_ANY:
 				return fromSign && toSign;
 			// === Leaf States First ===
-			case K_EXISTENTIAL: {
+			case K_NOMINAL: {
 				NameID nid1 = (NameID) fromState.data;
 				NameID nid2 = (NameID) toState.data;	
 				if(fromSign || toSign) {

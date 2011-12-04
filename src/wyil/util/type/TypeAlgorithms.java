@@ -45,7 +45,7 @@ public final class TypeAlgorithms {
 					}
 				}
 				return 0;
-			} else if(s1.kind == Type.K_EXISTENTIAL){
+			} else if(s1.kind == Type.K_NOMINAL){
 				NameID nid1 = (NameID) s1.data;
 				NameID nid2 = (NameID) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
@@ -652,7 +652,7 @@ public final class TypeAlgorithms {
 				break;
 			}				
 			case Type.K_LABEL:
-			case Type.K_EXISTENTIAL:
+			case Type.K_NOMINAL:
 			case Type.K_RECORD: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & {int g} => void
@@ -813,7 +813,7 @@ public final class TypeAlgorithms {
 			}
 							
 			case Type.K_LABEL:
-			case Type.K_EXISTENTIAL:
+			case Type.K_NOMINAL:
 			case Type.K_RECORD: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & !{int g} => {int f}
@@ -992,7 +992,7 @@ public final class TypeAlgorithms {
 			}
 							
 			case Type.K_LABEL:
-			case Type.K_EXISTENTIAL:			
+			case Type.K_NOMINAL:			
 			case Type.K_RECORD: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. !{int f} & {int g} => {int g}
@@ -1173,7 +1173,7 @@ public final class TypeAlgorithms {
 				break;
 			}				
 			case Type.K_LABEL:
-			case Type.K_EXISTENTIAL:
+			case Type.K_NOMINAL:
 			case Type.K_PROCESS:
 			case Type.K_LIST:
 			case Type.K_SET:
