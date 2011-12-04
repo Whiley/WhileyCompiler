@@ -653,9 +653,24 @@ public final class TypeAlgorithms {
 				myState = new Automata.State(Type.K_ANY);
 				break;
 			}				
-			case Type.K_LABEL:
-			case Type.K_NOMINAL:
 			case Type.K_RECORD: {
+				Type.Record.State fromData = (Type.Record.State) fromState.data;
+				Type.Record.State toData = (Type.Record.State) toState.data;
+				if (fromData.isOpen && toData.isOpen) {					
+					myState = intersectPosPosOpenOpen(fromIndex,from,toIndex,to,allocations,states);
+					break;
+				} else if(toData.isOpen) {
+					myState = intersectPosPosClosedOpen(fromIndex,from,toIndex,to,allocations,states);
+					break;
+				} else if(fromData.isOpen) {
+					myState = intersectPosPosClosedOpen(toIndex,to,fromIndex,from,allocations,states);
+					break;
+				} else {
+					// fall through to general case for compounds
+				}
+			}
+			case Type.K_LABEL:
+			case Type.K_NOMINAL: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & {int g} => void
 					myState = new Automata.State(Type.K_VOID);
@@ -773,7 +788,108 @@ public final class TypeAlgorithms {
 		
 		return myIndex;
 	}
+	
+	private static Automata.State intersectPosPosOpenOpen(int fromIndex, Automata from,
+			int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = from.states[toIndex];
+		Type.Record.State fromData = (Type.Record.State) fromState.data;
+		Type.Record.State toData = (Type.Record.State) toState.data;
+		Type.Record.State myData = new Type.Record.State(true);		
+		
+		int fi = 0, ti = 0;
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		ArrayList<Integer> myChildren = new ArrayList<Integer>();
+		while (fi < fromData.size() && ti < toData.size()) {
+			int fromChild = fromChildren[fi];
+			int toChild = toChildren[ti];
+			String fn = fromData.get(fi);
+			String tn = toData.get(ti);						
+			int c = fn.compareTo(tn);
+			if (c == 0) {
+				myData.add(fn);
+				myChildren.add(intersect(fromChild, true, from, toChild,
+						true, to, allocations, states));
+				fi++;ti++;
+			} else if (c < 0) {
+				myData.add(fn);
+				myChildren.add(states.size());
+				Automatas.extractOnto(fromChild,from,states);
+				fi++;
+			} else {
+				myData.add(tn);
+				myChildren.add(states.size());
+				Automatas.extractOnto(toChild,to,states);
+				ti++;
+			}
+		}	
+		while (fi < fromData.size()) {
+			String fn = fromData.get(fi);
+			myData.add(fn);
+			int fromChild = fromChildren[fi];
+			myChildren.add(states.size());
+			Automatas.extractOnto(fromChild,from,states);
+			fi = fi + 1;
+		}
+		while (ti < toData.size()) {
+			String tn = toData.get(ti);
+			myData.add(tn);
+			int toChild = toChildren[ti];
+			myChildren.add(states.size());
+			Automatas.extractOnto(toChild,to,states);
+			ti = ti + 1;
+		}
+		// finally, create the new type
+		int[] myChildrenArray = new int[myChildren.size()];
+		for(int i=0;i!=myChildrenArray.length;++i) {
+			 myChildrenArray[i] = myChildren.get(i);
+		}
+		return new Automata.State(fromState.kind, myData, true,							
+				myChildrenArray);
+	}
+	
+	private static Automata.State intersectPosPosClosedOpen(
+			int fromIndex, Automata from, int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+		
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = to.states[toIndex];
+		Type.Record.State fromData = (Type.Record.State) fromState.data;
+		Type.Record.State toData = (Type.Record.State) toState.data;
 
+		int oldSize = states.size(); // in case we need to back out
+		int[] myChildren = new int[fromData.size()];
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		for (int fi = 0, ti = 0; fi != myChildren.length; ++fi) {
+			String fn = fromData.get(fi);
+			int fromChild = fromChildren[fi];
+			if (ti < toData.size()) {
+				String tn = toData.get(ti);
+				int c = fn.compareTo(tn);
+				if (c == 0) {
+					int toChild = toChildren[ti++];
+					myChildren[fi] = intersect(fromChild, true, from, toChild,
+							true, to, allocations, states);
+					continue;
+				} else if (c > 0) {
+					// e.g. {int f} & {int g,...}
+					while (states.size() != oldSize) {
+						states.remove(states.size() - 1);
+					}
+					return new Automata.State(Type.K_VOID);
+				}
+			}
+			myChildren[fi] = states.size();
+			Automatas.extractOnto(fromChild, from, states);
+		}		
+		return new Automata.State(fromState.kind, fromData, true, myChildren);
+	}
+	
 	/**
 	 * The following method intersects two nodes with (resp. positive and
 	 * negative sign) which have identical kind. A precondition is that space
