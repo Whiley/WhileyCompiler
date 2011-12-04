@@ -222,13 +222,17 @@ public abstract class Type {
 	}
 	
 	/**
-	 * Construct a record type using the given fields.
+	 * Construct a record type using the given fields. The given record may be
+	 * either "open" or "closed". A closed record indicates a type which must
+	 * have exactly the given mapping of fields to types. An open record
+	 * indicates a type which may have more fields than that listed. The notion
+	 * of open records corresponds to "width subtyping" in type theory.
 	 * 
 	 * @param element
 	 */
-	public static final Type Record(Map<String,Type> fields) {				
+	public static final Type Record(boolean isOpen, Map<String,Type> fields) {				
 		java.util.Set<String> keySet = fields.keySet();
-		ArrayList<String> keys = new ArrayList(keySet);
+		Record.State keys = new Record.State(isOpen,keySet);
 		Collections.sort(keys);
 		Type[] types = new Type[keys.size()];
 		for(int i=0;i!=types.length;++i) {
@@ -391,8 +395,9 @@ public abstract class Type {
 				String name = readString();
 				state.data = new NameID(ModuleID.fromString(module), name);
 			} else if(state.kind == Type.K_RECORD) { 
+				boolean isOpen = reader.read_bit();
 				int nfields = reader.read_uv();
-				ArrayList<String> fields = new ArrayList<String>();
+				Record.State fields = new Record.State(isOpen);
 				for(int i=0;i!=nfields;++i) {
 					fields.add(readString());
 				}
@@ -444,7 +449,8 @@ public abstract class Type {
 				writeString(name.module().toString());
 				writeString(name.name());
 			} else if(state.kind == Type.K_RECORD) {
-				ArrayList<String> fields = (ArrayList<String>) state.data;
+				Record.State fields = (Record.State) state.data;
+				writer.write_bit(fields.isOpen);
 				writer.write_uv(fields.size());
 				for(String field : fields) {
 					writeString(field);
@@ -579,8 +585,10 @@ public abstract class Type {
 							nfields.put(e.getKey(),
 									Union(e.getValue(), bt));
 						}
-					}					
-					Type tmp = Record(nfields);
+					}				
+					boolean isOpen = r.isOpen() || br.isOpen()
+							|| nfields.size() < rfields.size();
+					Type tmp = Record(isOpen, nfields);
 					if(tmp instanceof Record) {
 						r = (Record) tmp;
 					} else {
@@ -1093,6 +1101,11 @@ public abstract class Type {
 		private Record(Automata automata) {
 			super(automata);
 		}
+		
+		public boolean isOpen() {
+			State state = (State) automata.states[0].data;
+			return state.isOpen;
+		}
 
 		/**
 		 * Extract just the key set for this field. This is a cheaper operation
@@ -1102,7 +1115,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public HashSet<String> keys() {
-			ArrayList<String> fields = (ArrayList<String>) automata.states[0].data;
+			State fields = (State) automata.states[0].data;
 			HashSet<String> r = new HashSet<String>();
 			for(String f : fields) {
 				r.add(f);
@@ -1116,7 +1129,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public HashMap<String, Type> fields() {
-			ArrayList<String> fields = (ArrayList<String>) automata.states[0].data;
+			State fields = (State) automata.states[0].data;
 			int[] children = automata.states[0].children;
 			HashMap<String, Type> r = new HashMap<String, Type>();
 			for (int i = 0; i != children.length; ++i) {
@@ -1125,6 +1138,21 @@ public abstract class Type {
 			}
 			return r;
 		}
+		
+
+		public static final class State extends ArrayList<String> {
+			public final boolean isOpen;
+			
+			public State(boolean isOpen) {
+				this.isOpen = isOpen;
+			}
+			
+			public State(boolean isOpen, Collection<String> values) {
+				super(values);
+				this.isOpen = isOpen;
+			}
+		}
+		
 	}
 
 	/**
@@ -1398,14 +1426,22 @@ public abstract class Type {
 			// labeled nary node
 			middle = "{";
 			int[] children = state.children;
-			ArrayList<String> fields = (ArrayList<String>) state.data;
+			Record.State fields = (Record.State) state.data;
 			for (int i = 0; i != fields.size(); ++i) {
 				if (i != 0) {
 					middle += ",";
 				}
 				middle += toString(children[i], visited, headers, automata) + " " + fields.get(i);
 			}
-			middle = middle + "}";
+			if(fields.isOpen) {
+				if(children.length > 0) {
+					middle = middle + ",...}";
+				} else {
+					middle = middle + "...}";
+				}
+			} else {
+				middle = middle + "}";
+			}
 			break;
 		}
 		case K_METHOD:
@@ -1810,7 +1846,7 @@ public abstract class Type {
 	public static final byte K_HEADLESS = 20; // headless method
 	public static final byte K_NOMINAL = 21;
 	public static final byte K_LABEL = 22;	
-		
+	
 	private static final ArrayList<Automata> values = new ArrayList<Automata>();
 	private static final HashMap<Automata,Integer> cache = new HashMap<Automata,Integer>();
 
@@ -1882,7 +1918,7 @@ public abstract class Type {
 			HashMap<String,Type> fields = new HashMap<String,Type>();
 			fields.put("next", Union(T_NULL,leaf));
 			fields.put("data", T_BOOL);
-			return Record(fields);
+			return Record(false,fields);
 		}
 	}
 }

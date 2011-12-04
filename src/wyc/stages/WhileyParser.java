@@ -1788,11 +1788,21 @@ public class WhileyParser {
 				
 				checkNotEof();
 				token = tokens.get(index);
+				boolean isOpen = false;
+				
 				while(!(token instanceof RightCurly)) {
 					match(Comma.class);
 					
 					checkNotEof();
 					token = tokens.get(index);
+					
+					if(token instanceof DotDotDot) {
+						// special case indicates an open record
+						match(DotDotDot.class);
+						isOpen = true;
+						break;
+					}
+					
 					UnresolvedType tmp = parseType();
 					
 					n = matchIdentifier();
@@ -1804,8 +1814,9 @@ public class WhileyParser {
 					checkNotEof();
 					token = tokens.get(index);								
 				}				
+							
 				match(RightCurly.class);
-				t = new UnresolvedType.Record(types, sourceAttr(start,index-1));				
+				t = new UnresolvedType.Record(isOpen, types, sourceAttr(start,index-1));				
 			} 
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);			

@@ -621,7 +621,7 @@ public class ModuleBuilder {
 				}	
 				types.put(e.getKey(), p.first());				
 			}
-			return new Pair<Type,Block>(Type.Record(types),blk);						
+			return new Pair<Type, Block>(Type.Record(tt.isOpen, types), blk);						
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type> bounds = new HashSet<Type>();
@@ -2067,7 +2067,7 @@ public class ModuleBuilder {
 			fields.put(key, Type.T_ANY);
 			blk.append(resolve(sg.fields.get(key), environment));
 		}
-		Type.Record rt = checkType(Type.Record(fields),Type.Record.class,sg);
+		Type.Record rt = checkType(Type.Record(false,fields),Type.Record.class,sg);
 		blk.append(Code.NewRecord(rt), attributes(sg));
 		return blk;
 	}
@@ -2206,7 +2206,7 @@ public class ModuleBuilder {
 				}
 				types.put(e.getKey(), p.first());				
 			}
-			return new Pair<Type,Block>(Type.Record(types),blk);
+			return new Pair<Type,Block>(Type.Record(tt.isOpen,types),blk);
 		} else if(t instanceof UnresolvedType.Not) {
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
 			Block blk = null;

@@ -2745,7 +2745,7 @@ public class ClassFileBuilder {
 					"whiley", "lang"), "System"), "1")));
 
 	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
-			.Process(Type.Record(new HashMap() {
+			.Process(Type.Record(false,new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
 					put("rest", Type.Nominal(new NameID(new ModuleID(

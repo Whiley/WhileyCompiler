@@ -162,15 +162,21 @@ public class TypeParser {
 				String id = parseIdentifier();
 				fields.put(id, elem);
 				skipWhiteSpace();
+				boolean isOpen = false;
 				while(index < str.length() && str.charAt(index) == ',') {
 					match(",");
+					if(str.charAt(index) == '.') {
+						match("...");
+						isOpen=true;
+						break;
+					}
 					elem = parse(typeVariables);
 					id = parseIdentifier();
 					fields.put(id, elem);
 					skipWhiteSpace();
-				}
+				}								
 				match("}");
-				return Record(fields);					
+				return Record(isOpen,fields);					
 			}
 			match("}");
 			return Set(elem,false);

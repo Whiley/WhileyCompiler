@@ -541,7 +541,7 @@ public abstract class Value implements Comparable<Value> {
 			for (Map.Entry<String, Value> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
 			}
-			return Type.Record(types);
+			return Type.Record(false,types);
 		}
 		public int hashCode() {
 			return values.hashCode();

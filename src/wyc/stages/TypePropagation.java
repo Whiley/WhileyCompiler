@@ -811,7 +811,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 						level - 1, fieldLevel + 1, fields, indexLevel, indices);
 				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
 				types.put(field, ntype);
-				return Type.Record(types);
+				return Type.Record(rt.isOpen(),types);
 			} else {
 				Type.Union tu = (Type.Union) oldtype;
 				Type t = Type.T_VOID;
@@ -873,7 +873,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 						level - 1, fieldLevel + 1, fields, indexLevel, indices);
 				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
 				types.put(field, ntype);
-				return Type.Record(types);
+				return Type.Record(rt.isOpen(),types);
 			} else {
 				Type.Union tu = (Type.Union) oldtype;
 				Type t = Type.T_VOID;
@@ -903,7 +903,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=keys.size()-1;i>=0;--i) {
 			fields.put(keys.get(i),environment.pop());
 		}		
-		Type.Record type = checkType(Type.Record(fields),Type.Record.class,stmt);
+		Type.Record type = checkType(Type.Record(false,fields),Type.Record.class,stmt);
 		environment.push(type);
 		return Code.NewRecord(type);
 	}

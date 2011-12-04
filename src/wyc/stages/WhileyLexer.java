@@ -326,8 +326,13 @@ public class WhileyLexer {
 		
 		if(c == '.') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '.') {
-				pos += 2;
-				return new DotDot(pos-2,line);
+				if((pos+2) < input.length() && input.charAt(pos+2) == '.') {
+					pos += 3;
+					return new DotDotDot(pos-3,line);
+				} else {
+					pos += 2;
+					return new DotDot(pos-2,line);
+				}
 			} else {
 				return new Dot(pos++,line);
 			}
@@ -728,6 +733,9 @@ public class WhileyLexer {
 	}
 	public static class DotDot extends Token {
 		public DotDot(int pos, int line) { super("..",pos,line);	}
+	}
+	public static class DotDotDot extends Token {
+		public DotDotDot(int pos, int line) { super("...",pos,line);	}
 	}
 	public static class Bar extends Token {
 		public Bar(int pos, int line) { super("|",pos,line);	}

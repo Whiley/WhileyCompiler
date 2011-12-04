@@ -154,12 +154,14 @@ public interface UnresolvedType extends SyntacticElement {
 	}
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
-		public Record(Map<String,UnresolvedType> types, Attribute... attributes) {
+		public final boolean isOpen;
+		public Record(boolean isOpen, Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(
 						"Cannot create type tuple with no fields");
 			}
+			this.isOpen = isOpen;
 			this.types = new HashMap<String,UnresolvedType>(types);
 		}
 	}

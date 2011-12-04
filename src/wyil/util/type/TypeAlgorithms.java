@@ -26,13 +26,15 @@ public final class TypeAlgorithms {
 		public int compare(Automata.State s1, Automata.State s2) {
 			// PRE-CONDITION s1.kind == s2.kind
 			if(s1.kind == Type.K_RECORD) {
-				ArrayList<String> fields1 = (ArrayList<String>) s1.data;
-				ArrayList<String> fields2 = (ArrayList<String>) s2.data;
+				Type.Record.State fields1 = (Type.Record.State) s1.data;
+				Type.Record.State fields2 = (Type.Record.State) s2.data;
 				int fields1_size = fields1.size();
 				int fields2_size = fields2.size();
-				if(fields1_size < fields2_size) {
+				if (fields1_size < fields2_size
+						|| (!fields1.isOpen && fields2.isOpen)) {
 					return -1;
-				} else if(fields1_size > fields2_size) {
+				} else if (fields1_size > fields2_size
+						|| (fields1.isOpen && !fields2.isOpen)) {
 					return 1;
 				}
 				// ASSERT: fields1_size == fields2_size
