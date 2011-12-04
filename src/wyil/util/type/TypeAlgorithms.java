@@ -194,6 +194,17 @@ public final class TypeAlgorithms {
 		case Type.K_UNION :			
 			changed = simplifyUnion(index, state, automata);			
 			break;		
+		case Type.K_LIST:
+		case Type.K_SET:
+			// for list and set types, we want to simplify the following cases:
+			// [void+] => void
+			// {void+} => void
+			boolean nonEmpty = (Boolean) state.data;
+			if(!nonEmpty) {
+				// type of form [T], so ignore
+				break;
+			}
+			// type of form [T+] so simplify like other compounds.
 		case Type.K_RECORD:
 		case Type.K_TUPLE:
 		case Type.K_FUNCTION:
