@@ -366,9 +366,9 @@ public class SubtypeOperator {
 			int[] toChildren = toState.children;						
 			Type.Record.State fromFields = (Type.Record.State) fromState.data;
 			Type.Record.State toFields = (Type.Record.State) toState.data;
-			boolean toAllowedMore = fromFields.isOpen && fromSign && toSign;
-			boolean fromAllowedMore = toFields.isOpen && (!fromSign || !toSign);
-						
+			boolean toAllowedMore = (fromFields.isOpen && fromSign) || (toFields.isOpen && (!fromSign || !toSign));
+			boolean fromAllowedMore = (toFields.isOpen && toSign) || (fromFields.isOpen && (!fromSign || !toSign));
+			FIXME: got here			
 			if (fromChildren.length < toChildren.length && !toAllowedMore) {
 				return !fromSign || !toSign;
 			} else if (fromChildren.length > toChildren.length  && !fromAllowedMore) {
