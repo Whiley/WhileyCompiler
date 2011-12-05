@@ -58,7 +58,7 @@ import wyc.util.*;
  * the first occurrence of a matching symbol, and records this as an attribute
  * on the corresponding Abstract Syntax Tree (AST) node.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class NameResolution {
