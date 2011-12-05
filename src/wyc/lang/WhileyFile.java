@@ -31,6 +31,15 @@ import wyil.lang.*;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 
+/**
+ * Provides classes representing the various kinds of declaration found in a
+ * Whiley source file. This includes <i>type declarations</i>, <i>method
+ * declarations</i>, <i>constant declarations</i>, etc. In essence, a
+ * <code>WhileyFile</code> forms the root of the Abstract Syntax Tree.
+ * 
+ * @author djp
+ * 
+ */
 public class WhileyFile {
 	public final ModuleID module;
 	public final String filename;
@@ -60,7 +69,20 @@ public class WhileyFile {
 	public interface Decl extends SyntacticElement {
 		public String name();
 	}
-	
+
+	/**
+	 * Represents an import declaration in a Whiley source file. For example:
+	 * 
+	 * <pre>
+	 * import Console from whiley.lang.System
+	 * </pre>
+	 * 
+	 * Here, the package is <code>whiley.lang</code>, the module is
+	 * <code>System</code> and the name is <code>Console</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static class ImportDecl extends SyntacticElement.Impl implements Decl {
 		public ArrayList<String> pkg;
 		public String module;
@@ -78,6 +100,19 @@ public class WhileyFile {
 		}		
 	}
 
+	/**
+	 * Represents a constant declaration in a Whiley source file. For example:
+	 * 
+	 * <pre>
+	 * define PI as 3.14159
+	 * </pre>
+	 * 
+	 * Constant declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static class ConstDecl extends
 				SyntacticElement.Impl implements Decl {
 		
@@ -110,7 +145,21 @@ public class WhileyFile {
 			return "define " + constant + " as " + name;
 		}
 	}
-	
+
+	/**
+	 * Represents a type declaration in a Whiley source file. For example:
+	 * 
+	 * <pre>
+	 * define nat as int where $ >= 0
+	 * </pre>
+	 * 
+	 * Here, the newly defined type is <code>nat</code> whose values are all
+	 * non-negative integers. Type declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */	
 	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
 		public final List<Modifier> modifiers;
 		public final UnresolvedType type;
@@ -146,6 +195,29 @@ public class WhileyFile {
 		}
 	}
 
+	/**
+	 * Represents a function declaration in a Whiley source file. For example:
+	 * 
+	 * <pre>
+	 * int f(int x) requires x > 0, ensures $ < 0:
+	 *    return -x
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, a function <code>f</code> is defined which accepts only positive
+	 * integers and returns only negative integers. The special variable
+	 * <code>$</code> is used to refer to the return value. Functions in Whiley
+	 * may not have side-effects (i.e. they are <code>pure functions</code>).
+	 * </p>
+	 * 
+	 * <p>
+	 * Function declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static class FunDecl extends SyntacticElement.Impl implements
 			Decl {
 		public final ArrayList<Modifier> modifiers;
@@ -202,7 +274,33 @@ public class WhileyFile {
 			return name;
 		}
 	}
-	
+
+	/**
+	 * Represents a method declaration in a Whiley source file. For example:
+	 * 
+	 * <pre>
+	 * int MyData::m(int x):
+	 *    return this.x + x
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, a method <code>m</code> is defined for the process type
+	 * <code>MyData</code>, which is referred to as the <i>receiver</i>. The
+	 * special variable <code>this</code> is used to access fields within the
+	 * process type. Methods are distinct from functions in Whiley as they may
+	 * have side-effects. This includes reading/writing I/O and modifying the
+	 * state of their receiver. Methods may also be <i>headless</i>, meaning
+	 * they are not attached to any specific receiver.
+	 * </p>
+	 * 
+	 * <p>
+	 * Method declarations may also have modifiers, such as <code>public</code>
+	 * and <code>private</code>.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public final static class MethDecl extends FunDecl implements Decl {
 		public final UnresolvedType receiver;
 		
@@ -216,7 +314,16 @@ public class WhileyFile {
 			this.receiver = receiver;
 		}
 	}
-	
+
+	/**
+	 * Represents a parameter declaration as part of a function or method
+	 * declaration. The primary purpose of this is to retain the source-code
+	 * location of the parameter in case any syntax error needs to be reported
+	 * on it.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Parameter extends SyntacticElement.Impl implements Decl {
 		public final UnresolvedType type;
 		public final String name;
