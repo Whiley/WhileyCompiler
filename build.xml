@@ -93,8 +93,8 @@
        version="true"
        use="true"
 	private="true"
-       windowtitle="Whiley API">
-      <doctitle><![CDATA[<h1>The Whiley Programming Language (v${version})</h1>]]></doctitle>
+       windowtitle="Whiley Compiler API">
+      <doctitle><![CDATA[<h1>The Whiley Compiler Framework (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2010 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       </javadoc>
   </target>
