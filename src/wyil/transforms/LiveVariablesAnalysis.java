@@ -6,7 +6,6 @@ import java.util.*;
 import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
-import wyc.stages.BackPropagation.Env;
 import wyil.ModuleLoader;
 import wyil.lang.Block;
 import wyil.lang.Code;

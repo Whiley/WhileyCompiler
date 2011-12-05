@@ -51,8 +51,7 @@ public class Pipeline {
 					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));					
 					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
 					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));							
-					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));
-					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
+					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));					
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					// Constant Propagation is disabled as there are some
 					// serious problems with that phase.
@@ -60,7 +59,7 @@ public class Pipeline {
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
 					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
-					//add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
+					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 				}
 			});
 
