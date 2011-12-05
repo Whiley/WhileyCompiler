@@ -830,7 +830,7 @@ public final class TypeAlgorithms {
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
 		ArrayList<Integer> myChildren = new ArrayList<Integer>();
-		while (fi < fromData.size() && ti < toData.size()) {
+		while (fi < fromData.size() && ti < toData.size()) {			
 			int fromChild = fromChildren[fi];
 			int toChild = toChildren[ti];
 			String fn = fromData.get(fi);
@@ -1139,16 +1139,15 @@ public final class TypeAlgorithms {
 		return myIndex;
 	}
 
-
 	/**
 	 * Intersect two automata representing open records, where the first is
 	 * positive and the second negative. For example:
 	 * 
 	 * <pre>
-	 * {T1 f, T2 g, ...} & !{T3 g, T4 h, ...} => ???
+	 * {T1 f, T2 g, ...} & !{T3 g, T4 h, ...} => {T1 f, T2&!T3 g, ...} | {T1 f, T2 g, void h, ...}
 	 * </pre>
 	 * 
-	 * ???
+	 * This is a fairly ticky case!
 	 * 
 	 * @param fromIndex
 	 *            --- index of state in from position
@@ -1291,17 +1290,20 @@ public final class TypeAlgorithms {
 		}				
 		return new Automata.State(Type.K_UNION, null, false, myChildren);
 	}
-	
+
 	/**
 	 * Intersect two automata representing records, where the first is positive
 	 * and open and the second negative and closed. For example:
 	 * 
 	 * <pre>
-	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => {T1 f, T2 g, ...}  
-	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => ????
+	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => {T1 f, T2 g}   
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => {T1&!T3 f, T2 g,...} | {T1 f, T2&!T4 g,...} 
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g, T5 h} => {T1&!T3 f, T2 g, ...} | {T1 f, T2&!T4 g, ...} | {T1 f, T2 g, void h, ...} | {T1 f, T2 g, !T5 h, ...}
 	 * </pre>
 	 * 
-	 * ???
+	 * Here, <code>{T1 f, T2 g, void h, ...}</code> represents a record which
+	 * doesn't have a field h. This use of void only really makes sense in the
+	 * context of open records.
 	 * 
 	 * @param fromIndex
 	 *            --- index of state in from position
@@ -1324,11 +1326,12 @@ public final class TypeAlgorithms {
 			int fromIndex, Automata from, int toIndex, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automata.State> states) {
+		
 		// FIXME: need to do better here
 		int myIndex = states.size()-1;
 		states.remove(myIndex);
 		Automatas.extractOnto(fromIndex,from,states);
-		return states.get(myIndex); 	
+		return states.get(myIndex); 		
 	}
 	
 	/**
@@ -1575,8 +1578,7 @@ public final class TypeAlgorithms {
 			case Type.K_SET:
 			case Type.K_DICTIONARY:
 			case Type.K_TUPLE: 
-			case Type.K_RECORD:
-				// FIXME: need to support open records? 
+			case Type.K_RECORD: 
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD: {				
