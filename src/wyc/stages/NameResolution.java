@@ -98,11 +98,11 @@ public class NameResolution {
 		}				
 	}
 	
-	protected void resolve(ConstDecl td, ArrayList<Import> imports) {
+	private void resolve(ConstDecl td, ArrayList<Import> imports) {
 		resolve(td.constant,new HashMap<String,Set<Expr>>(), imports);		
 	}
 	
-	protected void resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
+	private void resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
 		try {
 			resolve(td.type, imports);	
 			if (td.constraint != null) {
@@ -121,7 +121,7 @@ public class NameResolution {
 		}
 	}	
 	
-	protected void resolve(FunDecl fd, ArrayList<Import> imports) {
+	private void resolve(FunDecl fd, ArrayList<Import> imports) {
 		HashMap<String,Set<Expr>> environment = new HashMap<String,Set<Expr>>();
 		
 		// method parameter types
@@ -180,7 +180,7 @@ public class NameResolution {
 		}
 	}
 	
-	public void resolve(Stmt s, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
+	private void resolve(Stmt s, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		try {
 			if(s instanceof Assign) {
 				resolve((Assign)s, environment, imports);
@@ -221,7 +221,7 @@ public class NameResolution {
 		}
 	}	
 
-	protected void resolve(Assign s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Assign s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		if(s.lhs instanceof UnknownVariable) {
 			UnknownVariable v = (UnknownVariable) s.lhs;
@@ -245,29 +245,29 @@ public class NameResolution {
 		s.rhs = resolve(s.rhs, environment, imports);	
 	}
 
-	protected void resolve(Assert s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Assert s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.expr = resolve(s.expr, environment, imports);		
 	}
 
-	protected void resolve(Return s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Return s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		if(s.expr != null) {
 			s.expr = resolve(s.expr, environment, imports);
 		}
 	}
 	
-	protected void resolve(Debug s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Debug s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.expr = resolve(s.expr, environment, imports);		
 	}
 
-	protected void resolve(Throw s, HashMap<String, Set<Expr>> environment,
+	private void resolve(Throw s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.expr = resolve(s.expr, environment, imports);
 	}
 	
-	protected void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
+	private void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.condition = resolve(s.condition, environment, imports);
 		for (Stmt st : s.trueBranch) {
@@ -280,7 +280,7 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(Switch s, HashMap<String, Set<Expr>> environment,
+	private void resolve(Switch s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) {		
 		
 		s.expr = resolve(s.expr, environment, imports);
@@ -297,7 +297,7 @@ public class NameResolution {
 		}		
 	}
 	
-	protected void resolve(TryCatch s, HashMap<String, Set<Expr>> environment,
+	private void resolve(TryCatch s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		
 		for(Stmt st : s.body) {
@@ -318,7 +318,7 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(While s, HashMap<String,Set<Expr>> environment,
+	private void resolve(While s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.condition = resolve(s.condition, environment, imports);
 		if (s.invariant != null) {
@@ -330,7 +330,7 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(DoWhile s, HashMap<String,Set<Expr>> environment,
+	private void resolve(DoWhile s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.condition = resolve(s.condition, environment, imports);
 		if (s.invariant != null) {
@@ -342,7 +342,7 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(For s, HashMap<String,Set<Expr>> environment,
+	private void resolve(For s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.source = resolve(s.source, environment, imports);		
 		if (s.invariant != null) {
@@ -360,7 +360,7 @@ public class NameResolution {
 			resolve(st, environment, imports);
 		}
 	}
-	protected Expr resolve(Expr e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
+	private Expr resolve(Expr e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		try {
 			if (e instanceof Constant) {
 				
@@ -410,7 +410,7 @@ public class NameResolution {
 		return e;
 	}
 	
-	protected Expr resolve(Invoke ivk, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Invoke ivk, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 					
 		for(int i=0;i!=ivk.arguments.size();++i) {
@@ -455,7 +455,7 @@ public class NameResolution {
 		return ivk;
 	}
 	
-	protected Expr resolve(UnknownVariable v, HashMap<String, Set<Expr>> environment,
+	private Expr resolve(UnknownVariable v, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		
 		Set<Expr> aliases = environment.get(v.var);		
@@ -491,32 +491,32 @@ public class NameResolution {
 		return v;
 	}
 	
-	protected Expr resolve(UnOp v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(UnOp v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		v.mhs = resolve(v.mhs, environment, imports);
 		return v;
 	}
 	
-	protected Expr resolve(BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
+	private Expr resolve(BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		v.lhs = resolve(v.lhs, environment, imports);
 		v.rhs = resolve(v.rhs, environment, imports);
 		return v;
 	}
 	
-	protected Expr resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {
+	private Expr resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {
 		resolve(c.type, imports);
 		c.expr = resolve(c.expr, environment, imports);
 		return c;
 	}
 	
-	protected Expr resolve(ListAccess v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(ListAccess v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		v.src = resolve(v.src, environment, imports);
 		v.index = resolve(v.index, environment, imports);
 		return v;
 	}
 	
-	protected Expr resolve(NaryOp v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(NaryOp v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {				
 		for(int i=0;i!=v.arguments.size();++i) {
 			Expr e = v.arguments.get(i);						
@@ -526,7 +526,7 @@ public class NameResolution {
 		return v;
 	}
 	
-	protected Expr resolve(Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {						
+	private Expr resolve(Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {						
 		HashMap<String,Set<Expr>> nenv = new HashMap<String,Set<Expr>>(environment);
 		for(int i=0;i!=e.sources.size();++i) {	
 			Pair<String,Expr> me = e.sources.get(i);
@@ -547,7 +547,7 @@ public class NameResolution {
 		return e;
 	}	
 		
-	protected Expr resolve(RecordGen sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(RecordGen sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		for(String key : keys) {
@@ -558,7 +558,7 @@ public class NameResolution {
 		return sg;
 	}
 
-	protected Expr resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		for(int i=0;i!=sg.fields.size();++i) {
 			Expr e = sg.fields.get(i);
@@ -568,7 +568,7 @@ public class NameResolution {
 		return sg;
 	}
 	
-	protected Expr resolve(DictionaryGen sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(DictionaryGen sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		for(int i=0;i!=sg.pairs.size();++i) {
 			Pair<Expr,Expr> e = sg.pairs.get(i);
@@ -579,13 +579,13 @@ public class NameResolution {
 		return sg;
 	}
 	
-	protected Expr resolve(TypeConst tc, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(TypeConst tc, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		resolve(tc.type,imports);
 		return tc;
 	}
 	
-	protected Expr resolve(FunConst tc, HashMap<String, Set<Expr>> environment,
+	private Expr resolve(FunConst tc, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 
 		if (tc.paramTypes != null) {
@@ -600,7 +600,7 @@ public class NameResolution {
 		return tc;
 	}
 	
-	protected Expr resolve(RecordAccess sg,
+	private Expr resolve(RecordAccess sg,
 			HashMap<String, Set<Expr>> environment, ArrayList<Import> imports)
 			throws ResolveError {		
 		sg.lhs = resolve(sg.lhs, environment, imports);
@@ -633,7 +633,7 @@ public class NameResolution {
 		return sg;		
 	}
 	
-	protected void resolve(UnresolvedType t, ArrayList<Import> imports) throws ResolveError {
+	private void resolve(UnresolvedType t, ArrayList<Import> imports) throws ResolveError {
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			resolve(lt.element,imports);
