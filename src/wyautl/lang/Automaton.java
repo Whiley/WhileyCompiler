@@ -4,8 +4,8 @@ import java.util.*;
 
 /**
  * <p>
- * An Automata represents a finite-state automata. This is a machine for
- * accepting matching inputs of a given language. An automata is a directed
+ * An Automaton represents a finite-state automaton. This is a machine for
+ * accepting matching inputs of a given language. An automaton is a directed
  * graph whose nodes and edges are referred to as <i>states</i> and
  * <i>transitions</i>. Each state has a "kind" which determines how the state
  * behaves on given inputs. For example, a state with "OR" kind might accept an
@@ -46,10 +46,10 @@ public final class Automaton {
 		this.states = states;
 	}
 
-	public Automaton(Automaton automata) {
-		this.states = new State[automata.states.length];
+	public Automaton(Automaton automaton) {
+		this.states = new State[automaton.states.length];
 		for(int i=0;i!=states.length;++i) {
-			states[i] = new State(automata.states[i]);
+			states[i] = new State(automaton.states[i]);
 		}
 	}
 	
@@ -132,7 +132,7 @@ public final class Automaton {
 	}
 
 	/**
-	 * Represents a state in an automata. Each state has a kind, along with zero
+	 * Represents a state in an automaton. Each state has a kind, along with zero
 	 * or more children and an (optional) supplementary data item.
 	 * 
 	 * @author David J. Pearce

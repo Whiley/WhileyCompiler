@@ -10,14 +10,14 @@ import wyautl.util.BinaryMatrix;
 
 /**
  * <p>
- * This class provides various algorithms for manipulating automatas. In
+ * This class provides various algorithms for manipulating automata. In
  * particular, the following main algorithms are provided:
  * </p>
  * <ul>
- * <li><b>Extraction.</b> This is used to extract one automata out of another.</li>
+ * <li><b>Extraction.</b> This is used to extract one automaton out of another.</li>
  * <li><b>Minimisation.</b> This is used to eliminate equivalent states within
- * an automata.</li>
- * <li><b>Canonicalisation.</b> This is used to convert an automata into a
+ * an automaton.</li>
+ * <li><b>Canonicalisation.</b> This is used to convert an automaton into a
  * canonical form.</li>
  * </ul>
  * 
@@ -27,23 +27,23 @@ public final class Automata {
 
 	/**
 	 * <p>
-	 * Check whether or not an automata is "concrete". A concrete automata
+	 * Check whether or not an automaton is "concrete". A concrete automaton
 	 * cannot have recursive links or non-deterministic states.'
 	 * </p>
 	 */
-	public static boolean isConcrete(Automaton automata) {
+	public static boolean isConcrete(Automaton automaton) {
 		// First, check all states are deterministic
-		for(int i=0;i!=automata.size();++i) {
-			State s = automata.states[i];
+		for(int i=0;i!=automaton.size();++i) {
+			State s = automaton.states[i];
 			if(!s.deterministic) {
 				return false;
 			}
 		}
 		
 		// Second, check for cycles (i.e. recursive links)
-		BitSet visited = new BitSet(automata.size());
-		BitSet onStack = new BitSet(automata.size());
-		return isConcrete(0,onStack,visited,automata);
+		BitSet visited = new BitSet(automaton.size());
+		BitSet onStack = new BitSet(automaton.size());
+		return isConcrete(0,onStack,visited,automaton);
 	}
 	
 	/**
@@ -59,12 +59,12 @@ public final class Automata {
 	 * @param visited
 	 *            --- indicates which nodes have been visited (but may not be on
 	 *            the current path).
-	 * @param automata
-	 *            --- the automata being traversed.
-	 * @return --- true if the automata is concrete.
+	 * @param automaton
+	 *            --- the automaton being traversed.
+	 * @return --- true if the automaton is concrete.
 	 */
 	private static boolean isConcrete(int index, BitSet onStack,
-			BitSet visited, Automaton automata) {
+			BitSet visited, Automaton automaton) {
 		
 		if(onStack.get(index)) {
 			return false; // found a cycle!
@@ -78,9 +78,9 @@ public final class Automata {
 		visited.set(index);
 		onStack.set(index);
 		
-		State state = automata.states[index];
+		State state = automaton.states[index];
 		for(int child : state.children) {
-			if(!isConcrete(child,onStack,visited,automata)) {
+			if(!isConcrete(child,onStack,visited,automaton)) {
 				return false;
 			}
 		}
@@ -92,29 +92,29 @@ public final class Automata {
 	
 	/**
 	 * <p>
-	 * Traverse the automata rooted at the given state and recursively extract
-	 * all reachable states to produce a (potentially smaller) automata.
+	 * Traverse the automaton rooted at the given state and recursively extract
+	 * all reachable states to produce a (potentially smaller) automaton.
 	 * </p>
 	 * 
 	 * <p>
 	 * <b>NOTE:</b> one additional use-case for this method is to effectively
-	 * "garbage collect" states in the automata. That is, if you extract from
-	 * the root of any automata, you'll get an automata consisting only of those
+	 * "garbage collect" states in the automaton. That is, if you extract from
+	 * the root of any automaton, you'll get an automaton consisting only of those
 	 * nodes reachable from the root --- but, no others. Therefore, unreachable
-	 * nodes (which can arise as a result of other automata operations) are
+	 * nodes (which can arise as a result of other automaton operations) are
 	 * lost.
 	 * </p>
 	 * 
 	 * 
-	 * @param automata
-	 *            --- automata to extract from
+	 * @param automaton
+	 *            --- automaton to extract from
 	 * @param root
-	 *            --- state in automata to begin extraction from
-	 * @return --- extracted automata.
+	 *            --- state in automaton to begin extraction from
+	 * @return --- extracted automaton.
 	 */
-	public static Automaton extract(Automaton automata, int root) {
+	public static Automaton extract(Automaton automaton, int root) {
 		// First, perform a depth-first search from the root.
-		State[] nodes = automata.states;		
+		State[] nodes = automaton.states;		
 		ArrayList<Integer> extracted = new ArrayList<Integer>();
 		extract(root,new BitSet(nodes.length),extracted,nodes);
 		
@@ -134,10 +134,10 @@ public final class Automata {
 	}
 	
 
-	public static void extractOnto(int index, Automaton automata,
+	public static void extractOnto(int index, Automaton automaton,
 			ArrayList<Automaton.State> newNodes) { 		
 		// First, perform a depth-first search from the root.
-		State[] nodes = automata.states;		
+		State[] nodes = automaton.states;		
 		ArrayList<Integer> extracted = new ArrayList<Integer>();
 		extract(index,new BitSet(nodes.length),extracted,nodes);
 		
@@ -184,7 +184,7 @@ public final class Automata {
 		
 	/**
 	 * <p>
-	 * This method minimises an automata by removing equivalent states. Two
+	 * This method minimises an automaton by removing equivalent states. Two
 	 * states <code>s1</code> and <code>s2</code> are considered equivalent
 	 * under the following conditions:
 	 * </p>
@@ -197,19 +197,19 @@ public final class Automata {
 	 * in one, there is an equivalent child in the other and vice-versa.</li>
 	 * </ul>
 	 * 
-	 * @param automata
-	 *            --- automata to minimise
-	 * @return --- minimised automata
+	 * @param automaton
+	 *            --- automaton to minimise
+	 * @return --- minimised automaton
 	 */
-	public final static Automaton minimise(Automaton automata) {		
+	public final static Automaton minimise(Automaton automaton) {		
 		// First, determine equivalence classes
-		BinaryMatrix equivs = new BinaryMatrix(automata.size(),automata.size(),true);
-		determineEquivalenceClasses(equivs,automata);
+		BinaryMatrix equivs = new BinaryMatrix(automaton.size(),automaton.size(),true);
+		determineEquivalenceClasses(equivs,automaton);
 		
 		// TODO: optimise the case when all equivalence classes have unit size.
 		
 		// Second, determine representative nodes for each equivalence class.
-		int oldSize = automata.size();
+		int oldSize = automaton.size();
 		int[] mapping = new int[oldSize];		
 		int newSize = 0;		
 		for(int i=0;i!=oldSize;++i) {
@@ -227,8 +227,8 @@ public final class Automata {
 			}
 		}
 			
-		// Finally, reconstruct minimised automata
-		State[] oldStates = automata.states;
+		// Finally, reconstruct minimised automaton
+		State[] oldStates = automaton.states;
 		State[] newStates = new State[newSize];
 		for (int i = 0; i != oldSize; ++i) {
 			int classRep = mapping[i];
@@ -242,9 +242,9 @@ public final class Automata {
 	}
 		
 	private final static void determineEquivalenceClasses(BinaryMatrix equivs,
-			Automaton automata) {
+			Automaton automaton) {
 		boolean changed = true;
-		int size = automata.size();
+		int size = automaton.size();
 		
 		while (changed) {
 			changed = false;
@@ -253,7 +253,7 @@ public final class Automata {
 					if(equivs.get(i,j)) {
 						// no need to explore nodes which are already known to
 						// be not equivalent.
-						boolean b = equivalent(i, j, equivs, automata);						
+						boolean b = equivalent(i, j, equivs, automaton);						
 						equivs.set(i, j, b);
 						equivs.set(j, i, b);
 						changed |= !b;
@@ -267,9 +267,9 @@ public final class Automata {
 	 * Check whether two states are equivalent under the rules set out for
 	 * minimisation above.
 	 */
-	private final static boolean equivalent(int i, int j, BinaryMatrix equivs, Automaton automata) {
-		State s1 = automata.states[i];
-		State s2 = automata.states[j];
+	private final static boolean equivalent(int i, int j, BinaryMatrix equivs, Automaton automaton) {
+		State s1 = automaton.states[i];
+		State s2 = automaton.states[j];
 		
 		// first, check supplementary data
 		Object s1data = s1.data;
@@ -355,9 +355,9 @@ public final class Automata {
 
 	/**
 	 * <p>
-	 * Turn an automata into its canonical form. Two automatas are said to be
+	 * Turn an automaton into its canonical form. Two automata are said to be
 	 * <i>isomorphic</i> if there is a permutation of states which, when applied
-	 * to the first, yields the second. Then, for any isomorphic automatas have
+	 * to the first, yields the second. Then, for any isomorphic automata have
 	 * an identical canonical form. More generally, this known as the graph
 	 * isomorphism problem. From a computational perspective, graph isomorphism
 	 * is interesting in that (at the time of writing) no known polynomial time
@@ -368,7 +368,7 @@ public final class Automata {
 	 * The canonical form is computed using a straightforward (brute-force)
 	 * back-tracking search. This means it is potentially quite expensive,
 	 * although in most cases it probably runs in polynomial time. The number of
-	 * non-deterministic states in the automata directly affects how hard the
+	 * non-deterministic states in the automaton directly affects how hard the
 	 * computation is. In particular, if there are no non-deterministic states,
 	 * the algorithm runs in guaranteed polynomial time.
 	 * </p>
@@ -379,45 +379,45 @@ public final class Automata {
 	 * canonical form.
 	 * </p>
 	 * 
-	 * @param automata
+	 * @param automaton
 	 *            --- to be canonicalised
 	 * @param dataComparator
 	 *            --- comparator for supplementary data. May be null if no state
 	 *            has supplementary data.  The comparator is guaranteed to be
 	 *            called on states of matching kind and determinism.
 	 */
-	public static void canonicalise(Automaton automata,
+	public static void canonicalise(Automaton automaton,
 			Comparator<State> dataComparator) {
-		int size = automata.size();				
+		int size = automaton.size();				
 		ArrayList<Morphism> candidates = new ArrayList<Morphism>();		
 		candidates.add(new Morphism(size));		
 		for(int i=0;i!=size;++i) {
-			extend(i,candidates,automata,dataComparator);			
+			extend(i,candidates,automaton,dataComparator);			
 		}		
-		inplaceReorder(automata,candidates.get(0).n2i);					
+		inplaceReorder(automaton,candidates.get(0).n2i);					
 	}
 
 	/*
 	 * The following provides a brute-force way of determining the canonical
 	 * form. It's really really slow, but useful for testing.	
 	 */
-	private static Automaton bruteForce(Automaton automata, Comparator dataComparator) {
-		int[] init = new int[automata.size()-1];
+	private static Automaton bruteForce(Automaton automaton, Comparator dataComparator) {
+		int[] init = new int[automaton.size()-1];
 		for(int i=0;i<init.length;++i) {
 			init[i] = i+1;
 		}	
 		Morphism winner = null;
 		for(int[] permutation : permutations(init)) {			
-			Morphism m = new Morphism(automata.size());				
+			Morphism m = new Morphism(automaton.size());				
 			for(int c : permutation) {
 				m.allocate(c);
 			}
-			if(winner == null || lessThan(m,winner,automata, dataComparator)) {
+			if(winner == null || lessThan(m,winner,automaton, dataComparator)) {
 				winner = m;
 			}
 		}
 		
-		return reorder(automata,winner.n2i);
+		return reorder(automaton,winner.n2i);
 	}
 
 	/**
@@ -440,8 +440,8 @@ public final class Automata {
 	 *            explored. An invariant of this algorithm is that all
 	 *            candidates are equivalent under the <code>lessThan()</code>
 	 *            relation.
-	 * @param automata
-	 *            --- the automata being canonicalised
+	 * @param automaton
+	 *            --- the automaton being canonicalised
 	 * @param dataComparator
 	 *            --- comparator for supplementary data. May be null if no state
 	 *            has supplementary data. The comparator is guaranteed to be
@@ -449,7 +449,7 @@ public final class Automata {
 	 * 
 	 */
 	private static void extend(int index, ArrayList<Morphism> candidates,
-			Automaton automata, Comparator<State> dataComparator) {
+			Automaton automaton, Comparator<State> dataComparator) {
 
 		// Please note, this algorithm is really not very efficient. There is
 		// quite a lot more pruning that could be done!
@@ -457,15 +457,15 @@ public final class Automata {
 		int size = candidates.size();
 		for(int i=0;i!=size;++i) {
 			Morphism candidate = candidates.get(i);			
-			extend(index,candidate,candidates,automata);
+			extend(index,candidate,candidates,automaton);
 		}
 		
-		prune(candidates, automata, dataComparator);
+		prune(candidates, automaton, dataComparator);
 	}
 
 	private static void extend(int index, Morphism candidate,
-			ArrayList<Morphism> candidates, Automaton automata) {
-		State[] states = automata.states;
+			ArrayList<Morphism> candidates, Automaton automaton) {
+		State[] states = automaton.states;
 		State s = states[candidate.i2n[index]];
 		int[] children = s.children;
 		if(s.deterministic) {
@@ -555,14 +555,14 @@ public final class Automata {
 	 * 
 	 * @param size
 	 * @param candidates
-	 * @param automata
+	 * @param automaton
 	 */
-	private static void prune(ArrayList<Morphism> candidates, Automaton automata, Comparator<State> dataComparator) {
+	private static void prune(ArrayList<Morphism> candidates, Automaton automaton, Comparator<State> dataComparator) {
 		// this is really inefficient!
 		// at a minimum, we could avoid recomputing lessThan twice for each candidate.		
 		Morphism least = candidates.get(0); 
 		for(Morphism candidate : candidates) {			
-			if(lessThan(candidate,least,automata, dataComparator)) {
+			if(lessThan(candidate,least,automaton, dataComparator)) {
 				least = candidate;
 			}
 		}
@@ -570,7 +570,7 @@ public final class Automata {
 		int diff = 0;
 		for(int i=0;i!=candidates.size();++i) {
 			Morphism candidate = candidates.get(i);
-			if(lessThan(least,candidate,automata, dataComparator)) {
+			if(lessThan(least,candidate,automaton, dataComparator)) {
 				diff = diff + 1;
 			} else {
 				candidates.set(i-diff,candidate);
@@ -586,7 +586,7 @@ public final class Automata {
 	}
 	
 	/**
-	 * This function determines whether one morphism of a given automata is
+	 * This function determines whether one morphism of a given automaton is
 	 * <i>lexiographically</i> less than another. Starting from the root, we
 	 * compare the states at each index in the morphisms. One state is below
 	 * another if it has a lower kind, fewer children or its transitions are
@@ -598,13 +598,13 @@ public final class Automata {
 	 *            --- Morphism to test if above or not.
 	 * @param size
 	 *            --- don't consider states above this.
-	 * @param automata
-	 *            --- automata being canonicalised.
+	 * @param automaton
+	 *            --- automaton being canonicalised.
 	 * @return --- true if morph1 is less than morph2
 	 */
 	private static boolean lessThan(Morphism morph1, Morphism morph2,
-			Automaton automata, Comparator<State> dataComparator) {
-		State[] states = automata.states;
+			Automaton automaton, Comparator<State> dataComparator) {
+		State[] states = automaton.states;
 		int size = Math.min(morph1.free,morph2.free);
 		
 		for(int i=0;i!=size;++i) {			
@@ -641,8 +641,8 @@ public final class Automata {
 				}									
 			} else {
 				// as usual, non-deterministic states are awkward
-				BitSet s1Visited = new BitSet(automata.size());
-				BitSet s2Visited = new BitSet(automata.size());
+				BitSet s1Visited = new BitSet(automaton.size());
+				BitSet s2Visited = new BitSet(automaton.size());
 				for(int j=0;j!=length;++j) {
 					int s1child = morph1.n2i[s1children[j]];
 					int s2child = morph2.n2i[s2children[j]];
@@ -726,15 +726,15 @@ public final class Automata {
 	
 	/**
 	 * <p>
-	 * Determine whether a relationship between two automata exists. The most
+	 * Determine whether a relationship between two automaton exists. The most
 	 * common relationship of interest is that of <i>subsumption</i>. One
-	 * automata <code>a1</code> subsumes another automata <code>a2</code> if
+	 * automaton <code>a1</code> subsumes another automaton <code>a2</code> if
 	 * <code>a1</code> accepts all the values accepted by <code>a2</code> (and
 	 * possibly more).
 	 * </p>
 	 * 
 	 * @param relation
-	 *            --- the relation to be computed. automata.
+	 *            --- the relation to be computed. automaton.
 	 */	
 	public static final void computeFixpoint(Relation relation) {
 		Automaton from = relation.from();
@@ -754,18 +754,18 @@ public final class Automata {
 	}
 	
 	/**
-	 * Append a new state onto the end of an automata. It is assumed that any
+	 * Append a new state onto the end of an automaton. It is assumed that any
 	 * children the new state has already refer to states within the old
-	 * automata.
+	 * automaton.
 	 * 
-	 * @param automata
-	 *            --- the automata to append on to
+	 * @param automaton
+	 *            --- the automaton to append on to
 	 * @param state
 	 *            --- the state to be appended
-	 * @return --- the new automata
+	 * @return --- the new automaton
 	 */
-	public static Automaton append(Automaton automata, State state) {
-		State[] ostates = automata.states;
+	public static Automaton append(Automaton automaton, State state) {
+		State[] ostates = automaton.states;
 		State[] nstates = new State[ostates.length+1];
 		System.arraycopy(ostates,0,nstates,0,ostates.length);
 		nstates[ostates.length] = state;
@@ -773,29 +773,29 @@ public final class Automata {
 	}
 	
 	/**
-	 * Append all given states in place onto the given automata.
+	 * Append all given states in place onto the given automaton.
 	 * 
-	 * @param automata
+	 * @param automaton
 	 * @param states
 	 */
-	public static void inplaceAppendAll(Automaton automata, State... states) {
-		State[] ostates = automata.states;
+	public static void inplaceAppendAll(Automaton automaton, State... states) {
+		State[] ostates = automaton.states;
 		State[] nstates = new State[ostates.length+states.length];
 		System.arraycopy(ostates,0,nstates,0,ostates.length);
 		System.arraycopy(states,0,nstates,ostates.length,states.length);		
-		automata.states = nstates;
+		automaton.states = nstates;
 	}
 	
 	/**
-	 * Append an automata (the <code>tail</code>) onto the back of another (the
-	 * <code>head</code>). In this case, all states in the automata being
-	 * appended are remapped automata for their new location.
+	 * Append an automaton (the <code>tail</code>) onto the back of another (the
+	 * <code>head</code>). In this case, all states in the automaton being
+	 * appended are remapped automaton for their new location.
 	 * 
 	 * @param head
-	 *            --- head automata
+	 *            --- head automaton
 	 * @param tail
-	 *            --- tail automata to be appended onto head.
-	 * @return --- the new automata.
+	 *            --- tail automaton to be appended onto head.
+	 * @return --- the new automaton.
 	 */
 	public static Automaton append(Automaton head, Automaton tail) {
 		State[] hstates = head.states;
@@ -818,18 +818,18 @@ public final class Automata {
 	}
 	
 	/**
-	 * The reorder method takes an automata, and a mapping from vertices in the
+	 * The reorder method takes an automaton, and a mapping from vertices in the
 	 * old space to the those in the new space. It then reorders every state
 	 * according to this mapping. Thus, states may change position and
 	 * transitions are remapped accordingly.
 	 * 
-	 * @param automata
-	 *            --- automata to be transposed.
+	 * @param automaton
+	 *            --- automaton to be transposed.
 	 * @param rmap
 	 *            --- mapping from integers in old space to those in new space.
 	 */
-	public static Automaton reorder(Automaton automata, int[] rmap) {
-		State[] ostates = automata.states;
+	public static Automaton reorder(Automaton automaton, int[] rmap) {
+		State[] ostates = automaton.states;
 		State[] nstates = new State[ostates.length];
 		int length = ostates.length;			
 		for(int i=0;i!=length;++i) {
@@ -841,17 +841,17 @@ public final class Automata {
 	}
 	
 	/**
-	 * The remap method takes an automata, and a mapping from vertices in the
+	 * The remap method takes an automaton, and a mapping from vertices in the
 	 * old space to the those in the new space. It then applies this mapping, so
 	 * that all states and transitions are remapped accordingly.
 	 * 
-	 * @param automata
-	 *            --- automata to be transposed.
+	 * @param automaton
+	 *            --- automaton to be transposed.
 	 * @param rmap
 	 *            --- mapping from integers in old space to those in new space.
 	 */
-	public static Automaton remap(Automaton automata, int[] rmap) {
-		State[] ostates = automata.states;
+	public static Automaton remap(Automaton automaton, int[] rmap) {
+		State[] ostates = automaton.states;
 		State[] nstates = new State[ostates.length];
 		int length = ostates.length;			
 		for(int i=0;i!=length;++i) {
@@ -862,18 +862,18 @@ public final class Automata {
 	}	
 	
 	/**
-	 * The reorder method takes an automata, and a mapping from vertices in the
+	 * The reorder method takes an automaton, and a mapping from vertices in the
 	 * old space to the those in the new space. It then reorders every state
 	 * according to this mapping. Thus, states may change position and
 	 * transitions are remapped accordingly.
 	 * 
-	 * @param automata
-	 *            --- automata to be transposed.
+	 * @param automaton
+	 *            --- automaton to be transposed.
 	 * @param rmap
 	 *            --- mapping from integers in old space to those in new space.
 	 */
-	public static void inplaceReorder(Automaton automata, int[] rmap) {
-		State[] ostates = automata.states;
+	public static void inplaceReorder(Automaton automaton, int[] rmap) {
+		State[] ostates = automaton.states;
 		State[] nstates = new State[ostates.length];
 		int length = ostates.length;			
 		for(int i=0;i!=length;++i) {
@@ -881,21 +881,21 @@ public final class Automata {
 			inplaceRemap(os,rmap);
 			nstates[rmap[i]] = os;
 		}		
-		automata.states = nstates;
+		automaton.states = nstates;
 	}
 	
 	/**
-	 * The remap method takes an automata, and a mapping from vertices in the
+	 * The remap method takes an automaton, and a mapping from vertices in the
 	 * old space to the those in the new space. It then applies this mapping, so
 	 * that all states and transitions are remapped accordingly.
 	 * 
-	 * @param automata
-	 *            --- automata to be transposed.
+	 * @param automaton
+	 *            --- automaton to be transposed.
 	 * @param rmap
 	 *            --- mapping from integers in old space to those in new space.
 	 */
-	public static void inplaceRemap(Automaton automata, int[] rmap) {
-		State[] ostates = automata.states;
+	public static void inplaceRemap(Automaton automaton, int[] rmap) {
+		State[] ostates = automaton.states;
 		int length = ostates.length;			
 		for(int i=0;i!=length;++i) {
 			State os = ostates[i];
