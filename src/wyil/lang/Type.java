@@ -1449,7 +1449,7 @@ public abstract class Type {
 				}
 			} else {
 				middle = middle + "}";
-			}
+			}			
 			break;
 		}
 		case K_METHOD:

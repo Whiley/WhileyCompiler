@@ -92,10 +92,12 @@ public class Type {
 	public static final class Record extends Type {
 		public final String[] names;
 		public final Type[] types;
-		public Record(String[] names, Type[] types, String str) {
+		public final boolean isOpen;
+		public Record(String[] names, Type[] types, boolean open, String str) {
 			super(K_RECORD, str);
 			this.names = names;
 			this.types = types;
+			this.isOpen = open;
 		}
 	}
 	
@@ -325,8 +327,15 @@ public class Type {
 					String id = parseIdentifier();
 					fields.put(id, elem);
 					skipWhiteSpace();
+					boolean isOpen = false;
 					while(index < str.length() && str.charAt(index) == ',') {
 						match(",");
+						skipWhiteSpace();
+						if(index < str.length() && str.charAt(index) == '.') {
+							match("...");
+							isOpen=true;
+							break;
+						}
 						elem = parse(typeVars);
 						id = parseIdentifier();
 						fields.put(id, elem);
@@ -344,7 +353,7 @@ public class Type {
 						types[i] = fields.get(name);
 					}
 										
-					return new Record(names,types, str.substring(start,index));					
+					return new Record(names,types,isOpen,str.substring(start,index));					
 				}
 				match("}");
 				return new Set(elem, str.substring(start,index));
