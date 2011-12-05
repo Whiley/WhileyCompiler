@@ -136,7 +136,7 @@ public class ModuleBuilder {
 		return modules;
 	}
 
-	public Module resolve(WhileyFile wf) {
+	private Module resolve(WhileyFile wf) {
 		this.filename = wf.filename;
 		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
@@ -937,7 +937,7 @@ public class ModuleBuilder {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	public Block resolve(Stmt stmt, HashMap<String,Integer> environment) {
+	private Block resolve(Stmt stmt, HashMap<String,Integer> environment) {
 		try {
 			if (stmt instanceof Assign) {
 				return resolve((Assign) stmt, environment);
@@ -2384,7 +2384,7 @@ public class ModuleBuilder {
 		}
 	}
 	
-	public LocalVariable flattern(Expr e) {
+	private LocalVariable flattern(Expr e) {
 		if (e instanceof LocalVariable) {
 			return (LocalVariable) e;
 		} else if (e instanceof ListAccess) {
@@ -2403,7 +2403,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	public static Expr invert(Expr e) {
+	private static Expr invert(Expr e) {
 		if (e instanceof Expr.BinOp) {
 			BinOp bop = (BinOp) e;
 			switch (bop.op) {
@@ -2434,7 +2434,7 @@ public class ModuleBuilder {
 		return new Expr.UnOp(Expr.UOp.NOT, e);
 	}
 
-	public Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	private Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case ADD:
 			return Code.BOp.ADD;
@@ -2463,7 +2463,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	public Code.COp OP2COP(Expr.BOp bop, SyntacticElement elem) {
+	private Code.COp OP2COP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case EQ:
 			return Code.COp.EQ;
@@ -2497,7 +2497,7 @@ public class ModuleBuilder {
 	 * @param blk
 	 * @return
 	 */
-	public static Block shiftBlock(int amount, Block blk) {
+	private static Block shiftBlock(int amount, Block blk) {
 		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 		for(int i=0;i!=blk.numSlots();++i) {
 			binding.put(i,i+amount);
@@ -2520,7 +2520,7 @@ public class ModuleBuilder {
 	 * @param blk
 	 * @return
 	 */
-	public static Block chainBlock(String target, Block blk) {	
+	private static Block chainBlock(String target, Block blk) {	
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Fail) {
@@ -2539,7 +2539,7 @@ public class ModuleBuilder {
 	 * @param elem
 	 * @return
 	 */
-	public static Collection<Attribute> attributes(SyntacticElement elem) {
+	private static Collection<Attribute> attributes(SyntacticElement elem) {
 		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
 		attrs.add(elem.attribute(Attribute.Source.class));
 		return attrs;

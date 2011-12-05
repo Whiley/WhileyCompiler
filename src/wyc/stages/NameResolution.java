@@ -41,6 +41,26 @@ import wyc.lang.Expr.*;
 import wyc.stages.WhileyLexer.Ampersand;
 import wyc.util.*;
 
+/**
+ * Responsible for determining the fully-qualified names for all external
+ * symbols in a module. For example, consider the following module:
+ * 
+ * <pre>
+ * import whiley.lang.*
+ * 
+ * int f(int x):
+ *    return Math.max(x,10)
+ * </pre>
+ * 
+ * Here, <code>Math.max</code> is an external symbol and we must determine the
+ * package where it is defined, or report a syntax error if none is found.
+ * Therefore, name resolution walks the list of import declarations looking for
+ * the first occurrence of a matching symbol, and records this as an attribute
+ * on the corresponding Abstract Syntax Tree (AST) node.
+ * 
+ * @author djp
+ * 
+ */
 public class NameResolution {
 	private final NameResolver resolver;	
 	private String filename;
