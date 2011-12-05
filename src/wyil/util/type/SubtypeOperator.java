@@ -205,36 +205,8 @@ public class SubtypeOperator {
 				}
 				return true;
 			}
-			case K_RECORD: {				
-				if(fromSign || toSign) {					
-					int[] fromChildren = fromState.children;
-					int[] toChildren = toState.children;
-					if (fromChildren.length != toChildren.length) {
-						return !fromSign || !toSign;
-					}				
-					ArrayList<String> fromFields = (ArrayList<String>) fromState.data;
-					ArrayList<String> toFields = (ArrayList<String>) toState.data;				
-					boolean andChildren = true;
-					boolean orChildren = false;
-					for (int i = 0; i != fromFields.size(); ++i) {
-						String e1 = fromFields.get(i);
-						String e2 = toFields.get(i);
-						if(!e1.equals(e2)) { return !fromSign || !toSign; }
-						int fromChild = fromChildren[i];
-						int toChild = toChildren[i];
-						boolean v = isIntersection(fromChild, fromSign, toChild,
-								toSign);
-						andChildren &= v;
-						orChildren |= v;
-					}
-					if(!fromSign || !toSign) {
-						return orChildren;
-					} else {
-						return andChildren;
-					}
-				}
-				return true;
-			}
+			case K_RECORD: 
+				return intersectRecords(fromIndex,fromSign,toIndex,toSign);			
 			case K_NEGATION: 
 			case K_UNION : 			
 					// let these cases fall through to if-statements after
@@ -343,6 +315,103 @@ public class SubtypeOperator {
 		}  
 		
 		return !fromSign || !toSign;		
+	}
+
+	/**
+	 * <p>
+	 * Check for intersection between two states with kind K_RECORD. The
+	 * distinction between open and closed records adds complexity here.
+	 * </p>
+	 * 
+	 * <p>
+	 * Intersection between <b>closed</b> records is the easiest case. The main
+	 * examples are:
+	 * </p>
+	 * <ul>
+	 * <li><code>{T1 f, T2 g} & {T3 f, T4 g} = if T1&T3 and T2&T4</code>.</li>
+	 * <li><code>{T1 f, T2 g} & {T3 f, T4 h} = false</code>.</li>
+	 * <li><code>{T1 f, T2 g} & !{T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>
+	 * <li><code>{T1 f, T2 g} & !{T3 f} = false</code>.</li>
+	 * <li><code>!{T1 f} & !{T2 f} = true</code>.</li>
+	 * </ul>
+	 * <p>
+	 * Intersection between a <b>closed</b> and <b>open</b> record is similar. The main examples are:
+	 * </p>
+	 * <ul>
+	 * <li><code>{T1 f, T2 g, ...} & {T3 f, T4 g} = if T1&T3 and T2&T4</code>.</li>
+	 * <li><code>{T1 f, ...} & {T2 f, T3 g} = if T1&T2</code>.</li>
+	 * <li><code>{T1 f, T2 g, ...} & {T3 f, T4 h} = false</code>.</li>
+	 * <li><code>{T1 f, T2 g, ...} & !{T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>	 * 
+	 * <li><code>!{T1 f, T2 g, ...} & {T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>	 *
+	 * <li><code>{T1 f, ...} & !{T2 f, T3 g} = true</code>.</li>
+	 * <li><code>{T1 f, T2 g, ...} & !{T3 f, T4 h} = false</code>.</li>
+     * <li><code>!{T1 f,...} & !{T2 f} = true</code>.</li>
+	 * </ul>
+	 * 
+	 * @param fromIndex
+	 *            --- index of from state
+	 * @param fromSign
+	 *            --- sign of from state (true = normal, false = inverted).
+	 * @param toIndex
+	 *            --- index of to state
+	 * @param toSign
+	 *            --- sign of from state (true = normal, false = inverted).
+	 * @return --- true if such an intersection exists, false otherwise.
+	 */
+	protected boolean intersectRecords(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {				
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = to.states[toIndex];
+		if(fromSign || toSign) {					
+			int[] fromChildren = fromState.children;
+			int[] toChildren = toState.children;						
+			Type.Record.State fromFields = (Type.Record.State) fromState.data;
+			Type.Record.State toFields = (Type.Record.State) toState.data;
+			boolean toAllowedMore = fromFields.isOpen && fromSign && toSign;
+			boolean fromAllowedMore = toFields.isOpen && (!fromSign || !toSign);
+			
+			if (fromChildren.length < toChildren.length && toAllowedMore) {
+				return !fromSign || !toSign;
+			} else if (fromChildren.length > toChildren.length  && fromAllowedMore) {
+				return !fromSign || !toSign;
+			}
+			
+			boolean andChildren = true;
+			boolean orChildren = false;
+			
+			int fi=0;
+			int ti=0;
+			while(fi != fromFields.size() && ti != toFields.size()) {
+				String fn = fromFields.get(fi);
+				String tn = toFields.get(ti);
+				int c = fn.compareTo(tn);
+				if(c == 0) {					
+					int fromChild = fromChildren[fi++];
+					int toChild = toChildren[ti++];
+					boolean v = isIntersection(fromChild, fromSign, toChild,
+							toSign);
+					andChildren &= v;
+					orChildren |= v;					
+				} else if(c < 0) {
+					if(fromAllowedMore) {
+						fi++;
+					} else {
+						return !fromSign || !toSign; 
+					}
+				} else if(c > 0) {
+					if(toAllowedMore) {
+						ti++;
+					} else {						
+						return !fromSign || !toSign; 
+					}					
+				}			
+			}					
+			if(!fromSign || !toSign) {
+				return orChildren;
+			} else {
+				return andChildren;
+			}
+		}
+		return true;
 	}
 	
 	private int indexOf(int fromIndex, boolean fromSign,

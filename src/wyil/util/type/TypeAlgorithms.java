@@ -1171,8 +1171,11 @@ public final class TypeAlgorithms {
 			int toIndex, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automata.State> states) {
-		System.out.println("intersectPosNegOpenOpen Called");
-		return null;
+		// FIXME: need to do better here
+		int myIndex = states.size()-1;
+		states.remove(myIndex);
+		Automatas.extractOnto(fromIndex,from,states);
+		return states.get(myIndex); 
 	}
 
 	/**
@@ -1294,8 +1297,8 @@ public final class TypeAlgorithms {
 	 * and open and the second negative and closed. For example:
 	 * 
 	 * <pre>
-	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => void
-	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => ??
+	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => {T1 f, T2 g, ...}  
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => ????
 	 * </pre>
 	 * 
 	 * ???
@@ -1321,8 +1324,11 @@ public final class TypeAlgorithms {
 			int fromIndex, Automata from, int toIndex, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automata.State> states) {
-		System.out.println("intersectPosNegOpenClosed Called");
-		return null;
+		// FIXME: need to do better here
+		int myIndex = states.size()-1;
+		states.remove(myIndex);
+		Automatas.extractOnto(fromIndex,from,states);
+		return states.get(myIndex); 	
 	}
 	
 	/**
@@ -1570,7 +1576,7 @@ public final class TypeAlgorithms {
 			case Type.K_DICTIONARY:
 			case Type.K_TUPLE: 
 			case Type.K_RECORD:
-				// TODO: need to support open records? 
+				// FIXME: need to support open records? 
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD: {				
