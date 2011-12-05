@@ -61,7 +61,7 @@ import wyc.util.*;
  * @author David J. Pearce
  * 
  */
-public class NameResolution {
+public final class NameResolution {
 	private final NameResolver resolver;	
 	private String filename;
 	private ModuleID module;

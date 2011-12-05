@@ -87,7 +87,7 @@ import wyjc.runtime.BigRational;
  * @author David J. Pearce
  * 
  */
-public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
+public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
 	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	

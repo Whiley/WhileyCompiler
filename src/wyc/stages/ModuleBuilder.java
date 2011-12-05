@@ -77,7 +77,7 @@ import wyc.lang.Expr.*;
  * @author David J. Pearce
  * 
  */
-public class ModuleBuilder {
+public final class ModuleBuilder {
 	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;

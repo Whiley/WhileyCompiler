@@ -40,7 +40,7 @@ import wyil.util.SyntaxError;
  * @author djp
  * 
  */
-public class WhileyFile {
+public final class WhileyFile {
 	public final ModuleID module;
 	public final String filename;
 	public final ArrayList<Decl> declarations;
