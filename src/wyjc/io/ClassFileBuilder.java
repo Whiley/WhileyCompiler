@@ -1809,7 +1809,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(WHILEYTYPE,
 				JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "valueOf", ftype,
-				Bytecode.STATIC));
+				Bytecode.STATIC));		
 	}
 	
 	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {

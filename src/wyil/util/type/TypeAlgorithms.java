@@ -788,7 +788,34 @@ public final class TypeAlgorithms {
 		
 		return myIndex;
 	}
-	
+
+	/**
+	 * Intersect two automata representing positive, open records. For example:
+	 * 
+	 * <pre>
+	 * {T1 f, T2 g, ...} & {T3 g, T4 h, ...} => {T1 f, (T2&T3) g, T4 h, ...}
+	 * </pre>
+	 * 
+	 * As you can see from above, we include all fields from both types. For
+	 * fields common to both we intersect their types.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed.
+	 * @return
+	 */
 	private static Automata.State intersectPosPosOpenOpen(int fromIndex, Automata from,
 			int toIndex, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
@@ -803,7 +830,7 @@ public final class TypeAlgorithms {
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
 		ArrayList<Integer> myChildren = new ArrayList<Integer>();
-		while (fi < fromData.size() && ti < toData.size()) {
+		while (fi < fromData.size() && ti < toData.size()) {			
 			int fromChild = fromChildren[fi];
 			int toChild = toChildren[ti];
 			String fn = fromData.get(fi);
@@ -850,7 +877,37 @@ public final class TypeAlgorithms {
 		return new Automata.State(fromState.kind, myData, true,							
 				myChildrenArray);
 	}
-	
+
+	/**
+	 * Intersect two automata representing positive records, where the first is
+	 * closed and the second open. For example:
+	 * 
+	 * <pre>
+	 * {T1 f, T2 g} & {T3 g, T4 h, ...} => void
+	 * {T1 f, T2 g} & {T3 g, ...} => {T1 f, (T2&T3) g}
+	 * </pre>
+	 * 
+	 * In this case, the result must include exactly those fields in the closed
+	 * record. If a required field in the open record is not present in the
+	 * closed record, then there is no intersection.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed.
+	 * @return
+	 */
 	private static Automata.State intersectPosPosClosedOpen(
 			int fromIndex, Automata from, int toIndex, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
@@ -929,10 +986,24 @@ public final class TypeAlgorithms {
 				myState = new Automata.State(Type.K_VOID);				
 				break;
 			}
-							
-			case Type.K_LABEL:
-			case Type.K_NOMINAL:
 			case Type.K_RECORD: {
+				Type.Record.State fromData = (Type.Record.State) fromState.data;
+				Type.Record.State toData = (Type.Record.State) toState.data;
+				if (fromData.isOpen && toData.isOpen) {					
+					myState = intersectPosNegOpenOpen(fromIndex,from,toIndex,to,allocations,states);
+					break;
+				} else if(toData.isOpen) {
+					myState = intersectPosNegClosedOpen(fromIndex,from,toIndex,to,allocations,states);
+					break;
+				} else if(fromData.isOpen) {
+					myState = intersectPosNegOpenClosed(fromIndex,from,toIndex,to,allocations,states);
+					break;
+				} else {
+					// fall through to general case for compounds
+				}
+			}				
+			case Type.K_LABEL:
+			case Type.K_NOMINAL: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & !{int g} => {int f}
 					states.remove(states.size()-1);
@@ -1069,6 +1140,201 @@ public final class TypeAlgorithms {
 	}
 
 	/**
+	 * Intersect two automata representing open records, where the first is
+	 * positive and the second negative. For example:
+	 * 
+	 * <pre>
+	 * {T1 f, T2 g, ...} & !{T3 g, T4 h, ...} => {T1 f, T2&!T3 g, ...} | {T1 f, T2 g, void h, ...}
+	 * </pre>
+	 * 
+	 * This is a fairly ticky case!
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed.
+	 * @return
+	 */
+	private static Automata.State intersectPosNegOpenOpen(int fromIndex, Automata from,
+			int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+		// FIXME: need to do better here
+		int myIndex = states.size()-1;
+		states.remove(myIndex);
+		Automatas.extractOnto(fromIndex,from,states);
+		return states.get(myIndex); 
+	}
+
+	/**
+	 * Intersect two automata representing records, where the first is positive
+	 * and closed and the second negative and open. For example:
+	 * 
+	 * <pre>
+	 * {T1 f, T2 g} & !{T3 g, T4 h, ...} => {T1 f, T2 g}
+	 * {T1 f, T2 g} & !{T3 f, T4 g, ...} => {T1 & !T3 f, T2 g} | {T1 f, T2 & !T4 g}
+	 * {T1 f, T2 g, T3 h} & !{T4 f, T5 g, ...} => {T1 & !T4 f, T2 g, T3 h} | {T1 f, T2 & !T5 g, T3 h}
+	 * </pre>
+	 * 
+	 * In this case, the result must include exactly those fields in the closed
+	 * record. If the open record contains a field not present
+	 * in the closed record then it does not intersect with the closed record
+	 * and we're fine. Finally, in the case they have exactly the same fields
+	 * then we have to distribute.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed.
+	 * @return
+	 */
+	private static Automata.State intersectPosNegClosedOpen(
+			int fromIndex, Automata from, int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+
+		int oldSize = states.size(); // in case we need to back out
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = to.states[toIndex];		
+		
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+
+		// first, check whether the open record has more fields than the closed.
+		// If so, then there is no intersection between them and we can just
+		// return the closed record.
+		
+		if(fromChildren.length < toChildren.length) {
+			// no possible intersection so back out
+			states.remove(states.size()-1);
+			Automatas.extractOnto(fromIndex,from,states);
+			return states.get(oldSize); // tad ugly perhaps			
+		}
+		
+		Type.Record.State fromData = (Type.Record.State) fromState.data;
+		Type.Record.State toData = (Type.Record.State) toState.data;
+		
+		// second, check whether the open record contains a field not present in
+		// the closed record. If so, then there is no intersection between them
+		// and we can just return the closed record.
+		
+		int fi=0,ti=0;
+		while(ti!=toChildren.length) {
+			if(fi < fromChildren.length) {
+				String fn = fromData.get(fi);
+				String tn = toData.get(ti);
+				int c = fn.compareTo(tn);
+				if(c < 0) {
+					++fi;
+					continue;
+				} else if(c == 0){
+					++ti;
+					++fi;
+					continue;
+				}
+			} 			
+			// no possible intersection so back out
+			states.remove(states.size()-1);
+			Automatas.extractOnto(fromIndex,from,states);
+			return states.get(oldSize); // tad ugly perhaps			 
+		}
+		
+		// finally, distribute over those fields present in the open record
+		// (which are a subset of those in the closed record).
+		
+		int[] tmpChildren = new int[fromChildren.length];
+		for(int i=0;i!=fromChildren.length;++i) {
+			tmpChildren[i] = states.size();
+			Automatas.extractOnto(fromChildren[i],from,states);
+		}				
+		int[] myChildren = new int[toChildren.length];
+		for(ti=0;ti!=toChildren.length;++ti) {
+			int[] myChildChildren = new int[fromChildren.length];
+			String tn = toData.get(ti);
+			for(fi=0;fi!=fromChildren.length;++fi) {
+				String fn = fromData.get(fi);
+				if(fn.equals(tn)) {
+					int fromChild = fromChildren[fi];
+					int toChild = toChildren[ti];
+					myChildChildren[fi] = intersect(fromChild, true, from,
+							toChild, false, to, allocations, states);
+				} else {
+					myChildChildren[fi] = tmpChildren[fi];
+				}
+			}
+			myChildren[ti] = states.size();
+			states.add(new Automata.State(fromState.kind, fromData, true,
+					myChildChildren));
+		}				
+		return new Automata.State(Type.K_UNION, null, false, myChildren);
+	}
+
+	/**
+	 * Intersect two automata representing records, where the first is positive
+	 * and open and the second negative and closed. For example:
+	 * 
+	 * <pre>
+	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => {T1 f, T2 g}   
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => {T1&!T3 f, T2 g,...} | {T1 f, T2&!T4 g,...} 
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g, T5 h} => {T1&!T3 f, T2 g, ...} | {T1 f, T2&!T4 g, ...} | {T1 f, T2 g, void h, ...} | {T1 f, T2 g, !T5 h, ...}
+	 * </pre>
+	 * 
+	 * Here, <code>{T1 f, T2 g, void h, ...}</code> represents a record which
+	 * doesn't have a field h. This use of void only really makes sense in the
+	 * context of open records.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed.
+	 * @return
+	 */
+	private static Automata.State intersectPosNegOpenClosed(
+			int fromIndex, Automata from, int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+		
+		// FIXME: need to do better here
+		int myIndex = states.size()-1;
+		states.remove(myIndex);
+		Automatas.extractOnto(fromIndex,from,states);
+		return states.get(myIndex); 		
+	}
+	
+	/**
 	 * The following method intersects two nodes with (resp. negative and
 	 * positive sign) which have identical kind. A precondition is that space
 	 * has already been allocated in states for the resulting node.
@@ -1108,10 +1374,25 @@ public final class TypeAlgorithms {
 				myState = new Automata.State(Type.K_VOID);				
 				break;
 			}
-							
-			case Type.K_LABEL:
-			case Type.K_NOMINAL:			
+				
 			case Type.K_RECORD: {
+				Type.Record.State fromData = (Type.Record.State) fromState.data;
+				Type.Record.State toData = (Type.Record.State) toState.data;
+				if (fromData.isOpen && toData.isOpen) {					
+					myState = intersectPosNegOpenOpen(toIndex,to,fromIndex,from,allocations,states);
+					break;
+				} else if(fromData.isOpen) {
+					myState = intersectPosNegClosedOpen(toIndex,to,fromIndex,from,allocations,states);
+					break;
+				} else if(toData.isOpen) {
+					myState = intersectPosNegOpenClosed(toIndex,to,fromIndex,from,allocations,states);;
+					break;
+				} else {
+					// fall through to general case for compounds
+				}
+			}	
+			case Type.K_LABEL:
+			case Type.K_NOMINAL: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. !{int f} & {int g} => {int g}
 					states.remove(states.size()-1);
@@ -1297,7 +1578,7 @@ public final class TypeAlgorithms {
 			case Type.K_SET:
 			case Type.K_DICTIONARY:
 			case Type.K_TUPLE: 
-			case Type.K_RECORD:
+			case Type.K_RECORD: 
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD: {				

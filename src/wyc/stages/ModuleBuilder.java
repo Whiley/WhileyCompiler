@@ -1189,10 +1189,12 @@ public class ModuleBuilder {
 				
 		blk.append(resolveCondition(label, invert(s.condition), environment));
 
+		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
-				
+		scopes.pop(); // break
+		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
@@ -1222,9 +1224,11 @@ public class ModuleBuilder {
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
+		scopes.push(new BreakScope(label));	
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
+		scopes.pop(); // break
 		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();

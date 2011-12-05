@@ -587,7 +587,10 @@ public class Util {
 					Record ol = (Record) obj;
 					Type.Record tl = (Type.Record) t;
 					String[] names = tl.names;
-					Type[] types = tl.types;
+					Type[] types = tl.types;					
+					if(!tl.isOpen && names.length != ol.size()) {
+						return false;
+					}
 					for(int i=0;i!=names.length;++i) {
 						String name = names[i];
 						if(ol.containsKey(name)) {
@@ -761,6 +764,9 @@ public class Util {
 			Type.Record tl = (Type.Record) type;
 			String[] names = tl.names;
 			Type[] types = tl.types;
+			if (!tl.isOpen && names.length != object.size()) {
+				return false;
+			}
 			for(int i=0;i!=names.length;++i) {
 				String name = names[i];
 				if(object.containsKey(name)) {
