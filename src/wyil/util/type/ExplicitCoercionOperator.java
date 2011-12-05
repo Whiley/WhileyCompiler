@@ -33,15 +33,15 @@ import wyautl.lang.*;
  */
 public class ExplicitCoercionOperator extends ImplicitCoercionOperator {
 	
-	public ExplicitCoercionOperator(Automata fromAutomata, Automata toAutomata) {
+	public ExplicitCoercionOperator(Automaton fromAutomata, Automaton toAutomata) {
 		super(fromAutomata,toAutomata);
 	}
 	
 	@Override
 	public boolean isIntersectionInner(int fromIndex, boolean fromSign,
 			int toIndex, boolean toSign) {
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
 

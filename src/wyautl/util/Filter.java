@@ -51,8 +51,8 @@ public class Filter {
 				index++;
 			}
 			
-			GenericReader<Automata> reader;
-			GenericWriter<Automata> writer;
+			GenericReader<Automaton> reader;
+			GenericWriter<Automaton> writer;
 			if(binaryIn) {
 				BinaryInputStream bis = new BinaryInputStream(input);
 				reader = new BinaryAutomataReader(bis);				
@@ -68,21 +68,21 @@ public class Filter {
 			int nread = 0;
 			int nwritten = 0;
 			try {
-				HashSet<Automata> visited = new HashSet<Automata>();
+				HashSet<Automaton> visited = new HashSet<Automaton>();
 				while(true) {
-					Automata automata = reader.read();					
+					Automaton automata = reader.read();					
 					nread++;
 					
 					if(extract) {						
-						automata = Automatas.extract(automata,0);
+						automata = Automata.extract(automata,0);
 					}
 					
 					if(minimise) {
-						automata = Automatas.minimise(automata);
+						automata = Automata.minimise(automata);
 					}
 					
 					if(canonicalise) {
-						Automatas.canonicalise(automata,null);
+						Automata.canonicalise(automata,null);
 					}
 					
 					if(!reduce || !visited.contains(automata)) {					

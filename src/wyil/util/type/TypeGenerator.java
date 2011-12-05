@@ -6,9 +6,9 @@ import java.util.*;
 import wyil.lang.Type;
 import wyjvm.io.*;
 import wyautl.io.*;
+import wyautl.lang.Automaton;
 import wyautl.lang.Automata;
-import wyautl.lang.Automatas;
-import wyautl.lang.DefaultInterpretation.Value;
+import wyautl.lang.DefaultInterpretation.Term;
 import wyautl.util.*;
 import wyautl.util.Generator.Config;
 import wyautl.util.Generator.Kind;
@@ -20,8 +20,8 @@ public class TypeGenerator {
 			super(output);
 		}
 		
-		public void write(Automata automata) throws IOException {						
-			Type t = Type.construct(new Automata(automata));
+		public void write(Automaton automata) throws IOException {						
+			Type t = Type.construct(new Automaton(automata));
 			if (t != Type.T_VOID) {
 				super.write(automata);
 				count++;
@@ -32,15 +32,15 @@ public class TypeGenerator {
 		}
 	}
 	
-	public static class TextTypeWriter implements GenericWriter<Automata> {
+	public static class TextTypeWriter implements GenericWriter<Automaton> {
 		private PrintStream output;
 
 		public TextTypeWriter(PrintStream output) {
 			this.output = output;
 		}
 
-		public void write(Automata automata) throws IOException {						
-			Type t = Type.construct(Automatas.extract(automata,0));
+		public void write(Automaton automata) throws IOException {						
+			Type t = Type.construct(Automata.extract(automata,0));
 			if (t != Type.T_VOID) {
 				output.println(t);
 				count++;
@@ -59,7 +59,7 @@ public class TypeGenerator {
 		}
 	}	
 	
-	public static boolean isContractive(Automata automata) {		
+	public static boolean isContractive(Automaton automata) {		
 		BitSet contractives = new BitSet(automata.size());
 		// initially all nodes are considered contracive.
 		contractives.set(0,contractives.size(),true);
@@ -83,8 +83,8 @@ public class TypeGenerator {
 	}
 	
 	private static boolean isContractive(int index, BitSet contractives,
-			Automata automata) {
-		Automata.State state = automata.states[index];
+			Automaton automata) {
+		Automaton.State state = automata.states[index];
 		int[] children = state.children;
 		if(children.length == 0) {
 			return false;
@@ -109,7 +109,7 @@ public class TypeGenerator {
 	}
 	
 	private static final Generator.Data DATA_GENERATOR = new Generator.Data() {
-		public List<Object> generate(Automata.State state) {
+		public List<Object> generate(Automaton.State state) {
 			if(state.kind == Type.K_RECORD) {
 				return recordGenerator(state);
 			} else {
@@ -147,7 +147,7 @@ public class TypeGenerator {
 	
 	private static final String[] fields = {"f1","f2","f3","f4","f5"};	
 	
-	private static List<Object> recordGenerator(Automata.State state) {		
+	private static List<Object> recordGenerator(Automaton.State state) {		
 		ArrayList<String> data1 = new ArrayList();
 		ArrayList<String> data2 = new ArrayList();
 		for(int i=0;i!=state.children.length;++i) {
@@ -171,7 +171,7 @@ public class TypeGenerator {
 	
 	public static void main(String[] args) {		
 		boolean binary = false;
-		GenericWriter<Automata> writer;
+		GenericWriter<Automaton> writer;
 		PrintStream out = System.out;
 		int minSize = 1;
 		int maxSize = config.SIZE;

@@ -22,8 +22,8 @@ public final class TypeAlgorithms {
 	 * used to compare the supplementary data of states in automatas
 	 * representing types. Supplementary data is used for record kinds and 
 	 */
-	public static final Comparator<Automata.State> DATA_COMPARATOR = new Comparator<Automata.State>() {
-		public int compare(Automata.State s1, Automata.State s2) {
+	public static final Comparator<Automaton.State> DATA_COMPARATOR = new Comparator<Automaton.State>() {
+		public int compare(Automaton.State s1, Automaton.State s2) {
 			// PRE-CONDITION s1.kind == s2.kind
 			if(s1.kind == Type.K_RECORD) {
 				Type.Record.State fields1 = (Type.Record.State) s1.data;
@@ -80,7 +80,7 @@ public final class TypeAlgorithms {
 	 * @param type --- type to test for contractivity.
 	 * @return
 	 */
-	public static boolean isContractive(Automata automata) {		
+	public static boolean isContractive(Automaton automata) {		
 		BitSet contractives = new BitSet(automata.size());
 		// TODO: optimise away the need to initialise the contractives
 		contractives.set(0,automata.size(),true);
@@ -88,7 +88,7 @@ public final class TypeAlgorithms {
 		return findContractives(automata,contractives);
 	}
 	
-	private static boolean findContractives(Automata automata, BitSet contractives) {		
+	private static boolean findContractives(Automaton automata, BitSet contractives) {		
 		boolean changed = true;
 		boolean contractive = false;
 		while(changed) {
@@ -108,8 +108,8 @@ public final class TypeAlgorithms {
 	}
 	
 	private static boolean isContractive(int index, BitSet contractives,
-			Automata automata) {
-		Automata.State state = automata.states[index];
+			Automaton automata) {
+		Automaton.State state = automata.states[index];
 		int[] children = state.children;
 		if(children.length == 0) {
 			return false;
@@ -160,7 +160,7 @@ public final class TypeAlgorithms {
 	 * </p>
 	 * 
 	 */
-	public static void simplify(Automata automata) {		
+	public static void simplify(Automaton automata) {		
 		boolean changed = true;
 		while(changed) {				
 			changed = false;			
@@ -171,7 +171,7 @@ public final class TypeAlgorithms {
 		}	
 	}	
 	
-	private static boolean simplifyContractives(Automata automata) {
+	private static boolean simplifyContractives(Automaton automata) {
 		BitSet contractives = new BitSet(automata.size());
 		// initially all nodes are considered contractive.
 		// TODO: optimise away the need to initialise the contractives
@@ -180,14 +180,14 @@ public final class TypeAlgorithms {
 
 		for (int i = contractives.nextSetBit(0); i >= 0; i = contractives
 				.nextSetBit(i + 1)) {
-			automata.states[i] = new Automata.State(Type.K_VOID);
+			automata.states[i] = new Automaton.State(Type.K_VOID);
 		}
 
 		return changed;
 	}
 	
-	private static boolean simplify(int index, Automata automata) {		
-		Automata.State state = automata.states[index];
+	private static boolean simplify(int index, Automaton automata) {		
+		Automaton.State state = automata.states[index];
 		boolean changed=false;
 		switch (state.kind) {
 		case Type.K_NEGATION:			
@@ -218,18 +218,18 @@ public final class TypeAlgorithms {
 		return changed;
 	}
 	
-	private static boolean simplifyNegation(int index, Automata.State state, Automata automata) {
-		Automata.State child = automata.states[state.children[0]];
+	private static boolean simplifyNegation(int index, Automaton.State state, Automaton automata) {
+		Automaton.State child = automata.states[state.children[0]];
 		if(child.kind == Type.K_NEGATION) {
 			// bypass node
-			Automata.State childchild = automata.states[child.children[0]];
-			automata.states[index] = new Automata.State(childchild);
+			Automaton.State childchild = automata.states[child.children[0]];
+			automata.states[index] = new Automaton.State(childchild);
 			return true;
 		}
 		return false;
 	}
 	
-	private static boolean simplifyCompound(int index, Automata.State state, Automata automata) {
+	private static boolean simplifyCompound(int index, Automaton.State state, Automaton automata) {
 		int kind = state.kind;
 		int[] children = state.children;
 		for(int i=0;i<children.length;++i) {
@@ -240,9 +240,9 @@ public final class TypeAlgorithms {
 				// method return or throws type allowed to be void
 				continue;
 			}
-			Automata.State child = automata.states[children[i]];
+			Automaton.State child = automata.states[children[i]];
 			if(child.kind == Type.K_VOID) {
-				automata.states[index] = new Automata.State(Type.K_VOID);
+				automata.states[index] = new Automaton.State(Type.K_VOID);
 				return true;
 			}
 		}
@@ -267,8 +267,8 @@ public final class TypeAlgorithms {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	private static boolean simplifyUnion(int index, Automata.State state,
-			Automata automata) {
+	private static boolean simplifyUnion(int index, Automaton.State state,
+			Automaton automata) {
 		return simplifyUnion_1(index, state, automata)
 				|| simplifyUnion_2(index, state, automata);
 	}
@@ -290,8 +290,8 @@ public final class TypeAlgorithms {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	private static boolean simplifyUnion_1(int index, Automata.State state,
-			Automata automata) {
+	private static boolean simplifyUnion_1(int index, Automaton.State state,
+			Automaton automata) {
 		int[] children = state.children;
 		boolean changed = false;
 		for (int i = 0; i < children.length; ++i) {
@@ -301,10 +301,10 @@ public final class TypeAlgorithms {
 				state.children = removeIndex(i, children);
 				changed = true;
 			} else {
-				Automata.State child = automata.states[iChild];
+				Automaton.State child = automata.states[iChild];
 				switch (child.kind) {
 					case Type.K_ANY :
-						automata.states[index] = new Automata.State(Type.K_ANY);
+						automata.states[index] = new Automaton.State(Type.K_ANY);
 						return true;
 					case Type.K_VOID : {
 						children = removeIndex(i, children);
@@ -320,12 +320,12 @@ public final class TypeAlgorithms {
 		if (children.length == 0) {
 			// this can happen in the case of a union which has only itself as a
 			// child.
-			automata.states[index] = new Automata.State(Type.K_VOID);
+			automata.states[index] = new Automaton.State(Type.K_VOID);
 			changed = true;
 		} else if (children.length == 1) {
 			// bypass this node altogether
 			int child = children[0];
-			automata.states[index] = new Automata.State(automata.states[child]);
+			automata.states[index] = new Automaton.State(automata.states[child]);
 			changed = true;
 		}
 		return changed;
@@ -345,8 +345,8 @@ public final class TypeAlgorithms {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	private static boolean simplifyUnion_2(int index, Automata.State state,
-			Automata automata) {
+	private static boolean simplifyUnion_2(int index, Automaton.State state,
+			Automaton automata) {
 		boolean changed = false;
 		int[] children = state.children;
 
@@ -371,7 +371,7 @@ public final class TypeAlgorithms {
 		if (children.length == 1) {
 			// bypass this node altogether
 			int child = children[0];
-			automata.states[index] = new Automata.State(automata.states[child]);
+			automata.states[index] = new Automaton.State(automata.states[child]);
 			changed = true;
 		}
 		
@@ -379,7 +379,7 @@ public final class TypeAlgorithms {
 	}
 	
 	private static boolean isSubtype(int fromIndex, int toIndex,
-			Automata automata) {
+			Automaton automata) {
 		SubtypeOperator op = new SubtypeOperator(automata,automata);
 		return op.isSubtype(fromIndex, toIndex);
 	}
@@ -421,22 +421,22 @@ public final class TypeAlgorithms {
 	 * @return
 	 */
 	public static Type intersect(Type t1, Type t2) {
-		Automata a1 = Type.destruct(t1);
-		Automata a2 = Type.destruct(t2);
+		Automaton a1 = Type.destruct(t1);
+		Automaton a2 = Type.destruct(t2);
 		return Type.construct(intersect(true,a1,true,a2));
 	}
 	
-	private static Automata intersect(boolean fromSign, Automata from, boolean toSign, Automata to) {
+	private static Automaton intersect(boolean fromSign, Automaton from, boolean toSign, Automaton to) {
 		HashMap<IntersectionPoint,Integer> allocations = new HashMap();		
-		ArrayList<Automata.State> nstates = new ArrayList();
+		ArrayList<Automaton.State> nstates = new ArrayList();
 		intersect(0,fromSign,from,0,toSign,to,allocations,nstates);		
-		return new Automata(nstates.toArray(new Automata.State[nstates.size()]));		
+		return new Automaton(nstates.toArray(new Automaton.State[nstates.size()]));		
 	}
 	
 	private static int intersect(int fromIndex, boolean fromSign,
-			Automata from, int toIndex, boolean toSign, Automata to,
+			Automaton from, int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {				
+			ArrayList<Automaton.State> states) {				
 		
 		// first, check whether we have determined this state already
 		IntersectionPoint ip = new IntersectionPoint(fromIndex,fromSign,toIndex,toSign);
@@ -448,8 +448,8 @@ public final class TypeAlgorithms {
 		allocations.put(ip,myIndex);
 		states.add(null); // allocate space for me
 		
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];		
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
 				
 		// now, dispatch for the appropriate case.
 		if(fromState.kind == toState.kind) {
@@ -499,14 +499,14 @@ public final class TypeAlgorithms {
 	 * @return
 	 */
 	private static int intersectDifferentKind(int fromIndex, boolean fromSign,
-			Automata from, int toIndex, boolean toSign, Automata to,
+			Automaton from, int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 				
 		int myIndex = states.size()-1;
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];		
-		Automata.State myState = null;
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		Automaton.State myState = null;
 		
 		// using invert helps reduce the number of cases to consider.
 		int fromKind = invert(fromState.kind,fromSign);
@@ -514,7 +514,7 @@ public final class TypeAlgorithms {
 				
 		// TODO: tidy this mess up
 		if(fromKind == Type.K_VOID || toKind == Type.K_VOID) {
-			myState = new Automata.State(Type.K_VOID);
+			myState = new Automaton.State(Type.K_VOID);
 		} else if(fromKind == Type.K_UNION) {						
 			
 			// (T1 | T2) & T3 => (T1&T3) | (T2&T3)
@@ -524,7 +524,7 @@ public final class TypeAlgorithms {
 				int fromChild = fromChildren[i];
 				myChildren[i] = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);
 			}					
-			myState = new Automata.State(Type.K_UNION,false,myChildren);			
+			myState = new Automaton.State(Type.K_UNION,false,myChildren);			
 		} else if(toKind == Type.K_UNION) {			
 			int[] toChildren = toState.children;
 			int[] myChildren = new int[toChildren.length];
@@ -533,7 +533,7 @@ public final class TypeAlgorithms {
 				myChildren[i] = intersect(fromIndex, fromSign, from,
 						toChild, toSign, to, allocations, states);
 			}			
-			myState = new Automata.State(Type.K_UNION,false,myChildren);					
+			myState = new Automaton.State(Type.K_UNION,false,myChildren);					
 		} else if (fromKind == K_INTERSECTION) {
 			// !(T1 | T2) & T3 => (!T1&T3) & (!T2&T3)
 			// => !(!(!T1&T3)|!(!T2&T3))
@@ -544,10 +544,10 @@ public final class TypeAlgorithms {
 				int tmpChild = intersect(fromChild, fromSign, from, toIndex,
 						toSign, to, allocations, states);
 				myChildren[i] = states.size();
-				states.add(new Automata.State(Type.K_NEGATION, true, tmpChild));
+				states.add(new Automaton.State(Type.K_NEGATION, true, tmpChild));
 			}
-			states.add(new Automata.State(Type.K_UNION, false, myChildren));
-			myState = new Automata.State(Type.K_NEGATION, true,
+			states.add(new Automaton.State(Type.K_UNION, false, myChildren));
+			myState = new Automaton.State(Type.K_NEGATION, true,
 					states.size() - 1);
 		} else if (toKind == K_INTERSECTION) {
 			int[] toChildren = toState.children;
@@ -557,10 +557,10 @@ public final class TypeAlgorithms {
 				int tmpChild = intersect(fromIndex, fromSign, from, toChild,
 						toSign, to, allocations, states);
 				myChildren[i] = states.size();
-				states.add(new Automata.State(Type.K_NEGATION, true, tmpChild));
+				states.add(new Automaton.State(Type.K_NEGATION, true, tmpChild));
 			}
-			states.add(new Automata.State(Type.K_UNION, false, myChildren));
-			myState = new Automata.State(Type.K_NEGATION, true,
+			states.add(new Automaton.State(Type.K_UNION, false, myChildren));
+			myState = new Automaton.State(Type.K_NEGATION, true,
 					states.size() - 1);
 		} else if(fromKind == Type.K_NEGATION) {
 			states.remove(states.size()-1);
@@ -573,37 +573,37 @@ public final class TypeAlgorithms {
 		} else if(fromKind == Type.K_ANY) {				
 			states.remove(states.size()-1);
 			if(!toSign) {
-				states.add(new Automata.State(Type.K_NEGATION,states.size()+1));
+				states.add(new Automaton.State(Type.K_NEGATION,states.size()+1));
 			}
-			Automatas.extractOnto(toIndex,to,states);
+			Automata.extractOnto(toIndex,to,states);
 			return myIndex;
 		} else if(toKind == Type.K_ANY) {
 			states.remove(states.size()-1);
 			if(!fromSign) {
-				states.add(new Automata.State(Type.K_NEGATION,states.size()+1));
+				states.add(new Automaton.State(Type.K_NEGATION,states.size()+1));
 			}
-			Automatas.extractOnto(fromIndex,from,states);
+			Automata.extractOnto(fromIndex,from,states);
 			return myIndex;
 		} else if(fromSign && toSign) {				
-			myState = new Automata.State(Type.K_VOID);
+			myState = new Automaton.State(Type.K_VOID);
 		} else if(fromSign) {
 			states.remove(states.size()-1);
-			Automatas.extractOnto(fromIndex,from,states);
+			Automata.extractOnto(fromIndex,from,states);
 			return myIndex;
 		} else if(toSign) {
 			states.remove(states.size()-1);
-			Automatas.extractOnto(toIndex,to,states);
+			Automata.extractOnto(toIndex,to,states);
 			return myIndex;
 		} else {
 			int childIndex = states.size();			
 			states.add(null);		
 			int nFromChild = states.size();			
-			Automatas.extractOnto(fromIndex,from,states);
+			Automata.extractOnto(fromIndex,from,states);
 			int nToChild = states.size();
-			Automatas.extractOnto(toIndex,to,states);
-			states.set(childIndex,new Automata.State(Type.K_UNION, nFromChild,
+			Automata.extractOnto(toIndex,to,states);
+			states.set(childIndex,new Automaton.State(Type.K_UNION, nFromChild,
 					nToChild));
-			myState = new Automata.State(Type.K_NEGATION, childIndex);
+			myState = new Automaton.State(Type.K_NEGATION, childIndex);
 		}
 		
 		states.set(myIndex, myState);
@@ -633,24 +633,24 @@ public final class TypeAlgorithms {
 	 *            constructed/
 	 * @return
 	 */
-	private static int intersectSameKindPosPos(int fromIndex, Automata from,
-			int toIndex, Automata to,
+	private static int intersectSameKindPosPos(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 		int myIndex = states.size()-1;
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];		
-		Automata.State myState;
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		Automaton.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_VOID: {
 				// void & void => void
-				myState = new Automata.State(Type.K_VOID);				
+				myState = new Automaton.State(Type.K_VOID);				
 				break;
 			}
 			case Type.K_ANY: {
 				// any & any => any
-				myState = new Automata.State(Type.K_ANY);
+				myState = new Automaton.State(Type.K_ANY);
 				break;
 			}				
 			case Type.K_RECORD: {
@@ -673,7 +673,7 @@ public final class TypeAlgorithms {
 			case Type.K_NOMINAL: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & {int g} => void
-					myState = new Automata.State(Type.K_VOID);
+					myState = new Automaton.State(Type.K_VOID);
 					break;
 				}
 				// now fall through as for the other compound types.
@@ -681,7 +681,7 @@ public final class TypeAlgorithms {
 			case Type.K_TUPLE:
 				if(fromState.children.length != toState.children.length) {					
 					// e.g. (int,int) & (int) => void
-					myState = new Automata.State(Type.K_VOID);
+					myState = new Automaton.State(Type.K_VOID);
 					break;
 				}					
 			case Type.K_PROCESS: 
@@ -710,7 +710,7 @@ public final class TypeAlgorithms {
 					myChildren[i] = intersect(fromChild, true, from,
 							toChild, true, to, allocations, states);
 				}				
-				myState = new Automata.State(fromState.kind, myData,
+				myState = new Automaton.State(fromState.kind, myData,
 						true, myChildren);
 				break;
 			}							
@@ -729,7 +729,7 @@ public final class TypeAlgorithms {
 					newChildren[i] = intersect(fromChild, true, from,
 							toIndex, true, to, allocations, states);
 				}
-				myState = new Automata.State(Type.K_UNION, false, newChildren);
+				myState = new Automaton.State(Type.K_UNION, false, newChildren);
 				break;
 			}
 			case Type.K_FUNCTION:
@@ -765,13 +765,13 @@ public final class TypeAlgorithms {
 					int toChild = toChildren[i];
 					int[] childChildren = new int[2];
 					myChildren[i] = states.size();					
-					states.add(new Automata.State(Type.K_UNION,null,false,childChildren));					
+					states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
 					childChildren[0] = states.size();
-					Automatas.extractOnto(fromChild,from,states);
+					Automata.extractOnto(fromChild,from,states);
 					childChildren[1] = states.size();
-					Automatas.extractOnto(toChild,to,states);
+					Automata.extractOnto(toChild,to,states);
 				}				
-				myState = new Automata.State(fromState.kind, fromState.data,
+				myState = new Automaton.State(fromState.kind, fromState.data,
 						true, myChildren);
 				break;
 			}
@@ -779,7 +779,7 @@ public final class TypeAlgorithms {
 				// K_BYTE, K_CHAR, K_INT, K_RATIONAL
 				// K_STRING, K_NULL			
 				// e.g. INT & INT => INT
-				myState = new Automata.State(fromState.kind);
+				myState = new Automaton.State(fromState.kind);
 				break;
 			}		
 		}
@@ -816,12 +816,12 @@ public final class TypeAlgorithms {
 	 *            constructed.
 	 * @return
 	 */
-	private static Automata.State intersectPosPosOpenOpen(int fromIndex, Automata from,
-			int toIndex, Automata to,
+	private static Automaton.State intersectPosPosOpenOpen(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = from.states[toIndex];
+			ArrayList<Automaton.State> states) {
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = from.states[toIndex];
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 		Type.Record.State myData = new Type.Record.State(true);		
@@ -844,12 +844,12 @@ public final class TypeAlgorithms {
 			} else if (c < 0) {
 				myData.add(fn);
 				myChildren.add(states.size());
-				Automatas.extractOnto(fromChild,from,states);
+				Automata.extractOnto(fromChild,from,states);
 				fi++;
 			} else {
 				myData.add(tn);
 				myChildren.add(states.size());
-				Automatas.extractOnto(toChild,to,states);
+				Automata.extractOnto(toChild,to,states);
 				ti++;
 			}
 		}	
@@ -858,7 +858,7 @@ public final class TypeAlgorithms {
 			myData.add(fn);
 			int fromChild = fromChildren[fi];
 			myChildren.add(states.size());
-			Automatas.extractOnto(fromChild,from,states);
+			Automata.extractOnto(fromChild,from,states);
 			fi = fi + 1;
 		}
 		while (ti < toData.size()) {
@@ -866,7 +866,7 @@ public final class TypeAlgorithms {
 			myData.add(tn);
 			int toChild = toChildren[ti];
 			myChildren.add(states.size());
-			Automatas.extractOnto(toChild,to,states);
+			Automata.extractOnto(toChild,to,states);
 			ti = ti + 1;
 		}
 		// finally, create the new type
@@ -874,7 +874,7 @@ public final class TypeAlgorithms {
 		for(int i=0;i!=myChildrenArray.length;++i) {
 			 myChildrenArray[i] = myChildren.get(i);
 		}
-		return new Automata.State(fromState.kind, myData, true,							
+		return new Automaton.State(fromState.kind, myData, true,							
 				myChildrenArray);
 	}
 
@@ -908,13 +908,13 @@ public final class TypeAlgorithms {
 	 *            constructed.
 	 * @return
 	 */
-	private static Automata.State intersectPosPosClosedOpen(
-			int fromIndex, Automata from, int toIndex, Automata to,
+	private static Automaton.State intersectPosPosClosedOpen(
+			int fromIndex, Automaton from, int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 		
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 
@@ -938,13 +938,13 @@ public final class TypeAlgorithms {
 					while (states.size() != oldSize) {
 						states.remove(states.size() - 1);
 					}
-					return new Automata.State(Type.K_VOID);
+					return new Automaton.State(Type.K_VOID);
 				}
 			}
 			myChildren[fi] = states.size();
-			Automatas.extractOnto(fromChild, from, states);
+			Automata.extractOnto(fromChild, from, states);
 		}		
-		return new Automata.State(fromState.kind, fromData, true, myChildren);
+		return new Automaton.State(fromState.kind, fromData, true, myChildren);
 	}
 	
 	/**
@@ -969,21 +969,21 @@ public final class TypeAlgorithms {
 	 *            constructed/
 	 * @return
 	 */
-	private static int intersectSameKindPosNeg(int fromIndex, Automata from,
-			int toIndex, Automata to,
+	private static int intersectSameKindPosNeg(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 		int myIndex = states.size()-1;
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];		
-		Automata.State myState;
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		Automaton.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_ANY: 
 			case Type.K_VOID: {
 				// void & !void => void
 				// any & !any => void
-				myState = new Automata.State(Type.K_VOID);				
+				myState = new Automaton.State(Type.K_VOID);				
 				break;
 			}
 			case Type.K_RECORD: {
@@ -1007,7 +1007,7 @@ public final class TypeAlgorithms {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & !{int g} => {int f}
 					states.remove(states.size()-1);
-					Automatas.extractOnto(fromIndex,from,states);
+					Automata.extractOnto(fromIndex,from,states);
 					return myIndex;
 				}
 				// now fall through as for the other compound types.
@@ -1016,7 +1016,7 @@ public final class TypeAlgorithms {
 				if(fromState.children.length != toState.children.length) {					
 					// e.g. (int,int) & !(int) => (int,int)
 					states.remove(states.size()-1);
-					Automatas.extractOnto(fromIndex,from,states);
+					Automata.extractOnto(fromIndex,from,states);
 					return myIndex;
 				}
 			case Type.K_PROCESS: 
@@ -1043,7 +1043,7 @@ public final class TypeAlgorithms {
 				int[] tmpChildren = new int[fromChildren.length];
 				for(int i=0;i!=fromChildren.length;++i) {
 					tmpChildren[i] = states.size();
-					Automatas.extractOnto(fromChildren[i],from,states);
+					Automata.extractOnto(fromChildren[i],from,states);
 				}				
 				int[] myChildren = new int[fromChildren.length];
 				for(int i=0;i!=fromChildren.length;++i) {
@@ -1059,10 +1059,10 @@ public final class TypeAlgorithms {
 						}
 					}
 					myChildren[i] = states.size();
-					states.add(new Automata.State(fromState.kind, myData,
+					states.add(new Automaton.State(fromState.kind, myData,
 							true, myChildChildren));
 				}				
-				myState = new Automata.State(Type.K_UNION, null,
+				myState = new Automaton.State(Type.K_UNION, null,
 						false, myChildren);
 				break;
 			}
@@ -1082,7 +1082,7 @@ public final class TypeAlgorithms {
 					newChildren[i] = intersect(fromChild, true, from,
 							toIndex, false, to, allocations, states);
 				}
-				myState = new Automata.State(Type.K_UNION, false, newChildren);
+				myState = new Automaton.State(Type.K_UNION, false, newChildren);
 				break;
 			}
 			case Type.K_FUNCTION:
@@ -1118,18 +1118,18 @@ public final class TypeAlgorithms {
 					int toChild = toChildren[i];
 					int[] childChildren = new int[2];
 					myChildren[i] = states.size();					
-					states.add(new Automata.State(Type.K_UNION,null,false,childChildren));					
+					states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
 					childChildren[0] = states.size();
-					Automatas.extractOnto(fromChild,from,states);
+					Automata.extractOnto(fromChild,from,states);
 					childChildren[1] = states.size();
-					states.add(new Automata.State(Type.K_NEGATION,null,false,states.size()+1));
-					Automatas.extractOnto(toChild,to,states);
+					states.add(new Automaton.State(Type.K_NEGATION,null,false,states.size()+1));
+					Automata.extractOnto(toChild,to,states);
 				}				
-				myState = new Automata.State(fromState.kind, fromState.data,
+				myState = new Automaton.State(fromState.kind, fromState.data,
 						true, myChildren);
 			default: {
 				// e.g. !INT & INT => INT
-				myState = new Automata.State(Type.K_VOID);				
+				myState = new Automaton.State(Type.K_VOID);				
 				break;
 			}		
 		}
@@ -1166,14 +1166,14 @@ public final class TypeAlgorithms {
 	 *            constructed.
 	 * @return
 	 */
-	private static Automata.State intersectPosNegOpenOpen(int fromIndex, Automata from,
-			int toIndex, Automata to,
+	private static Automaton.State intersectPosNegOpenOpen(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 		// FIXME: need to do better here
 		int myIndex = states.size()-1;
 		states.remove(myIndex);
-		Automatas.extractOnto(fromIndex,from,states);
+		Automata.extractOnto(fromIndex,from,states);
 		return states.get(myIndex); 
 	}
 
@@ -1210,14 +1210,14 @@ public final class TypeAlgorithms {
 	 *            constructed.
 	 * @return
 	 */
-	private static Automata.State intersectPosNegClosedOpen(
-			int fromIndex, Automata from, int toIndex, Automata to,
+	private static Automaton.State intersectPosNegClosedOpen(
+			int fromIndex, Automaton from, int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 
 		int oldSize = states.size(); // in case we need to back out
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];		
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
 		
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
@@ -1229,7 +1229,7 @@ public final class TypeAlgorithms {
 		if(fromChildren.length < toChildren.length) {
 			// no possible intersection so back out
 			states.remove(states.size()-1);
-			Automatas.extractOnto(fromIndex,from,states);
+			Automata.extractOnto(fromIndex,from,states);
 			return states.get(oldSize); // tad ugly perhaps			
 		}
 		
@@ -1257,7 +1257,7 @@ public final class TypeAlgorithms {
 			} 			
 			// no possible intersection so back out
 			states.remove(states.size()-1);
-			Automatas.extractOnto(fromIndex,from,states);
+			Automata.extractOnto(fromIndex,from,states);
 			return states.get(oldSize); // tad ugly perhaps			 
 		}
 		
@@ -1267,7 +1267,7 @@ public final class TypeAlgorithms {
 		int[] tmpChildren = new int[fromChildren.length];
 		for(int i=0;i!=fromChildren.length;++i) {
 			tmpChildren[i] = states.size();
-			Automatas.extractOnto(fromChildren[i],from,states);
+			Automata.extractOnto(fromChildren[i],from,states);
 		}				
 		int[] myChildren = new int[toChildren.length];
 		for(ti=0;ti!=toChildren.length;++ti) {
@@ -1285,10 +1285,10 @@ public final class TypeAlgorithms {
 				}
 			}
 			myChildren[ti] = states.size();
-			states.add(new Automata.State(fromState.kind, fromData, true,
+			states.add(new Automaton.State(fromState.kind, fromData, true,
 					myChildChildren));
 		}				
-		return new Automata.State(Type.K_UNION, null, false, myChildren);
+		return new Automaton.State(Type.K_UNION, null, false, myChildren);
 	}
 
 	/**
@@ -1322,15 +1322,15 @@ public final class TypeAlgorithms {
 	 *            constructed.
 	 * @return
 	 */
-	private static Automata.State intersectPosNegOpenClosed(
-			int fromIndex, Automata from, int toIndex, Automata to,
+	private static Automaton.State intersectPosNegOpenClosed(
+			int fromIndex, Automaton from, int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 		
 		// FIXME: need to do better here
 		int myIndex = states.size()-1;
 		states.remove(myIndex);
-		Automatas.extractOnto(fromIndex,from,states);
+		Automata.extractOnto(fromIndex,from,states);
 		return states.get(myIndex); 		
 	}
 	
@@ -1356,22 +1356,22 @@ public final class TypeAlgorithms {
 	 *            constructed/
 	 * @return
 	 */
-	private static int intersectSameKindNegPos(int fromIndex, Automata from,
-			int toIndex, Automata to,
+	private static int intersectSameKindNegPos(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 	
 		int myIndex = states.size()-1;
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];		
-		Automata.State myState;
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		Automaton.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_ANY: 
 			case Type.K_VOID: {
 				// !void & void => void
 				// !any & any => void
-				myState = new Automata.State(Type.K_VOID);				
+				myState = new Automaton.State(Type.K_VOID);				
 				break;
 			}
 				
@@ -1396,7 +1396,7 @@ public final class TypeAlgorithms {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. !{int f} & {int g} => {int g}
 					states.remove(states.size()-1);
-					Automatas.extractOnto(toIndex,to,states);
+					Automata.extractOnto(toIndex,to,states);
 					return myIndex;
 				}
 				// now fall through as for the other compound types.
@@ -1405,7 +1405,7 @@ public final class TypeAlgorithms {
 				if(fromState.children.length != toState.children.length) {					
 					// e.g. !(int,int) & (int) => (int)
 					states.remove(states.size()-1);
-					Automatas.extractOnto(toIndex,to,states);
+					Automata.extractOnto(toIndex,to,states);
 					return myIndex;
 				}
 			case Type.K_PROCESS: 
@@ -1432,7 +1432,7 @@ public final class TypeAlgorithms {
 				int[] tmpChildren = new int[fromChildren.length];
 				for(int i=0;i!=toChildren.length;++i) {
 					tmpChildren[i] = states.size();
-					Automatas.extractOnto(toChildren[i],to,states);
+					Automata.extractOnto(toChildren[i],to,states);
 				}				
 				int[] myChildren = new int[fromChildren.length];
 				for(int i=0;i!=fromChildren.length;++i) {
@@ -1448,10 +1448,10 @@ public final class TypeAlgorithms {
 						}
 					}
 					myChildren[i] = states.size();
-					states.add(new Automata.State(fromState.kind, myData,
+					states.add(new Automaton.State(fromState.kind, myData,
 							true, myChildChildren));
 				}				
-				myState = new Automata.State(Type.K_UNION, null,
+				myState = new Automaton.State(Type.K_UNION, null,
 						false, myChildren);
 				break;				
 			}							
@@ -1471,7 +1471,7 @@ public final class TypeAlgorithms {
 					newChildren[i] = intersect(fromIndex, false, from,
 							toChild, true, to, allocations, states);
 				}
-				myState = new Automata.State(Type.K_UNION, false, newChildren);
+				myState = new Automaton.State(Type.K_UNION, false, newChildren);
 				break;
 			}				
 			case Type.K_FUNCTION:
@@ -1507,18 +1507,18 @@ public final class TypeAlgorithms {
 					int toChild = toChildren[i];
 					int[] childChildren = new int[2];
 					myChildren[i] = states.size();					
-					states.add(new Automata.State(Type.K_UNION,null,false,childChildren));					
+					states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
 					childChildren[0] = states.size();
-					states.add(new Automata.State(Type.K_NEGATION,null,false,states.size()+1));
-					Automatas.extractOnto(fromChild,from,states);
+					states.add(new Automaton.State(Type.K_NEGATION,null,false,states.size()+1));
+					Automata.extractOnto(fromChild,from,states);
 					childChildren[1] = states.size();					
-					Automatas.extractOnto(toChild,to,states);
+					Automata.extractOnto(toChild,to,states);
 				}				
-				myState = new Automata.State(fromState.kind, fromState.data,
+				myState = new Automaton.State(fromState.kind, fromState.data,
 						true, myChildren);
 			default: {
 				// e.g. INT & !INT => INT
-				myState = new Automata.State(Type.K_VOID);				
+				myState = new Automaton.State(Type.K_VOID);				
 				break;
 			}		
 		}
@@ -1550,25 +1550,25 @@ public final class TypeAlgorithms {
 	 *            constructed/
 	 * @return
 	 */
-	private static int intersectSameKindNegNeg(int fromIndex, Automata from,
-			int toIndex, Automata to,
+	private static int intersectSameKindNegNeg(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automaton.State> states) {
 		
 		int myIndex = states.size()-1;
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];		
-		Automata.State myState;
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		Automaton.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_VOID: {
 				// !void & !void => any
-				myState = new Automata.State(Type.K_ANY);				
+				myState = new Automaton.State(Type.K_ANY);				
 				break;
 			}
 			case Type.K_ANY: {
 				// !any & !any -> void				
-				myState = new Automata.State(Type.K_VOID);				
+				myState = new Automaton.State(Type.K_VOID);				
 				break;
 			}				
 			case Type.K_LABEL:
@@ -1586,11 +1586,11 @@ public final class TypeAlgorithms {
 				int childIndex = states.size();						
 				states.add(null);
 				int fromChild = states.size();
-				Automatas.extractOnto(fromIndex,from,states);
+				Automata.extractOnto(fromIndex,from,states);
 				int toChild = states.size();
-				Automatas.extractOnto(toIndex,to,states);
-				states.set(childIndex, new Automata.State(Type.K_UNION,false,fromChild,toChild));
-				myState = new Automata.State(Type.K_NEGATION,childIndex);
+				Automata.extractOnto(toIndex,to,states);
+				states.set(childIndex, new Automaton.State(Type.K_UNION,false,fromChild,toChild));
+				myState = new Automaton.State(Type.K_NEGATION,childIndex);
 				break;
 			}				
 			case Type.K_NEGATION: {
@@ -1606,25 +1606,25 @@ public final class TypeAlgorithms {
 				int[] toChildren = toState.children;
 				int[] newChildren = new int[fromChildren.length+toChildren.length];
 				int childIndex = states.size();
-				states.add(new Automata.State(Type.K_UNION, false, newChildren));
+				states.add(new Automaton.State(Type.K_UNION, false, newChildren));
 				for (int i = 0; i != fromChildren.length; ++i) {
 					int fromChild = fromChildren[i];
 					newChildren[i] = states.size();
-					Automatas.extractOnto(fromChild,from,states);					
+					Automata.extractOnto(fromChild,from,states);					
 				}
 				for (int i = 0; i != toChildren.length; ++i) {
 					int toChild = toChildren[i];
 					newChildren[i+fromChildren.length] = states.size();
-					Automatas.extractOnto(toChild,to,states);					
+					Automata.extractOnto(toChild,to,states);					
 				}
-				myState = new Automata.State(Type.K_NEGATION, true, childIndex);
+				myState = new Automaton.State(Type.K_NEGATION, true, childIndex);
 				break;
 			}				
 			default: {
 				// e.g. !INT & !INT => !INT
 				int childIndex = states.size();
-				states.add(new Automata.State(fromState.kind));
-				myState = new Automata.State(Type.K_NEGATION,childIndex);			
+				states.add(new Automaton.State(fromState.kind));
+				myState = new Automaton.State(Type.K_NEGATION,childIndex);			
 				break;			
 			}		
 		}
@@ -1676,15 +1676,15 @@ public final class TypeAlgorithms {
 	 * @param automata
 	 * @return
 	 */
-	private static boolean flattenChildren(int index, Automata.State state,
-			Automata automata) {
+	private static boolean flattenChildren(int index, Automaton.State state,
+			Automaton automata) {
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
 		int[] children = state.children;
 		final int kind = state.kind;
 
 		for (int i = 0; i < children.length; ++i) {
 			int iChild = children[i];
-			Automata.State child = automata.states[iChild];
+			Automaton.State child = automata.states[iChild];
 			if (child.kind == kind) {
 				for (int c : child.children) {
 					nchildren.add(c);
@@ -1699,7 +1699,7 @@ public final class TypeAlgorithms {
 			children[i] = nchildren.get(i);
 		}
 
-		automata.states[index] = new Automata.State(kind, false, children);
+		automata.states[index] = new Automaton.State(kind, false, children);
 
 		return true;
 	}
@@ -1718,8 +1718,8 @@ public final class TypeAlgorithms {
 	 *            --- automata state whose children are to be sorted.
 	 * @return --- the start index of the negative children.
 	 */
-	private static int splitPositiveNegativeChildren(Automata.State state,
-			Automata automata) {
+	private static int splitPositiveNegativeChildren(Automaton.State state,
+			Automaton automata) {
 		int[] children = state.children;
 		int posIndex = advancePositive(0, children, automata);
 		int negIndex = retreatNegative(children.length - 1, children, automata);
@@ -1736,7 +1736,7 @@ public final class TypeAlgorithms {
 	}
 
 	private static int advancePositive(int index, int[] children,
-			Automata automata) {
+			Automaton automata) {
 		while (index < children.length
 				&& automata.states[children[index]].kind != Type.K_NEGATION) {
 			index = index + 1;
@@ -1745,7 +1745,7 @@ public final class TypeAlgorithms {
 	}
 
 	private static int retreatNegative(int index, int[] children,
-			Automata automata) {
+			Automaton automata) {
 		while (index > 0
 				&& automata.states[children[index]].kind == Type.K_NEGATION) {
 			index = index - 1;

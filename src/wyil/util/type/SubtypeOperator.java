@@ -51,11 +51,11 @@ import wyil.lang.Type;
  * 
  */
 public class SubtypeOperator {
-	protected final Automata from; 
-	protected final Automata to;
+	protected final Automaton from; 
+	protected final Automaton to;
 	private final BitSet assumptions;
 	
-	public SubtypeOperator(Automata from, Automata to) {
+	public SubtypeOperator(Automaton from, Automaton to) {
 		this.from = from;
 		this.to = to;
 		// matrix is twice the size to accommodate positive and negative signs 
@@ -127,8 +127,8 @@ public class SubtypeOperator {
 	protected boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {
 		
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
 		
@@ -359,8 +359,8 @@ public class SubtypeOperator {
 	 * @return --- true if such an intersection exists, false otherwise.
 	 */
 	protected boolean intersectRecords(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {				
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];
 		if(fromSign || toSign) {					
 			int[] fromChildren = fromState.children;
 			int[] toChildren = toState.children;						

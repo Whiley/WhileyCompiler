@@ -67,9 +67,9 @@ public class WhileyType implements BytecodeAttribute {
 		
 	public static void addPoolItems(Type type, Set<Constant.Info> constantPool) {
 		if (type instanceof Type.Compound) {
-			Automata automata = Type.destruct(type);
+			Automaton automata = Type.destruct(type);
 			for (int i = 0; i != automata.size(); ++i) {
-				Automata.State s = automata.states[i];
+				Automaton.State s = automata.states[i];
 				if (s.kind == Type.K_NOMINAL) {
 					NameID name = (NameID) s.data;
 					Constant.Utf8 utf8 = new Constant.Utf8(name.module()
@@ -135,8 +135,8 @@ public class WhileyType implements BytecodeAttribute {
 			this.constantPool = pool;
 		}
 				
-		public Automata.State readState() throws IOException {
-			Automata.State state = super.readState();			
+		public Automaton.State readState() throws IOException {
+			Automaton.State state = super.readState();			
 			if (state.kind == Type.K_NOMINAL) {
 				String modstr = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
@@ -171,7 +171,7 @@ public class WhileyType implements BytecodeAttribute {
 			this.constantPool = pool;
 		}
 		
-		public void write(Automata.State state) throws IOException {
+		public void write(Automaton.State state) throws IOException {
 			super.write(state);
 			if(state.kind == Type.K_NOMINAL) {
 				NameID name = (NameID) state.data;

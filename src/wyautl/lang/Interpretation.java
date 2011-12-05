@@ -27,5 +27,5 @@ public interface Interpretation<T> {
 	 * @param value
 	 * @return
 	 */
-	public boolean accepts(Automata automata, T value);	
+	public boolean accepts(Automaton automata, T value);	
 }

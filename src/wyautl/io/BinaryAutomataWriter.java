@@ -2,7 +2,7 @@ package wyautl.io;
 
 import java.io.IOException;
 
-import wyautl.lang.Automata;
+import wyautl.lang.Automaton;
 import wyjvm.io.BinaryOutputStream;
 
 /**
@@ -14,7 +14,7 @@ import wyjvm.io.BinaryOutputStream;
  * to deal with this.
  * </p>
  * <p>
- * <b>NOTE:</b> By default, this class complete ignores any supplementary data.
+ * <b>NOTE:</b> By default, this class completely ignores any supplementary data.
  * To allow writing this data, the client should extend this class and overwrite
  * the method <code>write(Automata.State)</code>. In such case, it is
  * recommended that <code>super.write(state)</code> is called before writing the
@@ -26,14 +26,14 @@ import wyjvm.io.BinaryOutputStream;
  * @author David J. Pearce
  * 
  */
-public class BinaryAutomataWriter implements GenericWriter<Automata> {		
+public class BinaryAutomataWriter implements GenericWriter<Automaton> {		
 	protected final BinaryOutputStream writer;	
 	
 	public BinaryAutomataWriter(BinaryOutputStream writer) {
 		this.writer = writer;			
 	}
 	
-	public void write(Automata automata) throws IOException {
+	public void write(Automaton automata) throws IOException {
 		int size = automata.size();		
 		writer.write_uv(size);
 		for(int i=0;i!=size;++i) {
@@ -41,7 +41,7 @@ public class BinaryAutomataWriter implements GenericWriter<Automata> {
 		}		
 	}
 	
-	protected void write(Automata.State state) throws IOException {
+	protected void write(Automaton.State state) throws IOException {
 		writer.write_uv(state.kind);
 		writer.write_bit(state.deterministic);
 		int[] children = state.children;		

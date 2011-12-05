@@ -1,6 +1,6 @@
 package wyautl.lang;
 
-import static wyautl.lang.Automata.State;
+import static wyautl.lang.Automaton.State;
 import wyautl.util.BinaryMatrix;
 
 /**
@@ -25,20 +25,20 @@ import wyautl.util.BinaryMatrix;
  */
 public class DefaultSubsumption implements Relation {
 	private final BinaryMatrix subsumes;
-	private final Automata from;
-	private final Automata to;
+	private final Automaton from;
+	private final Automaton to;
 	
-	public DefaultSubsumption(Automata from, Automata to) {
+	public DefaultSubsumption(Automaton from, Automaton to) {
 		this.from = from;
 		this.to = to;
 		this.subsumes = new BinaryMatrix(from.size(),to.size(),true);
 	}
 	
-	public final Automata from() {
+	public final Automaton from() {
 		return from;
 	}
 	
-	public final Automata to() {
+	public final Automaton to() {
 		return to;
 	}
 	

@@ -33,15 +33,15 @@ import wyautl.lang.*;
  */
 public class ImplicitCoercionOperator extends SubtypeOperator {
 	
-	public ImplicitCoercionOperator(Automata fromAutomata, Automata toAutomata) {
+	public ImplicitCoercionOperator(Automaton fromAutomata, Automaton toAutomata) {
 		super(fromAutomata,toAutomata);
 	}
 	
 	@Override
 	public boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {		
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
 		
@@ -63,7 +63,7 @@ public class ImplicitCoercionOperator extends SubtypeOperator {
 				int fromKey = fromState.children[0];
 				int fromValue = fromState.children[1];
 				int toChild = toState.children[0];
-				Automata.State fromKeyState = from.states[fromKey];
+				Automaton.State fromKeyState = from.states[fromKey];
 				if (fromKeyState.kind != K_INT) {
 					return fromSign != toSign;
 				} else if (!isIntersection(fromValue, fromSign, toChild, toSign)) {

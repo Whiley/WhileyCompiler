@@ -24,7 +24,7 @@ public class Generator {
 		 * @param state
 		 * @return
 		 */
-		public List<Object> generate(Automata.State state);
+		public List<Object> generate(Automaton.State state);
 	}
 	
 	public static final class Kind {
@@ -104,12 +104,12 @@ public class Generator {
 	 * @param writer
 	 */
 	private static void generate(Template template,
-			GenericWriter<Automata> writer, Config config) throws IOException {
+			GenericWriter<Automaton> writer, Config config) throws IOException {
 		
 		Kind[] KINDS = config.KINDS;
 		int[] kinds = template.kinds;
 		int[] nchildren = template.children;
-		Automata.State[] states = new Automata.State[kinds.length];
+		Automaton.State[] states = new Automaton.State[kinds.length];
 		
 		for(int i=0;i!=kinds.length;++i) {
 			int kind = kinds[i];
@@ -120,14 +120,14 @@ public class Generator {
 					children[index++] = j;
 				}
 			}						
-			states[i] = new Automata.State(kind,KINDS[kind].DETERMINISTIC,children);
+			states[i] = new Automaton.State(kind,KINDS[kind].DETERMINISTIC,children);
 		}
-		Automata automata = new Automata(states);							
+		Automaton automata = new Automaton(states);							
 		generate(0,automata,writer,config);	
 	}
 	
-	private static void generate(int index, Automata automata,
-			GenericWriter<Automata> writer, Config config) throws IOException {
+	private static void generate(int index, Automaton automata,
+			GenericWriter<Automaton> writer, Config config) throws IOException {
 		if(index >= automata.size()) {			
 			writer.write(automata);
 			writer.flush();
@@ -136,9 +136,9 @@ public class Generator {
 				System.err.print("\rWrote " + count + " automatas.");
 			}	
 		} else {			
-			Automata.State state = automata.states[index];			
+			Automaton.State state = automata.states[index];			
 			int[] state_children = state.children;
-			for(int[] nchildren : Automatas.permutations(state_children)) {
+			for(int[] nchildren : Automata.permutations(state_children)) {
 				state.children = nchildren;
 				generateData(index,automata,writer,config);				
 			}
@@ -146,9 +146,9 @@ public class Generator {
 	}
 	
 	
-	private static void generateData(int index, Automata automata,
-			GenericWriter<Automata> writer, Config config) throws IOException {
-		Automata.State state = automata.states[index];		
+	private static void generateData(int index, Automaton automata,
+			GenericWriter<Automaton> writer, Config config) throws IOException {
+		Automaton.State state = automata.states[index];		
 		Kind kind = config.KINDS[state.kind];
 		if (kind.DATA != null) {
 			// this kind requires supplementary data
@@ -182,7 +182,7 @@ public class Generator {
 	}
 	
 	private static void generate(int from, int to, Template base,
-			GenericWriter<Automata> writer, Config config) throws IOException {
+			GenericWriter<Automaton> writer, Config config) throws IOException {
 		int[] nchildren = base.children;
 		int[] kinds = base.kinds;
 		Kind fromKind = config.KINDS[kinds[from]];		
@@ -250,7 +250,7 @@ public class Generator {
 	}
 	
 	private static void generate(int index, Template base,
-			GenericWriter<Automata> writer, Config config) throws IOException {
+			GenericWriter<Automaton> writer, Config config) throws IOException {
 		if(index == config.SIZE) {
 			// now start generating transitions
 			generate(0,0,base,writer,config);
@@ -279,7 +279,7 @@ public class Generator {
 	 * @param writer
 	 *            --- generate automatas are written to this writer.
 	 */
-	public static void generate(GenericWriter<Automata> writer, Config config) throws IOException {
+	public static void generate(GenericWriter<Automaton> writer, Config config) throws IOException {
 		Template base = new Template(config.SIZE);
 		generate(0,base,writer,config);
 	}
@@ -295,7 +295,7 @@ public class Generator {
 		
 	public static void main(String[] args) {		
 		boolean binary = false;		
-		GenericWriter<Automata> writer;
+		GenericWriter<Automaton> writer;
 		OutputStream out = System.out;
 		int minSize = 1;
 		int maxSize = config.SIZE;

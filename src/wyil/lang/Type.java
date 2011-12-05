@@ -23,7 +23,7 @@ import java.util.*;
 
 import wyautl.io.*;
 import wyautl.lang.*;
-import wyautl.lang.Automata.State;
+import wyautl.lang.Automaton.State;
 import wyil.util.Pair;
 import wyil.util.type.*;
 import wyjvm.io.*;
@@ -293,7 +293,7 @@ public abstract class Type {
 			throw new IllegalArgumentException("cannot close a leaf type");
 		}
 		Compound compound = (Compound) type;
-		Automata automata = compound.automata;
+		Automaton automata = compound.automata;
 		State[] nodes = automata.states;
 		int[] rmap = new int[nodes.length];		
 		for (int i = 0; i != nodes.length; ++i) {
@@ -304,7 +304,7 @@ public abstract class Type {
 				rmap[i] = i;
 			}
 		}		
-		return construct(Automatas.remap(automata, rmap));
+		return construct(Automata.remap(automata, rmap));
 	}
 
 	/**
@@ -388,8 +388,8 @@ public abstract class Type {
 			Type t = construct(read());			
 			return t;
 		}
-		public Automata.State readState() throws IOException {
-			Automata.State state = super.readState();
+		public Automaton.State readState() throws IOException {
+			Automaton.State state = super.readState();
 			if (state.kind == Type.K_NOMINAL) {				
 				String module = readString();
 				String name = readString();
@@ -442,7 +442,7 @@ public abstract class Type {
 			write(destruct(t));			
 		}
 		
-		public void write(Automata.State state) throws IOException {
+		public void write(Automaton.State state) throws IOException {
 			super.write(state);			
 			if (state.kind == Type.K_NOMINAL) {
 				NameID name = (NameID) state.data;
@@ -479,8 +479,8 @@ public abstract class Type {
 	 * <code>t2</code> is a subset of that described by <code>t1</code>.
 	 */
 	public static boolean isImplicitCoerciveSubtype(Type t1, Type t2) {				
-		Automata a1 = destruct(t1);
-		Automata a2 = destruct(t2);
+		Automaton a1 = destruct(t1);
+		Automaton a2 = destruct(t2);
 		ImplicitCoercionOperator relation = new ImplicitCoercionOperator(a1,a2);				
 		return relation.isSubtype(0, 0); 
 	}
@@ -490,8 +490,8 @@ public abstract class Type {
 	 * subtype</i> of type <code>t1</code>.  
 	 */
 	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2) {				
-		Automata a1 = destruct(t1);
-		Automata a2 = destruct(t2);
+		Automaton a1 = destruct(t1);
+		Automaton a2 = destruct(t2);
 		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2);				
 		return relation.isSubtype(0, 0); 
 	}
@@ -503,8 +503,8 @@ public abstract class Type {
 	 * that described by <code>t1</code>.
 	 */
 	public static boolean isSubtype(Type t1, Type t2) {		
-		Automata a1 = destruct(t1);
-		Automata a2 = destruct(t2);
+		Automaton a1 = destruct(t1);
+		Automaton a2 = destruct(t2);
 		SubtypeOperator relation = new SubtypeOperator(a1,a2);		
 		return relation.isSubtype(0, 0);		
 	}
@@ -530,7 +530,7 @@ public abstract class Type {
 		if(type instanceof Leaf) {
 			return false;
 		} else {
-			Automata automata = ((Compound) type).automata;
+			Automaton automata = ((Compound) type).automata;
 			return TypeAlgorithms.isContractive(automata);
 		}
 	}
@@ -941,9 +941,9 @@ public abstract class Type {
 	 */
 
 	public static class Compound extends Type {
-		protected Automata automata;
+		protected Automaton automata;
 		
-		public Compound(Automata automata) {
+		public Compound(Automaton automata) {
 			this.automata = automata;
 		}
 		
@@ -992,14 +992,14 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class Tuple extends Compound  {
-		private Tuple(Automata automata) {
+		private Tuple(Automaton automata) {
 			super(automata);
 		}		
 		public java.util.List<Type> elements() {
 			int[] values = (int[]) automata.states[0].children;
 			ArrayList<Type> elems = new ArrayList<Type>();
 			for(Integer i : values) {
-				elems.add(construct(Automatas.extract(automata,i)));
+				elems.add(construct(Automata.extract(automata,i)));
 			}
 			return elems;
 		}		
@@ -1014,12 +1014,12 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class Set extends Compound  {
-		private Set(Automata automata) {
+		private Set(Automaton automata) {
 			super(automata);
 		}
 		public Type element() {			
 			int elemIdx = automata.states[0].children[0];
-			return construct(Automatas.extract(automata,elemIdx));			
+			return construct(Automata.extract(automata,elemIdx));			
 		}
 		boolean nonEmpty() {
 			return (Boolean) automata.states[0].data;
@@ -1035,13 +1035,13 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class List extends Compound  {
-		private List(Automata automata) {
+		private List(Automaton automata) {
 			super(automata);
 		}
 		
 		public Type element() {			
 			int elemIdx = automata.states[0].children[0];
-			return construct(Automatas.extract(automata,elemIdx));	
+			return construct(Automata.extract(automata,elemIdx));	
 		}
 		
 		boolean nonEmpty() {
@@ -1056,12 +1056,12 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class Process extends Compound  {
-		private Process(Automata automata) {
+		private Process(Automaton automata) {
 			super(automata);
 		}
 		public Type element() {
 			int elemIdx = automata.states[0].children[0];
-			return construct(Automatas.extract(automata,elemIdx));		
+			return construct(Automata.extract(automata,elemIdx));		
 		}		
 	}
 
@@ -1075,16 +1075,16 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class Dictionary extends Compound  {
-		private Dictionary(Automata automata) {
+		private Dictionary(Automaton automata) {
 			super(automata);
 		}
 		public Type key() {
 			int keyIdx = automata.states[0].children[0];
-			return construct(Automatas.extract(automata,keyIdx));				
+			return construct(Automata.extract(automata,keyIdx));				
 		}
 		public Type value() {
 			int valueIdx = automata.states[0].children[1];
-			return construct(Automatas.extract(automata,valueIdx));	
+			return construct(Automata.extract(automata,valueIdx));	
 		}
 	}
 
@@ -1098,7 +1098,7 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class Record extends Compound  {
-		private Record(Automata automata) {
+		private Record(Automaton automata) {
 			super(automata);
 		}
 		
@@ -1134,7 +1134,7 @@ public abstract class Type {
 			HashMap<String, Type> r = new HashMap<String, Type>();
 			for (int i = 0; i != children.length; ++i) {
 				r.put(fields.get(i),
-						construct(Automatas.extract(automata, children[i])));
+						construct(Automata.extract(automata, children[i])));
 			}
 			return r;
 		}
@@ -1173,7 +1173,7 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class Union extends Compound {
-		private Union(Automata automata) {
+		private Union(Automaton automata) {
 			super(automata);
 		}
 
@@ -1186,7 +1186,7 @@ public abstract class Type {
 			HashSet<Type> r = new HashSet<Type>();
 			int[] fields = (int[]) automata.states[0].children;
 			for(int i : fields) {
-				Type b = construct(Automatas.extract(automata,i));					
+				Type b = construct(Automata.extract(automata,i));					
 				r.add(b);					
 			}			
 			return r;
@@ -1201,13 +1201,13 @@ public abstract class Type {
 	 * 
 	 */
 	public static final class Negation extends Compound {
-		private Negation(Automata automata) {
+		private Negation(Automaton automata) {
 			super(automata);
 		}
 		
 		public Type element() {						
 			int[] fields = automata.states[0].children;
-			return construct(Automatas.extract(automata,fields[0]));			
+			return construct(Automata.extract(automata,fields[0]));			
 		}		
 	}
 	
@@ -1219,7 +1219,7 @@ public abstract class Type {
 	 * 
 	 */
 	public static class Function extends Compound  {
-		Function(Automata automata) {
+		Function(Automaton automata) {
 			super(automata);
 		}
 
@@ -1230,7 +1230,7 @@ public abstract class Type {
 		 */
 		public Type ret() {
 			int[] fields = automata.states[0].children;
-			return construct(Automatas.extract(automata, fields[0]));
+			return construct(Automata.extract(automata, fields[0]));
 		}	
 
 		/**
@@ -1240,7 +1240,7 @@ public abstract class Type {
 		 */
 		public Type throwsClause() {
 			int[] fields = automata.states[0].children;
-			return construct(Automatas.extract(automata, fields[1]));
+			return construct(Automata.extract(automata, fields[1]));
 		}
 		
 		/**
@@ -1252,14 +1252,14 @@ public abstract class Type {
 			int[] fields = automata.states[0].children;			
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=2;i<fields.length;++i) {
-				r.add(construct(Automatas.extract(automata, fields[i])));
+				r.add(construct(Automata.extract(automata, fields[i])));
 			}
 			return r;
 		}
 	}
 	
 	public static final class Method extends Function {
-		Method(Automata automata) {
+		Method(Automaton automata) {
 			super(automata);
 		}
 
@@ -1269,12 +1269,12 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type.Process receiver() {
-			Automata.State root = automata.states[0];
+			Automaton.State root = automata.states[0];
 			if(root.kind == K_HEADLESS) {
 				return null;
 			} else {
 				int[] fields = root.children;
-				return (Type.Process) construct(Automatas.extract(automata,
+				return (Type.Process) construct(Automata.extract(automata,
 					fields[0]));
 			}
 		}
@@ -1285,10 +1285,10 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type ret() {
-			Automata.State root = automata.states[0];
+			Automaton.State root = automata.states[0];
 			int[] fields = root.children;
 			int start = root.kind == K_HEADLESS ? 0 : 1;
-			return construct(Automatas.extract(automata, fields[start]));
+			return construct(Automata.extract(automata, fields[start]));
 		}	
 		
 		/**
@@ -1297,10 +1297,10 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type throwsClause() {
-			Automata.State root = automata.states[0];
+			Automaton.State root = automata.states[0];
 			int[] fields = root.children;
 			int start = root.kind == K_HEADLESS ? 1 : 2;
-			return construct(Automatas.extract(automata, fields[start]));
+			return construct(Automata.extract(automata, fields[start]));
 		}	
 		
 		/**
@@ -1309,12 +1309,12 @@ public abstract class Type {
 		 * @return
 		 */
 		public ArrayList<Type> params() {
-			Automata.State root = automata.states[0];
+			Automaton.State root = automata.states[0];
 			int[] fields = root.children;
 			int start = root.kind == K_HEADLESS ? 2 : 3;
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=start;i<fields.length;++i) {
-				r.add(construct(Automatas.extract(automata, fields[i])));
+				r.add(construct(Automata.extract(automata, fields[i])));
 			}
 			return r;
 		}
@@ -1338,7 +1338,7 @@ public abstract class Type {
 	 * @return --- string representation of automata.
 	 */
 	private final static String toString(int index, BitSet visited,
-			String[] headers, Automata automata) {
+			String[] headers, Automaton automata) {
 		if (visited.get(index)) {
 			// node already visited
 			return headers[index];
@@ -1509,7 +1509,7 @@ public abstract class Type {
 	}
 
 	private final static String toBracesString(int index, BitSet visited,
-			String[] headers, Automata automata) {
+			String[] headers, Automaton automata) {
 		if (visited.get(index)) {
 			// node already visited
 			return headers[index];
@@ -1545,7 +1545,7 @@ public abstract class Type {
 	 *            --- the automata we're traversing.
 	 */
 	private final static void findHeaders(int index, BitSet visited,
-			BitSet onStack, BitSet headers, Automata automata) {
+			BitSet onStack, BitSet headers, Automaton automata) {
 		if(visited.get(index)) {
 			// node already visited
 			if(onStack.get(index)) {
@@ -1614,7 +1614,7 @@ public abstract class Type {
 	 * @param nodes
 	 * @return
 	 */
-	public final static Type construct(Automata automata) {
+	public final static Type construct(Automaton automata) {
 		automata = normalise(automata);
 		// second, construc the appropriate face
 		State root = automata.states[0];
@@ -1710,13 +1710,13 @@ public abstract class Type {
 	private static Type construct(byte kind, Object data, Type... children) {
 		int[] nchildren = new int[children.length];
 		boolean deterministic = kind != K_UNION;
-		Automata automata = new Automata(new State(kind, data, deterministic, nchildren));
+		Automaton automata = new Automaton(new State(kind, data, deterministic, nchildren));
 		int start = 1;
 		int i=0;
 		for(Type element : children) {
 			nchildren[i] = start;
-			Automata child = destruct(element);
-			automata = Automatas.append(automata,child);
+			Automaton child = destruct(element);
+			automata = Automata.append(automata,child);
 			start += child.size();
 			i = i + 1;
 		}		 	
@@ -1734,13 +1734,13 @@ public abstract class Type {
 	private static Type construct(byte kind, Object data, Collection<Type> children) {						
 		int[] nchildren = new int[children.size()];
 		boolean deterministic = kind != K_UNION;
-		Automata automata = new Automata(new State(kind, data, deterministic, nchildren));
+		Automaton automata = new Automaton(new State(kind, data, deterministic, nchildren));
 		int start = 1;
 		int i=0;
 		for(Type element : children) {
 			nchildren[i] = start;
-			Automata child = destruct(element);
-			automata = Automatas.append(automata,child);
+			Automaton child = destruct(element);
+			automata = Automata.append(automata,child);
 			start += child.size();
 			i = i + 1;
 		}
@@ -1755,7 +1755,7 @@ public abstract class Type {
 	 * @param t --- type to be converted.
 	 * @return
 	 */
-	public static final Automata destruct(Type t) {
+	public static final Automaton destruct(Type t) {
 		if (t instanceof Leaf) {
 			int kind = leafKind((Leaf) t);
 			Object data = null;
@@ -1763,8 +1763,8 @@ public abstract class Type {
 				Nominal x = (Nominal) t;
 				data = x.nid;
 			}
-			State state = new State(kind, data, true, Automata.NOCHILDREN);
-			return new Automata(new State[] { state });
+			State state = new State(kind, data, true, Automaton.NOCHILDREN);
+			return new Automaton(new State[] { state });
 		} else {
 			// compound type
 			return ((Compound) t).automata;
@@ -1816,16 +1816,16 @@ public abstract class Type {
 	 * @param afterType
 	 * @return
 	 */
-	private static Automata normalise(Automata automata) {		
+	private static Automaton normalise(Automaton automata) {		
 		normalisedCount++;
 		unminimisedCount += automata.size();		
 		TypeAlgorithms.simplify(automata);
 		// TODO: extract in place to avoid allocating data unless necessary
-		automata = Automatas.extract(automata, 0);
+		automata = Automata.extract(automata, 0);
 		// TODO: minimise in place to avoid allocating data unless necessary
-		automata = Automatas.minimise(automata);
+		automata = Automata.minimise(automata);
 		if(canonicalisation) {
-			Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);
+			Automata.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);
 		} 
 		minimisedCount += automata.size();
 		return automata;
@@ -1855,13 +1855,13 @@ public abstract class Type {
 	public static final byte K_NOMINAL = 21;
 	public static final byte K_LABEL = 22;	
 	
-	private static final ArrayList<Automata> values = new ArrayList<Automata>();
-	private static final HashMap<Automata,Integer> cache = new HashMap<Automata,Integer>();
+	private static final ArrayList<Automaton> values = new ArrayList<Automaton>();
+	private static final HashMap<Automaton,Integer> cache = new HashMap<Automaton,Integer>();
 
 	/**
 	 * The following method is for implementing the fly-weight pattern.
 	 */
-	private static <T extends Automata> T get(T type) {
+	private static <T extends Automaton> T get(T type) {
 		Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) values.get(idx);

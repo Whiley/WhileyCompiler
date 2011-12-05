@@ -25,14 +25,14 @@ public interface Relation {
 	 * 
 	 * @return
 	 */
-	public Automata from();
+	public Automaton from();
 	
 	/**
 	 * Get the automata in the "to" position.
 	 * 
 	 * @return
 	 */
-	public Automata to();
+	public Automaton to();
 
 	/**
 	 * Check whether a node in the <code>from</code> automata, and a node in the

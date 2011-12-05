@@ -5,20 +5,20 @@ import java.util.*;
 
 import wyautl.io.*;
 import wyautl.lang.*;
-import wyautl.lang.DefaultInterpretation.Value;
+import wyautl.lang.DefaultInterpretation.Term;
 import wyjvm.io.BinaryInputStream;
 
 public class Tester {
 	
-	public static ArrayList<Value> readModel(GenericReader<Automata> reader, boolean verbose)
+	public static ArrayList<Term> readModel(GenericReader<Automaton> reader, boolean verbose)
 			throws IOException {
 		
-		ArrayList<Value> model = new ArrayList<Value>();
+		ArrayList<Term> model = new ArrayList<Term>();
 		try {
 			int count = 0;
 			while (true) {
-				Automata automata = reader.read();
-				Value value = DefaultInterpretation.construct(automata);
+				Automaton automata = reader.read();
+				Term value = DefaultInterpretation.construct(automata);
 				model.add(value);
 				if(verbose) {				
 					System.err.print("\rRead " + count + " values.");				
@@ -34,10 +34,10 @@ public class Tester {
 		return model;
 	}
 	
-	public static ArrayList<Automata> readAutomatas(GenericReader<Automata> reader, boolean verbose)
+	public static ArrayList<Automaton> readAutomatas(GenericReader<Automaton> reader, boolean verbose)
 			throws IOException {
 		
-		ArrayList<Automata> automatas = new ArrayList<Automata>();
+		ArrayList<Automaton> automatas = new ArrayList<Automaton>();
 		try {
 			int count = 0;
 			while (true) {			
@@ -56,10 +56,10 @@ public class Tester {
 		return automatas;
 	}
 	
-	public static BitSet accepts(Interpretation interpretation, Automata automata, ArrayList<Value> model) {
+	public static BitSet accepts(Interpretation interpretation, Automaton automata, ArrayList<Term> model) {
 		BitSet accepted = new BitSet(model.size());
 		for(int i=0;i!=model.size();++i) {
-			Value value = model.get(i);
+			Term value = model.get(i);
 			if(interpretation.accepts(automata,value)) {
 				accepted.set(i);
 			}
@@ -67,9 +67,9 @@ public class Tester {
 		return accepted;
 	}
 	
-	public static boolean isSubsumed(Automata a1, Automata a2) {
+	public static boolean isSubsumed(Automaton a1, Automaton a2) {
 		DefaultSubsumption relation = new DefaultSubsumption(a1, a2);
-		Automatas.computeFixpoint(relation);
+		Automata.computeFixpoint(relation);
 		return relation.isRelated(0, 0);
 	}
 	
@@ -81,11 +81,11 @@ public class Tester {
 	 * @param automatas
 	 */
 	public static void minimiseTest(Interpretation interpretation,
-			ArrayList<Value> model, ArrayList<Automata> automatas, boolean verbose) {
+			ArrayList<Term> model, ArrayList<Automaton> automatas, boolean verbose) {
 		int count = 0;
 		int size = automatas.size();
-		for (Automata automata : automatas) {			
-			Automata minimised = Automatas.minimise(automata);			
+		for (Automaton automata : automatas) {			
+			Automaton minimised = Automata.minimise(automata);			
 			BitSet oldAccepts = accepts(interpretation, automata, model);
 			BitSet newAccepts = accepts(interpretation, minimised, model);
 			if (!oldAccepts.equals(newAccepts)) {
@@ -108,11 +108,11 @@ public class Tester {
 	}
 	
 	public static void canonicaliseTest(Interpretation interpretation,
-			ArrayList<Value> model, ArrayList<Automata> automatas, boolean verbose) {
+			ArrayList<Term> model, ArrayList<Automaton> automatas, boolean verbose) {
 		int count = 0;
 		int size = automatas.size();
 		for (int i=0;i!=size;++i) {	
-			Automata ai = automatas.get(i);
+			Automaton ai = automatas.get(i);
 			
 			if(nonAccepting(ai)) {
 				continue;
@@ -120,7 +120,7 @@ public class Tester {
 			
 			BitSet oldAccepts = accepts(interpretation, ai, model);			
 			for (int j=i+1;j!=size;++j) {	
-				Automata aj = automatas.get(j);
+				Automaton aj = automatas.get(j);
 				BitSet newAccepts = accepts(interpretation, aj, model);
 				if(oldAccepts.equals(newAccepts) && !ai.equals(aj)) {
 					System.out.println("Possible canonicalisation unsoundness: "
@@ -135,7 +135,7 @@ public class Tester {
 		}
 	}	
 	
-	public static boolean nonAccepting(Automata a) {
+	public static boolean nonAccepting(Automaton a) {
 		for(int i=0;i!=a.size();++i) {
 			if(a.states[i].children.length == 0) {
 				return false;
@@ -144,7 +144,7 @@ public class Tester {
 		return true;
 	}
 	
-	public static void printAccepts(BitSet accepts, ArrayList<Value> model) {
+	public static void printAccepts(BitSet accepts, ArrayList<Term> model) {
 		System.out.print("{");
 		boolean firstTime=true;
 		for (int i = accepts.nextSetBit(0); i >= 0; i = accepts.nextSetBit(i+1)) {
@@ -181,10 +181,10 @@ public class Tester {
 			}
 						
 							
-			ArrayList<Value> model = readModel(
+			ArrayList<Term> model = readModel(
 					new BinaryAutomataReader(new BinaryInputStream(
 							new FileInputStream(args[index]))), verbose);
-			ArrayList<Automata> automatas = readAutomatas(
+			ArrayList<Automaton> automatas = readAutomatas(
 					new BinaryAutomataReader(new BinaryInputStream(
 							new FileInputStream(args[index + 1]))), verbose);
 			

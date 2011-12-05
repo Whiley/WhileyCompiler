@@ -2,7 +2,7 @@ package wyautl.io;
 
 import java.io.IOException;
 
-import wyautl.lang.Automata;
+import wyautl.lang.Automaton;
 import wyjvm.io.BinaryInputStream;
 
 /**
@@ -25,7 +25,7 @@ import wyjvm.io.BinaryInputStream;
  * @author David J. Pearce
  * 
  */
-public class BinaryAutomataReader implements GenericReader<Automata> {		
+public class BinaryAutomataReader implements GenericReader<Automaton> {		
 	protected final BinaryInputStream reader;	
 	
 	public BinaryAutomataReader(BinaryInputStream reader) {
@@ -36,16 +36,16 @@ public class BinaryAutomataReader implements GenericReader<Automata> {
 		reader.close();
 	}
 	
-	public Automata read() throws IOException {		
+	public Automaton read() throws IOException {		
 		int size = reader.read_uv();		
-		Automata.State[] states = new Automata.State[size];
+		Automaton.State[] states = new Automaton.State[size];
 		for(int i=0;i!=size;++i) {
 			states[i] = readState();			
 		}		
-		return new Automata(states);
+		return new Automaton(states);
 	}
 
-	protected Automata.State readState() throws IOException {
+	protected Automaton.State readState() throws IOException {
 		int kind = reader.read_uv();
 		boolean deterministic = reader.read_bit();
 		int nchildren = reader.read_uv();
@@ -53,6 +53,6 @@ public class BinaryAutomataReader implements GenericReader<Automata> {
 		for (int i=0;i!=nchildren;++i) {
 			children[i]=reader.read_uv();
 		}
-		return new Automata.State(kind,deterministic,children);
+		return new Automaton.State(kind,deterministic,children);
 	}
 }	
