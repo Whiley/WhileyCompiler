@@ -368,10 +368,10 @@ public class SubtypeOperator {
 			Type.Record.State toFields = (Type.Record.State) toState.data;
 			boolean toAllowedMore = fromFields.isOpen && fromSign && toSign;
 			boolean fromAllowedMore = toFields.isOpen && (!fromSign || !toSign);
-			
-			if (fromChildren.length < toChildren.length && toAllowedMore) {
+						
+			if (fromChildren.length < toChildren.length && !toAllowedMore) {
 				return !fromSign || !toSign;
-			} else if (fromChildren.length > toChildren.length  && fromAllowedMore) {
+			} else if (fromChildren.length > toChildren.length  && !fromAllowedMore) {
 				return !fromSign || !toSign;
 			}
 			
@@ -404,7 +404,8 @@ public class SubtypeOperator {
 						return !fromSign || !toSign; 
 					}					
 				}			
-			}					
+			}
+			
 			if(!fromSign || !toSign) {
 				return orChildren;
 			} else {

@@ -1269,6 +1269,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env falseEnv = null;								
 		Type glb = Type.intersect(lhs_t, code.test);		
 		
+		System.out.println("TESTING: " + code.test + " :> " + lhs_t);
+		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
 			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, stmt);
