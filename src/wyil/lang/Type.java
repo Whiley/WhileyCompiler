@@ -1898,8 +1898,8 @@ public abstract class Type {
 	public static void main(String[] args) {
 		//Type from = fromString("(null,null)");
 		//Type to = fromString("X<[X]>");				
-		Type from = fromString("{int f,...}");
-		Type to = fromString("{int f,string x}");
+		Type from = fromString("{int f}");
+		Type to = fromString("{int f,...}");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));		
 		//System.out.println(from + " & " + to + " = " + intersect(from,to));
 		//System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));

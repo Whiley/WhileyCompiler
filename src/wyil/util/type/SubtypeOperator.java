@@ -399,42 +399,59 @@ public class SubtypeOperator {
 				return !fromSign || !toSign;
 			} else if (fromChildren.length > toChildren.length  && !toOpen) {
 				return !fromSign || !toSign;
+			} else if (!fromSign && !fromOpen && toOpen) {
+				return true; // guaranteed true!
+			} else if (!toSign && !toOpen && fromOpen) {
+				return true; // guaranteed true!
 			}
 			
 			boolean andChildren = true;
 			boolean orChildren = false;
-			
+						
 			int fi=0;
 			int ti=0;
 			while(fi != fromFields.size() && ti != toFields.size()) {
+				boolean v;
 				String fn = fromFields.get(fi);
 				String tn = toFields.get(ti);
 				int c = fn.compareTo(tn);
 				if(c == 0) {					
 					int fromChild = fromChildren[fi++];
 					int toChild = toChildren[ti++];
-					boolean v = isIntersection(fromChild, fromSign, toChild,
-							toSign);
-					andChildren &= v;
-					orChildren |= v;					
-				} else if(c < 0) {
-					if(toOpen) {
-						fi++;
-					} else {
-						return !fromSign || !toSign; 
-					}
-				} else if(c > 0) {
-					if(fromOpen) {
-						ti++;
-					} else {						
-						return !fromSign || !toSign; 
-					}					
-				}			
+					v = isIntersection(fromChild, fromSign, toChild,
+							toSign);									
+				} else if(c < 0 && toOpen) {
+					fi++;
+					v = toSign;					
+				} else if(c > 0 && fromOpen) {
+					ti++;
+					v = fromSign;
+				} else {										
+					return !fromSign || !toSign; 
+				}
+				andChildren &= v;
+				orChildren |= v;
 			}
+						
+			if(fi < fromFields.size()) {
+				if(toOpen) {
+					orChildren |= toSign;
+					andChildren &= toSign;
+				} else {
+					return !fromSign || !toSign;
+				}
+			} else if(ti < toFields.size()) {
+				if(fromOpen) {
+					orChildren |= fromSign;
+					andChildren &= fromSign;
+				} else {
+					return !fromSign || !toSign;
+				}
+			} 
 			
 			if(!fromSign || !toSign) {
 				return orChildren;
-			} else {
+			} else {			
 				return andChildren;
 			}
 		}
