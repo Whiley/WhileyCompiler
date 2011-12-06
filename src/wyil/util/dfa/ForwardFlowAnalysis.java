@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wyc.stages.TypePropagation.Env;
 import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
@@ -70,14 +69,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		}		
 	}
 	
-	public Module.ConstDef propagate(Module.ConstDef constant) {
+	protected Module.ConstDef propagate(Module.ConstDef constant) {
 		return constant;
 	}
-	public Module.TypeDef propagate(Module.TypeDef type) {
+	
+	protected Module.TypeDef propagate(Module.TypeDef type) {
 		return type;
 	}
 	
-	public Module.Method propagate(Module.Method method) {
+	protected Module.Method propagate(Module.Method method) {
 		this.method = method;
 		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
 		for (Module.Case c : method.cases()) {
@@ -86,7 +86,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	public Module.Case propagate(Module.Case mcase) {
+	protected Module.Case propagate(Module.Case mcase) {
 		this.methodCase = mcase;		
 		this.stores = new HashMap<String,T>();
 		this.block = mcase.body();
@@ -205,7 +205,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		return store;
 	}
 	
-	protected void merge(String target, T store, Map<String, T> stores) {		
+	private void merge(String target, T store, Map<String, T> stores) {		
 		T old = stores.get(target);
 		if (old == null) {
 			stores.put(target, store);
