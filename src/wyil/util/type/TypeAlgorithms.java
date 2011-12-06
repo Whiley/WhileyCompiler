@@ -44,7 +44,7 @@ public final class TypeAlgorithms {
 
 	/**
 	 * The data comparator is used in the type canonicalisation process. It is
-	 * used to compare the supplementary data of states in automatons
+	 * used to compare the supplementary data of states in automata
 	 * representing types. Supplementary data is used for record kinds and 
 	 */
 	public static final Comparator<Automaton.State> DATA_COMPARATOR = new Comparator<Automaton.State>() {

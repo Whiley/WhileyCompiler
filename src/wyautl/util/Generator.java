@@ -292,17 +292,17 @@ public class Generator {
 	}
 	
 	/**
-	 * The generate method generates all possible automatas matching of a given
+	 * The generate method generates all possible automata matching of a given
 	 * size. Observe that this may be an extremely expensive operation, and
 	 * significant care must be exercised in setting the configuration
 	 * parameters!
 	 * 
 	 * @param size
-	 *            --- generated automatas will have exactly this size.
+	 *            --- generated automata will have exactly this size.
 	 * @param recursive
-	 *            --- generated automatas permit recursive links.
+	 *            --- generated automata permit recursive links.
 	 * @param writer
-	 *            --- generate automatas are written to this writer.
+	 *            --- generate automata are written to this writer.
 	 */
 	public static void generate(GenericWriter<Automaton> writer, Config config) throws IOException {
 		Template base = new Template(config.SIZE);
@@ -368,7 +368,7 @@ public class Generator {
 				generate(writer,config);				
 			}			
 			if(!verbose) {
-				System.err.print("\rWrote " + count + " automatas.");
+				System.err.print("\rWrote " + count + " automata.");
 			}
 			writer.close();									
 		} catch(IOException ex) {
