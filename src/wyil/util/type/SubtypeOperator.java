@@ -391,12 +391,13 @@ public class SubtypeOperator {
 			int[] toChildren = toState.children;						
 			Type.Record.State fromFields = (Type.Record.State) fromState.data;
 			Type.Record.State toFields = (Type.Record.State) toState.data;
-			boolean toAllowedMore = (fromFields.isOpen && fromSign) || (toFields.isOpen && (!fromSign || !toSign));
-			boolean fromAllowedMore = (toFields.isOpen && toSign) || (fromFields.isOpen && (!fromSign || !toSign));
-						
-			if (fromChildren.length < toChildren.length && !toAllowedMore) {
+			
+			boolean fromOpen = fromFields.isOpen;
+			boolean toOpen = toFields.isOpen;
+			
+			if (fromChildren.length < toChildren.length && !fromOpen) {
 				return !fromSign || !toSign;
-			} else if (fromChildren.length > toChildren.length  && !fromAllowedMore) {
+			} else if (fromChildren.length > toChildren.length  && !toOpen) {
 				return !fromSign || !toSign;
 			}
 			
@@ -417,13 +418,13 @@ public class SubtypeOperator {
 					andChildren &= v;
 					orChildren |= v;					
 				} else if(c < 0) {
-					if(fromAllowedMore) {
+					if(toOpen) {
 						fi++;
 					} else {
 						return !fromSign || !toSign; 
 					}
 				} else if(c > 0) {
-					if(toAllowedMore) {
+					if(fromOpen) {
 						ti++;
 					} else {						
 						return !fromSign || !toSign; 
