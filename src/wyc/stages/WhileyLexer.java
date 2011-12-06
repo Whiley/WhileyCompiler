@@ -32,6 +32,13 @@ import java.util.*;
 import wyil.util.SyntaxError;
 import wyjc.runtime.BigRational;
 
+/**
+ * Split a source file into a list of tokens. These tokens can then be fed into
+ * the parser in order to generate an Abstract Syntax Tree (AST).
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class WhileyLexer {	
 	private String filename;
 	private String input;
@@ -47,9 +54,7 @@ public class WhileyLexer {
 		this(new InputStreamReader(instream,"UTF8"));		
 	}
 	
-	public WhileyLexer(Reader reader) throws IOException {
-		BufferedReader in = new BufferedReader(reader);
-		
+	public WhileyLexer(Reader reader) throws IOException {	
 		StringBuilder tmp = new StringBuilder();	    
 	    int len = 0;
 	    char[] buf = new char[1024]; 

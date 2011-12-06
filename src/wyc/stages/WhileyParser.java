@@ -39,7 +39,16 @@ import wyjvm.lang.Bytecode;
 
 import static wyc.stages.WhileyLexer.*;
 
-public class WhileyParser {
+/**
+ * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
+ * original source file in question. No effort is made to check whether or not
+ * the generated tree is syntactically correct. Subsequent stages of the
+ * compiler are responsible for doing this.
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public final class WhileyParser {
 	private String filename;
 	private ArrayList<Token> tokens;	
 	private int index;
@@ -271,13 +280,13 @@ public class WhileyParser {
 		return mods;
 	}
 	
-	public String[] modifiers = {
+	private String[] modifiers = {
 			"public",
 			"export",
 			"native"			
 	};
 	
-	public boolean isModifier(Token tok) {
+	private boolean isModifier(Token tok) {
 		for(String m : modifiers) {
 			if(tok.text.equals(m)) {
 				return true;
@@ -1014,7 +1023,7 @@ public class WhileyParser {
 		return t instanceof Star || t instanceof RightSlash || t instanceof Percent;
 	}
 	
-	public Expr.BOp mulDivOp(Token t) {
+	private Expr.BOp mulDivOp(Token t) {
 		if(t instanceof Star) {
 			return Expr.BOp.MUL;
 		} else if(t instanceof RightSlash) {

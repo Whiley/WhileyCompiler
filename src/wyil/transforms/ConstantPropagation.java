@@ -30,7 +30,6 @@ import static wyil.util.SyntaxError.internalFailure;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyc.stages.TypePropagation.Env;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;

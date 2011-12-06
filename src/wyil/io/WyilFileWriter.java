@@ -28,7 +28,6 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
-import wyc.stages.TypePropagation.Env;
 import wyil.lang.*;
 import wyil.lang.Module.*;
 import wyil.ModuleLoader;
