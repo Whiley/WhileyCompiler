@@ -33,13 +33,17 @@ import java.util.jar.JarFile;
 import wyjc.io.ClassFileLoader; // to be deprecated
 import wyil.io.*;
 import wyil.lang.*;
-import wyil.path.Path;
 import wyil.util.*;
+import wyil.util.path.Path;
 
 /**
- * Responsible for locating whiley modules on the WHILEYPATH, and retaining
- * information about them which can be used to compile other whiley files. This
- * is a critical component of the Whiley compiler.
+ * Responsible for locating whiley modules on the WHILEYPATH and SOURCEPATH, and
+ * retaining information about them which can be used to compile other whiley
+ * files. The WHILEYPATH and SOURCEPATH consist of a list of "package roots",
+ * where each root can be a directory, a Jar file, or even something else.
+ * 
+ * <b>NOTE:</b> This class is designed to be subclassed. However, in the future,
+ * it should be turned into an interface.
  * 
  * @author David J. Pearce
  * 
