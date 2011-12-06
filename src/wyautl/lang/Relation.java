@@ -46,27 +46,27 @@ package wyautl.lang;
 public interface Relation {
 	
 	/**
-	 * Get the automata in the "from" position.
+	 * Get the automaton in the "from" position.
 	 * 
 	 * @return
 	 */
 	public Automaton from();
 	
 	/**
-	 * Get the automata in the "to" position.
+	 * Get the automaton in the "to" position.
 	 * 
 	 * @return
 	 */
 	public Automaton to();
 
 	/**
-	 * Check whether a node in the <code>from</code> automata, and a node in the
-	 * <code>to</code> automata are related or not.
+	 * Check whether a node in the <code>from</code> automaton, and a node in the
+	 * <code>to</code> automaton are related or not.
 	 * 
 	 * @param from
-	 *            --- An index into automata <code>from</code>.
+	 *            --- An index into automaton <code>from</code>.
 	 * @param to
-	 *            --- An index into automata <code>to</code>.
+	 *            --- An index into automaton <code>to</code>.
 	 * @return
 	 */
 	public boolean isRelated(int from, int to);
@@ -74,13 +74,13 @@ public interface Relation {
 	/**
 	 * <p>
 	 * Recalculate the relationship status between a node in the
-	 * <code>from</code> automata, and a node in the <code>to</code> automata.
+	 * <code>from</code> automaton, and a node in the <code>to</code> automaton.
 	 * </p>
 	 * 
 	 * @param from
-	 *            --- An index into automata <code>from</code>.
+	 *            --- An index into automaton <code>from</code>.
 	 * @param to
-	 *            --- An index into automata <code>to</code>.
+	 *            --- An index into automaton <code>to</code>.
 	 * @return --- true if their status changed, false otherwise.
 	 */
 	public boolean update(int from, int to);

@@ -46,11 +46,11 @@ package wyautl.lang;
 public interface Interpretation<T> {
 
 	/**
-	 * Returns true iff the given automata accepts the given value.
+	 * Returns true iff the given automaton accepts the given value.
 	 * 
-	 * @param automata
+	 * @param automaton
 	 * @param value
 	 * @return
 	 */
-	public boolean accepts(Automaton automata, T value);	
+	public boolean accepts(Automaton automaton, T value);	
 }

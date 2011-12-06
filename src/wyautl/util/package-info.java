@@ -24,6 +24,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * Provides various utility classes, primarily for generating and testing automatas. 
+ * Provides various utility classes, primarily for generating and testing automata. 
  */
 package wyautl.util;

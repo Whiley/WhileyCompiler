@@ -67,9 +67,9 @@ public class WhileyType implements BytecodeAttribute {
 		
 	public static void addPoolItems(Type type, Set<Constant.Info> constantPool) {
 		if (type instanceof Type.Compound) {
-			Automaton automata = Type.destruct(type);
-			for (int i = 0; i != automata.size(); ++i) {
-				Automaton.State s = automata.states[i];
+			Automaton automaton = Type.destruct(type);
+			for (int i = 0; i != automaton.size(); ++i) {
+				Automaton.State s = automaton.states[i];
 				if (s.kind == Type.K_NOMINAL) {
 					NameID name = (NameID) s.data;
 					Constant.Utf8 utf8 = new Constant.Utf8(name.module()

@@ -55,13 +55,13 @@ public class TypeTester {
 		 */
 		private BitSet visited;
 		
-		public boolean accepts(Automaton automata, Term value) {
-			visited = new BitSet(automata.size());
-			return super.accepts(automata,value); 
+		public boolean accepts(Automaton automaton, Term value) {
+			visited = new BitSet(automaton.size());
+			return super.accepts(automaton,value); 
 		}
 		
-		public boolean accepts(int index, Automaton automata, Term value) {
-			Automaton.State state = automata.states[index];
+		public boolean accepts(int index, Automaton automaton, Term value) {
+			Automaton.State state = automaton.states[index];
 			
 			if (visited.get(index)) {
 				return false;
@@ -80,11 +80,11 @@ public class TypeTester {
 				if(value.kind != state.kind) { 
 					return false;
 				}				
-				int child = automata.states[index].children[0];
+				int child = automaton.states[index].children[0];
 				Term[] values = value.children;				
 				for(int i=0;i!=values.length;++i) {									
 					Term vchild = values[i];
-					if(!accepts(child,automata,vchild)) {
+					if(!accepts(child,automaton,vchild)) {
 						return false;
 					}
 				}
@@ -104,34 +104,34 @@ public class TypeTester {
 				for(int i=start;i<length;++i) {
 					int schild = schildren[i];					
 					Term vchild = vchildren[i];
-					if(accepts(schild,automata,vchild)) {
+					if(accepts(schild,automaton,vchild)) {
 						return false;
 					}
 				}
 				// Second, do return values (which are covariant)
-				if(!accepts(schildren[start],automata,vchildren[start])) {
+				if(!accepts(schildren[start],automaton,vchildren[start])) {
 					return false;
 				}
 				// Third, do return values (which should be contra-variant)
 				if(state.kind == Type.K_METHOD) {
-					if(accepts(schildren[start],automata,vchildren[start])) {
+					if(accepts(schildren[start],automaton,vchildren[start])) {
 						return false;
 					}
 				}
 				return true;
 			}			
 			case Type.K_NEGATION: {
-				int child = automata.states[index].children[0];
+				int child = automaton.states[index].children[0];
 				visited.set(index);				
-				return !accepts(child,automata,value);
+				return !accepts(child,automaton,value);
 			}
 			case Type.K_UNION: {
-				int[] children = automata.states[index].children;
+				int[] children = automaton.states[index].children;
 				visited.set(index);
 				BitSet copy = visited;
 				for(int child : children) {
 					visited = (BitSet) copy.clone();
-					if(accepts(child,automata,value)) {
+					if(accepts(child,automaton,value)) {
 						return true;
 					}
 				}				
@@ -139,7 +139,7 @@ public class TypeTester {
 				return false;
 			}			
 			}
-			return super.accepts(index,automata,value);
+			return super.accepts(index,automaton,value);
 		}
 	}
 	

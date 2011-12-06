@@ -24,6 +24,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * Provides core classes for representing and manipulating automatas.  
+ * Provides core classes for representing and manipulating automata.  
  */
 package wyautl.lang;

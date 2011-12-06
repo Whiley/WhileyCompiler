@@ -33,7 +33,7 @@ import wyautl.io.*;
 import wyautl.lang.*;
 
 /**
- * The generator class is used generate automatas, primarily for testing
+ * The generator class is used generate automata, primarily for testing
  * purposes.
  * 
  * @author David J. Pearce
@@ -93,7 +93,7 @@ public class Generator {
 		public boolean RECURSIVE;
 		
 		/**
-		 * Determine size of automatas to generate.
+		 * Determine size of automata to generate.
 		 */
 		public int SIZE;
 	}
@@ -123,7 +123,7 @@ public class Generator {
 	}
 	
 	/**
-	 * Turn a template into an actual automata.
+	 * Turn a template into an actual automaton.
 	 * 
 	 * @param template
 	 * @param writer
@@ -147,43 +147,43 @@ public class Generator {
 			}						
 			states[i] = new Automaton.State(kind,KINDS[kind].DETERMINISTIC,children);
 		}
-		Automaton automata = new Automaton(states);							
-		generate(0,automata,writer,config);	
+		Automaton automaton = new Automaton(states);							
+		generate(0,automaton,writer,config);	
 	}
 	
-	private static void generate(int index, Automaton automata,
+	private static void generate(int index, Automaton automaton,
 			GenericWriter<Automaton> writer, Config config) throws IOException {
-		if(index >= automata.size()) {			
-			writer.write(automata);
+		if(index >= automaton.size()) {			
+			writer.write(automaton);
 			writer.flush();
 			count++;
 			if(verbose) {
-				System.err.print("\rWrote " + count + " automatas.");
+				System.err.print("\rWrote " + count + " automata.");
 			}	
 		} else {			
-			Automaton.State state = automata.states[index];			
+			Automaton.State state = automaton.states[index];			
 			int[] state_children = state.children;
 			for(int[] nchildren : Automata.permutations(state_children)) {
 				state.children = nchildren;
-				generateData(index,automata,writer,config);				
+				generateData(index,automaton,writer,config);				
 			}
 		}
 	}
 	
 	
-	private static void generateData(int index, Automaton automata,
+	private static void generateData(int index, Automaton automaton,
 			GenericWriter<Automaton> writer, Config config) throws IOException {
-		Automaton.State state = automata.states[index];		
+		Automaton.State state = automaton.states[index];		
 		Kind kind = config.KINDS[state.kind];
 		if (kind.DATA != null) {
 			// this kind requires supplementary data
 			List<Object> datas = kind.DATA.generate(state);
 			for (Object data : datas) {
 				state.data = data;
-				generate(index + 1, automata, writer, config);
+				generate(index + 1, automaton, writer, config);
 			}
 		} else {
-			generate(index + 1, automata, writer, config);
+			generate(index + 1, automaton, writer, config);
 		}
 	}
 	
@@ -214,7 +214,7 @@ public class Generator {
 		
 		if(to >= config.SIZE) {	
 			if(nchildren[from] < fromKind.MIN_CHILDREN){
-				// this indicates an invalid automata, since this state doesn't
+				// this indicates an invalid automaton, since this state doesn't
 				// have enough children.				
 				return;
 			} 
@@ -236,7 +236,7 @@ public class Generator {
 			to = from;
 			
 			if(to >= config.SIZE) {
-				// ok, generate the automata.				
+				// ok, generate the automaton.				
 				generate(base,writer,config);
 				return;
 			} 

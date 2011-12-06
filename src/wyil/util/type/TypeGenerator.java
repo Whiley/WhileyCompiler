@@ -45,10 +45,10 @@ public class TypeGenerator {
 			super(output);
 		}
 		
-		public void write(Automaton automata) throws IOException {						
-			Type t = Type.construct(new Automaton(automata));
+		public void write(Automaton automaton) throws IOException {						
+			Type t = Type.construct(new Automaton(automaton));
 			if (t != Type.T_VOID) {
-				super.write(automata);
+				super.write(automaton);
 				count++;
 				if (verbose) {
 					System.err.print("\rWrote " + count + " types.");					
@@ -64,8 +64,8 @@ public class TypeGenerator {
 			this.output = output;
 		}
 
-		public void write(Automaton automata) throws IOException {						
-			Type t = Type.construct(Automata.extract(automata,0));
+		public void write(Automaton automaton) throws IOException {						
+			Type t = Type.construct(Automata.extract(automaton,0));
 			if (t != Type.T_VOID) {
 				output.println(t);
 				count++;
@@ -84,8 +84,8 @@ public class TypeGenerator {
 		}
 	}	
 	
-	public static boolean isContractive(Automaton automata) {		
-		BitSet contractives = new BitSet(automata.size());
+	public static boolean isContractive(Automaton automaton) {		
+		BitSet contractives = new BitSet(automaton.size());
 		// initially all nodes are considered contracive.
 		contractives.set(0,contractives.size(),true);
 		boolean changed = true;
@@ -93,9 +93,9 @@ public class TypeGenerator {
 		while(changed) {
 			changed=false;
 			contractive = false;
-			for(int i=0;i!=automata.size();++i) {
+			for(int i=0;i!=automaton.size();++i) {
 				boolean oldVal = contractives.get(i);
-				boolean newVal = isContractive(i,contractives,automata);
+				boolean newVal = isContractive(i,contractives,automaton);
 				if(oldVal && !newVal) {
 					contractives.set(i,newVal);
 					changed = true;
@@ -108,8 +108,8 @@ public class TypeGenerator {
 	}
 	
 	private static boolean isContractive(int index, BitSet contractives,
-			Automaton automata) {
-		Automaton.State state = automata.states[index];
+			Automaton automaton) {
+		Automaton.State state = automaton.states[index];
 		int[] children = state.children;
 		if(children.length == 0) {
 			return false;

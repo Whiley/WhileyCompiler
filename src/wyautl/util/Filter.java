@@ -95,25 +95,25 @@ public class Filter {
 			try {
 				HashSet<Automaton> visited = new HashSet<Automaton>();
 				while(true) {
-					Automaton automata = reader.read();					
+					Automaton automaton = reader.read();					
 					nread++;
 					
 					if(extract) {						
-						automata = Automata.extract(automata,0);
+						automaton = Automata.extract(automaton,0);
 					}
 					
 					if(minimise) {
-						automata = Automata.minimise(automata);
+						automaton = Automata.minimise(automaton);
 					}
 					
 					if(canonicalise) {
-						Automata.canonicalise(automata,null);
+						Automata.canonicalise(automaton,null);
 					}
 					
-					if(!reduce || !visited.contains(automata)) {					
+					if(!reduce || !visited.contains(automaton)) {					
 						nwritten++;
-						writer.write(automata);
-						if(reduce) { visited.add(automata); }
+						writer.write(automaton);
+						if(reduce) { visited.add(automaton); }
 					}
 					
 					if(verbose) {
