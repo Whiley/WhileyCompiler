@@ -33,7 +33,17 @@ import wyil.lang.Module.*;
 import wyil.ModuleLoader;
 import wyil.Transform;
 
-public class WyilFileWriter implements Transform {
+/**
+ * Writes WYIL bytecodes in a textual from to a given file.
+ * 
+ * <b>NOTE:</b> currently, this class is somewhat broken since it does not
+ * provide any way to specify the output directory. Rather, it simply puts the
+ * WYIL file in the same place as the Whiley file.
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public final class WyilFileWriter implements Transform {
 	private PrintWriter out;
 	private boolean writeLabels;
 	private boolean writeAttributes;
@@ -99,13 +109,13 @@ public class WyilFileWriter implements Transform {
 		out.flush();		
 	}
 	
-	public void write(Method method, PrintWriter out) {
+	private void write(Method method, PrintWriter out) {
 		for (Case c : method.cases()) {
 			write(c, method, out);
 		}
 	}
 	
-	public void write(Case mcase, Method method, PrintWriter out) {
+	private void write(Case mcase, Method method, PrintWriter out) {
 		writeModifiers(method.modifiers(),out);
 		Type.Function ft = method.type(); 
 		out.print(ft.ret() + " ");
@@ -178,7 +188,7 @@ public class WyilFileWriter implements Transform {
 		write(0,mcase.body(),locals,out);	
 	}
 	
-	public void write(int indent, Block blk, List<String> locals, PrintWriter out) {
+	private void write(int indent, Block blk, List<String> locals, PrintWriter out) {
 		for(Block.Entry s : blk) {
 			if(s.code instanceof Code.LoopEnd) {				
 				--indent;
@@ -196,7 +206,7 @@ public class WyilFileWriter implements Transform {
 		}
 	}
 	
-	public void write(int indent, Code c, List<Attribute> attributes, List<String> locals, PrintWriter out) {		
+	private void write(int indent, Code c, List<Attribute> attributes, List<String> locals, PrintWriter out) {		
 		String line = "null";		
 		tabIndent(indent+1,out);
 	
@@ -272,14 +282,14 @@ public class WyilFileWriter implements Transform {
 		out.println();
 	}
 	
-	public static void writeModifiers(List<Modifier> modifiers, PrintWriter out) {		
+	private static void writeModifiers(List<Modifier> modifiers, PrintWriter out) {		
 		for(Modifier m : modifiers) {						
 			out.print(m.toString());
 			out.print(" ");
 		}
 	}
 	
-	public static String getLocal(int index, List<String> locals) {
+	private static String getLocal(int index, List<String> locals) {
 		if(index < locals.size()) {
 			// is a named local
 			return locals.get(index);
@@ -288,7 +298,7 @@ public class WyilFileWriter implements Transform {
 		}
 	}
 	
-	public static void tabIndent(int indent, PrintWriter out) {
+	private static void tabIndent(int indent, PrintWriter out) {
 		indent = indent * 4;
 		for(int i=0;i<indent;++i) {
 			out.print(" ");

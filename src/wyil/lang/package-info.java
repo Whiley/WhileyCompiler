@@ -23,9 +23,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 /**
  * Provides core classes for representing WYIL modules and bytecodes. 
- * 
  * @author David J. Pearce
  */
 package wyil.lang;

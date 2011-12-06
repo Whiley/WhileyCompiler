@@ -30,9 +30,42 @@ import wyil.util.*;
 
 /**
  * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
- * stack-based bytecodes, similar to the Java Virtual Machine. Bytecodes may
- * push/pop values from the stack, and store/load them from the local variable
- * array.
+ * stack-based bytecodes, similar to the Java Virtual Machine. The frame of each
+ * function/method consists of zero or more <i>local variables</i> (a.k.a
+ * registers) and a stack of unbounded depth. Bytecodes may push/pop values from
+ * the stack, and store/load them from local variables. Like Java bytecode, WYIL
+ * uses unstructured control-flow and allows variables to take on different
+ * types at different points. For example:
+ * 
+ * <pre>
+ * int sum([int] data):
+ *    r = 0
+ *    for item in data:
+ *       r = r + item
+ *    return r
+ * </pre>
+ * 
+ * This function is compiled into the following WYIL bytecode:
+ * 
+ * <pre>
+ * int sum([int] data):
+ * body: 
+ *   var r, $2, item
+ *   const 0 : int                           
+ *   store r : int                           
+ *   move data : [int]                       
+ *   forall item [r] : [int]                 
+ *       move r : int                            
+ *       load item : int                         
+ *       add : int                               
+ *       store r : int                           
+ *   move r : int                            
+ *   return : int
+ * </pre>
+ * 
+ * Here, we can see that every bytecode is associated with one (or more) types.
+ * These types are inferred by the compiler during type propagation.
+ * 
  * 
  * @author djp
  * 

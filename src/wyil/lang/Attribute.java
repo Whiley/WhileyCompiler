@@ -30,7 +30,7 @@ package wyil.lang;
  * bytecode or declaration. For example, the location of the element in the
  * source code which generated this bytecode.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface Attribute {
@@ -40,7 +40,7 @@ public interface Attribute {
 	 * this may be the location which generated a particular bytecode, or the
 	 * location of a particular type declaration.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final static class Source implements Attribute {
