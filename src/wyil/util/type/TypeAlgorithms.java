@@ -846,7 +846,7 @@ public final class TypeAlgorithms {
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = from.states[toIndex];
+		Automaton.State toState = to.states[toIndex];
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 		Type.Record.State myData = new Type.Record.State(true);		

@@ -1340,7 +1340,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(src_t instanceof Type.Dictionary){
 			Type.Dictionary d = (Type.Dictionary) src_t;			
 			elem_t = Type.Tuple(d.key(),d.value());
-		} else {
+		} else {			
 			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);			
 			return null; // deadcode
 		}
