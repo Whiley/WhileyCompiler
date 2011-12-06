@@ -44,7 +44,7 @@ public final class TypeAlgorithms {
 
 	/**
 	 * The data comparator is used in the type canonicalisation process. It is
-	 * used to compare the supplementary data of states in automatas
+	 * used to compare the supplementary data of states in automatons
 	 * representing types. Supplementary data is used for record kinds and 
 	 */
 	public static final Comparator<Automaton.State> DATA_COMPARATOR = new Comparator<Automaton.State>() {
@@ -105,23 +105,23 @@ public final class TypeAlgorithms {
 	 * @param type --- type to test for contractivity.
 	 * @return
 	 */
-	public static boolean isContractive(Automaton automata) {		
-		BitSet contractives = new BitSet(automata.size());
+	public static boolean isContractive(Automaton automaton) {		
+		BitSet contractives = new BitSet(automaton.size());
 		// TODO: optimise away the need to initialise the contractives
-		contractives.set(0,automata.size(),true);
+		contractives.set(0,automaton.size(),true);
 		// initially all nodes are considered contracive.
-		return findContractives(automata,contractives);
+		return findContractives(automaton,contractives);
 	}
 	
-	private static boolean findContractives(Automaton automata, BitSet contractives) {		
+	private static boolean findContractives(Automaton automaton, BitSet contractives) {		
 		boolean changed = true;
 		boolean contractive = false;
 		while(changed) {
 			changed=false;
 			contractive = false;
-			for(int i=0;i!=automata.size();++i) {
+			for(int i=0;i!=automaton.size();++i) {
 				boolean oldVal = contractives.get(i);
-				boolean newVal = isContractive(i,contractives,automata);
+				boolean newVal = isContractive(i,contractives,automaton);
 				if(oldVal && !newVal) {
 					contractives.set(i,newVal);
 					changed = true;
@@ -133,8 +133,8 @@ public final class TypeAlgorithms {
 	}
 	
 	private static boolean isContractive(int index, BitSet contractives,
-			Automaton automata) {
-		Automaton.State state = automata.states[index];
+			Automaton automaton) {
+		Automaton.State state = automaton.states[index];
 		int[] children = state.children;
 		if(children.length == 0) {
 			return false;
@@ -180,46 +180,46 @@ public final class TypeAlgorithms {
 	 * </ul>
 	 * <p>
 	 * <b>NOTE:</b> applications of this rewrite rule may leave states which are
-	 * unreachable from the root. Therefore, the resulting automata should be
+	 * unreachable from the root. Therefore, the resulting automaton should be
 	 * extracted after rewriting to eliminate such states.
 	 * </p>
 	 * 
 	 */
-	public static void simplify(Automaton automata) {		
+	public static void simplify(Automaton automaton) {		
 		boolean changed = true;
 		while(changed) {				
 			changed = false;			
-			changed |= simplifyContractives(automata);						
-			for(int i=0;i!=automata.size();++i) {				
-				changed |= simplify(i,automata);				
+			changed |= simplifyContractives(automaton);						
+			for(int i=0;i!=automaton.size();++i) {				
+				changed |= simplify(i,automaton);				
 			}			
 		}	
 	}	
 	
-	private static boolean simplifyContractives(Automaton automata) {
-		BitSet contractives = new BitSet(automata.size());
+	private static boolean simplifyContractives(Automaton automaton) {
+		BitSet contractives = new BitSet(automaton.size());
 		// initially all nodes are considered contractive.
 		// TODO: optimise away the need to initialise the contractives
-		contractives.set(0,automata.size(),true);
-		boolean changed = findContractives(automata, contractives);
+		contractives.set(0,automaton.size(),true);
+		boolean changed = findContractives(automaton, contractives);
 
 		for (int i = contractives.nextSetBit(0); i >= 0; i = contractives
 				.nextSetBit(i + 1)) {
-			automata.states[i] = new Automaton.State(Type.K_VOID);
+			automaton.states[i] = new Automaton.State(Type.K_VOID);
 		}
 
 		return changed;
 	}
 	
-	private static boolean simplify(int index, Automaton automata) {		
-		Automaton.State state = automata.states[index];
+	private static boolean simplify(int index, Automaton automaton) {		
+		Automaton.State state = automaton.states[index];
 		boolean changed=false;
 		switch (state.kind) {
 		case Type.K_NEGATION:			
-			changed = simplifyNegation(index, state, automata);
+			changed = simplifyNegation(index, state, automaton);
 			break;
 		case Type.K_UNION :			
-			changed = simplifyUnion(index, state, automata);			
+			changed = simplifyUnion(index, state, automaton);			
 			break;		
 		case Type.K_LIST:
 		case Type.K_SET:
@@ -237,24 +237,24 @@ public final class TypeAlgorithms {
 		case Type.K_FUNCTION:
 		case Type.K_METHOD:
 		case Type.K_HEADLESS:			
-			changed = simplifyCompound(index, state, automata);			
+			changed = simplifyCompound(index, state, automaton);			
 			break;
 		}				
 		return changed;
 	}
 	
-	private static boolean simplifyNegation(int index, Automaton.State state, Automaton automata) {
-		Automaton.State child = automata.states[state.children[0]];
+	private static boolean simplifyNegation(int index, Automaton.State state, Automaton automaton) {
+		Automaton.State child = automaton.states[state.children[0]];
 		if(child.kind == Type.K_NEGATION) {
 			// bypass node
-			Automaton.State childchild = automata.states[child.children[0]];
-			automata.states[index] = new Automaton.State(childchild);
+			Automaton.State childchild = automaton.states[child.children[0]];
+			automaton.states[index] = new Automaton.State(childchild);
 			return true;
 		}
 		return false;
 	}
 	
-	private static boolean simplifyCompound(int index, Automaton.State state, Automaton automata) {
+	private static boolean simplifyCompound(int index, Automaton.State state, Automaton automaton) {
 		int kind = state.kind;
 		int[] children = state.children;
 		for(int i=0;i<children.length;++i) {
@@ -264,10 +264,10 @@ public final class TypeAlgorithms {
 			} else if((i == 1 || i == 2) && kind == Type.K_METHOD) {
 				// method return or throws type allowed to be void
 				continue;
-			}
-			Automaton.State child = automata.states[children[i]];
+			} 
+			Automaton.State child = automaton.states[children[i]];
 			if(child.kind == Type.K_VOID) {
-				automata.states[index] = new Automaton.State(Type.K_VOID);
+				automaton.states[index] = new Automaton.State(Type.K_VOID);
 				return true;
 			}
 		}
@@ -288,14 +288,14 @@ public final class TypeAlgorithms {
 	 *            --- index of state being worked on.
 	 * @param state
 	 *            --- state being worked on.
-	 * @param automata
-	 *            --- automata containing state being worked on.
+	 * @param automaton
+	 *            --- automaton containing state being worked on.
 	 * @return
 	 */
 	private static boolean simplifyUnion(int index, Automaton.State state,
-			Automaton automata) {
-		return simplifyUnion_1(index, state, automata)
-				|| simplifyUnion_2(index, state, automata);
+			Automaton automaton) {
+		return simplifyUnion_1(index, state, automaton)
+				|| simplifyUnion_2(index, state, automaton);
 	}
 	
 	/**
@@ -311,12 +311,12 @@ public final class TypeAlgorithms {
 	 *            --- index of state being worked on.
 	 * @param state
 	 *            --- state being worked on.
-	 * @param automata
-	 *            --- automata containing state being worked on.
+	 * @param automaton
+	 *            --- automaton containing state being worked on.
 	 * @return
 	 */
 	private static boolean simplifyUnion_1(int index, Automaton.State state,
-			Automaton automata) {
+			Automaton automaton) {
 		int[] children = state.children;
 		boolean changed = false;
 		for (int i = 0; i < children.length; ++i) {
@@ -326,10 +326,10 @@ public final class TypeAlgorithms {
 				state.children = removeIndex(i, children);
 				changed = true;
 			} else {
-				Automaton.State child = automata.states[iChild];
+				Automaton.State child = automaton.states[iChild];
 				switch (child.kind) {
 					case Type.K_ANY :
-						automata.states[index] = new Automaton.State(Type.K_ANY);
+						automaton.states[index] = new Automaton.State(Type.K_ANY);
 						return true;
 					case Type.K_VOID : {
 						children = removeIndex(i, children);
@@ -338,19 +338,19 @@ public final class TypeAlgorithms {
 						break;
 					}
 					case Type.K_UNION :
-						return flattenChildren(index, state, automata);
+						return flattenChildren(index, state, automaton);
 				}
 			}
 		}
 		if (children.length == 0) {
 			// this can happen in the case of a union which has only itself as a
 			// child.
-			automata.states[index] = new Automaton.State(Type.K_VOID);
+			automaton.states[index] = new Automaton.State(Type.K_VOID);
 			changed = true;
 		} else if (children.length == 1) {
 			// bypass this node altogether
 			int child = children[0];
-			automata.states[index] = new Automaton.State(automata.states[child]);
+			automaton.states[index] = new Automaton.State(automaton.states[child]);
 			changed = true;
 		}
 		return changed;
@@ -366,12 +366,14 @@ public final class TypeAlgorithms {
 	 *            --- index of state being worked on.
 	 * @param state
 	 *            --- state being worked on.
-	 * @param automata
-	 *            --- automata containing state being worked on.
+	 * @param automaton
+	 *            --- automaton containing state being worked on.
 	 * @return
 	 */
 	private static boolean simplifyUnion_2(int index, Automaton.State state,
-			Automaton automata) {
+			Automaton automaton) {
+		System.out.println("Simplifying: "
+				+ Type.toString(Automata.extract(automaton, index)));
 		boolean changed = false;
 		int[] children = state.children;
 
@@ -381,8 +383,8 @@ public final class TypeAlgorithms {
 			boolean subsumed = false;
 			for (int j = 0; j < children.length; ++j) {
 				int jChild = children[j];
-				if (i != j && isSubtype(jChild, iChild, automata)
-						&& (!isSubtype(iChild, jChild, automata) || i > j)) {
+				if (i != j && isSubtype(jChild, iChild, automaton)
+						&& (!isSubtype(iChild, jChild, automaton) || i > j)) {
 					subsumed = true;
 				}
 			}
@@ -396,7 +398,7 @@ public final class TypeAlgorithms {
 		if (children.length == 1) {
 			// bypass this node altogether
 			int child = children[0];
-			automata.states[index] = new Automaton.State(automata.states[child]);
+			automaton.states[index] = new Automaton.State(automaton.states[child]);
 			changed = true;
 		}
 		
@@ -404,8 +406,8 @@ public final class TypeAlgorithms {
 	}
 	
 	private static boolean isSubtype(int fromIndex, int toIndex,
-			Automaton automata) {
-		SubtypeOperator op = new SubtypeOperator(automata,automata);
+			Automaton automaton) {
+		SubtypeOperator op = new SubtypeOperator(automaton,automaton);
 		return op.isSubtype(fromIndex, toIndex);
 	}
 	
@@ -507,19 +509,19 @@ public final class TypeAlgorithms {
 	 * @param fromSign
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param toSign
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed/
 	 * @return
 	 */
@@ -644,17 +646,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed/
 	 * @return
 	 */
@@ -815,7 +817,7 @@ public final class TypeAlgorithms {
 	}
 	
 	/**
-	 * Intersect two automata representing positive, open records. For example:
+	 * Intersect two automaton representing positive, open records. For example:
 	 * 
 	 * <pre>
 	 * {T1 f, T2 g, ...} & {T3 g, T4 h, ...} => {T1 f, (T2&T3) g, T4 h, ...}
@@ -827,17 +829,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed.
 	 * @return
 	 */
@@ -904,7 +906,7 @@ public final class TypeAlgorithms {
 	}
 
 	/**
-	 * Intersect two automata representing positive records, where the first is
+	 * Intersect two automaton representing positive records, where the first is
 	 * closed and the second open. For example:
 	 * 
 	 * <pre>
@@ -919,17 +921,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed.
 	 * @return
 	 */
@@ -980,17 +982,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed/
 	 * @return
 	 */
@@ -1165,7 +1167,7 @@ public final class TypeAlgorithms {
 	}
 
 	/**
-	 * Intersect two automata representing open records, where the first is
+	 * Intersect two automaton representing open records, where the first is
 	 * positive and the second negative. For example:
 	 * 
 	 * <pre>
@@ -1177,17 +1179,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed.
 	 * @return
 	 */
@@ -1203,7 +1205,7 @@ public final class TypeAlgorithms {
 	}
 
 	/**
-	 * Intersect two automata representing records, where the first is positive
+	 * Intersect two automaton representing records, where the first is positive
 	 * and closed and the second negative and open. For example:
 	 * 
 	 * <pre>
@@ -1221,17 +1223,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed.
 	 * @return
 	 */
@@ -1324,17 +1326,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed/
 	 * @return
 	 */
@@ -1511,7 +1513,7 @@ public final class TypeAlgorithms {
 	}
 
 	/**
-	 * Intersect two automata representing records, where the first is negative
+	 * Intersect two automaton representing records, where the first is negative
 	 * and closed and the second positive and open. For example:
 	 * 
 	 * <pre>
@@ -1530,17 +1532,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed.
 	 * @return
 	 */
@@ -1609,8 +1611,7 @@ public final class TypeAlgorithms {
 			ti=0;
 			for(int fj=0;fj!=fromChildren.length;++fj) {
 				String fn = fromData.get(fj);
-				String tn;
-				if (ti < toData.size() && (tn = toData.get(ti)).equals(fn)) {
+				if (ti < toData.size() && toData.get(ti).equals(fn)) {
 					if(fi == fj) {
 						int fromChild = fromChildren[fi];
 						int toChild = toChildren[ti];
@@ -1640,17 +1641,17 @@ public final class TypeAlgorithms {
 	 * @param fromIndex
 	 *            --- index of state in from position
 	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
+	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
 	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
+	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
 	 * @param allocations
 	 *            --- mapping of intersection points to their index in states
 	 * @param states
-	 *            --- list of states which constitute the new automata being
+	 *            --- list of states which constitute the new automaton being
 	 *            constructed/
 	 * @return
 	 */
@@ -1777,18 +1778,18 @@ public final class TypeAlgorithms {
 	 * 
 	 * @param index
 	 * @param state
-	 * @param automata
+	 * @param automaton
 	 * @return
 	 */
 	private static boolean flattenChildren(int index, Automaton.State state,
-			Automaton automata) {
+			Automaton automaton) {
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
 		int[] children = state.children;
 		final int kind = state.kind;
 
 		for (int i = 0; i < children.length; ++i) {
 			int iChild = children[i];
-			Automaton.State child = automata.states[iChild];
+			Automaton.State child = automaton.states[iChild];
 			if (child.kind == kind) {
 				for (int c : child.children) {
 					nchildren.add(c);
@@ -1803,7 +1804,7 @@ public final class TypeAlgorithms {
 			children[i] = nchildren.get(i);
 		}
 
-		automata.states[index] = new Automaton.State(kind, false, children);
+		automaton.states[index] = new Automaton.State(kind, false, children);
 
 		return true;
 	}
@@ -1819,39 +1820,39 @@ public final class TypeAlgorithms {
 	 * the return value is <code>0</code>, then all children are negative.
 	 * 
 	 * @param state
-	 *            --- automata state whose children are to be sorted.
+	 *            --- automaton state whose children are to be sorted.
 	 * @return --- the start index of the negative children.
 	 */
 	private static int splitPositiveNegativeChildren(Automaton.State state,
-			Automaton automata) {
+			Automaton automaton) {
 		int[] children = state.children;
-		int posIndex = advancePositive(0, children, automata);
-		int negIndex = retreatNegative(children.length - 1, children, automata);
+		int posIndex = advancePositive(0, children, automaton);
+		int negIndex = retreatNegative(children.length - 1, children, automaton);
 
 		while (posIndex < negIndex) {
 			int tmp = children[posIndex];
 			children[posIndex] = children[negIndex];
 			children[negIndex] = tmp;
-			posIndex = advancePositive(posIndex + 1, children, automata);
-			negIndex = retreatNegative(negIndex - 1, children, automata);
+			posIndex = advancePositive(posIndex + 1, children, automaton);
+			negIndex = retreatNegative(negIndex - 1, children, automaton);
 		}
 
 		return posIndex;
 	}
 
 	private static int advancePositive(int index, int[] children,
-			Automaton automata) {
+			Automaton automaton) {
 		while (index < children.length
-				&& automata.states[children[index]].kind != Type.K_NEGATION) {
+				&& automaton.states[children[index]].kind != Type.K_NEGATION) {
 			index = index + 1;
 		}
 		return index;
 	}
 
 	private static int retreatNegative(int index, int[] children,
-			Automaton automata) {
+			Automaton automaton) {
 		while (index > 0
-				&& automata.states[children[index]].kind == Type.K_NEGATION) {
+				&& automaton.states[children[index]].kind == Type.K_NEGATION) {
 			index = index - 1;
 		}
 		return index;

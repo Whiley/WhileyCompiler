@@ -24,6 +24,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * Provides classes for reading and writing automatas via input/output streams.
+ * Provides classes for reading and writing automata via input/output streams.
  */
 package wyautl.io;

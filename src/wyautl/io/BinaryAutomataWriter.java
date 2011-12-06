@@ -32,10 +32,10 @@ import wyjvm.io.BinaryOutputStream;
 
 /**
  * <p>
- * The binary automata writer is responsible for writing an automata in a binary
+ * The binary automata writer is responsible for writing an automaton in a binary
  * format to an output stream. Obviously, it cannot know how to handle the
  * supplementary data that can be provided as part of a state. Therefore, if the
- * automata contains states which have supplementary data, the client is expected
+ * automaton contains states which have supplementary data, the client is expected
  * to deal with this.
  * </p>
  * <p>
@@ -58,11 +58,11 @@ public class BinaryAutomataWriter implements GenericWriter<Automaton> {
 		this.writer = writer;			
 	}
 	
-	public void write(Automaton automata) throws IOException {
-		int size = automata.size();		
+	public void write(Automaton automaton) throws IOException {
+		int size = automaton.size();		
 		writer.write_uv(size);
 		for(int i=0;i!=size;++i) {
-			write(automata.states[i]);
+			write(automaton.states[i]);
 		}		
 	}
 	

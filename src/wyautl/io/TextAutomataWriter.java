@@ -31,10 +31,10 @@ import wyautl.lang.*;
 
 /**
  * <p>
- * The text automata writer is responsible for writing an automata in a textual
+ * The text automata writer is responsible for writing an automaton in a textual
  * format to an output stream. Obviously, it cannot know how to handle the
  * supplementary data that can be provided as part of a state. Therefore, if the
- * automata contains states which have supplementary data, the client is expected
+ * automaton contains states which have supplementary data, the client is expected
  * to deal with this.
  * </p>
  * <p>
@@ -61,8 +61,8 @@ public final class TextAutomataWriter implements GenericWriter<Automaton> {
 		this.writer = new PrintStream(stream);
 	}
 	
-	public void write(Automaton automata) throws IOException {	
-		writer.println(automata);
+	public void write(Automaton automaton) throws IOException {	
+		writer.println(automaton);
 	}
 	
 	public void close() throws IOException {

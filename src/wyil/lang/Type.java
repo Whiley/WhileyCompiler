@@ -1330,7 +1330,7 @@ public abstract class Type {
 	 *            --- the automaton being turned into a string.
 	 * @return --- string representation of automaton.
 	 */
-	private final static String toString(Automaton automaton) {
+	public final static String toString(Automaton automaton) {
 		// First, we need to find the headers of the computation. This is
 		// necessary in order to mark the start of a recursive type.
 		BitSet headers = new BitSet(automaton.size());
@@ -1844,10 +1844,10 @@ public abstract class Type {
 	 * @param afterType
 	 * @return
 	 */
-	private static Automaton normalise(Automaton automaton) {				
+	private static Automaton normalise(Automaton automaton) {		
 		normalisedCount++;
 		unminimisedCount += automaton.size();		
-		TypeAlgorithms.simplify(automaton);		
+		TypeAlgorithms.simplify(automaton);				
 		// TODO: extract in place to avoid allocating data unless necessary
 		automaton = Automata.extract(automaton, 0);
 		// TODO: minimise in place to avoid allocating data unless necessary
@@ -1928,7 +1928,7 @@ public abstract class Type {
 		//Type to = fromString("X<[X]>");				
 		Type from = fromString("!{int f, int g}");
 		Type to = fromString("{int f,...}");
-		//System.out.println(from + " :> " + to + " = " + isSubtype(from, to));		
+		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));		
 		System.out.println(from + " & " + to + " = " + intersect(from,to));
 		//System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
 		//System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
