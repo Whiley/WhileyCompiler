@@ -43,7 +43,7 @@ public interface Attribute {
 	 * @author djp
 	 * 
 	 */
-	public static class Source implements Attribute {
+	public final static class Source implements Attribute {
 		public final int start;	 // starting character index
 		public final int end;	 // end character index
 		public final int line;   // line number

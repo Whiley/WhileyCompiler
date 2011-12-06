@@ -380,7 +380,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class BinaryReader extends BinaryAutomataReader {		
+	public static final class BinaryReader extends BinaryAutomataReader {		
 		public BinaryReader(BinaryInputStream reader) {
 			super(reader);
 		}
@@ -434,7 +434,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class BinaryWriter extends BinaryAutomataWriter {		
+	public static final class BinaryWriter extends BinaryAutomataWriter {		
 		public BinaryWriter(BinaryOutputStream writer) {
 			super(writer);			
 		}

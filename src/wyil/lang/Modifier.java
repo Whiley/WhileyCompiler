@@ -30,17 +30,17 @@ public interface Modifier {
 	public static final Modifier NATIVE = new Native();	
 	public static final Modifier EXPORT = new Export();	
 	
-	public static class Public implements Modifier {
+	public static final class Public implements Modifier {
 		private Public() {}
 		public String toString() { return "public"; }
 	}	
 	
-	public static class Export implements Modifier {
+	public static final class Export implements Modifier {
 		private Export() {}
 		public String toString() { return "export"; }
 	}	
 	
-	public static class Native implements Modifier {
+	public static final class Native implements Modifier {
 		private Native() {}
 		public String toString() { return "native"; }
 	}	

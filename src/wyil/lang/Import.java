@@ -31,7 +31,7 @@ package wyil.lang;
  * @author David J. Pearce
  * 
  */
-public class Import {	
+public final class Import {	
 	public final PkgID pkg;		
 	public final String module;	
 	public final String name;

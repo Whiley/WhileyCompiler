@@ -254,9 +254,15 @@ public final class TypeAlgorithms {
 		return false;
 	}
 	
-	private static boolean simplifyCompound(int index, Automaton.State state, Automaton automaton) {
+	private static boolean simplifyCompound(int index, Automaton.State state, Automaton automaton) {		
 		int kind = state.kind;
 		int[] children = state.children;
+		boolean isOpenRecord = false;
+		if(kind == Type.K_RECORD) {
+			Type.Record.State data = (Type.Record.State) state.data;
+			isOpenRecord = data.isOpen;
+		}
+		
 		for(int i=0;i<children.length;++i) {
 			if ((i == 0 || i == 1) && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
 				// headless method and function return or throws type allowed to be void
@@ -266,11 +272,12 @@ public final class TypeAlgorithms {
 				continue;
 			} 
 			Automaton.State child = automaton.states[children[i]];
-			if(child.kind == Type.K_VOID) {
+			if(child.kind == Type.K_VOID && !isOpenRecord) {				
 				automaton.states[index] = new Automaton.State(Type.K_VOID);
 				return true;
 			}
 		}
+		
 		return false;
 	}
 		
@@ -353,6 +360,7 @@ public final class TypeAlgorithms {
 			automaton.states[index] = new Automaton.State(automaton.states[child]);
 			changed = true;
 		}
+		
 		return changed;
 	}
 
@@ -372,8 +380,6 @@ public final class TypeAlgorithms {
 	 */
 	private static boolean simplifyUnion_2(int index, Automaton.State state,
 			Automaton automaton) {
-		System.out.println("Simplifying: "
-				+ Type.toString(Automata.extract(automaton, index)));
 		boolean changed = false;
 		int[] children = state.children;
 
@@ -384,7 +390,7 @@ public final class TypeAlgorithms {
 			for (int j = 0; j < children.length; ++j) {
 				int jChild = children[j];
 				if (i != j && isSubtype(jChild, iChild, automaton)
-						&& (!isSubtype(iChild, jChild, automaton) || i > j)) {
+						&& (!isSubtype(iChild, jChild, automaton) || i > j)) {					
 					subsumed = true;
 				}
 			}
@@ -395,7 +401,7 @@ public final class TypeAlgorithms {
 			}
 		}
 
-		if (children.length == 1) {
+		if (children.length == 1) {			
 			// bypass this node altogether
 			int child = children[0];
 			automaton.states[index] = new Automaton.State(automaton.states[child]);
@@ -1606,6 +1612,7 @@ public final class TypeAlgorithms {
 			Automata.extractOnto(toChildren[i],to,states);
 		}				
 		int[] myChildren = new int[fromChildren.length];
+		Type.Record.State myData = new Type.Record.State(true,fromData);
 		for(fi=0;fi!=fromChildren.length;++fi) {
 			int[] myChildChildren = new int[fromChildren.length];			
 			ti=0;
@@ -1627,7 +1634,7 @@ public final class TypeAlgorithms {
 				}
 			}
 			myChildren[fi] = states.size();
-			states.add(new Automaton.State(toState.kind, toData, true,
+			states.add(new Automaton.State(toState.kind, myData, true,
 					myChildChildren));
 		}				
 		return new Automaton.State(Type.K_UNION, null, false, myChildren);
