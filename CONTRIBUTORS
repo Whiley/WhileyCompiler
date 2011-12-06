@@ -13,7 +13,7 @@ When making a pull request it is necessary to include this
 modification as part of the request (unless you have already done so).
 Pull requests that do not include this modification will be rejected.
 
-Finally, it is also recommend that you include a line similar to the
+Finally, it is also recommended that you include a line similar to the
 following at the top of each file you modify:
 
 // Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
