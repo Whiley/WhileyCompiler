@@ -42,8 +42,8 @@ public class Tester {
 		try {
 			int count = 0;
 			while (true) {
-				Automaton automata = reader.read();
-				Term value = DefaultInterpretation.construct(automata);
+				Automaton automaton = reader.read();
+				Term value = DefaultInterpretation.construct(automaton);
 				model.add(value);
 				if(verbose) {				
 					System.err.print("\rRead " + count + " values.");				
@@ -62,13 +62,13 @@ public class Tester {
 	public static ArrayList<Automaton> readAutomatas(GenericReader<Automaton> reader, boolean verbose)
 			throws IOException {
 		
-		ArrayList<Automaton> automatas = new ArrayList<Automaton>();
+		ArrayList<Automaton> automata = new ArrayList<Automaton>();
 		try {
 			int count = 0;
 			while (true) {			
-				automatas.add(reader.read());
+				automata.add(reader.read());
 				if(verbose) {				
-					System.err.print("\rRead " + count + " automatas.");				
+					System.err.print("\rRead " + count + " automata.");				
 				}
 				count++;
 			}
@@ -78,14 +78,14 @@ public class Tester {
 		if(verbose) {				
 			System.err.println();				
 		}
-		return automatas;
+		return automata;
 	}
 	
-	public static BitSet accepts(Interpretation interpretation, Automaton automata, ArrayList<Term> model) {
+	public static BitSet accepts(Interpretation interpretation, Automaton automaton, ArrayList<Term> model) {
 		BitSet accepted = new BitSet(model.size());
 		for(int i=0;i!=model.size();++i) {
 			Term value = model.get(i);
-			if(interpretation.accepts(automata,value)) {
+			if(interpretation.accepts(automaton,value)) {
 				accepted.set(i);
 			}
 		}
@@ -99,45 +99,45 @@ public class Tester {
 	}
 	
 	/**
-	 * The purpose of this test is to check that minimised automatas accept the
+	 * The purpose of this test is to check that minimised automata accept the
 	 * same set of values as non-minimised ones.
 	 * 
 	 * @param model
-	 * @param automatas
+	 * @param automata
 	 */
 	public static void minimiseTest(Interpretation interpretation,
-			ArrayList<Term> model, ArrayList<Automaton> automatas, boolean verbose) {
+			ArrayList<Term> model, ArrayList<Automaton> automata, boolean verbose) {
 		int count = 0;
-		int size = automatas.size();
-		for (Automaton automata : automatas) {			
-			Automaton minimised = Automata.minimise(automata);			
-			BitSet oldAccepts = accepts(interpretation, automata, model);
+		int size = automata.size();
+		for (Automaton automaton : automata) {			
+			Automaton minimised = Automata.minimise(automaton);			
+			BitSet oldAccepts = accepts(interpretation, automaton, model);
 			BitSet newAccepts = accepts(interpretation, minimised, model);
 			if (!oldAccepts.equals(newAccepts)) {
 				System.out.println("Possible minimisation unsoundness: "
-						+ automata + " => " + minimised);
+						+ automaton + " => " + minimised);
 			}
-			if(!isSubsumed(minimised,automata)) {
+			if(!isSubsumed(minimised,automaton)) {
 				System.out.println("Possible subsumption unsoundness: "
-						+ automata + " :> " + minimised);
-			} else 	if(!isSubsumed(automata,minimised)) {
+						+ automaton + " :> " + minimised);
+			} else 	if(!isSubsumed(automaton,minimised)) {
 				System.out.println("Possible subsumption unsoundness: "
-						+ automata + " <: " + minimised);
+						+ automaton + " <: " + minimised);
 			}
 			
 			count++;
 			if(verbose) {				
-				System.err.print("\rChecked " + count + " / " + size + " automatas.");				
+				System.err.print("\rChecked " + count + " / " + size + " automata.");				
 			}			
 		}
 	}
 	
 	public static void canonicaliseTest(Interpretation interpretation,
-			ArrayList<Term> model, ArrayList<Automaton> automatas, boolean verbose) {
+			ArrayList<Term> model, ArrayList<Automaton> automata, boolean verbose) {
 		int count = 0;
-		int size = automatas.size();
+		int size = automata.size();
 		for (int i=0;i!=size;++i) {	
-			Automaton ai = automatas.get(i);
+			Automaton ai = automata.get(i);
 			
 			if(nonAccepting(ai)) {
 				continue;
@@ -145,7 +145,7 @@ public class Tester {
 			
 			BitSet oldAccepts = accepts(interpretation, ai, model);			
 			for (int j=i+1;j!=size;++j) {	
-				Automaton aj = automatas.get(j);
+				Automaton aj = automata.get(j);
 				BitSet newAccepts = accepts(interpretation, aj, model);
 				if(oldAccepts.equals(newAccepts) && !ai.equals(aj)) {
 					System.out.println("Possible canonicalisation unsoundness: "
@@ -155,7 +155,7 @@ public class Tester {
 			}
 			count++;
 			if(verbose) {				
-				System.err.print("\rChecked " + count + " / " + size + " automatas.");				
+				System.err.print("\rChecked " + count + " / " + size + " automata.");				
 			}
 		}
 	}	
@@ -201,7 +201,7 @@ public class Tester {
 			} 
 			
 			if((index+2) > args.length) {
-				System.out.println("usage: Tester [options] model.file automata.file");
+				System.out.println("usage: Tester [options] model.file automaton.file");
 				System.exit(1);
 			}
 						
@@ -209,15 +209,15 @@ public class Tester {
 			ArrayList<Term> model = readModel(
 					new BinaryAutomataReader(new BinaryInputStream(
 							new FileInputStream(args[index]))), verbose);
-			ArrayList<Automaton> automatas = readAutomatas(
+			ArrayList<Automaton> automata = readAutomatas(
 					new BinaryAutomataReader(new BinaryInputStream(
 							new FileInputStream(args[index + 1]))), verbose);
 			
 			if(minimiseTest) {
-				minimiseTest(new DefaultInterpretation(),model,automatas,verbose);
+				minimiseTest(new DefaultInterpretation(),model,automata,verbose);
 			}
 			if(canonicalTest) {
-				canonicaliseTest(new DefaultInterpretation(),model,automatas,verbose);
+				canonicaliseTest(new DefaultInterpretation(),model,automata,verbose);
 			}
 			
 		} catch(IOException ex) {
