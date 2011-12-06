@@ -435,6 +435,7 @@ public class SubtypeOperator {
 						
 			if(fi < fromFields.size()) {
 				if(toOpen) {
+					// assert fromSign || fromOpen
 					orChildren |= toSign;
 					andChildren &= toSign;
 				} else {
@@ -442,6 +443,7 @@ public class SubtypeOperator {
 				}
 			} else if(ti < toFields.size()) {
 				if(fromOpen) {
+					// assert toSign || toOpen
 					orChildren |= fromSign;
 					andChildren &= fromSign;
 				} else {
