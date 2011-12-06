@@ -367,7 +367,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class List extends Value {
+	public static final class List extends Value {
 		public final ArrayList<Value> values;
 		private List(Collection<Value> value) {
 			this.values = new ArrayList<Value>(value);
@@ -425,7 +425,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class Set extends Value {
+	public static final class Set extends Value {
 		public final HashSet<Value> values;
 		private Set() {
 			this.values = new HashSet<Value>();
@@ -530,7 +530,7 @@ public abstract class Value implements Comparable<Value> {
 		}		
 	}
 	
-	public static class Record extends Value {
+	public static final class Record extends Value {
 		public final HashMap<String,Value> values;
 		private Record(Map<String,Value> value) {
 			this.values = new HashMap<String,Value>(value);
@@ -600,7 +600,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class Dictionary extends Value {
+	public static final class Dictionary extends Value {
 		public final HashMap<Value,Value> values;
 		private Dictionary(Map<Value,Value> value) {
 			this.values = new HashMap<Value,Value>(value);
@@ -761,7 +761,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class Tuple extends Value {
+	public static final class Tuple extends Value {
 		public final ArrayList<Value> values;
 		private Tuple(Collection<Value> values) {
 			this.values = new ArrayList<Value>(values);
