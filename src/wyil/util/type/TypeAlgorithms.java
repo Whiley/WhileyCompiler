@@ -39,7 +39,34 @@ import wyautl.lang.*;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 
-
+/**
+ * Contains various important algorithms for manipulating types. These were
+ * split out from wyil.lang.Type, as that class is already quite large. The most
+ * important algorithms contained in this class are:
+ * <ul>
+ * <li>
+ * <p>
+ * <b>Type Intersection</b>. Here, the intersection of two types is calculated.
+ * This is necessary for determining the updated type after a runtime type test.
+ * Essentially, we intersect the original type with the tested type to produce
+ * something new.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Type Simplification</b>. Here, a number of simplification rules are
+ * provided which reduce non-sensical forms into something sensible. For
+ * example, <code>int|int</code> is a non-sensical form, and should be
+ * simplified to just <code>int</code>.
+ * </p>
+ * </li>
+ * </ul>
+ * <b>NOTE:</b> the algorithms contained in this file are ugly and difficult to
+ * follow. Do not touch them unless you absolutely know what you're doing!
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public final class TypeAlgorithms {
 
 	/**
