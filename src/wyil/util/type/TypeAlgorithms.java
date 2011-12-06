@@ -470,14 +470,29 @@ public final class TypeAlgorithms {
 			return fromIndex + toIndex;
 		}
 	}
-	
+
 	/**
-	 * Compute the intersection of two types. The resulting type will only
-	 * accept values which are accepted by both types being intersected.. In
-	 * many cases, the only valid intersection will be <code>void</code>.
+	 * Compute the <i>intersection</i> of two types. The resulting type will
+	 * only accept values which are accepted by both types being intersected. In
+	 * many cases, the only valid intersection will be <code>void</code>. For
+	 * example:
+	 * 
+	 * <pre>
+	 * int & real => void
+	 * int & [int] => void
+	 * !int & int|[int] => [int]
+	 * int|[any] & any|[int] => int|[int]
+	 * </pre>
+	 * 
+	 * Type intersection can be thought of as <i>set intersection</i>. In this
+	 * way, we're effectively taking the sets of values represented by the two
+	 * types and intersecting them. In particular, the resulting type should
+	 * correspond exactly to that intersection.
 	 * 
 	 * @param t1
+	 *            --- first type to be intersected
 	 * @param t2
+	 *            --- second type to be intersected
 	 * @return
 	 */
 	public static Type intersect(Type t1, Type t2) {
