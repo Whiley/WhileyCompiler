@@ -813,7 +813,7 @@ public final class TypeAlgorithms {
 		
 		return myIndex;
 	}
-
+	
 	/**
 	 * Intersect two automata representing positive, open records. For example:
 	 * 
@@ -1021,7 +1021,7 @@ public final class TypeAlgorithms {
 					myState = intersectPosNegClosedOpen(fromIndex,from,toIndex,to,allocations,states);
 					break;
 				} else if(fromData.isOpen) {
-					myState = intersectPosNegOpenClosed(fromIndex,from,toIndex,to,allocations,states);
+					myState = intersectNegPosClosedOpen(toIndex,to,fromIndex,from,allocations,states);
 					break;
 				} else {
 					// fall through to general case for compounds
@@ -1317,49 +1317,6 @@ public final class TypeAlgorithms {
 	}
 
 	/**
-	 * Intersect two automata representing records, where the first is positive
-	 * and open and the second negative and closed. For example:
-	 * 
-	 * <pre>
-	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => {T1 f, T2 g}   
-	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => {T1&!T3 f, T2 g,...} | {T1 f, T2&!T4 g,...} 
-	 * {T1 f, T2 g, ...} & !{T3 f, T4 g, T5 h} => {T1&!T3 f, T2 g, ...} | {T1 f, T2&!T4 g, ...} | {T1 f, T2 g, void h, ...} | {T1 f, T2 g, !T5 h, ...}
-	 * </pre>
-	 * 
-	 * Here, <code>{T1 f, T2 g, void h, ...}</code> represents a record which
-	 * doesn't have a field h. This use of void only really makes sense in the
-	 * context of open records.
-	 * 
-	 * @param fromIndex
-	 *            --- index of state in from position
-	 * @param from
-	 *            --- automata in the from position (i.e. containing state at
-	 *            fromIndex).
-	 * @param toIndex
-	 *            --- index of state in to position
-	 * @param to
-	 *            --- automata in the to position (i.e. containing state at
-	 *            toIndex).
-	 * @param allocations
-	 *            --- mapping of intersection points to their index in states
-	 * @param states
-	 *            --- list of states which constitute the new automata being
-	 *            constructed.
-	 * @return
-	 */
-	private static Automaton.State intersectPosNegOpenClosed(
-			int fromIndex, Automaton from, int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		
-		// FIXME: need to do better here
-		int myIndex = states.size()-1;
-		states.remove(myIndex);
-		Automata.extractOnto(fromIndex,from,states);
-		return states.get(myIndex); 		
-	}
-	
-	/**
 	 * The following method intersects two nodes with (resp. negative and
 	 * positive sign) which have identical kind. A precondition is that space
 	 * has already been allocated in states for the resulting node.
@@ -1410,7 +1367,7 @@ public final class TypeAlgorithms {
 					myState = intersectPosNegClosedOpen(toIndex,to,fromIndex,from,allocations,states);
 					break;
 				} else if(toData.isOpen) {
-					myState = intersectPosNegOpenClosed(toIndex,to,fromIndex,from,allocations,states);;
+					myState = intersectNegPosClosedOpen(fromIndex,from,toIndex,to,allocations,states);;
 					break;
 				} else {
 					// fall through to general case for compounds
@@ -1553,6 +1510,128 @@ public final class TypeAlgorithms {
 		return myIndex;
 	}
 
+	/**
+	 * Intersect two automata representing records, where the first is negative
+	 * and closed and the second positive and open. For example:
+	 * 
+	 * <pre>
+	 * !{int f} & {int f,...} => {int f, ...+}
+	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => {T1 f, T2 g}   
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => {T1&!T3 f, T2 g,...} | {T1 f, T2&!T4 g,...} 
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g, T5 h} => {T1&!T3 f, T2 g, ...} | 
+	 *                      {T1 f, T2&!T4 g, ...} | {T1 f, T2 g, void h, ...} | 
+	 *                      {T1 f, T2 g, !T5 h, ...}
+	 * </pre>
+	 * 
+	 * Here, <code>{T1 f, T2 g, void h, ...}</code> represents a record which
+	 * doesn't have a field h. This use of void only really makes sense in the
+	 * context of open records.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed.
+	 * @return
+	 */
+	private static Automaton.State intersectNegPosClosedOpen(
+			int fromIndex, Automaton from, int toIndex, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {		
+
+		int oldSize = states.size(); // in case we need to back out
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+
+		// first, check whether the open record has more fields than the closed.
+		// If so, then there is no intersection between them and we can just
+		// return the closed record.
+
+		if(fromChildren.length < toChildren.length) {
+			// no possible intersection so back out
+			states.remove(states.size()-1);
+			Automata.extractOnto(toIndex,to,states);
+			return states.get(oldSize); // tad ugly perhaps			
+		}
+		
+		Type.Record.State fromData = (Type.Record.State) fromState.data;
+		Type.Record.State toData = (Type.Record.State) toState.data;
+		
+		// second, check whether the open record contains a field not present in
+		// the closed record. If so, then there is no intersection between them
+		// and we can just return the closed record.
+		
+		int fi=0,ti=0;
+		while(ti!=toChildren.length) {
+			if(fi < fromChildren.length) {
+				String fn = fromData.get(fi);
+				String tn = toData.get(ti);
+				int c = fn.compareTo(tn);
+				if(c < 0) {
+					++fi;
+					continue;
+				} else if(c == 0){
+					++ti;
+					++fi;
+					continue;
+				}
+			} 			
+			// no possible intersection so back out
+			states.remove(states.size()-1);
+			Automata.extractOnto(toIndex,to,states);
+			return states.get(oldSize); // tad ugly perhaps			 
+		}
+		
+		// finally, distribute over those fields present in the open record
+		// (which are a subset of those in the closed record).
+		
+		int[] tmpChildren = new int[toChildren.length];
+		for(int i=0;i!=toChildren.length;++i) {
+			tmpChildren[i] = states.size();
+			Automata.extractOnto(toChildren[i],to,states);
+		}				
+		int[] myChildren = new int[fromChildren.length];
+		for(fi=0;fi!=fromChildren.length;++fi) {
+			int[] myChildChildren = new int[fromChildren.length];			
+			ti=0;
+			for(int fj=0;fj!=fromChildren.length;++fj) {
+				String fn = fromData.get(fj);
+				String tn;
+				if (ti < toData.size() && (tn = toData.get(ti)).equals(fn)) {
+					if(fi == fj) {
+						int fromChild = fromChildren[fi];
+						int toChild = toChildren[ti];
+						myChildChildren[fj] = intersect(fromChild, false, from,
+								toChild, true, to, allocations, states);
+					} else {
+						myChildChildren[fj] = tmpChildren[ti];
+					}
+					ti++;
+				} else {
+					states.add(new Automaton.State(Type.K_VOID));
+					myChildChildren[fj] = states.size()-1; 
+				}
+			}
+			myChildren[fi] = states.size();
+			states.add(new Automaton.State(toState.kind, toData, true,
+					myChildChildren));
+		}				
+		return new Automaton.State(Type.K_UNION, null, false, myChildren);
+	}
+	
 	/**
 	 * The following method intersects two nodes with (resp) negative and
 	 * negative sign which have identical kind. A precondition is that space has
