@@ -1,5 +1,5 @@
 ============================================================================
-Making a Contribution
+Making a Contribution to Whiley
 ============================================================================
 
 This document is based on the Developer's Certificate of Origin which
@@ -14,7 +14,7 @@ modification as part of the request (unless you have already done so).
 Pull requests that do not include this modification will be rejected.
 
 Finally, it is also recommend that you include a line similar to the
-following at the top of each file you have modified:
+following at the top of each file you modify:
 
 // Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
 
