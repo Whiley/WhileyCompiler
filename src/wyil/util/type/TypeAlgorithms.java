@@ -703,61 +703,64 @@ public final class TypeAlgorithms {
 			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {		
+		int myIndex = states.size();
+		Automaton.State myState;
 		Automaton.State fromState = from.states[fromIndex];		
 		
 		switch(fromState.kind) {
 			case Type.K_VOID:
-				return intersectVoid(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
+				myState = intersectVoid(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_ANY: 
-				return intersectVoid(fromIndex,!fromSign,from,toIndex,!toSign,to,allocations,states);
+				myState = intersectVoid(fromIndex,!fromSign,from,toIndex,!toSign,to,allocations,states);
 			case Type.K_RECORD: 
-				return intersectRecords(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
+				myState = intersectRecords(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
 			case Type.K_LABEL:
 			case Type.K_NOMINAL:
-				return intersectNominals(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
+				myState = intersectNominals(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_TUPLE:
-				return intersectTuples(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);																				
+				myState = intersectTuples(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);																				
 			case Type.K_LIST:
 			case Type.K_SET:
-				return intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
+				myState = intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_PROCESS:
 			case Type.K_DICTIONARY: 										
-				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);							
+				myState = intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);							
 			case Type.K_NEGATION: 
-				return intersectNegations(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);								
+				myState = intersectNegations(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);								
 			case Type.K_UNION: 
-				return intersectUnions(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
+				myState = intersectUnions(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD: 
-				return intersectFunctionsOrMethods(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
+				myState = intersectFunctionsOrMethods(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
 			default: {
-				return intersectPrimitives(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
+				myState = intersectPrimitives(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			}		
-		}		
+		}	
+		
+		states.set(myIndex,myState);		
+		return myIndex;
 	}
 	
 	// ==================================================================================
 	// Primitives
 	// ==================================================================================
 	
-	private static int intersectVoid(int fromIndex, boolean fromSign, Automaton from,
+	private static Automaton.State intersectVoid(int fromIndex, boolean fromSign, Automaton from,
 			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 		
 		if(!fromSign && !toSign) {
-			states.add(new Automaton.State(Type.K_ANY));
+			return new Automaton.State(Type.K_ANY);
 		} else {
 			// void & void => void
 			// void & !void => void
-			states.add(new Automaton.State(Type.K_VOID));	
-		} 
-		
-		return states.size()-1;
+			return new Automaton.State(Type.K_VOID);	
+		} 		
 	}
 	
-	private static int intersectPrimitives(int fromIndex, boolean fromSign, Automaton from,
+	private static Automaton.State intersectPrimitives(int fromIndex, boolean fromSign, Automaton from,
 			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
@@ -766,25 +769,23 @@ public final class TypeAlgorithms {
 		
 		if(fromSign && toSign) {
 			// e.g. INT & INT => INT
-			states.add(new Automaton.State(fromState.kind));			
+			return new Automaton.State(fromState.kind);			
 		} else if(fromSign || toSign) {
 			// e.g. !INT & INT => INT
-			states.add(new Automaton.State(Type.K_VOID));			 
+			return new Automaton.State(Type.K_VOID);			 
 		} else {
 			// e.g. !INT & !INT => !INT
 			int childIndex = states.size();
 			states.add(new Automaton.State(fromState.kind));
-			states.add(new Automaton.State(Type.K_NEGATION,childIndex));	
+			return new Automaton.State(Type.K_NEGATION,childIndex);	
 		}
-		
-		return states.size()-1;
 	}
 	
 	// ==================================================================================
 	// Negations
 	// ==================================================================================
 	
-	private static int intersectNegations(int fromIndex, boolean fromSign, Automaton from,
+	private static Automaton.State intersectNegations(int fromIndex, boolean fromSign, Automaton from,
 			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
@@ -794,15 +795,17 @@ public final class TypeAlgorithms {
 		
 		int fromChild = fromState.children[0];
 		int toChild = toState.children[0];				
-		
-		return intersect(fromChild,!fromSign,from,toChild,!toSign,to,allocations,states);	
+				
+		states.remove(states.size()-1);
+		int myIndex = intersect(fromChild,!fromSign,from,toChild,!toSign,to,allocations,states);
+		return states.get(myIndex);
 	}
 
 	// ==================================================================================
 	// Nominals
 	// ==================================================================================
 	
-	private static int intersectNominals(int fromIndex, boolean fromSign, Automaton from,
+	private static Automaton.State intersectNominals(int fromIndex, boolean fromSign, Automaton from,
 			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
@@ -811,14 +814,13 @@ public final class TypeAlgorithms {
 		Automaton.State toState = to.states[toIndex];
 		
 		if(!fromState.data.equals(toState.data)) {
-			if(fromSign && toSign) {
-				int myIndex = states.size();
-				states.add(new Automaton.State(Type.K_VOID));
-				return myIndex;
+			if(fromSign && toSign) {				
+				return new Automaton.State(Type.K_VOID);				
 			} else if(fromSign || toSign) {
 				int myIndex = states.size();
+				states.remove(myIndex);
 				Automata.extractOnto(fromIndex,from,states);
-				return myIndex;							
+				return states.get(myIndex);							
 			}
 		} 
 		
