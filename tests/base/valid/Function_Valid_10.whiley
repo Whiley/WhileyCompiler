@@ -3,13 +3,13 @@ import * from whiley.lang.*
 define msg as {int op, int s}
 
 string f(msg m):
-    return (toString(m))
+    return (Any.toString(m))
 
 string f([int] ls):
-    return (toString(ls))
+    return (Any.toString(ls))
 
 string f([real] ls):
-    return (toString(ls))
+    return (Any.toString(ls))
 
 void ::main(System sys,[string] args):
     sys.out.println(f([1,2,3]))

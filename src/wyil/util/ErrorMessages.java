@@ -23,47 +23,52 @@ package wyil.util;
 public class ErrorMessages {
 	
 	public static final int CYCLIC_CONSTANT_DECLARATION = 0;
-	public static final int INVALID_CONSTANT_EXPRESSION = 1;
-	public static final int INVALID_BOOLEAN_EXPRESSION = 2;
-	public static final int INVALID_NUMERIC_EXPRESSION = 3;
-	public static final int INVALID_BINARY_EXPRESSION = 4;	
-	public static final int INVALID_LIST_EXPRESSION = 5;
-	public static final int INVALID_SET_EXPRESSION = 6;
-	public static final int INVALID_SET_OR_LIST_EXPRESSION = 7;
-	public static final int INVALID_DICTIONARY_EXPRESSION = 8;
-	public static final int INVALID_LVAL_EXPRESSION = 9;
-	public static final int INVALID_DESTRUCTURE_EXPRESSION = 10;
-	public static final int INVALID_TUPLE_LVAL = 12;
-	public static final int INVALID_MODULE_ACCESS = 13;
-	public static final int INVALID_PACKAGE_ACCESS = 14;	
-	public static final int BREAK_OUTSIDE_LOOP = 14;
-	public static final int RESOLUTION_ERROR = 15;
-	public static final int AMBIGUOUS_VARIABLE = 16;
-	public static final int UNKNOWN_VARIABLE = 17;
-	public static final int UNKNOWN_FUNCTION_OR_METHOD = 18;
-	public static final int VARIABLE_POSSIBLY_UNITIALISED = 19;
-	public static final int VARIABLE_ALREADY_DEFINED = 20;
-	public static final int DUPLICATE_DEFAULT_LABEL = 21;
-	public static final int DUPLICATE_CASE_LABEL = 22;
-	public static final int UNREACHABLE_CODE = 23;
-	public static final int RECEIVER_NOT_PROCESS = 24;
-	public static final int PROCESS_NOT_PERMITTED_IN_FUNCTION = 25;
-	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 26;
-	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 27;
-	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 28;
-	public static final int PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION = 29;
-	public static final int SUBTYPE_ERROR = 30;
-	public static final int INCOMPARABLE_OPERANDS = 31;
-	public static final int RECORD_TYPE_REQUIRED = 32;
-	public static final int RECORD_MISSING_FIELD = 33;
-	public static final int RETURN_FROM_VOID = 34;
-	public static final int MISSING_RETURN_VALUE = 35;
-	public static final int BRANCH_ALWAYS_TAKEN = 36;
-	public static final int AMBIGUOUS_COERCION = 37;
-	public static final int MUST_DECLARE_THROWN_EXCEPTION = 38;
+	public static final int INVALID_CONSTANT_AS_TYPE = 1;
+	public static final int INVALID_FUNCTION_OR_METHOD_AS_TYPE = 2;
+	public static final int INVALID_CONSTANT_EXPRESSION = 3;
+	public static final int INVALID_BOOLEAN_EXPRESSION = 4;
+	public static final int INVALID_NUMERIC_EXPRESSION = 5;
+	public static final int INVALID_BINARY_EXPRESSION = 6;	
+	public static final int INVALID_LIST_EXPRESSION = 7;
+	public static final int INVALID_SET_EXPRESSION = 8;
+	public static final int INVALID_SET_OR_LIST_EXPRESSION = 9;
+	public static final int INVALID_DICTIONARY_EXPRESSION = 10;
+	public static final int INVALID_LVAL_EXPRESSION = 11;
+	public static final int INVALID_DESTRUCTURE_EXPRESSION = 12;
+	public static final int INVALID_TUPLE_LVAL = 13;
+	public static final int INVALID_MODULE_ACCESS = 14;
+	public static final int INVALID_PACKAGE_ACCESS = 15;	
+	public static final int BREAK_OUTSIDE_LOOP = 16;
+	public static final int RESOLUTION_ERROR = 17;
+	public static final int AMBIGUOUS_VARIABLE = 18;
+	public static final int UNKNOWN_VARIABLE = 19;
+	public static final int UNKNOWN_FUNCTION_OR_METHOD = 20;
+	public static final int VARIABLE_POSSIBLY_UNITIALISED = 21;
+	public static final int VARIABLE_ALREADY_DEFINED = 22;
+	public static final int DUPLICATE_DEFAULT_LABEL = 23;
+	public static final int DUPLICATE_CASE_LABEL = 24;
+	public static final int DEAD_CODE = 25;
+	public static final int UNREACHABLE_CODE = 26;
+	public static final int RECEIVER_NOT_PROCESS = 27;
+	public static final int PROCESS_NOT_PERMITTED_IN_FUNCTION = 28;
+	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 29;
+	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 30;
+	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 31;
+	public static final int PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION = 32;
+	public static final int SUBTYPE_ERROR = 33;
+	public static final int INCOMPARABLE_OPERANDS = 34;
+	public static final int RECORD_TYPE_REQUIRED = 35;
+	public static final int RECORD_MISSING_FIELD = 36;
+	public static final int RETURN_FROM_VOID = 37;
+	public static final int MISSING_RETURN_VALUE = 38;
+	public static final int BRANCH_ALWAYS_TAKEN = 39;
+	public static final int AMBIGUOUS_COERCION = 40;
+	public static final int MUST_DECLARE_THROWN_EXCEPTION = 41;
 	
-		private final static String[] messages = {			
+		private final static String[] messages = {						
 			"cyclic constant expression",
+			"constant cannot be used as a type",
+			"function or method cannot be used as a type",
 			"invalid constant expression",
 			"invalid boolean expression",
 			"invalid numeric expression",
@@ -86,7 +91,8 @@ public class ErrorMessages {
 			"variable $0 already defined",
 			"duplicate default label",
 			"duplicate case label",
-			"unreachable code",
+			"dead-code encountered (i.e. this statement has no effect)",
+			"unreachable code encountered (i.e. execution can never reach this statement)",
 			"method receiver must have process type",
 			"process not permitted in function",
 			"message send not permitted in function",

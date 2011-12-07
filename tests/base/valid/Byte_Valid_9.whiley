@@ -261,7 +261,7 @@ define constants as [
 public void ::main(System sys,[string] args):
     for i in constants:
         for j in 0..8:
-            sys.out.print(toString(i) + " & 10101010b << ")
-            sys.out.print(toString(j) + " = ")
+            sys.out.print(Any.toString(i) + " & 10101010b << ")
+            sys.out.print(Any.toString(j) + " = ")
             // test precedence
-            sys.out.println(toString(i & 10101010b << j))
+            sys.out.println(Any.toString(i & 10101010b << j))

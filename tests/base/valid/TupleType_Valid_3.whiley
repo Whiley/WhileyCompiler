@@ -5,5 +5,5 @@ import * from whiley.lang.*
 
 void ::main(System sys,[string] args):
     x,y = f(1)
-    sys.out.println(toString(x))
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(x))
+    sys.out.println(Any.toString(y))

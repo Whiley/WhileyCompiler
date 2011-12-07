@@ -35,7 +35,7 @@ null|Value evaluate(Expr e):
             return null // stuck
 
 public void ::main(System sys,[string] args):
-    sys.out.println(toString(evaluate(123)))
-    sys.out.println(toString(evaluate({src: [112,212332,342], index:0})))
-    sys.out.println(toString(evaluate({src: [112312,-289712,312242], index:2})))
-    sys.out.println(toString(evaluate([123,223,323])))
+    sys.out.println(Any.toString(evaluate(123)))
+    sys.out.println(Any.toString(evaluate({src: [112,212332,342], index:0})))
+    sys.out.println(Any.toString(evaluate({src: [112312,-289712,312242], index:2})))
+    sys.out.println(Any.toString(evaluate([123,223,323])))

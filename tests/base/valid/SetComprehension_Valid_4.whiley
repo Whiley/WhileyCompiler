@@ -4,6 +4,6 @@ import * from whiley.lang.*
     return { x | x in xs, x > 1 }
 
 void ::main(System sys,[string] args):
-    sys.out.println(toString(f([1,2,3])))
-    sys.out.println(toString(f([1,2,3,3])))
-    sys.out.println(toString(f([-1,1,2,-1,3,3])))
+    sys.out.println(Any.toString(f([1,2,3])))
+    sys.out.println(Any.toString(f([1,2,3,3])))
+    sys.out.println(Any.toString(f([-1,1,2,-1,3,3])))

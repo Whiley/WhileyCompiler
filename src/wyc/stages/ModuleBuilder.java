@@ -437,6 +437,11 @@ public class ModuleBuilder {
 					unresolved.put(key, new Pair<UnresolvedType,Expr>(td.type,td.constraint));
 					srcs.put(key, d);
 					filemap.put(key, f);
+				} else if (d instanceof ConstDecl) {
+					ConstDecl td = (ConstDecl) d;					
+					NameID key = new NameID(f.module, td.name());									
+					srcs.put(key, d);
+					filemap.put(key, f);
 				}
 			}
 		}
@@ -445,15 +450,17 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Pair<Type,Block> t = expandType(key, cache);				
-				types.put(key, new Pair<Type,Block>(t.first(),t.second()));				
+				Pair<Type, Block> p = expandType(key, cache,
+						filemap.get(key).filename, srcs.get(key));	
+				
+				types.put(key, new Pair<Type,Block>(p.first(),p.second()));				
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
 			}
 		}
 	}
-
+		
 	/**
 	 * This is a deeply complex method!
 	 * 
@@ -467,20 +474,32 @@ public class ModuleBuilder {
 	 * @throws ResolveError
 	 */
 	protected Pair<Type, Block> expandType(NameID key,
-			HashMap<NameID, Type> cache) throws ResolveError {
-		
+			HashMap<NameID, Type> cache, String filename, SyntacticElement elem)
+			throws ResolveError {
+				
 		Type cached = cache.get(key);
 		Pair<Type,Block> t = types.get(key);
 		
-		if (cached != null) {			
-			return new Pair<Type,Block>(cached, new Block(1));
-		} else if(t != null) {
-			return t;
+		if (cached != null) {						
+			return new Pair<Type,Block>(cached, null);
+		} else if(t != null) {						
+			return new Pair<Type,Block>(t.first(),t.second());
 		} else if (!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
-			Module.TypeDef td = mi.type(key.name());
+			Module.TypeDef td = mi.type(key.name());	
 			return new Pair<Type,Block>(td.type(),td.constraint());
+		} else if(constants.containsKey(key)) {
+			// this case happen if the key corresponds to a constant declared in
+			// the file which is not, in fact, a type. 
+			syntaxError(errorMessage(ErrorMessages.INVALID_CONSTANT_AS_TYPE),
+					filename, elem);
+		} else if(!unresolved.containsKey(key)) {
+			// this case happen if the key corresponds to a function or method declared in
+			// the file (which is definitely not a type).
+			syntaxError(
+					errorMessage(ErrorMessages.INVALID_FUNCTION_OR_METHOD_AS_TYPE),
+					filename, elem);
 		}
 
 		// following is needed to terminate any recursion
@@ -500,8 +519,7 @@ public class ModuleBuilder {
 					t.first()), t.second());
 		}
 		
-		Block blk = null;
-		blk = t.second();
+		Block blk = t.second();
 		if (ut.second() != null) {
 			String trueLabel = Block.freshLabel();
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -535,9 +553,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}		
@@ -549,9 +567,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}						
@@ -566,15 +584,27 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			Block blk = null;			
+			Block blk = null;						
 			ArrayList<Type> types = new ArrayList<Type>();				
+			
+			int i=0;			
 			for (UnresolvedType e : tt.types) {				
 				Pair<Type,Block> p = expandType(e, filename, cache);
-				// TODO: fix tuple constraints
-				types.add(p.first());				
-			}
+				types.add(p.first());
+				if(p.second() != null) {					
+					if(blk == null) {
+						blk = new Block(1);
+					}					
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.TupleLoad(null, i), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
+					blk.append(shiftBlock(1,p.second()));
+				}
+				i=i+1;
+			}			
+			
 			return new Pair<Type,Block>(Type.Tuple(types),blk);			
-		}else if (t instanceof UnresolvedType.Record) {
+		} else if (t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			Block blk = null;
 			HashMap<String, Type> types = new HashMap<String, Type>();								
@@ -584,9 +614,9 @@ public class ModuleBuilder {
 					if(blk == null) {
 						blk = new Block(1);
 					}					
-					blk.append(Code.Load(null, Code.THIS_SLOT));
-					blk.append(Code.FieldLoad(null, e.getKey()));
-					blk.append(Code.Store(null, Code.THIS_SLOT+1));
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.FieldLoad(null, e.getKey()), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
 					blk.append(shiftBlock(1,p.second()));								
 				}	
 				types.put(e.getKey(), p.first());				
@@ -594,14 +624,54 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.Record(types),blk);						
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			Block blk = null;
 			HashSet<Type> bounds = new HashSet<Type>();
-			for(int i=0;i!=ut.bounds.size();++i) {
-				UnresolvedType b = ut.bounds.get(i);
+			Block blk = new Block(1);
+			String exitLabel = Block.freshLabel();
+			boolean constraints = false;
+			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;			
+			for (int i=0;i!=ut_bounds.size();++i) {
+				boolean lastBound = (i+1) == ut_bounds.size(); 
+				UnresolvedType b = ut_bounds.get(i);
 				Pair<Type,Block> p = expandType(b, filename, cache);
-				// TODO: add union constraints
-				bounds.add(p.first());							
-			}			
+				Type bt = p.first();
+ 
+				bounds.add(bt);	
+				
+				if(p.second() != null) {
+					// In this case, there are constraints so we check the
+					// negated type and branch over the constraint test if we
+					// don't have the require type.  
+					
+					// TODO: in principle, the following should work. However,
+					// it's broken in the case of recurisve types being used in
+					// the type tests. This should be resolvable when we support
+					// proper named types, since we won't be expanding fully at
+					// this stage.
+//					constraints = true;
+//					String nextLabel = Block.freshLabel();												
+//					blk.append(
+//							Code.IfType(null, Code.THIS_SLOT,
+//									Type.Negation(bt), nextLabel),
+//									attributes(t));					
+//					blk.append(chainBlock(nextLabel,p.second()));
+//					blk.append(Code.Goto(exitLabel));
+//					blk.append(Code.Label(nextLabel));
+				} else {	
+					// In this case, there are no constraints so we can use a
+					// direct type test.
+					blk.append(
+							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
+							attributes(t));
+				}
+			}
+			
+			if(constraints) {
+				blk.append(Code.Fail("type constraint not satisfied"),attributes(ut));
+				blk.append(Code.Label(exitLabel));
+			} else {
+				blk = null;
+			}
+			
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {				
@@ -646,7 +716,7 @@ public class ModuleBuilder {
 
 			try {
 				// need to check for existential case				
-				return expandType(name, cache);															
+				return expandType(name, cache, filename, dt);															
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filename, t, rex);
 				return null;
@@ -1074,14 +1144,18 @@ public class ModuleBuilder {
 		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
 		for(Stmt.Catch c : s.catches) {
 			int freeReg = allocate(c.variable,environment);
-			String lab = Block.freshLabel();
+			Code.Label lab;
+			
 			if(endLab == null) {
-				endLab = lab;
+				endLab = Block.freshLabel();
+				lab = Code.TryEnd(endLab);
+			} else {
+				lab = Code.Label(Block.freshLabel());
 			}
 			Pair<Type,Block> pt = resolve(c.type);
 			// TODO: deal with exception type constraints
-			catches.add(new Pair<Type,String>(pt.first(),lab));
-			cblk.append(Code.Label(lab), attributes(c));
+			catches.add(new Pair<Type,String>(pt.first(),lab.label));
+			cblk.append(lab, attributes(c));
 			cblk.append(Code.Store(pt.first(), freeReg), attributes(c));
 			for (Stmt st : c.stmts) {
 				cblk.append(resolve(st, environment));
@@ -1097,19 +1171,36 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolve(While s, HashMap<String,Integer> environment) {		
-		String label = Block.freshLabel();				
+		String label = Block.freshLabel();									
 				
 		Block blk = new Block(environment.size());
 		
+		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
-		
+				
 		blk.append(resolveCondition(label, invert(s.condition), environment));
 
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
-					
+				
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
 		blk.append(Code.End(label));
 
 		return blk;
@@ -1120,13 +1211,29 @@ public class ModuleBuilder {
 				
 		Block blk = new Block(environment.size());
 		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
-	
+		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
 		blk.append(resolveCondition(label, invert(s.condition), environment));
 
 		
@@ -1137,17 +1244,28 @@ public class ModuleBuilder {
 	
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
-		Block blk = resolve(s.source,environment);	
+		
+		Block blk = new Block(1);
+		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
+		
+		blk.append(resolve(s.source,environment));	
 		int freeSlot = allocate(environment);
 		if(s.variables.size() > 1) {
 			// this is the destructuring case			
 			blk.append(Code.ForAll(null, freeSlot, label, Collections.EMPTY_SET), attributes(s));
-			blk.append(Code.Load(null, freeSlot));
-			blk.append(Code.Destructure(null));
+			blk.append(Code.Load(null, freeSlot), attributes(s));
+			blk.append(Code.Destructure(null), attributes(s));
 			for(int i=s.variables.size();i>0;--i) {
 				String var = s.variables.get(i-1);
 				int varReg = allocate(var,environment);
-				blk.append(Code.Store(null, varReg));
+				blk.append(Code.Store(null, varReg), attributes(s));
 			}										
 		} else {
 			// easy case.
@@ -1160,6 +1278,14 @@ public class ModuleBuilder {
 			blk.append(resolve(st, environment));
 		}		
 		scopes.pop(); // break
+		
+		if(s.invariant != null) {
+			String invariantLabel = Block.freshLabel();
+			blk.append(Code.Assert(invariantLabel),attributes(s));
+			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Label(invariantLabel));			
+		}
 		blk.append(Code.End(label), attributes(s));		
 
 		return blk;
@@ -2014,9 +2140,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
@@ -2028,9 +2154,9 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST), attributes(t));
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
@@ -2044,13 +2170,25 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			ArrayList<Type> types = new ArrayList<Type>();						
+			ArrayList<Type> types = new ArrayList<Type>();		
+			Block blk = null;
+			int i=0;			
 			for (UnresolvedType e : tt.types) {				
 				Pair<Type,Block> p = resolve(e);
-				// TODO: fix tuple constraints
-				types.add(p.first());				
-			}
-			return new Pair<Type,Block>(Type.Tuple(types),null);			
+				types.add(p.first());
+				if(p.second() != null) {
+					if(blk == null) {
+						blk = new Block(1);
+					}					
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.TupleLoad(null, i), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
+					blk.append(shiftBlock(1,p.second()));					
+				}
+				i=i+1;
+			}			
+			
+			return new Pair<Type,Block>(Type.Tuple(types),blk);			
 		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();	
@@ -2061,9 +2199,9 @@ public class ModuleBuilder {
 					if(blk == null) {
 						blk = new Block(1);
 					}					
-					blk.append(Code.Load(null, Code.THIS_SLOT));
-					blk.append(Code.FieldLoad(null, e.getKey()));
-					blk.append(Code.Store(null, Code.THIS_SLOT+1));
+					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
+					blk.append(Code.FieldLoad(null, e.getKey()), attributes(t));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
 					blk.append(shiftBlock(1,p.second()));								
 				}
 				types.put(e.getKey(), p.first());				
@@ -2077,17 +2215,56 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.Negation(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			HashSet<Type> bounds = new HashSet<Type>();			
-			for (UnresolvedType b : ut.bounds) {				
+			HashSet<Type> bounds = new HashSet<Type>();	
+			Block blk = new Block(1);
+			String exitLabel = Block.freshLabel();
+			boolean constraints = false;
+			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
+			for (int i=0;i!=ut_bounds.size();++i) {				
+				UnresolvedType b = ut_bounds.get(i);
 				Pair<Type,Block> p = resolve(b);
-				// TODO: fix union constraints
-				bounds.add(p.first());						
-			}
+				Type bt = p.first();
+ 
+				bounds.add(bt);	
+				
+				if(p.second() != null) {
+					// In this case, there are constraints so we check the
+					// negated type and branch over the constraint test if we
+					// don't have the require type.  
 
-			if (bounds.size() == 1) {
-				return new Pair<Type,Block>(bounds.iterator().next(),null);
+					// TODO: in principle, the following should work. However,
+					// it's broken in the case of recurisve types being used in
+					// the type tests. This should be resolvable when we support
+					// proper named types, since we won't be expanding fully at
+					// this stage.
+					//					
+//					constraints = true;
+//					String nextLabel = Block.freshLabel();				
+//					blk.append(
+//							Code.IfType(null, Code.THIS_SLOT,
+//									Type.Negation(bt), nextLabel),
+//									attributes(t));					
+//					blk.append(chainBlock(nextLabel,p.second()));
+//					blk.append(Code.Goto(exitLabel));
+//					blk.append(Code.Label(nextLabel));
+				} else {									
+					blk.append(
+							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
+							attributes(t));
+				}
+			}
+			
+			if(constraints) {
+				blk.append(Code.Fail("type constraint not satisfied"),attributes(ut));
+				blk.append(Code.Label(exitLabel));
 			} else {
-				return new Pair<Type,Block>(Type.Union(bounds),null);
+				blk = null;
+			}
+			
+			if (bounds.size() == 1) {
+				return new Pair<Type,Block>(bounds.iterator().next(),blk);
+			} else {
+				return new Pair<Type,Block>(Type.Union(bounds),blk);
 			}			
 		} else if(t instanceof UnresolvedType.Intersection) {
 			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
@@ -2287,7 +2464,29 @@ public class ModuleBuilder {
 			Code code = e.code.remap(binding);
 			nblock.append(code,e.attributes());
 		}
-		return nblock;
+		return nblock.relabel();
+	}
+	
+	/**
+	 * The chainBlock method takes a block and replaces every fail statement
+	 * with a goto to a given label. This is useful for handling constraints in
+	 * union types, since if the constraint is not met that doesn't mean its
+	 * game over.
+	 * 
+	 * @param target
+	 * @param blk
+	 * @return
+	 */
+	public static Block chainBlock(String target, Block blk) {	
+		Block nblock = new Block(blk.numInputs());
+		for (Block.Entry e : blk) {
+			if (e.code instanceof Code.Fail) {
+				nblock.append(Code.Goto(target), e.attributes());
+			} else {
+				nblock.append(e.code, e.attributes());
+			}
+		}
+		return nblock.relabel();
 	}
 	
 	/**

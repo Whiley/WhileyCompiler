@@ -32,6 +32,7 @@ import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
+import wyc.NameResolver;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
@@ -41,12 +42,12 @@ import wyc.stages.WhileyLexer.Ampersand;
 import wyc.util.*;
 
 public class NameResolution {
-	private final ModuleLoader loader;	
+	private final NameResolver resolver;	
 	private String filename;
 	private ModuleID module;
 	
 	public NameResolution(ModuleLoader loader) {
-		this.loader = loader;
+		this.resolver = (NameResolver) loader;
 	}
 	
 	public void resolve(WhileyFile wf) {
@@ -413,7 +414,7 @@ public class NameResolution {
 				} else {
 					ivk.receiver = target;
 					try {						
-						NameID nid = loader.resolveAsName(ivk.name,imports);
+						NameID nid = resolver.resolveAsName(ivk.name,imports);
 						ivk.attributes().add(new Attributes.Module(nid.module()));	
 					} catch(ResolveError e) {
 						// in this case, we've been unable to resolve the method
@@ -423,7 +424,7 @@ public class NameResolution {
 					}
 				}
 			} else {				
-				NameID nid = loader.resolveAsName(ivk.name,imports);				
+				NameID nid = resolver.resolveAsName(ivk.name,imports);				
 				// Ok, resolve the module for this invoke
 				ivk.attributes().add(new Attributes.Module(nid.module()));		
 			}
@@ -443,17 +444,17 @@ public class NameResolution {
 			// Therefore, we must determine which module this
 			// is, and update the tree accordingly.
 			try {
-				NameID nid = loader.resolveAsName(v.var, imports);				
+				NameID nid = resolver.resolveAsName(v.var, imports);				
 				return new ExternalAccess(nid,v.attributes());				
 			} catch(ResolveError err) {}
 			// In this case, we may still be OK if this corresponds to an
 			// explicit module or package access.
 			try {
-				ModuleID mid = loader.resolveAsModule(v.var, imports);				
+				ModuleID mid = resolver.resolveAsModule(v.var, imports);				
 				return new ModuleAccess(mid,v.attributes());
 			} catch(ResolveError err) {}			
 			PkgID pid = new PkgID(v.var);
-			if (loader.isPackage(pid)) {
+			if (resolver.isPackage(pid)) {
 				return new PackageAccess(pid, v.attributes());
 			}
 			// ok, failed.
@@ -573,7 +574,7 @@ public class NameResolution {
 			}
 		}
 
-		NameID nid = loader.resolveAsName(tc.name, imports);
+		NameID nid = resolver.resolveAsName(tc.name, imports);
 		tc.attributes().add(new Attributes.Module(nid.module()));
 
 		return tc;
@@ -588,11 +589,11 @@ public class NameResolution {
 			PackageAccess pa = (PackageAccess) sg.lhs;			
 			try {				
 				ModuleID mid = new ModuleID(pa.pid,sg.name);
-				ModuleLoader.Skeleton m = loader.loadSkeleton(mid);
+				ModuleLoader.Skeleton m = resolver.loadSkeleton(mid);
 				return new ModuleAccess(mid);
 			} catch(ResolveError err) {}
 			PkgID pid = pa.pid.append(sg.name);			
-			if(loader.isPackage(pid)) {
+			if(resolver.isPackage(pid)) {
 				pa.pid = pid;
 				return pa;
 			} else {
@@ -602,7 +603,7 @@ public class NameResolution {
 			// this indicates we're constructing a constant access
 			ModuleAccess ma = (ModuleAccess) sg.lhs;			
 			try {				
-				ModuleLoader.Skeleton m = loader.loadSkeleton(ma.mid);				
+				ModuleLoader.Skeleton m = resolver.loadSkeleton(ma.mid);				
 				if(m.hasName(sg.name)) {
 					return new ExternalAccess(new NameID(ma.mid,sg.name));
 				}				
@@ -638,7 +639,7 @@ public class NameResolution {
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			NameID nid = loader.resolveAsName(dt.names, imports);			
+			NameID nid = resolver.resolveAsName(dt.names, imports);			
 			t.attributes().add(new Attributes.Name(nid));
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential dt = (UnresolvedType.Existential) t;						

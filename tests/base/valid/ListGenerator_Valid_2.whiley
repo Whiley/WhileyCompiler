@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 string f([[int]] x):
     if(|x[0]| > 2):
-        return toString(x[0][1])
+        return Any.toString(x[0][1])
     else:
         return ""
 

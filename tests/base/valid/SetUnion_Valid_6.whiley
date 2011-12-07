@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 string f({int} xs, {int} ys, {int} zs):
     if zs == xs ∪ ys:
-        return toString(xs)
+        return Any.toString(xs)
     else:
         return "FAILED"
 

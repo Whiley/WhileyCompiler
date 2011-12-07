@@ -160,6 +160,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			for(int i=0;i<maxSlots;++i) {
 				tmp.add(Type.T_VOID);
 			}
+
 			postcondition = doPropagation(postcondition,tmp);
 		}
 		
@@ -273,6 +274,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Spawn)code,entry,environment);
 		} else if(code instanceof Throw) {
 			code = infer((Throw)code,entry,environment);
+		} else if(code instanceof TupleLoad) {
+			code = infer((TupleLoad)code,entry,environment);
 		} else {
 			internalFailure("Unknown wyil code encountered: " + code,filename,entry);
 			return null;
@@ -302,19 +305,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
 		
-		if(lhs_set || rhs_set) {
-			environment.push(lhs);
-			environment.push(rhs);
-			switch(v.bop) {
-				case ADD:			
-					return inferSetUnion(OpDir.UNIFORM, stmt, environment);					
-				case SUB:										
-					return inferSetDifference(OpDir.UNIFORM, stmt, environment);
-				default:
-					syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
-					result = null;
-			}						
-		} else if(lhs_str || rhs_str) {			
+		if(lhs_str || rhs_str) {			
 			Code.OpDir dir;
 			
 			if(lhs_str && rhs_str) {				
@@ -338,25 +329,26 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			
 			result = Type.T_STRING;
-		} else if(lhs_list || rhs_list) {
+		} else if(lhs_set || rhs_set) {
+			environment.push(lhs);
+			environment.push(rhs);
+			switch(v.bop) {
+				case ADD:			
+					return inferSetUnion(OpDir.UNIFORM, stmt, environment);					
+				case SUB:										
+					return inferSetDifference(OpDir.UNIFORM, stmt, environment);
+				default:
+					syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
+					result = null;
+			}						
+		} else if(lhs_list && rhs_list) {
 			Type.List type;
-			Code.OpDir dir;
-			
-			if(lhs_list && rhs_list) {				
-				dir = OpDir.UNIFORM;
-			} else if(lhs_list) {
-				rhs = Type.List(rhs);
-				dir = OpDir.LEFT;
-			} else {
-				lhs = Type.List(lhs);				
-				dir = OpDir.RIGHT;
-			}
 			
 			type = Type.effectiveListType(Type.Union(lhs,rhs));
 			
 			switch(v.bop) {				
 				case ADD:																				
-					code = Code.ListAppend(type,dir);
+					code = Code.ListAppend(type,OpDir.UNIFORM);
 					break;
 				default:
 					syntaxError("Invalid list operation: " + v.bop,filename,stmt);		
@@ -1185,6 +1177,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.Throw(val);
 	}
 	
+	protected Code infer(TupleLoad e, Entry stmt, Env environment) {		
+		Type src = environment.pop();
+		// FIXME: should have an effecitve tuple type here
+		Type.Tuple tuple = checkType(src,Type.Tuple.class,stmt);
+		List<Type> elements = tuple.elements();
+		if(e.index < 0 || e.index >= elements.size()) {
+			syntaxError("invalid tuple index",filename,stmt);
+			return null;
+		}
+		environment.push(elements.get(e.index));
+		return Code.TupleLoad(tuple,e.index);		
+	}
+	
 	protected Pair<Env, Env> propagate(int index, Code.IfGoto code, Entry stmt,
 			Env environment) {
 		environment = (Env) environment.clone();
@@ -1266,8 +1271,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
-			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, methodCase
-					.body().get(index));
+			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, stmt);
 		} else if (glb == Type.T_VOID) {				
 			// DEFINITE FALSE CASE	
 			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs_t, code.test),

@@ -7,4 +7,4 @@ void ::main(System sys,[string] args):
     l = [1,2,3]
     r = args + l
     f(r)
-    sys.out.println(toString(r))
+    sys.out.println(Any.toString(r))

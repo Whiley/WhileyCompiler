@@ -8,6 +8,6 @@ tac2tb f(tac2tb y):
 
 void ::main(System sys,[string] args):
     x = {f1:1, f2:3}
-    debug toString(x)
+    debug Any.toString(x)
     x.f1 = 2
-    debug toString(f(x))
+    debug Any.toString(f(x))

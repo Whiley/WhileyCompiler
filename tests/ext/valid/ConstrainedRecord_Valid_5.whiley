@@ -15,4 +15,4 @@ state parseTerm(state st):
 void ::main(System sys,[string] args):
     st = {input:"  Hello",pos:0}
     st = parseTerm(st)
-    sys.out.println(toString(st))
+    sys.out.println(Any.toString(st))

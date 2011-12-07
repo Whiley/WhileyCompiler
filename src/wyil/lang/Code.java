@@ -157,7 +157,8 @@ public abstract class Code {
 	}
 	
 	/**
-	 * Construct a <code>load</code> bytecode which reads a given register.
+	 * Construct a <code>load</code> bytecode which pushes a given register onto
+	 * the stack.
 	 * 
 	 * @param type
 	 *            --- record type.
@@ -171,6 +172,21 @@ public abstract class Code {
 	
 	public static ListLength ListLength(Type.List type) {
 		return get(new ListLength(type));
+	}
+	
+	/**
+	 * Construct a <code>move</code> bytecode which moves a given register onto
+	 * the stack. The register contents of the register are voided after this
+	 * operation.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param reg
+	 *            --- reg to load.
+	 * @return
+	 */
+	public static Move Move(Type type, int reg) {
+		return get(new Move(type,reg));
 	}
 	
 	public static SubList SubList(Type.List type) {
@@ -421,6 +437,22 @@ public abstract class Code {
 	public static TryCatch TryCatch(String target,
 			Collection<Pair<Type, String>> catches) {
 		return get(new TryCatch(target, catches));
+	}
+	
+	public static TryEnd TryEnd(String label) {
+		return get(new TryEnd(label));
+	}
+	
+	/**
+	 * Construct a <code>tupleload</code> bytecode which reads the value
+	 * at a given index in a tuple
+	 * 
+	 * @param type
+	 *            --- dictionary type.
+	 * @return
+	 */
+	public static TupleLoad TupleLoad(Type.Tuple type, int index) {
+		return get(new TupleLoad(type,index));
 	}
 	
 	public static Negate Negate(Type type) {
@@ -730,6 +762,8 @@ public abstract class Code {
 	 * values which are pushed back on the stack. For example, a rational can be
 	 * destructured into two integers (the <i>numerator</i> and
 	 * <i>denominator</i>). Or, an n-tuple can be destructured into n values.
+	 * 
+	 * Probably should be deprecated in favour of tupeload bytecode.
 	 */
 	public static final class Destructure extends Code {
 		public final Type type;
@@ -775,7 +809,7 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof SetLength) {
+			if (o instanceof DictLength) {
 				DictLength setop = (DictLength) o;
 				return (type == setop.type || (type != null && type
 						.equals(setop.type)));
@@ -1488,6 +1522,51 @@ public abstract class Code {
 		}	
 	}		
 	
+	public static final class Move extends Code {		
+		public final Type type;
+		public final int slot;		
+		
+		private Move(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
+		}
+		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Move(type, nslot);
+			} else {
+				return this;
+			}
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return slot; 
+			} else { 
+				return type.hashCode() + slot;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Move) {
+				Move i = (Move) o;
+				return slot == i.slot
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("move " + slot,type);
+		}	
+	}		
+	
 	public static class Loop extends Code {
 		public final String target;
 		public final HashSet<Integer> modifies;
@@ -1561,10 +1640,12 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof ForAll) {
+			if (o instanceof ForAll) {
 				ForAll f = (ForAll) o;
-				return target.equals(f.target) && type.equals(f.type)
-						&& slot == f.slot && modifies.equals(f.modifies);
+				return target.equals(f.target)
+						&& (type == f.type || (type != null && type
+								.equals(f.type))) && slot == f.slot
+						&& modifies.equals(f.modifies);
 			}
 			return false;
 		}
@@ -1661,7 +1742,7 @@ public abstract class Code {
 		public Type.Record type() {
 			return Type.effectiveRecordType(type);
 		}
-	}
+	}	
 	
 	private static final class UpdateIterator implements Iterator<LVal> {		
 		private final ArrayList<String> fields;
@@ -2257,7 +2338,7 @@ public abstract class Code {
 			return 101;
 		}
 		public boolean equals(Object o) {
-			return o instanceof Debug;
+			return o instanceof Skip;
 		}
 		public String toString() {
 			return "skip";
@@ -2494,6 +2575,41 @@ public abstract class Code {
 		}
 	}
 	
+	/**
+	 * Marks the end of a try-catch block.
+	 * @author djp
+	 *
+	 */
+	public static final class TryEnd extends Label {
+		TryEnd(String label) {
+			super(label);
+		}
+		
+		public TryEnd relabel(Map<String,String> labels) {
+			String nlabel = labels.get(label);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return TryEnd(nlabel);
+			}
+		}
+		
+		public int hashCode() {
+			return label.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof TryEnd) {
+				TryEnd e = (TryEnd) o;
+				return e.label.equals(label);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "tryend " + label;
+		}
+	}	
+	
 	public static final class Negate extends Code {
 		public final Type type;		
 		
@@ -2579,6 +2695,36 @@ public abstract class Code {
 		public String toString() {
 			return toString("spawn",type);
 		}
+	}
+	
+	public static final class TupleLoad extends Code {
+		public final Type.Tuple type;
+		public final int index;
+		
+		private TupleLoad(Type.Tuple type, int index) {
+			this.type = type;
+			this.index = index;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof TupleLoad) {
+				TupleLoad i = (TupleLoad) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("tupleload " + index,type);
+		}	
 	}
 	
 	public static final class ProcLoad extends Code {

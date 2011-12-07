@@ -11,9 +11,9 @@ void ::main(System sys,[string] args):
         x = 1
         y = x // OK
     else:
-        sys.out.println(toString(y))
+        sys.out.println(Any.toString(y))
         x = [1,2,3]
         ys = x // OK
     z = f(x) // should fail
-    sys.out.println(toString(z))
+    sys.out.println(Any.toString(z))
 

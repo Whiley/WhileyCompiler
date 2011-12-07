@@ -29,18 +29,19 @@ import java.io.*;
 import java.util.*;
 
 import wyil.*;
+import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
 
-public class Compiler implements Logger {	
-	protected ModuleLoader loader;
+public class Compiler implements Logger {		
+	protected NameResolver resolver;	
 	protected ArrayList<Transform> stages;
 
-	public Compiler(ModuleLoader loader, List<Transform> stages) {
-		this.loader = loader;		
-		this.stages = new ArrayList<Transform>(stages);				
+	public Compiler(NameResolver resolver, List<Transform> stages) {
+		this.resolver = resolver;
+		this.stages = new ArrayList<Transform>(stages);
 	}
 	
 	/**
@@ -62,14 +63,16 @@ public class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public List<WhileyFile> compile(List<File> files) throws IOException {
-		long startTime = System.currentTimeMillis();
+	public List<WhileyFile> compile(List<File> files) throws Exception {
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();		
+		long memory = runtime.freeMemory();
 		
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
 			wyfiles.add(wf);			
-			loader.preregister(wf.skeleton(),wf.filename);			
+			resolver.preregister(wf.skeleton());			
 		}
 				
 		for (WhileyFile m : wyfiles) {
@@ -78,37 +81,37 @@ public class Compiler implements Logger {
 		
 		List<Module> modules = buildModules(wyfiles);				
 		for(Module m : modules) {
-			loader.register(m);
-		}
-		for(Module m : modules) {
-			finishCompilation(m);
-		}
+			resolver.register(m);
+		}		
+		
+		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
-		logTotalTime("Compiled " + files.size() + " file(s)",endTime-startTime);
+		logTotalTime("Compiled " + files.size() + " file(s)",endTime-start, memory - runtime.freeMemory());
 		
 		return wyfiles;
 	}
 		
 	/**
 	 * This method simply parses a whiley file into an abstract syntax tree. It
-	 * makes little effort to check whether or not the file is syntactically. In
-	 * particular, it does not determine the correct type of all declarations,
-	 * expressions, etc.
+	 * makes little effort to check whether or not the file is syntactically
+	 * correct. In particular, it does not determine the correct type of all
+	 * declarations, expressions, etc.
 	 * 
 	 * @param file
 	 * @return
 	 * @throws IOException
 	 */
 	public WhileyFile innerParse(File file) throws IOException {
-		long start = System.currentTimeMillis();	
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();		
+		long memory = runtime.freeMemory();
 		WhileyLexer wlexer = new WhileyLexer(file.getPath());		
 		List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer.scan());		
 
 		WhileyParser wfr = new WhileyParser(file.getPath(), tokens);
 		logTimedMessage("[" + file + "] Parsing complete",
-				System.currentTimeMillis() - start);
-		
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		return wfr.read(); 
 	}		
 	
@@ -120,32 +123,39 @@ public class Compiler implements Logger {
 	 * 
 	 * @param wf
 	 */
-	public void finishCompilation(Module module) throws IOException {				
+	public void finishCompilation(List<Module> modules) throws Exception {				
 		// Register the updated file
-		loader.register(module);
+		for(Module module : modules) {
+			resolver.register(module);
+		}
 		
 		for(Transform stage : stages) {
-			process(module,stage);
+			for(Module module : modules) {
+				process(module,stage);
+			}
 		}		
 	}
 	
-	protected void process(Module module, Transform stage) throws IOException {
+	protected void process(Module module, Transform stage) throws Exception {
+		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
+		long memory = runtime.freeMemory();
 		String name = name(stage.getClass().getSimpleName());		
 		
-		try {
-			stage.apply(module);
+		try {						
+			stage.apply(module);			
 			logTimedMessage("[" + module.filename() + "] applied "
-					+ name, System.currentTimeMillis() - start);			
+					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());
+			System.gc();
 		} catch (RuntimeException ex) {
 			logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
-					System.currentTimeMillis() - start);
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		} catch (IOException ex) {
 			logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
-					System.currentTimeMillis() - start);
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		}
 	}
@@ -165,41 +175,52 @@ public class Compiler implements Logger {
 	}
 	
 	protected void resolveNames(WhileyFile m) {
+		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
-		new NameResolution(loader).resolve(m);
+		long memory = runtime.freeMemory();		
+		new NameResolution(resolver).resolve(m);
 		logTimedMessage("[" + m.filename + "] resolved names",
-				System.currentTimeMillis() - start);		
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		
 	}
 	
 	protected List<Module> buildModules(List<WhileyFile> files) {		
+		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
-		List<Module> modules = new ModuleBuilder(loader).resolve(files);
+		long memory = runtime.freeMemory();		
+		List<Module> modules = new ModuleBuilder(resolver).resolve(files);
 		logTimedMessage("built modules",
-				System.currentTimeMillis() - start);
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		return modules;		
 	}	
 	
 	/**
 	 * This method is just a helper to format the output
 	 */
-	public void logTimedMessage(String msg, long time) {
+	public void logTimedMessage(String msg, long time, long memory) {
 		logout.print(msg);
 		logout.print(" ");
-
-		String t = Long.toString(time);
-
-		for (int i = 0; i < (80 - msg.length() - t.length()); ++i) {
-			logout.print(".");
+		double mem = memory;
+		mem = mem / (1024*1024);
+		memory = (long) mem;
+		String stats = " [" + Long.toString(time) + "ms";
+		if(memory > 0) {
+			stats += "+" + Long.toString(memory) + "mb]";
+		} else if(memory < 0) {
+			stats += Long.toString(memory) + "mb]";
+		} else {
+			stats += "]";
 		}
-		logout.print(" [");
-		logout.print(time);
-		logout.println("ms]");
+		for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
+			logout.print(".");
+		}		
+		logout.println(stats);
 	}	
 	
-	public void logTotalTime(String msg, long time) {
+	public void logTotalTime(String msg, long time, long memory) {
+		memory = memory / 1024;
 		
-		for (int i = 0; i <= 85; ++i) {
+		for (int i = 0; i <= 90; ++i) {
 			logout.print("=");
 		}
 		
@@ -208,14 +229,22 @@ public class Compiler implements Logger {
 		logout.print(msg);
 		logout.print(" ");
 
-		String t = Long.toString(time);
-
-		for (int i = 0; i < (80 - msg.length() - t.length()); ++i) {
-			logout.print(".");
+		double mem = memory;
+		mem = mem / (1024*1024);
+		memory = (long) mem;
+		String stats = " [" + Long.toString(time) + "ms";
+		if(memory > 0) {
+			stats += "+" + Long.toString(memory) + "mb]";
+		} else if(memory < 0) {
+			stats += Long.toString(memory) + "mb]";
+		} else {
+			stats += "]";
 		}
 
-		logout.print(" [");
-		logout.print(time);
-		logout.println("ms]");
+		for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
+			logout.print(".");
+		}
+		
+		logout.println(stats);		
 	}	
 }

@@ -12,4 +12,4 @@ expr f(expr e):
 
 void ::main(System sys,[string] args):
     e1 = {op:0, left:{op:MUL,left:2,right:2}, right:2}
-    debug toString(f(e1))
+    debug Any.toString(f(e1))

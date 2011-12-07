@@ -4,5 +4,5 @@ define sr4set as {int}
 
 void ::main(System sys,[string] args):
     x = {1}
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
     

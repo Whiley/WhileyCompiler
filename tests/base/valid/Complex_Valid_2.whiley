@@ -45,11 +45,11 @@ define D3 as { col: 3, row: 2 }
 
 define H1 as { col: 8, row: 1 }
 
-string move2toString(Move m):
+string move2str(Move m):
     if m is SingleTake: 
-        return piece2toString(m.piece) + pos2str(m.from) + "x" + piece2str(m.taken) + pos2str(m.to)
+        return piece2str(m.piece) + pos2str(m.from) + "x" + piece2str(m.taken) + pos2str(m.to)
     else if m is SingleMove:
-        return piece2toString(m.piece) + pos2str(m.from) + "-" + pos2str(m.to)   
+        return piece2str(m.piece) + pos2str(m.from) + "-" + pos2str(m.to)   
     else if m is CastleMove:
         if m.kingSide:
             return "O-O"
@@ -57,22 +57,22 @@ string move2toString(Move m):
             return "O-O-O"
     else:
         // check move
-        return move2toString(m.check) + "+"  
+        return move2str(m.check) + "+"  
 
-string piece2toString(Piece p):
+string piece2str(Piece p):
     if p.kind == PAWN:
         return ""
     else:
         return "" + PIECE_CHARS[p.kind]
 
-string pos2toString(Pos p):
-    return "" + ('a' + p.col) + ('1' + p.row)
+string pos2str(Pos p):
+    return "" + ((char) ('a' + p.col)) + ((char) ('1' + p.row))
 
 
 void ::main(System sys,[string] args):
     m = {piece: WHITE_PAWN, from: A2, to: A1 }
-    sys.out.println(move2toString(m))
+    sys.out.println(move2str(m))
     m = {piece: WHITE_KNIGHT, from: A2, to: A1 }
-    sys.out.println(move2toString(m))
+    sys.out.println(move2str(m))
     m = {piece: WHITE_QUEEN, from: A2, to: A1, taken: BLACK_KING }
-    sys.out.println(move2toString(m))
+    sys.out.println(move2str(m))

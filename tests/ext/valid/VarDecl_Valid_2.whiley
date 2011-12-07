@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string g(int z) requires z > 1:
-    return toString(z)
+    return Any.toString(z)
 
 string f(int x) requires x > 0:
     y = x + 1

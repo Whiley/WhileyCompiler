@@ -3,11 +3,14 @@ package wyjc;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
+import java.util.jar.JarFile;
 
+import wyc.NameResolver;
 import wyc.Pipeline;
 import wyc.Compiler;
 import wyc.util.*;
 import wyil.*;
+import wyil.path.*;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
 import static wyc.util.OptArg.*;
@@ -78,13 +81,19 @@ public class Main {
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("whileypath", "wp", PATHLIST,
-					"Specify where to find whiley files",
+					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", PATHLIST,
-					"Specify where to find whiley standard library files",
+					"Specify where to find whiley standard library files",					
 					new ArrayList<String>()),
 			new OptArg("thread-count", "tc", INT,
 					"Specify the number of threads to use when run", (Object) (-1)),
+			new OptArg("sourcepath", "sp", PATHLIST,
+					"Specify where to find whiley (source) files",
+					new ArrayList<String>()),
+			new OptArg("outputdir", "d", STRING,
+					"Specify where to place generated class files",
+					null),
 			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("C", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
@@ -102,7 +111,7 @@ public class Main {
 	 * 
 	 * @param bootpath
 	 */
-	public static void initialiseBootpath(ArrayList<String> bootpath) {
+	public static void initialiseBootPath(List<Path.Root> bootpath) {
 		if(bootpath.isEmpty()) {
 		
 			//
@@ -123,14 +132,72 @@ public class Main {
 						// "."
 						jarfile += "stdlib";
 					}
-					bootpath.add(jarfile);
+					bootpath.add(new JarFileRoot(jarfile));
 				}				
 			} catch(Exception e) {
 				// just ignore.
 			}
 		}
 	}
+	
+	/**
+	 * In the case that no explicit source path is provided as a command-line
+	 * argument, then "." is used as the source path. This mirrors the behaviour
+	 * of "javac". What it means, however, is that if you're compiling from
+	 * somewhere other than the package root, then you can quickly get into
+	 * problems.
+	 * 
+	 * @param sourcepath
+	 * @throws IOException
+	 */
+	public static ArrayList<Path.Root> initialiseSourceRoots(
+			List<String> sourcepath, BinaryDirectoryRoot outputDirectory,
+			boolean verbose) throws IOException {
+		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
+		if (sourcepath.isEmpty()) {
+			nitems.add(new SourceDirectoryRoot(".", outputDirectory));
+		} else {			
+			for (String root : sourcepath) {
+				try {
+					nitems.add(new SourceDirectoryRoot(root,outputDirectory));					
+				} catch (IOException e) {
+					if (verbose) {
+						System.err.println("Warning: " + root
+								+ " is not a valid package root");
+					}
+				}
+			}			
+		}
+		return nitems;
+	}
 
+	/**
+	 * The following is just a helper method. It assumes the list given contains
+	 * the names of directories or jarfiles on the filesystem.
+	 * 
+	 * @param items
+	 * @return
+	 */
+	private static List<Path.Root> initialiseBinaryRoots(List<String> roots,
+			boolean verbose) {
+		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
+		for (String root : roots) {
+			try {
+				if (root.endsWith(".jar")) {
+					nitems.add(new JarFileRoot(root));
+				} else {
+					nitems.add(new BinaryDirectoryRoot(root));
+				}
+			} catch (IOException e) {
+				if (verbose) {
+					System.err.println("Warning: " + root
+							+ " is not a valid package root");
+				}
+			}
+		}
+		return nitems;
+	}
+	
 	/**
 	 * The run method is responsible for processing command-line arguments and
 	 * constructing an appropriate Compiler instance.
@@ -158,32 +225,52 @@ public class Main {
 		}
 				
 		// read out option values
-		ArrayList<String> whileypath = (ArrayList) values.get("whileypath");
-		ArrayList<String> bootpath = (ArrayList) values.get("bootpath");
-		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 
 		boolean verbose = values.containsKey("verbose");
-		threadCount = (Integer) values.get("thread-count");
-		
-		try {			
-			// initialise the boot path appropriately
-			initialiseBootpath(bootpath);
 
-			// now initialise the whiley path
-			whileypath.add(0,".");
+		threadCount = (Integer) values.get("thread-count");
+		String outputdir = (String) values.get("outputdir");
+						
+		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
+		
+		try {											
+			// initialise the boot path appropriately
+			List<Path.Root> bootpath = initialiseBinaryRoots((ArrayList) values.get("bootpath"),verbose);
+			initialiseBootPath(bootpath);
+
+			// initialise the whiley path appropriately
+			List<Path.Root> whileypath = initialiseBinaryRoots((ArrayList) values.get("whileypath"),verbose);	
+			
+			// initialise the source path appropriately
+			BinaryDirectoryRoot bindir = null;
+			if (outputdir != null) {
+				bindir = new BinaryDirectoryRoot(outputdir);
+			}
+			List<Path.Root> sourcepath = initialiseSourceRoots(
+					(ArrayList) values.get("sourcepath"), bindir, verbose);
+			
+			// now initialise the whiley path			
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			ClassFileLoader classLoader = new ClassFileLoader();
-			ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
+			NameResolver resolver = new NameResolver(sourcepath,whileypath);
+			resolver.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-			Pipeline pipeline = new Pipeline(templates, moduleLoader);
+			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
+
+			Pipeline pipeline = new Pipeline(templates, resolver);
+			
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
 			}
+			
+			if (outputdir != null) {
+				pipeline.setOption(ClassWriter.class, "outputDirectory",
+						outputdir);
+			}
+			
 			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(moduleLoader,stages);		
-			moduleLoader.setLogger(compiler);		
+			Compiler compiler = new Compiler(resolver,stages);		
+			resolver.setLogger(compiler);		
 
 			if(verbose) {			
 				compiler.setLogOut(System.err);

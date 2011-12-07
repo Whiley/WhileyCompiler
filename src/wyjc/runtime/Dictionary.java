@@ -3,7 +3,6 @@ package wyjc.runtime;
 import java.math.BigInteger;
 import java.util.*;
 
-
 public final class Dictionary extends java.util.HashMap<Object,Object> {	
 	/**
 	 * The reference count is use to indicate how many variables are currently
@@ -11,7 +10,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1; 
 
 	// ================================================================================
 	// Generic Operations
@@ -23,6 +22,10 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	
 	Dictionary(Dictionary dict) {
 		super(dict);
+		for(Map.Entry e : dict.entrySet()) {
+			Util.incRefs(e.getKey());
+			Util.incRefs(e.getValue());
+		}
 	}
 	
 	public String toString() {
@@ -50,19 +53,22 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	// Dictionary Operations
 	// ================================================================================	 	
 
-	public static Object get(Dictionary dict, Object key) {
-		return dict.get(key);
+	public static Object get(Dictionary dict, Object key) {	
+		Util.decRefs(dict);
+		Util.decRefs(key);
+		Object item = dict.get(key);		
+		Util.incRefs(item);
+		return item;
 	}
 	
 	public static Dictionary put(Dictionary dict, Object key, Object value) {
+		Util.countRefs(dict);
 		if(dict.refCount > 1) {
-			Dictionary ndict = new Dictionary(dict);
-			HashMap<Object,Object> tmp = ndict;
-			for(Map.Entry e : tmp.entrySet()) {
-				Util.incRefs(e.getKey());
-				Util.incRefs(e.getValue());
-			}
-			dict = ndict;
+			Util.countClone(dict);
+			Util.decRefs(dict);
+			dict = new Dictionary(dict);			
+		} else {
+			Util.ndict_inplace_updates++;
 		}
 		Object val = dict.put(key, value);
 		if(val != null) {
@@ -75,6 +81,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	}
 	
 	public static BigInteger length(Dictionary dict) {
+		Util.decRefs(dict);
 		return BigInteger.valueOf(dict.size());
 	}
 	
@@ -97,5 +104,22 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 			Map.Entry e = iter.next();
 			return new Tuple(e.getKey(),e.getValue());
 		}
+	}
+	
+	/**
+	 * This method is not intended for public consumption. It is used internally
+	 * by the compiler during imperative updates only.
+	 * 
+	 * @param list
+	 * @param item
+	 * @return
+	 */
+	public static Object internal_get(Dictionary dict, Object key) {	
+		Util.decRefs(key);
+		Object item = dict.get(key);
+		if(dict.refCount > 1) {
+			Util.incRefs(item);			
+		} 
+		return item;
 	}
 }

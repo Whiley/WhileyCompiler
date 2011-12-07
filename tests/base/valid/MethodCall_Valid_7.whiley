@@ -27,6 +27,6 @@ void ::main(System sys,[string] args):
     sum!start()
     // get the result synchronously
     r = sum.get()
-    sys.out.println("SUM: " + toString(r))
+    sys.out.println("SUM: " + Any.toString(r))
         
 

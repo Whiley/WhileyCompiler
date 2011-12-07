@@ -55,14 +55,14 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Ensures_Valid_5_RuntimeTest() { runTest("Ensures_Valid_5"); }
  @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
- @Test public void Function_Valid_11_RuntimeTest() { runTest("Function_Valid_11"); }
+ @Ignore("Known Issue") @Test public void Function_Valid_11_RuntimeTest() { runTest("Function_Valid_11"); }
  @Test public void Function_Valid_12_RuntimeTest() { runTest("Function_Valid_12"); }
  @Test public void Function_Valid_2_RuntimeTest() { runTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RuntimeTest() { runTest("Function_Valid_3"); }
  @Test public void Function_Valid_4_RuntimeTest() { runTest("Function_Valid_4"); }
  @Test public void Function_Valid_5_RuntimeTest() { runTest("Function_Valid_5"); }
  @Test public void Function_Valid_6_RuntimeTest() { runTest("Function_Valid_6"); }
- @Test public void Function_Valid_8_RuntimeTest() { runTest("Function_Valid_8"); }
+ @Ignore("Known Issue") @Test public void Function_Valid_8_RuntimeTest() { runTest("Function_Valid_8"); }
  @Test public void IntDefine_Valid_1_RuntimeTest() { runTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { runTest("IntDiv_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { runTest("ListAccess_Valid_1"); }
@@ -127,6 +127,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void UnionType_Valid_5_RuntimeTest() { runTest("UnionType_Valid_5"); }
  @Test public void UnionType_Valid_6_RuntimeTest() { runTest("UnionType_Valid_6"); }
  @Test public void UnionType_Valid_7_RuntimeTest() { runTest("UnionType_Valid_7"); }
+ @Test public void UnionType_Valid_8_RuntimeTest() { runTest("UnionType_Valid_8"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { runTest("VarDecl_Valid_2"); }
  @Test public void While_Valid_2_RuntimeTest() { runTest("While_Valid_2"); }
  @Test public void While_Valid_3_RuntimeTest() { runTest("While_Valid_3"); }

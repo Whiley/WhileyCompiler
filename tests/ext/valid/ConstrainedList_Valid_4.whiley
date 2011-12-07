@@ -10,5 +10,5 @@ char f(state st):
 
 void ::main(System sys,[string] args):
     c = f({input:"hello",pos:0})
-    sys.out.println(toString(c))
+    sys.out.println(Any.toString(c))
  

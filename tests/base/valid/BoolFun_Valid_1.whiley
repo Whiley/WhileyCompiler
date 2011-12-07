@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string f(bool b):
-    return toString(b)
+    return Any.toString(b)
 
 void ::main(System sys,[string] args):
     x = true

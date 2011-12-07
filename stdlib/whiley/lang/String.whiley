@@ -81,13 +81,3 @@ public [byte] toUTF8(string s):
         r = r + [Int.toUnsignedByte(c)]
     return r
 
-// Convert a string into an integer
-public int toInt(string input) throws SyntaxError:
-    r = 0
-    for i in 0..|input|:
-        c = input[i]
-        r = r * 10
-        if !Char.isDigit(c):
-            throw SyntaxError("invalid number string",i,i)
-        r = r + (c - '0')
-    return r

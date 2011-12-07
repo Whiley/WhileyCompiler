@@ -12,8 +12,8 @@ public bool has(char c, string str):
 
 void ::main(System sys,[string] args):
     s = "Hello World"
-    sys.out.println(toString(has('l',s)))
-    sys.out.println(toString(has('e',s)))
-    sys.out.println(toString(has('h',s)))
-    sys.out.println(toString(has('z',s)))
-    sys.out.println(toString(has('H',s)))
+    sys.out.println(Any.toString(has('l',s)))
+    sys.out.println(Any.toString(has('e',s)))
+    sys.out.println(Any.toString(has('h',s)))
+    sys.out.println(Any.toString(has('z',s)))
+    sys.out.println(Any.toString(has('H',s)))

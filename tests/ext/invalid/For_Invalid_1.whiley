@@ -6,4 +6,4 @@ void ::main(System sys,[string] args):
     r = |args|-1
     for x in xs where r >= 0:
         r = r + x    
-    debug toString(r)
+    debug Any.toString(r)

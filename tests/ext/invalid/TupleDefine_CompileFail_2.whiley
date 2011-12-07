@@ -8,4 +8,4 @@ point f(point p):
 void ::main(System sys,[string] args):
     p = {x:-1,y:1}
     p = f(p)
-    debug toString(p)
+    debug Any.toString(p)

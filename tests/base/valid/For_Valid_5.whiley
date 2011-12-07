@@ -8,6 +8,6 @@ real f({(int,real)} xs, int m):
 
 void ::main(System sys,[string] args):
     x = f({(1,2.2),(5,3.3)},5)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))
     x = f({(1,2.2),(5,3.3)},2)
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))

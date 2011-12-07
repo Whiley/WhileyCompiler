@@ -13,7 +13,7 @@ anat btoa(bnat x):
 
 void ::main(System sys,[string] args):
     x = 1
-    sys.out.println(toString(atob(x)))
-    sys.out.println(toString(btoa(x)))
+    sys.out.println(Any.toString(atob(x)))
+    sys.out.println(Any.toString(btoa(x)))
     
     

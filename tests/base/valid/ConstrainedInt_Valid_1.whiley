@@ -5,7 +5,7 @@ define cr1nat as int
 
 string f(cr1nat x):
     y = x
-    return toString(y)
+    return Any.toString(y)
 
 void ::main(System sys,[string] args):
     sys.out.println(f(9))

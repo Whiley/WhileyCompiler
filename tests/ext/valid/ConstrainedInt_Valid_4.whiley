@@ -7,4 +7,4 @@ nat f():
     return 1
 
 void ::main(System sys,[string] args):
-    sys.out.println(toString(f()))
+    sys.out.println(Any.toString(f()))

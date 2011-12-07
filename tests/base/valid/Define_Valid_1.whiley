@@ -9,6 +9,6 @@ void ::main(System sys,[string] args):
      li = [1,2,3]     
      p = {x:1,y:2}
      x = p.x     
-     sys.out.println(toString(x))
-     sys.out.println(toString(|si|))
-     sys.out.println(toString(li[0]))
+     sys.out.println(Any.toString(x))
+     sys.out.println(Any.toString(|si|))
+     sys.out.println(Any.toString(li[0]))

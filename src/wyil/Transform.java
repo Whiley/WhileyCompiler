@@ -39,5 +39,5 @@ import wyil.lang.Module;
  * 
  */
 public interface Transform {	
-	public void apply(Module module) throws IOException;
+	public void apply(Module module) throws Exception;
 }

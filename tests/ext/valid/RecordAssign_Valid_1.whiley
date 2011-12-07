@@ -9,4 +9,4 @@ void ::main(System sys,[string] args):
     x = f()    
     x.f1 = x.f2 - 2
     assert x.f1 != x.f2
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))

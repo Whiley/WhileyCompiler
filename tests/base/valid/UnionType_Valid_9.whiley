@@ -7,6 +7,6 @@ void ::main(System sys,[string] args):
     x = {op:1}
     x.op = 1
     y = x // OK
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(y))
     x = {op:[1,2,3]} // OK
-    sys.out.println(toString(x))
+    sys.out.println(Any.toString(x))

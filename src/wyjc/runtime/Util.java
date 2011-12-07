@@ -32,30 +32,156 @@ import java.util.Collections;
 import java.util.Map;
 
 import wyil.lang.Value;
+import wyil.util.Pair;
+
+import static wyil.lang.Type.K_VOID;
+import static wyil.lang.Type.K_ANY;
+import static wyil.lang.Type.K_META;
+import static wyil.lang.Type.K_NULL;
+import static wyil.lang.Type.K_BOOL;
+import static wyil.lang.Type.K_BYTE;
+import static wyil.lang.Type.K_CHAR;
+import static wyil.lang.Type.K_INT;
+import static wyil.lang.Type.K_RATIONAL;
+import static wyil.lang.Type.K_STRING;
+import static wyil.lang.Type.K_TUPLE;
+import static wyil.lang.Type.K_SET;
+import static wyil.lang.Type.K_LIST;
+import static wyil.lang.Type.K_DICTIONARY;
+import static wyil.lang.Type.K_PROCESS;
+import static wyil.lang.Type.K_PROCESS;
+import static wyil.lang.Type.K_RECORD;
+import static wyil.lang.Type.K_UNION;
+import static wyil.lang.Type.K_NEGATION;
+import static wyil.lang.Type.K_FUNCTION;
+import static wyil.lang.Type.K_EXISTENTIAL;
+import static wyil.lang.Type.K_LABEL;
+
 
 public class Util {
 
 	private static final boolean debug = false;
+	private static final boolean logRefCounts = false;
+	private static final ArrayList<Object[]> refCounts = new ArrayList();
+	private static long startTime;
 	
 	static { 
 		if(debug) {
+			startTime = System.currentTimeMillis();
 			Runtime.getRuntime().addShutdownHook(new Thread(){
 				public void run() {
-					System.err.println("===========================================");
-					System.err.println("CLONING STATS");
-					System.err.println("===========================================");
-					System.err.println("list clones: " + nlist_clones);
-					System.err.println("set clones: " + nset_clones);
-					System.err.println("record clones: " + nrecord_clones);
+					long totalTime = System.currentTimeMillis() - startTime;
+					System.err.println("==================================================");
+					System.err.println("STATS");
+					System.err.println("==================================================");
+					System.err.println("Time: " + totalTime + "ms");
+					double avg = nset_elems;
+					avg = avg / nset_clones;
+					System.err.println("set clones:        " + nset_clones + " / "
+							+ (nset_clones + nset_inplace_updates) + " (" + avg + ")");
+					avg = nlist_elems;
+					avg = avg / nlist_clones;
+					System.err.println("list clones:       " + nlist_clones + " / "
+							+ (nlist_clones + nlist_inplace_updates)+ " (" + avg + ")");
+					avg = ndict_elems;
+					avg = avg / ndict_clones;
+					System.err.println("dictionary clones: " + ndict_clones
+							+ " / " + (ndict_clones + ndict_inplace_updates)+ " (" + avg + ")");
+					avg = nrecord_elems;
+					avg = avg / nrecord_clones;
+					System.err.println("record clones:     " + nrecord_clones
+							+ " / " + (nrecord_clones + nrecord_strong_updates)+ " (" + avg + ")");		
+					long totalClones = nlist_clones + nset_clones + ndict_clones + nrecord_clones;
+					long totalStrongUpdates = nlist_inplace_updates + nset_inplace_updates + ndict_inplace_updates + nrecord_strong_updates;
+					double ratio = totalClones;
+					ratio = 100 * (ratio / (totalClones+totalStrongUpdates));
+					long totalElems = nset_elems + nlist_elems + ndict_elems + nrecord_elems; 
+					avg = totalElems;
+					avg = (avg / (totalClones));
+					System.err.println("--------------------------------------------------");
+					System.err.println("Total clones: " + totalClones + " / " + (totalClones+totalStrongUpdates) + " (" + ratio + "%)");
+					System.err.println("Average Clone Size: " + totalElems + " / " + totalClones + " (" + avg + ")");
+					avg = total_ref_count;
+					avg = avg / total_population;
+					System.err.println("Avg Reference Count: " + avg);	
+					System.err.println("--------------------------------------------------");
+					if(logRefCounts) {
+						for(Object[] p : refCounts) {
+							System.out.println(System.identityHashCode(p[0]) + " : " + p[1]);
+						}
+					}
 				}
 			});
 		}
 	}	
 	
+	private static long total_ref_count = 0;	
+	private static long total_population = 0; // number of update operations
 	private static int nlist_clones = 0;
+	private static long nlist_elems = 0;
+	static int nlist_inplace_updates = 0;
 	private static int nset_clones = 0;
+	private static long nset_elems = 0;
+	static int nset_inplace_updates = 0;
+	private static int ndict_clones = 0;
+	private static long ndict_elems = 0;
+	static int ndict_inplace_updates = 0;
 	private static int nrecord_clones = 0;
+	private static long nrecord_elems = 0;
+	static int nrecord_strong_updates = 0;
 
+	public static void countRefs(List l) {
+		total_ref_count += l.refCount;		
+		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
+	}
+	
+	public static void countRefs(Set l) {
+		total_ref_count += l.refCount;		
+		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
+	}
+	
+	public static void countRefs(Dictionary l) {
+		total_ref_count += l.refCount;		
+		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
+	}
+	
+	public static void countRefs(Record l) {
+		total_ref_count += l.refCount;
+		total_population++;
+		if(logRefCounts) {
+			refCounts.add(new Object[]{l,l.refCount});
+		}
+	}
+	
+	public static void countClone(List l) {
+		nlist_clones ++;		
+		nlist_elems += l.size();
+	}
+	
+	public static void countClone(Set l) {
+		nset_clones ++;		
+		nset_elems += l.size();
+	}
+	
+	public static void countClone(Dictionary l) {
+		ndict_clones ++;		
+		ndict_elems += l.size();
+	}
+	
+	public static void countClone(Record l) {
+		nrecord_clones ++;		
+		nrecord_elems += l.size();
+	}
+	
 	public static Method functionRef(String clazz, String name) {
 		try {
 			Class cl = Class.forName(clazz);
@@ -200,7 +326,7 @@ public class Util {
 	}
 		
 	/**
-	 * Increment the reference count for this object. In some cases, this may
+	 * Increment the reference count for an object. In some cases, this may
 	 * have no effect. In other cases, the current reference count will be
 	 * maintained and in-place updates can only occur when the reference count is
 	 * one.
@@ -211,14 +337,17 @@ public class Util {
 			list.refCount++;
 		} else if(obj instanceof Record) {
 			Record rec = (Record) obj;			
-			rec.refCount++;
+			rec.refCount++;			
 		} else if(obj instanceof Set) {
 			Set set = (Set) obj;
 			set.refCount++;			
 		} else if(obj instanceof Dictionary) {
 			Dictionary dict = (Dictionary) obj;
-			dict.refCount++;			
-		} 
+			dict.refCount++;						
+		} else if(obj instanceof Tuple) {
+			Tuple tuple = (Tuple) obj;
+			tuple.refCount++;			
+		}
 		return obj;
 	}
 
@@ -242,47 +371,106 @@ public class Util {
 		return obj;
 	}
 	
+	public static Tuple incRefs(Tuple obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
 	/**
 	 * Decrement the reference count for this object. In some cases, this may
 	 * have no effect. In other cases, the current reference count will be
 	 * maintained and in-place updates can only occur when the reference count is
 	 * one.
 	 */
-	public static Object decRefs(Object obj) {
+	public static void decRefs(Object obj) {
 		if(obj instanceof List) {
 			List list = (List) obj;
 			list.refCount--;
+			if(list.refCount == 0) {
+				for(Object o : list) {
+					decRefs(o);
+				}
+			}
 		} else if(obj instanceof Record) {
 			Record rec = (Record) obj;			
 			rec.refCount--;
+			if(rec.refCount == 0) {				
+				for(Object o : rec.values()) {
+					decRefs(o);
+				}
+			}
 		} else if(obj instanceof Set) {
 			Set set = (Set) obj;
 			set.refCount--;			
+			if(set.refCount == 0) {
+				for(Object o : set) {
+					decRefs(o);
+				}
+			}
 		} else if(obj instanceof Dictionary) {
 			Dictionary dict = (Dictionary) obj;
-			dict.refCount--;			
+			dict.refCount--;	
+			if(dict.refCount == 0) {				
+				for(Map.Entry e : dict.entrySet()) {
+					decRefs(e.getKey());
+					decRefs(e.getValue());
+				}
+			}
+		} else if(obj instanceof Tuple) {
+			Tuple tuple = (Tuple) obj;
+			tuple.refCount--;			
+			if(tuple.refCount == 0) {
+				for(Object o : tuple) {
+					decRefs(o);
+				}
+			}
 		} 
-		return obj;
 	}
 
-	public static List decRefs(List obj) {		
-		obj.refCount--;
-		return obj;
+	public static void decRefs(List list) {		
+		list.refCount--;
+		if(list.refCount == 0) {
+			for(Object o : list) {
+				decRefs(o);
+			}
+		}
 	}
 	
-	public static Set decRefs(Set obj) {
-		obj.refCount--;
-		return obj;
+	public static void decRefs(Set set) {
+		set.refCount--;
+		if(set.refCount == 0) {
+			for(Object o : set) {
+				decRefs(o);
+			}
+		}
 	}
 	
-	public static Record decRefs(Record obj) {
-		obj.refCount--;
-		return obj;
+	public static void decRefs(Record rec) {
+		rec.refCount--;
+		if(rec.refCount == 0) {				
+			for(Object o : rec.values()) {
+				decRefs(o);
+			}
+		}		
 	}
 	
-	public static Dictionary decRefs(Dictionary obj) {
-		obj.refCount--;
-		return obj;
+	public static void decRefs(Dictionary dict) {
+		dict.refCount--;
+		if(dict.refCount == 0) {				
+			for(Map.Entry e : dict.entrySet()) {
+				decRefs(e.getKey());
+				decRefs(e.getValue());
+			}
+		}
+	}
+	
+	public static void decRefs(Tuple tuple) {		
+		tuple.refCount--;
+		if(tuple.refCount == 0) {
+			for(Object o : tuple) {
+				decRefs(o);
+			}
+		}
 	}
 	
 	/**
@@ -290,33 +478,33 @@ public class Util {
 	 */
 	public static boolean instanceOf(Object obj, Type t) {			
 		switch(t.kind) {
-			case Type.K_ANY:
+			case K_ANY:
 				return true;
-			case Type.K_VOID:
+			case K_VOID:
 				return false;
-			case Type.K_NULL:
+			case K_NULL:
 				return obj == null;
-			case Type.K_BOOL:
+			case K_BOOL:
 				return obj instanceof Boolean;
-			case Type.K_BYTE:
+			case K_BYTE:
 				return obj instanceof Byte;
-			case Type.K_CHAR:
+			case K_CHAR:
 				return obj instanceof Character;
-			case Type.K_INT:
+			case K_INT:
 				return obj instanceof BigInteger;
-			case Type.K_RATIONAL:
+			case K_RATIONAL:
 				return obj instanceof BigRational;
-			case Type.K_STRING:
+			case K_STRING:
 				return obj instanceof String;
-			case Type.K_LIST:
+			case K_LIST:
 			{
 				if(obj instanceof List) {
 					List ol = (List) obj;
 					Type.List tl = (Type.List) t;
 					Type el = tl.element;
-					if(el.kind == Type.K_ANY) {
+					if(el.kind == K_ANY) {
 						return true;
-					} else if(el.kind == Type.K_VOID) {
+					} else if(el.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
 						for(Object elem : ol) { 
@@ -329,15 +517,15 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_SET:
+			case K_SET:
 			{
 				if(obj instanceof Set) {
 					Set ol = (Set) obj;
 					Type.Set tl = (Type.Set) t;
 					Type el = tl.element;
-					if(el.kind == Type.K_ANY) {
+					if(el.kind == K_ANY) {
 						return true;
-					} else if(el.kind == Type.K_VOID) {
+					} else if(el.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
 						for(Object elem : ol) { 
@@ -350,7 +538,7 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_TUPLE:
+			case K_TUPLE:
 			{				
 				if(obj instanceof Tuple) {
 					Tuple ol = (Tuple) obj;
@@ -368,7 +556,7 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_DICTIONARY:
+			case K_DICTIONARY:
 			{
 				if(obj instanceof Dictionary) {
 					Dictionary ol = (Dictionary) obj;
@@ -376,9 +564,9 @@ public class Util {
 					Type key = tl.key;
 					Type value = tl.value;
 					
-					if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
+					if (key.kind == K_ANY && value.kind == K_ANY) {
 						return true;						
-					} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
+					} else if(key.kind == K_VOID || value.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
 						for (java.util.Map.Entry<Object, Object> elem : ol
@@ -393,7 +581,7 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_RECORD:
+			case K_RECORD:
 			{
 				if(obj instanceof Record) {
 					Record ol = (Record) obj;
@@ -416,7 +604,12 @@ public class Util {
 				}
 				break;
 			}
-			case Type.K_UNION:
+			case K_NEGATION:
+			{
+				Type.Negation not = (Type.Negation) t;
+				return !instanceOf(obj,not.element);
+			}
+			case K_UNION:
 			{
 				Type.Union un = (Type.Union) t;
 				for(Type bound : un.bounds) {
@@ -430,93 +623,193 @@ public class Util {
 		return false;
 	}
 
-	public static boolean instanceOf(List ol, Type t) {
-		Type.List tl = (Type.List) t;
-		Type el = tl.element;
-		if(el.kind == Type.K_ANY) {
-			return true;
-		} else if(el.kind == Type.K_VOID) {
-			return ol.isEmpty();
+	/**
+	 * This method gets called when we're testing a list object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a list or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(List object, Type type) {
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
 		} else {
-			for(Object elem : ol) { 
-				if(!instanceOf(elem,el)) {
-					return false;
+			Type.List tl = (Type.List) type;
+			Type el = tl.element;
+			if(el.kind == K_ANY) {
+				return true;
+			} else if(el.kind == K_VOID) {
+				return object.isEmpty();
+			} else {
+				for(Object elem : object) { 
+					if(!instanceOf(elem,el)) {
+						return false;
+					}
 				}
+				return true;
 			}
-			return true;
-		}		
+		}
 	}
 	
-	public static boolean instanceOf(Set ol, Type t) {
-		Type.Set tl = (Type.Set) t;
-		Type el = tl.element;
-		if(el.kind == Type.K_ANY) {
-			return true;
-		} else if(el.kind == Type.K_VOID) {
-			return ol.isEmpty();
+	/**
+	 * This method gets called when we're testing a set object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a set or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Set object, Type type) {
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
 		} else {
-			for(Object elem : ol) { 
-				if(!instanceOf(elem,el)) {
+			Type.Set tl = (Type.Set) type;
+			Type el = tl.element;
+			if(el.kind == K_ANY) {
+				return true;
+			} else if(el.kind == K_VOID) {
+				return object.isEmpty();
+			} else {
+				for(Object elem : object) { 
+					if(!instanceOf(elem,el)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+	}
+	
+	/**
+	 * This method gets called when we're testing a dictionary object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a dictionary or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Dictionary object, Type type) {		
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
+		} else {
+			Type.Dictionary tl = (Type.Dictionary) type;
+			Type key = tl.key;
+			Type value = tl.value;
+
+			if (key.kind == K_ANY && value.kind == K_ANY) {
+				return true;						
+			} else if(key.kind == K_VOID || value.kind == K_VOID) {
+				return object.isEmpty();
+			} else {
+				for (java.util.Map.Entry<Object, Object> elem : object
+						.entrySet()) {
+					if (!instanceOf(elem.getKey(), key)
+							|| !instanceOf(elem.getValue(), value)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+	}
+	
+	/**
+	 * This method gets called when we're testing a record object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a list, since again the test would already
+	 * have been eliminated. In fact, the type can only be a record or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Record object, Type type) {
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
+		} else {
+			Type.Record tl = (Type.Record) type;
+			String[] names = tl.names;
+			Type[] types = tl.types;
+			for(int i=0;i!=names.length;++i) {
+				String name = names[i];
+				if(object.containsKey(name)) {
+					Type fieldType = types[i];
+					Object val = object.get(name);						
+					if(!instanceOf(val,fieldType)) {
+						return false;
+					} 
+				} else {				
 					return false;
 				}
 			}
 			return true;
 		}
-	}
-	
-	public static boolean instanceOf(Dictionary ol, Type t) {		
-		Type.Dictionary tl = (Type.Dictionary) t;
-		Type key = tl.key;
-		Type value = tl.value;
-		
-		if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
-			return true;						
-		} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
-			return ol.isEmpty();
-		} else {
-			for (java.util.Map.Entry<Object, Object> elem : ol
-					.entrySet()) {
-				if (!instanceOf(elem.getKey(), key)
-						|| !instanceOf(elem.getValue(), value)) {
-					return false;
-				}
-			}
-			return true;
-		}
-	}
-	
-	public static boolean instanceOf(Record ol, Type t) {			
-		Type.Record tl = (Type.Record) t;
-		String[] names = tl.names;
-		Type[] types = tl.types;
-		for(int i=0;i!=names.length;++i) {
-			String name = names[i];
-			if(ol.containsKey(name)) {
-				Type type = types[i];
-				Object val = ol.get(name);						
-				if(!instanceOf(val,type)) {
-					return false;
-				} 
-			} else {				
-				return false;
-			}
-		}
-		return true;
 	}	
 	
-	public static boolean instanceOf(Tuple ol, Type t) {				
-		Type.Tuple tl = (Type.Tuple) t;
-		Type[] types = tl.types;
-		if(types.length == ol.size()) {	
-			int i=0;
-			for(Object o : ol) { 
-				if(!instanceOf(o,types[i++])) {
-					return false;
+	/**
+	 * This method gets called when we're testing a tuple object against some
+	 * type. To reduce the number of cases, we can narrow down the possible
+	 * types by a process of deduction. The type cannot be <code>void</code> or
+	 * <code>any</code> (since the test would already have been eliminated).
+	 * Likewise, it cannot be e.g. a record, since again the test would already
+	 * have been eliminated. In fact, the type can only be a tuple or its
+	 * negation.
+	 * 
+	 * @param object
+	 *            --- object being tested against.
+	 * @param type
+	 *            --- type to test against.
+	 * @return
+	 */
+	public static boolean instanceOf(Tuple object, Type type) {				
+		if(type instanceof Type.Negation) {
+			Type.Negation not = (Type.Negation) type;			
+			return !instanceOf(object,not.element);
+		} else {
+			Type.Tuple tl = (Type.Tuple) type;
+			Type[] types = tl.types;
+			if(types.length == object.size()) {	
+				int i=0;
+				for(Object o : object) { 
+					if(!instanceOf(o,types[i++])) {
+						return false;
+					}
 				}
+				return true;					
 			}
-			return true;					
+			return false;
 		}
-		return false;
 	}		
 	
 	public static final Comparator COMPARATOR = new Comparator();

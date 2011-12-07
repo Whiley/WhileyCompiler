@@ -13,6 +13,6 @@ R4 f(R1 x):
 void ::main(System sys,[string] args):
     z1 = f({x: 1})
     z2 = f({x: null})
-    sys.out.println(toString(z1))
-    sys.out.println(toString(z2))
+    sys.out.println(Any.toString(z1))
+    sys.out.println(Any.toString(z2))
     

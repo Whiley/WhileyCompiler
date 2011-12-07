@@ -11,5 +11,5 @@ define UNIT as {unitCode op}
 
 void ::main(System sys,[string] args):
     bytes = f({op:NOP})
-    sys.out.println(toString(bytes))
+    sys.out.println(Any.toString(bytes))
 

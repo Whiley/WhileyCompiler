@@ -201,6 +201,47 @@ public final class Block implements Iterable<Block.Entry> {
 		}
 	}
 
+	public Block relabel() {
+		HashMap<String,String> labels = new HashMap<String,String>();
+		
+		for (Entry s : this) {
+			if (s.code instanceof Code.Label) {
+				Code.Label l = (Code.Label) s.code;
+				labels.put(l.label, freshLabel());
+			}
+		}
+		
+		Block block = new Block(numInputs);
+		// Finally, apply the binding and relabel any labels as well.
+		for(Entry s : this) {
+			Code ncode = s.code.relabel(labels);
+			block.append(ncode,s.attributes());
+		}
+		
+		return block;
+	}
+	
+	
+	/**
+	 * This method updates the source attributes for all statements in a block.
+	 * This is typically done in conjunction with a substitution, when we're
+	 * inlining constraints from e.g. pre- and post-conditions.
+	 * 
+	 * @param block
+	 * @param nsrc
+	 * @return
+	 */
+	public static Block resource(Block block, Attribute.Source nsrc) {
+		if(block == null) {
+			return null;
+		}
+		Block nblock = new Block(block.numInputs());
+		for(Entry e : block) {
+			nblock.append(e.code,nsrc);
+		}
+		return nblock;
+	}
+	
 	// ===================================================================
 	// Append Methods
 	// ===================================================================

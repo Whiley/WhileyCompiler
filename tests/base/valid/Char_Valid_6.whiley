@@ -13,4 +13,4 @@ string iof(int i):
 
 void ::main(System sys,[string] args):
     for i in 0..100:
-        sys.out.println(toString(iof(i)))
+        sys.out.println(Any.toString(iof(i)))

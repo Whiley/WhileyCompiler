@@ -5,4 +5,4 @@ define odd as { 1,3,5 }
 
 void ::main(System sys,[string] args):
     y = 1
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(y))

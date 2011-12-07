@@ -6,9 +6,9 @@ define expr as pos|neg
 
 string f(expr e):
     if e is pos:
-        return "POSITIVE: " + toString(e)
+        return "POSITIVE: " + Any.toString(e)
     else:
-        return "NEGATIVE: " + toString(e)
+        return "NEGATIVE: " + Any.toString(e)
 
 void ::main(System sys,[string] args):
     sys.out.println(f(-1))

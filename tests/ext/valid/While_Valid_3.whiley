@@ -14,4 +14,4 @@ define nat as int where $ >= 0
 
 void ::main(System sys,[string] args):
     rs = extract([-2,-3,1,2,-23,3,2345,4,5])
-    sys.out.println(toString(rs))
+    sys.out.println(Any.toString(rs))

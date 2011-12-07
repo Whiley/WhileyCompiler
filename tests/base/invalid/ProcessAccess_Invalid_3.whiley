@@ -15,6 +15,6 @@ void ::main(System sys,[string] args):
     p1 = this.create(1)
     p2 = this.create(2)
     p1.copy(p2)
-    sys.out.println(toString(p1.get()))
-    sys.out.println(toString(p2.get()))
+    sys.out.println(Any.toString(p1.get()))
+    sys.out.println(Any.toString(p2.get()))
 

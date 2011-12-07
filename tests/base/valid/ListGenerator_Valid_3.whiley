@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string f([int] x):
-     return toString(|x|)
+     return Any.toString(|x|)
 
 void ::main(System sys,[string] args):
      arr = []

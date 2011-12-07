@@ -7,7 +7,7 @@ define pir1nat as ir1nat
 string f(int x):
     if x > 2:
         y = x
-        return toString(y)
+        return Any.toString(y)
     return ""
 
 void ::main(System sys,[string] args):

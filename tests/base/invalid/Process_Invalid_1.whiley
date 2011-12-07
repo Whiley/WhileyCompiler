@@ -15,5 +15,5 @@ MyProc1 System::create(int data):
 void ::main(System sys,[string] args):
     p2 = this.create(1)
     p2.set(1.23)
-    sys.out.println(toString(p2.get()))
+    sys.out.println(Any.toString(p2.get()))
 

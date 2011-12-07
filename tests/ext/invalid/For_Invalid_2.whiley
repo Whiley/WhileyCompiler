@@ -8,5 +8,5 @@ int sum({int} xs) ensures $ >= 0:
 
 void ::main(System sys,[string] args):
     z = sum({-1,-2,-3,-4,5})
-    debug toString(z)
+    debug Any.toString(z)
     

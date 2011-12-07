@@ -22,5 +22,5 @@ void ::main(System sys,[string] args):
     fr = spawn { position: 0, data: [1,2,3,4,5] }
     reader = openReader(fr)
     data = reader.read(5)
-    sys.out.println(toString(data))
+    sys.out.println(Any.toString(data))
 

@@ -8,4 +8,4 @@ cr3nat f(cr3nat x):
 
 void ::main(System sys,[string] args):
     y = f(9)
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(y))

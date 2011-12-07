@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.transforms;
+package wyil.io;
 
 import java.io.*;
 import java.util.*;
@@ -215,6 +215,9 @@ public class WyilFileWriter implements Transform {
 		} else if(c instanceof Code.Load && !writeSlots){
 			Code.Load load = (Code.Load) c;
 			line = "load " + getLocal(load.slot,locals) + " : " + load.type;
+		} else if(c instanceof Code.Move && !writeSlots){
+			Code.Move move = (Code.Move) c;
+			line = "move " + getLocal(move.slot,locals) + " : " + move.type;
 		} else if(c instanceof Code.Update && !writeSlots){
 			Code.Update store = (Code.Update) c;
 			String fs = store.fields.isEmpty() ? "" : " ";

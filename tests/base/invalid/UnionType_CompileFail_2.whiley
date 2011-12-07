@@ -4,7 +4,7 @@ import * from whiley.lang.*
 define IntReal as int | real
 
 void f(int y):
-    sys.out.println(toString(y))
+    sys.out.println(Any.toString(y))
 
 void ::main(System sys,[string] args):
     x = 123

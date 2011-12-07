@@ -12,7 +12,7 @@ Actor ::createActor(int n):
     row = []
     for j in 0..n:
         m = createActor(j)
-        row = row + m
+        row = row + [m]
     return row
 
 void ::main(System sys,[string] args):
@@ -20,4 +20,4 @@ void ::main(System sys,[string] args):
     r = 0
     for i in 0..|actors|:
         r = r + actors[i].get()
-    sys.out.println(toString(r))
+    sys.out.println(Any.toString(r))

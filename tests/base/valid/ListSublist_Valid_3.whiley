@@ -11,5 +11,5 @@ int sum(posintlist ls):
 
 void ::main(System sys,[string] args):
     c = sum([-12987987234,-1,2,409234,2398729879])
-    sys.out.println(toString(c))
+    sys.out.println(Any.toString(c))
     

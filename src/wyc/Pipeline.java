@@ -8,6 +8,7 @@ import java.util.*;
 import wyc.stages.BackPropagation;
 import wyc.stages.TypePropagation;
 import wyil.*;
+import wyil.io.WyilFileWriter;
 import wyil.transforms.*;
 
 /**
@@ -49,14 +50,16 @@ public class Pipeline {
 				{					
 					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));					
 					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
-					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));		
-					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));					
+					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));							
+					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));
+					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					// Constant Propagation is disabled as there are some
 					// serious problems with that phase.
 					//add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
+					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					//add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 				}
 			});
@@ -76,6 +79,31 @@ public class Pipeline {
 		register(CoercionCheck.class);
 		register(WyilFileWriter.class);
 		register(DeadCodeElimination.class);
+		register(LiveVariablesAnalysis.class);
+	}
+	
+	/**
+	 * Set a specific option on a given pipeline stage. The previous value of
+	 * this option is returned, or null if there is none.
+	 * 
+	 * @param clazz
+	 * @param name
+	 * @param value
+	 * @return
+	 */
+	public Object setOption(Class<? extends Transform> clazz, String name,
+			Object value) {
+		for (Template template : stages) {
+			if (template.clazz == clazz) {
+				Map<String,Object> options = template.options;
+				if(options == Collections.EMPTY_MAP) { 
+					options = new HashMap<String,Object>();
+					template.options = options;
+				}
+				return options.put(name, value);
+			}
+		}
+		return null;
 	}
 	
 	/**
@@ -133,7 +161,7 @@ public class Pipeline {
 	 */
 	public static class Template {					
 		Class<? extends Transform> clazz;
-		public final Map<String,Object> options;
+		public Map<String,Object> options;
 		
 		public Template(Class<? extends Transform> clazz, 
 				Map<String, Object> options) {

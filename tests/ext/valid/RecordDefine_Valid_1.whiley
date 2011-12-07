@@ -7,4 +7,4 @@ point f(point x):
 
 void ::main(System sys,[string] args):
     p = f({x:1,y:1})
-    sys.out.println(toString(p))
+    sys.out.println(Any.toString(p))

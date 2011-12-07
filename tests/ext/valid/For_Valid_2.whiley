@@ -6,4 +6,4 @@ void ::main(System sys,[string] args):
     r = 0
     for x in xs where r >= 0:
         r = r + x    
-    sys.out.println(toString(r))
+    sys.out.println(Any.toString(r))

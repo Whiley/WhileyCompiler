@@ -9,12 +9,15 @@ public final class Record extends HashMap<String,Object> {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1; 
 	
 	public Record() {}
 	
 	Record(HashMap<String,Object> r) {
 		super(r);
+		for(Object item : r.values()) {
+			Util.incRefs(item);
+		}
 	}
 	
 	// ================================================================================
@@ -41,17 +44,21 @@ public final class Record extends HashMap<String,Object> {
 	// Record Operations
 	// ================================================================================	 	
 
-	public static Object get(final Record record, final String field) {
-		return record.get(field);
+	public static Object get(final Record record, final String field) {		
+		Util.decRefs(record);
+		Object item = record.get(field);
+		Util.incRefs(item);
+		return item;
 	}
 	
-	public static Record put(Record record, final String field, final Object value) {		
+	public static Record put(Record record, final String field, final Object value) {
+		Util.countRefs(record);
 		if(record.refCount > 1) {
-			Record nrecord = new Record(record);
-			for(Object e : nrecord.values()) {
-				Util.incRefs(e);
-			}
-			record = nrecord;
+			Util.countClone(record);
+			Util.decRefs(record);
+			record = new Record(record);			
+		} else {
+			Util.nrecord_strong_updates++;
 		}
 		Object val = record.put(field, value);
 		Util.decRefs(val);
@@ -59,7 +66,11 @@ public final class Record extends HashMap<String,Object> {
 		return record;
 	}
 	
-	public static int size(Record record) {
-		return record.size();
-	}	
+	public static Object internal_get(final Record record, final String field) {
+		Object item = record.get(field);
+		if(record.refCount > 1) {
+			Util.incRefs(item);
+		}
+		return item;		
+	}
 }

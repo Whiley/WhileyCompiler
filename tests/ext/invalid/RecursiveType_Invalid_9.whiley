@@ -10,4 +10,4 @@ posList f(LinkedList list):
 
 void ::main(System sys,[string] args):
     l = { next:{ next:1, data:-1 }, data:1 }
-    debug toString(f(l))
+    debug Any.toString(f(l))

@@ -8,7 +8,7 @@ string f(int i):
     else:
         arr2[2] = i
     assert arr2[2] == |arr1|
-    return toString(arr1) + Any.toString(arr2)
+    return Any.toString(arr1) + Any.toString(arr2)
 
 void ::main(System sys,[string] args):
     sys.out.println(f(2))

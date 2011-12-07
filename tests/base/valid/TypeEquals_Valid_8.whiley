@@ -6,9 +6,9 @@ define expr as pos|neg|[int]
 
 string f(expr e):
     if e is pos && e > 0:
-        return "POSITIVE: " + toString(e)
+        return "POSITIVE: " + Any.toString(e)
     else if e is neg:
-        return "NEGATIVE: " + toString(e)
+        return "NEGATIVE: " + Any.toString(e)
     else:
         return "OTHER"
 

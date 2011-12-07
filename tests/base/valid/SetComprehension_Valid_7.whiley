@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 // this is a comment!
 string f({int} xs):
-    return toString(xs)
+    return Any.toString(xs)
 
 void ::main(System sys,[string] args):
     ys = {1,2,3}

@@ -3,27 +3,30 @@ package wyjc.runtime;
 import java.math.BigInteger;
 import java.util.*;
 
+import static wyil.lang.Type.K_VOID;
+import static wyil.lang.Type.K_ANY;
+import static wyil.lang.Type.K_META;
+import static wyil.lang.Type.K_NULL;
+import static wyil.lang.Type.K_BOOL;
+import static wyil.lang.Type.K_BYTE;
+import static wyil.lang.Type.K_CHAR;
+import static wyil.lang.Type.K_INT;
+import static wyil.lang.Type.K_RATIONAL;
+import static wyil.lang.Type.K_STRING;
+import static wyil.lang.Type.K_TUPLE;
+import static wyil.lang.Type.K_SET;
+import static wyil.lang.Type.K_LIST;
+import static wyil.lang.Type.K_DICTIONARY;
+import static wyil.lang.Type.K_PROCESS;
+import static wyil.lang.Type.K_PROCESS;
+import static wyil.lang.Type.K_RECORD;
+import static wyil.lang.Type.K_UNION;
+import static wyil.lang.Type.K_NEGATION;
+import static wyil.lang.Type.K_FUNCTION;
+import static wyil.lang.Type.K_EXISTENTIAL;
+import static wyil.lang.Type.K_LABEL;
+
 public class Type {
-	public static final byte K_VOID = 0;
-	public static final byte K_ANY = 1;
-	public static final byte K_META = 2;
-	public static final byte K_NULL = 3;
-	public static final byte K_BOOL = 4;
-	public static final byte K_BYTE = 5;
-	public static final byte K_CHAR = 6;
-	public static final byte K_INT = 7;
-	public static final byte K_RATIONAL = 8;
-	public static final byte K_STRING = 9;
-	public static final byte K_TUPLE = 10;
-	public static final byte K_SET = 11;
-	public static final byte K_LIST = 12;
-	public static final byte K_DICTIONARY = 13;	
-	public static final byte K_PROCESS = 14;
-	public static final byte K_RECORD = 15;
-	public static final byte K_UNION = 16;
-	public static final byte K_FUNCTION = 17;
-	public static final byte K_EXISTENTIAL = 18;
-	public static final byte K_LEAF = 19;
 	
 	public final int kind;
 	public String str;
@@ -56,7 +59,7 @@ public class Type {
 	private static final class Integer extends Type { Integer() {super(K_INT, "int");}}
 	private static final class Rational extends Type { Rational() {super(K_RATIONAL, "real");}}
 	private static final class Strung extends Type { Strung() {super(K_STRING, "string");}}
-	
+		
 	public static final class List extends Type {
 		public Type element;
 		
@@ -115,10 +118,19 @@ public class Type {
 	private static final class Leaf extends Type {
 		public final String name;
 		public Leaf(String name) {
-			super(K_LEAF,name);
+			super(K_LABEL,name);
 			this.name = name;
 		}
 	}
+	
+	public static final class Negation extends Type {
+		public Type element;
+		
+		public Negation(Type element, String str) {
+			super(K_NEGATION,str);
+			this.element = element;
+		}
+	}	
 	
 	public static Type valueOf(String str) {
 		return new TypeParser(str).parse(new HashSet<String>());
@@ -154,14 +166,14 @@ public class Type {
 			visited.add(type);
 		}
 		switch(type.kind) {
-			case Type.K_ANY:				
-			case Type.K_VOID:				
-			case Type.K_NULL:				
-			case Type.K_INT:				
-			case Type.K_RATIONAL:				
-			case Type.K_STRING:
+			case K_ANY:				
+			case K_VOID:				
+			case K_NULL:				
+			case K_INT:				
+			case K_RATIONAL:				
+			case K_STRING:
 				break;
-			case Type.K_LEAF:
+			case K_LABEL:
 			{
 				Type.Leaf leaf = (Type.Leaf)type;
 				if(leaf.name.equals(var)) {
@@ -170,26 +182,26 @@ public class Type {
 					return leaf;
 				}				
 			}
-			case Type.K_LIST:
+			case K_LIST:
 			{
 				Type.List list = (Type.List) type;
 				list.element = substitute(list.element,var,root,visited); 
 				break;
 			}
-			case Type.K_SET:
+			case K_SET:
 			{
 				Type.Set set = (Type.Set) type;
 				set.element = substitute(set.element,var,root,visited); 
 				break;
 			}
-			case Type.K_DICTIONARY:
+			case K_DICTIONARY:
 			{
 				Type.Dictionary dict = (Type.Dictionary) type;
 				dict.key = substitute(dict.key,var,root,visited); 
 				dict.value = substitute(dict.value,var,root,visited);
 				break;
 			}
-			case Type.K_RECORD:
+			case K_RECORD:
 			{
 				Type.Record rec = (Type.Record) type;
 				Type[] types = rec.types;
@@ -198,7 +210,13 @@ public class Type {
 				}
 				break;
 			}
-			case Type.K_UNION:
+			case K_NEGATION:
+			{
+				Type.Negation not = (Type.Negation) type;
+				not.element = substitute(not.element,var,root,visited); 
+				break;
+			}
+			case K_UNION:
 			{
 				Type.Union un = (Type.Union) type;
 				Type[] types = un.bounds;
@@ -331,6 +349,11 @@ public class Type {
 				match("}");
 				return new Set(elem, str.substring(start,index));
 			}
+			case '!': {
+				match("!");
+				Type elem = parse(typeVars);
+				return new Negation(elem,str.substring(start, index));
+			}				
 			default:
 			{
 				// this case is either a syntax error, or it's a recursive type.

@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import wyautl.io.BinaryAutomataReader;
+import wyil.io.ModuleReader;
 import wyil.lang.Attribute;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
@@ -53,7 +54,7 @@ import wyjvm.lang.ClassFile;
  * @author David J. Pearce
  * 
  */
-public class ClassFileLoader {
+public class ClassFileLoader implements ModuleReader {
 
 	/**
 	 * A map from attribute names to attribute readers. The readers are used to
@@ -69,7 +70,7 @@ public class ClassFileLoader {
 		// probably want to add more readers here.  E.g. for pre and post-conditions.
 	}
 		
-	public Module read(ModuleID module, String filename, InputStream input)
+	public Module read(ModuleID module, InputStream input)
 			throws IOException {
 		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
 				this.readers);

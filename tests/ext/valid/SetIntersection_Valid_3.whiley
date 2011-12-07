@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 string f({int} xs) requires |xs| < 3:
-    return toString(xs)
+    return Any.toString(xs)
 
 string g({int} ys):
     return f(ys ∩ {1,2})

@@ -4,7 +4,7 @@ import * from whiley.lang.*
 define irf2nat as int where $ > 0
 
 void f(irf2nat x):
-    debug toString(x)
+    debug Any.toString(x)
 
 void g(int x):
     f(x)

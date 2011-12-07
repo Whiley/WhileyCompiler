@@ -5,4 +5,4 @@ void ::main(System sys,[string] args):
      assert arr[0] < |arr|
      assert arr[1] < |arr|
      assert arr[2] == |arr|
-     sys.out.println(toString(arr[0]))
+     sys.out.println(Any.toString(arr[0]))

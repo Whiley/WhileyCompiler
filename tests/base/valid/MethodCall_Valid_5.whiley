@@ -10,4 +10,4 @@ int Proc::get():
 
 void ::main(System sys,[string] args):
     proc = spawn { state: 1 }
-    sys.out.println(toString(sys.f(proc)))
+    sys.out.println(Any.toString(sys.f(proc)))

@@ -41,19 +41,21 @@ import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
 
 public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
-	private static final HashMap<Integer,Block> afterInsertions = new HashMap<Integer,Block>();
+	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
 	public BackPropagation(ModuleLoader loader) {
 		super(loader);
 	}
 	
-	public Module.TypeDef transform(Module.TypeDef type) {		
+	@Override
+	public Module.TypeDef propagate(Module.TypeDef type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}
 	
-	public Env initialStore() {				
+	@Override
+	public Env lastStore() {				
 		Env environment = new Env();		
 
 		for (int i = 0; i < methodCase.body().numSlots(); i++) {
@@ -63,17 +65,18 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;				
 	}
 	
+	@Override
 	public Module.Case propagate(Module.Case mcase) {		
 
 		// TODO: back propagate through pre- and post-conditions
 		
 		methodCase = mcase;
 		stores = new HashMap<String,Env>();
-		afterInsertions.clear();
+		afterInserts.clear();
 		rewrites.clear();
 		
-		Env environment = initialStore();		
-		propagate(0,mcase.body().size(), environment);	
+		Env environment = lastStore();		
+		propagate(0,mcase.body().size(), environment, Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
@@ -85,7 +88,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			} else {
 				nbody.append(body.get(i));
 			}
-			Block afters = afterInsertions.get(i);			
+			Block afters = afterInserts.get(i);			
 			if(afters != null) {								
 				nbody.append(afters);				
 			} 							
@@ -95,12 +98,12 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 
+	@Override
 	public Env propagate(int index, Entry entry, Env environment) {						
-		Code code = entry.code;			
+		Code code = entry.code;							
 		
 		// reset the rewrites for this code, in case it changes
-		afterInsertions.remove(index);
-		
+		afterInserts.remove(index);		
 		environment = (Env) environment.clone();
 		
 		if(code instanceof Assert) {
@@ -187,8 +190,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Spawn)code,entry,environment);
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
+		} else if(code instanceof TupleLoad) {
+			infer(index,(TupleLoad)code,entry,environment);
 		} else {			
-			internalFailure("unknown wyil code",filename,entry);
+			internalFailure("unknown wyil code (" + code + ")",filename,entry);
 			return null;
 		}	
 		
@@ -384,7 +389,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public void infer(int index, Code.Load code, Block.Entry entry,
-			Env environment) {
+			Env environment) {		
 		Type req = environment.pop();
 		coerceAfter(req,code.type,index,entry);
 		environment.set(code.slot,code.type);		
@@ -650,7 +655,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Env environment) {
 		environment.push(code.type);
 	}
-				
+	
+	public void infer(int index, Code.TupleLoad code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		coerceAfter(req,code.type.elements().get(code.index),index,entry);		
+		environment.push(code.type);
+	}
+	
 	public void infer(int index, Code.ProcLoad code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();	
@@ -658,6 +670,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.push(code.type);
 	}	
 	
+	@Override
 	public Env propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env trueEnv, Env falseEnv) {
 		
@@ -687,6 +700,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;
 	}
 	
+	@Override
 	public Env propagate(int index,
 			Code.IfType code, Entry stmt, Env trueEnv, Env falseEnv) {
 		
@@ -701,6 +715,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;
 	}
 	
+	@Override
 	public Env propagate(int index, Code.Switch sw,
 			Entry stmt, List<Env> environments, Env defEnv) {
 		
@@ -710,27 +725,21 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			environment = join(environment,environments.get(i));
 		} 
 		
-		environment.push(sw.type);
+		environment.push(sw.type);		
+		return environment;
+	}
+	
+	@Override
+	protected Env propagate(Type handler, Env normalEnv, Env exceptionEnv) {
+		// FIXME: if there are any constraints coming from the exceptional
+		// environment, then we need to translate them into coercions at the
+		// beginning of the catch handler.
+		return normalEnv;
+	}
 		
-		return environment;
-	}
-	
-	public Env propagate(int index, Code.TryCatch sw, Entry stmt,
-			List<Env> environments, Env defEnv) {
-
-		Env environment = defEnv;
-
-		for (int i = 0; i != sw.catches.size(); ++i) {
-			Env catchEnvironment = (Env) environments.get(i).clone();
-			catchEnvironment.pop(); // exception type
-			environment = join(environment, catchEnvironment);
-		}
-
-		return environment;
-	}
-	
+	@Override
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment) {
+			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 
 		environment = new Env(environment); 
 
@@ -740,7 +749,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv);
+			newEnv = propagate(start+1,end, oldEnv, handlers);
 			
 		} while (!newEnv.equals(oldEnv));
 		
@@ -758,8 +767,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void coerceAfter(Type to, Type from, int index, SyntacticElement elem) {					
 		
-		if (to.equals(from)) {
-			afterInsertions.remove(index);
+		if (to.equals(from) || to == Type.T_VOID) {
+			afterInserts.remove(index);
 		} else if(to == Type.T_STRING) {
 			// this indicates a string conversion is required			
 			Pair<Type.Function, NameID> p = choseToString(from);
@@ -771,11 +780,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			}
 			block.append(Code.Invoke(p.first(), p.second(), true),
 					elem.attributes());
-			afterInsertions.put(index, block);
+			afterInserts.put(index, block);
 		} else {
 			Block block = new Block(0);
 			block.append(Code.Convert(from, to), elem.attributes());
-			afterInsertions.put(index,block);
+			afterInserts.put(index,block);
 		}
 		
 		// this method *should* be structured as follows:
@@ -827,11 +836,37 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if (env1 == null) {
 			return env2;
 		}
+		
 		Env env = new Env();
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
 			env.add(Type.Union(env1.get(i), env2.get(i)));
 		}
 
+		/**
+		 * <p>
+		 * The following may seem strange, but it's necessary to support
+		 * constraint failures which can happen in the middle of expressions. In
+		 * such case, a conditional is inserted by the "constraint inline"
+		 * phase, where it fails on one side but succeeds on the other. Stack
+		 * requirements may be present from the succeeding branch and we need to
+		 * propagate those backwards still.
+		 * </p>
+		 * <p>
+		 * There are possibly other ways this could be handled. For example, we
+		 * might use null to signal that a particular branch is heading
+		 * immediately into a fail statement.
+		 * </p>
+		 */		
+		if(env1.size() > env2.size()) {
+			for(int i=env.size();i!=env1.size();++i) {
+				env.add(env1.get(i));
+			}
+		} else if(env2.size() > env1.size()) {
+			for(int i=env.size();i!=env2.size();++i) {
+				env.add(env2.get(i));
+			}
+		}				
+		
 		return env;
 	}
 	

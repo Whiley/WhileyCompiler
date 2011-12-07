@@ -260,6 +260,6 @@ define constants as [
 
 public void ::main(System sys,[string] args):
     for i in constants:
-        sys.out.print("~" + toString(i))
+        sys.out.print("~" + Any.toString(i))
         sys.out.print(" = ")
-        sys.out.println(toString(~i))
+        sys.out.println(Any.toString(~i))

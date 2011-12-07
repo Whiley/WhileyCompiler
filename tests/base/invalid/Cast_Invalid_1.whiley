@@ -6,5 +6,5 @@ int f(real i):
     return (int) i
 
 void ::main(System sys,[string] args):
-    sys.out.println(toString(f(1.01)))
+    sys.out.println(Any.toString(f(1.01)))
     
