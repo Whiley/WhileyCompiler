@@ -39,15 +39,9 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
-<<<<<<< HEAD
 import wyjvm.attributes.Code.Handler;
 import wyjvm.attributes.LineNumberTable;
 import wyjvm.attributes.SourceFile;
-=======
-import wyjvm.attributes.Code.Handler;
-import wyjvm.attributes.LineNumberTable;
-import wyjvm.attributes.SourceFile;
->>>>>>> c1e16e3856eb6283a3f112632b120df464d68f18
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
 import wyjvm.lang.Modifier;
@@ -219,29 +213,9 @@ public class ClassFileBuilder {
 		    new JvmType.Function(T_VOID, new JvmType.Array(JAVA_LANG_STRING));
 		ClassFile.Method cm = new ClassFile.Method("main", ft1, modifiers);
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
-<<<<<<< HEAD
+
 		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
-		ft1 = new JvmType.Function(WHILEYPROCESS);
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS,"systemProcess",ft1,Bytecode.STATIC));
-		codes.add(new Bytecode.Load(0,strArr));
-		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
-				new JvmType.Array(JAVA_LANG_STRING));
-		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
-		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T,
-						Type.List(Type.T_STRING));
-		JvmType.Function ft3 = convertFunType(wyft);		
-		// The following is a little bit of hack. Basically we flush the stdout
-		// channel on exit
-		codes.add(new Bytecode.Invoke(owner, nameMangle("main",wyft), ft3, Bytecode.STATIC));
-		ft3 = new JvmType.Function(T_VOID);		
-		codes.add(new Bytecode.Invoke(new JvmType.Clazz(
-				"whiley.io", "File$native"), "flush", ft3,
-				Bytecode.STATIC));
-		codes.add(new Bytecode.Return(null));
-=======
-		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
->>>>>>> c1e16e3856eb6283a3f112632b120df464d68f18
-		
+	
 		// Create the scheduler that will handle concurrency.
 		codes.add(new Bytecode.New(WHILEYSCHEDULER));
 		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
@@ -483,7 +457,6 @@ public class ClassFileBuilder {
 			}
 			freeSlot = translate(s, freeSlot, constants, unresolvedHandlers,
 					bytecodes);
-<<<<<<< HEAD
 		}
 		
 		if (unresolvedHandlers.size() > 0) {
@@ -505,31 +478,7 @@ public class ClassFileBuilder {
 				handlers.add(handler);
 			}
 		}
-		
-=======
-		}
-		
-		if (unresolvedHandlers.size() > 0) {
-			HashMap<String, Integer> labels = new HashMap<String, Integer>();
 
-			for (int i = 0; i != bytecodes.size(); ++i) {
-				Bytecode b = bytecodes.get(i);
-				if (b instanceof Bytecode.Label) {
-					Bytecode.Label lab = (Bytecode.Label) b;
-					labels.put(lab.name, i);
-				}
-			}
-
-			for (UnresolvedHandler ur : unresolvedHandlers) {
-				int start = labels.get(ur.start);
-				int end = labels.get(ur.end);
-				Handler handler = new Handler(start, end, ur.target,
-						ur.exception);
-				handlers.add(handler);
-			}
-		}
-		
->>>>>>> c1e16e3856eb6283a3f112632b120df464d68f18
 		// here, we need to resolve the handlers.
 	}
 	

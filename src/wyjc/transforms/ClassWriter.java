@@ -42,21 +42,12 @@ public class ClassWriter implements Transform {
 	private ClassFileBuilder classBuilder;
 	
 	private boolean validate = true;
-<<<<<<< HEAD
-	
-	// FIXME: deadCode elimination is currently unsafe because the
-	// LineNumberTable and Exceptions attributes do not deal with rewrites
-	// properly. 
-	private boolean deadCode = false;
-=======
-
 	//FIXME: deadCode elimination is currently unsafe because the
 	// LineNumberTable and Exceptions attributes do not deal with rewrites
 	// properly.
 	private boolean deadCode = false;
-	
+
 	private boolean continuations = true;
->>>>>>> c1e16e3856eb6283a3f112632b120df464d68f18
 	
 	public ClassWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
