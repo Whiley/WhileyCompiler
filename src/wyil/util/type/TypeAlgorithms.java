@@ -527,20 +527,9 @@ public final class TypeAlgorithms {
 		Automaton.State toState = to.states[toIndex];		
 				
 		// now, dispatch for the appropriate case.
-		if(fromState.kind == toState.kind) {
-			if(fromSign && toSign) {
-				return intersectSameKindPosPos(fromIndex, from, toIndex,
-					to, allocations, states);
-			} else if(fromSign) {
-				return intersectSameKindPosNeg(fromIndex, from, toIndex,
-						to, allocations, states);
-			} else if(toSign) {
-				return intersectSameKindNegPos(fromIndex, from, toIndex,
-						to, allocations, states);
-			} else {
-				return intersectSameKindNegNeg(fromIndex, from, toIndex,
-						to, allocations, states);
-			}
+		if(fromState.kind == toState.kind) {			
+			return intersectSameKind(fromIndex, fromSign, from, toIndex,
+					toSign, to, allocations, states);			
 		} else {
 			return intersectDifferentKind(fromIndex, fromSign, from, toIndex,
 					toSign, to, allocations, states);
@@ -685,19 +674,21 @@ public final class TypeAlgorithms {
 		
 		return myIndex;
 	}
-	
+
 	/**
-	 * The following method intersects two nodes with positive sign which have
-	 * identical kind. A precondition is that space has already been allocated
-	 * in states for the resulting node.
+	 * The following method intersects two nodes which have identical kind.
 	 * 
 	 * @param fromIndex
 	 *            --- index of state in from position
+	 * @param fromSign
+	 *            --- sign of state in from position
 	 * @param from
 	 *            --- automaton in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
 	 *            --- index of state in to position
+	 * @param toSign
+	 *            --- sign of state in to position
 	 * @param to
 	 *            --- automaton in the to position (i.e. containing state at
 	 *            toIndex).
@@ -708,61 +699,85 @@ public final class TypeAlgorithms {
 	 *            constructed/
 	 * @return
 	 */
-	private static int intersectSameKindPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
+	private static int intersectSameKind(int fromIndex, boolean fromSign, Automaton from,
+			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		int myIndex = states.size()-1;
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];		
-		Automaton.State myState;
+			ArrayList<Automaton.State> states) {		
+		Automaton.State fromState = from.states[fromIndex];		
 		
 		switch(fromState.kind) {
-			case Type.K_VOID: {
-				// void & void => void
-				myState = new Automaton.State(Type.K_VOID);				
-				break;
-			}
-			case Type.K_ANY: {
-				// any & any => any
-				myState = new Automaton.State(Type.K_ANY);
-				break;
-			}				
+			case Type.K_VOID:
+				return intersectVoid(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
+			case Type.K_ANY: 
+				return intersectVoid(fromIndex,!fromSign,from,toIndex,!toSign,to,allocations,states);
 			case Type.K_RECORD: 
 				return intersectRecordsPosPos(fromIndex,from,toIndex,to,allocations,states);			
 			case Type.K_LABEL:
 			case Type.K_NOMINAL:
-				return intersectNominalsPosPos(fromIndex,from,toIndex,to,allocations,states);
+				return intersectNominals(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_TUPLE:
-				return intersectTuplesPosPos(fromIndex,from,toIndex,to,allocations,states);																				
+				return intersectTuples(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);																				
 			case Type.K_LIST:
 			case Type.K_SET:
-				return intersectSetsOrListsPosPos(fromIndex,from,toIndex,to,allocations,states);
+				return intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_PROCESS:
-			case Type.K_DICTIONARY: 								
-				// e.g. [T1] & [T2] => [T1&T2]			
-				return intersectCompoundPosPos(fromIndex,from,toIndex,to,allocations,states);							
+			case Type.K_DICTIONARY: 										
+				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);							
 			case Type.K_NEGATION: 
-				// !T1 & !T2 => !T1 & !T2 (!)
-				return intersectNegations(fromIndex,true,from,toIndex,true,to,allocations,states);								
+				return intersectNegations(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);								
 			case Type.K_UNION: 
-				return intersectUnionsPosPos(fromIndex,from,toIndex,to,allocations,states);
+				return intersectUnions(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD: 
-				return intersectFunctionOrMethodPosPos(fromIndex,from,toIndex,to,allocations,states);			
+				return intersectFunctionsOrMethods(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
 			default: {
-				// K_BYTE, K_CHAR, K_INT, K_RATIONAL
-				// K_STRING, K_NULL			
-				// e.g. INT & INT => INT
-				myState = new Automaton.State(fromState.kind);
-				break;
+				return intersectPrimitives(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			}		
+		}		
+	}
+	
+	// ==================================================================================
+	// Primitives
+	// ==================================================================================
+	
+	private static int intersectVoid(int fromIndex, boolean fromSign, Automaton from,
+			int toIndex, boolean toSign, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+		
+		if(!fromSign && !toSign) {
+			states.add(new Automaton.State(Type.K_ANY));
+		} else {
+			// void & void => void
+			// void & !void => void
+			states.add(new Automaton.State(Type.K_VOID));	
+		} 
+		
+		return states.size()-1;
+	}
+	
+	private static int intersectPrimitives(int fromIndex, boolean fromSign, Automaton from,
+			int toIndex, boolean toSign, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+		
+		Automaton.State fromState = from.states[fromIndex];
+		
+		if(fromSign && toSign) {
+			// e.g. INT & INT => INT
+			states.add(new Automaton.State(fromState.kind));			
+		} else if(fromSign || toSign) {
+			// e.g. !INT & INT => INT
+			states.add(new Automaton.State(Type.K_VOID));			 
+		} else {
+			// e.g. !INT & !INT => !INT
+			int childIndex = states.size();
+			states.add(new Automaton.State(fromState.kind));
+			states.add(new Automaton.State(Type.K_NEGATION,childIndex));	
 		}
 		
-		states.set(myIndex, myState);
-		
-		return myIndex;
+		return states.size()-1;
 	}
 	
 	// ==================================================================================
@@ -784,57 +799,11 @@ public final class TypeAlgorithms {
 	}
 
 	// ==================================================================================
-	// Unions
-	// ==================================================================================
-	
-	private static int intersectUnionsPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states){
-		
-		Automaton.State fromState = from.states[fromIndex];		
-		
-		int[] fromChildren = fromState.children;
-		int[] newChildren = new int[fromChildren.length];
-		for (int i = 0; i != fromChildren.length; ++i) {
-			int fromChild = fromChildren[i];
-			newChildren[i] = intersect(fromChild, true, from,
-					toIndex, true, to, allocations, states);
-		}
-		
-		Automaton.State myState = new Automaton.State(Type.K_UNION, false, newChildren);
-		states.add(myState);
-		
-		return states.size()-1;
-	}
-	
-	private static int intersectUnionsPosNeg(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states){
-		// (T1|T2) & !(T3|T4) => (T1&!(T3|T4)) | (T2&!(T3|T4))
-		
-		Automaton.State fromState = from.states[fromIndex];
-							
-		int[] fromChildren = fromState.children;
-		int[] newChildren = new int[fromChildren.length];
-		for (int i = 0; i != fromChildren.length; ++i) {
-			int fromChild = fromChildren[i];
-			newChildren[i] = intersect(fromChild, true, from,
-					toIndex, false, to, allocations, states);
-		}
-		
-		Automaton.State myState = new Automaton.State(Type.K_UNION, false, newChildren);
-		states.add(myState);
-		return states.size()-1;
-	}	
-
-	// ==================================================================================
 	// Nominals
 	// ==================================================================================
 	
-	private static int intersectNominalsPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
+	private static int intersectNominals(int fromIndex, boolean fromSign, Automaton from,
+			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 		
@@ -842,38 +811,26 @@ public final class TypeAlgorithms {
 		Automaton.State toState = to.states[toIndex];
 		
 		if(!fromState.data.equals(toState.data)) {
-			int myIndex = states.size();
-			states.add(new Automaton.State(Type.K_VOID));
-			return myIndex;
-		} else {
-			return intersectCompoundPosPos(fromIndex,from,toIndex,to,allocations,states);
-		}				
-	}
-	
-	private static int intersectNominalsPosNeg(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
+			if(fromSign && toSign) {
+				int myIndex = states.size();
+				states.add(new Automaton.State(Type.K_VOID));
+				return myIndex;
+			} else if(fromSign || toSign) {
+				int myIndex = states.size();
+				Automata.extractOnto(fromIndex,from,states);
+				return myIndex;							
+			}
+		} 
 		
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];
-		
-		if(!fromState.data.equals(toState.data)) {
-			// e.g. {int f} & !{int g} => {int f}
-			int myIndex = states.size();
-			Automata.extractOnto(fromIndex,from,states);
-			return myIndex;			
-		} else {
-			return intersectCompoundPosNeg(fromIndex,from,toIndex,to,allocations,states);
-		}				
+		return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);						
 	}
 	
 	// ==================================================================================
 	// Tuples
 	// ==================================================================================
 	
-	private static int intersectTuplesPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
+	private static int intersectTuples(int fromIndex, boolean fromSign,
+			Automaton from, int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 		
@@ -881,42 +838,96 @@ public final class TypeAlgorithms {
 		Automaton.State toState = to.states[toIndex];
 		
 		if(fromState.children.length != toState.children.length) {
-			int myIndex = states.size();
-			states.add(new Automaton.State(Type.K_VOID));
-			return myIndex;
-		} else {
-			return intersectCompoundPosPos(fromIndex,from,toIndex,to,allocations,states);
-		}				
+			if(fromSign && toSign) {
+				int myIndex = states.size();
+				states.add(new Automaton.State(Type.K_VOID));
+				return myIndex;
+			} else if(fromSign || toSign) {
+				int myIndex = states.size();
+				Automata.extractOnto(fromIndex,from,states);
+				return myIndex;		
+			}
+		} 
+		
+		return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);					
 	}
 	
-	private static int intersectTuplesPosNeg(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
+	// ==================================================================================
+	// Unions
+	// ==================================================================================
+	
+	private static int intersectUnions(int fromIndex, boolean fromSign, Automaton from,
+			int toIndex, boolean toSign, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states){
+		if (!fromSign && !toSign) {
+			return intersectUnionsNegNeg(fromIndex, from, toIndex, to,allocations,states);		
+		} else {
+			return intersectUnionsPosNeg(fromIndex, fromSign, from, toIndex, toSign, to, allocations,states);		
+		}
+	}
+	
+	private static int intersectUnionsPosNeg(int fromIndex, boolean fromSign,
+			Automaton from, int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
-		
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];
-				
-		if(fromState.children.length != toState.children.length) {
-			// e.g. {int f} & !{int g} => {int f}
-			int myIndex = states.size();
-			Automata.extractOnto(fromIndex,from,states);
-			return myIndex;			
-		} else {
-			return intersectCompoundPosNeg(fromIndex,from,toIndex,to,allocations,states);
-		}				
-	}
+		// (T1|T2) & !(T3|T4) => (T1&!(T3|T4)) | (T2&!(T3|T4))
 
+		Automaton.State fromState = from.states[fromIndex];
+
+		int[] fromChildren = fromState.children;
+		int[] newChildren = new int[fromChildren.length];
+		for (int i = 0; i != fromChildren.length; ++i) {
+			int fromChild = fromChildren[i];
+			newChildren[i] = intersect(fromChild, fromSign, from, toIndex,
+					toSign, to, allocations, states);
+		}
+
+		Automaton.State myState = new Automaton.State(Type.K_UNION, false,
+				newChildren);
+		states.add(myState);
+		return states.size() - 1;
+	}	
+	
+	private static int intersectUnionsNegNeg(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states){
+		// !(T1|T2) & !(T3|T4) => !T1 & !T2 & !T3 & !T4 => !(T1|T2|T3|T4)
+		Automaton.State fromState = from.states[fromIndex];		
+		Automaton.State toState = to.states[fromIndex];		
+				
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		int[] newChildren = new int[fromChildren.length+toChildren.length];
+		int childIndex = states.size();
+		states.add(new Automaton.State(Type.K_UNION, false, newChildren));
+		for (int i = 0; i != fromChildren.length; ++i) {
+			int fromChild = fromChildren[i];
+			newChildren[i] = states.size();
+			Automata.extractOnto(fromChild,from,states);					
+		}
+		for (int i = 0; i != toChildren.length; ++i) {
+			int toChild = toChildren[i];
+			newChildren[i+fromChildren.length] = states.size();
+			Automata.extractOnto(toChild,to,states);					
+		}
+		
+		Automaton.State myState = new Automaton.State(Type.K_NEGATION, true, childIndex);
+		states.add(myState);
+		return states.size()-1;
+	}
+		
 	// ==================================================================================
 	// Sets and Lists
 	// ==================================================================================
 
-	private static int intersectSetsOrListsPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
+	private static int intersectSetsOrLists(int fromIndex, boolean fromSign, Automaton from,
+			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {					
 		
-		int myIndex = intersectCompoundPosPos(fromIndex,from,toIndex,to,allocations,states);
+		int myIndex = intersectCompoundsPosPos(fromIndex,from,toIndex,to,allocations,states);
 		
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
@@ -927,34 +938,225 @@ public final class TypeAlgorithms {
 		// [T1+] & [T2+] => [T1&T2+]
 		boolean fromNonEmpty = (Boolean) fromState.data;
 		boolean toNonEmpty = (Boolean) toState.data;
-				
+		
+		if(!fromSign) { fromNonEmpty = !fromNonEmpty; }
+		if(!toSign) { toNonEmpty = !toNonEmpty; }
+		
 		states.get(myIndex).data = fromNonEmpty | toNonEmpty; 
 		
 		return myIndex;		
 	}
 
-	private static int intersectSetsOrListsPosNeg(int fromIndex,
-			Automaton from, int toIndex, Automaton to,
+	// ==================================================================================
+	// Dictionaries, Processes, Records (closed), Sets and Lists
+	// ==================================================================================
+	
+	private static int intersectCompounds(int fromIndex, boolean fromSign,
+			Automaton from, int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
-
-		int myIndex = intersectCompoundPosPos(fromIndex, from, toIndex, to,
-				allocations, states);
-
+		if (fromSign == toSign) {
+			if (fromSign) {
+				return intersectCompoundsPosPos(fromIndex, from, toIndex, to,
+						allocations, states);
+			} else {
+				return intersectCompoundsNegNeg(fromIndex, from, toIndex, to,
+						allocations, states);
+			}
+		} else if (fromSign) {
+			return intersectCompoundsPosNeg(fromIndex, from, toIndex, to,
+					allocations, states);
+		} else {
+			return intersectCompoundsPosNeg(toIndex, to, fromIndex, from,
+					allocations, states);
+		}
+	}
+	
+	private static int intersectCompoundsPosPos(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+		
 		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];
+		Automaton.State toState = to.states[toIndex];		
+		
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		int[] myChildren = new int[fromChildren.length];
+		for(int i=0;i!=fromChildren.length;++i) {
+			int fromChild = fromChildren[i];
+			int toChild = toChildren[i];
+			myChildren[i] = intersect(fromChild, true, from,
+					toChild, true, to, allocations, states);
+		}				
+		
+		Automaton.State myState = new Automaton.State(fromState.kind, fromState.data,
+				true, myChildren);
+		
+		states.add(myState);		
+		return states.size()-1;
+	}
+	
+	private static int intersectCompoundsPosNeg(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+		
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+				
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		int[] tmpChildren = new int[fromChildren.length];
+		for(int i=0;i!=fromChildren.length;++i) {
+			tmpChildren[i] = states.size();
+			Automata.extractOnto(fromChildren[i],from,states);
+		}				
+		int[] myChildren = new int[fromChildren.length];
+		for(int i=0;i!=fromChildren.length;++i) {
+			int[] myChildChildren = new int[fromChildren.length];
+			for(int j=0;j!=fromChildren.length;++j) {
+				if(i == j) {
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					myChildChildren[i] = intersect(fromChild, true, from,
+							toChild, false, to, allocations, states);
+				} else {
+					myChildChildren[j] = tmpChildren[j];
+				}
+			}
+			myChildren[i] = states.size();
+			states.add(new Automaton.State(fromState.kind, fromState.data,
+					true, myChildChildren));
+		}						
+		
+		Automaton.State myState = new Automaton.State(Type.K_UNION, null,
+				false, myChildren);
+		
+		states.add(myState);	
+		
+		return states.size()-1;
+	}
+	
+	private static int intersectCompoundsNegNeg(int fromIndex, Automaton from,
+			int toIndex, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+		// e.g. ![int] & ![real] => !([int]|[real])
+		int fromChild = states.size();
+		Automata.extractOnto(fromIndex,from,states);
+		int toChild = states.size();
+		Automata.extractOnto(toIndex,to,states);
+		states.add(new Automaton.State(Type.K_UNION,false,fromChild,toChild));
+		states.add(new Automaton.State(Type.K_NEGATION,states.size()-1));
+		return states.size()-1;
+	}
 
-		// [T1] & [T2] => [T1&T2]
-		// [T1+] & [T2] => [T1&T2+]
-		// [T1] & [T2+] => [T1&T2]
-		// [T1+] & [T2+] => [T1&T2+]
-		boolean fromNonEmpty = (Boolean) fromState.data;
-		boolean toNonEmpty = (Boolean) toState.data;
-
-		states.get(myIndex).data = fromNonEmpty || !toNonEmpty;
-
-		return myIndex;
-	}	
+	// ==================================================================================
+	// Functions and Methods
+	// ==================================================================================	
+	private static int intersectFunctionsOrMethods(int fromIndex, boolean fromSign,
+			Automaton from, int toIndex, boolean toSign, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,		
+			ArrayList<Automaton.State> states) {
+		
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		
+		if(fromState.children.length != toState.children.length) {
+			if(fromSign && toSign) {
+				int myIndex = states.size();
+				states.add(new Automaton.State(Type.K_VOID));
+				return myIndex;
+			} else if(fromSign || toSign) {
+				int myIndex = states.size();
+				Automata.extractOnto(fromIndex,from,states);
+				return myIndex;		
+			}
+		} 
+		
+		// it's fair to say that something doesn't feel right about this?
+		
+		if(fromSign == toSign) { 
+			if(fromSign) {
+				return intersectFunctionOrMethodsHelper(fromIndex,from,toIndex,toSign,to,allocations,states);
+			} else {
+				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);				
+			}
+		} else if(fromSign) {
+			return intersectFunctionOrMethodsHelper(fromIndex,from,toIndex,false,to,allocations,states);
+		} else {
+			return intersectFunctionOrMethodsHelper(toIndex,to,fromIndex,false,from,allocations,states);
+		}
+	}
+	
+	private static int intersectFunctionOrMethodsHelper(int fromIndex,
+			Automaton from, int toIndex, boolean toSign, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+	
+		// int(int) & any(real) => int(int|real)
+		
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];		
+		
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		int[] myChildren = new int[fromChildren.length];
+		int returnIndex = 0; // index of return value in children
+		
+		if(fromState.kind == Type.K_METHOD) {
+			// receiver is invariant
+			myChildren[0] = intersect(fromChildren[0],
+					true, from, toChildren[0], true, to,
+					allocations, states);
+			returnIndex = 1;
+		}
+		
+		// return value is co-variant (i.e. normal, like e.g. list elements)
+		myChildren[returnIndex] = intersect(fromChildren[returnIndex],
+				true, from, toChildren[returnIndex], toSign, to,
+				allocations, states);
+		
+		// throws clause is co-variant (i.e. normal, like e.g. list elements)
+		myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
+				true, from, toChildren[returnIndex+1], toSign, to,
+				allocations, states);
+		
+		if(toSign) {
+			// parameter values are harder, since they are contra-variant.
+			for(int i=returnIndex+2;i<fromChildren.length;++i) {
+				int fromChild = fromChildren[i];
+				int toChild = toChildren[i];
+				int[] childChildren = new int[2];
+				myChildren[i] = states.size();					
+				states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
+				childChildren[0] = states.size();
+				Automata.extractOnto(fromChild,from,states);
+				childChildren[1] = states.size();
+				Automata.extractOnto(toChild,to,states);
+			}
+		} else {			
+			// parameter values are harder, since they are contra-variant.
+			for(int i=returnIndex+2;i<fromChildren.length;++i) {
+				int fromChild = fromChildren[i];
+				int toChild = toChildren[i];
+				int[] childChildren = new int[2];
+				myChildren[i] = states.size();					
+				states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
+				childChildren[0] = states.size();
+				Automata.extractOnto(fromChild,from,states);
+				childChildren[1] = states.size();
+				states.add(new Automaton.State(Type.K_NEGATION,null,false,states.size()+1));
+				Automata.extractOnto(toChild,to,states);
+			}		
+		} 
+		
+		Automaton.State myState = new Automaton.State(fromState.kind,
+				fromState.data, true, myChildren);
+		states.add(myState);
+		return states.size()-1;
+	}			
 	
 	// ==================================================================================
 	// Records
@@ -983,7 +1185,7 @@ public final class TypeAlgorithms {
 				states.add(new Automaton.State(Type.K_VOID));
 				return myIndex;
 			} else {
-				return intersectCompoundPosPos(fromIndex,from,toIndex,to,allocations,states);
+				return intersectCompoundsPosPos(fromIndex,from,toIndex,to,allocations,states);
 			}	
 		}		
 	}
@@ -1012,7 +1214,7 @@ public final class TypeAlgorithms {
 				Automata.extractOnto(fromIndex,from,states);
 				return myIndex;					
 			} else {
-				return intersectCompoundPosNeg(fromIndex,from,toIndex,to,allocations,states);
+				return intersectCompoundsPosNeg(fromIndex,from,toIndex,to,allocations,states);
 			}	
 		}
 	}
@@ -1458,532 +1660,7 @@ public final class TypeAlgorithms {
 		Automaton.State myState = new Automaton.State(Type.K_UNION, null, false, myChildren);
 		states.add(myState);
 		return states.size()-1;				
-	}
-	
-	// ==================================================================================
-	// Dictionaries, Processes, Records (closed), Sets and Lists
-	// ==================================================================================
-	
-	private static int intersectCompoundPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];		
-		
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		int[] myChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			int fromChild = fromChildren[i];
-			int toChild = toChildren[i];
-			myChildren[i] = intersect(fromChild, true, from,
-					toChild, true, to, allocations, states);
-		}				
-		
-		Automaton.State myState = new Automaton.State(fromState.kind, fromState.data,
-				true, myChildren);
-		
-		states.add(myState);		
-		return states.size()-1;
-	}
-	
-	private static int intersectCompoundPosNeg(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];		
-				
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		int[] tmpChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			tmpChildren[i] = states.size();
-			Automata.extractOnto(fromChildren[i],from,states);
-		}				
-		int[] myChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			int[] myChildChildren = new int[fromChildren.length];
-			for(int j=0;j!=fromChildren.length;++j) {
-				if(i == j) {
-					int fromChild = fromChildren[i];
-					int toChild = toChildren[i];
-					myChildChildren[i] = intersect(fromChild, true, from,
-							toChild, false, to, allocations, states);
-				} else {
-					myChildChildren[j] = tmpChildren[j];
-				}
-			}
-			myChildren[i] = states.size();
-			states.add(new Automaton.State(fromState.kind, fromState.data,
-					true, myChildChildren));
-		}						
-		
-		Automaton.State myState = new Automaton.State(Type.K_UNION, null,
-				false, myChildren);
-		
-		states.add(myState);	
-		
-		return states.size()-1;
-	}
-	
-	// ==================================================================================
-	// Functions and Methods
-	// ==================================================================================	
-	
-	private static int intersectFunctionOrMethodPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		
-		// int(int) & any(real) => int(int|real)
-		
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];		
-		
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		int[] myChildren = new int[fromChildren.length];
-		int returnIndex = 0; // index of return value in children
-		
-		if(fromState.kind == Type.K_METHOD) {
-			// receiver is invariant
-			myChildren[0] = intersect(fromChildren[0],
-					true, from, toChildren[0], true, to,
-					allocations, states);
-			returnIndex = 1;
-		}
-		
-		// return value is co-variant (i.e. normal, like e.g. list elements)
-		myChildren[returnIndex] = intersect(fromChildren[returnIndex],
-				true, from, toChildren[returnIndex], true, to,
-				allocations, states);
-		
-		// throws clause is co-variant (i.e. normal, like e.g. list elements)
-		myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
-				true, from, toChildren[returnIndex+1], true, to,
-				allocations, states);
-		
-		// parameter values are harder, since they are contra-variant.
-		for(int i=returnIndex+2;i<fromChildren.length;++i) {
-			int fromChild = fromChildren[i];
-			int toChild = toChildren[i];
-			int[] childChildren = new int[2];
-			myChildren[i] = states.size();					
-			states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
-			childChildren[0] = states.size();
-			Automata.extractOnto(fromChild,from,states);
-			childChildren[1] = states.size();
-			Automata.extractOnto(toChild,to,states);
-		}		
-		
-		Automaton.State myState = new Automaton.State(fromState.kind,
-				fromState.data, true, myChildren);
-		states.add(myState);
-		return states.size()-1;
-	}			
-	
-	/**
-	 * The following method intersects two nodes with (resp. positive and
-	 * negative sign) which have identical kind. A precondition is that space
-	 * has already been allocated in states for the resulting node.
-	 * 
-	 * @param fromIndex
-	 *            --- index of state in from position
-	 * @param from
-	 *            --- automaton in the from position (i.e. containing state at
-	 *            fromIndex).
-	 * @param toIndex
-	 *            --- index of state in to position
-	 * @param to
-	 *            --- automaton in the to position (i.e. containing state at
-	 *            toIndex).
-	 * @param allocations
-	 *            --- mapping of intersection points to their index in states
-	 * @param states
-	 *            --- list of states which constitute the new automaton being
-	 *            constructed/
-	 * @return
-	 */
-	private static int intersectSameKindPosNeg(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		int myIndex = states.size()-1;
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];		
-		Automaton.State myState;
-		
-		switch(fromState.kind) {
-			case Type.K_ANY: 
-			case Type.K_VOID: {
-				// void & !void => void
-				// any & !any => void
-				myState = new Automaton.State(Type.K_VOID);				
-				break;
-			}
-			case Type.K_RECORD: 
-				return intersectRecordsPosNeg(fromIndex,from,toIndex,to,allocations,states);							
-			case Type.K_LABEL:
-			case Type.K_NOMINAL: 
-				return intersectNominalsPosNeg(fromIndex,from,toIndex,to,allocations,states);			
-			case Type.K_TUPLE:
-				return intersectTuplesPosNeg(fromIndex,from,toIndex,to,allocations,states);							
-			case Type.K_LIST:
-			case Type.K_SET:
-				return intersectSetsOrListsPosNeg(fromIndex,from,toIndex,to,allocations,states);
-			case Type.K_PROCESS: 
-			case Type.K_DICTIONARY:
-				// (T1,T2) & !(T3,T4) => (T1 & !T3, T2) | (T1, T2 & !T4) 
-				return intersectCompoundPosNeg(fromIndex,from,toIndex,to,allocations,states);															
-			case Type.K_NEGATION: 
-				// !T1 & !!T2 => !T1 & T2 (!)
-				return intersectNegations(fromIndex,true,from,toIndex,false,to,allocations,states);			
-			case Type.K_UNION: 
-				return intersectUnionsPosNeg(fromIndex,from,toIndex,to,allocations,states);			
-			case Type.K_FUNCTION:
-			case Type.K_HEADLESS:
-			case Type.K_METHOD:
-				// int(int) & !(any(real)) => int&!any(int|!real)				
-				int[] fromChildren = fromState.children;
-				int[] toChildren = toState.children;
-				int[] myChildren = new int[fromChildren.length];
-				int returnIndex = 0; // index of return value in children
-				
-				if(fromState.kind == Type.K_METHOD) {
-					// receiver is invariant
-					myChildren[0] = intersect(fromChildren[0],
-							true, from, toChildren[0], false, to,
-							allocations, states);
-					returnIndex = 1;
-				}
-				
-				// return value is co-variant (i.e. normal, like e.g. list elements)
-				myChildren[returnIndex] = intersect(fromChildren[returnIndex],
-						true, from, toChildren[returnIndex], false, to,
-						allocations, states);
-
-				// throws clause is co-variant (i.e. normal, like e.g. list elements)
-				myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
-						true, from, toChildren[returnIndex+1], false, to,
-						allocations, states);
-				
-				// parameter values are harder, since they are contra-variant.
-				for(int i=returnIndex+2;i<fromChildren.length;++i) {
-					int fromChild = fromChildren[i];
-					int toChild = toChildren[i];
-					int[] childChildren = new int[2];
-					myChildren[i] = states.size();					
-					states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
-					childChildren[0] = states.size();
-					Automata.extractOnto(fromChild,from,states);
-					childChildren[1] = states.size();
-					states.add(new Automaton.State(Type.K_NEGATION,null,false,states.size()+1));
-					Automata.extractOnto(toChild,to,states);
-				}				
-				myState = new Automaton.State(fromState.kind, fromState.data,
-						true, myChildren);
-			default: {
-				// e.g. !INT & INT => INT
-				myState = new Automaton.State(Type.K_VOID);				
-				break;
-			}		
-		}
-		
-		states.set(myIndex, myState);
-		
-		return myIndex;
-	}
-	
-	/**
-	 * The following method intersects two nodes with (resp. negative and
-	 * positive sign) which have identical kind. A precondition is that space
-	 * has already been allocated in states for the resulting node.
-	 * 
-	 * @param fromIndex
-	 *            --- index of state in from position
-	 * @param from
-	 *            --- automaton in the from position (i.e. containing state at
-	 *            fromIndex).
-	 * @param toIndex
-	 *            --- index of state in to position
-	 * @param to
-	 *            --- automaton in the to position (i.e. containing state at
-	 *            toIndex).
-	 * @param allocations
-	 *            --- mapping of intersection points to their index in states
-	 * @param states
-	 *            --- list of states which constitute the new automaton being
-	 *            constructed/
-	 * @return
-	 */
-	private static int intersectSameKindNegPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-	
-		int myIndex = states.size()-1;
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];		
-		Automaton.State myState;
-		
-		switch(fromState.kind) {
-			case Type.K_ANY: 
-			case Type.K_VOID: {
-				// !void & void => void
-				// !any & any => void
-				myState = new Automaton.State(Type.K_VOID);				
-				break;
-			}
-				
-			case Type.K_RECORD: {
-				Type.Record.State fromData = (Type.Record.State) fromState.data;
-				Type.Record.State toData = (Type.Record.State) toState.data;
-				if (fromData.isOpen && toData.isOpen) {					
-					myState = intersectPosNegOpenOpen(toIndex,to,fromIndex,from,allocations,states);
-					break;
-				} else if(fromData.isOpen) {
-					myState = intersectPosNegClosedOpen(toIndex,to,fromIndex,from,allocations,states);
-					break;
-				} else if(toData.isOpen) {
-					myState = intersectNegPosClosedOpen(fromIndex,from,toIndex,to,allocations,states);;
-					break;
-				} else {
-					// fall through to general case for compounds
-				}
-			}	
-			case Type.K_LABEL:
-			case Type.K_NOMINAL: {
-				if(!fromState.data.equals(toState.data)) {					
-					// e.g. !{int f} & {int g} => {int g}
-					states.remove(states.size()-1);
-					Automata.extractOnto(toIndex,to,states);
-					return myIndex;
-				}
-				// now fall through as for the other compound types.
-			}
-			case Type.K_TUPLE:
-				if(fromState.children.length != toState.children.length) {					
-					// e.g. !(int,int) & (int) => (int)
-					states.remove(states.size()-1);
-					Automata.extractOnto(toIndex,to,states);
-					return myIndex;
-				}
-			case Type.K_PROCESS: 
-			case Type.K_LIST:
-			case Type.K_SET:
-			case Type.K_DICTIONARY: {
-				// !(T1,T2) & (T3,T4) => (!T1 & T3, T2) | (T3, !T2 & T4) 
-				
-				Object myData;
-				if (fromState.kind == Type.K_LIST || fromState.kind == Type.K_SET) {
-					// ![T1]  & [T2]  => [!T1&T2+]
-					// ![T1+] & [T2]  => [!T1&T2]
-					// ![T1]  & [T2+] => [!T1&T2+]
-					// ![T1+] & [T2+] => [!T1&T2+]
-					boolean fromNonEmpty = (Boolean) fromState.data;
-					boolean toNonEmpty = (Boolean) toState.data;
-					myData = !fromNonEmpty || toNonEmpty;
-				} else {
-					myData = fromState.data;
-				}
-				
-				int[] fromChildren = fromState.children;
-				int[] toChildren = toState.children;
-				int[] tmpChildren = new int[fromChildren.length];
-				for(int i=0;i!=toChildren.length;++i) {
-					tmpChildren[i] = states.size();
-					Automata.extractOnto(toChildren[i],to,states);
-				}				
-				int[] myChildren = new int[fromChildren.length];
-				for(int i=0;i!=fromChildren.length;++i) {
-					int[] myChildChildren = new int[fromChildren.length];
-					for(int j=0;j!=fromChildren.length;++j) {
-						if(i == j) {
-							int fromChild = fromChildren[i];
-							int toChild = toChildren[i];
-							myChildChildren[i] = intersect(fromChild, false, from,
-									toChild, true, to, allocations, states);
-						} else {
-							myChildChildren[j] = tmpChildren[j];
-						}
-					}
-					myChildren[i] = states.size();
-					states.add(new Automaton.State(fromState.kind, myData,
-							true, myChildChildren));
-				}				
-				myState = new Automaton.State(Type.K_UNION, null,
-						false, myChildren);
-				break;				
-			}							
-			case Type.K_NEGATION:
-				// !!T1 & !T2 => T1 & !T2 (!)
-				return intersectNegations(fromIndex,false,from,toIndex,true,to,allocations,states);							
-			case Type.K_UNION: {
-				return intersectUnionsPosNeg(toIndex,to,fromIndex,from,allocations,states);
-			}				
-			case Type.K_FUNCTION:
-			case Type.K_HEADLESS:
-			case Type.K_METHOD:
-				// !(int(int)) & any(real) => !int&any(!int|real)				
-				int[] fromChildren = fromState.children;
-				int[] toChildren = toState.children;
-				int[] myChildren = new int[fromChildren.length];
-				int returnIndex = 0; // index of return value in children
-				
-				if(fromState.kind == Type.K_METHOD) {
-					// receiver is invariant
-					myChildren[0] = intersect(fromChildren[0],
-							false, from, toChildren[0], true, to,
-							allocations, states);
-					returnIndex = 1;
-				}
-				
-				// return value is co-variant (i.e. normal, like e.g. list elements)
-				myChildren[returnIndex] = intersect(fromChildren[returnIndex],
-						true, from, toChildren[returnIndex], false, to,
-						allocations, states);
-				
-				// throw clause is co-variant (i.e. normal, like e.g. list elements)
-				myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
-						true, from, toChildren[returnIndex+1], false, to,
-						allocations, states);
-				
-				// parameter values are harder, since they are contra-variant.
-				for(int i=returnIndex+2;i<fromChildren.length;++i) {
-					int fromChild = fromChildren[i];
-					int toChild = toChildren[i];
-					int[] childChildren = new int[2];
-					myChildren[i] = states.size();					
-					states.add(new Automaton.State(Type.K_UNION,null,false,childChildren));					
-					childChildren[0] = states.size();
-					states.add(new Automaton.State(Type.K_NEGATION,null,false,states.size()+1));
-					Automata.extractOnto(fromChild,from,states);
-					childChildren[1] = states.size();					
-					Automata.extractOnto(toChild,to,states);
-				}				
-				myState = new Automaton.State(fromState.kind, fromState.data,
-						true, myChildren);
-			default: {
-				// e.g. INT & !INT => INT
-				myState = new Automaton.State(Type.K_VOID);				
-				break;
-			}		
-		}
-		
-		states.set(myIndex, myState);
-		
-		return myIndex;
-	}	
-	
-	/**
-	 * The following method intersects two nodes with (resp) negative and
-	 * negative sign which have identical kind. A precondition is that space has
-	 * already been allocated in states for the resulting node.
-	 * 
-	 * @param fromIndex
-	 *            --- index of state in from position
-	 * @param from
-	 *            --- automaton in the from position (i.e. containing state at
-	 *            fromIndex).
-	 * @param toIndex
-	 *            --- index of state in to position
-	 * @param to
-	 *            --- automaton in the to position (i.e. containing state at
-	 *            toIndex).
-	 * @param allocations
-	 *            --- mapping of intersection points to their index in states
-	 * @param states
-	 *            --- list of states which constitute the new automaton being
-	 *            constructed/
-	 * @return
-	 */
-	private static int intersectSameKindNegNeg(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		
-		int myIndex = states.size()-1;
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];		
-		Automaton.State myState;
-		
-		switch(fromState.kind) {
-			case Type.K_VOID: {
-				// !void & !void => any
-				myState = new Automaton.State(Type.K_ANY);				
-				break;
-			}
-			case Type.K_ANY: {
-				// !any & !any -> void				
-				myState = new Automaton.State(Type.K_VOID);				
-				break;
-			}				
-			case Type.K_LABEL:
-			case Type.K_NOMINAL:
-			case Type.K_PROCESS:
-			case Type.K_LIST:
-			case Type.K_SET:
-			case Type.K_DICTIONARY:
-			case Type.K_TUPLE: 
-			case Type.K_RECORD: 
-			case Type.K_FUNCTION:
-			case Type.K_HEADLESS:
-			case Type.K_METHOD: {				
-				// e.g. ![int] & ![real] => !([int]|[real])
-				int childIndex = states.size();						
-				states.add(null);
-				int fromChild = states.size();
-				Automata.extractOnto(fromIndex,from,states);
-				int toChild = states.size();
-				Automata.extractOnto(toIndex,to,states);
-				states.set(childIndex, new Automaton.State(Type.K_UNION,false,fromChild,toChild));
-				myState = new Automaton.State(Type.K_NEGATION,childIndex);
-				break;
-			}				
-			case Type.K_NEGATION: {
-				// !!T1 & !!T2 => T1 & T2 (!)
-				states.remove(states.size()-1);
-				int fromChild = fromState.children[0];
-				int toChild = toState.children[0];
-				return intersect(fromChild,true,from,toChild,true,to,allocations,states);			
-			}				
-			case Type.K_UNION: {
-				// !(T1|T2) & !(T3|T4) => !T1 & !T2 & !T3 & !T4 => !(T1|T2|T3|T4)
-				int[] fromChildren = fromState.children;
-				int[] toChildren = toState.children;
-				int[] newChildren = new int[fromChildren.length+toChildren.length];
-				int childIndex = states.size();
-				states.add(new Automaton.State(Type.K_UNION, false, newChildren));
-				for (int i = 0; i != fromChildren.length; ++i) {
-					int fromChild = fromChildren[i];
-					newChildren[i] = states.size();
-					Automata.extractOnto(fromChild,from,states);					
-				}
-				for (int i = 0; i != toChildren.length; ++i) {
-					int toChild = toChildren[i];
-					newChildren[i+fromChildren.length] = states.size();
-					Automata.extractOnto(toChild,to,states);					
-				}
-				myState = new Automaton.State(Type.K_NEGATION, true, childIndex);
-				break;
-			}				
-			default: {
-				// e.g. !INT & !INT => !INT
-				int childIndex = states.size();
-				states.add(new Automaton.State(fromState.kind));
-				myState = new Automaton.State(Type.K_NEGATION,childIndex);			
-				break;			
-			}		
-		}
-		
-		states.set(myIndex, myState);
-		
-		return myIndex;
-	}
+	}		
 	
 	private static int invert(int kind, boolean sign) {
 		if(sign) {
