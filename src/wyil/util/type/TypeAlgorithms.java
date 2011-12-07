@@ -711,7 +711,7 @@ public final class TypeAlgorithms {
 			case Type.K_ANY: 
 				return intersectVoid(fromIndex,!fromSign,from,toIndex,!toSign,to,allocations,states);
 			case Type.K_RECORD: 
-				return intersectRecordsPosPos(fromIndex,from,toIndex,to,allocations,states);			
+				return intersectRecords(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
 			case Type.K_LABEL:
 			case Type.K_NOMINAL:
 				return intersectNominals(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
@@ -1162,6 +1162,23 @@ public final class TypeAlgorithms {
 	// Records
 	// ==================================================================================
 	
+	private static int intersectRecords(int fromIndex, boolean fromSign, Automaton from,
+			int toIndex, boolean toSign, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+		if(fromSign == toSign) {
+			if(fromSign) {
+				return intersectRecordsPosPos(fromIndex,from,toIndex,to,allocations,states);
+			} else {
+				return intersectCompoundsNegNeg(fromIndex,from,toIndex,to,allocations,states);
+			}
+		} else if(fromSign) {
+			return intersectRecordsPosNeg(fromIndex,from,toIndex,to,allocations,states);
+		} else {
+			return intersectRecordsPosNeg(toIndex,to,fromIndex,from,allocations,states);
+		}
+	}
+	
 	private static int intersectRecordsPosPos(int fromIndex, Automaton from,
 			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
@@ -1458,7 +1475,6 @@ public final class TypeAlgorithms {
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 
-		int oldSize = states.size(); // in case we need to back out
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
 		
@@ -1576,7 +1592,6 @@ public final class TypeAlgorithms {
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {		
 
-		int oldSize = states.size(); // in case we need to back out
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
 		
@@ -1731,53 +1746,4 @@ public final class TypeAlgorithms {
 
 		return true;
 	}
-
-	/**
-	 * The aim of this method is to split up the positive and negative children
-	 * of a given state. A child is negative if it is a negated type; otherwise
-	 * it is positive. This method orders the children such so all the positive
-	 * ones come first, then the negative ones. The value returned indicates the
-	 * lowest index of a negative child (i.e. the point where the negative
-	 * children start). Thus, if the return value matches
-	 * <code>state.children</code>, then all children are positive. Likewise, if
-	 * the return value is <code>0</code>, then all children are negative.
-	 * 
-	 * @param state
-	 *            --- automaton state whose children are to be sorted.
-	 * @return --- the start index of the negative children.
-	 */
-	private static int splitPositiveNegativeChildren(Automaton.State state,
-			Automaton automaton) {
-		int[] children = state.children;
-		int posIndex = advancePositive(0, children, automaton);
-		int negIndex = retreatNegative(children.length - 1, children, automaton);
-
-		while (posIndex < negIndex) {
-			int tmp = children[posIndex];
-			children[posIndex] = children[negIndex];
-			children[negIndex] = tmp;
-			posIndex = advancePositive(posIndex + 1, children, automaton);
-			negIndex = retreatNegative(negIndex - 1, children, automaton);
-		}
-
-		return posIndex;
-	}
-
-	private static int advancePositive(int index, int[] children,
-			Automaton automaton) {
-		while (index < children.length
-				&& automaton.states[children[index]].kind != Type.K_NEGATION) {
-			index = index + 1;
-		}
-		return index;
-	}
-
-	private static int retreatNegative(int index, int[] children,
-			Automaton automaton) {
-		while (index > 0
-				&& automaton.states[children[index]].kind == Type.K_NEGATION) {
-			index = index - 1;
-		}
-		return index;
-	}	
 }
