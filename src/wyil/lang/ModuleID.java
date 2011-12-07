@@ -36,9 +36,9 @@ import java.util.*;
  * @author David J. Pearce
  * 
  */
-public class ModuleID {
-	private PkgID pkg;
-	private String module;
+public final class ModuleID {
+	private final PkgID pkg;
+	private final String module;
 	
 	/**
      * Construct a module identifier.
