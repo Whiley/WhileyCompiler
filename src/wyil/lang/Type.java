@@ -1926,7 +1926,7 @@ public abstract class Type {
 	public static void main(String[] args) {
 		//Type from = fromString("(null,null)");
 		//Type to = fromString("X<[X]>");				
-		Type from = fromString("[int]|real");
+		Type from = fromString("[int]");
 		Type to = fromString("![int]");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));		
 		System.out.println(from + " & " + to + " = " + intersect(from,to));

@@ -722,7 +722,7 @@ public final class TypeAlgorithms {
 				return intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_PROCESS:
 			case Type.K_DICTIONARY: 										
-				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);							
+				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);							
 			case Type.K_NEGATION: 
 				return intersectNegations(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);								
 			case Type.K_UNION: 
@@ -827,7 +827,8 @@ public final class TypeAlgorithms {
 			}			
 		} 
 		
-		return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);						
+		return intersectCompounds(fromIndex, fromSign, from, toIndex, toSign,
+				to, fromState.data, allocations, states);						
 	}
 	
 	// ==================================================================================
@@ -854,7 +855,7 @@ public final class TypeAlgorithms {
 			}
 		} 
 		
-		return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);					
+		return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);					
 	}
 	
 	// ==================================================================================
@@ -937,24 +938,35 @@ public final class TypeAlgorithms {
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {					
 		
-		int myIndex = intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
-		
+
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
-				
+		
+		// pos-pos
 		// [T1]  & [T2]  => [T1&T2]
 		// [T1+] & [T2]  => [T1&T2+]
-		// [T1]  & [T2+] => [T1&T2]
+		// [T1]  & [T2+] => [T1&T2+]
 		// [T1+] & [T2+] => [T1&T2+]
+		
+		// pos-neg
+		// [T1] & ![T2] => [T1&!T2+]
+		// [T1+] & ![T2] => [T1&!T2+]
+		// [T1] & ![T2+] => [T1&!T2]
+		// [T1+] & ![T2+] => [T1&!T2+]
+		
 		boolean fromNonEmpty = (Boolean) fromState.data;
 		boolean toNonEmpty = (Boolean) toState.data;
+		Object myData = null;
 		
-		if(!fromSign) { fromNonEmpty = !fromNonEmpty; }
-		if(!toSign) { toNonEmpty = !toNonEmpty; }
+		if(fromSign && toSign) {
+			myData = fromNonEmpty | toNonEmpty; 			
+		} else if(fromSign) {						
+			myData = fromNonEmpty | !toNonEmpty; 			
+		} else if(toSign) {
+			myData = !fromNonEmpty | toNonEmpty; 				
+		}
 		
-		states.get(myIndex).data = fromNonEmpty | toNonEmpty; 
-		
-		return myIndex;		
+		return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,myData,allocations,states);					
 	}
 
 	// ==================================================================================
@@ -963,29 +975,31 @@ public final class TypeAlgorithms {
 	
 	private static int intersectCompounds(int fromIndex, boolean fromSign,
 			Automaton from, int toIndex, boolean toSign, Automaton to,
+			Object myData,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 		if (fromSign == toSign) {
 			if (fromSign) {
 				return intersectCompoundsPosPos(fromIndex, from, toIndex, to,
-						allocations, states);
+						myData,allocations, states);
 			} else {
 				return intersectCompoundsNegNeg(fromIndex, from, toIndex, to,
 						allocations, states);
 			}
 		} else if (fromSign) {
 			return intersectCompoundsPosNeg(fromIndex, from, toIndex, to,
-					allocations, states);
+					myData,allocations, states);
 		} else {
 			return intersectCompoundsPosNeg(toIndex, to, fromIndex, from,
-					allocations, states);
+					myData,allocations, states);
 		}
 	}
 	
 	private static int intersectCompoundsPosPos(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
+			int toIndex, Automaton to,Object myData,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
+		
 		int myIndex = states.size();
 		states.add(null); // reserve space for me
 		
@@ -1002,7 +1016,7 @@ public final class TypeAlgorithms {
 					toChild, true, to, allocations, states);
 		}				
 		
-		Automaton.State myState = new Automaton.State(fromState.kind, fromState.data,
+		Automaton.State myState = new Automaton.State(fromState.kind, myData,
 				true, myChildren);
 		
 		states.set(myIndex,myState);		
@@ -1010,7 +1024,7 @@ public final class TypeAlgorithms {
 	}
 	
 	private static int intersectCompoundsPosNeg(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
+			int toIndex, Automaton to,Object myData,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 		
@@ -1041,7 +1055,7 @@ public final class TypeAlgorithms {
 				}
 			}
 			myChildren[i] = states.size();
-			states.add(new Automaton.State(fromState.kind, fromState.data,
+			states.add(new Automaton.State(fromState.kind, myData,
 					true, myChildChildren));
 		}						
 		
@@ -1067,6 +1081,7 @@ public final class TypeAlgorithms {
 		Automata.extractOnto(toIndex,to,states);
 		states.add(new Automaton.State(Type.K_UNION,false,fromChild,toChild));
 		Automaton.State myState = new Automaton.State(Type.K_NEGATION,states.size()-1);		
+		
 		states.set(myIndex,myState);		
 		return myIndex;		
 	}
@@ -1100,7 +1115,7 @@ public final class TypeAlgorithms {
 			if(fromSign) {
 				return intersectFunctionOrMethodsHelper(fromIndex,from,toIndex,toSign,to,allocations,states);
 			} else {
-				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);				
+				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);				
 			}
 		} else if(fromSign) {
 			return intersectFunctionOrMethodsHelper(fromIndex,from,toIndex,false,to,allocations,states);
@@ -1225,7 +1240,7 @@ public final class TypeAlgorithms {
 				states.add(new Automaton.State(Type.K_VOID));
 				return myIndex;
 			} else {
-				return intersectCompoundsPosPos(fromIndex,from,toIndex,to,allocations,states);
+				return intersectCompoundsPosPos(fromIndex,from,toIndex,to,fromState.data,allocations,states);
 			}	
 		}		
 	}
@@ -1254,7 +1269,7 @@ public final class TypeAlgorithms {
 				Automata.extractOnto(fromIndex,from,states);
 				return myIndex;					
 			} else {
-				return intersectCompoundsPosNeg(fromIndex,from,toIndex,to,allocations,states);
+				return intersectCompoundsPosNeg(fromIndex,from,toIndex,to,fromState.data,allocations,states);
 			}	
 		}
 	}
