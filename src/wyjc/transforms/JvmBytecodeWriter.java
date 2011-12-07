@@ -25,13 +25,16 @@
 
 package wyjc.transforms;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
-import wyil.*;
+import wyil.ModuleLoader;
+import wyil.Transform;
 import wyil.lang.Module;
 import wyjc.io.ClassFileBuilder;
-import wyjvm.io.*;
+import wyjvm.io.BytecodeFileWriter;
 import wyjvm.lang.ClassFile;
+import wyjvm.util.Continuations;
 import wyjvm.util.DeadCodeElimination;
 import wyjvm.util.Validation;
 
@@ -39,6 +42,7 @@ public class JvmBytecodeWriter implements Transform {
 	private ClassFileBuilder classBuilder;
 	private final boolean validate = true;
 	private final boolean deadCode = true;
+	private final boolean continuations = true;
 	
 	public JvmBytecodeWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
@@ -55,6 +59,9 @@ public class JvmBytecodeWriter implements Transform {
 		if(deadCode) {
 			// eliminate any dead code that was introduced.		
 			new DeadCodeElimination().apply(file);
+		}
+		if (continuations) {
+			new Continuations().apply(file);
 		}
 		
 		// calculate filename

@@ -3,3 +3,8 @@
 *~
 .classpath
 .project
+.settings
+.DS_Store
+lib/*
+build.num
+

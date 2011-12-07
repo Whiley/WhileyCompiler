@@ -1,8 +1,15 @@
 <project name="whiley" default="stdlib">  
+<<<<<<< HEAD
   <property name="version" value="0.3.10"/>
 
   <target name="compile">
     <javac debug="true" srcdir="src" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
+=======
+  <property name="version" value="0.3.11"/>
+
+  <target name="compile">
+    <javac debug="true" srcdir="src:stdlib" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
+>>>>>>> c1e16e3856eb6283a3f112632b120df464d68f18
   </target>
 
   <target name="wyjc" depends="compile">

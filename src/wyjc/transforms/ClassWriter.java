@@ -27,26 +27,36 @@ package wyjc.transforms;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
 
 import wyil.ModuleLoader;
+import wyil.Transform;
 import wyil.lang.Module;
-import wyil.util.Logger;
-import wyil.*;
 import wyjc.io.ClassFileBuilder;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
+import wyjvm.util.Continuations;
 import wyjvm.util.DeadCodeElimination;
 import wyjvm.util.Validation;
 
 public class ClassWriter implements Transform {
 	private ClassFileBuilder classBuilder;
+	
 	private boolean validate = true;
+<<<<<<< HEAD
 	
 	// FIXME: deadCode elimination is currently unsafe because the
 	// LineNumberTable and Exceptions attributes do not deal with rewrites
 	// properly. 
 	private boolean deadCode = false;
+=======
+
+	//FIXME: deadCode elimination is currently unsafe because the
+	// LineNumberTable and Exceptions attributes do not deal with rewrites
+	// properly.
+	private boolean deadCode = false;
+	
+	private boolean continuations = true;
+>>>>>>> c1e16e3856eb6283a3f112632b120df464d68f18
 	
 	public ClassWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
@@ -75,6 +85,9 @@ public class ClassWriter implements Transform {
 			
 			// eliminate any dead code that was introduced.		
 			new DeadCodeElimination().apply(file);
+		}
+		if (continuations) {
+			new Continuations().apply(file);
 		}
 		
 		// calculate filename
