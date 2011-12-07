@@ -10,7 +10,7 @@
 
   <target name="stdlib" depends="compile">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
-    <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="lib/wyjc.jar"/> 
+    <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="src/"/> 
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 
     <jar destfile="lib/wyrt.jar">
