@@ -937,7 +937,7 @@ public final class TypeAlgorithms {
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {					
 		
-		int myIndex = intersectCompoundsPosPos(fromIndex,from,toIndex,to,allocations,states);
+		int myIndex = intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 		
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
