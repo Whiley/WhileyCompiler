@@ -1524,10 +1524,7 @@ public final class TypeAlgorithms {
 		
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
-		
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		
+				
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 		
@@ -1545,6 +1542,9 @@ public final class TypeAlgorithms {
 		// finally, distribute over those fields present in the open record
 		// (which are a subset of those in the closed record).
 		
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+				
 		int[] tmpChildren = new int[fromChildren.length];
 		for(int i=0;i!=fromChildren.length;++i) {
 			tmpChildren[i] = states.size();
@@ -1621,9 +1621,6 @@ public final class TypeAlgorithms {
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
 		
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 		
@@ -1640,6 +1637,9 @@ public final class TypeAlgorithms {
 		
 		// finally, distribute over those fields present in the open record
 		// (which are a subset of those in the closed record).
+
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
 		
 		int[] tmpChildren = new int[toChildren.length];
 		for(int i=0;i!=toChildren.length;++i) {
