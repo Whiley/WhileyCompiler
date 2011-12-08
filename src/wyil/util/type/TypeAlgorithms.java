@@ -1234,8 +1234,7 @@ public final class TypeAlgorithms {
 			return intersectPosPosClosedOpen(toIndex,to,fromIndex,from,allocations,states);
 		} else {
 			// fall through to general case for compounds
-			if (!fromState.data.equals(toState.data)
-					|| fromState.children.length != toState.children.length) {
+			if (!fromData.equals(toData)) {
 				int myIndex = states.size();
 				states.add(new Automaton.State(Type.K_VOID));
 				return myIndex;
@@ -1262,8 +1261,7 @@ public final class TypeAlgorithms {
 			return intersectNegPosClosedOpen(toIndex,to,fromIndex,from,allocations,states);			
 		} else {
 			// fall through to general case for compounds
-			if (!fromState.data.equals(toState.data)
-					|| fromState.children.length != toState.children.length) {
+			if (!fromData.equals(toData)) {
 				// e.g. {int f} & !{int g} => {int f}
 				int myIndex = states.size();
 				Automata.extractOnto(fromIndex,from,states);
@@ -1529,42 +1527,19 @@ public final class TypeAlgorithms {
 		
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
-
-		// first, check whether the open record has more fields than the closed.
-		// If so, then there is no intersection between them and we can just
-		// return the closed record.
-		
-		if(fromChildren.length < toChildren.length) {
-			// no possible intersection so back out			
-			Automata.extractOnto(fromIndex,from,states);
-			return myIndex; // tad ugly perhaps			
-		}
 		
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 		
-		// second, check whether the open record contains a field not present in
+		// check whether the open record contains a field not present in
 		// the closed record. If so, then there is no intersection between them
 		// and we can just return the closed record.
 		
-		int fi=0,ti=0;
-		while(ti!=toChildren.length) {
-			if(fi < fromChildren.length) {
-				String fn = fromData.get(fi);
-				String tn = toData.get(ti);
-				int c = fn.compareTo(tn);
-				if(c < 0) {
-					++fi;
-					continue;
-				} else if(c == 0){
-					++ti;
-					++fi;
-					continue;
-				}
-			} 			
-			// no possible intersection so back out			
-			Automata.extractOnto(fromIndex,from,states);
-			return myIndex; // tad ugly perhaps						
+		if(!isSubset(toData,fromData)) {
+			// no possible intersection so back out
+			myIndex = states.size();
+			Automata.extractOnto(toIndex,to,states);
+			return myIndex; // tad ugly perhaps			 			
 		}
 		
 		// finally, distribute over those fields present in the open record
@@ -1576,10 +1551,10 @@ public final class TypeAlgorithms {
 			Automata.extractOnto(fromChildren[i],from,states);
 		}				
 		int[] myChildren = new int[toChildren.length];
-		for(ti=0;ti!=toChildren.length;++ti) {
+		for(int ti=0;ti!=toChildren.length;++ti) {
 			int[] myChildChildren = new int[fromChildren.length];
 			String tn = toData.get(ti);
-			for(fi=0;fi!=fromChildren.length;++fi) {
+			for(int fi=0;fi!=fromChildren.length;++fi) {
 				String fn = fromData.get(fi);
 				if(fn.equals(tn)) {
 					int fromChild = fromChildren[fi];
