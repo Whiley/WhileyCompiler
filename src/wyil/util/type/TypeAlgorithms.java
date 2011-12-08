@@ -1639,7 +1639,7 @@ public final class TypeAlgorithms {
 			int fromIndex, Automaton from, int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {		
-
+		
 		int myIndex = states.size();
 		states.add(null); // reserve space for me
 		
@@ -1649,43 +1649,18 @@ public final class TypeAlgorithms {
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
 
-		// first, check whether the open record has more fields than the closed.
-		// If so, then there is no intersection between them and we can just
-		// return the closed record.
-
-		if(fromChildren.length < toChildren.length) {
-			// no possible intersection so back out
-			myIndex = states.size();
-			Automata.extractOnto(toIndex,to,states);
-			return myIndex; // tad ugly perhaps				
-		}
-		
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 		
-		// second, check whether the open record contains a field not present in
+		// check whether the open record contains a field not present in
 		// the closed record. If so, then there is no intersection between them
 		// and we can just return the closed record.
 		
-		int fi=0,ti=0;
-		while(ti!=toChildren.length) {
-			if(fi < fromChildren.length) {
-				String fn = fromData.get(fi);
-				String tn = toData.get(ti);
-				int c = fn.compareTo(tn);
-				if(c < 0) {
-					++fi;
-					continue;
-				} else if(c == 0){
-					++ti;
-					++fi;
-					continue;
-				}
-			} 			
+		if(!isSubset(toData,fromData)) {
 			// no possible intersection so back out
 			myIndex = states.size();
 			Automata.extractOnto(toIndex,to,states);
-			return myIndex; // tad ugly perhaps			 
+			return myIndex; // tad ugly perhaps			 			
 		}
 		
 		// finally, distribute over those fields present in the open record
@@ -1698,9 +1673,9 @@ public final class TypeAlgorithms {
 		}				
 		int[] myChildren = new int[fromChildren.length];
 		Type.Record.State myData = new Type.Record.State(true,fromData);
-		for(fi=0;fi!=fromChildren.length;++fi) {
+		for(int fi=0;fi!=fromChildren.length;++fi) {
 			int[] myChildChildren = new int[fromChildren.length];			
-			ti=0;
+			int ti=0;
 			for(int fj=0;fj!=fromChildren.length;++fj) {
 				String fn = fromData.get(fj);
 				if (ti < toData.size() && toData.get(ti).equals(fn)) {
@@ -1726,7 +1701,42 @@ public final class TypeAlgorithms {
 		Automaton.State myState = new Automaton.State(Type.K_UNION, null, false, myChildren);
 		states.set(myIndex,myState);
 		return myIndex;				
-	}		
+	}
+
+	/**
+	 * Check whether one sorted lists is a subset or another.
+	 * 
+	 * @param subset --- list to check as subset  
+	 * @param superset --- list to check as superset
+	 * @return
+	 */
+	private static boolean isSubset(ArrayList<String> subset,
+			ArrayList<String> superset) {
+		int subsetSize = subset.size();
+		int supersetSize = superset.size();
+		
+		if(subsetSize > supersetSize) {
+			return false;
+		}
+		
+		int fi=0,ti=0;
+		while(fi < subsetSize && ti < supersetSize) {			
+			String fn = subset.get(fi);
+			String tn = superset.get(ti);
+			int c = fn.compareTo(tn);
+			if(c < 0) {				
+				++fi;
+				continue;								
+			} else if(c == 0){
+				++ti;
+				++fi;
+				continue;
+			} 
+			return false;							
+		}
+		
+		return subsetSize <= supersetSize;		
+	}
 	
 	private static int invert(int kind, boolean sign) {
 		if(sign) {
