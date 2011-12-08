@@ -105,6 +105,8 @@
    <fileset file="*.jar"/>
    <fileset file="*.tgz"/>
    <fileset dir="src" includes="**/*.class"/>
+   <fileset dir="stdlib" includes="**/*.class"/>
+   <fileset dir="stdlib" includes="**/*.wyil"/>
    <fileset dir="tmp/" includes="**"/>
   </delete>
  </target>
