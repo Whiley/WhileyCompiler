@@ -1235,7 +1235,7 @@ public final class TypeAlgorithms {
 		} else {
 			// fall through to general case for compounds
 			if (!fromState.data.equals(toState.data)
-					&& fromState.children.length != toState.children.length) {
+					|| fromState.children.length != toState.children.length) {
 				int myIndex = states.size();
 				states.add(new Automaton.State(Type.K_VOID));
 				return myIndex;
@@ -1263,7 +1263,7 @@ public final class TypeAlgorithms {
 		} else {
 			// fall through to general case for compounds
 			if (!fromState.data.equals(toState.data)
-					&& fromState.children.length != toState.children.length) {
+					|| fromState.children.length != toState.children.length) {
 				// e.g. {int f} & !{int g} => {int f}
 				int myIndex = states.size();
 				Automata.extractOnto(fromIndex,from,states);
