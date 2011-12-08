@@ -6,10 +6,12 @@ define Points as Point|Point3D
 
 void ::test(Points t):
     if t is Point:
-        debug "GOT POINT"
+        debug "GOT POINT\n"
     else:
-        debug "GOT POINT3D"
+        debug "GOT POINT3D\n"
 
 void ::main(System sys, [string] args):
     p3d = {x:1, y:2, z:3}
     test(p3d)
+    p2d = {x:1, y:2}
+    test(p2d)
