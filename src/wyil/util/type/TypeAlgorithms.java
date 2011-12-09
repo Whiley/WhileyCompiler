@@ -1334,37 +1334,17 @@ public final class TypeAlgorithms {
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 
-		int oldSize = states.size(); // in case we need to back out
-		int[] myChildren = new int[fromData.size()];
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		for (int fi = 0, ti = 0; fi != myChildren.length; ++fi) {
-			String fn = fromData.get(fi);
-			int fromChild = fromChildren[fi];
-			if (ti < toData.size()) {
-				String tn = toData.get(ti);
-				int c = fn.compareTo(tn);
-				if (c == 0) {
-					int toChild = toChildren[ti++];
-					myChildren[fi] = intersect(fromChild, true, from, toChild,
-							true, to, allocations, states);
-					continue;
-				} else if (c > 0) {
-					// e.g. {int f} & {int g,...}
-					while (states.size() != oldSize) {
-						states.remove(states.size() - 1);
-					}
-					states.add(new Automaton.State(Type.K_VOID));
-					return states.size()-1;					
-				}
-			}
-			myChildren[fi] = states.size();
-			Automata.extractOnto(fromChild, from, states);
-		}		
-		
-		Automaton.State myState = new Automaton.State(fromState.kind, fromData, true, myChildren);
-		states.set(myIndex,myState);
-		return myIndex;
+		if(!isSubset(toData,fromData)) {
+			// e.g. {int f} & {int g,...}			
+			states.set(myIndex,new Automaton.State(Type.K_VOID));
+			return myIndex;					
+		} else {
+			int[] myChildren = nonContiguousZipIntersection(fromState,from,toState,to,allocations,states);
+
+			Automaton.State myState = new Automaton.State(fromState.kind, fromData, true, myChildren);
+			states.set(myIndex,myState);
+			return myIndex;
+		}
 	}
 	
 	/**
