@@ -1007,7 +1007,7 @@ public final class TypeAlgorithms {
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
 		
-		int[] myChildren = zipIntersection(fromState.children, from,
+		int[] myChildren = contiguousZipIntersection(fromState.children, from,
 				toState.children, to, allocations, states);
 		
 		Automaton.State myState = new Automaton.State(fromState.kind, myData,
@@ -1201,7 +1201,8 @@ public final class TypeAlgorithms {
 		
 		Type.Record.State myData;
 		int myIndex = states.size();
-		int[] myChildren;
+		states.add(null); // reserve space
+		int[] myChildren;		
 		
 		if(fromData.isOpen == toData.isOpen) {
 			if(fromData.isOpen) {
@@ -1217,7 +1218,7 @@ public final class TypeAlgorithms {
 					return myIndex;					
 				} else {
 					myData = fromData;
-					myChildren = zipIntersection(fromState.children, from,
+					myChildren = contiguousZipIntersection(fromState.children, from,
 						toState.children, to, allocations, states);
 				}
 			}
@@ -1582,7 +1583,7 @@ public final class TypeAlgorithms {
 	 * @param states
 	 * @return
 	 */
-	private static int[] zipIntersection(int[] fromChildren,
+	private static int[] contiguousZipIntersection(int[] fromChildren,
 			Automaton from, int[] toChildren, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {	
