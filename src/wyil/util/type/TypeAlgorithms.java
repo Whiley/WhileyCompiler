@@ -1394,7 +1394,7 @@ public final class TypeAlgorithms {
 	 * !{int f} & {int f,...} => {int f, ...+}
 	 * {T1 f, T2 g, ...} & !{T3 g, T4 h} => {T1 f, T2 g}   
 	 * {T1 f, T2 g, ...} & !{T3 f, T4 g} => {T1&!T3 f, T2 g,...} | {T1 f, T2&!T4 g,...} 
-	 * {T1 f, T2 g, ...} & !{T3 f, T4 g, T5 h} => {T1&!T3 f, T2 g, ...} | 
+	 * {T1 f, T2 g, ...} & !{T3 f, T4 g, T5 h} =>  {T1&!T3 f, T2 g, ...} | 
 	 *                      {T1 f, T2&!T4 g, ...} | {T1 f, T2 g, void h, ...} | 
 	 *                      {T1 f, T2 g, !T5 h, ...}
 	 * </pre>
@@ -1447,11 +1447,16 @@ public final class TypeAlgorithms {
 		
 		// finally, distribute over those fields present in the open record
 		// (which are a subset of those in the closed record).
-		Type.Record.State myData = new Type.Record.State(true,fromData);
+		Type.Record.State myData = new Type.Record.State(false,fromData);
 		
 		int[] myChildren = nonContiguousDistributeIntersection(fromState,
 				false, from, toState, true, to, myData, allocations,
 				states);
+				
+		myChildren = Arrays.copyOf(myChildren, myChildren.length+1);		
+		myChildren[myChildren.length-1] = states.size(); 
+		Automata.extractOnto(toIndex,to,states);
+		// FIXME: at this point, the extract type must be made larger
 				
 		Automaton.State myState = new Automaton.State(Type.K_UNION, null, false, myChildren);
 		states.set(myIndex,myState);
@@ -1714,12 +1719,11 @@ public final class TypeAlgorithms {
 				if(c == 0) {
 					myChildChildren[fi] = intersect(fromChildren[fi], fromSign, from, toChildren[fi],
 							toSign, to, allocations, states);
+					ti++;
 				} else if(c < 0) {
 					myChildChildren[fi] = states.size();
 					states.add(new Automaton.State(Type.K_VOID));
-				} else if(c > 0) {
-					throw new RuntimeException("This case doesn't work properly!");
-				}
+				} // precondition protects against other case
 			} else {
 				myChildChildren[fi] = states.size();
 				states.add(new Automaton.State(Type.K_VOID));
