@@ -30,6 +30,7 @@ import static wyil.lang.Type.K_UNION;
 import static wyil.lang.Type.K_VOID;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -1006,15 +1007,8 @@ public final class TypeAlgorithms {
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
 		
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		int[] myChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			int fromChild = fromChildren[i];
-			int toChild = toChildren[i];
-			myChildren[i] = intersect(fromChild, true, from,
-					toChild, true, to, allocations, states);
-		}				
+		int[] myChildren = zipIntersection(fromState.children, from,
+				toState.children, to, allocations, states);
 		
 		Automaton.State myState = new Automaton.State(fromState.kind, myData,
 				true, myChildren);
@@ -1034,30 +1028,8 @@ public final class TypeAlgorithms {
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
 				
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		int[] tmpChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			tmpChildren[i] = states.size();
-			Automata.extractOnto(fromChildren[i],from,states);
-		}				
-		int[] myChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			int[] myChildChildren = new int[fromChildren.length];
-			for(int j=0;j!=fromChildren.length;++j) {
-				if(i == j) {
-					int fromChild = fromChildren[i];
-					int toChild = toChildren[i];
-					myChildChildren[i] = intersect(fromChild, true, from,
-							toChild, false, to, allocations, states);
-				} else {
-					myChildChildren[j] = tmpChildren[j];
-				}
-			}
-			myChildren[i] = states.size();
-			states.add(new Automaton.State(fromState.kind, myData,
-					true, myChildChildren));
-		}						
+		int[] myChildren = distributeIntersections(fromState, from, toState,
+				to, myData, allocations, states);
 		
 		Automaton.State myState = new Automaton.State(Type.K_UNION, null,
 				false, myChildren);
@@ -1712,6 +1684,81 @@ public final class TypeAlgorithms {
 		
 		return subsetSize <= supersetSize;		
 	}
+
+	/**
+	 * Intersect the <code>fromChildren</code> with the <code>toChildren</code>
+	 * in a one-one fashion. For example,
+	 * <code>[T1,T2] & [T3,T4] => [T1&T3,T2&T4]</code>.
+	 * 
+	 * @param fromChildren
+	 * @param from
+	 * @param toChildren
+	 * @param to
+	 * @param allocations
+	 * @param states
+	 * @return
+	 */
+	private static int[] zipIntersection(int[] fromChildren,
+			Automaton from, int[] toChildren, Automaton to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {		
+		int[] myChildren = new int[fromChildren.length];
+		for(int i=0;i!=fromChildren.length;++i) {
+			int fromChild = fromChildren[i];
+			int toChild = toChildren[i];
+			myChildren[i] = intersect(fromChild, true, from,
+					toChild, true, to, allocations, states);
+		}		
+		return myChildren;
+	}
+
+	/**
+	 * Distribute the intersections of <code>fromChildren</code> over
+	 * <code>toChildren</code>. For example,
+	 * <code>[T1,T2] & [T3,T4] => [T1&T3,T2] | [T1,T2&T4]</code>.
+	 * 
+	 * @param fromChildren
+	 * @param from
+	 * @param toChildren
+	 * @param to
+	 * @param allocations
+	 * @param states
+	 * @return
+	 */
+	private static int[] distributeIntersections(Automaton.State fromState,
+			Automaton from, Automaton.State toState, Automaton to,
+			Object myData, HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+	
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		
+		// First, allocate every fromChildren since each one will be used in one
+		// of the generated components.
+		int fromChildrenLength = fromChildren.length;
+		int[] tmpChildren = new int[fromChildrenLength];
+		for(int i=0;i!=fromChildren.length;++i) {
+			tmpChildren[i] = states.size();
+			Automata.extractOnto(fromChildren[i],from,states);
+		}				
+		
+		// Second, generate the new components (one for each element in
+		// fromChildren).
+		int[] myChildren = new int[fromChildrenLength];
+		for(int i=0;i!=fromChildrenLength;++i) {
+			int[] myChildChildren = new int[fromChildren.length];
+			System.arraycopy(tmpChildren, 0, myChildChildren, 0, fromChildrenLength);
+				int fromChild = fromChildren[i];
+				int toChild = toChildren[i];
+				myChildChildren[i] = intersect(fromChild, true, from,
+							toChild, false, to, allocations, states);						
+			myChildren[i] = states.size();
+			states.add(new Automaton.State(fromState.kind, myData,
+					true, myChildChildren));
+		}
+		
+		return myChildren;
+	}
 	
 	private static int invert(int kind, boolean sign) {
 		if(sign) {
@@ -1745,7 +1792,7 @@ public final class TypeAlgorithms {
 			}
 		}
 		return nchildren;
-	}
+	}		
 
 	/**
 	 * This rule flattens children which have the same kind as the given state.
