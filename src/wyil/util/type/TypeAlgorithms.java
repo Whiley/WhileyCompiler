@@ -1376,34 +1376,9 @@ public final class TypeAlgorithms {
 		// finally, distribute over those fields present in the open record
 		// (which are a subset of those in the closed record).
 		
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-				
-		int[] tmpChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			tmpChildren[i] = states.size();
-			Automata.extractOnto(fromChildren[i],from,states);
-		}				
-		int[] myChildren = new int[toChildren.length];
-		for(int ti=0;ti!=toChildren.length;++ti) {
-			int[] myChildChildren = new int[fromChildren.length];
-			String tn = toData.get(ti);
-			for(int fi=0;fi!=fromChildren.length;++fi) {
-				String fn = fromData.get(fi);
-				if(fn.equals(tn)) {
-					int fromChild = fromChildren[fi];
-					int toChild = toChildren[ti];
-					myChildChildren[fi] = intersect(fromChild, true, from,
-							toChild, false, to, allocations, states);
-				} else {
-					myChildChildren[fi] = tmpChildren[fi];
-				}
-			}
-			myChildren[ti] = states.size();
-			states.add(new Automaton.State(fromState.kind, fromData, true,
-					myChildChildren));
-		}
-		
+		int[] myChildren = nonContiguousDistributeIntersection(fromState, true,
+				from, toState, false, to, fromData, allocations, states);
+			
 		Automaton.State myState = new Automaton.State(Type.K_UNION, null, false, myChildren);
 				
 		states.set(myIndex,myState);
@@ -1718,9 +1693,9 @@ public final class TypeAlgorithms {
 		int[] myChildren = new int[fromChildrenLength];
 		for(int i=0;i!=fromChildrenLength;++i) {
 			int[] myChildChildren = new int[fromChildren.length];
-			System.arraycopy(tmpChildren, 0, myChildChildren, 0, fromChildrenLength);
+			System.arraycopy(tmpChildren, 0, myChildChildren, 0, fromChildrenLength);			
 			myChildChildren[i] = intersect(fromChildren[i], fromSign, from, toChildren[i],
-					toSign, to, allocations, states);
+					toSign, to, allocations, states);			
 			myChildren[i] = states.size();
 			states.add(new Automaton.State(fromState.kind, myData, true,
 					myChildChildren));
@@ -1734,7 +1709,8 @@ public final class TypeAlgorithms {
 	 * labels are non-contiguous. For example:
 	 * 
 	 * <pre>
-	 * [T1 f, T2 g] & [T3 g,T4 h] => [void f,T2&T3 g,void h]
+	 * [T1 f, T2 g] & [T3 g] => [void f,T2 g]|[T1 f,T2&T3 g]
+     * [T1 f, T2 g] & [T3 g, T4 h] => [void f,T2 g]|[T1 f,T2&T3 g]
 	 * </pre>
 	 * 
 	 * @param fromChildren
@@ -1755,33 +1731,39 @@ public final class TypeAlgorithms {
 		ArrayList<String> toLabels = (ArrayList) toState.data;				
 	
 		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-				
-		int[] tmpChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
-			tmpChildren[i] = states.size();
-			Automata.extractOnto(fromChildren[i],from,states);
-		}				
-		int[] myChildren = new int[toChildren.length];
-		for(int ti=0;ti!=toChildren.length;++ti) {
+		int[] toChildren = toState.children;				
+		int[] tmpChildren = extractChildren(fromChildren,from,states);
+		
+		
+		// Second, generate the new components (one for each element in
+		// fromChildren).		
+		int[] myChildren = new int[fromChildren.length];
+		for(int fi=0,ti=0;fi!=fromChildren.length;++fi,++ti) {
 			int[] myChildChildren = new int[fromChildren.length];
-			String tn = toLabels.get(ti);
-			for(int fi=0;fi!=fromChildren.length;++fi) {
+			System.arraycopy(tmpChildren, 0, myChildChildren, 0, fromChildren.length);	
+			
+			if(ti < fromLabels.size()) {
 				String fn = fromLabels.get(fi);
-				if(fn.equals(tn)) {
-					int fromChild = fromChildren[fi];
-					int toChild = toChildren[ti];
-					myChildChildren[fi] = intersect(fromChild, true, from,
-							toChild, false, to, allocations, states);
-				} else {
-					myChildChildren[fi] = tmpChildren[fi];
+				String tn = toLabels.get(ti);
+				int c = fn.compareTo(tn);
+				if(c == 0) {
+					myChildChildren[fi] = intersect(fromChildren[fi], fromSign, from, toChildren[fi],
+							toSign, to, allocations, states);
+				} else if(c < 0) {
+					myChildChildren[fi] = states.size();
+					states.add(new Automaton.State(Type.K_VOID));
+				} else if(c > 0) {
+					throw new RuntimeException("This case doesn't work properly!");
 				}
+			} else {
+				myChildChildren[fi] = states.size();
+				states.add(new Automaton.State(Type.K_VOID));
 			}
-			myChildren[ti] = states.size();
-			states.add(new Automaton.State(fromState.kind, fromLabels, true,
+			myChildren[fi] = states.size();
+			states.add(new Automaton.State(fromState.kind, myData, true,
 					myChildChildren));
 		}
-		
+
 		return myChildren;
 	}
 	

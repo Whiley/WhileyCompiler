@@ -87,10 +87,12 @@ public class Type {
 		
 	public static final class List extends Type {
 		public Type element;
-		
-		public List(Type element, String str) {
-			super(K_LIST,str);
+		public final boolean nonEmpty;
+
+		public List(Type element, boolean nonEmpty, String str) {
+			super(K_LIST, str);
 			this.element = element;
+			this.nonEmpty = nonEmpty;
 		}
 	}
 	
@@ -319,8 +321,13 @@ public class Type {
 			{				
 				match("[");
 				Type elem = parse(typeVars);
+				boolean nonEmpty = false;
+				if(index < str.length() && str.charAt(index) == '+') {
+					match("+");
+					nonEmpty=true;					
+				}
 				match("]");
-				return new List(elem, str.substring(start,index));
+				return new List(elem, nonEmpty, str.substring(start,index));
 			}
 			case '(':
 			{				

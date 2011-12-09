@@ -501,6 +501,9 @@ public class Util {
 				if(obj instanceof List) {
 					List ol = (List) obj;
 					Type.List tl = (Type.List) t;
+					if(tl.nonEmpty && ol.isEmpty()) {
+						return false;
+					}
 					Type el = tl.element;
 					if(el.kind == K_ANY) {
 						return true;
