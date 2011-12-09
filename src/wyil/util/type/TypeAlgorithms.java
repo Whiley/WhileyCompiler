@@ -1198,22 +1198,56 @@ public final class TypeAlgorithms {
 		Automaton.State toState = to.states[toIndex];		
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
-		if (fromData.isOpen && toData.isOpen) {					
-			return intersectPosPosOpenOpen(fromIndex,from,toIndex,to,allocations,states);
-		} else if(toData.isOpen) {
-			return intersectPosPosClosedOpen(fromIndex,from,toIndex,to,allocations,states);
-		} else if(fromData.isOpen) {
-			return intersectPosPosClosedOpen(toIndex,to,fromIndex,from,allocations,states);
-		} else {
-			// fall through to general case for compounds
-			if (!fromData.equals(toData)) {
-				int myIndex = states.size();
-				states.add(new Automaton.State(Type.K_VOID));
-				return myIndex;
+		
+		Type.Record.State myData;
+		int myIndex = states.size();
+		int[] myChildren;
+		
+		if(fromData.isOpen == toData.isOpen) {
+			if(fromData.isOpen) {
+				// open open
+				myData = new Type.Record.State(true); 
+				setUnion(fromData,toData,myData);
+				myChildren = nonContiguousZipIntersection(myData,fromState,from,toState,to,allocations,states);
 			} else {
-				return intersectCompoundsPosPos(fromIndex,from,toIndex,to,fromState.data,allocations,states);
-			}	
-		}		
+				// closed closed
+				if(!fromData.equals(toData)) {
+					// e.g. {int f,...} & {int g}			
+					states.set(myIndex,new Automaton.State(Type.K_VOID));
+					return myIndex;					
+				} else {
+					myData = fromData;
+					myChildren = zipIntersection(fromState.children, from,
+						toState.children, to, allocations, states);
+				}
+			}
+		} else if(fromData.isOpen) {
+			// open closed
+			if(!isSubset(fromData,toData)) {
+				// e.g. {int f,...} & {int g}			
+				states.set(myIndex,new Automaton.State(Type.K_VOID));
+				return myIndex;					
+			} else {
+				myData = toData;
+				myChildren = nonContiguousZipIntersection(toData,fromState,from,toState,to,allocations,states);
+			}
+		} else { // assert toData.isOpen
+			if(!isSubset(toData,fromData)) {
+				// e.g. {int f} & {int g,...}			
+				states.set(myIndex,new Automaton.State(Type.K_VOID));
+				return myIndex;					
+			} else {
+				myData = fromData;
+				myChildren = nonContiguousZipIntersection(fromData,fromState,from,toState,to,allocations,states);
+			}			
+		} 
+		
+		Automaton.State myState = new Automaton.State(fromState.kind, myData,
+				true, myChildren);
+		
+		states.set(myIndex,myState);
+		
+		return myIndex;
 	}
 	
 	private static int intersectRecordsPosNeg(int fromIndex, Automaton from,
@@ -1241,109 +1275,6 @@ public final class TypeAlgorithms {
 			} else {
 				return intersectCompoundsPosNeg(fromIndex,from,toIndex,to,fromState.data,allocations,states);
 			}	
-		}
-	}
-	
-	/**
-	 * Intersect two automaton representing positive, open records. For example:
-	 * 
-	 * <pre>
-	 * {T1 f, T2 g, ...} & {T3 g, T4 h, ...} => {T1 f, (T2&T3) g, T4 h, ...}
-	 * </pre>
-	 * 
-	 * As you can see from above, we include all fields from both types. For
-	 * fields common to both we intersect their types.
-	 * 
-	 * @param fromIndex
-	 *            --- index of state in from position
-	 * @param from
-	 *            --- automaton in the from position (i.e. containing state at
-	 *            fromIndex).
-	 * @param toIndex
-	 *            --- index of state in to position
-	 * @param to
-	 *            --- automaton in the to position (i.e. containing state at
-	 *            toIndex).
-	 * @param allocations
-	 *            --- mapping of intersection points to their index in states
-	 * @param states
-	 *            --- list of states which constitute the new automaton being
-	 *            constructed.
-	 * @return
-	 */
-	private static int intersectPosPosOpenOpen(int fromIndex, Automaton from,
-			int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		int myIndex = states.size();
-		states.add(null); // reserve space for me
-		
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];
-		Type.Record.State myData = new Type.Record.State(true);		
-		
-		int[] myChildren = nonContiguousZipIntersection(fromState,from,toState,to,allocations,states);
-			
-		Automaton.State myState = new Automaton.State(fromState.kind, myData,
-				true, myChildren);
-		
-		states.set(myIndex,myState);
-		return myIndex;
-	}
-	
-	/**
-	 * Intersect two automaton representing positive records, where the first is
-	 * closed and the second open. For example:
-	 * 
-	 * <pre>
-	 * {T1 f, T2 g} & {T3 g, T4 h, ...} => void
-	 * {T1 f, T2 g} & {T3 g, ...} => {T1 f, (T2&T3) g}
-	 * </pre>
-	 * 
-	 * In this case, the result must include exactly those fields in the closed
-	 * record. If a required field in the open record is not present in the
-	 * closed record, then there is no intersection.
-	 * 
-	 * @param fromIndex
-	 *            --- index of state in from position
-	 * @param from
-	 *            --- automaton in the from position (i.e. containing state at
-	 *            fromIndex).
-	 * @param toIndex
-	 *            --- index of state in to position
-	 * @param to
-	 *            --- automaton in the to position (i.e. containing state at
-	 *            toIndex).
-	 * @param allocations
-	 *            --- mapping of intersection points to their index in states
-	 * @param states
-	 *            --- list of states which constitute the new automaton being
-	 *            constructed.
-	 * @return
-	 */
-	private static int intersectPosPosClosedOpen(
-			int fromIndex, Automaton from, int toIndex, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-		
-		int myIndex = states.size();
-		states.add(null); // reserve space for me
-				
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];
-		Type.Record.State fromData = (Type.Record.State) fromState.data;
-		Type.Record.State toData = (Type.Record.State) toState.data;
-
-		if(!isSubset(toData,fromData)) {
-			// e.g. {int f} & {int g,...}			
-			states.set(myIndex,new Automaton.State(Type.K_VOID));
-			return myIndex;					
-		} else {
-			int[] myChildren = nonContiguousZipIntersection(fromState,from,toState,to,allocations,states);
-
-			Automaton.State myState = new Automaton.State(fromState.kind, fromData, true, myChildren);
-			states.set(myIndex,myState);
-			return myIndex;
 		}
 	}
 	
@@ -1633,8 +1564,8 @@ public final class TypeAlgorithms {
 	 * @param rhs
 	 * @return
 	 */
-	private static ArrayList<String> setUnion(ArrayList<String> lhs, ArrayList<String> rhs) {
-		ArrayList<String> result = new ArrayList<String>();
+	private static void setUnion(ArrayList<String> lhs, ArrayList<String> rhs,
+			ArrayList<String> result) {		
 		int li = 0;
 		int ri = 0;
 		int lhsSize = lhs.size();
@@ -1661,8 +1592,6 @@ public final class TypeAlgorithms {
 		while(ri < rhsSize) {
 			result.add(rhs.get(ri++));
 		}
-		return result;
-		
 	}
 
 	/**
@@ -1711,14 +1640,14 @@ public final class TypeAlgorithms {
 	 * @return
 	 */
 	private static int[] nonContiguousZipIntersection(
+			ArrayList<String> myLabels,
 			Automaton.State fromState, Automaton from, Automaton.State toState,
 			Automaton to, HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 		
 		ArrayList<String> fromLabels = (ArrayList) fromState.data;
 		ArrayList<String> toLabels = (ArrayList) toState.data;				
-		ArrayList<String> myLabels = setUnion(fromLabels,toLabels);
-		
+				
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
 		int[] myChildren = new int[myLabels.size()];
