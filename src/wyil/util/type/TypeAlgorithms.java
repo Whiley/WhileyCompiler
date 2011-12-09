@@ -1028,9 +1028,9 @@ public final class TypeAlgorithms {
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];		
 				
-		int[] myChildren = distributeIntersections(fromState, from, toState,
-				to, myData, allocations, states);
-		
+		int[] myChildren = distributeIntersections(fromState, true, from,
+				toState, false, to, myData, allocations, states);
+
 		Automaton.State myState = new Automaton.State(Type.K_UNION, null,
 				false, myChildren);
 		
@@ -1280,61 +1280,12 @@ public final class TypeAlgorithms {
 		
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];
-		Type.Record.State fromData = (Type.Record.State) fromState.data;
-		Type.Record.State toData = (Type.Record.State) toState.data;
 		Type.Record.State myData = new Type.Record.State(true);		
 		
-		int fi = 0, ti = 0;
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		ArrayList<Integer> myChildren = new ArrayList<Integer>();
-		while (fi < fromData.size() && ti < toData.size()) {			
-			int fromChild = fromChildren[fi];
-			int toChild = toChildren[ti];
-			String fn = fromData.get(fi);
-			String tn = toData.get(ti);						
-			int c = fn.compareTo(tn);
-			if (c == 0) {
-				myData.add(fn);
-				myChildren.add(intersect(fromChild, true, from, toChild,
-						true, to, allocations, states));
-				fi++;ti++;
-			} else if (c < 0) {
-				myData.add(fn);
-				myChildren.add(states.size());
-				Automata.extractOnto(fromChild,from,states);
-				fi++;
-			} else {
-				myData.add(tn);
-				myChildren.add(states.size());
-				Automata.extractOnto(toChild,to,states);
-				ti++;
-			}
-		}	
-		while (fi < fromData.size()) {
-			String fn = fromData.get(fi);
-			myData.add(fn);
-			int fromChild = fromChildren[fi];
-			myChildren.add(states.size());
-			Automata.extractOnto(fromChild,from,states);
-			fi = fi + 1;
-		}
-		while (ti < toData.size()) {
-			String tn = toData.get(ti);
-			myData.add(tn);
-			int toChild = toChildren[ti];
-			myChildren.add(states.size());
-			Automata.extractOnto(toChild,to,states);
-			ti = ti + 1;
-		}
-		// finally, create the new type
-		int[] myChildrenArray = new int[myChildren.size()];
-		for(int i=0;i!=myChildrenArray.length;++i) {
-			 myChildrenArray[i] = myChildren.get(i);
-		}
-		
+		int[] myChildren = nonContiguousZipIntersection(fromState,from,toState,to,allocations,states);
+			
 		Automaton.State myState = new Automaton.State(fromState.kind, myData,
-				true, myChildrenArray);
+				true, myChildren);
 		
 		states.set(myIndex,myState);
 		return myIndex;
@@ -1613,11 +1564,20 @@ public final class TypeAlgorithms {
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
 		
-		int[] tmpChildren = new int[toChildren.length];
-		for(int i=0;i!=toChildren.length;++i) {
-			tmpChildren[i] = states.size();
-			Automata.extractOnto(toChildren[i],to,states);
-		}				
+		int[] tmpChildren = new int[fromChildren.length];
+		for(int fi=0, ti=0;fi!=fromChildren.length;++fi) {
+			tmpChildren[fi] = states.size();
+			
+			String fn = fromData.get(fi);
+			String tn = toData.get(ti);	
+			if(fn.equals(tn)) {
+				Automata.extractOnto(toChildren[ti],to,states);
+			} else {
+				states.add(new Automaton.State(Type.K_VOID));
+			}
+		}
+		
+		
 		int[] myChildren = new int[fromChildren.length];
 		Type.Record.State myData = new Type.Record.State(true,fromData);
 		for(int fi=0;fi!=fromChildren.length;++fi) {
@@ -1686,6 +1646,46 @@ public final class TypeAlgorithms {
 	}
 
 	/**
+	 * Compute the union of two sorted ArrayLists. The resulting list is sorted,
+	 * and does not contain any duplicate labels.
+	 * 
+	 * @param lhs
+	 * @param rhs
+	 * @return
+	 */
+	private static ArrayList<String> setUnion(ArrayList<String> lhs, ArrayList<String> rhs) {
+		ArrayList<String> result = new ArrayList<String>();
+		int li = 0;
+		int ri = 0;
+		int lhsSize = lhs.size();
+		int rhsSize = rhs.size();
+		while(li < lhsSize && ri < rhsSize) {
+			String ln = lhs.get(li);
+			String rn = rhs.get(ri);
+			int c = ln.compareTo(rn);
+			if(c < 0) {
+				result.add(ln);
+				li++;
+			} else if(c == 0) {
+				result.add(ln);
+				li++;
+				ri++;
+			} else {
+				result.add(rn);
+				ri++;
+			}
+		}
+		while(li < lhsSize) {
+			result.add(lhs.get(li++));
+		}
+		while(ri < rhsSize) {
+			result.add(rhs.get(ri++));
+		}
+		return result;
+		
+	}
+
+	/**
 	 * Intersect the <code>fromChildren</code> with the <code>toChildren</code>
 	 * in a one-one fashion. For example,
 	 * <code>[T1,T2] & [T3,T4] => [T1&T3,T2&T4]</code>.
@@ -1701,9 +1701,11 @@ public final class TypeAlgorithms {
 	private static int[] zipIntersection(int[] fromChildren,
 			Automaton from, int[] toChildren, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {		
-		int[] myChildren = new int[fromChildren.length];
-		for(int i=0;i!=fromChildren.length;++i) {
+			ArrayList<Automaton.State> states) {	
+		
+		int fromChildrenLength = fromChildren.length;
+		int[] myChildren = new int[fromChildrenLength];
+		for(int i=0;i!=fromChildrenLength;++i) {
 			int fromChild = fromChildren[i];
 			int toChild = toChildren[i];
 			myChildren[i] = intersect(fromChild, true, from,
@@ -1713,8 +1715,71 @@ public final class TypeAlgorithms {
 	}
 
 	/**
-	 * Distribute the intersections of <code>fromChildren</code> over
-	 * <code>toChildren</code>. For example,
+	 * Similar to a zip intersection, except that the element labels are
+	 * non-contiguous.  For example: 
+	 * 
+	 * <pre>
+	 * [T1 f,T2 h] & [T3 g,T4 h] => [T1 f,T3 g,T2&T4 h]
+	 * </pre>
+	 * 
+	 * @param fromChildren
+	 * @param from
+	 * @param toChildren
+	 * @param to
+	 * @param allocations
+	 * @param states
+	 * @return
+	 */
+	private static int[] nonContiguousZipIntersection(
+			Automaton.State fromState, Automaton from, Automaton.State toState,
+			Automaton to, HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automaton.State> states) {
+		
+		ArrayList<String> fromLabels = (ArrayList) fromState.data;
+		ArrayList<String> toLabels = (ArrayList) toState.data;				
+		ArrayList<String> myLabels = setUnion(fromLabels,toLabels);
+		
+		int[] fromChildren = fromState.children;
+		int[] toChildren = toState.children;
+		int[] myChildren = new int[myLabels.size()];
+		int fi = 0, ti = 0, mi = 0;
+		while (fi < fromLabels.size() && ti < toLabels.size()) {
+			int fromChild = fromChildren[fi];
+			int toChild = toChildren[ti];
+			String fn = fromLabels.get(fi);
+			String tn = toLabels.get(ti);						
+			int c = fn.compareTo(tn);
+			if (c == 0) {
+				c = intersect(fromChild, true, from, toChild,true, to, allocations, states);
+				fi++;ti++;
+			} else if (c < 0) {				
+				c = states.size();
+				Automata.extractOnto(fromChild,from,states);
+				fi++;
+			} else {
+				c = states.size();
+				Automata.extractOnto(toChild,to,states);
+				ti++;
+			}
+			myChildren[mi++] = c; 
+		}	
+		while (fi < fromLabels.size()) {		
+			int fromChild = fromChildren[fi++];
+			myChildren[mi++] = states.size();
+			Automata.extractOnto(fromChild,from,states);
+		}
+		while (ti < toLabels.size()) {					
+			int toChild = toChildren[ti++];
+			myChildren[mi++] = states.size();			
+			Automata.extractOnto(toChild,to,states);			
+		}
+		
+		return myChildren;
+	}
+	
+	/**
+	 * Distribute the intersections of <code>fromState.Children</code> over
+	 * <code>toState.Children</code>. For example,
 	 * <code>[T1,T2] & [T3,T4] => [T1&T3,T2] | [T1,T2&T4]</code>.
 	 * 
 	 * @param fromChildren
@@ -1726,8 +1791,9 @@ public final class TypeAlgorithms {
 	 * @return
 	 */
 	private static int[] distributeIntersections(Automaton.State fromState,
-			Automaton from, Automaton.State toState, Automaton to,
-			Object myData, HashMap<IntersectionPoint, Integer> allocations,
+			boolean fromSign, Automaton from, Automaton.State toState,
+			boolean toSign, Automaton to, Object myData,
+			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
 	
 		int[] fromChildren = fromState.children;
@@ -1736,11 +1802,7 @@ public final class TypeAlgorithms {
 		// First, allocate every fromChildren since each one will be used in one
 		// of the generated components.
 		int fromChildrenLength = fromChildren.length;
-		int[] tmpChildren = new int[fromChildrenLength];
-		for(int i=0;i!=fromChildren.length;++i) {
-			tmpChildren[i] = states.size();
-			Automata.extractOnto(fromChildren[i],from,states);
-		}				
+		int[] tmpChildren = extractChildren(fromChildren,from,states);
 		
 		// Second, generate the new components (one for each element in
 		// fromChildren).
@@ -1748,16 +1810,68 @@ public final class TypeAlgorithms {
 		for(int i=0;i!=fromChildrenLength;++i) {
 			int[] myChildChildren = new int[fromChildren.length];
 			System.arraycopy(tmpChildren, 0, myChildChildren, 0, fromChildrenLength);
-				int fromChild = fromChildren[i];
-				int toChild = toChildren[i];
-				myChildChildren[i] = intersect(fromChild, true, from,
-							toChild, false, to, allocations, states);						
+			myChildChildren[i] = intersect(fromChildren[i], fromSign, from, toChildren[i],
+					toSign, to, allocations, states);
 			myChildren[i] = states.size();
-			states.add(new Automaton.State(fromState.kind, myData,
-					true, myChildChildren));
+			states.add(new Automaton.State(fromState.kind, myData, true,
+					myChildChildren));
 		}
 		
 		return myChildren;
+	}
+		
+	/**
+	 * Extract a given array of states onto the given list of states, returning
+	 * an array of indices to the copied states.
+	 * 
+	 * @param children
+	 *            --- states to be extracted
+	 * @param automaton
+	 *            --- automata from which to extract states.
+	 * @param states
+	 *            --- heap onto which to place the new states.
+	 * @return
+	 */
+	private static int[] extractChildren(int[] children, Automaton automaton,
+			ArrayList<Automaton.State> states) {
+		int childrenLength = children.length;
+		int[] nchildren = new int[childrenLength];
+		for(int i=0;i!=childrenLength;++i) {
+			nchildren[i] = states.size();
+			Automata.extractOnto(children[i],automaton,states);			
+		}		
+		return nchildren;
+	}
+	
+	/**
+	 * Construct a padded duplicate of the toChildren array.
+	 *  
+	 * @param fromChildren
+	 * @param fromData
+	 * @param toChildren
+	 * @param toData
+	 * @param to
+	 * @param states
+	 * @return
+	 */
+	private static int[] extractPaddedTemplate(int[] fromChildren,
+			ArrayList<?> fromData, int[] toChildren, ArrayList<?> toData,
+			Automaton to, ArrayList<Automaton.State> states) {
+
+		int[] template = new int[fromChildren.length];
+		for(int fi=0, ti=0;fi!=fromChildren.length;++fi) {
+			template[fi] = states.size();
+			
+			Object fn = fromData.get(fi);
+			Object tn = toData.get(ti);	
+			if(fn.equals(tn)) {
+				Automata.extractOnto(toChildren[ti],to,states);
+			} else {
+				states.add(new Automaton.State(Type.K_VOID));
+			}
+		}
+		
+		return template;
 	}
 	
 	private static int invert(int kind, boolean sign) {
