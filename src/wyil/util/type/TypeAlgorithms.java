@@ -1447,51 +1447,12 @@ public final class TypeAlgorithms {
 		
 		// finally, distribute over those fields present in the open record
 		// (which are a subset of those in the closed record).
-
-		int[] fromChildren = fromState.children;
-		int[] toChildren = toState.children;
-		
-		int[] tmpChildren = new int[fromChildren.length];
-		for(int fi=0, ti=0;fi!=fromChildren.length;++fi) {
-			tmpChildren[fi] = states.size();
-			
-			String fn = fromData.get(fi);
-			String tn = toData.get(ti);	
-			if(fn.equals(tn)) {
-				Automata.extractOnto(toChildren[ti],to,states);
-			} else {
-				states.add(new Automaton.State(Type.K_VOID));
-			}
-		}
-		
-		
-		int[] myChildren = new int[fromChildren.length];
 		Type.Record.State myData = new Type.Record.State(true,fromData);
-		for(int fi=0;fi!=fromChildren.length;++fi) {
-			int[] myChildChildren = new int[fromChildren.length];			
-			int ti=0;
-			for(int fj=0;fj!=fromChildren.length;++fj) {
-				String fn = fromData.get(fj);
-				if (ti < toData.size() && toData.get(ti).equals(fn)) {
-					if(fi == fj) {
-						int fromChild = fromChildren[fi];
-						int toChild = toChildren[ti];
-						myChildChildren[fj] = intersect(fromChild, false, from,
-								toChild, true, to, allocations, states);
-					} else {
-						myChildChildren[fj] = tmpChildren[ti];
-					}
-					ti++;
-				} else {
-					states.add(new Automaton.State(Type.K_VOID));
-					myChildChildren[fj] = states.size()-1; 
-				}
-			}
-			myChildren[fi] = states.size();
-			states.add(new Automaton.State(toState.kind, myData, true,
-					myChildChildren));
-		}				
 		
+		int[] myChildren = nonContiguousDistributeIntersection(fromState,
+				false, from, toState, true, to, myData, allocations,
+				states);
+				
 		Automaton.State myState = new Automaton.State(Type.K_UNION, null, false, myChildren);
 		states.set(myIndex,myState);
 		return myIndex;				
@@ -1711,8 +1672,11 @@ public final class TypeAlgorithms {
 	 * 
 	 * <pre>
 	 * [T1 f, T2 g] & [T3 g] => [void f,T2 g]|[T1 f,T2&T3 g]
-     * [T1 f, T2 g] & [T3 g, T4 h] => [void f,T2 g]|[T1 f,T2&T3 g]
+	 * [T1 f, T2 g] & [T3 g, T4 h] => [void f,T2 g]|[T1 f,T2&T3 g]
 	 * </pre>
+	 * 
+	 * <b>NOTE</b> current precondition is that toState.data is a subset of
+	 * fromState.data
 	 * 
 	 * @param fromChildren
 	 * @param from
