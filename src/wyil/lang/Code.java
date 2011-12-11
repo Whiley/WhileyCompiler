@@ -825,6 +825,12 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Pops a dictionary value from stack, and pushes it's length back on.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class DictLength extends Code {				
 		public final Type.Dictionary type;
 		
@@ -1148,8 +1154,29 @@ public abstract class Code {
 		SUBSETEQ{
 			public String toString() { return "sbe"; }
 		}		
-	};		
-	
+	};
+
+	/**
+	 * <p>
+	 * Branches conditionally to the given label, based on the result of a
+	 * runtime type test against a given value. More specifically, it checks
+	 * whether the value is a subtype of the type test. The value in question is
+	 * either loaded directly from a variable, or popped off the stack.
+	 * </p>
+	 * <p>
+	 * In the case that the value is obtained from a specific variable, then
+	 * that variable is automatically <i>retyped</i> as a result of the type
+	 * test. On the true branch, its type is intersected with type test. On the
+	 * false branch, its type is intersected with the <i>negation</i> of the
+	 * type test.
+	 * </p>
+	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
+	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * 
+	 * @author djp
+	 * 
+	 */	
 	public static final class IfType extends Code {
 		public final Type type;
 		public final int slot;
@@ -1633,8 +1660,16 @@ public abstract class Code {
 		public String toString() {
 			return "loop " + modifies;
 		}		
-	}		
+	}
 
+	/**
+	 * Pops a set, list or dictionary from the stack and iterates over every
+	 * element it contains. An index variable is given which holds the current
+	 * value being iterated over.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class ForAll extends Loop {
 		public final int slot;
 		public final Type type;
