@@ -1734,7 +1734,7 @@ public final class TypeAlgorithms {
 			int[] myChildChildren = new int[fromChildren.length];
 			System.arraycopy(tmpChildren, 0, myChildChildren, 0, fromChildren.length);	
 			
-			if(ti < fromLabels.size()) {
+			if(ti < toLabels.size()) {
 				String fn = fromLabels.get(fi);
 				String tn = toLabels.get(ti);
 				int c = fn.compareTo(tn);
