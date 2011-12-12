@@ -3,7 +3,7 @@ import * from whiley.lang.*
 define Expr as real | { Expr lhs, int data } | [Expr]
 define SubExpr as real | { SubExpr lhs, int data }
 
-string Any.toString(Expr e):
+string toString(Expr e):
     if e is SubExpr:
         if e is real:
             return Any.toString(e)
@@ -18,8 +18,8 @@ void ::main(System sys,[string] args):
     se3 = {lhs: se2, data: 45}
     e1 = [se1]
     e2 = [e1,se1,se2]
-    sys.out.println(Any.toString(se1))
-    sys.out.println(Any.toString(se2))
-    sys.out.println(Any.toString(se3))
-    sys.out.println(Any.toString(e1))
-    sys.out.println(Any.toString(e2))
+    sys.out.println(toString(se1))
+    sys.out.println(toString(se2))
+    sys.out.println(toString(se3))
+    sys.out.println(toString(e1))
+    sys.out.println(toString(e2))

@@ -8,7 +8,7 @@ http://kerneltrap.org/files/Jeremy/DCO.txt).
 
 In order to make a contribution to the Whiley project, you must
 sign-off the developers certificate of origin (see below).  To do
-this, you simply add an approprate line to this file at the bottom.
+this, you simply add an appropriate line to this file at the bottom.
 When making a pull request it is necessary to include this
 modification as part of the request (unless you have already done so).
 Pull requests that do not include this modification will be rejected.

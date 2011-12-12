@@ -30,8 +30,31 @@ import java.util.*;
 import wyil.lang.Attribute;
 import wyil.util.SyntacticElement;
 
+/**
+ * <p>
+ * Provides classes for representing types in Whiley's source language. These
+ * are referred to as <i>unresolved types</i> as they include nominal types
+ * whose full NameID remains unknown. Unresolved types are <i>resolved</i>
+ * during the name resolution> stage of the compiler.
+ * </p>
+ * 
+ * <p>
+ * Each class is an instance of <code>SyntacticElement</code> and, hence, can be
+ * adorned with certain information (such as source location, etc).
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public interface UnresolvedType extends SyntacticElement {
 
+	/**
+	 * A non-union type represents a type which is not an instance of
+	 * <code>Union</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public interface NonUnion extends UnresolvedType {
 	}
 	
@@ -154,12 +177,14 @@ public interface UnresolvedType extends SyntacticElement {
 	}
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
-		public Record(Map<String,UnresolvedType> types, Attribute... attributes) {
+		public final boolean isOpen;
+		public Record(boolean isOpen, Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(
 						"Cannot create type tuple with no fields");
 			}
+			this.isOpen = isOpen;
 			this.types = new HashMap<String,UnresolvedType>(types);
 		}
 	}

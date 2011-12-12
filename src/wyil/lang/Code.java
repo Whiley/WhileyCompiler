@@ -30,11 +30,43 @@ import wyil.util.*;
 
 /**
  * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
- * stack-based bytecodes, similar to the Java Virtual Machine. Bytecodes may
- * push/pop values from the stack, and store/load them from the local variable
- * array.
+ * stack-based bytecodes, similar to the Java Virtual Machine. The frame of each
+ * function/method consists of zero or more <i>local variables</i> (a.k.a
+ * registers) and a <i>stack of unbounded depth</i>. Bytecodes may push/pop
+ * values from the stack, and store/load them from local variables. Like Java
+ * bytecode, WYIL uses unstructured control-flow and allows variables to take on
+ * different types at different points. For example:
  * 
- * @author djp
+ * <pre>
+ * int sum([int] data):
+ *    r = 0
+ *    for item in data:
+ *       r = r + item
+ *    return r
+ * </pre>
+ * 
+ * This function is compiled into the following WYIL bytecode:
+ * 
+ * <pre>
+ * int sum([int] data):
+ * body: 
+ *   var r, $2, item
+ *   const 0 : int                           
+ *   store r : int                           
+ *   move data : [int]                       
+ *   forall item [r] : [int]                 
+ *       move r : int                            
+ *       load item : int                         
+ *       add : int                               
+ *       store r : int                           
+ *   move r : int                            
+ *   return : int
+ * </pre>
+ * 
+ * Here, we can see that every bytecode is associated with one (or more) types.
+ * These types are inferred by the compiler during type propagation.
+ * 
+ * @author David J. Pearce
  * 
  */
 public abstract class Code {
@@ -793,6 +825,12 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Pops a dictionary value from stack, and pushes it's length back on.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class DictLength extends Code {				
 		public final Type.Dictionary type;
 		
@@ -1015,7 +1053,7 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label, by popping two operands from
+	 * Branches conditionally to the given label by popping two operands from
 	 * the stack and comparing them. The possible comparators are:
 	 * </p>
 	 * <ul>
@@ -1032,7 +1070,7 @@ public abstract class Code {
 	 * </ul>
 	 *  
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
 	 * @author djp
@@ -1116,8 +1154,29 @@ public abstract class Code {
 		SUBSETEQ{
 			public String toString() { return "sbe"; }
 		}		
-	};		
-	
+	};
+
+	/**
+	 * <p>
+	 * Branches conditionally to the given label based on the result of a
+	 * runtime type test against a given value. More specifically, it checks
+	 * whether the value is a subtype of the type test. The value in question is
+	 * either loaded directly from a variable, or popped off the stack.
+	 * </p>
+	 * <p>
+	 * In the case that the value is obtained from a specific variable, then
+	 * that variable is automatically <i>retyped</i> as a result of the type
+	 * test. On the true branch, its type is intersected with type test. On the
+	 * false branch, its type is intersected with the <i>negation</i> of the
+	 * type test.
+	 * </p>
+	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
+	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
+	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * 
+	 * @author djp
+	 * 
+	 */	
 	public static final class IfType extends Code {
 		public final Type type;
 		public final int slot;
@@ -1601,8 +1660,16 @@ public abstract class Code {
 		public String toString() {
 			return "loop " + modifies;
 		}		
-	}		
+	}
 
+	/**
+	 * Pops a set, list or dictionary from the stack and iterates over every
+	 * element it contains. An index variable is given which holds the current
+	 * value being iterated over.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class ForAll extends Loop {
 		public final int slot;
 		public final Type type;
@@ -1768,7 +1835,7 @@ public abstract class Code {
 			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				return new StringLVal();
-			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.List(Type.T_ANY,false),iter)) {			
 				Type.List list = Type.effectiveListType(iter);											
 				iter = list.element();
 				return new ListLVal(raw);
@@ -1858,7 +1925,7 @@ public abstract class Code {
 			for (int i = 0; i != level; ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
-				} else if (Type.isSubtype(Type.List(Type.T_ANY), iter)) {
+				} else if (Type.isSubtype(Type.List(Type.T_ANY,false), iter)) {
 					Type.List list = Type.effectiveListType(iter);
 					iter = list.element();
 				} else if (Type.isSubtype(

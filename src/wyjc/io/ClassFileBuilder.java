@@ -217,7 +217,7 @@ public class ClassFileBuilder {
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
 		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T,
-						Type.List(Type.T_STRING));
+						Type.List(Type.T_STRING, false));
 		JvmType.Function ft3 = convertFunType(wyft);		
 		// The following is a little bit of hack. Basically we flush the stdout
 		// channel on exit
@@ -666,7 +666,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));						
 			
-		} else if(Type.isSubtype(Type.List(Type.T_ANY),type)) {
+		} else if(Type.isSubtype(Type.List(Type.T_ANY, false),type)) {
 			Type.List list = Type.effectiveListType(type);				
 										
 			if(level != 0) {
@@ -1809,7 +1809,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(WHILEYTYPE,
 				JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "valueOf", ftype,
-				Bytecode.STATIC));
+				Bytecode.STATIC));		
 	}
 	
 	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
@@ -2741,14 +2741,14 @@ public class ClassFileBuilder {
 	}		 	
 		
 	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
-			.Process(Type.Existential(new NameID(new ModuleID(new PkgID(
+			.Process(Type.Nominal(new NameID(new ModuleID(new PkgID(
 					"whiley", "lang"), "System"), "1")));
 
 	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
-			.Process(Type.Record(new HashMap() {
+			.Process(Type.Record(false,new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
-					put("rest", Type.Existential(new NameID(new ModuleID(
+					put("rest", Type.Nominal(new NameID(new ModuleID(
 							new PkgID("whiley", "lang"), "System"), "1")));
 				}
 			}));

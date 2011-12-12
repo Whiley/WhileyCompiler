@@ -65,14 +65,14 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		}		
 	}
 	
-	public Module.ConstDef propagate(Module.ConstDef constant) {
+	protected Module.ConstDef propagate(Module.ConstDef constant) {
 		return constant;
 	}
-	public Module.TypeDef propagate(Module.TypeDef type) {
+	protected Module.TypeDef propagate(Module.TypeDef type) {
 		return type;
 	}
 	
-	public Module.Method propagate(Module.Method method) {
+	protected Module.Method propagate(Module.Method method) {
 		this.method = method;
 		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
 		for (Module.Case c : method.cases()) {
@@ -81,7 +81,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	public Module.Case propagate(Module.Case mcase) {
+	protected Module.Case propagate(Module.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
 		T last = lastStore();						

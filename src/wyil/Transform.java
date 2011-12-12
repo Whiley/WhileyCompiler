@@ -25,8 +25,6 @@
 
 package wyil;
 
-import java.io.IOException;
-
 import wyil.lang.Module;
 
 /**
@@ -35,9 +33,20 @@ import wyil.lang.Module;
  * particular concern), or apply optimisations to the module. Examples include
  * <i>constant propagation</i> and <i>definite assignment analysis</i>.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
-public interface Transform {	
+public interface Transform {
+
+	/**
+	 * Apply this transform to the given module. Modifications are made to the
+	 * module in-place. To easy integration with other frameworks (e.g.
+	 * Eclipse), any exception may be thrown.
+	 * 
+	 * @param module
+	 *            --- module to be transformed
+	 * @throws Exception
+	 *             --- some kind of failure occurred.
+	 */
 	public void apply(Module module) throws Exception;
 }

@@ -76,3 +76,11 @@ Then, to run the program you would do this:
 Hello World
 
 (note: under UNIX you will want to replace the ';' with a ':')
+
+============================================================================
+Making a Contribution
+============================================================================
+
+When making a contribution to the Whiley project, you will need to
+first sign-off the developers certificate of origin.  Please see the
+CONTRIBUTORS file for more details.

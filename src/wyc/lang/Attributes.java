@@ -28,8 +28,8 @@ package wyc.lang;
 import wyil.lang.*;
 
 /**
- * An attribute is simply a piece of information that we may wish to
- * attached to a syntactic element,
+ * Provides a number of useful attributes which are attached to the AST during
+ * name resolution. These are all instances of wyil.lang.Attribute.
  * 
  * @author David J. Pearce
  * 
