@@ -300,7 +300,7 @@ public final class TypeAlgorithms {
 				continue;
 			} 
 			Automaton.State child = automaton.states[children[i]];
-			if(child.kind == Type.K_VOID && !isOpenRecord) {				
+			if(child.kind == Type.K_VOID) {				
 				automaton.states[index] = new Automaton.State(Type.K_VOID);
 				return true;
 			}
@@ -1319,11 +1319,12 @@ public final class TypeAlgorithms {
 		Type.Record.State fromData = (Type.Record.State) fromState.data;
 		Type.Record.State toData = (Type.Record.State) toState.data;
 		
-		if(isSubset(toData,fromData)) {
-			// no possible intersection so back out			
-			states.set(myIndex,new Automaton.State(Type.K_VOID));
-			return myIndex; // tad ugly perhaps		
-		}
+		
+//		if(isSubset(toData,fromData)) {
+//			// no possible intersection so back out			
+//			states.set(myIndex,new Automaton.State(Type.K_VOID));
+//			return myIndex; // tad ugly perhaps		
+//		}
 		
 		// finally, distribute over those fields present in the open record
 		// (which are a subset of those in the closed record).
