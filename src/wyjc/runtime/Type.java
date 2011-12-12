@@ -28,6 +28,10 @@ package wyjc.runtime;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyil.lang.ModuleID;
+import wyil.lang.NameID;
+import wyil.lang.Type.Nominal;
+
 import static wyil.lang.Type.K_VOID;
 import static wyil.lang.Type.K_ANY;
 import static wyil.lang.Type.K_META;
@@ -49,7 +53,6 @@ import static wyil.lang.Type.K_UNION;
 import static wyil.lang.Type.K_NEGATION;
 import static wyil.lang.Type.K_FUNCTION;
 import static wyil.lang.Type.K_NOMINAL;
-import static wyil.lang.Type.K_LABEL;
 
 public class Type {
 	
@@ -144,10 +147,10 @@ public class Type {
 		}
 	}
 	
-	private static final class Leaf extends Type {
-		public final String name;
-		public Leaf(String name) {
-			super(K_LABEL,name);
+	private static final class Nominal extends Type {
+		public final NameID name;
+		public Nominal(NameID name) {
+			super(K_NOMINAL,name.toString());
 			this.name = name;
 		}
 	}
@@ -188,7 +191,7 @@ public class Type {
 	 *            termination in the presence of cycles.
 	 * @return
 	 */
-	private static Type substitute(Type type, String var, Type root, HashSet<Type> visited) {
+	private static Type substitute(Type type, NameID label, Type root, HashSet<Type> visited) {
 		if(visited.contains(type)) {
 			return type;
 		} else {
@@ -202,10 +205,10 @@ public class Type {
 			case K_RATIONAL:				
 			case K_STRING:
 				break;
-			case K_LABEL:
+			case K_NOMINAL:
 			{
-				Type.Leaf leaf = (Type.Leaf)type;
-				if(leaf.name.equals(var)) {
+				Type.Nominal leaf = (Type.Nominal) type;
+				if(leaf.name.equals(label)) {
 					return root;
 				} else {
 					return leaf;
@@ -214,20 +217,20 @@ public class Type {
 			case K_LIST:
 			{
 				Type.List list = (Type.List) type;
-				list.element = substitute(list.element,var,root,visited); 
+				list.element = substitute(list.element,label,root,visited); 
 				break;
 			}
 			case K_SET:
 			{
 				Type.Set set = (Type.Set) type;
-				set.element = substitute(set.element,var,root,visited); 
+				set.element = substitute(set.element,label,root,visited); 
 				break;
 			}
 			case K_DICTIONARY:
 			{
 				Type.Dictionary dict = (Type.Dictionary) type;
-				dict.key = substitute(dict.key,var,root,visited); 
-				dict.value = substitute(dict.value,var,root,visited);
+				dict.key = substitute(dict.key,label,root,visited); 
+				dict.value = substitute(dict.value,label,root,visited);
 				break;
 			}
 			case K_RECORD:
@@ -235,14 +238,14 @@ public class Type {
 				Type.Record rec = (Type.Record) type;
 				Type[] types = rec.types;
 				for(int i=0;i!=types.length;++i) {
-					types[i] = substitute(types[i],var,root,visited);
+					types[i] = substitute(types[i],label,root,visited);
 				}
 				break;
 			}
 			case K_NEGATION:
 			{
 				Type.Negation not = (Type.Negation) type;
-				not.element = substitute(not.element,var,root,visited); 
+				not.element = substitute(not.element,label,root,visited); 
 				break;
 			}
 			case K_UNION:
@@ -250,7 +253,7 @@ public class Type {
 				Type.Union un = (Type.Union) type;
 				Type[] types = un.bounds;
 				for(int i=0;i!=types.length;++i) {
-					types[i] = substitute(types[i],var,root,visited);
+					types[i] = substitute(types[i],label,root,visited);
 				}
 				break;
 			}
@@ -401,7 +404,8 @@ public class Type {
 				String var = parseIdentifier();
 				
 				if(typeVars.contains(var)) {
-					return new Leaf(var);
+						return new Nominal(new NameID(ModuleID.fromString("$"),
+								var));					
 				} else {
 					typeVars = new HashSet<String>(typeVars);
 					typeVars.add(var);
@@ -409,7 +413,8 @@ public class Type {
 					Type t = parse(typeVars);
 					match(">");
 					t.str = str.substring(start,index);
-					return substitute(t,var,t, new HashSet<Type>());
+					NameID label = new NameID(ModuleID.fromString("$"), var);
+					return substitute(t, label, t, new HashSet<Type>());
 				}				
 			}
 			}

@@ -542,7 +542,7 @@ public final class ModuleBuilder {
 		}
 
 		// following is needed to terminate any recursion
-		cache.put(key, Type.Label(key.toString()));
+		cache.put(key, Type.Nominal(key));
 
 		// now, expand the type fully		
 		Pair<UnresolvedType,Expr> ut = unresolved.get(key); 
@@ -552,9 +552,9 @@ public final class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpen(key.toString(), t.first());
+		boolean isOpenRecursive = Type.isOpen(key, t.first());
 		if (isOpenRecursive) {
-			t = new Pair<Type, Block>(Type.Recursive(key.toString(),
+			t = new Pair<Type, Block>(Type.Recursive(key,
 					t.first()), t.second());
 		}
 		

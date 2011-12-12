@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import wyil.lang.ModuleID;
+import wyil.lang.NameID;
 import wyil.lang.Type;
 import static wyil.lang.Type.*;
 
@@ -210,15 +212,18 @@ public class TypeParser {
 		{
 			String typeVariable = parseIdentifier();
 			if(typeVariables.contains(typeVariable)) {
-				return Label(typeVariable);
+				return Nominal(new NameID(ModuleID.fromString("$"),
+						typeVariable));				
 			} else {
 				typeVariables = new HashSet<String>(typeVariables);
 				typeVariables.add(typeVariable);
 				match("<");
 				Type t = parse(typeVariables);
-				match(">");				
-				return Recursive(typeVariable,t);
-			}		
+				match(">");
+				NameID label = new NameID(ModuleID.fromString("$"),
+						typeVariable);
+				return Recursive(label, t);
+			}
 		}
 			
 		}

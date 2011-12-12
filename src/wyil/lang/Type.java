@@ -242,39 +242,17 @@ public abstract class Type {
 	}
 
 	/**
-	 * Construct a label type. These are used in the construction of recursive
-	 * types. Essentially, a label corresponds to the leaf of a recursive type,
-	 * which we can then "close" later on as we build up the type. For example,
-	 * we construct the recursive type <code>X<null|{X next}></code> as follows:
+	 * Close a recursive type using a given label (i.e. nominal type).
+	 * Essentially, this traverses the given type and routes each occurrence of
+	 * the label to recursively point to the type's root. For example, we
+	 * construct the recursive type <code>X<null|{X next}></code> as follows:
 	 * 
 	 * <pre>
 	 * HashMap<String,Type> fields = new HashMap<String,Type>();
-	 * fields.put("next",T_LABEL("X"));	 * 
+	 * Type.Nominal label = T_NOMINAL("X");
+	 * fields.put("next",label);	 
 	 * Type tmp = T_UNION(T_NULL,T_RECORD(fields));
-	 * Type type = T_RECURSIVE("X",tmp);
-	 * </pre>
-	 * 
-	 * <b>NOTE:</b> a type containing a label is not considered valid until it
-	 * is closed using a recursive type.
-	 * 
-	 * @param label
-	 * @return
-	 */
-	public static final Type Label(String label) {
-		return construct(K_LABEL,label);
-	}
-
-	/**
-	 * Close a recursive type using a given label. Essentially, this traverses
-	 * the given type and routes each occurrence of the label to recursively
-	 * point to the type's root. For example, we construct the recursive type
-	 * <code>X<null|{X next}></code> as follows:
-	 * 
-	 * <pre>
-	 * HashMap<String,Type> fields = new HashMap<String,Type>();
-	 * fields.put("next",T_LABEL("X"));	 * 
-	 * Type tmp = T_UNION(T_NULL,T_RECORD(fields));
-	 * Type type = T_RECURSIVE("X",tmp);
+	 * Type type = T_RECURSIVE(label,tmp);
 	 * </pre>
 	 * 
 	 * <b>NOTE:</b> it is invalid to close a type which does not contain at
@@ -287,7 +265,7 @@ public abstract class Type {
 	 *            --- type to be closed.
 	 * @return
 	 */
-	public static final Type Recursive(String label, Type type) {
+	public static final Type Recursive(NameID label, Type type) {
 		// first stage, identify all matching labels
 		if (type instanceof Leaf) {
 			throw new IllegalArgumentException("cannot close a leaf type");
@@ -298,7 +276,7 @@ public abstract class Type {
 		int[] rmap = new int[nodes.length];		
 		for (int i = 0; i != nodes.length; ++i) {
 			State c = nodes[i];
-			if (c.kind == K_LABEL && c.data.equals(label)) {
+			if (c.kind == K_NOMINAL && c.data.equals(label)) {
 				rmap[i] = 0;
 			} else {
 				rmap[i] = i;
@@ -328,40 +306,19 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpen(String label, Type t) {
+	public static boolean isOpen(NameID label, Type t) {
 		if (t instanceof Leaf) {
 			return false;
 		}
 		Compound graph = (Compound) t;
 		for (State n : graph.automaton.states) {
-			if (n.kind == K_LABEL && n.data.equals(label)) {
+			if (n.kind == K_NOMINAL && n.data.equals(label)) {
 				return true;
 			}
 		}
 		return false;
 	}
-	
-	/**
-	 * This is a utility helper for constructing types. In particular, it's
-	 * useful to check that a type has been built sanely.
-	 * 
-	 * @param label
-	 * @param t
-	 * @return
-	 */
-	public static boolean isOpen(Type t) {
-		if (t instanceof Leaf) {
-			return false;
-		}
-		Compound graph = (Compound) t;
-		for (State n : graph.automaton.states) {
-			if (n.kind == K_LABEL) {
-				return true;
-			}
-		}
-		return false;
-	}	
-	
+		
 	// =============================================================
 	// Readers / Writers
 	// =============================================================
@@ -1419,7 +1376,7 @@ public abstract class Type {
 			break;
 		}
 		case K_NOMINAL:
-			middle = "?" + state.data.toString();
+			middle = state.data.toString();
 			break;
 		case K_PROCESS:
 			middle = "*" + toString(state.children[0], visited, headers, automaton);
@@ -1513,9 +1470,6 @@ public abstract class Type {
 			}
 			break;
 		}		
-		case K_LABEL:
-			middle = (String) state.data;
-			break;
 		default: 
 			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
 		}
@@ -1714,10 +1668,7 @@ public abstract class Type {
 			break;
 		case K_FUNCTION:
 			type = new Function(automaton);
-			break;
-		case K_LABEL:
-			type = new Compound(automaton);
-			break;
+			break;		
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
@@ -1881,7 +1832,6 @@ public abstract class Type {
 	public static final byte K_METHOD = 19;
 	public static final byte K_HEADLESS = 20; // headless method
 	public static final byte K_NOMINAL = 21;
-	public static final byte K_LABEL = 22;	
 	
 	private static final ArrayList<Automaton> values = new ArrayList<Automaton>();
 	private static final HashMap<Automaton,Integer> cache = new HashMap<Automaton,Integer>();
@@ -1935,20 +1885,15 @@ public abstract class Type {
 		//System.out.println("!" + from + " & !" + to + " = "
 		//		+ intersect(Type.Negation(from), Type.Negation(to)));
 	}
-	
-	public static Type contractive() {
-		Type lab = Label("Contractive");
-		Type union = Union(lab,lab);
-		return Recursive("Contractive", union);
-	}
-	
+		
 	public static Type linkedList(int n) {
-		return Recursive("X",innerLinkedList(n));
+		NameID label = new NameID(ModuleID.fromString(""),"X");
+		return Recursive(label,innerLinkedList(n));
 	}
 	
 	public static Type innerLinkedList(int n) {
 		if(n == 0) {
-			return Label("X");
+			return Nominal(new NameID(ModuleID.fromString(""),"X"));			
 		} else {
 			Type leaf = Process(innerLinkedList(n-1)); 
 			HashMap<String,Type> fields = new HashMap<String,Type>();
