@@ -1,4 +1,4 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// Copyright (c) 2011, David J. Pearce (David J. Pearce@ecs.vuw.ac.nz)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -589,7 +589,14 @@ public abstract class Code {
 			return "assert " + target;
 		}		
 	}
-	
+
+	/**
+	 * Represents a binary operator (e.g. '+','-',etc) that is provided to a
+	 * <code>BinOp</code> bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public enum BOp { 
 		ADD{
 			public String toString() { return "add"; }
@@ -695,7 +702,7 @@ public abstract class Code {
 	 * </p>
 	 * 
 	 * <p>
-	 * A convert bytecode must be inserted whenever the type of a variable
+	 * A convert bytecode must be inserted whenever the type of a register
 	 * changes. This includes at control-flow meet points, when the value is
 	 * passed as a parameter, assigned to a field, etc.
 	 * </p>
@@ -773,7 +780,7 @@ public abstract class Code {
 	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
 	 * nop.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Debug extends Code {
@@ -828,7 +835,7 @@ public abstract class Code {
 	/**
 	 * Pops a dictionary value from stack, and pushes it's length back on.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class DictLength extends Code {				
@@ -865,7 +872,7 @@ public abstract class Code {
 	 * key in the dictionary. If no value exists, a dictionary fault is raised.
 	 * Otherwise, the value is pushed onto the stack.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class DictLoad extends Code {
@@ -898,7 +905,7 @@ public abstract class Code {
 	
 	/**
 	 * Marks the end of a loop block.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class LoopEnd extends Label {
@@ -935,7 +942,7 @@ public abstract class Code {
 	 * Raises an assertion failure fault with the given message. Fail bytecodes
 	 * may only appear within assertion blocks.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Fail extends Code {
@@ -1016,7 +1023,7 @@ public abstract class Code {
 	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Goto extends Code {
@@ -1073,7 +1080,7 @@ public abstract class Code {
 	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class IfGoto extends Code {
@@ -1126,6 +1133,13 @@ public abstract class Code {
 		}
 	}
 	
+	/**
+	 * Represents a comparison operator (e.g. '==','!=',etc) that is provided to a
+	 * <code>IfGoto</code> bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public enum COp { 
 		EQ() {
 			public String toString() { return "eq"; }
@@ -1161,20 +1175,20 @@ public abstract class Code {
 	 * Branches conditionally to the given label based on the result of a
 	 * runtime type test against a given value. More specifically, it checks
 	 * whether the value is a subtype of the type test. The value in question is
-	 * either loaded directly from a variable, or popped off the stack.
+	 * either loaded directly from a register, or popped off the stack.
 	 * </p>
 	 * <p>
-	 * In the case that the value is obtained from a specific variable, then
-	 * that variable is automatically <i>retyped</i> as a result of the type
-	 * test. On the true branch, its type is intersected with type test. On the
-	 * false branch, its type is intersected with the <i>negation</i> of the
-	 * type test.
+	 * In the case that the value is obtained from a register, then that
+	 * variable is automatically <i>retyped</i> as a result of the type test. On
+	 * the true branch, its type is intersected with type test. On the false
+	 * branch, its type is intersected with the <i>negation</i> of the type
+	 * test.
 	 * </p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */	
 	public static final class IfType extends Code {
@@ -1249,7 +1263,22 @@ public abstract class Code {
 			}
 		}
 	}
-	
+
+	/**
+	 * Represents an indirect function call. For example, consider the
+	 * following:
+	 * 
+	 * <pre>
+	 * int function(int(int) f, int x):
+	 *    return f(x)
+	 * </pre>
+	 * 
+	 * Here, the function call <code>f(x)</code> is indirect as the called
+	 * function is determined by the variable <code>f</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class IndirectInvoke extends Code {		
 		public final Type.Function type;
 		public final boolean retval;
@@ -1285,7 +1314,22 @@ public abstract class Code {
 			}
 		}		
 	}
-	
+
+	/**
+	 * Represents an indirect message send (either synchronous or asynchronous).
+	 * For example, consider the following:
+	 * 
+	 * <pre>
+	 * int ::method(Rec::int(int) m, Rec r, int x):
+	 *    return r.m(x)
+	 * </pre>
+	 * 
+	 * Here, the message send <code>r.m(x)</code> is indirect as the message
+	 * sent is determined by the variable <code>m</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
@@ -1342,7 +1386,15 @@ public abstract class Code {
 			return toString("not",Type.T_BYTE);
 		}
 	}
-	
+
+	/**
+	 * Corresponds to a direct function call whose parameters are found on the
+	 * stack in the order corresponding to the function type. If a return value
+	 * is required, this is pushed onto the stack after the function call.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Invoke extends Code {		
 		public final Type.Function type;
 		public final NameID name;
@@ -1382,7 +1434,13 @@ public abstract class Code {
 		}	
 		
 	}
-	
+
+	/**
+	 * Represents the labelled destination of a branch or loop statement.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static class Label extends Code {
 		public final String label;
 		
@@ -1414,7 +1472,14 @@ public abstract class Code {
 			return "." + label;
 		}
 	}
-		
+
+	/**
+	 * Pops two lists from the stack, appends them together and pushes the
+	 * result back onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ListAppend extends Code {				
 		public final OpDir dir;
 		public final Type.List type;
@@ -1449,7 +1514,13 @@ public abstract class Code {
 			return toString("listappend" + dir.toString(),type);
 		}
 	}
-	
+
+	/**
+	 * Pops a list from the stack and pushes its length back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ListLength extends Code {						
 		public final Type.List type;
 		
@@ -1507,7 +1578,14 @@ public abstract class Code {
 			return toString("sublist",type);
 		}
 	}
-	
+
+	/**
+	 * Pops am integer index from the stack, followed by a list and pushes the
+	 * element at the given index back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ListLoad extends Code {
 		public final Type.List type;				
 		
@@ -1534,8 +1612,14 @@ public abstract class Code {
 		public String toString() {
 			return toString("listload",type);
 		}	
-	}		
-	
+	}
+
+	/**
+	 * Loads the contents of the given register onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Load extends Code {		
 		public final Type type;
 		public final int slot;		
@@ -1579,8 +1663,18 @@ public abstract class Code {
 		public String toString() {
 			return toString("load " + slot,type);
 		}	
-	}		
-	
+	}
+
+	/**
+	 * Moves the contents of the given register onto the stack. This is similar
+	 * to a <code>load</code> bytecode, except that the register's contents are
+	 * "voided" afterwards. This guarantees that the register is no longer live,
+	 * which is useful for determining the live ranges of register in a
+	 * function or method.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Move extends Code {		
 		public final Type type;
 		public final int slot;		
@@ -1664,10 +1758,10 @@ public abstract class Code {
 
 	/**
 	 * Pops a set, list or dictionary from the stack and iterates over every
-	 * element it contains. An index variable is given which holds the current
-	 * value being iterated over.
+	 * element it contains. An register is identified to hold the current value
+	 * being iterated over.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class ForAll extends Loop {
@@ -1727,7 +1821,7 @@ public abstract class Code {
 	 * expression. Lists, Dictionaries, Strings, Records and Processes are the
 	 * only valid types for an lval.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static abstract class LVal {
@@ -1744,7 +1838,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with dictionary type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class DictLVal extends LVal {
@@ -1762,7 +1856,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with list type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class ListLVal extends LVal {
@@ -1780,7 +1874,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with string type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class StringLVal extends LVal {
@@ -1791,7 +1885,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with record type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class RecordLVal extends LVal {
@@ -1878,7 +1972,7 @@ public abstract class Code {
 	 * the compound structure.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Update extends Code implements Iterable<LVal> {
@@ -1990,7 +2084,25 @@ public abstract class Code {
 		}
 	}
 
-	
+	/**
+	 * Constructs a new dictionary value from zero or more key-value pairs on
+	 * the stack. For each pair, the key must occur directly before the value on
+	 * the stack.  For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const "Hello" : string                  
+	 *   const 2 : int                           
+	 *   const "World" : string                  
+	 *   newdict #2 : {int->string}
+	 * </pre>
+	 * 
+	 * Pushes the dictionary value <code>{1->"Hello",2->"World"}</code> onto the
+	 * stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewDict extends Code {
 		public final Type.Dictionary type;
 		public final int nargs;
@@ -2020,7 +2132,23 @@ public abstract class Code {
 			return toString("newdict #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new record value from zero or more values on the stack. Each
+	 * value is associated with a field name, and will be popped from the stack
+	 * in the reverse order. For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const 2 : int                           
+	 *   newrec : {int x,int y}
+	 * </pre>
+	 * 
+	 * Pushes the record value <code>{x:1,y:2}</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewRecord extends Code {
 		public final Type.Record type;
 		
@@ -2048,7 +2176,23 @@ public abstract class Code {
 			return toString("newrec",type);
 		}	
 	}
-		
+
+	/**
+	 * Constructs a new tuple value from two or more values on the stack. Values
+	 * are popped from the stack in the reverse order they occur in the tuple.
+	 * For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const 2 : int                           
+	 *   newtuple #2 : (int,int)
+	 * </pre>
+	 * 
+	 * Pushes the tuple value <code>(1,2)</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewTuple extends Code {
 		public final Type.Tuple type;
 		public final int nargs;
@@ -2078,7 +2222,23 @@ public abstract class Code {
 			return toString("newtuple #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new set value from zero or more values on the stack. The new
+	 * set is load onto the stack. For example:
+	 * 
+	 * <pre>
+	 *     const 1 : int                           
+	 *     const 2 : int                           
+	 *     const 3 : int                           
+	 *     newset #3 : {int}
+	 * </pre>
+	 * 
+	 * Pushes the set value <code>{1,2,3}</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */		
 	public static final class NewSet extends Code {
 		public final Type.Set type;
 		public final int nargs;
@@ -2109,7 +2269,24 @@ public abstract class Code {
 			return toString("newset #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new list value from zero or more values on the stack. The
+	 * values are popped from the stack in the reverse order they will occur in
+	 * the new list. The new list is load onto the stack. For example:
+	 * 
+	 * <pre>
+	 *     const 1 : int                           
+	 *     const 2 : int                           
+	 *     const 3 : int                           
+	 *     newlist #3 : [int]
+	 * </pre>
+	 * 
+	 * Pushes the list value <code>[1,2,3]</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */	
 	public static final class NewList extends Code {
 		public final Type.List type;
 		public final int nargs;
@@ -2644,7 +2821,7 @@ public abstract class Code {
 	
 	/**
 	 * Marks the end of a try-catch block.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class TryEnd extends Label {
@@ -2675,8 +2852,15 @@ public abstract class Code {
 		public String toString() {
 			return "tryend " + label;
 		}
-	}	
-	
+	}
+
+	/**
+	 * Pops a number (int or real) from the stack, negates it and pushes the
+	 * result back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Negate extends Code {
 		public final Type type;		
 		
@@ -2705,7 +2889,21 @@ public abstract class Code {
 			return toString("neg",type);
 		}
 	}
-	
+
+	/**
+	 * Corresponds to a bitwise inversion operation, which pops a byte off the
+	 * stack and pushes the result back on. For example:
+	 * 
+	 * <pre>
+	 * byte f(byte x):
+	 *    return ~x
+	 * </pre>
+	 * 
+	 * Here, the expression <code>~x</code> generates an inverstion bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Invert extends Code {
 		public final Type type;		
 		

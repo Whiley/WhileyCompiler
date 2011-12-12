@@ -39,9 +39,8 @@ import wyc.lang.Stmt.*;
 
 /**
  * <p>
- * Responsible for expanding all types and constraints for a given module(s), as
- * well as generating appropriate WYIL code. For example, consider these two
- * declarations:
+ * Responsible for expanding all types and constraints for a given module(s).
+ * For example, consider these two declarations:
  * </p>
  * 
  * <pre>
@@ -67,16 +66,11 @@ import wyc.lang.Stmt.*;
  * The type <code>natlist</code> expands to <code>[int]</code>, whilst its
  * constraint is expanded to <code>all {x in $ | x >= 0}</code>.
  * </p>
- * <p>
- * <b>NOTE:</b> As the above description hints, this class currently has two
- * distinct responsibilities. Therefore, at some point in the future, it will be
- * split into two separate stages.
- * </p>
  * 
  * @author David J. Pearce
  * 
  */
-public final class ModuleBuilder {
+public final class TypeResolution {
 	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
@@ -96,7 +90,7 @@ public final class ModuleBuilder {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public ModuleBuilder(ModuleLoader loader) {
+	public TypeResolution(ModuleLoader loader) {
 		this.loader = loader;		
 	}
 

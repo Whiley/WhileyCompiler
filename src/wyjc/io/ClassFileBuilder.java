@@ -1766,8 +1766,8 @@ public class ClassFileBuilder {
 			translate((Value.Char)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Integer) {
 			translate((Value.Integer)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.TypeConst) {
-			translate((Value.TypeConst)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Type) {
+			translate((Value.Type)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Rational) {
 			translate((Value.Rational)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Strung) {
@@ -1782,8 +1782,8 @@ public class ClassFileBuilder {
 			translate((Value.Dictionary)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Tuple) {
 			translate((Value.Tuple)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.FunConst) {
-			translate((Value.FunConst)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Function) {
+			translate((Value.Function)v,freeSlot,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
@@ -1803,7 +1803,7 @@ public class ClassFileBuilder {
 		}
 	}
 
-	protected void translate(Value.TypeConst e, int freeSlot,
+	protected void translate(Value.Type e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(e.toString()));
 		JvmType.Function ftype = new JvmType.Function(WHILEYTYPE,
@@ -2045,7 +2045,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void translate(Value.FunConst e, int freeSlot,
+	protected void translate(Value.Function e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		

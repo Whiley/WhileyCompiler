@@ -31,12 +31,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-import wyil.lang.Value;
-import wyil.util.Pair;
-
 import static wyil.lang.Type.K_VOID;
 import static wyil.lang.Type.K_ANY;
-import static wyil.lang.Type.K_META;
 import static wyil.lang.Type.K_NULL;
 import static wyil.lang.Type.K_BOOL;
 import static wyil.lang.Type.K_BYTE;
@@ -48,15 +44,9 @@ import static wyil.lang.Type.K_TUPLE;
 import static wyil.lang.Type.K_SET;
 import static wyil.lang.Type.K_LIST;
 import static wyil.lang.Type.K_DICTIONARY;
-import static wyil.lang.Type.K_PROCESS;
-import static wyil.lang.Type.K_PROCESS;
 import static wyil.lang.Type.K_RECORD;
 import static wyil.lang.Type.K_UNION;
 import static wyil.lang.Type.K_NEGATION;
-import static wyil.lang.Type.K_FUNCTION;
-import static wyil.lang.Type.K_NOMINAL;
-import static wyil.lang.Type.K_LABEL;
-
 
 public class Util {
 

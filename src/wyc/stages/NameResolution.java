@@ -391,10 +391,10 @@ public final class NameResolution {
 				e = resolve((TupleGen) e, environment, imports);
 			} else if (e instanceof DictionaryGen) {
 				e = resolve((DictionaryGen) e, environment, imports);
-			} else if(e instanceof TypeConst) {
-				e = resolve((TypeConst) e, environment, imports);
-			} else if(e instanceof FunConst) {
-				e = resolve((FunConst) e, environment, imports);
+			} else if(e instanceof Expr.Type) {
+				e = resolve((Expr.Type) e, environment, imports);
+			} else if(e instanceof Function) {
+				e = resolve((Function) e, environment, imports);
 			} else {				
 				internalFailure("unknown expression encountered: "
 							+ e.getClass().getName(), filename, e);								
@@ -579,13 +579,13 @@ public final class NameResolution {
 		return sg;
 	}
 	
-	private Expr resolve(TypeConst tc, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.Type tc, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		resolve(tc.type,imports);
 		return tc;
 	}
 	
-	private Expr resolve(FunConst tc, HashMap<String, Set<Expr>> environment,
+	private Expr resolve(Function tc, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 
 		if (tc.paramTypes != null) {

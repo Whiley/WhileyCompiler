@@ -713,7 +713,6 @@ public final class TypeAlgorithms {
 				return intersectVoid(fromIndex,!fromSign,from,toIndex,!toSign,to,allocations,states);
 			case Type.K_RECORD: 
 				return intersectRecords(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
-			case Type.K_LABEL:
 			case Type.K_NOMINAL:
 				return intersectNominals(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_TUPLE:
