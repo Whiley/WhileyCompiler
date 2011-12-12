@@ -1053,7 +1053,7 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label, by popping two operands from
+	 * Branches conditionally to the given label by popping two operands from
 	 * the stack and comparing them. The possible comparators are:
 	 * </p>
 	 * <ul>
@@ -1070,7 +1070,7 @@ public abstract class Code {
 	 * </ul>
 	 *  
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
 	 * @author djp
@@ -1158,7 +1158,7 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label, based on the result of a
+	 * Branches conditionally to the given label based on the result of a
 	 * runtime type test against a given value. More specifically, it checks
 	 * whether the value is a subtype of the type test. The value in question is
 	 * either loaded directly from a variable, or popped off the stack.
@@ -1171,7 +1171,7 @@ public abstract class Code {
 	 * type test.
 	 * </p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
 	 * @author djp

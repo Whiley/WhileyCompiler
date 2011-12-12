@@ -1389,6 +1389,7 @@ public final class TypePropagation extends ForwardFlowAnalysis<TypePropagation.E
 			Type.Dictionary d = (Type.Dictionary) src_t;			
 			elem_t = Type.Tuple(d.key(),d.value());
 		} else {			
+			System.out.println("TYPE: " + src_t);
 			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);			
 			return null; // deadcode
 		}

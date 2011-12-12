@@ -1310,10 +1310,31 @@ public final class TypeAlgorithms {
 			int toIndex, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
-		// FIXME: need to do better here
-		int myIndex = states.size()-1;		
-		Automata.extractOnto(fromIndex,from,states);
-		return myIndex; 
+		
+		int myIndex = states.size();
+		states.add(null); // reserve space for me
+		
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];	
+		Type.Record.State fromData = (Type.Record.State) fromState.data;
+		Type.Record.State toData = (Type.Record.State) toState.data;
+		
+		if(isSubset(toData,fromData)) {
+			// no possible intersection so back out			
+			states.set(myIndex,new Automaton.State(Type.K_VOID));
+			return myIndex; // tad ugly perhaps		
+		}
+		
+		// finally, distribute over those fields present in the open record
+		// (which are a subset of those in the closed record).
+		
+		int[] myChildren = nonContiguousDistributeIntersection(fromState, true,
+				from, toState, false, to, fromData, allocations, states);
+			
+		Automaton.State myState = new Automaton.State(Type.K_UNION, null, false, myChildren);
+				
+		states.set(myIndex,myState);
+		return myIndex;		
 	}
 
 	/**
