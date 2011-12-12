@@ -90,8 +90,8 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Tuple(values));
 	}
 	
-	public static FunConst V_FUN(NameID name, Type.Function type) {
-		return get(new FunConst(name,type));
+	public static Function V_FUN(NameID name, Type.Function type) {
+		return get(new Function(name,type));
 	}		
 	
 	public static final class Null extends Value {				
@@ -716,11 +716,11 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static final class FunConst extends Value {
+	public static final class Function extends Value {
 		public final NameID name;
 		public final Type.Function type;
 		
-		private FunConst(NameID name, Type.Function type) {
+		private Function(NameID name, Type.Function type) {
 			this.name = name;
 			this.type = type;
 		}
@@ -739,8 +739,8 @@ public abstract class Value implements Comparable<Value> {
 			}
 		}
 		public boolean equals(Object o) {
-			if(o instanceof FunConst) {
-				FunConst i = (FunConst) o;
+			if(o instanceof Function) {
+				Function i = (Function) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
 								.equals(i.type)));
@@ -748,8 +748,8 @@ public abstract class Value implements Comparable<Value> {
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof FunConst) {
-				FunConst t = (FunConst) v;
+			if(v instanceof Function) {
+				Function t = (Function) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {

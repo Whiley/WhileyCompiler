@@ -485,7 +485,7 @@ public final class TypePropagation extends ForwardFlowAnalysis<TypePropagation.E
 		} else if (val instanceof Value.Tuple) {
 			return infer((Value.Tuple)val,elem);
 		} else {
-			return infer((Value.FunConst)val,elem);
+			return infer((Value.Function)val,elem);
 		}
 	}
 	
@@ -533,7 +533,7 @@ public final class TypePropagation extends ForwardFlowAnalysis<TypePropagation.E
 		return Value.V_RECORD(nfields);
 	}
 	
-	private Value infer(Value.FunConst fc, SyntacticElement elem) {
+	private Value infer(Value.Function fc, SyntacticElement elem) {
 		try {
 			List<Type.Function> targets = lookupMethod(fc.name.module(),fc.name.name());
 			String msg;
