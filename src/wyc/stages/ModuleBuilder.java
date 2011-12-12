@@ -334,8 +334,8 @@ public final class ModuleBuilder {
 				values.add(new Pair<Value,Value>(key,value));				
 			}
 			return Value.V_DICTIONARY(values);
-		} else if(expr instanceof FunConst) {
-			FunConst f = (FunConst) expr;
+		} else if(expr instanceof Function) {
+			Function f = (Function) expr;
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
 			if (mid != null) {
 				NameID name = new NameID(mid.module, f.name);
@@ -1699,8 +1699,8 @@ public final class ModuleBuilder {
 				return resolve((TupleGen) expression, environment);
 			} else if (expression instanceof DictionaryGen) {
 				return resolve((DictionaryGen) expression, environment);
-			} else if (expression instanceof FunConst) {
-				return resolve((FunConst) expression, environment);
+			} else if (expression instanceof Function) {
+				return resolve((Function) expression, environment);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression encountered: "
@@ -1819,7 +1819,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 
-	private Block resolve(FunConst s, HashMap<String,Integer> environment) {
+	private Block resolve(Function s, HashMap<String,Integer> environment) {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		NameID name = new NameID(modInfo.module, s.name);	
 		Type.Function tf = null;

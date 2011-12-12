@@ -1281,7 +1281,7 @@ public final class WhileyParser {
 			match(RightBrace.class);
 		} 
 
-		return new Expr.FunConst(funName, paramTypes, sourceAttr(start, index - 1));
+		return new Expr.Function(funName, paramTypes, sourceAttr(start, index - 1));
 	}
 
 	private Expr.Spawn parseSpawn() {

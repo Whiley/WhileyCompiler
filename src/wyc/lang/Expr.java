@@ -175,12 +175,12 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class FunConst extends SyntacticElement.Impl implements Expr {
+	public static class Function extends SyntacticElement.Impl implements Expr {
 
 		public String name;
 		public final List<UnresolvedType> paramTypes;
 
-		public FunConst(String name, List<UnresolvedType> paramTypes, Attribute... attributes) {
+		public Function(String name, List<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.paramTypes = paramTypes;
