@@ -1232,7 +1232,7 @@ public final class TypeAlgorithms {
 				myData = toData;
 				myChildren = nonContiguousZipIntersection(toData,fromState,from,toState,to,allocations,states);
 			}
-		} else { // assert toData.isOpen
+		} else { // assert toData.isOpen			
 			if(!isSubset(toData,fromData)) {
 				// e.g. {int f} & {int g,...}			
 				states.set(myIndex,new Automaton.State(Type.K_VOID));
@@ -1506,8 +1506,8 @@ public final class TypeAlgorithms {
 			String fn = subset.get(fi);
 			String tn = superset.get(ti);
 			int c = fn.compareTo(tn);
-			if(c < 0) {				
-				++fi;
+			if(c > 0) {				
+				++ti;
 				continue;								
 			} else if(c == 0){
 				++ti;
@@ -1515,9 +1515,8 @@ public final class TypeAlgorithms {
 				continue;
 			} 
 			return false;							
-		}
-		
-		return subsetSize <= supersetSize;		
+		}		
+		return fi == subsetSize;		
 	}
 
 	/**
