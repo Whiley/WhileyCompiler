@@ -28,10 +28,6 @@ package wyjc.runtime;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.lang.ModuleID;
-import wyil.lang.NameID;
-import wyil.lang.Type.Nominal;
-
 import static wyil.lang.Type.K_VOID;
 import static wyil.lang.Type.K_ANY;
 import static wyil.lang.Type.K_META;
@@ -148,8 +144,8 @@ public class Type {
 	}
 	
 	private static final class Nominal extends Type {
-		public final NameID name;
-		public Nominal(NameID name) {
+		public final String name;
+		public Nominal(String name) {
 			super(K_NOMINAL,name.toString());
 			this.name = name;
 		}
@@ -181,8 +177,8 @@ public class Type {
 	 * 
 	 * @param type
 	 *            - The type currently be explored
-	 * @param var
-	 *            - The variable to substitute for
+	 * @param label
+	 *            - The label to substitute for
 	 * @param root
 	 *            - The root of the recursive type. Variable <code>var</code>
 	 *            will be replaced with this.
@@ -191,7 +187,7 @@ public class Type {
 	 *            termination in the presence of cycles.
 	 * @return
 	 */
-	private static Type substitute(Type type, NameID label, Type root, HashSet<Type> visited) {
+	private static Type substitute(Type type, String label, Type root, HashSet<Type> visited) {
 		if(visited.contains(type)) {
 			return type;
 		} else {
@@ -404,17 +400,15 @@ public class Type {
 				String var = parseIdentifier();
 				
 				if(typeVars.contains(var)) {
-						return new Nominal(new NameID(ModuleID.fromString("$"),
-								var));					
+						return new Nominal(var);					
 				} else {
 					typeVars = new HashSet<String>(typeVars);
 					typeVars.add(var);
 					match("<");
 					Type t = parse(typeVars);
 					match(">");
-					t.str = str.substring(start,index);
-					NameID label = new NameID(ModuleID.fromString("$"), var);
-					return substitute(t, label, t, new HashSet<Type>());
+					t.str = str.substring(start,index);					
+					return substitute(t, var, t, new HashSet<Type>());
 				}				
 			}
 			}
