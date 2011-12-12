@@ -61,7 +61,7 @@
       <include name="bin/wyjc"/>
       <include name="bin/whiley"/>
     </fileset>
-    <fileset dir="." includes="LICENSE,README,build.xml"/>
+    <fileset dir="." includes="LICENSE,README,build.xml,pom.xml,CONTRIBUTORS,Asmsrc.xml"/>
     <fileset dir="." includes="lib/wyrt.jar,lib/wyjc.jar"/>
   </copy>
   <tar destfile="wdk-src-v${version}.tar" longfile="gnu">  
@@ -72,7 +72,7 @@
       <include name="wdk-v${version}/bin/wyjc"/>
       <include name="wdk-v${version}/bin/whiley"/>
     </tarfileset>
-    <tarfileset dir="." includes="wdk-v${version}/LICENSE,wdk-v${version}/README,wdk-v${version}/build.xml"/>
+    <tarfileset dir="." includes="wdk-v${version}/LICENSE,wdk-v${version}/README,wdk-v${version}/build.xml,wdk-v${version}/pom.xml,wdk-v${version}/Asmsrc.xml,wdk-v${version}/CONTRIBUTORS"/>
     <tarfileset dir="." includes="wdk-v${version}/lib/wyrt.jar,wdk-v${version}/lib/wyjc.jar"/>
   </tar>
   <gzip destfile="wdk-src-v${version}.tgz" src="wdk-src-v${version}.tar"/>

@@ -54,7 +54,11 @@ public class Main {
 		if(versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
-			BUILD_NUMBER = Integer.parseInt(vb[1]);
+			if(vb.length == 1) {
+				BUILD_NUMBER=0;
+			} else {
+			BUILD_NUMBER = Integer.parseInt(vb[1]); }
+			
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
 			MINOR_REVISION = Integer.parseInt(pts[2]);
