@@ -589,7 +589,14 @@ public abstract class Code {
 			return "assert " + target;
 		}		
 	}
-	
+
+	/**
+	 * Represents a binary operator (e.g. '+','-',etc) that is provided to a
+	 * <code>BinOp</code> bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public enum BOp { 
 		ADD{
 			public String toString() { return "add"; }
@@ -1126,6 +1133,13 @@ public abstract class Code {
 		}
 	}
 	
+	/**
+	 * Represents a comparison operator (e.g. '==','!=',etc) that is provided to a
+	 * <code>IfGoto</code> bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public enum COp { 
 		EQ() {
 			public String toString() { return "eq"; }
@@ -1249,7 +1263,22 @@ public abstract class Code {
 			}
 		}
 	}
-	
+
+	/**
+	 * Represents an indirect function call. For example, consider the
+	 * following:
+	 * 
+	 * <pre>
+	 * int function(int(int) f, int x):
+	 *    return f(x)
+	 * </pre>
+	 * 
+	 * Here, the function call <code>f(x)</code> is indirect as the called
+	 * function is determined by the variable <code>f</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class IndirectInvoke extends Code {		
 		public final Type.Function type;
 		public final boolean retval;
@@ -1285,7 +1314,22 @@ public abstract class Code {
 			}
 		}		
 	}
-	
+
+	/**
+	 * Represents an indirect message send (either synchronous or asynchronous).
+	 * For example, consider the following:
+	 * 
+	 * <pre>
+	 * int ::method(Rec::int(int) m, Rec r, int x):
+	 *    return r.m(x)
+	 * </pre>
+	 * 
+	 * Here, the message send <code>r.m(x)</code> is indirect as the message
+	 * sent is determined by the variable <code>m</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
@@ -1342,7 +1386,15 @@ public abstract class Code {
 			return toString("not",Type.T_BYTE);
 		}
 	}
-	
+
+	/**
+	 * Corresponds to a direct function call whose parameters are found on the
+	 * stack in the order corresponding to the function type. If a return value
+	 * is required, this is pushed onto the stack after the function call.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Invoke extends Code {		
 		public final Type.Function type;
 		public final NameID name;
@@ -1382,7 +1434,13 @@ public abstract class Code {
 		}	
 		
 	}
-	
+
+	/**
+	 * Represents the labelled destination of a branch or loop statement.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static class Label extends Code {
 		public final String label;
 		
@@ -1414,7 +1472,14 @@ public abstract class Code {
 			return "." + label;
 		}
 	}
-		
+
+	/**
+	 * Pops two lists from the stack, appends them together and pushes the
+	 * result back onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ListAppend extends Code {				
 		public final OpDir dir;
 		public final Type.List type;
@@ -1449,7 +1514,13 @@ public abstract class Code {
 			return toString("listappend" + dir.toString(),type);
 		}
 	}
-	
+
+	/**
+	 * Pops a list from the stack and pushes its length back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ListLength extends Code {						
 		public final Type.List type;
 		
@@ -1507,7 +1578,14 @@ public abstract class Code {
 			return toString("sublist",type);
 		}
 	}
-	
+
+	/**
+	 * Pops am integer index from the stack, followed by a list and pushes the
+	 * element at the given index back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ListLoad extends Code {
 		public final Type.List type;				
 		
@@ -1534,8 +1612,14 @@ public abstract class Code {
 		public String toString() {
 			return toString("listload",type);
 		}	
-	}		
-	
+	}
+
+	/**
+	 * Loads the contents of the given variable onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Load extends Code {		
 		public final Type type;
 		public final int slot;		
@@ -1579,8 +1663,18 @@ public abstract class Code {
 		public String toString() {
 			return toString("load " + slot,type);
 		}	
-	}		
-	
+	}
+
+	/**
+	 * Moves the contents of the given variable onto the stack. This is similar
+	 * to a <code>load</code> bytecode, except that the variable's contents is
+	 * "voided" afterwards. This guarantees that the variable is no longer live,
+	 * which is useful for determining the live ranges of variables in a
+	 * function or method.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Move extends Code {		
 		public final Type type;
 		public final int slot;		
@@ -1990,7 +2084,25 @@ public abstract class Code {
 		}
 	}
 
-	
+	/**
+	 * Constructs a new dictionary value from zero or more key-value pairs on
+	 * the stack. For each pair, the key must occur directly before the value on
+	 * the stack.  For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const "Hello" : string                  
+	 *   const 2 : int                           
+	 *   const "World" : string                  
+	 *   newdict #2 : {int->string}
+	 * </pre>
+	 * 
+	 * Pushes the dictionary value <code>{1->"Hello",2->"World"}</code> onto the
+	 * stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewDict extends Code {
 		public final Type.Dictionary type;
 		public final int nargs;
@@ -2020,7 +2132,23 @@ public abstract class Code {
 			return toString("newdict #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new record value from zero or more values on the stack. Each
+	 * value is associated with a field name, and will be popped from the stack
+	 * in the reverse order. For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const 2 : int                           
+	 *   newrec : {int x,int y}
+	 * </pre>
+	 * 
+	 * Pushes the record value <code>{x:1,y:2}</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewRecord extends Code {
 		public final Type.Record type;
 		
@@ -2048,7 +2176,23 @@ public abstract class Code {
 			return toString("newrec",type);
 		}	
 	}
-		
+
+	/**
+	 * Constructs a new tuple value from two or more values on the stack. Values
+	 * are popped from the stack in the reverse order they occur in the tuple.
+	 * For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const 2 : int                           
+	 *   newtuple #2 : (int,int)
+	 * </pre>
+	 * 
+	 * Pushes the tuple value <code>(1,2)</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewTuple extends Code {
 		public final Type.Tuple type;
 		public final int nargs;
@@ -2078,7 +2222,23 @@ public abstract class Code {
 			return toString("newtuple #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new set value from zero or more values on the stack. The new
+	 * set is load onto the stack. For example:
+	 * 
+	 * <pre>
+	 *     const 1 : int                           
+	 *     const 2 : int                           
+	 *     const 3 : int                           
+	 *     newset #3 : {int}
+	 * </pre>
+	 * 
+	 * Pushes the set value <code>{1,2,3}</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */		
 	public static final class NewSet extends Code {
 		public final Type.Set type;
 		public final int nargs;
@@ -2109,7 +2269,24 @@ public abstract class Code {
 			return toString("newset #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new list value from zero or more values on the stack. The
+	 * values are popped from the stack in the reverse order they will occur in
+	 * the new list. The new list is load onto the stack. For example:
+	 * 
+	 * <pre>
+	 *     const 1 : int                           
+	 *     const 2 : int                           
+	 *     const 3 : int                           
+	 *     newlist #3 : [int]
+	 * </pre>
+	 * 
+	 * Pushes the list value <code>[1,2,3]</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */	
 	public static final class NewList extends Code {
 		public final Type.List type;
 		public final int nargs;
@@ -2675,8 +2852,15 @@ public abstract class Code {
 		public String toString() {
 			return "tryend " + label;
 		}
-	}	
-	
+	}
+
+	/**
+	 * Pops a number (int or real) from the stack, negates it and pushes the
+	 * result back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Negate extends Code {
 		public final Type type;		
 		
@@ -2705,7 +2889,21 @@ public abstract class Code {
 			return toString("neg",type);
 		}
 	}
-	
+
+	/**
+	 * Corresponds to a bitwise inversion operation, which pops a byte off the
+	 * stack and pushes the result back on. For example:
+	 * 
+	 * <pre>
+	 * byte f(byte x):
+	 *    return ~x
+	 * </pre>
+	 * 
+	 * Here, the expression <code>~x</code> generates an inverstion bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Invert extends Code {
 		public final Type type;		
 		
