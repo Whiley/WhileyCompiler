@@ -23,15 +23,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.stages;
+package wyil.transforms;
 
 import static wyil.util.SyntaxError.*;
-import static wyil.util.ErrorMessages.*;
-
-import java.math.BigInteger;
 import java.util.*;
 
-import wyc.stages.TypePropagation.Env;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
