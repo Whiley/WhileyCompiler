@@ -421,13 +421,25 @@ public final class TypePropagation extends ForwardFlowAnalysis<TypePropagation.E
 				checkIsSubtype(Type.T_INT,lhs,stmt);
 				checkIsSubtype(Type.T_INT,rhs,stmt);
 				result = Type.T_INT;
-			} else if(Type.isImplicitCoerciveSubtype(lhs,rhs)) {				
+			} else if(Type.isImplicitCoerciveSubtype(lhs,rhs)) {
 				checkIsSubtype(Type.T_REAL,lhs,stmt);
-				result = lhs;
+				if(Type.isSubtype(Type.T_CHAR, lhs)) {
+					result = Type.T_CHAR;
+				} else if(Type.isSubtype(Type.T_INT, lhs)) {
+					result = Type.T_INT;
+				} else {
+					result = Type.T_REAL;
+				}				
 			} else {
 				checkIsSubtype(Type.T_REAL,lhs,stmt);
 				checkIsSubtype(Type.T_REAL,rhs,stmt);				
-				result = rhs;
+				if(Type.isSubtype(Type.T_CHAR, rhs)) {
+					result = Type.T_CHAR;
+				} else if(Type.isSubtype(Type.T_INT, rhs)) {
+					result = Type.T_INT;
+				} else {
+					result = Type.T_REAL;
+				}
 			} 
 			if(result == Type.T_CHAR) {
 				result = Type.T_INT;
