@@ -78,12 +78,7 @@ import wyc.lang.Stmt.*;
  */
 public final class CodeGeneration {
 	private final ModuleLoader loader;	
-	private HashSet<ModuleID> modules;
-	private HashMap<NameID, WhileyFile> filemap;
-	private HashMap<NameID, List<Type.Function>> functions;
-	private HashMap<NameID, Pair<Type,Block>> types;
-	private HashMap<NameID, Value> constants;
-	private HashMap<NameID, Pair<UnresolvedType, Expr>> unresolved;
+	private HashSet<ModuleID> modules;	
 	private Stack<Scope> scopes = new Stack<Scope>();
 	private String filename;	
 	private FunDecl currentFunDecl;
@@ -100,42 +95,19 @@ public final class CodeGeneration {
 		this.loader = loader;		
 	}
 
-	public List<Module> resolve(List<WhileyFile> files) {
-		modules = new HashSet<ModuleID>();
-		filemap = new HashMap<NameID, WhileyFile>();
-		functions = new HashMap<NameID, List<Type.Function>>();
-		types = new HashMap<NameID, Pair<Type,Block>>();
-		constants = new HashMap<NameID, Value>();
-		unresolved = new HashMap<NameID, Pair<UnresolvedType,Expr>>();
-
-		// now, init data
-		for (WhileyFile f : files) {
-			modules.add(f.module);
-		}
-
-		// Stage 2 ... resolve and check types for all functions / methods
-		for (WhileyFile f : files) {
-			for (WhileyFile.Decl d : f.declarations) {
-				if (d instanceof FunDecl) {
-					partResolve(f.module, (FunDecl) d);
-				}
-			}
-		}
-
-		// Stage 3 ... resolve, propagate types for all expressions
-		ArrayList<Module> modules = new ArrayList<Module>();
-		for (WhileyFile f : files) {
-			modules.add(resolve(f));
-		}
-
-		return modules;
-	}
-
-	private Module resolve(WhileyFile wf) {
+	public Module generate(WhileyFile wf) {
 		this.filename = wf.filename;
+		
+		for (WhileyFile.Decl d : wf.declarations) {
+			if (d instanceof FunDecl) {
+				partResolve(wf.module, (FunDecl) d);
+			}		
+		}
+			
 		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
+		
 		for (WhileyFile.Decl d : wf.declarations) {
 			try {
 				if (d instanceof TypeDecl) {
