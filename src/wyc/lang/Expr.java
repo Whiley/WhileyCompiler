@@ -166,10 +166,10 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class TypeConst extends SyntacticElement.Impl implements Expr {
+	public static class Type extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType type;
 
-		public TypeConst(UnresolvedType val, Attribute... attributes) {
+		public Type(UnresolvedType val, Attribute... attributes) {
 			super(attributes);
 			this.type = val;
 		}

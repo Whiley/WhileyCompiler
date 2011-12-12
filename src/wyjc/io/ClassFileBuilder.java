@@ -1766,8 +1766,8 @@ public class ClassFileBuilder {
 			translate((Value.Char)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Integer) {
 			translate((Value.Integer)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.TypeConst) {
-			translate((Value.TypeConst)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Type) {
+			translate((Value.Type)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Rational) {
 			translate((Value.Rational)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Strung) {
@@ -1803,7 +1803,7 @@ public class ClassFileBuilder {
 		}
 	}
 
-	protected void translate(Value.TypeConst e, int freeSlot,
+	protected void translate(Value.Type e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(e.toString()));
 		JvmType.Function ftype = new JvmType.Function(WHILEYTYPE,
