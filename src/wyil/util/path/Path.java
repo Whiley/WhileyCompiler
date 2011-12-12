@@ -35,7 +35,7 @@ import wyil.lang.PkgID;
 public class Path {
 	
 	public interface Root {		
-		
+				
 		/**
 		 * Check whether or not a given package is contained.
 		 */

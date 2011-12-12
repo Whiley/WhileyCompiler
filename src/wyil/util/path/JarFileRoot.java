@@ -51,20 +51,12 @@ public final class JarFileRoot implements Path.Root {
 		this.jf = dir;				
 	}
 
-	public boolean exists(PkgID pkg) throws IOException {
+	public boolean exists(PkgID pkg) throws IOException {			
 		String pkgname = pkg.toString().replace('.', '/');
-		Enumeration<JarEntry> entries = jf.entries();
-		while (entries.hasMoreElements()) {
-			JarEntry e = entries.nextElement();
-			String filename = e.getName();
-			if(filename.startsWith(pkgname)) {
-				return true;
-			}
-		}
-		return false;
+		return jf.getEntry(pkgname) != null;		
 	}
 	
-	public List<Path.Entry> list(PkgID pkg) throws IOException {
+	public List<Path.Entry> list(PkgID pkg) throws IOException {		
 		String pkgname = pkg.toString().replace('.', '/');
 		Enumeration<JarEntry> entries = jf.entries();
 		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>();
@@ -82,8 +74,7 @@ public final class JarFileRoot implements Path.Root {
 					contents.add(new Entry(mid, jf, e));
 				}
 			}
-		}
-
+		}		
 		return contents;
 	}
 	

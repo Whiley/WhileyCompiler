@@ -194,12 +194,12 @@ public final class NameResolver extends ModuleLoader {
 	 * @param imp
 	 * @return
 	 */
-	private List<ModuleID> matchImport(Import imp) {
+	private List<ModuleID> matchImport(Import imp) {		
 		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
 		for (PkgID pid : matchPackage(imp.pkg)) {
 			try {
 				resolvePackage(pid);
-				for(Path.Root root : packageroots.get(pid)) {
+				for(Path.Root root : packageroots.get(pid)) {					
 					for (Path.Entry e : root.list(pid)) {
 						ModuleID m = e.id();
 						if (imp.matchModule(m.module())) {
@@ -212,7 +212,7 @@ public final class NameResolver extends ModuleLoader {
 			} catch (Exception ex) {
 				// FIXME
 			}
-		}
+		}		
 		return matches;
 	}
 	

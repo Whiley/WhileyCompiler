@@ -95,9 +95,8 @@ public class BinaryDirectoryRoot implements Path.Root {
 				ModuleID mid = new ModuleID(pkg, name);
 				entries.add(new Entry(mid, file));				
 			}
-
 			return entries;
-		} else {
+		} else {									
 			return Collections.EMPTY_LIST;
 		}
 	}
