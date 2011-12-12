@@ -82,12 +82,12 @@ public class SourceDirectoryRoot implements Path.Root {
 		this.bindir = bindir;
 	}
 	
-	public boolean exists(PkgID pkg) throws IOException {
+	public boolean exists(PkgID pkg) throws IOException {		
 		File location = new File(dir + File.separator + pkg.fileName());
 		return location.exists() && location.isDirectory();
 	}
 	
-	public List<Path.Entry> list(PkgID pkg) throws IOException {
+	public List<Path.Entry> list(PkgID pkg) throws IOException {		
 		File location = new File(dir + File.separator + pkg.fileName());
 
 		if (location.exists() && location.isDirectory()) {
@@ -118,10 +118,9 @@ public class SourceDirectoryRoot implements Path.Root {
 				} else {
 					entries.add(srcEntry);
 				}
-			}
-
+			}			
 			return entries;
-		} else {
+		} else {			
 			return Collections.EMPTY_LIST;
 		}
 	}

@@ -26,14 +26,11 @@
 package wyc;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.util.Logger;
-import wyil.util.ResolveError;
+import wyil.util.*;
 import wyil.util.path.Path;
 
 /**
@@ -50,6 +47,14 @@ import wyil.util.path.Path;
  * 
  */
 public final class NameResolver extends ModuleLoader {
+	/**
+	 * The import cache caches specific import queries to their result sets.
+	 * This is extremely important to avoid recomputing these result sets every
+	 * time. For example, the statement <code>import whiley.lang.*</code>
+	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
+	 */
+	private HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();
+	
 	public NameResolver(Collection<Path.Root> sourcepath,
 			Collection<Path.Root> whileypath, Logger logger) {
 		super(sourcepath, whileypath, logger);
@@ -194,25 +199,35 @@ public final class NameResolver extends ModuleLoader {
 	 * @param imp
 	 * @return
 	 */
-	private List<ModuleID> matchImport(Import imp) {		
-		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
-		for (PkgID pid : matchPackage(imp.pkg)) {
-			try {
-				resolvePackage(pid);
-				for(Path.Root root : packageroots.get(pid)) {					
-					for (Path.Entry e : root.list(pid)) {
-						ModuleID m = e.id();
-						if (imp.matchModule(m.module())) {
-							matches.add(m);
+	private List<ModuleID> matchImport(Import imp) {	
+		
+		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
+		ArrayList<ModuleID> matches = importCache.get(key);
+		if(matches != null) {
+			// cache hit
+			return matches;
+		} else {					
+			// cache miss
+			matches = new ArrayList<ModuleID>();
+			for (PkgID pid : matchPackage(imp.pkg)) {
+				try {
+					resolvePackage(pid);
+					for(Path.Root root : packageroots.get(pid)) {					
+						for (Path.Entry e : root.list(pid)) {
+							ModuleID m = e.id();
+							if (imp.matchModule(m.module())) {
+								matches.add(m);
+							}
 						}
 					}
+				} catch (ResolveError ex) {
+					// dead code
+				} catch (Exception ex) {
+					// FIXME
 				}
-			} catch (ResolveError ex) {
-				// dead code
-			} catch (Exception ex) {
-				// FIXME
 			}
-		}		
+			importCache.put(key, matches);
+		}
 		return matches;
 	}
 	
