@@ -1,4 +1,4 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// Copyright (c) 2011, David J. Pearce (David J. Pearce@ecs.vuw.ac.nz)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -702,7 +702,7 @@ public abstract class Code {
 	 * </p>
 	 * 
 	 * <p>
-	 * A convert bytecode must be inserted whenever the type of a variable
+	 * A convert bytecode must be inserted whenever the type of a register
 	 * changes. This includes at control-flow meet points, when the value is
 	 * passed as a parameter, assigned to a field, etc.
 	 * </p>
@@ -780,7 +780,7 @@ public abstract class Code {
 	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
 	 * nop.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Debug extends Code {
@@ -835,7 +835,7 @@ public abstract class Code {
 	/**
 	 * Pops a dictionary value from stack, and pushes it's length back on.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class DictLength extends Code {				
@@ -872,7 +872,7 @@ public abstract class Code {
 	 * key in the dictionary. If no value exists, a dictionary fault is raised.
 	 * Otherwise, the value is pushed onto the stack.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class DictLoad extends Code {
@@ -905,7 +905,7 @@ public abstract class Code {
 	
 	/**
 	 * Marks the end of a loop block.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class LoopEnd extends Label {
@@ -942,7 +942,7 @@ public abstract class Code {
 	 * Raises an assertion failure fault with the given message. Fail bytecodes
 	 * may only appear within assertion blocks.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Fail extends Code {
@@ -1023,7 +1023,7 @@ public abstract class Code {
 	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Goto extends Code {
@@ -1080,7 +1080,7 @@ public abstract class Code {
 	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class IfGoto extends Code {
@@ -1175,20 +1175,20 @@ public abstract class Code {
 	 * Branches conditionally to the given label based on the result of a
 	 * runtime type test against a given value. More specifically, it checks
 	 * whether the value is a subtype of the type test. The value in question is
-	 * either loaded directly from a variable, or popped off the stack.
+	 * either loaded directly from a register, or popped off the stack.
 	 * </p>
 	 * <p>
-	 * In the case that the value is obtained from a specific variable, then
-	 * that variable is automatically <i>retyped</i> as a result of the type
-	 * test. On the true branch, its type is intersected with type test. On the
-	 * false branch, its type is intersected with the <i>negation</i> of the
-	 * type test.
+	 * In the case that the value is obtained from a register, then that
+	 * variable is automatically <i>retyped</i> as a result of the type test. On
+	 * the true branch, its type is intersected with type test. On the false
+	 * branch, its type is intersected with the <i>negation</i> of the type
+	 * test.
 	 * </p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */	
 	public static final class IfType extends Code {
@@ -1615,7 +1615,7 @@ public abstract class Code {
 	}
 
 	/**
-	 * Loads the contents of the given variable onto the stack.
+	 * Loads the contents of the given register onto the stack.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1666,10 +1666,10 @@ public abstract class Code {
 	}
 
 	/**
-	 * Moves the contents of the given variable onto the stack. This is similar
-	 * to a <code>load</code> bytecode, except that the variable's contents is
-	 * "voided" afterwards. This guarantees that the variable is no longer live,
-	 * which is useful for determining the live ranges of variables in a
+	 * Moves the contents of the given register onto the stack. This is similar
+	 * to a <code>load</code> bytecode, except that the register's contents are
+	 * "voided" afterwards. This guarantees that the register is no longer live,
+	 * which is useful for determining the live ranges of register in a
 	 * function or method.
 	 * 
 	 * @author David J. Pearce
@@ -1758,10 +1758,10 @@ public abstract class Code {
 
 	/**
 	 * Pops a set, list or dictionary from the stack and iterates over every
-	 * element it contains. An index variable is given which holds the current
-	 * value being iterated over.
+	 * element it contains. An register is identified to hold the current value
+	 * being iterated over.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class ForAll extends Loop {
@@ -1821,7 +1821,7 @@ public abstract class Code {
 	 * expression. Lists, Dictionaries, Strings, Records and Processes are the
 	 * only valid types for an lval.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static abstract class LVal {
@@ -1838,7 +1838,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with dictionary type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class DictLVal extends LVal {
@@ -1856,7 +1856,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with list type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class ListLVal extends LVal {
@@ -1874,7 +1874,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with string type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class StringLVal extends LVal {
@@ -1885,7 +1885,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with record type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class RecordLVal extends LVal {
@@ -1972,7 +1972,7 @@ public abstract class Code {
 	 * the compound structure.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Update extends Code implements Iterable<LVal> {
@@ -2821,7 +2821,7 @@ public abstract class Code {
 	
 	/**
 	 * Marks the end of a try-catch block.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class TryEnd extends Label {
