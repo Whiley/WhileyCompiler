@@ -231,9 +231,7 @@ public final class NameResolver {
 					}					
 				} catch (ResolveError ex) {
 					// dead code
-				} catch (Exception ex) {
-					// FIXME
-				}
+				} 
 			}
 			importCache.put(key, matches);
 		}
