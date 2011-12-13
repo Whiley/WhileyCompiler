@@ -72,15 +72,7 @@ import wyc.lang.Stmt.*;
  */
 public final class TypeResolution {
 	private final ModuleLoader loader;	
-	private HashSet<ModuleID> modules;
-	private HashMap<NameID, WhileyFile> filemap;	
-	private HashMap<NameID, Pair<Type,Block>> types;
-	private HashMap<NameID, Value> constants;
-	private HashMap<NameID, Pair<UnresolvedType, Expr>> unresolved;
-	private Stack<Scope> scopes = new Stack<Scope>();
-	private String filename;	
-	private FunDecl currentFunDecl;
-
+	
 	// The shadow set is used to (efficiently) aid the correct generation of
 	// runtime checks for post conditions. The key issue is that a post
 	// condition may refer to parameters of the method. However, if those

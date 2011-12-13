@@ -271,12 +271,12 @@ public class Main {
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			NameResolver resolver = new NameResolver(sourcepath,whileypath);
-			resolver.setModuleReader("class",  new ClassFileLoader());
+			ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
+			loader.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
 
-			Pipeline pipeline = new Pipeline(templates, resolver);
+			Pipeline pipeline = new Pipeline(templates, loader);
 			
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
@@ -288,8 +288,8 @@ public class Main {
 			}
 			
 			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(resolver,stages);		
-			resolver.setLogger(compiler);		
+			Compiler compiler = new Compiler(loader,stages);		
+			loader.setLogger(compiler);		
 
 			if(verbose) {			
 				compiler.setLogOut(System.err);

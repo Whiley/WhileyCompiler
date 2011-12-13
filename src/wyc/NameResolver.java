@@ -45,13 +45,14 @@ import wyil.util.path.Path;
  * @author David J. Pearce
  * 
  */
-public final class NameResolver extends ModuleLoader {
+public final class NameResolver {
+	private final ModuleLoader loader;
 	
 	/**
 	 * A map from module identifiers to skeleton objects. This is required to
 	 * permit preregistration of source files during compilation.
 	 */
-	protected HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
+	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -61,16 +62,9 @@ public final class NameResolver extends ModuleLoader {
 	 */
 	private HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();
 	
-	public NameResolver(Collection<Path.Root> sourcepath,
-			Collection<Path.Root> whileypath, Logger logger) {
-		super(sourcepath, whileypath, logger);
+	public NameResolver(ModuleLoader loader) {
+		this.loader = loader;
 	}
-
-	public NameResolver(Collection<Path.Root> sourcepath,
-			Collection<Path.Root> whileypath) {
-		super(sourcepath, whileypath);
-	}
-
 	
 	/**
 	 * Register a given skeleton with this loader. This ensures that when
@@ -94,7 +88,7 @@ public final class NameResolver extends ModuleLoader {
 	 */
 	public boolean isPackage(PkgID pkg) {
 		try {
-			resolvePackage(pkg);
+			loader.resolvePackage(pkg);
 			return true;
 		} catch(ResolveError e) {
 			return false;
@@ -229,16 +223,12 @@ public final class NameResolver extends ModuleLoader {
 			// cache miss
 			matches = new ArrayList<ModuleID>();
 			for (PkgID pid : matchPackage(imp.pkg)) {
-				try {
-					resolvePackage(pid);
-					for(Path.Root root : packageroots.get(pid)) {					
-						for (Path.Entry e : root.list(pid)) {
-							ModuleID m = e.id();
-							if (imp.matchModule(m.module())) {
-								matches.add(m);
-							}
+				try {					
+					for(ModuleID mid : loader.loadPackage(pid)) {
+						if (imp.matchModule(mid.module())) {
+							matches.add(mid);
 						}
-					}
+					}					
 				} catch (ResolveError ex) {
 					// dead code
 				} catch (Exception ex) {
@@ -298,7 +288,7 @@ public final class NameResolver extends ModuleLoader {
 		// WHILEYPATH. Therefore, attempt to load that module via the module
 		// loader.
 		
-		final Module module = loadModule(mid);
+		final Module module = loader.loadModule(mid);
 		
 		return new Skeleton(mid) {
 			public boolean hasName(String name) {
@@ -318,7 +308,7 @@ public final class NameResolver extends ModuleLoader {
 	private List<PkgID> matchPackage(PkgID pkg) {
 		ArrayList<PkgID> matches = new ArrayList<PkgID>();
 		try {
-			resolvePackage(pkg);
+			loader.resolvePackage(pkg);
 			matches.add(pkg);
 		} catch(ResolveError er) {}
 		return matches;

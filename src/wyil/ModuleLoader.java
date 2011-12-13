@@ -48,18 +48,18 @@ import wyil.util.path.Path;
  * @author David J. Pearce
  * 
  */
-public class ModuleLoader {
+public final class ModuleLoader {
 	/**
 	 * The source path is a list of locations which must be searched in
 	 * ascending order for whiley files.
 	 */
-	protected ArrayList<Path.Root> sourcepath;
+	private ArrayList<Path.Root> sourcepath;
 	
 	/**
 	 * The whiley path is a list of locations which must be searched in
 	 * ascending order for wyil files.
 	 */
-	protected ArrayList<Path.Root> whileypath;
+	private ArrayList<Path.Root> whileypath;
 	
 	/**
 	 * A map from module identifiers to module objects. This is the master cache
@@ -67,25 +67,25 @@ public class ModuleLoader {
 	 * module has been entered into the moduletable, it will not be loaded
 	 * again.
 	 */
-	protected HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
+	private HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
 	
 	/**
 	 * This identifies which packages have had their contents fully resolved.
 	 * All items in a resolved package must have been loaded into the filetable.
 	 */
-	protected HashMap<PkgID, ArrayList<Path.Root>> packageroots = new HashMap<PkgID, ArrayList<Path.Root>>();
+	private HashMap<PkgID, ArrayList<Path.Root>> packageroots = new HashMap<PkgID, ArrayList<Path.Root>>();
 
 	/**
      * The failed packages set is a collection of packages which have been
      * requested, but are known not to exist. The purpose of this cache is
      * simply to speed up package resolution.
      */
-	protected final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
+	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
 	
 	/**
 	 * The suffix map maps suffixes to module readers for those suffixes.
 	 */
-	protected final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
+	private final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
 	
 	/**
 	 * The logger is used to log messages from the module loader.
@@ -177,6 +177,21 @@ public class ModuleLoader {
 			throw new ResolveError("Unable to find module: " + module,e);
 		}	
 	}	
+	
+	public Set<ModuleID> loadPackage(PkgID pid) throws ResolveError {
+		resolvePackage(pid);
+		HashSet<ModuleID> contents = new HashSet<ModuleID>();
+		try {
+			for(Path.Root root : packageroots.get(pid)) {			
+				for (Path.Entry e : root.list(pid)) {
+					contents.add(e.id());
+				}
+			}
+		} catch(Exception e) {
+			throw new ResolveError("unknown failure",e);
+		}
+		return contents;
+	}
 	
 	/**
 	 * This method searches the WHILEYPATH looking for a matching package. If

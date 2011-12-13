@@ -80,12 +80,14 @@ import wyc.stages.*;
  * 
  */
 public final class Compiler implements Logger {		
-	private NameResolver resolver;	
+	private ModuleLoader loader;	
+	private NameResolver nameResolver;
 	private ArrayList<Transform> stages;
 
-	public Compiler(NameResolver resolver, List<Transform> stages) {
-		this.resolver = resolver;
+	public Compiler(ModuleLoader loader, List<Transform> stages) {
+		this.loader = loader;
 		this.stages = new ArrayList<Transform>(stages);
+		nameResolver = new NameResolver(loader);
 	}
 	
 	/**
@@ -116,7 +118,7 @@ public final class Compiler implements Logger {
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
 			wyfiles.add(wf);			
-			resolver.register(wf.skeleton());			
+			nameResolver.register(wf.skeleton());			
 		}
 				
 		for (WhileyFile m : wyfiles) {
@@ -125,7 +127,7 @@ public final class Compiler implements Logger {
 		
 		List<Module> modules = buildModules(wyfiles);				
 		for(Module m : modules) {
-			resolver.register(m);
+			loader.register(m);
 		}		
 		
 		finishCompilation(modules);		
@@ -170,7 +172,7 @@ public final class Compiler implements Logger {
 	private void finishCompilation(List<Module> modules) throws Exception {				
 		// Register the updated file
 		for(Module module : modules) {
-			resolver.register(module);
+			loader.register(module);
 		}
 		
 		for(Transform stage : stages) {
@@ -222,7 +224,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
-		new NameResolution(resolver).resolve(m);
+		new NameResolution(nameResolver).resolve(m);
 		logTimedMessage("[" + m.filename + "] resolved names",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		
@@ -232,7 +234,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
-		List<Module> modules = new ModuleBuilder(resolver).resolve(files);
+		List<Module> modules = new ModuleBuilder(loader).resolve(files);
 		logTimedMessage("built modules",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		return modules;		

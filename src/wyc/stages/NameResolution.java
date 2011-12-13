@@ -66,8 +66,8 @@ public final class NameResolution {
 	private String filename;
 	private ModuleID module;
 	
-	public NameResolution(ModuleLoader loader) {
-		this.resolver = (NameResolver) loader;
+	public NameResolution(NameResolver resolver) {
+		this.resolver = resolver;
 	}
 	
 	public void resolve(WhileyFile wf) {
