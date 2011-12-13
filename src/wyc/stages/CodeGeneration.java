@@ -105,11 +105,11 @@ public final class CodeGeneration {
 		for (WhileyFile.Decl d : wf.declarations) {
 			try {
 				if (d instanceof TypeDecl) {
-					types.add(resolve((TypeDecl) d, wf.module));
+					types.add(generate((TypeDecl) d, wf.module));
 				} else if (d instanceof ConstDecl) {
-					constants.add(resolve((ConstDecl) d, wf.module));
+					constants.add(generate((ConstDecl) d, wf.module));
 				} else if (d instanceof FunDecl) {
-					Module.Method mi = resolve((FunDecl) d);
+					Module.Method mi = generate((FunDecl) d);
 					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
 					Module.Method method = methods.get(key);
 					if (method != null) {
@@ -133,17 +133,17 @@ public final class CodeGeneration {
 				constants);				
 	}
 
-	private Module.ConstDef resolve(ConstDecl td, ModuleID module) {
+	private Module.ConstDef generate(ConstDecl td, ModuleID module) {
 		Value v = td.attribute(Attributes.Constant.class).constant;
 		return new Module.ConstDef(td.modifiers, td.name(), v);
 	}
 
-	private Module.TypeDef resolve(TypeDecl td, ModuleID module) {
+	private Module.TypeDef generate(TypeDecl td, ModuleID module) {
 		Attributes.Type attr = td.attribute(Attributes.Type.class);		
 		return new Module.TypeDef(td.modifiers, td.name(), attr.type, attr.constraint);
 	}
 
-	private Module.Method resolve(FunDecl fd) {		
+	private Module.Method generate(FunDecl fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
 		// method return type		
@@ -166,7 +166,7 @@ public final class CodeGeneration {
 		Block precondition = null;
 		
 		for (WhileyFile.Parameter p : fd.parameters) {			
-			// First, resolve and inline any constraints associated with the type.
+			// First, generate and inline any constraints associated with the type.
 			Attributes.Type t = p.type.attribute(Attributes.Type.class);
 			Block constraint = t.constraint;
 			if(constraint != null) {
@@ -187,7 +187,7 @@ public final class CodeGeneration {
 			}
 			String lab = Block.freshLabel();
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
-			precondition.append(resolveCondition(lab, fd.precondition, preEnv));		
+			precondition.append(generateCondition(lab, fd.precondition, preEnv));		
 			precondition.append(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
 			precondition.append(Code.Label(lab));			
 		}
@@ -214,7 +214,7 @@ public final class CodeGeneration {
 			String lab = Block.freshLabel();
 			postcondition = postcondition != null ? postcondition : new Block(
 					postEnv.size());
-			postcondition.append(resolveCondition(lab, fd.postcondition,
+			postcondition.append(generateCondition(lab, fd.postcondition,
 					postEnv));
 			postcondition.append(Code.Fail("postcondition not satisfied"),
 					attributes(fd.postcondition));
@@ -228,7 +228,7 @@ public final class CodeGeneration {
 			
 		Block body = new Block(environment.size());		
 		for (Stmt s : fd.statements) {
-			body.append(resolve(s, environment));
+			body.append(generate(s, environment));
 		}
 
 		currentFunDecl = null;
@@ -266,38 +266,38 @@ public final class CodeGeneration {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	private Block resolve(Stmt stmt, HashMap<String,Integer> environment) {
+	private Block generate(Stmt stmt, HashMap<String,Integer> environment) {
 		try {
 			if (stmt instanceof Assign) {
-				return resolve((Assign) stmt, environment);
+				return generate((Assign) stmt, environment);
 			} else if (stmt instanceof Assert) {
-				return resolve((Assert) stmt, environment);
+				return generate((Assert) stmt, environment);
 			} else if (stmt instanceof Return) {
-				return resolve((Return) stmt, environment);
+				return generate((Return) stmt, environment);
 			} else if (stmt instanceof Debug) {
-				return resolve((Debug) stmt, environment);
+				return generate((Debug) stmt, environment);
 			} else if (stmt instanceof IfElse) {
-				return resolve((IfElse) stmt, environment);
+				return generate((IfElse) stmt, environment);
 			} else if (stmt instanceof Switch) {
-				return resolve((Switch) stmt, environment);
+				return generate((Switch) stmt, environment);
 			} else if (stmt instanceof TryCatch) {
-				return resolve((TryCatch) stmt, environment);
+				return generate((TryCatch) stmt, environment);
 			} else if (stmt instanceof Break) {
-				return resolve((Break) stmt, environment);
+				return generate((Break) stmt, environment);
 			} else if (stmt instanceof Throw) {
-				return resolve((Throw) stmt, environment);
+				return generate((Throw) stmt, environment);
 			} else if (stmt instanceof While) {
-				return resolve((While) stmt, environment);
+				return generate((While) stmt, environment);
 			} else if (stmt instanceof DoWhile) {
-				return resolve((DoWhile) stmt, environment);
+				return generate((DoWhile) stmt, environment);
 			} else if (stmt instanceof For) {
-				return resolve((For) stmt, environment);
+				return generate((For) stmt, environment);
 			} else if (stmt instanceof Expr.Invoke) {
-				return resolve((Expr.Invoke) stmt,false,environment);								
+				return generate((Expr.Invoke) stmt,false,environment);								
 			} else if (stmt instanceof Expr.Spawn) {
-				return resolve((Expr.UnOp) stmt, environment);
+				return generate((Expr.UnOp) stmt, environment);
 			} else if (stmt instanceof Skip) {
-				return resolve((Skip) stmt, environment);
+				return generate((Skip) stmt, environment);
 			} else {
 				// should be dead-code
 				internalFailure("unknown statement encountered: "
@@ -313,17 +313,17 @@ public final class CodeGeneration {
 		return null;
 	}
 	
-	private Block resolve(Assign s, HashMap<String,Integer> environment) {
+	private Block generate(Assign s, HashMap<String,Integer> environment) {
 		Block blk = null;
 		
 		if(s.lhs instanceof Expr.LocalVariable) {			
-			blk = resolve(s.rhs, environment);			
+			blk = generate(s.rhs, environment);			
 			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
 			blk.append(Code.Store(null, allocate(v.var, environment)),
 					attributes(s));			
 		} else if(s.lhs instanceof Expr.TupleGen) {					
 			Expr.TupleGen tg = (Expr.TupleGen) s.lhs;
-			blk = resolve(s.rhs, environment);			
+			blk = generate(s.rhs, environment);			
 			blk.append(Code.Destructure(null),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
 			Collections.reverse(fields);
@@ -346,7 +346,7 @@ public final class CodeGeneration {
 				syntaxError("unknown variable",filename,l.first());
 			}
 			int slot = environment.get(l.first().var);
-			blk.append(resolve(s.rhs, environment));			
+			blk.append(generate(s.rhs, environment));			
 			blk.append(Code.Update(null,null,slot,l.second(),fields),
 					attributes(s));							
 		} else {
@@ -365,7 +365,7 @@ public final class CodeGeneration {
 		} else if (e instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) e;
 			Pair<Expr.LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
-			blk.append(resolve(la.index, environment));			
+			blk.append(generate(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
@@ -378,20 +378,20 @@ public final class CodeGeneration {
 		}
 	}
 	
-	private Block resolve(Assert s, HashMap<String,Integer> environment) {
+	private Block generate(Assert s, HashMap<String,Integer> environment) {
 		String lab = Block.freshLabel();
 		Block blk = new Block(environment.size());
 		blk.append(Code.Assert(lab),attributes(s));
-		blk.append(resolveCondition(lab, s.expr, environment));		
+		blk.append(generateCondition(lab, s.expr, environment));		
 		blk.append(Code.Fail("assertion failed"), attributes(s));
 		blk.append(Code.Label(lab));			
 		return blk;
 	}
 
-	private Block resolve(Return s, HashMap<String,Integer> environment) {
+	private Block generate(Return s, HashMap<String,Integer> environment) {
 
 		if (s.expr != null) {
-			Block blk = resolve(s.expr, environment);
+			Block blk = generate(s.expr, environment);
 			Type ret = currentFunDecl.ret.attribute(Attributes.Type.class).type;
 			blk.append(Code.Return(ret), attributes(s));
 			return blk;
@@ -402,32 +402,32 @@ public final class CodeGeneration {
 		}
 	}
 
-	private Block resolve(Skip s, HashMap<String,Integer> environment) {
+	private Block generate(Skip s, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Skip, attributes(s));
 		return blk;
 	}
 
-	private Block resolve(Debug s, HashMap<String,Integer> environment) {		
-		Block blk = resolve(s.expr, environment);		
+	private Block generate(Debug s, HashMap<String,Integer> environment) {		
+		Block blk = generate(s.expr, environment);		
 		blk.append(Code.debug, attributes(s));
 		return blk;
 	}
 
-	private Block resolve(IfElse s, HashMap<String,Integer> environment) {
+	private Block generate(IfElse s, HashMap<String,Integer> environment) {
 		String falseLab = Block.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
 				.freshLabel();
-		Block blk = resolveCondition(falseLab, invert(s.condition), environment);
+		Block blk = generateCondition(falseLab, invert(s.condition), environment);
 
 		for (Stmt st : s.trueBranch) {
-			blk.append(resolve(st, environment));
+			blk.append(generate(st, environment));
 		}
 		if (!s.falseBranch.isEmpty()) {
 			blk.append(Code.Goto(exitLab));
 			blk.append(Code.Label(falseLab));
 			for (Stmt st : s.falseBranch) {
-				blk.append(resolve(st, environment));
+				blk.append(generate(st, environment));
 			}
 		}
 
@@ -436,13 +436,13 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block resolve(Throw s, HashMap<String,Integer> environment) {
-		Block blk = resolve(s.expr, environment);
+	private Block generate(Throw s, HashMap<String,Integer> environment) {
+		Block blk = generate(s.expr, environment);
 		blk.append(Code.Throw(null), s.attributes());
 		return blk;
 	}
 	
-	private Block resolve(Break s, HashMap<String,Integer> environment) {
+	private Block generate(Break s, HashMap<String,Integer> environment) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if(scope == null) {
 			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP), filename, s);
@@ -452,9 +452,9 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block resolve(Switch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Switch s, HashMap<String,Integer> environment) throws ResolveError {
 		String exitLab = Block.freshLabel();		
-		Block blk = resolve(s.expr, environment);				
+		Block blk = generate(s.expr, environment);				
 		Block cblk = new Block(environment.size());
 		String defaultTarget = exitLab;
 		HashSet<Value> values = new HashSet();
@@ -469,7 +469,7 @@ public final class CodeGeneration {
 					defaultTarget = Block.freshLabel();	
 					cblk.append(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
-						cblk.append(resolve(st, environment));
+						cblk.append(generate(st, environment));
 					}
 					cblk.append(Code.Goto(exitLab),attributes(c));
 				}
@@ -487,7 +487,7 @@ public final class CodeGeneration {
 				}
 				
 				for (Stmt st : c.stmts) {
-					cblk.append(resolve(st, environment));
+					cblk.append(generate(st, environment));
 				}
 				cblk.append(Code.Goto(exitLab),attributes(c));
 			} else {
@@ -500,11 +500,11 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block resolve(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
 		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {
-			cblk.append(resolve(st, environment));
+			cblk.append(generate(st, environment));
 		}		
 		cblk.append(Code.Goto(exitLab),attributes(s));	
 		String endLab = null;
@@ -525,7 +525,7 @@ public final class CodeGeneration {
 			cblk.append(lab, attributes(c));
 			cblk.append(Code.Store(pt, freeReg), attributes(c));
 			for (Stmt st : c.stmts) {
-				cblk.append(resolve(st, environment));
+				cblk.append(generate(st, environment));
 			}
 			cblk.append(Code.Goto(exitLab),attributes(c));
 		}
@@ -537,7 +537,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block resolve(While s, HashMap<String,Integer> environment) {		
+	private Block generate(While s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();									
 				
 		Block blk = new Block(environment.size());
@@ -546,7 +546,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(generateCondition(invariantLabel, s.invariant, environment));		
 			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
@@ -554,18 +554,18 @@ public final class CodeGeneration {
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 				
-		blk.append(resolveCondition(label, invert(s.condition), environment));
+		blk.append(generateCondition(label, invert(s.condition), environment));
 
 		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {
-			blk.append(resolve(st, environment));
+			blk.append(generate(st, environment));
 		}		
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(generateCondition(invariantLabel, s.invariant, environment));		
 			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
@@ -575,7 +575,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block resolve(DoWhile s, HashMap<String,Integer> environment) {		
+	private Block generate(DoWhile s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();				
 				
 		Block blk = new Block(environment.size());
@@ -583,7 +583,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(generateCondition(invariantLabel, s.invariant, environment));		
 			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
@@ -593,19 +593,19 @@ public final class CodeGeneration {
 		
 		scopes.push(new BreakScope(label));	
 		for (Stmt st : s.body) {
-			blk.append(resolve(st, environment));
+			blk.append(generate(st, environment));
 		}		
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(generateCondition(invariantLabel, s.invariant, environment));		
 			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
-		blk.append(resolveCondition(label, invert(s.condition), environment));
+		blk.append(generateCondition(label, invert(s.condition), environment));
 
 		
 		blk.append(Code.End(label));
@@ -613,7 +613,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block resolve(For s, HashMap<String,Integer> environment) {		
+	private Block generate(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
 		
 		Block blk = new Block(1);
@@ -621,12 +621,12 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(generateCondition(invariantLabel, s.invariant, environment));		
 			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
-		blk.append(resolve(s.source,environment));	
+		blk.append(generate(s.source,environment));	
 		int freeSlot = allocate(environment);
 		if(s.variables.size() > 1) {
 			// this is the destructuring case			
@@ -646,14 +646,14 @@ public final class CodeGeneration {
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {			
-			blk.append(resolve(st, environment));
+			blk.append(generate(st, environment));
 		}		
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(resolveCondition(invariantLabel, s.invariant, environment));		
+			blk.append(generateCondition(invariantLabel, s.invariant, environment));		
 			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
@@ -676,31 +676,31 @@ public final class CodeGeneration {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	private Block resolveCondition(String target, Expr condition,
+	private Block generateCondition(String target, Expr condition,
 			 HashMap<String, Integer> environment) {
 		try {
 			if (condition instanceof Expr.Constant) {
-				return resolveCondition(target, (Expr.Constant) condition, environment);
+				return generateCondition(target, (Expr.Constant) condition, environment);
 			} else if (condition instanceof Expr.LocalVariable) {
-				return resolveCondition(target, (Expr.LocalVariable) condition, environment);
+				return generateCondition(target, (Expr.LocalVariable) condition, environment);
 			} else if (condition instanceof Expr.ExternalAccess) {
-				return resolveCondition(target, (Expr.ExternalAccess) condition, environment);
+				return generateCondition(target, (Expr.ExternalAccess) condition, environment);
 			} else if (condition instanceof Expr.BinOp) {
-				return resolveCondition(target, (Expr.BinOp) condition, environment);
+				return generateCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.UnOp) {
-				return resolveCondition(target, (Expr.UnOp) condition, environment);
+				return generateCondition(target, (Expr.UnOp) condition, environment);
 			} else if (condition instanceof Expr.Invoke) {
-				return resolveCondition(target, (Expr.Invoke) condition, environment);
+				return generateCondition(target, (Expr.Invoke) condition, environment);
 			} else if (condition instanceof Expr.RecordAccess) {
-				return resolveCondition(target, (Expr.RecordAccess) condition, environment);
+				return generateCondition(target, (Expr.RecordAccess) condition, environment);
 			} else if (condition instanceof Expr.RecordGen) {
-				return resolveCondition(target, (Expr.RecordGen) condition, environment);
+				return generateCondition(target, (Expr.RecordGen) condition, environment);
 			} else if (condition instanceof Expr.TupleGen) {
-				return resolveCondition(target, (Expr.TupleGen) condition, environment);
+				return generateCondition(target, (Expr.TupleGen) condition, environment);
 			} else if (condition instanceof Expr.ListAccess) {
-				return resolveCondition(target, (Expr.ListAccess) condition, environment);
+				return generateCondition(target, (Expr.ListAccess) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
-				return resolveCondition(target, (Expr.Comprehension) condition, environment);
+				return generateCondition(target, (Expr.Comprehension) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, condition);
 			}
@@ -713,7 +713,7 @@ public final class CodeGeneration {
 		return null;
 	}
 
-	private Block resolveCondition(String target, Expr.Constant c, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.Constant c, HashMap<String,Integer> environment) {
 		Value.Bool b = (Value.Bool) c.value;
 		Block blk = new Block(environment.size());
 		if (b.value) {
@@ -724,7 +724,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block resolveCondition(String target, Expr.LocalVariable v, 
+	private Block generateCondition(String target, Expr.LocalVariable v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());				
@@ -735,7 +735,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block resolveCondition(String target, Expr.ExternalAccess v, 
+	private Block generateCondition(String target, Expr.ExternalAccess v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
@@ -763,7 +763,7 @@ public final class CodeGeneration {
 		
 		if (alias != null) {
 			if(alias.alias != null) {							
-				blk.append(resolve(alias.alias, environment));				
+				blk.append(generate(alias.alias, environment));				
 			} else {
 				// Ok, must be a local variable
 				blk.append(Code.Load(null, environment.get(v.var)));	
@@ -805,22 +805,22 @@ public final class CodeGeneration {
 		return blk;
 	}
 */
-	private Block resolveCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
 		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
 
 		if (bop == Expr.BOp.OR) {
-			blk.append(resolveCondition(target, v.lhs, environment));
-			blk.append(resolveCondition(target, v.rhs, environment));
+			blk.append(generateCondition(target, v.lhs, environment));
+			blk.append(generateCondition(target, v.rhs, environment));
 			return blk;
 		} else if (bop == Expr.BOp.AND) {
 			String exitLabel = Block.freshLabel();
-			blk.append(resolveCondition(exitLabel, invert(v.lhs), environment));
-			blk.append(resolveCondition(target, v.rhs, environment));
+			blk.append(generateCondition(exitLabel, invert(v.lhs), environment));
+			blk.append(generateCondition(target, v.rhs, environment));
 			blk.append(Code.Label(exitLabel));
 			return blk;
 		} else if (bop == Expr.BOp.TYPEEQ || bop == Expr.BOp.TYPEIMPLIES) {
-			return resolveTypeCondition(target, v, environment);
+			return generateTypeCondition(target, v, environment);
 		}
 
 		Code.COp cop = OP2COP(bop,v);
@@ -849,14 +849,14 @@ public final class CodeGeneration {
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
-			blk.append(resolve(v.lhs, environment));			
-			blk.append(resolve(v.rhs, environment));
+			blk.append(generate(v.lhs, environment));			
+			blk.append(generate(v.rhs, environment));
 			blk.append(Code.IfGoto(null, cop, target), attributes(v));
 		}
 		return blk;
 	}
 
-	private Block resolveTypeCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
+	private Block generateTypeCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
 		Block blk;
 		int slot;
 		
@@ -868,7 +868,7 @@ public final class CodeGeneration {
 			slot = environment.get(lhs.var);
 			blk = new Block(environment.size());
 		} else {
-			blk = resolve(v.lhs, environment);
+			blk = generate(v.lhs, environment);
 			slot = -1;
 		}
 
@@ -879,12 +879,12 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block resolveCondition(String target, Expr.UnOp v, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.UnOp v, HashMap<String,Integer> environment) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
 			String label = Block.freshLabel();
-			Block blk = resolveCondition(label, v.mhs, environment);
+			Block blk = generateCondition(label, v.mhs, environment);
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(label));
 			return blk;
@@ -893,28 +893,28 @@ public final class CodeGeneration {
 		return null;
 	}
 
-	private Block resolveCondition(String target, Expr.ListAccess v, HashMap<String,Integer> environment) {
-		Block blk = resolve(v, environment);
+	private Block generateCondition(String target, Expr.ListAccess v, HashMap<String,Integer> environment) {
+		Block blk = generate(v, environment);
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
-	private Block resolveCondition(String target, Expr.RecordAccess v, HashMap<String,Integer> environment) {
-		Block blk = resolve(v, environment);		
+	private Block generateCondition(String target, Expr.RecordAccess v, HashMap<String,Integer> environment) {
+		Block blk = generate(v, environment);		
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));		
 		return blk;
 	}
 
-	private Block resolveCondition(String target, Expr.Invoke v, HashMap<String,Integer> environment) throws ResolveError {
-		Block blk = resolve((Expr) v, environment);	
+	private Block generateCondition(String target, Expr.Invoke v, HashMap<String,Integer> environment) throws ResolveError {
+		Block blk = generate((Expr) v, environment);	
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
-	private Block resolveCondition(String target, Expr.Comprehension e,  
+	private Block generateCondition(String target, Expr.Comprehension e,  
 			HashMap<String,Integer> environment) {
 		
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
@@ -937,12 +937,12 @@ public final class CodeGeneration {
 					srcSlot = environment.get(v.var);
 				} else {					
 					// fall-back plan ...
-					blk.append(resolve(src.second(), environment));
+					blk.append(generate(src.second(), environment));
 					srcSlot = allocate(environment);
 					blk.append(Code.Store(null, srcSlot),attributes(e));	
 				}
 			} else {
-				blk.append(resolve(src.second(), environment));
+				blk.append(generate(src.second(), environment));
 				srcSlot = allocate(environment);
 				blk.append(Code.Store(null, srcSlot),attributes(e));	
 			}			
@@ -963,7 +963,7 @@ public final class CodeGeneration {
 								
 		if (e.cop == Expr.COp.NONE) {
 			String exitLabel = Block.freshLabel();
-			blk.append(resolveCondition(exitLabel, e.condition, 
+			blk.append(generateCondition(exitLabel, e.condition, 
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {				
 				blk.append(Code.End(labels.get(i)));
@@ -971,7 +971,7 @@ public final class CodeGeneration {
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else { // SOME			
-			blk.append(resolveCondition(target, e.condition, 
+			blk.append(generateCondition(target, e.condition, 
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				blk.append(Code.End(labels.get(i)));
@@ -992,38 +992,38 @@ public final class CodeGeneration {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	private Block resolve(Expr expression, HashMap<String,Integer> environment) {
+	private Block generate(Expr expression, HashMap<String,Integer> environment) {
 		try {
 			if (expression instanceof Expr.Constant) {
-				return resolve((Expr.Constant) expression, environment);
+				return generate((Expr.Constant) expression, environment);
 			} else if (expression instanceof Expr.LocalVariable) {
-				return resolve((Expr.LocalVariable) expression, environment);
+				return generate((Expr.LocalVariable) expression, environment);
 			} else if (expression instanceof Expr.ExternalAccess) {
-				return resolve((Expr.ExternalAccess) expression, environment);
+				return generate((Expr.ExternalAccess) expression, environment);
 			} else if (expression instanceof Expr.NaryOp) {
-				return resolve((Expr.NaryOp) expression, environment);
+				return generate((Expr.NaryOp) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
-				return resolve((Expr.BinOp) expression, environment);
+				return generate((Expr.BinOp) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
-				return resolve((Expr.Convert) expression, environment);
+				return generate((Expr.Convert) expression, environment);
 			} else if (expression instanceof Expr.ListAccess) {
-				return resolve((Expr.ListAccess) expression, environment);
+				return generate((Expr.ListAccess) expression, environment);
 			} else if (expression instanceof Expr.UnOp) {
-				return resolve((Expr.UnOp) expression, environment);
+				return generate((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.Invoke) {
-				return resolve((Expr.Invoke) expression, true, environment);
+				return generate((Expr.Invoke) expression, true, environment);
 			} else if (expression instanceof Expr.Comprehension) {
-				return resolve((Expr.Comprehension) expression, environment);
+				return generate((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
-				return resolve((Expr.RecordAccess) expression, environment);
+				return generate((Expr.RecordAccess) expression, environment);
 			} else if (expression instanceof Expr.RecordGen) {
-				return resolve((Expr.RecordGen) expression, environment);
+				return generate((Expr.RecordGen) expression, environment);
 			} else if (expression instanceof Expr.TupleGen) {
-				return resolve((Expr.TupleGen) expression, environment);
+				return generate((Expr.TupleGen) expression, environment);
 			} else if (expression instanceof Expr.DictionaryGen) {
-				return resolve((Expr.DictionaryGen) expression, environment);
+				return generate((Expr.DictionaryGen) expression, environment);
 			} else if (expression instanceof Expr.Function) {
-				return resolve((Expr.Function) expression, environment);
+				return generate((Expr.Function) expression, environment);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression encountered: "
@@ -1041,7 +1041,7 @@ public final class CodeGeneration {
 		return null;
 	}
 
-	private Block resolve(Expr.Invoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Expr.Invoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block(environment.size());
 		Type[] paramTypes = new Type[args.size()]; 
@@ -1085,7 +1085,7 @@ public final class CodeGeneration {
 		} 
 		
 		if (s.receiver != null) {			
-			blk.append(resolve(s.receiver, environment));
+			blk.append(generate(s.receiver, environment));
 		}
 
 		if(fieldIndirectInvoke) {
@@ -1094,7 +1094,7 @@ public final class CodeGeneration {
 		
 		int i = 0;
 		for (Expr e : args) {
-			blk.append(resolve(e, environment));
+			blk.append(generate(e, environment));
 			paramTypes[i++] = Type.T_ANY;
 		}	
 					
@@ -1136,13 +1136,13 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block resolve(Expr.Constant c, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Constant c, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(c.value), attributes(c));		
 		return blk;
 	}
 
-	private Block resolve(Expr.Function s, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Function s, HashMap<String,Integer> environment) {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		NameID name = new NameID(modInfo.module, s.name);	
 		Type.Function tf = null;
@@ -1163,14 +1163,14 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block resolve(Expr.ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
+	private Block generate(Expr.ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
 		Block blk = new Block(environment.size());
 		Value val = v.attribute(Attributes.Constant.class).constant;				
 		blk.append(Code.Const(val),attributes(v));
 		return blk;
 	}
 	
-	private Block resolve(Expr.LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Expr.LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
 		
 		if(environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());						
@@ -1194,8 +1194,8 @@ public final class CodeGeneration {
 		return null;
 	}
 
-	private Block resolve(Expr.UnOp v, HashMap<String,Integer> environment) {
-		Block blk = resolve(v.mhs,  environment);	
+	private Block generate(Expr.UnOp v, HashMap<String,Integer> environment) {
+		Block blk = generate(v.mhs,  environment);	
 		switch (v.op) {
 		case NEG:
 			blk.append(Code.Negate(null), attributes(v));
@@ -1206,7 +1206,7 @@ public final class CodeGeneration {
 		case NOT:
 			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			blk = resolveCondition(falseLabel, v.mhs, environment);
+			blk = generateCondition(falseLabel, v.mhs, environment);
 			blk.append(Code.Const(Value.V_BOOL(true)), attributes(v));
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(falseLabel));
@@ -1230,24 +1230,24 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block resolve(Expr.ListAccess v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.ListAccess v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(resolve(v.src, environment));
-		blk.append(resolve(v.index, environment));
+		blk.append(generate(v.src, environment));
+		blk.append(generate(v.index, environment));
 		blk.append(Code.ListLoad(null),attributes(v));
 		return blk;
 	}
 
-	private Block resolve(Expr.Convert v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(resolve(v.expr, environment));		
+		blk.append(generate(v.expr, environment));		
 		Type p = v.type.attribute(Attributes.Type.class).type;
 		// TODO: include constraints
 		blk.append(Code.Convert(null,p),attributes(v));
 		return blk;
 	}
 	
-	private Block resolve(Expr.BinOp v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.BinOp v, HashMap<String,Integer> environment) {
 
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
@@ -1256,7 +1256,7 @@ public final class CodeGeneration {
 				|| v.op == Expr.BOp.ELEMENTOF || v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			Block blk = resolveCondition(trueLabel, v, environment);
+			Block blk = generateCondition(trueLabel, v, environment);
 			blk.append(Code.Const(Value.V_BOOL(false)), attributes(v));			
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
@@ -1267,8 +1267,8 @@ public final class CodeGeneration {
 
 		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
-		blk.append(resolve(v.lhs, environment));
-		blk.append(resolve(v.rhs, environment));
+		blk.append(generate(v.lhs, environment));
+		blk.append(generate(v.rhs, environment));
 
 		if(bop == Expr.BOp.UNION) {
 			blk.append(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
@@ -1282,23 +1282,23 @@ public final class CodeGeneration {
 		}		
 	}
 
-	private Block resolve(Expr.NaryOp v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.NaryOp v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		if (v.nop == Expr.NOp.SUBLIST) {
 			if (v.arguments.size() != 3) {
 				// this should be dead-code
 				internalFailure("incorrect number of arguments", filename, v);
 			}
-			blk.append(resolve(v.arguments.get(0), environment));
-			blk.append(resolve(v.arguments.get(1), environment));
-			blk.append(resolve(v.arguments.get(2), environment));
+			blk.append(generate(v.arguments.get(0), environment));
+			blk.append(generate(v.arguments.get(1), environment));
+			blk.append(generate(v.arguments.get(2), environment));
 			blk.append(Code.SubList(null),attributes(v));
 			return blk;
 		} else {			
 			int nargs = 0;
 			for (Expr e : v.arguments) {				
 				nargs++;
-				blk.append(resolve(e, environment));
+				blk.append(generate(e, environment));
 			}
 
 			if (v.nop == Expr.NOp.LISTGEN) {
@@ -1310,15 +1310,15 @@ public final class CodeGeneration {
 		}
 	}
 	
-	private Block resolve(Expr.Comprehension e, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Comprehension e, HashMap<String,Integer> environment) {
 
 		// First, check for boolean cases which are handled mostly by
-		// resolveCondition.
+		// generateCondition.
 		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			int freeSlot = allocate(environment);
-			Block blk = resolveCondition(trueLabel, e, environment);					
+			Block blk = generateCondition(trueLabel, e, environment);					
 			blk.append(Code.Const(Value.V_BOOL(false)), attributes(e));
 			blk.append(Code.Store(null,freeSlot),attributes(e));			
 			blk.append(Code.Goto(exitLabel));
@@ -1346,12 +1346,12 @@ public final class CodeGeneration {
 					srcSlot = environment.get(v.var);
 				} else {
 					// fall-back plan ...
-					blk.append(resolve(src.second(), environment));
+					blk.append(generate(src.second(), environment));
 					srcSlot = allocate(environment);				
 					blk.append(Code.Store(null, srcSlot),attributes(e));	
 				}
 			} else {
-				blk.append(resolve(src.second(), environment));
+				blk.append(generate(src.second(), environment));
 				srcSlot = allocate(environment);
 				blk.append(Code.Store(null, srcSlot),attributes(e));	
 			}			
@@ -1391,12 +1391,12 @@ public final class CodeGeneration {
 		}
 		
 		if (e.condition != null) {
-			blk.append(resolveCondition(continueLabel, invert(e.condition),
+			blk.append(generateCondition(continueLabel, invert(e.condition),
 					environment));
 		}
 		
 		blk.append(Code.Load(null,resultSlot),attributes(e));
-		blk.append(resolve(e.value, environment));
+		blk.append(generate(e.value, environment));
 		blk.append(Code.SetUnion(null, Code.OpDir.LEFT),attributes(e));
 		blk.append(Code.Store(null,resultSlot),attributes(e));
 			
@@ -1413,42 +1413,42 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block resolve(Expr.RecordGen sg, HashMap<String,Integer> environment) {
+	private Block generate(Expr.RecordGen sg, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);
 		for (String key : keys) {
 			fields.put(key, Type.T_ANY);
-			blk.append(resolve(sg.fields.get(key), environment));
+			blk.append(generate(sg.fields.get(key), environment));
 		}
 		Type.Record rt = checkType(Type.Record(false,fields),Type.Record.class,sg);
 		blk.append(Code.NewRecord(rt), attributes(sg));
 		return blk;
 	}
 
-	private Block resolve(Expr.TupleGen sg, HashMap<String,Integer> environment) {		
+	private Block generate(Expr.TupleGen sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Expr e : sg.fields) {									
-			blk.append(resolve(e, environment));
+			blk.append(generate(e, environment));
 		}
 		// FIXME: to be updated to proper tuple
 		blk.append(Code.NewTuple(null,sg.fields.size()),attributes(sg));
 		return blk;		
 	}
 
-	private Block resolve(Expr.DictionaryGen sg, HashMap<String,Integer> environment) {		
+	private Block generate(Expr.DictionaryGen sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
-			blk.append(resolve(e.first(), environment));
-			blk.append(resolve(e.second(), environment));
+			blk.append(generate(e.first(), environment));
+			blk.append(generate(e.second(), environment));
 		}
 		blk.append(Code.NewDict(null,sg.pairs.size()),attributes(sg));
 		return blk;
 	}
 	
-	private Block resolve(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
-		Block lhs = resolve(sg.lhs, environment);		
+	private Block generate(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
+		Block lhs = generate(sg.lhs, environment);		
 		lhs.append(Code.FieldLoad(null,sg.name), attributes(sg));
 		return lhs;
 	}
