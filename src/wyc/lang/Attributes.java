@@ -35,7 +35,16 @@ import wyil.lang.*;
  * 
  */
 public interface Attributes {
-
+	public static final class Type implements Attribute {
+		public final wyil.lang.Type type;
+		public final Block constraint;
+		
+		public Type(wyil.lang.Type type, Block constraint) {
+			this.type = type;
+			this.constraint = constraint;
+		}
+	}
+	
 	public static final class Fun implements Attribute {
 		public final wyil.lang.Type.Function type;
 
@@ -60,4 +69,11 @@ public interface Attributes {
 		}
 	}
 	
+	public static final class Constant implements Attribute {
+		public final Value constant;
+		
+		public Constant(Value constant) {
+			this.constant = constant;
+		}
+	}
 }

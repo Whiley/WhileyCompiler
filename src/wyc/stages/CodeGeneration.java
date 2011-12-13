@@ -97,13 +97,7 @@ public final class CodeGeneration {
 
 	public Module generate(WhileyFile wf) {
 		this.filename = wf.filename;
-		
-		for (WhileyFile.Decl d : wf.declarations) {
-			if (d instanceof FunDecl) {
-				partResolve(wf.module, (FunDecl) d);
-			}		
-		}
-			
+				
 		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
@@ -139,65 +133,27 @@ public final class CodeGeneration {
 				constants);				
 	}
 
-	private void partResolve(ModuleID module, FunDecl fd) {
-
-		ArrayList<Type> parameters = new ArrayList<Type>();
-		for (WhileyFile.Parameter p : fd.parameters) {
-			parameters.add(resolve(p.type).first());
-		}
-
-		// method return type
-		Type ret = resolve(fd.ret).first();
-
-		Type throwsClause = resolve(fd.throwType).first();
-		
-		// method receiver type (if applicable)
-		Type.Process rec = null;
-		Type.Function ft;
-		if (fd instanceof MethDecl) {
-			MethDecl md = (MethDecl) fd;
-			if(md.receiver != null) {
-				Type t = resolve(md.receiver).first();
-				checkType(t, Type.Process.class, md.receiver);
-				rec = (Type.Process) t;				
-			}
-			ft = checkType(Type.Method(rec, ret, throwsClause, parameters),Type.Method.class,fd);
-		} else {
-			ft = checkType(Type.Function(ret, throwsClause, parameters),Type.Function.class,fd);
-		}
-		 
-		NameID name = new NameID(module, fd.name);
-		List<Type.Function> types = functions.get(name);
-		if (types == null) {
-			types = new ArrayList<Type.Function>();
-			functions.put(name, types);
-		}
-		types.add(ft);
-		fd.attributes().add(new Attributes.Fun(ft));
-	}
-
 	private Module.ConstDef resolve(ConstDecl td, ModuleID module) {
-		Value v = constants.get(new NameID(module, td.name()));
+		Value v = td.attribute(Attributes.Constant.class).constant;
 		return new Module.ConstDef(td.modifiers, td.name(), v);
 	}
 
 	private Module.TypeDef resolve(TypeDecl td, ModuleID module) {
-		Pair<Type,Block> p = types.get(new NameID(module, td.name()));
-		return new Module.TypeDef(td.modifiers, td.name(), p.first(), p.second());
+		Attributes.Type attr = td.attribute(Attributes.Type.class);		
+		return new Module.TypeDef(td.modifiers, td.name(), attr.type, attr.constraint);
 	}
 
 	private Module.Method resolve(FunDecl fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
-		// method return type
-		Pair<Type,Block> ret = resolve(fd.ret);
+		// method return type		
 		int paramIndex = 0;
 		int nparams = fd.parameters.size();
 		// method receiver type (if applicable)
 		if (fd instanceof MethDecl) {
 			MethDecl md = (MethDecl) fd;
 			if(md.receiver != null) {
-				Pair<Type,Block> rec = resolve(md.receiver);
+				Attributes.Type t = md.receiver.attribute(Attributes.Type.class);				
 				// TODO: fix receiver constraints
 				environment.put("this", paramIndex++);	
 				nparams++;
@@ -211,8 +167,8 @@ public final class CodeGeneration {
 		
 		for (WhileyFile.Parameter p : fd.parameters) {			
 			// First, resolve and inline any constraints associated with the type.
-			Pair<Type, Block> t = resolve(p.type);
-			Block constraint = t.second();
+			Attributes.Type t = p.type.attribute(Attributes.Type.class);
+			Block constraint = t.constraint;
 			if(constraint != null) {
 				if(precondition == null) {
 					precondition = new Block(nparams);
@@ -245,13 +201,13 @@ public final class CodeGeneration {
 		for(String var : environment.keySet()) {
 			postEnv.put(var, environment.get(var)+1);
 		}
-		Pair<Type,Block> rt = resolve(fd.ret);		
 		
-		if(rt.second() != null) {			
+		Attributes.Type ret = fd.ret.attribute(Attributes.Type.class);
+		if(ret.constraint != null) {			
 			postcondition = new Block(postEnv.size());
 			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 			binding.put(0,0);			
-			postcondition.importExternal(rt.second(), binding);
+			postcondition.importExternal(ret.constraint, binding);
 		}
 					
 		if (fd.postcondition != null) {
@@ -436,9 +392,9 @@ public final class CodeGeneration {
 
 		if (s.expr != null) {
 			Block blk = resolve(s.expr, environment);
-			Pair<Type,Block> ret = resolve(currentFunDecl.ret);
-			blk.append(Code.Return(ret.first()), attributes(s));
-			return blk;			
+			Type ret = currentFunDecl.ret.attribute(Attributes.Type.class).type;
+			blk.append(Code.Return(ret), attributes(s));
+			return blk;
 		} else {
 			Block blk = new Block(environment.size());
 			blk.append(Code.Return(Type.T_VOID), attributes(s));
@@ -522,8 +478,7 @@ public final class CodeGeneration {
 				cblk.append(Code.Label(target), attributes(c));				
 				
 				for(Expr e : c.values) { 
-					Value constant = expandConstantHelper(e, filename,
-							new HashMap(), new HashSet());												
+					Value constant = e.attribute(Attributes.Constant.class).constant;												
 					if(values.contains(constant)) {
 						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),filename,c);
 					}									
@@ -564,11 +519,11 @@ public final class CodeGeneration {
 			} else {
 				lab = Code.Label(Block.freshLabel());
 			}
-			Pair<Type,Block> pt = resolve(c.type);
+			Type pt = c.type.attribute(Attributes.Type.class).type;
 			// TODO: deal with exception type constraints
-			catches.add(new Pair<Type,String>(pt.first(),lab.label));
+			catches.add(new Pair<Type,String>(pt,lab.label));
 			cblk.append(lab, attributes(c));
-			cblk.append(Code.Store(pt.first(), freeReg), attributes(c));
+			cblk.append(Code.Store(pt, freeReg), attributes(c));
 			for (Stmt st : c.stmts) {
 				cblk.append(resolve(st, environment));
 			}
@@ -784,12 +739,7 @@ public final class CodeGeneration {
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
-		Value val = constants.get(v.nid);
-		if(val == null) {
-			// indicates an external access
-			Module mi = loader.loadModule(v.nid.module());
-			val = mi.constant(v.nid.name()).constant();
-		}								
+		Value val = v.attribute(Attributes.Constant.class).constant;					
 		// Obviously, this will be evaluated one way or another.
 		blk.append(Code.Const(val));
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
@@ -922,9 +872,9 @@ public final class CodeGeneration {
 			slot = -1;
 		}
 
-		Pair<Type,Block> rhs_t = resolve(((Expr.Type) v.rhs).type);
+		Type rhs_t = v.rhs.attribute(Attributes.Type.class).type;
 		// TODO: fix type constraints
-		blk.append(Code.IfType(null, slot, rhs_t.first(), target),
+		blk.append(Code.IfType(null, slot, rhs_t, target),
 				attributes(v));
 		return blk;
 	}
@@ -1200,9 +1150,9 @@ public final class CodeGeneration {
 			// in this case, the user has provided explicit type information.
 			ArrayList<Type> paramTypes = new ArrayList<Type>();
 			for(UnresolvedType pt : s.paramTypes) {
-				Pair<Type,Block> p = resolve(pt);
+				Type p = pt.attribute(Attributes.Type.class).type;
 				// TODO: fix parameter constraints
-				paramTypes.add(p.first());
+				paramTypes.add(p);
 			}
 			tf = checkType(Type.Function(Type.T_ANY, Type.T_VOID, paramTypes),
 					Type.Function.class, s);
@@ -1214,18 +1164,14 @@ public final class CodeGeneration {
 	}
 	
 	private Block resolve(Expr.ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
-		Value val = constants.get(v.nid);		
-		if(val == null) {
-			// indicates an external access
-			Module mi = loader.loadModule(v.nid.module());
-			val = mi.constant(v.nid.name()).constant();
-		}
 		Block blk = new Block(environment.size());
+		Value val = v.attribute(Attributes.Constant.class).constant;				
 		blk.append(Code.Const(val),attributes(v));
 		return blk;
 	}
 	
 	private Block resolve(Expr.LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
+		
 		if(environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());						
 			blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
@@ -1236,17 +1182,10 @@ public final class CodeGeneration {
 		}
 		
 		// Third, see if it's a constant
-		Attributes.Module mod = v.attribute(Attributes.Module.class);
-		if (mod != null) {
-			NameID name = new NameID(mod.module, v.var);
-			Value val = constants.get(name);
-			if (val == null) {
-				// indicates a non-local constant definition
-				Module mi = loader.loadModule(mod.module);
-				val = mi.constant(v.var).constant();
-			}
+		Attributes.Constant attr = v.attribute(Attributes.Constant.class);
+		if (attr != null) {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Const(val),attributes(v));
+			blk.append(Code.Const(attr.constant),attributes(v));
 			return blk;
 		}
 		
@@ -1302,9 +1241,9 @@ public final class CodeGeneration {
 	private Block resolve(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(resolve(v.expr, environment));		
-		Pair<Type,Block> p = resolve(v.type);
+		Type p = v.type.attribute(Attributes.Type.class).type;
 		// TODO: include constraints
-		blk.append(Code.Convert(null,p.first()),attributes(v));
+		blk.append(Code.Convert(null,p),attributes(v));
 		return blk;
 	}
 	
@@ -1528,254 +1467,8 @@ public final class CodeGeneration {
 		} else {
 			return r;
 		}
-	}	
-		
-	private Pair<Type,Block> resolve(UnresolvedType t) {
-		if (t instanceof UnresolvedType.Any) {
-			return new Pair<Type,Block>(Type.T_ANY,null);
-		} else if (t instanceof UnresolvedType.Void) {
-			return new Pair<Type,Block>(Type.T_VOID,null);
-		} else if (t instanceof UnresolvedType.Null) {
-			return new Pair<Type,Block>(Type.T_NULL,null);
-		} else if (t instanceof UnresolvedType.Bool) {
-			return new Pair<Type,Block>(Type.T_BOOL,null);
-		} else if (t instanceof UnresolvedType.Byte) {
-			return new Pair<Type,Block>(Type.T_BYTE,null);
-		} else if (t instanceof UnresolvedType.Char) {
-			return new Pair<Type,Block>(Type.T_CHAR,null);
-		} else if (t instanceof UnresolvedType.Int) {
-			return new Pair<Type,Block>(Type.T_INT,null);
-		} else if (t instanceof UnresolvedType.Real) {
-			return new Pair<Type,Block>(Type.T_REAL,null);
-		} else if (t instanceof UnresolvedType.Strung) {
-			return new Pair<Type,Block>(Type.T_STRING,null);
-		} else if (t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;			
-			Pair<Type,Block> p = resolve(lt.element); 
-			Block blk = null;
-			if (p.second() != null) {
-				blk = new Block(1); 
-				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
-				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST), attributes(t));
-				blk.append(shiftBlock(1,p.second()));				
-				blk.append(Code.End(label));
-			}	
-			return new Pair<Type,Block>(Type.List(p.first(), false),blk);			
-		} else if (t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;	
-			Pair<Type,Block> p = resolve(st.element);
-			Block blk = null;
-			if (p.second() != null) {
-				blk = new Block(1); 
-				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
-				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST), attributes(t));
-				blk.append(shiftBlock(1,p.second()));				
-				blk.append(Code.End(label));
-			}	
-			return new Pair<Type,Block>(Type.Set(p.first(),false),blk);			
-		} else if (t instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;			
-			Pair<Type,Block> key = resolve(st.key);
-			Pair<Type,Block> value = resolve(st.value);
-			// TODO: fix dictionary constraints
-			return new Pair<Type,Block>(Type.Dictionary(key.first(),value.first()),null);					
-		} else if (t instanceof UnresolvedType.Tuple) {
-			// At the moment, a tuple is compiled down to a wyil record.
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			ArrayList<Type> types = new ArrayList<Type>();		
-			Block blk = null;
-			int i=0;			
-			for (UnresolvedType e : tt.types) {				
-				Pair<Type,Block> p = resolve(e);
-				types.add(p.first());
-				if(p.second() != null) {
-					if(blk == null) {
-						blk = new Block(1);
-					}					
-					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
-					blk.append(Code.TupleLoad(null, i), attributes(t));
-					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
-					blk.append(shiftBlock(1,p.second()));					
-				}
-				i=i+1;
-			}			
-			
-			return new Pair<Type,Block>(Type.Tuple(types),blk);			
-		} else if (t instanceof UnresolvedType.Record) {		
-			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String, Type> types = new HashMap<String, Type>();	
-			Block blk = null;
-			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
-				Pair<Type,Block> p = resolve(e.getValue());
-				if (p.second() != null) {
-					if(blk == null) {
-						blk = new Block(1);
-					}					
-					blk.append(Code.Load(null, Code.THIS_SLOT), attributes(t));
-					blk.append(Code.FieldLoad(null, e.getKey()), attributes(t));
-					blk.append(Code.Store(null, Code.THIS_SLOT+1), attributes(t));
-					blk.append(shiftBlock(1,p.second()));								
-				}
-				types.put(e.getKey(), p.first());				
-			}
-			return new Pair<Type,Block>(Type.Record(tt.isOpen,types),blk);
-		} else if(t instanceof UnresolvedType.Not) {
-			UnresolvedType.Not ut = (UnresolvedType.Not) t;
-			Block blk = null;
-			Pair<Type,Block> p = resolve(ut.element);
-			// TODO: fix not constraints
-			return new Pair<Type,Block>(Type.Negation(p.first()),blk);							
-		} else if (t instanceof UnresolvedType.Union) {
-			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			HashSet<Type> bounds = new HashSet<Type>();	
-			Block blk = new Block(1);
-			String exitLabel = Block.freshLabel();
-			boolean constraints = false;
-			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
-			for (int i=0;i!=ut_bounds.size();++i) {				
-				UnresolvedType b = ut_bounds.get(i);
-				Pair<Type,Block> p = resolve(b);
-				Type bt = p.first();
- 
-				bounds.add(bt);	
-				
-				if(p.second() != null) {
-					// In this case, there are constraints so we check the
-					// negated type and branch over the constraint test if we
-					// don't have the require type.  
-
-					// TODO: in principle, the following should work. However,
-					// it's broken in the case of recurisve types being used in
-					// the type tests. This should be resolvable when we support
-					// proper named types, since we won't be expanding fully at
-					// this stage.
-					//					
-//					constraints = true;
-//					String nextLabel = Block.freshLabel();				
-//					blk.append(
-//							Code.IfType(null, Code.THIS_SLOT,
-//									Type.Negation(bt), nextLabel),
-//									attributes(t));					
-//					blk.append(chainBlock(nextLabel,p.second()));
-//					blk.append(Code.Goto(exitLabel));
-//					blk.append(Code.Label(nextLabel));
-				} else {									
-					blk.append(
-							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
-							attributes(t));
-				}
-			}
-			
-			if(constraints) {
-				blk.append(Code.Fail("type constraint not satisfied"),attributes(ut));
-				blk.append(Code.Label(exitLabel));
-			} else {
-				blk = null;
-			}
-			
-			if (bounds.size() == 1) {
-				return new Pair<Type,Block>(bounds.iterator().next(),blk);
-			} else {
-				return new Pair<Type,Block>(Type.Union(bounds),blk);
-			}			
-		} else if(t instanceof UnresolvedType.Intersection) {
-			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
-			Block blk = null;
-			Type r = null;
-			for(int i=0;i!=ut.bounds.size();++i) {
-				UnresolvedType b = ut.bounds.get(i);
-				Pair<Type,Block> p = resolve(b);
-				// TODO: add intersection constraints
-				if(r == null) {
-					r = p.first();
-				} else {
-					r = Type.intersect(p.first(),r);
-				}
-			}						
-			return new Pair<Type,Block>(r,blk);
-		} else if(t instanceof UnresolvedType.Existential) {
-			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
-			ModuleID mid = ut.attribute(Attributes.Module.class).module;
-			// TODO: need to fix existentials
-			return new Pair<Type,Block>(Type.Nominal(new NameID(mid,"1")),null);							
-		} else if(t instanceof UnresolvedType.Process) {
-			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Block blk = null;
-			Pair<Type,Block> p = resolve(ut.element);
-			// TODO: fix process constraints
-			return new Pair<Type,Block>(Type.Process(p.first()),blk);							
-		} else if (t instanceof UnresolvedType.Named) {
-			UnresolvedType.Named dt = (UnresolvedType.Named) t;
-			Attributes.Name nameInfo = dt.attribute(Attributes.Name.class);
-			NameID name = nameInfo.name;			
-			if (modules.contains(name.module())) {
-				return types.get(name);								
-			} else {
-				try {
-					Module mi = loader.loadModule(name.module());
-					Module.TypeDef td = mi.type(name.name());
-					return new Pair<Type,Block>(td.type(),td.constraint());
-				} catch (ResolveError rex) {
-					syntaxError(rex.getMessage(), filename, t, rex);
-					return null;
-				}
-			}
-		} else {
-			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
-			
-			ArrayList<Type> paramTypes = new ArrayList<Type>();
-			Type.Process receiver = null;
-			Block blk = null;
-			if(ut.receiver != null) {
-				Pair<Type,Block> tmp = resolve(ut.receiver);
-				// TODO: fix receiver constraints
-				if(tmp.first() instanceof Type.Process) { 
-					receiver = (Type.Process) tmp.first();
-				} else {
-					syntaxError(errorMessage(RECEIVER_NOT_PROCESS), filename,
-							ut.receiver);
-				}
-			}			
-			for(UnresolvedType pt : ut.paramTypes) {
-				Pair<Type,Block> p = resolve(pt);
-				// TODO: fix parameter constraints
-				paramTypes.add(p.first());
-			}
-			Pair<Type,Block> ret = resolve(ut.ret);
-			
-			if (receiver != null) {
-				return new Pair<Type, Block>(Type.Method(receiver, ret.first(),
-						Type.T_VOID, paramTypes), blk);
-			} else {
-				return new Pair<Type, Block>(Type.Function(ret.first(),
-						Type.T_VOID, paramTypes), blk);
-			}
-		}
-	}
+	}			
 	
-	private Expr.LocalVariable flattern(Expr e) {
-		if (e instanceof Expr.LocalVariable) {
-			return (Expr.LocalVariable) e;
-		} else if (e instanceof Expr.ListAccess) {
-			Expr.ListAccess la = (Expr.ListAccess) e;
-			return flattern(la.src);
-		} else if (e instanceof Expr.RecordAccess) {
-			Expr.RecordAccess la = (Expr.RecordAccess) e;
-			return flattern(la.lhs);
-		} else if (e instanceof Expr.UnOp) {
-			Expr.UnOp la = (Expr.UnOp) e;
-			if (la.op == Expr.UOp.PROCESSACCESS) {
-				return flattern(la.mhs);
-			}
-		}
-		syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), filename, e);
-		return null;
-	}
-
 	private static Expr invert(Expr e) {
 		if (e instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) e;
