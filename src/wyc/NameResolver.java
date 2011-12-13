@@ -28,6 +28,7 @@ package wyc;
 import java.io.IOException;
 import java.util.*;
 
+import wyc.lang.WhileyFile.Decl;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
@@ -47,6 +48,13 @@ import wyil.util.path.Path;
  * 
  */
 public final class NameResolver extends ModuleLoader {
+	
+	/**
+	 * A map from module identifiers to skeleton objects. This is required to
+	 * permit preregistration of source files during compilation.
+	 */
+	protected HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
+
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -65,6 +73,19 @@ public final class NameResolver extends ModuleLoader {
 		super(sourcepath, whileypath);
 	}
 
+	
+	/**
+	 * Register a given skeleton with this loader. This ensures that when
+	 * skeleton requests are made, this skeleton will be used instead of
+	 * searching for it on the whileypath.
+	 * 
+	 * @param skeleton
+	 *            --- skeleton to preregister.
+	 */
+	public void preregister(Skeleton skeleton) {		
+		skeletontable.put(skeleton.id(), skeleton);			
+	}
+	
 	/**
 	 * This function checks whether the supplied package exists or not.
 	 * 
@@ -231,6 +252,63 @@ public final class NameResolver extends ModuleLoader {
 		return matches;
 	}
 	
+	/**
+	 * Provides basic information regarding what names are defined within a
+	 * module. It represents the minimal knowledge regarding a module that we
+	 * can have. Skeletons are used early on in the compilation process to help
+	 * with name resolution.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public abstract static class Skeleton {
+		protected final ModuleID mid;
+
+		public Skeleton(ModuleID mid) {
+			this.mid = mid;
+		}
+		
+		public ModuleID id() {
+			return mid;
+		}
+
+		public abstract boolean hasName(String name);
+	}
+	
+
+	/**
+	 * This method attempts to load a whiley module skeleton. A skeleton
+	 * provides signature information about a module. For example, the signature
+	 * of all methods. However, a skeleton does not provide access to a methods
+	 * body. The skeleton is looked up in the internal skeleton table. If not
+	 * found there, then the WHILEYPATH is searched. A resolve error is thrown
+	 * if the module cannot be found or otherwise loaded.
+	 * 
+	 * @param module
+	 *            The module skeleton to load
+	 * @return the loaded module
+	 */
+	public Skeleton loadSkeleton(ModuleID mid) throws ResolveError {
+		Skeleton skeleton = skeletontable.get(mid);
+		if(skeleton != null) {
+			return skeleton;
+		}
+
+		// Couldn't find a registerd skeleton. This does not immediately signal
+		// a problem, since it could be that the module is not one currently
+		// being compiled. Rather, it's a module found somewhere on the
+		// WHILEYPATH. Therefore, attempt to load that module via the module
+		// loader.
+		
+		final Module module = loadModule(mid);
+		
+		return new Skeleton(mid) {
+			public boolean hasName(String name) {
+				return module.hasName(name);
+			}			
+		};
+		
+	}	
 	/**
 	 * This method takes a given package id from an import declaration, and
 	 * expands it to find all matching packages. Note, the package id may

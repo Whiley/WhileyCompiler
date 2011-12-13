@@ -609,7 +609,7 @@ public final class NameResolution {
 			PackageAccess pa = (PackageAccess) sg.lhs;			
 			try {				
 				ModuleID mid = new ModuleID(pa.pid,sg.name);
-				ModuleLoader.Skeleton m = resolver.loadSkeleton(mid);
+				NameResolver.Skeleton m = resolver.loadSkeleton(mid);
 				return new ModuleAccess(mid);
 			} catch(ResolveError err) {}
 			PkgID pid = pa.pid.append(sg.name);			
@@ -623,7 +623,7 @@ public final class NameResolution {
 			// this indicates we're constructing a constant access
 			ModuleAccess ma = (ModuleAccess) sg.lhs;			
 			try {				
-				ModuleLoader.Skeleton m = resolver.loadSkeleton(ma.mid);				
+				NameResolver.Skeleton m = resolver.loadSkeleton(ma.mid);				
 				if(m.hasName(sg.name)) {
 					return new ExternalAccess(new NameID(ma.mid,sg.name));
 				}				

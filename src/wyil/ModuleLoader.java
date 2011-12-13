@@ -68,13 +68,7 @@ public class ModuleLoader {
 	 * again.
 	 */
 	protected HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
-
-	/**
-	 * A map from module identifiers to skeleton objects. This is required to
-	 * permit preregistration of source files during compilation.
-	 */
-	protected HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
-
+	
 	/**
 	 * This identifies which packages have had their contents fully resolved.
 	 * All items in a resolved package must have been loaded into the filetable.
@@ -93,29 +87,6 @@ public class ModuleLoader {
 	 */
 	protected final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
 	
-	/**
-	 * Provides basic information regarding what names are defined within a
-	 * module. It represents the minimal knowledge regarding a module that we
-	 * can have. Skeletons are used early on in the compilation process to help
-	 * with name resolution.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public abstract static class Skeleton {
-		protected final ModuleID mid;
-
-		public Skeleton(ModuleID mid) {
-			this.mid = mid;
-		}
-		
-		public ModuleID id() {
-			return mid;
-		}
-
-		public abstract boolean hasName(String name);
-	}
-		
 	/**
 	 * The logger is used to log messages from the module loader.
 	 */
@@ -150,19 +121,7 @@ public class ModuleLoader {
 	 */
 	public void setModuleReader(String suffix, ModuleReader reader) {
 		suffixMap.put(suffix, reader);
-	}
-		
-	/**
-	 * Register a given skeleton with this loader. This ensures that when
-	 * skeleton requests are made, this skeleton will be used instead of
-	 * searching for it on the whileypath.
-	 * 
-	 * @param skeleton
-	 *            --- skeleton to preregister.
-	 */
-	public void preregister(Skeleton skeleton) {		
-		skeletontable.put(skeleton.id(), skeleton);			
-	}
+	}	
 	
 	/**
 	 * Register a given module with this loader. This ensures that when requests
@@ -217,55 +176,6 @@ public class ModuleLoader {
 		} catch(Exception e) {				
 			throw new ResolveError("Unable to find module: " + module,e);
 		}	
-	}
-	
-	/**
-	 * This method attempts to load a whiley module skeleton. A skeleton
-	 * provides signature information about a module. For example, the signature
-	 * of all methods. However, a skeleton does not provide access to a methods
-	 * body. The skeleton is looked up in the internal skeleton table. If not
-	 * found there, then the WHILEYPATH is searched. A resolve error is thrown
-	 * if the module cannot be found or otherwise loaded.
-	 * 
-	 * @param module
-	 *            The module skeleton to load
-	 * @return the loaded module
-	 */
-	public Skeleton loadSkeleton(ModuleID module) throws ResolveError {
-		Skeleton skeleton = skeletontable.get(module);
-		if(skeleton != null) {
-			return skeleton;
-		} 		
-		Module m = moduletable.get(module);
-		if(m != null) {
-			return m; // module was previously loaded and cached
-		}
-		
-		// module has not been previously loaded.
-		resolvePackage(module.pkg());
-				
-		try {
-			// ok, now look for skeleton inside package roots.
-			Path.Entry entry = null;
-			for(Path.Root root : packageroots.get(module.pkg())) {
-				entry = root.lookup(module);
-				if(entry != null) {
-					break;
-				}
-			}
-			if(entry == null) {
-				throw new ResolveError("Unable to find module: " + module);
-			}
-			m = readModuleInfo(entry);
-			if(m == null) {
-				throw new ResolveError("Unable to find module: " + module);
-			}
-			return m;
-		} catch(RuntimeException e) {
-			throw e;
-		} catch(Exception e) {				
-			throw new ResolveError("Unable to find module: " + module,e);
-		}		
 	}	
 	
 	/**

@@ -26,6 +26,8 @@
 package wyc.lang;
 
 import java.util.*;
+
+import wyc.NameResolver;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
@@ -51,8 +53,8 @@ public final class WhileyFile {
 		this.declarations = new ArrayList<Decl>(decls);
 	}
 	
-	public ModuleLoader.Skeleton skeleton() {		
-		return new ModuleLoader.Skeleton(module) {
+	public NameResolver.Skeleton skeleton() {		
+		return new NameResolver.Skeleton(module) {
 			public boolean hasName(String name) {
 				// FIXME: improve performance!
 				for(Decl d : declarations) {

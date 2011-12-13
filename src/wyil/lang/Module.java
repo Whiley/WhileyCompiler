@@ -29,7 +29,8 @@ import java.util.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 
-public final class Module extends ModuleLoader.Skeleton {	
+public final class Module {
+	private final ModuleID mid;
 	private final String filename;
 	private HashMap<Pair<String,Type.Function>,Method> methods;
 	private HashMap<String,TypeDef> types;
@@ -40,7 +41,7 @@ public final class Module extends ModuleLoader.Skeleton {
 			Collection<Method> methods,
 			Collection<TypeDef> types,
 			Collection<ConstDef> constants) {		
-		super(mid);
+		this.mid = mid;
 		this.filename = filename;
 		
 		// first, init the caches
@@ -76,6 +77,10 @@ public final class Module extends ModuleLoader.Skeleton {
 			}
 			this.constants.put(c.name(), c);
 		}
+	}
+	
+	public ModuleID id() {
+		return mid;
 	}
 	
 	public String filename() {
