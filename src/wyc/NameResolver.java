@@ -25,10 +25,8 @@
 
 package wyc;
 
-import java.io.IOException;
 import java.util.*;
 
-import wyc.lang.WhileyFile.Decl;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
@@ -82,7 +80,7 @@ public final class NameResolver extends ModuleLoader {
 	 * @param skeleton
 	 *            --- skeleton to preregister.
 	 */
-	public void preregister(Skeleton skeleton) {		
+	public void register(Skeleton skeleton) {		
 		skeletontable.put(skeleton.id(), skeleton);			
 	}
 	

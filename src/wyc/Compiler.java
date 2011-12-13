@@ -116,7 +116,7 @@ public final class Compiler implements Logger {
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
 			wyfiles.add(wf);			
-			resolver.preregister(wf.skeleton());			
+			resolver.register(wf.skeleton());			
 		}
 				
 		for (WhileyFile m : wyfiles) {
