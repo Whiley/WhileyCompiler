@@ -176,7 +176,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Method(Process receiver, Type ret,
+	public static final Type Method(Type receiver, Type ret,
 			Type throwsClause, Collection<Type> params) {
 		if(receiver == null) {
 			// this is a headless method
@@ -1225,13 +1225,13 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public Type.Process receiver() {
+		public Type receiver() {
 			Automaton.State root = automaton.states[0];
 			if(root.kind == K_HEADLESS) {
 				return null;
 			} else {
 				int[] fields = root.children;
-				return (Type.Process) construct(Automata.extract(automaton,
+				return construct(Automata.extract(automaton,
 					fields[0]));
 			}
 		}

@@ -73,12 +73,6 @@ public interface UnresolvedType extends SyntacticElement {
 			super(attributes);
 		}		
 	}
-	public static final class Existential extends SyntacticElement.Impl
-			implements NonUnion {
-		public Existential(Attribute... attributes) {
-			super(attributes);
-		}
-	}
 	public static final class Bool extends SyntacticElement.Impl implements NonUnion {
 		public Bool(Attribute... attributes) {
 			super(attributes);
@@ -109,9 +103,9 @@ public interface UnresolvedType extends SyntacticElement {
 			super(attributes);
 		}		
 	}
-	public static final class Named extends SyntacticElement.Impl implements NonUnion {		
+	public static final class Nominal extends SyntacticElement.Impl implements NonUnion {		
 		public final ArrayList<String> names;		
-		public Named(Collection<String> names, Attribute... attributes) {
+		public Nominal(Collection<String> names, Attribute... attributes) {
 			super(attributes);
 			this.names = new ArrayList<String>(names);
 		}		

@@ -212,8 +212,7 @@ public final class NameResolver {
 	 * @param imp
 	 * @return
 	 */
-	private List<ModuleID> matchImport(Import imp) {	
-		
+	private List<ModuleID> matchImport(Import imp) {			
 		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
 		ArrayList<ModuleID> matches = importCache.get(key);
 		if(matches != null) {

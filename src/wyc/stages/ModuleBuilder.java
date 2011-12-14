@@ -747,8 +747,8 @@ public final class ModuleBuilder {
 			Pair<Type,Block> p = expandType(ut.element, filename, cache);
 			// TODO: fix process constraints
 			return new Pair<Type,Block>(Type.Process(p.first()),blk);							
-		} else if (t instanceof UnresolvedType.Named) {
-			UnresolvedType.Named dt = (UnresolvedType.Named) t;
+		} else if (t instanceof UnresolvedType.Nominal) {
+			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;
 			Attributes.Name nameInfo = dt.attribute(Attributes.Name.class);
 			NameID name = nameInfo.name;
 
@@ -2334,8 +2334,8 @@ public final class ModuleBuilder {
 			Pair<Type,Block> p = resolve(ut.element);
 			// TODO: fix process constraints
 			return new Pair<Type,Block>(Type.Process(p.first()),blk);							
-		} else if (t instanceof UnresolvedType.Named) {
-			UnresolvedType.Named dt = (UnresolvedType.Named) t;
+		} else if (t instanceof UnresolvedType.Nominal) {
+			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;
 			Attributes.Name nameInfo = dt.attribute(Attributes.Name.class);
 			NameID name = nameInfo.name;			
 			if (modules.contains(name.module())) {

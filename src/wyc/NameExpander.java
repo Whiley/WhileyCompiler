@@ -25,6 +25,27 @@
 
 package wyc;
 
-public final class TypeResolver {
-	
+import wyil.lang.*;
+
+public final class NameExpander {
+
+	/**
+	 * Provides information about the declared types and constants of a module.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public abstract static class Skeleton {
+		private ModuleID mid;
+		
+		public Skeleton(ModuleID mid) {
+			this.mid = mid;
+		}
+		
+		public abstract Value constant(String name);
+		
+		public abstract Type type(String name);
+			
+		public abstract Type.Function function(String name);
+	}
 }

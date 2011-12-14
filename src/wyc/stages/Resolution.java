@@ -32,7 +32,9 @@ import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
+import wyil.lang.Type;
 import wyc.NameResolver;
+import wyc.NameExpander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
@@ -59,18 +61,17 @@ import wyc.util.*;
  * on the corresponding Abstract Syntax Tree (AST) node.
  * 
  * @author David J. Pearce
- * 
  */
-public final class NameResolution {
+public final class Resolution {
 	private final NameResolver resolver;	
 	private String filename;
 	private ModuleID module;
 	
-	public NameResolution(NameResolver resolver) {
+	public Resolution(NameResolver resolver) {
 		this.resolver = resolver;
 	}
 	
-	public void resolve(WhileyFile wf) {
+	public NameExpander.Skeleton resolve(WhileyFile wf) {
 		ArrayList<Import> imports = new ArrayList<Import>();
 		
 		module = wf.module;
@@ -79,6 +80,10 @@ public final class NameResolution {
 		imports.add(new Import(module.pkg(), module.module(), "*")); 
 		imports.add(new Import(module.pkg(), "*")); 
 
+		final HashMap<String,Type> types = new HashMap<String,Type>();
+		final HashMap<String,Value> constants = new HashMap<String,Value>();
+		final HashMap<String,Type.Function> functions = new HashMap<String,Type.Function>();
+		
 		for(Decl d : wf.declarations) {			
 			try {
 				if(d instanceof ImportDecl) {
@@ -95,16 +100,31 @@ public final class NameResolution {
 				syntaxError(errorMessage(RESOLUTION_ERROR, ex.getMessage()),
 						filename, d);
 			}
-		}				
+		}		
+		
+		return new NameExpander.Skeleton(module) {
+			public Type type(String name) {
+				return types.get(name);
+			}
+			public Value constant(String name) {
+				return constants.get(name);
+			}
+			public Type.Function function(String name) {
+				return functions.get(name);
+			}
+		};
 	}
 	
-	private void resolve(ConstDecl td, ArrayList<Import> imports) {
-		resolve(td.constant,new HashMap<String,Set<Expr>>(), imports);		
+	private Value resolve(ConstDecl td, ArrayList<Import> imports) throws ResolveError {
+		Value constant = evaluate(td.constant);
+		td.attributes().add(new Attributes.Constant(constant));
+		return constant;
 	}
 	
-	private void resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
+	private Type resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
 		try {
-			resolve(td.type, imports);	
+			Type type = resolve(td.type, imports);	
+			td.attributes().add(new Attributes.Type(type, null));
 			if (td.constraint != null) {
 				HashMap<String, Set<Expr>> environment = new HashMap<String, Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
@@ -114,20 +134,23 @@ public final class NameResolution {
 						td.type, environment);
 				resolve(td.constraint, environment, imports);
 			}
+			return type;
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
 			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
-					filename, td);			
-		}
+					filename, td);
+			return null; // dead-code
+		}		
 	}	
 	
-	private void resolve(FunDecl fd, ArrayList<Import> imports) {
+	private Type.Function resolve(FunDecl fd, ArrayList<Import> imports) {
 		HashMap<String,Set<Expr>> environment = new HashMap<String,Set<Expr>>();
 		
 		// method parameter types
+		ArrayList<Type> parameters = new ArrayList<Type>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			try {
-				resolve(p.type, imports);
+				parameters.add(resolve(p.type, imports));
 				environment.put(p.name(),Collections.EMPTY_SET);
 			} catch (ResolveError e) {												
 				// Ok, we've hit a resolution error.
@@ -143,20 +166,24 @@ public final class NameResolution {
 		}
 		
 		// method return and throw types
+		Type ret;
+		Type throwsClause;
 		try {
-			resolve(fd.ret, imports);
-			resolve(fd.throwType, imports);
+			ret = resolve(fd.ret, imports);
+			throwsClause = resolve(fd.throwType, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
 			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), filename,
 					fd.ret);
+			return null; // dead-code
 		}
 		
 		// method receiver type (if applicable)
+		Type receiver = null;
 		if(fd instanceof MethDecl) {			
 			MethDecl md = (MethDecl) fd;			
 			try {			
-				resolve(md.receiver, imports);			
+				receiver = resolve(md.receiver, imports);			
 			} catch (ResolveError e) {
 				// Ok, we've hit a resolution error.
 				syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
@@ -178,6 +205,17 @@ public final class NameResolution {
 		for (int i=0;i!=stmts.size();++i) {
 			resolve(stmts.get(i), environment, imports);							
 		}
+		
+		Type.Function funType;
+		
+		if(fd instanceof MethDecl) {
+			funType = checkType(Type.Method(ret,receiver,throwsClause,parameters),Type.Method.class,fd);
+		} else {
+			funType = checkType(Type.Function(ret,throwsClause,parameters),Type.Function.class,fd);
+		}
+		
+		fd.attributes().add(new Attributes.Fun(funType));
+		return funType;
 	}
 	
 	private void resolve(Stmt s, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
@@ -633,65 +671,275 @@ public final class NameResolution {
 		return sg;		
 	}
 	
-	private void resolve(UnresolvedType t, ArrayList<Import> imports) throws ResolveError {
-		if(t instanceof UnresolvedType.List) {
+	private Type resolve(UnresolvedType t, ArrayList<Import> imports) throws ResolveError {
+		if (t instanceof UnresolvedType.Any) {
+			return Type.T_ANY;
+		} else if (t instanceof UnresolvedType.Void) {
+			return Type.T_VOID;
+		} else if (t instanceof UnresolvedType.Null) {
+			return Type.T_NULL;
+		} else if (t instanceof UnresolvedType.Bool) {
+			return Type.T_BOOL;
+		} else if (t instanceof UnresolvedType.Byte) {
+			return Type.T_BYTE;
+		} else if (t instanceof UnresolvedType.Char) {
+			return Type.T_CHAR;
+		} else if (t instanceof UnresolvedType.Int) {
+			return Type.T_INT;
+		} else if (t instanceof UnresolvedType.Real) {
+			return Type.T_REAL;
+		} else if (t instanceof UnresolvedType.Strung) {
+			return Type.T_STRING;
+		} else if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
-			resolve(lt.element,imports);
+			Type element = resolve(lt.element,imports);
+			return Type.List(element,false);
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			resolve(st.element,imports);
+			Type element = resolve(st.element,imports);
+			return Type.Set(element,false);
 		} else if(t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
-			resolve(st.key,imports);
-			resolve(st.value,imports);
+			Type key = resolve(st.key,imports);
+			Type value = resolve(st.value,imports);
+			return Type.Dictionary(key,value);
 		} else if(t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
-				resolve(e.getValue(),imports);
+			HashMap<String,Type> fields = new HashMap<String,Type>();
+			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {				
+				Type type = resolve(e.getValue(),imports);
+				fields.put(e.getKey(), type);
 			}
+			return Type.Record(tt.isOpen,fields);
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			ArrayList<Type> types = new ArrayList<Type>();
 			for(UnresolvedType e : tt.types) {
-				resolve(e,imports);
+				Type type = resolve(e,imports);
+				types.add(type);
 			}
-		} else if(t instanceof UnresolvedType.Named) {
+			return Type.Tuple(types);
+		} else if(t instanceof UnresolvedType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
-			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
+			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;						
 			NameID nid = resolver.resolveAsName(dt.names, imports);			
-			t.attributes().add(new Attributes.Name(nid));
-		} else if(t instanceof UnresolvedType.Existential) {
-			UnresolvedType.Existential dt = (UnresolvedType.Existential) t;						
-			t.attributes().add(new Attributes.Module(module));
+			return Type.Nominal(nid);
 		} else if(t instanceof UnresolvedType.Not) {	
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
-			resolve(ut.element,imports);			
+			Type type = resolve(ut.element,imports);
+			return Type.Negation(type);
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			ArrayList<Type> bounds = new ArrayList<Type>();
 			for(UnresolvedType b : ut.bounds) {
-				resolve(b,imports);
+				Type bound = resolve(b,imports);
+				bounds.add(bound);
 			}
+			return Type.Union(bounds);
 		} else if(t instanceof UnresolvedType.Intersection) {
 			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
 			for(UnresolvedType b : ut.bounds) {
 				resolve(b,imports);
 			}
+			throw new RuntimeException("CANNOT COPE WITH INTERSECTIONS!");
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			resolve(ut.element,imports);			
-		} else if(t instanceof UnresolvedType.Fun) {	
+			Type type = resolve(ut.element,imports);
+			return Type.Process(type);
+		} else {	
 			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;
-			resolve(ut.ret,imports);
-			if(ut.receiver != null) {
-				resolve(ut.receiver,imports);
-			}
+			Type ret = resolve(ut.ret,imports);			
+			
+			ArrayList<Type> params = new ArrayList<Type>();
 			for(UnresolvedType p : ut.paramTypes) {
-				resolve(p,imports);
+				params.add(resolve(p,imports));
 			}
-		}  
+			
+			if(ut.receiver != null) {
+				Type receiver = resolve(ut.receiver,imports);
+				return Type.Method(receiver, ret, Type.T_VOID, params);
+			} else {
+				return Type.Function(ret, Type.T_VOID, params);
+			}
+		} 
 	}
 
+	private Value evaluate(Expr expr)
+			throws ResolveError {
+		if (expr instanceof Expr.Constant) {
+			Expr.Constant c = (Expr.Constant) expr;
+			return c.value;
+		} else if (expr instanceof Expr.BinOp) {
+			Expr.BinOp bop = (Expr.BinOp) expr;
+			Value lhs = evaluate(bop.lhs);
+			Value rhs = evaluate(bop.rhs);
+			return evaluate(bop, lhs, rhs);			
+		} else if (expr instanceof Expr.NaryOp) {
+			Expr.NaryOp nop = (Expr.NaryOp) expr;
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (Expr arg : nop.arguments) {
+				values.add(evaluate(arg));
+			}
+			if (nop.nop == Expr.NOp.LISTGEN) {
+				return Value.V_LIST(values);
+			} else if (nop.nop == Expr.NOp.SETGEN) {
+				return Value.V_SET(values);
+			}
+		} else if (expr instanceof Expr.RecordGen) {
+			Expr.RecordGen rg = (Expr.RecordGen) expr;
+			HashMap<String,Value> values = new HashMap<String,Value>();
+			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
+				Value v = evaluate(e.getValue());
+				if(v == null) {
+					return null;
+				}
+				values.put(e.getKey(), v);
+			}
+			return Value.V_RECORD(values);
+		} else if (expr instanceof Expr.TupleGen) {
+			Expr.TupleGen rg = (Expr.TupleGen) expr;			
+			ArrayList<Value> values = new ArrayList<Value>();			
+			for(Expr e : rg.fields) {
+				Value v = evaluate(e);
+				if(v == null) {
+					return null;
+				}
+				values.add(v);				
+			}
+			return Value.V_TUPLE(values);
+		}  else if (expr instanceof Expr.DictionaryGen) {
+			Expr.DictionaryGen rg = (Expr.DictionaryGen) expr;			
+			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
+			for(Pair<Expr,Expr> e : rg.pairs) {
+				Value key = evaluate(e.first());
+				Value value = evaluate(e.second());
+				if(key == null || value == null) {
+					return null;
+				}
+				values.add(new Pair<Value,Value>(key,value));				
+			}
+			return Value.V_DICTIONARY(values);
+		} else if(expr instanceof Expr.Function) {
+			Expr.Function f = (Expr.Function) expr;
+			Attributes.Module mid = expr.attribute(Attributes.Module.class);
+			if (mid != null) {
+				NameID name = new NameID(mid.module, f.name);
+				Type.Function tf = null;
+				
+				/**
+				 * TODO: bring back online
+				if(f.paramTypes != null) {
+					ArrayList<Type> paramTypes = new ArrayList<Type>();
+					for(UnresolvedType p : f.paramTypes) {
+						// TODO: fix parameter constraints
+						paramTypes.add(resolve(p).first());
+					}				
+					tf = checkType(
+							Type.Function(Type.T_ANY, Type.T_VOID, paramTypes),
+							Type.Function.class, expr);
+				}
+				*/
+				return Value.V_FUN(name, tf);	
+			}					
+		}
+		syntaxError(errorMessage(INVALID_CONSTANT_EXPRESSION), filename, expr);
+		return null;
+	}
+
+	private Value evaluate(Expr.BinOp bop, Value v1, Value v2) {
+		Type lub = Type.Union(v1.type(), v2.type());
+		
+		// FIXME: there are bugs here related to coercions.
+		
+		if(Type.isSubtype(Type.T_BOOL, lub)) {
+			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2);
+		} else if(Type.isSubtype(Type.T_REAL, lub)) {
+			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2);
+		} else if(Type.isSubtype(Type.List(Type.T_ANY, false), lub)) {
+			return evaluate(bop,(Value.List)v1,(Value.List)v2);
+		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false), lub)) {
+			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
+		} 
+		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),filename,bop);
+		return null;
+	}
+	
+	private Value evaluateBoolean(Expr.BinOp bop, Value.Bool v1, Value.Bool v2) {				
+		switch(bop.op) {
+		case AND:
+			return Value.V_BOOL(v1.value & v2.value);
+		case OR:		
+			return Value.V_BOOL(v1.value | v2.value);
+		case XOR:
+			return Value.V_BOOL(v1.value ^ v2.value);
+		}
+		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,bop);
+		return null;
+	}
+	
+	private Value evaluate(Expr.BinOp bop, Value.Rational v1, Value.Rational v2) {		
+		switch(bop.op) {
+		case ADD:
+			return Value.V_RATIONAL(v1.value.add(v2.value));
+		case SUB:
+			return Value.V_RATIONAL(v1.value.subtract(v2.value));
+		case MUL:
+			return Value.V_RATIONAL(v1.value.multiply(v2.value));
+		case DIV:
+			return Value.V_RATIONAL(v1.value.divide(v2.value));
+		case REM:
+			return Value.V_RATIONAL(v1.value.intRemainder(v2.value));	
+		}
+		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),filename,bop);
+		return null;
+	}
+	
+	private Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2) {
+		switch(bop.op) {
+		case ADD:
+			ArrayList<Value> vals = new ArrayList<Value>(v1.values);
+			vals.addAll(v2.values);
+			return Value.V_LIST(vals);
+		}
+		syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,bop);
+		return null;
+	}
+	
+	private Value evaluate(Expr.BinOp bop, Value.Set v1, Value.Set v2) {		
+		switch(bop.op) {
+		case UNION:
+		{
+			HashSet<Value> vals = new HashSet<Value>(v1.values);			
+			vals.addAll(v2.values);
+			return Value.V_SET(vals);
+		}
+		case INTERSECTION:
+		{
+			HashSet<Value> vals = new HashSet<Value>();			
+			for(Value v : v1.values) {
+				if(v2.values.contains(v)) {
+					vals.add(v);
+				}
+			}			
+			return Value.V_SET(vals);
+		}
+		case SUB:
+		{
+			HashSet<Value> vals = new HashSet<Value>();			
+			for(Value v : v1.values) {
+				if(!v2.values.contains(v)) {
+					vals.add(v);
+				}
+			}			
+			return Value.V_SET(vals);
+		}
+		}
+		syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,bop);
+		return null;
+	}
+	
 	/**
 	 * The purpose of the exposed names method is capture the case when we have
 	 * a define statement like this:
@@ -731,6 +979,18 @@ public final class NameResolution {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			addExposedNames(new Expr.UnOp(Expr.UOp.PROCESSACCESS, src),
 					ut.element, environment);
+		}
+	}
+	
+	private <T extends Type> T checkType(Type t, Class<T> clazz,
+			SyntacticElement elem) {		
+		if (clazz.isInstance(t)) {
+			return (T) t;
+		} else {
+			// TODO: need a better error message here.
+			String errMsg = errorMessage(SUBTYPE_ERROR,clazz.getName().replace('$',' '),t);
+			syntaxError(errMsg, filename, elem);
+			return null;
 		}
 	}
 }

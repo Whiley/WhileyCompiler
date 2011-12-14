@@ -1718,10 +1718,7 @@ public final class WhileyParser {
 		Token token = tokens.get(index);
 		UnresolvedType t;
 		
-		if(token instanceof Question) {
-			match(Question.class);
-			t = new UnresolvedType.Existential(sourceAttr(start,index-1));
-		} else if(token.text.equals("any")) {
+		if(token.text.equals("any")) {
 			matchKeyword("any");
 			t = new UnresolvedType.Any(sourceAttr(start,index-1));
 		} else if(token.text.equals("null")) {
@@ -1839,7 +1836,7 @@ public final class WhileyParser {
 				match(Dot.class);
 				names.add(matchIdentifier().text);
 			}
-			t = new UnresolvedType.Named(names,sourceAttr(start,index-1));			
+			t = new UnresolvedType.Nominal(names,sourceAttr(start,index-1));			
 		}		
 		
 		return t;

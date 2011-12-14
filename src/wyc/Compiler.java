@@ -224,7 +224,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
-		new NameResolution(nameResolver).resolve(m);
+		new Resolution(nameResolver).resolve(m);
 		logTimedMessage("[" + m.filename + "] resolved names",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		
