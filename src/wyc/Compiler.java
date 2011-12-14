@@ -82,12 +82,14 @@ import wyc.stages.*;
 public final class Compiler implements Logger {		
 	private ModuleLoader loader;	
 	private NameResolver nameResolver;
+	private NameExpander nameExpander;
 	private ArrayList<Transform> stages;
 
 	public Compiler(ModuleLoader loader, List<Transform> stages) {
 		this.loader = loader;
 		this.stages = new ArrayList<Transform>(stages);
 		nameResolver = new NameResolver(loader);
+		nameExpander = new NameExpander(loader);
 	}
 	
 	/**
@@ -117,8 +119,7 @@ public final class Compiler implements Logger {
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
-			wyfiles.add(wf);			
-			nameResolver.register(wf.skeleton());			
+			wyfiles.add(wf);								
 		}
 				
 		for (WhileyFile m : wyfiles) {
@@ -157,8 +158,11 @@ public final class Compiler implements Logger {
 
 		WhileyParser wfr = new WhileyParser(file.getPath(), tokens);
 		logTimedMessage("[" + file + "] Parsing complete",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
-		return wfr.read(); 
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+		
+		WhileyFile wf = wfr.read();
+		nameResolver.register(wf.skeleton());		
+		return wf;
 	}		
 	
 	/**
@@ -223,10 +227,13 @@ public final class Compiler implements Logger {
 	private void resolveNames(WhileyFile m) {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
-		long memory = runtime.freeMemory();		
-		new Resolution(nameResolver).resolve(m);
+		long memory = runtime.freeMemory();				
+		NameExpander.Skeleton skeleton = new Resolution(nameResolver).resolve(m);
+		
 		logTimedMessage("[" + m.filename + "] resolved names",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+		
+		nameExpander.register(skeleton);
 		
 	}
 	
