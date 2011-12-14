@@ -318,7 +318,30 @@ public abstract class Type {
 		}
 		return false;
 	}
-		
+	
+	/**
+	 * This is a utility helper for constructing types. In particular, it's
+	 * useful for determine whether or not a type needs to be closed. An open
+	 * type is one which contains a "dangling" reference to some node which
+	 * needs to be connected to back to form a cycle.
+	 * 
+	 * @param label
+	 * @param t
+	 * @return
+	 */
+	public static boolean isOpen(java.util.Set<NameID> labels, Type t) {
+		if (t instanceof Leaf) {
+			return false;
+		}
+		Compound graph = (Compound) t;
+		for (State n : graph.automaton.states) {
+			if (n.kind == K_NOMINAL && labels.contains(n.data)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	// =============================================================
 	// Readers / Writers
 	// =============================================================

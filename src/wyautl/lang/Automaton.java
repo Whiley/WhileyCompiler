@@ -71,6 +71,14 @@ public final class Automaton {
 		this.states = states;
 	}
 
+	public Automaton(List<State> states) {
+		int statesSize = states.size();
+		this.states = new State[statesSize];
+		for(int i=0;i!=statesSize;++i) {
+			this.states[i] = states.get(i);
+		}		
+	}
+	
 	public Automaton(Automaton automaton) {
 		this.states = new State[automaton.states.length];
 		for(int i=0;i!=states.length;++i) {

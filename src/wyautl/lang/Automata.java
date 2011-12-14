@@ -978,7 +978,7 @@ public final class Automata {
 	 *            --- mapping from integers in old space to those in new
 	 *            space.
 	 */
-	private static State remap(State node, int[] rmap) {
+	public static State remap(State node, int[] rmap) {
 		int[] ochildren = node.children;
 		int[] nchildren;
 		if(node.deterministic) { 

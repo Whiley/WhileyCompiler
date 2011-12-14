@@ -28,11 +28,16 @@ package wyc;
 import static wyil.util.ErrorMessages.errorMessage;
 import static wyil.util.SyntaxError.syntaxError;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
+import wyautl.lang.Automata;
+import wyautl.lang.Automaton;
+import wyautl.lang.Automaton.State;
 import wyc.NameResolver.Skeleton;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
+import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 import wyil.util.Pair;
@@ -75,22 +80,23 @@ import wyil.util.Triple;
  * 
  */
 public final class NameExpander {
+	
+	private final ModuleLoader loader;
+	
 	/**
 	 * A map from module identifiers to skeleton objects. This is required to
 	 * permit registration of source files during compilation.
 	 */
-	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
-	
-	/**
-	 * Cache of expanded types.
-	 */
-	private HashMap<NameID,Type> types = new HashMap<NameID,Type>();
-	
+	private final HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
+			
 	/**
 	 * Cache of expanded constraints.
 	 */
-	private HashMap<NameID,Block> constraints = new HashMap<NameID,Block>();
+	private final HashMap<NameID,Block> constraints = new HashMap<NameID,Block>();
 	
+	public NameExpander(ModuleLoader loader) {
+		this.loader = loader;
+	}
 	
 	/**
 	 * Provides information about the declared types and constants of a module.
@@ -134,16 +140,99 @@ public final class NameExpander {
 	 * @param type
 	 * @return
 	 */
-	public Type expandType(Type type) {
+	public Type expandType(Type type) throws ResolveError {		
+		if(type instanceof Type.Leaf) {
+			return type; // no expansion possible
+		}
+		Automaton automaton = Type.destruct(type);
+
+		// first, check whether it's actually worth doing anything
+		boolean hasNominal = false;
+		for(Automaton.State state : automaton.states) {
+			if(state.kind == Type.K_NOMINAL) {
+				hasNominal = true;
+				break;
+			}
+		}
 		
+		if(hasNominal) {
+			// ok, possibility of expansion exists
+			ArrayList<State> states = new ArrayList<State>();
+			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
+			expandType(0,automaton,roots,states);
+			automaton = new Automaton(states);
+			return Type.construct(automaton);
+		} else {
+			return type;
+		}
 	}
 
-	private Type expandType(Type type, HashMap<NameID, Type> cache) throws ResolveError {
-
+	private int expandType(int index, Automaton automaton,
+			HashMap<NameID, Integer> roots, ArrayList<State> states)
+			throws ResolveError {
+		
+		Automaton.State state = automaton.states[index];
+		int kind = state.kind;
+		
+		if(kind == Type.K_NOMINAL) {
+			NameID key = (NameID) state.data;
+			return expandType(key,roots,states);
+		} else {
+			int myIndex = states.size();			
+			states.add(null);
+			int[] ochildren = state.children;
+			int[] nchildren = new int[ochildren.length];
+			for(int i=0;i!=ochildren.length;++i) {
+				nchildren[i] = expandType(i,automaton,roots,states);
+			}
+			boolean deterministic = kind != Type.K_UNION;		
+			Automaton.State myState = new Automaton.State(kind,state.data,deterministic,nchildren);
+			states.set(myIndex,myState);
+			return myIndex;
+		}
 	}
 
-	private Type expandType(NameID key, HashMap<NameID, Type> cache) throws ResolveError {
+	private int expandType(NameID key, HashMap<NameID, Integer> roots,
+			ArrayList<State> states) throws ResolveError {
+		
+		// First, check the various caches we have
+		Integer root = roots.get(key);			
+		if (root != null) { return root; } 		
+		
+		// check whether this type is external or not
+		Skeleton skeleton = skeletontable.get(key.module());
+		if (skeleton == null) {			
+			// indicates a non-local key which we can resolve immediately
+			Module mi = loader.loadModule(key.module());
+			Module.TypeDef td = mi.type(key.name());	
+			return append(td.type(),states);			
+		} 
+		
+		Type type = skeleton.type(key.name());
+		if(type == null) {
+			// FIXME: need a better error message!
+			throw new ResolveError("unknown type");
+		}
+		
+		// following is needed to terminate any recursion
+		roots.put(key, states.size());
 
+		// now, expand the given type fully			
+		if(type instanceof Type.Leaf) {
+			// to avoid unnecessarily creating an array of size one
+			int myIndex = states.size();
+			int kind = Type.leafKind((Type.Leaf)type);			
+			states.add(new Automaton.State(kind,null,true,Automaton.NOCHILDREN));
+			return myIndex;
+		} else {
+			return expandType(0, Type.destruct(type), roots, states);
+		}
+		
+		// TODO: performance can be improved here, but actually assigning the
+		// constructed type into a cache of previously expanded types cache.
+		// This is challenging, in the case that the type may not be complete at
+		// this point. In particular, if it contains any back-links above this
+		// index there could be an issue.
 	}
 	
 	/**
@@ -154,5 +243,19 @@ public final class NameExpander {
 	 */
 	public Block expandConstraint(Type type) {
 		return null;
+	}
+	
+	private static int append(Type type, ArrayList<State> states) {		
+		int myIndex = states.size();
+		Automaton automaton = Type.destruct(type);
+		Automaton.State[] tStates = automaton.states;
+		int[] rmap = new int[tStates.length];
+		for(int i=0,j=myIndex;i!=rmap.length;++i,++j) {
+			rmap[i] = j;
+		}
+		for(Automaton.State state : tStates) {
+			states.add(Automata.remap(state, rmap));
+		}
+		return myIndex;		
 	}
 }
