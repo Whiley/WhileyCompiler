@@ -122,14 +122,15 @@ public final class Compiler implements Logger {
 			wyfiles.add(wf);								
 		}
 				
-		for (WhileyFile m : wyfiles) {
-			resolveNames(m);			
+		for (WhileyFile wf : wyfiles) {
+			resolveNames(wf);			
 		}
 		
-		List<Module> modules = buildModules(wyfiles);				
-		for(Module m : modules) {
+		ArrayList<Module> modules = new ArrayList<Module>();
+		for (WhileyFile wf : wyfiles) {
+			Module m = buildModule(wf);	
 			loader.register(m);
-		}		
+		}
 		
 		finishCompilation(modules);		
 		
@@ -224,27 +225,28 @@ public final class Compiler implements Logger {
 		return r;
 	}
 	
-	private void resolveNames(WhileyFile m) {
+	private void resolveNames(WhileyFile wf) {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();				
-		NameExpander.Skeleton skeleton = new Resolution(nameResolver).resolve(m);
+		NameExpander.Skeleton skeleton = new Resolution(nameResolver).resolve(wf);
 		
-		logTimedMessage("[" + m.filename + "] resolved names",
+		logTimedMessage("[" + wf.filename + "] resolved names",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		
 		nameExpander.register(skeleton);
 		
 	}
 	
-	private List<Module> buildModules(List<WhileyFile> files) {		
+	private Module buildModule(WhileyFile wf) {		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
-		List<Module> modules = new ModuleBuilder(loader).resolve(files);
-		logTimedMessage("built modules",
+		wf = new TypePropagation(loader, nameExpander).apply(wf);
+		Module m = new CodeGeneration(loader).generate(wf);		
+		logTimedMessage("[" + wf.filename + "] built module",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
-		return modules;		
+		return m;
 	}	
 	
 	/**
