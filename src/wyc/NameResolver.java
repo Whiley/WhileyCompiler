@@ -50,7 +50,7 @@ public final class NameResolver {
 	
 	/**
 	 * A map from module identifiers to skeleton objects. This is required to
-	 * permit preregistration of source files during compilation.
+	 * permit registration of source files during compilation.
 	 */
 	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
 
