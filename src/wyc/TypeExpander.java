@@ -65,7 +65,7 @@ import wyil.util.Triple;
  * @author David J. Pearce
  * 
  */
-public final class TypeAndConstantExpander {
+public final class TypeExpander {
 	
 	private final ModuleLoader loader;
 	
@@ -75,7 +75,7 @@ public final class TypeAndConstantExpander {
 	 */
 	private final HashMap<ModuleID, Skeleton> skeletons = new HashMap<ModuleID, Skeleton>();
 				
-	public TypeAndConstantExpander(ModuleLoader loader) {
+	public TypeExpander(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
