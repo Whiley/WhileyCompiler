@@ -25,15 +25,13 @@
 
 package wyc;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
-import wyautl.lang.Automaton.State;
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.util.Pair;
 import wyil.util.ResolveError;
 
 /**
@@ -89,21 +87,21 @@ public final class ConstraintExpander {
 			case Type.K_STRING:
 				return null;
 			case Type.K_TUPLE:
-				return expandTuple(state,automaton);
+				return expandTuple(index,state,automaton);
 			case Type.K_SET:
-				return expandSet(state,automaton);
+				return expandSet(index,state,automaton);
 			case Type.K_LIST:	
-				return expandList(state,automaton);
+				return expandList(index,state,automaton);
 			case Type.K_DICTIONARY:	
-				return expandDictionary(state,automaton);
+				return expandDictionary(index,state,automaton);
 			case Type.K_PROCESS:	
-				return expandProcess(state,automaton);
+				return expandProcess(index,state,automaton);
 			case Type.K_RECORD:	
-				return expandRecord(state,automaton);
+				return expandRecord(index,state,automaton);
 			case Type.K_UNION:
-				return expandUnion(state,automaton);
+				return expandUnion(index,state,automaton);
 			case Type.K_NEGATION:
-				return expandNegation(state,automaton);			
+				return expandNegation(index,state,automaton);			
 			case Type.K_NOMINAL:					
 				return expand((NameID) state.data);
 			default:
@@ -146,26 +144,19 @@ public final class ConstraintExpander {
 		
 		return constraint;
 	}
-	
-	private Block expandTuple(Automaton.State state, Automaton automaton) throws ResolveError {
-		return null;
-	}
-	
-	private Block expandSet(Automaton.State state, Automaton automaton) throws ResolveError {
-		return null;
-	}
-	
-	private Block expandList(Automaton.State state, Automaton automaton) throws ResolveError {
+		
+	private Block expandSet(int index, Automaton.State state, Automaton automaton) throws ResolveError {
 		Block constraint = expand(state.children[0], automaton);
 		Block blk = null;
 		if (constraint != null) {
 			blk = new Block(1);
 			String label = Block.freshLabel();
+			Type type = Type.construct(Automata.extract(automaton, index));
+			blk.append(Code.Load(type, Code.THIS_SLOT));
 			/**
-			 * FIXME: need to get the type information here!!
+			 * FIXME: add in modified variables
 			 */
-			blk.append(Code.Load(null, Code.THIS_SLOT));			
-			blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
+			blk.append(Code.ForAll(type, Code.THIS_SLOT + 1, label,
 					Collections.EMPTY_LIST));			
 			shiftAppend(1,constraint,blk);					
 			blk.append(Code.End(label));
@@ -173,23 +164,85 @@ public final class ConstraintExpander {
 		return blk;
 	}
 	
-	private Block expandDictionary(Automaton.State state, Automaton automaton) throws ResolveError {
+	private Block expandList(int index, Automaton.State state, Automaton automaton) throws ResolveError {
+		Block constraint = expand(state.children[0], automaton);
+		Block blk = null;
+		if (constraint != null) {
+			blk = new Block(1);
+			String label = Block.freshLabel();
+			Type type = Type.construct(Automata.extract(automaton, index));
+			blk.append(Code.Load(type, Code.THIS_SLOT));	
+			/**
+			 * FIXME: add in modified variables
+			 */
+			blk.append(Code.ForAll(type, Code.THIS_SLOT + 1, label,
+					Collections.EMPTY_LIST));			
+			shiftAppend(1,constraint,blk);					
+			blk.append(Code.End(label));
+		}			
+		return blk;
+	}
+	
+	private Block expandDictionary(int index, Automaton.State state, Automaton automaton) throws ResolveError {
+		// TODO: add dictionary constraints
 		return null;
 	}
 	
-	private Block expandProcess(Automaton.State state, Automaton automaton) throws ResolveError {
+	private Block expandProcess(int index, Automaton.State state, Automaton automaton) throws ResolveError {
+		// TODO: add process constraints
 		return null;
 	}
 	
-	private Block expandRecord(Automaton.State state, Automaton automaton) throws ResolveError {
+	private Block expandTuple(int index, Automaton.State state,
+			Automaton automaton) throws ResolveError {
+		Block blk = null;		
+		int[] children = state.children;
+		for (int i=0;i!=children.length;++i) {
+			Block constraint = expand(children[i], automaton);
+			if (constraint != null) {
+				if (blk == null) {
+					blk = new Block(1);
+				}
+				Type.Tuple type = (Type.Tuple) Type.construct(Automata.extract(
+						automaton, index));
+				blk.append(Code.Load(type, Code.THIS_SLOT));
+				blk.append(Code.TupleLoad(type, i));
+				blk.append(Code.Store(type, Code.THIS_SLOT + 1));
+				shiftAppend(1, constraint, blk);
+			}			
+		}
+		return blk;
+	}
+	
+	private Block expandRecord(int index, Automaton.State state,
+			Automaton automaton) throws ResolveError {
+		Block blk = null;
+		String[] fields = (String[]) state.data;
+		int[] children = state.children;
+		for (int i = 0; i != children.length; ++i) {
+			Block constraint = expand(children[i], automaton);
+			if (constraint != null) {
+				if (blk == null) {
+					blk = new Block(1);
+				}
+				Type.Record type = (Type.Record) Type.construct(Automata
+						.extract(automaton, index));
+				blk.append(Code.Load(type, Code.THIS_SLOT));
+				blk.append(Code.FieldLoad(type, fields[i]));
+				blk.append(Code.Store(type, Code.THIS_SLOT + 1));
+				shiftAppend(1, constraint, blk);
+			}
+		}
+		return blk;
+	}
+	
+	private Block expandNegation(int index, Automaton.State state, Automaton automaton) throws ResolveError {
+		// TODO: add negation constraints
 		return null;
 	}
 	
-	private Block expandNegation(Automaton.State state, Automaton automaton) throws ResolveError {
-		return null;
-	}
-	
-	private Block expandUnion(Automaton.State state, Automaton automaton) throws ResolveError {
+	private Block expandUnion(int index, Automaton.State state, Automaton automaton) throws ResolveError {
+		// TODO: add union constraints
 		return null;
 	}
 	
