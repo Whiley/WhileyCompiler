@@ -61,25 +61,11 @@ import wyil.util.Triple;
  * structural definition. That is,
  * <code>{int x,int y}|{int x,int y,int z}</code>.
  * </p>
- * <p>
- * Type expansion must also account for any constraints on the types in
- * question. For example:
- * </p>
- * 
- * <pre>
- * define nat as int where $ >= 0
- * define natlist as [nat]
- * </pre>
- * <p>
- * The type <code>natlist</code> expands to <code>[int]</code>, whilst its
- * constraint is expanded to <code>all {x in $ | x >= 0}</code>.
- * </p>
- * <p>
  * 
  * @author David J. Pearce
  * 
  */
-public final class NameExpander {
+public final class TypeExpander {
 	
 	private final ModuleLoader loader;
 	
@@ -94,7 +80,7 @@ public final class NameExpander {
 	 */
 	private final HashMap<NameID,Block> constraints = new HashMap<NameID,Block>();
 	
-	public NameExpander(ModuleLoader loader) {
+	public TypeExpander(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
@@ -140,7 +126,7 @@ public final class NameExpander {
 	 * @param type
 	 * @return
 	 */
-	public Type expandType(Type type) throws ResolveError {		
+	public Type expand(Type type) throws ResolveError {		
 		if(type instanceof Type.Leaf) {
 			return type; // no expansion possible
 		}
@@ -159,7 +145,7 @@ public final class NameExpander {
 			// ok, possibility of expansion exists
 			ArrayList<State> states = new ArrayList<State>();
 			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-			expandType(0,automaton,roots,states);
+			expand(0,automaton,roots,states);
 			automaton = new Automaton(states);
 			return Type.construct(automaton);
 		} else {
@@ -167,7 +153,7 @@ public final class NameExpander {
 		}
 	}
 
-	private int expandType(int index, Automaton automaton,
+	private int expand(int index, Automaton automaton,
 			HashMap<NameID, Integer> roots, ArrayList<State> states)
 			throws ResolveError {
 		
@@ -176,14 +162,14 @@ public final class NameExpander {
 		
 		if(kind == Type.K_NOMINAL) {
 			NameID key = (NameID) state.data;
-			return expandType(key,roots,states);
+			return expand(key,roots,states);
 		} else {
 			int myIndex = states.size();			
 			states.add(null);
 			int[] ochildren = state.children;
 			int[] nchildren = new int[ochildren.length];
 			for(int i=0;i!=ochildren.length;++i) {
-				nchildren[i] = expandType(i,automaton,roots,states);
+				nchildren[i] = expand(i,automaton,roots,states);
 			}
 			boolean deterministic = kind != Type.K_UNION;		
 			Automaton.State myState = new Automaton.State(kind,state.data,deterministic,nchildren);
@@ -192,7 +178,7 @@ public final class NameExpander {
 		}
 	}
 
-	private int expandType(NameID key, HashMap<NameID, Integer> roots,
+	private int expand(NameID key, HashMap<NameID, Integer> roots,
 			ArrayList<State> states) throws ResolveError {
 		
 		// First, check the various caches we have
@@ -229,7 +215,7 @@ public final class NameExpander {
 			states.add(new Automaton.State(kind,null,true,Automaton.NOCHILDREN));
 			return myIndex;
 		} else {
-			return expandType(0, Type.destruct(type), roots, states);
+			return expand(0, Type.destruct(type), roots, states);
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the

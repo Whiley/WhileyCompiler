@@ -30,7 +30,7 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.NameExpander;
+import wyc.TypeExpander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.MethDecl;
 import wyc.lang.WhileyFile.*;
@@ -105,10 +105,10 @@ import static wyil.util.SyntaxError.*;
  */
 public final class TypePropagation {
 	private final ModuleLoader loader;
-	private final NameExpander expander;
+	private final TypeExpander expander;
 	private String filename;
 	
-	public TypePropagation(ModuleLoader loader, NameExpander expander) {
+	public TypePropagation(ModuleLoader loader, TypeExpander expander) {
 		this.loader = loader;
 		this.expander = expander;
 	}
@@ -134,7 +134,7 @@ public final class TypePropagation {
 	public void propagate(TypeDecl td) {
 		Attributes.Type attr = td.type.attribute(Attributes.Type.class);
 		try {
-			Type expanded = expander.expandType(attr.type);
+			Type expanded = expander.expand(attr.type);
 		} catch(ResolveError e) {
 			// FIXME: this will report an error that is not very specific.			
 			syntaxError(e.getMessage(),filename,td.type,e);
