@@ -23,14 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc;
+package wyil;
 
 import java.util.Collections;
 import java.util.HashMap;
 
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
-import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.ResolveError;
 

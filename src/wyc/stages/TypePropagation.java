@@ -32,14 +32,15 @@ import java.util.*;
 
 import wyc.TypeExpander;
 import wyc.lang.*;
-import wyc.lang.WhileyFile.MethDecl;
 import wyc.lang.WhileyFile.*;
 import wyil.ModuleLoader;
 import wyil.lang.Import;
 import wyil.lang.PkgID;
 import wyil.lang.Type;
+import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
+import wyil.util.SyntaxError;
 import static wyil.util.SyntaxError.*;
 
 /**
@@ -106,6 +107,7 @@ import static wyil.util.SyntaxError.*;
 public final class TypePropagation {
 	private final ModuleLoader loader;
 	private final TypeExpander expander;
+	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	
 	public TypePropagation(ModuleLoader loader, TypeExpander expander) {
@@ -131,36 +133,212 @@ public final class TypePropagation {
 		
 	}
 	
-	public void propagate(TypeDecl td) {
-		Attributes.Type attr = td.type.attribute(Attributes.Type.class);
-		try {
-			Type expanded = expander.expand(attr.type);
-		} catch(ResolveError e) {
-			// FIXME: this will report an error that is not very specific.			
-			syntaxError(e.getMessage(),filename,td.type,e);
+	public void propagate(TypeDecl td) {		
+		if(td.constraint != null) {
+			Attributes.Type attr = td.type.attribute(Attributes.Type.class);
+			Env environment = new Env();
+			environment.put("$", attr.type);
+			propagate(td.constraint,environment);
 		}
 	}
 
 	public void propagate(FunDecl fd) {
-		HashMap<String,Type> environment = new HashMap<String,Type>();
+		Env environment = new Env();
 		
 		for (WhileyFile.Parameter p : fd.parameters) {			
 			Attributes.Type attr = p.type.attribute(Attributes.Type.class);
-			environment.put(p.name,attr.type);
+			environment = environment.put(p.name,attr.type);
 		}
 		
 		if(fd instanceof MethDecl) {
 			MethDecl md = (MethDecl) fd;
 			Attributes.Type attr = md.receiver.attribute(Attributes.Type.class);
-			environment.put("this",attr.type);
+			environment = environment.put("this",attr.type);
 		}
+		
+		if(fd.precondition != null) {
+			propagate(fd.precondition,environment.copy());
+		}
+		
+		if(fd.postcondition != null) {
+			Attributes.Type attr = fd.ret.attribute(Attributes.Type.class);
+			environment = environment.put("$", attr.type);
+			propagate(fd.postcondition,environment.copy());
+			// The following is a little sneaky and helps to avoid unnecessary
+			// copying of environments. 
+			environment = environment.remove("$");
+		}
+		
 		
 		propagate(fd.statements,environment);
 	}
 	
-	private void propagate(ArrayList<Stmt> body,
-			HashMap<String, Type> environment) {
-
+	private Env propagate(ArrayList<Stmt> body, Env environment) {
+		for (Stmt stmt : body) {
+			environment = propagate(stmt, environment);
+		}
+		return environment;
+	}
+	
+	private Env propagate(Stmt stmt,
+			Env environment) {
+		try {
+			if(stmt instanceof Stmt.Assign) {
+				return propagate((Stmt.Assign) stmt,environment);
+			} else if(stmt instanceof Stmt.Return) {
+				return propagate((Stmt.Return) stmt,environment);
+			} else if(stmt instanceof Stmt.IfElse) {
+				return propagate((Stmt.IfElse) stmt,environment);
+			} else if(stmt instanceof Stmt.While) {
+				return propagate((Stmt.While) stmt,environment);
+			} else if(stmt instanceof Stmt.For) {
+				return propagate((Stmt.For) stmt,environment);
+			} else if(stmt instanceof Stmt.Switch) {
+				return propagate((Stmt.Switch) stmt,environment);
+			} else if(stmt instanceof Expr.Invoke) {
+				propagate((Expr.Invoke) stmt,environment);
+				return environment;
+			} else if(stmt instanceof Stmt.DoWhile) {
+				return propagate((Stmt.DoWhile) stmt,environment);
+			} else if(stmt instanceof Stmt.Break) {
+				return propagate((Stmt.Break) stmt,environment);
+			} else if(stmt instanceof Stmt.Throw) {
+				return propagate((Stmt.Throw) stmt,environment);
+			} else if(stmt instanceof Stmt.TryCatch) {
+				return propagate((Stmt.TryCatch) stmt,environment);
+			} else if(stmt instanceof Stmt.Assert) {
+				return propagate((Stmt.Assert) stmt,environment);
+			} else if(stmt instanceof Stmt.Debug) {
+				return propagate((Stmt.Debug) stmt,environment);
+			} else if(stmt instanceof Stmt.Skip) {
+				return propagate((Stmt.Skip) stmt,environment);
+			} else {
+				internalFailure("unknown statement encountered",filename,stmt);
+				return null; // deadcode
+			}
+		} catch(SyntaxError e) {
+			throw e;
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,stmt,e);
+		}
+	}
+	
+	private Env propagate(Stmt.Assert stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.Assign stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.Break stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.Debug stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.DoWhile stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.For stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.IfElse stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.Return stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.Skip stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.Switch stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.Throw stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.TryCatch stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Env propagate(Stmt.While stmt,
+			Env environment) {
+		return environment;
+	}
+	
+	private Expr propagate(Expr expr,
+			Env environment) {
+		Type type;
+		
+		try {
+			if(expr instanceof Expr.BinOp) {
+				type = propagate((Expr.BinOp) expr,environment); 
+			} else if(expr instanceof Expr.Comprehension) {
+				type = propagate((Expr.Comprehension) expr,environment); 
+			} else if(expr instanceof Expr.Constant) {
+				type = propagate((Expr.Constant) expr,environment); 
+			} else if(expr instanceof Expr.Convert) {
+				type = propagate((Expr.Convert) expr,environment); 
+			} else if(expr instanceof Expr.DictionaryGen) {
+				type = propagate((Expr.DictionaryGen) expr,environment); 
+			} else if(expr instanceof Expr.ExternalAccess) {
+				type = propagate((Expr.ExternalAccess) expr,environment); 
+			} else if(expr instanceof Expr.Function) {
+				type = propagate((Expr.Function) expr,environment); 
+			} else if(expr instanceof Expr.Invoke) {
+				type = propagate((Expr.Invoke) expr,environment); 
+			} else if(expr instanceof Expr.ListAccess) {
+				type = propagate((Expr.ListAccess) expr,environment); 
+			} else if(expr instanceof Expr.LocalVariable) {
+				type = propagate((Expr.LocalVariable) expr,environment); 
+			} else if(expr instanceof Expr.ModuleAccess) {
+				type = propagate((Expr.ModuleAccess) expr,environment); 
+			} else if(expr instanceof Expr.NaryOp) {
+				type = propagate((Expr.NaryOp) expr,environment); 
+			} else if(expr instanceof Expr.PackageAccess) {
+				type = propagate((Expr.PackageAccess) expr,environment); 
+			} else if(expr instanceof Expr.RecordAccess) {
+				type = propagate((Expr.RecordAccess) expr,environment); 
+			} else if(expr instanceof Expr.RecordGen) {
+				type = propagate((Expr.RecordGen) expr,environment); 
+			} else if(expr instanceof Expr.Spawn) {
+				type = propagate((Expr.Spawn) expr,environment); 
+			}
+		} catch(SyntaxError e) {
+			throw e;
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,expr,e);
+		}
+		
+		expr.attributes().add(new Attributes.Type(type));
+		return expr;
+	}
+	
+	private Type propagate(Expr.BinOp expr,
+			Env environment) {
+		return null;
 	}
 	
 	private <T extends Type> T checkType(Type t, Class<T> clazz,
@@ -180,4 +358,116 @@ public final class TypePropagation {
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
 		}
 	}	
+	
+	private abstract static class Scope {
+		public abstract void free();
+	}
+	
+	private static final class Handler {
+		public final Type exception;
+		public final String variable;
+		public Env environment;
+		
+		public Handler(Type exception, String variable) {
+			this.exception = exception;
+			this.variable = variable;
+			this.environment = new Env();
+		}
+	}
+	
+	private static final class TryCatchScope extends Scope {
+		public final ArrayList<Handler> handlers = new ArrayList<Handler>();
+						
+		public void free() {
+			for(Handler handler : handlers) {
+				handler.environment.free();
+			}
+		}
+	}
+	
+	private static final class BreakScope extends Scope {
+		public Env environment;
+		
+		public void free() {
+			environment.free();
+		}
+	}
+
+	private static final class ContinueScope extends Scope {
+		public Env environment;
+		
+		public void free() {
+			environment.free();
+		}
+	}
+	
+	private static final class Env {
+		private final HashMap<String,Type> types;
+		private int count; // refCount
+		
+		public Env() {
+			count = 1;
+			types = new HashMap<String,Type>();
+		}
+		
+		private Env(HashMap<String,Type> types) {
+			count = 1;
+			this.types = (HashMap<String,Type>) types.clone();
+		}
+
+		public Type get(String var) {
+			return types.get(var);
+		}
+				
+		public Env put(String var, Type type) {
+			if(count == 1) {
+				types.put(var, type);
+				return this;
+			} else {				
+				Env nenv = new Env(types);
+				nenv.types.put(var, type);
+				count--;
+				return nenv;
+			}
+		}
+		
+		public Env putAll(Env env) {
+			if(count == 1) {
+				HashMap<String,Type> envTypes = env.types;
+				if(envTypes != null) {					
+					types.putAll(envTypes);
+				}
+				return this;
+			} else { 
+				Env nenv = new Env(types);
+				HashMap<String,Type> envTypes = env.types;
+				if(envTypes != null) {
+					nenv.types.putAll(envTypes);
+				}
+				count--;
+				return nenv;				
+			}
+		}
+		
+		public Env remove(String var) {
+			if(count == 1) {
+				types.remove(var);
+				return this;
+			} else {				
+				Env nenv = new Env(types);
+				nenv.types.remove(var);
+				count--;
+				return nenv;
+			}
+		}
+		
+		public Env copy() {
+			count++;
+			return this;
+		}
+		
+		public void free() {
+			--count;			
+		}
+	}
 }
