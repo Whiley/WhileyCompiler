@@ -242,7 +242,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
-		wf = new TypePropagation(loader, nameExpander).apply(wf);
+		new TypePropagation(loader, nameExpander).propagate(wf);
 		Module m = new CodeGeneration(loader).generate(wf);		
 		logTimedMessage("[" + wf.filename + "] built module",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());

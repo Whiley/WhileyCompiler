@@ -37,11 +37,9 @@ import wyil.lang.*;
 public interface Attributes {
 	public static final class Type implements Attribute {
 		public final wyil.lang.Type type;
-		public final Block constraint;
 		
-		public Type(wyil.lang.Type type, Block constraint) {
-			this.type = type;
-			this.constraint = constraint;
+		public Type(wyil.lang.Type type) {
+			this.type = type;		
 		}
 	}
 	

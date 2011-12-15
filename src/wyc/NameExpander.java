@@ -201,8 +201,12 @@ public final class NameExpander {
 		
 		// check whether this type is external or not
 		Skeleton skeleton = skeletontable.get(key.module());
-		if (skeleton == null) {			
+		if (skeleton == null) {						
 			// indicates a non-local key which we can resolve immediately
+			
+			// FIXME: there is an implicit assumption here that types are
+			// already fully expanded. In fact, this may not be the case.
+			
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());	
 			return append(td.type(),states);			
@@ -233,17 +237,7 @@ public final class NameExpander {
 		// This is challenging, in the case that the type may not be complete at
 		// this point. In particular, if it contains any back-links above this
 		// index there could be an issue.
-	}
-	
-	/**
-	 * This method fully expands the constraints of a given type.
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public Block expandConstraint(Type type) {
-		return null;
-	}
+	}	
 	
 	private static int append(Type type, ArrayList<State> states) {		
 		int myIndex = states.size();

@@ -71,8 +71,7 @@ public class Pipeline {
 
 	public static final List<Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Template>() {
-				{					
-					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));					
+				{														
 					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
 					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));							
 					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));					
@@ -93,7 +92,6 @@ public class Pipeline {
 	 * names.
 	 */
 	static {
-		register(TypePropagation.class);
 		register(BackPropagation.class);
 		register(DefiniteAssignment.class);
 		register(ConstantPropagation.class);

@@ -124,7 +124,7 @@ public final class Resolution {
 	private Type resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
 		try {
 			Type type = resolve(td.type, imports);	
-			td.attributes().add(new Attributes.Type(type, null));
+			td.attributes().add(new Attributes.Type(type));
 			if (td.constraint != null) {
 				HashMap<String, Set<Expr>> environment = new HashMap<String, Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
@@ -150,7 +150,9 @@ public final class Resolution {
 		ArrayList<Type> parameters = new ArrayList<Type>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			try {
-				parameters.add(resolve(p.type, imports));
+				Type type = resolve(p.type, imports);
+				p.type.attributes().add(new Attributes.Type(type));
+				parameters.add(type);
 				environment.put(p.name(),Collections.EMPTY_SET);
 			} catch (ResolveError e) {												
 				// Ok, we've hit a resolution error.
@@ -170,6 +172,7 @@ public final class Resolution {
 		Type throwsClause;
 		try {
 			ret = resolve(fd.ret, imports);
+			fd.ret.attributes().add(new Attributes.Type(ret));
 			throwsClause = resolve(fd.throwType, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
