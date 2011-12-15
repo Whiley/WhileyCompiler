@@ -65,7 +65,7 @@ import wyil.util.Triple;
  * @author David J. Pearce
  * 
  */
-public final class TypeExpander {
+public final class TypeAndConstantExpander {
 	
 	private final ModuleLoader loader;
 	
@@ -73,14 +73,9 @@ public final class TypeExpander {
 	 * A map from module identifiers to skeleton objects. This is required to
 	 * permit registration of source files during compilation.
 	 */
-	private final HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
-			
-	/**
-	 * Cache of expanded constraints.
-	 */
-	private final HashMap<NameID,Block> constraints = new HashMap<NameID,Block>();
-	
-	public TypeExpander(ModuleLoader loader) {
+	private final HashMap<ModuleID, Skeleton> skeletons = new HashMap<ModuleID, Skeleton>();
+				
+	public TypeAndConstantExpander(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
@@ -117,7 +112,7 @@ public final class TypeExpander {
 	 *            --- skeleton to register.
 	 */
 	public void register(Skeleton skeleton) {		
-		skeletontable.put(skeleton.id(), skeleton);			
+		skeletons.put(skeleton.id(), skeleton);			
 	}
 	
 	/**
@@ -145,7 +140,7 @@ public final class TypeExpander {
 			// ok, possibility of expansion exists
 			ArrayList<State> states = new ArrayList<State>();
 			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-			expand(0,automaton,roots,states);
+			expandType(0,automaton,roots,states);
 			automaton = new Automaton(states);
 			return Type.construct(automaton);
 		} else {
@@ -153,7 +148,7 @@ public final class TypeExpander {
 		}
 	}
 
-	private int expand(int index, Automaton automaton,
+	private int expandType(int index, Automaton automaton,
 			HashMap<NameID, Integer> roots, ArrayList<State> states)
 			throws ResolveError {
 		
@@ -162,14 +157,14 @@ public final class TypeExpander {
 		
 		if(kind == Type.K_NOMINAL) {
 			NameID key = (NameID) state.data;
-			return expand(key,roots,states);
+			return expandType(key,roots,states);
 		} else {
 			int myIndex = states.size();			
 			states.add(null);
 			int[] ochildren = state.children;
 			int[] nchildren = new int[ochildren.length];
 			for(int i=0;i!=ochildren.length;++i) {
-				nchildren[i] = expand(i,automaton,roots,states);
+				nchildren[i] = expandType(i,automaton,roots,states);
 			}
 			boolean deterministic = kind != Type.K_UNION;		
 			Automaton.State myState = new Automaton.State(kind,state.data,deterministic,nchildren);
@@ -178,7 +173,7 @@ public final class TypeExpander {
 		}
 	}
 
-	private int expand(NameID key, HashMap<NameID, Integer> roots,
+	private int expandType(NameID key, HashMap<NameID, Integer> roots,
 			ArrayList<State> states) throws ResolveError {
 		
 		// First, check the various caches we have
@@ -186,7 +181,7 @@ public final class TypeExpander {
 		if (root != null) { return root; } 		
 		
 		// check whether this type is external or not
-		Skeleton skeleton = skeletontable.get(key.module());
+		Skeleton skeleton = skeletons.get(key.module());
 		if (skeleton == null) {						
 			// indicates a non-local key which we can resolve immediately
 			
@@ -215,7 +210,7 @@ public final class TypeExpander {
 			states.add(new Automaton.State(kind,null,true,Automaton.NOCHILDREN));
 			return myIndex;
 		} else {
-			return expand(0, Type.destruct(type), roots, states);
+			return expandType(0, Type.destruct(type), roots, states);
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the
@@ -224,6 +219,16 @@ public final class TypeExpander {
 		// this point. In particular, if it contains any back-links above this
 		// index there could be an issue.
 	}	
+	
+	/**
+	 * This method fully expands a given constant.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public Value expand(Value constant) {
+		
+	}
 	
 	private static int append(Type type, ArrayList<State> states) {		
 		int myIndex = states.size();

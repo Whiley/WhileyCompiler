@@ -30,7 +30,7 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.TypeExpander;
+import wyc.TypeAndConstantExpander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.MethDecl;
 import wyc.lang.WhileyFile.*;
@@ -105,10 +105,10 @@ import static wyil.util.SyntaxError.*;
  */
 public final class TypePropagation {
 	private final ModuleLoader loader;
-	private final TypeExpander expander;
+	private final TypeAndConstantExpander expander;
 	private String filename;
 	
-	public TypePropagation(ModuleLoader loader, TypeExpander expander) {
+	public TypePropagation(ModuleLoader loader, TypeAndConstantExpander expander) {
 		this.loader = loader;
 		this.expander = expander;
 	}

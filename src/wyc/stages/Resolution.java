@@ -34,7 +34,7 @@ import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Type;
 import wyc.NameResolver;
-import wyc.TypeExpander;
+import wyc.TypeAndConstantExpander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
@@ -71,7 +71,7 @@ public final class Resolution {
 		this.resolver = resolver;
 	}
 	
-	public TypeExpander.Skeleton resolve(WhileyFile wf) {
+	public TypeAndConstantExpander.Skeleton resolve(WhileyFile wf) {
 		ArrayList<Import> imports = new ArrayList<Import>();
 		
 		module = wf.module;
@@ -102,7 +102,7 @@ public final class Resolution {
 			}
 		}		
 		
-		return new TypeExpander.Skeleton(module) {
+		return new TypeAndConstantExpander.Skeleton(module) {
 			public Type type(String name) {
 				return types.get(name);
 			}
