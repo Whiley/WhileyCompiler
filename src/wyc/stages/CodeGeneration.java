@@ -140,7 +140,16 @@ public final class CodeGeneration {
 
 	private Module.TypeDef generate(TypeDecl td, ModuleID module) {
 		Attributes.Type attr = td.attribute(Attributes.Type.class);		
-		return new Module.TypeDef(td.modifiers, td.name(), attr.type, attr.constraint);
+		Block constraint = null;
+		if(td.constraint != null) {
+			HashMap<String,Integer> environment = new HashMap<String,Integer>();
+			environment.put("$",0);
+			String lab = Block.freshLabel();
+			constraint = generateCondition(lab, td.constraint, environment);		
+			constraint.append(Code.Fail("precondition not satisfied"), attributes(td.constraint));
+			constraint.append(Code.Label(lab));
+		}
+		return new Module.TypeDef(td.modifiers, td.name(), attr.type, constraint);
 	}
 
 	private Module.Method generate(FunDecl fd) {		
@@ -163,28 +172,18 @@ public final class CodeGeneration {
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================
-		Block precondition = null;
 		
 		for (WhileyFile.Parameter p : fd.parameters) {			
 			// First, generate and inline any constraints associated with the type.
-			Attributes.Type t = p.type.attribute(Attributes.Type.class);
-			Block constraint = t.constraint;
-			if(constraint != null) {
-				if(precondition == null) {
-					precondition = new Block(nparams);
-				}				
-				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-				binding.put(0,paramIndex);			
-				precondition.importExternal(constraint,binding);
-			}
+			Attributes.Type t = p.type.attribute(Attributes.Type.class);			
 			// Now, map the parameter to its index
 			environment.put(p.name(),paramIndex++);
 		}		
+		
 		// Resolve pre- and post-condition								
-		if(fd.precondition != null) {
-			if(precondition == null) {
-				precondition = new Block(nparams);	
-			}
+		Block precondition = null;		
+		if(fd.precondition != null) {			
+			precondition = new Block(nparams);				
 			String lab = Block.freshLabel();
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
 			precondition.append(generateCondition(lab, fd.precondition, preEnv));		
@@ -195,22 +194,14 @@ public final class CodeGeneration {
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Block postcondition = null;
-		HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
-		postEnv.put("$", 0);
-		for(String var : environment.keySet()) {
-			postEnv.put(var, environment.get(var)+1);
-		}
-		
-		Attributes.Type ret = fd.ret.attribute(Attributes.Type.class);
-		if(ret.constraint != null) {			
-			postcondition = new Block(postEnv.size());
-			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-			binding.put(0,0);			
-			postcondition.importExternal(ret.constraint, binding);
-		}
-					
+		Block postcondition = null;		
+						
 		if (fd.postcondition != null) {
+			HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
+			postEnv.put("$", 0);
+			for(String var : environment.keySet()) {
+				postEnv.put(var, environment.get(var)+1);
+			}
 			String lab = Block.freshLabel();
 			postcondition = postcondition != null ? postcondition : new Block(
 					postEnv.size());
@@ -249,7 +240,6 @@ public final class CodeGeneration {
 			locals.set(e.getValue(),e.getKey());
 		}	
 		
-		// TODO: fix constraints here
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
 		
 		Type.Function tf = fd.attribute(Attributes.Fun.class).type;

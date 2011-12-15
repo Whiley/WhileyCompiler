@@ -132,6 +132,7 @@ public final class Compiler implements Logger {
 		for (WhileyFile wf : wyfiles) {
 			Module m = buildModule(wf);	
 			loader.register(m);
+			modules.add(m);
 		}
 		
 		finishCompilation(modules);		
@@ -256,7 +257,7 @@ public final class Compiler implements Logger {
 		long memory = runtime.freeMemory();		
 		new TypePropagation(loader, nameExpander).propagate(wf);
 		Module m = new CodeGeneration(loader).generate(wf);		
-		logTimedMessage("[" + wf.filename + "] built module",
+		logTimedMessage("[" + wf.filename + "] generated wyil module",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		return m;
 	}	
