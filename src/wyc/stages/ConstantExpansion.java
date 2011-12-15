@@ -30,11 +30,15 @@ import wyil.lang.Value;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 
-public class ConstantExpansion {
-	private ModuleLoader loader;
-	private HashSet<ModuleID> modules = new HashSet<ModuleID>();
-	private HashMap<NameID, Value> constants = new HashMap<NameID, Value>();
-	private HashMap<NameID, WhileyFile> filemap = new HashMap<NameID, WhileyFile>();
+public final class ConstantExpansion {
+	private final ModuleLoader loader;
+	private final HashSet<ModuleID> modules = new HashSet<ModuleID>();
+	private final HashMap<NameID, Value> constants = new HashMap<NameID, Value>();
+	private final HashMap<NameID, WhileyFile> filemap = new HashMap<NameID, WhileyFile>();
+	
+	public ConstantExpansion(ModuleLoader loader) {
+		this.loader = loader;
+	}
 	
 	public void expand(List<WhileyFile> files) {
 		HashMap<NameID, Expr> exprs = new HashMap();

@@ -126,6 +126,8 @@ public final class Compiler implements Logger {
 			resolveNames(wf);			
 		}
 		
+		expandConstants(wyfiles);
+		
 		ArrayList<Module> modules = new ArrayList<Module>();
 		for (WhileyFile wf : wyfiles) {
 			Module m = buildModule(wf);	
@@ -236,6 +238,16 @@ public final class Compiler implements Logger {
 		
 		nameExpander.register(skeleton);
 		
+	}
+	
+	private void expandConstants(List<WhileyFile> files) {
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();		
+		long memory = runtime.freeMemory();				
+		new ConstantExpansion(loader).expand(files);
+		
+		logTimedMessage("expanded constants",
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());				
 	}
 	
 	private Module buildModule(WhileyFile wf) {		
