@@ -220,6 +220,7 @@ public final class TypePropagation {
 			throw e;
 		} catch(Throwable e) {
 			internalFailure(e.getMessage(),filename,stmt,e);
+			return null; // dead code
 		}
 	}
 	
@@ -325,11 +326,19 @@ public final class TypePropagation {
 				type = propagate((Expr.RecordGen) expr,environment); 
 			} else if(expr instanceof Expr.Spawn) {
 				type = propagate((Expr.Spawn) expr,environment); 
+			} else if(expr instanceof Expr.TupleGen) {
+				type = propagate((Expr.TupleGen) expr,environment); 
+			} else if(expr instanceof Expr.Type) {
+				type = propagate((Expr.Type) expr,environment); 
+			} else {
+				internalFailure("unknown expression encountered (" + expr.getClass().getName() +")",filename,expr);
+				return null; // dead code
 			}
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
 			internalFailure(e.getMessage(),filename,expr,e);
+			return null; // dead code
 		}
 		
 		expr.attributes().add(new Attributes.Type(type));
@@ -337,6 +346,91 @@ public final class TypePropagation {
 	}
 	
 	private Type propagate(Expr.BinOp expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.Comprehension expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.Constant expr,
+			Env environment) {
+		return null;
+	}
+
+	private Type propagate(Expr.Convert expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.DictionaryGen expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.ExternalAccess expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.Function expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.Invoke expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.ListAccess expr,
+			Env environment) {			
+		return null;
+	}
+	
+	private Type propagate(Expr.LocalVariable expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.ModuleAccess expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.NaryOp expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.PackageAccess expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.RecordAccess expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.RecordGen expr,
+			Env environment) {
+		return null;
+	}
+
+	private Type propagate(Expr.Spawn expr,
+			Env environment) {
+		return null;
+	}
+
+	private Type propagate(Expr.TupleGen expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Type propagate(Expr.Type expr,
 			Env environment) {
 		return null;
 	}
