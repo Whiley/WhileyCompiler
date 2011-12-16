@@ -109,6 +109,7 @@ public final class TypePropagation {
 	private final TypeExpander expander;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
+	private WhileyFile.FunDecl method;
 	
 	public TypePropagation(ModuleLoader loader, TypeExpander expander) {
 		this.loader = loader;
@@ -134,42 +135,38 @@ public final class TypePropagation {
 	}
 	
 	public void propagate(TypeDecl td) {		
-		if(td.constraint != null) {
-			Attributes.Type attr = td.type.attribute(Attributes.Type.class);
+		if(td.constraint != null) {			
 			Env environment = new Env();
-			environment.put("$", attr.type);
+			environment.put("$", typeOf(td.type));
 			propagate(td.constraint,environment);
 		}
 	}
 
 	public void propagate(FunDecl fd) {
+		this.method = fd;
 		Env environment = new Env();
 		
-		for (WhileyFile.Parameter p : fd.parameters) {			
-			Attributes.Type attr = p.type.attribute(Attributes.Type.class);
-			environment = environment.put(p.name,attr.type);
+		for (WhileyFile.Parameter p : fd.parameters) {						
+			environment = environment.put(p.name,typeOf(p.type));
 		}
 		
 		if(fd instanceof MethDecl) {
-			MethDecl md = (MethDecl) fd;
-			Attributes.Type attr = md.receiver.attribute(Attributes.Type.class);
-			environment = environment.put("this",attr.type);
+			MethDecl md = (MethDecl) fd;			
+			environment = environment.put("this",typeOf(md.receiver));
 		}
 		
 		if(fd.precondition != null) {
 			propagate(fd.precondition,environment.copy());
 		}
 		
-		if(fd.postcondition != null) {
-			Attributes.Type attr = fd.ret.attribute(Attributes.Type.class);
-			environment = environment.put("$", attr.type);
+		if(fd.postcondition != null) {			
+			environment = environment.put("$", typeOf(fd.ret));
 			propagate(fd.postcondition,environment.copy());
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
 			environment = environment.remove("$");
 		}
-		
-		
+				
 		propagate(fd.statements,environment);
 	}
 	
@@ -259,9 +256,12 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Return stmt,
-			Env environment) {
-		return environment;
+	private Env propagate(Stmt.Return stmt, Env environment) {
+		if (stmt.expr != null) {
+			stmt.expr = propagate(stmt.expr, environment);
+			checkIsSubtype(typeOf(method.ret), typeOf(stmt.expr), stmt.expr);
+		}
+		return BOTTOM;
 	}
 	
 	private Env propagate(Stmt.Skip stmt,
@@ -357,7 +357,7 @@ public final class TypePropagation {
 	
 	private Type propagate(Expr.Constant expr,
 			Env environment) {
-		return null;
+		return expr.value.type();
 	}
 
 	private Type propagate(Expr.Convert expr,
@@ -453,6 +453,10 @@ public final class TypePropagation {
 		}
 	}	
 	
+	private static Type typeOf(SyntacticElement elem) {
+		return elem.attribute(Attributes.Type.class).type;
+	}
+	
 	private abstract static class Scope {
 		public abstract void free();
 	}
@@ -494,6 +498,8 @@ public final class TypePropagation {
 			environment.free();
 		}
 	}
+	
+	private static final Env BOTTOM = new Env();
 	
 	private static final class Env {
 		private final HashMap<String,Type> types;
