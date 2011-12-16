@@ -203,8 +203,7 @@ public final class CodeGeneration {
 				postEnv.put(var, environment.get(var)+1);
 			}
 			String lab = Block.freshLabel();
-			postcondition = postcondition != null ? postcondition : new Block(
-					postEnv.size());
+			postcondition = new Block(postEnv.size());
 			postcondition.append(generateCondition(lab, fd.postcondition,
 					postEnv));
 			postcondition.append(Code.Fail("postcondition not satisfied"),
@@ -1259,15 +1258,35 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.lhs, environment));
 		blk.append(generate(v.rhs, environment));
-
-		if(bop == Expr.BOp.UNION) {
-			blk.append(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
+		Type result = typeOf(v); 
+		switch(bop) {		
+		case UNION:
+			blk.append(Code.SetUnion((Type.Set)result,Code.OpDir.UNIFORM),attributes(v));			
 			return blk;			
-		} else if(bop == Expr.BOp.INTERSECTION) {
-			blk.append(Code.SetIntersect(null,Code.OpDir.UNIFORM),attributes(v));
+		case INTERSECTION:
+			blk.append(Code.SetIntersect((Type.Set)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
-		} else {
-			blk.append(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
+		case DIFFERENCE:
+			blk.append(Code.SetDifference((Type.Set)result,Code.OpDir.UNIFORM),attributes(v));
+			return blk;			
+		case LISTAPPEND:
+			blk.append(Code.ListAppend((Type.List)result,Code.OpDir.UNIFORM),attributes(v));
+			return blk;	
+		case STRINGAPPEND:
+			Type lhs = typeOf(v.lhs);
+			Type rhs = typeOf(v.rhs);
+			Code.OpDir dir;
+			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
+				dir = Code.OpDir.UNIFORM;
+			} else if(lhs == Type.T_STRING) {
+				dir = Code.OpDir.LEFT;
+			} else {
+				dir = Code.OpDir.RIGHT;
+			}
+			blk.append(Code.StringAppend(dir),attributes(v));
+			return blk;	
+		default:
+			blk.append(Code.BinOp(result, OP2BOP(bop,v)),attributes(v));			
 			return blk;
 		}		
 	}
@@ -1611,6 +1630,10 @@ public final class CodeGeneration {
 			syntaxError(errMsg, filename, elem);
 			return null;
 		}
+	}
+	
+	private static Type typeOf(SyntacticElement elem) {
+		return elem.attribute(Attributes.Type.class).type;
 	}
 	
 	private <T extends Scope> T findEnclosingScope(Class<T> c) {
