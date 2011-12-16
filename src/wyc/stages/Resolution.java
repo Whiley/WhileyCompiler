@@ -416,8 +416,8 @@ public final class Resolution {
 				e = resolve((BinOp)e, environment, imports);
 			} else if (e instanceof Convert) {
 				e = resolve((Convert)e, environment, imports);
-			} else if (e instanceof ListAccess) {
-				e = resolve((ListAccess)e, environment, imports);
+			} else if (e instanceof Access) {
+				e = resolve((Access)e, environment, imports);
 			} else if (e instanceof UnOp) {
 				e = resolve((UnOp)e, environment, imports);
 			} else if (e instanceof Invoke) {
@@ -548,7 +548,7 @@ public final class Resolution {
 		return c;
 	}
 	
-	private Expr resolve(ListAccess v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Access v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		v.src = resolve(v.src, environment, imports);
 		v.index = resolve(v.index, environment, imports);

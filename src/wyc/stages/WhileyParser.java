@@ -1136,7 +1136,7 @@ public final class WhileyParser {
 								start, index - 1), lhs, rhs, end);
 					} else {
 						match(RightSquare.class);							
-						lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
+						lhs = new Expr.Access(lhs, rhs, sourceAttr(start,
 								index - 1));
 					}
 				} else if(lookahead instanceof Dot) {				

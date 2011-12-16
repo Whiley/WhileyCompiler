@@ -327,7 +327,7 @@ public final class CodeGeneration {
 						attributes(s));				
 			}
 			return blk;
-		} else if(s.lhs instanceof Expr.ListAccess || s.lhs instanceof Expr.RecordAccess){
+		} else if(s.lhs instanceof Expr.Access || s.lhs instanceof Expr.RecordAccess){
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
@@ -352,8 +352,8 @@ public final class CodeGeneration {
 		if (e instanceof Expr.LocalVariable) {
 			Expr.LocalVariable v = (Expr.LocalVariable) e;
 			return new Pair(v,0);			
-		} else if (e instanceof Expr.ListAccess) {
-			Expr.ListAccess la = (Expr.ListAccess) e;
+		} else if (e instanceof Expr.Access) {
+			Expr.Access la = (Expr.Access) e;
 			Pair<Expr.LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(generate(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
@@ -687,8 +687,8 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.RecordGen) condition, environment);
 			} else if (condition instanceof Expr.TupleGen) {
 				return generateCondition(target, (Expr.TupleGen) condition, environment);
-			} else if (condition instanceof Expr.ListAccess) {
-				return generateCondition(target, (Expr.ListAccess) condition, environment);
+			} else if (condition instanceof Expr.Access) {
+				return generateCondition(target, (Expr.Access) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
 			} else {				
@@ -883,7 +883,7 @@ public final class CodeGeneration {
 		return null;
 	}
 
-	private Block generateCondition(String target, Expr.ListAccess v, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.Access v, HashMap<String,Integer> environment) {
 		Block blk = generate(v, environment);
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
@@ -996,8 +996,8 @@ public final class CodeGeneration {
 				return generate((Expr.BinOp) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
 				return generate((Expr.Convert) expression, environment);
-			} else if (expression instanceof Expr.ListAccess) {
-				return generate((Expr.ListAccess) expression, environment);
+			} else if (expression instanceof Expr.Access) {
+				return generate((Expr.Access) expression, environment);
 			} else if (expression instanceof Expr.UnOp) {
 				return generate((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.Invoke) {
@@ -1220,7 +1220,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generate(Expr.ListAccess v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Access v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.index, environment));

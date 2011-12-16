@@ -311,8 +311,8 @@ public final class TypePropagation {
 				type = propagate((Expr.Function) expr,environment); 
 			} else if(expr instanceof Expr.Invoke) {
 				type = propagate((Expr.Invoke) expr,environment); 
-			} else if(expr instanceof Expr.ListAccess) {
-				type = propagate((Expr.ListAccess) expr,environment); 
+			} else if(expr instanceof Expr.Access) {
+				type = propagate((Expr.Access) expr,environment); 
 			} else if(expr instanceof Expr.LocalVariable) {
 				type = propagate((Expr.LocalVariable) expr,environment); 
 			} else if(expr instanceof Expr.ModuleAccess) {
@@ -480,11 +480,37 @@ public final class TypePropagation {
 	private Type propagate(Expr.Invoke expr,
 			Env environment) {
 		return null;
-	}
+	}	
 	
-	private Type propagate(Expr.ListAccess expr,
+	private Type propagate(Expr.Access expr,
 			Env environment) {			
-		return null;
+		expr.src = propagate(expr.src,environment);
+		expr.index = propagate(expr.index,environment);		
+		Type idx = typeOf(expr.index);
+		Type src = typeOf(expr.src);
+		if(Type.isImplicitCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),src)) {			
+			// this indicates a dictionary access, rather than a list access			
+			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
+			if(dict == null) {
+				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
+			}
+			checkIsSubtype(dict.key(),idx,expr);
+			expr.op = Expr.AOp.DICT_ACCESS;
+			// OK, it's a hit			
+			return dict.value();
+		} else if(Type.isImplicitCoerciveSubtype(Type.T_STRING,src)) {
+			checkIsSubtype(Type.T_INT,idx,expr);			
+			expr.op = Expr.AOp.STRING_ACCESS;			
+			return Type.T_CHAR;
+		} else {		
+			Type.List list = Type.effectiveListType(src);			
+			if(list == null) {
+				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
+			}			
+			checkIsSubtype(Type.T_INT,idx,expr);
+			expr.op = Expr.AOp.LIST_ACCESS;
+			return list.element();			
+		}
 	}
 	
 	private Type propagate(Expr.LocalVariable expr,
