@@ -875,7 +875,7 @@ public final class WhileyParser {
 		match(WhileyLexer.TypeEquals.class);			
 				
 		UnresolvedType type = parseType();
-		Expr.Type tc = new Expr.Type(type, sourceAttr(start, index - 1));				
+		Expr.TypeVal tc = new Expr.TypeVal(type, sourceAttr(start, index - 1));				
 		
 		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
 				index - 1));

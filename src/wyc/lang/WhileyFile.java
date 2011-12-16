@@ -121,6 +121,7 @@ public final class WhileyFile {
 		public final List<Modifier> modifiers;
 		public final Expr constant;
 		public final String name;
+		public Value value;
 
 		public ConstDecl(List<Modifier> modifiers, Expr constant, String name,
 				Attribute... attributes) {
@@ -164,15 +165,16 @@ public final class WhileyFile {
 	 */	
 	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
 		public final List<Modifier> modifiers;
-		public final UnresolvedType type;
+		public final UnresolvedType unresolvedType;		
 		public final Expr constraint;
 		public final String name;
+		public Type type;
 
 		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name,
 				Expr constraint, Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
-			this.type = type;
+			this.unresolvedType = type;
 			this.name = name;			
 			this.constraint = constraint;			
 		}		
@@ -190,9 +192,9 @@ public final class WhileyFile {
 		
 		public String toString() {
 			if(constraint != null) {
-				return "define " + type + " as " + name + " where " + constraint;
+				return "define " + unresolvedType + " as " + name + " where " + constraint;
 			} else {
-				return "define " + type + " as " + name;
+				return "define " + unresolvedType + " as " + name;
 			}
 		}
 	}
@@ -230,6 +232,7 @@ public final class WhileyFile {
 		public final Expr precondition;
 		public final Expr postcondition;		
 		public final ArrayList<Stmt> statements;
+		public Type.Function type;
 
 		/**
 		 * Construct an object representing a Whiley function.

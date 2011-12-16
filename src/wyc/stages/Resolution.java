@@ -115,21 +115,21 @@ public final class Resolution {
 		};
 	}
 	
-	private Value resolve(ConstDecl td, ArrayList<Import> imports) throws ResolveError {		
-		return td.attribute(Attributes.Constant.class).constant;		
+	private Value resolve(ConstDecl td, ArrayList<Import> imports) throws ResolveError {	
+		return td.value;			
 	}
 	
 	private Type resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
 		try {
-			Type type = resolve(td.type, imports);	
-			td.attributes().add(new Attributes.Type(type));
+			Type type = resolve(td.unresolvedType, imports); 
+			td.type = type;
 			if (td.constraint != null) {
 				HashMap<String, Set<Expr>> environment = new HashMap<String, Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
 				addExposedNames(
 						new Expr.LocalVariable("$", td.constraint
 								.attribute(Attribute.Source.class)),
-						td.type, environment);
+						td.unresolvedType, environment);
 				resolve(td.constraint, environment, imports);
 			}
 			return type;
@@ -148,8 +148,7 @@ public final class Resolution {
 		ArrayList<Type> parameters = new ArrayList<Type>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			try {
-				Type type = resolve(p.type, imports);
-				p.type.attributes().add(new Attributes.Type(type));
+				Type type = resolve(p.type, imports);				
 				parameters.add(type);
 				environment.put(p.name(),Collections.EMPTY_SET);
 			} catch (ResolveError e) {												
@@ -169,8 +168,7 @@ public final class Resolution {
 		Type ret;
 		Type throwsClause;
 		try {
-			ret = resolve(fd.ret, imports);
-			fd.ret.attributes().add(new Attributes.Type(ret));
+			ret = resolve(fd.ret, imports);			
 			throwsClause = resolve(fd.throwType, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
@@ -215,7 +213,7 @@ public final class Resolution {
 			funType = checkType(Type.Function(ret,throwsClause,parameters),Type.Function.class,fd);
 		}
 		
-		fd.attributes().add(new Attributes.Fun(funType));
+		fd.type = funType;		
 		return funType;
 	}
 	
@@ -325,10 +323,10 @@ public final class Resolution {
 		s.expr = resolve(s.expr, environment, imports);
 		
 		for(Stmt.Case c : s.cases){			
-			for(int i=0;i!=c.values.size();++i) {
-				Expr v = c.values.get(i);
+			for(int i=0;i!=c.expr.size();++i) {
+				Expr v = c.expr.get(i);
 				v = resolve(v,environment,imports);
-				c.values.set(i, v);
+				c.expr.set(i, v);
 			}
 			for (Stmt st : c.stmts) {
 				resolve(st, environment, imports);
@@ -350,7 +348,7 @@ public final class Resolution {
 						filename, s);
 			}
 			nenvironment.put(c.variable, Collections.EMPTY_SET);
-			resolve(c.type, imports);
+			c.type = resolve(c.unresolvedType, imports);
 			for (Stmt st : c.stmts) {
 				resolve(st, nenvironment, imports);
 			}
@@ -430,8 +428,8 @@ public final class Resolution {
 				e = resolve((TupleGen) e, environment, imports);
 			} else if (e instanceof DictionaryGen) {
 				e = resolve((DictionaryGen) e, environment, imports);
-			} else if(e instanceof Expr.Type) {
-				e = resolve((Expr.Type) e, environment, imports);
+			} else if(e instanceof Expr.TypeVal) {
+				e = resolve((Expr.TypeVal) e, environment, imports);
 			} else if(e instanceof Function) {
 				e = resolve((Function) e, environment, imports);
 			} else {				
@@ -543,7 +541,7 @@ public final class Resolution {
 	}
 	
 	private Expr resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {
-		resolve(c.type, imports);
+		c.type = resolve(c.unresolvedType, imports);
 		c.expr = resolve(c.expr, environment, imports);
 		return c;
 	}
@@ -618,19 +616,23 @@ public final class Resolution {
 		return sg;
 	}
 	
-	private Expr resolve(Expr.Type tc, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.TypeVal tc, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
-		resolve(tc.type,imports);
+		tc.type = resolve(tc.unresolvedType,imports);
 		return tc;
 	}
 	
 	private Expr resolve(Function tc, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
-
+		
 		if (tc.paramTypes != null) {
+			ArrayList<Type> types = new ArrayList<Type>();
 			for (UnresolvedType t : tc.paramTypes) {
-				resolve(t, imports);
+				types.add(resolve(t, imports));
 			}
+			// FIXME: include throws clause
+			tc.type = checkType(Type.Function(Type.T_VOID, Type.T_VOID, types),
+					Type.Function.class, tc);
 		}
 
 		NameID nid = resolver.resolveAsName(tc.name, imports);

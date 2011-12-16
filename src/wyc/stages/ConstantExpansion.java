@@ -70,8 +70,7 @@ public final class ConstantExpansion {
 				if (d instanceof ConstDecl) {
 					ConstDecl cd = (ConstDecl) d;
 					NameID key = new NameID(f.module, cd.name());
-					cd.attributes().add(
-							new Attributes.Constant(constants.get(key)));
+					cd.value = constants.get(key);
 				}
 			}
 		}

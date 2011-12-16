@@ -472,7 +472,7 @@ public final class ModuleBuilder {
 					TypeDecl td = (TypeDecl) d;					
 					NameID key = new NameID(f.module, td.name());
 					declOrder.add(key);
-					unresolved.put(key, new Pair<UnresolvedType,Expr>(td.type,td.constraint));
+					unresolved.put(key, new Pair<UnresolvedType,Expr>(td.unresolvedType,td.constraint));
 					srcs.put(key, d);
 					filemap.put(key, f);
 				} else if (d instanceof ConstDecl) {
@@ -922,7 +922,7 @@ public final class ModuleBuilder {
 		// TODO: fix constraints here
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
 		
-		Type.Function tf = fd.attribute(Attributes.Fun.class).type;
+		Type.Function tf = fd.attribute(Attributes.Fun.class).unresolvedType;
 		return new Module.Method(fd.modifiers, fd.name(), tf, ncases);
 	}
 
@@ -1131,7 +1131,7 @@ public final class ModuleBuilder {
 		ArrayList<Pair<Value,String>> cases = new ArrayList();	
 		
 		for(Stmt.Case c : s.cases) {			
-			if(c.values.isEmpty()) {
+			if(c.expr.isEmpty()) {
 				// indicates the default block
 				if(defaultTarget != exitLab) {
 					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),filename,c);
@@ -1147,7 +1147,7 @@ public final class ModuleBuilder {
 				String target = Block.freshLabel();	
 				cblk.append(Code.Label(target), attributes(c));				
 				
-				for(Expr e : c.values) { 
+				for(Expr e : c.expr) { 
 					Value constant = expandConstantHelper(e, filename,
 							new HashMap(), new HashSet());												
 					if(values.contains(constant)) {
@@ -1190,7 +1190,7 @@ public final class ModuleBuilder {
 			} else {
 				lab = Code.Label(Block.freshLabel());
 			}
-			Pair<Type,Block> pt = resolve(c.type);
+			Pair<Type,Block> pt = resolve(c.unresolvedType);
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt.first(),lab.label));
 			cblk.append(lab, attributes(c));
@@ -1548,7 +1548,7 @@ public final class ModuleBuilder {
 			slot = -1;
 		}
 
-		Pair<Type,Block> rhs_t = resolve(((Expr.Type) v.rhs).type);
+		Pair<Type,Block> rhs_t = resolve(((Expr.Type) v.rhs).unresolvedType);
 		// TODO: fix type constraints
 		blk.append(Code.IfType(null, slot, rhs_t.first(), target),
 				attributes(v));
@@ -1928,7 +1928,7 @@ public final class ModuleBuilder {
 	private Block resolve(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(resolve(v.expr, environment));		
-		Pair<Type,Block> p = resolve(v.type);
+		Pair<Type,Block> p = resolve(v.unresolvedType);
 		// TODO: include constraints
 		blk.append(Code.Convert(null,p.first()),attributes(v));
 		return blk;

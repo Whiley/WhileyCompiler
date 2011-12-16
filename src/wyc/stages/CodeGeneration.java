@@ -134,12 +134,10 @@ public final class CodeGeneration {
 	}
 
 	private Module.ConstDef generate(ConstDecl td, ModuleID module) {
-		Value v = td.attribute(Attributes.Constant.class).constant;
-		return new Module.ConstDef(td.modifiers, td.name(), v);
+		return new Module.ConstDef(td.modifiers, td.name, td.value);
 	}
 
-	private Module.TypeDef generate(TypeDecl td, ModuleID module) {
-		Attributes.Type attr = td.attribute(Attributes.Type.class);		
+	private Module.TypeDef generate(TypeDecl td, ModuleID module) {		
 		Block constraint = null;
 		if(td.constraint != null) {
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -149,7 +147,7 @@ public final class CodeGeneration {
 			constraint.append(Code.Fail("precondition not satisfied"), attributes(td.constraint));
 			constraint.append(Code.Label(lab));
 		}
-		return new Module.TypeDef(td.modifiers, td.name(), attr.type, constraint);
+		return new Module.TypeDef(td.modifiers, td.name(), td.type, constraint);
 	}
 
 	private Module.Method generate(FunDecl fd) {		
@@ -161,8 +159,7 @@ public final class CodeGeneration {
 		// method receiver type (if applicable)
 		if (fd instanceof MethDecl) {
 			MethDecl md = (MethDecl) fd;
-			if(md.receiver != null) {
-				Attributes.Type t = md.receiver.attribute(Attributes.Type.class);				
+			if(md.receiver != null) {						
 				// TODO: fix receiver constraints
 				environment.put("this", paramIndex++);	
 				nparams++;
@@ -174,8 +171,7 @@ public final class CodeGeneration {
 		// ==================================================================
 		
 		for (WhileyFile.Parameter p : fd.parameters) {			
-			// First, generate and inline any constraints associated with the type.
-			Attributes.Type t = p.type.attribute(Attributes.Type.class);			
+			// First, generate and inline any constraints associated with the type.	
 			// Now, map the parameter to its index
 			environment.put(p.name(),paramIndex++);
 		}		
@@ -240,9 +236,8 @@ public final class CodeGeneration {
 		}	
 		
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
-		
-		Type.Function tf = fd.attribute(Attributes.Fun.class).type;
-		return new Module.Method(fd.modifiers, fd.name(), tf, ncases);
+
+		return new Module.Method(fd.modifiers, fd.name(), fd.type, ncases);
 	}
 
 	/**
@@ -381,7 +376,7 @@ public final class CodeGeneration {
 
 		if (s.expr != null) {
 			Block blk = generate(s.expr, environment);
-			Type ret = currentFunDecl.ret.attribute(Attributes.Type.class).type;
+			Type ret = currentFunDecl.type.ret();
 			blk.append(Code.Return(ret), attributes(s));
 			return blk;
 		} else {
@@ -450,7 +445,7 @@ public final class CodeGeneration {
 		ArrayList<Pair<Value,String>> cases = new ArrayList();	
 		
 		for(Stmt.Case c : s.cases) {			
-			if(c.values.isEmpty()) {
+			if(c.expr.isEmpty()) {
 				// indicates the default block
 				if(defaultTarget != exitLab) {
 					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),filename,c);
@@ -466,8 +461,7 @@ public final class CodeGeneration {
 				String target = Block.freshLabel();	
 				cblk.append(Code.Label(target), attributes(c));				
 				
-				for(Expr e : c.values) { 
-					Value constant = e.attribute(Attributes.Constant.class).constant;												
+				for(Value constant : c.constants) { 					
 					if(values.contains(constant)) {
 						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),filename,c);
 					}									
@@ -508,7 +502,7 @@ public final class CodeGeneration {
 			} else {
 				lab = Code.Label(Block.freshLabel());
 			}
-			Type pt = c.type.attribute(Attributes.Type.class).type;
+			Type pt = c.type;
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt,lab.label));
 			cblk.append(lab, attributes(c));
@@ -728,7 +722,8 @@ public final class CodeGeneration {
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
-		Value val = v.attribute(Attributes.Constant.class).constant;					
+		Value val = v.value;
+		
 		// Obviously, this will be evaluated one way or another.
 		blk.append(Code.Const(val));
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
@@ -861,9 +856,10 @@ public final class CodeGeneration {
 			slot = -1;
 		}
 
-		Type rhs_t = v.rhs.attribute(Attributes.Type.class).type;
+		Expr.TypeVal rhs =(Expr.TypeVal) v.rhs;		
+		
 		// TODO: fix type constraints
-		blk.append(Code.IfType(null, slot, rhs_t, target),
+		blk.append(Code.IfType(null, slot, rhs.type, target),
 				attributes(v));
 		return blk;
 	}
@@ -1133,49 +1129,29 @@ public final class CodeGeneration {
 
 	private Block generate(Expr.Function s, HashMap<String,Integer> environment) {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
-		NameID name = new NameID(modInfo.module, s.name);	
-		Type.Function tf = null;
-		if(s.paramTypes != null) {
-			// in this case, the user has provided explicit type information.
-			ArrayList<Type> paramTypes = new ArrayList<Type>();
-			for(UnresolvedType pt : s.paramTypes) {
-				Type p = pt.attribute(Attributes.Type.class).type;
-				// TODO: fix parameter constraints
-				paramTypes.add(p);
-			}
-			tf = checkType(Type.Function(Type.T_ANY, Type.T_VOID, paramTypes),
-					Type.Function.class, s);
-		}
+		NameID name = new NameID(modInfo.module, s.name);			
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(Value.V_FUN(name, tf)),
+		blk.append(Code.Const(Value.V_FUN(name, s.type)),
 				attributes(s));
 		return blk;
 	}
 	
 	private Block generate(Expr.ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
 		Block blk = new Block(environment.size());
-		Value val = v.attribute(Attributes.Constant.class).constant;				
+		Value val = v.value;				
 		blk.append(Code.Const(val),attributes(v));
 		return blk;
 	}
 	
 	private Block generate(Expr.LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
 		
-		if(environment.containsKey(v.var)) {
-			Block blk = new Block(environment.size());						
-			blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
+		if (environment.containsKey(v.var)) {
+			Block blk = new Block(environment.size());
+			blk.append(Code.Load(null, environment.get(v.var)), attributes(v));
 			return blk;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					v);
-		}
-		
-		// Third, see if it's a constant
-		Attributes.Constant attr = v.attribute(Attributes.Constant.class);
-		if (attr != null) {
-			Block blk = new Block(environment.size());
-			blk.append(Code.Const(attr.constant),attributes(v));
-			return blk;
 		}
 		
 		// must be an error
@@ -1230,9 +1206,10 @@ public final class CodeGeneration {
 	private Block generate(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.expr, environment));		
-		Type p = v.type.attribute(Attributes.Type.class).type;
+		Type from = v.expr.type();
+		Type to = v.type;
 		// TODO: include constraints
-		blk.append(Code.Convert(null,p),attributes(v));
+		blk.append(Code.Convert(from,to),attributes(v));
 		return blk;
 	}
 	
@@ -1258,7 +1235,8 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.lhs, environment));
 		blk.append(generate(v.rhs, environment));
-		Type result = typeOf(v); 
+		Type result = v.type;
+		
 		switch(bop) {		
 		case UNION:
 			blk.append(Code.SetUnion((Type.Set)result,Code.OpDir.UNIFORM),attributes(v));			
@@ -1273,8 +1251,8 @@ public final class CodeGeneration {
 			blk.append(Code.ListAppend((Type.List)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;	
 		case STRINGAPPEND:
-			Type lhs = typeOf(v.lhs);
-			Type rhs = typeOf(v.rhs);
+			Type lhs = v.lhs.type();
+			Type rhs = v.rhs.type();
 			Code.OpDir dir;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
 				dir = Code.OpDir.UNIFORM;
@@ -1630,10 +1608,6 @@ public final class CodeGeneration {
 			syntaxError(errMsg, filename, elem);
 			return null;
 		}
-	}
-	
-	private static Type typeOf(SyntacticElement elem) {
-		return elem.attribute(Attributes.Type.class).type;
 	}
 	
 	private <T extends Scope> T findEnclosingScope(Class<T> c) {

@@ -28,6 +28,8 @@ package wyc.lang;
 import java.util.*;
 
 import wyil.lang.Attribute;
+import wyil.lang.Type;
+import wyil.lang.Value;
 import wyil.util.*;
 import wyjvm.lang.Bytecode;
 
@@ -193,26 +195,28 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {
-		public ArrayList<Expr> values; // needs to be proved all constants
+		public ArrayList<Expr> expr; // needs to be proved all constants
+		public ArrayList<Value> constants; // needs to be proved all constants
 		public final ArrayList<Stmt> stmts;
 		
 		public Case(List<Expr> values, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
-			this.values = new ArrayList<Expr>(values);
+			this.expr = new ArrayList<Expr>(values);
 			this.stmts = new ArrayList<Stmt>(statements);
 		}
 	}	
 	
 	public static final class Catch extends SyntacticElement.Impl {
-		public UnresolvedType type; 
+		public UnresolvedType unresolvedType; 		
 		public final String variable;
 		public final ArrayList<Stmt> stmts;
+		public Type type;
 
 		public Catch(UnresolvedType type, String variable, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
-			this.type = type;
+			this.unresolvedType = type;
 			this.variable = variable;
 			this.stmts = new ArrayList<Stmt>(statements);
 		}

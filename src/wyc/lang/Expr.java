@@ -42,7 +42,14 @@ import wyil.util.SyntacticElement;
  * 
  */
 public interface Expr extends SyntacticElement {
-
+	
+	/**
+	 * Get the type that this expression will evaluate to.
+	 * 
+	 * @return
+	 */
+	public Type type();
+	
 	/**
 	 * An LVal is a special form of expression which may appear on the left-hand
 	 * side of an assignment.
@@ -53,13 +60,17 @@ public interface Expr extends SyntacticElement {
 	public interface LVal extends Expr {}
 	
 	public static class UnknownVariable extends SyntacticElement.Impl implements Expr, LVal {
-		public final String var;
+		public final String var;		
 
 		public UnknownVariable(String var, Attribute... attributes) {
 			super(attributes);
 			this.var = var;
 		}
 
+		public Type type() {
+			return Type.T_ANY;
+		}
+		
 		public String toString() {
 			return var;
 		}
@@ -68,6 +79,7 @@ public interface Expr extends SyntacticElement {
 	public static class LocalVariable extends SyntacticElement.Impl implements
 			Expr, LVal {
 		public final String var;
+		public Type type;
 
 		public LocalVariable(String var, Attribute... attributes) {
 			super(attributes);
@@ -79,6 +91,10 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 		
+		public Type type() {
+			return type;
+		}
+		
 		public String toString() {
 			return var;
 		}
@@ -86,6 +102,7 @@ public interface Expr extends SyntacticElement {
 		
 	public static class ExternalAccess extends SyntacticElement.Impl implements Expr {
 		public final NameID nid;
+		public Value value;
 
 		public ExternalAccess(NameID mid, Attribute... attributes) {
 			super(attributes);
@@ -95,6 +112,10 @@ public interface Expr extends SyntacticElement {
 		public ExternalAccess(NameID mid, Collection<Attribute> attributes) {
 			super(attributes);
 			this.nid = mid;
+		}
+		
+		public Type type() {
+			return Type.T_ANY;
 		}
 		
 		public String toString() {
@@ -113,6 +134,10 @@ public interface Expr extends SyntacticElement {
 		public ModuleAccess(ModuleID mid, Collection<Attribute> attributes) {
 			super(attributes);
 			this.mid = mid;
+		}		
+		
+		public Type type() {
+			return Type.T_ANY;
 		}
 		
 		public String toString() {
@@ -131,6 +156,10 @@ public interface Expr extends SyntacticElement {
 		public PackageAccess(PkgID mid, Collection<Attribute> attributes) {
 			super(attributes);
 			this.pid = mid;
+		}		
+
+		public Type type() {
+			return Type.T_ANY;
 		}
 		
 		public String toString() {
@@ -146,44 +175,63 @@ public interface Expr extends SyntacticElement {
 			this.value = val;
 		}
 		
+		public Type type() {
+			return value.type();
+		}
+		
 		public String toString() {
 			return value.toString();
 		}
 	}
 
 	public static class Convert extends SyntacticElement.Impl implements Expr {
-		public final UnresolvedType type;
+		public final UnresolvedType unresolvedType;
 		public Expr expr;
-
+		public Type type;
+		
 		public Convert(UnresolvedType type, Expr expr, Attribute... attributes) {
 			super(attributes);
-			this.type = type;
+			this.unresolvedType = type;
 			this.expr = expr;
 		}
 		
+		public Type type() {
+			return type;
+		}
+		
 		public String toString() {
-			return "(" + type.toString() + ") " + expr;
+			return "(" + unresolvedType.toString() + ") " + expr;
 		}
 	}
 	
-	public static class Type extends SyntacticElement.Impl implements Expr {
-		public final UnresolvedType type;
-
-		public Type(UnresolvedType val, Attribute... attributes) {
+	public static class TypeVal extends SyntacticElement.Impl implements Expr {
+		public final UnresolvedType unresolvedType;
+		public Type type;
+		
+		public TypeVal(UnresolvedType val, Attribute... attributes) {
 			super(attributes);
-			this.type = val;
+			this.unresolvedType = val;
+		}
+		
+
+		public Type type() {
+			return type;
 		}
 	}
 	
 	public static class Function extends SyntacticElement.Impl implements Expr {
-
-		public String name;
+		public final String name;
 		public final List<UnresolvedType> paramTypes;
-
+		public Type.Function type;
+		
 		public Function(String name, List<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.paramTypes = paramTypes;
+		}
+		
+		public Type.Function type() {
+			return type;
 		}
 	}
 	
@@ -191,6 +239,7 @@ public interface Expr extends SyntacticElement {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
+		public Type type;
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -206,6 +255,10 @@ public interface Expr extends SyntacticElement {
 			this.rhs = rhs;
 		}
 		
+		public Type type() {
+			return type;
+		}
+		
 		public String toString() {
 			return "(" + op + " " + lhs + " " + rhs + ")";
 		}
@@ -217,6 +270,7 @@ public interface Expr extends SyntacticElement {
 		public Expr src;
 		public Expr index;
 		public AOp op = null;
+		public Type type;
 		
 		public Access(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -230,6 +284,19 @@ public interface Expr extends SyntacticElement {
 			this.index = index;
 		}
 					
+		public Type type() {
+			switch(op) {			
+			case STRING_ACCESS:
+				return Type.T_CHAR;
+			case LIST_ACCESS:
+				return ((Type.List) type).element();
+			case DICT_ACCESS:
+				return ((Type.Dictionary) type).value();
+			default:
+				return Type.T_VOID;
+			}
+		}
+		
 		public String toString() {
 			return src + "[" + index + "]";
 		}
@@ -250,12 +317,17 @@ public interface Expr extends SyntacticElement {
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
-		public Expr mhs;		
+		public Expr mhs;	
+		public Type type;
 		
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
 			this.mhs = mhs;			
+		}
+		
+		public Type type() {
+			return type;
 		}
 		
 		public String toString() {
@@ -266,11 +338,14 @@ public interface Expr extends SyntacticElement {
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {
 		public final NOp nop;
 		public final ArrayList<Expr> arguments;
+		public Type type;
+		
 		public NaryOp(NOp nop, Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.nop = nop;
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
+		
 		public NaryOp(NOp nop, Attribute attribute, Expr... arguments) {
 			super(attribute);
 			this.nop = nop;
@@ -278,6 +353,10 @@ public interface Expr extends SyntacticElement {
 			for(Expr a : arguments) {
 				this.arguments.add(a);
 			}
+		}
+		
+		public Type type() {
+			return type;
 		}
 	}
 	
@@ -292,6 +371,7 @@ public interface Expr extends SyntacticElement {
 		public Expr value;
 		public final ArrayList<Pair<String,Expr>> sources;
 		public Expr condition;
+		public Type type;
 		
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<String, Expr>> sources, Expr condition,
@@ -301,6 +381,10 @@ public interface Expr extends SyntacticElement {
 			this.value = value;
 			this.condition = condition;
 			this.sources = new ArrayList<Pair<String, Expr>>(sources);
+		}
+		
+		public Type type() {
+			return type;
 		}
 	}
 	
@@ -315,11 +399,16 @@ public interface Expr extends SyntacticElement {
 			LVal {
 		public Expr lhs;
 		public final String name;
+		public Type.Record type;
 
 		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.name = name;
+		}
+		
+		public Type type() {
+			return type.fields().get(name);
 		}
 		
 		public String toString() {
@@ -329,28 +418,43 @@ public interface Expr extends SyntacticElement {
 
 	public static class DictionaryGen extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Pair<Expr,Expr>> pairs;		
+		public Type.Dictionary type;
 		
 		public DictionaryGen(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
 			super(attributes);
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
+		
+		public Type.Dictionary type() {
+			return type;
+		}
 	}
 	
 	public static class RecordGen extends SyntacticElement.Impl implements Expr {
-		public final HashMap<String,Expr> fields;		
+		public final HashMap<String,Expr> fields;
+		public Type.Record type;
 		
 		public RecordGen(Map<String, Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new HashMap<String, Expr>(fields);
 		}
+		
+		public Type.Record type() {
+			return type;
+		}
 	}
 	
 	public static class TupleGen extends SyntacticElement.Impl implements LVal {
 		public final ArrayList<Expr> fields;		
+		public Type.Tuple type;
 		
 		public TupleGen(Collection<Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
+		}
+		
+		public Type.Tuple type() {
+			return type;
 		}
 	}
 	
@@ -360,6 +464,7 @@ public interface Expr extends SyntacticElement {
 		public Expr receiver;
 		public final List<Expr> arguments;
 		public final boolean synchronous;
+		public Type.Function type;
 
 		public Invoke(String name, Expr receiver, List<Expr> arguments,
 				boolean synchronous, Attribute... attributes) {
@@ -369,11 +474,21 @@ public interface Expr extends SyntacticElement {
 			this.arguments = arguments;
 			this.synchronous = synchronous;
 		}
+		
+		public Type type() {
+			return type.ret();
+		}
 	}
 	
-	public static class Spawn extends UnOp implements Stmt {		
+	public static class Spawn extends UnOp implements Stmt {
+		public Type.Process type;
+
 		public Spawn(Expr mhs, Attribute... attributes) {
 			super(UOp.PROCESSSPAWN,mhs,attributes);							
+		}
+		
+		public Type.Process type() {
+			return type;
 		}
 	}
 	

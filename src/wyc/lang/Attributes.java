@@ -35,22 +35,6 @@ import wyil.lang.*;
  * 
  */
 public interface Attributes {
-	public static final class Type implements Attribute {
-		public final wyil.lang.Type type;
-		
-		public Type(wyil.lang.Type type) {
-			this.type = type;		
-		}
-	}
-	
-	public static final class Fun implements Attribute {
-		public final wyil.lang.Type.Function type;
-
-		public Fun(wyil.lang.Type.Function type) {
-			this.type = type;
-		}
-	}
-	
 	public static final class Module implements Attribute {
 		public final ModuleID module;
 		
@@ -65,13 +49,5 @@ public interface Attributes {
 		public Name(NameID name) {
 			this.name = name;
 		}
-	}
-	
-	public static final class Constant implements Attribute {
-		public final Value constant;
-		
-		public Constant(Value constant) {
-			this.constant = constant;
-		}
-	}
+	}	
 }
