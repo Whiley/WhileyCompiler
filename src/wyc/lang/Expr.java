@@ -188,7 +188,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
-		public final BOp op;
+		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
 		
@@ -200,7 +200,7 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
-			super(attributes);
+			super(attributes);			
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
@@ -404,6 +404,15 @@ public interface Expr extends SyntacticElement {
 		},
 		INTERSECTION{
 			public String toString() { return "&"; }
+		},
+		DIFFERENCE{
+			public String toString() { return "-"; }
+		},
+		LISTAPPEND{
+			public String toString() { return "+"; }
+		},
+		STRINGAPPEND{
+			public String toString() { return "+"; }
 		},
 		EQ{
 			public String toString() { return "=="; }

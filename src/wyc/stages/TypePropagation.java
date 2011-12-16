@@ -37,6 +37,7 @@ import wyil.ModuleLoader;
 import wyil.lang.Import;
 import wyil.lang.PkgID;
 import wyil.lang.Type;
+import wyil.lang.Code.OpDir;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
@@ -347,7 +348,97 @@ public final class TypePropagation {
 	
 	private Type propagate(Expr.BinOp expr,
 			Env environment) {
-		return null;
+		expr.lhs = propagate(expr.lhs,environment);
+		expr.rhs = propagate(expr.rhs,environment);
+		Type lhs = typeOf(expr.lhs);
+		Type rhs = typeOf(expr.rhs);
+	
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhs);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhs);		
+		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhs);
+		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhs);
+		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
+		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
+		
+		if(lhs_str || rhs_str) {						
+			switch(expr.op) {				
+				case ADD:			
+					expr.op = Expr.BOp.STRINGAPPEND;				
+					break;
+				default:
+					syntaxError("Invalid string operation: " + expr.op,filename,expr);					
+			}
+			
+			return Type.T_STRING;
+		} else if(lhs_set && rhs_set) {		
+			Type.Set type = Type.effectiveSetType(Type.Union(lhs,rhs));
+			
+			switch(expr.op) {				
+				case ADD:																				
+					expr.op = Expr.BOp.LISTAPPEND;
+					break;
+				default:
+					syntaxError("Invalid list operation: " + expr.op,filename,expr);		
+			}
+			
+			return type;
+		} else if(lhs_list && rhs_list) {
+			Type.List type = Type.effectiveListType(Type.Union(lhs,rhs));
+			
+			switch(expr.op) {				
+				case ADD:																				
+					expr.op = Expr.BOp.LISTAPPEND;
+					break;
+				default:
+					syntaxError("Invalid set operation: " + expr.op,filename,expr);		
+			}
+			
+			return type;
+			
+		} else {			
+			switch(expr.op) {
+			case BITWISEAND:
+			case BITWISEOR:
+			case BITWISEXOR:
+				checkIsSubtype(Type.T_BYTE,lhs,expr);
+				checkIsSubtype(Type.T_BYTE,rhs,expr);
+				return Type.T_BYTE;
+			case LEFTSHIFT:
+			case RIGHTSHIFT:
+				checkIsSubtype(Type.T_BYTE,lhs,expr);
+				checkIsSubtype(Type.T_INT,rhs,expr);
+				return Type.T_BYTE;
+			case RANGE:
+				checkIsSubtype(Type.T_INT,lhs,expr);
+				checkIsSubtype(Type.T_INT,rhs,expr);
+				return Type.List(Type.T_INT, false);
+			case REM:
+				checkIsSubtype(Type.T_INT,lhs,expr);
+				checkIsSubtype(Type.T_INT,rhs,expr);
+				return Type.T_INT;
+			}
+			
+			if(Type.isImplicitCoerciveSubtype(lhs,rhs)) {
+				checkIsSubtype(Type.T_REAL,lhs,expr);
+				if(Type.isSubtype(Type.T_CHAR, lhs)) {
+					return Type.T_CHAR;
+				} else if(Type.isSubtype(Type.T_INT, lhs)) {
+					return Type.T_INT;
+				} else {
+					return Type.T_REAL;
+				}				
+			} else {
+				checkIsSubtype(Type.T_REAL,lhs,expr);
+				checkIsSubtype(Type.T_REAL,rhs,expr);				
+				if(Type.isSubtype(Type.T_CHAR, rhs)) {
+					return Type.T_CHAR;
+				} else if(Type.isSubtype(Type.T_INT, rhs)) {
+					return Type.T_INT;
+				} else {
+					return Type.T_REAL;
+				}
+			} 			
+		}						
 	}
 	
 	private Type propagate(Expr.Comprehension expr,
@@ -362,7 +453,13 @@ public final class TypePropagation {
 
 	private Type propagate(Expr.Convert expr,
 			Env environment) {
-		return null;
+		expr.expr = propagate(expr.expr,environment);
+		Type from = typeOf(expr.expr);
+		Type to = typeOf(expr.type);
+		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
+			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), filename, expr);
+		}	
+		return to;
 	}
 	
 	private Type propagate(Expr.DictionaryGen expr,
