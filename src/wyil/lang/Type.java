@@ -906,7 +906,7 @@ public abstract class Type {
 			return nid.hashCode();
 		}
 		public String toString() {
-			return "?" + nid;
+			return nid.toString();
 		}
 	}
 			
