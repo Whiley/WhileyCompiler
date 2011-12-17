@@ -48,7 +48,14 @@ public interface Expr extends SyntacticElement {
 	 * 
 	 * @return
 	 */
-	public Type type();
+	public Type nominalType();
+	
+	/**
+	 * Get the type that this expression will evaluate to.
+	 * 
+	 * @return
+	 */
+	public Type rawType();
 	
 	/**
 	 * An LVal is a special form of expression which may appear on the left-hand
@@ -67,7 +74,11 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 
-		public Type type() {
+		public Type nominalType() {
+			return Type.T_ANY;
+		}
+		
+		public Type rawType() {
 			return Type.T_ANY;
 		}
 		
@@ -79,7 +90,8 @@ public interface Expr extends SyntacticElement {
 	public static class LocalVariable extends SyntacticElement.Impl implements
 			Expr, LVal {
 		public final String var;
-		public Type type;
+		public Type nominalType;
+		public Type rawType;
 
 		public LocalVariable(String var, Attribute... attributes) {
 			super(attributes);
@@ -91,8 +103,12 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 		
-		public Type type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 		
 		public String toString() {
@@ -114,7 +130,11 @@ public interface Expr extends SyntacticElement {
 			this.nid = mid;
 		}
 		
-		public Type type() {
+		public Type nominalType() {
+			return Type.T_ANY;
+		}
+		
+		public Type rawType() {
 			return Type.T_ANY;
 		}
 		
@@ -136,7 +156,11 @@ public interface Expr extends SyntacticElement {
 			this.mid = mid;
 		}		
 		
-		public Type type() {
+		public Type nominalType() {
+			return Type.T_ANY;
+		}
+		
+		public Type rawType() {
 			return Type.T_ANY;
 		}
 		
@@ -158,7 +182,11 @@ public interface Expr extends SyntacticElement {
 			this.pid = mid;
 		}		
 
-		public Type type() {
+		public Type nominalType() {
+			return Type.T_ANY;
+		}
+		
+		public Type rawType() {
 			return Type.T_ANY;
 		}
 		
@@ -175,7 +203,11 @@ public interface Expr extends SyntacticElement {
 			this.value = val;
 		}
 		
-		public Type type() {
+		public Type nominalType() {
+			return value.type();
+		}
+		
+		public Type rawType() {
 			return value.type();
 		}
 		
@@ -186,8 +218,9 @@ public interface Expr extends SyntacticElement {
 
 	public static class Convert extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType unresolvedType;
-		public Expr expr;
-		public Type type;
+		public Type nominalType;
+		public Type rawType;				
+		public Expr expr;	
 		
 		public Convert(UnresolvedType type, Expr expr, Attribute... attributes) {
 			super(attributes);
@@ -195,8 +228,12 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 		
-		public Type type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 		
 		public String toString() {
@@ -206,7 +243,8 @@ public interface Expr extends SyntacticElement {
 	
 	public static class TypeVal extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType unresolvedType;
-		public Type type;
+		public Type nominalType;
+		public Type rawType;
 		
 		public TypeVal(UnresolvedType val, Attribute... attributes) {
 			super(attributes);
@@ -214,15 +252,20 @@ public interface Expr extends SyntacticElement {
 		}
 		
 
-		public Type type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 	}
 	
 	public static class Function extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final List<UnresolvedType> paramTypes;
-		public Type.Function type;
+		public Type nominalType;
+		public Type.Function rawType;
 		
 		public Function(String name, List<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
@@ -230,8 +273,12 @@ public interface Expr extends SyntacticElement {
 			this.paramTypes = paramTypes;
 		}
 		
-		public Type.Function type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type.Function rawType() {
+			return rawType;
 		}
 	}
 	
@@ -239,7 +286,8 @@ public interface Expr extends SyntacticElement {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
-		public Type type;
+		public Type nominalType;
+		public Type rawType;
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -255,8 +303,12 @@ public interface Expr extends SyntacticElement {
 			this.rhs = rhs;
 		}
 		
-		public Type type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 		
 		public String toString() {
@@ -270,7 +322,8 @@ public interface Expr extends SyntacticElement {
 		public Expr src;
 		public Expr index;
 		public AOp op = null;
-		public Type type;
+		public Type nominalElementType;
+		public Type rawSrcType;
 		
 		public Access(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -284,14 +337,18 @@ public interface Expr extends SyntacticElement {
 			this.index = index;
 		}
 					
-		public Type type() {
+		public Type nominalType() {
+			return nominalElementType;
+		}
+		
+		public Type rawType() {
 			switch(op) {			
 			case STRING_ACCESS:
 				return Type.T_CHAR;
 			case LIST_ACCESS:
-				return ((Type.List) type).element();
+				return ((Type.List) nominalElementType).element();
 			case DICT_ACCESS:
-				return ((Type.Dictionary) type).value();
+				return ((Type.Dictionary) nominalElementType).value();
 			default:
 				return Type.T_VOID;
 			}
@@ -318,7 +375,8 @@ public interface Expr extends SyntacticElement {
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
 		public Expr mhs;	
-		public Type type;
+		public Type nominalType;
+		public Type rawType;
 		
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -326,8 +384,12 @@ public interface Expr extends SyntacticElement {
 			this.mhs = mhs;			
 		}
 		
-		public Type type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 		
 		public String toString() {
@@ -338,7 +400,8 @@ public interface Expr extends SyntacticElement {
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {
 		public final NOp nop;
 		public final ArrayList<Expr> arguments;
-		public Type type;
+		public Type nominalType;
+		public Type rawType;
 		
 		public NaryOp(NOp nop, Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
@@ -355,8 +418,12 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Type type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 	}
 	
@@ -371,7 +438,8 @@ public interface Expr extends SyntacticElement {
 		public Expr value;
 		public final ArrayList<Pair<String,Expr>> sources;
 		public Expr condition;
-		public Type type;
+		public Type nominalType;
+		public Type rawType;
 		
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<String, Expr>> sources, Expr condition,
@@ -383,8 +451,12 @@ public interface Expr extends SyntacticElement {
 			this.sources = new ArrayList<Pair<String, Expr>>(sources);
 		}
 		
-		public Type type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 	}
 	
@@ -399,7 +471,8 @@ public interface Expr extends SyntacticElement {
 			LVal {
 		public Expr lhs;
 		public final String name;
-		public Type.Record type;
+		public Type nominalFieldType;
+		public Type.Record rawType;
 
 		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);
@@ -407,8 +480,12 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 		}
 		
-		public Type type() {
-			return type.fields().get(name);
+		public Type nominalType() {
+			return nominalFieldType;
+		}
+		
+		public Type rawType() {
+			return rawType.fields().get(name);
 		}
 		
 		public String toString() {
@@ -416,45 +493,63 @@ public interface Expr extends SyntacticElement {
 		}
 	}		
 
-	public static class DictionaryGen extends SyntacticElement.Impl implements Expr {
+	public static class DictionaryGenerator extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Pair<Expr,Expr>> pairs;		
-		public Type.Dictionary type;
+		public Type nominalType;
+		public Type.Dictionary rawType;
 		
-		public DictionaryGen(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
+		public DictionaryGenerator(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
 			super(attributes);
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
 		
-		public Type.Dictionary type() {
-			return type;
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type rawType() {
+			return rawType;
 		}
 	}
 	
-	public static class RecordGen extends SyntacticElement.Impl implements Expr {
-		public final HashMap<String,Expr> fields;
-		public Type.Record type;
-		
-		public RecordGen(Map<String, Expr> fields, Attribute... attributes) {
+	public static class RecordGenerator extends SyntacticElement.Impl implements
+			Expr {
+		public final HashMap<String, Expr> fields;
+		public Type nominalType;
+		public Type.Record rawType;
+
+		public RecordGenerator(Map<String, Expr> fields,
+				Attribute... attributes) {
 			super(attributes);
 			this.fields = new HashMap<String, Expr>(fields);
 		}
-		
-		public Type.Record type() {
-			return type;
+
+		public Type nominalType() {
+			return nominalType;
+		}
+
+		public Type.Record rawType() {
+			return rawType;
 		}
 	}
 	
-	public static class TupleGen extends SyntacticElement.Impl implements LVal {
-		public final ArrayList<Expr> fields;		
-		public Type.Tuple type;
+	public static class TupleGenerator extends SyntacticElement.Impl implements
+			LVal {
+		public final ArrayList<Expr> fields;
+		public Type nominalType;
+		public Type.Tuple rawType;
 		
-		public TupleGen(Collection<Expr> fields, Attribute... attributes) {
+		public TupleGenerator(Collection<Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
 		}
-		
-		public Type.Tuple type() {
-			return type;
+
+		public Type nominalType() {
+			return nominalType;
+		}
+
+		public Type.Tuple rawType() {
+			return rawType;
 		}
 	}
 	
@@ -464,7 +559,8 @@ public interface Expr extends SyntacticElement {
 		public Expr receiver;
 		public final List<Expr> arguments;
 		public final boolean synchronous;
-		public Type.Function type;
+		public Type nominalReturnType;
+		public Type.Function rawType;
 
 		public Invoke(String name, Expr receiver, List<Expr> arguments,
 				boolean synchronous, Attribute... attributes) {
@@ -475,8 +571,12 @@ public interface Expr extends SyntacticElement {
 			this.synchronous = synchronous;
 		}
 		
-		public Type type() {
-			return type.ret();
+		public Type nominalType() {
+			return nominalReturnType;
+		}
+		
+		public Type rawType() {
+			return rawType.ret();
 		}
 	}
 	
@@ -487,7 +587,7 @@ public interface Expr extends SyntacticElement {
 			super(UOp.PROCESSSPAWN,mhs,attributes);							
 		}
 		
-		public Type.Process type() {
+		public Type.Process nominalType() {
 			return type;
 		}
 	}

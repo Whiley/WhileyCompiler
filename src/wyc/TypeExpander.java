@@ -121,8 +121,8 @@ public final class TypeExpander {
 	 * @param type
 	 * @return
 	 */
-	public Type expand(Type type) throws ResolveError {		
-		if(type instanceof Type.Leaf) {
+	public Type expand(Type type) throws ResolveError {				
+		if(type instanceof Type.Leaf && !(type instanceof Type.Nominal)) {
 			return type; // no expansion possible
 		}
 		Automaton automaton = Type.destruct(type);
@@ -134,9 +134,8 @@ public final class TypeExpander {
 				hasNominal = true;
 				break;
 			}
-		}
-		
-		if(hasNominal) {
+		}		
+		if(hasNominal) {		
 			// ok, possibility of expansion exists
 			ArrayList<State> states = new ArrayList<State>();
 			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
@@ -196,7 +195,7 @@ public final class TypeExpander {
 		Type type = skeleton.type(key.name());
 		if(type == null) {
 			// FIXME: need a better error message!
-			throw new ResolveError("unknown type");
+			throw new ResolveError("type not present in module: " + key.name());
 		}
 		
 		// following is needed to terminate any recursion
@@ -207,7 +206,8 @@ public final class TypeExpander {
 			// to avoid unnecessarily creating an array of size one
 			int myIndex = states.size();
 			int kind = Type.leafKind((Type.Leaf)type);			
-			states.add(new Automaton.State(kind,null,true,Automaton.NOCHILDREN));
+			Object data = Type.leafData((Type.Leaf)type);
+			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
 		} else {
 			return expand(0, Type.destruct(type), roots, states);

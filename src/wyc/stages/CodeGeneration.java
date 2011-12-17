@@ -305,8 +305,8 @@ public final class CodeGeneration {
 			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
 			blk.append(Code.Store(null, allocate(v.var, environment)),
 					attributes(s));			
-		} else if(s.lhs instanceof Expr.TupleGen) {					
-			Expr.TupleGen tg = (Expr.TupleGen) s.lhs;
+		} else if(s.lhs instanceof Expr.TupleGenerator) {					
+			Expr.TupleGenerator tg = (Expr.TupleGenerator) s.lhs;
 			blk = generate(s.rhs, environment);			
 			blk.append(Code.Destructure(null),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
@@ -676,10 +676,10 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.Invoke) condition, environment);
 			} else if (condition instanceof Expr.RecordAccess) {
 				return generateCondition(target, (Expr.RecordAccess) condition, environment);
-			} else if (condition instanceof Expr.RecordGen) {
-				return generateCondition(target, (Expr.RecordGen) condition, environment);
-			} else if (condition instanceof Expr.TupleGen) {
-				return generateCondition(target, (Expr.TupleGen) condition, environment);
+			} else if (condition instanceof Expr.RecordGenerator) {
+				return generateCondition(target, (Expr.RecordGenerator) condition, environment);
+			} else if (condition instanceof Expr.TupleGenerator) {
+				return generateCondition(target, (Expr.TupleGenerator) condition, environment);
 			} else if (condition instanceof Expr.Access) {
 				return generateCondition(target, (Expr.Access) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
@@ -859,7 +859,7 @@ public final class CodeGeneration {
 		Expr.TypeVal rhs =(Expr.TypeVal) v.rhs;		
 		
 		// TODO: fix type constraints
-		blk.append(Code.IfType(null, slot, rhs.type, target),
+		blk.append(Code.IfType(null, slot, rhs.rawType, target),
 				attributes(v));
 		return blk;
 	}
@@ -1001,12 +1001,12 @@ public final class CodeGeneration {
 				return generate((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
 				return generate((Expr.RecordAccess) expression, environment);
-			} else if (expression instanceof Expr.RecordGen) {
-				return generate((Expr.RecordGen) expression, environment);
-			} else if (expression instanceof Expr.TupleGen) {
-				return generate((Expr.TupleGen) expression, environment);
-			} else if (expression instanceof Expr.DictionaryGen) {
-				return generate((Expr.DictionaryGen) expression, environment);
+			} else if (expression instanceof Expr.RecordGenerator) {
+				return generate((Expr.RecordGenerator) expression, environment);
+			} else if (expression instanceof Expr.TupleGenerator) {
+				return generate((Expr.TupleGenerator) expression, environment);
+			} else if (expression instanceof Expr.DictionaryGenerator) {
+				return generate((Expr.DictionaryGenerator) expression, environment);
 			} else if (expression instanceof Expr.Function) {
 				return generate((Expr.Function) expression, environment);
 			} else {
@@ -1131,7 +1131,7 @@ public final class CodeGeneration {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		NameID name = new NameID(modInfo.module, s.name);			
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(Value.V_FUN(name, s.type)),
+		blk.append(Code.Const(Value.V_FUN(name, s.rawType)),
 				attributes(s));
 		return blk;
 	}
@@ -1206,8 +1206,8 @@ public final class CodeGeneration {
 	private Block generate(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.expr, environment));		
-		Type from = v.expr.type();
-		Type to = v.type;
+		Type from = v.expr.rawType();
+		Type to = v.rawType;
 		// TODO: include constraints
 		blk.append(Code.Convert(from,to),attributes(v));
 		return blk;
@@ -1235,7 +1235,7 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.lhs, environment));
 		blk.append(generate(v.rhs, environment));
-		Type result = v.type;
+		Type result = v.rawType;
 		
 		switch(bop) {		
 		case UNION:
@@ -1251,8 +1251,8 @@ public final class CodeGeneration {
 			blk.append(Code.ListAppend((Type.List)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;	
 		case STRINGAPPEND:
-			Type lhs = v.lhs.type();
-			Type rhs = v.rhs.type();
+			Type lhs = v.lhs.rawType();
+			Type rhs = v.rhs.rawType();
 			Code.OpDir dir;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
 				dir = Code.OpDir.UNIFORM;
@@ -1400,7 +1400,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generate(Expr.RecordGen sg, HashMap<String,Integer> environment) {
+	private Block generate(Expr.RecordGenerator sg, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
@@ -1414,7 +1414,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generate(Expr.TupleGen sg, HashMap<String,Integer> environment) {		
+	private Block generate(Expr.TupleGenerator sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Expr e : sg.fields) {									
 			blk.append(generate(e, environment));
@@ -1424,7 +1424,7 @@ public final class CodeGeneration {
 		return blk;		
 	}
 
-	private Block generate(Expr.DictionaryGen sg, HashMap<String,Integer> environment) {		
+	private Block generate(Expr.DictionaryGenerator sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
 			blk.append(generate(e.first(), environment));

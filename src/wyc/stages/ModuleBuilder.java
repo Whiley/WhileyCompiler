@@ -299,8 +299,8 @@ public final class ModuleBuilder {
 			} else if (nop.nop == Expr.NOp.SETGEN) {
 				return Value.V_SET(values);
 			}
-		} else if (expr instanceof Expr.RecordGen) {
-			Expr.RecordGen rg = (Expr.RecordGen) expr;
+		} else if (expr instanceof Expr.RecordGenerator) {
+			Expr.RecordGenerator rg = (Expr.RecordGenerator) expr;
 			HashMap<String,Value> values = new HashMap<String,Value>();
 			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
 				Value v = expandConstantHelper(e.getValue(),filename,exprs,visited);
@@ -310,8 +310,8 @@ public final class ModuleBuilder {
 				values.put(e.getKey(), v);
 			}
 			return Value.V_RECORD(values);
-		} else if (expr instanceof Expr.TupleGen) {
-			Expr.TupleGen rg = (Expr.TupleGen) expr;			
+		} else if (expr instanceof Expr.TupleGenerator) {
+			Expr.TupleGenerator rg = (Expr.TupleGenerator) expr;			
 			ArrayList<Value> values = new ArrayList<Value>();			
 			for(Expr e : rg.fields) {
 				Value v = expandConstantHelper(e,filename,exprs,visited);
@@ -321,8 +321,8 @@ public final class ModuleBuilder {
 				values.add(v);				
 			}
 			return Value.V_TUPLE(values);
-		}  else if (expr instanceof Expr.DictionaryGen) {
-			Expr.DictionaryGen rg = (Expr.DictionaryGen) expr;			
+		}  else if (expr instanceof Expr.DictionaryGenerator) {
+			Expr.DictionaryGenerator rg = (Expr.DictionaryGenerator) expr;			
 			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 			for(Pair<Expr,Expr> e : rg.pairs) {
 				Value key = expandConstantHelper(e.first(),filename,exprs,visited);
@@ -991,8 +991,8 @@ public final class ModuleBuilder {
 			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
 			blk.append(Code.Store(null, allocate(v.var, environment)),
 					attributes(s));			
-		} else if(s.lhs instanceof Expr.TupleGen) {					
-			Expr.TupleGen tg = (Expr.TupleGen) s.lhs;
+		} else if(s.lhs instanceof Expr.TupleGenerator) {					
+			Expr.TupleGenerator tg = (Expr.TupleGenerator) s.lhs;
 			blk = resolve(s.rhs, environment);			
 			blk.append(Code.Destructure(null),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
@@ -1364,10 +1364,10 @@ public final class ModuleBuilder {
 				return resolveCondition(target, (Expr.Invoke) condition, environment);
 			} else if (condition instanceof Expr.RecordAccess) {
 				return resolveCondition(target, (Expr.RecordAccess) condition, environment);
-			} else if (condition instanceof Expr.RecordGen) {
-				return resolveCondition(target, (Expr.RecordGen) condition, environment);
-			} else if (condition instanceof Expr.TupleGen) {
-				return resolveCondition(target, (Expr.TupleGen) condition, environment);
+			} else if (condition instanceof Expr.RecordGenerator) {
+				return resolveCondition(target, (Expr.RecordGenerator) condition, environment);
+			} else if (condition instanceof Expr.TupleGenerator) {
+				return resolveCondition(target, (Expr.TupleGenerator) condition, environment);
 			} else if (condition instanceof Expr.Access) {
 				return resolveCondition(target, (Expr.Access) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
@@ -1692,12 +1692,12 @@ public final class ModuleBuilder {
 				return resolve((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
 				return resolve((Expr.RecordAccess) expression, environment);
-			} else if (expression instanceof Expr.RecordGen) {
-				return resolve((Expr.RecordGen) expression, environment);
-			} else if (expression instanceof Expr.TupleGen) {
-				return resolve((Expr.TupleGen) expression, environment);
-			} else if (expression instanceof Expr.DictionaryGen) {
-				return resolve((Expr.DictionaryGen) expression, environment);
+			} else if (expression instanceof Expr.RecordGenerator) {
+				return resolve((Expr.RecordGenerator) expression, environment);
+			} else if (expression instanceof Expr.TupleGenerator) {
+				return resolve((Expr.TupleGenerator) expression, environment);
+			} else if (expression instanceof Expr.DictionaryGenerator) {
+				return resolve((Expr.DictionaryGenerator) expression, environment);
 			} else if (expression instanceof Expr.Function) {
 				return resolve((Expr.Function) expression, environment);
 			} else {
@@ -2100,7 +2100,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 
-	private Block resolve(Expr.RecordGen sg, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.RecordGenerator sg, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
@@ -2114,7 +2114,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 
-	private Block resolve(Expr.TupleGen sg, HashMap<String,Integer> environment) {		
+	private Block resolve(Expr.TupleGenerator sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Expr e : sg.fields) {									
 			blk.append(resolve(e, environment));
@@ -2124,7 +2124,7 @@ public final class ModuleBuilder {
 		return blk;		
 	}
 
-	private Block resolve(Expr.DictionaryGen sg, HashMap<String,Integer> environment) {		
+	private Block resolve(Expr.DictionaryGenerator sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
 			blk.append(resolve(e.first(), environment));

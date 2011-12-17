@@ -159,8 +159,8 @@ public final class ConstantExpansion {
 			} else if (nop.nop == Expr.NOp.SETGEN) {
 				return Value.V_SET(values);
 			}
-		} else if (expr instanceof Expr.RecordGen) {
-			Expr.RecordGen rg = (Expr.RecordGen) expr;
+		} else if (expr instanceof Expr.RecordGenerator) {
+			Expr.RecordGenerator rg = (Expr.RecordGenerator) expr;
 			HashMap<String,Value> values = new HashMap<String,Value>();
 			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
 				Value v = expandConstantHelper(e.getValue(),filename,exprs,visited);
@@ -170,8 +170,8 @@ public final class ConstantExpansion {
 				values.put(e.getKey(), v);
 			}
 			return Value.V_RECORD(values);
-		} else if (expr instanceof Expr.TupleGen) {
-			Expr.TupleGen rg = (Expr.TupleGen) expr;			
+		} else if (expr instanceof Expr.TupleGenerator) {
+			Expr.TupleGenerator rg = (Expr.TupleGenerator) expr;			
 			ArrayList<Value> values = new ArrayList<Value>();			
 			for(Expr e : rg.fields) {
 				Value v = expandConstantHelper(e,filename,exprs,visited);
@@ -181,8 +181,8 @@ public final class ConstantExpansion {
 				values.add(v);				
 			}
 			return Value.V_TUPLE(values);
-		}  else if (expr instanceof Expr.DictionaryGen) {
-			Expr.DictionaryGen rg = (Expr.DictionaryGen) expr;			
+		}  else if (expr instanceof Expr.DictionaryGenerator) {
+			Expr.DictionaryGenerator rg = (Expr.DictionaryGenerator) expr;			
 			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 			for(Pair<Expr,Expr> e : rg.pairs) {
 				Value key = expandConstantHelper(e.first(),filename,exprs,visited);

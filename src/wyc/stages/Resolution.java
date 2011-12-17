@@ -90,11 +90,14 @@ public final class Resolution {
 					ImportDecl impd = (ImportDecl) d;
 					imports.add(1,new Import(new PkgID(impd.pkg),impd.module,impd.name));
 				} else if(d instanceof FunDecl) {
-					resolve((FunDecl)d,imports);
+					Type.Function t = resolve((FunDecl)d,imports);
+					functions.put(d.name(), t);
 				} else if(d instanceof TypeDecl) {
-					resolve((TypeDecl)d,imports);					
+					Type t = resolve((TypeDecl)d,imports);
+					types.put(d.name(), t);
 				} else if(d instanceof ConstDecl) {
-					resolve((ConstDecl)d,imports);					
+					Value v = resolve((ConstDecl)d,imports);
+					constants.put(d.name(), v);
 				}
 			} catch(ResolveError ex) {
 				syntaxError(errorMessage(RESOLUTION_ERROR, ex.getMessage()),
@@ -264,8 +267,8 @@ public final class Resolution {
 			UnknownVariable v = (UnknownVariable) s.lhs;
 			environment.put(v.var, Collections.EMPTY_SET);
 			s.lhs = new LocalVariable(v.var,v.attributes());
-		} else if(s.lhs instanceof TupleGen) {
-			TupleGen tg = (TupleGen) s.lhs;
+		} else if(s.lhs instanceof TupleGenerator) {
+			TupleGenerator tg = (TupleGenerator) s.lhs;
 			for(int i=0;i!=tg.fields.size();++i) {
 				Expr e = tg.fields.get(i);
 				if(e instanceof UnknownVariable) {
@@ -422,12 +425,12 @@ public final class Resolution {
 				e = resolve((Invoke)e, environment, imports);
 			} else if (e instanceof RecordAccess) {
 				e = resolve((RecordAccess) e, environment, imports);
-			} else if (e instanceof RecordGen) {
-				e = resolve((RecordGen) e, environment, imports);
-			} else if (e instanceof TupleGen) {
-				e = resolve((TupleGen) e, environment, imports);
-			} else if (e instanceof DictionaryGen) {
-				e = resolve((DictionaryGen) e, environment, imports);
+			} else if (e instanceof RecordGenerator) {
+				e = resolve((RecordGenerator) e, environment, imports);
+			} else if (e instanceof TupleGenerator) {
+				e = resolve((TupleGenerator) e, environment, imports);
+			} else if (e instanceof DictionaryGenerator) {
+				e = resolve((DictionaryGenerator) e, environment, imports);
 			} else if(e instanceof Expr.TypeVal) {
 				e = resolve((Expr.TypeVal) e, environment, imports);
 			} else if(e instanceof Function) {
@@ -541,7 +544,7 @@ public final class Resolution {
 	}
 	
 	private Expr resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {
-		c.type = resolve(c.unresolvedType, imports);
+		c.nominalType = resolve(c.unresolvedType, imports);
 		c.expr = resolve(c.expr, environment, imports);
 		return c;
 	}
@@ -584,7 +587,7 @@ public final class Resolution {
 		return e;
 	}	
 		
-	private Expr resolve(RecordGen sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(RecordGenerator sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		for(String key : keys) {
@@ -595,7 +598,7 @@ public final class Resolution {
 		return sg;
 	}
 
-	private Expr resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(TupleGenerator sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		for(int i=0;i!=sg.fields.size();++i) {
 			Expr e = sg.fields.get(i);
@@ -605,7 +608,7 @@ public final class Resolution {
 		return sg;
 	}
 	
-	private Expr resolve(DictionaryGen sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(DictionaryGenerator sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		for(int i=0;i!=sg.pairs.size();++i) {
 			Pair<Expr,Expr> e = sg.pairs.get(i);
@@ -618,7 +621,7 @@ public final class Resolution {
 	
 	private Expr resolve(Expr.TypeVal tc, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
-		tc.type = resolve(tc.unresolvedType,imports);
+		tc.nominalType = resolve(tc.unresolvedType,imports);
 		return tc;
 	}
 	
@@ -631,7 +634,7 @@ public final class Resolution {
 				types.add(resolve(t, imports));
 			}
 			// FIXME: include throws clause
-			tc.type = checkType(Type.Function(Type.T_VOID, Type.T_VOID, types),
+			tc.nominalType = checkType(Type.Function(Type.T_VOID, Type.T_VOID, types),
 					Type.Function.class, tc);
 		}
 

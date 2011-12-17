@@ -260,10 +260,14 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Return stmt, Env environment) {
+	private Env propagate(Stmt.Return stmt, Env environment) throws ResolveError {
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment);
-			checkIsSubtype(method.type.ret(), stmt.expr.type(), stmt.expr);
+			Type lhs = method.type.ret();
+			Type rhs = stmt.expr.nominalType();
+			Type lhsExpanded = expander.expand(lhs);
+			Type rhsExpanded = expander.expand(rhs);
+			checkIsSubtype(lhs,lhsExpanded,rhs,rhsExpanded, stmt.expr);
 		}
 		return BOTTOM;
 	}
@@ -306,8 +310,8 @@ public final class TypePropagation {
 				return propagate((Expr.Constant) expr,environment); 
 			} else if(expr instanceof Expr.Convert) {
 				return propagate((Expr.Convert) expr,environment); 
-			} else if(expr instanceof Expr.DictionaryGen) {
-				return propagate((Expr.DictionaryGen) expr,environment); 
+			} else if(expr instanceof Expr.DictionaryGenerator) {
+				return propagate((Expr.DictionaryGenerator) expr,environment); 
 			} else if(expr instanceof Expr.ExternalAccess) {
 				return propagate((Expr.ExternalAccess) expr,environment); 
 			} else if(expr instanceof Expr.Function) {
@@ -326,12 +330,12 @@ public final class TypePropagation {
 				return propagate((Expr.PackageAccess) expr,environment); 
 			} else if(expr instanceof Expr.RecordAccess) {
 				return propagate((Expr.RecordAccess) expr,environment); 
-			} else if(expr instanceof Expr.RecordGen) {
-				return propagate((Expr.RecordGen) expr,environment); 
+			} else if(expr instanceof Expr.RecordGenerator) {
+				return propagate((Expr.RecordGenerator) expr,environment); 
 			} else if(expr instanceof Expr.Spawn) {
 				return propagate((Expr.Spawn) expr,environment); 
-			} else if(expr instanceof Expr.TupleGen) {
-				return  propagate((Expr.TupleGen) expr,environment); 
+			} else if(expr instanceof Expr.TupleGenerator) {
+				return  propagate((Expr.TupleGenerator) expr,environment); 
 			} else if(expr instanceof Expr.TypeVal) {
 				return propagate((Expr.TypeVal) expr,environment); 
 			} else {
@@ -347,18 +351,20 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.BinOp expr,
-			Env environment) {
+			Env environment) throws ResolveError {
 		expr.lhs = propagate(expr.lhs,environment);
 		expr.rhs = propagate(expr.rhs,environment);
-		Type lhs = expr.lhs.type();
-		Type rhs = expr.rhs.type();
+		Type lhs = expr.lhs.nominalType();
+		Type rhs = expr.rhs.nominalType();
+		Type lhsExpanded = expander.expand(lhs);
+		Type rhsExpanded = expander.expand(rhs);
 	
-		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhs);
-		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhs);		
-		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhs);
-		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhs);
-		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
-		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhsExpanded);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhsExpanded);		
+		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhsExpanded);
+		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhsExpanded);
+		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhsExpanded);
+		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsExpanded);
 		
 		Type result;
 		if(lhs_str || rhs_str) {						
@@ -400,26 +406,26 @@ public final class TypePropagation {
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
-				checkIsSubtype(Type.T_BYTE,lhs,expr);
-				checkIsSubtype(Type.T_BYTE,rhs,expr);
+				checkIsSubtype(Type.T_BYTE,Type.T_BYTE,lhs,lhsExpanded,expr);
+				checkIsSubtype(Type.T_BYTE,Type.T_BYTE,rhs,rhsExpanded,expr);
 				result = Type.T_BYTE;
 			case LEFTSHIFT:
 			case RIGHTSHIFT:
-				checkIsSubtype(Type.T_BYTE,lhs,expr);
-				checkIsSubtype(Type.T_INT,rhs,expr);
+				checkIsSubtype(Type.T_BYTE,Type.T_BYTE,lhs,lhsExpanded,expr);
+				checkIsSubtype(Type.T_INT,Type.T_INT,rhs,rhsExpanded,expr);
 				result = Type.T_BYTE;
 			case RANGE:
-				checkIsSubtype(Type.T_INT,lhs,expr);
-				checkIsSubtype(Type.T_INT,rhs,expr);
+				checkIsSubtype(Type.T_INT,Type.T_INT,lhs,lhsExpanded,expr);
+				checkIsSubtype(Type.T_INT,Type.T_INT,rhs,rhsExpanded,expr);
 				result = Type.List(Type.T_INT, false);
 			case REM:
-				checkIsSubtype(Type.T_INT,lhs,expr);
-				checkIsSubtype(Type.T_INT,rhs,expr);
+				checkIsSubtype(Type.T_INT,Type.T_INT,lhs,lhsExpanded,expr);
+				checkIsSubtype(Type.T_INT,Type.T_INT,rhs,rhsExpanded,expr);
 				result = Type.T_INT;
 			default:
 				// all other operations go through here
 				if(Type.isImplicitCoerciveSubtype(lhs,rhs)) {
-					checkIsSubtype(Type.T_REAL,lhs,expr);
+					checkIsSubtype(Type.T_REAL,Type.T_REAL,lhs,lhsExpanded,expr);
 					if(Type.isSubtype(Type.T_CHAR, lhs)) {
 						result = Type.T_CHAR;
 					} else if(Type.isSubtype(Type.T_INT, lhs)) {
@@ -428,8 +434,8 @@ public final class TypePropagation {
 						result = Type.T_REAL;
 					}				
 				} else {
-					checkIsSubtype(Type.T_REAL,lhs,expr);
-					checkIsSubtype(Type.T_REAL,rhs,expr);				
+					checkIsSubtype(Type.T_REAL,Type.T_REAL,lhs,lhsExpanded,expr);
+					checkIsSubtype(Type.T_REAL,Type.T_REAL,rhs,rhsExpanded,expr);				
 					if(Type.isSubtype(Type.T_CHAR, rhs)) {
 						result = Type.T_CHAR;
 					} else if(Type.isSubtype(Type.T_INT, rhs)) {
@@ -441,7 +447,7 @@ public final class TypePropagation {
 			}
 		}	
 		
-		expr.type = result;
+		expr.nominalType = result;
 		return expr;
 	}
 	
@@ -458,15 +464,15 @@ public final class TypePropagation {
 	private Expr propagate(Expr.Convert c,
 			Env environment) {
 		c.expr = propagate(c.expr,environment);
-		Type from = c.expr.type();
-		Type to = c.type();
+		Type from = c.expr.nominalType();
+		Type to = c.nominalType();
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), filename, c);
 		}	
 		return c;
 	}
 	
-	private Expr propagate(Expr.DictionaryGen expr,
+	private Expr propagate(Expr.DictionaryGenerator expr,
 			Env environment) {
 		return null;
 	}
@@ -487,37 +493,41 @@ public final class TypePropagation {
 	}	
 	
 	private Expr propagate(Expr.Access expr,
-			Env environment) {			
+			Env environment) throws ResolveError {			
 		expr.src = propagate(expr.src,environment);
 		expr.index = propagate(expr.index,environment);		
-		Type idx = expr.index.type();
-		Type src = expr.src.type();
-		Type result;
-		if(Type.isImplicitCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),src)) {			
+		Type src = expr.src.nominalType();		
+		Type srcExpanded = expander.expand(src);
+		Type nominalElementType;
+		
+		if(Type.isImplicitCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),srcExpanded)) {			
 			// this indicates a dictionary access, rather than a list access			
-			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
+			Type.Dictionary dict = Type.effectiveDictionaryType(srcExpanded);			
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
 			}
-			checkIsSubtype(dict.key(),idx,expr);
+			// FIXME: this is broken since we've lost the nominal information
+			// about the key/value.
+			checkIsSubtype(dict.key(),expr.index);
 			expr.op = Expr.AOp.DICT_ACCESS;
 			// OK, it's a hit			
-			result = dict;
+			nominalElementType = dict.value();
 		} else if(Type.isImplicitCoerciveSubtype(Type.T_STRING,src)) {
-			checkIsSubtype(Type.T_INT,idx,expr);			
+			checkIsSubtype(Type.T_INT,expr.index);			
 			expr.op = Expr.AOp.STRING_ACCESS;			
-			result = Type.T_STRING;
+			nominalElementType = Type.T_CHAR;
 		} else {		
 			Type.List list = Type.effectiveListType(src);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
 			}			
-			checkIsSubtype(Type.T_INT,idx,expr);
+			checkIsSubtype(Type.T_INT,expr.index);
 			expr.op = Expr.AOp.LIST_ACCESS;
-			result =  list;			
+			nominalElementType = list.element();			
 		}
 		
-		expr.type = result;
+		expr.nominalElementType = nominalElementType;
+		expr.rawSrcType = srcExpanded;
 		return expr;
 	}
 	
@@ -546,7 +556,7 @@ public final class TypePropagation {
 		return null;
 	}
 	
-	private Expr propagate(Expr.RecordGen expr,
+	private Expr propagate(Expr.RecordGenerator expr,
 			Env environment) {
 		return null;
 	}
@@ -556,7 +566,7 @@ public final class TypePropagation {
 		return null;
 	}
 
-	private Expr propagate(Expr.TupleGen expr,
+	private Expr propagate(Expr.TupleGenerator expr,
 			Env environment) {
 		return null;
 	}
@@ -578,11 +588,20 @@ public final class TypePropagation {
 	}
 	
 	// Check t1 :> t2
-	private void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (!Type.isImplicitCoerciveSubtype(t1, t2)) {			
+	private void checkIsSubtype(Type t1, Type t1Expanded, Type t2,
+			Type t2Expanded, SyntacticElement elem) throws ResolveError {
+		if (!Type.isImplicitCoerciveSubtype(t1Expanded, t2Expanded)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
 		}
 	}		
+	
+	private void checkIsSubtype(Type t1, Expr _t2)
+			throws ResolveError {
+		Type t2 = _t2.nominalType();
+		if (!Type.isImplicitCoerciveSubtype(t1, t2)) {
+			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, _t2);
+		}
+	}
 	
 	private abstract static class Scope {
 		public abstract void free();

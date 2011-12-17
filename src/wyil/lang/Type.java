@@ -1612,6 +1612,18 @@ public abstract class Type {
 		}
 	}
 
+	/**
+	 * Determine the node data of a Type.Leaf.
+	 * @param leaf
+	 * @return
+	 */
+	public static final Object leafData(Type.Leaf leaf) {
+		if(leaf instanceof Type.Nominal) {
+			return ((Type.Nominal)leaf).nid;
+		} else {
+			return null;
+		}
+	}
 	
 	/**
 	 * The construct methods constructs a Type from an automaton.
