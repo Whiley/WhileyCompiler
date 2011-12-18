@@ -366,10 +366,8 @@ public final class TypePropagation {
 			Env environment) throws ResolveError {
 		expr.lhs = propagate(expr.lhs,environment);
 		expr.rhs = propagate(expr.rhs,environment);
-		Type lhs = expr.lhs.nominalType();
-		Type rhs = expr.rhs.nominalType();
-		Type lhsExpanded = expander.expand(lhs);
-		Type rhsExpanded = expander.expand(rhs);
+		Type lhsExpanded = expr.lhs.rawType();
+		Type rhsExpanded = expr.rhs.rawType();
 	
 		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhsExpanded);
 		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhsExpanded);		
@@ -380,35 +378,37 @@ public final class TypePropagation {
 		
 		Type result;
 		if(lhs_str || rhs_str) {						
-			switch(expr.op) {				
-				case ADD:			
+			if(expr.op == Expr.BOp.ADD) {								
 					expr.op = Expr.BOp.STRINGAPPEND;				
-					break;
-				default:
+			} else {
 					syntaxError("Invalid string operation: " + expr.op,filename,expr);					
 			}
 			
 			result = Type.T_STRING;
 		} else if(lhs_set && rhs_set) {		
-			Type.Set type = Type.effectiveSetType(Type.Union(lhs,rhs));
+			Type.Set type = Type.effectiveSetType(Type.Union(lhsExpanded,rhsExpanded));
 			
 			switch(expr.op) {				
 				case ADD:																				
-					expr.op = Expr.BOp.LISTAPPEND;
+					expr.op = Expr.BOp.UNION;
+					break;
+				case BITWISEAND:																				
+					expr.op = Expr.BOp.INTERSECTION;
+					break;
+				case SUB:																				
+					expr.op = Expr.BOp.DIFFERENCE;
 					break;
 				default:
-					syntaxError("Invalid list operation: " + expr.op,filename,expr);		
+					syntaxError("Invalid set operation: " + expr.op,filename,expr);		
 			}
 			
 			result = type;
 		} else if(lhs_list && rhs_list) {
-			Type.List type = Type.effectiveListType(Type.Union(lhs,rhs));
+			Type.List type = Type.effectiveListType(Type.Union(lhsExpanded,rhsExpanded));
 			
-			switch(expr.op) {				
-				case ADD:																				
+			if(expr.op == Expr.BOp.ADD){ 																							
 					expr.op = Expr.BOp.LISTAPPEND;
-					break;
-				default:
+			} else {
 					syntaxError("Invalid set operation: " + expr.op,filename,expr);		
 			}
 			
@@ -418,39 +418,39 @@ public final class TypePropagation {
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
-				checkIsSubtype(Type.T_BYTE,Type.T_BYTE,lhs,lhsExpanded,expr);
-				checkIsSubtype(Type.T_BYTE,Type.T_BYTE,rhs,rhsExpanded,expr);
+				checkIsSubtype(Type.T_BYTE,expr.lhs);
+				checkIsSubtype(Type.T_BYTE,expr.rhs);
 				result = Type.T_BYTE;
 			case LEFTSHIFT:
 			case RIGHTSHIFT:
-				checkIsSubtype(Type.T_BYTE,Type.T_BYTE,lhs,lhsExpanded,expr);
-				checkIsSubtype(Type.T_INT,Type.T_INT,rhs,rhsExpanded,expr);
+				checkIsSubtype(Type.T_BYTE,expr.lhs);
+				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.T_BYTE;
 			case RANGE:
-				checkIsSubtype(Type.T_INT,Type.T_INT,lhs,lhsExpanded,expr);
-				checkIsSubtype(Type.T_INT,Type.T_INT,rhs,rhsExpanded,expr);
+				checkIsSubtype(Type.T_INT,expr.lhs);
+				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.List(Type.T_INT, false);
 			case REM:
-				checkIsSubtype(Type.T_INT,Type.T_INT,lhs,lhsExpanded,expr);
-				checkIsSubtype(Type.T_INT,Type.T_INT,rhs,rhsExpanded,expr);
+				checkIsSubtype(Type.T_INT,expr.lhs);
+				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.T_INT;
 			default:
 				// all other operations go through here
-				if(Type.isImplicitCoerciveSubtype(lhs,rhs)) {
-					checkIsSubtype(Type.T_REAL,Type.T_REAL,lhs,lhsExpanded,expr);
-					if(Type.isSubtype(Type.T_CHAR, lhs)) {
+				if(Type.isImplicitCoerciveSubtype(lhsExpanded,rhsExpanded)) {
+					checkIsSubtype(Type.T_REAL,expr.lhs);
+					if(Type.isSubtype(Type.T_CHAR, lhsExpanded)) {
 						result = Type.T_CHAR;
-					} else if(Type.isSubtype(Type.T_INT, lhs)) {
+					} else if(Type.isSubtype(Type.T_INT, lhsExpanded)) {
 						result = Type.T_INT;
 					} else {
 						result = Type.T_REAL;
 					}				
 				} else {
-					checkIsSubtype(Type.T_REAL,Type.T_REAL,lhs,lhsExpanded,expr);
-					checkIsSubtype(Type.T_REAL,Type.T_REAL,rhs,rhsExpanded,expr);				
-					if(Type.isSubtype(Type.T_CHAR, rhs)) {
+					checkIsSubtype(Type.T_REAL,expr.lhs);
+					checkIsSubtype(Type.T_REAL,expr.rhs);				
+					if(Type.isSubtype(Type.T_CHAR, rhsExpanded)) {
 						result = Type.T_CHAR;
-					} else if(Type.isSubtype(Type.T_INT, rhs)) {
+					} else if(Type.isSubtype(Type.T_INT, rhsExpanded)) {
 						result = Type.T_INT;
 					} else {
 						result = Type.T_REAL;
@@ -459,8 +459,13 @@ public final class TypePropagation {
 			}
 		}	
 		
+		/**
+		 * Finally, save the resulting types for this expression.
+		 */
+		
 		expr.nominalType = result;
 		expr.rawType = result;
+		
 		return expr;
 	}
 	
@@ -475,13 +480,14 @@ public final class TypePropagation {
 	}
 
 	private Expr propagate(Expr.Convert c,
-			Env environment) {
+			Env environment) throws ResolveError {
 		c.expr = propagate(c.expr,environment);
-		Type from = c.expr.nominalType();
-		Type to = c.nominalType();
+		Type from = c.expr.rawType();
+		Type to = expander.expand(c.nominalType);
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), filename, c);
 		}	
+		c.rawType = to;
 		return c;
 	}
 	
@@ -545,8 +551,14 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.LocalVariable expr,
-			Env environment) {
-		return null;
+			Env environment) throws ResolveError {
+		
+		Type nominalType = environment.get(expr.var);
+		// Resolution guarantees nominalType != null
+		expr.nominalType = nominalType;
+		expr.rawType = expander.expand(nominalType);
+		
+		return expr;
 	}
 	
 	private Expr propagate(Expr.ModuleAccess expr,
@@ -608,11 +620,12 @@ public final class TypePropagation {
 		}
 	}		
 	
-	private void checkIsSubtype(Type t1, Expr _t2)
-			throws ResolveError {
-		Type t2 = _t2.nominalType();
-		if (!Type.isImplicitCoerciveSubtype(t1, t2)) {
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, _t2);
+	private void checkIsSubtype(Type t1, Expr t2)
+			throws ResolveError {		
+		if (!Type.isImplicitCoerciveSubtype(t1, t2.rawType())) {
+			// We use the nominal type for error reporting, since this includes
+			// more helpful names.
+			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.nominalType()), filename, t2);
 		}
 	}
 	

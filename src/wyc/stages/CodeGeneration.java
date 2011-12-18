@@ -710,9 +710,9 @@ public final class CodeGeneration {
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());				
-		blk.append(Code.Load(null, environment.get(v.var)));
+		blk.append(Code.Load(Type.T_BOOL, environment.get(v.var)));
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
+		blk.append(Code.IfGoto(Type.T_BOOL,Code.COp.EQ, target),attributes(v));			
 
 		return blk;
 	}
@@ -1148,7 +1148,7 @@ public final class CodeGeneration {
 		
 		if (environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Load(null, environment.get(v.var)), attributes(v));
+			blk.append(Code.Load(v.rawType(), environment.get(v.var)), attributes(v));
 			return blk;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
