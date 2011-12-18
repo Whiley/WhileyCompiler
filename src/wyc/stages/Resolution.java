@@ -216,7 +216,7 @@ public final class Resolution {
 			funType = checkType(Type.Function(ret,throwsClause,parameters),Type.Function.class,fd);
 		}
 		
-		fd.type = funType;		
+		fd.nominalType = funType;		
 		return funType;
 	}
 	

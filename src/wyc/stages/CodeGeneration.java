@@ -236,8 +236,7 @@ public final class CodeGeneration {
 		}	
 		
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
-
-		return new Module.Method(fd.modifiers, fd.name(), fd.type, ncases);
+		return new Module.Method(fd.modifiers, fd.name(), fd.rawType, ncases);
 	}
 
 	/**
@@ -376,7 +375,7 @@ public final class CodeGeneration {
 
 		if (s.expr != null) {
 			Block blk = generate(s.expr, environment);
-			Type ret = currentFunDecl.type.ret();
+			Type ret = currentFunDecl.rawType.ret();
 			blk.append(Code.Return(ret), attributes(s));
 			return blk;
 		} else {
@@ -790,6 +789,7 @@ public final class CodeGeneration {
 	}
 */
 	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
+		
 		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
 
@@ -808,6 +808,7 @@ public final class CodeGeneration {
 		}
 
 		Code.COp cop = OP2COP(bop,v);
+		Type type = v.rawType();
 		
 		if (cop == Code.COp.EQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
@@ -818,7 +819,7 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);					
-			blk.append(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
+			blk.append(Code.IfType(type, slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
@@ -829,13 +830,13 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);						
-			blk.append(Code.IfType(null, slot, Type.T_NULL, exitLabel), attributes(v));
+			blk.append(Code.IfType(type, slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
 			blk.append(generate(v.lhs, environment));			
 			blk.append(generate(v.rhs, environment));
-			blk.append(Code.IfGoto(null, cop, target), attributes(v));
+			blk.append(Code.IfGoto(type, cop, target), attributes(v));
 		}
 		return blk;
 	}

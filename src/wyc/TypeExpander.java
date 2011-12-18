@@ -163,7 +163,7 @@ public final class TypeExpander {
 			int[] ochildren = state.children;
 			int[] nchildren = new int[ochildren.length];
 			for(int i=0;i!=ochildren.length;++i) {
-				nchildren[i] = expand(i,automaton,roots,states);
+				nchildren[i] = expand(ochildren[i],automaton,roots,states);
 			}
 			boolean deterministic = kind != Type.K_UNION;		
 			Automaton.State myState = new Automaton.State(kind,state.data,deterministic,nchildren);

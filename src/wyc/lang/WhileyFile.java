@@ -232,7 +232,8 @@ public final class WhileyFile {
 		public final Expr precondition;
 		public final Expr postcondition;		
 		public final ArrayList<Stmt> statements;
-		public Type.Function type;
+		public Type.Function nominalType;
+		public Type.Function rawType;
 
 		/**
 		 * Construct an object representing a Whiley function.

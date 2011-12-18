@@ -121,13 +121,17 @@ public final class TypePropagation {
 		this.filename = wf.filename;
 		
 		for(WhileyFile.Decl decl : wf.declarations) {
-			if(decl instanceof FunDecl) {
-				propagate((FunDecl)decl);
-			} else if(decl instanceof TypeDecl) {
-				propagate((TypeDecl)decl);					
-			} else if(decl instanceof ConstDecl) {
-				propagate((ConstDecl)decl);					
-			}			
+			try {
+				if(decl instanceof FunDecl) {
+					propagate((FunDecl)decl);
+				} else if(decl instanceof TypeDecl) {
+					propagate((TypeDecl)decl);					
+				} else if(decl instanceof ConstDecl) {
+					propagate((ConstDecl)decl);					
+				}			
+			} catch(Throwable t) {
+				internalFailure(t.getMessage(),filename,decl,t);
+			}
 		}
 	}
 	
@@ -143,11 +147,12 @@ public final class TypePropagation {
 		}
 	}
 
-	public void propagate(FunDecl fd) {
+	public void propagate(FunDecl fd) throws ResolveError {
 		this.method = fd;
 		Env environment = new Env();
-		Type.Function type = fd.type;
+		Type.Function type = fd.nominalType;		
 		ArrayList<Type> paramTypes = type.params();
+		
 		int i=0;
 		for (WhileyFile.Parameter p : fd.parameters) {						
 			environment = environment.put(p.name,paramTypes.get(i++));
@@ -170,7 +175,14 @@ public final class TypePropagation {
 			// copying of environments. 
 			environment = environment.remove("$");
 		}
-				
+
+		// Now, expand this functions type (but, only in the case that it hasn't
+		// already been expanded during some other pass). This can happen, for
+		// example, when typing a call to this function.
+		if(fd.rawType == null) {
+			fd.rawType = (Type.Function) expander.expand(fd.nominalType);			
+		}
+		
 		propagate(fd.statements,environment);
 	}
 	
@@ -263,7 +275,7 @@ public final class TypePropagation {
 	private Env propagate(Stmt.Return stmt, Env environment) throws ResolveError {
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment);
-			Type lhs = method.type.ret();
+			Type lhs = method.nominalType.ret();
 			Type rhs = stmt.expr.nominalType();
 			Type lhsExpanded = expander.expand(lhs);
 			Type rhsExpanded = expander.expand(rhs);
@@ -448,6 +460,7 @@ public final class TypePropagation {
 		}	
 		
 		expr.nominalType = result;
+		expr.rawType = result;
 		return expr;
 	}
 	
