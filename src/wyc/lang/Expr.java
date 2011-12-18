@@ -507,7 +507,7 @@ public interface Expr extends SyntacticElement {
 			return nominalType;
 		}
 		
-		public Type rawType() {
+		public Type.Dictionary rawType() {
 			return rawType;
 		}
 	}

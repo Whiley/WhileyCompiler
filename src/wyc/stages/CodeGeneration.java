@@ -1164,10 +1164,10 @@ public final class CodeGeneration {
 		Block blk = generate(v.mhs,  environment);	
 		switch (v.op) {
 		case NEG:
-			blk.append(Code.Negate(null), attributes(v));
+			blk.append(Code.Negate(v.rawType()), attributes(v));
 			break;
 		case INVERT:
-			blk.append(Code.Invert(null), attributes(v));
+			blk.append(Code.Invert(v.rawType()), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
@@ -1180,13 +1180,13 @@ public final class CodeGeneration {
 			blk.append(Code.Label(exitLabel));
 			break;
 		case LENGTHOF:
-			blk.append(Code.ListLength(null), attributes(v));
+			blk.append(Code.ListLength(v.rawSrcType()), attributes(v));
 			break;
 		case PROCESSACCESS:
-			blk.append(Code.ProcLoad(null), attributes(v));
+			blk.append(Code.ProcLoad(v.rawSrcType()), attributes(v));
 			break;			
 		case PROCESSSPAWN:
-			blk.append(Code.Spawn(null), attributes(v));
+			blk.append(Code.Spawn(v.rawType()), attributes(v));
 			break;			
 		default:
 			// should be dead-code
@@ -1200,7 +1200,7 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.index, environment));
-		blk.append(Code.ListLoad(null),attributes(v));
+		blk.append(Code.ListLoad(v.rawSrcType()),attributes(v));
 		return blk;
 	}
 
@@ -1208,7 +1208,7 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.expr, environment));		
 		Type from = v.expr.rawType();
-		Type to = v.rawType;
+		Type to = v.rawType();
 		// TODO: include constraints
 		blk.append(Code.Convert(from,to),attributes(v));
 		return blk;
@@ -1236,7 +1236,7 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.lhs, environment));
 		blk.append(generate(v.rhs, environment));
-		Type result = v.rawType;
+		Type result = v.rawType();
 		
 		switch(bop) {		
 		case UNION:
@@ -1403,15 +1403,12 @@ public final class CodeGeneration {
 
 	private Block generate(Expr.RecordGenerator sg, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
-		HashMap<String, Type> fields = new HashMap<String, Type>();
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);
-		for (String key : keys) {
-			fields.put(key, Type.T_ANY);
+		for (String key : keys) {		
 			blk.append(generate(sg.fields.get(key), environment));
-		}
-		Type.Record rt = checkType(Type.Record(false,fields),Type.Record.class,sg);
-		blk.append(Code.NewRecord(rt), attributes(sg));
+		}		
+		blk.append(Code.NewRecord(sg.rawType()), attributes(sg));
 		return blk;
 	}
 
@@ -1420,8 +1417,7 @@ public final class CodeGeneration {
 		for (Expr e : sg.fields) {									
 			blk.append(generate(e, environment));
 		}
-		// FIXME: to be updated to proper tuple
-		blk.append(Code.NewTuple(null,sg.fields.size()),attributes(sg));
+		blk.append(Code.NewTuple(sg.rawType(),sg.fields.size()),attributes(sg));
 		return blk;		
 	}
 
@@ -1431,13 +1427,13 @@ public final class CodeGeneration {
 			blk.append(generate(e.first(), environment));
 			blk.append(generate(e.second(), environment));
 		}
-		blk.append(Code.NewDict(null,sg.pairs.size()),attributes(sg));
+		blk.append(Code.NewDict(sg.rawType(),sg.pairs.size()),attributes(sg));
 		return blk;
 	}
 	
 	private Block generate(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
 		Block lhs = generate(sg.lhs, environment);		
-		lhs.append(Code.FieldLoad(null,sg.name), attributes(sg));
+		lhs.append(Code.FieldLoad(sg.rawSrcType(),sg.name), attributes(sg));
 		return lhs;
 	}
 	
