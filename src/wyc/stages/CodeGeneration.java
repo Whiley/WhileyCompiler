@@ -375,6 +375,12 @@ public final class CodeGeneration {
 
 		if (s.expr != null) {
 			Block blk = generate(s.expr, environment);
+	
+			// Here, we don't put the type propagated for the return expression.
+			// Instead, we use the declared return type of this function. This
+			// has the effect of forcing an implicit coercion between the
+			// actual value being returned and its required type. 
+			
 			Type ret = currentFunDecl.rawType.ret();
 			blk.append(Code.Return(ret), attributes(s));
 			return blk;
@@ -421,7 +427,7 @@ public final class CodeGeneration {
 	
 	private Block generate(Throw s, HashMap<String,Integer> environment) {
 		Block blk = generate(s.expr, environment);
-		blk.append(Code.Throw(null), s.attributes());
+		blk.append(Code.Throw(s.expr.rawType()), s.attributes());
 		return blk;
 	}
 	
@@ -476,7 +482,7 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNREACHABLE_CODE), filename, c);
 			}
 		}		
-		blk.append(Code.Switch(null,defaultTarget,cases),attributes(s));
+		blk.append(Code.Switch(s.expr.rawType(),defaultTarget,cases),attributes(s));
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));		
 		return blk;
@@ -623,8 +629,9 @@ public final class CodeGeneration {
 		} else {
 			// easy case.
 			int freeReg = allocate(s.variables.get(0),environment);
-			blk.append(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.ForAll(s.source.rawType(), freeReg, label, Collections.EMPTY_SET), attributes(s));
 		}		
+		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {			
@@ -726,68 +733,10 @@ public final class CodeGeneration {
 		// Obviously, this will be evaluated one way or another.
 		blk.append(Code.Const(val));
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
+		blk.append(Code.IfGoto(v.rawType(),Code.COp.EQ, target),attributes(v));			
 		return blk;
 	}
-	
-	/*
-	private Block oldResolveCondition(String target, LocalVariable v, 
-			HashMap<String, Integer> environment) throws ResolveError {
-	
-		Attributes.Alias alias = v.attribute(Attributes.Alias.class);					
-		Attributes.Module mod = v.attribute(Attributes.Module.class);
-		Type.Fun tf = null;
 		
-		if(currentFunDecl != null) {
-			tf = currentFunDecl.attribute(Attributes.Fun.class).type;
-		}			
-		
-		boolean matched=false;
-		
-		if (alias != null) {
-			if(alias.alias != null) {							
-				blk.append(generate(alias.alias, environment));				
-			} else {
-				// Ok, must be a local variable
-				blk.append(Code.Load(null, environment.get(v.var)));	
-			}
-			matched = true;
-		} else if(tf != null && tf instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) tf;
-			Type pt = mt.receiver();			
-			if(pt instanceof Type.Process) {
-				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
-				if(ert != null && ert.fields().containsKey(v.var)) {
-					// Bingo, this is an implicit field dereference
-					blk.append(Code.Load(Type.T_BOOL, environment.get("this")));	
-					blk.append(Code.ProcLoad(null));
-					blk.append(Code.FieldLoad(null, v.var));
-					matched = true;
-				} 
-			}
-		} else if (mod != null) {
-			NameID name = new NameID(mod.module, v.var);
-			Value val = constants.get(name);
-			if (val == null) {
-				// indicates a non-local constant definition
-				Module mi = loader.loadModule(mod.module);
-				val = mi.constant(v.var).constant();				
-			}
-			blk.append(Code.Const(val));
-			matched = true;
-		} 
-		
-		if(!matched) {
-			syntaxError("unknown variable \"" + v.var + "\"",filename,v);
-			return null;
-		}
-						
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
-		
-		return blk;
-	}
-*/
 	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
 		
 		Expr.BOp bop = v.op;
@@ -860,7 +809,7 @@ public final class CodeGeneration {
 		Expr.TypeVal rhs =(Expr.TypeVal) v.rhs;		
 		
 		// TODO: fix type constraints
-		blk.append(Code.IfType(null, slot, rhs.rawType, target),
+		blk.append(Code.IfType(v.rawType(), slot, rhs.rawType, target),
 				attributes(v));
 		return blk;
 	}
