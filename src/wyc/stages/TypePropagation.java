@@ -324,26 +324,24 @@ public final class TypePropagation {
 				return propagate((Expr.Convert) expr,environment); 
 			} else if(expr instanceof Expr.Dictionary) {
 				return propagate((Expr.Dictionary) expr,environment); 
-			} else if(expr instanceof Expr.ExternalConstant) {
-				return propagate((Expr.ExternalConstant) expr,environment); 
 			} else if(expr instanceof Expr.Function) {
 				return propagate((Expr.Function) expr,environment); 
 			} else if(expr instanceof Expr.Invoke) {
 				return propagate((Expr.Invoke) expr,environment); 
-			} else if(expr instanceof Expr.AbstractAccess) {
-				return propagate((Expr.AbstractAccess) expr,environment); 
+			} else if(expr instanceof Expr.AbstractIndexAccess) {
+				return propagate((Expr.AbstractIndexAccess) expr,environment); 
 			} else if(expr instanceof Expr.AbstractLength) {
 				return propagate((Expr.AbstractLength) expr,environment); 
 			} else if(expr instanceof Expr.LocalVariable) {
 				return propagate((Expr.LocalVariable) expr,environment); 
-			} else if(expr instanceof Expr.ModuleAccess) {
-				return propagate((Expr.ModuleAccess) expr,environment); 
-			} else if(expr instanceof Expr.NaryOp) {
-				return propagate((Expr.NaryOp) expr,environment); 
-			} else if(expr instanceof Expr.PackageAccess) {
-				return propagate((Expr.PackageAccess) expr,environment); 
-			} else if(expr instanceof Expr.RecordAccess) {
-				return propagate((Expr.RecordAccess) expr,environment); 
+			} else if(expr instanceof Expr.List) {
+				return propagate((Expr.List) expr,environment); 
+			} else if(expr instanceof Expr.Set) {
+				return propagate((Expr.Set) expr,environment); 
+			} else if(expr instanceof Expr.SubList) {
+				return propagate((Expr.SubList) expr,environment); 
+			} else if(expr instanceof Expr.AbstractDotAccess) {
+				return propagate((Expr.AbstractDotAccess) expr,environment); 
 			} else if(expr instanceof Expr.Record) {
 				return propagate((Expr.Record) expr,environment); 
 			} else if(expr instanceof Expr.Spawn) {
@@ -498,11 +496,6 @@ public final class TypePropagation {
 		return null;
 	}
 	
-	private Expr propagate(Expr.ExternalConstant expr,
-			Env environment) {
-		return null;
-	}
-	
 	private Expr propagate(Expr.Function expr,
 			Env environment) {
 		return null;
@@ -513,7 +506,7 @@ public final class TypePropagation {
 		return null;
 	}	
 	
-	private Expr propagate(Expr.AbstractAccess expr,
+	private Expr propagate(Expr.AbstractIndexAccess expr,
 			Env environment) throws ResolveError {			
 		expr.src = propagate(expr.src,environment);
 		expr.index = propagate(expr.index,environment);		
@@ -631,17 +624,22 @@ public final class TypePropagation {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.ModuleAccess expr,
+	private Expr propagate(Expr.Set expr,
 			Env environment) {
 		return null;
 	}
 	
-	private Expr propagate(Expr.NaryOp expr,
+	private Expr propagate(Expr.List expr,
 			Env environment) {
 		return null;
 	}
 	
-	private Expr propagate(Expr.PackageAccess expr,
+	private Expr propagate(Expr.SubList expr,
+			Env environment) {
+		return null;
+	}
+	
+	private Expr propagate(Expr.AbstractDotAccess expr,
 			Env environment) {
 		return null;
 	}
@@ -650,6 +648,11 @@ public final class TypePropagation {
 			Env environment) {
 		return null;
 	}
+	
+	private Expr propagate(Expr.ConstantAccess expr,
+			Env environment) {
+		return null;
+	}		
 	
 	private Expr propagate(Expr.Record expr,
 			Env environment) {

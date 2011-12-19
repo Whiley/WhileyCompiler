@@ -280,8 +280,8 @@ public final class ModuleBuilder {
 		if (expr instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) expr;
 			return c.value;
-		} else if (expr instanceof Expr.ExternalConstant) {
-			Expr.ExternalConstant v = (Expr.ExternalConstant) expr;			
+		} else if (expr instanceof Expr.ConstantAccess) {
+			Expr.ConstantAccess v = (Expr.ConstantAccess) expr;			
 			return expandConstant(v.nid, exprs, visited);
 		} else if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
@@ -1039,7 +1039,7 @@ public final class ModuleBuilder {
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
-			Pair<Expr.LocalVariable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
+			Pair<Expr.LocalVariable,Integer> l = extractLVal(ra.src, fields, blk, environment);
 			fields.add(ra.name);
 			return new Pair(l.first(),l.second() + 1);			
 		} else {
@@ -1354,8 +1354,8 @@ public final class ModuleBuilder {
 				return resolveCondition(target, (Expr.Constant) condition, environment);
 			} else if (condition instanceof Expr.LocalVariable) {
 				return resolveCondition(target, (Expr.LocalVariable) condition, environment);
-			} else if (condition instanceof Expr.ExternalConstant) {
-				return resolveCondition(target, (Expr.ExternalConstant) condition, environment);
+			} else if (condition instanceof Expr.ConstantAccess) {
+				return resolveCondition(target, (Expr.ConstantAccess) condition, environment);
 			} else if (condition instanceof Expr.BinOp) {
 				return resolveCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.UnOp) {
@@ -1406,7 +1406,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 	
-	private Block resolveCondition(String target, Expr.ExternalConstant v, 
+	private Block resolveCondition(String target, Expr.ConstantAccess v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
@@ -1674,8 +1674,8 @@ public final class ModuleBuilder {
 				return resolve((Expr.Constant) expression, environment);
 			} else if (expression instanceof Expr.LocalVariable) {
 				return resolve((Expr.LocalVariable) expression, environment);
-			} else if (expression instanceof Expr.ExternalConstant) {
-				return resolve((Expr.ExternalConstant) expression, environment);
+			} else if (expression instanceof Expr.ConstantAccess) {
+				return resolve((Expr.ConstantAccess) expression, environment);
 			} else if (expression instanceof Expr.NaryOp) {
 				return resolve((Expr.NaryOp) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
@@ -1839,7 +1839,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 	
-	private Block resolve(Expr.ExternalConstant v, HashMap<String,Integer> environment) throws ResolveError {						
+	private Block resolve(Expr.ConstantAccess v, HashMap<String,Integer> environment) throws ResolveError {						
 		Value val = constants.get(v.nid);		
 		if(val == null) {
 			// indicates an external access
@@ -2135,7 +2135,7 @@ public final class ModuleBuilder {
 	}
 	
 	private Block resolve(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
-		Block lhs = resolve(sg.lhs, environment);		
+		Block lhs = resolve(sg.src, environment);		
 		lhs.append(Code.FieldLoad(null,sg.name), attributes(sg));
 		return lhs;
 	}
@@ -2391,7 +2391,7 @@ public final class ModuleBuilder {
 			return flattern(la.src);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) e;
-			return flattern(la.lhs);
+			return flattern(la.src);
 		} else if (e instanceof Expr.UnOp) {
 			Expr.UnOp la = (Expr.UnOp) e;
 			if (la.op == Expr.UOp.PROCESSACCESS) {

@@ -38,8 +38,6 @@ import wyc.TypeExpander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
-import wyc.lang.Stmt.*;
-import wyc.lang.Expr.*;
 import wyc.stages.WhileyLexer.Ampersand;
 import wyc.util.*;
 
@@ -222,34 +220,34 @@ public final class Resolution {
 	
 	private void resolve(Stmt s, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		try {
-			if(s instanceof Assign) {
-				resolve((Assign)s, environment, imports);
-			} else if(s instanceof Assert) {
-				resolve((Assert)s, environment, imports);
-			} else if(s instanceof Return) {
-				resolve((Return)s, environment, imports);
-			} else if(s instanceof Debug) {
-				resolve((Debug)s, environment, imports);
-			} else if(s instanceof Skip || s instanceof Break) {
+			if(s instanceof Stmt.Assign) {
+				resolve((Stmt.Assign)s, environment, imports);
+			} else if(s instanceof Stmt.Assert) {
+				resolve((Stmt.Assert)s, environment, imports);
+			} else if(s instanceof Stmt.Return) {
+				resolve((Stmt.Return)s, environment, imports);
+			} else if(s instanceof Stmt.Debug) {
+				resolve((Stmt.Debug)s, environment, imports);
+			} else if(s instanceof Stmt.Skip || s instanceof Stmt.Break) {
 				// do nothing
-			} else if(s instanceof Throw) {
-				resolve((Throw)s, environment, imports);
-			} else if(s instanceof IfElse) {
-				resolve((IfElse)s, environment, imports);
-			} else if(s instanceof Switch) {
-				resolve((Switch)s, environment, imports);
-			} else if(s instanceof TryCatch) {
-				resolve((TryCatch)s, environment, imports);
-			} else if(s instanceof While) {
-				resolve((While)s, environment, imports);
-			} else if(s instanceof DoWhile) {
-				resolve((DoWhile)s, environment, imports);
-			} else if(s instanceof For) {
-				resolve((For)s, environment, imports);
-			} else if(s instanceof Invoke) {
-				resolve((Invoke)s, environment, imports);
-			} else if(s instanceof Spawn) {
-				resolve((UnOp)s, environment, imports);
+			} else if(s instanceof Stmt.Throw) {
+				resolve((Stmt.Throw)s, environment, imports);
+			} else if(s instanceof Stmt.IfElse) {
+				resolve((Stmt.IfElse)s, environment, imports);
+			} else if(s instanceof Stmt.Switch) {
+				resolve((Stmt.Switch)s, environment, imports);
+			} else if(s instanceof Stmt.TryCatch) {
+				resolve((Stmt.TryCatch)s, environment, imports);
+			} else if(s instanceof Stmt.While) {
+				resolve((Stmt.While)s, environment, imports);
+			} else if(s instanceof Stmt.DoWhile) {
+				resolve((Stmt.DoWhile)s, environment, imports);
+			} else if(s instanceof Stmt.For) {
+				resolve((Stmt.For)s, environment, imports);
+			} else if(s instanceof Expr.Invoke) {
+				resolve((Expr.Invoke)s, environment, imports);
+			} else if(s instanceof Expr.Spawn) {
+				resolve((Expr.Spawn)s, environment, imports);
 			} else {
 				internalFailure("unknown statement encountered: "
 						+ s.getClass().getName(), filename, s);				
@@ -261,53 +259,53 @@ public final class Resolution {
 		}
 	}	
 
-	private void resolve(Assign s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Stmt.Assign s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
-		if(s.lhs instanceof AbstractVariable) {
-			AbstractVariable v = (AbstractVariable) s.lhs;
+		if(s.lhs instanceof Expr.AbstractVariable) {
+			Expr.AbstractVariable v = (Expr.AbstractVariable) s.lhs;
 			environment.put(v.var, Collections.EMPTY_SET);
-			s.lhs = new LocalVariable(v.var,v.attributes());
-		} else if(s.lhs instanceof Tuple) {
-			Tuple tg = (Tuple) s.lhs;
+			s.lhs = new Expr.LocalVariable(v.var,v.attributes());
+		} else if(s.lhs instanceof Expr.Tuple) {
+			Expr.Tuple tg = (Expr.Tuple) s.lhs;
 			for(int i=0;i!=tg.fields.size();++i) {
 				Expr e = tg.fields.get(i);
-				if(e instanceof AbstractVariable) {
-					AbstractVariable v = (AbstractVariable) e;
-					tg.fields.set(i,new LocalVariable(v.var,e.attributes()));
+				if(e instanceof Expr.AbstractVariable) {
+					Expr.AbstractVariable v = (Expr.AbstractVariable) e;
+					tg.fields.set(i,new Expr.LocalVariable(v.var,e.attributes()));
 					environment.put(v.var, Collections.EMPTY_SET);
 				} else {
 					syntaxError(errorMessage(INVALID_TUPLE_LVAL), filename, e);
 				}
 			}
 		} else {
-			s.lhs = (LVal) resolve(s.lhs, environment, imports);
+			s.lhs = (Expr.LVal) resolve(s.lhs, environment, imports);
 		}
 		s.rhs = resolve(s.rhs, environment, imports);	
 	}
 
-	private void resolve(Assert s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Stmt.Assert s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.expr = resolve(s.expr, environment, imports);		
 	}
 
-	private void resolve(Return s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Stmt.Return s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		if(s.expr != null) {
 			s.expr = resolve(s.expr, environment, imports);
 		}
 	}
 	
-	private void resolve(Debug s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Stmt.Debug s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.expr = resolve(s.expr, environment, imports);		
 	}
 
-	private void resolve(Throw s, HashMap<String, Set<Expr>> environment,
+	private void resolve(Stmt.Throw s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.expr = resolve(s.expr, environment, imports);
 	}
 	
-	private void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
+	private void resolve(Stmt.IfElse s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.condition = resolve(s.condition, environment, imports);
 		for (Stmt st : s.trueBranch) {
@@ -320,7 +318,7 @@ public final class Resolution {
 		}
 	}
 	
-	private void resolve(Switch s, HashMap<String, Set<Expr>> environment,
+	private void resolve(Stmt.Switch s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) {		
 		
 		s.expr = resolve(s.expr, environment, imports);
@@ -337,7 +335,7 @@ public final class Resolution {
 		}		
 	}
 	
-	private void resolve(TryCatch s, HashMap<String, Set<Expr>> environment,
+	private void resolve(Stmt.TryCatch s, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		
 		for(Stmt st : s.body) {
@@ -358,7 +356,7 @@ public final class Resolution {
 		}
 	}
 	
-	private void resolve(While s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Stmt.While s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.condition = resolve(s.condition, environment, imports);
 		if (s.invariant != null) {
@@ -370,7 +368,7 @@ public final class Resolution {
 		}
 	}
 	
-	private void resolve(DoWhile s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Stmt.DoWhile s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.condition = resolve(s.condition, environment, imports);
 		if (s.invariant != null) {
@@ -382,7 +380,7 @@ public final class Resolution {
 		}
 	}
 	
-	private void resolve(For s, HashMap<String,Set<Expr>> environment,
+	private void resolve(Stmt.For s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.source = resolve(s.source, environment, imports);		
 		if (s.invariant != null) {
@@ -402,33 +400,39 @@ public final class Resolution {
 	}
 	private Expr resolve(Expr e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		try {
-			if (e instanceof Constant) {
+			if (e instanceof Expr.Constant) {
 				
 			} else if (e instanceof Expr.LocalVariable) {
 				// this case is possible because of the way WhileyParser handles
 				// sublist expressions.
 			} else if (e instanceof Expr.AbstractVariable) {
 				e = resolve((Expr.AbstractVariable)e, environment, imports);
-			} else if (e instanceof Expr.NaryOp) {
-				e = resolve((Expr.NaryOp)e, environment, imports);
+			} else if (e instanceof Expr.Set) {
+				e = resolve((Expr.Set)e, environment, imports);
+			} else if (e instanceof Expr.List) {
+				e = resolve((Expr.List)e, environment, imports);
+			} else if (e instanceof Expr.SubList) {
+				e = resolve((Expr.SubList)e, environment, imports);
 			} else if (e instanceof Expr.Comprehension) {
 				e = resolve((Expr.Comprehension) e, environment, imports);
 			} else if (e instanceof Expr.BinOp) {
 				e = resolve((Expr.BinOp)e, environment, imports);
 			} else if (e instanceof Expr.Convert) {
 				e = resolve((Expr.Convert)e, environment, imports);
-			} else if (e instanceof Expr.AbstractAccess) {
-				e = resolve((Expr.AbstractAccess)e, environment, imports);
+			} else if (e instanceof Expr.AbstractIndexAccess) {
+				e = resolve((Expr.AbstractIndexAccess)e, environment, imports);
 			} else if (e instanceof Expr.UnOp) {
 				e = resolve((Expr.UnOp)e, environment, imports);
+			} else if (e instanceof Expr.Spawn) {
+				e = resolve((Expr.Spawn)e, environment, imports);
 			} else if (e instanceof Expr.Invoke) {
 				e = resolve((Expr.Invoke)e, environment, imports);
 			} else if (e instanceof Expr.AbstractLength) {
 				e = resolve((Expr.AbstractLength) e, environment, imports);
 			} else if (e instanceof Expr.ProcessAccess) {
 				e = resolve((Expr.ProcessAccess) e, environment, imports);
-			}else if (e instanceof Expr.RecordAccess) {
-				e = resolve((Expr.RecordAccess) e, environment, imports);
+			}else if (e instanceof Expr.AbstractDotAccess) {
+				e = resolve((Expr.AbstractDotAccess) e, environment, imports);
 			} else if (e instanceof Expr.Record) {
 				e = resolve((Expr.Record) e, environment, imports);
 			} else if (e instanceof Expr.Tuple) {
@@ -469,10 +473,10 @@ public final class Resolution {
 			Expr target = ivk.receiver;			
 			if(target != null) {
 				target = resolve(target,environment,imports);
-				if(target instanceof ModuleAccess) {
+				if(target instanceof Expr.ModuleAccess) {
 					// In this case, an explicit module identifier has been
 					// provided, so we don't need to resolve.
-					ModuleAccess maccess = (ModuleAccess) target;
+					Expr.ModuleAccess maccess = (Expr.ModuleAccess) target;
 					ivk.receiver = null;					
 					ivk.attributes().add(new Attributes.Module(maccess.mid));
 				} else {
@@ -509,17 +513,17 @@ public final class Resolution {
 			// is, and update the tree accordingly.
 			try {
 				NameID nid = resolver.resolveAsName(v.var, imports);				
-				return new ExternalConstant(nid,v.attributes());				
+				return new Expr.ConstantAccess(null,v.var,nid,v.attributes());				
 			} catch(ResolveError err) {}
 			// In this case, we may still be OK if this corresponds to an
 			// explicit module or package access.
 			try {
 				ModuleID mid = resolver.resolveAsModule(v.var, imports);				
-				return new ModuleAccess(mid,v.attributes());
+				return new Expr.ModuleAccess(null,v.var,mid,v.attributes());
 			} catch(ResolveError err) {}			
 			PkgID pid = new PkgID(v.var);
 			if (resolver.isPackage(pid)) {
-				return new PackageAccess(pid, v.attributes());
+				return new Expr.PackageAccess(null,v.var,pid, v.attributes());
 			}
 			// ok, failed.
 			syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v);			
@@ -529,7 +533,7 @@ public final class Resolution {
 			syntaxError(errorMessage(AMBIGUOUS_VARIABLE), filename, v);
 		} else {
 			// following signals a local variable	
-			return new LocalVariable(v.var,v.attributes());
+			return new Expr.LocalVariable(v.var,v.attributes());
 		}
 		
 		return v;
@@ -538,6 +542,12 @@ public final class Resolution {
 	private Expr resolve(Expr.UnOp v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		v.mhs = resolve(v.mhs, environment, imports);
+		return v;
+	}
+	
+	private Expr resolve(Expr.Spawn v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		v.expr = resolve(v.expr, environment, imports);
 		return v;
 	}
 	
@@ -565,14 +575,14 @@ public final class Resolution {
 		return c;
 	}
 	
-	private Expr resolve(Expr.AbstractAccess v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.AbstractIndexAccess v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		v.src = resolve(v.src, environment, imports);
 		v.index = resolve(v.index, environment, imports);
 		return v;
 	}
 	
-	private Expr resolve(Expr.NaryOp v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.Set v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {				
 		for(int i=0;i!=v.arguments.size();++i) {
 			Expr e = v.arguments.get(i);						
@@ -582,6 +592,23 @@ public final class Resolution {
 		return v;
 	}
 	
+	private Expr resolve(Expr.List v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {				
+		for(int i=0;i!=v.arguments.size();++i) {
+			Expr e = v.arguments.get(i);						
+			e = resolve(e, environment, imports);
+			v.arguments.set(i,e);
+		}		
+		return v;
+	}
+	
+	private Expr resolve(Expr.SubList v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {				
+		v.src = resolve(v.src, environment, imports);
+		v.start = resolve(v.start, environment, imports);
+		v.end = resolve(v.end, environment, imports);				
+		return v;
+	}
 	private Expr resolve(Expr.Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {						
 		HashMap<String,Set<Expr>> nenv = new HashMap<String,Set<Expr>>(environment);
 		for(int i=0;i!=e.sources.size();++i) {	
@@ -660,37 +687,41 @@ public final class Resolution {
 		return tc;
 	}
 	
-	private Expr resolve(Expr.RecordAccess sg,
+	private Expr resolve(Expr.AbstractDotAccess sg,
 			HashMap<String, Set<Expr>> environment, ArrayList<Import> imports)
 			throws ResolveError {		
-		sg.lhs = resolve(sg.lhs, environment, imports);
-		if(sg.lhs instanceof PackageAccess) {
+		Expr lhs = resolve(sg.src, environment, imports);
+		if(lhs instanceof Expr.PackageAccess) {
 			// this indicates we're constructing a more complex package access.
-			PackageAccess pa = (PackageAccess) sg.lhs;			
+			Expr.PackageAccess pa = (Expr.PackageAccess) lhs;			
 			try {				
 				ModuleID mid = new ModuleID(pa.pid,sg.name);
 				NameResolver.Skeleton m = resolver.loadSkeleton(mid);
-				return new ModuleAccess(mid);
+				return new Expr.ModuleAccess(pa,sg.name,mid,sg.attributes());
 			} catch(ResolveError err) {}
 			PkgID pid = pa.pid.append(sg.name);			
-			if(resolver.isPackage(pid)) {
-				pa.pid = pid;
-				return pa;
+			if(resolver.isPackage(pid)) {				
+				return new Expr.PackageAccess(pa,sg.name,pid,sg.attributes());				
 			} else {
-				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),filename,pa);				
+				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),filename,pa);
+				return null; // deadcode
 			}
-		} else if(sg.lhs instanceof ModuleAccess) {
+		} else if(lhs instanceof Expr.ModuleAccess) {
 			// this indicates we're constructing a constant access
-			ModuleAccess ma = (ModuleAccess) sg.lhs;			
+			Expr.ModuleAccess ma = (Expr.ModuleAccess) lhs;			
 			try {				
 				NameResolver.Skeleton m = resolver.loadSkeleton(ma.mid);				
 				if(m.hasName(sg.name)) {
-					return new ExternalConstant(new NameID(ma.mid,sg.name));
+					NameID nid = new NameID(ma.mid,sg.name);
+					return new Expr.ConstantAccess(ma,sg.name,nid,sg.attributes());
 				}				
 			} catch(ResolveError err) {}			
-			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,ma);						
-		}
-		return sg;		
+			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,ma);	
+			return null; // deadcode
+		} else {
+			// must be a standard record lookup
+			return new Expr.RecordAccess(lhs,sg.name,sg.attributes());
+		}			
 	}
 	
 	private Type resolve(UnresolvedType t, ArrayList<Import> imports) throws ResolveError {

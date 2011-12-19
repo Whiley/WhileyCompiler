@@ -348,14 +348,14 @@ public final class CodeGeneration {
 		if (e instanceof Expr.LocalVariable) {
 			Expr.LocalVariable v = (Expr.LocalVariable) e;
 			return new Pair(v,0);			
-		} else if (e instanceof Expr.AbstractAccess) {
-			Expr.AbstractAccess la = (Expr.AbstractAccess) e;
+		} else if (e instanceof Expr.AbstractIndexAccess) {
+			Expr.AbstractIndexAccess la = (Expr.AbstractIndexAccess) e;
 			Pair<Expr.LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(generate(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
-			Pair<Expr.LocalVariable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
+			Pair<Expr.LocalVariable,Integer> l = extractLVal(ra.src, fields, blk, environment);
 			fields.add(ra.name);
 			return new Pair(l.first(),l.second() + 1);			
 		} else {
@@ -675,8 +675,8 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.Constant) condition, environment);
 			} else if (condition instanceof Expr.LocalVariable) {
 				return generateCondition(target, (Expr.LocalVariable) condition, environment);
-			} else if (condition instanceof Expr.ExternalConstant) {
-				return generateCondition(target, (Expr.ExternalConstant) condition, environment);
+			} else if (condition instanceof Expr.ConstantAccess) {
+				return generateCondition(target, (Expr.ConstantAccess) condition, environment);
 			} else if (condition instanceof Expr.BinOp) {
 				return generateCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.UnOp) {
@@ -731,7 +731,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generateCondition(String target, Expr.ExternalConstant v, 
+	private Block generateCondition(String target, Expr.ConstantAccess v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
@@ -954,10 +954,14 @@ public final class CodeGeneration {
 				return generate((Expr.Constant) expression, environment);
 			} else if (expression instanceof Expr.LocalVariable) {
 				return generate((Expr.LocalVariable) expression, environment);
-			} else if (expression instanceof Expr.ExternalConstant) {
-				return generate((Expr.ExternalConstant) expression, environment);
-			} else if (expression instanceof Expr.NaryOp) {
-				return generate((Expr.NaryOp) expression, environment);
+			} else if (expression instanceof Expr.ConstantAccess) {
+				return generate((Expr.ConstantAccess) expression, environment);
+			} else if (expression instanceof Expr.Set) {
+				return generate((Expr.Set) expression, environment);
+			} else if (expression instanceof Expr.List) {
+				return generate((Expr.List) expression, environment);
+			} else if (expression instanceof Expr.SubList) {
+				return generate((Expr.SubList) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment);
 			} else if (expression instanceof Expr.SetLength) {
@@ -1121,7 +1125,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Expr.ExternalConstant v, HashMap<String,Integer> environment) throws ResolveError {						
+	private Block generate(Expr.ConstantAccess v, HashMap<String,Integer> environment) throws ResolveError {						
 		Block blk = new Block(environment.size());
 		Value val = v.value;				
 		blk.append(Code.Const(val),attributes(v));
@@ -1291,32 +1295,35 @@ public final class CodeGeneration {
 		}		
 	}
 
-	private Block generate(Expr.NaryOp v, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());
-		if (v.nop == Expr.NOp.SUBLIST) {
-			if (v.arguments.size() != 3) {
-				// this should be dead-code
-				internalFailure("incorrect number of arguments", filename, v);
-			}
-			blk.append(generate(v.arguments.get(0), environment));
-			blk.append(generate(v.arguments.get(1), environment));
-			blk.append(generate(v.arguments.get(2), environment));
-			blk.append(Code.SubList(null),attributes(v));
-			return blk;
-		} else {			
-			int nargs = 0;
-			for (Expr e : v.arguments) {				
-				nargs++;
-				blk.append(generate(e, environment));
-			}
-
-			if (v.nop == Expr.NOp.LISTGEN) {
-				blk.append(Code.NewList(null,nargs),attributes(v));
-			} else {
-				blk.append(Code.NewSet(null,nargs),attributes(v));
-			}
-			return blk;
+	private Block generate(Expr.Set v, HashMap<String,Integer> environment) {
+		Block blk = new Block(environment.size());		
+		int nargs = 0;
+		for (Expr e : v.arguments) {				
+			nargs++;
+			blk.append(generate(e, environment));
 		}
+		blk.append(Code.NewSet(v.rawType,nargs),attributes(v));		
+		return blk;
+	}
+	
+	private Block generate(Expr.List v, HashMap<String,Integer> environment) {
+		Block blk = new Block(environment.size());		
+		int nargs = 0;
+		for (Expr e : v.arguments) {				
+			nargs++;
+			blk.append(generate(e, environment));
+		}
+		blk.append(Code.NewList(v.rawType,nargs),attributes(v));		
+		return blk;
+	}
+	
+	private Block generate(Expr.SubList v, HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(generate(v.src, environment));
+		blk.append(generate(v.start, environment));
+		blk.append(generate(v.end, environment));
+		blk.append(Code.SubList(v.rawType), attributes(v));
+		return blk;
 	}
 	
 	private Block generate(Expr.Comprehension e, HashMap<String,Integer> environment) {
@@ -1453,7 +1460,7 @@ public final class CodeGeneration {
 	}
 	
 	private Block generate(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
-		Block lhs = generate(sg.lhs, environment);		
+		Block lhs = generate(sg.src, environment);		
 		lhs.append(Code.FieldLoad(sg.rawSrcType,sg.name), attributes(sg));
 		return lhs;
 	}

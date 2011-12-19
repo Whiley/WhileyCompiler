@@ -1108,10 +1108,10 @@ public final class WhileyParser {
 						lookahead = tokens.get(index);
 						Expr end = parseAddSubExpression();
 						match(RightSquare.class);
-						return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
-								index - 1), lhs, new Expr.Constant(Value
-										.V_INTEGER(BigInteger.ZERO), sourceAttr(start,
-												index - 1)), end);
+						return new Expr.SubList(lhs, new Expr.Constant(
+								Value.V_INTEGER(BigInteger.ZERO), sourceAttr(
+										start, index - 1)), end, sourceAttr(
+								start, index - 1));
 					}
 
 					Expr rhs = parseAddSubExpression();
@@ -1132,11 +1132,11 @@ public final class WhileyParser {
 							end = parseBitwiseExpression(false);						
 						}
 						match(RightSquare.class);
-						lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
-								start, index - 1), lhs, rhs, end);
+						lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start,
+								index - 1));
 					} else {
 						match(RightSquare.class);							
-						lhs = new Expr.AbstractAccess(lhs, rhs, sourceAttr(start,
+						lhs = new Expr.AbstractIndexAccess(lhs, rhs, sourceAttr(start,
 								index - 1));
 					}
 				} else if(lookahead instanceof Dot) {				
@@ -1151,7 +1151,7 @@ public final class WhileyParser {
 								true, sourceAttr(
 										ostart, index - 1));				
 					} else {
-						lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
+						lhs =  new Expr.AbstractDotAccess(lhs, name, sourceAttr(start,index - 1));
 					}
 				} else {
 					match(Shreak.class);								 						
@@ -1312,8 +1312,7 @@ public final class WhileyParser {
 			token = tokens.get(index);
 		}
 		match(RightSquare.class);
-		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(start,
-				index - 1));
+		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 	
 	private Expr.Comprehension parseQuantifierSet() {
@@ -1450,8 +1449,7 @@ public final class WhileyParser {
 			return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs,
 					condition, sourceAttr(start, index - 1));
 		} else {	
-			return new Expr.NaryOp(Expr.NOp.SETGEN, exprs, sourceAttr(
-					start, index - 1));
+			return new Expr.Set(exprs, sourceAttr(start, index - 1));
 		}
 	}
 	

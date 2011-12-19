@@ -140,25 +140,28 @@ public final class ConstantExpansion {
 		if (expr instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) expr;
 			return c.value;
-		} else if (expr instanceof Expr.ExternalConstant) {
-			Expr.ExternalConstant v = (Expr.ExternalConstant) expr;			
+		} else if (expr instanceof Expr.ConstantAccess) {
+			Expr.ConstantAccess v = (Expr.ConstantAccess) expr;			
 			return expandConstant(v.nid, exprs, visited);
 		} else if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
 			Value lhs = expandConstantHelper(bop.lhs, filename, exprs, visited);
 			Value rhs = expandConstantHelper(bop.rhs, filename, exprs, visited);
 			return evaluate(bop, lhs, rhs, filename);			
-		} else if (expr instanceof Expr.NaryOp) {
-			Expr.NaryOp nop = (Expr.NaryOp) expr;
+		} else if (expr instanceof Expr.Set) {
+			Expr.Set nop = (Expr.Set) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (Expr arg : nop.arguments) {
 				values.add(expandConstantHelper(arg, filename, exprs, visited));
-			}
-			if (nop.nop == Expr.NOp.LISTGEN) {
-				return Value.V_LIST(values);
-			} else if (nop.nop == Expr.NOp.SETGEN) {
-				return Value.V_SET(values);
-			}
+			}			
+			return Value.V_SET(values);			
+		} else if (expr instanceof Expr.List) {
+			Expr.List nop = (Expr.List) expr;
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (Expr arg : nop.arguments) {
+				values.add(expandConstantHelper(arg, filename, exprs, visited));
+			}			
+			return Value.V_LIST(values);			
 		} else if (expr instanceof Expr.Record) {
 			Expr.Record rg = (Expr.Record) expr;
 			HashMap<String,Value> values = new HashMap<String,Value>();
