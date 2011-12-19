@@ -86,7 +86,8 @@ public interface Expr extends SyntacticElement {
 			return var;
 		}
 	}
-	
+
+
 	public static class LocalVariable extends SyntacticElement.Impl implements
 			Expr, LVal {
 		public final String var;
@@ -317,41 +318,30 @@ public interface Expr extends SyntacticElement {
 	}
 
 	// A list access is very similar to a BinOp, except that it can be assiged.
-	public static class Access extends SyntacticElement.Impl implements
-			Expr, LVal {		
+	public static class AbstractAccess extends SyntacticElement.Impl implements
+			Expr, LVal {
+		public Type nominalElementType;
 		public Expr src;
 		public Expr index;
-		public AOp op = null;
-		public Type nominalElementType;
-		public Type rawSrcType;
-		
-		public Access(Expr src, Expr index, Attribute... attributes) {
+	
+		public AbstractAccess(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
 		
-		public Access(Expr src, Expr index, Collection<Attribute> attributes) {
+		public AbstractAccess(Expr src, Expr index, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
-					
+				
 		public Type nominalType() {
 			return nominalElementType;
 		}
 		
 		public Type rawType() {
-			switch(op) {			
-			case STRING_ACCESS:
-				return Type.T_CHAR;
-			case LIST_ACCESS:
-				return ((Type.List) nominalElementType).element();
-			case DICT_ACCESS:
-				return ((Type.Dictionary) nominalElementType).value();
-			default:
-				return Type.T_VOID;
-			}
+			return null;
 		}
 		
 		public String toString() {
@@ -359,17 +349,60 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public enum AOp {
-		LIST_ACCESS,DICT_ACCESS,STRING_ACCESS;
+	public static class ListAccess extends AbstractAccess {					
+		public Type.List rawSrcType;
+
+		public ListAccess(Expr src, Expr index, Attribute... attributes) {
+			super(src,index,attributes);
+		}
+
+		public ListAccess(Expr src, Expr index, Collection<Attribute> attributes) {
+			super(src,index,attributes);			
+		}
+
+		public Type rawType() {
+			return rawSrcType.element();			
+		}
 	}
 
+	public static class DictionaryAccess extends AbstractAccess {				
+		public Type.Dictionary rawSrcType;
+
+		public DictionaryAccess(Expr src, Expr index, Attribute... attributes) {
+			super(src,index,attributes);
+		}
+
+		public DictionaryAccess(Expr src, Expr index, Collection<Attribute> attributes) {
+			super(src,index,attributes);			
+		}
+		
+		public Type rawType() {
+			return rawSrcType.value();			
+		}
+	}
+	
+	public static class StringAccess extends AbstractAccess {				
+		public StringAccess(Expr src, Expr index, Attribute... attributes) {
+			super(src,index,attributes);			
+		}
+
+		public StringAccess(Expr src, Expr index, Collection<Attribute> attributes) {
+			super(src,index,attributes);			
+		}
+
+		public Type nominalType() {
+			return Type.T_CHAR;
+		}
+
+		public Type rawType() {
+			return Type.T_CHAR;			
+		}		
+	}
+	
 	public enum UOp {
 		NOT,
 		NEG,
-		INVERT,
-		LENGTHOF,		
-		PROCESSACCESS,
-		PROCESSSPAWN
+		INVERT
 	}
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
@@ -472,7 +505,7 @@ public interface Expr extends SyntacticElement {
 		public Expr lhs;
 		public final String name;
 		public Type nominalFieldType;
-		public Type.Record rawType;
+		public Type.Record rawSrcType;
 
 		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);
@@ -485,7 +518,7 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public Type rawType() {
-			return rawType.fields().get(name);
+			return rawSrcType.fields().get(name);
 		}
 		
 		public String toString() {
@@ -493,6 +526,28 @@ public interface Expr extends SyntacticElement {
 		}
 	}		
 
+	public static class ProcessAccess extends SyntacticElement.Impl implements Expr {
+		public Expr src;	
+		public Type nominalElementType;
+		public Type.Process rawSrcType;
+		
+		public ProcessAccess(Expr src, Attribute... attributes) {
+			super(attributes);
+			this.src = src;			
+		}
+		
+		public Type nominalType() {
+			return nominalElementType;
+		}
+		
+		public Type rawType() {
+			return rawSrcType.element();
+		}
+				
+		public String toString() {
+			return "*" + src.toString();
+		}
+	}
 	public static class DictionaryGenerator extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Pair<Expr,Expr>> pairs;		
 		public Type nominalType;
@@ -580,15 +635,94 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class Spawn extends UnOp implements Stmt {
-		public Type.Process type;
-
-		public Spawn(Expr mhs, Attribute... attributes) {
-			super(UOp.PROCESSSPAWN,mhs,attributes);							
+	
+	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
+		public Expr src;	
+		
+		public AbstractLength(Expr mhs, Attribute... attributes) {
+			super(attributes);
+			this.src = mhs;			
 		}
 		
-		public Type.Process nominalType() {
-			return type;
+		public AbstractLength(Expr mhs, Collection<Attribute> attributes) {
+			super(attributes);
+			this.src = mhs;			
+		}
+		
+		public Type nominalType() {
+			return Type.T_INT;
+		}		
+		
+		public Type rawType() {
+			return Type.T_INT;
+		}
+		
+		public String toString() {
+			return "|" + src.toString() + "|";
+		}
+	}
+	
+	public static class SetLength extends AbstractLength {
+		public Type.Set rawSrcType;
+		
+		public SetLength(Expr src, Attribute... attributes) {
+			super(src,attributes);
+		}
+		
+		public SetLength(Expr src, Collection<Attribute> attributes) {
+			super(src,attributes);
+		}		
+	}		
+	
+	public static class ListLength extends AbstractLength {		
+		public Type.List rawSrcType;
+		
+		public ListLength(Expr src, Attribute... attributes) {
+			super(src,attributes);
+		}
+		
+		public ListLength(Expr src, Collection<Attribute> attributes) {
+			super(src,attributes);
+		}		
+	}	
+	
+	public static class StringLength extends AbstractLength {		
+		public StringLength(Expr src, Attribute... attributes) {
+			super(src,attributes);
+		}
+		
+		public StringLength(Expr src, Collection<Attribute> attributes) {
+			super(src,attributes);
+		}
+	}	
+	
+	public static class DictionaryLength extends AbstractLength {		
+		public Type.Dictionary rawSrcType;
+		
+		public DictionaryLength(Expr src, Attribute... attributes) {
+			super(src,attributes);
+		}
+		
+		public DictionaryLength(Expr src, Collection<Attribute> attributes) {
+			super(src,attributes);
+		}		
+	}	
+	
+	public static class Spawn  extends SyntacticElement.Impl implements Expr,Stmt {
+		public Expr expr;
+		public Type nominalType;
+		public Type.Process rawType;		
+
+		public Spawn(Expr expr, Attribute... attributes) {
+			this.expr = expr;						
+		}
+		
+		public Type nominalType() {
+			return nominalType;
+		}
+		
+		public Type.Process rawType() {
+			return rawType;
 		}
 	}
 	

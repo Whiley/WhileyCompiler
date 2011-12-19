@@ -1007,7 +1007,7 @@ public final class ModuleBuilder {
 						attributes(s));				
 			}
 			return blk;
-		} else if(s.lhs instanceof Expr.Access || s.lhs instanceof Expr.RecordAccess){
+		} else if(s.lhs instanceof Expr.UnknownAccess || s.lhs instanceof Expr.RecordAccess){
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
@@ -1032,8 +1032,8 @@ public final class ModuleBuilder {
 		if (e instanceof Expr.LocalVariable) {
 			Expr.LocalVariable v = (Expr.LocalVariable) e;
 			return new Pair(v,0);			
-		} else if (e instanceof Expr.Access) {
-			Expr.Access la = (Expr.Access) e;
+		} else if (e instanceof Expr.UnknownAccess) {
+			Expr.UnknownAccess la = (Expr.UnknownAccess) e;
 			Pair<Expr.LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(resolve(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
@@ -1368,8 +1368,8 @@ public final class ModuleBuilder {
 				return resolveCondition(target, (Expr.RecordGenerator) condition, environment);
 			} else if (condition instanceof Expr.TupleGenerator) {
 				return resolveCondition(target, (Expr.TupleGenerator) condition, environment);
-			} else if (condition instanceof Expr.Access) {
-				return resolveCondition(target, (Expr.Access) condition, environment);
+			} else if (condition instanceof Expr.UnknownAccess) {
+				return resolveCondition(target, (Expr.UnknownAccess) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return resolveCondition(target, (Expr.Comprehension) condition, environment);
 			} else {				
@@ -1569,7 +1569,7 @@ public final class ModuleBuilder {
 		return null;
 	}
 
-	private Block resolveCondition(String target, Expr.Access v, HashMap<String,Integer> environment) {
+	private Block resolveCondition(String target, Expr.UnknownAccess v, HashMap<String,Integer> environment) {
 		Block blk = resolve(v, environment);
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
@@ -1682,8 +1682,8 @@ public final class ModuleBuilder {
 				return resolve((Expr.BinOp) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
 				return resolve((Expr.Convert) expression, environment);
-			} else if (expression instanceof Expr.Access) {
-				return resolve((Expr.Access) expression, environment);
+			} else if (expression instanceof Expr.UnknownAccess) {
+				return resolve((Expr.UnknownAccess) expression, environment);
 			} else if (expression instanceof Expr.UnOp) {
 				return resolve((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.Invoke) {
@@ -1917,7 +1917,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 
-	private Block resolve(Expr.Access v, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.UnknownAccess v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(resolve(v.src, environment));
 		blk.append(resolve(v.index, environment));
@@ -2386,8 +2386,8 @@ public final class ModuleBuilder {
 	private Expr.LocalVariable flattern(Expr e) {
 		if (e instanceof Expr.LocalVariable) {
 			return (Expr.LocalVariable) e;
-		} else if (e instanceof Expr.Access) {
-			Expr.Access la = (Expr.Access) e;
+		} else if (e instanceof Expr.UnknownAccess) {
+			Expr.UnknownAccess la = (Expr.UnknownAccess) e;
 			return flattern(la.src);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) e;

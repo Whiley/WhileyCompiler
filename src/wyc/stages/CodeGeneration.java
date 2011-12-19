@@ -320,7 +320,10 @@ public final class CodeGeneration {
 						attributes(s));				
 			}
 			return blk;
-		} else if(s.lhs instanceof Expr.Access || s.lhs instanceof Expr.RecordAccess){
+		} else if (s.lhs instanceof Expr.ListAccess
+				|| s.lhs instanceof Expr.StringAccess
+				|| s.lhs instanceof Expr.DictionaryAccess
+				|| s.lhs instanceof Expr.RecordAccess) {
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
@@ -345,8 +348,8 @@ public final class CodeGeneration {
 		if (e instanceof Expr.LocalVariable) {
 			Expr.LocalVariable v = (Expr.LocalVariable) e;
 			return new Pair(v,0);			
-		} else if (e instanceof Expr.Access) {
-			Expr.Access la = (Expr.Access) e;
+		} else if (e instanceof Expr.AbstractAccess) {
+			Expr.AbstractAccess la = (Expr.AbstractAccess) e;
 			Pair<Expr.LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(generate(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
@@ -686,8 +689,12 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.RecordGenerator) condition, environment);
 			} else if (condition instanceof Expr.TupleGenerator) {
 				return generateCondition(target, (Expr.TupleGenerator) condition, environment);
-			} else if (condition instanceof Expr.Access) {
-				return generateCondition(target, (Expr.Access) condition, environment);
+			} else if (condition instanceof Expr.ListAccess) {
+				return generateCondition(target, (Expr.ListAccess) condition, environment);
+			} else if (condition instanceof Expr.StringAccess) {
+				return generateCondition(target, (Expr.StringAccess) condition, environment);
+			} else if (condition instanceof Expr.DictionaryAccess) {
+				return generateCondition(target, (Expr.DictionaryAccess) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
 			} else {				
@@ -828,13 +835,27 @@ public final class CodeGeneration {
 		return null;
 	}
 
-	private Block generateCondition(String target, Expr.Access v, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.ListAccess v, HashMap<String,Integer> environment) {
 		Block blk = generate(v, environment);
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
+	private Block generateCondition(String target, Expr.StringAccess v, HashMap<String,Integer> environment) {
+		Block blk = generate(v, environment);
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
+		return blk;
+	}
+	
+	private Block generateCondition(String target, Expr.DictionaryAccess v, HashMap<String,Integer> environment) {
+		Block blk = generate(v, environment);
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
+		return blk;
+	}
+	
 	private Block generateCondition(String target, Expr.RecordAccess v, HashMap<String,Integer> environment) {
 		Block blk = generate(v, environment);		
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
@@ -939,10 +960,24 @@ public final class CodeGeneration {
 				return generate((Expr.NaryOp) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment);
+			} else if (expression instanceof Expr.SetLength) {
+				return generate((Expr.SetLength) expression, environment);
+			} else if (expression instanceof Expr.ListLength) {
+				return generate((Expr.ListLength) expression, environment);
+			} else if (expression instanceof Expr.StringLength) {
+				return generate((Expr.StringLength) expression, environment);
+			} else if (expression instanceof Expr.DictionaryLength) {
+				return generate((Expr.DictionaryLength) expression, environment);
+			} else if (expression instanceof Expr.ProcessAccess) {
+				return generate((Expr.ProcessAccess) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
 				return generate((Expr.Convert) expression, environment);
-			} else if (expression instanceof Expr.Access) {
-				return generate((Expr.Access) expression, environment);
+			} else if (expression instanceof Expr.ListAccess) {
+				return generate((Expr.ListAccess) expression, environment);
+			} else if (expression instanceof Expr.StringAccess) {
+				return generate((Expr.StringAccess) expression, environment);
+			} else if (expression instanceof Expr.DictionaryAccess) {
+				return generate((Expr.DictionaryAccess) expression, environment);
 			} else if (expression instanceof Expr.UnOp) {
 				return generate((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.Invoke) {
@@ -1127,16 +1162,7 @@ public final class CodeGeneration {
 			blk.append(Code.Label(falseLabel));
 			blk.append(Code.Const(Value.V_BOOL(false)), attributes(v));
 			blk.append(Code.Label(exitLabel));
-			break;
-		case LENGTHOF:
-			blk.append(Code.ListLength(v.rawSrcType()), attributes(v));
-			break;
-		case PROCESSACCESS:
-			blk.append(Code.ProcLoad(v.rawSrcType()), attributes(v));
-			break;			
-		case PROCESSSPAWN:
-			blk.append(Code.Spawn(v.rawType()), attributes(v));
-			break;			
+			break;							
 		default:
 			// should be dead-code
 			internalFailure("unexpected unary operator encountered", filename, v);
@@ -1144,15 +1170,61 @@ public final class CodeGeneration {
 		}
 		return blk;
 	}
-
-	private Block generate(Expr.Access v, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, environment));
-		blk.append(generate(v.index, environment));
-		blk.append(Code.ListLoad(v.rawSrcType()),attributes(v));
+	
+	private Block generate(Expr.ListLength v, HashMap<String,Integer> environment) {
+		Block blk = generate(v.src,  environment);	
+		blk.append(Code.ListLength(v.rawSrcType), attributes(v));
 		return blk;
 	}
 
+	private Block generate(Expr.SetLength v, HashMap<String,Integer> environment) {
+		Block blk = generate(v.src,  environment);	
+		blk.append(Code.SetLength(v.rawSrcType), attributes(v));
+		return blk;
+	}	
+	
+	private Block generate(Expr.StringLength v, HashMap<String,Integer> environment) {
+		Block blk = generate(v.src,  environment);	
+		blk.append(Code.StringLength(), attributes(v));
+		return blk;
+	}	
+	
+	private Block generate(Expr.DictionaryLength v, HashMap<String,Integer> environment) {
+		Block blk = generate(v.src,  environment);	
+		blk.append(Code.DictLength(v.rawSrcType), attributes(v));
+		return blk;
+	}	
+	
+	private Block generate(Expr.ProcessAccess v, HashMap<String,Integer> environment) {
+		Block blk = generate(v.src,  environment);	
+		blk.append(Code.ProcLoad(v.rawSrcType), attributes(v));
+		return blk;
+	}	
+	
+	private Block generate(Expr.ListAccess v, HashMap<String,Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(generate(v.src, environment));
+		blk.append(generate(v.index, environment));
+		blk.append(Code.ListLoad(v.rawSrcType),attributes(v));
+		return blk;
+	}
+
+	private Block generate(Expr.StringAccess v, HashMap<String,Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(generate(v.src, environment));
+		blk.append(generate(v.index, environment));
+		blk.append(Code.StringLoad(),attributes(v));
+		return blk;
+	}
+	
+	private Block generate(Expr.DictionaryAccess v, HashMap<String,Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(generate(v.src, environment));
+		blk.append(generate(v.index, environment));
+		blk.append(Code.DictLoad(v.rawSrcType),attributes(v));
+		return blk;
+	}
+	
 	private Block generate(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.expr, environment));		
@@ -1382,7 +1454,7 @@ public final class CodeGeneration {
 	
 	private Block generate(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
 		Block lhs = generate(sg.lhs, environment);		
-		lhs.append(Code.FieldLoad(sg.rawSrcType(),sg.name), attributes(sg));
+		lhs.append(Code.FieldLoad(sg.rawSrcType,sg.name), attributes(sg));
 		return lhs;
 	}
 	

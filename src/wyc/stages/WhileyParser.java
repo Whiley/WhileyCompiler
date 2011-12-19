@@ -1126,7 +1126,7 @@ public final class WhileyParser {
 							// In this case, no end of the slice has been provided.
 							// Therefore, it is taken to be the length of the source
 							// expression.						
-							end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
+							end = new Expr.AbstractLength(lhs, lhs
 									.attribute(Attribute.Source.class));
 						} else {
 							end = parseBitwiseExpression(false);						
@@ -1136,7 +1136,7 @@ public final class WhileyParser {
 								start, index - 1), lhs, rhs, end);
 					} else {
 						match(RightSquare.class);							
-						lhs = new Expr.Access(lhs, rhs, sourceAttr(start,
+						lhs = new Expr.AbstractAccess(lhs, rhs, sourceAttr(start,
 								index - 1));
 					}
 				} else if(lookahead instanceof Dot) {				
@@ -1192,7 +1192,7 @@ public final class WhileyParser {
 			match(Star.class);
 			
 			Expr e = parseTerm();
-			return new Expr.UnOp(Expr.UOp.PROCESSACCESS, e, sourceAttr(start,
+			return new Expr.ProcessAccess(e, sourceAttr(start,
 					index - 1));
 		} else if ((index + 1) < tokens.size()
 				&& token instanceof Identifier
@@ -1519,7 +1519,7 @@ public final class WhileyParser {
 		Expr e = parseIndexTerm();
 		
 		match(Bar.class);
-		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
+		return new Expr.AbstractLength(e, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseNegation() {

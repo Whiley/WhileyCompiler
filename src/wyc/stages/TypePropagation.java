@@ -330,8 +330,10 @@ public final class TypePropagation {
 				return propagate((Expr.Function) expr,environment); 
 			} else if(expr instanceof Expr.Invoke) {
 				return propagate((Expr.Invoke) expr,environment); 
-			} else if(expr instanceof Expr.Access) {
-				return propagate((Expr.Access) expr,environment); 
+			} else if(expr instanceof Expr.AbstractAccess) {
+				return propagate((Expr.AbstractAccess) expr,environment); 
+			} else if(expr instanceof Expr.AbstractLength) {
+				return propagate((Expr.AbstractLength) expr,environment); 
 			} else if(expr instanceof Expr.LocalVariable) {
 				return propagate((Expr.LocalVariable) expr,environment); 
 			} else if(expr instanceof Expr.ModuleAccess) {
@@ -511,42 +513,110 @@ public final class TypePropagation {
 		return null;
 	}	
 	
-	private Expr propagate(Expr.Access expr,
+	private Expr propagate(Expr.AbstractAccess expr,
 			Env environment) throws ResolveError {			
 		expr.src = propagate(expr.src,environment);
 		expr.index = propagate(expr.index,environment);		
 		Type src = expr.src.nominalType();		
 		Type srcExpanded = expander.expand(src);
-		Type nominalElementType;
+				
+		// First, check whether this is still only an abstract access and, in
+		// such case, upgrade it to the appropriate access expression.
 		
-		if(Type.isImplicitCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),srcExpanded)) {			
-			// this indicates a dictionary access, rather than a list access			
-			Type.Dictionary dict = Type.effectiveDictionaryType(srcExpanded);			
-			if(dict == null) {
-				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
-			}
-			// FIXME: this is broken since we've lost the nominal information
-			// about the key/value.
-			checkIsSubtype(dict.key(),expr.index);
-			expr.op = Expr.AOp.DICT_ACCESS;
-			// OK, it's a hit			
-			nominalElementType = dict.value();
-		} else if(Type.isImplicitCoerciveSubtype(Type.T_STRING,src)) {
-			checkIsSubtype(Type.T_INT,expr.index);			
-			expr.op = Expr.AOp.STRING_ACCESS;			
-			nominalElementType = Type.T_CHAR;
-		} else {		
+		if (!(expr instanceof Expr.StringAccess)
+				&& Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
+			expr = new Expr.StringAccess(expr.src,expr.index,expr.attributes());
+		} else if (!(expr instanceof Expr.ListAccess)
+				&& Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),
+						src)) {
+			expr = new Expr.ListAccess(expr.src,expr.index,expr.attributes());
+		} else if (!(expr instanceof Expr.DictionaryAccess)) {
+			expr = new Expr.DictionaryAccess(expr.src,expr.index,expr.attributes());
+		}
+		
+		// Second, determine the expanded src type for this access expression
+		// and check the key value.
+		
+		if(expr instanceof Expr.StringAccess) {
+			checkIsSubtype(Type.T_STRING,expr.src);	
+			checkIsSubtype(Type.T_INT,expr.index);				
+		} else if(expr instanceof Expr.ListAccess) {
+			Expr.ListAccess la = (Expr.ListAccess) expr; 
 			Type.List list = Type.effectiveListType(src);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
+			}
+			checkIsSubtype(Type.T_INT,expr.index);		
+			la.rawSrcType = list;
+			// FIXME: lost nominal information
+			la.nominalElementType = list.element();
+		} else {
+			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
+			Type.Dictionary dict = Type.effectiveDictionaryType(srcExpanded);
+			if(dict == null) {
+				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
 			}			
-			checkIsSubtype(Type.T_INT,expr.index);
-			expr.op = Expr.AOp.LIST_ACCESS;
-			nominalElementType = list.element();			
+			checkIsSubtype(dict.key(),expr.index);						
+			da.rawSrcType = dict;
+			// FIXME: lost nominal information
+			da.nominalElementType = dict.value();
 		}
 		
-		expr.nominalElementType = nominalElementType;
-		expr.rawSrcType = srcExpanded;
+		return expr;
+	}
+	
+	private Expr propagate(Expr.AbstractLength expr,
+			Env environment) throws ResolveError {			
+		expr.src = propagate(expr.src,environment);			
+		Type src = expr.src.nominalType();		
+		Type srcExpanded = expander.expand(src);
+	
+		// First, check whether this is still only an abstract access and, in
+				// such case, upgrade it to the appropriate access expression.
+
+		if (!(expr instanceof Expr.StringLength)
+				&& Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
+			expr = new Expr.StringLength(expr.src,expr.attributes());
+		} else if (!(expr instanceof Expr.ListLength)
+				&& Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),
+						src)) {
+			expr = new Expr.ListLength(expr.src,expr.attributes());
+		} else if (!(expr instanceof Expr.SetLength)
+				&& Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),
+						src)) {
+			expr = new Expr.SetLength(expr.src,expr.attributes());
+		} else if (!(expr instanceof Expr.DictionaryLength)) {
+			expr = new Expr.DictionaryLength(expr.src,expr.attributes());
+		}
+
+		// Second, determine the expanded src type for this access expression
+		// and check the key value.
+
+		if(expr instanceof Expr.StringLength) {
+			checkIsSubtype(Type.T_STRING,expr.src);								
+		} else if(expr instanceof Expr.ListLength) {
+			Expr.ListLength ll = (Expr.ListLength) expr; 
+			Type.List list = Type.effectiveListType(src);			
+			if(list == null) {
+				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
+			}
+			ll.rawSrcType = list;
+		} else if(expr instanceof Expr.SetLength) {
+			Expr.SetLength sl = (Expr.SetLength) expr; 
+			Type.Set list = Type.effectiveSetType(src);			
+			if(list == null) {
+				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,expr);				
+			}
+			sl.rawSrcType = list;
+		} else {
+			Expr.DictionaryLength da = (Expr.DictionaryLength) expr; 
+			Type.Dictionary dict = Type.effectiveDictionaryType(srcExpanded);
+			if(dict == null) {
+				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
+			}						
+			da.rawSrcType = dict;
+		}
+		
 		return expr;
 	}
 	

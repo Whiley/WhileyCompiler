@@ -417,13 +417,17 @@ public final class Resolution {
 				e = resolve((BinOp)e, environment, imports);
 			} else if (e instanceof Convert) {
 				e = resolve((Convert)e, environment, imports);
-			} else if (e instanceof Access) {
-				e = resolve((Access)e, environment, imports);
+			} else if (e instanceof AbstractAccess) {
+				e = resolve((AbstractAccess)e, environment, imports);
 			} else if (e instanceof UnOp) {
 				e = resolve((UnOp)e, environment, imports);
 			} else if (e instanceof Invoke) {
 				e = resolve((Invoke)e, environment, imports);
-			} else if (e instanceof RecordAccess) {
+			} else if (e instanceof AbstractLength) {
+				e = resolve((AbstractLength) e, environment, imports);
+			} else if (e instanceof ProcessAccess) {
+				e = resolve((ProcessAccess) e, environment, imports);
+			}else if (e instanceof RecordAccess) {
 				e = resolve((RecordAccess) e, environment, imports);
 			} else if (e instanceof RecordGenerator) {
 				e = resolve((RecordGenerator) e, environment, imports);
@@ -537,6 +541,18 @@ public final class Resolution {
 		return v;
 	}
 	
+	private Expr resolve(AbstractLength v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		v.src = resolve(v.src, environment, imports);
+		return v;
+	}
+	
+	private Expr resolve(ProcessAccess v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		v.src = resolve(v.src, environment, imports);
+		return v;
+	}
+	
 	private Expr resolve(BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		v.lhs = resolve(v.lhs, environment, imports);
 		v.rhs = resolve(v.rhs, environment, imports);
@@ -549,7 +565,7 @@ public final class Resolution {
 		return c;
 	}
 	
-	private Expr resolve(Access v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(AbstractAccess v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		v.src = resolve(v.src, environment, imports);
 		v.index = resolve(v.index, environment, imports);
@@ -810,7 +826,7 @@ public final class Resolution {
 			}
 		} else if (t instanceof UnresolvedType.Process) {			
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			addExposedNames(new Expr.UnOp(Expr.UOp.PROCESSACCESS, src),
+			addExposedNames(new Expr.ProcessAccess(src),
 					ut.element, environment);
 		}
 	}
