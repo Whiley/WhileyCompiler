@@ -735,7 +735,7 @@ public final class WhileyParser {
 				exprs.add(parseCondition(false));
 				checkNotEof();
 			}
-			return new Expr.TupleGenerator(exprs,sourceAttr(start,index-1));
+			return new Expr.Tuple(exprs,sourceAttr(start,index-1));
 		} else {
 			return e;
 		}
@@ -1474,7 +1474,7 @@ public final class WhileyParser {
 			token = tokens.get(index);
 		}
 		match(RightCurly.class);
-		return new Expr.DictionaryGenerator(pairs,sourceAttr(start, index - 1));
+		return new Expr.Dictionary(pairs,sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseRecordVal(int start, String ident) {
@@ -1509,7 +1509,7 @@ public final class WhileyParser {
 		} 
 		match(RightCurly.class);
 
-		return new Expr.RecordGenerator(exprs,sourceAttr(start, index - 1));
+		return new Expr.Record(exprs,sourceAttr(start, index - 1));
 	} 
 	
 	private Expr parseLengthOf() {

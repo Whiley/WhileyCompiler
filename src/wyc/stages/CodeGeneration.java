@@ -304,8 +304,8 @@ public final class CodeGeneration {
 			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
 			blk.append(Code.Store(null, allocate(v.var, environment)),
 					attributes(s));			
-		} else if(s.lhs instanceof Expr.TupleGenerator) {					
-			Expr.TupleGenerator tg = (Expr.TupleGenerator) s.lhs;
+		} else if(s.lhs instanceof Expr.Tuple) {					
+			Expr.Tuple tg = (Expr.Tuple) s.lhs;
 			blk = generate(s.rhs, environment);			
 			blk.append(Code.Destructure(null),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
@@ -685,10 +685,10 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.Invoke) condition, environment);
 			} else if (condition instanceof Expr.RecordAccess) {
 				return generateCondition(target, (Expr.RecordAccess) condition, environment);
-			} else if (condition instanceof Expr.RecordGenerator) {
-				return generateCondition(target, (Expr.RecordGenerator) condition, environment);
-			} else if (condition instanceof Expr.TupleGenerator) {
-				return generateCondition(target, (Expr.TupleGenerator) condition, environment);
+			} else if (condition instanceof Expr.Record) {
+				return generateCondition(target, (Expr.Record) condition, environment);
+			} else if (condition instanceof Expr.Tuple) {
+				return generateCondition(target, (Expr.Tuple) condition, environment);
 			} else if (condition instanceof Expr.ListAccess) {
 				return generateCondition(target, (Expr.ListAccess) condition, environment);
 			} else if (condition instanceof Expr.StringAccess) {
@@ -986,12 +986,12 @@ public final class CodeGeneration {
 				return generate((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
 				return generate((Expr.RecordAccess) expression, environment);
-			} else if (expression instanceof Expr.RecordGenerator) {
-				return generate((Expr.RecordGenerator) expression, environment);
-			} else if (expression instanceof Expr.TupleGenerator) {
-				return generate((Expr.TupleGenerator) expression, environment);
-			} else if (expression instanceof Expr.DictionaryGenerator) {
-				return generate((Expr.DictionaryGenerator) expression, environment);
+			} else if (expression instanceof Expr.Record) {
+				return generate((Expr.Record) expression, environment);
+			} else if (expression instanceof Expr.Tuple) {
+				return generate((Expr.Tuple) expression, environment);
+			} else if (expression instanceof Expr.Dictionary) {
+				return generate((Expr.Dictionary) expression, environment);
 			} else if (expression instanceof Expr.Function) {
 				return generate((Expr.Function) expression, environment);
 			} else {
@@ -1422,7 +1422,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generate(Expr.RecordGenerator sg, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Record sg, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);
@@ -1433,7 +1433,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generate(Expr.TupleGenerator sg, HashMap<String,Integer> environment) {		
+	private Block generate(Expr.Tuple sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Expr e : sg.fields) {									
 			blk.append(generate(e, environment));
@@ -1442,7 +1442,7 @@ public final class CodeGeneration {
 		return blk;		
 	}
 
-	private Block generate(Expr.DictionaryGenerator sg, HashMap<String,Integer> environment) {		
+	private Block generate(Expr.Dictionary sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
 			blk.append(generate(e.first(), environment));

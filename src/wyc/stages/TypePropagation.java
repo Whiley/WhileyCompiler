@@ -322,8 +322,8 @@ public final class TypePropagation {
 				return propagate((Expr.Constant) expr,environment); 
 			} else if(expr instanceof Expr.Convert) {
 				return propagate((Expr.Convert) expr,environment); 
-			} else if(expr instanceof Expr.DictionaryGenerator) {
-				return propagate((Expr.DictionaryGenerator) expr,environment); 
+			} else if(expr instanceof Expr.Dictionary) {
+				return propagate((Expr.Dictionary) expr,environment); 
 			} else if(expr instanceof Expr.ExternalConstant) {
 				return propagate((Expr.ExternalConstant) expr,environment); 
 			} else if(expr instanceof Expr.Function) {
@@ -344,12 +344,12 @@ public final class TypePropagation {
 				return propagate((Expr.PackageAccess) expr,environment); 
 			} else if(expr instanceof Expr.RecordAccess) {
 				return propagate((Expr.RecordAccess) expr,environment); 
-			} else if(expr instanceof Expr.RecordGenerator) {
-				return propagate((Expr.RecordGenerator) expr,environment); 
+			} else if(expr instanceof Expr.Record) {
+				return propagate((Expr.Record) expr,environment); 
 			} else if(expr instanceof Expr.Spawn) {
 				return propagate((Expr.Spawn) expr,environment); 
-			} else if(expr instanceof Expr.TupleGenerator) {
-				return  propagate((Expr.TupleGenerator) expr,environment); 
+			} else if(expr instanceof Expr.Tuple) {
+				return  propagate((Expr.Tuple) expr,environment); 
 			} else if(expr instanceof Expr.TypeVal) {
 				return propagate((Expr.TypeVal) expr,environment); 
 			} else {
@@ -493,7 +493,7 @@ public final class TypePropagation {
 		return c;
 	}
 	
-	private Expr propagate(Expr.DictionaryGenerator expr,
+	private Expr propagate(Expr.Dictionary expr,
 			Env environment) {
 		return null;
 	}
@@ -651,7 +651,7 @@ public final class TypePropagation {
 		return null;
 	}
 	
-	private Expr propagate(Expr.RecordGenerator expr,
+	private Expr propagate(Expr.Record expr,
 			Env environment) {
 		return null;
 	}
@@ -661,7 +661,7 @@ public final class TypePropagation {
 		return null;
 	}
 
-	private Expr propagate(Expr.TupleGenerator expr,
+	private Expr propagate(Expr.Tuple expr,
 			Env environment) {
 		return null;
 	}

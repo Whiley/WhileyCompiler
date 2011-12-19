@@ -267,8 +267,8 @@ public final class Resolution {
 			AbstractVariable v = (AbstractVariable) s.lhs;
 			environment.put(v.var, Collections.EMPTY_SET);
 			s.lhs = new LocalVariable(v.var,v.attributes());
-		} else if(s.lhs instanceof TupleGenerator) {
-			TupleGenerator tg = (TupleGenerator) s.lhs;
+		} else if(s.lhs instanceof Tuple) {
+			Tuple tg = (Tuple) s.lhs;
 			for(int i=0;i!=tg.fields.size();++i) {
 				Expr e = tg.fields.get(i);
 				if(e instanceof AbstractVariable) {
@@ -404,41 +404,41 @@ public final class Resolution {
 		try {
 			if (e instanceof Constant) {
 				
-			} else if (e instanceof LocalVariable) {
+			} else if (e instanceof Expr.LocalVariable) {
 				// this case is possible because of the way WhileyParser handles
 				// sublist expressions.
-			} else if (e instanceof AbstractVariable) {
-				e = resolve((AbstractVariable)e, environment, imports);
-			} else if (e instanceof NaryOp) {
-				e = resolve((NaryOp)e, environment, imports);
-			} else if (e instanceof Comprehension) {
-				e = resolve((Comprehension) e, environment, imports);
-			} else if (e instanceof BinOp) {
-				e = resolve((BinOp)e, environment, imports);
-			} else if (e instanceof Convert) {
-				e = resolve((Convert)e, environment, imports);
-			} else if (e instanceof AbstractAccess) {
-				e = resolve((AbstractAccess)e, environment, imports);
-			} else if (e instanceof UnOp) {
-				e = resolve((UnOp)e, environment, imports);
-			} else if (e instanceof Invoke) {
-				e = resolve((Invoke)e, environment, imports);
-			} else if (e instanceof AbstractLength) {
-				e = resolve((AbstractLength) e, environment, imports);
-			} else if (e instanceof ProcessAccess) {
-				e = resolve((ProcessAccess) e, environment, imports);
-			}else if (e instanceof RecordAccess) {
-				e = resolve((RecordAccess) e, environment, imports);
-			} else if (e instanceof RecordGenerator) {
-				e = resolve((RecordGenerator) e, environment, imports);
-			} else if (e instanceof TupleGenerator) {
-				e = resolve((TupleGenerator) e, environment, imports);
-			} else if (e instanceof DictionaryGenerator) {
-				e = resolve((DictionaryGenerator) e, environment, imports);
+			} else if (e instanceof Expr.AbstractVariable) {
+				e = resolve((Expr.AbstractVariable)e, environment, imports);
+			} else if (e instanceof Expr.NaryOp) {
+				e = resolve((Expr.NaryOp)e, environment, imports);
+			} else if (e instanceof Expr.Comprehension) {
+				e = resolve((Expr.Comprehension) e, environment, imports);
+			} else if (e instanceof Expr.BinOp) {
+				e = resolve((Expr.BinOp)e, environment, imports);
+			} else if (e instanceof Expr.Convert) {
+				e = resolve((Expr.Convert)e, environment, imports);
+			} else if (e instanceof Expr.AbstractAccess) {
+				e = resolve((Expr.AbstractAccess)e, environment, imports);
+			} else if (e instanceof Expr.UnOp) {
+				e = resolve((Expr.UnOp)e, environment, imports);
+			} else if (e instanceof Expr.Invoke) {
+				e = resolve((Expr.Invoke)e, environment, imports);
+			} else if (e instanceof Expr.AbstractLength) {
+				e = resolve((Expr.AbstractLength) e, environment, imports);
+			} else if (e instanceof Expr.ProcessAccess) {
+				e = resolve((Expr.ProcessAccess) e, environment, imports);
+			}else if (e instanceof Expr.RecordAccess) {
+				e = resolve((Expr.RecordAccess) e, environment, imports);
+			} else if (e instanceof Expr.Record) {
+				e = resolve((Expr.Record) e, environment, imports);
+			} else if (e instanceof Expr.Tuple) {
+				e = resolve((Expr.Tuple) e, environment, imports);
+			} else if (e instanceof Expr.Dictionary) {
+				e = resolve((Expr.Dictionary) e, environment, imports);
 			} else if(e instanceof Expr.TypeVal) {
 				e = resolve((Expr.TypeVal) e, environment, imports);
-			} else if(e instanceof Function) {
-				e = resolve((Function) e, environment, imports);
+			} else if(e instanceof Expr.Function) {
+				e = resolve((Expr.Function) e, environment, imports);
 			} else {				
 				internalFailure("unknown expression encountered: "
 							+ e.getClass().getName(), filename, e);								
@@ -454,7 +454,7 @@ public final class Resolution {
 		return e;
 	}
 	
-	private Expr resolve(Invoke ivk, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.Invoke ivk, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 					
 		for(int i=0;i!=ivk.arguments.size();++i) {
@@ -499,7 +499,7 @@ public final class Resolution {
 		return ivk;
 	}
 	
-	private Expr resolve(AbstractVariable v, HashMap<String, Set<Expr>> environment,
+	private Expr resolve(Expr.AbstractVariable v, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		
 		Set<Expr> aliases = environment.get(v.var);		
@@ -535,44 +535,44 @@ public final class Resolution {
 		return v;
 	}
 	
-	private Expr resolve(UnOp v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.UnOp v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		v.mhs = resolve(v.mhs, environment, imports);
 		return v;
 	}
 	
-	private Expr resolve(AbstractLength v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.AbstractLength v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		v.src = resolve(v.src, environment, imports);
 		return v;
 	}
 	
-	private Expr resolve(ProcessAccess v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.ProcessAccess v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		v.src = resolve(v.src, environment, imports);
 		return v;
 	}
 	
-	private Expr resolve(BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
+	private Expr resolve(Expr.BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		v.lhs = resolve(v.lhs, environment, imports);
 		v.rhs = resolve(v.rhs, environment, imports);
 		return v;
 	}
 	
-	private Expr resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {
+	private Expr resolve(Expr.Convert c, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {
 		c.nominalType = resolve(c.unresolvedType, imports);
 		c.expr = resolve(c.expr, environment, imports);
 		return c;
 	}
 	
-	private Expr resolve(AbstractAccess v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.AbstractAccess v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		v.src = resolve(v.src, environment, imports);
 		v.index = resolve(v.index, environment, imports);
 		return v;
 	}
 	
-	private Expr resolve(NaryOp v, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.NaryOp v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {				
 		for(int i=0;i!=v.arguments.size();++i) {
 			Expr e = v.arguments.get(i);						
@@ -582,7 +582,7 @@ public final class Resolution {
 		return v;
 	}
 	
-	private Expr resolve(Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {						
+	private Expr resolve(Expr.Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {						
 		HashMap<String,Set<Expr>> nenv = new HashMap<String,Set<Expr>>(environment);
 		for(int i=0;i!=e.sources.size();++i) {	
 			Pair<String,Expr> me = e.sources.get(i);
@@ -603,7 +603,7 @@ public final class Resolution {
 		return e;
 	}	
 		
-	private Expr resolve(RecordGenerator sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.Record sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		for(String key : keys) {
@@ -614,7 +614,7 @@ public final class Resolution {
 		return sg;
 	}
 
-	private Expr resolve(TupleGenerator sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.Tuple sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		for(int i=0;i!=sg.fields.size();++i) {
 			Expr e = sg.fields.get(i);
@@ -624,7 +624,7 @@ public final class Resolution {
 		return sg;
 	}
 	
-	private Expr resolve(DictionaryGenerator sg, HashMap<String,Set<Expr>> environment,
+	private Expr resolve(Expr.Dictionary sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {		
 		for(int i=0;i!=sg.pairs.size();++i) {
 			Pair<Expr,Expr> e = sg.pairs.get(i);
@@ -641,7 +641,7 @@ public final class Resolution {
 		return tc;
 	}
 	
-	private Expr resolve(Function tc, HashMap<String, Set<Expr>> environment,
+	private Expr resolve(Expr.Function tc, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		
 		if (tc.paramTypes != null) {
@@ -660,7 +660,7 @@ public final class Resolution {
 		return tc;
 	}
 	
-	private Expr resolve(RecordAccess sg,
+	private Expr resolve(Expr.RecordAccess sg,
 			HashMap<String, Set<Expr>> environment, ArrayList<Import> imports)
 			throws ResolveError {		
 		sg.lhs = resolve(sg.lhs, environment, imports);

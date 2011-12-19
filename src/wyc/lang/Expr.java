@@ -554,12 +554,12 @@ public interface Expr extends SyntacticElement {
 			return "*" + src.toString();
 		}
 	}
-	public static class DictionaryGenerator extends SyntacticElement.Impl implements Expr {
+	public static class Dictionary extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Pair<Expr,Expr>> pairs;		
 		public Type nominalType;
 		public Type.Dictionary rawType;
 		
-		public DictionaryGenerator(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
+		public Dictionary(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
 			super(attributes);
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
@@ -573,13 +573,13 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class RecordGenerator extends SyntacticElement.Impl implements
+	public static class Record extends SyntacticElement.Impl implements
 			Expr {
 		public final HashMap<String, Expr> fields;
 		public Type nominalType;
 		public Type.Record rawType;
 
-		public RecordGenerator(Map<String, Expr> fields,
+		public Record(Map<String, Expr> fields,
 				Attribute... attributes) {
 			super(attributes);
 			this.fields = new HashMap<String, Expr>(fields);
@@ -594,13 +594,13 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class TupleGenerator extends SyntacticElement.Impl implements
+	public static class Tuple extends SyntacticElement.Impl implements
 			LVal {
 		public final ArrayList<Expr> fields;
 		public Type nominalType;
 		public Type.Tuple rawType;
 		
-		public TupleGenerator(Collection<Expr> fields, Attribute... attributes) {
+		public Tuple(Collection<Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
 		}
