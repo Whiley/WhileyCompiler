@@ -168,7 +168,8 @@ public final class WhileyFile {
 		public final UnresolvedType unresolvedType;		
 		public final Expr constraint;
 		public final String name;
-		public Type type;
+		public Type nominalType;
+		public Type rawType;
 
 		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name,
 				Expr constraint, Attribute... attributes) {

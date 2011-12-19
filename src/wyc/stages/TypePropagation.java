@@ -33,8 +33,10 @@ import java.util.*;
 import wyc.TypeExpander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
+import wyc.util.RefCountedHashMap;
 import wyil.ModuleLoader;
 import wyil.lang.Import;
+import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Code.OpDir;
@@ -120,9 +122,18 @@ public final class TypePropagation {
 	public void propagate(WhileyFile wf) {
 		this.filename = wf.filename;
 		
+		ModuleID mid = wf.module;
+		ArrayList<Import> imports = new ArrayList<Import>();
+		imports.add(new Import(mid.pkg(), mid.module(), "*")); 
+		imports.add(new Import(mid.pkg(), "*")); 
+		
 		for(WhileyFile.Decl decl : wf.declarations) {
 			try {
-				if(decl instanceof FunDecl) {
+				if (decl instanceof ImportDecl) {
+					ImportDecl impd = (ImportDecl) decl;
+					imports.add(1, new Import(new PkgID(impd.pkg), impd.module,
+							impd.name));
+				} else if(decl instanceof FunDecl) {
 					propagate((FunDecl)decl);
 				} else if(decl instanceof TypeDecl) {
 					propagate((TypeDecl)decl);					
@@ -139,38 +150,46 @@ public final class TypePropagation {
 		
 	}
 	
-	public void propagate(TypeDecl td) {		
-		if(td.constraint != null) {			
-			Env environment = new Env();
-			environment.put("$", td.type);
+	public void propagate(TypeDecl td) throws ResolveError {		
+		// first, expand the declared type
+		Type nominalType = td.nominalType;
+		Type rawType = expander.expand(nominalType);
+		td.rawType = rawType;
+
+		if(td.constraint != null) {						
+			// second, construct the appropriate typing environment			
+			RefCountedHashMap<String,Pair<Type,Type>> environment = new RefCountedHashMap<String,Pair<Type,Type>>();
+			environment.put("$", new Pair<Type,Type>(nominalType,rawType));
+			
+			// third, propagate type information through the constraint 
 			propagate(td.constraint,environment);
 		}
 	}
 
 	public void propagate(FunDecl fd) throws ResolveError {
 		this.method = fd;
-		Env environment = new Env();
+		RefCountedHashMap<String,Pair<Type,Type>> environment = new RefCountedHashMap<String,Pair<Type,Type>>();
 		Type.Function type = fd.nominalType;		
 		ArrayList<Type> paramTypes = type.params();
 		
 		int i=0;
 		for (WhileyFile.Parameter p : fd.parameters) {						
-			environment = environment.put(p.name,paramTypes.get(i++));
+			environment = environment.put(p.name,expand(paramTypes.get(i++)));
 		}
 		
 		if(fd instanceof MethDecl) {
 			MethDecl md = (MethDecl) fd;			
 			Type.Method mt = (Type.Method) type; 
-			environment = environment.put("this",mt.receiver());
+			environment = environment.put("this",expand(mt.receiver()));
 		}
 		
 		if(fd.precondition != null) {
-			propagate(fd.precondition,environment.copy());
+			propagate(fd.precondition,environment.clone());
 		}
 		
 		if(fd.postcondition != null) {			
-			environment = environment.put("$", type.ret());
-			propagate(fd.postcondition,environment.copy());
+			environment = environment.put("$", expand(type.ret()));
+			propagate(fd.postcondition,environment.clone());
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
 			environment = environment.remove("$");
@@ -186,15 +205,15 @@ public final class TypePropagation {
 		propagate(fd.statements,environment);
 	}
 	
-	private Env propagate(ArrayList<Stmt> body, Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(ArrayList<Stmt> body, RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		for (Stmt stmt : body) {
 			environment = propagate(stmt, environment);
 		}
 		return environment;
 	}
 	
-	private Env propagate(Stmt stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		try {
 			if(stmt instanceof Stmt.Assign) {
 				return propagate((Stmt.Assign) stmt,environment);
@@ -237,42 +256,42 @@ public final class TypePropagation {
 		}
 	}
 	
-	private Env propagate(Stmt.Assert stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assert stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Assign stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assign stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Break stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Break stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Debug stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Debug stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.DoWhile stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.DoWhile stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.For stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.For stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.IfElse stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.IfElse stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Return stmt, Env environment) throws ResolveError {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Return stmt, RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment);
 			Type lhs = method.nominalType.ret();
@@ -284,33 +303,33 @@ public final class TypePropagation {
 		return BOTTOM;
 	}
 	
-	private Env propagate(Stmt.Skip stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Skip stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Switch stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Switch stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.Throw stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Throw stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.TryCatch stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.TryCatch stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
-	private Env propagate(Stmt.While stmt,
-			Env environment) {
+	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.While stmt,
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return environment;
 	}
 	
 	private Expr propagate(Expr expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		Type type;
 		
 		try {
@@ -363,7 +382,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.BinOp expr,
-			Env environment) throws ResolveError {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
 		expr.lhs = propagate(expr.lhs,environment);
 		expr.rhs = propagate(expr.rhs,environment);
 		Type lhsExpanded = expr.lhs.rawType();
@@ -470,17 +489,17 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Comprehension expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return expr;
 	}
 	
 	private Expr propagate(Expr.Constant expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return expr;
 	}
 
 	private Expr propagate(Expr.Convert c,
-			Env environment) throws ResolveError {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
 		c.expr = propagate(c.expr,environment);
 		Type from = c.expr.rawType();
 		Type to = expander.expand(c.nominalType);
@@ -492,22 +511,22 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Dictionary expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.Function expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.Invoke expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}	
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
-			Env environment) throws ResolveError {			
+			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {			
 		expr.src = propagate(expr.src,environment);
 		expr.index = propagate(expr.index,environment);		
 		Type src = expr.src.nominalType();		
@@ -559,7 +578,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.AbstractLength expr,
-			Env environment) throws ResolveError {			
+			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {			
 		expr.src = propagate(expr.src,environment);			
 		Type src = expr.src.nominalType();		
 		Type srcExpanded = expander.expand(src);
@@ -614,63 +633,64 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.LocalVariable expr,
-			Env environment) throws ResolveError {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
 		
-		Type nominalType = environment.get(expr.var);
-		// Resolution guarantees nominalType != null
-		expr.nominalType = nominalType;
-		expr.rawType = expander.expand(nominalType);
+		Pair<Type,Type> types = environment.get(expr.var);
+		
+		// Resolution guarantees types != null
+		expr.nominalType = types.first();
+		expr.rawType = types.second();
 		
 		return expr;
 	}
 	
 	private Expr propagate(Expr.Set expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.List expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.SubList expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.RecordAccess expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.ConstantAccess expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}		
 	
 	private Expr propagate(Expr.Record expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 
 	private Expr propagate(Expr.Spawn expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 
 	private Expr propagate(Expr.Tuple expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.TypeVal expr,
-			Env environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment) {
 		return null;
 	}
 	
@@ -709,12 +729,12 @@ public final class TypePropagation {
 	private static final class Handler {
 		public final Type exception;
 		public final String variable;
-		public Env environment;
+		public RefCountedHashMap<String,Pair<Type,Type>> environment;
 		
 		public Handler(Type exception, String variable) {
 			this.exception = exception;
 			this.variable = variable;
-			this.environment = new Env();
+			this.environment = new RefCountedHashMap<String,Pair<Type,Type>>();
 		}
 	}
 	
@@ -729,7 +749,7 @@ public final class TypePropagation {
 	}
 	
 	private static final class BreakScope extends Scope {
-		public Env environment;
+		public RefCountedHashMap<String,Pair<Type,Type>> environment;
 		
 		public void free() {
 			environment.free();
@@ -737,82 +757,16 @@ public final class TypePropagation {
 	}
 
 	private static final class ContinueScope extends Scope {
-		public Env environment;
+		public RefCountedHashMap<String,Pair<Type,Type>> environment;
 		
 		public void free() {
 			environment.free();
 		}
 	}
 	
-	private static final Env BOTTOM = new Env();
+	private static final RefCountedHashMap<String,Pair<Type,Type>> BOTTOM = new RefCountedHashMap<String,Pair<Type,Type>>();
 	
-	private static final class Env {
-		private final HashMap<String,Type> types;
-		private int count; // refCount
-		
-		public Env() {
-			count = 1;
-			types = new HashMap<String,Type>();
-		}
-		
-		private Env(HashMap<String,Type> types) {
-			count = 1;
-			this.types = (HashMap<String,Type>) types.clone();
-		}
-
-		public Type get(String var) {
-			return types.get(var);
-		}
-				
-		public Env put(String var, Type type) {
-			if(count == 1) {
-				types.put(var, type);
-				return this;
-			} else {				
-				Env nenv = new Env(types);
-				nenv.types.put(var, type);
-				count--;
-				return nenv;
-			}
-		}
-		
-		public Env putAll(Env env) {
-			if(count == 1) {
-				HashMap<String,Type> envTypes = env.types;
-				if(envTypes != null) {					
-					types.putAll(envTypes);
-				}
-				return this;
-			} else { 
-				Env nenv = new Env(types);
-				HashMap<String,Type> envTypes = env.types;
-				if(envTypes != null) {
-					nenv.types.putAll(envTypes);
-				}
-				count--;
-				return nenv;				
-			}
-		}
-		
-		public Env remove(String var) {
-			if(count == 1) {
-				types.remove(var);
-				return this;
-			} else {				
-				Env nenv = new Env(types);
-				nenv.types.remove(var);
-				count--;
-				return nenv;
-			}
-		}
-		
-		public Env copy() {
-			count++;
-			return this;
-		}
-		
-		public void free() {
-			--count;			
-		}
+	private Pair<Type,Type> expand(Type nominalType) throws ResolveError {
+		return new Pair<Type,Type>(nominalType,expander.expand(nominalType));
 	}
 }

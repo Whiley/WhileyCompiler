@@ -147,7 +147,9 @@ public final class CodeGeneration {
 			constraint.append(Code.Fail("precondition not satisfied"), attributes(td.constraint));
 			constraint.append(Code.Label(lab));
 		}
-		return new Module.TypeDef(td.modifiers, td.name(), td.type, constraint);
+		
+		// FIXME: include the declared nominal type as an attribute?
+		return new Module.TypeDef(td.modifiers, td.name(), td.rawType, constraint);
 	}
 
 	private Module.Method generate(FunDecl fd) {		
