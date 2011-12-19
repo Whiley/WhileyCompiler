@@ -42,16 +42,22 @@ import wyil.util.SyntacticElement;
  * 
  */
 public interface Expr extends SyntacticElement {
-	
+
 	/**
-	 * Get the type that this expression will evaluate to.
+	 * Get the type that this expression will evaluate to. This type may contain
+	 * nominal information that could be further expanded. This means one should
+	 * not use this type for subtype testing; rather it should only be used for
+	 * reporting information to the user (e.g. type errors, etc).
 	 * 
 	 * @return
 	 */
 	public Type nominalType();
-	
+
 	/**
-	 * Get the type that this expression will evaluate to.
+	 * Get the raw type that this expression will evaluate to. This type may
+	 * only contain nominal information that cannot be further expanded (e.g.
+	 * because it's declared private). This type can safely be used for subtype
+	 * testing.
 	 * 
 	 * @return
 	 */
@@ -66,20 +72,25 @@ public interface Expr extends SyntacticElement {
 	 */
 	public interface LVal extends Expr {}
 	
-	public static class UnknownVariable extends SyntacticElement.Impl implements Expr, LVal {
+	public static class AbstractVariable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;		
 
-		public UnknownVariable(String var, Attribute... attributes) {
+		public AbstractVariable(String var, Attribute... attributes) {
 			super(attributes);
 			this.var = var;
 		}
 
+		public AbstractVariable(String var, Collection<Attribute> attributes) {
+			super(attributes);
+			this.var = var;
+		}
+		
 		public Type nominalType() {
-			return Type.T_ANY;
+			return null;
 		}
 		
 		public Type rawType() {
-			return Type.T_ANY;
+			return null;
 		}
 		
 		public String toString() {
@@ -87,21 +98,16 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-
-	public static class LocalVariable extends SyntacticElement.Impl implements
-			Expr, LVal {
-		public final String var;
+	public static class LocalVariable extends AbstractVariable {		
 		public Type nominalType;
 		public Type rawType;
 
 		public LocalVariable(String var, Attribute... attributes) {
-			super(attributes);
-			this.var = var;
+			super(var, attributes);			
 		}
 
 		public LocalVariable(String var, Collection<Attribute> attributes) {
-			super(attributes);
-			this.var = var;
+			super(var, attributes);			
 		}
 		
 		public Type nominalType() {
@@ -117,16 +123,16 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 		
-	public static class ExternalAccess extends SyntacticElement.Impl implements Expr {
+	public static class ExternalConstant extends SyntacticElement.Impl implements Expr {
 		public final NameID nid;
 		public Value value;
 
-		public ExternalAccess(NameID mid, Attribute... attributes) {
+		public ExternalConstant(NameID mid, Attribute... attributes) {
 			super(attributes);
 			this.nid = mid;
 		}
 		
-		public ExternalAccess(NameID mid, Collection<Attribute> attributes) {
+		public ExternalConstant(NameID mid, Collection<Attribute> attributes) {
 			super(attributes);
 			this.nid = mid;
 		}

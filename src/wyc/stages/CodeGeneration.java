@@ -675,8 +675,8 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.Constant) condition, environment);
 			} else if (condition instanceof Expr.LocalVariable) {
 				return generateCondition(target, (Expr.LocalVariable) condition, environment);
-			} else if (condition instanceof Expr.ExternalAccess) {
-				return generateCondition(target, (Expr.ExternalAccess) condition, environment);
+			} else if (condition instanceof Expr.ExternalConstant) {
+				return generateCondition(target, (Expr.ExternalConstant) condition, environment);
 			} else if (condition instanceof Expr.BinOp) {
 				return generateCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.UnOp) {
@@ -731,7 +731,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generateCondition(String target, Expr.ExternalAccess v, 
+	private Block generateCondition(String target, Expr.ExternalConstant v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
@@ -954,8 +954,8 @@ public final class CodeGeneration {
 				return generate((Expr.Constant) expression, environment);
 			} else if (expression instanceof Expr.LocalVariable) {
 				return generate((Expr.LocalVariable) expression, environment);
-			} else if (expression instanceof Expr.ExternalAccess) {
-				return generate((Expr.ExternalAccess) expression, environment);
+			} else if (expression instanceof Expr.ExternalConstant) {
+				return generate((Expr.ExternalConstant) expression, environment);
 			} else if (expression instanceof Expr.NaryOp) {
 				return generate((Expr.NaryOp) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
@@ -1121,7 +1121,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Expr.ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
+	private Block generate(Expr.ExternalConstant v, HashMap<String,Integer> environment) throws ResolveError {						
 		Block blk = new Block(environment.size());
 		Value val = v.value;				
 		blk.append(Code.Const(val),attributes(v));

@@ -324,8 +324,8 @@ public final class TypePropagation {
 				return propagate((Expr.Convert) expr,environment); 
 			} else if(expr instanceof Expr.DictionaryGenerator) {
 				return propagate((Expr.DictionaryGenerator) expr,environment); 
-			} else if(expr instanceof Expr.ExternalAccess) {
-				return propagate((Expr.ExternalAccess) expr,environment); 
+			} else if(expr instanceof Expr.ExternalConstant) {
+				return propagate((Expr.ExternalConstant) expr,environment); 
 			} else if(expr instanceof Expr.Function) {
 				return propagate((Expr.Function) expr,environment); 
 			} else if(expr instanceof Expr.Invoke) {
@@ -498,7 +498,7 @@ public final class TypePropagation {
 		return null;
 	}
 	
-	private Expr propagate(Expr.ExternalAccess expr,
+	private Expr propagate(Expr.ExternalConstant expr,
 			Env environment) {
 		return null;
 	}

@@ -140,8 +140,8 @@ public final class ConstantExpansion {
 		if (expr instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) expr;
 			return c.value;
-		} else if (expr instanceof Expr.ExternalAccess) {
-			Expr.ExternalAccess v = (Expr.ExternalAccess) expr;			
+		} else if (expr instanceof Expr.ExternalConstant) {
+			Expr.ExternalConstant v = (Expr.ExternalConstant) expr;			
 			return expandConstant(v.nid, exprs, visited);
 		} else if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;

@@ -280,8 +280,8 @@ public final class ModuleBuilder {
 		if (expr instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) expr;
 			return c.value;
-		} else if (expr instanceof Expr.ExternalAccess) {
-			Expr.ExternalAccess v = (Expr.ExternalAccess) expr;			
+		} else if (expr instanceof Expr.ExternalConstant) {
+			Expr.ExternalConstant v = (Expr.ExternalConstant) expr;			
 			return expandConstant(v.nid, exprs, visited);
 		} else if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
@@ -1354,8 +1354,8 @@ public final class ModuleBuilder {
 				return resolveCondition(target, (Expr.Constant) condition, environment);
 			} else if (condition instanceof Expr.LocalVariable) {
 				return resolveCondition(target, (Expr.LocalVariable) condition, environment);
-			} else if (condition instanceof Expr.ExternalAccess) {
-				return resolveCondition(target, (Expr.ExternalAccess) condition, environment);
+			} else if (condition instanceof Expr.ExternalConstant) {
+				return resolveCondition(target, (Expr.ExternalConstant) condition, environment);
 			} else if (condition instanceof Expr.BinOp) {
 				return resolveCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.UnOp) {
@@ -1406,7 +1406,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 	
-	private Block resolveCondition(String target, Expr.ExternalAccess v, 
+	private Block resolveCondition(String target, Expr.ExternalConstant v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
@@ -1674,8 +1674,8 @@ public final class ModuleBuilder {
 				return resolve((Expr.Constant) expression, environment);
 			} else if (expression instanceof Expr.LocalVariable) {
 				return resolve((Expr.LocalVariable) expression, environment);
-			} else if (expression instanceof Expr.ExternalAccess) {
-				return resolve((Expr.ExternalAccess) expression, environment);
+			} else if (expression instanceof Expr.ExternalConstant) {
+				return resolve((Expr.ExternalConstant) expression, environment);
 			} else if (expression instanceof Expr.NaryOp) {
 				return resolve((Expr.NaryOp) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
@@ -1839,7 +1839,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 	
-	private Block resolve(Expr.ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
+	private Block resolve(Expr.ExternalConstant v, HashMap<String,Integer> environment) throws ResolveError {						
 		Value val = constants.get(v.nid);		
 		if(val == null) {
 			// indicates an external access

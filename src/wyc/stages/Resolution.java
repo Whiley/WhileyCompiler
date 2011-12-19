@@ -263,16 +263,16 @@ public final class Resolution {
 
 	private void resolve(Assign s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
-		if(s.lhs instanceof UnknownVariable) {
-			UnknownVariable v = (UnknownVariable) s.lhs;
+		if(s.lhs instanceof AbstractVariable) {
+			AbstractVariable v = (AbstractVariable) s.lhs;
 			environment.put(v.var, Collections.EMPTY_SET);
 			s.lhs = new LocalVariable(v.var,v.attributes());
 		} else if(s.lhs instanceof TupleGenerator) {
 			TupleGenerator tg = (TupleGenerator) s.lhs;
 			for(int i=0;i!=tg.fields.size();++i) {
 				Expr e = tg.fields.get(i);
-				if(e instanceof UnknownVariable) {
-					UnknownVariable v = (UnknownVariable) e;
+				if(e instanceof AbstractVariable) {
+					AbstractVariable v = (AbstractVariable) e;
 					tg.fields.set(i,new LocalVariable(v.var,e.attributes()));
 					environment.put(v.var, Collections.EMPTY_SET);
 				} else {
@@ -407,8 +407,8 @@ public final class Resolution {
 			} else if (e instanceof LocalVariable) {
 				// this case is possible because of the way WhileyParser handles
 				// sublist expressions.
-			} else if (e instanceof UnknownVariable) {
-				e = resolve((UnknownVariable)e, environment, imports);
+			} else if (e instanceof AbstractVariable) {
+				e = resolve((AbstractVariable)e, environment, imports);
 			} else if (e instanceof NaryOp) {
 				e = resolve((NaryOp)e, environment, imports);
 			} else if (e instanceof Comprehension) {
@@ -499,7 +499,7 @@ public final class Resolution {
 		return ivk;
 	}
 	
-	private Expr resolve(UnknownVariable v, HashMap<String, Set<Expr>> environment,
+	private Expr resolve(AbstractVariable v, HashMap<String, Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		
 		Set<Expr> aliases = environment.get(v.var);		
@@ -509,7 +509,7 @@ public final class Resolution {
 			// is, and update the tree accordingly.
 			try {
 				NameID nid = resolver.resolveAsName(v.var, imports);				
-				return new ExternalAccess(nid,v.attributes());				
+				return new ExternalConstant(nid,v.attributes());				
 			} catch(ResolveError err) {}
 			// In this case, we may still be OK if this corresponds to an
 			// explicit module or package access.
@@ -685,7 +685,7 @@ public final class Resolution {
 			try {				
 				NameResolver.Skeleton m = resolver.loadSkeleton(ma.mid);				
 				if(m.hasName(sg.name)) {
-					return new ExternalAccess(new NameID(ma.mid,sg.name));
+					return new ExternalConstant(new NameID(ma.mid,sg.name));
 				}				
 			} catch(ResolveError err) {}			
 			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,ma);						
