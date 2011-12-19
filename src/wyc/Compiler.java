@@ -255,7 +255,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
-		new TypePropagation(loader, nameExpander).propagate(wf);
+		new TypePropagation(loader, nameResolver, nameExpander).propagate(wf);
 		Module m = new CodeGeneration(loader).generate(wf);		
 		logTimedMessage("[" + wf.filename + "] generated wyil module",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());

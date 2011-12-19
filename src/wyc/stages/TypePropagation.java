@@ -30,6 +30,7 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
+import wyc.NameResolver;
 import wyc.TypeExpander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
@@ -109,14 +110,16 @@ import static wyil.util.SyntaxError.*;
  */
 public final class TypePropagation {
 	private final ModuleLoader loader;
+	private final NameResolver resolver;
 	private final TypeExpander expander;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunDecl method;
 	
-	public TypePropagation(ModuleLoader loader, TypeExpander expander) {
+	public TypePropagation(ModuleLoader loader, NameResolver resolver, TypeExpander expander) {
 		this.loader = loader;
 		this.expander = expander;
+		this.resolver = resolver;
 	}
 	
 	public void propagate(WhileyFile wf) {
@@ -134,23 +137,25 @@ public final class TypePropagation {
 					imports.add(1, new Import(new PkgID(impd.pkg), impd.module,
 							impd.name));
 				} else if(decl instanceof FunDecl) {
-					propagate((FunDecl)decl);
+					propagate((FunDecl)decl,imports);
 				} else if(decl instanceof TypeDecl) {
-					propagate((TypeDecl)decl);					
+					propagate((TypeDecl)decl,imports);					
 				} else if(decl instanceof ConstDecl) {
-					propagate((ConstDecl)decl);					
+					propagate((ConstDecl)decl,imports);					
 				}			
+			} catch(SyntaxError e) {
+				throw e;
 			} catch(Throwable t) {
 				internalFailure(t.getMessage(),filename,decl,t);
 			}
 		}
 	}
 	
-	public void propagate(ConstDecl cd) {
+	public void propagate(ConstDecl cd, ArrayList<Import> imports) {
 		
 	}
 	
-	public void propagate(TypeDecl td) throws ResolveError {		
+	public void propagate(TypeDecl td, ArrayList<Import> imports) throws ResolveError {		
 		// first, expand the declared type
 		Type nominalType = td.nominalType;
 		Type rawType = expander.expand(nominalType);
@@ -161,12 +166,14 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Pair<Type,Type>> environment = new RefCountedHashMap<String,Pair<Type,Type>>();
 			environment.put("$", new Pair<Type,Type>(nominalType,rawType));
 			
+			// FIXME: add names exposed from records and other types
+			
 			// third, propagate type information through the constraint 
-			propagate(td.constraint,environment);
+			propagate(td.constraint,environment,imports);
 		}
 	}
 
-	public void propagate(FunDecl fd) throws ResolveError {
+	public void propagate(FunDecl fd, ArrayList<Import> imports) throws ResolveError {
 		this.method = fd;
 		RefCountedHashMap<String,Pair<Type,Type>> environment = new RefCountedHashMap<String,Pair<Type,Type>>();
 		Type.Function type = fd.nominalType;		
@@ -184,12 +191,12 @@ public final class TypePropagation {
 		}
 		
 		if(fd.precondition != null) {
-			propagate(fd.precondition,environment.clone());
+			propagate(fd.precondition,environment.clone(),imports);
 		}
 		
 		if(fd.postcondition != null) {			
 			environment = environment.put("$", expand(type.ret()));
-			propagate(fd.postcondition,environment.clone());
+			propagate(fd.postcondition,environment.clone(),imports);
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
 			environment = environment.remove("$");
@@ -202,48 +209,53 @@ public final class TypePropagation {
 			fd.rawType = (Type.Function) expander.expand(fd.nominalType);			
 		}
 		
-		propagate(fd.statements,environment);
+		propagate(fd.statements,environment,imports);
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(ArrayList<Stmt> body, RefCountedHashMap<String,Pair<Type,Type>> environment) {
+	private RefCountedHashMap<String, Pair<Type, Type>> propagate(
+			ArrayList<Stmt> body,
+			RefCountedHashMap<String, Pair<Type, Type>> environment,
+			ArrayList<Import> imports) {
+		
 		for (Stmt stmt : body) {
-			environment = propagate(stmt, environment);
+			environment = propagate(stmt, environment, imports);
 		}
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String, Pair<Type, Type>> environment,
+			ArrayList<Import> imports) {
 		try {
 			if(stmt instanceof Stmt.Assign) {
-				return propagate((Stmt.Assign) stmt,environment);
+				return propagate((Stmt.Assign) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Return) {
-				return propagate((Stmt.Return) stmt,environment);
+				return propagate((Stmt.Return) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.IfElse) {
-				return propagate((Stmt.IfElse) stmt,environment);
+				return propagate((Stmt.IfElse) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.While) {
-				return propagate((Stmt.While) stmt,environment);
+				return propagate((Stmt.While) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.For) {
-				return propagate((Stmt.For) stmt,environment);
+				return propagate((Stmt.For) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Switch) {
-				return propagate((Stmt.Switch) stmt,environment);
+				return propagate((Stmt.Switch) stmt,environment,imports);
 			} else if(stmt instanceof Expr.Invoke) {
-				propagate((Expr.Invoke) stmt,environment);
+				propagate((Expr.Invoke) stmt,environment,imports);
 				return environment;
 			} else if(stmt instanceof Stmt.DoWhile) {
-				return propagate((Stmt.DoWhile) stmt,environment);
+				return propagate((Stmt.DoWhile) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Break) {
-				return propagate((Stmt.Break) stmt,environment);
+				return propagate((Stmt.Break) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Throw) {
-				return propagate((Stmt.Throw) stmt,environment);
+				return propagate((Stmt.Throw) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.TryCatch) {
-				return propagate((Stmt.TryCatch) stmt,environment);
+				return propagate((Stmt.TryCatch) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Assert) {
-				return propagate((Stmt.Assert) stmt,environment);
+				return propagate((Stmt.Assert) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Debug) {
-				return propagate((Stmt.Debug) stmt,environment);
+				return propagate((Stmt.Debug) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Skip) {
-				return propagate((Stmt.Skip) stmt,environment);
+				return propagate((Stmt.Skip) stmt,environment,imports);
 			} else {
 				internalFailure("unknown statement encountered",filename,stmt);
 				return null; // deadcode
@@ -257,43 +269,53 @@ public final class TypePropagation {
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assert stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assign stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Break stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Debug stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.DoWhile stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.For stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.IfElse stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Return stmt, RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
+	private RefCountedHashMap<String, Pair<Type, Type>> propagate(
+			Stmt.Return stmt,
+			RefCountedHashMap<String, Pair<Type, Type>> environment,
+			ArrayList<Import> imports) throws ResolveError {
 		if (stmt.expr != null) {
-			stmt.expr = propagate(stmt.expr, environment);
+			stmt.expr = propagate(stmt.expr, environment,imports);
 			Type lhs = method.nominalType.ret();
 			Type rhs = stmt.expr.nominalType();
 			Type lhsExpanded = expander.expand(lhs);
@@ -304,87 +326,92 @@ public final class TypePropagation {
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Skip stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Switch stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Throw stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.TryCatch stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.While stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return environment;
 	}
 	
 	private Expr propagate(Expr expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
-		Type type;
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		
 		try {
 			if(expr instanceof Expr.BinOp) {
-				return propagate((Expr.BinOp) expr,environment); 
+				return propagate((Expr.BinOp) expr,environment,imports); 
 			} else if(expr instanceof Expr.Comprehension) {
-				return propagate((Expr.Comprehension) expr,environment); 
+				return propagate((Expr.Comprehension) expr,environment,imports); 
 			} else if(expr instanceof Expr.Constant) {
-				return propagate((Expr.Constant) expr,environment); 
+				return propagate((Expr.Constant) expr,environment,imports); 
 			} else if(expr instanceof Expr.Convert) {
-				return propagate((Expr.Convert) expr,environment); 
+				return propagate((Expr.Convert) expr,environment,imports); 
 			} else if(expr instanceof Expr.Dictionary) {
-				return propagate((Expr.Dictionary) expr,environment); 
+				return propagate((Expr.Dictionary) expr,environment,imports); 
 			} else if(expr instanceof Expr.Function) {
-				return propagate((Expr.Function) expr,environment); 
+				return propagate((Expr.Function) expr,environment,imports); 
 			} else if(expr instanceof Expr.Invoke) {
-				return propagate((Expr.Invoke) expr,environment); 
+				return propagate((Expr.Invoke) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractIndexAccess) {
-				return propagate((Expr.AbstractIndexAccess) expr,environment); 
+				return propagate((Expr.AbstractIndexAccess) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractLength) {
-				return propagate((Expr.AbstractLength) expr,environment); 
+				return propagate((Expr.AbstractLength) expr,environment,imports); 
 			} else if(expr instanceof Expr.LocalVariable) {
-				return propagate((Expr.LocalVariable) expr,environment); 
+				return propagate((Expr.LocalVariable) expr,environment,imports); 
 			} else if(expr instanceof Expr.List) {
-				return propagate((Expr.List) expr,environment); 
+				return propagate((Expr.List) expr,environment,imports); 
 			} else if(expr instanceof Expr.Set) {
-				return propagate((Expr.Set) expr,environment); 
+				return propagate((Expr.Set) expr,environment,imports); 
 			} else if(expr instanceof Expr.SubList) {
-				return propagate((Expr.SubList) expr,environment); 
+				return propagate((Expr.SubList) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractDotAccess) {
-				return propagate((Expr.AbstractDotAccess) expr,environment); 
+				return propagate((Expr.AbstractDotAccess) expr,environment,imports); 
 			} else if(expr instanceof Expr.Record) {
-				return propagate((Expr.Record) expr,environment); 
+				return propagate((Expr.Record) expr,environment,imports); 
 			} else if(expr instanceof Expr.Spawn) {
-				return propagate((Expr.Spawn) expr,environment); 
+				return propagate((Expr.Spawn) expr,environment,imports); 
 			} else if(expr instanceof Expr.Tuple) {
-				return  propagate((Expr.Tuple) expr,environment); 
+				return  propagate((Expr.Tuple) expr,environment,imports); 
 			} else if(expr instanceof Expr.TypeVal) {
-				return propagate((Expr.TypeVal) expr,environment); 
-			} else {
-				internalFailure("unknown expression encountered (" + expr.getClass().getName() +")",filename,expr);
-				return null; // dead code
-			}
+				return propagate((Expr.TypeVal) expr,environment,imports); 
+			} 
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
 			internalFailure(e.getMessage(),filename,expr,e);
 			return null; // dead code
 		}		
+		internalFailure("unknown expression encountered (" + expr.getClass().getName() +")",filename,expr);
+		return null; // dead code
 	}
 	
 	private Expr propagate(Expr.BinOp expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
-		expr.lhs = propagate(expr.lhs,environment);
-		expr.rhs = propagate(expr.rhs,environment);
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		expr.lhs = propagate(expr.lhs,environment,imports);
+		expr.rhs = propagate(expr.rhs,environment,imports);
 		Type lhsExpanded = expr.lhs.rawType();
 		Type rhsExpanded = expr.rhs.rawType();
 	
@@ -489,18 +516,21 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Comprehension expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return expr;
 	}
 	
 	private Expr propagate(Expr.Constant expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return expr;
 	}
 
 	private Expr propagate(Expr.Convert c,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
-		c.expr = propagate(c.expr,environment);
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		c.expr = propagate(c.expr,environment,imports);
 		Type from = c.expr.rawType();
 		Type to = expander.expand(c.nominalType);
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
@@ -511,24 +541,28 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Dictionary expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.Function expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.Invoke expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}	
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {			
-		expr.src = propagate(expr.src,environment);
-		expr.index = propagate(expr.index,environment);		
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) throws ResolveError {			
+		expr.src = propagate(expr.src,environment,imports);
+		expr.index = propagate(expr.index,environment,imports);		
 		Type src = expr.src.nominalType();		
 		Type srcExpanded = expander.expand(src);
 				
@@ -578,8 +612,9 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.AbstractLength expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {			
-		expr.src = propagate(expr.src,environment);			
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) throws ResolveError {			
+		expr.src = propagate(expr.src,environment,imports);			
 		Type src = expr.src.nominalType();		
 		Type srcExpanded = expander.expand(src);
 	
@@ -633,7 +668,8 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.LocalVariable expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) throws ResolveError {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) throws ResolveError {
 		
 		Pair<Type,Type> types = environment.get(expr.var);
 		
@@ -645,52 +681,62 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Set expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.List expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.SubList expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.RecordAccess expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.ConstantAccess expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}		
 	
 	private Expr propagate(Expr.Record expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 
 	private Expr propagate(Expr.Spawn expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 
 	private Expr propagate(Expr.Tuple expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.TypeVal expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment) {
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
 		return null;
 	}
 	
