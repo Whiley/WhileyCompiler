@@ -302,49 +302,6 @@ public final class Resolution {
 			}
 		} 
 	}
-
-	
-	/**
-	 * The purpose of the exposed names method is capture the case when we have
-	 * a define statement like this:
-	 * 
-	 * <pre>
-	 * define tup as {int x, int y} where x < y
-	 * </pre>
-	 * 
-	 * In this case, <code>x</code> and <code>y</code> are "exposed" --- meaning
-	 * their real names are different in some way. In this case, the aliases we
-	 * have are: x->$.x and y->$.y
-	 * 
-	 * @param src
-	 * @param t
-	 * @param environment
-	 */
-	private static void addExposedNames(Expr src, UnresolvedType t,
-			HashMap<String, Set<Expr>> environment) {
-		// Extended this method to handle lists and sets etc, is very difficult.
-		// The primary problem is that we need to expand expressions involved
-		// names exposed in this way into quantified
-		// expressions.		
-		if(t instanceof UnresolvedType.Record) {
-			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
-				Expr s = new Expr.RecordAccess(src, e
-						.getKey(), src.attribute(Attribute.Source.class));
-				addExposedNames(s,e.getValue(),environment);
-				Set<Expr> aliases = environment.get(e.getKey());
-				if(aliases == null) {
-					aliases = new HashSet<Expr>();
-					environment.put(e.getKey(),aliases);
-				}
-				aliases.add(s);
-			}
-		} else if (t instanceof UnresolvedType.Process) {			
-			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			addExposedNames(new Expr.ProcessAccess(src),
-					ut.element, environment);
-		}
-	}
 	
 	private <T extends Type> T checkType(Type t, Class<T> clazz,
 			SyntacticElement elem) {		

@@ -19,7 +19,11 @@ public final class RefCountedHashMap<K,V> {
 	public V get(K key) {
 		return map.get(key);
 	}
-			
+	
+	public boolean containsKey(K key) {
+		return map.containsKey(key);
+	}
+	
 	public RefCountedHashMap<K,V> put(K key, V value) {
 		if(count == 1) {
 			map.put(key,value);
@@ -56,7 +60,7 @@ public final class RefCountedHashMap<K,V> {
 			count--;
 			return nenv;
 		}
-	}
+	}		
 	
 	public RefCountedHashMap<K,V> clone() {
 		count++;

@@ -36,8 +36,10 @@ import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.RefCountedHashMap;
 import wyil.ModuleLoader;
+import wyil.lang.Attribute;
 import wyil.lang.Import;
 import wyil.lang.ModuleID;
+import wyil.lang.NameID;
 import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Code.OpDir;
@@ -220,12 +222,19 @@ public final class TypePropagation {
 		for (Stmt stmt : body) {
 			environment = propagate(stmt, environment, imports);
 		}
+		
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt stmt,
 			RefCountedHashMap<String, Pair<Type, Type>> environment,
 			ArrayList<Import> imports) {
+		
+		// We have to clone the environment here to ensure that any updates made
+		// within the statement-specific propagation rules do not interfere with
+		// the environment(s) from the previous statements.
+		environment = environment.clone();
+		
 		try {
 			if(stmt instanceof Stmt.Assign) {
 				return propagate((Stmt.Assign) stmt,environment,imports);
@@ -271,36 +280,85 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assert stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		stmt.expr = propagate(stmt.expr,environment,imports);
+		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assign stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		Expr lhs = propagate(stmt.lhs,environment,imports);
+		Expr rhs = propagate(stmt.rhs,environment,imports);
+		if(lhs instanceof Expr.LVal) {
+			stmt.lhs = (Expr.LVal) lhs;
+		} else {
+			syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), filename,
+					stmt.lhs);
+		}		
+		stmt.rhs = rhs;
+
+		// FIXME: update the type of the assigned lval. 
+		
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Break stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		// nothing to do
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Debug stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		stmt.expr = propagate(stmt.expr,environment,imports);
+		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.DoWhile stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		
+		if (stmt.invariant != null) {
+			stmt.invariant = propagate(stmt.invariant, environment, imports);
+			checkIsSubtype(Type.T_BOOL,stmt.invariant);
+		}
+		
+		// FIXME: need to iterate to a fixed point		
+		environment = propagate(stmt.body,environment,imports);
+		
+		stmt.condition = propagate(stmt.condition,environment,imports);
+		checkIsSubtype(Type.T_BOOL,stmt.condition);			
+		
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.For stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		
+		stmt.source = propagate(stmt.source,environment,imports);
+		checkIsSubtype(Type.T_BOOL,stmt.source);			
+		
+		for(String var : stmt.variables) {
+			if (environment.containsKey(var)) {
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
+						filename, stmt);
+			}
+			environment = environment.put(var, ?);
+		} 
+		
+		if (stmt.invariant != null) {
+			stmt.invariant = propagate(stmt.invariant, environment, imports);
+			checkIsSubtype(Type.T_BOOL,stmt.invariant);
+		}
+		
+		// FIXME: need to iterate to a fixed point
+		environment = propagate(stmt.body,environment,imports);
+		
 		return environment;
 	}
 	
@@ -352,6 +410,18 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.While stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+
+		stmt.condition = propagate(stmt.condition,environment,imports);
+		checkIsSubtype(Type.T_BOOL,stmt.condition);			
+		
+		if (stmt.invariant != null) {
+			stmt.invariant = propagate(stmt.invariant, environment, imports);
+			checkIsSubtype(Type.T_BOOL,stmt.invariant);
+		}		
+		
+		// FIXME: need to iterate to a fixed point
+		environment = propagate(stmt.body,environment,imports);
+		
 		return environment;
 	}
 	
@@ -378,8 +448,8 @@ public final class TypePropagation {
 				return propagate((Expr.AbstractIndexAccess) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractLength) {
 				return propagate((Expr.AbstractLength) expr,environment,imports); 
-			} else if(expr instanceof Expr.LocalVariable) {
-				return propagate((Expr.LocalVariable) expr,environment,imports); 
+			} else if(expr instanceof Expr.AbstractVariable) {
+				return propagate((Expr.AbstractVariable) expr,environment,imports); 
 			} else if(expr instanceof Expr.List) {
 				return propagate((Expr.List) expr,environment,imports); 
 			} else if(expr instanceof Expr.Set) {
@@ -667,17 +737,51 @@ public final class TypePropagation {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.LocalVariable expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private Expr propagate(Expr.AbstractVariable expr,
+			RefCountedHashMap<String, Pair<Type, Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
-		
-		Pair<Type,Type> types = environment.get(expr.var);
-		
-		// Resolution guarantees types != null
-		expr.nominalType = types.first();
-		expr.rawType = types.second();
-		
-		return expr;
+
+		Pair<Type, Type> types = environment.get(expr.var);
+
+		if (expr instanceof Expr.LocalVariable) {
+			Expr.LocalVariable lv = (Expr.LocalVariable) expr;
+			lv.nominalType = types.first();
+			lv.rawType = types.second();
+			return lv;
+		} else if (types != null) {
+			// yes, this is a local variable
+			Expr.LocalVariable lv = new Expr.LocalVariable(expr.var,
+					expr.attributes());			
+			lv.nominalType = types.first();
+			lv.rawType = types.second();
+			return lv;
+		} else {
+			// This variable access may correspond to an external access.
+			// Therefore, we must determine which module this
+			// is, and update the tree accordingly.
+			try {
+				NameID nid = resolver.resolveAsName(expr.var, imports);
+				return new Expr.ConstantAccess(null, expr.var, nid,
+						expr.attributes());
+			} catch (ResolveError err) {
+			}
+			// In this case, we may still be OK if this corresponds to an
+			// explicit module or package access.
+			try {
+				ModuleID mid = resolver.resolveAsModule(expr.var, imports);
+				return new Expr.ModuleAccess(null, expr.var, mid,
+						expr.attributes());
+			} catch (ResolveError err) {
+			}
+			PkgID pid = new PkgID(expr.var);
+			if (resolver.isPackage(pid)) {
+				return new Expr.PackageAccess(null, expr.var, pid,
+						expr.attributes());
+			}
+			// ok, failed.
+			syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, expr);
+			return null; // deadcode
+		}
 	}
 	
 	private Expr propagate(Expr.Set expr,
@@ -753,18 +857,59 @@ public final class TypePropagation {
 	
 	// Check t1 :> t2
 	private void checkIsSubtype(Type t1, Type t1Expanded, Type t2,
-			Type t2Expanded, SyntacticElement elem) throws ResolveError {
+			Type t2Expanded, SyntacticElement elem) {
 		if (!Type.isImplicitCoerciveSubtype(t1Expanded, t2Expanded)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
 		}
 	}		
 	
-	private void checkIsSubtype(Type t1, Expr t2)
-			throws ResolveError {		
+	private void checkIsSubtype(Type t1, Expr t2) {		
 		if (!Type.isImplicitCoerciveSubtype(t1, t2.rawType())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.nominalType()), filename, t2);
+		}
+	}
+	
+	/**
+	 * The purpose of the exposed names method is capture the case when we have
+	 * a define statement like this:
+	 * 
+	 * <pre>
+	 * define tup as {int x, int y} where x < y
+	 * </pre>
+	 * 
+	 * In this case, <code>x</code> and <code>y</code> are "exposed" --- meaning
+	 * their real names are different in some way. In this case, the aliases we
+	 * have are: x->$.x and y->$.y
+	 * 
+	 * @param src
+	 * @param t
+	 * @param environment
+	 */
+	private static void addExposedNames(Expr src, UnresolvedType t,
+			HashMap<String, Set<Expr>> environment) {
+		// Extended this method to handle lists and sets etc, is very difficult.
+		// The primary problem is that we need to expand expressions involved
+		// names exposed in this way into quantified
+		// expressions.		
+		if(t instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) t;
+			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
+				Expr s = new Expr.RecordAccess(src, e
+						.getKey(), src.attribute(Attribute.Source.class));
+				addExposedNames(s,e.getValue(),environment);
+				Set<Expr> aliases = environment.get(e.getKey());
+				if(aliases == null) {
+					aliases = new HashSet<Expr>();
+					environment.put(e.getKey(),aliases);
+				}
+				aliases.add(s);
+			}
+		} else if (t instanceof UnresolvedType.Process) {			
+			UnresolvedType.Process ut = (UnresolvedType.Process) t;
+			addExposedNames(new Expr.ProcessAccess(src),
+					ut.element, environment);
 		}
 	}
 	
