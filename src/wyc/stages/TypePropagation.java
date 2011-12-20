@@ -267,7 +267,7 @@ public final class TypePropagation {
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure(e.getMessage(),filename,stmt,e);
+			internalFailure("internal failure",filename,stmt,e);
 			return null; // dead code
 		}
 	}
@@ -874,19 +874,57 @@ public final class TypePropagation {
 	private Expr propagate(Expr.Set expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
-		return null;
+		Type nominalElementType = Type.T_VOID;
+		Type rawElementType = Type.T_VOID;
+		
+		ArrayList<Expr> exprs = expr.arguments;
+		for(int i=0;i!=exprs.size();++i) {
+			Expr e = propagate(exprs.get(i),environment,imports);
+			exprs.set(i,e);
+			nominalElementType = Type.Union(e.nominalType(),nominalElementType);
+			rawElementType = Type.Union(e.rawType(),rawElementType);
+		}
+		
+		expr.nominalType = Type.Set(nominalElementType, false);
+		expr.rawType = (Type.Set) Type.Set(rawElementType, false);
+		
+		return expr;
 	}
 	
 	private Expr propagate(Expr.List expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
-		return null;
+		
+		Type nominalElementType = Type.T_VOID;
+		Type rawElementType = Type.T_VOID;
+		
+		ArrayList<Expr> exprs = expr.arguments;
+		for(int i=0;i!=exprs.size();++i) {
+			Expr e = propagate(exprs.get(i),environment,imports);
+			exprs.set(i,e);
+			nominalElementType = Type.Union(e.nominalType(),nominalElementType);
+			rawElementType = Type.Union(e.rawType(),rawElementType);
+		}
+		
+		expr.nominalType = Type.List(nominalElementType, false);
+		expr.rawType = (Type.List) Type.List(rawElementType, false);
+		
+		return expr;
 	}
 	
 	private Expr propagate(Expr.SubList expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
-		return null;
+		
+		expr.src = propagate(expr.src,environment,imports);
+		expr.start = propagate(expr.start,environment,imports);
+		expr.end = propagate(expr.end,environment,imports);
+		
+		checkIsSubtype(Type.List(Type.T_ANY, false),expr.src);
+		checkIsSubtype(Type.T_INT,expr.start);
+		checkIsSubtype(Type.T_INT,expr.end);
+		
+		return expr;
 	}
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,

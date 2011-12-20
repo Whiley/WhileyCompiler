@@ -440,9 +440,7 @@ public interface Expr extends SyntacticElement {
 	public static class SubList extends SyntacticElement.Impl implements Expr {		
 		public Expr src;
 		public Expr start;
-		public Expr end;
-		public Type nominalType;
-		public Type.List rawType;
+		public Expr end;		
 		
 		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
 			super(attributes);
@@ -459,11 +457,11 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public Type nominalType() {
-			return nominalType;
+			return src.nominalType();
 		}
 		
 		public Type.List rawType() {
-			return rawType;
+			return (Type.List) src.rawType();
 		}
 	}
 	

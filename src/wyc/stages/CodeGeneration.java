@@ -1324,7 +1324,7 @@ public final class CodeGeneration {
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.start, environment));
 		blk.append(generate(v.end, environment));
-		blk.append(Code.SubList(v.rawType), attributes(v));
+		blk.append(Code.SubList(v.rawType()), attributes(v));
 		return blk;
 	}
 	
