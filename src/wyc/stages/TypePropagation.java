@@ -733,7 +733,16 @@ public final class TypePropagation {
 	private Expr propagate(Expr.Invoke expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
-		return null;
+		Expr receiver = expr.receiver;
+		
+		if(receiver != null) {
+			receiver = propagate(expr.receiver,environment,imports);
+			expr.receiver = receiver;
+		}
+		
+		// ouch, a lot to do here!
+		
+		return expr;
 	}	
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
@@ -1021,15 +1030,79 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
-			ArrayList<Import> imports) {
-		return null;
+			ArrayList<Import> imports) {	
+		
+		if (expr instanceof Expr.PackageAccess
+				|| expr instanceof Expr.ModuleAccess) {
+			// don't need to do anything in these cases.
+			return expr;
+		}
+		
+		Expr src = propagate(expr.src,environment,imports);
+		expr.src = src;
+				
+		if(expr instanceof Expr.RecordAccess) {			
+			return propagate((Expr.RecordAccess)expr,environment,imports);
+		} else if(expr instanceof Expr.ConstantAccess) {
+			return propagate((Expr.ConstantAccess)expr,environment,imports);
+		} else 
+				
+		if(src instanceof Expr.PackageAccess) {
+			// either a package access, module access or constant access
+			// This variable access may correspond to an external access.			
+			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
+			PkgID pid = pa.pid.append(expr.name);
+			if (resolver.isPackage(pid)) {
+				return new Expr.PackageAccess(pa, expr.name, pid,
+						expr.attributes());
+			}
+			try {				
+				ModuleID mid = new ModuleID(pa.pid,expr.name);
+				loader.loadModule(mid);
+				return new Expr.ModuleAccess(pa, expr.name, mid,
+						expr.attributes());
+			} catch (ResolveError err) {
+				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),filename,expr);
+				return null; // deadcode
+			}			
+		} else if(src instanceof Expr.ModuleAccess) {
+			// must be a constant access
+			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 
+			try {								
+				NameResolver.Skeleton skeleton = resolver.loadSkeleton(ma.mid);
+				if (skeleton.hasName(expr.name)) {
+					Expr.ConstantAccess ca = new Expr.ConstantAccess(ma, expr.name, new NameID(
+							ma.mid, expr.name), expr.attributes());
+					// FIXME: there is definitely a bug here, as we need to initialise the value.
+					// ca.value = ?
+					return ca;
+				}
+			} catch (ResolveError err) {}				
+			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,expr);			
+			return null; // deadcode
+		} else {
+			// must be a RecordAccess
+			Expr.RecordAccess ra = new Expr.RecordAccess(src,expr.name,expr.attributes());			
+			return propagate(ra,environment,imports);
+		}
 	}
 	
-	private Expr propagate(Expr.RecordAccess expr,
+	private Expr propagate(Expr.RecordAccess ra,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
-		return null;
-	}
+		Type.Record rawType = Type.effectiveRecordType(ra.src.rawType());
+		if(rawType == null) {
+			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,ra.src.rawType()),filename,ra);
+		} 
+		Type fieldType = rawType.fields().get(ra.name);
+		if(fieldType == null) {
+			syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,ra);
+		}
+		ra.rawSrcType = rawType;
+		// FIXME: lost nominal type information here
+		ra.nominalFieldType = fieldType;		
+		return ra;
+	}	
 	
 	private Expr propagate(Expr.ConstantAccess expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
