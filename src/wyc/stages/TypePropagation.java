@@ -697,12 +697,6 @@ public final class TypePropagation {
 		return c;
 	}
 	
-	private Expr propagate(Expr.Dictionary expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
-			ArrayList<Import> imports) {
-		return null;
-	}
-	
 	private Expr propagate(Expr.Function expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
@@ -912,9 +906,37 @@ public final class TypePropagation {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.SubList expr,
+	
+	private Expr propagate(Expr.Dictionary expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		Type nominalKeyType = Type.T_VOID;
+		Type rawKeyType = Type.T_VOID;
+		Type nominalValueType = Type.T_VOID;
+		Type rawValueType = Type.T_VOID;
+				
+		ArrayList<Pair<Expr,Expr>> exprs = expr.pairs;
+		for(int i=0;i!=exprs.size();++i) {
+			Pair<Expr,Expr> p = exprs.get(i);
+			Expr key = propagate(p.first(),environment,imports);
+			Expr value = propagate(p.second(),environment,imports);
+			exprs.set(i,new Pair<Expr,Expr>(key,value));
+			
+			nominalKeyType = Type.Union(key.nominalType(),nominalKeyType);
+			rawKeyType = Type.Union(key.rawType(),rawKeyType);
+			nominalValueType = Type.Union(value.nominalType(),nominalValueType);
+			rawValueType = Type.Union(value.rawType(),rawValueType);
+		}
+		
+		expr.nominalType = Type.Dictionary(nominalKeyType, nominalValueType);
+		expr.rawType = (Type.Dictionary) Type.Dictionary(rawKeyType, rawValueType);
+		
+		return expr;
+	}
+	
+	private Expr propagate(Expr.SubList expr,
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {	
 		
 		expr.src = propagate(expr.src,environment,imports);
 		expr.start = propagate(expr.start,environment,imports);
