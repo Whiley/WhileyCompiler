@@ -37,7 +37,9 @@ import wyc.lang.WhileyFile.*;
 import wyc.util.RefCountedHashMap;
 import wyil.ModuleLoader;
 import wyil.lang.Attribute;
+import wyil.lang.Code;
 import wyil.lang.Import;
+import wyil.lang.Module;
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
 import wyil.lang.PkgID;
@@ -267,6 +269,9 @@ public final class TypePropagation {
 				internalFailure("unknown statement encountered",filename,stmt);
 				return null; // deadcode
 			}
+		} catch(ResolveError e) {
+			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,stmt);
+			return null; // dead code
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
@@ -572,6 +577,8 @@ public final class TypePropagation {
 			} else if(expr instanceof Expr.TypeVal) {
 				return propagate((Expr.TypeVal) expr,environment,imports); 
 			} 
+		} catch(ResolveError e) {
+			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,expr);
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
@@ -732,18 +739,221 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.Invoke expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<Import> imports) throws ResolveError {
+		
+		// first, propagate through receiver and parameters.
+		
 		Expr receiver = expr.receiver;
 		
 		if(receiver != null) {
-			receiver = propagate(expr.receiver,environment,imports);
-			expr.receiver = receiver;
+			receiver = propagate(receiver,environment,imports);
+			expr.receiver = receiver;						
 		}
 		
-		// ouch, a lot to do here!
+		ArrayList<Expr> exprArgs = expr.arguments;
+		ArrayList<Type> nominalParamTypes = new ArrayList<Type>();
+		ArrayList<Type> rawParamTypes = new ArrayList<Type>();
+		for(int i=0;i!=exprArgs.size();++i) {
+			Expr arg = propagate(exprArgs.get(i),environment,imports);
+			exprArgs.set(i, arg);
+			nominalParamTypes.add(arg.nominalType());
+			rawParamTypes.add(arg.rawType());
+		}
 		
+		// second, determine whether we already have a fully qualified name and
+		// then lookup the appropriate function.
+		Type.Function funType;
+		if(receiver instanceof Expr.ModuleAccess) {
+			// Yes, this function or method is qualified
+			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
+			NameID name = new NameID(ma.mid,expr.name);
+			funType = bindFunction(name,  rawParamTypes, expr);				
+		} else {
+			// no, function is not qualified
+
+			// third, lookup the function		
+			Type.Function funtype;
+			if(receiver != null) {
+				Type.Process rawRecType = checkType(expr.receiver.rawType(),Type.Process.class,receiver);
+				//funtype = bindMethod(expr.name,  rawRecType, rawParamTypes, expr);
+			} else {
+				//funtype = bindFunction(expr.name,  rawParamTypes, expr);				
+			}		
+			
+			funType = null; // HACK
+		}
+			
+		// TODO: include nominal type information here
+		expr.nominalReturnType = funType.ret();
+		expr.rawType = funType;
+			
 		return expr;
 	}	
+	
+	/**
+	 * Bind function is responsible for determining the true type of a method or
+	 * function being invoked. To do this, it must find the function/method
+	 * with the most precise type that matches the argument types.
+	 * 
+	 * @param nid
+	 * @param receiver
+	 * @param paramTypes
+	 * @param elem
+	 * @return
+	 * @throws ResolveError
+	 */
+	private Type.Function bindFunction(NameID nid, 
+			ArrayList<Type> paramTypes, SyntacticElement elem) throws ResolveError {
+
+		Type.Function target = checkType(Type.Function(Type.T_ANY, Type.T_ANY, paramTypes),
+				Type.Function.class, elem);
+		Type.Function candidate = null;				
+		
+		ArrayList<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 
+		
+		for (Type.Function ft : targets) {										
+			if(ft instanceof Type.Method) {
+				// in this case, we want to check if this is a definite method
+				// call with a receiver. If so, then we don't consider it. We do
+				// consider "headless" method calls, since these cannot be
+				// distinguished from function calls in module builder.  
+				Type.Method mt = (Type.Method) ft;
+				if(mt.receiver() != null) {
+					continue;
+				}
+			}
+			if (ft.params().size() == paramTypes.size()						
+					&& paramSubtypes(ft, target)
+					&& (candidate == null || paramSubtypes(candidate,ft))) {					
+				candidate = ft;								
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {			
+			String msg = "no match for " + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for(Type.Function ft : targets) {
+				if(firstTime) {
+					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			
+			// need to think about this one
+			syntaxError(msg + "\n",filename,elem);
+		}
+		
+		return candidate;
+	}
+	
+	private Type.Method bindMethod(NameID nid, Type.Process receiver,
+			ArrayList<Type> paramTypes, SyntacticElement elem) throws ResolveError {
+
+		Type.Method target = checkType(
+				Type.Method(receiver, Type.T_ANY, Type.T_ANY, paramTypes),
+				Type.Method.class, elem);
+		Type.Method candidate = null;				
+		
+		ArrayList<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 
+		
+		for (Type.Function ft : targets) {
+			if(ft instanceof Type.Method) {
+				Type.Method mt = (Type.Method) ft; 
+				Type funrec = mt.receiver();			
+				if (receiver == funrec
+						|| (receiver != null && funrec != null && Type
+								.isImplicitCoerciveSubtype(receiver, funrec))) {
+					// receivers match up OK ...				
+					if (ft.params().size() == paramTypes.size()						
+							&& paramSubtypes(ft, target)
+							&& (candidate == null || paramSubtypes(candidate,ft))) {					
+						candidate = mt;					
+					}
+				}
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {
+			String rec = "::";
+			if(receiver != null) {				
+				rec = receiver.toString() + "::";
+			}
+			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for(Type.Function ft : targets) {
+				rec = "";
+				if(ft instanceof Type.Method) {
+					Type.Method mt = (Type.Method) ft;
+					if(mt.receiver() != null) {
+						rec = mt.receiver().toString();
+					}
+					rec = rec + "::";
+				}
+				if(firstTime) {
+					msg += "\n\tfound: " + rec + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + rec + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			
+			syntaxError(msg + "\n",filename,elem);
+		}
+		
+		return candidate;
+	}
+	
+	private boolean paramSubtypes(Type.Function f1, Type.Function f2) {		
+		List<Type> f1_params = f1.params();
+		List<Type> f2_params = f2.params();
+		if(f1_params.size() == f2_params.size()) {
+			for(int i=0;i!=f1_params.size();++i) {
+				Type f1_param = f1_params.get(i);
+				Type f2_param = f2_params.get(i);				
+				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
+					return false;
+				}
+			}			
+			return true;
+		}
+		return false;
+	}
+	
+	private String parameterString(List<Type> paramTypes) {
+		String paramStr = "(";
+		boolean firstTime = true;
+		for(Type t : paramTypes) {
+			if(!firstTime) {
+				paramStr += ",";
+			}
+			firstTime=false;
+			paramStr += t;
+		}
+		return paramStr + ")";
+	}
+	
+	private ArrayList<Type.Function> lookupMethod(ModuleID mid, String name)
+			throws ResolveError {
+		
+		Module module = loader.loadModule(mid);
+		ArrayList<Type.Function> rs = new ArrayList<Type.Function>();
+		for (Module.Method m : module.method(name)) {
+			rs.add(m.type());
+		}
+		return rs;		
+	}
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
