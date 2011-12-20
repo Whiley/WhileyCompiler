@@ -52,16 +52,16 @@ public final class WhileyParser {
 	private String filename;
 	private ArrayList<Token> tokens;	
 	private int index;
-
+	
 	public WhileyParser(String filename, List<Token> tokens) {
 		this.filename = filename;
-		this.tokens = new ArrayList<Token>(tokens); 
+		this.tokens = new ArrayList<Token>(tokens); 		
 	}
 	public WhileyFile read() {
 		ArrayList<Decl> decls = new ArrayList<Decl>();
 		boolean finishedImports = false;
 		ArrayList<String> pkg = parsePackage();
-				
+		
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
 			if (t instanceof NewLine || t instanceof LineComment|| t instanceof BlockComment) {
@@ -93,9 +93,9 @@ public final class WhileyParser {
 		}
 		
 		// Now, figure out module name from filename
-		String name = filename.substring(filename
-				.lastIndexOf(File.separatorChar) + 1, filename.length() - 7);
-		
+		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,
+				filename.length() - 7);
+
 		return new WhileyFile(new ModuleID(pkg,name),filename,decls);
 	}
 	
@@ -251,8 +251,7 @@ public final class WhileyParser {
 			matchEndLine();			
 			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
 		
-		} catch(Exception e) {	
-		}
+		} catch(Exception e) {}
 		
 		// Ok, failed parsing type constructor. So, backtrack and try for
 		// expression.
