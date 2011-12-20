@@ -148,20 +148,23 @@ public final class Resolution {
 		// method receiver type (if applicable)
 		Type receiver = null;
 		if(fd instanceof MethDecl) {			
-			MethDecl md = (MethDecl) fd;			
-			try {			
-				receiver = resolve(md.receiver, imports, resolver);			
-			} catch (ResolveError e) {
-				// Ok, we've hit a resolution error.
-				syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
-						filename, md.receiver);
+			MethDecl md = (MethDecl) fd;
+			// check whether this is a headless method or not
+			if(md.receiver != null) {
+				try {			
+					receiver = resolve(md.receiver, imports, resolver);			
+				} catch (ResolveError e) {
+					// Ok, we've hit a resolution error.
+					syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+							filename, md.receiver);
+				}
 			}
 		}
 		
 		Type.Function funType;
 		
 		if(fd instanceof MethDecl) {
-			funType = checkType(Type.Method(ret,receiver,throwsClause,parameters),Type.Method.class,fd);
+			funType = checkType(Type.Method(receiver,ret,throwsClause,parameters),Type.Method.class,fd);
 		} else {
 			funType = checkType(Type.Function(ret,throwsClause,parameters),Type.Function.class,fd);
 		}
@@ -208,7 +211,7 @@ public final class Resolution {
 	}
 	
 	public static Type resolve(UnresolvedType t, ArrayList<Import> imports,
-			NameResolver resolver) throws ResolveError {
+			NameResolver resolver) throws ResolveError {		
 		if (t instanceof UnresolvedType.Any) {
 			return Type.T_ANY;
 		} else if (t instanceof UnresolvedType.Void) {

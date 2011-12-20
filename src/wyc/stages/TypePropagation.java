@@ -187,9 +187,12 @@ public final class TypePropagation {
 		}
 		
 		if(fd instanceof MethDecl) {
-			MethDecl md = (MethDecl) fd;			
-			Type.Method mt = (Type.Method) type; 
-			environment = environment.put("this",expand(mt.receiver()));
+			MethDecl md = (MethDecl) fd;				
+			Type.Method mt = (Type.Method) type;
+			// check that we're not a headless method
+			if(mt.receiver() != null) {
+				environment = environment.put("this",expand(mt.receiver()));
+			}
 		}
 		
 		if(fd.precondition != null) {
