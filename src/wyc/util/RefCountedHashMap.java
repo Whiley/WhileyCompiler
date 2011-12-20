@@ -1,6 +1,7 @@
 package wyc.util;
 
 import java.util.HashMap;
+import java.util.Set;
 
 public final class RefCountedHashMap<K,V> {
 	private final HashMap<K,V> map;
@@ -22,6 +23,10 @@ public final class RefCountedHashMap<K,V> {
 	
 	public boolean containsKey(K key) {
 		return map.containsKey(key);
+	}
+	
+	public Set<K> keySet() {
+		return map.keySet();
 	}
 	
 	public RefCountedHashMap<K,V> put(K key, V value) {

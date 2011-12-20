@@ -229,12 +229,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt stmt,
 			RefCountedHashMap<String, Pair<Type, Type>> environment,
 			ArrayList<Import> imports) {
-		
-		// We have to clone the environment here to ensure that any updates made
-		// within the statement-specific propagation rules do not interfere with
-		// the environment(s) from the previous statements.
-		environment = environment.clone();
-		
+				
 		try {
 			if(stmt instanceof Stmt.Assign) {
 				return propagate((Stmt.Assign) stmt,environment,imports);
@@ -341,14 +336,62 @@ public final class TypePropagation {
 			ArrayList<Import> imports) {
 		
 		stmt.source = propagate(stmt.source,environment,imports);
-		checkIsSubtype(Type.T_BOOL,stmt.source);			
+		Type rawType = stmt.source.rawType(); 		
 		
-		for(String var : stmt.variables) {
+		// At this point, the major task is to determine what the types for the
+		// iteration variables declared in the for loop. More than one variable
+		// is permitted in some cases.
+		
+		Type[] elementTypes = new Type[stmt.variables.size()];		
+		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {
+			Type.List lt = Type.effectiveListType(rawType);
+			if(elementTypes.length == 1) {
+				elementTypes[0] = lt.element();
+			} else {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
+			}			
+		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
+			Type.Set st = Type.effectiveSetType(rawType);
+			if(elementTypes.length == 1) {
+				elementTypes[0] = st.element();
+			} else {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
+			}					
+		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
+			Type.Dictionary dt = Type.effectiveDictionaryType(rawType);
+			if(elementTypes.length == 1) {
+				elementTypes[0] = Type.Tuple(dt.key(),dt.value());				
+			} else if(elementTypes.length == 2) {				
+				elementTypes[0] = dt.key();
+				elementTypes[1] = dt.value();
+			} else {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
+			}
+			
+		} else if(Type.isSubtype(Type.T_STRING,rawType)) {
+			if(elementTypes.length == 1) {
+				elementTypes[0] = Type.T_CHAR;
+			} else {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
+			}				
+		} else {
+			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
+			return null; // deadcode
+		}
+		
+		// Now, update the environment to include those declared variables
+		ArrayList<String> stmtVariables = stmt.variables;
+		for(int i=0;i!=elementTypes.length;++i) {
+			String var = stmtVariables.get(i);
 			if (environment.containsKey(var)) {
 				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
 						filename, stmt);
 			}
-			environment = environment.put(var, ?);
+			// FIXME: at this point, we lose nominal information about the
+			// element type. This needs to fixed above by only expanding the
+			// nominal source type by one level.
+			Type rawElementType = elementTypes[i];
+			environment = environment.put(var, new Pair<Type,Type>(rawElementType,rawElementType));
 		} 
 		
 		if (stmt.invariant != null) {
@@ -359,12 +402,45 @@ public final class TypePropagation {
 		// FIXME: need to iterate to a fixed point
 		environment = propagate(stmt.body,environment,imports);
 		
+		// FIXME: need to remove the variable types from the environment, since
+		// they are only declared for the duration of the body but not beyond.
+		
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.IfElse stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		
+		stmt.condition = propagate(stmt.condition,environment,imports);
+		checkIsSubtype(Type.T_BOOL,stmt.condition);
+		
+		// FIXME: need to deal with retyping of variables
+		
+		RefCountedHashMap<String,Pair<Type,Type>> trueEnv;
+		RefCountedHashMap<String,Pair<Type,Type>> falseEnv;
+		
+		if(stmt.trueBranch != null && stmt.trueBranch != null) {
+			falseEnv = environment.clone();
+			trueEnv = propagate(stmt.trueBranch,environment.clone(),imports);
+			falseEnv = propagate(stmt.falseBranch,environment,imports);						
+		} else if(stmt.trueBranch != null) {			
+			trueEnv = propagate(stmt.trueBranch,environment.clone(),imports);
+			falseEnv = environment;
+			environment = join(environment,trueEnv);			
+		} else if(stmt.falseBranch != null){								
+			trueEnv = environment;
+			falseEnv = propagate(stmt.falseBranch,environment.clone(),imports);		
+			environment = join(environment,falseEnv);
+		} else {
+			trueEnv = environment;
+			falseEnv = environment.clone();
+		}
+		
+		environment = join(trueEnv,falseEnv);			
+		trueEnv.free();
+		falseEnv.free(); 
+		
 		return environment;
 	}
 	
@@ -380,6 +456,8 @@ public final class TypePropagation {
 			Type rhsExpanded = expander.expand(rhs);
 			checkIsSubtype(lhs,lhsExpanded,rhs,rhsExpanded, stmt.expr);
 		}
+		
+		environment.free();
 		return BOTTOM;
 	}
 	
@@ -494,15 +572,16 @@ public final class TypePropagation {
 		
 		Type result;
 		if(lhs_str || rhs_str) {						
-			if(expr.op == Expr.BOp.ADD) {								
-					expr.op = Expr.BOp.STRINGAPPEND;				
+			if (expr.op == Expr.BOp.ADD) {
+				expr.op = Expr.BOp.STRINGAPPEND;
 			} else {
-					syntaxError("Invalid string operation: " + expr.op,filename,expr);					
+				syntaxError("Invalid string operation: " + expr.op, filename,
+						expr);
 			}
 			
 			result = Type.T_STRING;
 		} else if(lhs_set && rhs_set) {		
-			Type.Set type = Type.effectiveSetType(Type.Union(lhsExpanded,rhsExpanded));
+			Type type = Type.effectiveSetType(Type.Union(lhsExpanded,rhsExpanded));
 			
 			switch(expr.op) {				
 				case ADD:																				
@@ -513,6 +592,10 @@ public final class TypePropagation {
 					break;
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
+					break;
+				case SUBSET:
+				case SUBSETEQ:
+					type = Type.T_BOOL;
 					break;
 				default:
 					syntaxError("Invalid set operation: " + expr.op,filename,expr);		
@@ -530,26 +613,30 @@ public final class TypePropagation {
 			
 			result = type;			
 		} else {			
-			switch(expr.op) {
+			switch(expr.op) {			
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
 				checkIsSubtype(Type.T_BYTE,expr.lhs);
 				checkIsSubtype(Type.T_BYTE,expr.rhs);
 				result = Type.T_BYTE;
+				break;
 			case LEFTSHIFT:
 			case RIGHTSHIFT:
 				checkIsSubtype(Type.T_BYTE,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.T_BYTE;
+				break;
 			case RANGE:
 				checkIsSubtype(Type.T_INT,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.List(Type.T_INT, false);
+				break;
 			case REM:
 				checkIsSubtype(Type.T_INT,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.T_INT;
+				break;
 			default:
 				// all other operations go through here
 				if(Type.isImplicitCoerciveSubtype(lhsExpanded,rhsExpanded)) {
@@ -956,6 +1043,24 @@ public final class TypePropagation {
 	}
 	
 	private static final RefCountedHashMap<String,Pair<Type,Type>> BOTTOM = new RefCountedHashMap<String,Pair<Type,Type>>();
+	
+	private static final RefCountedHashMap<String, Pair<Type, Type>> join(
+			RefCountedHashMap<String, Pair<Type, Type>> lhs,
+			RefCountedHashMap<String, Pair<Type, Type>> rhs) {
+		
+		RefCountedHashMap<String,Pair<Type,Type>> result = new RefCountedHashMap<String,Pair<Type,Type>>();
+		for(String key : lhs.keySet()) {
+			if(rhs.containsKey(key)) {
+				Pair<Type,Type> lhs_t = lhs.get(key);
+				Pair<Type,Type> rhs_t = rhs.get(key);
+				Type nominalType = Type.Union(lhs_t.first(),rhs_t.first());
+				Type rawType = Type.Union(lhs_t.second(),rhs_t.second());
+				result.put(key, new Pair<Type,Type>(nominalType,rawType));
+			}
+		}
+		
+		return result;
+	}
 	
 	private Pair<Type,Type> expand(Type nominalType) throws ResolveError {
 		return new Pair<Type,Type>(nominalType,expander.expand(nominalType));

@@ -232,11 +232,37 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public Type nominalType() {
-			return nominalType;
+			switch(op) {
+			case EQ:
+			case NEQ:
+			case LT:	
+			case LTEQ:
+			case GT:	
+			case GTEQ:
+			case SUBSET:	
+			case SUBSETEQ:
+			case TYPEEQ:				
+				return Type.T_BOOL;
+			default:
+				return nominalType;
+			}			
 		}
 		
 		public Type rawType() {
-			return rawType;
+			switch(op) {
+			case EQ:
+			case NEQ:
+			case LT:	
+			case LTEQ:
+			case GT:	
+			case GTEQ:
+			case SUBSET:	
+			case SUBSETEQ:
+			case TYPEEQ:				
+				return Type.T_BOOL;
+			default:
+				return rawType;
+			}			
 		}
 		
 		public String toString() {

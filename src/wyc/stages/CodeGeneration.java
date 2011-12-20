@@ -793,7 +793,7 @@ public final class CodeGeneration {
 			blk.append(Code.Label(exitLabel));
 		} else {
 			blk.append(generate(v.lhs, environment));			
-			blk.append(generate(v.rhs, environment));
+			blk.append(generate(v.rhs, environment));					
 			blk.append(Code.IfGoto(type, cop, target), attributes(v));
 		}
 		return blk;
@@ -1486,24 +1486,27 @@ public final class CodeGeneration {
 	private static Expr invert(Expr e) {
 		if (e instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) e;
+			Expr.BinOp nbop = null;
 			switch (bop.op) {
 			case AND:
-				return new Expr.BinOp(Expr.BOp.OR, invert(bop.lhs), invert(bop.rhs), attributes(e));
+				nbop = new Expr.BinOp(Expr.BOp.OR, invert(bop.lhs), invert(bop.rhs), attributes(e));
 			case OR:
-				return new Expr.BinOp(Expr.BOp.AND, invert(bop.lhs), invert(bop.rhs), attributes(e));
+				nbop = new Expr.BinOp(Expr.BOp.AND, invert(bop.lhs), invert(bop.rhs), attributes(e));
 			case EQ:
-				return new Expr.BinOp(Expr.BOp.NEQ, bop.lhs, bop.rhs, attributes(e));
+				nbop =  new Expr.BinOp(Expr.BOp.NEQ, bop.lhs, bop.rhs, attributes(e));
 			case NEQ:
-				return new Expr.BinOp(Expr.BOp.EQ, bop.lhs, bop.rhs, attributes(e));
+				nbop =  new Expr.BinOp(Expr.BOp.EQ, bop.lhs, bop.rhs, attributes(e));
 			case LT:
-				return new Expr.BinOp(Expr.BOp.GTEQ, bop.lhs, bop.rhs, attributes(e));
+				nbop =  new Expr.BinOp(Expr.BOp.GTEQ, bop.lhs, bop.rhs, attributes(e));
 			case LTEQ:
-				return new Expr.BinOp(Expr.BOp.GT, bop.lhs, bop.rhs, attributes(e));
+				nbop =  new Expr.BinOp(Expr.BOp.GT, bop.lhs, bop.rhs, attributes(e));
 			case GT:
-				return new Expr.BinOp(Expr.BOp.LTEQ, bop.lhs, bop.rhs, attributes(e));
+				nbop =  new Expr.BinOp(Expr.BOp.LTEQ, bop.lhs, bop.rhs, attributes(e));
 			case GTEQ:
-				return new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs, attributes(e));
+				nbop =  new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs, attributes(e));
 			}
+			nbop.rawType = bop.rawType;
+			nbop.nominalType = bop.nominalType;
 		} else if (e instanceof Expr.UnOp) {
 			Expr.UnOp uop = (Expr.UnOp) e;
 			switch (uop.op) {
