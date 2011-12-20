@@ -29,6 +29,7 @@ import static wyil.util.ErrorMessages.errorMessage;
 import static wyil.util.SyntaxError.syntaxError;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -101,9 +102,7 @@ public final class TypeExpander {
 		
 		public abstract Type type(String name);
 			
-		public abstract List<Type.Function> function(String name);
-		
-		public abstract List<Type.Method> method(String name);
+		public abstract List<Type.Function> functionOrMethod(String name);		
 	}
 
 	/**
@@ -144,33 +143,19 @@ public final class TypeExpander {
 				}
 			}
 				
-			public List<Type.Function> function(String name) {
+			public List<Type.Function> functionOrMethod(String name) {
 				List<Module.Method> fd = module.method(name);				
-				ArrayList<Type.Function> r = null;
+				List<Type.Function> r = Collections.EMPTY_LIST;
 				for(Module.Method m : fd) {
 					if(m.isFunction()) {
-						if(r == null) {
+						if(r == Collections.EMPTY_LIST) {
 							r = new ArrayList<Type.Function>();
 						}
 						r.add(m.type());
 					}
 				}
 				return r;
-			}
-			
-			public List<Type.Method> method(String name) {
-				List<Module.Method> fd = module.method(name);				
-				ArrayList<Type.Method> r = null;
-				for(Module.Method m : fd) {
-					if(!m.isFunction()) {
-						if(r == null) {
-							r = new ArrayList<Type.Method>();
-						}
-						r.add((Type.Method) m.type());
-					}
-				}
-				return r;
-			}
+			}			
 		};
 	}
 	

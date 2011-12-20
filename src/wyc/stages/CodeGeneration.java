@@ -277,6 +277,8 @@ public final class CodeGeneration {
 				return generate((DoWhile) stmt, environment);
 			} else if (stmt instanceof For) {
 				return generate((For) stmt, environment);
+			} else if (stmt instanceof Expr.MethodCall) {
+				return generate((Expr.MethodCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.FunctionCall) {
 				return generate((Expr.FunctionCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.Spawn) {
@@ -988,6 +990,8 @@ public final class CodeGeneration {
 				return generate((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.FunctionCall) {
 				return generate((Expr.FunctionCall) expression, true, environment);
+			} else if (expression instanceof Expr.MethodCall) {
+				return generate((Expr.MethodCall) expression, true, environment);
 			} else if (expression instanceof Expr.Comprehension) {
 				return generate((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
@@ -1017,6 +1021,21 @@ public final class CodeGeneration {
 		return null;
 	}
 
+	private Block generate(Expr.MethodCall fc, boolean retval,
+			HashMap<String, Integer> environment) throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		for (Expr e : fc.arguments) {
+			blk.append(generate(e, environment));
+		}
+
+		// FIXME: should split Code.Invoke into Code.FunCall and Code.MethCall.
+		
+		blk.append(Code.Invoke(fc.rawFunctionType(), fc.nid(), retval), attributes(fc));
+
+		return blk;
+	}
+	
 	private Block generate(Expr.FunctionCall fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());

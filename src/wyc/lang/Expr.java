@@ -774,6 +774,26 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public static class MethodCall extends AbstractInvoke<ModuleAccess> {		
+		public final NameID nid;
+		
+		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(nid.name(),qualification,arguments,false,attributes);
+			this.nid = nid;
+		}
+		
+		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(nid.name(),qualification,arguments,false,attributes);
+			this.nid = nid;			
+		}
+		
+		public NameID nid() {
+			return nid;
+		}		
+	}
+	
 	public static class FunctionCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
 		
