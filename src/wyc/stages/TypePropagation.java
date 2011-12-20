@@ -286,17 +286,23 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assign stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
+		
 		Expr lhs = propagate(stmt.lhs,environment,imports);
 		Expr rhs = propagate(stmt.rhs,environment,imports);
-		if(lhs instanceof Expr.LVal) {
-			stmt.lhs = (Expr.LVal) lhs;
+		
+		
+		if(lhs instanceof Expr.LocalVariable) {
+			Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
+			lv.nominalType = rhs.nominalType();
+			lv.rawType = rhs.rawType();
+			environment.put(lv.var, new Pair<Type, Type>(lv.nominalType(),
+					lv.rawType()));
 		} else {
-			syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), filename,
-					stmt.lhs);
-		}		
-		stmt.rhs = rhs;
-
-		// FIXME: update the type of the assigned lval. 
+			// FIXME: deal with other LVals
+		}
+		
+		stmt.lhs = (Expr.LVal) lhs;
+		stmt.rhs = rhs;	
 		
 		return environment;
 	}
@@ -504,6 +510,24 @@ public final class TypePropagation {
 		environment = propagate(stmt.body,environment,imports);
 		
 		return environment;
+	}
+	
+	private Expr.LVal propagate(Expr.LVal lval,
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
+		try {
+			if(lval instanceof Expr.AbstractVariable) {
+				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
+				return new Expr.LocalVariable(av.var, av.attributes());
+			} 
+		} catch(SyntaxError e) {
+			throw e;
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,lval,e);
+			return null; // dead code
+		}		
+		internalFailure("unknown lval encountered (" + lval.getClass().getName() +")",filename,lval);
+		return null; // dead code
 	}
 	
 	private Expr propagate(Expr expr,
