@@ -957,6 +957,26 @@ public final class TypePropagation {
 		return expr;
 	}
 	
+	private Expr propagate(Expr.Tuple expr,
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) {
+		ArrayList<Expr> exprFields = expr.fields;
+		ArrayList<Type> nominalFieldTypes = new ArrayList<Type>();
+		ArrayList<Type> rawFieldTypes = new ArrayList<Type>();
+		
+		for(int i=0;i!=exprFields.size();++i) {
+			Expr e = propagate(exprFields.get(i),environment,imports);
+			exprFields.set(i,e);
+			nominalFieldTypes.add(e.nominalType());
+			rawFieldTypes.add(e.rawType());
+		}
+		
+		expr.nominalType = Type.Tuple(nominalFieldTypes);
+		expr.rawType = (Type.Tuple) Type.Tuple(rawFieldTypes);
+		
+		return expr;
+	}
+	
 	private Expr propagate(Expr.SubList expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {	
@@ -991,12 +1011,6 @@ public final class TypePropagation {
 	}			
 
 	private Expr propagate(Expr.Spawn expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
-			ArrayList<Import> imports) {
-		return null;
-	}
-
-	private Expr propagate(Expr.Tuple expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
 		return null;
