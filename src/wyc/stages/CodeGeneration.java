@@ -277,8 +277,8 @@ public final class CodeGeneration {
 				return generate((DoWhile) stmt, environment);
 			} else if (stmt instanceof For) {
 				return generate((For) stmt, environment);
-			} else if (stmt instanceof Expr.Invoke) {
-				return generate((Expr.Invoke) stmt,false,environment);								
+			} else if (stmt instanceof Expr.FunctionCall) {
+				return generate((Expr.FunctionCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.Spawn) {
 				return generate((Expr.UnOp) stmt, environment);
 			} else if (stmt instanceof Skip) {
@@ -683,8 +683,8 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.UnOp) {
 				return generateCondition(target, (Expr.UnOp) condition, environment);
-			} else if (condition instanceof Expr.Invoke) {
-				return generateCondition(target, (Expr.Invoke) condition, environment);
+			} else if (condition instanceof Expr.AbstractInvoke) {
+				return generateCondition(target, (Expr.AbstractInvoke) condition, environment);
 			} else if (condition instanceof Expr.RecordAccess) {
 				return generateCondition(target, (Expr.RecordAccess) condition, environment);
 			} else if (condition instanceof Expr.Record) {
@@ -865,7 +865,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generateCondition(String target, Expr.Invoke v, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generateCondition(String target, Expr.AbstractInvoke v, HashMap<String,Integer> environment) throws ResolveError {
 		Block blk = generate((Expr) v, environment);	
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
@@ -986,8 +986,8 @@ public final class CodeGeneration {
 				return generate((Expr.DictionaryAccess) expression, environment);
 			} else if (expression instanceof Expr.UnOp) {
 				return generate((Expr.UnOp) expression, environment);
-			} else if (expression instanceof Expr.Invoke) {
-				return generate((Expr.Invoke) expression, true, environment);
+			} else if (expression instanceof Expr.FunctionCall) {
+				return generate((Expr.FunctionCall) expression, true, environment);
 			} else if (expression instanceof Expr.Comprehension) {
 				return generate((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
@@ -1017,12 +1017,25 @@ public final class CodeGeneration {
 		return null;
 	}
 
-	private Block generate(Expr.Invoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Expr.FunctionCall fc, boolean retval,
+			HashMap<String, Integer> environment) throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		for (Expr e : fc.arguments) {
+			blk.append(generate(e, environment));
+		}
+
+		blk.append(Code.Invoke(fc.rawType(), fc.nid(), retval), attributes(fc));
+
+		return blk;
+	}
+	
+	private Block generate(Expr.AbstractInvoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block(environment.size());
 		Type[] paramTypes = new Type[args.size()]; 
 		
-		boolean receiverIsThis = s.receiver != null && s.receiver instanceof Expr.LocalVariable && ((Expr.LocalVariable)s.receiver).var.equals("this");
+		boolean receiverIsThis = s.qualification != null && s.qualification instanceof Expr.LocalVariable && ((Expr.LocalVariable)s.qualification).var.equals("this");
 		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 
@@ -1036,7 +1049,7 @@ public final class CodeGeneration {
 		 * A direct invoke indicates no receiver was provided, and there was a
 		 * matching external symbol.
 		 */
-		boolean directInvoke = !variableIndirectInvoke && s.receiver == null && modInfo != null;		
+		boolean directInvoke = !variableIndirectInvoke && s.qualification == null && modInfo != null;		
 		
 		/**
 		 * A method invoke indicates the receiver was this, and there was a
@@ -1048,20 +1061,20 @@ public final class CodeGeneration {
 		 * An field indirect invoke indicates an invoke statement on a value
 		 * coming out of a field.
 		 */
-		boolean fieldIndirectInvoke = !variableIndirectInvoke && s.receiver != null && modInfo == null;
+		boolean fieldIndirectInvoke = !variableIndirectInvoke && s.qualification != null && modInfo == null;
 
 		/**
 		 * A direct send indicates a message send to a matching external symbol.
 		 */
-		boolean directSend = !variableIndirectInvoke && s.receiver != null
+		boolean directSend = !variableIndirectInvoke && s.qualification != null
 				&& !receiverIsThis && modInfo != null;
 											
 		if(variableIndirectInvoke) {
 			blk.append(Code.Load(null, environment.get(s.name)),attributes(s));
 		} 
 		
-		if (s.receiver != null) {			
-			blk.append(generate(s.receiver, environment));
+		if (s.qualification != null) {			
+			blk.append(generate(s.qualification, environment));
 		}
 
 		if(fieldIndirectInvoke) {
@@ -1075,7 +1088,7 @@ public final class CodeGeneration {
 		}	
 					
 		if(variableIndirectInvoke) {			
-			if(s.receiver != null) {
+			if(s.qualification != null) {
 				Type.Method mt = checkType(Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),Type.Method.class,s);
 				blk.append(Code.IndirectSend(mt,s.synchronous, retval),attributes(s));
 			} else {

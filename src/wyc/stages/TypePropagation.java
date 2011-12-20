@@ -248,8 +248,8 @@ public final class TypePropagation {
 				return propagate((Stmt.For) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Switch) {
 				return propagate((Stmt.Switch) stmt,environment,imports);
-			} else if(stmt instanceof Expr.Invoke) {
-				propagate((Expr.Invoke) stmt,environment,imports);
+			} else if(stmt instanceof Expr.AbstractInvoke) {
+				propagate((Expr.AbstractInvoke) stmt,environment,imports);
 				return environment;
 			} else if(stmt instanceof Stmt.DoWhile) {
 				return propagate((Stmt.DoWhile) stmt,environment,imports);
@@ -552,8 +552,8 @@ public final class TypePropagation {
 				return propagate((Expr.Dictionary) expr,environment,imports); 
 			} else if(expr instanceof Expr.Function) {
 				return propagate((Expr.Function) expr,environment,imports); 
-			} else if(expr instanceof Expr.Invoke) {
-				return propagate((Expr.Invoke) expr,environment,imports); 
+			} else if(expr instanceof Expr.AbstractInvoke) {
+				return propagate((Expr.AbstractInvoke) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractIndexAccess) {
 				return propagate((Expr.AbstractIndexAccess) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractLength) {
@@ -737,17 +737,17 @@ public final class TypePropagation {
 		return null;
 	}
 	
-	private Expr propagate(Expr.Invoke expr,
+	private Expr propagate(Expr.AbstractInvoke expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		
 		// first, propagate through receiver and parameters.
 		
-		Expr receiver = expr.receiver;
+		Expr receiver = expr.qualification;
 		
 		if(receiver != null) {
 			receiver = propagate(receiver,environment,imports);
-			expr.receiver = receiver;						
+			expr.qualification = receiver;						
 		}
 		
 		ArrayList<Expr> exprArgs = expr.arguments;
@@ -762,30 +762,31 @@ public final class TypePropagation {
 		
 		// second, determine whether we already have a fully qualified name and
 		// then lookup the appropriate function.
-		Type.Function funType;
+		
 		if(receiver instanceof Expr.ModuleAccess) {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			funType = bindFunction(name,  rawParamTypes, expr);				
+			Type.Function funType = bindFunction(name,  rawParamTypes, expr);	
+			Expr.FunctionCall r = new Expr.FunctionCall(expr.name, ma, expr.arguments, expr.attributes());
+			// FIXME: loss of nominal information here
+			r.nominalReturnType = funType.ret();
+			r.rawType = funType;
+			return r;
 		} else {
-			// no, function is not qualified
-
-			// third, lookup the function		
-			Type.Function funtype;
+			// no, function is not qualified ... need to search for it.
+			Type.Function funType;
+			
+			// third, lookup the function					
 			if(receiver != null) {
-				Type.Process rawRecType = checkType(expr.receiver.rawType(),Type.Process.class,receiver);
+				Type.Process rawRecType = checkType(expr.qualification.rawType(),Type.Process.class,receiver);
 				//funtype = bindMethod(expr.name,  rawRecType, rawParamTypes, expr);
 			} else {
 				//funtype = bindFunction(expr.name,  rawParamTypes, expr);				
 			}		
 			
 			funType = null; // HACK
-		}
-			
-		// TODO: include nominal type information here
-		expr.nominalReturnType = funType.ret();
-		expr.rawType = funType;
+		}		
 			
 		return expr;
 	}	
@@ -796,7 +797,7 @@ public final class TypePropagation {
 	 * with the most precise type that matches the argument types.
 	 * 
 	 * @param nid
-	 * @param receiver
+	 * @param qualification
 	 * @param paramTypes
 	 * @param elem
 	 * @return

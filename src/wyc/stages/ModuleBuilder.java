@@ -962,8 +962,8 @@ public final class ModuleBuilder {
 				return resolve((DoWhile) stmt, environment);
 			} else if (stmt instanceof For) {
 				return resolve((For) stmt, environment);
-			} else if (stmt instanceof Expr.Invoke) {
-				return resolve((Expr.Invoke) stmt,false,environment);								
+			} else if (stmt instanceof Expr.AbstractInvoke) {
+				return resolve((Expr.AbstractInvoke) stmt,false,environment);								
 			} else if (stmt instanceof Expr.Spawn) {
 				return resolve((Expr.UnOp) stmt, environment);
 			} else if (stmt instanceof Skip) {
@@ -1360,8 +1360,8 @@ public final class ModuleBuilder {
 				return resolveCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.UnOp) {
 				return resolveCondition(target, (Expr.UnOp) condition, environment);
-			} else if (condition instanceof Expr.Invoke) {
-				return resolveCondition(target, (Expr.Invoke) condition, environment);
+			} else if (condition instanceof Expr.AbstractInvoke) {
+				return resolveCondition(target, (Expr.AbstractInvoke) condition, environment);
 			} else if (condition instanceof Expr.RecordAccess) {
 				return resolveCondition(target, (Expr.RecordAccess) condition, environment);
 			} else if (condition instanceof Expr.Record) {
@@ -1583,7 +1583,7 @@ public final class ModuleBuilder {
 		return blk;
 	}
 
-	private Block resolveCondition(String target, Expr.Invoke v, HashMap<String,Integer> environment) throws ResolveError {
+	private Block resolveCondition(String target, Expr.AbstractInvoke v, HashMap<String,Integer> environment) throws ResolveError {
 		Block blk = resolve((Expr) v, environment);	
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
@@ -1686,8 +1686,8 @@ public final class ModuleBuilder {
 				return resolve((Expr.UnknownAccess) expression, environment);
 			} else if (expression instanceof Expr.UnOp) {
 				return resolve((Expr.UnOp) expression, environment);
-			} else if (expression instanceof Expr.Invoke) {
-				return resolve((Expr.Invoke) expression, true, environment);
+			} else if (expression instanceof Expr.AbstractInvoke) {
+				return resolve((Expr.AbstractInvoke) expression, true, environment);
 			} else if (expression instanceof Expr.Comprehension) {
 				return resolve((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
@@ -1717,12 +1717,12 @@ public final class ModuleBuilder {
 		return null;
 	}
 
-	private Block resolve(Expr.Invoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
+	private Block resolve(Expr.AbstractInvoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block(environment.size());
 		Type[] paramTypes = new Type[args.size()]; 
 		
-		boolean receiverIsThis = s.receiver != null && s.receiver instanceof Expr.LocalVariable && ((Expr.LocalVariable)s.receiver).var.equals("this");
+		boolean receiverIsThis = s.qualification != null && s.qualification instanceof Expr.LocalVariable && ((Expr.LocalVariable)s.qualification).var.equals("this");
 		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 
@@ -1736,7 +1736,7 @@ public final class ModuleBuilder {
 		 * A direct invoke indicates no receiver was provided, and there was a
 		 * matching external symbol.
 		 */
-		boolean directInvoke = !variableIndirectInvoke && s.receiver == null && modInfo != null;		
+		boolean directInvoke = !variableIndirectInvoke && s.qualification == null && modInfo != null;		
 		
 		/**
 		 * A method invoke indicates the receiver was this, and there was a
@@ -1748,20 +1748,20 @@ public final class ModuleBuilder {
 		 * An field indirect invoke indicates an invoke statement on a value
 		 * coming out of a field.
 		 */
-		boolean fieldIndirectInvoke = !variableIndirectInvoke && s.receiver != null && modInfo == null;
+		boolean fieldIndirectInvoke = !variableIndirectInvoke && s.qualification != null && modInfo == null;
 
 		/**
 		 * A direct send indicates a message send to a matching external symbol.
 		 */
-		boolean directSend = !variableIndirectInvoke && s.receiver != null
+		boolean directSend = !variableIndirectInvoke && s.qualification != null
 				&& !receiverIsThis && modInfo != null;
 											
 		if(variableIndirectInvoke) {
 			blk.append(Code.Load(null, environment.get(s.name)),attributes(s));
 		} 
 		
-		if (s.receiver != null) {			
-			blk.append(resolve(s.receiver, environment));
+		if (s.qualification != null) {			
+			blk.append(resolve(s.qualification, environment));
 		}
 
 		if(fieldIndirectInvoke) {
@@ -1775,7 +1775,7 @@ public final class ModuleBuilder {
 		}	
 					
 		if(variableIndirectInvoke) {			
-			if(s.receiver != null) {
+			if(s.qualification != null) {
 				Type.Method mt = checkType(Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),Type.Method.class,s);
 				blk.append(Code.IndirectSend(mt,s.synchronous, retval),attributes(s));
 			} else {

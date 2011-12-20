@@ -1485,7 +1485,7 @@ public final class OldTypePropagation extends ForwardFlowAnalysis<OldTypePropaga
 	 * with the most precise type that matches the argument types.
 	 * 
 	 * @param nid
-	 * @param receiver
+	 * @param qualification
 	 * @param paramTypes
 	 * @param elem
 	 * @return

@@ -406,9 +406,9 @@ public final class WhileyParser {
 		} else {
 			int start = index;
 			Expr t = parseTupleExpression();
-			if(t instanceof Expr.Invoke) {
+			if(t instanceof Expr.AbstractInvoke) {
 				matchEndLine();
-				return (Expr.Invoke) t;
+				return (Expr.AbstractInvoke) t;
 			} else {
 				index = start;
 				return parseAssign();
@@ -416,7 +416,7 @@ public final class WhileyParser {
 		}
 	}		
 	
-	private Expr.Invoke parseInvokeStmt() {				
+	private Expr.AbstractInvoke parseInvokeStmt() {				
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
@@ -438,7 +438,7 @@ public final class WhileyParser {
 		matchEndLine();				
 		
 		// no receiver is possible in this case.
-		return new Expr.Invoke(name.text, null, args, false, sourceAttr(start,end-1));
+		return new Expr.AbstractInvoke(name.text, null, args, false, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseReturn() {
@@ -1145,8 +1145,8 @@ public final class WhileyParser {
 					if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 						// this indicates a method invocation.
 						index = tmp; // slight backtrack
-						Expr.Invoke ivk = parseInvokeExpr();							
-						lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
+						Expr.AbstractInvoke ivk = parseInvokeExpr();							
+						lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 								true, sourceAttr(
 										ostart, index - 1));				
 					} else {
@@ -1154,8 +1154,8 @@ public final class WhileyParser {
 					}
 				} else {
 					match(Shreak.class);								 						
-					Expr.Invoke ivk = parseInvokeExpr();							
-					lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
+					Expr.AbstractInvoke ivk = parseInvokeExpr();							
+					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 							false, sourceAttr(
 									ostart, index - 1));								
 				}
@@ -1537,7 +1537,7 @@ public final class WhileyParser {
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
-	private Expr.Invoke parseInvokeExpr() {		
+	private Expr.AbstractInvoke parseInvokeExpr() {		
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
@@ -1557,7 +1557,7 @@ public final class WhileyParser {
 			args.add(e);		
 		}
 		match(RightBrace.class);		
-		return new Expr.Invoke(name.text, null, args, false, sourceAttr(start,index-1));
+		return new Expr.AbstractInvoke(name.text, null, args, false, sourceAttr(start,index-1));
 	}
 	
 	private Expr parseString() {

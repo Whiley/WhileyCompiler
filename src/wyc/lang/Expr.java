@@ -733,33 +733,66 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class Invoke extends SyntacticElement.Impl implements Expr,
+	public static class AbstractInvoke<R extends Expr> extends SyntacticElement.Impl implements Expr,
 			Stmt {
 		public final String name;
-		public Expr receiver;
+		public R qualification;
 		public final ArrayList<Expr> arguments;
 		public final boolean synchronous;
+		
 		public Type nominalReturnType;
 		public Type.Function rawType;
-
-		public Invoke(String name, Expr receiver, Collection<Expr> arguments,
+		
+		public AbstractInvoke(String name, R receiver, Collection<Expr> arguments,
 				boolean synchronous, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
-			this.receiver = receiver;
+			this.qualification = receiver;
 			this.arguments = new ArrayList<Expr>(arguments);
 			this.synchronous = synchronous;
+		}
+		
+		public AbstractInvoke(String name, R receiver, Collection<Expr> arguments,
+				boolean synchronous, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+			this.qualification = receiver;
+			this.arguments = new ArrayList<Expr>(arguments);
+			this.synchronous = synchronous;
+		}
+		
+		public Type nominalType() {
+			return null;
+		}
+		
+		public Type rawType() {
+			return null;
+		}
+	}
+	
+	public static class FunctionCall extends AbstractInvoke<ModuleAccess> {		
+		public FunctionCall(String name, ModuleAccess qualification, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(name,qualification,arguments,false,attributes);			
+		}
+		
+		public FunctionCall(String name, ModuleAccess qualification, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(name,qualification,arguments,false,attributes);			
+		}
+		
+		public NameID nid() {
+			return new NameID(qualification.mid,name);
 		}
 		
 		public Type nominalType() {
 			return nominalReturnType;
 		}
 		
-		public Type rawType() {
-			return rawType.ret();
+		public Type.Function rawType() {
+			return rawType;
 		}
 	}
-	
 	
 	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
 		public Expr src;	
