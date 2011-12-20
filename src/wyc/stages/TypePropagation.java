@@ -32,6 +32,7 @@ import java.util.*;
 
 import wyc.NameResolver;
 import wyc.TypeExpander;
+import wyc.TypeExpander.Skeleton;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.RefCountedHashMap;
@@ -150,7 +151,7 @@ public final class TypePropagation {
 			} catch(SyntaxError e) {
 				throw e;
 			} catch(Throwable t) {
-				internalFailure(t.getMessage(),filename,decl,t);
+				internalFailure("internal failure",filename,decl,t);
 			}
 		}
 	}
@@ -528,7 +529,7 @@ public final class TypePropagation {
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure(e.getMessage(),filename,lval,e);
+			internalFailure("internal failure",filename,lval,e);
 			return null; // dead code
 		}		
 		internalFailure("unknown lval encountered (" + lval.getClass().getName() +")",filename,lval);
@@ -582,7 +583,7 @@ public final class TypePropagation {
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure(e.getMessage(),filename,expr,e);
+			internalFailure("internal failure",filename,expr,e);
 			return null; // dead code
 		}		
 		internalFailure("unknown expression encountered (" + expr.getClass().getName() +")",filename,expr);
@@ -768,24 +769,29 @@ public final class TypePropagation {
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
 			Type.Function funType = bindFunction(name,  rawParamTypes, expr);	
-			Expr.FunctionCall r = new Expr.FunctionCall(expr.name, ma, expr.arguments, expr.attributes());
+			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, expr.arguments, expr.attributes());
 			// FIXME: loss of nominal information here
 			r.nominalReturnType = funType.ret();
 			r.rawFunctionType = funType;
 			return r;
 		} else {
 			// no, function is not qualified ... need to search for it.
-			Type.Function funType;
 			
 			// third, lookup the function					
 			if(receiver != null) {
 				Type.Process rawRecType = checkType(expr.qualification.rawType(),Type.Process.class,receiver);
 				//funtype = bindMethod(expr.name,  rawRecType, rawParamTypes, expr);
 			} else {
-				//funtype = bindFunction(expr.name,  rawParamTypes, expr);				
-			}		
-			
-			funType = null; // HACK
+				// FIXME: perform better namespace look up here, by exploiting
+				// known parameter types.
+				NameID nid = resolver.resolveAsName(expr.name, imports);
+				Type.Function funType = bindFunction(nid,  rawParamTypes, expr);	
+				Expr.FunctionCall r = new Expr.FunctionCall(nid, null, expr.arguments, expr.attributes());
+				// FIXME: loss of nominal information here
+				r.nominalReturnType = funType.ret();
+				r.rawFunctionType = funType;
+				return r;
+			}											
 		}		
 			
 		return expr;
@@ -810,19 +816,9 @@ public final class TypePropagation {
 				Type.Function.class, elem);
 		Type.Function candidate = null;				
 		
-		ArrayList<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 
+		List<Type.Function> targets = lookupFunction(nid.module(),nid.name()); 
 		
-		for (Type.Function ft : targets) {										
-			if(ft instanceof Type.Method) {
-				// in this case, we want to check if this is a definite method
-				// call with a receiver. If so, then we don't consider it. We do
-				// consider "headless" method calls, since these cannot be
-				// distinguished from function calls in module builder.  
-				Type.Method mt = (Type.Method) ft;
-				if(mt.receiver() != null) {
-					continue;
-				}
-			}
+		for (Type.Function ft : targets) {													
 			if (ft.params().size() == paramTypes.size()						
 					&& paramSubtypes(ft, target)
 					&& (candidate == null || paramSubtypes(candidate,ft))) {					
@@ -862,21 +858,19 @@ public final class TypePropagation {
 				Type.Method.class, elem);
 		Type.Method candidate = null;				
 		
-		ArrayList<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 
+		List<Type.Method> targets = lookupMethod(nid.module(),nid.name()); 
 		
-		for (Type.Function ft : targets) {
-			if(ft instanceof Type.Method) {
-				Type.Method mt = (Type.Method) ft; 
-				Type funrec = mt.receiver();			
-				if (receiver == funrec
-						|| (receiver != null && funrec != null && Type
-								.isImplicitCoerciveSubtype(receiver, funrec))) {
-					// receivers match up OK ...				
-					if (ft.params().size() == paramTypes.size()						
-							&& paramSubtypes(ft, target)
-							&& (candidate == null || paramSubtypes(candidate,ft))) {					
-						candidate = mt;					
-					}
+		for (Type.Method mt : targets) {
+			Type funrec = mt.receiver();	
+			// TODO: deal with headless method calls
+			if (receiver == funrec
+					|| (receiver != null && funrec != null && Type
+					.isImplicitCoerciveSubtype(receiver, funrec))) {
+				// receivers match up OK ...				
+				if (mt.params().size() == paramTypes.size()						
+						&& paramSubtypes(mt, target)
+						&& (candidate == null || paramSubtypes(candidate,mt))) {					
+					candidate = mt;					
 				}
 			}
 		}				
@@ -945,15 +939,16 @@ public final class TypePropagation {
 		return paramStr + ")";
 	}
 	
-	private ArrayList<Type.Function> lookupMethod(ModuleID mid, String name)
-			throws ResolveError {
-		
-		Module module = loader.loadModule(mid);
-		ArrayList<Type.Function> rs = new ArrayList<Type.Function>();
-		for (Module.Method m : module.method(name)) {
-			rs.add(m.type());
-		}
-		return rs;		
+	private List<Type.Function> lookupFunction(ModuleID mid, String name)
+			throws ResolveError {		
+		TypeExpander.Skeleton skeleton = expander.lookup(mid);
+		return skeleton.function(name);		
+	}
+	
+	private List<Type.Method> lookupMethod(ModuleID mid, String name)
+			throws ResolveError {		
+		TypeExpander.Skeleton skeleton = expander.lookup(mid);
+		return skeleton.method(name);		
 	}
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,

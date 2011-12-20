@@ -56,7 +56,8 @@ public final class Resolution {
 
 		final HashMap<String,Type> types = new HashMap<String,Type>();
 		final HashMap<String,Value> constants = new HashMap<String,Value>();
-		final HashMap<String,Type.Function> functions = new HashMap<String,Type.Function>();
+		final HashMap<String,List<Type.Function>> functions = new HashMap<String,List<Type.Function>>();
+		final HashMap<String,List<Type.Method>> methods = new HashMap<String,List<Type.Method>>();				
 		
 		for(Decl d : wf.declarations) {			
 			try {
@@ -65,7 +66,21 @@ public final class Resolution {
 					imports.add(1,new Import(new PkgID(impd.pkg),impd.module,impd.name));
 				} else if(d instanceof FunDecl) {
 					Type.Function t = resolve((FunDecl)d,imports);
-					functions.put(d.name(), t);
+					if(t instanceof Type.Method) {
+						List<Type.Method> meths = methods.get(d.name());
+						if(meths == null) {
+							meths = new ArrayList<Type.Method>();
+							methods.put(d.name(), meths);
+						}
+						meths.add((Type.Method)t);
+					} else {
+						List<Type.Function> funs = functions.get(d.name()); 
+						if(funs == null) {
+							funs = new ArrayList<Type.Function>();
+							functions.put(d.name(), funs);
+						}
+						funs.add(t);
+					}
 				} else if(d instanceof TypeDecl) {
 					Type t = resolve((TypeDecl)d,imports);
 					types.put(d.name(), t);
@@ -86,8 +101,11 @@ public final class Resolution {
 			public Value constant(String name) {
 				return constants.get(name);
 			}
-			public Type.Function function(String name) {
+			public List<Type.Function> function(String name) {
 				return functions.get(name);
+			}
+			public List<Type.Method> method(String name) {
+				return methods.get(name);
 			}
 		};
 	}

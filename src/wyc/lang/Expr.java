@@ -775,18 +775,22 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class FunctionCall extends AbstractInvoke<ModuleAccess> {		
-		public FunctionCall(String name, ModuleAccess qualification, Collection<Expr> arguments,
+		public final NameID nid;
+		
+		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(name,qualification,arguments,false,attributes);			
+			super(nid.name(),qualification,arguments,false,attributes);
+			this.nid = nid;
 		}
 		
-		public FunctionCall(String name, ModuleAccess qualification, Collection<Expr> arguments,
+		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(name,qualification,arguments,false,attributes);			
+			super(nid.name(),qualification,arguments,false,attributes);
+			this.nid = nid;			
 		}
 		
 		public NameID nid() {
-			return new NameID(qualification.mid,name);
+			return nid;
 		}		
 	}
 	

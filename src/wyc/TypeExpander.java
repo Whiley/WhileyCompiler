@@ -30,6 +30,7 @@ import static wyil.util.SyntaxError.syntaxError;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
@@ -100,7 +101,9 @@ public final class TypeExpander {
 		
 		public abstract Type type(String name);
 			
-		public abstract Type.Function function(String name);
+		public abstract List<Type.Function> function(String name);
+		
+		public abstract List<Type.Method> method(String name);
 	}
 
 	/**
@@ -113,6 +116,62 @@ public final class TypeExpander {
 	 */
 	public void register(Skeleton skeleton) {		
 		skeletons.put(skeleton.id(), skeleton);			
+	}
+	
+	public Skeleton lookup(ModuleID mid) throws ResolveError {
+		Skeleton skeleton = skeletons.get(mid);
+		if(skeleton != null) {
+			return skeleton;
+		}
+		
+		final Module module = loader.loadModule(mid);
+		return new Skeleton(mid) {
+			public Value constant(String name) {
+				Module.ConstDef cd = module.constant(name);
+				if(cd != null) {
+					return cd.constant();
+				} else {
+					return null;
+				}
+			}
+			
+			public Type type(String name) {
+				Module.TypeDef td = module.type(name);
+				if(td != null) {
+					return td.type();
+				} else {
+					return null;
+				}
+			}
+				
+			public List<Type.Function> function(String name) {
+				List<Module.Method> fd = module.method(name);				
+				ArrayList<Type.Function> r = null;
+				for(Module.Method m : fd) {
+					if(m.isFunction()) {
+						if(r == null) {
+							r = new ArrayList<Type.Function>();
+						}
+						r.add(m.type());
+					}
+				}
+				return r;
+			}
+			
+			public List<Type.Method> method(String name) {
+				List<Module.Method> fd = module.method(name);				
+				ArrayList<Type.Method> r = null;
+				for(Module.Method m : fd) {
+					if(!m.isFunction()) {
+						if(r == null) {
+							r = new ArrayList<Type.Method>();
+						}
+						r.add((Type.Method) m.type());
+					}
+				}
+				return r;
+			}
+		};
 	}
 	
 	/**
