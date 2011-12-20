@@ -322,7 +322,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Debug stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
-		stmt.expr = propagate(stmt.expr,environment,imports);
+		stmt.expr = propagate(stmt.expr,environment,imports);		
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
 	}
@@ -771,7 +771,7 @@ public final class TypePropagation {
 			Expr.FunctionCall r = new Expr.FunctionCall(expr.name, ma, expr.arguments, expr.attributes());
 			// FIXME: loss of nominal information here
 			r.nominalReturnType = funType.ret();
-			r.rawType = funType;
+			r.rawFunctionType = funType;
 			return r;
 		} else {
 			// no, function is not qualified ... need to search for it.

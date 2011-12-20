@@ -1025,7 +1025,7 @@ public final class CodeGeneration {
 			blk.append(generate(e, environment));
 		}
 
-		blk.append(Code.Invoke(fc.rawType(), fc.nid(), retval), attributes(fc));
+		blk.append(Code.Invoke(fc.rawFunctionType(), fc.nid(), retval), attributes(fc));
 
 		return blk;
 	}

@@ -741,7 +741,7 @@ public interface Expr extends SyntacticElement {
 		public final boolean synchronous;
 		
 		public Type nominalReturnType;
-		public Type.Function rawType;
+		public Type.Function rawFunctionType;
 		
 		public AbstractInvoke(String name, R receiver, Collection<Expr> arguments,
 				boolean synchronous, Attribute... attributes) {
@@ -762,11 +762,15 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public Type nominalType() {
-			return null;
+			return nominalReturnType;
 		}
 		
 		public Type rawType() {
-			return null;
+			return rawFunctionType.ret();
+		}
+		
+		public Type.Function rawFunctionType() {
+			return rawFunctionType;
 		}
 	}
 	
@@ -783,15 +787,7 @@ public interface Expr extends SyntacticElement {
 		
 		public NameID nid() {
 			return new NameID(qualification.mid,name);
-		}
-		
-		public Type nominalType() {
-			return nominalReturnType;
-		}
-		
-		public Type.Function rawType() {
-			return rawType;
-		}
+		}		
 	}
 	
 	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
