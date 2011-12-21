@@ -31,8 +31,8 @@ import static wyil.util.ErrorMessages.*;
 import java.util.*;
 
 import wyc.NameResolver;
-import wyc.TypeExpander;
-import wyc.TypeExpander.Skeleton;
+import wyc.TypeResolver;
+import wyc.TypeResolver.Skeleton;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.RefCountedHashMap;
@@ -117,12 +117,12 @@ import static wyil.util.SyntaxError.*;
 public final class TypePropagation {
 	private final ModuleLoader loader;
 	private final NameResolver resolver;
-	private final TypeExpander expander;
+	private final TypeResolver expander;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunDecl method;
 	
-	public TypePropagation(ModuleLoader loader, NameResolver resolver, TypeExpander expander) {
+	public TypePropagation(ModuleLoader loader, NameResolver resolver, TypeResolver expander) {
 		this.loader = loader;
 		this.expander = expander;
 		this.resolver = resolver;
@@ -927,7 +927,7 @@ public final class TypePropagation {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Type.Function funType = bindFunctionOrMethod(name,  rawParamTypes, expr);	
+			Type.Function funType = expander.bindFunctionOrMethod(name,  rawParamTypes);	
 			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 			// FIXME: loss of nominal information here
 			r.nominalReturnType = funType.ret();
@@ -942,7 +942,7 @@ public final class TypePropagation {
 				// FIXME: perform better namespace look up here, by exploiting
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Method methType = bindMessage(nid,  rawRecType, rawParamTypes, expr);
+				Type.Method methType = expander.bindMessage(nid,  rawRecType, rawParamTypes);
 				Expr.MessageSend r = new Expr.MessageSend(nid, receiver, exprArgs, expr.synchronous, expr.attributes());
 				// FIXME: loss of nominal information here
 				r.nominalReturnType = methType.ret();
@@ -952,7 +952,7 @@ public final class TypePropagation {
 				// FIXME: perform better namespace look up here, by exploiting
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Function funType = bindFunctionOrMethod(nid,  rawParamTypes, expr);
+				Type.Function funType = expander.bindFunctionOrMethod(nid,  rawParamTypes);
 				Expr.AbstractInvoke<Expr.ModuleAccess> r;
 				if(funType instanceof Type.Method) {
 					r = new Expr.MethodCall(nid, null, exprArgs, expr.attributes());					
@@ -965,157 +965,7 @@ public final class TypePropagation {
 				return r;
 			}											
 		}		
-	}	
-	
-	/**
-	 * Bind function is responsible for determining the true type of a method or
-	 * function being invoked. To do this, it must find the function/method
-	 * with the most precise type that matches the argument types.
-	 * 
-	 * @param nid
-	 * @param qualification
-	 * @param paramTypes
-	 * @param elem
-	 * @return
-	 * @throws ResolveError
-	 */
-	private Type.Function bindFunctionOrMethod(NameID nid, 
-			ArrayList<Type> paramTypes, SyntacticElement elem) throws ResolveError {
-
-		Type.Function target = checkType(Type.Function(Type.T_ANY, Type.T_ANY, paramTypes),
-				Type.Function.class, elem);
-		Type.Function candidate = null;				
-		
-		List<Type.Function> targets = lookupFunction(nid.module(),nid.name()); 		
-		
-		for (Type.Function ft : targets) {													
-			if (ft.params().size() == paramTypes.size()						
-					&& paramSubtypes(ft, target)
-					&& (candidate == null || paramSubtypes(candidate,ft))) {					
-				candidate = ft;								
-			}
-		}				
-		
-		// Check whether we actually found something. If not, print a useful
-		// error message.
-		if(candidate == null) {			
-			String msg = "no match for " + nid.name() + parameterString(paramTypes);
-			boolean firstTime = true;
-			int count = 0;
-			for(Type.Function ft : targets) {
-				if(firstTime) {
-					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
-				} else {
-					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
-				}				
-				if(++count < targets.size()) {
-					msg += ",";
-				}
-			}
-			
-			// need to think about this one
-			syntaxError(msg + "\n",filename,elem);
-		}
-		
-		return candidate;
-	}
-	
-	private Type.Method bindMessage(NameID nid, Type.Process receiver,
-			ArrayList<Type> paramTypes, SyntacticElement elem) throws ResolveError {
-
-		Type.Method target = checkType(
-				Type.Method(receiver, Type.T_ANY, Type.T_ANY, paramTypes),
-				Type.Method.class, elem);
-		Type.Method candidate = null;				
-		
-		List<Type.Function> targets = lookupFunction(nid.module(),nid.name()); 
-		
-		for (Type.Function ft : targets) {			
-			if(ft instanceof Type.Method) { 				
-				Type.Method mt = (Type.Method) ft; 
-				Type funrec = mt.receiver();	
-				if (receiver == funrec
-						|| (receiver != null && funrec != null && Type
-						.isImplicitCoerciveSubtype(receiver, funrec))) {					
-					// receivers match up OK ...				
-					if (mt.params().size() == paramTypes.size()						
-							&& paramSubtypes(mt, target)
-							&& (candidate == null || paramSubtypes(candidate,mt))) {					
-						candidate = mt;					
-					}
-				}
-			}
-		}				
-		
-		// Check whether we actually found something. If not, print a useful
-		// error message.
-		if(candidate == null) {
-			String rec = "::";
-			if(receiver != null) {				
-				rec = receiver.toString() + "::";
-			}
-			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
-			boolean firstTime = true;
-			int count = 0;
-			for(Type.Function ft : targets) {
-				rec = "";
-				if(ft instanceof Type.Method) {
-					Type.Method mt = (Type.Method) ft;
-					if(mt.receiver() != null) {
-						rec = mt.receiver().toString();
-					}
-					rec = rec + "::";
-				}
-				if(firstTime) {
-					msg += "\n\tfound: " + rec + nid.name() +  parameterString(ft.params());
-				} else {
-					msg += "\n\tand: " + rec + nid.name() +  parameterString(ft.params());
-				}				
-				if(++count < targets.size()) {
-					msg += ",";
-				}
-			}
-			
-			syntaxError(msg + "\n",filename,elem);
-		}
-		
-		return candidate;
-	}
-	
-	private boolean paramSubtypes(Type.Function f1, Type.Function f2) {		
-		List<Type> f1_params = f1.params();
-		List<Type> f2_params = f2.params();
-		if(f1_params.size() == f2_params.size()) {
-			for(int i=0;i!=f1_params.size();++i) {
-				Type f1_param = f1_params.get(i);
-				Type f2_param = f2_params.get(i);				
-				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
-					return false;
-				}
-			}			
-			return true;
-		}
-		return false;
-	}
-	
-	private String parameterString(List<Type> paramTypes) {
-		String paramStr = "(";
-		boolean firstTime = true;
-		for(Type t : paramTypes) {
-			if(!firstTime) {
-				paramStr += ",";
-			}
-			firstTime=false;
-			paramStr += t;
-		}
-		return paramStr + ")";
-	}
-	
-	private List<Type.Function> lookupFunction(ModuleID mid, String name)
-			throws ResolveError {		
-		TypeExpander.Skeleton skeleton = expander.lookup(mid);
-		return skeleton.functionOrMethod(name);		
-	}
+	}			
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,

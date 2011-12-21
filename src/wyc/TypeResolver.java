@@ -63,7 +63,7 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public final class TypeExpander {
+public final class TypeResolver {
 	
 	private final ModuleLoader loader;
 	
@@ -73,7 +73,7 @@ public final class TypeExpander {
 	 */
 	private final HashMap<ModuleID, Skeleton> skeletons = new HashMap<ModuleID, Skeleton>();
 				
-	public TypeExpander(ModuleLoader loader) {
+	public TypeResolver(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
@@ -114,58 +114,170 @@ public final class TypeExpander {
 	}
 	
 	/**
-	 * Lookup a function or method in a given module with a given name. There
-	 * are two basic cases: either the module in question is currently being
-	 * compiled (hence, registered as a skeleton); or, it's stored in a
-	 * compiled module somewhere.
+	 * Bind function is responsible for determining the true type of a method or
+	 * function being invoked. To do this, it must find the function/method
+	 * with the most precise type that matches the argument types.
 	 * 
-	 * @param mid
-	 * @param name
+	 * @param nid
+	 * @param qualification
+	 * @param paramTypes
+	 * @param elem
 	 * @return
+	 * @throws ResolveError
 	 */
-	public List<Nominal<Type.Function>> functionOrMethod(ModuleID mid,
-			String name) {
+	public Type.Function bindFunctionOrMethod(NameID nid, 
+			ArrayList<Type> paramTypes) throws ResolveError {
+
+		Type.Function target = (Type.Function) Type.Function(Type.T_ANY,
+				Type.T_ANY, paramTypes);
+		Type.Function candidate = null;				
 		
-	}
-	
-	public Skeleton lookup2(ModuleID mid) throws ResolveError {
-		Skeleton skeleton = skeletons.get(mid);
-		if(skeleton != null) {
-			return skeleton;
-		}
+		List<Nominal<Type.Function>> targets = lookupFunction(nid.module(),nid.name()); 		
 		
-		final Module module = loader.loadModule(mid);
-		return new Skeleton(mid) {
-			public Value constant(String name) {
-				Module.ConstDef cd = module.constant(name);
-				if(cd != null) {
-					return cd.constant();
+		for (Nominal<Type.Function> nft : targets) {
+			Type.Function ft = nft.raw();
+			if (ft.params().size() == paramTypes.size()						
+					&& paramSubtypes(ft, target)
+					&& (candidate == null || paramSubtypes(candidate,ft))) {					
+				candidate = ft;								
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {			
+			String msg = "no match for " + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for (Nominal<Type.Function> nft : targets) {
+				Type.Function ft = (Type.Function) nft.nominal();
+				if(firstTime) {
+					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
 				} else {
-					return null;
+					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
 				}
 			}
 			
-			public Type type(String name) {
-				Module.TypeDef td = module.type(name);
-				if(td != null) {
-					return td.type();
-				} else {
-					return null;
+			// need to think about this one
+			throw new ResolveError(msg);
+		}
+		
+		return candidate;
+	}
+	
+	public Type.Method bindMessage(NameID nid, Type.Process receiver,
+			ArrayList<Type> paramTypes) throws ResolveError {
+
+		Type.Method target = (Type.Method) Type.Method(receiver, Type.T_ANY,
+				Type.T_ANY, paramTypes);
+		Type.Method candidate = null;				
+		
+		List<Nominal<Type.Function>> targets = lookupFunction(nid.module(),nid.name()); 
+		
+		for (Nominal<Type.Function> nft : targets) {
+			Type.Function ft = nft.raw();
+			if(ft instanceof Type.Method) { 				
+				Type.Method mt = (Type.Method) ft; 
+				Type funrec = mt.receiver();	
+				if (receiver == funrec
+						|| (receiver != null && funrec != null && Type
+						.isImplicitCoerciveSubtype(receiver, funrec))) {					
+					// receivers match up OK ...				
+					if (mt.params().size() == paramTypes.size()						
+							&& paramSubtypes(mt, target)
+							&& (candidate == null || paramSubtypes(candidate,mt))) {					
+						candidate = mt;					
+					}
 				}
 			}
-				
-			public List<Type.Function> functionOrMethod(String name) {
-				List<Module.Method> fd = module.method(name);				
-				List<Type.Function> r = Collections.EMPTY_LIST;
-				for(Module.Method m : fd) {					
-					if(r == Collections.EMPTY_LIST) {
-						r = new ArrayList<Type.Function>();
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {
+			String rec = "::";
+			if(receiver != null) {				
+				rec = receiver.toString() + "::";
+			}
+			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for(Nominal<Type.Function> nft : targets) {
+				rec = "";
+				Type.Function ft = (Type.Function) nft.nominal();
+				if(ft instanceof Type.Method) {
+					Type.Method mt = (Type.Method) ft;
+					if(mt.receiver() != null) {
+						rec = mt.receiver().toString();
 					}
-					r.add(m.type());
+					rec = rec + "::";
 				}
-				return r;
+				if(firstTime) {
+					msg += "\n\tfound: " + rec + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + rec + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			throw new ResolveError(msg);			
+		}
+		
+		return candidate;
+	}
+	
+	private boolean paramSubtypes(Type.Function f1, Type.Function f2) {		
+		List<Type> f1_params = f1.params();
+		List<Type> f2_params = f2.params();
+		if(f1_params.size() == f2_params.size()) {
+			for(int i=0;i!=f1_params.size();++i) {
+				Type f1_param = f1_params.get(i);
+				Type f2_param = f2_params.get(i);				
+				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
+					return false;
+				}
 			}			
-		};
+			return true;
+		}
+		return false;
+	}
+	
+	private String parameterString(List<Type> paramTypes) {
+		String paramStr = "(";
+		boolean firstTime = true;
+		for(Type t : paramTypes) {
+			if(!firstTime) {
+				paramStr += ",";
+			}
+			firstTime=false;
+			paramStr += t;
+		}
+		return paramStr + ")";
+	}
+	
+	private List<Nominal<Type.Function>> lookupFunction(ModuleID mid,
+			String name) throws ResolveError {
+		Skeleton skeleton = skeletons.get(mid);
+		if (skeleton != null) {
+			List<Type.Function> nominals = skeleton.functionOrMethod(name);
+			ArrayList<Nominal<Type.Function>> r = new ArrayList();
+			for (Type.Function tf : nominals) {
+				r.add(new Nominal<Type.Function>(tf, (Type.Function) expand(tf)));
+			}
+			return r;
+		}
+
+		Module module = loader.loadModule(mid);
+		ArrayList<Nominal<Type.Function>> r = new ArrayList();
+		for (Module.Method f : module.method(name)) {
+			// FIXME: loss of nominal information here
+			r.add(new Nominal<Type.Function>(f.type(), f.type()));
+		}
+		return r;
 	}
 	
 	/**

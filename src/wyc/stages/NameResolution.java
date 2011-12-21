@@ -33,20 +33,20 @@ import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Type;
 import wyc.NameResolver;
-import wyc.TypeExpander;
+import wyc.TypeResolver;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 
-public final class Resolution {
+public final class NameResolution {
 	private final NameResolver resolver;	
 	private String filename;
 	private ModuleID module;
 	
-	public Resolution(NameResolver resolver) {
+	public NameResolution(NameResolver resolver) {
 		this.resolver = resolver;
 	}
 	
-	public TypeExpander.Skeleton resolve(WhileyFile wf) {		
+	public TypeResolver.Skeleton resolve(WhileyFile wf) {		
 		module = wf.module;
 		filename = wf.filename;
 		
@@ -84,7 +84,7 @@ public final class Resolution {
 			}
 		}		
 		
-		return new TypeExpander.Skeleton(module) {
+		return new TypeResolver.Skeleton(module) {
 			public Type type(String name) {
 				return types.get(name);
 			}

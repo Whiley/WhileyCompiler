@@ -82,14 +82,14 @@ import wyc.stages.*;
 public final class Compiler implements Logger {		
 	private ModuleLoader loader;	
 	private NameResolver nameResolver;
-	private TypeExpander nameExpander;
+	private TypeResolver nameExpander;
 	private ArrayList<Transform> stages;
 
 	public Compiler(ModuleLoader loader, List<Transform> stages) {
 		this.loader = loader;
 		this.stages = new ArrayList<Transform>(stages);
 		nameResolver = new NameResolver(loader);
-		nameExpander = new TypeExpander(loader);
+		nameExpander = new TypeResolver(loader);
 	}
 	
 	/**
@@ -232,7 +232,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();				
-		TypeExpander.Skeleton skeleton = new Resolution(nameResolver).resolve(wf);
+		TypeResolver.Skeleton skeleton = new NameResolution(nameResolver).resolve(wf);
 		
 		logTimedMessage("[" + wf.filename + "] resolved names",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
