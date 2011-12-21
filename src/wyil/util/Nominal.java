@@ -11,8 +11,8 @@ import wyil.lang.Type;
  * 
  * @param <T>
  */
-public class NominalType<T extends Type> extends Pair<Type,T> {
-	public NominalType(Type nominal, T raw) {
+public class Nominal<T extends Type> extends Pair<Type,T> {
+	public Nominal(Type nominal, T raw) {
 		super(nominal,raw);
 	}
 	

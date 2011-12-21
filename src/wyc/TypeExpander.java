@@ -123,7 +123,7 @@ public final class TypeExpander {
 	 * @param name
 	 * @return
 	 */
-	public List<NominalType<Type.Function>> functionOrMethod(ModuleID mid,
+	public List<Nominal<Type.Function>> functionOrMethod(ModuleID mid,
 			String name) {
 		
 	}
