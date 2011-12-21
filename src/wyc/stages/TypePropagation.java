@@ -295,18 +295,32 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assign stmt,
 			RefCountedHashMap<String,Pair<Type,Type>> environment,
 			ArrayList<Import> imports) {
-		
-		Expr lhs = propagate(stmt.lhs,environment,imports);
+			
+		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = propagate(stmt.rhs,environment,imports);
-		
-		
-		if(lhs instanceof Expr.LocalVariable) {
-			Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
+				
+		if(lhs instanceof Expr.AbstractVariable) {
+			// An assignment to a local variable is slightly different from
+			// other kinds of assignments. That's because in this case only it
+			// is permitted that the variable does not exist a priori.
+			// Therefore, whatever type the rhs has, the variable in question
+			// will have after the assignment.
+			Expr.AbstractVariable av = (Expr.AbstractVariable) lhs;
+			Expr.LocalVariable lv;
+			if(lhs instanceof Expr.LocalVariable) {
+				// this case just avoids creating another object everytime we
+				// visit this statement.
+				lv = (Expr.LocalVariable) lhs; 
+			} else {
+				lv = new Expr.LocalVariable(av.var, av.attributes());
+			}
 			lv.nominalType = rhs.nominalType();
 			lv.rawType = rhs.rawType();
 			environment.put(lv.var, new Pair<Type, Type>(lv.nominalType(),
 					lv.rawType()));
+			lhs = lv;
 		} else {
+			lhs = propagate(lhs,environment,imports);
 			// FIXME: deal with other LVals
 		}
 		
@@ -527,8 +541,45 @@ public final class TypePropagation {
 		try {
 			if(lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
-				return new Expr.LocalVariable(av.var, av.attributes());
-			} 
+				Pair<Type,Type> p = environment.get(av.var);
+				if(p == null) {
+					syntaxError(errorMessage(UNKNOWN_VARIABLE),filename,av);
+				}				
+				Expr.LocalVariable lv = new Expr.LocalVariable(av.var, av.attributes());
+				lv.nominalType = p.first();
+				lv.rawType = p.second();
+				return lv;
+			} else if(lval instanceof Expr.AbstractIndexAccess) {
+				// this indicates either a list, string or dictionary update
+				Expr.AbstractIndexAccess ai = (Expr.AbstractIndexAccess) lval;				
+				Expr.LVal src = propagate((Expr.LVal) ai.src,environment,imports);				
+				Expr index = propagate(ai.index,environment,imports);				
+				Type rawSrcType = src.rawType();
+				// FIXME: problem if list is only an effective list, similarly
+				// for dictionaries.
+				if(Type.isSubtype(Type.T_STRING, rawSrcType)) {
+					return new Expr.StringAccess(src,index,lval.attributes());
+				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
+					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
+					la.rawSrcType = Type.effectiveListType(rawSrcType);
+					// FIXME: loss of nominal information here
+					la.nominalElementType = la.rawSrcType.element();
+					return la;
+				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
+					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
+					da.rawSrcType = Type.effectiveDictionaryType(rawSrcType);
+					// FIXME: loss of nominal information here
+					da.nominalElementType = da.rawSrcType.value();
+					return da;
+				} else {				
+					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,src);
+				}
+			} else if(lval instanceof Expr.AbstractDotAccess) {
+				// this indicates a record update
+				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
+				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,imports);
+				
+			}
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
