@@ -781,7 +781,7 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);					
-			blk.append(Code.IfType(type, slot, Type.T_NULL, target), attributes(v));
+			blk.append(Code.IfType(v.rawSrcType, slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
@@ -792,13 +792,13 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);						
-			blk.append(Code.IfType(type, slot, Type.T_NULL, exitLabel), attributes(v));
+			blk.append(Code.IfType(v.rawSrcType, slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
 			blk.append(generate(v.lhs, environment));			
 			blk.append(generate(v.rhs, environment));					
-			blk.append(Code.IfGoto(type, cop, target), attributes(v));
+			blk.append(Code.IfGoto(v.rawSrcType, cop, target), attributes(v));
 		}
 		return blk;
 	}
@@ -1542,22 +1542,30 @@ public final class CodeGeneration {
 			switch (bop.op) {
 			case AND:
 				nbop = new Expr.BinOp(Expr.BOp.OR, invert(bop.lhs), invert(bop.rhs), attributes(e));
+				break;
 			case OR:
 				nbop = new Expr.BinOp(Expr.BOp.AND, invert(bop.lhs), invert(bop.rhs), attributes(e));
+				break;
 			case EQ:
 				nbop =  new Expr.BinOp(Expr.BOp.NEQ, bop.lhs, bop.rhs, attributes(e));
+				break;
 			case NEQ:
 				nbop =  new Expr.BinOp(Expr.BOp.EQ, bop.lhs, bop.rhs, attributes(e));
+				break;
 			case LT:
 				nbop =  new Expr.BinOp(Expr.BOp.GTEQ, bop.lhs, bop.rhs, attributes(e));
+				break;
 			case LTEQ:
 				nbop =  new Expr.BinOp(Expr.BOp.GT, bop.lhs, bop.rhs, attributes(e));
+				break;
 			case GT:
 				nbop =  new Expr.BinOp(Expr.BOp.LTEQ, bop.lhs, bop.rhs, attributes(e));
+				break;
 			case GTEQ:
 				nbop =  new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs, attributes(e));
+				break;
 			}
-			nbop.rawType = bop.rawType;
+			nbop.rawSrcType = bop.rawSrcType;
 			nbop.nominalType = bop.nominalType;
 		} else if (e instanceof Expr.UnOp) {
 			Expr.UnOp uop = (Expr.UnOp) e;

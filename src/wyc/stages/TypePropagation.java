@@ -714,7 +714,7 @@ public final class TypePropagation {
 		 */
 		
 		expr.nominalType = result;
-		expr.rawType = result;
+		expr.rawSrcType = result;
 		
 		return expr;
 	}

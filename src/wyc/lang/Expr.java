@@ -215,7 +215,7 @@ public interface Expr extends SyntacticElement {
 		public Expr lhs;
 		public Expr rhs;
 		public Type nominalType;
-		public Type rawType;
+		public Type rawSrcType;
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -261,7 +261,7 @@ public interface Expr extends SyntacticElement {
 			case TYPEEQ:				
 				return Type.T_BOOL;
 			default:
-				return rawType;
+				return rawSrcType;
 			}			
 		}
 		
