@@ -70,7 +70,7 @@ public final class ConstantExpansion {
 			for (Decl d : f.declarations) {
 				if (d instanceof ConstDecl) {
 					ConstDecl cd = (ConstDecl) d;
-					NameID key = new NameID(f.module, cd.name());
+					NameID key = new NameID(f.module, cd.name());					
 					cd.value = constants.get(key);
 				}
 			}

@@ -46,6 +46,7 @@ import wyil.lang.NameID;
 import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Code.OpDir;
+import wyil.lang.Value;
 import wyil.util.Nominal;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
@@ -1101,8 +1102,10 @@ public final class TypePropagation {
 			// is, and update the tree accordingly.
 			try {
 				NameID nid = resolver.resolveAsName(expr.var, imports);
-				return new Expr.ConstantAccess(null, expr.var, nid,
+				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
+				ca.value = expander.constant(nid);
+				return ca;
 			} catch (ResolveError err) {
 			}
 			// In this case, we may still be OK if this corresponds to an

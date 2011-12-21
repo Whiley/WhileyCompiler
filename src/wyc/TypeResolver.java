@@ -25,18 +25,28 @@
 
 package wyc;
 
+import static wyil.util.ErrorMessages.CYCLIC_CONSTANT_DECLARATION;
+import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_CONSTANT_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
 import static wyil.util.ErrorMessages.errorMessage;
 import static wyil.util.SyntaxError.syntaxError;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
 import wyautl.lang.Automaton.State;
 import wyc.NameResolver.Skeleton;
+import wyc.lang.Attributes;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyil.ModuleLoader;
@@ -278,6 +288,25 @@ public final class TypeResolver {
 			r.add(new Nominal<Type.Function>(f.type(), f.type()));
 		}
 		return r;
+	}
+	
+	public Value constant(NameID nid) throws ResolveError {
+		Skeleton skeleton = skeletons.get(nid.module());
+		if (skeleton != null) {			
+			Value v = skeleton.constant(nid.name());
+			if(v != null) {
+				return v;
+			} else {				
+				throw new ResolveError("unable to find constant " + nid);
+			}
+		}		
+		Module module = loader.loadModule(nid.module());
+		Module.ConstDef cd = module.constant(nid.name());
+		if(cd != null) {
+			return cd.constant();
+		} else {
+			throw new ResolveError("unable to find constant " + nid);
+		}
 	}
 	
 	/**

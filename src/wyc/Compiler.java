@@ -121,12 +121,12 @@ public final class Compiler implements Logger {
 			WhileyFile wf = innerParse(f);			
 			wyfiles.add(wf);								
 		}
-				
+		
+		expandConstants(wyfiles);
+		
 		for (WhileyFile wf : wyfiles) {
 			resolveNames(wf);			
 		}
-		
-		expandConstants(wyfiles);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();
 		for (WhileyFile wf : wyfiles) {

@@ -75,7 +75,7 @@ public final class NameResolution {
 					Type t = resolve((TypeDecl)d,imports);
 					types.put(d.name(), t);
 				} else if(d instanceof ConstDecl) {
-					Value v = resolve((ConstDecl)d,imports);
+					Value v = resolve((ConstDecl)d,imports);					
 					constants.put(d.name(), v);
 				}
 			} catch(ResolveError ex) {

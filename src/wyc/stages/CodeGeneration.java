@@ -133,8 +133,8 @@ public final class CodeGeneration {
 				constants);				
 	}
 
-	private Module.ConstDef generate(ConstDecl td, ModuleID module) {
-		return new Module.ConstDef(td.modifiers, td.name, td.value);
+	private Module.ConstDef generate(ConstDecl cd, ModuleID module) {
+		return new Module.ConstDef(cd.modifiers, cd.name, cd.value);
 	}
 
 	private Module.TypeDef generate(TypeDecl td, ModuleID module) {		
