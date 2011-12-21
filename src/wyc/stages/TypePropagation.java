@@ -578,7 +578,14 @@ public final class TypePropagation {
 				// this indicates a record update
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,imports);
-				
+				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
+				Type.Record rawSrcType =  Type.effectiveRecordType(src.rawType());
+				if(rawSrcType == null) {								
+					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,src);					
+				}
+				ra.rawSrcType = rawSrcType;
+				ra.nominalFieldType = rawSrcType.fields().get(ad.name);
+				return ra;
 			}
 		} catch(SyntaxError e) {
 			throw e;
