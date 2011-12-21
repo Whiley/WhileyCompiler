@@ -46,6 +46,7 @@ import wyil.lang.NameID;
 import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Code.OpDir;
+import wyil.util.Nominal;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
@@ -169,8 +170,8 @@ public final class TypePropagation {
 
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			
-			RefCountedHashMap<String,Pair<Type,Type>> environment = new RefCountedHashMap<String,Pair<Type,Type>>();
-			environment.put("$", new Pair<Type,Type>(nominalType,rawType));
+			RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
+			environment.put("$", new Nominal<Type>(nominalType,rawType));
 			
 			// FIXME: add names exposed from records and other types
 			
@@ -181,7 +182,7 @@ public final class TypePropagation {
 
 	public void propagate(FunDecl fd, ArrayList<Import> imports) throws ResolveError {
 		this.method = fd;
-		RefCountedHashMap<String,Pair<Type,Type>> environment = new RefCountedHashMap<String,Pair<Type,Type>>();
+		RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
 		Type.Function type = fd.nominalType;		
 		ArrayList<Type> paramTypes = type.params();
 		
@@ -221,9 +222,9 @@ public final class TypePropagation {
 		propagate(fd.statements,environment,imports);
 	}
 	
-	private RefCountedHashMap<String, Pair<Type, Type>> propagate(
+	private RefCountedHashMap<String, Nominal<Type>> propagate(
 			ArrayList<Stmt> body,
-			RefCountedHashMap<String, Pair<Type, Type>> environment,
+			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		
 		
@@ -239,8 +240,8 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt stmt,
-			RefCountedHashMap<String, Pair<Type, Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt stmt,
+			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 				
 		try {
@@ -285,16 +286,16 @@ public final class TypePropagation {
 		}
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assert stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Assert stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		stmt.expr = propagate(stmt.expr,environment,imports);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Assign stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Assign stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 			
 		Expr.LVal lhs = stmt.lhs;
@@ -317,7 +318,7 @@ public final class TypePropagation {
 			}
 			lv.nominalType = rhs.nominalType();
 			lv.rawType = rhs.rawType();
-			environment.put(lv.var, new Pair<Type, Type>(lv.nominalType(),
+			environment.put(lv.var, new Nominal<Type>(lv.nominalType(),
 					lv.rawType()));
 			lhs = lv;
 		} else {
@@ -325,7 +326,7 @@ public final class TypePropagation {
 			Expr.AssignedVariable av = inferBeforeAfterType(lhs,
 					lhs.nominalType(), lhs.rawType(), rhs.nominalType(),
 					rhs.rawType());
-			environment.put(av.var, new Pair<Type,Type>(av.nominalAfterType,av.rawAfterType));
+			environment.put(av.var, new Nominal<Type>(av.nominalAfterType,av.rawAfterType));
 		}
 		
 		stmt.lhs = (Expr.LVal) lhs;
@@ -391,23 +392,23 @@ public final class TypePropagation {
 		}
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Break stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Break stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		// nothing to do
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Debug stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Debug stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		stmt.expr = propagate(stmt.expr,environment,imports);		
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.DoWhile stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.DoWhile stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		
 		if (stmt.invariant != null) {
@@ -424,8 +425,8 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.For stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.For stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		
 		stmt.source = propagate(stmt.source,environment,imports);
@@ -484,7 +485,7 @@ public final class TypePropagation {
 			// element type. This needs to fixed above by only expanding the
 			// nominal source type by one level.
 			Type rawElementType = elementTypes[i];
-			environment = environment.put(var, new Pair<Type,Type>(rawElementType,rawElementType));
+			environment = environment.put(var, new Nominal<Type>(rawElementType,rawElementType));
 		} 
 		
 		if (stmt.invariant != null) {
@@ -501,8 +502,8 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.IfElse stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.IfElse stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		
 		stmt.condition = propagate(stmt.condition,environment,imports);
@@ -510,8 +511,8 @@ public final class TypePropagation {
 		
 		// FIXME: need to deal with retyping of variables
 		
-		RefCountedHashMap<String,Pair<Type,Type>> trueEnv;
-		RefCountedHashMap<String,Pair<Type,Type>> falseEnv;
+		RefCountedHashMap<String,Nominal<Type>> trueEnv;
+		RefCountedHashMap<String,Nominal<Type>> falseEnv;
 		
 		if(stmt.trueBranch != null && stmt.trueBranch != null) {
 			falseEnv = environment.clone();
@@ -537,9 +538,9 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String, Pair<Type, Type>> propagate(
+	private RefCountedHashMap<String, Nominal<Type>> propagate(
 			Stmt.Return stmt,
-			RefCountedHashMap<String, Pair<Type, Type>> environment,
+			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment,imports);
@@ -554,32 +555,32 @@ public final class TypePropagation {
 		return BOTTOM;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Skip stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Skip stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Switch stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Switch stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Throw stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Throw stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.TryCatch stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.TryCatch stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.While stmt,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.While stmt,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 
 		stmt.condition = propagate(stmt.condition,environment,imports);
@@ -597,12 +598,12 @@ public final class TypePropagation {
 	}
 	
 	private Expr.LVal propagate(Expr.LVal lval,
-			RefCountedHashMap<String, Pair<Type, Type>> environment,
+			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		try {
 			if(lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
-				Pair<Type,Type> p = environment.get(av.var);
+				Nominal<Type> p = environment.get(av.var);
 				if(p == null) {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE),filename,av);
 				}				
@@ -659,7 +660,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		
 		try {
@@ -715,7 +716,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.BinOp expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		expr.lhs = propagate(expr.lhs,environment,imports);
 		expr.rhs = propagate(expr.rhs,environment,imports);
@@ -839,7 +840,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.UnOp expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		Expr src = propagate(expr.mhs, environment, imports);
 		expr.mhs = src;
@@ -867,19 +868,19 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Comprehension expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return expr;
 	}
 	
 	private Expr propagate(Expr.Constant expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return expr;
 	}
 
 	private Expr propagate(Expr.Convert c,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		c.expr = propagate(c.expr,environment,imports);
 		Type from = c.expr.rawType();
@@ -892,13 +893,13 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Function expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.AbstractInvoke expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 		
 		// first, propagate through receiver and parameters.
@@ -968,7 +969,7 @@ public final class TypePropagation {
 	}			
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);
 		expr.index = propagate(expr.index,environment,imports);		
@@ -1021,7 +1022,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.AbstractLength expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);			
 		Type src = expr.src.nominalType();		
@@ -1077,10 +1078,10 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.AbstractVariable expr,
-			RefCountedHashMap<String, Pair<Type, Type>> environment,
+			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
 
-		Pair<Type, Type> types = environment.get(expr.var);
+		Nominal<Type> types = environment.get(expr.var);
 
 		if (expr instanceof Expr.LocalVariable) {
 			Expr.LocalVariable lv = (Expr.LocalVariable) expr;
@@ -1124,7 +1125,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Set expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		Type nominalElementType = Type.T_VOID;
 		Type rawElementType = Type.T_VOID;
@@ -1144,7 +1145,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.List expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		
 		Type nominalElementType = Type.T_VOID;
@@ -1166,7 +1167,7 @@ public final class TypePropagation {
 	
 	
 	private Expr propagate(Expr.Dictionary expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		Type nominalKeyType = Type.T_VOID;
 		Type rawKeyType = Type.T_VOID;
@@ -1194,7 +1195,7 @@ public final class TypePropagation {
 	
 
 	private Expr propagate(Expr.Record expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		
 		HashMap<String,Expr> exprFields = expr.fields;
@@ -1216,7 +1217,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.Tuple expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		ArrayList<Expr> exprFields = expr.fields;
 		ArrayList<Type> nominalFieldTypes = new ArrayList<Type>();
@@ -1236,7 +1237,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.SubList expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {	
 		
 		expr.src = propagate(expr.src,environment,imports);
@@ -1251,7 +1252,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {	
 		
 		if (expr instanceof Expr.PackageAccess
@@ -1310,7 +1311,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr propagate(Expr.RecordAccess ra,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		Type.Record rawType = Type.effectiveRecordType(ra.src.rawType());
 		if(rawType == null) {
@@ -1327,19 +1328,19 @@ public final class TypePropagation {
 	}	
 	
 	private Expr propagate(Expr.ConstantAccess expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return null;
 	}			
 
 	private Expr propagate(Expr.Spawn expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.TypeVal expr,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) {
 		return null;
 	}
@@ -1420,12 +1421,12 @@ public final class TypePropagation {
 	private static final class Handler {
 		public final Type exception;
 		public final String variable;
-		public RefCountedHashMap<String,Pair<Type,Type>> environment;
+		public RefCountedHashMap<String,Nominal<Type>> environment;
 		
 		public Handler(Type exception, String variable) {
 			this.exception = exception;
 			this.variable = variable;
-			this.environment = new RefCountedHashMap<String,Pair<Type,Type>>();
+			this.environment = new RefCountedHashMap<String,Nominal<Type>>();
 		}
 	}
 	
@@ -1440,7 +1441,7 @@ public final class TypePropagation {
 	}
 	
 	private static final class BreakScope extends Scope {
-		public RefCountedHashMap<String,Pair<Type,Type>> environment;
+		public RefCountedHashMap<String,Nominal<Type>> environment;
 		
 		public void free() {
 			environment.free();
@@ -1448,34 +1449,34 @@ public final class TypePropagation {
 	}
 
 	private static final class ContinueScope extends Scope {
-		public RefCountedHashMap<String,Pair<Type,Type>> environment;
+		public RefCountedHashMap<String,Nominal<Type>> environment;
 		
 		public void free() {
 			environment.free();
 		}
 	}
 	
-	private static final RefCountedHashMap<String,Pair<Type,Type>> BOTTOM = new RefCountedHashMap<String,Pair<Type,Type>>();
+	private static final RefCountedHashMap<String,Nominal<Type>> BOTTOM = new RefCountedHashMap<String,Nominal<Type>>();
 	
-	private static final RefCountedHashMap<String, Pair<Type, Type>> join(
-			RefCountedHashMap<String, Pair<Type, Type>> lhs,
-			RefCountedHashMap<String, Pair<Type, Type>> rhs) {
+	private static final RefCountedHashMap<String, Nominal<Type>> join(
+			RefCountedHashMap<String, Nominal<Type>> lhs,
+			RefCountedHashMap<String, Nominal<Type>> rhs) {
 		
-		RefCountedHashMap<String,Pair<Type,Type>> result = new RefCountedHashMap<String,Pair<Type,Type>>();
+		RefCountedHashMap<String,Nominal<Type>> result = new RefCountedHashMap<String,Nominal<Type>>();
 		for(String key : lhs.keySet()) {
 			if(rhs.containsKey(key)) {
-				Pair<Type,Type> lhs_t = lhs.get(key);
-				Pair<Type,Type> rhs_t = rhs.get(key);
+				Nominal<Type> lhs_t = lhs.get(key);
+				Nominal<Type> rhs_t = rhs.get(key);
 				Type nominalType = Type.Union(lhs_t.first(),rhs_t.first());
 				Type rawType = Type.Union(lhs_t.second(),rhs_t.second());
-				result.put(key, new Pair<Type,Type>(nominalType,rawType));
+				result.put(key, new Nominal<Type>(nominalType,rawType));
 			}
 		}
 		
 		return result;
 	}
 	
-	private Pair<Type,Type> expand(Type nominalType) throws ResolveError {
-		return new Pair<Type,Type>(nominalType,expander.expand(nominalType));
+	private Nominal<Type> expand(Type nominalType) throws ResolveError {
+		return new Nominal<Type>(nominalType,expander.expand(nominalType));
 	}
 }
