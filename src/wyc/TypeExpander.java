@@ -41,11 +41,7 @@ import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.util.ErrorMessages;
-import wyil.util.Pair;
-import wyil.util.ResolveError;
-import wyil.util.SyntacticElement;
-import wyil.util.Triple;
+import wyil.util.*;
 
 /**
  * <p>
@@ -104,7 +100,7 @@ public final class TypeExpander {
 			
 		public abstract List<Type.Function> functionOrMethod(String name);		
 	}
-
+	
 	/**
 	 * Register a given skeleton with this expander. This ensures that when
 	 * skeleton requests are made, this skeleton will be used instead of
@@ -117,7 +113,22 @@ public final class TypeExpander {
 		skeletons.put(skeleton.id(), skeleton);			
 	}
 	
-	public Skeleton lookup(ModuleID mid) throws ResolveError {
+	/**
+	 * Lookup a function or method in a given module with a given name. There
+	 * are two basic cases: either the module in question is currently being
+	 * compiled (hence, registered as a skeleton); or, it's stored in a
+	 * compiled module somewhere.
+	 * 
+	 * @param mid
+	 * @param name
+	 * @return
+	 */
+	public List<NominalType<Type.Function>> functionOrMethod(ModuleID mid,
+			String name) {
+		
+	}
+	
+	public Skeleton lookup2(ModuleID mid) throws ResolveError {
 		Skeleton skeleton = skeletons.get(mid);
 		if(skeleton != null) {
 			return skeleton;

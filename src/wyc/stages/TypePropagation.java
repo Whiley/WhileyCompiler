@@ -334,7 +334,7 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private static Expr.AssignedVariable inferBeforeAfterType(Expr.LVal lv,
+	private Expr.AssignedVariable inferBeforeAfterType(Expr.LVal lv,
 			Type nominalBeforeType, Type rawBeforeType, Type nominalAfterType,
 			Type rawAfterType) {
 		if (lv instanceof Expr.AssignedVariable) {
@@ -357,9 +357,37 @@ public final class TypePropagation {
 			// FIXME: loss of nominal information here.
 			return inferBeforeAfterType((Expr.LVal) la.src, la.rawSrcType,
 					la.rawSrcType, nominalAfterType, rawAfterType);
+		} else if(lv instanceof Expr.DictionaryAccess)  {
+			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		
+			Type.Dictionary rawSrcType = da.rawSrcType;
+			// FIXME: loss of nominal information here
+			nominalAfterType = Type.Dictionary(
+					Type.Union(rawSrcType.key(), da.index.nominalType()),
+					Type.Union(da.nominalElementType, nominalAfterType));
+			rawAfterType = Type.Dictionary(
+					Type.Union(rawSrcType.key(), da.index.rawType()),
+					Type.Union(rawSrcType.value(), rawAfterType));
+			// FIXME: loss of nominal information here.
+			return inferBeforeAfterType((Expr.LVal) da.src, da.rawSrcType,
+					da.rawSrcType, nominalAfterType, rawAfterType);
+		} else if(lv instanceof Expr.RecordAccess) {
+			Expr.RecordAccess la = (Expr.RecordAccess) lv;
+			Type.Record srcType = la.rawSrcType;
+			HashMap<String,Type> beforeFields = new HashMap<String,Type>(srcType.fields());
+			HashMap<String,Type> afterFields = new HashMap<String,Type>(srcType.fields());
+			beforeFields.put(la.name, rawBeforeType);
+			afterFields.put(la.name, rawAfterType);
+			
+			rawBeforeType = Type.Record(srcType.isOpen(), beforeFields);
+			rawAfterType = Type.Record(srcType.isOpen(), afterFields);
+			
+			// FIXME: loss of nominal information here.
+			return inferBeforeAfterType((Expr.LVal) la.src, rawBeforeType,
+					rawBeforeType, rawAfterType, rawAfterType);
 		} else {
-			// blah blah
-			return null;
+			internalFailure("unknown lval encountered ("
+					+ lv.getClass().getName() + ")", filename, lv);
+			return null; //deadcode
 		}
 	}
 	
