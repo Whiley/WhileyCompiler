@@ -45,6 +45,7 @@ public final class ConstantExpansion {
 
 		// first construct list.
 		for (WhileyFile f : files) {
+			modules.add(f.module);
 			for (Decl d : f.declarations) {
 				if (d instanceof ConstDecl) {
 					ConstDecl cd = (ConstDecl) d;
@@ -99,7 +100,7 @@ public final class ConstantExpansion {
 		if (value != null) {
 			return value;
 		} else if (!modules.contains(key.module())) {
-			// indicates a non-local key
+			// indicates a non-local key			
 			Module mi = loader.loadModule(key.module());
 			return mi.constant(key.name()).constant();
 		} else if (visited.contains(key)) {
