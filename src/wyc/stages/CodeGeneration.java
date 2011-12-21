@@ -308,7 +308,7 @@ public final class CodeGeneration {
 		if(s.lhs instanceof Expr.LocalVariable) {			
 			blk = generate(s.rhs, environment);			
 			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
-			blk.append(Code.Store(null, allocate(v.var, environment)),
+			blk.append(Code.Store(v.rawType(), allocate(v.var, environment)),
 					attributes(s));			
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
