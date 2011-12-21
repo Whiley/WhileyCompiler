@@ -225,8 +225,14 @@ public final class TypePropagation {
 			RefCountedHashMap<String, Pair<Type, Type>> environment,
 			ArrayList<Import> imports) {
 		
-		for (Stmt stmt : body) {
-			environment = propagate(stmt, environment, imports);
+		
+		for (int i=0;i!=body.size();++i) {
+			Stmt stmt = body.get(i);
+			if(stmt instanceof Expr) {
+				body.set(i,(Stmt) propagate((Expr)stmt,environment,imports));
+			} else {
+				environment = propagate(stmt, environment, imports);
+			}
 		}
 		
 		return environment;
@@ -249,9 +255,6 @@ public final class TypePropagation {
 				return propagate((Stmt.For) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Switch) {
 				return propagate((Stmt.Switch) stmt,environment,imports);
-			} else if(stmt instanceof Expr.AbstractInvoke) {
-				propagate((Expr.AbstractInvoke) stmt,environment,imports);
-				return environment;
 			} else if(stmt instanceof Stmt.DoWhile) {
 				return propagate((Stmt.DoWhile) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Break) {
@@ -769,7 +772,7 @@ public final class TypePropagation {
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
 			Type.Function funType = bindFunctionOrMethod(name,  rawParamTypes, expr);	
-			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, expr.arguments, expr.attributes());
+			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 			// FIXME: loss of nominal information here
 			r.nominalReturnType = funType.ret();
 			r.rawFunctionType = funType;
@@ -784,10 +787,10 @@ public final class TypePropagation {
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
 				Type.Method methType = bindMessage(nid,  rawRecType, rawParamTypes, expr);
-				Expr.FunctionCall r = new Expr.FunctionCall(nid, null, expr.arguments, expr.attributes());
+				Expr.MessageSend r = new Expr.MessageSend(nid, receiver, exprArgs, expr.attributes());
 				// FIXME: loss of nominal information here
 				r.nominalReturnType = methType.ret();
-				r.rawFunctionType = methType;
+				r.rawFunctionType = methType;				
 				return r;
 			} else {
 				// FIXME: perform better namespace look up here, by exploiting
@@ -796,9 +799,9 @@ public final class TypePropagation {
 				Type.Function funType = bindFunctionOrMethod(nid,  rawParamTypes, expr);
 				Expr.AbstractInvoke<Expr.ModuleAccess> r;
 				if(funType instanceof Type.Method) {
-					r = new Expr.MethodCall(nid, null, expr.arguments, expr.attributes());					
+					r = new Expr.MethodCall(nid, null, exprArgs, expr.attributes());					
 				} else {
-					r = new Expr.FunctionCall(nid, null, expr.arguments, expr.attributes());					
+					r = new Expr.FunctionCall(nid, null, exprArgs, expr.attributes());					
 				}				
 				// FIXME: loss of nominal information here
 				r.nominalReturnType = funType.ret();
@@ -871,13 +874,13 @@ public final class TypePropagation {
 		
 		List<Type.Function> targets = lookupFunction(nid.module(),nid.name()); 
 		
-		for (Type.Function ft : targets) {
-			if(ft instanceof Type.Method) { 
+		for (Type.Function ft : targets) {			
+			if(ft instanceof Type.Method) { 				
 				Type.Method mt = (Type.Method) ft; 
 				Type funrec = mt.receiver();	
 				if (receiver == funrec
 						|| (receiver != null && funrec != null && Type
-						.isImplicitCoerciveSubtype(receiver, funrec))) {
+						.isImplicitCoerciveSubtype(receiver, funrec))) {					
 					// receivers match up OK ...				
 					if (mt.params().size() == paramTypes.size()						
 							&& paramSubtypes(mt, target)

@@ -120,17 +120,6 @@ public final class Actor extends Thread {
 		return state + "@" + System.identityHashCode(this);
 	}
 	
-	public static Actor systemProcess() {
-		// Not sure what the default value should be yet!!!
-		Actor sysout = new Actor(null);
-		Record data = new Record();
-		data.put("out", sysout);		
-		Actor system = new Actor(data);
-		sysout.start();
-		system.start();		
-		return system;
-	}
-	
 	private final static class Message {
 		public final Method method;
 		public final Object[] arguments;

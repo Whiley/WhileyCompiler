@@ -146,13 +146,11 @@ public final class TypeExpander {
 			public List<Type.Function> functionOrMethod(String name) {
 				List<Module.Method> fd = module.method(name);				
 				List<Type.Function> r = Collections.EMPTY_LIST;
-				for(Module.Method m : fd) {
-					if(m.isFunction()) {
-						if(r == Collections.EMPTY_LIST) {
-							r = new ArrayList<Type.Function>();
-						}
-						r.add(m.type());
+				for(Module.Method m : fd) {					
+					if(r == Collections.EMPTY_LIST) {
+						r = new ArrayList<Type.Function>();
 					}
+					r.add(m.type());
 				}
 				return r;
 			}			

@@ -210,8 +210,8 @@ public class ClassFileBuilder {
 		ClassFile.Method cm = new ClassFile.Method("main",ft1,modifiers);
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
 		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
-		ft1 = new JvmType.Function(WHILEYPROCESS);
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS,"systemProcess",ft1,Bytecode.STATIC));
+		ft1 = new JvmType.Function(WHILEYRECORD);
+		codes.add(new Bytecode.Invoke(WHILEYUTIL,"systemConsole",ft1,Bytecode.STATIC));
 		codes.add(new Bytecode.Load(0,strArr));
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
@@ -2741,17 +2741,14 @@ public class ClassFileBuilder {
 	}		 	
 		
 	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
-			.Process(Type.Nominal(new NameID(new ModuleID(new PkgID(
-					"whiley", "lang"), "System"), "1")));
+			.Process(Type.T_ANY);
 
-	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
-			.Process(Type.Record(false,new HashMap() {
+	public final static Type WHILEY_SYSTEM_T = Type.Record(false,
+			new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
-					put("rest", Type.Nominal(new NameID(new ModuleID(
-							new PkgID("whiley", "lang"), "System"), "1")));
 				}
-			}));
+			});
 		
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");

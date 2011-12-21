@@ -774,6 +774,30 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public static class MessageSend extends AbstractInvoke<Expr> {		
+		public final NameID nid;
+		
+		public MessageSend(NameID nid, Expr receiver, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(nid.name(),receiver,arguments,false,attributes);
+			this.nid = nid;
+		}
+		
+		public MessageSend(NameID nid, Expr receiver, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(nid.name(),receiver,arguments,false,attributes);
+			this.nid = nid;			
+		}
+		
+		public NameID nid() {
+			return nid;
+		}	
+		
+		public Type.Method rawFunctionType() {
+			return (Type.Method) rawFunctionType;
+		}
+	}
+	
 	public static class MethodCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
 		

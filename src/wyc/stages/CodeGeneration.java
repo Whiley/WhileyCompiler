@@ -277,6 +277,8 @@ public final class CodeGeneration {
 				return generate((DoWhile) stmt, environment);
 			} else if (stmt instanceof For) {
 				return generate((For) stmt, environment);
+			} else if (stmt instanceof Expr.MessageSend) {
+				return generate((Expr.MessageSend) stmt,false,environment);								
 			} else if (stmt instanceof Expr.MethodCall) {
 				return generate((Expr.MethodCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.FunctionCall) {
@@ -990,6 +992,8 @@ public final class CodeGeneration {
 				return generate((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.FunctionCall) {
 				return generate((Expr.FunctionCall) expression, true, environment);
+			} else if (expression instanceof Expr.MessageSend) {
+				return generate((Expr.MessageSend) expression, true, environment);
 			} else if (expression instanceof Expr.MethodCall) {
 				return generate((Expr.MethodCall) expression, true, environment);
 			} else if (expression instanceof Expr.Comprehension) {
@@ -1021,6 +1025,22 @@ public final class CodeGeneration {
 		return null;
 	}
 
+	private Block generate(Expr.MessageSend fc, boolean retval,
+			HashMap<String, Integer> environment) throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		blk.append(generate(fc.qualification, environment));
+		
+		for (Expr e : fc.arguments) {
+			blk.append(generate(e, environment));
+		}
+
+		blk.append(Code.Send(fc.rawFunctionType(), fc.nid, fc.synchronous, retval),
+				attributes(fc));		
+
+		return blk;
+	}
+	
 	private Block generate(Expr.MethodCall fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());

@@ -1031,4 +1031,16 @@ public class Util {
 			return 0;
 		}
 	}
+	
+
+	public static Record systemConsole() {
+		// Not sure what the default value should be yet!!!
+		Actor sysout = new Actor(null);
+		Record data = new Record();
+		data.put("out", sysout);		
+		Record console = new Record(data);
+		sysout.start();		
+		return console;
+	}
+	
 }
