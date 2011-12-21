@@ -824,7 +824,7 @@ public final class TypePropagation {
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
 				Type.Method methType = bindMessage(nid,  rawRecType, rawParamTypes, expr);
-				Expr.MessageSend r = new Expr.MessageSend(nid, receiver, exprArgs, expr.attributes());
+				Expr.MessageSend r = new Expr.MessageSend(nid, receiver, exprArgs, expr.synchronous, expr.attributes());
 				// FIXME: loss of nominal information here
 				r.nominalReturnType = methType.ret();
 				r.rawFunctionType = methType;				

@@ -139,7 +139,7 @@ public class File$native {
 		}		
 	}
 	
-	public static void flush() {
+	public static void flush() {		
 		System.out.flush();
 	}
 }

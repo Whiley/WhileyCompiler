@@ -54,7 +54,7 @@ public final class Actor extends Thread {
 	 * @param method --- the "message"
 	 * @param arguments --- the message "arguments"
 	 */
-	public void asyncSend(Method method, Object[] arguments) {
+	public void asyncSend(Method method, Object[] arguments) {		
 		arguments[0] = this;		
 		queue.add(new Message(method,arguments,false));
 	}

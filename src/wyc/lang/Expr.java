@@ -737,23 +737,24 @@ public interface Expr extends SyntacticElement {
 			Stmt {
 		public final String name;
 		public R qualification;
-		public final ArrayList<Expr> arguments;
-		public final boolean synchronous;
-		
+		public final ArrayList<Expr> arguments;		
+		public final boolean synchronous;		
 		public Type nominalReturnType;
 		public Type.Function rawFunctionType;
 		
-		public AbstractInvoke(String name, R receiver, Collection<Expr> arguments,
-				boolean synchronous, Attribute... attributes) {
+		public AbstractInvoke(String name, R receiver,
+				Collection<Expr> arguments, boolean synchronous,
+				Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
-			this.arguments = new ArrayList<Expr>(arguments);
+			this.arguments = new ArrayList<Expr>(arguments);	
 			this.synchronous = synchronous;
 		}
 		
-		public AbstractInvoke(String name, R receiver, Collection<Expr> arguments,
-				boolean synchronous, Collection<Attribute> attributes) {
+		public AbstractInvoke(String name, R receiver,
+				Collection<Expr> arguments, boolean synchronous,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
@@ -777,16 +778,18 @@ public interface Expr extends SyntacticElement {
 	public static class MessageSend extends AbstractInvoke<Expr> {		
 		public final NameID nid;
 		
-		public MessageSend(NameID nid, Expr receiver, Collection<Expr> arguments,
+		public MessageSend(NameID nid, Expr receiver,
+				Collection<Expr> arguments, boolean synchronous,
 				Attribute... attributes) {
-			super(nid.name(),receiver,arguments,false,attributes);
-			this.nid = nid;
-		}
-		
-		public MessageSend(NameID nid, Expr receiver, Collection<Expr> arguments,
-				Collection<Attribute> attributes) {
-			super(nid.name(),receiver,arguments,false,attributes);
+			super(nid.name(), receiver, arguments, synchronous, attributes);
 			this.nid = nid;			
+		}
+
+		public MessageSend(NameID nid, Expr receiver,
+				Collection<Expr> arguments, boolean synchronous,
+				Collection<Attribute> attributes) {
+			super(nid.name(), receiver, arguments, synchronous, attributes);
+			this.nid = nid;
 		}
 		
 		public NameID nid() {

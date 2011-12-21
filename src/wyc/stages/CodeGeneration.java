@@ -1034,7 +1034,7 @@ public final class CodeGeneration {
 		for (Expr e : fc.arguments) {
 			blk.append(generate(e, environment));
 		}
-
+		
 		blk.append(Code.Send(fc.rawFunctionType(), fc.nid, fc.synchronous, retval),
 				attributes(fc));		
 
