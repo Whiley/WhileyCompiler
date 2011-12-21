@@ -546,6 +546,8 @@ public final class TypePropagation {
 		try {
 			if(expr instanceof Expr.BinOp) {
 				return propagate((Expr.BinOp) expr,environment,imports); 
+			} else if(expr instanceof Expr.UnOp) {
+				return propagate((Expr.UnOp) expr,environment,imports); 
 			} else if(expr instanceof Expr.Comprehension) {
 				return propagate((Expr.Comprehension) expr,environment,imports); 
 			} else if(expr instanceof Expr.Constant) {
@@ -651,7 +653,14 @@ public final class TypePropagation {
 			
 			result = type;			
 		} else {			
-			switch(expr.op) {			
+			switch(expr.op) {	
+			case AND:
+			case OR:
+			case XOR:
+				checkIsSubtype(Type.T_BOOL,expr.lhs);
+				checkIsSubtype(Type.T_BOOL,expr.rhs);
+				result = Type.T_BOOL;
+				break;
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
@@ -706,6 +715,34 @@ public final class TypePropagation {
 		
 		expr.nominalType = result;
 		expr.rawType = result;
+		
+		return expr;
+	}
+	
+	private Expr propagate(Expr.UnOp expr,
+			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		Expr src = propagate(expr.mhs, environment, imports);
+		expr.mhs = src;
+		
+		switch(expr.op) {
+		case NEG:
+			checkIsSubtype(Type.T_REAL,src);			
+			break;
+		case NOT:
+			checkIsSubtype(Type.T_BOOL,src);
+			break;
+		case INVERT:
+			checkIsSubtype(Type.T_BYTE,src);
+			break;
+		default:		
+			internalFailure("unknown unary operator ("
+					+ expr.op.getClass().getName() + ")" + expr.op, filename,
+					expr);
+		}
+		
+		expr.nominalType = src.nominalType();
+		expr.rawType = src.rawType();
 		
 		return expr;
 	}
