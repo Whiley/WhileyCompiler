@@ -334,12 +334,14 @@ public final class CodeGeneration {
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
 			Pair<Expr.LocalVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
-			if(!environment.containsKey(l.first().var)) {
+			Expr.LocalVariable lhs = l.first();
+			if(!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable",filename,l.first());
 			}
-			int slot = environment.get(l.first().var);
-			blk.append(generate(s.rhs, environment));			
-			blk.append(Code.Update(null,null,slot,l.second(),fields),
+			int slot = environment.get(lhs.var);
+			blk.append(generate(s.rhs, environment));		
+			// FIXME: need to update the type here
+			blk.append(Code.Update(lhs.rawType,lhs.rawType,slot,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
