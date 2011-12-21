@@ -122,7 +122,20 @@ public interface Expr extends SyntacticElement {
 			return var;
 		}
 	}
+	
+	public static class AssignedVariable extends LocalVariable {		
+		public Type nominalAfterType;
+		public Type rawAfterType;
+
+		public AssignedVariable(String var, Attribute... attributes) {
+			super(var, attributes);			
+		}
 		
+		public AssignedVariable(String var, Collection<Attribute> attributes) {
+			super(var, attributes);			
+		}
+	}
+	
 	public static class Constant extends SyntacticElement.Impl implements Expr {
 		public final Value value;
 

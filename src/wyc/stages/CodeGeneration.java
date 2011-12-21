@@ -333,15 +333,14 @@ public final class CodeGeneration {
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
-			Pair<Expr.LocalVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
-			Expr.LocalVariable lhs = l.first();
+			Pair<Expr.AssignedVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
+			Expr.AssignedVariable lhs = l.first();
 			if(!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable",filename,l.first());
 			}
 			int slot = environment.get(lhs.var);
 			blk.append(generate(s.rhs, environment));		
-			// FIXME: need to update the type here
-			blk.append(Code.Update(lhs.rawType,lhs.rawType,slot,l.second(),fields),
+			blk.append(Code.Update(lhs.rawType,lhs.rawAfterType,slot,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -350,20 +349,20 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Pair<Expr.LocalVariable, Integer> extractLVal(Expr e,
+	private Pair<Expr.AssignedVariable, Integer> extractLVal(Expr e,
 			ArrayList<String> fields, Block blk, 
 			HashMap<String, Integer> environment) {
-		if (e instanceof Expr.LocalVariable) {
-			Expr.LocalVariable v = (Expr.LocalVariable) e;
+		if (e instanceof Expr.AssignedVariable) {
+			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return new Pair(v,0);			
 		} else if (e instanceof Expr.AbstractIndexAccess) {
 			Expr.AbstractIndexAccess la = (Expr.AbstractIndexAccess) e;
-			Pair<Expr.LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
+			Pair<Expr.AssignedVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(generate(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
-			Pair<Expr.LocalVariable,Integer> l = extractLVal(ra.src, fields, blk, environment);
+			Pair<Expr.AssignedVariable,Integer> l = extractLVal(ra.src, fields, blk, environment);
 			fields.add(ra.name);
 			return new Pair(l.first(),l.second() + 1);			
 		} else {

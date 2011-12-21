@@ -50,6 +50,7 @@ import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
+import wyil.util.Triple;
 import static wyil.util.SyntaxError.*;
 
 /**
@@ -320,14 +321,46 @@ public final class TypePropagation {
 					lv.rawType()));
 			lhs = lv;
 		} else {
-			lhs = propagate(lhs,environment,imports);
-			// FIXME: deal with other LVals
+			lhs = propagate(lhs,environment,imports);			
+			Expr.AssignedVariable av = inferBeforeAfterType(lhs,
+					lhs.nominalType(), lhs.rawType(), rhs.nominalType(),
+					rhs.rawType());
+			environment.put(av.var, new Pair<Type,Type>(av.nominalAfterType,av.rawAfterType));
 		}
 		
 		stmt.lhs = (Expr.LVal) lhs;
 		stmt.rhs = rhs;	
 		
 		return environment;
+	}
+	
+	private static Expr.AssignedVariable inferBeforeAfterType(Expr.LVal lv,
+			Type nominalBeforeType, Type rawBeforeType, Type nominalAfterType,
+			Type rawAfterType) {
+		if (lv instanceof Expr.AssignedVariable) {
+			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;
+			v.nominalType = nominalBeforeType;
+			v.rawType = rawBeforeType;
+			v.nominalAfterType = nominalAfterType;
+			v.rawAfterType = rawAfterType;
+			return v;
+		} else if (lv instanceof Expr.StringAccess) {
+			Expr.StringAccess la = (Expr.StringAccess) lv;
+			return inferBeforeAfterType((Expr.LVal) la.src, Type.T_STRING,
+					Type.T_STRING, Type.T_STRING, Type.T_STRING);
+		} else if (lv instanceof Expr.ListAccess) {
+			Expr.ListAccess la = (Expr.ListAccess) lv;
+			nominalAfterType = Type.List(
+					Type.Union(la.nominalType(), nominalAfterType), false);
+			rawAfterType = Type.List(Type.Union(la.rawType(), rawAfterType),
+					false);
+			// FIXME: loss of nominal information here.
+			return inferBeforeAfterType((Expr.LVal) la.src, la.rawSrcType,
+					la.rawSrcType, nominalAfterType, rawAfterType);
+		} else {
+			// blah blah
+			return null;
+		}
 	}
 	
 	private RefCountedHashMap<String,Pair<Type,Type>> propagate(Stmt.Break stmt,
@@ -536,7 +569,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr.LVal propagate(Expr.LVal lval,
-			RefCountedHashMap<String,Pair<Type,Type>> environment,
+			RefCountedHashMap<String, Pair<Type, Type>> environment,
 			ArrayList<Import> imports) {
 		try {
 			if(lval instanceof Expr.AbstractVariable) {
@@ -545,7 +578,7 @@ public final class TypePropagation {
 				if(p == null) {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE),filename,av);
 				}				
-				Expr.LocalVariable lv = new Expr.LocalVariable(av.var, av.attributes());
+				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
 				lv.nominalType = p.first();
 				lv.rawType = p.second();
 				return lv;
@@ -579,7 +612,7 @@ public final class TypePropagation {
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,imports);
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
-				Type.Record rawSrcType =  Type.effectiveRecordType(src.rawType());
+				Type.Record rawSrcType = Type.effectiveRecordType(src.rawType());
 				if(rawSrcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,src);					
 				}
