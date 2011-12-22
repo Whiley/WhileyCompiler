@@ -1564,10 +1564,13 @@ public final class CodeGeneration {
 				break;
 			case GTEQ:
 				nbop =  new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs, attributes(e));
-				break;
+				break;			
 			}
-			nbop.rawSrcType = bop.rawSrcType;
-			nbop.nominalType = bop.nominalType;
+			if(nbop != null) {
+				nbop.rawSrcType = bop.rawSrcType;
+				nbop.nominalType = bop.nominalType;
+				return nbop;
+			}
 		} else if (e instanceof Expr.UnOp) {
 			Expr.UnOp uop = (Expr.UnOp) e;
 			switch (uop.op) {
@@ -1575,7 +1578,11 @@ public final class CodeGeneration {
 				return uop.mhs;
 			}
 		}
-		return new Expr.UnOp(Expr.UOp.NOT, e);
+		
+		Expr.UnOp r = new Expr.UnOp(Expr.UOp.NOT, e);
+		r.nominalType = Type.T_BOOL;
+		r.rawType = Type.T_BOOL;
+		return r;
 	}
 
 	private Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {

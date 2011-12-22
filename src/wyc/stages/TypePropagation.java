@@ -755,8 +755,7 @@ public final class TypePropagation {
 					expr.op = Expr.BOp.DIFFERENCE;
 					break;
 				case SUBSET:
-				case SUBSETEQ:
-					type = Type.T_BOOL;
+				case SUBSETEQ:					
 					break;
 				default:
 					syntaxError("Invalid set operation: " + expr.op,filename,expr);		
