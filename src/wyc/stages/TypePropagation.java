@@ -1344,8 +1344,10 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.TypeVal expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
-		return null;
+			ArrayList<Import> imports) throws ResolveError {
+		expr.nominalType = resolver.resolve(expr.unresolvedType, imports);
+		expr.rawType = expander.expand(expr.nominalType);
+		return expr;
 	}
 	
 	private <T extends Type> T checkType(Type t, Class<T> clazz,
