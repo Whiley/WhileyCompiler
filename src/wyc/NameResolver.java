@@ -27,7 +27,9 @@ package wyc;
 
 import java.util.*;
 
+import wyautl.lang.*;
 import wyc.lang.UnresolvedType;
+import wyc.lang.WhileyFile;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
@@ -50,10 +52,10 @@ public final class NameResolver {
 	private final ModuleLoader loader;
 	
 	/**
-	 * A map from module identifiers to skeleton objects. This is required to
+	 * A map from module identifiers to WhileyFile objects. This is required to
 	 * permit registration of source files during compilation.
 	 */
-	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
+	private HashMap<ModuleID, WhileyFile> files = new HashMap<ModuleID, WhileyFile>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -68,15 +70,15 @@ public final class NameResolver {
 	}
 	
 	/**
-	 * Register a given skeleton with this loader. This ensures that when
-	 * skeleton requests are made, this skeleton will be used instead of
+	 * Register a given WhileyFile with this loader. This ensures that when
+	 * WhileyFile requests are made, this WhileyFile will be used instead of
 	 * searching for it on the whileypath.
 	 * 
-	 * @param skeleton
-	 *            --- skeleton to preregister.
+	 * @param WhileyFile
+	 *            --- WhileyFile to preregister.
 	 */
-	public void register(Skeleton skeleton) {		
-		skeletontable.put(skeleton.id(), skeleton);			
+	public void register(WhileyFile WhileyFile) {		
+		files.put(WhileyFile.module, WhileyFile);			
 	}
 	
 	/**
@@ -93,6 +95,29 @@ public final class NameResolver {
 			return true;
 		} catch(ResolveError e) {
 			return false;
+		}
+	}		
+	
+	/**
+	 * This function checks whether the supplied name exists or not.
+	 * 
+	 * @param nid
+	 *            The name whose existence we want to check for.
+	 * 
+	 * @return true if the package exists, false otherwise.
+	 */
+	public boolean isName(NameID nid) {		
+		ModuleID mid = nid.module();
+		WhileyFile wf = files.get(mid);
+		if(wf != null) {
+			return wf.hasName(nid.name());
+		} else {
+			try {
+				Module m = loader.loadModule(mid);
+				return m.hasName(nid.name());
+			} catch(ResolveError e) {
+				return false;
+			}
 		}
 	}		
 	
@@ -115,17 +140,11 @@ public final class NameResolver {
 			throws ResolveError {		
 		for (Import imp : imports) {
 			if (imp.matchName(name)) {
-				for (ModuleID mid : matchImport(imp)) {
-					try {
-						Skeleton mi = loadSkeleton(mid);
-						if (mi.hasName(name)) {
-							return new NameID(mid, name);
-						}
-					} catch (ResolveError rex) {
-						// ignore. This indicates we simply couldn't resolve
-						// this module. For example, if it wasn't a whiley class
-						// file.
-					}
+				for (ModuleID mid : matchImport(imp)) {					
+					NameID nid = new NameID(mid, name); 
+					if (isName(nid)) {
+						return nid;
+					}					
 				}
 			}
 		}
@@ -156,20 +175,20 @@ public final class NameResolver {
 			return resolveAsName(names.get(0),imports);
 		} else if(names.size() == 2) {
 			String name = names.get(1);
-			ModuleID mid = resolveAsModule(names.get(0),imports);
-			Skeleton mi = loadSkeleton(mid);					
-			if (mi.hasName(name)) {
-				return new NameID(mid,name);
+			ModuleID mid = resolveAsModule(names.get(0),imports);		
+			NameID nid = new NameID(mid, name); 
+			if (isName(nid)) {
+				return nid;
 			} 
 		} else {
 			String name = names.get(names.size()-1);
 			String module = names.get(names.size()-2);
 			PkgID pkg = new PkgID(names.subList(0,names.size()-2));
 			ModuleID mid = new ModuleID(pkg,module);
-			Skeleton mi = loadSkeleton(mid);					
-			if (mi.hasName(name)) {
-				return new NameID(mid,name);
-			}
+			NameID nid = new NameID(mid, name); 
+			if (isName(nid)) {
+				return nid;
+			} 			
 		}
 		
 		String name = null;
@@ -215,7 +234,257 @@ public final class NameResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Type resolve(UnresolvedType t, List<Import> imports) throws ResolveError {		
+	public Nominal<Type> resolveAsType(UnresolvedType t, List<Import> imports) throws ResolveError {		
+		Type nominalType = resolve(t,imports);
+		Type rawType = expand(nominalType);
+		return new Nominal<Type>(nominalType,rawType);
+	}
+	
+	public Value resolveAsConstant(NameID nid) throws ResolveError {				
+		WhileyFile wf = files.get(nid.module());
+		if (wf != null) {			
+			Value v = wf.constant(nid.name());
+			if(v != null) {
+				return v;
+			} else {				
+				throw new ResolveError("unable to find constant " + nid);
+			}
+		}		
+		Module module = loader.loadModule(nid.module());
+		Module.ConstDef cd = module.constant(nid.name());
+		if(cd != null) {
+			return cd.constant();
+		} else {
+			throw new ResolveError("unable to find constant " + nid);
+		}
+	}
+	
+	/**
+	 * This method takes a given import declaration, and expands it to find all
+	 * matching modules.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	private List<ModuleID> matchImport(Import imp) {			
+		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
+		ArrayList<ModuleID> matches = importCache.get(key);
+		if(matches != null) {
+			// cache hit
+			return matches;
+		} else {					
+			// cache miss
+			matches = new ArrayList<ModuleID>();
+			for (PkgID pid : matchPackage(imp.pkg)) {
+				try {					
+					for(ModuleID mid : loader.loadPackage(pid)) {
+						if (imp.matchModule(mid.module())) {
+							matches.add(mid);
+						}
+					}					
+				} catch (ResolveError ex) {
+					// dead code
+				} 
+			}
+			importCache.put(key, matches);
+		}
+		return matches;
+	}
+	
+	/**
+	 * This method takes a given package id from an import declaration, and
+	 * expands it to find all matching packages. Note, the package id may
+	 * contain various wildcard characters to match multiple actual packages.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	private List<PkgID> matchPackage(PkgID pkg) {
+		ArrayList<PkgID> matches = new ArrayList<PkgID>();
+		try {
+			loader.resolvePackage(pkg);
+			matches.add(pkg);
+		} catch(ResolveError er) {}
+		return matches;
+	}
+
+	/**
+	 * Bind function is responsible for determining the true type of a method or
+	 * function being invoked. To do this, it must find the function/method
+	 * with the most precise type that matches the argument types.
+	 * 
+	 * @param nid
+	 * @param qualification
+	 * @param paramTypes
+	 * @param elem
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Type.Function bindFunctionOrMethod(NameID nid, 
+			ArrayList<Type> paramTypes) throws ResolveError {
+
+		Type.Function target = (Type.Function) Type.Function(Type.T_ANY,
+				Type.T_ANY, paramTypes);
+		Type.Function candidate = null;				
+		
+		List<Nominal<Type.Function>> targets = lookupFunction(nid.module(),nid.name()); 		
+		
+		for (Nominal<Type.Function> nft : targets) {
+			Type.Function ft = nft.raw();
+			if (ft.params().size() == paramTypes.size()						
+					&& paramSubtypes(ft, target)
+					&& (candidate == null || paramSubtypes(candidate,ft))) {					
+				candidate = ft;								
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {			
+			String msg = "no match for " + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for (Nominal<Type.Function> nft : targets) {
+				Type.Function ft = (Type.Function) nft.nominal();
+				if(firstTime) {
+					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			
+			// need to think about this one
+			throw new ResolveError(msg);
+		}
+		
+		return candidate;
+	}
+	
+	public Type.Method bindMessage(NameID nid, Type.Process receiver,
+			ArrayList<Type> paramTypes) throws ResolveError {
+
+		Type.Method target = (Type.Method) Type.Method(receiver, Type.T_ANY,
+				Type.T_ANY, paramTypes);
+		Type.Method candidate = null;				
+		
+		List<Nominal<Type.Function>> targets = lookupFunction(nid.module(),nid.name()); 
+		
+		for (Nominal<Type.Function> nft : targets) {
+			Type.Function ft = nft.raw();
+			if(ft instanceof Type.Method) { 				
+				Type.Method mt = (Type.Method) ft; 
+				Type funrec = mt.receiver();	
+				if (receiver == funrec
+						|| (receiver != null && funrec != null && Type
+						.isImplicitCoerciveSubtype(receiver, funrec))) {					
+					// receivers match up OK ...				
+					if (mt.params().size() == paramTypes.size()						
+							&& paramSubtypes(mt, target)
+							&& (candidate == null || paramSubtypes(candidate,mt))) {					
+						candidate = mt;					
+					}
+				}
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {
+			String rec = "::";
+			if(receiver != null) {				
+				rec = receiver.toString() + "::";
+			}
+			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for(Nominal<Type.Function> nft : targets) {
+				rec = "";
+				Type.Function ft = (Type.Function) nft.nominal();
+				if(ft instanceof Type.Method) {
+					Type.Method mt = (Type.Method) ft;
+					if(mt.receiver() != null) {
+						rec = mt.receiver().toString();
+					}
+					rec = rec + "::";
+				}
+				if(firstTime) {
+					msg += "\n\tfound: " + rec + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + rec + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			throw new ResolveError(msg);			
+		}
+		
+		return candidate;
+	}
+	
+	private boolean paramSubtypes(Type.Function f1, Type.Function f2) {		
+		List<Type> f1_params = f1.params();
+		List<Type> f2_params = f2.params();
+		if(f1_params.size() == f2_params.size()) {
+			for(int i=0;i!=f1_params.size();++i) {
+				Type f1_param = f1_params.get(i);
+				Type f2_param = f2_params.get(i);				
+				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
+					return false;
+				}
+			}			
+			return true;
+		}
+		return false;
+	}
+	
+	private String parameterString(List<Type> paramTypes) {
+		String paramStr = "(";
+		boolean firstTime = true;
+		for(Type t : paramTypes) {
+			if(!firstTime) {
+				paramStr += ",";
+			}
+			firstTime=false;
+			paramStr += t;
+		}
+		return paramStr + ")";
+	}
+	
+	private List<Nominal<Type.Function>> lookupFunction(ModuleID mid,
+			String name) throws ResolveError {
+		WhileyFile wf = files.get(mid);
+		if (wf != null) {
+			List<Type.Function> nominals = wf.functionOrMethod(name);
+			ArrayList<Nominal<Type.Function>> r = new ArrayList();
+			for (Type.Function tf : nominals) {
+				r.add(new Nominal<Type.Function>(tf, (Type.Function) expand(tf)));
+			}
+			return r;
+		}
+
+		Module module = loader.loadModule(mid);
+		ArrayList<Nominal<Type.Function>> r = new ArrayList();
+		for (Module.Method f : module.method(name)) {
+			// FIXME: loss of nominal information here
+			r.add(new Nominal<Type.Function>(f.type(), f.type()));
+		}
+		return r;
+	}
+	
+	/**
+	 * The following method resolves a given type using a list of import
+	 * statements.
+	 * 
+	 * @param t
+	 * @param imports
+	 * @return
+	 * @throws ResolveError
+	 */
+	private Type resolve(UnresolvedType t, List<Import> imports) throws ResolveError {		
 		if (t instanceof UnresolvedType.Any) {
 			return Type.T_ANY;
 		} else if (t instanceof UnresolvedType.Void) {
@@ -311,108 +580,117 @@ public final class NameResolver {
 	}
 	
 	/**
-	 * This method takes a given import declaration, and expands it to find all
-	 * matching modules.
+	 * This method fully expands a given type.
 	 * 
-	 * @param imp
+	 * @param type
 	 * @return
 	 */
-	private List<ModuleID> matchImport(Import imp) {			
-		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
-		ArrayList<ModuleID> matches = importCache.get(key);
-		if(matches != null) {
-			// cache hit
-			return matches;
-		} else {					
-			// cache miss
-			matches = new ArrayList<ModuleID>();
-			for (PkgID pid : matchPackage(imp.pkg)) {
-				try {					
-					for(ModuleID mid : loader.loadPackage(pid)) {
-						if (imp.matchModule(mid.module())) {
-							matches.add(mid);
-						}
-					}					
-				} catch (ResolveError ex) {
-					// dead code
-				} 
+	public Type expand(Type type) throws ResolveError {				
+		if(type instanceof Type.Leaf && !(type instanceof Type.Nominal)) {
+			return type; // no expansion possible
+		}
+		Automaton automaton = Type.destruct(type);
+
+		// first, check whether it's actually worth doing anything
+		boolean hasNominal = false;
+		for(Automaton.State state : automaton.states) {
+			if(state.kind == Type.K_NOMINAL) {
+				hasNominal = true;
+				break;
 			}
-			importCache.put(key, matches);
+		}		
+		if(hasNominal) {		
+			// ok, possibility of expansion exists
+			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
+			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
+			expand(0,automaton,roots,states);
+			automaton = new Automaton(states);
+			return Type.construct(automaton);
+		} else {
+			return type;
 		}
-		return matches;
 	}
-	
-	/**
-	 * Provides basic information regarding what names are defined within a
-	 * module. It represents the minimal knowledge regarding a module that we
-	 * can have. Skeletons are used early on in the compilation process to help
-	 * with name resolution.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public abstract static class Skeleton {
-		protected final ModuleID mid;
 
-		public Skeleton(ModuleID mid) {
-			this.mid = mid;
-		}
+	private int expand(int index, Automaton automaton,
+			HashMap<NameID, Integer> roots, ArrayList<Automaton.State> states)
+			throws ResolveError {
 		
-		public ModuleID id() {
-			return mid;
+		Automaton.State state = automaton.states[index];
+		int kind = state.kind;
+		
+		if(kind == Type.K_NOMINAL) {
+			NameID key = (NameID) state.data;
+			return expand(key,roots,states);
+		} else {
+			int myIndex = states.size();			
+			states.add(null);
+			int[] ochildren = state.children;
+			int[] nchildren = new int[ochildren.length];
+			for(int i=0;i!=ochildren.length;++i) {
+				nchildren[i] = expand(ochildren[i],automaton,roots,states);
+			}
+			boolean deterministic = kind != Type.K_UNION;		
+			Automaton.State myState = new Automaton.State(kind,state.data,deterministic,nchildren);
+			states.set(myIndex,myState);
+			return myIndex;
 		}
-
-		public abstract boolean hasName(String name);
 	}
-	
 
-	/**
-	 * This method attempts to load a whiley module skeleton. A skeleton
-	 * provides signature information about a module. For example, the signature
-	 * of all methods. However, a skeleton does not provide access to a methods
-	 * body. The skeleton is looked up in the internal skeleton table. If not
-	 * found there, then the WHILEYPATH is searched. A resolve error is thrown
-	 * if the module cannot be found or otherwise loaded.
-	 * 
-	 * @param module
-	 *            The module skeleton to load
-	 * @return the loaded module
-	 */
-	public Skeleton loadSkeleton(ModuleID mid) throws ResolveError {
-		Skeleton skeleton = skeletontable.get(mid);
-		if(skeleton != null) {
-			return skeleton;
+	private int expand(NameID key, HashMap<NameID, Integer> roots,
+			ArrayList<Automaton.State> states) throws ResolveError {
+		
+		// First, check the various caches we have
+		Integer root = roots.get(key);			
+		if (root != null) { return root; } 		
+		
+		// check whether this type is external or not
+		WhileyFile wf = files.get(key.module());
+		if (wf == null) {						
+			// indicates a non-local key which we can resolve immediately			
+			Module mi = loader.loadModule(key.module());
+			Module.TypeDef td = mi.type(key.name());	
+			return append(td.type(),states);			
+		} 
+		
+		Type type = wf.type(key.name());
+		if(type == null) {
+			// FIXME: need a better error message!
+			throw new ResolveError("type not present in module: " + key.name());
 		}
+		
+		// following is needed to terminate any recursion
+		roots.put(key, states.size());
 
-		// Couldn't find a registerd skeleton. This does not immediately signal
-		// a problem, since it could be that the module is not one currently
-		// being compiled. Rather, it's a module found somewhere on the
-		// WHILEYPATH. Therefore, attempt to load that module via the module
-		// loader.
+		// now, expand the given type fully			
+		if(type instanceof Type.Leaf) {
+			// to avoid unnecessarily creating an array of size one
+			int myIndex = states.size();
+			int kind = Type.leafKind((Type.Leaf)type);			
+			Object data = Type.leafData((Type.Leaf)type);
+			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
+			return myIndex;
+		} else {
+			return expand(0, Type.destruct(type), roots, states);
+		}
 		
-		final Module module = loader.loadModule(mid);
-		
-		return new Skeleton(mid) {
-			public boolean hasName(String name) {
-				return module.hasName(name);
-			}			
-		};
-		
+		// TODO: performance can be improved here, but actually assigning the
+		// constructed type into a cache of previously expanded types cache.
+		// This is challenging, in the case that the type may not be complete at
+		// this point. In particular, if it contains any back-links above this
+		// index there could be an issue.
 	}	
-	/**
-	 * This method takes a given package id from an import declaration, and
-	 * expands it to find all matching packages. Note, the package id may
-	 * contain various wildcard characters to match multiple actual packages.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	private List<PkgID> matchPackage(PkgID pkg) {
-		ArrayList<PkgID> matches = new ArrayList<PkgID>();
-		try {
-			loader.resolvePackage(pkg);
-			matches.add(pkg);
-		} catch(ResolveError er) {}
-		return matches;
+		
+	private static int append(Type type, ArrayList<Automaton.State> states) {
+		int myIndex = states.size();
+		Automaton automaton = Type.destruct(type);
+		Automaton.State[] tStates = automaton.states;
+		int[] rmap = new int[tStates.length];
+		for (int i = 0, j = myIndex; i != rmap.length; ++i, ++j) {
+			rmap[i] = j;
+		}
+		for (Automaton.State state : tStates) {
+			states.add(Automata.remap(state, rmap));
+		}
+		return myIndex;
 	}
 }

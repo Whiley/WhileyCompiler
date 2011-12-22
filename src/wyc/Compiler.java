@@ -82,14 +82,12 @@ import wyc.stages.*;
 public final class Compiler implements Logger {		
 	private ModuleLoader loader;	
 	private NameResolver nameResolver;
-	private TypeResolver nameExpander;
 	private ArrayList<Transform> stages;
 
 	public Compiler(ModuleLoader loader, List<Transform> stages) {
 		this.loader = loader;
 		this.stages = new ArrayList<Transform>(stages);
-		nameResolver = new NameResolver(loader);
-		nameExpander = new TypeResolver(loader);
+		nameResolver = new NameResolver(loader);		
 	}
 	
 	/**
@@ -165,7 +163,7 @@ public final class Compiler implements Logger {
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		
 		WhileyFile wf = wfr.read();
-		nameResolver.register(wf.skeleton());		
+		nameResolver.register(wf);		
 		return wf;
 	}		
 	
@@ -228,19 +226,6 @@ public final class Compiler implements Logger {
 		return r;
 	}
 	
-	private void resolveNames(WhileyFile wf) {
-		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();		
-		long memory = runtime.freeMemory();				
-		TypeResolver.Skeleton skeleton = new NameResolution(nameResolver).resolve(wf);
-		
-		logTimedMessage("[" + wf.filename + "] resolved names",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());
-		
-		nameExpander.register(skeleton);
-		
-	}
-	
 	private void expandConstants(List<WhileyFile> files) {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
@@ -255,7 +240,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
-		new TypePropagation(loader, nameResolver, nameExpander).propagate(wf);
+		new TypePropagation(loader, nameResolver).propagate(wf);
 		Module m = new CodeGeneration(loader).generate(wf);		
 		logTimedMessage("[" + wf.filename + "] generated wyil module",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());

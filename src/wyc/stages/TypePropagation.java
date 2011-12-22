@@ -119,12 +119,11 @@ import static wyil.util.SyntaxError.*;
 public final class TypePropagation {
 	private final ModuleLoader loader;
 	private final NameResolver resolver;
-	private final TypeResolver expander;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunDecl method;
 	
-	public TypePropagation(ModuleLoader loader, NameResolver resolver, TypeResolver expander) {
+	public TypePropagation(ModuleLoader loader, NameResolver resolver) {
 		this.loader = loader;
 		this.expander = expander;
 		this.resolver = resolver;
@@ -189,7 +188,7 @@ public final class TypePropagation {
 		
 		int i=0;
 		for (WhileyFile.Parameter p : fd.parameters) {						
-			environment = environment.put(p.name,expand(paramTypes.get(i++)));
+			environment = environment.put(p.name,resolver.resolveAsType(p.type,imports));
 		}
 		
 		if(fd instanceof MethDecl) {
@@ -197,7 +196,7 @@ public final class TypePropagation {
 			Type.Method mt = (Type.Method) type;
 			// check that we're not a headless method
 			if(mt.receiver() != null) {
-				environment = environment.put("this",expand(mt.receiver()));
+				environment = environment.put("this",resolver.resolveAsType(md.receiver,imports));
 			}
 		}
 		
@@ -929,7 +928,7 @@ public final class TypePropagation {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Type.Function funType = expander.bindFunctionOrMethod(name,  rawParamTypes);	
+			Type.Function funType = resolver.bindFunctionOrMethod(name,  rawParamTypes);	
 			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 			// FIXME: loss of nominal information here
 			r.nominalReturnType = funType.ret();
@@ -944,7 +943,7 @@ public final class TypePropagation {
 				// FIXME: perform better namespace look up here, by exploiting
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Method methType = expander.bindMessage(nid,  rawRecType, rawParamTypes);
+				Type.Method methType = resolver.bindMessage(nid,  rawRecType, rawParamTypes);
 				Expr.MessageSend r = new Expr.MessageSend(nid, receiver, exprArgs, expr.synchronous, expr.attributes());
 				// FIXME: loss of nominal information here
 				r.nominalReturnType = methType.ret();
@@ -954,7 +953,7 @@ public final class TypePropagation {
 				// FIXME: perform better namespace look up here, by exploiting
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Function funType = expander.bindFunctionOrMethod(nid,  rawParamTypes);
+				Type.Function funType = resolver.bindFunctionOrMethod(nid,  rawParamTypes);
 				Expr.AbstractInvoke<Expr.ModuleAccess> r;
 				if(funType instanceof Type.Method) {
 					r = new Expr.MethodCall(nid, null, exprArgs, expr.attributes());					
@@ -975,7 +974,7 @@ public final class TypePropagation {
 		expr.src = propagate(expr.src,environment,imports);
 		expr.index = propagate(expr.index,environment,imports);		
 		Type src = expr.src.nominalType();		
-		Type srcExpanded = expander.expand(src);
+		Type srcExpanded = resolver.expand(src);
 				
 		// First, check whether this is still only an abstract access and, in
 		// such case, upgrade it to the appropriate access expression.
@@ -1027,7 +1026,7 @@ public final class TypePropagation {
 			ArrayList<Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);			
 		Type src = expr.src.nominalType();		
-		Type srcExpanded = expander.expand(src);
+		Type srcExpanded = resolver.expand(src);
 	
 		// First, check whether this is still only an abstract access and, in
 				// such case, upgrade it to the appropriate access expression.
@@ -1104,7 +1103,7 @@ public final class TypePropagation {
 				NameID nid = resolver.resolveAsName(expr.var, imports);
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
-				ca.value = expander.constant(nid);
+				ca.value = resolver.resolveAsConstant(nid);
 				return ca;
 			} catch (ResolveError err) {
 			}
@@ -1294,11 +1293,11 @@ public final class TypePropagation {
 		} else if(src instanceof Expr.ModuleAccess) {
 			// must be a constant access
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 
-			try {								
-				NameResolver.Skeleton skeleton = resolver.loadSkeleton(ma.mid);
-				if (skeleton.hasName(expr.name)) {
-					Expr.ConstantAccess ca = new Expr.ConstantAccess(ma, expr.name, new NameID(
-							ma.mid, expr.name), expr.attributes());
+			try {												
+				NameID nid = new NameID(ma.mid,expr.name);
+				if (resolver.isName(nid)) {
+					Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
+							expr.name, nid, expr.attributes());
 					// FIXME: there is definitely a bug here, as we need to initialise the value.
 					// ca.value = ?
 					return ca;
@@ -1345,8 +1344,9 @@ public final class TypePropagation {
 	private Expr propagate(Expr.TypeVal expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
-		expr.nominalType = resolver.resolve(expr.unresolvedType, imports);
-		expr.rawType = expander.expand(expr.nominalType);
+		Nominal<Type> type = resolver.resolveAsType(expr.unresolvedType, imports); 
+		expr.nominalType = type.nominal();
+		expr.rawType = type.raw();
 		return expr;
 	}
 	
@@ -1479,9 +1479,5 @@ public final class TypePropagation {
 		}
 		
 		return result;
-	}
-	
-	private Nominal<Type> expand(Type nominalType) throws ResolveError {
-		return new Nominal<Type>(nominalType,expander.expand(nominalType));
-	}
+	}	
 }
