@@ -31,8 +31,6 @@ import static wyil.util.ErrorMessages.*;
 import java.util.*;
 
 import wyc.NameResolver;
-import wyc.TypeResolver;
-import wyc.TypeResolver.Skeleton;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.Nominal;
