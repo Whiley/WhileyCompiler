@@ -108,7 +108,7 @@ public final class NameResolution {
 	
 	private Type resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
 		try {
-			Type type = resolve(td.unresolvedType, imports, resolver); 
+			Type type = resolver.resolve(td.unresolvedType, imports); 
 			td.nominalType = type;			
 			return type;
 		} catch (ResolveError e) {												
@@ -126,7 +126,7 @@ public final class NameResolution {
 		ArrayList<Type> parameters = new ArrayList<Type>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			try {
-				Type type = resolve(p.type, imports, resolver);				
+				Type type = resolver.resolve(p.type, imports);				
 				parameters.add(type);
 				environment.put(p.name(),Collections.EMPTY_SET);
 			} catch (ResolveError e) {												
@@ -146,8 +146,8 @@ public final class NameResolution {
 		Type ret;
 		Type throwsClause;
 		try {
-			ret = resolve(fd.ret, imports, resolver);			
-			throwsClause = resolve(fd.throwType, imports, resolver);
+			ret = resolver.resolve(fd.ret, imports);			
+			throwsClause = resolver.resolve(fd.throwType, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
 			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), filename,
@@ -162,7 +162,7 @@ public final class NameResolution {
 			// check whether this is a headless method or not
 			if(md.receiver != null) {
 				try {			
-					receiver = resolve(md.receiver, imports, resolver);			
+					receiver = resolver.resolve(md.receiver, imports);			
 				} catch (ResolveError e) {
 					// Ok, we've hit a resolution error.
 					syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
@@ -218,103 +218,7 @@ public final class NameResolution {
 			// must be a standard record lookup
 			return new Expr.RecordAccess(lhs,sg.name,sg.attributes());
 		}			
-	}
-	
-	public static Type resolve(UnresolvedType t, ArrayList<Import> imports,
-			NameResolver resolver) throws ResolveError {		
-		if (t instanceof UnresolvedType.Any) {
-			return Type.T_ANY;
-		} else if (t instanceof UnresolvedType.Void) {
-			return Type.T_VOID;
-		} else if (t instanceof UnresolvedType.Null) {
-			return Type.T_NULL;
-		} else if (t instanceof UnresolvedType.Bool) {
-			return Type.T_BOOL;
-		} else if (t instanceof UnresolvedType.Byte) {
-			return Type.T_BYTE;
-		} else if (t instanceof UnresolvedType.Char) {
-			return Type.T_CHAR;
-		} else if (t instanceof UnresolvedType.Int) {
-			return Type.T_INT;
-		} else if (t instanceof UnresolvedType.Real) {
-			return Type.T_REAL;
-		} else if (t instanceof UnresolvedType.Strung) {
-			return Type.T_STRING;
-		} else if(t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
-			Type element = resolve(lt.element,imports,resolver);
-			return Type.List(element,false);
-		} else if(t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			Type element = resolve(st.element,imports,resolver);
-			return Type.Set(element,false);
-		} else if(t instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
-			Type key = resolve(st.key,imports,resolver);
-			Type value = resolve(st.value,imports,resolver);
-			return Type.Dictionary(key,value);
-		} else if(t instanceof UnresolvedType.Record) {
-			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String,Type> fields = new HashMap<String,Type>();
-			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {				
-				Type type = resolve(e.getValue(),imports,resolver);
-				fields.put(e.getKey(), type);
-			}
-			return Type.Record(tt.isOpen,fields);
-		} else if(t instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			ArrayList<Type> types = new ArrayList<Type>();
-			for(UnresolvedType e : tt.types) {
-				Type type = resolve(e,imports,resolver);
-				types.add(type);
-			}
-			return Type.Tuple(types);
-		} else if(t instanceof UnresolvedType.Nominal) {
-			// This case corresponds to a user-defined type. This will be
-			// defined in some module (possibly ours), and we need to identify
-			// what module that is here, and save it for future use.
-			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;						
-			NameID nid = resolver.resolveAsName(dt.names, imports);			
-			return Type.Nominal(nid);
-		} else if(t instanceof UnresolvedType.Not) {	
-			UnresolvedType.Not ut = (UnresolvedType.Not) t;
-			Type type = resolve(ut.element,imports,resolver);
-			return Type.Negation(type);
-		} else if(t instanceof UnresolvedType.Union) {
-			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			ArrayList<Type> bounds = new ArrayList<Type>();
-			for(UnresolvedType b : ut.bounds) {
-				Type bound = resolve(b,imports,resolver);
-				bounds.add(bound);
-			}
-			return Type.Union(bounds);
-		} else if(t instanceof UnresolvedType.Intersection) {
-			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
-			for(UnresolvedType b : ut.bounds) {
-				resolve(b,imports,resolver);
-			}
-			throw new RuntimeException("CANNOT COPE WITH INTERSECTIONS!");
-		} else if(t instanceof UnresolvedType.Process) {	
-			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Type type = resolve(ut.element,imports,resolver);
-			return Type.Process(type);
-		} else {	
-			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;
-			Type ret = resolve(ut.ret,imports,resolver);			
-			
-			ArrayList<Type> params = new ArrayList<Type>();
-			for(UnresolvedType p : ut.paramTypes) {
-				params.add(resolve(p,imports,resolver));
-			}
-			
-			if(ut.receiver != null) {
-				Type receiver = resolve(ut.receiver,imports,resolver);
-				return Type.Method(receiver, ret, Type.T_VOID, params);
-			} else {
-				return Type.Function(ret, Type.T_VOID, params);
-			}
-		} 
-	}
+	}	
 	
 	private <T extends Type> T checkType(Type t, Class<T> clazz,
 			SyntacticElement elem) {		

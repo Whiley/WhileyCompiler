@@ -27,6 +27,7 @@ package wyc;
 
 import java.util.*;
 
+import wyc.lang.UnresolvedType;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
@@ -203,6 +204,110 @@ public final class NameResolver {
 		}
 				
 		throw new ResolveError("module not found: " + name);
+	}
+	
+	/**
+	 * Resolve a given type by identifiying all unknown names and replacing them
+	 * with nominal types.
+	 * 
+	 * @param t
+	 * @param imports
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Type resolve(UnresolvedType t, List<Import> imports) throws ResolveError {		
+		if (t instanceof UnresolvedType.Any) {
+			return Type.T_ANY;
+		} else if (t instanceof UnresolvedType.Void) {
+			return Type.T_VOID;
+		} else if (t instanceof UnresolvedType.Null) {
+			return Type.T_NULL;
+		} else if (t instanceof UnresolvedType.Bool) {
+			return Type.T_BOOL;
+		} else if (t instanceof UnresolvedType.Byte) {
+			return Type.T_BYTE;
+		} else if (t instanceof UnresolvedType.Char) {
+			return Type.T_CHAR;
+		} else if (t instanceof UnresolvedType.Int) {
+			return Type.T_INT;
+		} else if (t instanceof UnresolvedType.Real) {
+			return Type.T_REAL;
+		} else if (t instanceof UnresolvedType.Strung) {
+			return Type.T_STRING;
+		} else if(t instanceof UnresolvedType.List) {
+			UnresolvedType.List lt = (UnresolvedType.List) t;
+			Type element = resolve(lt.element,imports);
+			return Type.List(element,false);
+		} else if(t instanceof UnresolvedType.Set) {
+			UnresolvedType.Set st = (UnresolvedType.Set) t;
+			Type element = resolve(st.element,imports);
+			return Type.Set(element,false);
+		} else if(t instanceof UnresolvedType.Dictionary) {
+			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
+			Type key = resolve(st.key,imports);
+			Type value = resolve(st.value,imports);
+			return Type.Dictionary(key,value);
+		} else if(t instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) t;
+			HashMap<String,Type> fields = new HashMap<String,Type>();
+			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {				
+				Type type = resolve(e.getValue(),imports);
+				fields.put(e.getKey(), type);
+			}
+			return Type.Record(tt.isOpen,fields);
+		} else if(t instanceof UnresolvedType.Tuple) {
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			ArrayList<Type> types = new ArrayList<Type>();
+			for(UnresolvedType e : tt.types) {
+				Type type = resolve(e,imports);
+				types.add(type);
+			}
+			return Type.Tuple(types);
+		} else if(t instanceof UnresolvedType.Nominal) {
+			// This case corresponds to a user-defined type. This will be
+			// defined in some module (possibly ours), and we need to identify
+			// what module that is here, and save it for future use.
+			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;						
+			NameID nid = resolveAsName(dt.names, imports);			
+			return Type.Nominal(nid);
+		} else if(t instanceof UnresolvedType.Not) {	
+			UnresolvedType.Not ut = (UnresolvedType.Not) t;
+			Type type = resolve(ut.element,imports);
+			return Type.Negation(type);
+		} else if(t instanceof UnresolvedType.Union) {
+			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			ArrayList<Type> bounds = new ArrayList<Type>();
+			for(UnresolvedType b : ut.bounds) {
+				Type bound = resolve(b,imports);
+				bounds.add(bound);
+			}
+			return Type.Union(bounds);
+		} else if(t instanceof UnresolvedType.Intersection) {
+			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
+			for(UnresolvedType b : ut.bounds) {
+				resolve(b,imports);
+			}
+			throw new RuntimeException("CANNOT COPE WITH INTERSECTIONS!");
+		} else if(t instanceof UnresolvedType.Process) {	
+			UnresolvedType.Process ut = (UnresolvedType.Process) t;
+			Type type = resolve(ut.element,imports);
+			return Type.Process(type);
+		} else {	
+			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;
+			Type ret = resolve(ut.ret,imports);			
+			
+			ArrayList<Type> params = new ArrayList<Type>();
+			for(UnresolvedType p : ut.paramTypes) {
+				params.add(resolve(p,imports));
+			}
+			
+			if(ut.receiver != null) {
+				Type receiver = resolve(ut.receiver,imports);
+				return Type.Method(receiver, ret, Type.T_VOID, params);
+			} else {
+				return Type.Function(ret, Type.T_VOID, params);
+			}
+		} 
 	}
 	
 	/**

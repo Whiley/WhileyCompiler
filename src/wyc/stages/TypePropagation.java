@@ -883,8 +883,9 @@ public final class TypePropagation {
 	private Expr propagate(Expr.Convert c,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<Import> imports) throws ResolveError {
-		c.expr = propagate(c.expr,environment,imports);
-		Type from = c.expr.rawType();
+		c.expr = propagate(c.expr,environment,imports);		
+		c.nominalType = resolver.resolve(c.unresolvedType, imports);
+		Type from = c.expr.rawType();		
 		Type to = expander.expand(c.nominalType);
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), filename, c);
