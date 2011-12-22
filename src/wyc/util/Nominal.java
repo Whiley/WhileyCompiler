@@ -1,6 +1,7 @@
-package wyil.util;
+package wyc.util;
 
 import wyil.lang.Type;
+import wyil.util.Pair;
 
 /**
  * A type pair is used to simplify the problem of dealing with nominal and raw

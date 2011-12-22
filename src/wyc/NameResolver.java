@@ -30,6 +30,7 @@ import java.util.*;
 import wyautl.lang.*;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
+import wyc.util.Nominal;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
