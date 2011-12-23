@@ -57,48 +57,51 @@ public interface UnresolvedType extends SyntacticElement {
 	 */
 	public interface NonUnion extends UnresolvedType {
 	}
+	public interface Primitive extends UnresolvedType {
+		
+	}
 	
-	public static final class Any extends SyntacticElement.Impl implements NonUnion {
+	public static final class Any extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Any(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Void extends SyntacticElement.Impl implements NonUnion {
+	public static final class Void extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Void(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Null extends SyntacticElement.Impl implements NonUnion {
+	public static final class Null extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Null(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Bool extends SyntacticElement.Impl implements NonUnion {
+	public static final class Bool extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Bool(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Byte extends SyntacticElement.Impl implements NonUnion {
+	public static final class Byte extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Byte(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Char extends SyntacticElement.Impl implements NonUnion {
+	public static final class Char extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Char(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Int extends SyntacticElement.Impl implements NonUnion {
+	public static final class Int extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Int(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Real extends SyntacticElement.Impl implements NonUnion {
+	public static final class Real extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Real(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Strung extends SyntacticElement.Impl implements NonUnion {
+	public static final class Strung extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Strung(Attribute... attributes) {
 			super(attributes);
 		}		
@@ -193,18 +196,25 @@ public interface UnresolvedType extends SyntacticElement {
 			this.types = new ArrayList<UnresolvedType>(types);
 		}
 	}
-	public static final class Fun extends SyntacticElement.Impl
+	public static class Fun extends SyntacticElement.Impl
 	implements NonUnion {
 		public final UnresolvedType ret;
-		public final UnresolvedType receiver;
 		public final ArrayList<UnresolvedType> paramTypes;
 
-		public Fun(UnresolvedType ret, UnresolvedType receiver, Collection<UnresolvedType> paramTypes,
+		public Fun(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
 				Attribute... attributes) {
 			super(attributes);
 			this.ret = ret;
-			this.receiver = receiver;
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+		}
+	}
+	public static final class Meth extends Fun {		
+		public final UnresolvedType receiver;		
+
+		public Meth(UnresolvedType ret, UnresolvedType receiver, Collection<UnresolvedType> paramTypes,
+				Attribute... attributes) {
+			super(ret,paramTypes,attributes);			
+			this.receiver = receiver;			
 		}
 	}
 }

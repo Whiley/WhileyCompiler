@@ -54,14 +54,17 @@ public final class WhileyFile {
 	}
 	
 	public boolean hasName(String name) {
-		// FIXME: improve performance!
+		return declaration(name) != null;
+	}			
+
+	public Decl declaration(String name) {
 		for(Decl d : declarations) {
 			if(d.name().equals(name)) {
-				return true;
+				return d;
 			}
 		}
-		return false;
-	}			
+		return null;
+	}
 	
 	public interface Decl extends SyntacticElement {
 		public String name();

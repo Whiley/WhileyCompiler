@@ -248,28 +248,13 @@ public final class NameResolver {
 	 * @throws ResolveError
 	 */
 	public Nominal<Type> resolveAsType(UnresolvedType t, List<Import> imports) throws ResolveError {		
-		Type nominalType = resolve(t,imports);
-		Type rawType = expand(nominalType);
+		Type nominalType = resolveAsType(t,imports,true);
+		Type rawType = resolveAsType(t,imports,false);
 		return new Nominal<Type>(nominalType,rawType);
 	}
 	
 	public Value resolveAsConstant(NameID nid) throws ResolveError {				
-		WhileyFile wf = files.get(nid.module());
-		if (wf != null) {			
-			Value v = wf.constant(nid.name());
-			if(v != null) {
-				return v;
-			} else {				
-				throw new ResolveError("unable to find constant " + nid);
-			}
-		}		
-		Module module = loader.loadModule(nid.module());
-		Module.ConstDef cd = module.constant(nid.name());
-		if(cd != null) {
-			return cd.constant();
-		} else {
-			throw new ResolveError("unable to find constant " + nid);
-		}
+		return resolveAsConstant(nid,null);		
 	}
 	
 	/**
@@ -488,6 +473,39 @@ public final class NameResolver {
 		return r;
 	}
 	
+	private Type resolveAsType(UnresolvedType t, List<Import> imports,
+			boolean nominal) throws ResolveError {
+		if(t instanceof UnresolvedType.Primitive) { 
+			if (t instanceof UnresolvedType.Any) {
+				return Type.T_ANY;
+			} else if (t instanceof UnresolvedType.Void) {
+				return Type.T_VOID;
+			} else if (t instanceof UnresolvedType.Null) {
+				return Type.T_NULL;
+			} else if (t instanceof UnresolvedType.Bool) {
+				return Type.T_BOOL;
+			} else if (t instanceof UnresolvedType.Byte) {
+				return Type.T_BYTE;
+			} else if (t instanceof UnresolvedType.Char) {
+				return Type.T_CHAR;
+			} else if (t instanceof UnresolvedType.Int) {
+				return Type.T_INT;
+			} else if (t instanceof UnresolvedType.Real) {
+				return Type.T_REAL;
+			} else if (t instanceof UnresolvedType.Strung) {
+				return Type.T_STRING;
+			} else {
+				throw new ResolveError("unrecognised type encountered ("
+						+ t.getClass().getName() + ")");
+			}
+		} else {
+			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
+			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
+			resolveAsType(t,imports,states,roots,nominal);
+			return Type.construct(new Automaton(states));
+		}
+	}
+	
 	/**
 	 * The following method resolves a given type using a list of import
 	 * statements.
@@ -497,99 +515,161 @@ public final class NameResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	private Type resolve(UnresolvedType t, List<Import> imports) throws ResolveError {		
-		if (t instanceof UnresolvedType.Any) {
-			return Type.T_ANY;
-		} else if (t instanceof UnresolvedType.Void) {
-			return Type.T_VOID;
-		} else if (t instanceof UnresolvedType.Null) {
-			return Type.T_NULL;
-		} else if (t instanceof UnresolvedType.Bool) {
-			return Type.T_BOOL;
-		} else if (t instanceof UnresolvedType.Byte) {
-			return Type.T_BYTE;
-		} else if (t instanceof UnresolvedType.Char) {
-			return Type.T_CHAR;
-		} else if (t instanceof UnresolvedType.Int) {
-			return Type.T_INT;
-		} else if (t instanceof UnresolvedType.Real) {
-			return Type.T_REAL;
-		} else if (t instanceof UnresolvedType.Strung) {
-			return Type.T_STRING;
-		} else if(t instanceof UnresolvedType.List) {
+	private int resolveAsType(UnresolvedType t, List<Import> imports,
+			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
+			boolean nominal) throws ResolveError {				
+		if(t instanceof UnresolvedType.Primitive) {
+			return resolveAsType((UnresolvedType.Primitive)t,imports,states);
+		} 
+		
+		int myIndex = states.size();
+		int myKind;
+		int[] myChildren;
+		Object myData = null;
+		boolean myDeterministic = true;
+		
+		states.add(null); // reserve space for me
+		
+		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
-			Type element = resolve(lt.element,imports);
-			return Type.List(element,false);
+			myKind = Type.K_LIST;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(lt.element,imports,states,roots,nominal);
+			myData = false;
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			Type element = resolve(st.element,imports);
-			return Type.Set(element,false);
+			myKind = Type.K_SET;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(st.element,imports,states,roots,nominal);
+			myData = false;
 		} else if(t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
-			Type key = resolve(st.key,imports);
-			Type value = resolve(st.value,imports);
-			return Type.Dictionary(key,value);
+			myKind = Type.K_DICTIONARY;
+			myChildren = new int[2];
+			myChildren[0] = resolveAsType(st.key,imports,states,roots,nominal);
+			myChildren[1] = resolveAsType(st.value,imports,states,roots,nominal);			
 		} else if(t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String,Type> fields = new HashMap<String,Type>();
-			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {				
-				Type type = resolve(e.getValue(),imports);
-				fields.put(e.getKey(), type);
-			}
-			return Type.Record(tt.isOpen,fields);
+			HashMap<String,UnresolvedType> ttTypes = tt.types;
+			Type.Record.State fields = new Type.Record.State(tt.isOpen,ttTypes.keySet());
+			Collections.sort(fields);			
+			myKind = Type.K_RECORD;
+			myChildren = new int[fields.size()];
+			for(int i=0;i!=fields.size();++i) {	
+				String field = fields.get(i);
+				myChildren[i] = resolveAsType(ttTypes.get(field),imports,states,roots,nominal);
+			}			
+			myData = fields;
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			ArrayList<Type> types = new ArrayList<Type>();
-			for(UnresolvedType e : tt.types) {
-				Type type = resolve(e,imports);
-				types.add(type);
-			}
-			return Type.Tuple(types);
+			ArrayList<UnresolvedType> ttTypes = tt.types;
+			myKind = Type.K_TUPLE;
+			myChildren = new int[ttTypes.size()];
+			for(int i=0;i!=ttTypes.size();++i) {
+				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,nominal);
+				
+			}			
 		} else if(t instanceof UnresolvedType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
 			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;						
-			NameID nid = resolveAsName(dt.names, imports);			
-			return Type.Nominal(nid);
+			NameID nid = resolveAsName(dt.names, imports);
+			if(nominal) {
+				myKind = Type.K_NOMINAL;
+				myData = nid;
+				myChildren = Automaton.NOCHILDREN;
+			} else {
+				resolveAsType(nid,imports,states,roots,false);
+				return myIndex;
+			}
 		} else if(t instanceof UnresolvedType.Not) {	
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
-			Type type = resolve(ut.element,imports);
-			return Type.Negation(type);
+			myKind = Type.K_NEGATION;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);			
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			ArrayList<Type> bounds = new ArrayList<Type>();
-			for(UnresolvedType b : ut.bounds) {
-				Type bound = resolve(b,imports);
-				bounds.add(bound);
-			}
-			return Type.Union(bounds);
-		} else if(t instanceof UnresolvedType.Intersection) {
-			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
-			for(UnresolvedType b : ut.bounds) {
-				resolve(b,imports);
-			}
-			throw new RuntimeException("CANNOT COPE WITH INTERSECTIONS!");
+			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
+			myKind = Type.K_UNION;
+			myChildren = new int[utTypes.size()];
+			for(int i=0;i!=utTypes.size();++i) {
+				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);
+				
+			}	
+			myDeterministic = false;
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Type type = resolve(ut.element,imports);
-			return Type.Process(type);
+			myKind = Type.K_PROCESS;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
 		} else {	
-			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;
-			Type ret = resolve(ut.ret,imports);			
+			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
+			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
+			UnresolvedType receiver = null;
+			int start = 0;
 			
-			ArrayList<Type> params = new ArrayList<Type>();
-			for(UnresolvedType p : ut.paramTypes) {
-				params.add(resolve(p,imports));
-			}
-			
-			if(ut.receiver != null) {
-				Type receiver = resolve(ut.receiver,imports);
-				return Type.Method(receiver, ret, Type.T_VOID, params);
+			if(ut instanceof UnresolvedType.Meth) {
+				UnresolvedType.Meth mt = (UnresolvedType.Meth) ut;
+				receiver = mt.receiver;
+				if(receiver == null) {
+					myKind = Type.K_HEADLESS;
+				} else {
+					myKind = Type.K_METHOD;
+					start++;
+				}
 			} else {
-				return Type.Function(ret, Type.T_VOID, params);
+				myKind = Type.K_FUNCTION;
 			}
-		} 
+			
+			myChildren = new int[start + 2 + utParamTypes.size()];
+			
+			if(receiver != null) {
+				myChildren[0] = resolveAsType(receiver,imports,states,roots,nominal);
+			}			
+			myChildren[start++] = resolveAsType(ut.ret,imports,states,roots,nominal);
+			// FIXME: following is a hack since UnresolvedType.Fun doesn't include a throws clause
+			myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,nominal);						
+			for(UnresolvedType pt : utParamTypes) {
+				myChildren[start++] = resolveAsType(pt,imports,states,roots,nominal);				
+			}						
+		}
+		
+		states.set(myIndex,new Automaton.State(myKind,myData,myDeterministic,myChildren));
+		
+		return myIndex;
+	}
+	
+	private int resolveAsType(UnresolvedType.Primitive t,
+			List<Import> imports, ArrayList<Automaton.State> states)
+			throws ResolveError {
+		int myIndex = states.size();
+		int kind;
+		if (t instanceof UnresolvedType.Any) {
+			kind = Type.K_ANY;
+		} else if (t instanceof UnresolvedType.Void) {
+			kind = Type.K_VOID;
+		} else if (t instanceof UnresolvedType.Null) {
+			kind = Type.K_NULL;
+		} else if (t instanceof UnresolvedType.Bool) {
+			kind = Type.K_BOOL;
+		} else if (t instanceof UnresolvedType.Byte) {
+			kind = Type.K_BYTE;
+		} else if (t instanceof UnresolvedType.Char) {
+			kind = Type.K_CHAR;
+		} else if (t instanceof UnresolvedType.Int) {
+			kind = Type.K_INT;
+		} else if (t instanceof UnresolvedType.Real) {
+			kind = Type.K_RATIONAL;
+		} else if (t instanceof UnresolvedType.Strung) {
+			kind = Type.K_STRING;
+		} else {		
+			throw new ResolveError("unrecognised type encountered ("
+					+ t.getClass().getName() + ")");
+		}
+		states.add(new Automaton.State(kind, null, true,
+				Automaton.NOCHILDREN));
+		return myIndex;
 	}
 	
 	/**
@@ -723,31 +803,29 @@ public final class NameResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	private Value expandConstant(NameID key, HashMap<NameID, Expr> exprs,
-			HashSet<NameID> visited) throws ResolveError {
-		Expr e = exprs.get(key);
-		Value value = constants.get(key);
-		if (value != null) {
-			return value;
-		} else if (!modules.contains(key.module())) {
-			// indicates a non-local key			
-			Module mi = loader.loadModule(key.module());
-			return mi.constant(key.name()).constant();
-		} else if (visited.contains(key)) {
-			// this indicates a cyclic definition.
-			String errMsg = errorMessage(CYCLIC_CONSTANT_DECLARATION);
-			syntaxError(errMsg, filemap
-					.get(key).filename, exprs.get(key));
-		} else {
-			visited.add(key); // mark this node as visited
-		}
-
-		// At this point, we need to replace every unresolved variable with a
-		// constant definition.
-		Value v = expandConstantHelper(e, filemap.get(key).filename, exprs,
-				visited);
-		constants.put(key, v);
-		return v;
+	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {		
+		WhileyFile wf = files.get(key.module());
+		if (wf != null) {			
+			WhileyFile.Decl decl = wf.declaration(key.name());
+			if(decl instanceof WhileyFile.ConstDecl) {
+				WhileyFile.ConstDecl cd = (WhileyFile.ConstDecl) decl; 				
+				if (cd.value == null) {
+					cd.value = resolveAsConstant(cd.constant, wf.filename,
+							visited);
+				}
+				return cd.value;
+			} else {
+				throw new ResolveError("unable to find constant " + key);
+			}
+		} else {		
+			Module module = loader.loadModule(key.module());
+			Module.ConstDef cd = module.constant(key.name());
+			if(cd != null) {
+				return cd.constant();
+			} else {
+				throw new ResolveError("unable to find constant " + key);
+			}
+		}		
 	}
 
 	/**
@@ -765,36 +843,35 @@ public final class NameResolver {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 */
-	private Value expandConstantHelper(Expr expr, String filename,
-			HashMap<NameID, Expr> exprs, HashSet<NameID> visited)
+	private Value resolveAsConstant(Expr expr, String filename,HashSet<NameID> visited)
 			throws ResolveError {
 		if (expr instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) expr;
 			return c.value;
 		} else if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
-			Value lhs = expandConstantHelper(bop.lhs, filename, exprs, visited);
-			Value rhs = expandConstantHelper(bop.rhs, filename, exprs, visited);
+			Value lhs = resolveAsConstant(bop.lhs, filename, visited);
+			Value rhs = resolveAsConstant(bop.rhs, filename, visited);
 			return evaluate(bop, lhs, rhs, filename);			
 		} else if (expr instanceof Expr.Set) {
 			Expr.Set nop = (Expr.Set) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (Expr arg : nop.arguments) {
-				values.add(expandConstantHelper(arg, filename, exprs, visited));
+				values.add(resolveAsConstant(arg, filename, visited));
 			}			
 			return Value.V_SET(values);			
 		} else if (expr instanceof Expr.List) {
 			Expr.List nop = (Expr.List) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (Expr arg : nop.arguments) {
-				values.add(expandConstantHelper(arg, filename, exprs, visited));
+				values.add(resolveAsConstant(arg, filename, visited));
 			}			
 			return Value.V_LIST(values);			
 		} else if (expr instanceof Expr.Record) {
 			Expr.Record rg = (Expr.Record) expr;
 			HashMap<String,Value> values = new HashMap<String,Value>();
 			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
-				Value v = expandConstantHelper(e.getValue(),filename,exprs,visited);
+				Value v = resolveAsConstant(e.getValue(),filename,visited);
 				if(v == null) {
 					return null;
 				}
@@ -805,7 +882,7 @@ public final class NameResolver {
 			Expr.Tuple rg = (Expr.Tuple) expr;			
 			ArrayList<Value> values = new ArrayList<Value>();			
 			for(Expr e : rg.fields) {
-				Value v = expandConstantHelper(e,filename,exprs,visited);
+				Value v = resolveAsConstant(e,filename,visited);
 				if(v == null) {
 					return null;
 				}
@@ -816,8 +893,8 @@ public final class NameResolver {
 			Expr.Dictionary rg = (Expr.Dictionary) expr;			
 			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 			for(Pair<Expr,Expr> e : rg.pairs) {
-				Value key = expandConstantHelper(e.first(),filename,exprs,visited);
-				Value value = expandConstantHelper(e.second(),filename,exprs,visited);
+				Value key = resolveAsConstant(e.first(),filename,visited);
+				Value value = resolveAsConstant(e.second(),filename,visited);
 				if(key == null || value == null) {
 					return null;
 				}
@@ -833,6 +910,7 @@ public final class NameResolver {
 				return Value.V_FUN(name, tf);	
 			}					
 		}
+		
 		syntaxError(errorMessage(INVALID_CONSTANT_EXPRESSION), filename, expr);
 		return null;
 	}
