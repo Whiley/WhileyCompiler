@@ -238,6 +238,10 @@ public final class NameResolver {
 		throw new ResolveError("module not found: " + name);
 	}
 	
+	// =========================================================================
+	// ResolveAsType
+	// =========================================================================
+	
 	/**
 	 * Resolve a given type by identifiying all unknown names and replacing them
 	 * with nominal types.
@@ -252,6 +256,269 @@ public final class NameResolver {
 		Type rawType = resolveAsType(t,imports,false);
 		return new Nominal<Type>(nominalType,rawType);
 	}
+	
+	private Type resolveAsType(UnresolvedType t, List<Import> imports,
+			boolean nominal) throws ResolveError {
+		if(t instanceof UnresolvedType.Primitive) { 
+			if (t instanceof UnresolvedType.Any) {
+				return Type.T_ANY;
+			} else if (t instanceof UnresolvedType.Void) {
+				return Type.T_VOID;
+			} else if (t instanceof UnresolvedType.Null) {
+				return Type.T_NULL;
+			} else if (t instanceof UnresolvedType.Bool) {
+				return Type.T_BOOL;
+			} else if (t instanceof UnresolvedType.Byte) {
+				return Type.T_BYTE;
+			} else if (t instanceof UnresolvedType.Char) {
+				return Type.T_CHAR;
+			} else if (t instanceof UnresolvedType.Int) {
+				return Type.T_INT;
+			} else if (t instanceof UnresolvedType.Real) {
+				return Type.T_REAL;
+			} else if (t instanceof UnresolvedType.Strung) {
+				return Type.T_STRING;
+			} else {
+				throw new ResolveError("unrecognised type encountered ("
+						+ t.getClass().getName() + ")");
+			}
+		} else {
+			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
+			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
+			resolveAsType(t,imports,states,roots,nominal);
+			return Type.construct(new Automaton(states));
+		}
+	}
+	
+	/**
+	 * The following method resolves a given type using a list of import
+	 * statements.
+	 * 
+	 * @param t
+	 * @param imports
+	 * @return
+	 * @throws ResolveError
+	 */
+	private int resolveAsType(UnresolvedType t, List<Import> imports,
+			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
+			boolean nominal) throws ResolveError {				
+		if(t instanceof UnresolvedType.Primitive) {
+			return resolveAsType((UnresolvedType.Primitive)t,imports,states);
+		} 
+		
+		int myIndex = states.size();
+		int myKind;
+		int[] myChildren;
+		Object myData = null;
+		boolean myDeterministic = true;
+		
+		states.add(null); // reserve space for me
+		
+		if(t instanceof UnresolvedType.List) {
+			UnresolvedType.List lt = (UnresolvedType.List) t;
+			myKind = Type.K_LIST;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(lt.element,imports,states,roots,nominal);
+			myData = false;
+		} else if(t instanceof UnresolvedType.Set) {
+			UnresolvedType.Set st = (UnresolvedType.Set) t;
+			myKind = Type.K_SET;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(st.element,imports,states,roots,nominal);
+			myData = false;
+		} else if(t instanceof UnresolvedType.Dictionary) {
+			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
+			myKind = Type.K_DICTIONARY;
+			myChildren = new int[2];
+			myChildren[0] = resolveAsType(st.key,imports,states,roots,nominal);
+			myChildren[1] = resolveAsType(st.value,imports,states,roots,nominal);			
+		} else if(t instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) t;
+			HashMap<String,UnresolvedType> ttTypes = tt.types;
+			Type.Record.State fields = new Type.Record.State(tt.isOpen,ttTypes.keySet());
+			Collections.sort(fields);			
+			myKind = Type.K_RECORD;
+			myChildren = new int[fields.size()];
+			for(int i=0;i!=fields.size();++i) {	
+				String field = fields.get(i);
+				myChildren[i] = resolveAsType(ttTypes.get(field),imports,states,roots,nominal);
+			}			
+			myData = fields;
+		} else if(t instanceof UnresolvedType.Tuple) {
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			ArrayList<UnresolvedType> ttTypes = tt.types;
+			myKind = Type.K_TUPLE;
+			myChildren = new int[ttTypes.size()];
+			for(int i=0;i!=ttTypes.size();++i) {
+				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,nominal);
+				
+			}			
+		} else if(t instanceof UnresolvedType.Nominal) {
+			// This case corresponds to a user-defined type. This will be
+			// defined in some module (possibly ours), and we need to identify
+			// what module that is here, and save it for future use.
+			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;						
+			NameID nid = resolveAsName(dt.names, imports);
+			if(nominal) {
+				myKind = Type.K_NOMINAL;
+				myData = nid;
+				myChildren = Automaton.NOCHILDREN;
+			} else {
+				resolveAsType(nid,imports,states,roots);
+				return myIndex;
+			}
+		} else if(t instanceof UnresolvedType.Not) {	
+			UnresolvedType.Not ut = (UnresolvedType.Not) t;
+			myKind = Type.K_NEGATION;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);			
+		} else if(t instanceof UnresolvedType.Union) {
+			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
+			myKind = Type.K_UNION;
+			myChildren = new int[utTypes.size()];
+			for(int i=0;i!=utTypes.size();++i) {
+				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);
+				
+			}	
+			myDeterministic = false;
+		} else if(t instanceof UnresolvedType.Process) {	
+			UnresolvedType.Process ut = (UnresolvedType.Process) t;
+			myKind = Type.K_PROCESS;
+			myChildren = new int[1];
+			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
+		} else {	
+			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
+			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
+			UnresolvedType receiver = null;
+			int start = 0;
+			
+			if(ut instanceof UnresolvedType.Meth) {
+				UnresolvedType.Meth mt = (UnresolvedType.Meth) ut;
+				receiver = mt.receiver;
+				if(receiver == null) {
+					myKind = Type.K_HEADLESS;
+				} else {
+					myKind = Type.K_METHOD;
+					start++;
+				}
+			} else {
+				myKind = Type.K_FUNCTION;
+			}
+			
+			myChildren = new int[start + 2 + utParamTypes.size()];
+			
+			if(receiver != null) {
+				myChildren[0] = resolveAsType(receiver,imports,states,roots,nominal);
+			}			
+			myChildren[start++] = resolveAsType(ut.ret,imports,states,roots,nominal);
+			// FIXME: following is a hack since UnresolvedType.Fun doesn't include a throws clause
+			myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,nominal);						
+			for(UnresolvedType pt : utParamTypes) {
+				myChildren[start++] = resolveAsType(pt,imports,states,roots,nominal);				
+			}						
+		}
+		
+		states.set(myIndex,new Automaton.State(myKind,myData,myDeterministic,myChildren));
+		
+		return myIndex;
+	}
+	
+	private int resolveAsType(NameID key, List<Import> imports,
+			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots)
+			throws ResolveError {
+		
+		// First, check the various caches we have
+		Integer root = roots.get(key);			
+		if (root != null) { return root; } 		
+		
+		// check whether this type is external or not
+		WhileyFile wf = files.get(key.module());
+		if (wf == null) {						
+			// indicates a non-local key which we can resolve immediately			
+			Module mi = loader.loadModule(key.module());
+			Module.TypeDef td = mi.type(key.name());	
+			return append(td.type(),states);			
+		} 
+		
+		WhileyFile.TypeDecl td = wf.typeDecl(key.name());
+		if(td == null) {
+			// FIXME: need a better error message!
+			throw new ResolveError("type not present in module: " + key.name());
+		}
+		
+		// following is needed to terminate any recursion
+		roots.put(key, states.size());
+		UnresolvedType type = td.unresolvedType;
+		
+		// now, expand the given type fully			
+		if(type instanceof Type.Leaf) {
+			// to avoid unnecessarily creating an array of size one
+			int myIndex = states.size();
+			int kind = Type.leafKind((Type.Leaf)type);			
+			Object data = Type.leafData((Type.Leaf)type);
+			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
+			return myIndex;
+		} else {
+			return resolveAsType(type,imports,states,roots,false);
+		}
+		
+		// TODO: performance can be improved here, but actually assigning the
+		// constructed type into a cache of previously expanded types cache.
+		// This is challenging, in the case that the type may not be complete at
+		// this point. In particular, if it contains any back-links above this
+		// index there could be an issue.
+	}	
+	
+	private int resolveAsType(UnresolvedType.Primitive t,
+			List<Import> imports, ArrayList<Automaton.State> states)
+			throws ResolveError {
+		int myIndex = states.size();
+		int kind;
+		if (t instanceof UnresolvedType.Any) {
+			kind = Type.K_ANY;
+		} else if (t instanceof UnresolvedType.Void) {
+			kind = Type.K_VOID;
+		} else if (t instanceof UnresolvedType.Null) {
+			kind = Type.K_NULL;
+		} else if (t instanceof UnresolvedType.Bool) {
+			kind = Type.K_BOOL;
+		} else if (t instanceof UnresolvedType.Byte) {
+			kind = Type.K_BYTE;
+		} else if (t instanceof UnresolvedType.Char) {
+			kind = Type.K_CHAR;
+		} else if (t instanceof UnresolvedType.Int) {
+			kind = Type.K_INT;
+		} else if (t instanceof UnresolvedType.Real) {
+			kind = Type.K_RATIONAL;
+		} else if (t instanceof UnresolvedType.Strung) {
+			kind = Type.K_STRING;
+		} else {		
+			throw new ResolveError("unrecognised type encountered ("
+					+ t.getClass().getName() + ")");
+		}
+		states.add(new Automaton.State(kind, null, true,
+				Automaton.NOCHILDREN));
+		return myIndex;
+	}
+	
+	private static int append(Type type, ArrayList<Automaton.State> states) {
+		int myIndex = states.size();
+		Automaton automaton = Type.destruct(type);
+		Automaton.State[] tStates = automaton.states;
+		int[] rmap = new int[tStates.length];
+		for (int i = 0, j = myIndex; i != rmap.length; ++i, ++j) {
+			rmap[i] = j;
+		}
+		for (Automaton.State state : tStates) {
+			states.add(Automata.remap(state, rmap));
+		}
+		return myIndex;
+	}
+	
+	// =========================================================================
+	// ResolveAsConstant
+	// =========================================================================		
 	
 	public Value resolveAsConstant(NameID nid) throws ResolveError {				
 		return resolveAsConstant(nid,null);		
@@ -473,319 +740,7 @@ public final class NameResolver {
 		return r;
 	}
 	
-	private Type resolveAsType(UnresolvedType t, List<Import> imports,
-			boolean nominal) throws ResolveError {
-		if(t instanceof UnresolvedType.Primitive) { 
-			if (t instanceof UnresolvedType.Any) {
-				return Type.T_ANY;
-			} else if (t instanceof UnresolvedType.Void) {
-				return Type.T_VOID;
-			} else if (t instanceof UnresolvedType.Null) {
-				return Type.T_NULL;
-			} else if (t instanceof UnresolvedType.Bool) {
-				return Type.T_BOOL;
-			} else if (t instanceof UnresolvedType.Byte) {
-				return Type.T_BYTE;
-			} else if (t instanceof UnresolvedType.Char) {
-				return Type.T_CHAR;
-			} else if (t instanceof UnresolvedType.Int) {
-				return Type.T_INT;
-			} else if (t instanceof UnresolvedType.Real) {
-				return Type.T_REAL;
-			} else if (t instanceof UnresolvedType.Strung) {
-				return Type.T_STRING;
-			} else {
-				throw new ResolveError("unrecognised type encountered ("
-						+ t.getClass().getName() + ")");
-			}
-		} else {
-			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-			resolveAsType(t,imports,states,roots,nominal);
-			return Type.construct(new Automaton(states));
-		}
-	}
 	
-	/**
-	 * The following method resolves a given type using a list of import
-	 * statements.
-	 * 
-	 * @param t
-	 * @param imports
-	 * @return
-	 * @throws ResolveError
-	 */
-	private int resolveAsType(UnresolvedType t, List<Import> imports,
-			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
-			boolean nominal) throws ResolveError {				
-		if(t instanceof UnresolvedType.Primitive) {
-			return resolveAsType((UnresolvedType.Primitive)t,imports,states);
-		} 
-		
-		int myIndex = states.size();
-		int myKind;
-		int[] myChildren;
-		Object myData = null;
-		boolean myDeterministic = true;
-		
-		states.add(null); // reserve space for me
-		
-		if(t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
-			myKind = Type.K_LIST;
-			myChildren = new int[1];
-			myChildren[0] = resolveAsType(lt.element,imports,states,roots,nominal);
-			myData = false;
-		} else if(t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			myKind = Type.K_SET;
-			myChildren = new int[1];
-			myChildren[0] = resolveAsType(st.element,imports,states,roots,nominal);
-			myData = false;
-		} else if(t instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
-			myKind = Type.K_DICTIONARY;
-			myChildren = new int[2];
-			myChildren[0] = resolveAsType(st.key,imports,states,roots,nominal);
-			myChildren[1] = resolveAsType(st.value,imports,states,roots,nominal);			
-		} else if(t instanceof UnresolvedType.Record) {
-			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String,UnresolvedType> ttTypes = tt.types;
-			Type.Record.State fields = new Type.Record.State(tt.isOpen,ttTypes.keySet());
-			Collections.sort(fields);			
-			myKind = Type.K_RECORD;
-			myChildren = new int[fields.size()];
-			for(int i=0;i!=fields.size();++i) {	
-				String field = fields.get(i);
-				myChildren[i] = resolveAsType(ttTypes.get(field),imports,states,roots,nominal);
-			}			
-			myData = fields;
-		} else if(t instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			ArrayList<UnresolvedType> ttTypes = tt.types;
-			myKind = Type.K_TUPLE;
-			myChildren = new int[ttTypes.size()];
-			for(int i=0;i!=ttTypes.size();++i) {
-				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,nominal);
-				
-			}			
-		} else if(t instanceof UnresolvedType.Nominal) {
-			// This case corresponds to a user-defined type. This will be
-			// defined in some module (possibly ours), and we need to identify
-			// what module that is here, and save it for future use.
-			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;						
-			NameID nid = resolveAsName(dt.names, imports);
-			if(nominal) {
-				myKind = Type.K_NOMINAL;
-				myData = nid;
-				myChildren = Automaton.NOCHILDREN;
-			} else {
-				resolveAsType(nid,imports,states,roots,false);
-				return myIndex;
-			}
-		} else if(t instanceof UnresolvedType.Not) {	
-			UnresolvedType.Not ut = (UnresolvedType.Not) t;
-			myKind = Type.K_NEGATION;
-			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);			
-		} else if(t instanceof UnresolvedType.Union) {
-			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
-			myKind = Type.K_UNION;
-			myChildren = new int[utTypes.size()];
-			for(int i=0;i!=utTypes.size();++i) {
-				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);
-				
-			}	
-			myDeterministic = false;
-		} else if(t instanceof UnresolvedType.Process) {	
-			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			myKind = Type.K_PROCESS;
-			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
-		} else {	
-			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
-			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
-			UnresolvedType receiver = null;
-			int start = 0;
-			
-			if(ut instanceof UnresolvedType.Meth) {
-				UnresolvedType.Meth mt = (UnresolvedType.Meth) ut;
-				receiver = mt.receiver;
-				if(receiver == null) {
-					myKind = Type.K_HEADLESS;
-				} else {
-					myKind = Type.K_METHOD;
-					start++;
-				}
-			} else {
-				myKind = Type.K_FUNCTION;
-			}
-			
-			myChildren = new int[start + 2 + utParamTypes.size()];
-			
-			if(receiver != null) {
-				myChildren[0] = resolveAsType(receiver,imports,states,roots,nominal);
-			}			
-			myChildren[start++] = resolveAsType(ut.ret,imports,states,roots,nominal);
-			// FIXME: following is a hack since UnresolvedType.Fun doesn't include a throws clause
-			myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,nominal);						
-			for(UnresolvedType pt : utParamTypes) {
-				myChildren[start++] = resolveAsType(pt,imports,states,roots,nominal);				
-			}						
-		}
-		
-		states.set(myIndex,new Automaton.State(myKind,myData,myDeterministic,myChildren));
-		
-		return myIndex;
-	}
-	
-	private int resolveAsType(UnresolvedType.Primitive t,
-			List<Import> imports, ArrayList<Automaton.State> states)
-			throws ResolveError {
-		int myIndex = states.size();
-		int kind;
-		if (t instanceof UnresolvedType.Any) {
-			kind = Type.K_ANY;
-		} else if (t instanceof UnresolvedType.Void) {
-			kind = Type.K_VOID;
-		} else if (t instanceof UnresolvedType.Null) {
-			kind = Type.K_NULL;
-		} else if (t instanceof UnresolvedType.Bool) {
-			kind = Type.K_BOOL;
-		} else if (t instanceof UnresolvedType.Byte) {
-			kind = Type.K_BYTE;
-		} else if (t instanceof UnresolvedType.Char) {
-			kind = Type.K_CHAR;
-		} else if (t instanceof UnresolvedType.Int) {
-			kind = Type.K_INT;
-		} else if (t instanceof UnresolvedType.Real) {
-			kind = Type.K_RATIONAL;
-		} else if (t instanceof UnresolvedType.Strung) {
-			kind = Type.K_STRING;
-		} else {		
-			throw new ResolveError("unrecognised type encountered ("
-					+ t.getClass().getName() + ")");
-		}
-		states.add(new Automaton.State(kind, null, true,
-				Automaton.NOCHILDREN));
-		return myIndex;
-	}
-	
-	/**
-	 * This method fully expands a given type.
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public Type expand(Type type) throws ResolveError {				
-		if(type instanceof Type.Leaf && !(type instanceof Type.Nominal)) {
-			return type; // no expansion possible
-		}
-		Automaton automaton = Type.destruct(type);
-
-		// first, check whether it's actually worth doing anything
-		boolean hasNominal = false;
-		for(Automaton.State state : automaton.states) {
-			if(state.kind == Type.K_NOMINAL) {
-				hasNominal = true;
-				break;
-			}
-		}		
-		if(hasNominal) {		
-			// ok, possibility of expansion exists
-			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-			expand(0,automaton,roots,states);
-			automaton = new Automaton(states);
-			return Type.construct(automaton);
-		} else {
-			return type;
-		}
-	}
-
-	private int expand(int index, Automaton automaton,
-			HashMap<NameID, Integer> roots, ArrayList<Automaton.State> states)
-			throws ResolveError {
-		
-		Automaton.State state = automaton.states[index];
-		int kind = state.kind;
-		
-		if(kind == Type.K_NOMINAL) {
-			NameID key = (NameID) state.data;
-			return expand(key,roots,states);
-		} else {
-			int myIndex = states.size();			
-			states.add(null);
-			int[] ochildren = state.children;
-			int[] nchildren = new int[ochildren.length];
-			for(int i=0;i!=ochildren.length;++i) {
-				nchildren[i] = expand(ochildren[i],automaton,roots,states);
-			}
-			boolean deterministic = kind != Type.K_UNION;		
-			Automaton.State myState = new Automaton.State(kind,state.data,deterministic,nchildren);
-			states.set(myIndex,myState);
-			return myIndex;
-		}
-	}
-
-	private int expand(NameID key, HashMap<NameID, Integer> roots,
-			ArrayList<Automaton.State> states) throws ResolveError {
-		
-		// First, check the various caches we have
-		Integer root = roots.get(key);			
-		if (root != null) { return root; } 		
-		
-		// check whether this type is external or not
-		WhileyFile wf = files.get(key.module());
-		if (wf == null) {						
-			// indicates a non-local key which we can resolve immediately			
-			Module mi = loader.loadModule(key.module());
-			Module.TypeDef td = mi.type(key.name());	
-			return append(td.type(),states);			
-		} 
-		
-		Type type = wf.type(key.name());
-		if(type == null) {
-			// FIXME: need a better error message!
-			throw new ResolveError("type not present in module: " + key.name());
-		}
-		
-		// following is needed to terminate any recursion
-		roots.put(key, states.size());
-
-		// now, expand the given type fully			
-		if(type instanceof Type.Leaf) {
-			// to avoid unnecessarily creating an array of size one
-			int myIndex = states.size();
-			int kind = Type.leafKind((Type.Leaf)type);			
-			Object data = Type.leafData((Type.Leaf)type);
-			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
-			return myIndex;
-		} else {
-			return expand(0, Type.destruct(type), roots, states);
-		}
-		
-		// TODO: performance can be improved here, but actually assigning the
-		// constructed type into a cache of previously expanded types cache.
-		// This is challenging, in the case that the type may not be complete at
-		// this point. In particular, if it contains any back-links above this
-		// index there could be an issue.
-	}	
-		
-	private static int append(Type type, ArrayList<Automaton.State> states) {
-		int myIndex = states.size();
-		Automaton automaton = Type.destruct(type);
-		Automaton.State[] tStates = automaton.states;
-		int[] rmap = new int[tStates.length];
-		for (int i = 0, j = myIndex; i != rmap.length; ++i, ++j) {
-			rmap[i] = j;
-		}
-		for (Automaton.State state : tStates) {
-			states.add(Automata.remap(state, rmap));
-		}
-		return myIndex;
-	}
 	
 	/**
 	 * The expand constant method is responsible for turning a named constant

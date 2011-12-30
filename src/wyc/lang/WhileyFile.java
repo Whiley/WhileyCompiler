@@ -66,6 +66,15 @@ public final class WhileyFile {
 		return null;
 	}
 	
+	public TypeDecl typeDecl(String name) {
+		for (Decl d : declarations) {
+			if (d instanceof TypeDecl && d.name().equals(name)) {
+				return (TypeDecl) d;
+			}
+		}
+		return null;
+	}
+	
 	public interface Decl extends SyntacticElement {
 		public String name();
 	}
