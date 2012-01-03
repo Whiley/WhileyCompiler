@@ -66,6 +66,26 @@ public final class WhileyFile {
 		return null;
 	}
 	
+	public <T> List<T> declarations(Class<T> c) {
+		ArrayList<T> r = new ArrayList<T>();
+		for(Decl d : declarations) {
+			if(c.isInstance(d)) {
+				r.add((T)d);
+			}			
+		}
+		return r;
+	}
+	
+	public <T> List<T> declarations(Class<T> c, String name) {
+		ArrayList<T> r = new ArrayList<T>();
+		for(Decl d : declarations) {
+			if (d.name().equals(name) && c.isInstance(d)) {
+				r.add((T) d);
+			}		
+		}
+		return r;
+	}
+	
 	public TypeDecl typeDecl(String name) {
 		for (Decl d : declarations) {
 			if (d instanceof TypeDecl && d.name().equals(name)) {

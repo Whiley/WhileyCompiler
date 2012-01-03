@@ -925,37 +925,36 @@ public final class TypePropagation {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Type.Function funType = resolver.resolveAsFunctionOrMethod(name,  rawParamTypes);	
+			Nominal<Type.Function> funType = resolver.resolveAsFunctionOrMethod(name,  rawParamTypes);	
 			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 			// FIXME: loss of nominal information here
-			r.nominalReturnType = funType.ret();
-			r.rawFunctionType = funType;
+			r.nominalReturnType = funType.raw().ret();
+			r.rawFunctionType = funType.raw();
 			return r;
 		} else {
 			// no, function is not qualified ... need to search for it.
 			
 			// third, lookup the function					
 			if(receiver != null) {
-				Type.Process rawRecType = checkType(expr.qualification.rawType(),Type.Process.class,receiver);
-				// FIXME: perform better namespace look up here, by exploiting
-				// known parameter types.
-				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Method methType = resolver.resolveAsMessage(nid,  rawRecType, rawParamTypes);
-				Expr.MessageSend r = new Expr.MessageSend(nid, receiver, exprArgs, expr.synchronous, expr.attributes());
+				Type.Process rawRecType = checkType(expr.qualification.rawType(),Type.Process.class,receiver);							
+				Pair<NameID, Nominal<Type.Method>> p = resolver
+						.resolveAsMessage(expr.name, rawRecType, rawParamTypes,
+								imports);
+				Type.Function messType = p.second().raw();
+				Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
+						exprArgs, expr.synchronous, expr.attributes());
 				// FIXME: loss of nominal information here
-				r.nominalReturnType = methType.ret();
-				r.rawFunctionType = methType;				
+				r.nominalReturnType = messType.ret();
+				r.rawFunctionType = messType;
 				return r;
 			} else {
-				// FIXME: perform better namespace look up here, by exploiting
-				// known parameter types.
-				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Function funType = resolver.resolveAsFunctionOrMethod(nid,  rawParamTypes);
-				Expr.AbstractInvoke<Expr.ModuleAccess> r;
+				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, rawParamTypes, imports);
+				Type.Function funType = p.second().raw();
+				Expr.AbstractInvoke<Expr.ModuleAccess> r;				
 				if(funType instanceof Type.Method) {
-					r = new Expr.MethodCall(nid, null, exprArgs, expr.attributes());					
+					r = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
 				} else {
-					r = new Expr.FunctionCall(nid, null, exprArgs, expr.attributes());					
+					r = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
 				}				
 				// FIXME: loss of nominal information here
 				r.nominalReturnType = funType.ret();

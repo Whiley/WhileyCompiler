@@ -259,6 +259,22 @@ public final class Module {
 			return !(type instanceof Type.Method);
 		}
 		
+		public boolean isMethod() {
+			if(type instanceof Type.Method) {
+				Type.Method m = (Type.Method) type;
+				return m.receiver() == null;
+			}
+			return false;
+		}
+		
+		public boolean isMessage() {
+			if(type instanceof Type.Method) {
+				Type.Method m = (Type.Method) type;
+				return m.receiver() != null;
+			}
+			return false;
+		}
+		
 		public boolean isPublic() {
 				// TODO: fixme!
 			return true;
