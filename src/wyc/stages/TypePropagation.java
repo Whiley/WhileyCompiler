@@ -123,7 +123,6 @@ public final class TypePropagation {
 	
 	public TypePropagation(ModuleLoader loader, NameResolver resolver) {
 		this.loader = loader;
-		this.expander = expander;
 		this.resolver = resolver;
 	}
 	
@@ -926,7 +925,7 @@ public final class TypePropagation {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Type.Function funType = resolver.bindFunctionOrMethod(name,  rawParamTypes);	
+			Type.Function funType = resolver.resolveAsFunctionOrMethod(name,  rawParamTypes);	
 			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 			// FIXME: loss of nominal information here
 			r.nominalReturnType = funType.ret();
@@ -941,7 +940,7 @@ public final class TypePropagation {
 				// FIXME: perform better namespace look up here, by exploiting
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Method methType = resolver.bindMessage(nid,  rawRecType, rawParamTypes);
+				Type.Method methType = resolver.resolveAsMessage(nid,  rawRecType, rawParamTypes);
 				Expr.MessageSend r = new Expr.MessageSend(nid, receiver, exprArgs, expr.synchronous, expr.attributes());
 				// FIXME: loss of nominal information here
 				r.nominalReturnType = methType.ret();
@@ -951,7 +950,7 @@ public final class TypePropagation {
 				// FIXME: perform better namespace look up here, by exploiting
 				// known parameter types.
 				NameID nid = resolver.resolveAsName(expr.name, imports);
-				Type.Function funType = resolver.bindFunctionOrMethod(nid,  rawParamTypes);
+				Type.Function funType = resolver.resolveAsFunctionOrMethod(nid,  rawParamTypes);
 				Expr.AbstractInvoke<Expr.ModuleAccess> r;
 				if(funType instanceof Type.Method) {
 					r = new Expr.MethodCall(nid, null, exprArgs, expr.attributes());					

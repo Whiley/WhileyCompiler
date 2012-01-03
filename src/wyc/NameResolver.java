@@ -135,6 +135,59 @@ public final class NameResolver {
 	}		
 	
 	/**
+	 * This method takes a given import declaration, and expands it to find all
+	 * matching modules.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	private List<ModuleID> matchImport(Import imp) {			
+		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
+		ArrayList<ModuleID> matches = importCache.get(key);
+		if(matches != null) {
+			// cache hit
+			return matches;
+		} else {					
+			// cache miss
+			matches = new ArrayList<ModuleID>();
+			for (PkgID pid : matchPackage(imp.pkg)) {
+				try {					
+					for(ModuleID mid : loader.loadPackage(pid)) {
+						if (imp.matchModule(mid.module())) {
+							matches.add(mid);
+						}
+					}					
+				} catch (ResolveError ex) {
+					// dead code
+				} 
+			}
+			importCache.put(key, matches);
+		}
+		return matches;
+	}
+	
+	/**
+	 * This method takes a given package id from an import declaration, and
+	 * expands it to find all matching packages. Note, the package id may
+	 * contain various wildcard characters to match multiple actual packages.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	private List<PkgID> matchPackage(PkgID pkg) {
+		ArrayList<PkgID> matches = new ArrayList<PkgID>();
+		try {
+			loader.resolvePackage(pkg);
+			matches.add(pkg);
+		} catch(ResolveError er) {}
+		return matches;
+	}
+
+	// =========================================================================
+	// ResolveAsName
+	// =========================================================================		
+	
+	/**
 	 * This methods attempts to resolve the correct package for a named item,
 	 * given a list of imports. Resolving the correct package may require
 	 * loading modules as necessary from the WHILEYPATH and/or compiling modules
@@ -243,7 +296,7 @@ public final class NameResolver {
 	// =========================================================================
 	
 	/**
-	 * Resolve a given type by identifiying all unknown names and replacing them
+	 * Resolve a given type by identifying all unknown names and replacing them
 	 * with nominal types.
 	 * 
 	 * @param t
@@ -523,225 +576,7 @@ public final class NameResolver {
 	public Value resolveAsConstant(NameID nid) throws ResolveError {				
 		return resolveAsConstant(nid,null);		
 	}
-	
-	/**
-	 * This method takes a given import declaration, and expands it to find all
-	 * matching modules.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	private List<ModuleID> matchImport(Import imp) {			
-		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
-		ArrayList<ModuleID> matches = importCache.get(key);
-		if(matches != null) {
-			// cache hit
-			return matches;
-		} else {					
-			// cache miss
-			matches = new ArrayList<ModuleID>();
-			for (PkgID pid : matchPackage(imp.pkg)) {
-				try {					
-					for(ModuleID mid : loader.loadPackage(pid)) {
-						if (imp.matchModule(mid.module())) {
-							matches.add(mid);
-						}
-					}					
-				} catch (ResolveError ex) {
-					// dead code
-				} 
-			}
-			importCache.put(key, matches);
-		}
-		return matches;
-	}
-	
-	/**
-	 * This method takes a given package id from an import declaration, and
-	 * expands it to find all matching packages. Note, the package id may
-	 * contain various wildcard characters to match multiple actual packages.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	private List<PkgID> matchPackage(PkgID pkg) {
-		ArrayList<PkgID> matches = new ArrayList<PkgID>();
-		try {
-			loader.resolvePackage(pkg);
-			matches.add(pkg);
-		} catch(ResolveError er) {}
-		return matches;
-	}
-
-	/**
-	 * Bind function is responsible for determining the true type of a method or
-	 * function being invoked. To do this, it must find the function/method
-	 * with the most precise type that matches the argument types.
-	 * 
-	 * @param nid
-	 * @param qualification
-	 * @param paramTypes
-	 * @param elem
-	 * @return
-	 * @throws ResolveError
-	 */
-	public Type.Function bindFunctionOrMethod(NameID nid, 
-			ArrayList<Type> paramTypes) throws ResolveError {
-
-		Type.Function target = (Type.Function) Type.Function(Type.T_ANY,
-				Type.T_ANY, paramTypes);
-		Type.Function candidate = null;				
 		
-		List<Nominal<Type.Function>> targets = lookupFunction(nid.module(),nid.name()); 		
-		
-		for (Nominal<Type.Function> nft : targets) {
-			Type.Function ft = nft.raw();
-			if (ft.params().size() == paramTypes.size()						
-					&& paramSubtypes(ft, target)
-					&& (candidate == null || paramSubtypes(candidate,ft))) {					
-				candidate = ft;								
-			}
-		}				
-		
-		// Check whether we actually found something. If not, print a useful
-		// error message.
-		if(candidate == null) {			
-			String msg = "no match for " + nid.name() + parameterString(paramTypes);
-			boolean firstTime = true;
-			int count = 0;
-			for (Nominal<Type.Function> nft : targets) {
-				Type.Function ft = (Type.Function) nft.nominal();
-				if(firstTime) {
-					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
-				} else {
-					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
-				}				
-				if(++count < targets.size()) {
-					msg += ",";
-				}
-			}
-			
-			// need to think about this one
-			throw new ResolveError(msg);
-		}
-		
-		return candidate;
-	}
-	
-	public Type.Method bindMessage(NameID nid, Type.Process receiver,
-			ArrayList<Type> paramTypes) throws ResolveError {
-
-		Type.Method target = (Type.Method) Type.Method(receiver, Type.T_ANY,
-				Type.T_ANY, paramTypes);
-		Type.Method candidate = null;				
-		
-		List<Nominal<Type.Function>> targets = lookupFunction(nid.module(),nid.name()); 
-		
-		for (Nominal<Type.Function> nft : targets) {
-			Type.Function ft = nft.raw();
-			if(ft instanceof Type.Method) { 				
-				Type.Method mt = (Type.Method) ft; 
-				Type funrec = mt.receiver();	
-				if (receiver == funrec
-						|| (receiver != null && funrec != null && Type
-						.isImplicitCoerciveSubtype(receiver, funrec))) {					
-					// receivers match up OK ...				
-					if (mt.params().size() == paramTypes.size()						
-							&& paramSubtypes(mt, target)
-							&& (candidate == null || paramSubtypes(candidate,mt))) {					
-						candidate = mt;					
-					}
-				}
-			}
-		}				
-		
-		// Check whether we actually found something. If not, print a useful
-		// error message.
-		if(candidate == null) {
-			String rec = "::";
-			if(receiver != null) {				
-				rec = receiver.toString() + "::";
-			}
-			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
-			boolean firstTime = true;
-			int count = 0;
-			for(Nominal<Type.Function> nft : targets) {
-				rec = "";
-				Type.Function ft = (Type.Function) nft.nominal();
-				if(ft instanceof Type.Method) {
-					Type.Method mt = (Type.Method) ft;
-					if(mt.receiver() != null) {
-						rec = mt.receiver().toString();
-					}
-					rec = rec + "::";
-				}
-				if(firstTime) {
-					msg += "\n\tfound: " + rec + nid.name() +  parameterString(ft.params());
-				} else {
-					msg += "\n\tand: " + rec + nid.name() +  parameterString(ft.params());
-				}				
-				if(++count < targets.size()) {
-					msg += ",";
-				}
-			}
-			throw new ResolveError(msg);			
-		}
-		
-		return candidate;
-	}
-	
-	private boolean paramSubtypes(Type.Function f1, Type.Function f2) {		
-		List<Type> f1_params = f1.params();
-		List<Type> f2_params = f2.params();
-		if(f1_params.size() == f2_params.size()) {
-			for(int i=0;i!=f1_params.size();++i) {
-				Type f1_param = f1_params.get(i);
-				Type f2_param = f2_params.get(i);				
-				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
-					return false;
-				}
-			}			
-			return true;
-		}
-		return false;
-	}
-	
-	private String parameterString(List<Type> paramTypes) {
-		String paramStr = "(";
-		boolean firstTime = true;
-		for(Type t : paramTypes) {
-			if(!firstTime) {
-				paramStr += ",";
-			}
-			firstTime=false;
-			paramStr += t;
-		}
-		return paramStr + ")";
-	}
-	
-	private List<Nominal<Type.Function>> lookupFunction(ModuleID mid,
-			String name) throws ResolveError {
-		WhileyFile wf = files.get(mid);
-		if (wf != null) {
-			List<Type.Function> nominals = wf.functionOrMethod(name);
-			ArrayList<Nominal<Type.Function>> r = new ArrayList();
-			for (Type.Function tf : nominals) {
-				r.add(new Nominal<Type.Function>(tf, (Type.Function) expand(tf)));
-			}
-			return r;
-		}
-
-		Module module = loader.loadModule(mid);
-		ArrayList<Nominal<Type.Function>> r = new ArrayList();
-		for (Module.Method f : module.method(name)) {
-			// FIXME: loss of nominal information here
-			r.add(new Nominal<Type.Function>(f.type(), f.type()));
-		}
-		return r;
-	}
-	
-	
-	
 	/**
 	 * The expand constant method is responsible for turning a named constant
 	 * expression into a value. This is done by traversing the constant's
@@ -782,7 +617,7 @@ public final class NameResolver {
 			}
 		}		
 	}
-
+	
 	/**
 	 * The following is a helper method for expandConstant. It takes a given
 	 * expression (rather than the name of a constant) and expands to a value
@@ -961,4 +796,186 @@ public final class NameResolver {
 		syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,bop);
 		return null;
 	}	
+
+	// =========================================================================
+	// BindFunction and BindMessage
+	// =========================================================================				
+	
+	/**
+	 * Responsible for determining the true type of a method or function being
+	 * invoked. To do this, it must find the function/method with the most
+	 * precise type that matches the argument types.
+	 * 
+	 * @param nid
+	 * @param qualification
+	 * @param parameters
+	 * @param elem
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Pair<NameID,Nominal<Type.Function>> resolveAsFunctionOrMethod(String name, 
+			List<Type> parameters, List<Import> imports) throws ResolveError {
+
+		Type.Function target = (Type.Function) Type.Function(Type.T_ANY,
+				Type.T_ANY, parameters);
+		Nominal<Type.Function> candidate = null;	
+		NameID candidateID = null;
+		
+		List<Pair<NameID,Nominal<Type.Function>>> targets = lookup(name,null,parameters,imports); 		
+		
+		for (Pair<NameID,Nominal<Type.Function>> p : targets) {
+			Nominal<Type.Function> nft = p.second();
+			Type.Function ft = nft.raw();
+			if(ft instanceof Type.Method) {
+				Type.Method mt = (Type.Method) ft;
+				if(mt.receiver() != null) {
+					continue; // cannot resolve as function or method
+				}
+			}
+			if (ft.params().size() == parameters.size()						
+					&& paramSubtypes(ft, target)
+					&& (candidate == null || paramSubtypes(candidate.raw(),ft))) {					
+				candidate = nft;		
+				candidateID = p.first();
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {			
+			String msg = "no match for " + name + parameterString(parameters);
+			boolean firstTime = true;
+			int count = 0;
+			for (Pair<NameID,Nominal<Type.Function>> p : targets) {
+				Nominal<Type.Function> nft = p.second();
+				Type.Function ft = (Type.Function) nft.nominal();
+				NameID nid = p.first();
+				if(firstTime) {
+					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			
+			// need to think about this one
+			throw new ResolveError(msg);
+		}
+		
+		return new Pair<NameID,Nominal<Type.Function>>(candidateID,candidate);
+	}
+	
+	public Pair<NameID,Nominal<Type.Method>> resolveAsMessage(String name, Type.Process receiver,
+			List<Type> parameters, List<Import> imports) throws ResolveError {
+
+		Type.Method target = (Type.Method) Type.Method(receiver, Type.T_ANY,
+				Type.T_ANY, parameters);
+		Nominal<Type.Method> candidate = null;				
+		NameID candidateID = null;
+		
+		List<Pair<NameID,Nominal<Type.Function>>> targets = lookup(name,receiver,parameters,imports); 
+		
+		for (Pair<NameID,Nominal<Type.Function>> p : targets) {
+			Nominal<Type.Function> nft = p.second();
+			Type.Function ft = nft.raw();
+			if(ft instanceof Type.Method) { 				
+				Type.Method mt = (Type.Method) ft; 
+				Type funrec = mt.receiver();	
+				if (receiver == funrec
+						|| (receiver != null && funrec != null && Type
+						.isImplicitCoerciveSubtype(receiver, funrec))) {					
+					// receivers match up OK ...				
+					if (mt.params().size() == parameters.size()						
+							&& paramSubtypes(mt, target)
+							&& (candidate == null || paramSubtypes(candidate.raw(),mt))) {	
+						// The following cast is safe since we've already
+						// checked the type of ft.
+						candidate = (Nominal) nft;
+						candidateID = p.first();
+					}
+				}
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {
+			String rec = "::";
+			if(receiver != null) {				
+				rec = receiver.toString() + "::";
+			}
+			String msg = "no match for " + name + parameterString(parameters);
+			boolean firstTime = true;
+			int count = 0;
+			for (Pair<NameID,Nominal<Type.Function>> p : targets) {
+				Nominal<Type.Function> nft = p.second();
+				Type.Function ft = (Type.Function) nft.nominal();
+				NameID nid = p.first();
+				if(firstTime) {
+					msg += "\n\tfound: " + rec + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + rec + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			throw new ResolveError(msg);			
+		}
+		
+		return new Pair<NameID,Nominal<Type.Method>>(candidateID,candidate);
+	}
+	
+	private boolean paramSubtypes(Type.Function f1, Type.Function f2) {		
+		List<Type> f1_params = f1.params();
+		List<Type> f2_params = f2.params();
+		if(f1_params.size() == f2_params.size()) {
+			for(int i=0;i!=f1_params.size();++i) {
+				Type f1_param = f1_params.get(i);
+				Type f2_param = f2_params.get(i);				
+				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
+					return false;
+				}
+			}			
+			return true;
+		}
+		return false;
+	}
+	
+	private String parameterString(List<Type> paramTypes) {
+		String paramStr = "(";
+		boolean firstTime = true;
+		for(Type t : paramTypes) {
+			if(!firstTime) {
+				paramStr += ",";
+			}
+			firstTime=false;
+			paramStr += t;
+		}
+		return paramStr + ")";
+	}
+	
+	private List<Pair<NameID, Nominal<Type.Function>>> lookup(String name,
+			Type.Process receiver, List<Type> parameters, List<Import> imports) throws ResolveError {
+		WhileyFile wf = files.get(mid);
+		if (wf != null) {
+			List<Type.Function> nominals = wf.functionOrMethod(name);
+			ArrayList<Nominal<Type.Function>> r = new ArrayList();
+			for (Type.Function tf : nominals) {
+				r.add(new Nominal<Type.Function>(tf, (Type.Function) expand(tf)));
+			}
+			return r;
+		}
+
+		Module module = loader.loadModule(mid);
+		ArrayList<Nominal<Type.Function>> r = new ArrayList();
+		for (Module.Method f : module.method(name)) {
+			// FIXME: loss of nominal information here
+			r.add(new Nominal<Type.Function>(f.type(), f.type()));
+		}
+		return r;
+	}
+	
 }
