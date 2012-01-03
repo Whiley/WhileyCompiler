@@ -207,6 +207,12 @@ public interface UnresolvedType extends SyntacticElement {
 			this.ret = ret;
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
 		}
+		public Fun(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.ret = ret;
+			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+		}
 	}
 	public static final class Meth extends Fun {		
 		public final UnresolvedType receiver;		
@@ -215,6 +221,13 @@ public interface UnresolvedType extends SyntacticElement {
 				Attribute... attributes) {
 			super(ret,paramTypes,attributes);			
 			this.receiver = receiver;			
+		}
+		
+		public Meth(UnresolvedType ret, UnresolvedType receiver,
+				Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(ret, paramTypes, attributes);
+			this.receiver = receiver;
 		}
 	}
 }

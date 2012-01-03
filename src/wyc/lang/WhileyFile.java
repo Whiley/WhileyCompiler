@@ -307,6 +307,14 @@ public final class WhileyFile {
 		public String name() {
 			return name;
 		}
+		
+		public UnresolvedType.Fun unresolvedType() {
+			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
+			for (Parameter p : parameters) {
+				params.add(p.type);
+			}
+			return new UnresolvedType.Fun(ret, params, attributes());
+		}
 	}
 
 	/**
@@ -346,6 +354,14 @@ public final class WhileyFile {
 				Attribute... attributes) {
 			super(modifiers,name,ret,parameters,precondition,postcondition,throwType,statements,attributes);
 			this.receiver = receiver;
+		}
+		
+		public UnresolvedType.Meth unresolvedType() {
+			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
+			for (Parameter p : parameters) {
+				params.add(p.type);
+			}
+			return new UnresolvedType.Meth(ret, receiver, params, attributes());
 		}
 	}
 

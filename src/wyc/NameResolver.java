@@ -834,7 +834,7 @@ public final class NameResolver {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {
 					NameID nid = new NameID(mid,name);	
-					for(Nominal<Type.Function> ft : listFunctions(nid,parameters.size())) {					
+					for(Nominal<Type.Function> ft : listFunctionsAndMethods(nid,parameters.size())) {					
 						// FIXME: produce nominal information here
 						msg += "\n\tfound: " + nid + " : " + ft.nominal();
 					}					
@@ -866,7 +866,7 @@ public final class NameResolver {
 		if(candidate == null) {			
 			String msg = "no match for " + nid + parameterString(parameters);
 			boolean firstTime = true;			
-			for (Nominal<Type.Function> nft : listFunctions(nid,parameters.size())) {				
+			for (Nominal<Type.Function> nft : listFunctionsAndMethods(nid,parameters.size())) {				
 				Type.Function ft = (Type.Function) nft.nominal();				
 				if(firstTime) {
 					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
@@ -976,7 +976,7 @@ public final class NameResolver {
 				Type.T_ANY, parameters);
 		Nominal<Type.Function> candidate = null;			
 				
-		for (Nominal<Type.Function> nft : listFunctions(nid, parameters.size())) {
+		for (Nominal<Type.Function> nft : listFunctionsAndMethods(nid, parameters.size())) {
 			Type.Function ft = nft.raw();
 			if (ft instanceof Type.Method) {
 				Type.Method mt = (Type.Method) ft;
@@ -1024,7 +1024,8 @@ public final class NameResolver {
 		return candidate;
 	}
 	
-	private ArrayList<Nominal<Type.Function>> listFunctions(NameID nid, int nparams) {
+	private ArrayList<Nominal<Type.Function>> listFunctionsAndMethods(
+			NameID nid, int nparams) {
 		ModuleID mid = nid.module();
 		ArrayList<Nominal<Type.Function>> r = new ArrayList<Nominal<Type.Function>>();		
 		
@@ -1035,7 +1036,7 @@ public final class NameResolver {
 					WhileyFile.FunDecl.class, nid.name())) {
 				if (f.parameters.size() == nparams) {
 					// FIXME: loss of nominal information
-					r.add(new Nominal(f.type(), f.type()));
+					r.add(resolveAsType(f.unresolvedType()));
 				}
 			}
 		} else {
@@ -1067,7 +1068,7 @@ public final class NameResolver {
 					WhileyFile.MethDecl.class, nid.name())) {
 				if (m.parameters.size() == nparams) {
 					// FIXME: loss of nominal information
-					r.add(new Nominal(m.type(), m.type()));
+					r.add(resolveAsType(m.unresolvedType()));
 				}
 			}
 		} else {
