@@ -26,8 +26,8 @@ Whiley Developement Kit
 The Whiley Development Kit will allow you compile and run Whiley
 programs on the Java Virtual Machine.  Whiley will operate on any
 system that can run Java including Windows, Mac OS and Linux.  Whiley
-is released under the GNU General Public License, version 3 --- see
-the LICENSE file for more on this.
+is released under the New BSD License --- see the LICENSE file for
+more on this.
 
 Finally, to learn more about the Whiley language, visit
 http://whiley.org.  There you will find a range of documentation,
