@@ -33,12 +33,12 @@ import java.util.*;
  * module name. The purpose of the UMI is to provide a uniform way of referring
  * to modules throughout the compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
-public class ModuleID {
-	private PkgID pkg;
-	private String module;
+public final class ModuleID {
+	private final PkgID pkg;
+	private final String module;
 	
 	/**
      * Construct a module identifier.
@@ -59,8 +59,8 @@ public class ModuleID {
 		this.module = module;
 	}
 	
-	public static ModuleID fromString(String pkg) {
-		String[] split = pkg.split("\\.");
+	public static ModuleID fromString(String module) {
+		String[] split = module.split("\\.");
 		ArrayList<String> pkgs = new ArrayList<String>();
 		for (int i = 0; i != split.length - 1; ++i) {
 			pkgs.add(split[i]);

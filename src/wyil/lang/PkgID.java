@@ -28,7 +28,7 @@ package wyil.lang;
 import java.util.*;
 import java.io.File;
 
-public class PkgID implements Iterable<String> {
+public final class PkgID implements Iterable<String> {
 	private final ArrayList<String> components;
 	
 	public PkgID(String... cs) {

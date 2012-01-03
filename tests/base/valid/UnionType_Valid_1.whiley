@@ -1,7 +1,9 @@
-void System::main([string] args):    
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):    
     if |args| == 1:
         x = 1
     else:
         x = [1,2,3]
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
 

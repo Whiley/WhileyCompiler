@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Link as { bool val, LinkedList next }
 define LinkedList as null | Link
 
@@ -9,10 +11,10 @@ int sum(LinkedList ls):
     else:
         return 1 + sum(ls.next)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ls = { val: true, next: null}
-    out.println(str(sum(ls)))
+    sys.out.println(Any.toString(sum(ls)))
     ls = { val: true, next: ls}
-    out.println(str(sum(ls)))
+    sys.out.println(Any.toString(sum(ls)))
     ls = { val: false, next: ls}
-    out.println(str(sum(ls)))
+    sys.out.println(Any.toString(sum(ls)))

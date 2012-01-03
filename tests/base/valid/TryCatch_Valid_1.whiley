@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 
 int f(real x) throws string:
     if x >= 0:
@@ -5,11 +7,11 @@ int f(real x) throws string:
     else:
         throw "error"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     try:
-        out.println(str(f(1)))
-        out.println(str(f(0)))
-        out.println(str(f(-1)))
+        sys.out.println(Any.toString(f(1)))
+        sys.out.println(Any.toString(f(0)))
+        sys.out.println(Any.toString(f(-1)))
     catch(string e):
-        out.println("CAUGHT EXCEPTION: " + e)
-    out.println("DONE")        
+        sys.out.println("CAUGHT EXCEPTION: " + e)
+    sys.out.println("DONE")        

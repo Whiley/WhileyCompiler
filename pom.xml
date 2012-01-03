@@ -1,0 +1,192 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>whiley</groupId>
+	<artifactId>whiley</artifactId>
+	<packaging>jar</packaging>
+	<version>0.3.12</version>
+	<name>whiley-lang</name>
+	<description>Whiley: A Programming Language with Extended Static Checking </description>
+	<url>http://whiley.org</url>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	<!-- Required For compiling the AntTask file. Looking to move away from this -->
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.ant</groupId>
+			<artifactId>ant</artifactId>
+			<version>1.8.2</version>
+		</dependency>
+	</dependencies>
+	<build>
+		
+		<plugins>
+			<!-- Compiler Plugin. Compiles all java files to target dir -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<excludes>
+						<exclude>**/wyil/testing/**</exclude>
+						<exclude>**/wyjc/testing/**</exclude>
+						<exclude>**/*.whiley</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			<!-- Whiley file Compiler. Uses ANT task. Needs to be changed -->
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>wyjc-compile</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<tasks>
+								<taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="target/classes/"/>
+								 <wyjc verbose="false" srcdir="stdlib" destdir="target/classes" includes="whiley/**/*.whiley"/>
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Jar Compiler -->
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.2</version>
+				<executions>
+					<!-- Runtime Jar -->
+					<execution>
+						<id>wyrt</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier></classifier>
+							<includes>
+								<include>whiley/**</include>
+								<include>wyjc/runtime/**</include>
+							</includes>
+							<finalName>wyrt</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+							<outputDirectory>${basedir}/lib</outputDirectory>
+						</configuration>
+					</execution>
+					<!-- Distribution Source -->
+					<execution>
+						<id>distsrc</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier></classifier>
+							<archive>
+								<manifest>
+									<mainClass>wyjc.Main</mainClass>
+									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+								</manifest>
+							</archive>
+							<includes>
+								<include>whiley/**/*.class</include>
+								<include>wyil/**/*.class</include>
+								<include>wyc/**/* </include>
+								<include>wyjc/**/*.class</include>
+								<include>wyone/**/*.class</include>
+								<include>wyjvm/**/*.class</include>
+								<include>wyautl/**/*.class</include>
+							</includes>
+							<finalName>wyjc-v${project.version}</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+							<outputDirectory>${basedir}</outputDirectory>
+						</configuration>
+					</execution>
+					<!-- Whiley Compiler -->
+					<execution>
+						<id>wyjc</id>
+								<phase>package</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+									<configuration>
+									<classifier></classifier>
+									<archive>
+										<manifest>
+											<mainClass>wyjc.Main</mainClass>
+											<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+										</manifest>
+									</archive>
+									<includes>
+										<include>**/*.class</include>
+									</includes>
+									<finalName>wyjc</finalName>
+									<appendAssemblyId>false</appendAssemblyId>
+									<outputDirectory>${basedir}/lib</outputDirectory>
+								</configuration>
+							</execution>
+				</executions>
+			</plugin>
+			<!-- Sets Up the Source Directories -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals><goal>add-source</goal></goals>
+						<configuration>
+							<sources>
+								<source>src/</source>
+								<source>stdlib/</source>
+							</sources>
+							<includes> 
+								<include>*.java</include>
+								<include>*.whiley</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>Asmsrc.xml</descriptor>
+							</descriptors>
+							<finalName>wdk-src-v${project.version}</finalName>
+							<outputDirectory>${basedir}</outputDirectory>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Javadoc Generation -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.8</version>
+					<configuration>
+						<excludePackageNames>wyjc.testing,wyil.testing,whiley</excludePackageNames>
+						
+					</configuration>
+				
+				
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

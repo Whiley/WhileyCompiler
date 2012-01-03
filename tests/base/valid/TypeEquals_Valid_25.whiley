@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define src as int|[src]
 
 string f(src e):
@@ -6,8 +8,8 @@ string f(src e):
     else:
         return "int"
 
-void System::main([string] args):
-    out.println(f([1]))
-    out.println(f([[1]]))
-    out.println(f([[[1]]]))
-    out.println(f(1))
+void ::main(System sys,[string] args):
+    sys.out.println(f([1]))
+    sys.out.println(f([[1]]))
+    sys.out.println(f([[[1]]]))
+    sys.out.println(f(1))

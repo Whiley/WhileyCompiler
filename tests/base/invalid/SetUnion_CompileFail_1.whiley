@@ -1,5 +1,7 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     y = 1.0234234
     xs = {1,2,3,4}
     xs = xs ∪ y
-    out.println(str(xs))
+    sys.out.println(Any.toString(xs))

@@ -31,11 +31,10 @@ import wyil.util.*;
 
 /**
  * <p>
- * A Block is the foundation of the Whiley Intermediate Language. A Block
- * represents a complete sequence of bytecode instructions. For example, every
+ * Represents a complete sequence of bytecode instructions. For example, every
  * method body is a single Block. Likewise, the constraint for a give type is a
  * Block. Finally, a Block permits attributes to be attached to every bytecode
- * in the block. An example attribute is one for holding the location of the
+ * it contains. An example attribute is one for holding the location of the
  * source code which generated the bytecode.
  * </p>
  * 
@@ -73,7 +72,7 @@ import wyil.util.*;
  * </ul>
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class Block implements Iterable<Block.Entry> {
@@ -202,6 +201,47 @@ public final class Block implements Iterable<Block.Entry> {
 		}
 	}
 
+	public Block relabel() {
+		HashMap<String,String> labels = new HashMap<String,String>();
+		
+		for (Entry s : this) {
+			if (s.code instanceof Code.Label) {
+				Code.Label l = (Code.Label) s.code;
+				labels.put(l.label, freshLabel());
+			}
+		}
+		
+		Block block = new Block(numInputs);
+		// Finally, apply the binding and relabel any labels as well.
+		for(Entry s : this) {
+			Code ncode = s.code.relabel(labels);
+			block.append(ncode,s.attributes());
+		}
+		
+		return block;
+	}
+	
+	
+	/**
+	 * This method updates the source attributes for all statements in a block.
+	 * This is typically done in conjunction with a substitution, when we're
+	 * inlining constraints from e.g. pre- and post-conditions.
+	 * 
+	 * @param block
+	 * @param nsrc
+	 * @return
+	 */
+	public static Block resource(Block block, Attribute.Source nsrc) {
+		if(block == null) {
+			return null;
+		}
+		Block nblock = new Block(block.numInputs());
+		for(Entry e : block) {
+			nblock.append(e.code,nsrc);
+		}
+		return nblock;
+	}
+	
 	// ===================================================================
 	// Append Methods
 	// ===================================================================
@@ -362,10 +402,10 @@ public final class Block implements Iterable<Block.Entry> {
 	}
 
 	/**
-	 * An Entry object represents a bytecode and those attributes currently
+	 * Represents an individual bytecode and those attributes currently
 	 * associated with it (if any) in the block.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Entry extends SyntacticElement.Impl {

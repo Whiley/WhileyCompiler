@@ -1,7 +1,9 @@
+import * from whiley.lang.*
+
 {int} f(int x):
     return {x}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     bytes = f(0)
-    out.println(str(bytes))
+    sys.out.println(Any.toString(bytes))
 

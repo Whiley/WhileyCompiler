@@ -1,9 +1,11 @@
+import * from whiley.lang.*
+
 int get({string->int} env):
     return env["x"]
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     if |args| == 10:
-        out.println("GOT HERE")
+        sys.out.println("GOT HERE")
     else:
         env = get({"x"->1,"y"->2})
-        out.println(str(env))
+        sys.out.println(Any.toString(env))

@@ -148,7 +148,7 @@ public class Constant {
 	 * Recursively add a CONSTANT_Info object to a constant pool. Items used by
 	 * this item which are not already in the pool are also added.
 	 * 	 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 * @return the index of the pool item
 	 */

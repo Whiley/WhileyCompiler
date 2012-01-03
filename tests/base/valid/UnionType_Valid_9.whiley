@@ -1,10 +1,12 @@
+import * from whiley.lang.*
+
 // this is a comment!
 define IntList as {int|[int] op}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {op:1}
     x.op = 1
     y = x // OK
-    out.println(str(y))
+    sys.out.println(Any.toString(y))
     x = {op:[1,2,3]} // OK
-    out.println(str(x))
+    sys.out.println(Any.toString(x))

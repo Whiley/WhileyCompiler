@@ -42,7 +42,7 @@ import wyjvm.lang.JvmTypes;
 /**
  * This represents the Code attribute from the JVM Spec.
  * 
- * @author djp
+ * @author David J. Pearce
  */
 public class Code implements BytecodeAttribute {
 
@@ -202,7 +202,7 @@ public class Code implements BytecodeAttribute {
 	 * The exception handler class is used to store the necessary information
 	 * about where control-flow is directed when an exception is raised.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Handler {
@@ -316,12 +316,16 @@ public class Code implements BytecodeAttribute {
 		bout = new ByteArrayOutputStream();
 		BinaryOutputStream attrbout = new BinaryOutputStream(bout); 
 		for(BytecodeAttribute a : attributes) {
-			a.write(attrbout, constantPool, loader);
+			if(a instanceof BytecodeMapAttribute) {
+				BytecodeMapAttribute bap = (BytecodeMapAttribute) a;
+				bap.write(insnOffsets, attrbout, constantPool, loader);
+			} else {
+				a.write(attrbout, constantPool, loader);
+			}
 		}
 		byte[] attrbytes = bout.toByteArray();
 		
-		// === WRITE CODE ATTRIBUTE ===
-		
+		// === WRITE CODE ATTRIBUTE ===		
 
 		writer.write_u2(constantPool.get(new Constant.Utf8("Code")));
 		// need to figure out exception_table length
@@ -336,7 +340,7 @@ public class Code implements BytecodeAttribute {
 		writer.write_u2(maxLocals());
 		writer.write_u4(bytecodebytes.length);
 		// write bytecode instructions
-		for (int i = 0; i != bytecodebytes.length; ++i) {
+		for (int i = 0; i != bytecodebytes.length; ++i) {			
 			writer.write_u1(bytecodebytes[i]);
 		}
 
@@ -355,7 +359,7 @@ public class Code implements BytecodeAttribute {
 			}
 		}
 				
-		writer.write_u2(attributes.size()); // no attributes for now
+		writer.write_u2(attributes.size()); 
 		writer.write(attrbytes);		
 	}
 	
@@ -461,7 +465,7 @@ public class Code implements BytecodeAttribute {
 	 * A rewrite defines a sequence of bytecodes that are to be rewritten as a
 	 * (potentially) smaller sequence.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Rewrite {
@@ -475,21 +479,33 @@ public class Code implements BytecodeAttribute {
 			this.bytecodes = bytecodes;
 		}
 	}
-	
+
 	/**
-	 * A Rewriteable attribute is one maps bytecodes to something. For example,
-	 * the Exceptions attribute maps bytecodes to exception handler regions;
-	 * likewise, the LineNumbers attribute maps bytecodes to source code line
-	 * numbers. During bytecode optimisation, the relative position of bytecodes
-	 * may change as a result of eliminating redundant bytecodes. In such a case
-	 * we need to update those attributes which are affected. This interface
+	 * <p>
+	 * Maps bytecodes to some kind of attribute. For example, the Exceptions
+	 * attribute maps bytecodes to exception handler regions; likewise, the
+	 * LineNumbersTable attribute maps bytecodes to source code line numbers.
+	 * </p>
+	 * 
+	 * <p>
+	 * During bytecode optimisation, the relative position of bytecodes may
+	 * change as a result of eliminating redundant bytecodes. In such a case we
+	 * need to update those attributes which are affected. This interface
 	 * captures those attributes which are affected, and provides a hook to tell
 	 * them about rewrites as they happen.
+	 * </p>
 	 * 
-	 * @author djp
+	 * <p>
+	 * Finally, the actual bytecode offsets in the code block (as opposed to
+	 * their index in the block) are not known until the class file is actually
+	 * written. Attributes which write bytecode offsets must convert between
+	 * indices and actual code offsets.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
 	 * 
 	 */
-	public static interface Rewriteable {
+	public static interface BytecodeMapAttribute extends BytecodeAttribute {
 		
 		/**
 		 * This method accepts a list of rewrites which should be applied. For
@@ -507,5 +523,25 @@ public class Code implements BytecodeAttribute {
 		 * @param rewrites
 		 */
 		public void apply(List<Rewrite> rewrites);
+
+		/**
+		 * This method requires the attribute to write itself to the binary
+		 * stream.
+		 * 
+		 * @param bytecodeOffsets
+		 *            --- maps each bytecode index to its actual offset in the
+		 *            code block.
+		 * @param writer
+		 *            --- stream to write attribute to
+		 * @param constantPool
+		 *            --- map of constant pool items to their actual pool index
+		 * @param load
+		 *            --- class loader instance
+		 * @returns the number of bytes written.
+		 * @throws IOException
+		 */
+		public void write(int[] bytecodeOffsets, BinaryOutputStream writer,
+				Map<Constant.Info, Integer> constantPool, ClassLoader loader)
+				throws IOException;
 	}
 }	

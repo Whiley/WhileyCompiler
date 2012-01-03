@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define msg1 as {int op, int s} where op == 1
 define msg2 as {int op, int s} where op == 2
 
@@ -7,8 +9,8 @@ string f(msg1 m):
 string f(msg2 m):
     return ("MSG2")
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     m1 = {op:1,s:123}
     m2 = {op:2,s:123}
-    out.println(f(m1))
-    out.println(f(m2))
+    sys.out.println(f(m1))
+    sys.out.println(f(m2))

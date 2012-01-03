@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define MyProc as process { int data }
 
 int MyProc::copy(MyProc p):
@@ -9,10 +11,10 @@ int MyProc::get():
 MyProc System::create(int data):
     return spawn {data: data}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p1 = this.create(1)
     p2 = this.create(2)
     p1.copy(p2)
-    out.println(str(p1.get()))
-    out.println(str(p2.get()))
+    sys.out.println(Any.toString(p1.get()))
+    sys.out.println(Any.toString(p2.get()))
 

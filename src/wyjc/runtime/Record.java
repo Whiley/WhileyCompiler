@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyjc.runtime;
 
 import java.util.*;
@@ -9,12 +34,15 @@ public final class Record extends HashMap<String,Object> {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1; 
 	
 	public Record() {}
 	
 	Record(HashMap<String,Object> r) {
 		super(r);
+		for(Object item : r.values()) {
+			Util.incRefs(item);
+		}
 	}
 	
 	// ================================================================================
@@ -32,7 +60,7 @@ public final class Record extends HashMap<String,Object> {
 				r = r + ",";
 			}
 			firstTime = false;
-			r = r + s + ":" + Util.str(get(s));
+			r = r + s + ":" + whiley.lang.Any$native.toString(get(s));
 		}
 		return r + "}";
 	}
@@ -41,17 +69,21 @@ public final class Record extends HashMap<String,Object> {
 	// Record Operations
 	// ================================================================================	 	
 
-	public static Object get(final Record record, final String field) {
-		return record.get(field);
+	public static Object get(final Record record, final String field) {		
+		Util.decRefs(record);
+		Object item = record.get(field);
+		Util.incRefs(item);
+		return item;
 	}
 	
-	public static Record put(Record record, final String field, final Object value) {		
+	public static Record put(Record record, final String field, final Object value) {
+		Util.countRefs(record);
 		if(record.refCount > 1) {
-			Record nrecord = new Record(record);
-			for(Object e : nrecord.values()) {
-				Util.incRefs(e);
-			}
-			record = nrecord;
+			Util.countClone(record);
+			Util.decRefs(record);
+			record = new Record(record);			
+		} else {
+			Util.nrecord_strong_updates++;
 		}
 		Object val = record.put(field, value);
 		Util.decRefs(val);
@@ -59,7 +91,11 @@ public final class Record extends HashMap<String,Object> {
 		return record;
 	}
 	
-	public static int size(Record record) {
-		return record.size();
-	}	
+	public static Object internal_get(final Record record, final String field) {
+		Object item = record.get(field);
+		if(record.refCount > 1) {
+			Util.incRefs(item);
+		}
+		return item;		
+	}
 }

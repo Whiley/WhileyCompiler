@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Proc as process { int data }
 
 int Proc::read(int x):
@@ -13,10 +15,10 @@ int id(int x):
 int test(Func f, int arg):
     return f.read(arg)
     
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = test({read: &id},123)
-    out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + Any.toString(x))
     x = test({read: &id},12545)
-    out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + Any.toString(x))
     x = test({read: &id},-11)
-    out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + Any.toString(x))

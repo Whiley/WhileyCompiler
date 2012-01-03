@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 // this is a comment!
 void f({int} xs) requires |xs| > 4:
-    debug str(xs)
+    debug Any.toString(xs)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     if |args| > 1:
         ys = {1,2,3}
     else:

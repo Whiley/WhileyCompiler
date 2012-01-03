@@ -30,8 +30,31 @@ import java.util.*;
 import wyil.lang.Attribute;
 import wyil.util.SyntacticElement;
 
+/**
+ * <p>
+ * Provides classes for representing types in Whiley's source language. These
+ * are referred to as <i>unresolved types</i> as they include nominal types
+ * whose full NameID remains unknown. Unresolved types are <i>resolved</i>
+ * during the name resolution> stage of the compiler.
+ * </p>
+ * 
+ * <p>
+ * Each class is an instance of <code>SyntacticElement</code> and, hence, can be
+ * adorned with certain information (such as source location, etc).
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public interface UnresolvedType extends SyntacticElement {
 
+	/**
+	 * A non-union type represents a type which is not an instance of
+	 * <code>Union</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public interface NonUnion extends UnresolvedType {
 	}
 	
@@ -87,10 +110,10 @@ public interface UnresolvedType extends SyntacticElement {
 		}		
 	}
 	public static final class Named extends SyntacticElement.Impl implements NonUnion {		
-		public final String name;		
-		public Named(String name, Attribute... attributes) {
+		public final ArrayList<String> names;		
+		public Named(Collection<String> names, Attribute... attributes) {
 			super(attributes);
-			this.name = name;
+			this.names = new ArrayList<String>(names);
 		}		
 	}
 	public static final class List extends SyntacticElement.Impl implements NonUnion {
@@ -116,6 +139,13 @@ public interface UnresolvedType extends SyntacticElement {
 			this.value=value;
 		}
 	}
+	public static final class Not extends SyntacticElement.Impl implements NonUnion {
+		public final UnresolvedType element;
+		public Not(UnresolvedType element, Attribute... attributes) {
+			this.element = element;
+		}
+	}
+
 	public static final class Union extends SyntacticElement.Impl implements UnresolvedType {
 		public final ArrayList<NonUnion> bounds;
 
@@ -127,6 +157,17 @@ public interface UnresolvedType extends SyntacticElement {
 			this.bounds = new ArrayList<NonUnion>(bounds);
 		}	
 	}
+	public static final class Intersection extends SyntacticElement.Impl implements UnresolvedType {
+		public final ArrayList<UnresolvedType> bounds;
+
+		public Intersection(Collection<UnresolvedType> bounds, Attribute... attributes) {
+			if (bounds.size() < 2) {
+				new IllegalArgumentException(
+						"Cannot construct a type intersection with fewer than two bounds");
+			}
+			this.bounds = new ArrayList<UnresolvedType>(bounds);
+		}	
+	}
 	
 	public static final class Process extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType element;
@@ -136,12 +177,14 @@ public interface UnresolvedType extends SyntacticElement {
 	}
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
-		public Record(Map<String,UnresolvedType> types, Attribute... attributes) {
+		public final boolean isOpen;
+		public Record(boolean isOpen, Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(
 						"Cannot create type tuple with no fields");
 			}
+			this.isOpen = isOpen;
 			this.types = new HashMap<String,UnresolvedType>(types);
 		}
 	}

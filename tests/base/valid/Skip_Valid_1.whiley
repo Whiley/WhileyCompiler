@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int f(int x):
     if x > 0:
         skip
@@ -5,6 +7,6 @@ int f(int x):
         return -1
     return x
 
-void System::main([string] args):
-    out.println(str(f(1)))
-    out.println(str(f(-10)))
+void ::main(System sys,[string] args):
+    sys.out.println(Any.toString(f(1)))
+    sys.out.println(Any.toString(f(-10)))

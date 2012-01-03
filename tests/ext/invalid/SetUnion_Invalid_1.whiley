@@ -1,10 +1,12 @@
+import * from whiley.lang.*
+
 void f({int} xs) requires |xs| > 0:
-    debug str(xs)
+    debug Any.toString(xs)
 
 void g({int} ys, {int} zs):
     f(ys ∪ zs)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     g({},{1})
     g({2},{2})
     g({},{})

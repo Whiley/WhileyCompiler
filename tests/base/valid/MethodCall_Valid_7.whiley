@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Sum as process { 
     [int] items, 
     int result 
@@ -5,12 +7,12 @@ define Sum as process {
 
 void Sum::start():
     sum = 0
-    for i in items:
+    for i in this.items:
         sum = sum + i
     this.result = sum    
 
 int Sum::get():
-    return result
+    return this.result
 
 Sum ::create([int] items):
     return spawn { 
@@ -18,13 +20,13 @@ Sum ::create([int] items):
         result: 0 
     }
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     data = [1,3,5,7,3,198,1,4,6]
     sum = create(data)
     // start the process asynchronously
     sum!start()
     // get the result synchronously
     r = sum.get()
-    out.println("SUM: " + str(r))
+    sys.out.println("SUM: " + Any.toString(r))
         
 

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 [[int]] update([[int]] ls):
     ls[0][0] = 10
     return ls
@@ -6,8 +8,8 @@
     nls = update(ls)
     return ls,nls
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ls = [[1,2,3,4]]
     ls,nls = f(ls)
-    out.println(str(ls))
-    out.println(str(nls))
+    sys.out.println(Any.toString(ls))
+    sys.out.println(Any.toString(nls))

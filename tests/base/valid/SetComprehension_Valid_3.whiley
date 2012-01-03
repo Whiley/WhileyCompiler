@@ -1,8 +1,10 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
      xs = { 1,2,3,4 }
      ys = { 1,2 }
      zs = { x+y | x∈xs, y∈ys }
-     out.println(str(xs))
-     out.println(str(ys))
-     out.println(str(zs))
+     sys.out.println(Any.toString(xs))
+     sys.out.println(Any.toString(ys))
+     sys.out.println(Any.toString(zs))
 

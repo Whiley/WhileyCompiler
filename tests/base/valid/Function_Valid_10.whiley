@@ -1,14 +1,16 @@
+import * from whiley.lang.*
+
 define msg as {int op, int s}
 
 string f(msg m):
-    return (str(m))
+    return (Any.toString(m))
 
 string f([int] ls):
-    return (str(ls))
+    return (Any.toString(ls))
 
 string f([real] ls):
-    return (str(ls))
+    return (Any.toString(ls))
 
-void System::main([string] args):
-    out.println(f([1,2,3]))
-    out.println(f([1.2,2.2,3.3]))
+void ::main(System sys,[string] args):
+    sys.out.println(f([1,2,3]))
+    sys.out.println(f([1.2,2.2,3.3]))

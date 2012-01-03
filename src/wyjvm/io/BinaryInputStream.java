@@ -36,7 +36,7 @@ public class BinaryInputStream extends InputStream {
 	public BinaryInputStream(InputStream input) {
 		this.input = input;
 	}
-
+	
 	public int read() throws IOException {
 		return input.read();		
 	}
@@ -74,17 +74,20 @@ public class BinaryInputStream extends InputStream {
 	public int read_uv() throws IOException {
 		int value = 0;
 		boolean flag = true;
+		int shift = 0;
 		while(flag) {
 			int w = read_un(4);
 			flag = (w&8) != 0;
-			value = (value << 3) | (w&7);
+			value = ((w&7)<<shift) | value;
+			shift = shift + 3;			
 		}
 		return value;
 	}
 	
-	private boolean read_bit() throws IOException {
+	public boolean read_bit() throws IOException {
 		if(count == 0) {
 			value = input.read();
+			if(value < 0) { throw new EOFException(); }
 			count = 8;
 		}
 		boolean r = (value&1) != 0;

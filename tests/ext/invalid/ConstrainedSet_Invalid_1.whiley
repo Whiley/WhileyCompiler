@@ -1,9 +1,11 @@
+import * from whiley.lang.*
+
 define pintset as {int} where |$| > 1
 
 int f(pintset x):
     return |x|
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = {1}
-    debug str(p)
+    debug Any.toString(p)
     f(p)

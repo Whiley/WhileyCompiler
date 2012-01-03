@@ -1,9 +1,11 @@
+import * from whiley.lang.*
+
 define realtup as {real op}
 
 string f(realtup t):
     x = t.op
-    return str(t)
+    return Any.toString(t)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     t = {op:1}
-    out.println(f(t))
+    sys.out.println(f(t))

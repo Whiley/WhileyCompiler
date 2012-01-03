@@ -1,18 +1,20 @@
+import * from whiley.lang.*
+
 define pos as real
 define neg as int
 define expr as pos|neg|[int]
 
 string f(expr e):
     if e is pos && e > 0:
-        return "POSITIVE: " + str(e)
+        return "POSITIVE: " + Any.toString(e)
     else if e is neg:
-        return "NEGATIVE: " + str(e)
+        return "NEGATIVE: " + Any.toString(e)
     else:
         return "OTHER"
 
-void System::main([string] args):
-    out.println(f(-1))
-    out.println(f(1.0))
-    out.println(f(1.234))
-    out.println(f([1,2,3]))
+void ::main(System sys,[string] args):
+    sys.out.println(f(-1))
+    sys.out.println(f(1.0))
+    sys.out.println(f(1.234))
+    sys.out.println(f([1,2,3]))
  

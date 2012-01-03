@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.transforms;
 
 import java.math.BigInteger;
@@ -5,6 +30,7 @@ import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import static wyil.util.SyntaxError.*;
@@ -22,7 +48,7 @@ import wyjc.runtime.BigRational;
  * cases is the dispatch target.</li>
  * </ol>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ConstraintInline implements Transform {
@@ -61,7 +87,7 @@ public class ConstraintInline implements Transform {
 			constraint = nconstraint;
 		}
 		
-		return new Module.TypeDef(type.name(), type.type(), constraint,
+		return new Module.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
 				type.attributes());
 	}
 	
@@ -70,7 +96,7 @@ public class ConstraintInline implements Transform {
 		for(Module.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new Module.Method(method.name(), method.type(), cases);
+		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {	
@@ -152,7 +178,9 @@ public class ConstraintInline implements Transform {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
 		} catch(ResolveError e) {
-			syntaxError("internal failure",filename,entry,e);
+			syntaxError(e.getMessage(),filename,entry,e);
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,entry,e);
 		}
 		
 		return null;
@@ -167,8 +195,8 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {		
-		Block precondition = findPrecondition(code.name,code.type);
-		if(precondition != null) {
+		Block precondition = findPrecondition(code.name,code.type);		
+		if(precondition != null) {			
 			Block blk = new Block(0);
 			List<Type> paramTypes = code.type.params();
 			
@@ -180,13 +208,15 @@ public class ConstraintInline implements Transform {
 				binding.put(i,freeSlot+i);
 			}
 			
+			precondition = Block.resource(precondition, elem.attribute(Attribute.Source.class));
 			blk.importExternal(precondition,binding);
 			
-			for(int i=0;i<paramTypes.size();++i) {
+			for(int i=0;i<paramTypes.size();++i) {				
 				blk.append(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
 			return blk;
 		}
+		
 		return null;
 	}		
 	
@@ -220,16 +250,17 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
-				Type.Fun mtype = method.type();	
+				Type.Function mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Type.Meth
-						&& ((Type.Meth) mtype).receiver() != null) {
+				if (mtype instanceof Type.Method
+						&& ((Type.Method) mtype).receiver() != null) {
 					binding.put(pIndex++, Code.THIS_SLOT);
 				}
 				int shadowIndex = methodCase.body().numSlots();
 				for(Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
+				postcondition = Block.resource(postcondition,elem.attribute(Attribute.Source.class));
 				blk.importExternal(postcondition,binding);
 				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 				return blk;
@@ -325,10 +356,10 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.Fun fun) throws ResolveError {
+	protected Block findPrecondition(NameID name, Type.Function fun) throws ResolveError {
 		Module m = loader.loadModule(name.module());				
 		Module.Method method = m.method(name.name(),fun);
-		
+	
 		for(Module.Case c : method.cases()) {
 			// FIXME: this is a hack for now
 			return c.precondition();

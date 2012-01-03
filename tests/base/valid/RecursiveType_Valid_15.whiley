@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Expr as real | Var | BinOp
 define BinOp as { Expr lhs, Expr rhs } 
 define Var as { string id }
@@ -20,12 +22,12 @@ SExpr sbuild(int i):
         return build(i)
 
 // Main method
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     i = -5
     while i < 10:
         e = sbuild(i)
         if e is SyntaxError:
-            out.println("syntax error: " + e.err)
+            sys.out.println("syntax error: " + e.err)
         else:
-            out.println(str(e))
+            sys.out.println(Any.toString(e))
         i = i + 1

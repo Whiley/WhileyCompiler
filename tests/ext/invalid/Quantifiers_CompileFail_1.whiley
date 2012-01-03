@@ -1,5 +1,7 @@
-void f({int} ls) requires some { i in ls | i < 0}:
-    debug str(ls)
+import * from whiley.lang.*
 
-void System::main([string] args):
+void f({int} ls) requires some { i in ls | i < 0}:
+    debug Any.toString(ls)
+
+void ::main(System sys,[string] args):
     f({1,2,3})

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 // this is a comment!
 define c4nat as int where $ < 10
 
@@ -7,5 +9,5 @@ int h() ensures $ <= 5:
 c4nat f():
     return h() * 2
 
-void System::main([string] args):
-    debug str(f())
+void ::main(System sys,[string] args):
+    debug Any.toString(f())

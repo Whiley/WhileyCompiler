@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 void f([int] x, int i) requires |x| > 0:
     if(i < 0 || i >= |x|):
         i = 0
@@ -5,14 +7,14 @@ void f([int] x, int i) requires |x| > 0:
     z = x[i]
     assert y == z
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     arr = [1,2,3]
     f(arr, 1)
-    out.println(str(arr))
+    sys.out.println(Any.toString(arr))
     f(arr, 2)
-    out.println(str(arr))
+    sys.out.println(Any.toString(arr))
     f(arr, 3)
-    out.println(str(arr))
+    sys.out.println(Any.toString(arr))
     f(arr, -1)
-    out.println(str(arr))
+    sys.out.println(Any.toString(arr))
     f(arr, 4)

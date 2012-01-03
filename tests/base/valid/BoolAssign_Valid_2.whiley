@@ -1,10 +1,12 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     x = true
     y = false
-    out.println(str(x))
-    out.println(str(y))
-    out.println("AND")
+    sys.out.println(x)
+    sys.out.println(y)
+    sys.out.println("AND")
     x = x && y
-    out.println(str(x))
-    out.println("NOT")
-    out.println(str(!x))
+    sys.out.println(x)
+    sys.out.println("NOT")
+    sys.out.println(!x)

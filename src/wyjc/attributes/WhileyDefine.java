@@ -43,7 +43,7 @@ import wyjvm.lang.Constant;
  * file was generated from a whiley source file. This is useful in
  * multi-platform scenarios where we might have multiple source languages.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class WhileyDefine implements BytecodeAttribute {
@@ -123,10 +123,10 @@ public class WhileyDefine implements BytecodeAttribute {
 		for(BytecodeAttribute a : attributes) {
 			a.write(iw, constantPool, loader);
 		}
-		
+		iw.close();
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
 		writer.write_u4(out.size() + 2);		
-		writer.write_u2(constantPool.get(new Constant.Utf8(defName)));		
+		writer.write_u2(constantPool.get(new Constant.Utf8(defName)));				
 		writer.write(out.toByteArray());			
 	}	
 		
@@ -279,7 +279,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 		
-	public static class Reader implements BytecodeAttribute.Reader {		
+	public static final class Reader implements BytecodeAttribute.Reader {		
 		private HashMap<String,BytecodeAttribute.Reader> attributeReaders;
 		
 		public Reader(Collection<BytecodeAttribute.Reader> readers) {
@@ -319,7 +319,8 @@ public class WhileyDefine implements BytecodeAttribute {
 				return new WhileyDefine(name, value, attrs);
 			} else {
 				// type only
-				Type type = WhileyType.Reader.readType(input, constantPool);
+				Type type = Type.construct(new WhileyType.TypeReader(input,
+						constantPool).read());
 				int nattrs = input.read_u2();
 				List<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(
 						nattrs, input, constantPool, attributeReaders);

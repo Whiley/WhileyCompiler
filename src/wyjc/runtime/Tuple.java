@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyjc.runtime;
 
 import java.math.BigInteger;
@@ -10,7 +35,7 @@ public final class Tuple extends java.util.ArrayList {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100; // TODO: implement proper reference counting
+	int refCount = 1;
 	
 	// ================================================================================
 	// Generic Operations
@@ -26,18 +51,18 @@ public final class Tuple extends java.util.ArrayList {
 	
 	Tuple(java.util.Collection items) {
 		super(items);			
+		for(Object item : items) {
+			Util.incRefs(item);
+		}
 	}
 	
 	Tuple(Object... items) {
 		super();
-		for(Object o : items) {
-			add(o);
+		for(Object item : items) {
+			add(item);
+			Util.incRefs(item);
 		}
-	}
-	
-	public boolean add(Object o) {		
-		return super.add(o);
-	}
+	}	
 		
 	public String toString() {
 		String r = "(";
@@ -47,7 +72,7 @@ public final class Tuple extends java.util.ArrayList {
 				r += ",";
 			}
 			firstTime=false;
-			r += Util.str(o);
+			r += whiley.lang.Any$native.toString(o);
 		}
 		return r + ")";
 	}
@@ -55,57 +80,17 @@ public final class Tuple extends java.util.ArrayList {
 	// ================================================================================
 	// List Operations
 	// ================================================================================	 
+	
+	public static Object get(Tuple tuple, int index) {
+		Util.decRefs(tuple);
+		Object item = tuple.get(index);
+		Util.incRefs(item);
+		return item;
+	}
 		
-	public static Object get(Tuple list, BigInteger index) {		
-		return list.get(index.intValue());
-	}
-			
-	public static Tuple set(Tuple list, final BigInteger index, final Object value) {
-		if(list.refCount > 1) {			
-			// in this case, we need to clone the list in question
-			list.refCount--;
-			Tuple nlist = new Tuple(list);
-			for(Object item : nlist) {
-				Util.incRefs(item);
-			}
-			list = nlist;
-		}
-		Object v = list.set(index.intValue(),value);
-		Util.decRefs(v);
-		Util.incRefs(value);
-		return list;
-	}
-	
-	public static Tuple sublist(final Tuple list, final BigInteger start, final BigInteger end) {
-		int st = start.intValue();
-		int en = end.intValue();
-		Tuple r = new Tuple(en-st);
-		for (int i = st; i != en; ++i) {
-			r.add(list.get(i));
-		}
-		return r;		
-	}
-	
-	public static BigInteger length(Tuple list) {
-		return BigInteger.valueOf(list.size());
-	}
-	
-	public static Tuple append(final Tuple lhs, final Tuple rhs) {		
-		Tuple r = new Tuple(lhs);
-		r.addAll(rhs);
-		return r;
-	}
-	
-	public static Tuple append(final Tuple list, final Object item) {
-		Tuple r = new Tuple(list);
-		r.add(item);
-		return r;
-	}
-	
-	public static Tuple append(final Object item, final Tuple list) {
-		Tuple r = new Tuple(list);
-		r.add(0,item);
-		return r;
+	public static BigInteger length(Tuple tuple) {
+		Util.decRefs(tuple);
+		return BigInteger.valueOf(tuple.size());
 	}
 	
 	public static int size(final Tuple list) {
@@ -115,4 +100,17 @@ public final class Tuple extends java.util.ArrayList {
 	public static java.util.Iterator iterator(Tuple list) {
 		return list.iterator();
 	}		
+	
+	/**
+	 * This method is not intended for public consumption. It is used internally
+	 * by the compiler during object construction only.
+	 * 
+	 * @param list
+	 * @param item
+	 * @return
+	 */
+	public static Tuple internal_add(Tuple lhs, Object rhs) {		
+		lhs.add(rhs);
+		return lhs;
+	}
 }

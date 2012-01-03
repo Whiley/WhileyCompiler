@@ -32,12 +32,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import wyautl.io.BinaryAutomataReader;
+import wyil.io.ModuleReader;
 import wyil.lang.Attribute;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
 import wyil.lang.Type;
 import wyil.util.Pair;
-import wyil.util.Types;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
 import wyjvm.io.BinaryInputStream;
@@ -50,10 +51,10 @@ import wyjvm.lang.ClassFile;
  * them into wyil modules. The value of this is that we can extract necessary
  * module information from classfiles on the CLASSPATH.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
-public class ClassFileLoader {
+public class ClassFileLoader implements ModuleReader {
 
 	/**
 	 * A map from attribute names to attribute readers. The readers are used to
@@ -69,7 +70,7 @@ public class ClassFileLoader {
 		// probably want to add more readers here.  E.g. for pre and post-conditions.
 	}
 		
-	public Module read(ModuleID module, String filename, InputStream input)
+	public Module read(ModuleID module, InputStream input)
 			throws IOException {
 		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
 				this.readers);
@@ -88,19 +89,19 @@ public class ClassFileLoader {
 			return null;
 		}
 		
-		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
+		HashMap<Pair<Type.Function,String>,Module.Method> methods = new HashMap();
 		
 		for (ClassFile.Method cm : cf.methods()) {
 			if (!cm.isSynthetic()) {
 				Module.Method mi = createMethodInfo(mid, cm);
-				Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
+				Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
 				Module.Method method = methods.get(key);
 				if (method != null) {
 					// coalesce cases
 					ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
 							method.cases());
 					ncases.addAll(mi.cases());
-					mi = new Module.Method(mi.name(), mi.type(), ncases);
+					mi = new Module.Method(method.modifiers(), mi.name(), mi.type(), ncases);
 				}
 				methods.put(key, mi);
 			}
@@ -123,7 +124,8 @@ public class ClassFileLoader {
 							attrs.add((Attribute)bba);
 						}
 					}
-					Module.ConstDef ci = new Module.ConstDef(wd.defName(),wd.value(),attrs);
+					// TODO: generate proper modifiers
+					Module.ConstDef ci = new Module.ConstDef(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
 					constants.add(ci);
 				} else {
 					// type definition
@@ -134,7 +136,8 @@ public class ClassFileLoader {
 							attrs.add((Attribute)bba);
 						}
 					}
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,null,attrs);					
+					// TODO: generate proper modifiers
+					Module.TypeDef ti = new Module.TypeDef(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
 					types.add(ti);
 				}
 			}
@@ -149,10 +152,10 @@ public class ClassFileLoader {
 			int split = cm.name().indexOf('$');
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());
-			// then find the type
-			Type.Fun type = (Type.Fun) new Types.BinaryReader(
-					new BinaryInputStream(new JavaIdentifierInputStream(mangle)))
-					.read();
+			// then read the type
+			BinaryInputStream bin = new BinaryInputStream(
+					new JavaIdentifierInputStream(mangle));
+			Type.Function type = (Type.Function) new Type.BinaryReader(bin).readType();
 			// now build the parameter names
 			List<Attribute> attrs = new ArrayList<Attribute>();
 			for (BytecodeAttribute ba : cm.attributes()) {
@@ -171,8 +174,8 @@ public class ClassFileLoader {
 			List<Module.Case> mcases = new ArrayList<Module.Case>();
 			// TODO: fix this problem here related to locals
 			mcases.add(new Module.Case(null, null, null, Collections.EMPTY_LIST, attrs));
-
-			return new Module.Method(name, type, mcases);
+			// TODO: generate proper modifiers
+			return new Module.Method(Collections.EMPTY_LIST,name, type, mcases);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

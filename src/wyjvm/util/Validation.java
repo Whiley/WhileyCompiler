@@ -48,7 +48,7 @@ import wyjvm.attributes.*;
  * <li>That type modifiers on bytecodes are correct</li>
  * </ul>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class Validation {

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 // this implements what is effectively a "raw" interface
 
 define FileReader as process {
@@ -13,15 +15,15 @@ int FileReader::read(int amount):
     r = amount + this.position
     return r
     
-Reader System::openReader():
+Reader ::openReader():
     proc = spawn { position: 123 }
     return { thus: proc, read: &read } 
 
-void System::main([string] args):
-    reader = this.openReader()
+void ::main(System sys,[string] args):
+    reader = openReader()
     target = reader.thus
     method = reader.read
     data = target.method(5)
-    out.println(str(data))
+    sys.out.println(Any.toString(data))
 
 

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define nat as int
 define pos as int
 
@@ -8,6 +10,6 @@ expr f(posExpr e1):
     e2 = e1
     return e2
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = f({lhs:{lhs:1,rhs:2},rhs:1})
-    out.println(str(e))
+    sys.out.println(Any.toString(e))

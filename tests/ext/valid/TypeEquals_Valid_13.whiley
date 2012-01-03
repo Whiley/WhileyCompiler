@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define pos as int where $ > 0
 define neg as int where $ < 0
 
@@ -8,9 +10,9 @@ int f(intlist x):
         return x
     return 1 
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f([1,2,3])
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
     x = f(123)
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
 

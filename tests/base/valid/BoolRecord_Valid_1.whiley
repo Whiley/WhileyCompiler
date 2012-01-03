@@ -1,5 +1,7 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     x = {flag:true,code:0}
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
     x.flag = false
-    out.println(str(x))
+    sys.out.println(Any.toString(x))

@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Expr as real | [Expr]
 
 real f(Expr x):
@@ -6,8 +8,8 @@ real f(Expr x):
     else:
         return x
 
-void System::main([string] args):
-    out.println(str(f([1,2,3])))
-    out.println(str(f([1.0,2.0,3.0])))
-    out.println(str(f(1)))
-    out.println(str(f(1.234)))
+void ::main(System sys,[string] args):
+    sys.out.println(Any.toString(f([1,2,3])))
+    sys.out.println(Any.toString(f([1.0,2.0,3.0])))
+    sys.out.println(Any.toString(f(1)))
+    sys.out.println(Any.toString(f(1.234)))

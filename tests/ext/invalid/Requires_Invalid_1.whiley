@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int g(int y) requires y > 0:
     return 10 / y
 

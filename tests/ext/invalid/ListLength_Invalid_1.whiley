@@ -1,7 +1,9 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     if |args| > 0:
         arr = [1,2]
     else:
         arr = [1,2,3]
     assert |arr| == 4 
-    debug str(arr[0])
+    debug Any.toString(arr[0])

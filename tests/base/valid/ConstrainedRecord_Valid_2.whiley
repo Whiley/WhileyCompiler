@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define RET as 169
 define NOP as 0
 
@@ -7,7 +9,7 @@ define UNIT as {unitCode op}
 int f(UNIT x):
     return x.op
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     bytes = f({op:NOP})
-    out.println(str(bytes))
+    sys.out.println(Any.toString(bytes))
 

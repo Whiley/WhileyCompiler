@@ -1,23 +1,25 @@
+import * from whiley.lang.*
+
 define Expr as real | { Expr lhs, int data } | [Expr]
 define SubExpr as real | { SubExpr lhs, int data }
 
 string toString(Expr e):
     if e is SubExpr:
         if e is real:
-            return str(e)
+            return Any.toString(e)
         else:
-            return str(e.data) + "->" + toString(e.lhs)
+            return Any.toString(e.data) + "->" + toString(e.lhs)
     else:
-        return str(-1)
+        return Any.toString(-1)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     se1 = 0.1234
     se2 = {lhs: se1, data: 1}
     se3 = {lhs: se2, data: 45}
     e1 = [se1]
     e2 = [e1,se1,se2]
-    out.println(toString(se1))
-    out.println(toString(se2))
-    out.println(toString(se3))
-    out.println(toString(e1))
-    out.println(toString(e2))
+    sys.out.println(toString(se1))
+    sys.out.println(toString(se2))
+    sys.out.println(toString(se3))
+    sys.out.println(toString(e1))
+    sys.out.println(toString(e2))

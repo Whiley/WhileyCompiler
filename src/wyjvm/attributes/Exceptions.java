@@ -57,8 +57,7 @@ public class Exceptions implements BytecodeAttribute {
 	 * @throws IOException
 	 */
 	public void write(BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {
-		
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {		
 		writer.write_u2(constantPool.get(new Constant.Utf8("Exceptions")));
 		writer.write_u4(2 + (2 * exceptions.size()));
 		writer.write_u2(exceptions.size());

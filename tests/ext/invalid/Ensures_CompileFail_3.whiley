@@ -1,8 +1,10 @@
-int System::g(int x):
-    return x - 1
+import * from whiley.lang.*
 
-void System::f(int x) requires x > this.g(x):
-    debug str(x)
+int ::g(int x):
+    return x + 1
 
-void System::main([string] args):
-    this.f(1)
+void ::f(int x) requires x > g(x):
+    debug Any.toString(x)
+
+void ::main(System sys,[string] args):
+    f(1)

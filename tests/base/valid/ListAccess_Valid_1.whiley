@@ -1,9 +1,11 @@
+import * from whiley.lang.*
+
 void f([int] x):
     y = x[0]
     z = x[0]
     assert y == z
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     arr = [1,2,3]
     f(arr)
-    out.println(str(arr[0]))
+    sys.out.println(Any.toString(arr[0]))

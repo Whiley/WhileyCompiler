@@ -1,3 +1,5 @@
-void System::main([string] args):
-    x = this.out
-    out.println("GOT HERE")
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
+    x = sys.out
+    x.println("GOT HERE")

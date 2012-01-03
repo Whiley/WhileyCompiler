@@ -35,7 +35,7 @@ public abstract class Value implements Comparable<Value> {
 
 	public static final Null V_NULL = new Null();
 
-	public abstract Type type();
+	public abstract wyil.lang.Type type();
 	
 	public static Bool V_BOOL(boolean value) {
 		return get(new Bool(value));
@@ -82,21 +82,21 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Dictionary(values));
 	}
 	
-	public static TypeConst V_TYPE(Type type) {
-		return get(new TypeConst(type));
+	public static Type V_TYPE(wyil.lang.Type type) {
+		return get(new Type(type));
 	}
 	
 	public static Tuple V_TUPLE(Collection<Value> values) {
 		return get(new Tuple(values));
 	}
 	
-	public static FunConst V_FUN(NameID name, Type.Fun type) {
-		return get(new FunConst(name,type));
+	public static Function V_FUN(NameID name, wyil.lang.Type.Function type) {
+		return get(new Function(name,type));
 	}		
 	
 	public static final class Null extends Value {				
-		public Type type() {
-			return Type.T_NULL;
+		public wyil.lang.Type type() {
+			return wyil.lang.Type.T_NULL;
 		}
 		public int hashCode() {
 			return 0;
@@ -121,8 +121,8 @@ public abstract class Value implements Comparable<Value> {
 		private Bool(boolean value) {
 			this.value = value;
 		}
-		public Type type() {
-			return Type.T_BOOL;
+		public wyil.lang.Type type() {
+			return wyil.lang.Type.T_BOOL;
 		}
 		public int hashCode() {
 			return value ? 1 : 0;
@@ -160,8 +160,8 @@ public abstract class Value implements Comparable<Value> {
 		private Rational(BigRational value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_REAL;			
+		public wyil.lang.Type type() {				
+			return wyil.lang.Type.T_REAL;			
 		}
 		public int hashCode() {
 			return value.hashCode();
@@ -205,8 +205,8 @@ public abstract class Value implements Comparable<Value> {
 		private Byte(byte value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_BYTE;			
+		public wyil.lang.Type type() {				
+			return wyil.lang.Type.T_BYTE;			
 		}
 		public int hashCode() {
 			return value;
@@ -253,8 +253,8 @@ public abstract class Value implements Comparable<Value> {
 		private Char(char value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_CHAR;			
+		public wyil.lang.Type type() {				
+			return wyil.lang.Type.T_CHAR;			
 		}
 		public int hashCode() {
 			return value;
@@ -292,8 +292,8 @@ public abstract class Value implements Comparable<Value> {
 		private Integer(BigInteger value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_INT;			
+		public wyil.lang.Type type() {				
+			return wyil.lang.Type.T_INT;			
 		}
 		public int hashCode() {
 			return value.hashCode();
@@ -340,8 +340,8 @@ public abstract class Value implements Comparable<Value> {
 		private Strung(String value) {
 			this.value = value;
 		}
-		public Type type() {
-			return Type.T_STRING;
+		public wyil.lang.Type type() {
+			return wyil.lang.Type.T_STRING;
 		}
 		public int hashCode() {
 			return value.hashCode();
@@ -367,17 +367,17 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class List extends Value {
+	public static final class List extends Value {
 		public final ArrayList<Value> values;
 		private List(Collection<Value> value) {
 			this.values = new ArrayList<Value>(value);
 		}
-		public Type type() {
-			Type t = Type.T_VOID;
+		public wyil.lang.Type type() {
+			wyil.lang.Type t = wyil.lang.Type.T_VOID;
 			for(Value arg : values) {
-				t = Type.leastUpperBound(t,arg.type());
+				t = wyil.lang.Type.Union(t,arg.type());
 			}
-			return Type.T_LIST(t);			
+			return wyil.lang.Type.List(t, !values.isEmpty());			
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -425,7 +425,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class Set extends Value {
+	public static final class Set extends Value {
 		public final HashSet<Value> values;
 		private Set() {
 			this.values = new HashSet<Value>();
@@ -433,12 +433,12 @@ public abstract class Value implements Comparable<Value> {
 		private Set(Collection<Value> value) {
 			this.values = new HashSet<Value>(value);
 		}
-		public Type type() {
-			Type t = Type.T_VOID;
+		public wyil.lang.Type type() {
+			wyil.lang.Type t = wyil.lang.Type.T_VOID;
 			for(Value arg : values) {
-				t = Type.leastUpperBound(t,arg.type());
+				t = wyil.lang.Type.Union(t,arg.type());
 			}
-			return Type.T_SET(t);	
+			return wyil.lang.Type.Set(t, !values.isEmpty());	
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -530,18 +530,18 @@ public abstract class Value implements Comparable<Value> {
 		}		
 	}
 	
-	public static class Record extends Value {
+	public static final class Record extends Value {
 		public final HashMap<String,Value> values;
 		private Record(Map<String,Value> value) {
 			this.values = new HashMap<String,Value>(value);
 		}
 
-		public Type type() {
-			HashMap<String, Type> types = new HashMap<String, Type>();
+		public wyil.lang.Type type() {
+			HashMap<String, wyil.lang.Type> types = new HashMap<String, wyil.lang.Type>();
 			for (Map.Entry<String, Value> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
 			}
-			return Type.T_RECORD(types);
+			return wyil.lang.Type.Record(false,types);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -600,7 +600,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class Dictionary extends Value {
+	public static final class Dictionary extends Value {
 		public final HashMap<Value,Value> values;
 		private Dictionary(Map<Value,Value> value) {
 			this.values = new HashMap<Value,Value>(value);
@@ -611,14 +611,14 @@ public abstract class Value implements Comparable<Value> {
 				this.values.put(p.first(), p.second());
 			}
 		}
-		public Type type() {
-			Type key = Type.T_VOID;
-			Type value = Type.T_VOID;
+		public wyil.lang.Type type() {
+			wyil.lang.Type key = wyil.lang.Type.T_VOID;
+			wyil.lang.Type value = wyil.lang.Type.T_VOID;
 			for (Map.Entry<Value, Value> e : values.entrySet()) {
-				key = Type.leastUpperBound(key,e.getKey().type());
-				value = Type.leastUpperBound(value,e.getKey().type());
+				key = wyil.lang.Type.Union(key,e.getKey().type());
+				value = wyil.lang.Type.Union(value,e.getKey().type());
 			}
-			return Type.T_DICTIONARY(key,value);
+			return wyil.lang.Type.Dictionary(key,value);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -684,27 +684,27 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static final class TypeConst extends Value {
-		public final Type type;
-		private TypeConst(Type type) {
+	public static final class Type extends Value {
+		public final wyil.lang.Type type;
+		private Type(wyil.lang.Type type) {
 			this.type = type;
 		}
-		public Type type() {
-			return Type.T_META;
+		public wyil.lang.Type type() {
+			return wyil.lang.Type.T_META;
 		}
 		public int hashCode() {
 			return type.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof TypeConst) {
-				TypeConst i = (TypeConst) o;
+			if(o instanceof Type) {
+				Type i = (Type) o;
 				return type == i.type;
 			}
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof TypeConst) {
-				TypeConst t = (TypeConst) v;
+			if(v instanceof Type) {
+				Type t = (Type) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {
@@ -716,17 +716,17 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static final class FunConst extends Value {
+	public static final class Function extends Value {
 		public final NameID name;
-		public final Type.Fun type;
+		public final wyil.lang.Type.Function type;
 		
-		private FunConst(NameID name, Type.Fun type) {
+		private Function(NameID name, wyil.lang.Type.Function type) {
 			this.name = name;
 			this.type = type;
 		}
-		public Type type() {
+		public wyil.lang.Type type() {
 			if (type == null) {				
-				return Type.T_FUN(Type.T_ANY, Type.T_ANY);
+				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY, wyil.lang.Type.T_ANY);
 			} else {
 				return type;
 			}
@@ -739,8 +739,8 @@ public abstract class Value implements Comparable<Value> {
 			}
 		}
 		public boolean equals(Object o) {
-			if(o instanceof FunConst) {
-				FunConst i = (FunConst) o;
+			if(o instanceof Function) {
+				Function i = (Function) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
 								.equals(i.type)));
@@ -748,8 +748,8 @@ public abstract class Value implements Comparable<Value> {
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof FunConst) {
-				FunConst t = (FunConst) v;
+			if(v instanceof Function) {
+				Function t = (Function) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {
@@ -761,18 +761,18 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static class Tuple extends Value {
+	public static final class Tuple extends Value {
 		public final ArrayList<Value> values;
 		private Tuple(Collection<Value> values) {
 			this.values = new ArrayList<Value>(values);
 		}
 
-		public Type type() {
-			ArrayList<Type> types = new ArrayList<Type>();			
+		public wyil.lang.Type type() {
+			ArrayList<wyil.lang.Type> types = new ArrayList<wyil.lang.Type>();			
 			for (Value e : values) {
 				types.add(e.type());				
 			}
-			return Type.T_TUPLE(types);
+			return wyil.lang.Type.Tuple(types);
 		}
 		public int hashCode() {
 			return values.hashCode();

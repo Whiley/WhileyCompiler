@@ -1,10 +1,12 @@
+import * from whiley.lang.*
+
 string f(int|null x):
     if x is null:
         return "GOT NULL"
     else:
         return "GOT INT"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = null
-    out.println(f(x))
-    out.println(f(1))
+    sys.out.println(f(x))
+    sys.out.println(f(1))

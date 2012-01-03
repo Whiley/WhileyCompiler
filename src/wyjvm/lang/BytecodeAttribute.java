@@ -68,7 +68,7 @@ public interface BytecodeAttribute {
 	/**
 	 * Class for representing unknown attributes
 	 * 
-	 * @author djp	 
+	 * @author David J. Pearce	 
 	 */
 	public static class Unknown implements BytecodeAttribute {
 		private byte[] bytes;
@@ -181,7 +181,7 @@ public interface BytecodeAttribute {
 	 * determine those bytecode attributes it will read (i.e. those with the
 	 * same name).
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static interface Reader {

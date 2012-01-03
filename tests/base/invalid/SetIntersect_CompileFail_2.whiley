@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 int f({real} xs):
     return |xs|
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ys = {{1,2},{1}}
     xs = {1,2,3,4}
     x = f(xs ∩ ys)
-    out.println(str(x))
+    sys.out.println(Any.toString(x))

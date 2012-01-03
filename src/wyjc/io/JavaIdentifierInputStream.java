@@ -38,7 +38,7 @@ import java.io.*;
  * we're basically encoding 8-bit data into a 6-bit stream (with encoding).
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class JavaIdentifierInputStream extends InputStream {	

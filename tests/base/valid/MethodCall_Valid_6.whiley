@@ -1,12 +1,14 @@
+import * from whiley.lang.*
+
 define wmcr6tup as {int x, int y}
 define Proc as process { int state }
 
 int Proc::get():
-    return state
+    return this.state
 
 wmcr6tup System::f(Proc x, int y):
     return {x:y,y:x.get()}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     proc = spawn { state: 1 }
-    out.println(str(this.f(proc,1)))
+    sys.out.println(Any.toString(sys.f(proc,1)))

@@ -1,7 +1,33 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.transforms;
 
 import java.util.*;
 import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.ErrorMessages.*;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
@@ -41,7 +67,7 @@ import wyil.util.*;
  * left-hand side to either of the two options in the right-hand side.  
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  */
 public class CoercionCheck implements Transform {
 	private final ModuleLoader loader;
@@ -119,7 +145,7 @@ public class CoercionCheck implements Transform {
 		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
 			Type.Dictionary t1 = (Type.Dictionary) from;
 			Type.Set t2 = (Type.Set) to;
-			Type.Tuple tup = Type.T_TUPLE(t1.key(),t1.value());
+			Type tup = Type.Tuple(t1.key(),t1.value());
 			check(tup,t2.element(),visited,elem);
 		} else if(from instanceof Type.List && to instanceof Type.Set) {
 			Type.List t1 = (Type.List) from;
@@ -147,9 +173,9 @@ public class CoercionCheck implements Transform {
 				Type e2 = t2_elements.get(s);
 				check(e1,e2,visited,elem);
 			}			
-		} else if(from instanceof Type.Fun && to instanceof Type.Fun) {
-			Type.Fun t1 = (Type.Fun) from;
-			Type.Fun t2 = (Type.Fun) to;
+		} else if(from instanceof Type.Function && to instanceof Type.Function) {
+			Type.Function t1 = (Type.Function) from;
+			Type.Function t2 = (Type.Function) to;
 			List<Type> t1_elements = t1.params(); 
 			List<Type> t2_elements = t2.params();			
 			for(int i=0;i!=t1_elements.size();++i) {
@@ -169,7 +195,7 @@ public class CoercionCheck implements Transform {
 			// First, check for identical type (i.e. no coercion necessary)
 			
 			for(Type b : t2.bounds()) {
-				if(Type.isomorphic(from, b)) {
+				if(from.equals(b)) {
 					// no problem
 					return;
 				}
@@ -181,9 +207,8 @@ public class CoercionCheck implements Transform {
 			for(Type b : t2.bounds()) {
 				if(Type.isSubtype(b,from)) {
 					if(match != null) {
-						// found ambiguity
-						syntaxError("ambiguous coercion (" + from + " => "
-								+ to, filename, elem);
+						// found ambiguity						
+						syntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), filename, elem);
 					} else {
 						check(from,b,visited,elem);
 						match = b;						
@@ -199,7 +224,7 @@ public class CoercionCheck implements Transform {
 			// Third, test for single coercive match
 			
 			for(Type b : t2.bounds()) {
-				if(Type.isCoerciveSubtype(b,from)) {
+				if(Type.isImplicitCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						syntaxError("ambiguous coercion (" + from + " => "

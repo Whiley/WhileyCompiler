@@ -31,7 +31,7 @@ package wyil.util;
  * error (e.g. trying to import from module that doesn't exist). However, it
  * could also indicate that the WHILEYPATH is not configured correctly.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ResolveError extends Exception {

@@ -39,7 +39,7 @@ import wyjvm.lang.Constant;
  * file was generated from a whiley source file. This is useful in
  * multi-platform scenarios where we might have multiple source languages.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class WhileyVersion implements BytecodeAttribute {

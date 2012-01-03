@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define Rec1 as {int x}
 define Rec2 as {real x}
 
@@ -5,9 +7,9 @@ int f(Rec2 rec):
     x,y = rec.x
     return x
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rec = {x: 1}
-    out.println(str(rec))
+    sys.out.println(Any.toString(rec))
     num = f(rec)
-    out.println(str(rec))
-    out.println(str(num))
+    sys.out.println(Any.toString(rec))
+    sys.out.println(Any.toString(num))

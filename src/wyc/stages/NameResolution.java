@@ -28,9 +28,11 @@ package wyc.stages;
 import java.util.*;
 
 import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
+import wyc.NameResolver;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
@@ -39,30 +41,49 @@ import wyc.lang.Expr.*;
 import wyc.stages.WhileyLexer.Ampersand;
 import wyc.util.*;
 
-public class NameResolution {
-	private final ModuleLoader loader;	
+/**
+ * Responsible for determining the fully-qualified names for all external
+ * symbols in a module. For example, consider the following module:
+ * 
+ * <pre>
+ * import whiley.lang.*
+ * 
+ * int f(int x):
+ *    return Math.max(x,10)
+ * </pre>
+ * 
+ * Here, <code>Math.max</code> is an external symbol and we must determine the
+ * package where it is defined, or report a syntax error if none is found.
+ * Therefore, name resolution walks the list of import declarations looking for
+ * the first occurrence of a matching symbol, and records this as an attribute
+ * on the corresponding Abstract Syntax Tree (AST) node.
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public final class NameResolution {
+	private final NameResolver resolver;	
 	private String filename;
 	private ModuleID module;
 	
 	public NameResolution(ModuleLoader loader) {
-		this.loader = loader;
+		this.resolver = (NameResolver) loader;
 	}
 	
 	public void resolve(WhileyFile wf) {
-		ArrayList<PkgID> imports = new ArrayList<PkgID>();
+		ArrayList<Import> imports = new ArrayList<Import>();
 		
 		module = wf.module;
 		filename = wf.filename;
 		
-		imports.add(module.pkg().append(module.module()));
-		imports.add(module.pkg().append("*"));
-		imports.add(new PkgID(new String[]{"whiley","lang"}).append("*"));
-						
+		imports.add(new Import(module.pkg(), module.module(), "*")); 
+		imports.add(new Import(module.pkg(), "*")); 
+
 		for(Decl d : wf.declarations) {			
 			try {
 				if(d instanceof ImportDecl) {
 					ImportDecl impd = (ImportDecl) d;
-					imports.add(0,new PkgID(impd.pkg));
+					imports.add(1,new Import(new PkgID(impd.pkg),impd.module,impd.name));
 				} else if(d instanceof FunDecl) {
 					resolve((FunDecl)d,imports);
 				} else if(d instanceof TypeDecl) {
@@ -71,33 +92,36 @@ public class NameResolution {
 					resolve((ConstDecl)d,imports);					
 				}
 			} catch(ResolveError ex) {
-				syntaxError(ex.getMessage(),filename,d);
+				syntaxError(errorMessage(RESOLUTION_ERROR, ex.getMessage()),
+						filename, d);
 			}
 		}				
 	}
 	
-	protected void resolve(ConstDecl td, ArrayList<PkgID> imports) {
+	private void resolve(ConstDecl td, ArrayList<Import> imports) {
 		resolve(td.constant,new HashMap<String,Set<Expr>>(), imports);		
 	}
 	
-	protected void resolve(TypeDecl td, ArrayList<PkgID> imports) throws ResolveError {
+	private void resolve(TypeDecl td, ArrayList<Import> imports) throws ResolveError {
 		try {
 			resolve(td.type, imports);	
 			if (td.constraint != null) {
 				HashMap<String, Set<Expr>> environment = new HashMap<String, Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
-				addExposedNames(new Expr.Variable("$", td.constraint
-						.attribute(Attribute.Source.class),
-						new Attributes.Alias(null)), td.type, environment);
+				addExposedNames(
+						new Expr.LocalVariable("$", td.constraint
+								.attribute(Attribute.Source.class)),
+						td.type, environment);
 				resolve(td.constraint, environment, imports);
 			}
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), filename,  td);			
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+					filename, td);			
 		}
 	}	
 	
-	protected void resolve(FunDecl fd, ArrayList<PkgID> imports) {
+	private void resolve(FunDecl fd, ArrayList<Import> imports) {
 		HashMap<String,Set<Expr>> environment = new HashMap<String,Set<Expr>>();
 		
 		// method parameter types
@@ -124,7 +148,8 @@ public class NameResolution {
 			resolve(fd.throwType, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), filename, fd.ret);
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), filename,
+					fd.ret);
 		}
 		
 		// method receiver type (if applicable)
@@ -134,7 +159,8 @@ public class NameResolution {
 				resolve(md.receiver, imports);			
 			} catch (ResolveError e) {
 				// Ok, we've hit a resolution error.
-				syntaxError(e.getMessage(),filename,md.receiver);
+				syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+						filename, md.receiver);
 			}
 		}
 		
@@ -154,7 +180,7 @@ public class NameResolution {
 		}
 	}
 	
-	public void resolve(Stmt s, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) {
+	private void resolve(Stmt s, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		try {
 			if(s instanceof Assign) {
 				resolve((Assign)s, environment, imports);
@@ -172,8 +198,12 @@ public class NameResolution {
 				resolve((IfElse)s, environment, imports);
 			} else if(s instanceof Switch) {
 				resolve((Switch)s, environment, imports);
+			} else if(s instanceof TryCatch) {
+				resolve((TryCatch)s, environment, imports);
 			} else if(s instanceof While) {
 				resolve((While)s, environment, imports);
+			} else if(s instanceof DoWhile) {
+				resolve((DoWhile)s, environment, imports);
 			} else if(s instanceof For) {
 				resolve((For)s, environment, imports);
 			} else if(s instanceof Invoke) {
@@ -181,61 +211,65 @@ public class NameResolution {
 			} else if(s instanceof Spawn) {
 				resolve((UnOp)s, environment, imports);
 			} else {
-				syntaxError("unknown statement encountered: "
+				internalFailure("unknown statement encountered: "
 						+ s.getClass().getName(), filename, s);				
 			}
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), filename, s);			
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+					filename, s);			
 		}
 	}	
 
-	protected void resolve(Assign s, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		if(s.lhs instanceof Variable) {
-			Variable v = (Variable) s.lhs;
+	private void resolve(Assign s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		if(s.lhs instanceof UnknownVariable) {
+			UnknownVariable v = (UnknownVariable) s.lhs;
 			environment.put(v.var, Collections.EMPTY_SET);
+			s.lhs = new LocalVariable(v.var,v.attributes());
 		} else if(s.lhs instanceof TupleGen) {
 			TupleGen tg = (TupleGen) s.lhs;
-			for(Expr e : tg.fields) {
-				if(e instanceof Variable) {
-					Variable v = (Variable) e;
+			for(int i=0;i!=tg.fields.size();++i) {
+				Expr e = tg.fields.get(i);
+				if(e instanceof UnknownVariable) {
+					UnknownVariable v = (UnknownVariable) e;
+					tg.fields.set(i,new LocalVariable(v.var,e.attributes()));
 					environment.put(v.var, Collections.EMPTY_SET);
 				} else {
-					syntaxError("variable expected",filename,e);
+					syntaxError(errorMessage(INVALID_TUPLE_LVAL), filename, e);
 				}
 			}
 		} else {
-			resolve(s.lhs, environment, imports);
+			s.lhs = (LVal) resolve(s.lhs, environment, imports);
 		}
-		resolve(s.rhs, environment, imports);	
+		s.rhs = resolve(s.rhs, environment, imports);	
 	}
 
-	protected void resolve(Assert s, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.expr, environment, imports);		
+	private void resolve(Assert s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.expr = resolve(s.expr, environment, imports);		
 	}
 
-	protected void resolve(Return s, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
+	private void resolve(Return s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
 		if(s.expr != null) {
-			resolve(s.expr, environment, imports);
+			s.expr = resolve(s.expr, environment, imports);
 		}
 	}
 	
-	protected void resolve(Debug s, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.expr, environment, imports);		
+	private void resolve(Debug s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.expr = resolve(s.expr, environment, imports);		
 	}
 
-	protected void resolve(Throw s, HashMap<String, Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.expr, environment, imports);
+	private void resolve(Throw s, HashMap<String, Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.expr = resolve(s.expr, environment, imports);
 	}
 	
-	protected void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.condition, environment, imports);
+	private void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.condition = resolve(s.condition, environment, imports);
 		for (Stmt st : s.trueBranch) {
 			resolve(st, environment, imports);
 		}
@@ -246,14 +280,16 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(Switch s, HashMap<String, Set<Expr>> environment,
-			ArrayList<PkgID> imports) {		
+	private void resolve(Switch s, HashMap<String, Set<Expr>> environment,
+			ArrayList<Import> imports) {		
 		
-		resolve(s.expr, environment, imports);
+		s.expr = resolve(s.expr, environment, imports);
 		
-		for(Stmt.Case c : s.cases){					
-			if(c.value != null) {
-				resolve(c.value,environment,imports);
+		for(Stmt.Case c : s.cases){			
+			for(int i=0;i!=c.values.size();++i) {
+				Expr v = c.values.get(i);
+				v = resolve(v,environment,imports);
+				c.values.set(i, v);
 			}
 			for (Stmt st : c.stmts) {
 				resolve(st, environment, imports);
@@ -261,11 +297,32 @@ public class NameResolution {
 		}		
 	}
 	
-	protected void resolve(While s, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.condition, environment, imports);
+	private void resolve(TryCatch s, HashMap<String, Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {		
+		
+		for(Stmt st : s.body) {
+			resolve(st, environment, imports);
+		}
+			
+		for (Stmt.Catch c : s.catches) {
+			HashMap<String, Set<Expr>> nenvironment = new HashMap<String, Set<Expr>>(environment);
+			if (nenvironment.containsKey(c.variable)) {
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, c.variable),
+						filename, s);
+			}
+			nenvironment.put(c.variable, Collections.EMPTY_SET);
+			resolve(c.type, imports);
+			for (Stmt st : c.stmts) {
+				resolve(st, nenvironment, imports);
+			}
+		}
+	}
+	
+	private void resolve(While s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.condition = resolve(s.condition, environment, imports);
 		if (s.invariant != null) {
-			resolve(s.invariant, environment, imports);
+			s.invariant = resolve(s.invariant, environment, imports);
 		}
 		environment = new HashMap<String,Set<Expr>>(environment);
 		for (Stmt st : s.body) {
@@ -273,16 +330,28 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(For s, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.source, environment, imports);		
+	private void resolve(DoWhile s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.condition = resolve(s.condition, environment, imports);
 		if (s.invariant != null) {
-			resolve(s.invariant, environment, imports);
+			s.invariant = resolve(s.invariant, environment, imports);
+		}
+		environment = new HashMap<String,Set<Expr>>(environment);
+		for (Stmt st : s.body) {
+			resolve(st, environment, imports);
+		}
+	}
+	
+	private void resolve(For s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.source = resolve(s.source, environment, imports);		
+		if (s.invariant != null) {
+			s.invariant = resolve(s.invariant, environment, imports);
 		}
 		environment = new HashMap<String,Set<Expr>>(environment);
 		for(String var : s.variables) {
 			if (environment.containsKey(var)) {
-				syntaxError("variable " + var + " is alreaded defined",
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
 						filename, s);
 			}
 			environment.put(var, Collections.EMPTY_SET);
@@ -291,40 +360,43 @@ public class NameResolution {
 			resolve(st, environment, imports);
 		}
 	}
-	protected void resolve(Expr e, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) {
+	private Expr resolve(Expr e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
 		try {
 			if (e instanceof Constant) {
 				
-			} else if (e instanceof Variable) {
-				resolve((Variable)e, environment, imports);
+			} else if (e instanceof LocalVariable) {
+				// this case is possible because of the way WhileyParser handles
+				// sublist expressions.
+			} else if (e instanceof UnknownVariable) {
+				e = resolve((UnknownVariable)e, environment, imports);
 			} else if (e instanceof NaryOp) {
-				resolve((NaryOp)e, environment, imports);
+				e = resolve((NaryOp)e, environment, imports);
 			} else if (e instanceof Comprehension) {
-				resolve((Comprehension) e, environment, imports);
+				e = resolve((Comprehension) e, environment, imports);
 			} else if (e instanceof BinOp) {
-				resolve((BinOp)e, environment, imports);
+				e = resolve((BinOp)e, environment, imports);
 			} else if (e instanceof Convert) {
-				resolve((Convert)e, environment, imports);
+				e = resolve((Convert)e, environment, imports);
 			} else if (e instanceof ListAccess) {
-				resolve((ListAccess)e, environment, imports);
+				e = resolve((ListAccess)e, environment, imports);
 			} else if (e instanceof UnOp) {
-				resolve((UnOp)e, environment, imports);
+				e = resolve((UnOp)e, environment, imports);
 			} else if (e instanceof Invoke) {
-				resolve((Invoke)e, environment, imports);
+				e = resolve((Invoke)e, environment, imports);
 			} else if (e instanceof RecordAccess) {
-				resolve((RecordAccess) e, environment, imports);
+				e = resolve((RecordAccess) e, environment, imports);
 			} else if (e instanceof RecordGen) {
-				resolve((RecordGen) e, environment, imports);
+				e = resolve((RecordGen) e, environment, imports);
 			} else if (e instanceof TupleGen) {
-				resolve((TupleGen) e, environment, imports);
+				e = resolve((TupleGen) e, environment, imports);
 			} else if (e instanceof DictionaryGen) {
-				resolve((DictionaryGen) e, environment, imports);
-			} else if(e instanceof TypeConst) {
-				resolve((TypeConst) e, environment, imports);
-			} else if(e instanceof FunConst) {
-				resolve((FunConst) e, environment, imports);
+				e = resolve((DictionaryGen) e, environment, imports);
+			} else if(e instanceof Expr.Type) {
+				e = resolve((Expr.Type) e, environment, imports);
+			} else if(e instanceof Function) {
+				e = resolve((Function) e, environment, imports);
 			} else {				
-				syntaxError("unknown expression encountered: "
+				internalFailure("unknown expression encountered: "
 							+ e.getClass().getName(), filename, e);								
 			}
 		} catch(ResolveError re) {
@@ -332,160 +404,236 @@ public class NameResolution {
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
-			syntaxError("internal failure", filename, e, ex);			
+			internalFailure("internal failure", filename, e, ex);			
 		}	
+		
+		return e;
 	}
 	
-	protected void resolve(Invoke ivk, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
+	private Expr resolve(Invoke ivk, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {
 					
-		for(Expr e : ivk.arguments) {						
-			resolve(e, environment, imports);
+		for(int i=0;i!=ivk.arguments.size();++i) {
+			Expr e = ivk.arguments.get(i);
+			e = resolve(e, environment, imports);
+			ivk.arguments.set(i,e);
 		}
 
-		if(!environment.containsKey(ivk.name)) {
+		if(!environment.containsKey(ivk.name)) {			
 			// only look for non-local function binding if there is not a local
 			// variable with the same name.
 			Expr target = ivk.receiver;			
 			if(target != null) {
-				resolve(target,environment,imports);
-				try {
-					ModuleID mid = loader.resolve(ivk.name,imports);
-					ivk.attributes().add(new Attributes.Module(mid));	
-				} catch(ResolveError e) {
-					// in this case, we've been unable to resolve the method
-					// being called. However, this does not necessarily indicate
-					// an error --- this could be a field dereferences, followed
-					// by an indirect function call.
+				target = resolve(target,environment,imports);
+				if(target instanceof ModuleAccess) {
+					// In this case, an explicit module identifier has been
+					// provided, so we don't need to resolve.
+					ModuleAccess maccess = (ModuleAccess) target;
+					ivk.receiver = null;					
+					ivk.attributes().add(new Attributes.Module(maccess.mid));
+				} else {
+					ivk.receiver = target;
+					try {						
+						NameID nid = resolver.resolveAsName(ivk.name,imports);
+						ivk.attributes().add(new Attributes.Module(nid.module()));	
+					} catch(ResolveError e) {
+						// in this case, we've been unable to resolve the method
+						// being called. However, this does not necessarily indicate
+						// an error --- this could be a field dereferences, followed
+						// by an indirect function call.
+					}
 				}
-			} else {
-				ModuleID mid = loader.resolve(ivk.name,imports);
+			} else {				
+				NameID nid = resolver.resolveAsName(ivk.name,imports);				
 				// Ok, resolve the module for this invoke
-				ivk.attributes().add(new Attributes.Module(mid));		
+				ivk.attributes().add(new Attributes.Module(nid.module()));		
 			}
 		} else if(ivk.receiver != null) {
-			resolve(ivk.receiver,environment,imports);
-		}
+			ivk.receiver = resolve(ivk.receiver,environment,imports);
+		} 
+		
+		return ivk;
 	}
 	
-	protected void resolve(Variable v, HashMap<String, Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
-		Set<Expr> aliases = environment.get(v.var);
+	private Expr resolve(UnknownVariable v, HashMap<String, Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		
+		Set<Expr> aliases = environment.get(v.var);		
 		if (aliases == null) {
-			// This variable access may correspond with a constant definition
-			// in some module. Therefore, we must determine which module this
-			// is, and then store that information for future use.
+			// This variable access may correspond to an external access.
+			// Therefore, we must determine which module this
+			// is, and update the tree accordingly.
 			try {
-				ModuleID mid = loader.resolve(v.var, imports);
-				v.attributes().add(new Attributes.Module(mid));
-			} catch(ResolveError err) {
-				// In this case, we may still be OK if this is a method, and the
-				// this receiver contains a field with the appropriate name. At
-				// this point in time, we cannot be sure whether or not this is
-				// the case and we must wait until ModuleBuilder to determine
-				// this.								
+				NameID nid = resolver.resolveAsName(v.var, imports);				
+				return new ExternalAccess(nid,v.attributes());				
+			} catch(ResolveError err) {}
+			// In this case, we may still be OK if this corresponds to an
+			// explicit module or package access.
+			try {
+				ModuleID mid = resolver.resolveAsModule(v.var, imports);				
+				return new ModuleAccess(mid,v.attributes());
+			} catch(ResolveError err) {}			
+			PkgID pid = new PkgID(v.var);
+			if (resolver.isPackage(pid)) {
+				return new PackageAccess(pid, v.attributes());
 			}
+			// ok, failed.
+			syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v);			
 		} else if (aliases.size() == 1) {			
-			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
+			return aliases.iterator().next();			
 		} else if (aliases.size() > 1) {
-			syntaxError("ambigous variable name", filename, v);
+			syntaxError(errorMessage(AMBIGUOUS_VARIABLE), filename, v);
 		} else {
-			// following signals a local variable			
-			v.attributes().add(new Attributes.Alias(null));
+			// following signals a local variable	
+			return new LocalVariable(v.var,v.attributes());
 		}
+		
+		return v;
 	}
 	
-	protected void resolve(UnOp v, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
-		resolve(v.mhs, environment, imports);		
+	private Expr resolve(UnOp v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+		v.mhs = resolve(v.mhs, environment, imports);
+		return v;
 	}
 	
-	protected void resolve(BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) {
-		resolve(v.lhs, environment, imports);
-		resolve(v.rhs, environment, imports);		
+	private Expr resolve(BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) {
+		v.lhs = resolve(v.lhs, environment, imports);
+		v.rhs = resolve(v.rhs, environment, imports);
+		return v;
 	}
 	
-	protected void resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {
+	private Expr resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {
 		resolve(c.type, imports);
-		resolve(c.expr, environment, imports);		
+		c.expr = resolve(c.expr, environment, imports);
+		return c;
 	}
 	
-	protected void resolve(ListAccess v, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
-		resolve(v.src, environment, imports);
-		resolve(v.index, environment, imports);
+	private Expr resolve(ListAccess v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		v.src = resolve(v.src, environment, imports);
+		v.index = resolve(v.index, environment, imports);
+		return v;
 	}
 	
-	protected void resolve(NaryOp v, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {				
-		for(Expr e : v.arguments) {
-			resolve(e, environment, imports);
+	private Expr resolve(NaryOp v, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {				
+		for(int i=0;i!=v.arguments.size();++i) {
+			Expr e = v.arguments.get(i);						
+			e = resolve(e, environment, imports);
+			v.arguments.set(i,e);
 		}		
+		return v;
 	}
 	
-	protected void resolve(Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {						
+	private Expr resolve(Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<Import> imports) throws ResolveError {						
 		HashMap<String,Set<Expr>> nenv = new HashMap<String,Set<Expr>>(environment);
-		for(Pair<String,Expr> me : e.sources) {	
+		for(int i=0;i!=e.sources.size();++i) {	
+			Pair<String,Expr> me = e.sources.get(i);
 			if (environment.containsKey(me.first())) {
-				syntaxError("variable " + me.first() + " is alreaded defined",
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, me.first()),
 						filename, e);
 			}
-			resolve(me.second(),nenv,imports); 			
+			Expr me_second = resolve(me.second(),nenv,imports);
+			e.sources.set(i, new Pair(me.first(),me_second));
 			nenv.put(me.first(),Collections.EMPTY_SET);
 		}		
 		if(e.value != null) {			
-			resolve(e.value,nenv,imports);
+			e.value = resolve(e.value,nenv,imports);
 		}
 		if(e.condition != null) {
-			resolve(e.condition,nenv,imports);
+			e.condition = resolve(e.condition,nenv,imports);
 		}	
+		return e;
 	}	
 		
-	protected void resolve(RecordGen sg, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
-		for(Map.Entry<String,Expr> e : sg.fields.entrySet()) {
-			resolve(e.getValue(),environment,imports);
+	private Expr resolve(RecordGen sg, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {		
+		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
+		for(String key : keys) {
+			Expr val = sg.fields.get(key); 
+			val = resolve(val,environment,imports);
+			sg.fields.put(key,val);
 		}			
+		return sg;
 	}
 
-	protected void resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
-		for(Expr e : sg.fields) {
-			resolve(e,environment,imports);
+	private Expr resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {		
+		for(int i=0;i!=sg.fields.size();++i) {
+			Expr e = sg.fields.get(i);
+			e = resolve(e,environment,imports);
+			sg.fields.set(i,e);
 		}			
+		return sg;
 	}
 	
-	protected void resolve(DictionaryGen sg, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
-		for(Pair<Expr,Expr> e : sg.pairs) {
-			resolve(e.first(),environment,imports);
-			resolve(e.second(),environment,imports);
+	private Expr resolve(DictionaryGen sg, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {		
+		for(int i=0;i!=sg.pairs.size();++i) {
+			Pair<Expr,Expr> e = sg.pairs.get(i);
+			Expr e_first = resolve(e.first(),environment,imports);
+			Expr e_second = resolve(e.second(),environment,imports);
+			sg.pairs.set(i, new Pair(e_first,e_second));
 		}			
+		return sg;
 	}
 	
-	protected void resolve(TypeConst tc, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
-		resolve(tc.type,imports);			
+	private Expr resolve(Expr.Type tc, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {		
+		resolve(tc.type,imports);
+		return tc;
 	}
 	
-	protected void resolve(FunConst tc, HashMap<String,Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
-		
-		if(tc.paramTypes != null) {
-			for(UnresolvedType t : tc.paramTypes) {
-				resolve(t,imports);
+	private Expr resolve(Function tc, HashMap<String, Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {
+
+		if (tc.paramTypes != null) {
+			for (UnresolvedType t : tc.paramTypes) {
+				resolve(t, imports);
 			}
 		}
-		
-		ModuleID mid = loader.resolve(tc.name,imports);		
-		tc.attributes().add(new Attributes.Module(mid));
-	}	
-	
-	protected void resolve(RecordAccess sg, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {
-		resolve(sg.lhs,environment,imports);			
+
+		NameID nid = resolver.resolveAsName(tc.name, imports);
+		tc.attributes().add(new Attributes.Module(nid.module()));
+
+		return tc;
 	}
 	
-	protected void resolve(UnresolvedType t, ArrayList<PkgID> imports) throws ResolveError {
+	private Expr resolve(RecordAccess sg,
+			HashMap<String, Set<Expr>> environment, ArrayList<Import> imports)
+			throws ResolveError {		
+		sg.lhs = resolve(sg.lhs, environment, imports);
+		if(sg.lhs instanceof PackageAccess) {
+			// this indicates we're constructing a more complex package access.
+			PackageAccess pa = (PackageAccess) sg.lhs;			
+			try {				
+				ModuleID mid = new ModuleID(pa.pid,sg.name);
+				ModuleLoader.Skeleton m = resolver.loadSkeleton(mid);
+				return new ModuleAccess(mid);
+			} catch(ResolveError err) {}
+			PkgID pid = pa.pid.append(sg.name);			
+			if(resolver.isPackage(pid)) {
+				pa.pid = pid;
+				return pa;
+			} else {
+				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),filename,pa);				
+			}
+		} else if(sg.lhs instanceof ModuleAccess) {
+			// this indicates we're constructing a constant access
+			ModuleAccess ma = (ModuleAccess) sg.lhs;			
+			try {				
+				ModuleLoader.Skeleton m = resolver.loadSkeleton(ma.mid);				
+				if(m.hasName(sg.name)) {
+					return new ExternalAccess(new NameID(ma.mid,sg.name));
+				}				
+			} catch(ResolveError err) {}			
+			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,ma);						
+		}
+		return sg;		
+	}
+	
+	private void resolve(UnresolvedType t, ArrayList<Import> imports) throws ResolveError {
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			resolve(lt.element,imports);
@@ -511,13 +659,21 @@ public class NameResolution {
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			ModuleID mid = loader.resolve(dt.name, imports);			
-			t.attributes().add(new Attributes.Module(mid));
+			NameID nid = resolver.resolveAsName(dt.names, imports);			
+			t.attributes().add(new Attributes.Name(nid));
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential dt = (UnresolvedType.Existential) t;						
 			t.attributes().add(new Attributes.Module(module));
+		} else if(t instanceof UnresolvedType.Not) {	
+			UnresolvedType.Not ut = (UnresolvedType.Not) t;
+			resolve(ut.element,imports);			
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			for(UnresolvedType b : ut.bounds) {
+				resolve(b,imports);
+			}
+		} else if(t instanceof UnresolvedType.Intersection) {
+			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
 			for(UnresolvedType b : ut.bounds) {
 				resolve(b,imports);
 			}
@@ -545,8 +701,8 @@ public class NameResolution {
 	 * </pre>
 	 * 
 	 * In this case, <code>x</code> and <code>y</code> are "exposed" --- meaning
-	 * they're real names are different in some way. In this case, the aliases
-	 * we have are: x->$.x and y->$.y
+	 * their real names are different in some way. In this case, the aliases we
+	 * have are: x->$.x and y->$.y
 	 * 
 	 * @param src
 	 * @param t

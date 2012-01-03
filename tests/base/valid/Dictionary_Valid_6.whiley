@@ -1,10 +1,12 @@
-{int->char} reverse(string input):
-    rs = {}
+import * from whiley.lang.*
+
+{char->int} reverse(string input):
+    rs = {->}
     for i in 0..|input|:
         c = input[i]
         rs[c] = i
     return rs
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = reverse("abcdefghijklmnopqrstuvwxyz")
-    out.println(str(xs))
+    sys.out.println(Any.toString(xs))

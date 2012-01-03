@@ -1,7 +1,9 @@
+import * from whiley.lang.*
+
 int f():
     x = spawn 1
     return 1
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f()
-    out.println(str(x))
+    sys.out.println(Any.toString(x))

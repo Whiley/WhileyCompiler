@@ -1,7 +1,9 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     ls = [true,false,true]
-    out.println(str(ls))
+    sys.out.println(Any.toString(ls))
     x = ls[0]
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
     ls[0] = false
-    out.println(str(ls))
+    sys.out.println(Any.toString(ls))

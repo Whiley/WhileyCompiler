@@ -1,4 +1,6 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     arr = [1,2,3]
     assert |arr| == 3
-    out.println(str(arr[0]))
+    sys.out.println(Any.toString(arr[0]))

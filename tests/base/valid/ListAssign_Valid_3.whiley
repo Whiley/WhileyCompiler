@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 string f(int i):
     arr1 = [1,2,64]
     arr2 = arr1
@@ -6,8 +8,8 @@ string f(int i):
     else:
         arr2[2] = i
     assert arr2[2] == |arr1|
-    return str(arr1) + str(arr2)
+    return Any.toString(arr1) + Any.toString(arr2)
 
-void System::main([string] args):
-    out.println(f(2))
-    out.println(f(3))
+void ::main(System sys,[string] args):
+    sys.out.println(f(2))
+    sys.out.println(f(3))

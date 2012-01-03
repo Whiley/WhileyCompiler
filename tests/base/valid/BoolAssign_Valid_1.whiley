@@ -1,5 +1,7 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     x = true
-    out.println(str(x))
+    sys.out.println(x)
     x = false
-    out.println(str(x))
+    sys.out.println(x)

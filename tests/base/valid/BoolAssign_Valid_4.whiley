@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int f(int x, int y):
     a = true
     
@@ -9,5 +11,5 @@ int f(int x, int y):
     else:
         return 123
 
-void System::main([string] args):
-    out.println(str(1))
+void ::main(System sys,[string] args):
+    sys.out.println(Any.toString(1))

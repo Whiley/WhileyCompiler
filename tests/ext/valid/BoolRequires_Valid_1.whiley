@@ -1,8 +1,10 @@
-string f([bool] x) requires |x| > 0 && x[0]:
-    return str(x)
+import * from whiley.lang.*
 
-void System::main([string] args):
-    out.println(f([true]))
-    out.println(f([true,false]))
-    out.println(f([true,false,true]))
+string f([bool] x) requires |x| > 0 && x[0]:
+    return Any.toString(x)
+
+void ::main(System sys,[string] args):
+    sys.out.println(f([true]))
+    sys.out.println(f([true,false]))
+    sys.out.println(f([true,false,true]))
     

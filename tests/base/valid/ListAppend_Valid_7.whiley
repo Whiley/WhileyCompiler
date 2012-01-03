@@ -1,9 +1,11 @@
-[int] append(string input):
+import * from whiley.lang.*
+
+[char] append(string input):
     rs = []
     for i in 0..|input|:
-        rs = rs + input[i]
+        rs = rs + [input[i]]
     return rs
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = append("abcdefghijklmnopqrstuvwxyz")
-    out.println(str(xs))
+    sys.out.println(Any.toString(xs))

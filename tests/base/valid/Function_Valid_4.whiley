@@ -1,11 +1,13 @@
+import * from whiley.lang.*
+
 define fr4nat as int
 
 fr4nat g(fr4nat x):
     return x + 1
 
 string f(fr4nat x):
-    return str(x)
+    return Any.toString(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     y = 1
-    out.println(f(g(y)))
+    sys.out.println(f(g(y)))

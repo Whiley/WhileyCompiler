@@ -18,18 +18,22 @@
 
 package wyil.lang;
 
-import java.io.PrintStream;
+import java.io.IOException;
 import java.util.*;
 
+import wyautl.io.*;
+import wyautl.lang.*;
+import wyautl.lang.Automaton.State;
 import wyil.util.Pair;
-import wyjvm.lang.Constant;
+import wyil.util.type.*;
+import wyjvm.io.*;
 
 /**
  * A structural type. See
  * http://whiley.org/2011/03/07/implementing-structural-types/ for more on how
  * this class works.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public abstract class Type {
@@ -54,23 +58,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(Type... elements) {
-		int len = 1;
-		for(Type b : elements) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[elements.length];
-		int start = 1;
-		for(int i=0;i!=elements.length;++i) {
-			children[i] = start;
-			Node[] comps = nodes(elements[i]);
-			insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_TUPLE, children);		
-		return new Tuple(nodes);
+	public static final Type Tuple(Type... elements) {		
+		return construct(K_TUPLE, null, elements);			
 	}
 	
 	/**
@@ -78,23 +67,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
-		int len = 1;
-		for(Type b : elements) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[elements.size()];
-		int start = 1;
-		for(int i=0;i!=elements.size();++i) {
-			children[i] = start;
-			Node[] comps = nodes(elements.get(i));
-			insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_TUPLE, children);		
-		return new Tuple(nodes);
+	public static final Type Tuple(java.util.List<Type> elements) {
+		return construct(K_TUPLE, null, elements);		
 	}
 	
 	/**
@@ -102,24 +76,16 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Process T_PROCESS(Type element) {
-		if (element instanceof Leaf) {
-			return new Process(new Node[] { new Node(K_PROCESS, 1),
-					new Node(leafKind((Leaf) element), null) });
-		} else {
-			// Compound type
-			Node[] nodes = insertComponent(((Compound) element).nodes);
-			nodes[0] = new Node(K_PROCESS, 1);
-			return new Process(nodes);
-		}
+	public static final Type Process(Type element) {
+		return construct(K_PROCESS, null, element);				
 	}
 	
-	public static final Existential T_EXISTENTIAL(NameID name) {
+	public static final Nominal Nominal(NameID name) {
 		if (name == null) {
 			throw new IllegalArgumentException(
-					"existential name cannot be null");
+					"nominal name cannot be null");
 		}
-		return new Existential(name);
+		return new Nominal(name);
 	}
 	
 	/**
@@ -127,16 +93,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Set T_SET(Type element) {
-		if (element instanceof Leaf) {
-			return new Set(new Node[] { new Node(K_SET, 1),
-					new Node(leafKind((Leaf) element), null) });
-		} else {
-			// Compound type
-			Node[] nodes = insertComponent(((Compound) element).nodes);
-			nodes[0] = new Node(K_SET, 1);
-			return new Set(nodes);
-		}
+	public static final Type Set(Type element, boolean nonEmpty) {
+		return construct(K_SET, nonEmpty, element);
 	}
 	
 	/**
@@ -144,32 +102,17 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final List T_LIST(Type element) {
-		if (element instanceof Leaf) {
-			return new List(new Node[] { new Node(K_LIST, 1),
-					new Node(leafKind((Leaf) element), null) });
-		} else {
-			// Compound type
-			Node[] nodes = insertComponent(((Compound) element).nodes);
-			nodes[0] = new Node(K_LIST, 1);
-			return new List(nodes);
-		}
+	public static final Type List(Type element, boolean nonEmpty) {
+		return construct(K_LIST, nonEmpty, element);
 	}
-	
+
 	/**
 	 * Construct a dictionary type using the given key and value types.
 	 * 
 	 * @param element
 	 */
-	public static final Dictionary T_DICTIONARY(Type key, Type value) {
-		Node[] keyComps = nodes(key);
-		Node[] valueComps = nodes(value);
-		Node[] nodes = new Node[1 + keyComps.length + valueComps.length];
-			
-		insertNodes(1,keyComps,nodes);
-		insertNodes(1+keyComps.length,valueComps,nodes);
-		nodes[0] = new Node(K_DICTIONARY, new Pair(1,1+keyComps.length));
-		return new Dictionary(nodes);		
+	public static final Type Dictionary(Type key, Type value) {
+		return construct(K_DICTIONARY, null, key, value);		
 	}
 	
 	/**
@@ -177,13 +120,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Collection<Type> bounds) {
-		Type[] ts = new Type[bounds.size()];
-		int i = 0;
-		for(Type t : bounds) {
-			ts[i++] = t;
-		}
-		return T_UNION(ts);
+	public static final Type Union(Collection<Type> bounds) {
+		return construct(K_UNION,null,bounds);		
 	}
 	
 	/**
@@ -191,34 +129,17 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Type... bounds) {		
-		// include child unions			
-		int len = 1;		
-		for(Type b : bounds) {			
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[bounds.length];
-		int start = 1;
-		for(int i=0;i!=bounds.length;++i) {
-			children[i] = start;
-			Node[] comps = nodes(bounds[i]);
-			insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_UNION, children);
-		return new Union(nodes);		
-	}
-
-	public static final Fun T_FUN(Type ret,
-			Collection<Type> params) {
-		Type[] ts = new Type[params.size()];
-		int i = 0;
-		for (Type t : params) {
-			ts[i++] = t;
-		}
-		return T_FUN(ret, ts);
+	public static final Type Union(Type... bounds) {
+		return construct(K_UNION,null,bounds);			
+	}	
+		
+	/**
+	 * Construct a difference of two types.
+	 * 
+	 * @param element
+	 */
+	public static final Type Negation(Type element) {
+		return construct(K_NEGATION,null,element);				
 	}
 	
 	/**
@@ -226,40 +147,14 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(Type ret, Type... params) {
-		Node[] reccomps;		
-		reccomps = new Node[0];		
-		Node[] retcomps = nodes(ret); 
-		int len = 1 + reccomps.length + retcomps.length;
-		for(Type b : params) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[2 + params.length];
-		insertNodes(1,reccomps,nodes);
-		insertNodes(1+reccomps.length,retcomps,nodes);
-		children[0] = -1;
-		children[1] = 1 + reccomps.length;
-		int start = 1 + reccomps.length + retcomps.length;		
-		for(int i=0;i!=params.length;++i) {
-			children[i+2] = start;
-			Node[] comps = nodes(params[i]);
-			insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_FUNCTION, children);
-		return new Fun(nodes);		
-	}
-	
-	public static final Meth T_METH(Process receiver, Type ret,
+	public static final Type Function(Type ret, Type throwsClause,
 			Collection<Type> params) {
-		Type[] ts = new Type[params.size()];
-		int i = 0;
-		for (Type t : params) {
-			ts[i++] = t;
-		}
-		return T_METH(receiver, ret, ts);
+		Type[] rparams = new Type[params.size()+2];		
+		int i = 2;
+		for (Type t : params) { rparams[i++] = t; }		
+		rparams[0] = ret;
+		rparams[1] = throwsClause;
+		return construct(K_FUNCTION, null, rparams); 			
 	}
 	
 	/**
@@ -267,98 +162,97 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Meth T_METH(Process receiver, Type ret, Type... params) {
-		Node[] reccomps;
-		if(receiver != null) {
-			reccomps = nodes(receiver);
+	public static final Type Function(Type ret, Type throwsClause,
+			Type... params) {
+		Type[] rparams = new Type[params.length+2];		
+		System.arraycopy(params, 0, rparams, 2, params.length);
+		rparams[0] = ret;
+		rparams[1] = throwsClause;
+		return construct(K_FUNCTION, null, rparams);								
+	}
+	
+	/**
+	 * Construct a method type using the given receiver, return and parameter types.
+	 * 
+	 * @param element
+	 */
+	public static final Type Method(Process receiver, Type ret,
+			Type throwsClause, Collection<Type> params) {
+		if(receiver == null) {
+			// this is a headless method
+			Type[] rparams = new Type[params.size()+2];		
+			int i = 2;
+			for (Type t : params) { rparams[i++] = t; }					
+			rparams[0] = ret;
+			rparams[1] = throwsClause;
+			return construct(K_HEADLESS, null, rparams);					
 		} else {
-			reccomps = new Node[0];
-		}
-		Node[] retcomps = nodes(ret); 
-		int len = 1 + reccomps.length + retcomps.length;
-		for(Type b : params) {
-			// could be optimised slightly
-			len += nodes(b).length;
+			Type[] rparams = new Type[params.size()+3];		
+			int i = 3;
+			for (Type t : params) { rparams[i++] = t; }		
+			rparams[0] = receiver;
+			rparams[1] = ret;
+			rparams[2] = throwsClause;
+			return construct(K_METHOD, null, rparams);						
 		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[2 + params.length];
-		insertNodes(1,reccomps,nodes);
-		insertNodes(1+reccomps.length,retcomps,nodes);
-		children[0] = receiver == null ? -1 : 1;
-		children[1] = 1 + reccomps.length;
-		int start = 1 + reccomps.length + retcomps.length;		
-		for(int i=0;i!=params.length;++i) {
-			children[i+2] = start;
-			Node[] comps = nodes(params[i]);
-			insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_METHOD, children);
-		return new Meth(nodes);		
 	}
 	
 	/**
-	 * Construct a record type using the given fields.
+	 * Construct a function type using the given return and parameter types.
 	 * 
 	 * @param element
 	 */
-	public static final Record T_RECORD(Map<String,Type> fields) {		
-		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
-		Collections.sort(keys);		
-		int len = 1;
-		for(int i=0;i!=keys.size();++i) {
-			String k = keys.get(i);
-			Type t = fields.get(k);			
-			len += nodes(t).length;
+	public static final Type Method(Process receiver, Type ret,
+			Type throwsClause, Type... params) {
+		if(receiver == null) {
+			// this is a headless method
+			Type[] rparams = new Type[params.length+2];		
+			System.arraycopy(params, 0, rparams, 2, params.length);			
+			rparams[0] = ret;
+			rparams[1] = throwsClause;
+			return construct(K_HEADLESS, null, rparams);						
+		} else {
+			Type[] rparams = new Type[params.length+3];		
+			System.arraycopy(params, 0, rparams, 3, params.length);
+			rparams[0] = receiver;
+			rparams[1] = ret;
+			rparams[2] = throwsClause;
+			return construct(K_METHOD, null, rparams);
 		}
-		Node[] nodes = new Node[len];
-		Pair<String,Integer>[] children = new Pair[fields.size()];
-		int start = 1;
-		for(int i=0;i!=children.length;++i) {			
-			String k = keys.get(i);
-			children[i] = new Pair<String,Integer>(k,start);
-			Node[] comps = nodes(fields.get(k));
-			insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_RECORD,children);
-		return new Record(nodes);
 	}
-
+	
 	/**
-	 * Construct a label type. These are used in the construction of recursive
-	 * types. Essentially, a label corresponds to the leaf of a recursive type,
-	 * which we can then "close" later on as we build up the type. For example,
-	 * we construct the recursive type <code>X<null|{X next}></code> as follows:
+	 * Construct a record type using the given fields. The given record may be
+	 * either "open" or "closed". A closed record indicates a type which must
+	 * have exactly the given mapping of fields to types. An open record
+	 * indicates a type which may have more fields than that listed. The notion
+	 * of open records corresponds to "width subtyping" in type theory.
 	 * 
-	 * <pre>
-	 * HashMap<String,Type> fields = new HashMap<String,Type>();
-	 * fields.put("next",T_LABEL("X"));	 * 
-	 * Type tmp = T_UNION(T_NULL,T_RECORD(fields));
-	 * Type type = T_RECURSIVE("X",tmp);
-	 * </pre>
-	 * 
-	 * <b>NOTE:</b> a type containing a label is not considered valid until it
-	 * is closed using a recursive type.
-	 * 
-	 * @param label
-	 * @return
+	 * @param element
 	 */
-	public static final Type T_LABEL(String label) {
-		return new Compound(new Node[]{new Node(K_LABEL,label)});
+	public static final Type Record(boolean isOpen, Map<String,Type> fields) {				
+		java.util.Set<String> keySet = fields.keySet();
+		Record.State keys = new Record.State(isOpen,keySet);
+		Collections.sort(keys);
+		Type[] types = new Type[keys.size()];
+		for(int i=0;i!=types.length;++i) {
+			types[i] = fields.get(keys.get(i));
+		}
+		return construct(K_RECORD,keys,types);			
 	}
 
 	/**
-	 * Close a recursive type using a given label. Essentially, this traverses
-	 * the given type and routes each occurrence of the label to recursively
-	 * point to the type's root. For example, we construct the recursive type
-	 * <code>X<null|{X next}></code> as follows:
+	 * Close a recursive type using a given label (i.e. nominal type).
+	 * Essentially, this traverses the given type and routes each occurrence of
+	 * the label to recursively point to the type's root. For example, we
+	 * construct the recursive type <code>X<null|{X next}></code> as follows:
 	 * 
 	 * <pre>
 	 * HashMap<String,Type> fields = new HashMap<String,Type>();
-	 * fields.put("next",T_LABEL("X"));	 * 
+	 * Type.Nominal label = T_NOMINAL("X");
+	 * fields.put("next",label);	 
 	 * Type tmp = T_UNION(T_NULL,T_RECORD(fields));
-	 * Type type = T_RECURSIVE("X",tmp);
+	 * Type type = T_RECURSIVE(label,tmp);
 	 * </pre>
 	 * 
 	 * <b>NOTE:</b> it is invalid to close a type which does not contain at
@@ -371,37 +265,24 @@ public abstract class Type {
 	 *            --- type to be closed.
 	 * @return
 	 */
-	public static final Type T_RECURSIVE(String label, Type type) {
+	public static final Type Recursive(NameID label, Type type) {
 		// first stage, identify all matching labels
-		if(type instanceof Leaf) { throw new IllegalArgumentException("cannot close a leaf type"); }
+		if (type instanceof Leaf) {
+			throw new IllegalArgumentException("cannot close a leaf type");
+		}
 		Compound compound = (Compound) type;
-		Node[] nodes = compound.nodes;
+		Automaton automaton = compound.automaton;
+		State[] nodes = automaton.states;
 		int[] rmap = new int[nodes.length];		
-		int nmatches = 0;
-		for(int i=0;i!=nodes.length;++i) {
-			Node c = nodes[i];
-			if(c.kind == K_LABEL && c.data.equals(label)) {
+		for (int i = 0; i != nodes.length; ++i) {
+			State c = nodes[i];
+			if (c.kind == K_NOMINAL && c.data.equals(label)) {
 				rmap[i] = 0;
-				nmatches++;
 			} else {
-				rmap[i] = i - nmatches;
+				rmap[i] = i;
 			}
-		}
-		if (nmatches == 0) {
-			throw new IllegalArgumentException(
-					"type cannot be closed, as it contains no matching labels");
-		}
-		Node[] newnodes = new Node[nodes.length-nmatches];
-		nmatches = 0;
-		for(int i=0;i!=nodes.length;++i) {
-			Node c = nodes[i];
-			if(c.kind == K_LABEL && c.data.equals(label)) {				
-				nmatches++;
-			} else {
-				newnodes[i-nmatches] = remap(nodes[i],rmap);
-			}
-		}
-		return construct(newnodes);
+		}		
+		return construct(Automata.remap(automaton, rmap));
 	}
 
 	/**
@@ -414,112 +295,7 @@ public abstract class Type {
 	public static Type fromString(String str) {
 		return new TypeParser(str).parse();
 	}
-
-	private static class TypeParser {
-		private int index;
-		private String str;
-		public TypeParser(String str) { 
-			this.str = str;
-		}
-		public Type parse() {
-			Type term = parseTerm();
-			skipWhiteSpace();
-			while(index < str.length() && str.charAt(index) == '|') {
-				// union type
-				match("|");
-				term = T_UNION(term,parse());
-				skipWhiteSpace();
-			}
-			return term;
-		}
-		public Type parseTerm() {
-			skipWhiteSpace();
-			char lookahead = str.charAt(index);
-
-			switch (lookahead) {
-			case 'a':
-				match("any");
-				return T_ANY;
-			case 'v':
-				match("void");
-				return T_VOID;
-			case 'n':
-				match("null");
-				return T_NULL;
-			case 'b':
-				match("bool");
-				return T_BOOL;
-			case 'c':
-				match("char");
-				return T_CHAR;
-			case 'i':
-				match("int");
-				return T_INT;
-			case 'r':
-				match("real");
-				return T_REAL;
-			case '[':
-			{
-				match("[");
-				Type elem = parse();
-				match("]");
-				return T_LIST(elem);
-			}
-			case '{':
-			{
-				match("{");
-				Type elem = parse();
-				skipWhiteSpace();
-				if(index < str.length() && str.charAt(index) != '}') {
-					// record
-					HashMap<String,Type> fields = new HashMap<String,Type>();
-					String id = parseIdentifier();
-					fields.put(id, elem);
-					skipWhiteSpace();
-					while(index < str.length() && str.charAt(index) == ',') {
-						match(",");
-						elem = parse();
-						id = parseIdentifier();
-						fields.put(id, elem);
-						skipWhiteSpace();
-					}
-					match("}");
-					return T_RECORD(fields);					
-				}
-				match("}");
-				return T_SET(elem);
-			}
-			default:
-				throw new IllegalArgumentException("invalid type string: "
-						+ str);
-			}
-		}
-		private String parseIdentifier() {
-			skipWhiteSpace();
-			int start = index;
-			while (index < str.length()
-					&& Character.isJavaIdentifierPart(str.charAt(index))) {
-				index++;
-			}
-			return str.substring(start,index);
-		}
-		private void skipWhiteSpace() {
-			while (index < str.length()
-					&& Character.isWhitespace(str.charAt(index))) {
-				index++;
-			}
-		}		
-		private void match(String match) {
-			skipWhiteSpace();
-			if ((str.length() - index) < match.length()
-					|| !str.startsWith(match, index)) {
-				throw new IllegalArgumentException("invalid type string: "
-						+ str);
-			}
-			index += match.length();
-		}
-	}
-	
+		
 	/**
 	 * This is a utility helper for constructing types. In particular, it's
 	 * useful for determine whether or not a type needs to be closed. An open
@@ -530,982 +306,151 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpen(String label, Type t) {
+	public static boolean isOpen(NameID label, Type t) {
 		if (t instanceof Leaf) {
 			return false;
 		}
 		Compound graph = (Compound) t;
-		for (Node n : graph.nodes) {
-			if (n.kind == K_LABEL && n.data.equals(label)) {
+		for (State n : graph.automaton.states) {
+			if (n.kind == K_NOMINAL && n.data.equals(label)) {
 				return true;
 			}
 		}
 		return false;
 	}
-	
-	/**
-	 * This is a utility helper for constructing types. In particular, it's
-	 * useful to check that a type has been built sanely.
-	 * 
-	 * @param label
-	 * @param t
-	 * @return
-	 */
-	public static boolean isOpen(Type t) {
-		if (t instanceof Leaf) {
-			return false;
-		}
-		Compound graph = (Compound) t;
-		for (Node n : graph.nodes) {			
-			if (n.kind == K_LABEL) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
+		
 	// =============================================================
-	// Serialisation Helpers
+	// Readers / Writers
 	// =============================================================
-
+	
 	/**
-	 * The Type.Builder interface is essentially a way of separating the
-	 * internals of the type implementation from clients which may want to
-	 * serialise a given type graph.
-	 */
-	public interface Builder {
-
-		/**
-		 * Set the number of nodes required for the type being built. This
-		 * method is called once, before all other methods are called. The
-		 * intention is to give builders a chance to statically initialise data
-		 * structures based on the number of nodes required.
-		 * 
-		 * @param numNodes
-		 */
-		void initialise(int numNodes);
-
-		void buildPrimitive(int index, Type.Leaf type);
-
-		void buildExistential(int index, NameID name);
-
-		void buildSet(int index, int element);
-
-		void buildList(int index, int element);
-
-		void buildProcess(int index, int element);
-
-		void buildDictionary(int index, int key, int value);
-
-		void buildTuple(int index, int... elements);
-
-		void buildRecord(int index, Pair<String, Integer>... fields);
-
-		void buildFunction(int index, int ret, int... parameters);
-		
-		void buildMethod(int index, int receiver, int ret, int... parameters);
-		
-		void buildUnion(int index, int... bounds);
-	}
-
-	/**
-	 * This class provides an empty implementation of a type builder, which is
-	 * useful for define simple builders.
+	 * <p>
+	 * A <code>BinaryReader</code> will read types from a binary input stream.
+	 * The types should be written to the stream using <code>BinaryWriter</code>
+	 * .
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> Under-the-hood, this class is essentially a wrapper for
+	 * <code>BinaryAutomataReader</code>.
+	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
-	public static class AbstractBuilder implements Type.Builder {		
-		public void initialise(int numNodes) {
+	public static class BinaryReader extends BinaryAutomataReader {		
+		public BinaryReader(BinaryInputStream reader) {
+			super(reader);
 		}
-
-		public void buildPrimitive(int index, Type.Leaf type) {
+		public Type readType() throws IOException {			
+			Type t = construct(read());			
+			return t;
 		}
-
-		public void buildExistential(int index, NameID name) {
-		}
-
-		public void buildSet(int index, int element) {
-		}
-
-		public void buildList(int index, int element) {
-		}
-
-		public void buildProcess(int index, int element) {
-		}
-
-		public void buildDictionary(int index, int key, int value) {
-		}
-
-		public void buildTuple(int index, int... elements) {
-		}
-
-		public void buildRecord(int index, Pair<String, Integer>... fields) {
-		}
-
-		public void buildFunction(int index, int ret,
-				int... parameters) {
-		}
-		
-		public void buildMethod(int index, int receiver, int ret,
-				int... parameters) {
-		}
-
-		public void buildUnion(int index, int... bounds) {
-		}
-	}
-
-	/**
-	 * The internal builder is essentially the way we deserialise types. That
-	 * is, clients create an instance of internal builder and then call the
-	 * methods (as directed by their own type representation). At the end, we
-	 * have a fully built type --- neat!
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static class InternalBuilder implements Type.Builder {	
-		private Node[] nodes;
-		
-		public Type type() {
-			return construct(nodes);
-		}	
-		public void initialise(int numNodes) {
-			nodes = new Node[numNodes];
-		}
-		public void buildPrimitive(int index, Type.Leaf type) {
-			nodes[index] = new Node(leafKind(type),null);
-		}
-		public void buildExistential(int index, NameID name) {
-			if (name == null) {
-				throw new IllegalArgumentException(
-						"existential name cannot be null");
-			}
-			nodes[index] = new Node(K_EXISTENTIAL,name);
-		}
-
-		public void buildSet(int index, int element) {
-			nodes[index] = new Node(K_SET,element);
-		}
-
-		public void buildList(int index, int element) {
-			nodes[index] = new Node(K_LIST,element);
-		}
-
-		public void buildProcess(int index, int element) {
-			nodes[index] = new Node(K_PROCESS,element);
-		}
-
-		public void buildDictionary(int index, int key, int value) {
-			nodes[index] = new Node(K_DICTIONARY,new Pair(key,value));
-		}
-
-		public void buildTuple(int index, int... elements) {
-			nodes[index] = new Node(K_TUPLE,elements);
-		}
-
-		public void buildRecord(int index, Pair<String, Integer>... fields) {
-			nodes[index] = new Node(K_RECORD,fields);
-		}
-
-		public void buildFunction(int index, int ret, int... parameters) {
-			int[] items = new int[parameters.length+2];
-			items[0] = -1;
-			items[1] = ret;
-			System.arraycopy(parameters,0,items,2,parameters.length);
-			nodes[index] = new Node(K_FUNCTION,items);
-		}
-
-		public void buildMethod(int index, int receiver, int ret,
-				int... parameters) {
-			int[] items = new int[parameters.length+2];
-			items[0] = receiver;
-			items[1] = ret;
-			System.arraycopy(parameters,0,items,2,parameters.length);
-			nodes[index] = new Node(K_METHOD,items);
-		}
-		
-		public void buildUnion(int index, int... bounds) {
-			nodes[index] = new Node(K_UNION,bounds);
-		}
-	}
-	/**
-	 * The print builder is an example implementation of type builder which
-	 * simply constructs a textual representation of the type in the form of a
-	 * graph.
-	 */
-	public static class PrintBuilder implements Builder {
-		private final PrintStream out;
-		
-		public PrintBuilder(PrintStream out) {
-			this.out = out;
-		}
-		
-		public void initialise(int numNodes) { }
-		
-		public void buildPrimitive(int index, Type.Leaf type) {
-			out.println("#" + index + " = " + type);
-		}
-		
-		public void buildExistential(int index, NameID name) {
-			out.println("#" + index + " = ?" + name);
-		}
-		
-		public void buildSet(int index, int element) {
-			out.println("#" + index + " = {#" + element + "}");
-		}
-
-		public void buildList(int index, int element) {
-			out.println("#" + index + " = [#" + element + "]");
-		}
-
-		public void buildProcess(int index, int element) {
-			out.println("#" + index + " = process #" + element);
-		}
-
-		public void buildDictionary(int index, int key, int value) {
-			out.println("#" + index + " = {#" + key + "->#" + value + "}");
-		}
-
-		public void buildTuple(int index, int... elements) {
-			out.print("#" + index + " = (");
-			boolean firstTime=true;
-			for(int e : elements) {
-				if(!firstTime) {
-					out.print(", ");
+		public Automaton.State readState() throws IOException {
+			Automaton.State state = super.readState();
+			if (state.kind == Type.K_NOMINAL) {				
+				String module = readString();
+				String name = readString();
+				state.data = new NameID(ModuleID.fromString(module), name);
+			} else if(state.kind == Type.K_RECORD) { 
+				boolean isOpen = reader.read_bit();
+				int nfields = reader.read_uv();
+				Record.State fields = new Record.State(isOpen);
+				for(int i=0;i!=nfields;++i) {
+					fields.add(readString());
 				}
-				firstTime=false;
-				out.print("#" + e);
+				state.data = fields;			
+			}  else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) { 
+				boolean nonEmpty = reader.read_bit();				
+				state.data = nonEmpty;			
 			}
-			out.println(")");
-		}
-
-		public void buildRecord(int index, Pair<String, Integer>... fields) {
-			out.print("#" + index + " = {");
-			boolean firstTime=true;
-			for(Pair<String,Integer> e : fields) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print("#" + e.second() + " " + e.first());
-			}
-			out.println("}");
-		}
-
-		public void buildFunction(int index, int ret, int... parameters) {
-			out.print("#" + index + " = ");			
-			out.print("#" + ret + "(");
-			boolean firstTime=true;
-			for(int e : parameters) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print("#" + e);
-			}
-			out.println(")");
+			return state;
 		}
 		
-		public void buildMethod(int index, int receiver, int ret, int... parameters) {
-			out.print("#" + index + " = ");
-			if(receiver != -1) {
-				out.print("#" + receiver);
+		private String readString() throws IOException {
+			String r = "";
+			int nchars = reader.read_uv();
+			for(int i=0;i!=nchars;++i) {
+				char c = (char) reader.read_u2();
+				r = r + c;
 			}
-			out.print("::#" + ret + "(");
-			boolean firstTime=true;
-			for(int e : parameters) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print("#" + e);
-			}
-			out.println(")");
-		}
-		
-		public void buildUnion(int index, int... bounds) {
-			out.print("#" + index + " = ");
-			boolean firstTime=true;
-			for(int e : bounds) {
-				if(!firstTime) {
-					out.print(" | ");
-				}
-				firstTime=false;
-				out.print("#" + e);
-			}
-			out.println();
+			return r;
 		}
 	}
 	
 	/**
-	 * Construct a copy of a given type using a given type builder. The normal
-	 * reason to do this is that the representation of the type being built is
-	 * not the internal one --- e.g. it's a textual or binary representation for
-	 * serialisation.
+	 * <p>
+	 * A <code>BinaryWriter</code> will write types to a binary output stream.
+	 * The types should be read back from the stream using
+	 * <code>BinaryReader</code> .
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> Under-the-hood, this class is essentially a wrapper for
+	 * <code>BinaryAutomataWriter</code>.
+	 * </p>
 	 * 
-	 * @param writer
-	 * @param type
+	 * @author David J. Pearce
+	 * 
 	 */
-	public static void build(Builder writer, Type type) {
-		if(type instanceof Leaf) {			
-			writer.initialise(1);
-			writer.buildPrimitive(0,(Type.Leaf)type);
-		} else {				
-			Compound graph = (Compound) type;
-			writer.initialise(graph.nodes.length);
-			Node[] nodes = graph.nodes;
-			for(int i=0;i!=nodes.length;++i) {
-				Node node = nodes[i];						
-				switch (node.kind) {
-				case K_VOID:
-					writer.buildPrimitive(i,T_VOID);
-					break;
-				case K_ANY:
-					writer.buildPrimitive(i,T_ANY);
-					break;
-				case K_NULL:
-					writer.buildPrimitive(i,T_NULL);
-					break;
-				case K_BOOL:
-					writer.buildPrimitive(i,T_BOOL);
-					break;
-				case K_BYTE:
-					writer.buildPrimitive(i,T_BYTE);
-					break;
-				case K_CHAR:
-					writer.buildPrimitive(i,T_CHAR);
-					break;
-				case K_INT:
-					writer.buildPrimitive(i,T_INT);
-					break;
-				case K_RATIONAL:
-					writer.buildPrimitive(i,T_REAL);
-					break;
-				case K_STRING:
-					writer.buildPrimitive(i,T_STRING);
-					break;
-				case K_SET:
-					writer.buildSet(i,(Integer) node.data);
-					break;
-				case K_LIST:
-					writer.buildList(i,(Integer) node.data);												
-					break;
-				case K_PROCESS:
-					writer.buildProcess(i,(Integer) node.data);	
-					break;
-				case K_EXISTENTIAL:					
-					writer.buildExistential(i,(NameID) node.data);	
-					break;
-				case K_DICTIONARY: {
-					// binary node
-					Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-					writer.buildDictionary(i,p.first(),p.second());										
-					break;
-				}
-				case K_UNION: {
-					int[] bounds = (int[]) node.data;			
-					writer.buildUnion(i,bounds);
-					break;
-				}
-				case K_TUPLE: {									
-					int[] bounds = (int[]) node.data;								
-					writer.buildTuple(i,bounds);					
-					break;
-				}				
-				case K_FUNCTION: {				
-					int[] bounds = (int[]) node.data;
-					int[] params = new int[bounds.length-2];
-					System.arraycopy(bounds, 2, params,0, params.length);
-					writer.buildFunction(i,bounds[1],params);
-					break;
-				}
-				case K_METHOD: {				
-					int[] bounds = (int[]) node.data;
-					int[] params = new int[bounds.length-2];
-					System.arraycopy(bounds, 2, params,0, params.length);
-					writer.buildMethod(i,bounds[0],bounds[1],params);
-					break;
-				}
-				case K_RECORD: {
-					// labeled nary node					
-					Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-					writer.buildRecord(i,fields);
-					break;
-				}
-				default: 
-					throw new IllegalArgumentException("Invalid type encountered");
-				}
-			}		
+	public static class BinaryWriter extends BinaryAutomataWriter {		
+		public BinaryWriter(BinaryOutputStream writer) {
+			super(writer);			
+		}
+		public void write(Type t) throws IOException {
+			write(destruct(t));			
+		}
+		
+		public void write(Automaton.State state) throws IOException {
+			super.write(state);			
+			if (state.kind == Type.K_NOMINAL) {
+				NameID name = (NameID) state.data;
+				writeString(name.module().toString());
+				writeString(name.name());
+			} else if(state.kind == Type.K_RECORD) {
+				Record.State fields = (Record.State) state.data;
+				writer.write_bit(fields.isOpen);
+				writer.write_uv(fields.size());
+				for(String field : fields) {
+					writeString(field);
+				}					
+			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
+				writer.write_bit((Boolean) state.data);							
+			}						
+		}
+		
+		private void writeString(String str) throws IOException {
+			writer.write_uv(str.length());
+			for (int i = 0; i != str.length(); ++i) {
+				writer.write_u2(str.charAt(i));
+			}
 		}
 	}
-	
 	
 	// =============================================================
 	// Type operations
 	// =============================================================
 
 	/**
-	 * A subtype relation encodes both a subtype and a supertype relation
-	 * between two separate domains (called <code>from</code> and
-	 * <code>to</code>).
+	 * Determine whether type <code>t2</code> is an <i>implicit coercive
+	 * subtype</i> of type <code>t1</code> (written t1 :> t2). In other words,
+	 * whether the set of all possible values described by the type
+	 * <code>t2</code> is a subset of that described by <code>t1</code>.
 	 */
-	public final static class SubtypeRelation {
-
-		/** 
-		 * Indicates the size of the "source" domain.
-		 */
-		private final int fromDomain;
-		
-		/**
-		 * Indicates the size of the "target" domain.
-		 */
-		private final int toDomain;
-		
-		/**
-		 * Stores subtype relation as a binary matrix for dimenaion
-		 * <code>fromDomain</code> x <code>toDomain</code>. This matrix
-		 * <code>r</code> is organised into row-major order, where
-		 * <code>r[i][j]</code> implies <code>i :> j</code>.
-		 */
-		private final BitSet subTypes;
-		
-		/**
-		 * Stores subtype relation as a binary matrix for dimenaion
-		 * <code>fromDomain</code> x <code>toDomain</code>. This matrix
-		 * <code>r</code> is organised into row-major order, where
-		 * <code>r[i][j]</code> implies <code>i <: j</code>.
-		 */
-		private final BitSet superTypes;
-
-		public SubtypeRelation(int fromDomain, int toDomain) {
-			this.fromDomain = fromDomain;
-			this.toDomain = toDomain;
-			this.subTypes = new BitSet(fromDomain*toDomain);
-			this.superTypes = new BitSet(fromDomain*toDomain);
-			
-			// Initially, set all sub- and super-types as true			
-			subTypes.set(0,subTypes.size(),true);
-			superTypes.set(0,superTypes.size(),true);
-		}
-		
-		/**
-		 * Check whether a a given node is a subtype of another.
-		 * 
-		 * @param from
-		 * @param to
-		 * @return
-		 */
-		public boolean isSubtype(int from, int to) {
-			return subTypes.get((toDomain*from) + to);
-		}
-		
-		/**
-		 * Check whether a a given node is a supertype of another.
-		 * 
-		 * @param from
-		 * @param to
-		 * @return
-		 */
-		public boolean isSupertype(int from, int to) {
-			return superTypes.get((toDomain*from) + to);
-		}
-
-		/**
-		 * Set the subtype flag for a given pair in the relation.
-		 * 
-		 * @param from
-		 * @param to
-		 * @param flag
-		 */
-		public void setSubtype(int from, int to, boolean flag) {
-			subTypes.set((toDomain*from) + to,flag);			
-		}
-		
-		/**
-		 * Set the supertype flag for a given pair in the relation.
-		 * 
-		 * @param from
-		 * @param to
-		 * @param flag
-		 */
-		public void setSupertype(int from, int to, boolean flag) {
-			superTypes.set((toDomain*from) + to,flag);			
-		}
-		
-		public String toString() {			
-			return toString(subTypes) + "\n" + toString(superTypes);
-		}
-		
-		public String toString(BitSet matrix) {
-			String r = " |";
-			for(int i=0;i!=toDomain;++i) {
-				r = r + " " + (i%10);
-			}
-			r = r + "\n-+";
-			for(int i=0;i!=toDomain;++i) {
-				r = r + "--";
-			}
-			r = r + "\n";
-			for(int i=0;i!=fromDomain;++i) {	
-				r = r + (i%10) + "|";;
-				for(int j=0;j!=toDomain;++j) {
-					if(matrix.get((i*toDomain)+j)) {
-						r += " 1";
-					} else {
-						r += " 0";
-					}
-				}	
-				r = r + "\n";
-			}
-			return r;
-		}
-
+	public static boolean isImplicitCoerciveSubtype(Type t1, Type t2) {				
+		Automaton a1 = destruct(t1);
+		Automaton a2 = destruct(t2);
+		ImplicitCoercionOperator relation = new ImplicitCoercionOperator(a1,a2);				
+		return relation.isSubtype(0, 0); 
 	}
 
 	/**
-	 * A subtype inference is responsible for computing a complete subtype
-	 * relation between two given graphs. The class is abstract because there
-	 * are different possible implementations of this. In particular, the case
-	 * when coercions are being considered, versus the case when they are not.
-	 * 
-	 * @author djp
-	 * 
+	 * Determine whether type <code>t2</code> is an <i>explicit coercive
+	 * subtype</i> of type <code>t1</code>.  
 	 */
-	public static abstract class SubtypeInference {
-		protected final Node[] fromGraph;
-		protected final Node[] toGraph;
-		protected final SubtypeRelation assumptions;
-		
-		public SubtypeInference(Node[] fromGraph, Node[] toGraph) {
-			this.fromGraph = fromGraph;
-			this.toGraph = toGraph;
-			this.assumptions = new SubtypeRelation(fromGraph.length,toGraph.length);
-		}
-		
-		public SubtypeRelation doInference() {
-			int fromDomain = fromGraph.length;
-			int toDomain = toGraph.length;
-			
-			boolean changed = true;
-			while(changed) {
-				changed=false;
-				for(int i=0;i!=fromDomain;i++) {
-					for(int j=0;j!=toDomain;j++) {					
-						boolean isubj = isSubType(i,j);					
-						boolean isupj = isSuperType(i,j);		
-						
-						if(assumptions.isSubtype(i,j) && !isubj) {
-							assumptions.setSubtype(i,j,false);
-							changed = true;
-						}
-						if(assumptions.isSupertype(i,j) && !isupj) {
-							assumptions.setSupertype(i,j,false);
-							changed = true;
-						}						
-					}	
-				}
-			}
-			
-			return assumptions;
-		}
-		
-		/**
-		 * <p>
-		 * Determine whether type <code>to</code> is a <i>subtype</i> of type
-		 * <code>from</code> (written from :> to). In other words, whether the set
-		 * of all possible values described by the type <code>to</code> is a
-		 * subset of that described by <code>from</code>.
-		 * </p>
-		 * 
-		 * @param from --- An index into <code>fromGraph</code>.
-		 * @param to --- An index into <code>toGraph</code>.
-		 * @return
-		 */
-		public abstract boolean isSubType(int from, int to);
-		
-		/**
-		 * <p>
-		 * Determine whether type <code>to</code> is a <i>super type</i> of type
-		 * <code>from</code> (written from <: to). In other words, whether the set
-		 * of all possible values described by the type <code>to</code> is a
-		 * super set of that described by <code>from</code>.
-		 * </p>
-		 * 
-		 * @param from --- An index into <code>fromGraph</code>.
-		 * @param to --- An index into <code>toGraph</code>.
-		 * @return
-		 */
-		public abstract boolean isSuperType(int from, int to);
-	}
-	
-	public static class DefaultSubtypeOperator extends SubtypeInference {
-		public DefaultSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
-			super(fromGraph,toGraph);
-		}
-		
-		public boolean isSubType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			if(fromNode.kind == toNode.kind) { 
-				switch(fromNode.kind) {
-				case K_EXISTENTIAL:
-					NameID nid1 = (NameID) fromNode.data;
-					NameID nid2 = (NameID) toNode.data;				
-					return nid1.equals(nid2);
-				case K_SET:
-				case K_LIST:
-				case K_PROCESS: {
-					return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
-				}
-				case K_DICTIONARY: {
-					// binary node
-					Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-					Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-					return assumptions.isSubtype(p1.first(),p2.first()) && assumptions.isSubtype(p1.second(),p2.second());  					
-				}		
-				case K_TUPLE:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){ return false; }
-					for(int i=0;i<elems1.length;++i) {
-						if(!assumptions.isSubtype(elems1[i],elems2[i])) { return false; }
-					}
-					return true;
-				}
-				case K_METHOD:
-				case K_FUNCTION:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){
-						return false;
-					}
-					// Check (optional) receiver value first (which is contravariant)
-					int e1 = elems1[0];
-					int e2 = elems2[0];
-					if((e1 == -1 || e2 == -1) && e1 != e2) {
-						return false;
-					} else if (e1 != -1 && e2 != -1
-							&& !assumptions.isSupertype(e1,e2)) {
-						return false;
-					}
-					// Check return value first (which is covariant)
-					e1 = elems1[1];
-					e2 = elems2[1];
-					if(!assumptions.isSubtype(e1,e2)) {
-						return false;
-					}
-					// Now, check parameters (which are contra-variant)
-					for(int i=2;i<elems1.length;++i) {
-						e1 = elems1[i];
-						e2 = elems2[i];
-						if(!assumptions.isSupertype(e1,e2)) {
-							return false;
-						}
-					}
-					return true;
-				}
-				case K_RECORD:		
-				{
-					// labeled nary nodes
-					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-					if(fields1.length != fields2.length) {
-						return false;
-					}
-					for (int i = 0; i != fields2.length; ++i) {
-						Pair<String, Integer> e1 = fields1[i];
-						Pair<String, Integer> e2 = fields2[i];						
-							if (!e1.first().equals(e2.first())
-									|| !assumptions.isSubtype(e1.second(),
-											e2.second())) {
-								return false;
-							}
-					}					
-					return true;					
-				} 		
-				case K_UNION: {									
-					int[] bounds2 = (int[]) toNode.data;		
-					for(int j : bounds2) {				
-						if(!assumptions.isSubtype(from,j)) { return false; }								
-					}
-					return true;					
-				}
-				case K_LABEL:
-					throw new IllegalArgumentException("attempting to minimise open recurisve type");		
-				default:
-					// primitive types true immediately
-					return true;
-				}		
-			} else if(fromNode.kind == K_ANY || toNode.kind == K_VOID) {
-				return true;
-			} else if(fromNode.kind == K_UNION) {
-				int[] bounds1 = (int[]) fromNode.data;		
-
-				// check every bound in c1 is a subtype of some bound in c2.
-				for(int i : bounds1) {				
-					if(assumptions.isSubtype(i,to)) {
-						return true;
-					}								
-				}
-				return false;	
-			} else if(toNode.kind == K_UNION) {
-				int[] bounds2 = (int[]) toNode.data;		
-
-				// check some bound in c1 is a subtype of some bound in c2.
-				for(int j : bounds2) {				
-					if(!assumptions.isSubtype(from,j)) {
-						return false;
-					}								
-				}
-				return true;	
-			}
-			
-			return false;
-		}
-		
-		public boolean isSuperType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			if(fromNode.kind == toNode.kind) { 
-				switch(fromNode.kind) {
-				case K_EXISTENTIAL:
-					NameID nid1 = (NameID) fromNode.data;
-					NameID nid2 = (NameID) toNode.data;				
-					return nid1.equals(nid2);
-				case K_SET:
-				case K_LIST:
-				case K_PROCESS: {
-					return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
-				}
-				case K_DICTIONARY: {
-					// binary node
-					Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-					Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-					return assumptions.isSupertype(p1.first(),p2.first()) && assumptions.isSupertype(p1.second(),p2.second());  					
-				}		
-				case K_TUPLE:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){ return false; }
-					for(int i=0;i<elems1.length;++i) {
-						if(!assumptions.isSupertype(elems1[i],elems2[i])) { return false; }
-					}
-					return true;
-				}
-				case K_METHOD:
-				case K_FUNCTION:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){
-						return false;
-					}
-					// Check (optional) receiver value first (which is contravariant)
-					int e1 = elems1[0];
-					int e2 = elems2[0];
-					if((e1 == -1 || e2 == -1) && e1 != e2) {
-						return false;
-					} else if (e1 != -1 && e2 != -1
-							&& !assumptions.isSubtype(e1,e2)) {
-						return false;
-					}
-					// Check return value first (which is covariant)
-					e1 = elems1[1];
-					e2 = elems2[1];
-					if(!assumptions.isSupertype(e1,e2)) {
-						return false;
-					}
-					// Now, check parameters (which are contra-variant)
-					for(int i=2;i<elems1.length;++i) {
-						e1 = elems1[i];
-						e2 = elems2[i];
-						if(!assumptions.isSubtype(e1,e2)) {
-							return false;
-						}
-					}
-					return true;
-				}
-				case K_RECORD:		
-				{
-					// labeled nary nodes
-					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-					if(fields1.length != fields2.length) {
-						return false;
-					}
-					for (int i = 0; i != fields2.length; ++i) {
-						Pair<String, Integer> e1 = fields1[i];
-						Pair<String, Integer> e2 = fields2[i];						
-							if (!e1.first().equals(e2.first())
-									|| !assumptions.isSupertype(e1.second(),
-											e2.second())) {
-								return false;
-							}
-					}					
-					return true;					
-				} 		
-				case K_UNION: {														
-					int[] bounds1 = (int[]) toNode.data;		
-
-					// check every bound in c1 is a subtype of some bound in toNode.
-					for(int i : bounds1) {				
-						if(!assumptions.isSupertype(i,to)) {
-							return false;
-						}								
-					}
-					return true;
-				}									
-				case K_LABEL:
-					throw new IllegalArgumentException("attempting to minimise open recurisve type");		
-				default:
-					// primitive types true immediately
-					return true;
-				}		
-			} else if(fromNode.kind == K_VOID || toNode.kind == K_ANY) {
-				return true;
-			} else if(fromNode.kind == K_UNION) {
-				int[] bounds1 = (int[]) fromNode.data;		
-
-				// check every bound in c1 is a subtype of some bound in c2.
-				for(int i : bounds1) {				
-					if(!assumptions.isSupertype(i,to)) {
-						return false;
-					}								
-				}
-				return true;	
-			} else if(toNode.kind == K_UNION) {
-				int[] bounds2 = (int[]) toNode.data;		
-
-				// check some bound in c1 is a subtype of some bound in c2.
-				for(int j : bounds2) {				
-					if(assumptions.isSupertype(from,j)) {
-						return true;
-					}								
-				}				
-			}						
-			
-			return false;
-		}
-	}
-	
-	public static class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
-		
-		public CoerciveSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
-			super(fromGraph,toGraph);
-		}
-		
-		public boolean isSubType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			/*
-			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
-				// labeled nary nodes
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
-				HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
-				for(Pair<String,Integer> f : _fields2) {
-					fields2.put(f.first(), f.second());
-				}
-				for (int i = 0; i != fields1.length; ++i) {
-					Pair<String, Integer> e1 = fields1[i];
-					Integer e2 = fields2.get(e1.first());
-					if (e2 == null || !assumptions.isSubtype(e1.second(),e2)) {
-						return false;
-					}
-				}					
-				return true;
-			} else 
-			*/
-			if(fromNode.kind == K_CHAR && toNode.kind == K_INT) {
-				// ints can flow into chars
-				return true;
-			} else if(fromNode.kind == K_INT && toNode.kind == K_CHAR) {
-				// chars can flow into ints
-				return true;
-			} else if(fromNode.kind == K_RATIONAL && (toNode.kind == K_INT || toNode.kind == K_CHAR)) {
-				// ints or chars can flow into rationals
-				return true;
-			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
-				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-				return fromGraph[p1.first()].kind == K_INT
-						&& assumptions.isSubtype(p1.second(),
-								(Integer) toNode.data);
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_STRING) {
-				Integer p1 = (Integer) fromNode.data;
-				// TO DO: this is a bug here for cases when the element type is e.g. int|real
-				return fromGraph[p1].kind == K_ANY || fromGraph[p1].kind == K_INT || fromGraph[p1].kind == K_RATIONAL;
-			} else {
-				return super.isSubType(from,to);
-			}
-		}
-		
-		public boolean isSuperType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			/*
-			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
-				// labeled nary nodes
-				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) fromNode.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-				HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
-				for(Pair<String,Integer> f : _fields1) {
-					fields1.put(f.first(), f.second());
-				}
-				for (int i = 0; i != fields2.length; ++i) {
-					Pair<String, Integer> e2 = fields2[i];
-					Integer e1 = fields1.get(e2.first());
-					if (e1 == null || !assumptions.isSupertype(e1,e2.second())) {
-						return false;
-					}
-				}					
-				return true;					
-
-			} else 
-			*/	
-			if(fromNode.kind == K_CHAR && (toNode.kind == K_RATIONAL || toNode.kind == K_INT)) {
-				// char can flow into int or rational
-				return true;
-			} else if(fromNode.kind == K_INT && (toNode.kind == K_RATIONAL || toNode.kind == K_CHAR)) {
-				// int can flow into rational or char
-				return true;
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
-				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-				return toGraph[p2.first()].kind == K_INT
-						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
-			} else if(fromNode.kind == K_STRING && toNode.kind == K_LIST) {
-				Integer p2 = (Integer) toNode.data;
-				// TO DO: this is a bug here for cases when the element type is e.g. int|real
-				return toGraph[p2].kind == K_ANY || toGraph[p2].kind == K_INT || toGraph[p2].kind == K_RATIONAL;
-			} else {
-				return super.isSuperType(from, to);
-			}
-		}
-	}
-
-	/**
-	 * Determine whether type <code>t2</code> is a <i>coercive subtype</i> of
-	 * type <code>t1</code> (written t1 :> t2). In other words, whether the set
-	 * of all possible values described by the type <code>t2</code> is a subset
-	 * of that described by <code>t1</code>.
-	 */
-	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
-		Node[] g1 = nodes(t1);
-		Node[] g2 = nodes(t2);
-		SubtypeInference inference = new CoerciveSubtypeOperator(g1,g2);		
-		SubtypeRelation rel = inference.doInference();		
-		return rel.isSubtype(0, 0); 
+	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2) {				
+		Automaton a1 = destruct(t1);
+		Automaton a2 = destruct(t2);
+		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2);				
+		return relation.isSubtype(0, 0); 
 	}
 	
 	/**
@@ -1514,112 +459,50 @@ public abstract class Type {
 	 * all possible values described by the type <code>t2</code> is a subset of
 	 * that described by <code>t1</code>.
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {				
-		Node[] g1 = nodes(t1);
-		Node[] g2 = nodes(t2);
-		SubtypeInference inference = new DefaultSubtypeOperator(g1,g2);		
-		SubtypeRelation rel = inference.doInference();		
-		return rel.isSubtype(0, 0); 
-	}
-
-	/**
-	 * Check whether two types are <i>isomorphic</i>. This is true if they are
-	 * identical, or encode the same structure.
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static boolean isomorphic(Type t1, Type t2) {
-		return isSubtype(t1,t2) && isSubtype(t2,t1);
+	public static boolean isSubtype(Type t1, Type t2) {		
+		Automaton a1 = destruct(t1);
+		Automaton a2 = destruct(t2);
+		SubtypeOperator relation = new SubtypeOperator(a1,a2);		
+		return relation.isSubtype(0, 0);		
 	}
 	
 	/**
-	 * Compute the <i>least upper bound</i> of two types t1 and t2. The least upper
-	 * bound is a type t3 where <code>t3 :> t1</code>, <code>t3 :> t2</code> and
-	 * there does not exist a type t4, where <code>t3 :> t4</code>,
-	 * <code>t4 :> t1</code>, <code>t4 :> t2</code>.
+	 * <p>
+	 * Contractive types are types which cannot accept value because they have
+	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
+	 * terminating it. For example, <code>X<{X field}></code> is contractive,
+	 * where as <code>X<{null|X field}></code> is not.
+	 * </p>
 	 * 
-	 * @param t1
-	 * @param t2
+	 * <p>
+	 * This method returns true if the type is contractive, or contains a
+	 * contractive subcomponent. For example, <code>null|X<{X field}></code> is
+	 * considered contracted.
+	 * </p>
+	 * 
+	 * @param type --- type to test for contractivity.
 	 * @return
 	 */
-	public static Type leastUpperBound(Type t1, Type t2) {
-		return minimise(T_UNION(t1,t2)); // so easy
-	}
-	
-	/**
-	 * Compute the <i>greatest lower bound</i> of two types t1 and t2. The
-	 * greatest lower bound is a type t3 where <code>t1 :> t3</code>,
-	 * <code>t2 :> t3</code> and there does not exist a type t4, where
-	 * <code>t1 :> t4</code>, <code>t2 :> t4</code> and <code>t4 :> t3</code>.
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static Type greatestLowerBound(Type t1, Type t2) {
-		// BUG FIX: this algorithm still isn't implemented correctly.
-		// -------> it can infinite loop as the recursion isn't terminated.
-		if(isSubtype(t1,t2)) {			
-			return t2;
-		} else if(isSubtype(t2,t1)) {			
-			return t1;
+	public static boolean isContractive(Type type) {
+		if(type instanceof Leaf) {
+			return false;
 		} else {
-			Node[] graph1, graph2;
-			if(t1 instanceof Leaf) {
-				graph1 = new Node[] { new Node(leafKind((Type.Leaf) t1), null) };
-			} else {
-				graph1 = ((Compound)t1).nodes;
-			}
-			if(t2 instanceof Leaf) {
-				graph2 = new Node[] { new Node(leafKind((Type.Leaf) t2), null) };
-			} else {
-				graph2 = ((Compound)t2).nodes;
-			}
-			ArrayList<Node> newNodes = new ArrayList<Node>();
-			intersect(0,graph1,0,graph2,newNodes, new HashMap());
-			Type glb = construct(newNodes.toArray(new Node[newNodes.size()]));				
-			return minimise(glb);
+			Automaton automaton = ((Compound) type).automaton;
+			return TypeAlgorithms.isContractive(automaton);
 		}
 	}
-
+			
 	/**
-	 * Let <code>S</code> be determined by subtracting the set of values
-	 * described by type <code>t2</code> from that described by <code>t1</code>.
-	 * Then, this method returns the <i>least</i> type <code>t3</code> which
-	 * covers <code>S</code> (that is, every value in <code>S</code> is in the
-	 * set of values described by <code>t3</code>). Unfortunately, in some
-	 * cases, <code>t3</code> may contain other (spurious) values not found in
-	 * <code>S</code>.
+	 * Compute the intersection of two types. The resulting type will only
+	 * accept values which are accepted by both types being intersected.. In
+	 * many cases, the only valid intersection will be <code>void</code>.
 	 * 
 	 * @param t1
 	 * @param t2
 	 * @return
 	 */
-	public static Type leastDifference(Type t1, Type t2) {
-		// BUG FIX: this algorithm still isn't implemented correctly.
-		// -------> it can infinite loop as the recursion isn't terminated.
-		if(isSubtype(t2,t1)) {			
-			return T_VOID;
-		} else {
-			Node[] graph1, graph2;
-			if(t1 instanceof Leaf) {
-				graph1 = new Node[] { new Node(leafKind((Type.Leaf) t1), null) };
-			} else {
-				graph1 = ((Compound)t1).nodes;
-			}
-			if(t2 instanceof Leaf) {
-				graph2 = new Node[] { new Node(leafKind((Type.Leaf) t2), null) };
-			} else {
-				graph2 = ((Compound)t2).nodes;
-			}
-			SubtypeRelation assumptions = new DefaultSubtypeOperator(graph1,graph2).doInference();			
-			ArrayList<Node> newNodes = new ArrayList<Node>();
-			difference(0,graph1,0,graph2,newNodes, new HashMap(),assumptions);
-			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));
-			return minimise(ldiff);
-		}
+	public static Type intersect(Type t1, Type t2) {
+		return TypeAlgorithms.intersect(t1,t2);
 	}
 
 	/**
@@ -1652,15 +535,22 @@ public abstract class Type {
 				} else {
 					HashMap<String, Type> rfields = r.fields();
 					HashMap<String, Type> bfields = br.fields();
-					HashMap<String, Type> nfields = new HashMap();
+					HashMap<String, Type> nfields = new HashMap<String,Type>();
 					for (Map.Entry<String, Type> e : rfields.entrySet()) {
 						Type bt = bfields.get(e.getKey());
 						if (bt != null) {
 							nfields.put(e.getKey(),
-									leastUpperBound(e.getValue(), bt));
+									Union(e.getValue(), bt));
 						}
-					}					
-					r = T_RECORD(nfields);
+					}				
+					boolean isOpen = r.isOpen() || br.isOpen()
+							|| nfields.size() < rfields.size();
+					Type tmp = Record(isOpen, nfields);
+					if(tmp instanceof Record) {
+						r = (Record) tmp;
+					} else {
+						return null;
+					}
 				}
 			}
 			return r;
@@ -1682,7 +572,9 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_SET(leastUpperBound(r.element(),br.element()));
+					Type element = Union(r.element(),br.element());
+					boolean nonEmpty = r.nonEmpty() & br.nonEmpty();
+					r = (Set) Set(element,nonEmpty);					
 				}
 			}			
 			return r;
@@ -1695,7 +587,7 @@ public abstract class Type {
 			return (Type.List) t;
 		} else if (t instanceof Type.Union) {			
 			Union ut = (Type.Union) t;
-			List r = null;
+			List r = null;			
 			for (Type b : ut.bounds()) {
 				if (!(b instanceof List)) {
 					return null;
@@ -1704,7 +596,9 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_LIST(leastUpperBound(r.element(),br.element()));
+					Type element = Union(r.element(),br.element());
+					boolean nonEmpty = r.nonEmpty() & br.nonEmpty();
+					r = (List) List(element,nonEmpty);
 				}
 			}			
 			return r;
@@ -1726,645 +620,20 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_DICTIONARY(leastUpperBound(r.key(), br.key()),
-							leastUpperBound(r.value(), br.value()));
+					Type tmp = Dictionary(Union(r.key(), br.key()),
+							Union(r.value(), br.value()));
+					if(tmp instanceof Dictionary) {
+						r = (Dictionary) tmp;
+					} else {
+						return null;
+					}
 				}
 			}
 			return r;
 		}
 		return null;
 	}
-	
-	/**
-	 * Minimise the given type to produce a fully minimised version.
-	 * 
-	 * @param type
-	 * @return
-	 */	
-	public static Type minimise(Type type) {
-		// leaf types never need minmising!
-		if (type instanceof Leaf) {
-			return type;
-		}				
-		
-		// compound types need minimising.
-		Node[] nodes = ((Compound) type).nodes;		
-		SubtypeRelation relation;;
-		relation = new DefaultSubtypeOperator(nodes,nodes).doInference();		
-		ArrayList<Node> newnodes = new ArrayList<Node>();
-		int[] allocated = new int[nodes.length];
-		//System.out.println("REBUILDING: " + type);
-		//build(new PrintBuilder(System.out),type);
-		//System.out.println(relation.toString());
-		rebuild(0, nodes, allocated, newnodes, relation);
-		return construct(newnodes.toArray(new Node[newnodes.size()]));		
-	}
-
-	/**
-	 * This method reconstructs a graph given a set of equivalent nodes. The
-	 * equivalence classes for a node are determined by the given subtype
-	 * matrix, whilst the allocate array identifies when a node has already been
-	 * allocated for a given equivalence class.
-	 * 
-	 * @param idx
-	 * @param graph
-	 * @param allocated
-	 * @param newNodes
-	 * @param matrix
-	 * @return
-	 */
-	private static int rebuild(int idx, Node[] graph, int[] allocated,
-			ArrayList<Node> newNodes, SubtypeRelation assumptions) {	
-		int graph_size = graph.length;
-		Node node = graph[idx]; 		
-		int cidx = allocated[idx];		
-		if(cidx > 0) {
-			// node already constructed for this equivalence class
-			return cidx - 1;
-		} 
-		
-		cidx = newNodes.size(); // my new index
-		// now, allocate all nodes in equivalence class
-		for(int i=0;i!=graph_size;++i) {
-			if(assumptions.isSubtype(i,idx) && assumptions.isSubtype(idx, i)) {
-				allocated[i] = cidx + 1; 
-			}
-		}
-		 
-		newNodes.add(null); // reserve space for my node
-		
-		Object data = null;
-		switch(node.kind) {
-		case K_EXISTENTIAL:
-			data = node.data;
-			break;
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS: {
-			int element = (Integer) node.data;
-			data = (Integer) rebuild(element,graph,allocated,newNodes,assumptions);
-			break;
-		}
-		case K_DICTIONARY: {
-			Pair<Integer,Integer> p = (Pair) node.data;
-			int from = (Integer) rebuild(p.first(),graph,allocated,newNodes,assumptions);
-			int to = (Integer) rebuild(p.second(),graph,allocated,newNodes,assumptions);
-			data = new Pair(from,to);
-			break;
-		}		
-		case K_TUPLE:
-		case K_METHOD:
-		case K_FUNCTION: {
-			int[] elems = (int[]) node.data;
-			int[] nelems = new int[elems.length];
-			for(int i = 0; i!=elems.length;++i) {
-				if(elems[i] == -1) {
-					// possible for K_FUNCTION
-					nelems[i] = -1;
-				} else {
-					nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,newNodes,assumptions);
-				}
-			}			
-			data = nelems;
-			break;			
-		}
-		case K_RECORD: {			
-				Pair<String, Integer>[] elems = (Pair[]) node.data;
-				Pair<String, Integer>[] nelems = new Pair[elems.length];
-				for (int i = 0; i != elems.length; ++i) {
-					Pair<String, Integer> p = elems[i];					
-					int j = (Integer) rebuild(p.second(), graph, allocated,
-							newNodes, assumptions);							
-					nelems[i] = new Pair<String, Integer>(p.first(), j);
-				}
-				data = nelems;			
-			break;
-		}	
-		case K_UNION: {
-			int[] elems = (int[]) node.data;
 			
-			// The aim here is to try and remove equivalent nodes, and nodes
-			// which are subsumed by other nodes.
-			
-			HashSet<Integer> nelems = new HashSet<Integer>();			
-			for(int i : elems) { nelems.add(i); }
-									
-			for(int i=0;i!=elems.length;i++) {
-				int n1 = elems[i];
-				for(int j=0;j<elems.length;j++) {
-					if(i==j) { continue; }
-					int n2 = elems[j];	
-					if(assumptions.isSubtype(n1,n2) && (!assumptions.isSubtype(n2,n1) || i < j)) {				
-						nelems.remove(n2);												
-					}
-				}	
-			}					
-			
-			// ok, let's see what we've got left			
-			if (nelems.size() == 1) {				
-				// ok, union node should be removed as it's entirely subsumed. I
-				// need to undo what I've already done in allocating a new node.
-				newNodes.remove(cidx);		
-				for (int i = 0; i != graph_size; ++i) {
-					if(assumptions.isSubtype(i,idx) && assumptions.isSubtype(idx,i)) {					
-						allocated[i] = 0;
-					}
-				}
-				return rebuild(nelems.iterator().next(), graph, allocated, newNodes,
-						assumptions);
-			} else {
-				// first off, we have to normalise this sucker
-				ArrayList<Integer> nnelems = new ArrayList(nelems);
-				Collections.sort(nnelems,new MinimiseComparator(graph,assumptions));
-				// ok, now rebuild
-				int[] melems = new int[nelems.size()];
-				int i=0;
-				for (Integer j : nnelems) {
-					melems[i++] = (Integer) rebuild(j, graph,
-							allocated, newNodes, assumptions);
-				}
-				data = melems;
-			}
-			break;			
-		}
-		}
-		// finally, create the new node!!!
-		newNodes.set(cidx, new Node(node.kind,data));
-		return cidx;
-	}
-
-	private static final class MinimiseComparator implements Comparator<Integer> {
-		private Node[] graph;
-		private SubtypeRelation subtypeMatrix;
-		
-		public MinimiseComparator(Node[] graph, SubtypeRelation matrix) {
-			this.graph = graph;
-			this.subtypeMatrix = matrix;
-		}
-		
-		public int compare(Integer a, Integer b) {
-			Node n1 = graph[a];
-			Node n2 = graph[b];
-			if(n1.kind < n2.kind) {
-				return -1;
-			} else if(n1.kind > n2.kind) {
-				return 1;
-			} else {
-				// First try subtype relation
-				if (subtypeMatrix.isSubtype(b,a)) {
-					return -1;
-				} else if (subtypeMatrix.isSubtype(a,b)) {
-					return 1;
-				}
-				// Second try harder stuff
-				Object data1 = n1.data;
-				Object data2 = n2.data;
-				
-				switch(n1.kind){
-				case K_VOID:
-				case K_ANY:
-				case K_META:
-				case K_NULL:
-				case K_BOOL:
-				case K_BYTE:
-				case K_CHAR:
-				case K_INT:
-				case K_RATIONAL:
-				case K_STRING:
-					return 0;
-				case K_EXISTENTIAL: {
-					String s1 = (String) data1;
-					String s2 = (String) data2;
-					return s1.compareTo(s2);
-				}
-				case K_RECORD: {
-					Pair[] fields1 = (Pair[]) data1;
-					Pair[] fields2 = (Pair[]) data2;
-					if(fields1.length < fields2.length) {
-						return -1; 
-					} else if(fields1.length > fields2.length) {
-						return 1;
-					}
-					// FIXME: could presumably do more here.
-				}
-				// FIXME: could do more here!!
-				}
-				
-				if(a < b) {
-					return -1;
-				} else if(a > b) {
-					return 1;
-				} else {
-					return 0;
-				}
-			}
-		}
-	}
-	
-	private static int intersect(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes,
-			HashMap<Pair<Integer, Integer>, Integer> allocations) {	
-		Integer idx = allocations.get(new Pair(n1,n2));
-		if(idx != null) {
-			// this indicates an allocation has already been performed for this
-			// pair.  
-			return idx;
-		}
-		
-		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];				
-		int nid = newNodes.size(); // my node id
-		newNodes.add(null); // reserve space for my node	
-		allocations.put(new Pair(n1,n2), nid);
-		Node node; // new node being created
-		
-		if(c1.kind == c2.kind) { 
-			switch(c1.kind) {
-			case K_VOID:
-			case K_ANY:
-			case K_META:
-			case K_NULL:
-			case K_BOOL:
-			case K_BYTE:
-			case K_CHAR:
-			case K_INT:
-			case K_RATIONAL:
-			case K_STRING:
-				node = c1;
-				break;
-			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) c1.data;
-				NameID nid2 = (NameID) c2.data;				
-				if(nid1.name().equals(nid2.name())) {
-					node = c1;
-				} else {
-					node = new Node(K_VOID,null);
-				}
-				break;
-			case K_SET:
-			case K_LIST:
-			case K_PROCESS: {
-				// unary node
-				int e1 = (Integer) c1.data;
-				int e2 = (Integer) c2.data;
-				int element = intersect(e1,graph1,e2,graph2,newNodes,allocations);
-				node = new Node(c1.kind,element);
-				break;
-			}
-			case K_DICTIONARY: {
-				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-				int key = intersect(p1.first(),graph2,p2.first(),graph2,newNodes,allocations);
-				int value = intersect(p1.second(),graph2,p2.second(),graph2,newNodes,allocations);
-				node = new Node(K_DICTIONARY,new Pair(key,value));
-				break;
-			}		
-			case K_TUPLE:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
-				if(elems1.length != elems2.length) {
-					// TODO: can we do better here?
-					node = new Node(K_VOID,null);
-				} else {
-					int[] nelems = new int[elems1.length];
-					for(int i=0;i!=nelems.length;++i) {
-						nelems[i] = intersect(elems1[i],graph1,elems2[i],graph2,newNodes,allocations);
-					}
-					node = new Node(K_TUPLE,nelems);
-				}
-				break;
-			}
-			case K_METHOD:
-			case K_FUNCTION:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
-				int e1 = elems1[0];
-				int e2 = elems2[0];
-				if(elems1.length != elems2.length){
-					node = new Node(K_VOID,null);
-				} else if ((e1 == -1 || e2 == -1) && e1 != e2) {
-					node = new Node(K_VOID, null);
-				} else {
-					int[] nelems = new int[elems1.length];
-					// TODO: need to check here whether or not this is the right
-					// thing to do. My gut is telling me that covariant and
-					// contravariance should be treated differently ...
-					for (int i = 0; i != nelems.length; ++i) {
-						nelems[i] = intersect(elems1[i], graph1, elems2[i],
-								graph2, newNodes,allocations);
-					}
-					node = new Node(c1.kind, nelems);
-				}
-				break;
-			}
-			case K_RECORD: 
-					// labeled nary nodes
-					outer : {
-						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
-						int old = newNodes.size();
-						if (fields1.length != fields2.length) {
-							node = new Node(K_VOID, null);
-						} else {
-							Pair<String, Integer>[] nfields = new Pair[fields1.length];
-							for (int i = 0; i != nfields.length; ++i) {
-								Pair<String, Integer> e1 = fields1[i];
-								Pair<String, Integer> e2 = fields2[i];
-								if (!e1.first().equals(e2.first())) {
-									node = new Node(K_VOID, null);
-									break outer;
-								} else {
-									int nidx = intersect(e1.second(), graph1,
-											e2.second(), graph2, newNodes,
-											allocations);
-
-									if (newNodes.get(nidx).kind == K_VOID) {
-										// A record with a field of void type
-										// cannot exist --- it's just equivalent
-										// to void.
-										while (newNodes.size() != old) {
-											newNodes.remove(newNodes.size() - 1);
-										}
-										node = new Node(K_VOID, null);
-										break outer;
-									}
-
-									nfields[i] = new Pair<String, Integer>(
-											e1.first(), nidx);
-								}
-							}
-							node = new Node(K_RECORD, nfields);
-						}						
-					}	
-				break;
-			case K_UNION: {
-				// This is the hardest (i.e. most expensive) case. Essentially, I
-				// just check that for each bound in one node, there is an
-				// equivalent bound in the other.
-				int[] bounds1 = (int[]) c1.data;
-				int[] nbounds = new int[bounds1.length];
-								
-				// check every bound in c1 is a subtype of some bound in c2.
-				for (int i = 0; i != bounds1.length; ++i) {
-					nbounds[i] = intersect(bounds1[i], graph1, n2, graph2,
-							newNodes,allocations);
-				}
-				node = new Node(K_UNION,nbounds);
-				break;
-			}					
-			default:
-				throw new IllegalArgumentException("attempting to minimise open recurisve type");
-			}		
-		} else if(c1.kind == K_ANY) {			
-			newNodes.remove(newNodes.size()-1);
-			extractOnto(n2,graph2,newNodes);
-			return nid;
-		} else if(c2.kind == K_ANY) {			
-			newNodes.remove(newNodes.size()-1);
-			extractOnto(n1,graph1,newNodes);
-			return nid;
-		} else if (c1.kind == K_UNION){					
-			int[] obounds = (int[]) c1.data;			
-			int[] nbounds = new int[obounds.length];
-							
-			// check every bound in c1 is a subtype of some bound in c2.
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = intersect(obounds[i], graph1, n2, graph2,
-						newNodes,allocations);
-			}
-			node = new Node(K_UNION,nbounds);
-		} else if (c2.kind == K_UNION) {			
-			int[] obounds = (int[]) c2.data;			
-			int[] nbounds = new int[obounds.length];
-							
-			// check every bound in c1 is a subtype of some bound in c2.
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = intersect(n1,graph1,obounds[i], graph2,
-						newNodes,allocations);
-			}
-			node = new Node(K_UNION,nbounds);
-		} else {
-			// default case --> go to void
-			node = new Node(K_VOID,null);
-		}
-		// finally, create the new node!!!
-		newNodes.set(nid, node);
-		return nid;
-	}
-	
-	private static int difference(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes,
-			HashMap<Pair<Integer, Integer>, Integer> allocations, SubtypeRelation matrix) {
-		
-		int nid = newNodes.size(); // my node id		
-		if(matrix.isSupertype(n1,n2)) {
-			newNodes.add(new Node(K_VOID,null));
-			return nid; 
-		}
-		
-		Integer idx = allocations.get(new Pair(n1,n2));
-		if(idx != null) {
-			// this indicates an allocation has already been performed for this
-			// pair.  
-			return idx;
-		}
-		
-		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];				
-		
-		allocations.put(new Pair(n1,n2), nid);
-		newNodes.add(null); // reserve space for my node	
-		Node node; // new node being created
-		
-		if(c1.kind == c2.kind) { 
-			switch(c1.kind) {
-			case K_VOID:
-			case K_ANY:
-			case K_META:
-			case K_NULL:
-			case K_BOOL:
-			case K_BYTE:
-			case K_CHAR:
-			case K_INT:
-			case K_RATIONAL:
-			case K_STRING:
-				node = new Node(K_VOID,null);
-				break;
-			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) c1.data;
-				NameID nid2 = (NameID) c2.data;				
-				if(nid1.name().equals(nid2.name())) {
-					node = new Node(K_VOID,null);					
-				} else {
-					node = c1;
-				}
-				break;
-			case K_SET:
-			case K_LIST:
-			case K_PROCESS: {
-				// unary node
-				int e1 = (Integer) c1.data;
-				int e2 = (Integer) c2.data;
-				int element = difference(e1,graph1,e2,graph2,newNodes,allocations,matrix);
-				node = new Node(c1.kind,element);
-				break;
-			}
-			case K_DICTIONARY: {
-				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-				int key = difference(p1.first(),graph2,p2.first(),graph2,newNodes,allocations,matrix);
-				int value = difference(p1.second(),graph2,p2.second(),graph2,newNodes,allocations,matrix);
-				node = new Node(K_DICTIONARY,new Pair(key,value));
-				break;
-			}		
-			case K_TUPLE:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
-				if(elems1.length != elems2.length) {
-					node = c1;
-				} else {
-					int[] nelems = new int[elems1.length];
-					for(int i=0;i!=nelems.length;++i) {
-						nelems[i] = difference(elems1[i],graph1,elems2[i],graph2,newNodes,allocations,matrix);
-					}
-					node = new Node(K_TUPLE,nelems);
-				}
-				break;
-			}
-			case K_METHOD:
-			case K_FUNCTION:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
-				int e1 = elems1[0];
-				int e2 = elems2[0];
-				if(elems1.length != elems2.length){
-					node = c1;
-				} else if ((e1 == -1 || e2 == -1) && e1 != e2) {
-					node = c1;
-				} else {
-					int[] nelems = new int[elems1.length];
-					// TODO: need to check here whether or not this is the right
-					// thing to do. My gut is telling me that covariant and
-					// contravariance should be treated differently ...
-					for (int i = 0; i != nelems.length; ++i) {
-						nelems[i] = difference(elems1[i], graph1, elems2[i],
-								graph2, newNodes,allocations,matrix);
-					}
-					node = new Node(c1.kind, nelems);
-				}
-				break;
-			}
-			case K_RECORD:
-				// labeled nary nodes
-					outer : {
-						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
-						int old = newNodes.size();
-						if (fields1.length != fields2.length) {
-							node = c1;
-						} else {
-							Pair<String, Integer>[] nfields = new Pair[fields1.length];
-							boolean voidField = false;
-							for (int i = 0; i != fields1.length; ++i) {
-								Pair<String, Integer> e1 = fields1[i];
-								Pair<String, Integer> e2 = fields2[i];
-								if (!e1.first().equals(e2.first())) {
-									node = c1;
-									break outer;
-								} else {
-									int nidx = difference(e1.second(), graph1,
-											e2.second(), graph2, newNodes,
-											allocations, matrix);
-									Node nnode = newNodes.get(nidx);
-									if (nnode != null && nnode.kind == K_VOID) {
-										voidField = true;
-									}
-
-									nfields[i] = new Pair<String, Integer>(
-											e1.first(), nidx);
-								}
-							}
-							if(voidField) {
-								// A record with a field of void type
-								// cannot exist --- it's just equivalent
-								// to void.
-								while (newNodes.size() != old) {
-									newNodes.remove(newNodes.size() - 1);
-								}
-								node = new Node(K_VOID, null);
-								break outer;
-							}
-							node = new Node(K_RECORD, nfields);
-						}
-					}
-				break;
-			case K_UNION: {
-				// This is the hardest (i.e. most expensive) case. Essentially, I
-				// just check that for each bound in one node, there is an
-				// equivalent bound in the other.
-				int[] bounds1 = (int[]) c1.data;
-				int[] nbounds = new int[bounds1.length];
-								
-				// check every bound in c1 is a subtype of some bound in c2.
-				for (int i = 0; i != bounds1.length; ++i) {
-					nbounds[i] = difference(bounds1[i], graph1, n2, graph2,
-							newNodes,allocations,matrix);
-				}
-				node = new Node(K_UNION,nbounds);
-				break;
-			}					
-			default:
-				throw new IllegalArgumentException("attempting to minimise open recurisve type");
-			}		
-		} else if(c1.kind == K_ANY) {			
-			// TODO: try to do better
-			node = new Node(K_ANY,null);
-		} else if(c2.kind == K_ANY) {			
-			node = new Node(K_VOID,null);
-		} else if (c1.kind == K_UNION){					
-			int[] obounds = (int[]) c1.data;			
-			int[] nbounds = new int[obounds.length];
-							
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = difference(obounds[i], graph1, n2, graph2,
-						newNodes,allocations,matrix);
-			}
-			node = new Node(K_UNION,nbounds);
-		} else if (c2.kind == K_UNION) {			
-			int[] obounds = (int[]) c2.data;			
-			int[] nbounds = new int[obounds.length];
-							
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = difference(n1,graph1,obounds[i], graph2,
-						newNodes,allocations,matrix);
-			}
-			// FIXME: this is broken. need intersection types.
-			node = new Node(K_UNION,nbounds);
-		} else {
-			// default case --> go to no change
-			node = c1;			
-		}								
-		
-		if(node == c1) {
-			while(newNodes.size() > nid) {
-				newNodes.remove(newNodes.size()-1);
-			}
-						
-			extractOnto(n1,graph1,newNodes);			
-			return nid;
-		} else {
-			// finally, create the new node!!!
-			newNodes.set(nid, node);
-			return nid;
-		}
-	}
-	
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -2374,7 +643,7 @@ public abstract class Type {
 	 * primitive types like <code>int</code> and <code>real</code> are leaf
 	 * types.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Leaf extends Type {}
@@ -2387,7 +656,7 @@ public abstract class Type {
 	 * the void type is a subtype of everything; that is, it is bottom in the
 	 * type lattice.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Void extends Leaf {
@@ -2407,7 +676,7 @@ public abstract class Type {
 	 * The type any represents the type whose variables may hold any possible
 	 * value. <b>NOTE:</b> the any type is top in the type lattice.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Any extends Leaf {
@@ -2433,7 +702,7 @@ public abstract class Type {
 	 * abstraction to have around and, in Whiley, it is treated in a completely
 	 * safe manner (unlike e.g. Java).
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Null extends Leaf {
@@ -2454,7 +723,7 @@ public abstract class Type {
 	 * are themselves types. (think reflection, where we have
 	 * <code>class Class {}</code>).
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Meta extends Leaf {
@@ -2471,37 +740,8 @@ public abstract class Type {
 	}
 
 	/**
-	 * The existential type represents the an unknown type, defined at a given
-	 * position.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Existential extends Compound{
-		private Existential(NameID name) {
-			super(new Node[] { new Node(K_EXISTENTIAL,name) });
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Existential) {
-				Existential e = (Existential) o;
-				return nodes[0].data.equals(nodes[0].data);
-			}
-			return false;
-		}
-		public NameID name() {
-			return (NameID) nodes[0].data;
-		}
-		public int hashCode() {
-			return nodes[0].data.hashCode();
-		}
-		public String toString() {
-			return "?" + name();
-		}
-	}
-	
-	/**
 	 * Represents the set of boolean values (i.e. true and false)
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class Bool extends Leaf {
@@ -2520,7 +760,7 @@ public abstract class Type {
 	/**
 	 * Represents a unicode character.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Char extends Leaf {
@@ -2539,7 +779,7 @@ public abstract class Type {
 	/**
 	 * Represents a unicode character.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Byte extends Leaf {
@@ -2562,7 +802,7 @@ public abstract class Type {
 	 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for <code>int</code>
 	 * types.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Int extends Leaf {
@@ -2581,7 +821,7 @@ public abstract class Type {
 	/**
 	 * Represents the set of (unbound) rational numbers. 
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Real extends Leaf {
@@ -2600,7 +840,7 @@ public abstract class Type {
 	/**
 	 * Represents a string of characters 
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Strung extends Leaf {
@@ -2616,253 +856,458 @@ public abstract class Type {
 		}
 	}
 	
-	// =============================================================
-	// Compound Type
-	// =============================================================
 
 	/**
-	 * A Compound data structure is essentially a graph encoding of a type. Each
-	 * node in the graph corresponds to a component of the type. Recursive
-	 * cycles in the graph are permitted. <b>NOTE:</b> care must be take to
-	 * ensure that the root of the graph (namely node at index 0) matches the
-	 * actual Compound class (i.e. if its kind is K_SET, then this is an
-	 * instance of Set).
+	 * The existential type represents the an unknown type, defined at a given
+	 * position.
+	 * 
+	 * @author David J. Pearce
+	 * 
 	 */
-	private static class Compound extends Type {
-		protected final Node[] nodes;
+	public static final class Nominal extends Leaf {
+		private NameID nid;
+		private Nominal(NameID name) {
+			nid = name;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Nominal) {
+				Nominal e = (Nominal) o;
+				return nid.equals(e.nid);
+			}
+			return false;
+		}
+		public NameID name() {
+			return nid;
+		}
+		public int hashCode() {
+			return nid.hashCode();
+		}
+		public String toString() {
+			return "?" + nid;
+		}
+	}
+			
+	// =============================================================
+	// Compound Faces
+	// =============================================================
+
+	/*
+	 * The compound faces are not technically necessary, as they simply provide
+	 * interfaces to the underlying nodes of a compound type. However, they
+	 * certainly make it more pleasant to use this library.
+	 */
+
+	public static class Compound extends Type {
+		protected Automaton automaton;
 		
-		public Compound(Node[] nodes) {
-			this.nodes = nodes;
+		public Compound(Automaton automaton) {
+			this.automaton = automaton;
+		}
+		
+		public int hashCode() {
+			return automaton.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Compound) {
+				Compound c = (Compound) o;
+				equalsCount++;
+				if(canonicalisation) {
+					return automaton.equals(c.automaton);
+				} else {
+					return isSubtype(this, c) && isSubtype(c, this);
+				}				
+			}
+			return false;
+		}
+		
+		public String toString() {
+			// First, we need to find the headers of the computation. This is
+			// necessary in order to mark the start of a recursive type.			
+			BitSet headers = new BitSet(automaton.size());
+			BitSet visited = new BitSet(automaton.size()); 
+			BitSet onStack = new BitSet(automaton.size());
+			findHeaders(0,visited,onStack,headers,automaton);
+			visited.clear();
+			String[] titles = new String[automaton.size()];
+			int count = 0;
+			for(int i=0;i!=automaton.size();++i) {
+				if(headers.get(i)) {
+					titles[i] = headerTitle(count++);
+				}
+			}			
+			return Type.toString(0,visited,titles,automaton);
+		}
+	}
+	
+	/**
+	 * A tuple type describes a compound type made up of two or more
+	 * subcomponents. It is similar to a record, except that fields are
+	 * effectively anonymous.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Tuple extends Compound  {
+		private Tuple(Automaton automaton) {
+			super(automaton);
+		}		
+		public java.util.List<Type> elements() {
+			int[] values = (int[]) automaton.states[0].children;
+			ArrayList<Type> elems = new ArrayList<Type>();
+			for(Integer i : values) {
+				elems.add(construct(Automata.extract(automaton,i)));
+			}
+			return elems;
+		}		
+	}	
+	
+	/**
+	 * A set type describes set values whose elements are subtypes of the
+	 * element type. For example, <code>{1,2,3}</code> is an instance of set
+	 * type <code>{int}</code>; however, <code>{1.345}</code> is not.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Set extends Compound  {
+		private Set(Automaton automaton) {
+			super(automaton);
+		}
+		public Type element() {			
+			int elemIdx = automaton.states[0].children[0];
+			return construct(Automata.extract(automaton,elemIdx));			
+		}
+		boolean nonEmpty() {
+			return (Boolean) automaton.states[0].data;
+		}
+	}
+
+	/**
+	 * A list type describes list values whose elements are subtypes of the
+	 * element type. For example, <code>[1,2,3]</code> is an instance of list
+	 * type <code>[int]</code>; however, <code>[1.345]</code> is not.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class List extends Compound  {
+		private List(Automaton automaton) {
+			super(automaton);
+		}
+		
+		public Type element() {			
+			int elemIdx = automaton.states[0].children[0];
+			return construct(Automata.extract(automaton,elemIdx));	
+		}
+		
+		boolean nonEmpty() {
+			return (Boolean) automaton.states[0].data;
+		}
+	}
+
+	/**
+	 * A process represents a reference to an actor in Whiley.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Process extends Compound  {
+		private Process(Automaton automaton) {
+			super(automaton);
+		}
+		public Type element() {
+			int elemIdx = automaton.states[0].children[0];
+			return construct(Automata.extract(automaton,elemIdx));		
+		}		
+	}
+
+	/**
+	 * A dictionary represents a one-many mapping from variables of one type to
+	 * variables of another type. For example, the dictionary type
+	 * <code>int->real</code> represents a map from integers to real values. A
+	 * valid instance of this type might be <code>{1->1.2,2->3}</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Dictionary extends Compound  {
+		private Dictionary(Automaton automaton) {
+			super(automaton);
+		}
+		public Type key() {
+			int keyIdx = automaton.states[0].children[0];
+			return construct(Automata.extract(automaton,keyIdx));				
+		}
+		public Type value() {
+			int valueIdx = automaton.states[0].children[1];
+			return construct(Automata.extract(automaton,valueIdx));	
+		}
+	}
+
+	/**
+	 * A record is made up of a number of fields, each of which has a unique
+	 * name. Each field has a corresponding type. One can think of a record as a
+	 * special kind of "fixed" dictionary (i.e. where we know exactly which
+	 * entries we have).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Record extends Compound  {
+		private Record(Automaton automaton) {
+			super(automaton);
+		}
+		
+		public boolean isOpen() {
+			State state = (State) automaton.states[0].data;
+			return state.isOpen;
 		}
 
 		/**
-		 * Determine the hashCode of a type.
+		 * Extract just the key set for this field. This is a cheaper operation
+		 * than extracting the keys and their types (since types must be
+		 * extracted).
+		 * 
+		 * @return
 		 */
-		public int hashCode() {
-			int r = 0;
-			for(Node c : nodes) {
-				r = r + c.hashCode();
+		public HashSet<String> keys() {
+			State fields = (State) automaton.states[0].data;
+			HashSet<String> r = new HashSet<String>();
+			for(String f : fields) {
+				r.add(f);
 			}
 			return r;
 		}
 
 		/**
-		 * This method compares two compound types to test whether they are
-		 * <i>identical</i>. Observe that it does not perform an
-		 * <i>isomorphism</i> test. Thus, two distinct types which are
-		 * structurally isomorphic will <b>not</b> be considered equal under
-		 * this method. <b>NOTE:</b> to test whether two types are structurally
-		 * isomorphic, using the <code>isomorphic(t1,t2)</code> method.
+		 * Return a mapping from field names to their types.
+		 * 
+		 * @return
 		 */
-		public boolean equals(Object o) {
-			if(o instanceof Compound) {
-				Node[] cs = ((Compound) o).nodes;
-				if(cs.length != nodes.length) {
-					return false;
-				}
-				for(int i=0;i!=cs.length;++i) {
-					if(!nodes[i].equals(cs[i])) {
-						return false;
-					}
-				}
-				return true;
+		public HashMap<String, Type> fields() {
+			State fields = (State) automaton.states[0].data;
+			int[] children = automaton.states[0].children;
+			HashMap<String, Type> r = new HashMap<String, Type>();
+			for (int i = 0; i != children.length; ++i) {
+				r.put(fields.get(i),
+						construct(Automata.extract(automaton, children[i])));
 			}
-			return false;
+			return r;
+		}
+		
+
+		public static final class State extends ArrayList<String> {
+			public final boolean isOpen;
+			
+			public State(boolean isOpen) {
+				this.isOpen = isOpen;
+			}
+			
+			public State(boolean isOpen, Collection<String> values) {
+				super(values);
+				this.isOpen = isOpen;
+			}
+			
+			public boolean equals(Object o) {
+				if (o instanceof State) {
+					State s = (State) o;
+					return isOpen == s.isOpen && super.equals(s);
+				}
+				return false;
+			}
+		}
+		
+	}
+
+	/**
+	 * A union type represents a type whose variables may hold values from any
+	 * of its "bounds". For example, the union type null|int indicates a
+	 * variable can either hold an integer value, or null. <b>NOTE:</b>There
+	 * must be at least two bounds for a union type to make sense.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Union extends Compound {
+		private Union(Automaton automaton) {
+			super(automaton);
+		}
+
+		/**
+		 * Return the bounds of this union type.
+		 * 
+		 * @return
+		 */
+		public HashSet<Type> bounds() {			
+			HashSet<Type> r = new HashSet<Type>();
+			int[] fields = (int[]) automaton.states[0].children;
+			for(int i : fields) {
+				Type b = construct(Automata.extract(automaton,i));					
+				r.add(b);					
+			}			
+			return r;
+		}
+	}
+
+	/**
+	 * A difference type represents a type which accepts values in the
+	 * difference between its bounds. 
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Negation extends Compound {
+		private Negation(Automaton automaton) {
+			super(automaton);
+		}
+		
+		public Type element() {						
+			int[] fields = automaton.states[0].children;
+			return construct(Automata.extract(automaton,fields[0]));			
+		}		
+	}
+	
+	/**
+	 * A function type, consisting of a list of zero or more parameters and a
+	 * return type.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Function extends Compound  {
+		Function(Automaton automaton) {
+			super(automaton);
+		}
+
+		/**
+		 * Get the return type of this function type.
+		 * 
+		 * @return
+		 */
+		public Type ret() {
+			int[] fields = automaton.states[0].children;
+			return construct(Automata.extract(automaton, fields[0]));
+		}	
+
+		/**
+		 * Get the throws clause of this function type.
+		 * 
+		 * @return
+		 */
+		public Type throwsClause() {
+			int[] fields = automaton.states[0].children;
+			return construct(Automata.extract(automaton, fields[1]));
 		}
 		
 		/**
-		 * The extract method basically performs a DFS from the root, extracts
-		 * what it finds and minimises it.
+		 * Get the parameter types of this function type.
 		 * 
-		 * @param root
-		 *            --- the starting node to extract from.
 		 * @return
 		 */
-		protected final Type extract(int root) {
-			return construct(Type.extract(root,nodes));
+		public ArrayList<Type> params() {
+			int[] fields = automaton.states[0].children;			
+			ArrayList<Type> r = new ArrayList<Type>();
+			for(int i=2;i<fields.length;++i) {
+				r.add(construct(Automata.extract(automaton, fields[i])));
+			}
+			return r;
+		}
+	}
+	
+	public static final class Method extends Function {
+		Method(Automaton automaton) {
+			super(automaton);
+		}
+
+		/**
+		 * Get the receiver type of this function type.
+		 * 
+		 * @return
+		 */
+		public Type.Process receiver() {
+			Automaton.State root = automaton.states[0];
+			if(root.kind == K_HEADLESS) {
+				return null;
+			} else {
+				int[] fields = root.children;
+				return (Type.Process) construct(Automata.extract(automaton,
+					fields[0]));
+			}
 		}
 		
-		public String toString() {
-			// First, we need to find the headers of the computation. This is
-			// necessary in order to mark the start of a recursive type.
-			BitSet headers = new BitSet(nodes.length);
-			BitSet visited = new BitSet(nodes.length); 
-			BitSet onStack = new BitSet(nodes.length);
-			findHeaders(0,visited,onStack,headers,nodes);
-			visited.clear();
-			String[] titles = new String[nodes.length];
-			int count = 0;
-			for(int i=0;i!=nodes.length;++i) {
-				if(headers.get(i)) {
-					titles[i] = headerTitle(count++);
-				}
-			}			
-			return Type.toString(0,visited,titles,nodes);
-		}
-	}
-
-	private static final Node[] extract(int root, Node[] nodes) {
-		// First, we perform the DFS.
-		BitSet visited = new BitSet(nodes.length);
-		// extracted maps new indices to old indices
-		ArrayList<Integer> extracted = new ArrayList<Integer>();
-		subgraph(root,visited,extracted,nodes);		
-		// rextracted is the reverse of extracted
-		int[] rextracted = new int[nodes.length];
-		int i=0;
-		for(int j : extracted) {
-			rextracted[j]=i++;
-		}
-		Node[] newNodes = new Node[extracted.size()];
-		i=0;
-		for(int j : extracted) {
-			newNodes[i++] = remap(nodes[j],rextracted);  
-		}
-			
-		return newNodes;
-	}
-	
-	private static final void extractOnto(int root, Node[] nodes,
-			ArrayList<Node> newNodes) {
-		// First, we perform the DFS.
-		BitSet visited = new BitSet(nodes.length);
-		// extracted maps new indices to old indices
-		ArrayList<Integer> extracted = new ArrayList<Integer>();
-		subgraph(root, visited, extracted, nodes);
-		// rextracted is the reverse of extracted
-		int[] rextracted = new int[nodes.length];
-		int i = newNodes.size();
-		for (int j : extracted) {
-			rextracted[j] = i++;
-		}				
-		for (int j : extracted) {
-			newNodes.add(remap(nodes[j], rextracted));
+		/**
+		 * Get the return type of this method type.
+		 * 
+		 * @return
+		 */
+		public Type ret() {
+			Automaton.State root = automaton.states[0];
+			int[] fields = root.children;
+			int start = root.kind == K_HEADLESS ? 0 : 1;
+			return construct(Automata.extract(automaton, fields[start]));
+		}	
+		
+		/**
+		 * Get the throws clause for this method type.
+		 * 
+		 * @return
+		 */
+		public Type throwsClause() {
+			Automaton.State root = automaton.states[0];
+			int[] fields = root.children;
+			int start = root.kind == K_HEADLESS ? 1 : 2;
+			return construct(Automata.extract(automaton, fields[start]));
+		}	
+		
+		/**
+		 * Get the parameter types of this function type.
+		 * 
+		 * @return
+		 */
+		public ArrayList<Type> params() {
+			Automaton.State root = automaton.states[0];
+			int[] fields = root.children;
+			int start = root.kind == K_HEADLESS ? 2 : 3;
+			ArrayList<Type> r = new ArrayList<Type>();
+			for(int i=start;i<fields.length;++i) {
+				r.add(construct(Automata.extract(automaton, fields[i])));
+			}
+			return r;
 		}
 	}
 	
-	/**
-	 * The following method recursively extracts the subgraph rooted at
-	 * <code>index</code> in the given graph using a depth-first search.
-	 * Vertices in the subgraph are added to <code>extracted</code> in the order
-	 * they are visited.
-	 * 
-	 * @param index
-	 *            --- the node to extract the subgraph from.
-	 * @param visited
-	 *            --- the set of vertices already visited
-	 * @param extracted
-	 *            --- the list of vertices that make up the subgraph which is
-	 *            built by this method.
-	 * @param graph
-	 *            --- the graph.
-	 */
-	private final static void subgraph(int index, BitSet visited,
-			ArrayList<Integer> extracted, Node[] graph) {
-		if(visited.get(index)) { return; } // node already visited}
-		extracted.add(index);
-		visited.set(index);
-		Node node = graph[index];
-		switch(node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			subgraph((Integer) node.data,visited,extracted,graph);
-			break;
-		case K_DICTIONARY:
-			// binary node
-			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
-			subgraph(p.first(),visited,extracted,graph);
-			subgraph(p.second(),visited,extracted,graph);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			for(int b : bounds) {
-				if(b == -1) { continue; } // possible with K_FUNCTION				
-				subgraph(b,visited,extracted,graph);				
-			}
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
-			for(Pair<String,Integer> f : fields) {
-				subgraph(f.second(),visited,extracted,graph);
-			}
-			break;			
-		}
-	}
-
-	/**
-	 * The following method traverses the graph using a depth-first
-	 * search to identify nodes which are "loop headers". That is, they are the
-	 * target of one or more recursive edgesin the graph.
-	 * 
-	 * @param index
-	 *            --- the index to search from.
-	 * @param visited
-	 *            --- the set of vertices already visited.
-	 * @param onStack
-	 *            --- the set of nodes currently on the DFS path from the root.
-	 * @param headers
-	 *            --- header nodes discovered during this search are set to true
-	 *            in this bitset.
-	 * @param graph
-	 *            --- the graph.
-	 */
-	private final static void findHeaders(int index, BitSet visited,
-			BitSet onStack, BitSet headers, Node[] graph) {
-		if(visited.get(index)) {
-			// node already visited
-			if(onStack.get(index)) {
-				headers.set(index);
-			}
-			return; 
-		} 		
-		onStack.set(index);
-		visited.set(index);
-		Node node = graph[index];
-		switch(node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			findHeaders((Integer) node.data,visited,onStack,headers,graph);
-			break;
-		case K_DICTIONARY:
-			// binary node
-			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
-			findHeaders(p.first(),visited,onStack,headers,graph);
-			findHeaders(p.second(),visited,onStack,headers,graph);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			for(int b : bounds) {
-				if(b == -1) { continue; } // possible with K_FUNCTION
-				findHeaders(b,visited,onStack,headers,graph);
-			}
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
-			for(Pair<String,Integer> f : fields) {
-				findHeaders(f.second(),visited,onStack,headers,graph);
-			}
-			break;			
-		}
-		onStack.set(index,false);
-	}
-
 	/**
 	 * The following method constructs a string representation of the underlying
-	 * graph. This representation may be an expanded version of the underling
+	 * automaton. This representation may be an expanded version of the underling
+	 * graph, since one cannot easily represent aliasing in the type graph in a
+	 * textual manner.
+	 * 
+	 * @param automaton
+	 *            --- the automaton being turned into a string.
+	 * @return --- string representation of automaton.
+	 */
+	public final static String toString(Automaton automaton) {
+		// First, we need to find the headers of the computation. This is
+		// necessary in order to mark the start of a recursive type.
+		BitSet headers = new BitSet(automaton.size());
+		BitSet visited = new BitSet(automaton.size());
+		BitSet onStack = new BitSet(automaton.size());
+		findHeaders(0, visited, onStack, headers, automaton);
+		visited.clear();
+		String[] titles = new String[automaton.size()];
+		int count = 0;
+		for (int i = 0; i != automaton.size(); ++i) {
+			if (headers.get(i)) {
+				titles[i] = headerTitle(count++);
+			}
+		}
+		return Type.toString(0, visited, titles, automaton);
+	}
+	
+	/**
+	 * The following method constructs a string representation of the underlying
+	 * automaton. This representation may be an expanded version of the underling
 	 * graph, since one cannot easily represent aliasing in the type graph in a
 	 * textual manner.
 	 * 
@@ -2873,20 +1318,21 @@ public abstract class Type {
 	 * @param headers
 	 *            --- an array of strings which identify the name to be given to
 	 *            each header.
-	 * @param graph
-	 *            --- the graph.
+	 * @param automaton
+	 *            --- the automaton being turned into a string.
+	 * @return --- string representation of automaton.
 	 */
 	private final static String toString(int index, BitSet visited,
-			String[] headers, Node[] graph) {
+			String[] headers, Automaton automaton) {
 		if (visited.get(index)) {
 			// node already visited
 			return headers[index];
 		} else if(headers[index] != null) {
 			visited.set(index);
 		}
-		Node node = graph[index];
+		State state = automaton.states[index];
 		String middle;
-		switch (node.kind) {
+		switch (state.kind) {
 		case K_VOID:
 			return "void";
 		case K_ANY:
@@ -2905,88 +1351,127 @@ public abstract class Type {
 			return "real";
 		case K_STRING:
 			return "string";
-		case K_SET:
-			middle = "{" + toString((Integer) node.data, visited, headers, graph)
-					+ "}";
-			break;
-		case K_LIST:
-			middle = "[" + toString((Integer) node.data, visited, headers, graph)
-					+ "]";
-			break;
-		case K_EXISTENTIAL:
-			middle = "?" + node.data.toString();
-			break;
-		case K_PROCESS:
-			middle = "*" + toString((Integer) node.data, visited, headers, graph);
-			break;
-		case K_DICTIONARY: {
-			// binary node
-			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-			String k = toString(p.first(), visited, headers, graph);
-			String v = toString(p.second(), visited, headers, graph);
-			middle = "{" + k + "->" + v + "}";
+		case K_SET: {
+			boolean nonEmpty = (Boolean) state.data;
+			if (nonEmpty) {
+				middle = "{"
+						+ toString(state.children[0], visited, headers,
+								automaton) + "+}";
+			} else {
+				middle = "{"
+						+ toString(state.children[0], visited, headers,
+								automaton) + "}";
+			}
 			break;
 		}
+		case K_LIST: {
+			boolean nonEmpty = (Boolean) state.data;
+			if(nonEmpty) {
+				middle = "[" + toString(state.children[0], visited, headers, automaton)
+						+ "+]";
+			} else {
+				middle = "[" + toString(state.children[0], visited, headers, automaton)
+						+ "]";
+			}
+			break;
+		}
+		case K_NOMINAL:
+			middle = state.data.toString();
+			break;
+		case K_PROCESS:
+			middle = "*" + toString(state.children[0], visited, headers, automaton);
+			break;
+		case K_NEGATION: {
+			middle = "!" + toBracesString(state.children[0], visited, headers, automaton);			
+			break;
+		}
+		case K_DICTIONARY: {
+			// binary node			
+			String k = toString(state.children[0], visited, headers, automaton);
+			String v = toString(state.children[1], visited, headers, automaton);
+			middle = "{" + k + "->" + v + "}";
+			break;
+		}		
 		case K_UNION: {
-			int[] bounds = (int[]) node.data;
+			int[] children = state.children;
 			middle = "";
-			for (int i = 0; i != bounds.length; ++i) {
-				if (i != 0) {
+			for (int i = 0; i != children.length; ++i) {					
+				if(i != 0 || children.length == 1) {
 					middle += "|";
 				}
-				middle += toString(bounds[i], visited, headers, graph);
+				middle += toBracesString(children[i], visited, headers, automaton);				
 			}
 			break;
 		}
 		case K_TUPLE: {
 			middle = "";
-			int[] bounds = (int[]) node.data;			
-			for (int i = 0; i != bounds.length; ++i) {
+			int[] children = state.children;			
+			for (int i = 0; i != children.length; ++i) {
 				if (i != 0) {
 					middle += ",";
 				}
-				middle += toString(bounds[i], visited, headers, graph);
+				middle += toString(children[i], visited, headers, automaton);
 			}
 			middle = "(" + middle + ")";
 			break;
 		}
-		case K_METHOD:
-		case K_FUNCTION: {
-			middle = "";
-			int[] bounds = (int[]) node.data;
-			String rec = bounds[0] == -1 ? null : toString(bounds[0],visited,headers,graph);
-			String ret = toString(bounds[1], visited, headers, graph);
-			for (int i = 2; i != bounds.length; ++i) {
-				if (i != 2) {
+		case K_RECORD: {
+			// labeled nary node
+			middle = "{";
+			int[] children = state.children;
+			Record.State fields = (Record.State) state.data;
+			for (int i = 0; i != fields.size(); ++i) {
+				if (i != 0) {
 					middle += ",";
 				}
-				middle += toString(bounds[i], visited, headers, graph);
+				middle += toString(children[i], visited, headers, automaton) + " " + fields.get(i);
 			}
-			if(node.kind == K_FUNCTION) {
+			if(fields.isOpen) {
+				if(children.length > 0) {
+					middle = middle + ",...}";
+				} else {
+					middle = middle + "...}";
+				}
+			} else {
+				middle = middle + "}";
+			}			
+			break;
+		}
+		case K_METHOD:
+		case K_HEADLESS:
+		case K_FUNCTION: {
+			middle = "";
+			int[] children = state.children;
+			int start = 0;
+			String rec = null;
+			if(state.kind == K_METHOD) {
+				rec = toString(children[0],visited,headers,automaton);
+				start++;
+			}
+			String ret = toString(children[start], visited, headers, automaton);
+			String thros = toString(children[start+1], visited, headers, automaton);
+			boolean firstTime=true;
+			for (int i = start+2; i != children.length; ++i) {
+				if (!firstTime) {
+					middle += ",";
+				}
+				firstTime=false;
+				middle += toString(children[i], visited, headers, automaton);
+			}
+			if(state.kind == K_FUNCTION) {
 				middle = ret + "(" + middle + ")";
 			} else if(rec != null) {
 				middle = rec + "::" + ret + "(" + middle + ")";
 			} else {
 				middle = "::" + ret + "(" + middle + ")";
 			}
-			break;
-		}
-		case K_RECORD: {
-			// labeled nary node
-			middle = "{";
-			Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-			for (int i = 0; i != fields.length; ++i) {
-				if (i != 0) {
-					middle += ",";
-				}
-				Pair<String, Integer> f = fields[i];
-				middle += toString(f.second(), visited, headers, graph) + " " + f.first();
+			if(!thros.equals("void")) {
+				middle = middle + " throws " + thros;
 			}
-			middle = middle + "}";
 			break;
-		}
+		}		
 		default: 
-			throw new IllegalArgumentException("Invalid type encountered");
+			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
 		}
 		
 		// Finally, check whether this is a header node, or not. If it is a
@@ -3005,7 +1490,60 @@ public abstract class Type {
 		}
 	}
 
+	private final static String toBracesString(int index, BitSet visited,
+			String[] headers, Automaton automaton) {
+		if (visited.get(index)) {
+			// node already visited
+			return headers[index];
+		}
+		String middle = toString(index,visited,headers,automaton);
+		State state = automaton.states[index];
+		switch(state.kind) {		
+			case K_UNION:
+			case K_FUNCTION:
+			case K_METHOD:
+			case K_HEADLESS:
+				return "(" + middle + ")";
+			default:
+				return middle;
+		}
+	}
 	
+	/**
+	 * The following method traverses the graph using a depth-first
+	 * search to identify nodes which are "loop headers". That is, they are the
+	 * target of one or more recursive edges in the graph.
+	 * 
+	 * @param index
+	 *            --- the index to search from.
+	 * @param visited
+	 *            --- the set of vertices already visited.
+	 * @param onStack
+	 *            --- the set of nodes currently on the DFS path from the root.
+	 * @param headers
+	 *            --- header nodes discovered during this search are set to true
+	 *            in this bitset.
+	 * @param automaton
+	 *            --- the automaton we're traversing.
+	 */
+	private final static void findHeaders(int index, BitSet visited,
+			BitSet onStack, BitSet headers, Automaton automaton) {
+		if(visited.get(index)) {
+			// node already visited
+			if(onStack.get(index)) {
+				headers.set(index);
+			}
+			return; 
+		} 		
+		onStack.set(index);
+		visited.set(index);
+		State state = automaton.states[index];
+		for(int child : state.children) {
+			findHeaders(child,visited,onStack,headers,automaton);
+		}	
+		onStack.set(index,false);
+	}
+
 	private static final char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
 	private static String headerTitle(int count) {
 		String r = Character.toString(headers[count%headers.length]);
@@ -3015,587 +1553,353 @@ public abstract class Type {
 		} else {
 			return r;
 		}
-	}
-		
-	// =============================================================
-	// Compound Faces
-	// =============================================================
-
-	/*
-	 * The compound faces are not technically necessary, as they simply provide
-	 * interfaces to the underlying nodes of a compound type. However, they
-	 * certainly make it more pleasant to use this library.
-	 */
-
-	/**
-	 * A tuple type describes a compound type made up of two or more
-	 * subcomponents. It is similar to a record, except that fields are
-	 * effectively anonymous.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Tuple extends Compound  {
-		private Tuple(Node[] nodes) {
-			super(nodes);
-		}		
-		public java.util.List<Type> elements() {
-			int[] values = (int[]) nodes[0].data;
-			ArrayList<Type> elems = new ArrayList<Type>();
-			for(Integer i : values) {
-				elems.add(extract(i));
-			}
-			return elems;
-		}		
 	}	
 	
 	/**
-	 * A set type describes set values whose elements are subtypes of the
-	 * element type. For example, <code>{1,2,3}</code> is an instance of set
-	 * type <code>{int}</code>; however, <code>{1.345}</code> is not.
-	 * 
-	 * @author djp
-	 * 
+	 * Determine the node kind of a Type.Leafs
+	 * @param leaf
+	 * @return
 	 */
-	public static final class Set extends Compound  {
-		private Set(Node[] nodes) {
-			super(nodes);
-		}
-		public Type element() {
-			return extract(1);
-		}		
-	}
-
-	/**
-	 * A list type describes list values whose elements are subtypes of the
-	 * element type. For example, <code>[1,2,3]</code> is an instance of list
-	 * type <code>[int]</code>; however, <code>[1.345]</code> is not.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class List extends Compound  {
-		private List(Node[] nodes) {
-			super(nodes);
-		}
-		public Type element() {
-			return extract(1);
-		}		
-	}
-
-	/**
-	 * A process represents a reference to an actor in Whiley.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Process extends Compound  {
-		private Process(Node[] nodes) {
-			super(nodes);
-		}
-		public Type element() {
-			int i = (Integer) nodes[0].data;
-			return extract(i);			
-		}		
-	}
-
-	/**
-	 * A dictionary represents a one-many mapping from variables of one type to
-	 * variables of another type. For example, the dictionary type
-	 * <code>int->real</code> represents a map from integers to real values. A
-	 * valid instance of this type might be <code>{1->1.2,2->3}</code>.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Dictionary extends Compound  {
-		private Dictionary(Node[] nodes) {
-			super(nodes);
-		}
-		public Type key() {
-			Pair<Integer,Integer> p = (Pair) nodes[0].data;
-			return extract(p.first());
-		}
-		public Type value() {
-			Pair<Integer,Integer> p = (Pair) nodes[0].data;
-			return extract(p.second());			
-		}
-	}
-
-	/**
-	 * A record is made up of a number of fields, each of which has a unique
-	 * name. Each field has a corresponding type. One can think of a record as a
-	 * special kind of "fixed" dictionary (i.e. where we know exactly which
-	 * entries we have).
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Record extends Compound  {
-		private Record(Node[] nodes) {
-			super(nodes);
-		}
-
-		/**
-		 * Extract just the key set for this field. This is a cheaper operation
-		 * than extracting the keys and their types (since types must be
-		 * extracted).
-		 * 
-		 * @return
-		 */
-		public HashSet<String> keys() {
-			Pair<String,Integer>[] fields = (Pair[]) nodes[0].data;
-			HashSet<String> r = new HashSet<String>();
-			for(Pair<String,Integer> f : fields) {
-				r.add(f.first());
-			}
-			return r;
-		}
-
-		/**
-		 * Return a mapping from field names to their types.
-		 * 
-		 * @return
-		 */
-		public HashMap<String,Type> fields() {
-			Pair<String,Integer>[] fields = (Pair[]) nodes[0].data;
-			HashMap<String,Type> r = new HashMap<String,Type>();
-			for(Pair<String,Integer> f : fields) {
-				r.put(f.first(),extract(f.second()));
-			}
-			return r;
-		}
-	}
-
-	/**
-	 * A union type represents a type whose variables may hold values from any
-	 * of its "bounds". For example, the union type null|int indicates a
-	 * variable can either hold an integer value, or null. <b>NOTE:</b>There
-	 * must be at least two bounds for a union type to make sense.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Union extends Compound {
-		private Union(Node[] nodes) {
-			super(nodes);
-		}
-
-		/**
-		 * Return the bounds of this union type.
-		 * 
-		 * @return
-		 */
-		public HashSet<Type> bounds() {			
-			HashSet<Type> r = new HashSet<Type>();
-			// FIXME: this is a bit of a cludge. The essential idea is to
-			// flattern unions, so we never see a union of unions. This is
-			// helpful for simplifying various algorithms which use them
-			Stack<Union> stack = new Stack<Union>();
-			stack.add(this);
-			while(!stack.isEmpty()) {				
-				Union u = stack.pop();
-				int[] fields = (int[]) u.nodes[0].data;
-				for(int i : fields) {
-					Type b = u.extract(i);
-					if(b instanceof Union) {
-						stack.add((Union)b);
-					} else {
-						r.add(b);
-					}
-				}
-			}
-			return r;
-		}
-	}
-
-	/**
-	 * A function type, consisting of a list of zero or more parameters and a
-	 * return type.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static class Fun extends Compound  {
-		Fun(Node[] nodes) {
-			super(nodes);
-		}
-
-		/**
-		 * Get the return type of this function type.
-		 * 
-		 * @return
-		 */
-		public Type ret() {						
-			int[] fields = (int[]) nodes[0].data;			
-			return extract(fields[1]);
-		}		
-		
-		/**
-		 * Get the parameter types of this function type.
-		 * 
-		 * @return
-		 */
-		public ArrayList<Type> params() {
-			int[] fields = (int[]) nodes[0].data;
-			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=2;i<fields.length;++i) {
-				r.add(extract(fields[i]));
-			}
-			return r;
-		}
-	}
-	
-	public static final class Meth extends Fun {
-		Meth(Node[] nodes) {
-			super(nodes);
-		}
-		/**
-		 * Get the receiver type of this function type.
-		 * 
-		 * @return
-		 */
-		public Type.Process receiver() {
-			int[] fields = (int[]) nodes[0].data;
-			int r = fields[0];
-			if(r == -1) { return null; }
-			return (Type.Process) extract(r);
-		}
-	}
-	
-	// =============================================================
-	// Components
-	// =============================================================
-
-	private static final byte K_VOID = 0;
-	private static final byte K_ANY = 1;
-	private static final byte K_META = 2;
-	private static final byte K_NULL = 3;
-	private static final byte K_BOOL = 4;
-	private static final byte K_BYTE = 5;
-	private static final byte K_CHAR = 6;
-	private static final byte K_INT = 7;
-	private static final byte K_RATIONAL = 8;
-	private static final byte K_STRING = 9;
-	private static final byte K_TUPLE = 10;
-	private static final byte K_SET = 11;
-	private static final byte K_LIST = 12;
-	private static final byte K_DICTIONARY = 13;	
-	private static final byte K_PROCESS = 14;
-	private static final byte K_RECORD = 15;
-	private static final byte K_UNION = 16;
-	private static final byte K_FUNCTION = 17;
-	private static final byte K_METHOD = 18;
-	private static final byte K_EXISTENTIAL = 19;
-	private static final byte K_LABEL = 20;
-	
-	/**
-	 * Represents a node in the type graph. Each node has a kind, along with a
-	 * data value identifying any children. For set, list and reference kinds
-	 * the data value is an Integer; for records, it's a Pair<String,Integer>[]
-	 * (sorted by key). For dictionaries, it's a Pair<Integer,Integer> and, for
-	 * unions and functions it's int[] (for functions first element is return).
-	 * 
-	 * @author djp
-	 * 
-	 */
-	private static final class Node {
-		final byte kind;
-		final Object data;
-		
-		public Node(byte kind, Object data) {
-			this.kind = kind;
-			this.data = data;
-		}
-		public boolean equals(final Object o) {
-			if(o instanceof Node) {
-				Node c = (Node) o;
-				if(kind == c.kind) {
-					switch(kind) {
-					case K_VOID:
-					case K_ANY:
-					case K_META:
-					case K_NULL:
-					case K_BOOL:
-					case K_BYTE:
-					case K_CHAR:
-					case K_INT:
-					case K_RATIONAL:
-					case K_STRING:
-						return true;
-					case K_SET:
-					case K_LIST:
-					case K_PROCESS:
-					case K_EXISTENTIAL:
-					case K_DICTIONARY:
-						return data.equals(c.data);
-					case K_TUPLE:	
-					case K_METHOD:
-					case K_FUNCTION:
-					case K_UNION:
-						return Arrays.equals((int[])data, (int[])c.data);
-					case K_RECORD:
-						return Arrays.equals((Pair[])data, (Pair[])c.data);
-					}
-				}				
-			}
-			return false;
-		}
-		public int hashCode() {
-			if(data == null) {
-				return kind;
-			} else {
-				return kind + data.hashCode();
-			}
-		}
-		
-		public final static String[] kinds = { "void", "any", "meta", "null", "bool",
-				"char","int", "real", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
-				"fun", "label" };
-		public String toString() {
-			if(data instanceof Pair[]) {
-				return kinds[kind] + " : " + Arrays.toString((Pair[])data);
-			} else if(data instanceof int[]) {
-				return kinds[kind] + " : " + Arrays.toString((int[])data);				
-			} else {
-				return kinds[kind] + " : " + data;
-			}
-		}
-	}
-	
-	private static final Node[] nodes(Type t) {
-		if (t instanceof Leaf) {
-			return new Node[]{new Node(leafKind((Leaf) t), null)};
-		} else {			
-			// compound type
-			return ((Compound)t).nodes;
-		}
-	}
-	
-	private static final byte leafKind(Leaf leaf) {
-		if(leaf instanceof Void) {
+	public static final byte leafKind(Type.Leaf leaf) {
+		if(leaf instanceof Type.Void) {
 			return K_VOID;
-		} else if(leaf instanceof Any) {
+		} else if(leaf instanceof Type.Any) {
 			return K_ANY;
-		} else if(leaf instanceof Null) {
+		} else if(leaf instanceof Type.Null) {
 			return K_NULL;
-		} else if(leaf instanceof Bool) {
+		} else if(leaf instanceof Type.Bool) {
 			return K_BOOL;
-		} else if(leaf instanceof Byte) {
+		} else if(leaf instanceof Type.Byte) {
 			return K_BYTE;
-		} else if(leaf instanceof Char) {
+		} else if(leaf instanceof Type.Char) {
 			return K_CHAR;
-		} else if(leaf instanceof Int) {
+		} else if(leaf instanceof Type.Int) {
 			return K_INT;
-		} else if(leaf instanceof Real) {
+		} else if(leaf instanceof Type.Real) {
 			return K_RATIONAL;
-		} else if(leaf instanceof Strung) {
+		} else if(leaf instanceof Type.Strung) {
 			return K_STRING;
-		} else if(leaf instanceof Meta) {
+		} else if(leaf instanceof Type.Meta) {
 			return K_META;
+		} else if(leaf instanceof Type.Nominal) {
+			return K_NOMINAL;
 		} else {
 			// should be dead code
 			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
 		}
 	}
 
+	
 	/**
-	 * This method inserts a blank node at the head of the nodes
-	 * array, whilst remapping all existing nodes appropriately.
+	 * The construct methods constructs a Type from an automaton.
 	 * 
 	 * @param nodes
 	 * @return
 	 */
-	private static Node[] insertComponent(Node[] nodes) {
-		Node[] newnodes = new Node[nodes.length+1];		
-		int[] rmap = new int[nodes.length];
-		for(int i=0;i!=nodes.length;++i) {
-			rmap[i] = i+1;			
-		}
-		for(int i=0;i!=nodes.length;++i) {
-			newnodes[i+1] = remap(nodes[i],rmap);			
-		}
-		return newnodes;
-	}
-
-	/**
-	 * The method inserts the nodes in
-	 * <code>from</from> into those in <code>into</code> at the given index.
-	 * This method remaps nodes in <code>from</code>, but does not remap
-	 * any in <code>into</code>
-	 * 
-	 * @param start
-	 * @param from
-	 * @param into
-	 * @return
-	 */
-	private static Node[] insertNodes(int start, Node[] from, Node[] into) {
-		int[] rmap = new int[from.length];
-		for(int i=0;i!=from.length;++i) {
-			rmap[i] = i+start;			
-		}
-		for(int i=0;i!=from.length;++i) {
-			into[i+start] = remap(from[i],rmap);			
-		}
-		return into;
-	}
-	/**
-	 * The remap method takes a node, and mapping from vertices in the old
-	 * space to the those in the new space. It then applies this mapping, so
-	 * that the node produced refers to vertices in the new space. Or, in
-	 * other words, it transposes the node into the new space.
-	 * 
-	 * @param node
-	 *            --- node to be transposed.
-	 * @param rmap
-	 *            --- mapping from integers in old space to those in new
-	 *            space.
-	 * @return
-	 */
-	private static Node remap(Node node, int[] rmap) {
-		Object data;
-
-		switch (node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			int element = (Integer) node.data;
-			data = rmap[element];
-			break;
-		case K_DICTIONARY:
-			// binary node
-			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-			data = new Pair(rmap[p.first()], rmap[p.second()]);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			int[] nbounds = new int[bounds.length];
-			for (int i = 0; i != bounds.length; ++i) {
-				if(bounds[i] == -1) { 
-					nbounds[i] = -1; // possible with K_FUNCTION
-				} else {
-					nbounds[i] = rmap[bounds[i]];	
-				}
-			}
-			data = nbounds;
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-			Pair<String, Integer>[] nfields = new Pair[fields.length];
-			for (int i = 0; i != fields.length; ++i) {
-				Pair<String, Integer> field = fields[i];
-				nfields[i] = new Pair(field.first(), rmap[field.second()]);
-			}
-			data = nfields;
-			break;
-		default:
-			return node;
-		}
-		return new Node(node.kind, data);
-	}
-
-	/**
-	 * The construct methods constructs a Type from an array of Components.
-	 * It carefully ensures the kind of the root node matches the class
-	 * created (e.g. a kind K_SET results in a class Set).
-	 * 
-	 * @param nodes
-	 * @return
-	 */
-	private final static Type construct(Node[] nodes) {
-		Node root = nodes[0];
+	public final static Type construct(Automaton automaton) {
+		automaton = normalise(automaton);
+		// second, construc the appropriate face
+		State root = automaton.states[0];
+		Type type;
+		
 		switch(root.kind) {
 		case K_VOID:
-			return T_VOID;
+			type = T_VOID;
+			break;
 		case K_ANY:
-			return T_ANY;
+			type = T_ANY;
+			break;
 		case K_META:
-			return T_META;
+			type = T_META;
+			break;
 		case K_NULL:
-			return T_NULL;			
+			type = T_NULL;
+			break;
 		case K_BOOL:
-			return T_BOOL;
+			type = T_BOOL;
+			break;
 		case K_BYTE:
-			return T_BYTE;
+			type = T_BYTE;
+			break;
 		case K_CHAR:
-			return T_CHAR;
+			type = T_CHAR;
+			break;
 		case K_INT:
-			return T_INT;
+			type = T_INT;
+			break;
 		case K_RATIONAL:
-			return T_REAL;
+			type = T_REAL;
+			break;
 		case K_STRING:
-			return T_STRING;
+			type = T_STRING;
+			break;
+		case K_NOMINAL:			
+			type = new Nominal((NameID) root.data);
+			break;
 		case K_TUPLE:
-			return new Tuple(nodes);
+			type = new Tuple(automaton);
+			break;
 		case K_SET:
-			return new Set(nodes);
+			type = new Set(automaton);
+			break;
 		case K_LIST:
-			return new List(nodes);
-		case K_EXISTENTIAL:
-			if(root.data == null) {
-				throw new RuntimeException("Problem");
-			}
-			return new Existential((NameID) root.data);
+			type = new List(automaton);
+			break;
 		case K_PROCESS:
-			return new Process(nodes);
+			type = new Process(automaton);
+			break;
 		case K_DICTIONARY:
-			return new Dictionary(nodes);
+			type = new Dictionary(automaton);
+			break;
 		case K_RECORD:
-			return new Record(nodes);
+			type = new Record(automaton);
+			break;
 		case K_UNION:
-			return new Union(nodes);
+			type = new Union(automaton);
+			break;
+		case K_NEGATION:
+			type = new Negation(automaton);
+			break;
 		case K_METHOD:
-			return new Meth(nodes);
+			type = new Method(automaton);
+			break;
+		case K_HEADLESS:
+			type = new Method(automaton);
+			break;
 		case K_FUNCTION:
-			return new Fun(nodes);		
+			type = new Function(automaton);
+			break;		
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
+		
+		distinctTypes.add(type);
+		
+		return type;
+	}
+
+	/**
+	 * This method constructs a Node array from an array of types which will
+	 * form children.
+	 * 
+	 * @param kind
+	 * @param elements
+	 * @return
+	 */
+	private static Type construct(byte kind, Object data, Type... children) {
+		int[] nchildren = new int[children.length];
+		boolean deterministic = kind != K_UNION;
+		Automaton automaton = new Automaton(new State(kind, data, deterministic, nchildren));
+		int start = 1;
+		int i=0;
+		for(Type element : children) {
+			nchildren[i] = start;
+			Automaton child = destruct(element);
+			automaton = Automata.append(automaton,child);
+			start += child.size();
+			i = i + 1;
+		}		 	
+		return construct(automaton);	
 	}
 	
-	public static void main(String[] args) {				
-		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = linkedList(2);
-		System.out.println("GOT: " + t1);
-		System.out.println("MIN: " + minimise(t1));
-		/*
-		Type t2 = fromString("{int x,any y}");
-		//Type t1 = T_REAL;
-		//Type t2 = T_INT;
-		System.out.println("Type: " + t1 + "\n------------------");
-		build(printer,t1);		
-		System.out.println("\nType: " + t2 + "\n------------------");
-		build(printer,t2);		
-		System.out.println("====================");
-		System.out.println(isSubtype(t1,t2));
-		System.out.println(isSubtype(t2,t1));
-		Type glb = greatestLowerBound(t1,t2);
-		System.out.println(glb);
-		Type lub = leastUpperBound(t1,t2);
-		System.out.println(lub);
-		*/	
+	/**
+	 * This method constructs a State array from a collection of types which will
+	 * form children.
+	 * 
+	 * @param kind
+	 * @param children
+	 * @return
+	 */
+	private static Type construct(byte kind, Object data, Collection<Type> children) {						
+		int[] nchildren = new int[children.size()];
+		boolean deterministic = kind != K_UNION;
+		Automaton automaton = new Automaton(new State(kind, data, deterministic, nchildren));
+		int start = 1;
+		int i=0;
+		for(Type element : children) {
+			nchildren[i] = start;
+			Automaton child = destruct(element);
+			automaton = Automata.append(automaton,child);
+			start += child.size();
+			i = i + 1;
+		}
+		 		
+		return construct(automaton);	
 	}
 	
+	/**
+	 * Destruct is the opposite of construct. It converts a type into an
+	 * automaton.
+	 * 
+	 * @param t --- type to be converted.
+	 * @return
+	 */
+	public static final Automaton destruct(Type t) {
+		if (t instanceof Leaf) {
+			int kind = leafKind((Leaf) t);
+			Object data = null;
+			if (t instanceof Nominal) {
+				Nominal x = (Nominal) t;
+				data = x.nid;
+			}
+			State state = new State(kind, data, true, Automaton.NOCHILDREN);
+			return new Automaton(new State[] { state });
+		} else {
+			// compound type
+			return ((Compound) t).automaton;
+		}
+	}
+	
+	/**
+	 * <p>
+	 * The following algorithm simplifies a type. For example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * define InnerList as null|{int data, OuterList next}
+	 * define OuterList as null|{int data, InnerList next}
+	 * </pre>
+	 * <p>
+	 * This type is simplified into the following (equivalent) form:
+	 * </p>
+	 * 
+	 * <pre>
+	 * define LinkedList as null|{int data, LinkedList next}
+	 * </pre>
+	 * <p>
+	 * The simplification algorithm is made up of several different procedures
+	 * which operate on the underlying <i>automaton</i> representing the type:
+	 * </p>
+	 * <ol>
+	 * <li><b>Extraction.</b> Here, sub-components unreachable from the root are
+	 * eliminated.</li>
+	 * <li><b>Simplification.</b> Here, basic simplifications are applied. For
+	 * example, eliminating unions of unions.</li>
+	 * <li><b>Minimisation.</b>Here, equivalent states are merged together.</li>
+	 * <li><b>Canonicalisation.</b> A canonical form of the type is computed</li>
+	 * </ol>
+	 * 
+	 * is based on the well-known algorithm for minimising a DFA (see e.g. <a
+	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>). </p>
+	 * <p>
+	 * The algorithm operates by performing a subtype test of each node against
+	 * all others. From this, we can identify nodes which are equivalent under
+	 * the subtype operator. Using this information, the type is reconstructed
+	 * such that for each equivalence class only a single node is created.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> this algorithm does not put the type into a canonical form.
+	 * Additional work is necessary to do this.
+	 * </p>
+	 * 
+	 * @param afterType
+	 * @return
+	 */
+	private static Automaton normalise(Automaton automaton) {		
+		normalisedCount++;
+		unminimisedCount += automaton.size();		
+		TypeAlgorithms.simplify(automaton);				
+		// TODO: extract in place to avoid allocating data unless necessary
+		automaton = Automata.extract(automaton, 0);
+		// TODO: minimise in place to avoid allocating data unless necessary
+		automaton = Automata.minimise(automaton);
+		if(canonicalisation) {
+			Automata.canonicalise(automaton, TypeAlgorithms.DATA_COMPARATOR);
+		} 
+		minimisedCount += automaton.size();
+		return automaton;
+	}
+	
+	public static final byte K_VOID = 0;
+	public static final byte K_ANY = 1;
+	public static final byte K_META = 2;
+	public static final byte K_NULL = 3;
+	public static final byte K_BOOL = 4;
+	public static final byte K_BYTE = 5;
+	public static final byte K_CHAR = 6;
+	public static final byte K_INT = 7;
+	public static final byte K_RATIONAL = 8;
+	public static final byte K_STRING = 9;
+	public static final byte K_TUPLE = 10;
+	public static final byte K_SET = 11;
+	public static final byte K_LIST = 12;	
+	public static final byte K_DICTIONARY = 13;	
+	public static final byte K_PROCESS = 14;	
+	public static final byte K_RECORD = 15;	
+	public static final byte K_UNION = 16;
+	public static final byte K_NEGATION = 17;
+	public static final byte K_FUNCTION = 18;
+	public static final byte K_METHOD = 19;
+	public static final byte K_HEADLESS = 20; // headless method
+	public static final byte K_NOMINAL = 21;
+	
+	private static final ArrayList<Automaton> values = new ArrayList<Automaton>();
+	private static final HashMap<Automaton,Integer> cache = new HashMap<Automaton,Integer>();
+
+	/**
+	 * The following method is for implementing the fly-weight pattern.
+	 */
+	private static <T extends Automaton> T get(T type) {
+		Integer idx = cache.get(type);
+		if(idx != null) {
+			return (T) values.get(idx);
+		} else {					
+			cache.put(type, values.size());
+			values.add(type);
+			return type;
+		}
+	}
+
+	private static boolean canonicalisation = true;
+	private static int equalsCount = 0;	
+	private static int normalisedCount = 0;
+	private static int unminimisedCount = 0;
+	private static int minimisedCount = 0;
+	private static final HashSet<Type> distinctTypes = new HashSet<Type>();
+
+//	static {
+//		Thread _shutdownHook = new Thread(Type.class.getName()
+//				+ ".shutdownHook") {
+//			public void run() {
+//				shutdown();
+//			}
+//		};
+//		Runtime.getRuntime().addShutdownHook(_shutdownHook);
+//	}
+	
+	public static void shutdown() {
+		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);	
+		System.err.println("#TYPE NORMALISATIONS: " + normalisedCount + " (" + unminimisedCount + " -> " + minimisedCount +")");
+		System.err.println("#DISTINCT TYPES: " + distinctTypes.size());
+	}
+	
+	public static void main(String[] args) {
+		//Type from = fromString("(null,null)");
+		//Type to = fromString("X<[X]>");				
+		Type from = fromString("{int maxLocals,string name}");
+		Type to = fromString("{string name,...}");
+		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));		
+		System.out.println(from + " & " + to + " = " + intersect(from,to));
+		//System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
+		//System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
+		//System.out.println("!" + from + " & !" + to + " = "
+		//		+ intersect(Type.Negation(from), Type.Negation(to)));
+	}
+		
 	public static Type linkedList(int n) {
-		return T_RECURSIVE("X",innerLinkedList(n));
+		NameID label = new NameID(ModuleID.fromString(""),"X");
+		return Recursive(label,innerLinkedList(n));
 	}
 	
 	public static Type innerLinkedList(int n) {
 		if(n == 0) {
-			return T_LABEL("X");
+			return Nominal(new NameID(ModuleID.fromString(""),"X"));			
 		} else {
-			Type leaf = T_PROCESS(innerLinkedList(n-1)); 
+			Type leaf = Process(innerLinkedList(n-1)); 
 			HashMap<String,Type> fields = new HashMap<String,Type>();
-			fields.put("next", T_UNION(T_NULL,leaf));
+			fields.put("next", Union(T_NULL,leaf));
 			fields.put("data", T_BOOL);
-			Type.Record rec = T_RECORD(fields);
-			return rec;
+			return Record(false,fields);
 		}
 	}
 }

@@ -1,4 +1,6 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     s = "Hello World"
     s[0] = 1.234
-    out.println(s)
+    sys.out.println(s)

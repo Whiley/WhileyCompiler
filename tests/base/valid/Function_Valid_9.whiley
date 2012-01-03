@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 string f(int x):
     return "F(INT)"
 
@@ -11,8 +13,8 @@ string f({int} xs):
     return "F({int})"
 
 
-void System::main([string] args):
-    out.println(f(1.234))
-    out.println(f(1))
-    out.println(f([1,2,3]))
-    out.println(f({1,2,3}))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1.234))
+    sys.out.println(f(1))
+    sys.out.println(f([1,2,3]))
+    sys.out.println(f({1,2,3}))

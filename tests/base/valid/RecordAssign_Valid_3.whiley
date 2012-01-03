@@ -1,10 +1,12 @@
-void System::main([string] args):
+import * from whiley.lang.*
+
+void ::main(System sys,[string] args):
     x = {f1:2,f2:3}
     y = {f1:1,f2:3}
-    out.println(str(x))
-    out.println(str(y)   )
+    sys.out.println(Any.toString(x))
+    sys.out.println(Any.toString(y)   )
     assert x != y
     x.f1 = 1
-    out.println(str(x))
-    out.println(str(y)  )
+    sys.out.println(Any.toString(x))
+    sys.out.println(Any.toString(y)  )
     assert x == y

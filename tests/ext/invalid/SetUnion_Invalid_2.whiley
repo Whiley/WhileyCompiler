@@ -1,5 +1,7 @@
+import * from whiley.lang.*
+
 void f({int} xs, {int} ys, {int} zs) requires zs == xs ∪ ys:
-    debug str(xs)
+    debug Any.toString(xs)
 
 void g({int} ys):
     f(ys,ys,ys ∪ {6})
@@ -7,7 +9,7 @@ void g({int} ys):
 void h({int} ys, {int} zs):
     f(ys,zs,ys ∪ zs)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     g({})
     g({2})
     g({1,2,3})

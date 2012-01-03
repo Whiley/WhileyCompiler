@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 [int] reverse([int] ls):
     i = |ls|
     r = []
@@ -7,6 +9,6 @@
         r = r + [ls[i]]
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rs = reverse([1,2,3,4,5])
-    out.println(str(rs))
+    sys.out.println(Any.toString(rs))

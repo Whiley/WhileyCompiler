@@ -1,12 +1,14 @@
+import * from whiley.lang.*
+
 define point as {int x,int y}
 define listint as [int]
 define setint as {int}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      si = {1,2,3}
      li = [1,2,3]     
      p = {x:1,y:2}
      x = p.x     
-     out.println(str(x))
-     out.println(str(|si|))
-     out.println(str(li[0]))
+     sys.out.println(Any.toString(x))
+     sys.out.println(Any.toString(|si|))
+     sys.out.println(Any.toString(li[0]))

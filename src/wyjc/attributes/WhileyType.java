@@ -28,6 +28,9 @@ package wyjc.attributes;
 import java.io.*;
 
 import java.util.*;
+
+import wyautl.io.*;
+import wyautl.lang.*;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyjvm.io.*;
@@ -39,7 +42,7 @@ import wyjvm.lang.*;
  * stored into a class file, such that they can be retrieved and checked against
  * during compilation.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class WhileyType implements BytecodeAttribute {	
@@ -62,22 +65,42 @@ public class WhileyType implements BytecodeAttribute {
 		addPoolItems(type, constantPool);
 	}
 		
-	public static void addPoolItems(Type type,
-			Set<Constant.Info> constantPool) {
-		Type.build(new ConstantBuilder(constantPool),type);
+	public static void addPoolItems(Type type, Set<Constant.Info> constantPool) {
+		if (type instanceof Type.Compound) {
+			Automaton automaton = Type.destruct(type);
+			for (int i = 0; i != automaton.size(); ++i) {
+				Automaton.State s = automaton.states[i];
+				if (s.kind == Type.K_NOMINAL) {
+					NameID name = (NameID) s.data;
+					Constant.Utf8 utf8 = new Constant.Utf8(name.module()
+							.toString());
+					Constant.addPoolItem(utf8, constantPool);
+					utf8 = new Constant.Utf8(name.name());
+					Constant.addPoolItem(utf8, constantPool);
+				} else if (s.kind == Type.K_RECORD) {
+					ArrayList<String> fields = (ArrayList<String>) s.data;
+					for (String f : fields) {
+						Constant.Utf8 utf8 = new Constant.Utf8(f);
+						Constant.addPoolItem(utf8, constantPool);
+					}
+				}
+			}
+		}
 	}
 		
 	public static void write(Type type, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		Type.build(new JvmBuilder(writer,constantPool),type);
+			Map<Constant.Info, Integer> constantPool) throws IOException {		
+		TypeWriter typeWriter = new TypeWriter(writer,constantPool);		
+		typeWriter.write(Type.destruct(type));		
 	}
 			
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		BinaryOutputStream iw = new BinaryOutputStream(out);
-		write(type,iw,constantPool);
+		write(type,iw,constantPool);		
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
+		iw.close();
 		writer.write_u4(out.size());		
 		writer.write(out.toByteArray());						
 	}
@@ -88,7 +111,7 @@ public class WhileyType implements BytecodeAttribute {
 		output.print(name() + ":");
 	}	
 	
-	public static class Reader implements BytecodeAttribute.Reader {
+	public static class Reader implements BytecodeAttribute.Reader{
 		public String name() {
 			return "WhileyType";
 		}
@@ -96,344 +119,79 @@ public class WhileyType implements BytecodeAttribute {
 		public WhileyType read(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			input.read_u2(); // attribute name index code
-			input.read_u4(); // attribute length
-			Type t = readType(input, constantPool);
+			input.read_u4(); // attribute length			
+			TypeReader reader = new TypeReader(input,constantPool);
+			Type t = Type.construct(reader.read());
 			return new WhileyType(t);
-		}
-
-		public static Type readType(BinaryInputStream input,
-				Map<Integer, Constant.Info> constantPool) throws IOException {
-			Type.InternalBuilder builder = new Type.InternalBuilder();
-			int numNodes = input.read_u2();
-			builder.initialise(numNodes);					
-			for(int i=0;i!=numNodes;++i) {
-				int tag = input.read_u1();			
-				switch (tag) {
-				case ANY_TYPE:
-					builder.buildPrimitive(i, Type.T_ANY);
-					break;
-				case VOID_TYPE:
-					builder.buildPrimitive(i, Type.T_VOID);
-					break;
-				case NULL_TYPE:
-					builder.buildPrimitive(i, Type.T_NULL);
-					break;
-				case BOOL_TYPE:
-					builder.buildPrimitive(i, Type.T_BOOL);
-					break;
-				case BYTE_TYPE:
-					builder.buildPrimitive(i, Type.T_BYTE);
-					break;
-				case CHAR_TYPE:
-					builder.buildPrimitive(i, Type.T_CHAR);
-					break;
-				case INT_TYPE:
-					builder.buildPrimitive(i, Type.T_INT);
-					break;
-				case REAL_TYPE:
-					builder.buildPrimitive(i, Type.T_REAL);
-					break;
-				case STRING_TYPE:
-					builder.buildPrimitive(i, Type.T_STRING);
-					break;
-				case LIST_TYPE:
-					builder.buildList(i, input.read_u2());
-					break;
-				case SET_TYPE:
-					builder.buildSet(i, input.read_u2());
-					break;
-				case TUPLE_TYPE:
-				{
-					int nents = input.read_u2();
-					int[] elems = new int[nents];
-					for (int j = 0; j != nents; ++j) {
-						elems[j] = input.read_u2();
-					}
-					builder.buildTuple(i, elems);
-					break;
-				}
-				case RECORD_TYPE:
-				{
-					int nents = input.read_u2();
-					Pair<String, Integer>[] types = new Pair[nents];
-					for (int j = 0; j != nents; ++j) {
-						String key = ((Constant.Utf8) constantPool.get(input
-								.read_u2())).str;						
-						types[j] = new Pair(key, input.read_u2());
-					}
-					builder.buildRecord(i, types);
-					break;
-				}
-				case UNION_TYPE:
-				{
-					int nents = input.read_u2();
-					int[] elems = new int[nents];
-					for (int j = 0; j != nents; ++j) {
-						elems[j] = input.read_u2();
-					}
-					builder.buildUnion(i, elems);
-					break;					
-				}
-				case PROCESS_TYPE:					
-					builder.buildProcess(i, input.read_u2());
-					break;		
-				case EXISTENTIAL_TYPE:
-					ModuleID mid = readModule(input,constantPool);
-					String name = ((Constant.Utf8) constantPool
-							.get(input.read_u2())).str;
-					builder.buildExistential(i, new NameID(mid,name));
-					break;
-				case HEADLESS_METH_TYPE:
-				case METH_TYPE:{
-					int rec = -1;
-					if(tag == METH_TYPE) {
-						rec = input.read_u2();					
-					}
-					int ret = input.read_u2();
-					int nents = input.read_u2();
-					int[] params = new int[nents];
-					for (int j = 0; j != nents; ++j) {
-						params[j] = input.read_u2();
-					}
-					builder.buildMethod(i, rec, ret, params);
-					break;
-				}				
-				case FUN_TYPE: {					
-					int ret = input.read_u2();
-					int nents = input.read_u2();
-					int[] params = new int[nents];
-					for (int j = 0; j != nents; ++j) {
-						params[j] = input.read_u2();
-					}
-					builder.buildFunction(i, ret, params);
-					break;
-				}				
-				default:
-					throw new RuntimeException("invalid type");
-				}
-			}
-			
-			return builder.type();			
-		}
-
-		protected static ModuleID readModule(BinaryInputStream input,
-				Map<Integer, Constant.Info> constantPool) throws IOException {
-			String modstr = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
-			return ModuleID.fromString(modstr);
-		}
-	}
-	
-	private static class ConstantBuilder extends Type.AbstractBuilder {
-		private final Set<Constant.Info> constantPool;
-		
-		public ConstantBuilder(Set<Constant.Info> pool) {
-			constantPool = pool;
 		}		
-
-		public void buildExistential(int index, NameID name) { 
-			Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
-			Constant.addPoolItem(utf8,constantPool);			
-			utf8 = new Constant.Utf8(name.name());
-			Constant.addPoolItem(utf8,constantPool);			
-		}
-		
-		public void buildRecord(int index, Pair<String, Integer>... fields) { 
-			for(Pair<String,Integer> f : fields) {
-				Constant.Utf8 utf8 = new Constant.Utf8(f.first());
-				Constant.addPoolItem(utf8,constantPool);
-			}
-		}
 	}
 	
-	public static class JvmBuilder implements Type.Builder {		
-		private final BinaryOutputStream writer;
-		private final Map<Constant.Info,Integer> constantPool;
+
+	public static final class TypeReader extends BinaryAutomataReader {				
+		private final Map<Integer,Constant.Info> constantPool;
 		
-		public JvmBuilder(BinaryOutputStream writer, Map<Constant.Info,Integer> pool) {
-			this.writer = writer;
+		public TypeReader(BinaryInputStream reader, Map<Integer,Constant.Info> pool) {
+			super(reader);
 			this.constantPool = pool;
 		}
-		
-		public void initialise(int numNodes) {
-			try {
-				writer.write_u2(numNodes);
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
-		}
-
-		public void buildPrimitive(int index, Type.Leaf t) {
-			try {
-				if(t == Type.T_ANY) {
-					writer.write_u1(ANY_TYPE );
-				} else if(t == Type.T_VOID) {
-					writer.write_u1(VOID_TYPE);
-				} else if(t == Type.T_NULL) {
-					writer.write_u1(NULL_TYPE );
-				} else if(t == Type.T_BOOL) {
-					writer.write_u1(BOOL_TYPE );			
-				} else if(t == Type.T_BYTE) {			
-					writer.write_u1(BYTE_TYPE );		
-				} else if(t == Type.T_CHAR) {			
-					writer.write_u1(CHAR_TYPE );		
-				} else if(t == Type.T_INT) {			
-					writer.write_u1(INT_TYPE );		
-				} else if(t == Type.T_REAL) {
-					writer.write_u1(REAL_TYPE );			
-				} else if(t == Type.T_STRING) {
-					writer.write_u1(STRING_TYPE );			
-				} else {
-					throw new RuntimeException("unknown type encountered: " + t);		
+				
+		public Automaton.State readState() throws IOException {
+			Automaton.State state = super.readState();			
+			if (state.kind == Type.K_NOMINAL) {
+				String modstr = ((Constant.Utf8) constantPool.get(reader
+						.read_uv())).str;
+				ModuleID mid = ModuleID.fromString(modstr);
+				String name = ((Constant.Utf8) constantPool.get(reader
+						.read_uv())).str;
+				NameID data = new NameID(mid, name);
+				state.data = data;				
+			} else if (state.kind == Type.K_RECORD) {
+				boolean isOpen = reader.read_bit();
+				int nfields = reader.read_uv();				
+				Type.Record.State fields = new Type.Record.State(isOpen);
+				for (int i = 0; i != nfields; ++i) {
+					int index = reader.read_uv();					
+					String f = ((Constant.Utf8) constantPool.get(index)).str;
+					fields.add(f);
 				}
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}			
-		}
-
-		public void buildExistential(int index, NameID name) {
-			try {
-				writer.write_u1(EXISTENTIAL_TYPE);				
-				Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
-				writer.write_u2(constantPool.get(utf8));
-				utf8 = new Constant.Utf8(name.name());
-				writer.write_u2(constantPool.get(utf8));
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
+				state.data = fields;				
+			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) { 
+				boolean nonEmpty = reader.read_bit();				
+				state.data = nonEmpty;			
 			}
-		}
-
-		public void buildSet(int index, int element) {
-			try {
-				writer.write_u1(SET_TYPE);			
-				writer.write_u2(element);
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
-		}
-
-		public void buildList(int index, int element) {
-			try {
-				writer.write_u1(LIST_TYPE);
-				writer.write_u2(element);
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
-		}
-
-		public void buildProcess(int index, int element) {
-			try {
-				writer.write_u1(PROCESS_TYPE);	
-				writer.write_u2(element);				
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
-		}
-
-		public void buildDictionary(int index, int key, int value) {
-			try {
-				writer.write_u1(DICTIONARY_TYPE);
-				writer.write_u2(key);
-				writer.write_u2(value);
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
-		}
-
-		public void buildTuple(int index, int... elements) {
-			try {
-				writer.write_u1(TUPLE_TYPE);
-				// FIXME: bug here if number of entries > 64K
-				writer.write_u2(elements.length);
-				for(int e : elements) {					
-					writer.write_u2(e);					
-				}	
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
-		}
-
-		public void buildRecord(int index, Pair<String, Integer>... fields) {
-			try {				
-				writer.write_u1(RECORD_TYPE );
-				// FIXME: bug here if number of entries > 64K
-				writer.write_u2(fields.length);
-				for(Pair<String,Integer> p : fields) {
-					Constant.Utf8 utf8 = new Constant.Utf8(p.first());
-					writer.write_u2(constantPool.get(utf8));
-					writer.write_u2(p.second());					
-				}			
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
-		}
-
-		public void buildFunction(int index, int ret,
-				int... parameters) {
-			try {				
-				writer.write_u1(FUN_TYPE);				
-				writer.write_u2(ret);
-				writer.write_u2(parameters.length);
-				for (int p : parameters) {
-					writer.write_u2(p);
-				}
-			} catch (IOException e) {
-				throw new RuntimeException("internal failure", e);
-			}
-		}
-
-		public void buildMethod(int index, int receiver, int ret,
-				int... parameters) {
-			try {			
-				if(receiver == -1) {
-					writer.write_u1(HEADLESS_METH_TYPE);					
-				} else {
-					writer.write_u1(METH_TYPE);
-					writer.write_u2(receiver);
-				}
-				writer.write_u2(ret);
-				writer.write_u2(parameters.length);
-				for (int p : parameters) {
-					writer.write_u2(p);
-				}
-			} catch (IOException e) {
-				throw new RuntimeException("internal failure", e);
-			}
-		}
-		
-		public void buildUnion(int index, int... bounds) {
-			try {				
-				writer.write_u1(UNION_TYPE );			
-				// FIXME: bug here if number of bounds > 64K
-				writer.write_u2(bounds.length);
-				for(int b : bounds) {
-					writer.write_u2(b);
-				}	
-			} catch(IOException e) {
-				throw new RuntimeException("internal failure",e);
-			}
+			return state;
 		}
 	}	
 	
-	public static final int EXISTENTIAL_TYPE = 1;
-	public static final int ANY_TYPE = 2;
-	public static final int VOID_TYPE = 3;
-	public static final int NULL_TYPE = 4;
-	public static final int BOOL_TYPE = 5;
-	public static final int BYTE_TYPE = 6;
-	public static final int CHAR_TYPE = 7;
-	public static final int INT_TYPE = 8;
-	public static final int REAL_TYPE = 9;
-	public static final int STRING_TYPE = 10;
-	public static final int LIST_TYPE = 11;
-	public static final int SET_TYPE = 12;
-	public static final int DICTIONARY_TYPE = 13;
-	public static final int TUPLE_TYPE = 14;
-	public static final int RECORD_TYPE = 15;
-	public static final int UNION_TYPE = 16;
-	public static final int INTERSECTION_TYPE = 17;
-	public static final int PROCESS_TYPE = 18;	
-	public static final int FUN_TYPE = 19;
-	public static final int METH_TYPE = 20;
-	public static final int HEADLESS_METH_TYPE = 21;
-	public static final int CONSTRAINT_MASK = 32;
+	public static final class TypeWriter extends BinaryAutomataWriter {				
+		private final Map<Constant.Info,Integer> constantPool;
+		
+		public TypeWriter(BinaryOutputStream writer, Map<Constant.Info,Integer> pool) {
+			super(writer);
+			this.constantPool = pool;
+		}
+		
+		public void write(Automaton.State state) throws IOException {
+			super.write(state);
+			if(state.kind == Type.K_NOMINAL) {
+				NameID name = (NameID) state.data;
+				Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
+				writer.write_uv(constantPool.get(utf8));
+				utf8 = new Constant.Utf8(name.name());
+				writer.write_uv(constantPool.get(utf8));
+			} else if(state.kind == Type.K_RECORD) {
+				Type.Record.State fields = (Type.Record.State) state.data;
+				writer.write_bit(fields.isOpen);
+				writer.write_uv(fields.size());				
+				for (String f : fields) {
+					Constant.Utf8 utf8 = new Constant.Utf8(f);
+					int index = constantPool.get(utf8);					
+					writer.write_uv(index);
+				}
+			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) { 
+				boolean nonEmpty = (Boolean) state.data;
+				writer.write_bit(nonEmpty);			
+			}		
+		}
+	}		
 }

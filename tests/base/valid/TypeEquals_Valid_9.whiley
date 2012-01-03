@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define bop as {int x, int y}
 define expr as int|bop
 
@@ -7,8 +9,8 @@ int f(expr e):
     else:
         return e // type difference
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f(1)
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
     x = f({x:4,y:10})   
-    out.println(str(x))
+    sys.out.println(Any.toString(x))

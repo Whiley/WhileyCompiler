@@ -36,7 +36,7 @@ import wyil.lang.Attribute;
 /**
  * This exception is thrown when a syntax error occurs in the parser. 
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class SyntaxError extends RuntimeException {
@@ -115,7 +115,7 @@ public class SyntaxError extends RuntimeException {
 	 * @return
 	 */
 	public int end() { return end; }
-
+	
 	/**
 	 * Output the syntax error to a given output stream.
 	 */
@@ -124,39 +124,60 @@ public class SyntaxError extends RuntimeException {
 			output.println("syntax error: " + getMessage());
 		} else {
 			int line = 0;
-			String lineText = "";
-
+			int lineStart = 0;
+			int lineEnd = 0;
+			StringBuilder text = new StringBuilder();
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(
 						new FileInputStream(filename), "UTF8"));
-
-				while (in.ready() && start >= lineText.length()) {
-					start -= lineText.length() + 1;
-					end -= lineText.length() + 1;
-					lineText = in.readLine();
+				
+				// first, read whole file					   
+			    int len = 0;
+			    char[] buf = new char[1024]; 
+			    while((len = in.read(buf)) != -1) {
+			    	text.append(buf,0,len);	    	
+			    }
+				
+				while (lineEnd < text.length() && lineEnd <= start) {
+					lineStart = lineEnd;
+					lineEnd = parseLine(text,lineEnd);
 					line = line + 1;
 				}
 			} catch (IOException e) {
 				output.println("syntax error: " + getMessage());
 				return;
 			}
-
+			lineEnd = Math.min(lineEnd,text.length());
+			
 			output.println(filename + ":" + line + ": " + getMessage());
-			// errout.println();
-			output.println(lineText);
-
-			for (int i = 0; i <= start; ++i) {
-				if (lineText.charAt(i) == '\t') {
-					output.print("\t");
+			// NOTE: in the following lines I don't print characters
+			// individually. The reason for this is that it messes up the ANT
+			// task output.
+			String str = "";
+			for (int i = lineStart; i < lineEnd; ++i) {
+				str = str + text.charAt(i);
+			}
+			output.print(str);
+			str = "";
+			for (int i = lineStart; i < start; ++i) {
+				if (text.charAt(i) == '\t') {
+					str += "\t";
 				} else {
-					output.print(" ");
+					str += " ";
 				}
-			}
+			}			
 			for (int i = start; i <= end; ++i) {
-				output.print("^");
+				str += "^";
 			}
-			output.println("");
+			output.println(str);
 		} 
+	}
+	
+	private static int parseLine(StringBuilder text, int index) {
+		while(index < text.length() && text.charAt(index) != '\n') {
+			index++;
+		}		
+		return index+1;
 	}
 	
 	public static final long serialVersionUID = 1l;
@@ -187,6 +208,53 @@ public class SyntaxError extends RuntimeException {
 		}
 		
 		throw new SyntaxError(msg, filename, start, end, ex);
+	}
+
+	/**
+	 * An internal failure is a special form of syntax error which indicates
+	 * something went wrong whilst processing some piece of syntax. In other
+	 * words, is an internal error in the compiler, rather than a mistake in the
+	 * input program.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class InternalFailure extends SyntaxError {
+		public InternalFailure(String msg, String filename, int start, int end) {
+			super(msg, filename, start, end);
+		}
+		public InternalFailure(String msg, String filename, int start, int end,
+				Throwable ex) {
+			super(msg, filename, start, end, ex);
+		}
+	}
+	
+	public static void internalFailure(String msg, String filename,
+			SyntacticElement elem) {
+		int start = -1;
+		int end = -1;		
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;			
+		}
+		
+		throw new InternalFailure(msg, filename, start, end);
+	}
+	
+	public static void internalFailure(String msg, String filename,
+			SyntacticElement elem, Throwable ex) {
+		int start = -1;
+		int end = -1;		
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;			
+		}
+		
+		throw new InternalFailure(msg, filename, start, end, ex);
 	}
 	
 	

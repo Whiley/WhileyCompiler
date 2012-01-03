@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define expr as {int op, expr lhs} | {string err}
 
 int f(expr e):
@@ -6,8 +8,8 @@ int f(expr e):
     else:
         return -1
     
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f({err:"Hello World"})
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
     x = f({op:1,lhs:{err:"Gotcha"}})
-    out.println(str(x))
+    sys.out.println(Any.toString(x))

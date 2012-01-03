@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int g(int x) ensures $ > 0 && $ < 125:
     if(x <= 0 || x >= 125):
         return 1
@@ -7,7 +9,7 @@ int g(int x) ensures $ > 0 && $ < 125:
 {int8} f(int x):
     return {g(x)}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     bytes = f(0)
-    out.println(str(bytes))
+    sys.out.println(Any.toString(bytes))
 

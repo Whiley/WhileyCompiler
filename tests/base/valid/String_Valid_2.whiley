@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED
 public bool has(char c1, string str):
@@ -6,10 +8,10 @@ public bool has(char c1, string str):
             return true
     return false
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     s = "Hello World"
-    out.println(str(has('l',s)))
-    out.println(str(has('e',s)))
-    out.println(str(has('h',s)))
-    out.println(str(has('z',s)))
-    out.println(str(has('H',s)))
+    sys.out.println(Any.toString(has('l',s)))
+    sys.out.println(Any.toString(has('e',s)))
+    sys.out.println(Any.toString(has('h',s)))
+    sys.out.println(Any.toString(has('z',s)))
+    sys.out.println(Any.toString(has('H',s)))

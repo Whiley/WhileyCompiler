@@ -1,6 +1,8 @@
+import * from whiley.lang.*
+
 define intset as [int]
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      is = {1,2,3,4}
-     out.println(str(|il|))
-     out.println(str(is) ∪ {5})
+     sys.out.println(Any.toString(|il|))
+     sys.out.println(Any.toString(is) ∪ {5})

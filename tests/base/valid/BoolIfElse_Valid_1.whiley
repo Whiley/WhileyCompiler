@@ -1,9 +1,11 @@
+import * from whiley.lang.*
+
 string f(bool b):
     if(b):
         return "TRUE"
     else:
         return "FALSE"
 
-void System::main([string] args):
-    out.println(f(true))
-    out.println(f(false))
+void ::main(System sys,[string] args):
+    sys.out.println(f(true))
+    sys.out.println(f(false))

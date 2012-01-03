@@ -1,6 +1,8 @@
+import * from whiley.lang.*
+
 define sr4set as {int}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {1}
-    out.println(str(x))
+    sys.out.println(Any.toString(x))
     

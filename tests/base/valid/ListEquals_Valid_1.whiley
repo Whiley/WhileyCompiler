@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 string f([int] xs, [real] ys):
     if xs == ys:
         return "EQUAL"
@@ -5,12 +7,12 @@ string f([int] xs, [real] ys):
         return "NOT EQUAL"
 
 void System::g([int] xs, [real] ys):
-    out.println(str(xs))
-    out.println(str(ys))
-    out.println(f(xs,ys))
+    this.out.println(Any.toString(xs))
+    this.out.println(Any.toString(ys))
+    this.out.println(f(xs,ys))
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     // following lines should block
-    this.g([1,4],[1.0,4.0])
-    this.g([1,4],[1.0,4.2])
-    this.g([],[])
+    sys.g([1,4],[1.0,4.0])
+    sys.g([1,4],[1.0,4.2])
+    sys.g([],[])

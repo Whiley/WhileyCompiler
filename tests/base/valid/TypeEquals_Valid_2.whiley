@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define expr as [int]|int
 
 string f(expr e):
@@ -6,9 +8,9 @@ string f(expr e):
     else:
         return "GOT INT"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = 1
-    out.println(f(e))
+    sys.out.println(f(e))
     e = [1,2,3,4]
-    out.println(f(e))
+    sys.out.println(f(e))
  

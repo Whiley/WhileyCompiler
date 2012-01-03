@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 int f1(int x):
     return x + 1
 
@@ -7,6 +9,6 @@ int f2(int x):
 int g(int(int) func):
     return func(1234)
     
-void System::main([string] args):
-    out.println(str(g(&f1)))
-    out.println(str(g(&f2)))
+void ::main(System sys,[string] args):
+    sys.out.println(Any.toString(g(&f1)))
+    sys.out.println(Any.toString(g(&f2)))

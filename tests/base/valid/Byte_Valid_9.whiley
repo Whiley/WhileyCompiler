@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define constants as [
 	10000000b,
 	10000001b,
@@ -256,10 +258,10 @@ define constants as [
 	01111110b
 ]
 
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     for i in constants:
         for j in 0..8:
-            out.print(str(i) + " & 10101010b << ")
-            out.print(str(j) + " = ")
+            sys.out.print(Any.toString(i) + " & 10101010b << ")
+            sys.out.print(Any.toString(j) + " = ")
             // test precedence
-            out.println(str(i & 10101010b << j))
+            sys.out.println(Any.toString(i & 10101010b << j))

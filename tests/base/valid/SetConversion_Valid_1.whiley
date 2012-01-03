@@ -1,5 +1,7 @@
-string f({real} ls):
-    return str(ls)
+import * from whiley.lang.*
 
-void System::main([string] args):
-    out.println(f({1,2,3}))
+string f({real} ls):
+    return Any.toString(ls)
+
+void ::main(System sys,[string] args):
+    sys.out.println(f({1,2,3}))

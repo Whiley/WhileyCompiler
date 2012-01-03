@@ -1,5 +1,7 @@
+import * from whiley.lang.*
+
 real g(real x):
      return x / 3
 
-void System::main([string] args):
-     out.println(str(g(0.234)))
+void ::main(System sys,[string] args):
+     sys.out.println(Any.toString(g(0.234)))

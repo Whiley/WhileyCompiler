@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define rlist as real | [int]
 
 int f(rlist l):
@@ -6,8 +8,8 @@ int f(rlist l):
     else:
         return |l|
 
-void System::main([string] args):
-    out.println(str(f(123)))
-    out.println(str(f(1.23)))
-    out.println(str(f([1,2,3]))) 
+void ::main(System sys,[string] args):
+    sys.out.println(Any.toString(f(123)))
+    sys.out.println(Any.toString(f(1.23)))
+    sys.out.println(Any.toString(f([1,2,3]))) 
 

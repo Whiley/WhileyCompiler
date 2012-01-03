@@ -27,9 +27,4 @@ package whiley.lang
 
 define Time as process {int dummy}
 
-int Time::currentTime():
-    extern jvm:                
-        invokestatic java/lang/System.currentTimeMillis:()J;
-        invokestatic java/math/BigInteger.valueOf:(J)Ljava/math/BigInteger;
-        areturn
-    return 101 // dummy
+public native int Time::currentTime():

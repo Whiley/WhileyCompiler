@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define a_nat as int
 define b_nat as int
 
@@ -7,7 +9,7 @@ b_nat f(a_nat x):
     else:
         return f(x-1)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = |args|    
     x = f(x)    
-    out.println(str(x))
+    sys.out.println(Any.toString(x))

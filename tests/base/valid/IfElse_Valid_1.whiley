@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 string f(int x):
     if(x < 10):
         return "LESS THAN"
@@ -6,9 +8,9 @@ string f(int x):
     else:
         return "EQUALS"
 
-void System::main([string] args):
-    out.println(f(1))
-    out.println(f(10))
-    out.println(f(11))
-    out.println(f(1212))
-    out.println(f(-1212))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))
+    sys.out.println(f(10))
+    sys.out.println(f(11))
+    sys.out.println(f(1212))
+    sys.out.println(f(-1212))

@@ -1,8 +1,10 @@
+import * from whiley.lang.*
+
 define posints as {int}
 
 string f(posints x):
-    return str(x)
+    return Any.toString(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = {1,2,3}
-    out.println(f(xs))
+    sys.out.println(f(xs))

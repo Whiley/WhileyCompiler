@@ -34,7 +34,7 @@ import wyil.lang.Attribute;
  * to the syntactic structure of the file, and in particular parts we may
  * wish to add information too (e.g. line numbers, types, etc).
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface SyntacticElement {

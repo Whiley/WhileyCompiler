@@ -1,3 +1,5 @@
+import * from whiley.lang.*
+
 define PAWN as 0
 define KNIGHT as 1 
 define BISHOP as 2
@@ -20,6 +22,6 @@ Board f(Board board):
     board.rows[0] = BLACK_PAWN
     return board
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     r1 = {rows: [WHITE_PAWN], flag: false }
-    out.println(str(f(r1)))
+    sys.out.println(Any.toString(f(r1)))

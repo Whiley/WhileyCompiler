@@ -1,5 +1,7 @@
+import * from whiley.lang.*
+
 string f():
     return ""
 
-void System::main([string] args):
-    out.println(f())
+void ::main(System sys,[string] args):
+    sys.out.println(f())

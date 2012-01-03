@@ -1,10 +1,12 @@
+import * from whiley.lang.*
+
 define bytes as { int b1, int b2 }
 
 bytes f(int a):
     bs = {b1:a,b2:a+1}
     return bs
 
-void System::main([string] args):
-    out.println(str(f(1)))
-    out.println(str(f(2)))
-    out.println(str(f(9)))
+void ::main(System sys,[string] args):
+    sys.out.println(Any.toString(f(1)))
+    sys.out.println(Any.toString(f(2)))
+    sys.out.println(Any.toString(f(9)))

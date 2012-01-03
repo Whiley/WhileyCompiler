@@ -30,12 +30,12 @@ package wyil.lang;
  * purpose of this is to provide a uniform way of referring to modules +
  * names throughout the compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
-public class NameID {
-	private ModuleID module;
-	private String name;
+public final class NameID {
+	private final ModuleID module;
+	private final String name;
 		
 	public NameID(ModuleID module, String name) {		
 		this.module = module;
