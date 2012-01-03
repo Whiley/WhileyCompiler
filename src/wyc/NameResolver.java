@@ -40,6 +40,7 @@ import java.util.*;
 import wyautl.lang.*;
 import wyc.lang.Attributes;
 import wyc.lang.Expr;
+import wyc.lang.Import;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wyc.util.Nominal;
@@ -1036,7 +1037,7 @@ public final class NameResolver {
 					WhileyFile.FunDecl.class, nid.name())) {
 				if (f.parameters.size() == nparams) {
 					// FIXME: loss of nominal information
-					r.add(resolveAsType(f.unresolvedType()));
+					r.add(resolveAsType(f.unresolvedType(),wf.imports()));
 				}
 			}
 		} else {
@@ -1068,7 +1069,7 @@ public final class NameResolver {
 					WhileyFile.MethDecl.class, nid.name())) {
 				if (m.parameters.size() == nparams) {
 					// FIXME: loss of nominal information
-					r.add(resolveAsType(m.unresolvedType()));
+					r.add(resolveAsType(m.unresolvedType(),wf.imports()));
 				}
 			}
 		} else {

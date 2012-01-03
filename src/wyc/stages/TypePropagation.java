@@ -38,7 +38,6 @@ import wyc.util.RefCountedHashMap;
 import wyil.ModuleLoader;
 import wyil.lang.Attribute;
 import wyil.lang.Code;
-import wyil.lang.Import;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
