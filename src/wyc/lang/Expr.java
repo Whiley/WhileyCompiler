@@ -497,7 +497,9 @@ public interface Expr extends SyntacticElement {
 		}
 				
 		public Nominal<Type> type() {
-			return new Nominal(Type.Nominal(nid), Type.Nominal(nid));
+			// FIXME: loss of nominal information here, since the type of the
+			// constant in question is always fully expanded.
+			return new Nominal(value.type(), value.type());
 		}
 		
 		public String toString() {

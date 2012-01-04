@@ -978,20 +978,28 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);
 		expr.index = propagate(expr.index,environment,imports);		
-		Type src = expr.src.type().raw();		
-				
+		Type src = expr.src.type().raw();			
+		
 		// First, check whether this is still only an abstract access and, in
 		// such case, upgrade it to the appropriate access expression.
 		
-		if (!(expr instanceof Expr.StringAccess)
-				&& Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
-			expr = new Expr.StringAccess(expr.src,expr.index,expr.attributes());
-		} else if (!(expr instanceof Expr.ListAccess)
-				&& Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),
-						src)) {
-			expr = new Expr.ListAccess(expr.src,expr.index,expr.attributes());
-		} else if (!(expr instanceof Expr.DictionaryAccess)) {
-			expr = new Expr.DictionaryAccess(expr.src,expr.index,expr.attributes());
+		if (!(expr instanceof Expr.StringAccess
+				|| expr instanceof Expr.ListAccess || expr instanceof Expr.DictionaryAccess)) {
+			// first time through
+			if (Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
+				expr = new Expr.StringAccess(expr.src, expr.index,
+						expr.attributes());
+			} else if (Type.isImplicitCoerciveSubtype(
+					Type.List(Type.T_ANY, false), src)) {
+				expr = new Expr.ListAccess(expr.src, expr.index,
+						expr.attributes());
+			} else if (Type.isImplicitCoerciveSubtype(
+					Type.Dictionary(Type.T_ANY, Type.T_ANY), src)) {
+				expr = new Expr.DictionaryAccess(expr.src, expr.index,
+						expr.attributes());
+			} else {
+				syntaxError("invalid index expression", filename, expr);
+			}
 		}
 		
 		// Second, determine the expanded src type for this access expression
@@ -1104,7 +1112,7 @@ public final class TypePropagation {
 				NameID nid = resolver.resolveAsName(expr.var, imports);
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
-				ca.value = resolver.resolveAsConstant(nid);
+				ca.value = resolver.resolveAsConstant(nid);				
 				return ca;
 			} catch (ResolveError err) {
 			}
@@ -1280,9 +1288,7 @@ public final class TypePropagation {
 			return propagate((Expr.RecordAccess)expr,environment,imports);
 		} else if(expr instanceof Expr.ConstantAccess) {
 			return propagate((Expr.ConstantAccess)expr,environment,imports);
-		} else 
-				
-		if(src instanceof Expr.PackageAccess) {
+		} else if(src instanceof Expr.PackageAccess) {
 			// either a package access, module access or constant access
 			// This variable access may correspond to an external access.			
 			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
