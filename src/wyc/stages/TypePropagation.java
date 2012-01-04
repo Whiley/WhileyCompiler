@@ -387,7 +387,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Debug stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		stmt.expr = propagate(stmt.expr,environment,imports);		
+		stmt.expr = propagate(stmt.expr,environment,imports);				
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
 	}
@@ -930,6 +930,8 @@ public final class TypePropagation {
 			Nominal<Type.Function> funType = resolver.resolveAsFunctionOrMethod(name,  paramTypes);	
 			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 			r.functionType = funType;
+			// FIXME: loss of nominal information
+			r.returnType = new Nominal<Type>(funType.raw().ret(),funType.raw().ret());
 			return r;
 		} else {
 			// no, function is not qualified ... need to search for it.
@@ -943,6 +945,8 @@ public final class TypePropagation {
 				Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
 						exprArgs, expr.synchronous, expr.attributes());			
 				r.messageType = p.second();
+				// FIXME: loss of nominal information
+				r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
 				return r;
 			} else {
 				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
@@ -950,10 +954,13 @@ public final class TypePropagation {
 				if(funType instanceof Type.Method) {
 					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
 					mc.methodType = (Nominal) p.second();
+					// FIXME: loss of nominal information
+					mc.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
 					return mc;
 				} else {
 					Expr.FunctionCall mc = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
 					mc.functionType = (Nominal) p.second();
+					mc.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
 					return mc;									
 				}								
 			}											
