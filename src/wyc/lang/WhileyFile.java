@@ -312,6 +312,7 @@ public final class WhileyFile {
 			return name;
 		}
 		
+		public abstract Nominal<? extends Type.Function> resolvedType();
 	}
 
 	/**
@@ -356,6 +357,10 @@ public final class WhileyFile {
 			}
 			return new UnresolvedType.Function(ret, params, attributes());
 		}
+		
+		public Nominal<Type.Function> resolvedType() {
+			return resolvedType;
+		}
 	}
 	
 	/**
@@ -399,6 +404,10 @@ public final class WhileyFile {
 				params.add(p.type);
 			}
 			return new UnresolvedType.Method(ret, params, attributes());
+		}
+		
+		public Nominal<Type.Method> resolvedType() {
+			return resolvedType;
 		}
 	}
 	
@@ -448,6 +457,10 @@ public final class WhileyFile {
 				params.add(p.type);
 			}
 			return new UnresolvedType.Message(ret, receiver, params, attributes());
+		}
+		
+		public Nominal<Type.Method> resolvedType() {
+			return resolvedType;
 		}
 	}
 

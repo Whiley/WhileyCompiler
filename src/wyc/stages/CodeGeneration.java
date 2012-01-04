@@ -36,6 +36,7 @@ import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
 import wyc.lang.Stmt.*;
+import wyc.util.Nominal;
 
 /**
  * <p>
@@ -149,7 +150,7 @@ public final class CodeGeneration {
 		}
 		
 		// FIXME: include the declared nominal type as an attribute?
-		return new Module.TypeDef(td.modifiers, td.name(), td.rawType, constraint);
+		return new Module.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
 	private Module.Method generate(FunctionOrMethodOrMessage fd) {		
@@ -238,7 +239,17 @@ public final class CodeGeneration {
 		}	
 		
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
-		return new Module.Method(fd.modifiers, fd.name(), fd.rawType, ncases);
+				
+		if(fd instanceof WhileyFile.Function) {
+			WhileyFile.Function f = (WhileyFile.Function) fd;
+			return new Module.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
+		} else if(fd instanceof WhileyFile.Method) {
+			WhileyFile.Method md = (WhileyFile.Method) fd;
+			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+		} else {
+			WhileyFile.Message md = (WhileyFile.Message) fd;					
+			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+		}		
 	}
 
 	/**
@@ -308,7 +319,7 @@ public final class CodeGeneration {
 		if(s.lhs instanceof Expr.LocalVariable) {			
 			blk = generate(s.rhs, environment);			
 			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
-			blk.append(Code.Store(v.rawType(), allocate(v.var, environment)),
+			blk.append(Code.Store(v.type.raw(), allocate(v.var, environment)),
 					attributes(s));			
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
@@ -340,7 +351,7 @@ public final class CodeGeneration {
 			}
 			int slot = environment.get(lhs.var);
 			blk.append(generate(s.rhs, environment));		
-			blk.append(Code.Update(lhs.rawType,lhs.rawAfterType,slot,l.second(),fields),
+			blk.append(Code.Update(lhs.type.raw(),lhs.afterType.raw(),slot,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -391,7 +402,7 @@ public final class CodeGeneration {
 			// has the effect of forcing an implicit coercion between the
 			// actual value being returned and its required type. 
 			
-			Type ret = currentFunDecl.rawType.ret();
+			Type ret = currentFunDecl.resolvedType().raw().ret();
 			blk.append(Code.Return(ret), attributes(s));
 			return blk;
 		} else {
@@ -437,7 +448,7 @@ public final class CodeGeneration {
 	
 	private Block generate(Throw s, HashMap<String,Integer> environment) {
 		Block blk = generate(s.expr, environment);
-		blk.append(Code.Throw(s.expr.rawType()), s.attributes());
+		blk.append(Code.Throw(s.expr.type().raw()), s.attributes());
 		return blk;
 	}
 	
@@ -492,7 +503,7 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNREACHABLE_CODE), filename, c);
 			}
 		}		
-		blk.append(Code.Switch(s.expr.rawType(),defaultTarget,cases),attributes(s));
+		blk.append(Code.Switch(s.expr.type().raw(),defaultTarget,cases),attributes(s));
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));		
 		return blk;
@@ -639,7 +650,7 @@ public final class CodeGeneration {
 		} else {
 			// easy case.
 			int freeReg = allocate(s.variables.get(0),environment);
-			blk.append(Code.ForAll(s.source.rawType(), freeReg, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.ForAll(s.source.type().raw(), freeReg, label, Collections.EMPTY_SET), attributes(s));
 		}		
 		
 		// FIXME: add a continue scope
@@ -747,7 +758,7 @@ public final class CodeGeneration {
 		// Obviously, this will be evaluated one way or another.
 		blk.append(Code.Const(val));
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(v.rawType(),Code.COp.EQ, target),attributes(v));			
+		blk.append(Code.IfGoto(v.type().raw(),Code.COp.EQ, target),attributes(v));			
 		return blk;
 	}
 		
@@ -771,7 +782,7 @@ public final class CodeGeneration {
 		}
 
 		Code.COp cop = OP2COP(bop,v);
-		Type type = v.rawType();
+		Type type = v.type().raw();
 		
 		if (cop == Code.COp.EQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
@@ -782,7 +793,7 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);					
-			blk.append(Code.IfType(v.rawSrcType, slot, Type.T_NULL, target), attributes(v));
+			blk.append(Code.IfType(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
@@ -793,13 +804,13 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);						
-			blk.append(Code.IfType(v.rawSrcType, slot, Type.T_NULL, exitLabel), attributes(v));
+			blk.append(Code.IfType(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
 			blk.append(generate(v.lhs, environment));			
 			blk.append(generate(v.rhs, environment));					
-			blk.append(Code.IfGoto(v.rawSrcType, cop, target), attributes(v));
+			blk.append(Code.IfGoto(v.srcType.raw(), cop, target), attributes(v));
 		}
 		return blk;
 	}
@@ -823,7 +834,7 @@ public final class CodeGeneration {
 		Expr.TypeVal rhs =(Expr.TypeVal) v.rhs;		
 		
 		// TODO: fix type constraints
-		blk.append(Code.IfType(v.rawType(), slot, rhs.rawType, target),
+		blk.append(Code.IfType(v.type().raw(), slot, rhs.type.raw(), target),
 				attributes(v));
 		return blk;
 	}
@@ -1036,7 +1047,7 @@ public final class CodeGeneration {
 			blk.append(generate(e, environment));
 		}
 		
-		blk.append(Code.Send(fc.rawFunctionType(), fc.nid, fc.synchronous, retval),
+		blk.append(Code.Send(fc.messageType.raw(), fc.nid, fc.synchronous, retval),
 				attributes(fc));		
 
 		return blk;
@@ -1052,7 +1063,7 @@ public final class CodeGeneration {
 
 		// FIXME: should split Code.Invoke into Code.FunCall and Code.MethCall.
 		
-		blk.append(Code.Invoke(fc.rawFunctionType(), fc.nid(), retval), attributes(fc));
+		blk.append(Code.Invoke(fc.methodType.raw(), fc.nid(), retval), attributes(fc));
 
 		return blk;
 	}
@@ -1065,7 +1076,7 @@ public final class CodeGeneration {
 			blk.append(generate(e, environment));
 		}
 
-		blk.append(Code.Invoke(fc.rawFunctionType(), fc.nid(), retval), attributes(fc));
+		blk.append(Code.Invoke(fc.functionType.raw(), fc.nid(), retval), attributes(fc));
 
 		return blk;
 	}
@@ -1175,7 +1186,7 @@ public final class CodeGeneration {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		NameID name = new NameID(modInfo.module, s.name);			
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(Value.V_FUN(name, s.rawType)),
+		blk.append(Code.Const(Value.V_FUN(name, s.type.raw())),
 				attributes(s));
 		return blk;
 	}
@@ -1191,7 +1202,7 @@ public final class CodeGeneration {
 		
 		if (environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Load(v.rawType(), environment.get(v.var)), attributes(v));
+			blk.append(Code.Load(v.type().raw(), environment.get(v.var)), attributes(v));
 			return blk;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -1207,10 +1218,10 @@ public final class CodeGeneration {
 		Block blk = generate(v.mhs,  environment);	
 		switch (v.op) {
 		case NEG:
-			blk.append(Code.Negate(v.rawType()), attributes(v));
+			blk.append(Code.Negate(v.type().raw()), attributes(v));
 			break;
 		case INVERT:
-			blk.append(Code.Invert(v.rawType()), attributes(v));
+			blk.append(Code.Invert(v.type().raw()), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
@@ -1232,13 +1243,13 @@ public final class CodeGeneration {
 	
 	private Block generate(Expr.ListLength v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
-		blk.append(Code.ListLength(v.rawSrcType), attributes(v));
+		blk.append(Code.ListLength(v.srcType.raw()), attributes(v));
 		return blk;
 	}
 
 	private Block generate(Expr.SetLength v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
-		blk.append(Code.SetLength(v.rawSrcType), attributes(v));
+		blk.append(Code.SetLength(v.srcType.raw()), attributes(v));
 		return blk;
 	}	
 	
@@ -1250,13 +1261,13 @@ public final class CodeGeneration {
 	
 	private Block generate(Expr.DictionaryLength v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
-		blk.append(Code.DictLength(v.rawSrcType), attributes(v));
+		blk.append(Code.DictLength(v.srcType.raw()), attributes(v));
 		return blk;
 	}	
 	
 	private Block generate(Expr.ProcessAccess v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
-		blk.append(Code.ProcLoad(v.rawSrcType), attributes(v));
+		blk.append(Code.ProcLoad(v.srcType.raw()), attributes(v));
 		return blk;
 	}	
 	
@@ -1264,7 +1275,7 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.index, environment));
-		blk.append(Code.ListLoad(v.rawSrcType),attributes(v));
+		blk.append(Code.ListLoad(v.srcType.raw()),attributes(v));
 		return blk;
 	}
 
@@ -1280,15 +1291,15 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.index, environment));
-		blk.append(Code.DictLoad(v.rawSrcType),attributes(v));
+		blk.append(Code.DictLoad(v.srcType.raw()),attributes(v));
 		return blk;
 	}
 	
 	private Block generate(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.expr, environment));		
-		Type from = v.expr.rawType();
-		Type to = v.rawType();
+		Type from = v.expr.type().raw();
+		Type to = v.type().raw();
 		// TODO: include constraints
 		blk.append(Code.Convert(from,to),attributes(v));
 		return blk;
@@ -1316,7 +1327,7 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.lhs, environment));
 		blk.append(generate(v.rhs, environment));
-		Type result = v.rawType();
+		Type result = v.type().raw();
 		
 		switch(bop) {		
 		case UNION:
@@ -1332,8 +1343,8 @@ public final class CodeGeneration {
 			blk.append(Code.ListAppend((Type.List)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;	
 		case STRINGAPPEND:
-			Type lhs = v.lhs.rawType();
-			Type rhs = v.rhs.rawType();
+			Type lhs = v.lhs.type().raw();
+			Type rhs = v.rhs.type().raw();
 			Code.OpDir dir;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
 				dir = Code.OpDir.UNIFORM;
@@ -1357,7 +1368,7 @@ public final class CodeGeneration {
 			nargs++;
 			blk.append(generate(e, environment));
 		}
-		blk.append(Code.NewSet(v.rawType,nargs),attributes(v));		
+		blk.append(Code.NewSet(v.type.raw(),nargs),attributes(v));		
 		return blk;
 	}
 	
@@ -1368,7 +1379,7 @@ public final class CodeGeneration {
 			nargs++;
 			blk.append(generate(e, environment));
 		}
-		blk.append(Code.NewList(v.rawType,nargs),attributes(v));		
+		blk.append(Code.NewList(v.type.raw(),nargs),attributes(v));		
 		return blk;
 	}
 	
@@ -1377,7 +1388,7 @@ public final class CodeGeneration {
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.start, environment));
 		blk.append(generate(v.end, environment));
-		blk.append(Code.SubList(v.rawType()), attributes(v));
+		blk.append(Code.SubList(v.type().raw()), attributes(v));
 		return blk;
 	}
 	
@@ -1491,7 +1502,7 @@ public final class CodeGeneration {
 		for (String key : keys) {		
 			blk.append(generate(sg.fields.get(key), environment));
 		}		
-		blk.append(Code.NewRecord(sg.rawType()), attributes(sg));
+		blk.append(Code.NewRecord(sg.type().raw()), attributes(sg));
 		return blk;
 	}
 
@@ -1500,7 +1511,7 @@ public final class CodeGeneration {
 		for (Expr e : sg.fields) {									
 			blk.append(generate(e, environment));
 		}
-		blk.append(Code.NewTuple(sg.rawType(),sg.fields.size()),attributes(sg));
+		blk.append(Code.NewTuple(sg.type().raw(),sg.fields.size()),attributes(sg));
 		return blk;		
 	}
 
@@ -1510,13 +1521,13 @@ public final class CodeGeneration {
 			blk.append(generate(e.first(), environment));
 			blk.append(generate(e.second(), environment));
 		}
-		blk.append(Code.NewDict(sg.rawType(),sg.pairs.size()),attributes(sg));
+		blk.append(Code.NewDict(sg.type().raw(),sg.pairs.size()),attributes(sg));
 		return blk;
 	}
 	
 	private Block generate(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
 		Block lhs = generate(sg.src, environment);		
-		lhs.append(Code.FieldLoad(sg.rawSrcType,sg.name), attributes(sg));
+		lhs.append(Code.FieldLoad(sg.srcType.raw(),sg.name), attributes(sg));
 		return lhs;
 	}
 	
@@ -1567,8 +1578,7 @@ public final class CodeGeneration {
 				break;			
 			}
 			if(nbop != null) {
-				nbop.rawSrcType = bop.rawSrcType;
-				nbop.nominalType = bop.nominalType;
+				nbop.srcType = bop.srcType;				
 				return nbop;
 			}
 		} else if (e instanceof Expr.UnOp) {
@@ -1580,8 +1590,7 @@ public final class CodeGeneration {
 		}
 		
 		Expr.UnOp r = new Expr.UnOp(Expr.UOp.NOT, e);
-		r.nominalType = Type.T_BOOL;
-		r.rawType = Type.T_BOOL;
+		r.type = Nominal.T_BOOL;		
 		return r;
 	}
 

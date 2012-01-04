@@ -193,7 +193,7 @@ public interface Expr extends SyntacticElement {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
-		public Nominal<Type> type;
+		public Nominal<Type> srcType;
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -222,12 +222,12 @@ public interface Expr extends SyntacticElement {
 			case TYPEEQ:				
 				return Nominal.T_BOOL;
 			default:
-				return type;
+				return srcType;
 			}			
 		}
 		
 		public Nominal<Type> srcType() {
-			return type;		
+			return srcType;		
 		}
 		
 		public String toString() {
@@ -568,7 +568,7 @@ public interface Expr extends SyntacticElement {
 	public static class ProcessAccess extends SyntacticElement.Impl implements Expr {
 		public Expr src;	
 		public Nominal<Type> elementType;
-		public Type.Process srcType;
+		public Nominal<Type.Process> srcType;
 		
 		public ProcessAccess(Expr src, Attribute... attributes) {
 			super(attributes);

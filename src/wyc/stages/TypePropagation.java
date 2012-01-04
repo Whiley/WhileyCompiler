@@ -836,7 +836,7 @@ public final class TypePropagation {
 		 * Finally, save the resulting types for this expression.
 		 */
 		
-		expr.type = new Nominal<Type>(result,result);
+		expr.srcType = new Nominal<Type>(result,result);
 		
 		return expr;
 	}
