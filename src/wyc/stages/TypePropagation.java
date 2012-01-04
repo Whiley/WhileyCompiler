@@ -541,24 +541,9 @@ public final class TypePropagation {
 			stmt.expr = propagate(stmt.expr, environment,imports);
 			Type rawType;
 			Type nominalType;
-			
-			// following is somewhat cumbersome
-			if(current instanceof WhileyFile.Function) {
-				WhileyFile.Function fd = (WhileyFile.Function) current;
-				// FIXME: loss of nominal information
-				nominalType = fd.resolvedType.raw().ret();
-				rawType = fd.resolvedType.raw().ret();
-			} else if(current instanceof WhileyFile.Method) {
-				WhileyFile.Method md = (WhileyFile.Method) current;
-				// FIXME: loss of nominal information
-				nominalType = md.resolvedType.raw().ret();
-				rawType = md.resolvedType.raw().ret();
-			} else {
-				WhileyFile.Message md = (WhileyFile.Message) current;
-				// FIXME: loss of nominal information
-				nominalType = md.resolvedType.raw().ret();
-				rawType = md.resolvedType.raw().ret();
-			}
+			// FIXME: loss of nominal information
+			nominalType = current.resolvedType().raw().ret();
+			rawType = current.resolvedType().raw().ret();			
 			Nominal<Type> lhs = new Nominal<Type>(nominalType,rawType);
 			Nominal<Type> rhs = (Nominal) stmt.expr.type();
 			checkIsSubtype(lhs,rhs, stmt.expr);
@@ -583,7 +568,8 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Throw stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		return environment;
+		stmt.expr = propagate(stmt.expr,environment,imports);
+		return BOTTOM;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.TryCatch stmt,
@@ -1486,6 +1472,16 @@ public final class TypePropagation {
 	private static final RefCountedHashMap<String, Nominal<Type>> join(
 			RefCountedHashMap<String, Nominal<Type>> lhs,
 			RefCountedHashMap<String, Nominal<Type>> rhs) {
+		
+		// first, need to check for the special bottom value case.
+		
+		if(lhs == BOTTOM) {
+			return rhs;
+		} else if(rhs == BOTTOM) {
+			return lhs;
+		}
+		
+		// ok, not bottom so compute intersection.
 		
 		RefCountedHashMap<String,Nominal<Type>> result = new RefCountedHashMap<String,Nominal<Type>>();
 		for(String key : lhs.keySet()) {
