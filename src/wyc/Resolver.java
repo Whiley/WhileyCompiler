@@ -42,6 +42,7 @@ import wyc.lang.Attributes;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Declaration;
 import wyc.util.Nominal;
 import wyil.ModuleLoader;
 import wyil.lang.*;
@@ -204,6 +205,7 @@ public final class Resolver {
 	 */
 	public NameID resolveAsName(String name, List<WhileyFile.Import> imports)
 			throws ResolveError {		
+		
 		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {					
@@ -1058,9 +1060,8 @@ public final class Resolver {
 			// FIXME: need to include methods here as well
 			for (WhileyFile.Function f : wf.declarations(
 					WhileyFile.Function.class, nid.name())) {
-				if (f.parameters.size() == nparams) {
-					r.add((Nominal) resolveAsType(f.unresolvedType(),
-							wf.declarations(WhileyFile.Import.class, f)));
+				if (f.parameters.size() == nparams) {					
+					r.add((Nominal) resolveAsType(f.unresolvedType(),buildImports(wf,f)));							
 				}
 			}
 		} else {
@@ -1093,7 +1094,7 @@ public final class Resolver {
 					WhileyFile.Message.class, nid.name())) {
 				if (m.parameters.size() == nparams) {
 					r.add((Nominal) resolveAsType(m.unresolvedType(),
-							wf.declarations(WhileyFile.Import.class, m)));
+							buildImports(wf,m)));
 				}
 			}
 		} else {
@@ -1113,4 +1114,39 @@ public final class Resolver {
 		return r;		
 	}
 	
+	/**
+	 * Construct an appropriate list of import statements for a declaration in a
+	 * given file. Thus, only import statements up to and including the given
+	 * declaration will be included in the returned list.
+	 * 
+	 * @param wf
+	 *            --- Whiley File in question to obtain list of import
+	 *            statements.
+	 * @param decl
+	 *            --- declaration in Whiley File for which the list is desired.
+	 * @return
+	 */
+	private ArrayList<WhileyFile.Import> buildImports(WhileyFile wf,
+			WhileyFile.Declaration decl) {		
+		ModuleID mid = wf.module;
+		ArrayList<WhileyFile.Import> imports = new ArrayList<WhileyFile.Import>();
+		
+		
+		for (Declaration d : wf.declarations) {
+			if (d instanceof WhileyFile.Import) {
+				imports.add((WhileyFile.Import) d);
+			}
+			if (d == decl) {
+				break;
+			}
+		}
+		
+		imports.add(new WhileyFile.Import(PkgID.fromString("whiley.lang"), "*", null));
+		imports.add(new WhileyFile.Import(mid.pkg(), "*", null));
+		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 		
+		
+		Collections.reverse(imports);
+		
+		return imports;
+	}
 }

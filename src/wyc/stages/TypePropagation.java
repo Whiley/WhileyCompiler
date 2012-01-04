@@ -130,13 +130,19 @@ public final class TypePropagation {
 		
 		ModuleID mid = wf.module;
 		ArrayList<WhileyFile.Import> imports = new ArrayList<WhileyFile.Import>();
+		
 		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 
+		// other import statements are inserted here
 		imports.add(new WhileyFile.Import(mid.pkg(), "*", null)); 
+		imports.add(new WhileyFile.Import(PkgID.fromString("whiley.lang"), "*", null)); 
 		
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
 				if (decl instanceof Import) {
 					Import impd = (Import) decl;
+					// insert import statement into the appropriate space
+					// between that for this file, and those for its package and
+					// whiley.lang (see above).
 					imports.add(1, impd);
 				} else if(decl instanceof FunctionOrMethodOrMessage) {
 					propagate((FunctionOrMethodOrMessage)decl,imports);
@@ -708,7 +714,7 @@ public final class TypePropagation {
 				return propagate((Expr.TypeVal) expr,environment,imports); 
 			} 
 		} catch(ResolveError e) {
-			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,expr);
+			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,expr,e);
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {

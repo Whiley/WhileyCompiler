@@ -85,28 +85,7 @@ public final class WhileyFile {
 			}		
 		}
 		return r;
-	}
-	
-	/**
-	 * Return the list of all matching declarations upto and including the given
-	 * declaration.
-	 * 
-	 * @param c
-	 * @param end
-	 * @return
-	 */
-	public <T> List<T> declarations(Class<T> c, Declaration decl) {
-		ArrayList<T> r = new ArrayList<T>();
-		for(Declaration d : declarations) {
-			if (c.isInstance(d)) {
-				r.add((T) d);
-			}	
-			if(d == decl) {
-				break;
-			}
-		}
-		return r;
-	}
+	}	
 	
 	public TypeDef typeDecl(String name) {
 		for (Declaration d : declarations) {
