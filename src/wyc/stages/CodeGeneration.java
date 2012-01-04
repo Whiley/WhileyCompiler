@@ -81,7 +81,7 @@ public final class CodeGeneration {
 	private HashSet<ModuleID> modules;	
 	private Stack<Scope> scopes = new Stack<Scope>();
 	private String filename;	
-	private FunDecl currentFunDecl;
+	private Function currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
 	// runtime checks for post conditions. The key issue is that a post
@@ -102,14 +102,14 @@ public final class CodeGeneration {
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 		
-		for (WhileyFile.Decl d : wf.declarations) {
+		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
-				if (d instanceof TypeDecl) {
-					types.add(generate((TypeDecl) d, wf.module));
-				} else if (d instanceof ConstDecl) {
-					constants.add(generate((ConstDecl) d, wf.module));
-				} else if (d instanceof FunDecl) {
-					Module.Method mi = generate((FunDecl) d);
+				if (d instanceof TypeDef) {
+					types.add(generate((TypeDef) d, wf.module));
+				} else if (d instanceof Constant) {
+					constants.add(generate((Constant) d, wf.module));
+				} else if (d instanceof Function) {
+					Module.Method mi = generate((Function) d);
 					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
 					Module.Method method = methods.get(key);
 					if (method != null) {
@@ -133,11 +133,11 @@ public final class CodeGeneration {
 				constants);				
 	}
 
-	private Module.ConstDef generate(ConstDecl cd, ModuleID module) {
+	private Module.ConstDef generate(Constant cd, ModuleID module) {
 		return new Module.ConstDef(cd.modifiers, cd.name, cd.value);
 	}
 
-	private Module.TypeDef generate(TypeDecl td, ModuleID module) {		
+	private Module.TypeDef generate(TypeDef td, ModuleID module) {		
 		Block constraint = null;
 		if(td.constraint != null) {
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -152,15 +152,15 @@ public final class CodeGeneration {
 		return new Module.TypeDef(td.modifiers, td.name(), td.rawType, constraint);
 	}
 
-	private Module.Method generate(FunDecl fd) {		
+	private Module.Method generate(Function fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
 		// method return type		
 		int paramIndex = 0;
 		int nparams = fd.parameters.size();
 		// method receiver type (if applicable)
-		if (fd instanceof MethDecl) {
-			MethDecl md = (MethDecl) fd;
+		if (fd instanceof Message) {
+			Message md = (Message) fd;
 			if(md.receiver != null) {						
 				// TODO: fix receiver constraints
 				environment.put("this", paramIndex++);	

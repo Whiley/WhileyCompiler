@@ -118,7 +118,7 @@ public final class TypePropagation {
 	private final NameResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
-	private WhileyFile.FunDecl method;
+	private WhileyFile.Function method;
 	
 	public TypePropagation(ModuleLoader loader, NameResolver resolver) {
 		this.loader = loader;
@@ -129,22 +129,21 @@ public final class TypePropagation {
 		this.filename = wf.filename;
 		
 		ModuleID mid = wf.module;
-		ArrayList<Import> imports = new ArrayList<Import>();
-		imports.add(new Import(mid.pkg(), mid.module(), "*")); 
-		imports.add(new Import(mid.pkg(), "*")); 
+		ArrayList<WhileyFile.Import> imports = new ArrayList<WhileyFile.Import>();
+		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 
+		imports.add(new WhileyFile.Import(mid.pkg(), "*", null)); 
 		
-		for(WhileyFile.Decl decl : wf.declarations) {
+		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
-				if (decl instanceof ImportDecl) {
-					ImportDecl impd = (ImportDecl) decl;
-					imports.add(1, new Import(new PkgID(impd.pkg), impd.module,
-							impd.name));
-				} else if(decl instanceof FunDecl) {
-					propagate((FunDecl)decl,imports);
-				} else if(decl instanceof TypeDecl) {
-					propagate((TypeDecl)decl,imports);					
-				} else if(decl instanceof ConstDecl) {
-					propagate((ConstDecl)decl,imports);					
+				if (decl instanceof Import) {
+					Import impd = (Import) decl;
+					imports.add(1, impd);
+				} else if(decl instanceof Function) {
+					propagate((Function)decl,imports);
+				} else if(decl instanceof TypeDef) {
+					propagate((TypeDef)decl,imports);					
+				} else if(decl instanceof Constant) {
+					propagate((Constant)decl,imports);					
 				}			
 			} catch(SyntaxError e) {
 				throw e;
@@ -154,11 +153,11 @@ public final class TypePropagation {
 		}
 	}
 	
-	public void propagate(ConstDecl cd, ArrayList<Import> imports) {
+	public void propagate(Constant cd, ArrayList<WhileyFile.Import> imports) {
 		
 	}
 	
-	public void propagate(TypeDecl td, ArrayList<Import> imports) throws ResolveError {		
+	public void propagate(TypeDef td, ArrayList<WhileyFile.Import> imports) throws ResolveError {		
 		// first, expand the declared type
 		Type nominalType = td.nominalType;
 		Type rawType = expander.expand(nominalType);
@@ -176,7 +175,7 @@ public final class TypePropagation {
 		}
 	}
 
-	public void propagate(FunDecl fd, ArrayList<Import> imports) throws ResolveError {
+	public void propagate(Function fd, ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		this.method = fd;
 		RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
 		Type.Function type = fd.nominalType;		
@@ -187,8 +186,8 @@ public final class TypePropagation {
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,imports));
 		}
 		
-		if(fd instanceof MethDecl) {
-			MethDecl md = (MethDecl) fd;				
+		if(fd instanceof Message) {
+			Message md = (Message) fd;				
 			Type.Method mt = (Type.Method) type;
 			// check that we're not a headless method
 			if(mt.receiver() != null) {
@@ -221,7 +220,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String, Nominal<Type>> propagate(
 			ArrayList<Stmt> body,
 			RefCountedHashMap<String, Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		
 		
 		for (int i=0;i!=body.size();++i) {
@@ -238,7 +237,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt stmt,
 			RefCountedHashMap<String, Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 				
 		try {
 			if(stmt instanceof Stmt.Assign) {
@@ -284,7 +283,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Assert stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		stmt.expr = propagate(stmt.expr,environment,imports);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
@@ -292,7 +291,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Assign stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = propagate(stmt.rhs,environment,imports);
@@ -390,14 +389,14 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Break stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		// nothing to do
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Debug stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		stmt.expr = propagate(stmt.expr,environment,imports);		
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
@@ -405,7 +404,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.DoWhile stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		
 		if (stmt.invariant != null) {
 			stmt.invariant = propagate(stmt.invariant, environment, imports);
@@ -423,7 +422,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.For stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		
 		stmt.source = propagate(stmt.source,environment,imports);
 		Type rawType = stmt.source.rawType(); 		
@@ -500,7 +499,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.IfElse stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		
 		stmt.condition = propagate(stmt.condition,environment,imports);
 		checkIsSubtype(Type.T_BOOL,stmt.condition);
@@ -537,7 +536,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String, Nominal<Type>> propagate(
 			Stmt.Return stmt,
 			RefCountedHashMap<String, Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment,imports);
 			Type lhs = method.nominalType.ret();
@@ -553,31 +552,31 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Skip stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Switch stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Throw stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.TryCatch stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return environment;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.While stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 
 		stmt.condition = propagate(stmt.condition,environment,imports);
 		checkIsSubtype(Type.T_BOOL,stmt.condition);			
@@ -595,7 +594,7 @@ public final class TypePropagation {
 	
 	private Expr.LVal propagate(Expr.LVal lval,
 			RefCountedHashMap<String, Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		try {
 			if(lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
@@ -657,7 +656,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		
 		try {
 			if(expr instanceof Expr.BinOp) {
@@ -713,7 +712,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.BinOp expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		expr.lhs = propagate(expr.lhs,environment,imports);
 		expr.rhs = propagate(expr.rhs,environment,imports);
 		Type lhsExpanded = expr.lhs.rawType();
@@ -836,7 +835,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.UnOp expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Expr src = propagate(expr.mhs, environment, imports);
 		expr.mhs = src;
 		
@@ -864,19 +863,19 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.Comprehension expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return expr;
 	}
 	
 	private Expr propagate(Expr.Constant expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return expr;
 	}
 
 	private Expr propagate(Expr.Convert c,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		c.expr = propagate(c.expr,environment,imports);		
 		c.nominalType = resolver.resolve(c.unresolvedType, imports);
 		Type from = c.expr.rawType();		
@@ -890,13 +889,13 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.Function expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.AbstractInvoke expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		
 		// first, propagate through receiver and parameters.
 		
@@ -965,7 +964,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {			
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);
 		expr.index = propagate(expr.index,environment,imports);		
 		Type src = expr.src.nominalType();		
@@ -1018,7 +1017,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.AbstractLength expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {			
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);			
 		Type src = expr.src.nominalType();		
 		Type srcExpanded = resolver.expand(src);
@@ -1074,7 +1073,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.AbstractVariable expr,
 			RefCountedHashMap<String, Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 
 		Nominal<Type> types = environment.get(expr.var);
 
@@ -1123,7 +1122,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.Set expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		Type nominalElementType = Type.T_VOID;
 		Type rawElementType = Type.T_VOID;
 		
@@ -1143,7 +1142,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.List expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		
 		Type nominalElementType = Type.T_VOID;
 		Type rawElementType = Type.T_VOID;
@@ -1165,7 +1164,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.Dictionary expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		Type nominalKeyType = Type.T_VOID;
 		Type rawKeyType = Type.T_VOID;
 		Type nominalValueType = Type.T_VOID;
@@ -1193,7 +1192,7 @@ public final class TypePropagation {
 
 	private Expr propagate(Expr.Record expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		
 		HashMap<String,Expr> exprFields = expr.fields;
 		HashMap<String,Type> nominalFieldTypes = new HashMap<String,Type>();
@@ -1215,7 +1214,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.Tuple expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		ArrayList<Expr> exprFields = expr.fields;
 		ArrayList<Type> nominalFieldTypes = new ArrayList<Type>();
 		ArrayList<Type> rawFieldTypes = new ArrayList<Type>();
@@ -1235,7 +1234,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.SubList expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {	
+			ArrayList<WhileyFile.Import> imports) {	
 		
 		expr.src = propagate(expr.src,environment,imports);
 		expr.start = propagate(expr.start,environment,imports);
@@ -1250,7 +1249,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {	
+			ArrayList<WhileyFile.Import> imports) {	
 		
 		if (expr instanceof Expr.PackageAccess
 				|| expr instanceof Expr.ModuleAccess) {
@@ -1309,7 +1308,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.RecordAccess ra,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		Type.Record rawType = Type.effectiveRecordType(ra.src.rawType());
 		if(rawType == null) {
 			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,ra.src.rawType()),filename,ra);
@@ -1326,19 +1325,19 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.ConstantAccess expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return null;
 	}			
 
 	private Expr propagate(Expr.Spawn expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {
 		return null;
 	}
 	
 	private Expr propagate(Expr.TypeVal expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<Import> imports) throws ResolveError {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Nominal<Type> type = resolver.resolveAsType(expr.unresolvedType, imports); 
 		expr.nominalType = type.nominal();
 		expr.rawType = type.raw();

@@ -45,20 +45,20 @@ import wyil.util.SyntaxError;
 public final class WhileyFile {
 	public final ModuleID module;
 	public final String filename;
-	public final ArrayList<Decl> declarations;
+	public final ArrayList<Declaration> declarations;
 	
-	public WhileyFile(ModuleID module, String filename, List<Decl> decls) {
+	public WhileyFile(ModuleID module, String filename, List<Declaration> decls) {
 		this.module = module;
 		this.filename = filename;
-		this.declarations = new ArrayList<Decl>(decls);
+		this.declarations = new ArrayList<Declaration>(decls);
 	}
 	
 	public boolean hasName(String name) {
 		return declaration(name) != null;
 	}			
 
-	public Decl declaration(String name) {
-		for(Decl d : declarations) {
+	public Declaration declaration(String name) {
+		for(Declaration d : declarations) {
 			if(d.name().equals(name)) {
 				return d;
 			}
@@ -68,7 +68,7 @@ public final class WhileyFile {
 	
 	public <T> List<T> declarations(Class<T> c) {
 		ArrayList<T> r = new ArrayList<T>();
-		for(Decl d : declarations) {
+		for(Declaration d : declarations) {
 			if(c.isInstance(d)) {
 				r.add((T)d);
 			}			
@@ -78,7 +78,7 @@ public final class WhileyFile {
 	
 	public <T> List<T> declarations(Class<T> c, String name) {
 		ArrayList<T> r = new ArrayList<T>();
-		for(Decl d : declarations) {
+		for(Declaration d : declarations) {
 			if (d.name().equals(name) && c.isInstance(d)) {
 				r.add((T) d);
 			}		
@@ -86,16 +86,37 @@ public final class WhileyFile {
 		return r;
 	}
 	
-	public TypeDecl typeDecl(String name) {
-		for (Decl d : declarations) {
-			if (d instanceof TypeDecl && d.name().equals(name)) {
-				return (TypeDecl) d;
+	/**
+	 * Return the list of all matching declarations upto and including the given
+	 * declaration.
+	 * 
+	 * @param c
+	 * @param end
+	 * @return
+	 */
+	public <T> List<T> declarations(Class<T> c, Declaration decl) {
+		ArrayList<T> r = new ArrayList<T>();
+		for(Declaration d : declarations) {
+			if (c.isInstance(d)) {
+				r.add((T) d);
+			}	
+			if(d == decl) {
+				break;
+			}
+		}
+		return r;
+	}
+	
+	public TypeDef typeDecl(String name) {
+		for (Declaration d : declarations) {
+			if (d instanceof TypeDef && d.name().equals(name)) {
+				return (TypeDef) d;
 			}
 		}
 		return null;
 	}
 	
-	public interface Decl extends SyntacticElement {
+	public interface Declaration extends SyntacticElement {
 		public String name();
 	}
 
@@ -112,18 +133,26 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public static class ImportDecl extends SyntacticElement.Impl implements Decl {
-		public ArrayList<String> pkg;
+	public static class Import extends SyntacticElement.Impl implements Declaration {
+		public PkgID pkg;
 		public String module;
 		public String name;
 		
-		public ImportDecl(List<String> pkg, String module, String name, Attribute... attributes) {
+		public Import(PkgID pkg, String module, String name, Attribute... attributes) {
 			super(attributes);
-			this.pkg = new ArrayList<String>(pkg);
+			this.pkg = pkg;
 			this.module = module;
 			this.name = name;
 		}
 	
+		public boolean matchName(String name) {
+			return this.name != null && (this.name.equals(name) || this.name.equals("*"));
+		}
+		
+		public boolean matchModule(String module) {
+			return this.module != null && (this.module.equals(module) || this.module.equals("*"));
+		}
+		
 		public String name() {
 			return "";
 		}		
@@ -142,15 +171,15 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public static class ConstDecl extends
-				SyntacticElement.Impl implements Decl {
+	public static class Constant extends
+				SyntacticElement.Impl implements Declaration {
 		
 		public final List<Modifier> modifiers;
 		public final Expr constant;
 		public final String name;
 		public Value value;
 
-		public ConstDecl(List<Modifier> modifiers, Expr constant, String name,
+		public Constant(List<Modifier> modifiers, Expr constant, String name,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
@@ -190,7 +219,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */	
-	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
+	public static class TypeDef extends SyntacticElement.Impl implements Declaration {
 		public final List<Modifier> modifiers;
 		public final UnresolvedType unresolvedType;		
 		public final Expr constraint;
@@ -198,7 +227,7 @@ public final class WhileyFile {
 		public Type nominalType;
 		public Type rawType;
 
-		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name,
+		public TypeDef(List<Modifier> modifiers, UnresolvedType type, String name,
 				Expr constraint, Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
@@ -250,8 +279,8 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public static class FunDecl extends SyntacticElement.Impl implements
-			Decl {
+	public static class Function extends SyntacticElement.Impl implements
+			Declaration {
 		public final ArrayList<Modifier> modifiers;
 		public final String name;		
 		public final UnresolvedType ret;
@@ -279,7 +308,7 @@ public final class WhileyFile {
 		 * @param statements
 		 *            - The Statements making up the function body.
 		 */
-		public FunDecl(List<Modifier> modifiers, String name,
+		public Function(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
 				Expr precondition, Expr postcondition,
 				UnresolvedType throwType, List<Stmt> statements,
@@ -343,10 +372,10 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class MethDecl extends FunDecl implements Decl {
+	public final static class Message extends Function implements Declaration {
 		public final UnresolvedType receiver;
 		
-		public MethDecl(List<Modifier> modifiers, String name,
+		public Message(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,
 				List<Parameter> parameters, Expr precondition,
 				Expr postcondition, UnresolvedType throwType, 
@@ -374,7 +403,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public static final class Parameter extends SyntacticElement.Impl implements Decl {
+	public static final class Parameter extends SyntacticElement.Impl implements Declaration {
 		public final UnresolvedType type;
 		public final String name;
 

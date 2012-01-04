@@ -58,7 +58,7 @@ public final class WhileyParser {
 		this.tokens = new ArrayList<Token>(tokens); 		
 	}
 	public WhileyFile read() {
-		ArrayList<Decl> decls = new ArrayList<Decl>();
+		ArrayList<Declaration> decls = new ArrayList<Declaration>();
 		boolean finishedImports = false;
 		ArrayList<String> pkg = parsePackage();
 		
@@ -124,7 +124,7 @@ public final class WhileyParser {
 		}
 	}
 	
-	private ImportDecl parseImport() {
+	private Import parseImport() {
 		int start = index;
 		matchKeyword("import");
 		
@@ -164,10 +164,11 @@ public final class WhileyParser {
 		int end = index;
 		matchEndLine();
 		
-		return new ImportDecl(pkg, module, name, sourceAttr(start, end - 1));
+		return new Import(new PkgID(pkg), module, name, sourceAttr(start,
+				end - 1));
 	}
 	
-	private FunDecl parseFunction(List<Modifier> modifiers) {			
+	private Function parseFunction(List<Modifier> modifiers) {			
 		int start = index;		
 		UnresolvedType ret = parseType();				
 		// FIXME: potential bug here at end of file		
@@ -214,17 +215,17 @@ public final class WhileyParser {
 		List<Stmt> stmts = parseBlock(1);
 		
 		if(method) {
-			return new MethDecl(modifiers, name.text, receiver, ret, paramTypes,
+			return new Message(modifiers, name.text, receiver, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
 		} else {
-			return new FunDecl(modifiers, name.text, ret, paramTypes,
+			return new Function(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
 		}
 	}
 	
-	private Decl parseDefType(List<Modifier> modifiers) {		
+	private Declaration parseDefType(List<Modifier> modifiers) {		
 		int start = index; 
 		matchKeyword("define");
 		
@@ -249,7 +250,7 @@ public final class WhileyParser {
 			}
 			int end = index;			
 			matchEndLine();			
-			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
+			return new TypeDef(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
 		
 		} catch(Exception e) {}
 		
@@ -259,7 +260,7 @@ public final class WhileyParser {
 		Expr e = parseCondition(false);
 		int end = index;
 		matchEndLine();		
-		return new ConstDecl(modifiers, e, name.text, sourceAttr(start,end-1));
+		return new Constant(modifiers, e, name.text, sourceAttr(start,end-1));
 	}
 	
 	private List<Modifier> parseModifiers() {

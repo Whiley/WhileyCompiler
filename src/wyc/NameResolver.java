@@ -40,7 +40,6 @@ import java.util.*;
 import wyautl.lang.*;
 import wyc.lang.Attributes;
 import wyc.lang.Expr;
-import wyc.lang.Import;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wyc.util.Nominal;
@@ -142,7 +141,7 @@ public final class NameResolver {
 	 * @param imp
 	 * @return
 	 */
-	private List<ModuleID> matchImport(Import imp) {			
+	private List<ModuleID> matchImport(WhileyFile.Import imp) {			
 		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
 		ArrayList<ModuleID> matches = importCache.get(key);
 		if(matches != null) {
@@ -203,9 +202,9 @@ public final class NameResolver {
 	 * @throws ResolveError
 	 *             if it couldn't resolve the name
 	 */
-	public NameID resolveAsName(String name, List<Import> imports)
+	public NameID resolveAsName(String name, List<WhileyFile.Import> imports)
 			throws ResolveError {		
-		for (Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {					
 					NameID nid = new NameID(mid, name); 
@@ -237,7 +236,7 @@ public final class NameResolver {
 	 * @throws ResolveError
 	 *             if it couldn't resolve the name
 	 */
-	public NameID resolveAsName(List<String> names, List<Import> imports) throws ResolveError {
+	public NameID resolveAsName(List<String> names, List<WhileyFile.Import> imports) throws ResolveError {
 		if(names.size() == 1) {
 			return resolveAsName(names.get(0),imports);
 		} else if(names.size() == 2) {
@@ -278,10 +277,10 @@ public final class NameResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public ModuleID resolveAsModule(String name, List<Import> imports)
+	public ModuleID resolveAsModule(String name, List<WhileyFile.Import> imports)
 			throws ResolveError {
 		
-		for (Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {
 			for(ModuleID mid : matchImport(imp)) {				
 				if(mid.module().equals(name)) {
 					return mid;
@@ -305,13 +304,14 @@ public final class NameResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Nominal<Type> resolveAsType(UnresolvedType t, List<Import> imports) throws ResolveError {		
-		Type nominalType = resolveAsType(t,imports,true);
-		Type rawType = resolveAsType(t,imports,false);
-		return new Nominal<Type>(nominalType,rawType);
+	public Nominal<Type> resolveAsType(UnresolvedType t,
+			List<WhileyFile.Import> imports) throws ResolveError {
+		Type nominalType = resolveAsType(t, imports, true);
+		Type rawType = resolveAsType(t, imports, false);
+		return new Nominal<Type>(nominalType, rawType);
 	}
 	
-	private Type resolveAsType(UnresolvedType t, List<Import> imports,
+	private Type resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
 			boolean nominal) throws ResolveError {
 		if(t instanceof UnresolvedType.Primitive) { 
 			if (t instanceof UnresolvedType.Any) {
@@ -353,7 +353,7 @@ public final class NameResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	private int resolveAsType(UnresolvedType t, List<Import> imports,
+	private int resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
 			boolean nominal) throws ResolveError {				
 		if(t instanceof UnresolvedType.Primitive) {
@@ -478,7 +478,7 @@ public final class NameResolver {
 		return myIndex;
 	}
 	
-	private int resolveAsType(NameID key, List<Import> imports,
+	private int resolveAsType(NameID key, List<WhileyFile.Import> imports,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots)
 			throws ResolveError {
 		
@@ -495,7 +495,7 @@ public final class NameResolver {
 			return append(td.type(),states);			
 		} 
 		
-		WhileyFile.TypeDecl td = wf.typeDecl(key.name());
+		WhileyFile.TypeDef td = wf.typeDecl(key.name());
 		if(td == null) {
 			// FIXME: need a better error message!
 			throw new ResolveError("type not present in module: " + key.name());
@@ -525,7 +525,7 @@ public final class NameResolver {
 	}	
 	
 	private int resolveAsType(UnresolvedType.Primitive t,
-			List<Import> imports, ArrayList<Automaton.State> states)
+			List<WhileyFile.Import> imports, ArrayList<Automaton.State> states)
 			throws ResolveError {
 		int myIndex = states.size();
 		int kind;
@@ -597,9 +597,9 @@ public final class NameResolver {
 	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {		
 		WhileyFile wf = files.get(key.module());
 		if (wf != null) {			
-			WhileyFile.Decl decl = wf.declaration(key.name());
-			if(decl instanceof WhileyFile.ConstDecl) {
-				WhileyFile.ConstDecl cd = (WhileyFile.ConstDecl) decl; 				
+			WhileyFile.Declaration decl = wf.declaration(key.name());
+			if(decl instanceof WhileyFile.Constant) {
+				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
 				if (cd.value == null) {
 					cd.value = resolveAsConstant(cd.constant, wf.filename,
 							visited);
@@ -815,9 +815,9 @@ public final class NameResolver {
 	 * @throws ResolveError
 	 */
 	public Pair<NameID,Nominal<Type.Function>> resolveAsFunctionOrMethod(String name, 
-			List<Type> parameters, List<Import> imports) throws ResolveError {
+			List<Type> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 		// first, try to find the matching message
-		for (Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {
 					NameID nid = new NameID(mid,name);										
@@ -831,7 +831,7 @@ public final class NameResolver {
 
 		String msg = "no match for " + name + parameterString(parameters);
 		// second, didn't find matching message so generate error message
-		for (Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {
 					NameID nid = new NameID(mid,name);	
@@ -884,9 +884,9 @@ public final class NameResolver {
 	}
 	
 	public Pair<NameID,Nominal<Type.Method>> resolveAsMessage(String name, Type.Process receiver,
-			List<Type> parameters, List<Import> imports) throws ResolveError {
+			List<Type> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 		// first, try to find the matching message
-		for (Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {
 					NameID nid = new NameID(mid,name);										
@@ -902,7 +902,7 @@ public final class NameResolver {
 		
 		String msg = "no match for " + name + parameterString(parameters);
 		// second, didn't find matching message so generate error message
-		for (Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {
 					NameID nid = new NameID(mid,name);	
@@ -1026,18 +1026,18 @@ public final class NameResolver {
 	}
 	
 	private ArrayList<Nominal<Type.Function>> listFunctionsAndMethods(
-			NameID nid, int nparams) {
+			NameID nid, int nparams) throws ResolveError {
 		ModuleID mid = nid.module();
 		ArrayList<Nominal<Type.Function>> r = new ArrayList<Nominal<Type.Function>>();		
 		
 		WhileyFile wf = files.get(mid);
 		if(wf != null) {
 			// FIXME: need to include methods here as well
-			for (WhileyFile.FunDecl f : wf.declarations(
-					WhileyFile.FunDecl.class, nid.name())) {
+			for (WhileyFile.Function f : wf.declarations(
+					WhileyFile.Function.class, nid.name())) {
 				if (f.parameters.size() == nparams) {
-					// FIXME: loss of nominal information
-					r.add(resolveAsType(f.unresolvedType(),wf.imports()));
+					r.add((Nominal) resolveAsType(f.unresolvedType(),
+							wf.declarations(WhileyFile.Import.class, f)));
 				}
 			}
 		} else {
@@ -1058,18 +1058,19 @@ public final class NameResolver {
 		return r;
 	}
 	
-	private ArrayList<Nominal<Type.Method>> listMessages(NameID nid, int nparams) {		
+	private ArrayList<Nominal<Type.Method>> listMessages(NameID nid, int nparams)
+			throws ResolveError {		
 		ModuleID mid = nid.module();
 		ArrayList<Nominal<Type.Method>> r = new ArrayList<Nominal<Type.Method>>();		
 		
 		WhileyFile wf = files.get(mid);
 		if(wf != null) {
 			// FIXME: need to exclude methods here
-			for (WhileyFile.MethDecl m : wf.declarations(
-					WhileyFile.MethDecl.class, nid.name())) {
+			for (WhileyFile.Message m : wf.declarations(
+					WhileyFile.Message.class, nid.name())) {
 				if (m.parameters.size() == nparams) {
-					// FIXME: loss of nominal information
-					r.add(resolveAsType(m.unresolvedType(),wf.imports()));
+					r.add((Nominal) resolveAsType(m.unresolvedType(),
+							wf.declarations(WhileyFile.Import.class, m)));
 				}
 			}
 		} else {
@@ -1088,4 +1089,5 @@ public final class NameResolver {
 		}
 		return r;		
 	}
+	
 }
