@@ -529,11 +529,29 @@ public final class TypePropagation {
 		
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment,imports);
-			Type lhs = current.type.nominalType.ret();
-			Type rhs = stmt.expr.nominalType();
-			Type lhsExpanded = expander.expand(lhs);
-			Type rhsExpanded = expander.expand(rhs);
-			checkIsSubtype(lhs,lhsExpanded,rhs,rhsExpanded, stmt.expr);
+			Type rawType;
+			Type nominalType;
+			
+			// following is somewhat cumbersome
+			if(current instanceof WhileyFile.Function) {
+				WhileyFile.Function fd = (WhileyFile.Function) current;
+				// FIXME: loss of nominal information
+				nominalType = fd.resolvedType.raw().ret();
+				rawType = fd.resolvedType.raw().ret();
+			} else if(current instanceof WhileyFile.Method) {
+				WhileyFile.Method md = (WhileyFile.Method) current;
+				// FIXME: loss of nominal information
+				nominalType = md.resolvedType.raw().ret();
+				rawType = md.resolvedType.raw().ret();
+			} else {
+				WhileyFile.Message md = (WhileyFile.Message) current;
+				// FIXME: loss of nominal information
+				nominalType = md.resolvedType.raw().ret();
+				rawType = md.resolvedType.raw().ret();
+			}
+			Nominal<Type> lhs = new Nominal<Type>(nominalType,rawType);
+			Nominal<Type> rhs = (Nominal) stmt.expr.type();
+			checkIsSubtype(lhs,rhs, stmt.expr);
 		}
 		
 		environment.free();
@@ -1338,12 +1356,14 @@ public final class TypePropagation {
 	}
 	
 	// Check t1 :> t2
-	private void checkIsSubtype(Type t1, Type t1Expanded, Type t2,
-			Type t2Expanded, SyntacticElement elem) {
-		if (!Type.isImplicitCoerciveSubtype(t1Expanded, t2Expanded)) {			
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
+	private void checkIsSubtype(Nominal<Type> t1, Nominal<Type> t2,
+			SyntacticElement elem) {
+		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
+			syntaxError(
+					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
+					filename, elem);
 		}
-	}		
+	}	
 	
 	private void checkIsSubtype(Type t1, Expr t2) {
 		if (!Type.isImplicitCoerciveSubtype(t1, t2.type().raw())) {
