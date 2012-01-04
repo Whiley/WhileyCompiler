@@ -815,13 +815,16 @@ public final class NameResolver {
 	 * @throws ResolveError
 	 */
 	public Pair<NameID,Nominal<Type.Function>> resolveAsFunctionOrMethod(String name, 
-			List<Type> parameters, List<WhileyFile.Import> imports) throws ResolveError {
+			List<Nominal<Type>> parameters, List<WhileyFile.Import> imports) throws ResolveError {
+
+		List<Type> rawParameters = Nominal.stripNominal(parameters);
+		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {
 					NameID nid = new NameID(mid,name);										
-					Nominal<Type.Function> ft = lookupFunctionOrMethod(nid,parameters);
+					Nominal<Type.Function> ft = lookupFunctionOrMethod(nid,rawParameters);
 					if(ft != null) {
 						return new Pair<NameID,Nominal<Type.Function>>(nid,ft);
 					}
@@ -858,9 +861,10 @@ public final class NameResolver {
 	 * @throws ResolveError
 	 */
 	public Nominal<Type.Function> resolveAsFunctionOrMethod(NameID nid, 
-			List<Type> parameters) throws ResolveError {
+			List<Nominal<Type>> parameters) throws ResolveError {
 
-		Nominal<Type.Function> candidate = lookupFunctionOrMethod(nid,parameters); 		
+		List<Type> rawParameters = Nominal.stripNominal(parameters);		
+		Nominal<Type.Function> candidate = lookupFunctionOrMethod(nid,rawParameters); 		
 							
 		// Check whether we actually found something. If not, print a useful
 		// error message.
@@ -870,9 +874,9 @@ public final class NameResolver {
 			for (Nominal<Type.Function> nft : listFunctionsAndMethods(nid,parameters.size())) {				
 				Type.Function ft = (Type.Function) nft.nominal();				
 				if(firstTime) {
-					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
+					msg += "\n\tfound: " + nid.name() +  rawParameterString(ft.params());
 				} else {
-					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
+					msg += "\n\tand: " + nid.name() +  rawParameterString(ft.params());
 				}								
 			}
 			
@@ -884,13 +888,15 @@ public final class NameResolver {
 	}
 	
 	public Pair<NameID,Nominal<Type.Method>> resolveAsMessage(String name, Type.Process receiver,
-			List<Type> parameters, List<WhileyFile.Import> imports) throws ResolveError {
+			List<Nominal<Type>> parameters, List<WhileyFile.Import> imports) throws ResolveError {
+
 		// first, try to find the matching message
+		List<Type> rawParameters = Nominal.stripNominal(parameters);	
 		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {
 					NameID nid = new NameID(mid,name);										
-					Nominal<Type.Method> mt = lookupMessage(nid,receiver,parameters);
+					Nominal<Type.Method> mt = lookupMessage(nid,receiver,rawParameters);
 					if(mt != null) {
 						return new Pair<NameID,Nominal<Type.Method>>(nid,mt);
 					}
@@ -917,9 +923,10 @@ public final class NameResolver {
 	}
 	
 	public Nominal<Type.Method> resolveAsMessage(NameID nid, Type.Process receiver,
-			List<Type> parameters) throws ResolveError {
+			List<Nominal<Type>> parameters) throws ResolveError {
 		
-		Nominal<Type.Method> candidate = lookupMessage(nid,receiver,parameters); 
+		List<Type> rawParameters = Nominal.stripNominal(parameters);	
+		Nominal<Type.Method> candidate = lookupMessage(nid,receiver,rawParameters); 
 						
 		// Check whether we actually found something. If not, print a useful
 		// error message.
@@ -930,9 +937,9 @@ public final class NameResolver {
 			for (Nominal<Type.Method> nmt : listMessages(nid,parameters.size())) {
 				Type.Method mt = nmt.raw();
 				if(firstTime) {
-					msg += "\n\tfound: " + mt.receiver() + nid.name() +  parameterString(mt.params());
+					msg += "\n\tfound: " + mt.receiver() + nid.name() +  rawParameterString(mt.params());
 				} else {
-					msg += "\n\tand: " + mt.receiver() + nid.name() +  parameterString(mt.params());
+					msg += "\n\tand: " + mt.receiver() + nid.name() +  rawParameterString(mt.params());
 				}								
 			}
 			throw new ResolveError(msg);			
@@ -957,7 +964,20 @@ public final class NameResolver {
 		return false;
 	}
 	
-	private String parameterString(List<Type> paramTypes) {
+	private String parameterString(List<Nominal<Type>> paramTypes) {
+		String paramStr = "(";
+		boolean firstTime = true;
+		for(Nominal<Type> t : paramTypes) {
+			if(!firstTime) {
+				paramStr += ",";
+			}
+			firstTime=false;
+			paramStr += t.nominal();
+		}
+		return paramStr + ")";		
+	}
+	
+	private String rawParameterString(List<Type> paramTypes) {
 		String paramStr = "(";
 		boolean firstTime = true;
 		for(Type t : paramTypes) {
@@ -967,8 +987,9 @@ public final class NameResolver {
 			firstTime=false;
 			paramStr += t;
 		}
-		return paramStr + ")";
+		return paramStr + ")";		
 	}
+	
 	
 	private Nominal<Type.Function> lookupFunctionOrMethod(NameID nid, 
 			List<Type> parameters) throws ResolveError {

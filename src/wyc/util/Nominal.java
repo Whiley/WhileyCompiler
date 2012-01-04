@@ -1,5 +1,8 @@
 package wyc.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import wyil.lang.Type;
 import wyil.util.Pair;
 
@@ -44,5 +47,13 @@ public class Nominal<T extends Type> extends Pair<Type,T> {
 		Type.Dictionary nominal = (Type.Dictionary) Type.Dictionary(key.nominal(),value.nominal());
 		Type.Dictionary raw = (Type.Dictionary) Type.Dictionary(key.nominal(),value.nominal());
 		return new Nominal<Type.Dictionary>(nominal,raw);
+	}
+	
+	public static <T extends Type> List<Type> stripNominal(List<Nominal<T>> types) {
+		ArrayList<Type> r = new ArrayList<Type>();
+		for (Nominal<? extends Type> t : types) {
+			r.add(t.raw());
+		}
+		return r;
 	}
 }
