@@ -808,7 +808,7 @@ public final class TypePropagation {
 				if(Type.isImplicitCoerciveSubtype(lhsExpanded,rhsExpanded)) {
 					checkIsSubtype(Type.T_REAL,expr.lhs);
 					if(Type.isSubtype(Type.T_CHAR, lhsExpanded)) {
-						result = Type.T_CHAR;
+						result = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, lhsExpanded)) {
 						result = Type.T_INT;
 					} else {
@@ -818,13 +818,13 @@ public final class TypePropagation {
 					checkIsSubtype(Type.T_REAL,expr.lhs);
 					checkIsSubtype(Type.T_REAL,expr.rhs);				
 					if(Type.isSubtype(Type.T_CHAR, rhsExpanded)) {
-						result = Type.T_CHAR;
+						result = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, rhsExpanded)) {
 						result = Type.T_INT;
 					} else {
 						result = Type.T_REAL;
 					}
-				} 			
+				}				
 			}
 		}	
 		
