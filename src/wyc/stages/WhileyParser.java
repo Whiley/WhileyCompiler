@@ -58,8 +58,7 @@ public final class WhileyParser {
 		this.tokens = new ArrayList<Token>(tokens); 		
 	}
 	public WhileyFile read() {
-		ArrayList<Declaration> decls = new ArrayList<Declaration>();
-		boolean finishedImports = false;
+		ArrayList<Declaration> decls = new ArrayList<Declaration>();		
 		ArrayList<String> pkg = parsePackage();
 		
 		while(index < tokens.size()) {			
@@ -68,10 +67,7 @@ public final class WhileyParser {
 				matchEndLine();
 			} else if(t instanceof Keyword) {
 				Keyword k = (Keyword) t;
-				if(k.text.equals("import")) {
-					if(finishedImports) {
-						syntaxError("import statement must come first",k);
-					}
+				if(k.text.equals("import")) {					
 					decls.add(parseImport());
 				} else {
 					List<Modifier> modifiers = parseModifiers();
@@ -79,15 +75,12 @@ public final class WhileyParser {
 					t = tokens.get(index);
 					
 					if (t.text.equals("define")) {
-						finishedImports = true;
 						decls.add(parseDefType(modifiers));
 					} else {
-						finishedImports = true;
 						decls.add(parseFunctionOrMethodOrMessage(modifiers));
 					} 
 				}
 			} else {
-				finishedImports = true;
 				decls.add(parseFunctionOrMethodOrMessage(new ArrayList<Modifier>()));				
 			}			
 		}

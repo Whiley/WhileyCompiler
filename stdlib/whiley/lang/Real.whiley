@@ -27,6 +27,9 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
+public string toString(real item):
+    return Any.toString(item)
+
 // Convert a string into an integer
 public real parse(string input) throws SyntaxError:
     r = 0

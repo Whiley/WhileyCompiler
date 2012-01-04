@@ -32,6 +32,9 @@ define digits as [
     'a','b','c','d','e','f','g','h'
 ]
 
+public string toString(int item):
+    return Any.toString(item)
+
 // Convert an integer into a hex string
 public string toHexString(int item):    
     r = ""
