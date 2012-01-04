@@ -296,7 +296,7 @@ public final class TypePropagation {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = propagate(stmt.rhs,environment,imports);
-				
+		
 		if(lhs instanceof Expr.AbstractVariable) {
 			// An assignment to a local variable is slightly different from
 			// other kinds of assignments. That's because in this case only it
@@ -312,14 +312,14 @@ public final class TypePropagation {
 			} else {
 				lv = new Expr.LocalVariable(av.var, av.attributes());
 			}
-			lv.type = (Nominal) rhs.type();
-			environment.put(lv.var, lv.type);
+			lv.type = (Nominal) rhs.type();			
+			environment = environment.put(lv.var, lv.type);
 			lhs = lv;
 		} else {
 			lhs = propagate(lhs,environment,imports);			
 			Expr.AssignedVariable av = inferBeforeAfterType(lhs,
 					(Nominal) lhs.type(), (Nominal) rhs.type());
-			environment.put(av.var, av.afterType);
+			environment = environment.put(av.var, av.afterType);
 		}
 		
 		stmt.lhs = (Expr.LVal) lhs;
@@ -1094,6 +1094,8 @@ public final class TypePropagation {
 
 		Nominal<Type> type = environment.get(expr.var);
 
+		System.out.println("ENVIRONMENT: " + environment);
+		
 		if (expr instanceof Expr.LocalVariable) {
 			Expr.LocalVariable lv = (Expr.LocalVariable) expr;
 			lv.type = type;			

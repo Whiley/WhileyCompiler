@@ -75,4 +75,8 @@ public final class RefCountedHashMap<K,V> {
 	public void free() {
 		--count;			
 	}
+	
+	public String toString() {
+		return map.toString();
+	}
 }
