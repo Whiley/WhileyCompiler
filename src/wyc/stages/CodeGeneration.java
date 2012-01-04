@@ -109,8 +109,8 @@ public final class CodeGeneration {
 					types.add(generate((TypeDef) d, wf.module));
 				} else if (d instanceof Constant) {
 					constants.add(generate((Constant) d, wf.module));
-				} else if (d instanceof Function) {
-					Module.Method mi = generate((Function) d);
+				} else if (d instanceof FunctionOrMethodOrMessage) {
+					Module.Method mi = generate((FunctionOrMethodOrMessage) d);
 					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
 					Module.Method method = methods.get(key);
 					if (method != null) {

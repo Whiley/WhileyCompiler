@@ -138,8 +138,8 @@ public final class TypePropagation {
 				if (decl instanceof Import) {
 					Import impd = (Import) decl;
 					imports.add(1, impd);
-				} else if(decl instanceof Function) {
-					propagate((Function)decl,imports);
+				} else if(decl instanceof FunctionOrMethodOrMessage) {
+					propagate((FunctionOrMethodOrMessage)decl,imports);
 				} else if(decl instanceof TypeDef) {
 					propagate((TypeDef)decl,imports);					
 				} else if(decl instanceof Constant) {
