@@ -71,11 +71,10 @@ public class ModuleCheck implements Transform {
 		}
 	}
 		
-	public void check(Module.Method method) {
-		boolean isFunction = !(method.type() instanceof Type.Method);
+	public void check(Module.Method method) {		
 		for (Module.Case c : method.cases()) {
 			checkTryCatchBlocks(c, method);
-			if(isFunction) {
+			if(method.isFunction()) {
 				checkFunctionPure(c);
 			}
 		}		

@@ -173,43 +173,43 @@ public final class TypePropagation {
 		}
 	}
 
-	public void propagate(FunctionOrMethodOrMessage fd, ArrayList<WhileyFile.Import> imports) throws ResolveError {
-		this.current = fd;
+	public void propagate(FunctionOrMethodOrMessage d, ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		this.current = d;
 		RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
 						
-		for (WhileyFile.Parameter p : fd.parameters) {							
+		for (WhileyFile.Parameter p : d.parameters) {							
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,imports));
 		}
 		
-		if(fd instanceof Message) {
-			Message md = (Message) fd;							
+		if(d instanceof Message) {
+			Message md = (Message) d;							
 			environment = environment.put("this",resolver.resolveAsType(md.receiver,imports));			
 		}
 		
-		if(fd.precondition != null) {
-			propagate(fd.precondition,environment.clone(),imports);
+		if(d.precondition != null) {
+			propagate(d.precondition,environment.clone(),imports);
 		}
 		
-		if(fd.postcondition != null) {			
-			environment = environment.put("$", resolver.resolveAsType(fd.ret,imports));
-			propagate(fd.postcondition,environment.clone(),imports);
+		if(d.postcondition != null) {			
+			environment = environment.put("$", resolver.resolveAsType(d.ret,imports));
+			propagate(d.postcondition,environment.clone(),imports);
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
 			environment = environment.remove("$");
 		}
 
-		if(fd instanceof Function) {
-			Function f = (Function) fd;
+		if(d instanceof Function) {
+			Function f = (Function) d;
 			f.resolvedType = (Nominal) resolver.resolveAsType(f.unresolvedType(),imports);					
-		} else if(fd instanceof Method) {
-			Method m = (Method) fd;
+		} else if(d instanceof Method) {
+			Method m = (Method) d;			
 			m.resolvedType = (Nominal) resolver.resolveAsType(m.unresolvedType(),imports);		
 		} else {
-			Message m = (Message) fd;
+			Message m = (Message) d;
 			m.resolvedType = (Nominal) resolver.resolveAsType(m.unresolvedType(),imports);		
 		}
 			
-		propagate(fd.statements,environment,imports);
+		propagate(d.statements,environment,imports);
 	}
 	
 	private RefCountedHashMap<String, Nominal<Type>> propagate(
@@ -951,9 +951,9 @@ public final class TypePropagation {
 			} else {
 				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
 				Type.Function funType = p.second().raw();							
-				if(funType instanceof Type.Method) {
+				if(funType instanceof Type.Method) {					
 					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
-					mc.methodType = (Nominal) p.second();
+					mc.methodType = (Nominal) p.second();					
 					// FIXME: loss of nominal information
 					mc.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
 					return mc;

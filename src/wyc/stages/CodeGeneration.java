@@ -244,7 +244,7 @@ public final class CodeGeneration {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
 			return new Module.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
 		} else if(fd instanceof WhileyFile.Method) {
-			WhileyFile.Method md = (WhileyFile.Method) fd;
+			WhileyFile.Method md = (WhileyFile.Method) fd;			
 			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		} else {
 			WhileyFile.Message md = (WhileyFile.Message) fd;					
