@@ -1590,7 +1590,7 @@ public final class WhileyParser {
 			}
 			match(RightBrace.class);
 			// headless method
-			return new UnresolvedType.Meth(t,null,types, sourceAttr(start, index - 1));
+			return new UnresolvedType.Message(t,null,types, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 			// this is a function or method type type
 			match(LeftBrace.class);
@@ -1628,9 +1628,9 @@ public final class WhileyParser {
 				match(RightBrace.class);
 			}
 			if(receiver == null) {
-				return new UnresolvedType.Fun(t, types, sourceAttr(start, index - 1));
+				return new UnresolvedType.Function(t, types, sourceAttr(start, index - 1));
 			} else {
-				return new UnresolvedType.Meth(t, receiver, types, sourceAttr(start, index - 1));
+				return new UnresolvedType.Message(t, receiver, types, sourceAttr(start, index - 1));
 			}
 		} else {
 			return t;

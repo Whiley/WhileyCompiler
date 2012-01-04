@@ -337,12 +337,12 @@ public final class WhileyFile {
 			return name;
 		}
 		
-		public UnresolvedType.Fun unresolvedType() {
+		public UnresolvedType.Function unresolvedType() {
 			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
 			for (Parameter p : parameters) {
 				params.add(p.type);
 			}
-			return new UnresolvedType.Fun(ret, params, attributes());
+			return new UnresolvedType.Function(ret, params, attributes());
 		}
 	}
 
@@ -385,12 +385,12 @@ public final class WhileyFile {
 			this.receiver = receiver;
 		}
 		
-		public UnresolvedType.Meth unresolvedType() {
+		public UnresolvedType.Message unresolvedType() {
 			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
 			for (Parameter p : parameters) {
 				params.add(p.type);
 			}
-			return new UnresolvedType.Meth(ret, receiver, params, attributes());
+			return new UnresolvedType.Message(ret, receiver, params, attributes());
 		}
 	}
 

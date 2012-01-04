@@ -442,13 +442,13 @@ public final class NameResolver {
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
 		} else {	
-			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
+			UnresolvedType.Function ut = (UnresolvedType.Function) t;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
 			UnresolvedType receiver = null;
 			int start = 0;
 			
-			if(ut instanceof UnresolvedType.Meth) {
-				UnresolvedType.Meth mt = (UnresolvedType.Meth) ut;
+			if(ut instanceof UnresolvedType.Message) {
+				UnresolvedType.Message mt = (UnresolvedType.Message) ut;
 				receiver = mt.receiver;
 				if(receiver == null) {
 					myKind = Type.K_HEADLESS;
