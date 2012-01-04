@@ -442,7 +442,7 @@ public final class NameResolver {
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
 		} else {	
-			UnresolvedType.Function ut = (UnresolvedType.Function) t;			
+			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) t;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
 			UnresolvedType receiver = null;
 			int start = 0;

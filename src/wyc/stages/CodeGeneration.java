@@ -81,7 +81,7 @@ public final class CodeGeneration {
 	private HashSet<ModuleID> modules;	
 	private Stack<Scope> scopes = new Stack<Scope>();
 	private String filename;	
-	private Function currentFunDecl;
+	private FunctionOrMethodOrMessage currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
 	// runtime checks for post conditions. The key issue is that a post
@@ -152,7 +152,7 @@ public final class CodeGeneration {
 		return new Module.TypeDef(td.modifiers, td.name(), td.rawType, constraint);
 	}
 
-	private Module.Method generate(Function fd) {		
+	private Module.Method generate(FunctionOrMethodOrMessage fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
 		// method return type		

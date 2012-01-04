@@ -83,12 +83,12 @@ public final class WhileyParser {
 						decls.add(parseDefType(modifiers));
 					} else {
 						finishedImports = true;
-						decls.add(parseFunction(modifiers));
+						decls.add(parseFunctionOrMethodOrMessage(modifiers));
 					} 
 				}
 			} else {
 				finishedImports = true;
-				decls.add(parseFunction(new ArrayList<Modifier>()));				
+				decls.add(parseFunctionOrMethodOrMessage(new ArrayList<Modifier>()));				
 			}			
 		}
 		
@@ -168,19 +168,20 @@ public final class WhileyParser {
 				end - 1));
 	}
 	
-	private Function parseFunction(List<Modifier> modifiers) {			
+	private Declaration parseFunctionOrMethodOrMessage(List<Modifier> modifiers) {			
 		int start = index;		
 		UnresolvedType ret = parseType();				
 		// FIXME: potential bug here at end of file		
 		UnresolvedType receiver = null;
-		boolean method = false;	
+		boolean method = false;
+		boolean message = false;	
 		
 		if(tokens.get(index) instanceof ColonColon) {
 			// headless method
 			method = true;
 			match(ColonColon.class);
 		} else if(tokens.get(index+1) instanceof ColonColon) {
-			method = true;
+			message = true;
 			receiver = parseType();			
 			match(ColonColon.class);							
 		}
@@ -214,11 +215,15 @@ public final class WhileyParser {
 		
 		List<Stmt> stmts = parseBlock(1);
 		
-		if(method) {
+		if(message) {
 			return new Message(modifiers, name.text, receiver, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
-		} else {
+		} else if(method) {
+			return new Method(modifiers, name.text, ret, paramTypes,
+					conditions.first(), conditions.second(), throwType, stmts,
+					sourceAttr(start, end - 1));
+		}else {
 			return new Function(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));

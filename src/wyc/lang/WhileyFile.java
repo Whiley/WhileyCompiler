@@ -255,31 +255,8 @@ public final class WhileyFile {
 			}
 		}
 	}
-
-	/**
-	 * Represents a function declaration in a Whiley source file. For example:
-	 * 
-	 * <pre>
-	 * int f(int x) requires x > 0, ensures $ < 0:
-	 *    return -x
-	 * </pre>
-	 * 
-	 * <p>
-	 * Here, a function <code>f</code> is defined which accepts only positive
-	 * integers and returns only negative integers. The special variable
-	 * <code>$</code> is used to refer to the return value. Functions in Whiley
-	 * may not have side-effects (i.e. they are <code>pure functions</code>).
-	 * </p>
-	 * 
-	 * <p>
-	 * Function declarations may also have modifiers, such as
-	 * <code>public</code> and <code>private</code>.
-	 * </p>
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static class Function extends SyntacticElement.Impl implements
+	
+	public static abstract class FunctionOrMethodOrMessage extends SyntacticElement.Impl implements
 			Declaration {
 		public final ArrayList<Modifier> modifiers;
 		public final String name;		
@@ -308,7 +285,7 @@ public final class WhileyFile {
 		 * @param statements
 		 *            - The Statements making up the function body.
 		 */
-		public Function(List<Modifier> modifiers, String name,
+		public FunctionOrMethodOrMessage(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
 				Expr precondition, Expr postcondition,
 				UnresolvedType throwType, List<Stmt> statements,
@@ -337,6 +314,41 @@ public final class WhileyFile {
 			return name;
 		}
 		
+	}
+
+	/**
+	 * Represents a function declaration in a Whiley source file. For example:
+	 * 
+	 * <pre>
+	 * int f(int x) requires x > 0, ensures $ < 0:
+	 *    return -x
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, a function <code>f</code> is defined which accepts only positive
+	 * integers and returns only negative integers. The special variable
+	 * <code>$</code> is used to refer to the return value. Functions in Whiley
+	 * may not have side-effects (i.e. they are <code>pure functions</code>).
+	 * </p>
+	 * 
+	 * <p>
+	 * Function declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class Function extends FunctionOrMethodOrMessage {		
+		public Function(List<Modifier> modifiers, String name,
+				UnresolvedType ret, List<Parameter> parameters,
+				Expr precondition, Expr postcondition,
+				UnresolvedType throwType, List<Stmt> statements,
+				Attribute... attributes) {
+			super(modifiers, name, ret, parameters, precondition,
+					postcondition, throwType, statements, attributes);
+		}
+		
 		public UnresolvedType.Function unresolvedType() {
 			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
 			for (Parameter p : parameters) {
@@ -345,9 +357,52 @@ public final class WhileyFile {
 			return new UnresolvedType.Function(ret, params, attributes());
 		}
 	}
-
+	
 	/**
 	 * Represents a method declaration in a Whiley source file. For example:
+	 * 
+	 * <pre>
+	 * int ::m(int x) requires x > 0, ensures $ < 0:
+	 *    return -x
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, a method <code>m</code> is defined which accepts only positive
+	 * integers and returns only negative integers. The special variable
+	 * <code>$</code> is used to refer to the return value. Unlike functions,
+	 * methods in Whiley may have side-effects.
+	 * </p>
+	 * 
+	 * <p>
+	 * Method declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class Method extends FunctionOrMethodOrMessage {
+		
+		public Method(List<Modifier> modifiers, String name,
+				UnresolvedType ret, List<Parameter> parameters,
+				Expr precondition, Expr postcondition,
+				UnresolvedType throwType, List<Stmt> statements,
+				Attribute... attributes) {
+			super(modifiers, name, ret, parameters, precondition,
+					postcondition, throwType, statements, attributes);
+		}
+		
+		public UnresolvedType.Method unresolvedType() {
+			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
+			for (Parameter p : parameters) {
+				params.add(p.type);
+			}
+			return new UnresolvedType.Method(ret, params, attributes());
+		}
+	}
+	
+	/**
+	 * Represents a message declaration in a Whiley source file. For example:
 	 * 
 	 * <pre>
 	 * int MyData::m(int x):
@@ -355,13 +410,13 @@ public final class WhileyFile {
 	 * </pre>
 	 * 
 	 * <p>
-	 * Here, a method <code>m</code> is defined for the process type
+	 * Here, a message <code>m</code> is defined for the process type
 	 * <code>MyData</code>, which is referred to as the <i>receiver</i>. The
 	 * special variable <code>this</code> is used to access fields within the
-	 * process type. Methods are distinct from functions in Whiley as they may
-	 * have side-effects. This includes reading/writing I/O and modifying the
-	 * state of their receiver. Methods may also be <i>headless</i>, meaning
-	 * they are not attached to any specific receiver.
+	 * process type. Like methods, messages in Whiley as they may have
+	 * side-effects. This includes reading/writing I/O and modifying the state
+	 * of their receiver. Methods may also be <i>headless</i>, meaning they are
+	 * not attached to any specific receiver.
 	 * </p>
 	 * 
 	 * <p>
@@ -372,7 +427,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class Message extends Function implements Declaration {
+	public final static class Message extends FunctionOrMethodOrMessage {
 		public final UnresolvedType receiver;
 		
 		public Message(List<Modifier> modifiers, String name,

@@ -118,7 +118,7 @@ public final class TypePropagation {
 	private final NameResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
-	private WhileyFile.Function method;
+	private WhileyFile.FunctionOrMethodOrMessage current;
 	
 	public TypePropagation(ModuleLoader loader, NameResolver resolver) {
 		this.loader = loader;
@@ -175,8 +175,8 @@ public final class TypePropagation {
 		}
 	}
 
-	public void propagate(Function fd, ArrayList<WhileyFile.Import> imports) throws ResolveError {
-		this.method = fd;
+	public void propagate(FunctionOrMethodOrMessage fd, ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		this.current = fd;
 		RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
 		Type.Function type = fd.nominalType;		
 		ArrayList<Type> paramTypes = type.params();
@@ -539,7 +539,7 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment,imports);
-			Type lhs = method.nominalType.ret();
+			Type lhs = current.nominalType.ret();
 			Type rhs = stmt.expr.nominalType();
 			Type lhsExpanded = expander.expand(lhs);
 			Type rhsExpanded = expander.expand(rhs);
