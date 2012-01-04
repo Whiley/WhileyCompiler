@@ -61,7 +61,7 @@ import wyil.util.path.Path;
  * @author David J. Pearce
  * 
  */
-public final class NameResolver {
+public final class Resolver {
 	private final ModuleLoader loader;
 	
 	/**
@@ -78,7 +78,7 @@ public final class NameResolver {
 	 */
 	private HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();
 	
-	public NameResolver(ModuleLoader loader) {
+	public Resolver(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	

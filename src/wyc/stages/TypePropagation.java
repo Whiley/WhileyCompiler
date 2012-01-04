@@ -30,7 +30,7 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.NameResolver;
+import wyc.Resolver;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.Nominal;
@@ -115,12 +115,12 @@ import static wyil.util.SyntaxError.*;
  */
 public final class TypePropagation {
 	private final ModuleLoader loader;
-	private final NameResolver resolver;
+	private final Resolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethodOrMessage current;
 	
-	public TypePropagation(ModuleLoader loader, NameResolver resolver) {
+	public TypePropagation(ModuleLoader loader, Resolver resolver) {
 		this.loader = loader;
 		this.resolver = resolver;
 	}
@@ -177,7 +177,7 @@ public final class TypePropagation {
 		this.current = fd;
 		RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
 						
-		for (WhileyFile.Parameter p : fd.parameters) {						
+		for (WhileyFile.Parameter p : fd.parameters) {							
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,imports));
 		}
 		

@@ -29,7 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wyc.Compiler;
-import wyc.NameResolver;
+import wyc.Resolver;
 import wyc.Pipeline;
 import wyil.ModuleLoader;
 import wyil.Transform;

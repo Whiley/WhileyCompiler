@@ -30,7 +30,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.jar.JarFile;
 
-import wyc.NameResolver;
+import wyc.Resolver;
 import wyc.Pipeline;
 import wyc.Compiler;
 import wyc.util.*;
