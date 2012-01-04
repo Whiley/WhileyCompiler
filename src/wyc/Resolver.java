@@ -470,8 +470,12 @@ public final class Resolver {
 				myChildren[0] = resolveAsType(receiver,imports,states,roots,nominal);
 			}			
 			myChildren[start++] = resolveAsType(ut.ret,imports,states,roots,nominal);
-			// FIXME: following is a hack since UnresolvedType.Fun doesn't include a throws clause
-			myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,nominal);						
+			if(ut.throwType == null) {
+				// this case indicates the user did not provide a throws clause.
+				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,nominal);
+			} else {
+				myChildren[start++] = resolveAsType(ut.throwType,imports,states,roots,nominal);
+			}
 			for(UnresolvedType pt : utParamTypes) {
 				myChildren[start++] = resolveAsType(pt,imports,states,roots,nominal);				
 			}						

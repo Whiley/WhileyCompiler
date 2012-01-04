@@ -334,7 +334,7 @@ public final class WhileyFile {
 			for (Parameter p : parameters) {
 				params.add(p.type);
 			}
-			return new UnresolvedType.Function(ret, params, attributes());
+			return new UnresolvedType.Function(ret, throwType, params, attributes());
 		}
 		
 		public Nominal<Type.Function> resolvedType() {
@@ -382,7 +382,7 @@ public final class WhileyFile {
 			for (Parameter p : parameters) {
 				params.add(p.type);
 			}
-			return new UnresolvedType.Method(ret, params, attributes());
+			return new UnresolvedType.Method(ret, throwType, params, attributes());
 		}
 		
 		public Nominal<Type.Method> resolvedType() {
@@ -435,7 +435,7 @@ public final class WhileyFile {
 			for (Parameter p : parameters) {
 				params.add(p.type);
 			}
-			return new UnresolvedType.Message(ret, receiver, params, attributes());
+			return new UnresolvedType.Message(receiver, ret, throwType, params, attributes());
 		}
 		
 		public Nominal<Type.Method> resolvedType() {

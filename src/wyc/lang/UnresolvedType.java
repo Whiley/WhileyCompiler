@@ -200,75 +200,79 @@ public interface UnresolvedType extends SyntacticElement {
 	public abstract static class FunctionOrMethodOrMessage extends
 			SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType ret;
+		public final UnresolvedType throwType;
 		public final ArrayList<UnresolvedType> paramTypes;
 
-		public FunctionOrMethodOrMessage(UnresolvedType ret,
+		public FunctionOrMethodOrMessage(UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.ret = ret;
+			this.throwType = throwType;
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
 		}
 
-		public FunctionOrMethodOrMessage(UnresolvedType ret,
+		public FunctionOrMethodOrMessage(UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.ret = ret;
+			this.throwType = throwType;
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
 		}
 	}
 
 	public static class FunctionOrMethod extends FunctionOrMethodOrMessage
 			implements NonUnion {
-		public FunctionOrMethod(UnresolvedType ret,
+		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
-			super(ret, paramTypes, attributes);
+			super(ret, throwType, paramTypes, attributes);
 		}
 
-		public FunctionOrMethod(UnresolvedType ret,
+		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret, paramTypes, attributes);
+			super(ret, throwType, paramTypes, attributes);
 		}
 	}
 	
 	public static class Function extends FunctionOrMethod
 	implements NonUnion {
-				public Function(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
+		public Function(UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes,
 				Attribute... attributes) {
-			super(ret,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);			
 		}
-		public Function(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
+		public Function(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);			
 		}
 	}
 	
 	public static class Method extends FunctionOrMethod
 	implements NonUnion {
-				public Method(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
+				public Method(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
 				Attribute... attributes) {
-			super(ret,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);			
 		}
-		public Method(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
+		public Method(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);			
 		}
 	}
 		
 	public static final class Message extends FunctionOrMethodOrMessage {
 		public final UnresolvedType receiver;
 
-		public Message(UnresolvedType ret, UnresolvedType receiver,
+		public Message(UnresolvedType receiver, UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
-			super(ret, paramTypes, attributes);
+			super(ret, throwType, paramTypes, attributes);
 			this.receiver = receiver;
 		}
 
-		public Message(UnresolvedType ret, UnresolvedType receiver,
+		public Message(UnresolvedType receiver, UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret, paramTypes, attributes);
+			super(ret, throwType, paramTypes, attributes);
 			this.receiver = receiver;
 		}
 	}
