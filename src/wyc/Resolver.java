@@ -404,8 +404,7 @@ public final class Resolver {
 			myKind = Type.K_TUPLE;
 			myChildren = new int[ttTypes.size()];
 			for(int i=0;i!=ttTypes.size();++i) {
-				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,nominal);
-				
+				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,nominal);				
 			}			
 		} else if(t instanceof UnresolvedType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
@@ -418,6 +417,11 @@ public final class Resolver {
 				myData = nid;
 				myChildren = Automaton.NOCHILDREN;
 			} else {
+				// At this point, we're going to expand the given nominal type.
+				// We're going to use resolveAsType(NameID,...) to do this which
+				// will load the expanded type onto states at the current point.
+				// Therefore, we need to remove the initial null we loaded on.
+				states.remove(myIndex); 
 				resolveAsType(nid,imports,states,roots);
 				return myIndex;
 			}
