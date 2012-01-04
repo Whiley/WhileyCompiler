@@ -27,6 +27,7 @@ package wyc.lang;
 
 import java.util.*;
 
+import wyc.util.Nominal;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;
@@ -44,24 +45,18 @@ import wyil.util.SyntacticElement;
 public interface Expr extends SyntacticElement {
 
 	/**
-	 * Get the type that this expression will evaluate to. This type may contain
-	 * nominal information that could be further expanded. This means one should
-	 * not use this type for subtype testing; rather it should only be used for
-	 * reporting information to the user (e.g. type errors, etc).
+	 * Get the type that this expression will evaluate to. This type splits into
+	 * a nominal and raw component. The nominal component retains name
+	 * information and, as such, is incomplete. This means one should not use
+	 * the nominal component for subtype testing; rather it should only be used
+	 * for reporting information to the user (e.g. type errors, etc). The raw
+	 * component represents the fully expanded type, and can safely be used for
+	 * type testing. However, it can be rather long and cumbersome to read so
+	 * should not be reported to the user.
 	 * 
 	 * @return
 	 */
-	public Type nominalType();
-
-	/**
-	 * Get the raw type that this expression will evaluate to. This type may
-	 * only contain nominal information that cannot be further expanded (e.g.
-	 * because it's declared private). This type can safely be used for subtype
-	 * testing.
-	 * 
-	 * @return
-	 */
-	public Type rawType();
+	public Nominal<? extends Type> type();
 	
 	/**
 	 * An LVal is a special form of expression which may appear on the left-hand
@@ -85,11 +80,7 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 		
-		public Type nominalType() {
-			return null;
-		}
-		
-		public Type rawType() {
+		public Nominal<Type> type() {
 			return null;
 		}
 		
@@ -99,8 +90,7 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class LocalVariable extends AbstractVariable {		
-		public Type nominalType;
-		public Type rawType;
+		public Nominal<Type> type;		
 
 		public LocalVariable(String var, Attribute... attributes) {
 			super(var, attributes);			
@@ -110,13 +100,9 @@ public interface Expr extends SyntacticElement {
 			super(var, attributes);			
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type rawType() {
-			return rawType;
-		}
+		public Nominal<Type> type() {
+			return type;
+		}		
 		
 		public String toString() {
 			return var;
@@ -124,8 +110,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class AssignedVariable extends LocalVariable {		
-		public Type nominalAfterType;
-		public Type rawAfterType;
+		public Nominal<Type> afterType;
 
 		public AssignedVariable(String var, Attribute... attributes) {
 			super(var, attributes);			
@@ -144,12 +129,8 @@ public interface Expr extends SyntacticElement {
 			this.value = val;
 		}
 		
-		public Type nominalType() {
-			return value.type();
-		}
-		
-		public Type rawType() {
-			return value.type();
+		public Nominal<Type> type() {
+			return new Nominal<Type>(value.type(),value.type());
 		}
 		
 		public String toString() {
@@ -159,8 +140,7 @@ public interface Expr extends SyntacticElement {
 
 	public static class Convert extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType unresolvedType;
-		public Type nominalType;
-		public Type rawType;				
+		public Nominal<Type> type;					
 		public Expr expr;	
 		
 		public Convert(UnresolvedType type, Expr expr, Attribute... attributes) {
@@ -169,13 +149,9 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type rawType() {
-			return rawType;
-		}
+		public Nominal<Type> type() {
+			return type;
+		}		
 		
 		public String toString() {
 			return "(" + unresolvedType.toString() + ") " + expr;
@@ -184,8 +160,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class TypeVal extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType unresolvedType;
-		public Type nominalType;
-		public Type rawType;
+		public Nominal<Type> type;		
 		
 		public TypeVal(UnresolvedType val, Attribute... attributes) {
 			super(attributes);
@@ -193,20 +168,15 @@ public interface Expr extends SyntacticElement {
 		}
 		
 
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type rawType() {
-			return rawType;
-		}
+		public Nominal<Type> type() {
+			return type;
+		}		
 	}
 	
 	public static class Function extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<UnresolvedType> paramTypes;
-		public Type nominalType;
-		public Type.Function rawType;
+		public Nominal<Type.Function> type;		
 		
 		public Function(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
@@ -214,21 +184,16 @@ public interface Expr extends SyntacticElement {
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type.Function rawType() {
-			return rawType;
-		}
+		public Nominal<Type.Function> type() {
+			return type;
+		}		
 	}
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
-		public Type nominalType;
-		public Type rawSrcType;
+		public Nominal<Type> type;
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -244,7 +209,7 @@ public interface Expr extends SyntacticElement {
 			this.rhs = rhs;
 		}
 		
-		public Type nominalType() {
+		public Nominal<Type> type() {
 			switch(op) {
 			case EQ:
 			case NEQ:
@@ -255,27 +220,14 @@ public interface Expr extends SyntacticElement {
 			case SUBSET:	
 			case SUBSETEQ:
 			case TYPEEQ:				
-				return Type.T_BOOL;
+				return Nominal.T_BOOL;
 			default:
-				return nominalType;
+				return type;
 			}			
 		}
 		
-		public Type rawType() {
-			switch(op) {
-			case EQ:
-			case NEQ:
-			case LT:	
-			case LTEQ:
-			case GT:	
-			case GTEQ:
-			case SUBSET:	
-			case SUBSETEQ:
-			case TYPEEQ:				
-				return Type.T_BOOL;
-			default:
-				return rawSrcType;
-			}			
+		public Nominal<Type> srcType() {
+			return type;		
 		}
 		
 		public String toString() {
@@ -285,10 +237,9 @@ public interface Expr extends SyntacticElement {
 
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static class AbstractIndexAccess extends SyntacticElement.Impl implements
-			Expr, LVal {
-		public Type nominalElementType;
+			Expr, LVal {		
 		public Expr src;
-		public Expr index;
+		public Expr index;		
 	
 		public AbstractIndexAccess(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -302,21 +253,18 @@ public interface Expr extends SyntacticElement {
 			this.index = index;
 		}
 				
-		public Type nominalType() {
-			return nominalElementType;
-		}
-		
-		public Type rawType() {
+		public Nominal<Type> type() {
 			return null;
 		}
-		
+				
 		public String toString() {
 			return src + "[" + index + "]";
 		}
 	}
 
 	public static class ListAccess extends AbstractIndexAccess {					
-		public Type.List rawSrcType;
+		public Nominal<Type.List> srcType;
+		public Nominal<Type> elementType;
 
 		public ListAccess(Expr src, Expr index, Attribute... attributes) {
 			super(src,index,attributes);
@@ -325,14 +273,15 @@ public interface Expr extends SyntacticElement {
 		public ListAccess(Expr src, Expr index, Collection<Attribute> attributes) {
 			super(src,index,attributes);			
 		}
-
-		public Type rawType() {
-			return rawSrcType.element();			
+		
+		public Nominal<Type> type() {
+			return elementType;
 		}
 	}
 
 	public static class DictionaryAccess extends AbstractIndexAccess {				
-		public Type.Dictionary rawSrcType;
+		public Nominal<Type.Dictionary> srcType;
+		public Nominal<Type> elementType;
 
 		public DictionaryAccess(Expr src, Expr index, Attribute... attributes) {
 			super(src,index,attributes);
@@ -340,10 +289,10 @@ public interface Expr extends SyntacticElement {
 
 		public DictionaryAccess(Expr src, Expr index, Collection<Attribute> attributes) {
 			super(src,index,attributes);			
-		}
+		}		
 		
-		public Type rawType() {
-			return rawSrcType.value();			
+		public Nominal<Type> type() {
+			return elementType;
 		}
 	}
 	
@@ -356,13 +305,9 @@ public interface Expr extends SyntacticElement {
 			super(src,index,attributes);			
 		}
 
-		public Type nominalType() {
-			return Type.T_CHAR;
+		public Nominal<Type> type() {
+			return Nominal.T_CHAR;
 		}
-
-		public Type rawType() {
-			return Type.T_CHAR;			
-		}		
 	}
 	
 	public enum UOp {
@@ -374,8 +319,7 @@ public interface Expr extends SyntacticElement {
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
 		public Expr mhs;	
-		public Type nominalType;
-		public Type rawType;
+		public Nominal<Type> type;
 		
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -383,13 +327,9 @@ public interface Expr extends SyntacticElement {
 			this.mhs = mhs;			
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type rawType() {
-			return rawType;
-		}
+		public Nominal<Type> type() {
+			return type;
+		}		
 		
 		public String toString() {
 			return op + mhs.toString();
@@ -398,8 +338,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Set extends SyntacticElement.Impl implements Expr {		
 		public final ArrayList<Expr> arguments;
-		public Type nominalType;
-		public Type.Set rawType;
+		public Nominal<Type.Set> type;		
 		
 		public Set(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
@@ -414,19 +353,14 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type.Set rawType() {
-			return rawType;
-		}
+		public Nominal<Type.Set> type() {
+			return type;
+		}		
 	}
 	
 	public static class List extends SyntacticElement.Impl implements Expr {		
 		public final ArrayList<Expr> arguments;
-		public Type nominalType;
-		public Type.List rawType;
+		public Nominal<Type.List> type;		
 		
 		public List(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
@@ -441,19 +375,16 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type.List rawType() {
-			return rawType;
-		}
+		public Nominal<Type.List> type() {
+			return type;
+		}		
 	}
 	
 	public static class SubList extends SyntacticElement.Impl implements Expr {		
 		public Expr src;
 		public Expr start;
-		public Expr end;		
+		public Expr end;	
+		public Nominal<Type.List> type;
 		
 		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
 			super(attributes);
@@ -469,13 +400,9 @@ public interface Expr extends SyntacticElement {
 			this.end = end;
 		}
 		
-		public Type nominalType() {
-			return src.nominalType();
-		}
-		
-		public Type.List rawType() {
-			return (Type.List) src.rawType();
-		}
+		public Nominal<Type.List> type() {
+			return type;
+		}		
 	}
 	
 	public static class Comprehension extends SyntacticElement.Impl implements Expr {
@@ -483,8 +410,7 @@ public interface Expr extends SyntacticElement {
 		public Expr value;
 		public final ArrayList<Pair<String,Expr>> sources;
 		public Expr condition;
-		public Type nominalType;
-		public Type rawType;
+		public Nominal<Type> type;
 		
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<String, Expr>> sources, Expr condition,
@@ -496,13 +422,9 @@ public interface Expr extends SyntacticElement {
 			this.sources = new ArrayList<Pair<String, Expr>>(sources);
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type rawType() {
-			return rawType;
-		}
+		public Nominal<Type> type() {
+			return type;
+		}		
 	}
 	
 	public enum COp {
@@ -531,11 +453,7 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 		}
 		
-		public Type nominalType() {
-			return null;
-		}
-
-		public Type rawType() {
+		public Nominal<Type> type() {
 			return null;
 		}
 
@@ -544,9 +462,9 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class RecordAccess extends AbstractDotAccess {
-		public Type nominalFieldType;
-		public Type.Record rawSrcType;
+	public static class RecordAccess extends AbstractDotAccess {		
+		public Nominal<Type> fieldType;
+		public Nominal<Type.Record> srcType;
 
 		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
 			super(lhs,name,attributes);			
@@ -556,12 +474,8 @@ public interface Expr extends SyntacticElement {
 			super(lhs,name,attributes);			
 		}
 		
-		public Type nominalType() {
-			return nominalFieldType;
-		}
-		
-		public Type rawType() {
-			return rawSrcType.fields().get(name);
+		public Nominal<Type> type() {
+			return fieldType;
 		}		
 	}		
 	
@@ -582,12 +496,8 @@ public interface Expr extends SyntacticElement {
 			this.nid = nid;
 		}
 				
-		public Type nominalType() {
-			return Type.Nominal(nid);
-		}
-		
-		public Type rawType() {
-			return value.type();
+		public Nominal<Type> type() {
+			return new Nominal(Type.Nominal(nid), Type.Nominal(nid));
 		}
 		
 		public String toString() {
@@ -614,11 +524,7 @@ public interface Expr extends SyntacticElement {
 			this.mid = mid;
 		}
 		
-		public Type nominalType() {
-			return null;
-		}
-		
-		public Type rawType() {
+		public Nominal<Type> type() {
 			return null;
 		}
 		
@@ -645,11 +551,7 @@ public interface Expr extends SyntacticElement {
 			this.pid = pid;
 		}			
 
-		public Type nominalType() {
-			return null;
-		}
-		
-		public Type rawType() {
+		public Nominal<Type> type() {
 			return null;
 		}
 		
@@ -665,22 +567,18 @@ public interface Expr extends SyntacticElement {
 	
 	public static class ProcessAccess extends SyntacticElement.Impl implements Expr {
 		public Expr src;	
-		public Type nominalElementType;
-		public Type.Process rawSrcType;
+		public Nominal<Type> elementType;
+		public Type.Process srcType;
 		
 		public ProcessAccess(Expr src, Attribute... attributes) {
 			super(attributes);
 			this.src = src;			
 		}
 		
-		public Type nominalType() {
-			return nominalElementType;
+		public Nominal<Type> type() {
+			return elementType;
 		}
 		
-		public Type rawType() {
-			return rawSrcType.element();
-		}
-				
 		public String toString() {
 			return "*" + src.toString();
 		}
@@ -688,28 +586,22 @@ public interface Expr extends SyntacticElement {
 		
 	public static class Dictionary extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Pair<Expr,Expr>> pairs;		
-		public Type nominalType;
-		public Type.Dictionary rawType;
+		public Nominal<Type.Dictionary> type;		
 		
 		public Dictionary(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
 			super(attributes);
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type.Dictionary rawType() {
-			return rawType;
-		}
+		public Nominal<Type.Dictionary> type() {
+			return type;
+		}		
 	}
 	
 	public static class Record extends SyntacticElement.Impl implements
 			Expr {
 		public final HashMap<String, Expr> fields;
-		public Type nominalType;
-		public Type.Record rawType;
+		public Nominal<Type.Record> type;		
 
 		public Record(Map<String, Expr> fields,
 				Attribute... attributes) {
@@ -717,32 +609,23 @@ public interface Expr extends SyntacticElement {
 			this.fields = new HashMap<String, Expr>(fields);
 		}
 
-		public Type nominalType() {
-			return nominalType;
-		}
-
-		public Type.Record rawType() {
-			return rawType;
+		public Nominal<Type.Record> type() {
+			return type;
 		}
 	}
 	
 	public static class Tuple extends SyntacticElement.Impl implements
 			LVal {
 		public final ArrayList<Expr> fields;
-		public Type nominalType;
-		public Type.Tuple rawType;
+		public Nominal<Type.Tuple> type;		
 		
 		public Tuple(Collection<Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
 		}
 
-		public Type nominalType() {
-			return nominalType;
-		}
-
-		public Type.Tuple rawType() {
-			return rawType;
+		public Nominal<Type.Tuple> type() {
+			return type;
 		}
 	}
 	
@@ -752,8 +635,7 @@ public interface Expr extends SyntacticElement {
 		public R qualification;
 		public final ArrayList<Expr> arguments;		
 		public final boolean synchronous;		
-		public Type nominalReturnType;
-		public Type.Function rawFunctionType;
+		public Nominal<Type> returnType;		
 		
 		public AbstractInvoke(String name, R receiver,
 				Collection<Expr> arguments, boolean synchronous,
@@ -775,21 +657,14 @@ public interface Expr extends SyntacticElement {
 			this.synchronous = synchronous;
 		}
 		
-		public Type nominalType() {
-			return nominalReturnType;
-		}
-		
-		public Type rawType() {
-			return rawFunctionType.ret();
-		}
-		
-		public Type.Function rawFunctionType() {
-			return rawFunctionType;
-		}
+		public Nominal<Type> type() {
+			return returnType;
+		}				
 	}
 	
 	public static class MessageSend extends AbstractInvoke<Expr> {		
 		public final NameID nid;
+		public Nominal<Type.Method> messageType;
 		
 		public MessageSend(NameID nid, Expr receiver,
 				Collection<Expr> arguments, boolean synchronous,
@@ -807,15 +682,12 @@ public interface Expr extends SyntacticElement {
 		
 		public NameID nid() {
 			return nid;
-		}	
-		
-		public Type.Method rawFunctionType() {
-			return (Type.Method) rawFunctionType;
-		}
+		}			
 	}
 	
 	public static class MethodCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
+		public Nominal<Type.Method> methodType;
 		
 		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -836,6 +708,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class FunctionCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
+		public Nominal<Type.Function> functionType;
 		
 		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -867,13 +740,9 @@ public interface Expr extends SyntacticElement {
 			this.src = mhs;			
 		}
 		
-		public Type nominalType() {
-			return Type.T_INT;
-		}		
-		
-		public Type rawType() {
-			return Type.T_INT;
-		}
+		public Nominal<Type> type() {
+			return Nominal.T_INT;
+		}				
 		
 		public String toString() {
 			return "|" + src.toString() + "|";
@@ -881,7 +750,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class SetLength extends AbstractLength {
-		public Type.Set rawSrcType;
+		public Nominal<Type.Set> srcType;
 		
 		public SetLength(Expr src, Attribute... attributes) {
 			super(src,attributes);
@@ -893,7 +762,7 @@ public interface Expr extends SyntacticElement {
 	}		
 	
 	public static class ListLength extends AbstractLength {		
-		public Type.List rawSrcType;
+		public Nominal<Type.List> srcType;
 		
 		public ListLength(Expr src, Attribute... attributes) {
 			super(src,attributes);
@@ -915,7 +784,7 @@ public interface Expr extends SyntacticElement {
 	}	
 	
 	public static class DictionaryLength extends AbstractLength {		
-		public Type.Dictionary rawSrcType;
+		public Nominal<Type.Dictionary> srcType;
 		
 		public DictionaryLength(Expr src, Attribute... attributes) {
 			super(src,attributes);
@@ -928,20 +797,15 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Spawn  extends SyntacticElement.Impl implements Expr,Stmt {
 		public Expr expr;
-		public Type nominalType;
-		public Type.Process rawType;		
+		public Nominal<Type.Process> type;
 
 		public Spawn(Expr expr, Attribute... attributes) {
 			this.expr = expr;						
 		}
 		
-		public Type nominalType() {
-			return nominalType;
-		}
-		
-		public Type.Process rawType() {
-			return rawType;
-		}
+		public Nominal<Type.Process> type() {
+			return type;
+		}		
 	}
 	
 	public enum BOp { 

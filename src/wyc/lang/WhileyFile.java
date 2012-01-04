@@ -28,6 +28,7 @@ package wyc.lang;
 import java.util.*;
 
 import wyc.NameResolver;
+import wyc.util.Nominal;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
@@ -221,11 +222,10 @@ public final class WhileyFile {
 	 */	
 	public static class TypeDef extends SyntacticElement.Impl implements Declaration {
 		public final List<Modifier> modifiers;
-		public final UnresolvedType unresolvedType;		
+		public final UnresolvedType unresolvedType;
+		public Nominal<Type> resolvedType;
 		public final Expr constraint;
-		public final String name;
-		public Type nominalType;
-		public Type rawType;
+		public final String name;		
 
 		public TypeDef(List<Modifier> modifiers, UnresolvedType type, String name,
 				Expr constraint, Attribute... attributes) {
@@ -265,9 +265,7 @@ public final class WhileyFile {
 		public final ArrayList<Parameter> parameters;
 		public final Expr precondition;
 		public final Expr postcondition;		
-		public final ArrayList<Stmt> statements;
-		public Type.Function nominalType;
-		public Type.Function rawType;
+		public final ArrayList<Stmt> statements;			
 
 		/**
 		 * Construct an object representing a Whiley function.
@@ -339,7 +337,9 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class Function extends FunctionOrMethodOrMessage {		
+	public final static class Function extends FunctionOrMethodOrMessage {
+		public Nominal<Type.Function> resolvedType;
+		
 		public Function(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
 				Expr precondition, Expr postcondition,
@@ -382,6 +382,7 @@ public final class WhileyFile {
 	 * 
 	 */
 	public final static class Method extends FunctionOrMethodOrMessage {
+		public Nominal<Type.Method> resolvedType;
 		
 		public Method(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
@@ -429,6 +430,7 @@ public final class WhileyFile {
 	 */
 	public final static class Message extends FunctionOrMethodOrMessage {
 		public final UnresolvedType receiver;
+		public Nominal<Type.Method> resolvedType;
 		
 		public Message(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,

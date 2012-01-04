@@ -159,14 +159,12 @@ public final class TypePropagation {
 	
 	public void propagate(TypeDef td, ArrayList<WhileyFile.Import> imports) throws ResolveError {		
 		// first, expand the declared type
-		Type nominalType = td.nominalType;
-		Type rawType = expander.expand(nominalType);
-		td.rawType = rawType;
-
+		td.resolvedType = resolver.resolveAsType(td.unresolvedType, imports);
+		
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			
 			RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
-			environment.put("$", new Nominal<Type>(nominalType,rawType));
+			environment.put("$", td.resolvedType);
 			
 			// FIXME: add names exposed from records and other types
 			
@@ -178,21 +176,14 @@ public final class TypePropagation {
 	public void propagate(FunctionOrMethodOrMessage fd, ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		this.current = fd;
 		RefCountedHashMap<String,Nominal<Type>> environment = new RefCountedHashMap<String,Nominal<Type>>();
-		Type.Function type = fd.nominalType;		
-		ArrayList<Type> paramTypes = type.params();
-		
-		int i=0;
+						
 		for (WhileyFile.Parameter p : fd.parameters) {						
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,imports));
 		}
 		
 		if(fd instanceof Message) {
-			Message md = (Message) fd;				
-			Type.Method mt = (Type.Method) type;
-			// check that we're not a headless method
-			if(mt.receiver() != null) {
-				environment = environment.put("this",resolver.resolveAsType(md.receiver,imports));
-			}
+			Message md = (Message) fd;							
+			environment = environment.put("this",resolver.resolveAsType(md.receiver,imports));			
 		}
 		
 		if(fd.precondition != null) {
@@ -200,20 +191,24 @@ public final class TypePropagation {
 		}
 		
 		if(fd.postcondition != null) {			
-			environment = environment.put("$", expand(type.ret()));
+			environment = environment.put("$", resolver.resolveAsType(fd.ret,imports));
 			propagate(fd.postcondition,environment.clone(),imports);
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
 			environment = environment.remove("$");
 		}
 
-		// Now, expand this functions type (but, only in the case that it hasn't
-		// already been expanded during some other pass). This can happen, for
-		// example, when typing a call to this function.
-		if(fd.rawType == null) {
-			fd.rawType = (Type.Function) expander.expand(fd.nominalType);			
+		if(fd instanceof Function) {
+			Function f = (Function) fd;
+			f.resolvedType = (Nominal) resolver.resolveAsType(f.unresolvedType(),imports);					
+		} else if(fd instanceof Method) {
+			Method m = (Method) fd;
+			m.resolvedType = (Nominal) resolver.resolveAsType(m.unresolvedType(),imports);		
+		} else {
+			Message m = (Message) fd;
+			m.resolvedType = (Nominal) resolver.resolveAsType(m.unresolvedType(),imports);		
 		}
-		
+			
 		propagate(fd.statements,environment,imports);
 	}
 	
@@ -311,17 +306,14 @@ public final class TypePropagation {
 			} else {
 				lv = new Expr.LocalVariable(av.var, av.attributes());
 			}
-			lv.nominalType = rhs.nominalType();
-			lv.rawType = rhs.rawType();
-			environment.put(lv.var, new Nominal<Type>(lv.nominalType(),
-					lv.rawType()));
+			lv.type = (Nominal) rhs.type();
+			environment.put(lv.var, lv.type);
 			lhs = lv;
 		} else {
 			lhs = propagate(lhs,environment,imports);			
 			Expr.AssignedVariable av = inferBeforeAfterType(lhs,
-					lhs.nominalType(), lhs.rawType(), rhs.nominalType(),
-					rhs.rawType());
-			environment.put(av.var, new Nominal<Type>(av.nominalAfterType,av.rawAfterType));
+					(Nominal) lhs.type(), (Nominal) rhs.type());
+			environment.put(av.var, av.afterType);
 		}
 		
 		stmt.lhs = (Expr.LVal) lhs;
@@ -331,55 +323,53 @@ public final class TypePropagation {
 	}
 	
 	private Expr.AssignedVariable inferBeforeAfterType(Expr.LVal lv,
-			Type nominalBeforeType, Type rawBeforeType, Type nominalAfterType,
-			Type rawAfterType) {
+			Nominal<Type> beforeType, Nominal<Type> afterType) {
 		if (lv instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;
-			v.nominalType = nominalBeforeType;
-			v.rawType = rawBeforeType;
-			v.nominalAfterType = nominalAfterType;
-			v.rawAfterType = rawAfterType;
+			v.type = beforeType;
+			v.afterType = afterType;			
 			return v;
 		} else if (lv instanceof Expr.StringAccess) {
 			Expr.StringAccess la = (Expr.StringAccess) lv;
-			return inferBeforeAfterType((Expr.LVal) la.src, Type.T_STRING,
-					Type.T_STRING, Type.T_STRING, Type.T_STRING);
+			return inferBeforeAfterType((Expr.LVal) la.src, Nominal.T_STRING,
+					Nominal.T_STRING);
 		} else if (lv instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) lv;
-			nominalAfterType = Type.List(
-					Type.Union(la.nominalType(), nominalAfterType), false);
-			rawAfterType = Type.List(Type.Union(la.rawType(), rawAfterType),
-					false);
+			Type nominalAfterType = Type.List(
+					Type.Union(la.type().nominal(), afterType.nominal()), false);
+			Type rawAfterType = Type.List(
+					Type.Union(la.type().raw(), afterType.raw()), false);
 			// FIXME: loss of nominal information here.
-			return inferBeforeAfterType((Expr.LVal) la.src, la.rawSrcType,
-					la.rawSrcType, nominalAfterType, rawAfterType);
+			afterType = new Nominal<Type>(nominalAfterType,rawAfterType);
+			return inferBeforeAfterType((Expr.LVal) la.src, (Nominal) la.srcType, afterType);
 		} else if(lv instanceof Expr.DictionaryAccess)  {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		
-			Type.Dictionary rawSrcType = da.rawSrcType;
+			Type.Dictionary rawSrcType = da.srcType.raw();
 			// FIXME: loss of nominal information here
-			nominalAfterType = Type.Dictionary(
-					Type.Union(rawSrcType.key(), da.index.nominalType()),
-					Type.Union(da.nominalElementType, nominalAfterType));
-			rawAfterType = Type.Dictionary(
-					Type.Union(rawSrcType.key(), da.index.rawType()),
-					Type.Union(rawSrcType.value(), rawAfterType));
+			Type nominalAfterType = Type.Dictionary(
+					Type.Union(rawSrcType.key(), da.index.type().nominal()),
+					Type.Union(da.elementType.nominal(), afterType.nominal()));
+			Type rawAfterType = Type.Dictionary(
+					Type.Union(rawSrcType.key(), da.index.type().raw()),
+					Type.Union(rawSrcType.value(), afterType.raw()));
 			// FIXME: loss of nominal information here.
-			return inferBeforeAfterType((Expr.LVal) da.src, da.rawSrcType,
-					da.rawSrcType, nominalAfterType, rawAfterType);
+			afterType = new Nominal<Type>(nominalAfterType,rawAfterType);
+			return inferBeforeAfterType((Expr.LVal) da.src, (Nominal) da.srcType, afterType);
 		} else if(lv instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) lv;
-			Type.Record srcType = la.rawSrcType;
+			Type.Record srcType = la.srcType.raw();
 			HashMap<String,Type> beforeFields = new HashMap<String,Type>(srcType.fields());
 			HashMap<String,Type> afterFields = new HashMap<String,Type>(srcType.fields());
-			beforeFields.put(la.name, rawBeforeType);
-			afterFields.put(la.name, rawAfterType);
+			beforeFields.put(la.name, beforeType.raw());
+			afterFields.put(la.name, afterType.raw());
 			
-			rawBeforeType = Type.Record(srcType.isOpen(), beforeFields);
-			rawAfterType = Type.Record(srcType.isOpen(), afterFields);
+			Type rawBeforeType = Type.Record(srcType.isOpen(), beforeFields);
+			Type rawAfterType = Type.Record(srcType.isOpen(), afterFields);
 			
 			// FIXME: loss of nominal information here.
-			return inferBeforeAfterType((Expr.LVal) la.src, rawBeforeType,
-					rawBeforeType, rawAfterType, rawAfterType);
+			return inferBeforeAfterType((Expr.LVal) la.src, new Nominal<Type>(
+					rawBeforeType, rawBeforeType), new Nominal<Type>(
+					rawAfterType, rawAfterType));
 		} else {
 			internalFailure("unknown lval encountered ("
 					+ lv.getClass().getName() + ")", filename, lv);
@@ -425,41 +415,44 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) {
 		
 		stmt.source = propagate(stmt.source,environment,imports);
-		Type rawType = stmt.source.rawType(); 		
+		Type rawType = stmt.source.type().raw(); 		
 		
 		// At this point, the major task is to determine what the types for the
 		// iteration variables declared in the for loop. More than one variable
 		// is permitted in some cases.
 		
-		Type[] elementTypes = new Type[stmt.variables.size()];		
+		Nominal<Type>[] elementTypes = new Nominal[stmt.variables.size()];		
 		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {
 			Type.List lt = Type.effectiveListType(rawType);
 			if(elementTypes.length == 1) {
-				elementTypes[0] = lt.element();
+				// FIXME: loss of nominal information
+				elementTypes[0] = new Nominal<Type>(lt.element(),lt.element());
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}			
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
 			Type.Set st = Type.effectiveSetType(rawType);
 			if(elementTypes.length == 1) {
-				elementTypes[0] = st.element();
+				// FIXME: loss of nominal information
+				elementTypes[0] = new Nominal<Type>(st.element(),st.element());
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}					
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
 			Type.Dictionary dt = Type.effectiveDictionaryType(rawType);
 			if(elementTypes.length == 1) {
-				elementTypes[0] = Type.Tuple(dt.key(),dt.value());				
-			} else if(elementTypes.length == 2) {				
-				elementTypes[0] = dt.key();
-				elementTypes[1] = dt.value();
+				Type elemType = Type.Tuple(dt.key(),dt.value()); 
+				elementTypes[0] = new Nominal<Type>(elemType,elemType);			
+			} else if(elementTypes.length == 2) {					
+				elementTypes[0] = new Nominal<Type>(dt.key(),dt.key());
+				elementTypes[1] = new Nominal<Type>(dt.value(),dt.value());
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}
 			
 		} else if(Type.isSubtype(Type.T_STRING,rawType)) {
 			if(elementTypes.length == 1) {
-				elementTypes[0] = Type.T_CHAR;
+				elementTypes[0] = Nominal.T_CHAR;
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}				
@@ -475,12 +468,8 @@ public final class TypePropagation {
 			if (environment.containsKey(var)) {
 				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
 						filename, stmt);
-			}
-			// FIXME: at this point, we lose nominal information about the
-			// element type. This needs to fixed above by only expanding the
-			// nominal source type by one level.
-			Type rawElementType = elementTypes[i];
-			environment = environment.put(var, new Nominal<Type>(rawElementType,rawElementType));
+			}			
+			environment = environment.put(var, elementTypes[i]);
 		} 
 		
 		if (stmt.invariant != null) {
@@ -537,9 +526,10 @@ public final class TypePropagation {
 			Stmt.Return stmt,
 			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment,imports);
-			Type lhs = current.nominalType.ret();
+			Type lhs = current.type.nominalType.ret();
 			Type rhs = stmt.expr.nominalType();
 			Type lhsExpanded = expander.expand(lhs);
 			Type rhsExpanded = expander.expand(rhs);
@@ -603,30 +593,29 @@ public final class TypePropagation {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE),filename,av);
 				}				
 				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
-				lv.nominalType = p.first();
-				lv.rawType = p.second();
+				lv.type = p;				
 				return lv;
 			} else if(lval instanceof Expr.AbstractIndexAccess) {
 				// this indicates either a list, string or dictionary update
 				Expr.AbstractIndexAccess ai = (Expr.AbstractIndexAccess) lval;				
 				Expr.LVal src = propagate((Expr.LVal) ai.src,environment,imports);				
 				Expr index = propagate(ai.index,environment,imports);				
-				Type rawSrcType = src.rawType();
+				Type rawSrcType = src.type().raw();
 				// FIXME: problem if list is only an effective list, similarly
 				// for dictionaries.
 				if(Type.isSubtype(Type.T_STRING, rawSrcType)) {
 					return new Expr.StringAccess(src,index,lval.attributes());
 				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
 					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
-					la.rawSrcType = Type.effectiveListType(rawSrcType);
-					// FIXME: loss of nominal information here
-					la.nominalElementType = la.rawSrcType.element();
+					Type.List lt = Type.effectiveListType(rawSrcType); 
+					la.srcType = new Nominal<Type.List>(lt,lt);
+					la.elementType = new Nominal<Type>(lt.element(),lt.element());
 					return la;
 				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
-					da.rawSrcType = Type.effectiveDictionaryType(rawSrcType);
-					// FIXME: loss of nominal information here
-					da.nominalElementType = da.rawSrcType.value();
+					Type.Dictionary lt = Type.effectiveDictionaryType(rawSrcType);
+					da.srcType = new Nominal<Type.Dictionary>(lt,lt);
+					da.elementType = new Nominal<Type>(lt.value(),lt.value());
 					return da;
 				} else {				
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,src);
@@ -636,12 +625,14 @@ public final class TypePropagation {
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,imports);
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
-				Type.Record rawSrcType = Type.effectiveRecordType(src.rawType());
+				Type.Record rawSrcType = Type.effectiveRecordType(src.type().raw());
 				if(rawSrcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,src);					
 				}
-				ra.rawSrcType = rawSrcType;
-				ra.nominalFieldType = rawSrcType.fields().get(ad.name);
+				ra.srcType = new Nominal<Type.Record>(src.type().nominal(),rawSrcType);
+				// FIXME: loss of nominal information
+				Type fieldType = rawSrcType.fields().get(ad.name);
+				ra.fieldType = new Nominal<Type>(fieldType,fieldType);
 				return ra;
 			}
 		} catch(SyntaxError e) {
@@ -715,8 +706,8 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		expr.lhs = propagate(expr.lhs,environment,imports);
 		expr.rhs = propagate(expr.rhs,environment,imports);
-		Type lhsExpanded = expr.lhs.rawType();
-		Type rhsExpanded = expr.rhs.rawType();
+		Type lhsExpanded = expr.lhs.type().raw();
+		Type rhsExpanded = expr.rhs.type().raw();
 	
 		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhsExpanded);
 		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhsExpanded);		
@@ -827,8 +818,7 @@ public final class TypePropagation {
 		 * Finally, save the resulting types for this expression.
 		 */
 		
-		expr.nominalType = result;
-		expr.rawSrcType = result;
+		expr.type = new Nominal<Type>(result,result);
 		
 		return expr;
 	}
@@ -855,8 +845,7 @@ public final class TypePropagation {
 					expr);
 		}
 		
-		expr.nominalType = src.nominalType();
-		expr.rawType = src.rawType();
+		expr.type = (Nominal) src.type();		
 		
 		return expr;
 	}
@@ -877,13 +866,12 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		c.expr = propagate(c.expr,environment,imports);		
-		c.nominalType = resolver.resolve(c.unresolvedType, imports);
-		Type from = c.expr.rawType();		
-		Type to = expander.expand(c.nominalType);
+		c.type = resolver.resolveAsType(c.unresolvedType, imports);
+		Type from = c.expr.type().raw();		
+		Type to = c.type.raw();
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), filename, c);
 		}	
-		c.rawType = to;
 		return c;
 	}
 	
@@ -907,13 +895,11 @@ public final class TypePropagation {
 		}
 		
 		ArrayList<Expr> exprArgs = expr.arguments;
-		ArrayList<Type> nominalParamTypes = new ArrayList<Type>();
-		ArrayList<Type> rawParamTypes = new ArrayList<Type>();
+		ArrayList<Nominal<Type>> paramTypes = new ArrayList<Nominal<Type>>();
 		for(int i=0;i!=exprArgs.size();++i) {
 			Expr arg = propagate(exprArgs.get(i),environment,imports);
 			exprArgs.set(i, arg);
-			nominalParamTypes.add(arg.nominalType());
-			rawParamTypes.add(arg.rawType());
+			paramTypes.add((Nominal) arg.type());			
 		}
 		
 		// second, determine whether we already have a fully qualified name and
@@ -923,41 +909,35 @@ public final class TypePropagation {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Nominal<Type.Function> funType = resolver.resolveAsFunctionOrMethod(name,  rawParamTypes);	
+			Nominal<Type.Function> funType = resolver.resolveAsFunctionOrMethod(name,  paramTypes);	
 			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
-			// FIXME: loss of nominal information here
-			r.nominalReturnType = funType.raw().ret();
-			r.rawFunctionType = funType.raw();
+			r.functionType = funType;
 			return r;
 		} else {
 			// no, function is not qualified ... need to search for it.
 			
 			// third, lookup the function					
 			if(receiver != null) {
-				Type.Process rawRecType = checkType(expr.qualification.rawType(),Type.Process.class,receiver);							
+				Type.Process rawRecType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
 				Pair<NameID, Nominal<Type.Method>> p = resolver
-						.resolveAsMessage(expr.name, rawRecType, rawParamTypes,
-								imports);
-				Type.Function messType = p.second().raw();
+						.resolveAsMessage(expr.name, rawRecType, paramTypes,
+								imports);				
 				Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
-						exprArgs, expr.synchronous, expr.attributes());
-				// FIXME: loss of nominal information here
-				r.nominalReturnType = messType.ret();
-				r.rawFunctionType = messType;
+						exprArgs, expr.synchronous, expr.attributes());			
+				r.messageType = p.second();
 				return r;
 			} else {
-				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, rawParamTypes, imports);
-				Type.Function funType = p.second().raw();
-				Expr.AbstractInvoke<Expr.ModuleAccess> r;				
+				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
+				Type.Function funType = p.second().raw();							
 				if(funType instanceof Type.Method) {
-					r = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
+					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
+					mc.methodType = (Nominal) p.second();
+					return mc;
 				} else {
-					r = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
-				}				
-				// FIXME: loss of nominal information here
-				r.nominalReturnType = funType.ret();
-				r.rawFunctionType = funType;
-				return r;
+					Expr.FunctionCall mc = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
+					mc.functionType = (Nominal) p.second();
+					return mc;									
+				}								
 			}											
 		}		
 	}			
@@ -967,8 +947,7 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);
 		expr.index = propagate(expr.index,environment,imports);		
-		Type src = expr.src.nominalType();		
-		Type srcExpanded = resolver.expand(src);
+		Type src = expr.src.type().raw();		
 				
 		// First, check whether this is still only an abstract access and, in
 		// such case, upgrade it to the appropriate access expression.
@@ -996,20 +975,20 @@ public final class TypePropagation {
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
 			}
-			checkIsSubtype(Type.T_INT,expr.index);		
-			la.rawSrcType = list;
+			checkIsSubtype(Type.T_INT,expr.index);	
 			// FIXME: lost nominal information
-			la.nominalElementType = list.element();
+			la.srcType = new Nominal<Type.List>(list,list);			
+			la.elementType = new Nominal<Type>(list.element(),list.element());
 		} else {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
-			Type.Dictionary dict = Type.effectiveDictionaryType(srcExpanded);
+			Type.Dictionary dict = Type.effectiveDictionaryType(src);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
 			}			
-			checkIsSubtype(dict.key(),expr.index);						
-			da.rawSrcType = dict;
+			checkIsSubtype(dict.key(),expr.index);			
 			// FIXME: lost nominal information
-			da.nominalElementType = dict.value();
+			da.srcType = new Nominal<Type.Dictionary>(dict,dict);			
+			da.elementType = new Nominal<Type>(dict.value(),dict.value());
 		}
 		
 		return expr;
@@ -1019,8 +998,7 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {			
 		expr.src = propagate(expr.src,environment,imports);			
-		Type src = expr.src.nominalType();		
-		Type srcExpanded = resolver.expand(src);
+		Type src = expr.src.type().raw();				
 	
 		// First, check whether this is still only an abstract access and, in
 				// such case, upgrade it to the appropriate access expression.
@@ -1051,21 +1029,21 @@ public final class TypePropagation {
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
 			}
-			ll.rawSrcType = list;
+			ll.srcType = new Nominal<Type.List>(expr.type().nominal(),list);
 		} else if(expr instanceof Expr.SetLength) {
 			Expr.SetLength sl = (Expr.SetLength) expr; 
-			Type.Set list = Type.effectiveSetType(src);			
-			if(list == null) {
+			Type.Set set = Type.effectiveSetType(src);			
+			if(set == null) {
 				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,expr);				
 			}
-			sl.rawSrcType = list;
+			sl.srcType = new Nominal<Type.Set>(expr.type().nominal(),set);			
 		} else {
-			Expr.DictionaryLength da = (Expr.DictionaryLength) expr; 
-			Type.Dictionary dict = Type.effectiveDictionaryType(srcExpanded);
+			Expr.DictionaryLength dl = (Expr.DictionaryLength) expr; 
+			Type.Dictionary dict = Type.effectiveDictionaryType(src);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
-			}						
-			da.rawSrcType = dict;
+			}				
+			dl.srcType = new Nominal<Type.Dictionary>(expr.type().nominal(),dict);	
 		}
 		
 		return expr;
@@ -1075,19 +1053,17 @@ public final class TypePropagation {
 			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 
-		Nominal<Type> types = environment.get(expr.var);
+		Nominal<Type> type = environment.get(expr.var);
 
 		if (expr instanceof Expr.LocalVariable) {
 			Expr.LocalVariable lv = (Expr.LocalVariable) expr;
-			lv.nominalType = types.first();
-			lv.rawType = types.second();
+			lv.type = type;			
 			return lv;
-		} else if (types != null) {
+		} else if (type != null) {
 			// yes, this is a local variable
 			Expr.LocalVariable lv = new Expr.LocalVariable(expr.var,
-					expr.attributes());			
-			lv.nominalType = types.first();
-			lv.rawType = types.second();
+					expr.attributes());	
+			lv.type = type;			
 			return lv;
 		} else {
 			// This variable access may correspond to an external access.
@@ -1129,13 +1105,16 @@ public final class TypePropagation {
 		ArrayList<Expr> exprs = expr.arguments;
 		for(int i=0;i!=exprs.size();++i) {
 			Expr e = propagate(exprs.get(i),environment,imports);
+			Nominal<Type> t = (Nominal) e.type();
 			exprs.set(i,e);
-			nominalElementType = Type.Union(e.nominalType(),nominalElementType);
-			rawElementType = Type.Union(e.rawType(),rawElementType);
+			nominalElementType = Type.Union(t.nominal(),nominalElementType);
+			rawElementType = Type.Union(t.raw(),rawElementType);
 		}
+				
+		Type nominalType = Type.Set(nominalElementType, false);
+		Type.Set rawType = (Type.Set) Type.Set(rawElementType, false);
 		
-		expr.nominalType = Type.Set(nominalElementType, false);
-		expr.rawType = (Type.Set) Type.Set(rawElementType, false);
+		expr.type = new Nominal<Type.Set>(nominalType,rawType);
 		
 		return expr;
 	}
@@ -1150,13 +1129,17 @@ public final class TypePropagation {
 		ArrayList<Expr> exprs = expr.arguments;
 		for(int i=0;i!=exprs.size();++i) {
 			Expr e = propagate(exprs.get(i),environment,imports);
+			Nominal<Type> t = (Nominal) e.type();
 			exprs.set(i,e);
-			nominalElementType = Type.Union(e.nominalType(),nominalElementType);
-			rawElementType = Type.Union(e.rawType(),rawElementType);
+			nominalElementType = Type.Union(t.nominal(),nominalElementType);
+			rawElementType = Type.Union(t.raw(),rawElementType);
 		}
 		
-		expr.nominalType = Type.List(nominalElementType, false);
-		expr.rawType = (Type.List) Type.List(rawElementType, false);
+		Type nominalType = Type.List(nominalElementType, false);
+		Type.List rawType = (Type.List) Type.List(rawElementType, false);
+		
+		expr.type = new Nominal<Type.List>(nominalType,rawType);
+		
 		
 		return expr;
 	}
@@ -1165,26 +1148,23 @@ public final class TypePropagation {
 	private Expr propagate(Expr.Dictionary expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		Type nominalKeyType = Type.T_VOID;
-		Type rawKeyType = Type.T_VOID;
-		Type nominalValueType = Type.T_VOID;
-		Type rawValueType = Type.T_VOID;
+		Nominal<Type> keyType = Nominal.T_VOID;
+		Nominal<Type> valueType = Nominal.T_VOID;		
 				
 		ArrayList<Pair<Expr,Expr>> exprs = expr.pairs;
 		for(int i=0;i!=exprs.size();++i) {
 			Pair<Expr,Expr> p = exprs.get(i);
 			Expr key = propagate(p.first(),environment,imports);
 			Expr value = propagate(p.second(),environment,imports);
+			Nominal<Type> kt = (Nominal) key.type();
+			Nominal<Type> vt = (Nominal) value.type();
 			exprs.set(i,new Pair<Expr,Expr>(key,value));
 			
-			nominalKeyType = Type.Union(key.nominalType(),nominalKeyType);
-			rawKeyType = Type.Union(key.rawType(),rawKeyType);
-			nominalValueType = Type.Union(value.nominalType(),nominalValueType);
-			rawValueType = Type.Union(value.rawType(),rawValueType);
+			keyType = Nominal.Union(kt,keyType);			
+			valueType = Nominal.Union(vt,valueType);
 		}
 		
-		expr.nominalType = Type.Dictionary(nominalKeyType, nominalValueType);
-		expr.rawType = (Type.Dictionary) Type.Dictionary(rawKeyType, rawValueType);
+		expr.type = Nominal.Dictionary(keyType,valueType);
 		
 		return expr;
 	}
@@ -1201,13 +1181,15 @@ public final class TypePropagation {
 		ArrayList<String> fields = new ArrayList<String>(exprFields.keySet());
 		for(String field : fields) {
 			Expr e = propagate(exprFields.get(field),environment,imports);
+			Nominal<Type> t = (Nominal) e.type();
 			exprFields.put(field,e);
-			nominalFieldTypes.put(field,e.nominalType());
-			rawFieldTypes.put(field,e.rawType());			
-		}
+			nominalFieldTypes.put(field,t.nominal());
+			rawFieldTypes.put(field,t.raw());			
+		}		
 		
-		expr.nominalType = Type.Record(false, nominalFieldTypes);
-		expr.rawType = (Type.Record) Type.Record(false, rawFieldTypes);
+		Type nominalType = Type.Record(false, nominalFieldTypes);
+		Type.Record rawType = (Type.Record) Type.Record(false, rawFieldTypes);
+		expr.type = new Nominal<Type.Record>(nominalType,rawType);
 		
 		return expr;
 	}
@@ -1221,13 +1203,16 @@ public final class TypePropagation {
 		
 		for(int i=0;i!=exprFields.size();++i) {
 			Expr e = propagate(exprFields.get(i),environment,imports);
+			Nominal<Type> t = (Nominal) e.type();
 			exprFields.set(i,e);
-			nominalFieldTypes.add(e.nominalType());
-			rawFieldTypes.add(e.rawType());
+			nominalFieldTypes.add(t.nominal());
+			rawFieldTypes.add(t.raw());
 		}
 		
-		expr.nominalType = Type.Tuple(nominalFieldTypes);
-		expr.rawType = (Type.Tuple) Type.Tuple(rawFieldTypes);
+		Type nominalType = Type.Tuple(nominalFieldTypes);
+		Type.Tuple rawType = (Type.Tuple) Type.Tuple(rawFieldTypes);
+		
+		expr.type = new Nominal<Type.Tuple>(nominalType,rawType);
 		
 		return expr;
 	}
@@ -1286,17 +1271,15 @@ public final class TypePropagation {
 			}			
 		} else if(src instanceof Expr.ModuleAccess) {
 			// must be a constant access
-			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 
-			try {												
-				NameID nid = new NameID(ma.mid,expr.name);
-				if (resolver.isName(nid)) {
-					Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
-							expr.name, nid, expr.attributes());
-					// FIXME: there is definitely a bug here, as we need to initialise the value.
-					// ca.value = ?
-					return ca;
-				}
-			} catch (ResolveError err) {}				
+			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 													
+			NameID nid = new NameID(ma.mid,expr.name);
+			if (resolver.isName(nid)) {
+				Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
+						expr.name, nid, expr.attributes());
+				// FIXME: there is definitely a bug here, as we need to initialise the value.
+				// ca.value = ?
+				return ca;
+			}						
 			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,expr);			
 			return null; // deadcode
 		} else {
@@ -1309,17 +1292,18 @@ public final class TypePropagation {
 	private Expr propagate(Expr.RecordAccess ra,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		Type.Record rawType = Type.effectiveRecordType(ra.src.rawType());
+		Nominal<Type> srcType = (Nominal) ra.src.type();
+		Type.Record rawType = Type.effectiveRecordType(srcType.raw());
 		if(rawType == null) {
-			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,ra.src.rawType()),filename,ra);
+			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),filename,ra);
 		} 
 		Type fieldType = rawType.fields().get(ra.name);
 		if(fieldType == null) {
 			syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,ra);
 		}
-		ra.rawSrcType = rawType;
-		// FIXME: lost nominal type information here
-		ra.nominalFieldType = fieldType;		
+		ra.srcType = new Nominal<Type.Record>(srcType.nominal(),rawType);		
+		// FIXME: loss of nominal information here
+		ra.fieldType = new Nominal<Type>(fieldType,fieldType);
 		return ra;
 	}	
 	
@@ -1338,9 +1322,7 @@ public final class TypePropagation {
 	private Expr propagate(Expr.TypeVal expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
-		Nominal<Type> type = resolver.resolveAsType(expr.unresolvedType, imports); 
-		expr.nominalType = type.nominal();
-		expr.rawType = type.raw();
+		expr.type = resolver.resolveAsType(expr.unresolvedType, imports); 
 		return expr;
 	}
 	
@@ -1363,11 +1345,12 @@ public final class TypePropagation {
 		}
 	}		
 	
-	private void checkIsSubtype(Type t1, Expr t2) {		
-		if (!Type.isImplicitCoerciveSubtype(t1, t2.rawType())) {
+	private void checkIsSubtype(Type t1, Expr t2) {
+		if (!Type.isImplicitCoerciveSubtype(t1, t2.type().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.nominalType()), filename, t2);
+			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.type().nominal()),
+					filename, t2);
 		}
 	}
 	
