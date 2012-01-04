@@ -486,8 +486,12 @@ public final class TypePropagation {
 		// FIXME: need to iterate to a fixed point
 		environment = propagate(stmt.body,environment,imports);
 		
-		// FIXME: need to remove the variable types from the environment, since
-		// they are only declared for the duration of the body but not beyond.
+		// Remove loop variables from the environment, since they are only
+		// declared for the duration of the body but not beyond.
+		for(int i=0;i!=elementTypes.length;++i) {
+			String var = stmtVariables.get(i);				
+			environment = environment.remove(var);
+		} 
 		
 		return environment;
 	}
@@ -1094,8 +1098,6 @@ public final class TypePropagation {
 
 		Nominal<Type> type = environment.get(expr.var);
 
-		System.out.println("ENVIRONMENT: " + environment);
-		
 		if (expr instanceof Expr.LocalVariable) {
 			Expr.LocalVariable lv = (Expr.LocalVariable) expr;
 			lv.type = type;			
