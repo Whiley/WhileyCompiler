@@ -50,6 +50,11 @@ public class Nominal<T extends Type> extends Pair<Type,T> {
 		return new Nominal<Type.Dictionary>(nominal,raw);
 	}
 	
+	public static Nominal<Type> Negation(Nominal<Type> type) {
+		return new Nominal<Type>(Type.Negation(type.nominal()),
+				Type.Negation(type.raw()));
+	}
+	
 	public static <T extends Type> List<Type> stripNominal(List<Nominal<T>> types) {
 		ArrayList<Type> r = new ArrayList<Type>();
 		for (Nominal<? extends Type> t : types) {

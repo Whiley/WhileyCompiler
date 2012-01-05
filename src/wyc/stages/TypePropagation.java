@@ -500,36 +500,30 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		
-		stmt.condition = propagate(stmt.condition,environment,imports);
-		checkIsSubtype(Type.T_BOOL,stmt.condition);
+		// First, check condition and apply variable retypings.
+		Pair<Expr,RefCountedHashMap<String,Nominal<Type>>> p1,p2;
 		
-		// FIXME: need to deal with retyping of variables
+		p1 = propagateCondition(stmt.condition,true,environment.clone(),imports);
+		p2 = propagateCondition(stmt.condition,false,environment,imports);
+		stmt.condition = p1.first();
 		
-		RefCountedHashMap<String,Nominal<Type>> trueEnv;
-		RefCountedHashMap<String,Nominal<Type>> falseEnv;
-		
+		RefCountedHashMap<String,Nominal<Type>> trueEnvironment = p1.second();
+		RefCountedHashMap<String,Nominal<Type>> falseEnvironment = p2.second();
+				
+		// Second, update environments for true and false branches
 		if(stmt.trueBranch != null && stmt.falseBranch != null) {
-			falseEnv = environment.clone();
-			trueEnv = propagate(stmt.trueBranch,environment.clone(),imports);
-			falseEnv = propagate(stmt.falseBranch,environment,imports);						
+			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment,imports);
+			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment,imports);						
 		} else if(stmt.trueBranch != null) {			
-			trueEnv = propagate(stmt.trueBranch,environment.clone(),imports);
-			falseEnv = environment;
-			environment = join(environment,trueEnv);			
+			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment,imports);
 		} else if(stmt.falseBranch != null){								
-			trueEnv = environment;
-			falseEnv = propagate(stmt.falseBranch,environment.clone(),imports);		
-			environment = join(environment,falseEnv);
-		} else {
-			trueEnv = environment;
-			falseEnv = environment.clone();
-		}
+			trueEnvironment = environment;
+			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment,imports);		
+		} 
 		
-		environment = join(trueEnv,falseEnv);			
-		trueEnv.free();
-		falseEnv.free(); 
+		// Finally, join results back together
 		
-		return environment;
+		return join(trueEnvironment,falseEnvironment);							
 	}
 	
 	private RefCountedHashMap<String, Nominal<Type>> propagate(
@@ -657,6 +651,110 @@ public final class TypePropagation {
 		}		
 		internalFailure("unknown lval encountered (" + lval.getClass().getName() +")",filename,lval);
 		return null; // dead code
+	}		
+	
+
+	private Pair<Expr,RefCountedHashMap<String, Nominal<Type>>> propagateCondition(
+			Expr expr, boolean sign,
+			RefCountedHashMap<String, Nominal<Type>> environment,
+			ArrayList<WhileyFile.Import> imports) {
+		Pair<Expr,RefCountedHashMap<String, Nominal<Type>>> p;
+		
+		if(expr instanceof Expr.UnOp) {
+			Expr.UnOp uop = (Expr.UnOp) expr; 
+			if(uop.op == Expr.UOp.NOT) { 
+				p = propagateCondition(uop.mhs,!sign,environment,imports);
+				uop.mhs = p.first();
+				environment = p.second();
+				checkIsSubtype(Type.T_BOOL,uop.mhs);
+				uop.type = Nominal.T_BOOL;
+			} else {
+				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,expr);
+			}			
+		} else if(expr instanceof Expr.BinOp) {  
+			Expr.BinOp bop = (Expr.BinOp) expr;
+			Expr.BOp op = bop.op;
+			
+			boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
+			
+			if(followOn) {
+				p = propagateCondition(bop.lhs,sign,environment,imports);
+				bop.lhs = p.first();
+				p = propagateCondition(bop.rhs,sign,p.second(),imports);
+				bop.rhs = p.first();
+				environment = p.second();		
+			} else {
+				// We could do better here
+				p = propagateCondition(bop.lhs,sign,environment.clone(),imports);
+				bop.lhs = p.first();
+				p = propagateCondition(bop.rhs,sign,environment,imports);
+				bop.rhs = p.first();
+			}
+			
+			switch(op) {
+			case AND:
+			case OR:
+			case XOR:
+				checkIsSubtype(Type.T_BOOL,bop.lhs);
+				checkIsSubtype(Type.T_BOOL,bop.rhs);				
+				break;
+			case IS:
+				// this one is slightly more difficult. In the special case that
+				// we have a type constant on the right-hand side then we want
+				// to check that it makes sense. Otherwise, we just check that
+				// it has type meta.								
+				
+				if(bop.rhs instanceof Expr.TypeVal) {
+					// yes, right-hand side is a constant					
+					Expr.TypeVal tv = (Expr.TypeVal) bop.rhs;
+					Type testRawType = tv.type.raw();
+					Type lhsRawType = bop.lhs.type().raw();
+					Type glb = Type.intersect(lhsRawType, testRawType);							
+					if(Type.isSubtype(testRawType,lhsRawType)) {								
+						// DEFINITE TRUE CASE										
+						syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, expr);
+					} else if (glb == Type.T_VOID) {				
+						// DEFINITE FALSE CASE	
+						syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
+								filename, expr);			
+					} 
+					
+					// Finally, if the lhs is local variable then update its
+					// type in the resulting environment. 
+					if(bop.lhs instanceof Expr.LocalVariable) {
+						Expr.LocalVariable lv = (Expr.LocalVariable) bop.lhs;
+						Nominal<Type> newType;
+						if(sign) {
+							newType = new Nominal<Type>(tv.type.first(), glb);
+						} else {
+							Type gdiff = Type.intersect(lhsRawType, Type.Negation(testRawType));
+							System.out.println("COMPUTED: " + gdiff + " FROM: "
+									+ lhsRawType + " AND: "
+									+ Type.Negation(testRawType));
+							newType = new Nominal<Type>(Type.Negation(tv.type
+									.first()), gdiff);
+						}
+						environment = environment.put(lv.var,newType);
+					}
+				} else {
+					// In this case, we can't update the type of the lhs since
+					// we don't know anything about the rhs. It may be possible
+					// to support bounds here in order to do that, but frankly
+					// that's future work :)
+					checkIsSubtype(Type.T_META,bop.rhs);
+				}							
+				break;
+			default:
+				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,expr);			
+			}			
+			
+			bop.srcType = Nominal.T_BOOL;
+		} else {
+			// for all others just default back to the base rules for expressions.
+			expr = propagate(expr,environment,imports);
+		}		
+		
+		return new Pair(expr,environment);
 	}
 	
 	private Expr propagate(Expr expr,
@@ -772,14 +870,12 @@ public final class TypePropagation {
 			
 			result = type;			
 		} else {			
-			switch(expr.op) {	
+			switch(expr.op) {
+			case IS:
 			case AND:
 			case OR:
 			case XOR:
-				checkIsSubtype(Type.T_BOOL,expr.lhs);
-				checkIsSubtype(Type.T_BOOL,expr.rhs);
-				result = Type.T_BOOL;
-				break;
+				return propagateCondition(expr,true,environment,imports).first();				
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
@@ -802,34 +898,7 @@ public final class TypePropagation {
 				checkIsSubtype(Type.T_INT,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.T_INT;
-				break;
-			case IS:
-				// this one is slightly more difficult. In the special case that
-				// we have a type constant on the right-hand side then we want
-				// to check that it makes sense. Otherwise, we just check that
-				// it has type meta.
-				if(expr.rhs instanceof Expr.TypeVal) {
-					// yes, right-hand side is a constant
-					Expr.TypeVal tv = (Expr.TypeVal) expr.rhs;
-					Type testRawType = tv.type.raw();
-					Type glb = Type.intersect(lhsRawType, testRawType);							
-					if(Type.isSubtype(testRawType,lhsRawType)) {								
-						// DEFINITE TRUE CASE										
-						syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, expr);
-					} else if (glb == Type.T_VOID) {				
-						// DEFINITE FALSE CASE	
-						syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
-								filename, expr);			
-					} 
-				} else {
-					// In this case, we can't update the type of the lhs since
-					// we don't know anything about the rhs. It may be possible
-					// to support bounds here in order to do that, but frankly
-					// that's future work :)
-					checkIsSubtype(Type.T_META,expr.rhs);
-				}
-				result = Type.T_BOOL;
-				break;
+				break;			
 			default:
 				// all other operations go through here
 				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
@@ -874,12 +943,11 @@ public final class TypePropagation {
 		case NEG:
 			checkIsSubtype(Type.T_REAL,src);			
 			break;
-		case NOT:
-			checkIsSubtype(Type.T_BOOL,src);
-			break;
 		case INVERT:
 			checkIsSubtype(Type.T_BYTE,src);
 			break;
+		case NOT:
+			return propagateCondition(expr,true,environment,imports).first();		
 		default:		
 			internalFailure("unknown unary operator ("
 					+ expr.op.getClass().getName() + ")" + expr.op, filename,
@@ -1509,6 +1577,9 @@ public final class TypePropagation {
 		}
 		
 		// ok, not bottom so compute intersection.
+		
+		lhs.free();
+		rhs.free(); 		
 		
 		RefCountedHashMap<String,Nominal<Type>> result = new RefCountedHashMap<String,Nominal<Type>>();
 		for(String key : lhs.keySet()) {
