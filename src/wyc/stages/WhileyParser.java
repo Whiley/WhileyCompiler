@@ -839,28 +839,21 @@ public final class WhileyParser {
 			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
-			match(NotEquals.class);			
-			
-			
+			match(NotEquals.class);									
 			Expr rhs = parseBitwiseExpression(startSet);			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.InstanceOf) {
 			return parseTypeEquals(lhs,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
-			match(WhileyLexer.ElemOf.class);			
-						
+			match(WhileyLexer.ElemOf.class);									
 			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
-			match(WhileyLexer.SubsetEquals.class);			
-			
-			
+			match(WhileyLexer.SubsetEquals.class);									
 			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
-			match(WhileyLexer.Subset.class);			
-			
-			
+			match(WhileyLexer.Subset.class);									
 			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {

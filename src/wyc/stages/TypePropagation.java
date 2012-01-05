@@ -508,7 +508,7 @@ public final class TypePropagation {
 		RefCountedHashMap<String,Nominal<Type>> trueEnv;
 		RefCountedHashMap<String,Nominal<Type>> falseEnv;
 		
-		if(stmt.trueBranch != null && stmt.trueBranch != null) {
+		if(stmt.trueBranch != null && stmt.falseBranch != null) {
 			falseEnv = environment.clone();
 			trueEnv = propagate(stmt.trueBranch,environment.clone(),imports);
 			falseEnv = propagate(stmt.falseBranch,environment,imports);						
@@ -720,15 +720,15 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		expr.lhs = propagate(expr.lhs,environment,imports);
 		expr.rhs = propagate(expr.rhs,environment,imports);
-		Type lhsExpanded = expr.lhs.type().raw();
-		Type rhsExpanded = expr.rhs.type().raw();
+		Type lhsRawType = expr.lhs.type().raw();
+		Type rhsRawType = expr.rhs.type().raw();
 	
-		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhsExpanded);
-		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhsExpanded);		
-		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhsExpanded);
-		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhsExpanded);
-		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhsExpanded);
-		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsExpanded);
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhsRawType);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhsRawType);		
+		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhsRawType);
+		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhsRawType);
+		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhsRawType);
+		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsRawType);
 		
 		Type result;
 		if(lhs_str || rhs_str) {						
@@ -741,7 +741,7 @@ public final class TypePropagation {
 			
 			result = Type.T_STRING;
 		} else if(lhs_set && rhs_set) {		
-			Type type = Type.effectiveSetType(Type.Union(lhsExpanded,rhsExpanded));
+			Type type = Type.effectiveSetType(Type.Union(lhsRawType,rhsRawType));
 			
 			switch(expr.op) {				
 				case ADD:																				
@@ -762,7 +762,7 @@ public final class TypePropagation {
 			
 			result = type;
 		} else if(lhs_list && rhs_list) {
-			Type.List type = Type.effectiveListType(Type.Union(lhsExpanded,rhsExpanded));
+			Type.List type = Type.effectiveListType(Type.Union(lhsRawType,rhsRawType));
 			
 			if(expr.op == Expr.BOp.ADD){ 																							
 					expr.op = Expr.BOp.LISTAPPEND;
@@ -803,13 +803,40 @@ public final class TypePropagation {
 				checkIsSubtype(Type.T_INT,expr.rhs);
 				result = Type.T_INT;
 				break;
+			case IS:
+				// this one is slightly more difficult. In the special case that
+				// we have a type constant on the right-hand side then we want
+				// to check that it makes sense. Otherwise, we just check that
+				// it has type meta.
+				if(expr.rhs instanceof Expr.TypeVal) {
+					// yes, right-hand side is a constant
+					Expr.TypeVal tv = (Expr.TypeVal) expr.rhs;
+					Type testRawType = tv.type.raw();
+					Type glb = Type.intersect(lhsRawType, testRawType);							
+					if(Type.isSubtype(testRawType,lhsRawType)) {								
+						// DEFINITE TRUE CASE										
+						syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, expr);
+					} else if (glb == Type.T_VOID) {				
+						// DEFINITE FALSE CASE	
+						syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
+								filename, expr);			
+					} 
+				} else {
+					// In this case, we can't update the type of the lhs since
+					// we don't know anything about the rhs. It may be possible
+					// to support bounds here in order to do that, but frankly
+					// that's future work :)
+					checkIsSubtype(Type.T_META,expr.rhs);
+				}
+				result = Type.T_BOOL;
+				break;
 			default:
 				// all other operations go through here
-				if(Type.isImplicitCoerciveSubtype(lhsExpanded,rhsExpanded)) {
+				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
 					checkIsSubtype(Type.T_REAL,expr.lhs);
-					if(Type.isSubtype(Type.T_CHAR, lhsExpanded)) {
+					if(Type.isSubtype(Type.T_CHAR, lhsRawType)) {
 						result = Type.T_INT;
-					} else if(Type.isSubtype(Type.T_INT, lhsExpanded)) {
+					} else if(Type.isSubtype(Type.T_INT, lhsRawType)) {
 						result = Type.T_INT;
 					} else {
 						result = Type.T_REAL;
@@ -817,9 +844,9 @@ public final class TypePropagation {
 				} else {
 					checkIsSubtype(Type.T_REAL,expr.lhs);
 					checkIsSubtype(Type.T_REAL,expr.rhs);				
-					if(Type.isSubtype(Type.T_CHAR, rhsExpanded)) {
+					if(Type.isSubtype(Type.T_CHAR, rhsRawType)) {
 						result = Type.T_INT;
-					} else if(Type.isSubtype(Type.T_INT, rhsExpanded)) {
+					} else if(Type.isSubtype(Type.T_INT, rhsRawType)) {
 						result = Type.T_INT;
 					} else {
 						result = Type.T_REAL;

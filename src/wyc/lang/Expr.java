@@ -167,9 +167,8 @@ public interface Expr extends SyntacticElement {
 			this.unresolvedType = val;
 		}
 		
-
 		public Nominal<Type> type() {
-			return type;
+			return Nominal.T_META;
 		}		
 	}
 	
@@ -880,7 +879,7 @@ public interface Expr extends SyntacticElement {
 		RANGE{
 			public String toString() { return ".."; }
 		},
-		IS {
+		IS{
 			public String toString() { return "is"; }
 		},
 		BITWISEAND {

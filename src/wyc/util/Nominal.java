@@ -30,6 +30,7 @@ public class Nominal<T extends Type> extends Pair<Type,T> {
 	
 	public static final Nominal<Type> T_ANY = new Nominal<Type>(Type.T_ANY,Type.T_ANY);
 	public static final Nominal<Type> T_VOID = new Nominal<Type>(Type.T_VOID,Type.T_VOID);
+	public static final Nominal<Type> T_META = new Nominal<Type>(Type.T_META,Type.T_META);
 	public static final Nominal<Type> T_BOOL = new Nominal<Type>(Type.T_BOOL,Type.T_BOOL);
 	public static final Nominal<Type> T_BYTE = new Nominal<Type>(Type.T_BYTE,Type.T_BYTE);
 	public static final Nominal<Type> T_CHAR = new Nominal<Type>(Type.T_CHAR,Type.T_CHAR);
