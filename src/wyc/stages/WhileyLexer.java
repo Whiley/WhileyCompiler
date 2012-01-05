@@ -547,7 +547,7 @@ public class WhileyLexer {
 		} else if(text.equals("some")) {
 			return new Some(text,start,line);
 		} else if(text.equals("is")) {			
-			return new TypeEquals(start,line);			 
+			return new InstanceOf(start,line);			 
 		}
 	
 		// otherwise, must be identifier
@@ -760,8 +760,8 @@ public class WhileyLexer {
 	public static class GreaterEquals extends Token {
 		public GreaterEquals(String text, int pos, int line) { super(text,pos,line);	}
 	}
-	public static class TypeEquals extends Token {
-		public TypeEquals(int pos, int line) { super("is",pos,line);	}
+	public static class InstanceOf extends Token {
+		public InstanceOf(int pos, int line) { super("is",pos,line);	}
 	}
 	public static class None extends Token {
 		public None(String text, int pos, int line) { super(text,pos,line);	}

@@ -844,12 +844,11 @@ public final class WhileyParser {
 			
 			Expr rhs = parseBitwiseExpression(startSet);			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.TypeEquals) {
+		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.InstanceOf) {
 			return parseTypeEquals(lhs,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
 			match(WhileyLexer.ElemOf.class);			
-			
-			
+						
 			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
@@ -870,12 +869,12 @@ public final class WhileyParser {
 	}
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
-		match(WhileyLexer.TypeEquals.class);			
+		match(WhileyLexer.InstanceOf.class);			
 				
 		UnresolvedType type = parseType();
 		Expr.TypeVal tc = new Expr.TypeVal(type, sourceAttr(start, index - 1));				
 		
-		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
+		return new Expr.BinOp(Expr.BOp.IS, lhs, tc, sourceAttr(start,
 				index - 1));
 	}
 	

@@ -777,7 +777,7 @@ public final class CodeGeneration {
 			blk.append(generateCondition(target, v.rhs, environment));
 			blk.append(Code.Label(exitLabel));
 			return blk;
-		} else if (bop == Expr.BOp.TYPEEQ || bop == Expr.BOp.TYPEIMPLIES) {
+		} else if (bop == Expr.BOp.IS) {
 			return generateTypeCondition(target, v, environment);
 		}
 

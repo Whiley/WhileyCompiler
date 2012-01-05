@@ -219,7 +219,7 @@ public interface Expr extends SyntacticElement {
 			case GTEQ:
 			case SUBSET:	
 			case SUBSETEQ:
-			case TYPEEQ:				
+			case IS:				
 				return Nominal.T_BOOL;
 			default:
 				return srcType;
@@ -880,11 +880,8 @@ public interface Expr extends SyntacticElement {
 		RANGE{
 			public String toString() { return ".."; }
 		},
-		TYPEEQ{
-			public String toString() { return "~=="; }
-		},
-		TYPEIMPLIES {
-			public String toString() { return "~=>"; }
+		IS {
+			public String toString() { return "is"; }
 		},
 		BITWISEAND {
 			public String toString() { return "&"; }
