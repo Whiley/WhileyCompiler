@@ -215,8 +215,6 @@ public final class TypePropagation {
 			m.resolvedType = (Nominal) resolver.resolveAsType(m.unresolvedType(),imports);		
 		}
 		
-		System.out.println("ENVIRONMENT: " + environment);
-		
 		propagate(d.statements,environment,imports);
 	}
 	
@@ -698,7 +696,8 @@ public final class TypePropagation {
 			case OR:
 			case XOR:
 				checkIsSubtype(Type.T_BOOL,bop.lhs);
-				checkIsSubtype(Type.T_BOOL,bop.rhs);				
+				checkIsSubtype(Type.T_BOOL,bop.rhs);	
+				bop.srcType = Nominal.T_BOOL;
 				break;
 			case IS:
 				// this one is slightly more difficult. In the special case that
@@ -706,11 +705,11 @@ public final class TypePropagation {
 				// to check that it makes sense. Otherwise, we just check that
 				// it has type meta.								
 				
-				if(bop.rhs instanceof Expr.TypeVal) {
-					// yes, right-hand side is a constant					
-					Expr.TypeVal tv = (Expr.TypeVal) bop.rhs;
-					Type testRawType = tv.type.raw();
+				if(bop.rhs instanceof Expr.TypeVal) {									
+					// yes, right-hand side is a constant
 					Type lhsRawType = bop.lhs.type().raw();
+					Expr.TypeVal tv = (Expr.TypeVal) bop.rhs;
+					Type testRawType = tv.type.raw();					
 					Type glb = Type.intersect(lhsRawType, testRawType);							
 					if(Type.isSubtype(testRawType,lhsRawType)) {								
 						// DEFINITE TRUE CASE										
@@ -729,10 +728,7 @@ public final class TypePropagation {
 						if(sign) {
 							newType = new Nominal<Type>(tv.type.first(), glb);
 						} else {
-							Type gdiff = Type.intersect(lhsRawType, Type.Negation(testRawType));
-							System.out.println("COMPUTED: " + gdiff + " FROM: "
-									+ lhsRawType + " AND: "
-									+ Type.Negation(testRawType));
+							Type gdiff = Type.intersect(lhsRawType, Type.Negation(testRawType));							
 							newType = new Nominal<Type>(Type.Negation(tv.type
 									.first()), gdiff);
 						}
@@ -744,13 +740,14 @@ public final class TypePropagation {
 					// to support bounds here in order to do that, but frankly
 					// that's future work :)
 					checkIsSubtype(Type.T_META,bop.rhs);
-				}							
+				}	
+
+				bop.srcType = (Nominal) bop.lhs.type();
 				break;
 			default:
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,expr);			
 			}			
 			
-			bop.srcType = Nominal.T_BOOL;
 		} else {
 			// for all others just default back to the base rules for expressions.
 			expr = propagate(expr,environment,imports);

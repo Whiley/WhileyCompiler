@@ -782,7 +782,6 @@ public final class CodeGeneration {
 		}
 
 		Code.COp cop = OP2COP(bop,v);
-		Type type = v.type().raw();
 		
 		if (cop == Code.COp.EQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
@@ -792,7 +791,7 @@ public final class CodeGeneration {
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
-			int slot = environment.get(lhs.var);					
+			int slot = environment.get(lhs.var);								
 			blk.append(Code.IfType(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
@@ -803,7 +802,7 @@ public final class CodeGeneration {
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
-			int slot = environment.get(lhs.var);						
+			int slot = environment.get(lhs.var);			
 			blk.append(Code.IfType(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
@@ -833,8 +832,7 @@ public final class CodeGeneration {
 
 		Expr.TypeVal rhs =(Expr.TypeVal) v.rhs;		
 		
-		// TODO: fix type constraints
-		blk.append(Code.IfType(v.type().raw(), slot, rhs.type.raw(), target),
+		blk.append(Code.IfType(v.srcType.raw(), slot, rhs.type.raw(), target),
 				attributes(v));
 		return blk;
 	}

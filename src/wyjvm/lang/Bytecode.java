@@ -86,8 +86,9 @@ public abstract class Bytecode {
 		public final JvmType type;
 		
 		public Store(int slot, JvmType type) {
+			typeChar(type); // check valid type
 			this.slot=slot;
-			this.type=type;
+			this.type=type;			
 		}
 		
 		public int stackDiff() {
@@ -135,8 +136,9 @@ public abstract class Bytecode {
 		public final JvmType type;
 		
 		public Load(int slot, JvmType type) {
+			typeChar(type); // check valid type
 			this.slot=slot;
-			this.type=type;
+			this.type=type;			
 		}
 		
 		public int stackDiff() {
@@ -500,7 +502,10 @@ public abstract class Bytecode {
 	 */
 	public static final class Return extends Bytecode {
 		public final JvmType type;
-		public Return(JvmType type) { this.type = type; }		
+		public Return(JvmType type) {
+			if(type != null) { typeChar(type); } // check valid
+			this.type = type;			
+		}		
 		
 		public int stackDiff() {
 			if(type == null) { return 0; }
@@ -570,7 +575,10 @@ public abstract class Bytecode {
 	public static final class Neg extends Bytecode {
 		public final JvmType type;
 		
-		public Neg(JvmType type) { this.type = type; }
+		public Neg(JvmType type) {
+			typeChar(type); // check valid type
+			this.type = type; 
+		}
 		
 		public int stackDiff() {
 			return 0;
@@ -622,6 +630,7 @@ public abstract class Bytecode {
 		public final JvmType type;
 		public final int op;
 		public BinOp(int op, JvmType type) {
+			typeChar(type); // check valid type
 			assert op >= 0 && op <= USHR;
 			this.op = op;
 			this.type = type;
