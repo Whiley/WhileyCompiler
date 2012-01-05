@@ -675,6 +675,20 @@ public final class TypePropagation {
 			Expr.BinOp bop = (Expr.BinOp) expr;
 			Expr.BOp op = bop.op;
 			
+			switch (op) {
+			case AND:
+			case OR:
+			case XOR:
+			case IS:
+				break;
+			default:
+				// sanity check return is boolean for all other expression
+				// kinds.
+				expr = propagate(expr,environment,imports);
+				checkIsSubtype(Type.T_BOOL, expr);
+				return new Pair(expr,environment);
+			}
+			
 			boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
 			
 			if(followOn) {
@@ -743,9 +757,7 @@ public final class TypePropagation {
 				}	
 
 				bop.srcType = (Nominal) bop.lhs.type();
-				break;
-			default:
-				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,expr);			
+				break;								
 			}			
 			
 		} else {
