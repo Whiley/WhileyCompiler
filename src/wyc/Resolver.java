@@ -308,8 +308,8 @@ public final class Resolver {
 	 */
 	public Nominal<Type> resolveAsType(UnresolvedType t,
 			List<WhileyFile.Import> imports) throws ResolveError {
-		Type nominalType = resolveAsType(t, imports, true);
-		Type rawType = resolveAsType(t, imports, false);
+		Type nominalType = resolveAsType(t, imports, true);		
+		Type rawType = resolveAsType(t, imports, false);		
 		return new Nominal<Type>(nominalType, rawType);
 	}
 	
@@ -358,6 +358,7 @@ public final class Resolver {
 	private int resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
 			boolean nominal) throws ResolveError {				
+		
 		if(t instanceof UnresolvedType.Primitive) {
 			return resolveAsType((UnresolvedType.Primitive)t,imports,states);
 		} 
@@ -390,7 +391,7 @@ public final class Resolver {
 			myChildren[1] = resolveAsType(st.value,imports,states,roots,nominal);			
 		} else if(t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String,UnresolvedType> ttTypes = tt.types;
+			HashMap<String,UnresolvedType> ttTypes = tt.types;			
 			Type.Record.State fields = new Type.Record.State(tt.isOpen,ttTypes.keySet());
 			Collections.sort(fields);			
 			myKind = Type.K_RECORD;
@@ -398,7 +399,7 @@ public final class Resolver {
 			for(int i=0;i!=fields.size();++i) {	
 				String field = fields.get(i);
 				myChildren[i] = resolveAsType(ttTypes.get(field),imports,states,roots,nominal);
-			}			
+			}						
 			myData = fields;
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
@@ -424,8 +425,7 @@ public final class Resolver {
 				// will load the expanded type onto states at the current point.
 				// Therefore, we need to remove the initial null we loaded on.
 				states.remove(myIndex); 
-				resolveAsType(nid,imports,states,roots);
-				return myIndex;
+				return resolveAsType(nid,imports,states,roots);				
 			}
 		} else if(t instanceof UnresolvedType.Not) {	
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
@@ -438,8 +438,7 @@ public final class Resolver {
 			myKind = Type.K_UNION;
 			myChildren = new int[utTypes.size()];
 			for(int i=0;i!=utTypes.size();++i) {
-				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);
-				
+				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);				
 			}	
 			myDeterministic = false;
 		} else if(t instanceof UnresolvedType.Process) {	

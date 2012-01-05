@@ -214,7 +214,9 @@ public final class TypePropagation {
 			Message m = (Message) d;
 			m.resolvedType = (Nominal) resolver.resolveAsType(m.unresolvedType(),imports);		
 		}
-			
+		
+		System.out.println("ENVIRONMENT: " + environment);
+		
 		propagate(d.statements,environment,imports);
 	}
 	
