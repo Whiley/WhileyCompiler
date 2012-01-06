@@ -1474,6 +1474,8 @@ public final class TypePropagation {
 		checkIsSubtype(Type.T_INT,expr.start);
 		checkIsSubtype(Type.T_INT,expr.end);
 		
+		expr.type = (Nominal) expr.src.type();
+		
 		return expr;
 	}
 	
