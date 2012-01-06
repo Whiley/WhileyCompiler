@@ -504,8 +504,16 @@ public final class Resolver {
 		
 		WhileyFile.TypeDef td = wf.typeDecl(key.name());
 		if(td == null) {
-			// FIXME: need a better error message!
-			throw new ResolveError("type not present in module: " + key.name());
+			Value v = resolveAsConstant(key,null);
+			Type t = v.type();
+			if(t instanceof Type.Set) {
+				Type.Set ts = (Type.Set) t;
+				// FIXME: add constraints
+				return append(ts.element(),states);
+			} else {
+				// FIXME: need a better error message!
+				throw new ResolveError("type not found: " + key.name());
+			}
 		}
 		
 		// following is needed to terminate any recursion
@@ -602,6 +610,8 @@ public final class Resolver {
 	 * @throws ResolveError
 	 */
 	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {		
+		// FIXME: cyclic constants
+		
 		WhileyFile wf = files.get(key.module());
 		if (wf != null) {			
 			WhileyFile.Declaration decl = wf.declaration(key.name());
