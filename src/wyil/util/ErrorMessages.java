@@ -151,6 +151,7 @@ public class ErrorMessages {
 		String r = messages[kind];
 		for (int i = 0; i != data.length; ++i) {
 			String rep = data[i].toString();
+			System.out.println("REPLACING: " + rep + " in " + r);
 			r = r.replaceAll("\\$" + i, rep);			
 		}
 		return r;		

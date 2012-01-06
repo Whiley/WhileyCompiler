@@ -304,18 +304,66 @@ public final class TypePropagation {
 			// Therefore, whatever type the rhs has, the variable in question
 			// will have after the assignment.
 			Expr.AbstractVariable av = (Expr.AbstractVariable) lhs;
-			Expr.LocalVariable lv;
-			if(lhs instanceof Expr.LocalVariable) {
+			Expr.AssignedVariable lv;
+			if(lhs instanceof Expr.AssignedVariable) {
 				// this case just avoids creating another object everytime we
 				// visit this statement.
-				lv = (Expr.LocalVariable) lhs; 
+				lv = (Expr.AssignedVariable) lhs; 
 			} else {
-				lv = new Expr.LocalVariable(av.var, av.attributes());
+				lv = new Expr.AssignedVariable(av.var, av.attributes());
 			}
-			lv.type = (Nominal) rhs.type();			
-			environment = environment.put(lv.var, lv.type);
+			lv.type = Nominal.T_VOID;
+			lv.afterType = (Nominal) rhs.type();			
+			environment = environment.put(lv.var, lv.afterType);
 			lhs = lv;
-		} else {
+		} else if(lhs instanceof Expr.Tuple) {
+			// represents a destructuring assignment
+			Expr.Tuple tv = (Expr.Tuple) lhs;
+			ArrayList<Expr> tvFields = tv.fields;
+			
+			// FIXME: loss of nominal information here			
+			Type rawRhs = rhs.type().raw();		
+			Type.Tuple rawTupleRhs;
+			
+			// FIXME: the following is something of a kludge. It would also be
+			// nice to support more expressive destructuring assignment
+			// operations.
+			if(Type.isImplicitCoerciveSubtype(Type.T_REAL, rawRhs)) {
+				rawTupleRhs = (Type.Tuple) Type.Tuple(Type.T_INT,Type.T_INT);
+			} else if(!(rawRhs instanceof Type.Tuple)) {
+				syntaxError("tuple value expected, got " + rawRhs,filename,rhs);
+				return null; // deadcode
+			} else {
+				rawTupleRhs = (Type.Tuple) rawRhs;
+			}
+			
+			List<Type> rhsElements = rawTupleRhs.elements();
+			if(rhsElements.size() != tvFields.size()) {
+				syntaxError("incompatible tuple assignment",filename,rhs);
+			}			
+			for(int i=0;i!=tvFields.size();++i) {
+				Expr f = tvFields.get(i);
+				Nominal<Type> t = new Nominal<Type>(rhsElements.get(i),rhsElements.get(i));
+				
+				if(f instanceof Expr.AbstractVariable) {
+					Expr.AbstractVariable av = (Expr.AbstractVariable) f; 				
+					Expr.AssignedVariable lv;
+					if(lhs instanceof Expr.AssignedVariable) {
+						// this case just avoids creating another object everytime we
+						// visit this statement.
+						lv = (Expr.AssignedVariable) lhs; 
+					} else {
+						lv = new Expr.AssignedVariable(av.var, av.attributes());
+					}
+					lv.type = Nominal.T_VOID;
+					lv.afterType = t; 
+					environment = environment.put(lv.var, t);					
+					tvFields.set(i, lv);
+				} else {
+					syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,f);
+				}								
+			}										
+		} else {	
 			lhs = propagate(lhs,environment,imports);			
 			Expr.AssignedVariable av = inferBeforeAfterType(lhs,
 					(Nominal) lhs.type(), (Nominal) rhs.type());

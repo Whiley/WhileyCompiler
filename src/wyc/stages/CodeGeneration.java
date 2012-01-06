@@ -316,25 +316,26 @@ public final class CodeGeneration {
 	private Block generate(Assign s, HashMap<String,Integer> environment) {
 		Block blk = null;
 		
-		if(s.lhs instanceof Expr.LocalVariable) {			
+		if(s.lhs instanceof Expr.AssignedVariable) {			
 			blk = generate(s.rhs, environment);			
-			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
-			blk.append(Code.Store(v.type.raw(), allocate(v.var, environment)),
+			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
+			blk.append(Code.Store(v.afterType.raw(), allocate(v.var, environment)),
 					attributes(s));			
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
 			blk = generate(s.rhs, environment);			
-			blk.append(Code.Destructure(null),attributes(s));
+			blk.append(Code.Destructure(s.rhs.type().raw()),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
 			Collections.reverse(fields);
 			
 			for(Expr e : fields) {
-				if(!(e instanceof Expr.LocalVariable)) {
+				if(!(e instanceof Expr.AssignedVariable)) {
 					syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,e);
 				}
-				Expr.LocalVariable v = (Expr.LocalVariable) e;
-				blk.append(Code.Store(null, allocate(v.var, environment)),
-						attributes(s));				
+				Expr.AssignedVariable v = (Expr.AssignedVariable) e;
+				blk.append(
+						Code.Store(v.afterType.raw(),
+								allocate(v.var, environment)), attributes(s));
 			}
 			return blk;
 		} else if (s.lhs instanceof Expr.ListAccess
