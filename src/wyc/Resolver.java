@@ -839,8 +839,8 @@ public final class Resolver {
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
 			if (imp.matchName(name)) {
-				for (ModuleID mid : matchImport(imp)) {
-					NameID nid = new NameID(mid,name);										
+				for (ModuleID mid : matchImport(imp)) {					
+					NameID nid = new NameID(mid,name);						
 					Nominal<Type.Function> ft = lookupFunctionOrMethod(nid,rawParameters);
 					if(ft != null) {
 						return new Pair<NameID,Nominal<Type.Function>>(nid,ft);
@@ -1071,8 +1071,8 @@ public final class Resolver {
 		WhileyFile wf = files.get(mid);
 		if(wf != null) {
 			// FIXME: need to include methods here as well
-			for (WhileyFile.Function f : wf.declarations(
-					WhileyFile.Function.class, nid.name())) {
+			for (WhileyFile.FunctionOrMethod f : wf.declarations(
+					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (f.parameters.size() == nparams) {					
 					r.add((Nominal) resolveAsType(f.unresolvedType(),buildImports(wf,f)));							
 				}

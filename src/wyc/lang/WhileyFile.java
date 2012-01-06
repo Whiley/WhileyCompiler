@@ -291,9 +291,24 @@ public final class WhileyFile {
 			return name;
 		}
 		
+		public abstract UnresolvedType.FunctionOrMethodOrMessage unresolvedType();
+		
 		public abstract Nominal<? extends Type.Function> resolvedType();
 	}
 
+	public static abstract class FunctionOrMethod extends FunctionOrMethodOrMessage {
+		public FunctionOrMethod(List<Modifier> modifiers, String name,
+				UnresolvedType ret, List<Parameter> parameters,
+				Expr precondition, Expr postcondition,
+				UnresolvedType throwType, List<Stmt> statements,
+				Attribute... attributes) {
+			super(modifiers, name, ret, parameters, precondition,
+					postcondition, throwType, statements, attributes);
+		}		
+		
+		public abstract UnresolvedType.FunctionOrMethod unresolvedType();
+	}
+	
 	/**
 	 * Represents a function declaration in a Whiley source file. For example:
 	 * 
@@ -317,7 +332,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class Function extends FunctionOrMethodOrMessage {
+	public final static class Function extends FunctionOrMethod {
 		public Nominal<Type.Function> resolvedType;
 		
 		public Function(List<Modifier> modifiers, String name,
@@ -365,7 +380,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class Method extends FunctionOrMethodOrMessage {
+	public final static class Method extends FunctionOrMethod {
 		public Nominal<Type.Method> resolvedType;
 		
 		public Method(List<Modifier> modifiers, String name,
