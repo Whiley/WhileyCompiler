@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define etype as {int mode, ? rest}
+define etype as {int mode, ...}
 define Ptype as process etype
 
 int Ptype::get():
