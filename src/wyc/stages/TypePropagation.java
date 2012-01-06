@@ -753,6 +753,9 @@ public final class TypePropagation {
 		// differently.
 		
 		switch (op) {
+		case AND:
+		case OR:
+		case XOR:
 		case EQ:
 		case NEQ:
 		case LT:
@@ -949,6 +952,9 @@ public final class TypePropagation {
 		// differently.
 		
 		switch(expr.op) {
+		case AND:
+		case OR:
+		case XOR:
 		case EQ:
 		case NEQ:
 		case LT:	
