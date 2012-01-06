@@ -216,6 +216,7 @@ public interface Expr extends SyntacticElement {
 			case LTEQ:
 			case GT:	
 			case GTEQ:
+			case ELEMENTOF:
 			case SUBSET:	
 			case SUBSETEQ:
 			case IS:				

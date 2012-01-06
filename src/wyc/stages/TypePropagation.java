@@ -890,18 +890,27 @@ public final class TypePropagation {
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsRawType);
 		
 		Type srcType;
-		if(lhs_str || rhs_str) {						
-			if (expr.op == Expr.BOp.ADD) {
+
+		if(lhs_str || rhs_str) {	
+			switch(expr.op) {				
+			case ADD:								
 				expr.op = Expr.BOp.STRINGAPPEND;
-			} else {
+			case STRINGAPPEND:
+				break;
+			default:			
 				syntaxError("Invalid string operation: " + expr.op, filename,
 						expr);
 			}
 			
 			srcType = Type.T_STRING;
+		} else if(expr.op == Expr.BOp.ELEMENTOF && rhs_set) {
+			Type.Set type = Type.effectiveSetType(rhsRawType);
+			if (!Type.isImplicitCoerciveSubtype(type.element(), lhsRawType)) {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,type.element()),
+						filename, expr);
+			}			
+			srcType = rhsRawType;
 		} else if(lhs_set && rhs_set) {		
-			Type type = Type.effectiveSetType(Type.Union(lhsRawType,rhsRawType));
-			
 			switch(expr.op) {				
 				case ADD:																				
 					expr.op = Expr.BOp.UNION;
@@ -911,11 +920,14 @@ public final class TypePropagation {
 					break;
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
-					break;
+					break;				
 				case EQ:
 				case NEQ:
 				case SUBSET:
-				case SUBSETEQ:					
+				case SUBSETEQ:
+				case UNION:
+				case INTERSECTION:
+				case DIFFERENCE:
 					break;
 				default:
 					syntaxError("invalid set operation: " + expr.op,filename,expr);		
@@ -928,17 +940,22 @@ public final class TypePropagation {
 			} else {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
 				return null; // dead code
-			}
-						
+			}					
+		} else if(expr.op == Expr.BOp.ELEMENTOF && rhs_list) {			
+			Type.List type = Type.effectiveListType(rhsRawType);
+			if (!Type.isImplicitCoerciveSubtype(type.element(), lhsRawType)) {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,type.element()),
+						filename, expr);
+			}			
+			srcType = rhsRawType;			
 		} else if(lhs_list && rhs_list) {
-			Type.List type = Type.effectiveListType(Type.Union(lhsRawType,rhsRawType));
-			
 			switch(expr.op) {	
 			case ADD:
 				expr.op = Expr.BOp.LISTAPPEND;
 				break;
 			case EQ:
 			case NEQ:
+			case LISTAPPEND:
 				break;
 			default:
 				syntaxError("invalid list operation: " + expr.op,filename,expr);		
