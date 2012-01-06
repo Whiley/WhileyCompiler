@@ -889,7 +889,7 @@ public final class TypePropagation {
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhsRawType);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsRawType);
 		
-		Type result;
+		Type srcType;
 		if(lhs_str || rhs_str) {						
 			if (expr.op == Expr.BOp.ADD) {
 				expr.op = Expr.BOp.STRINGAPPEND;
@@ -898,7 +898,7 @@ public final class TypePropagation {
 						expr);
 			}
 			
-			result = Type.T_STRING;
+			srcType = Type.T_STRING;
 		} else if(lhs_set && rhs_set) {		
 			Type type = Type.effectiveSetType(Type.Union(lhsRawType,rhsRawType));
 			
@@ -912,24 +912,46 @@ public final class TypePropagation {
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
 					break;
+				case EQ:
+				case NEQ:
 				case SUBSET:
 				case SUBSETEQ:					
 					break;
 				default:
-					syntaxError("Invalid set operation: " + expr.op,filename,expr);		
+					syntaxError("invalid set operation: " + expr.op,filename,expr);		
 			}
 			
-			result = type;
+			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+				srcType = lhsRawType;
+			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+				srcType = rhsRawType;				
+			} else {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
+				return null; // dead code
+			}
+						
 		} else if(lhs_list && rhs_list) {
 			Type.List type = Type.effectiveListType(Type.Union(lhsRawType,rhsRawType));
 			
-			if(expr.op == Expr.BOp.ADD){ 																							
-					expr.op = Expr.BOp.LISTAPPEND;
-			} else {
-					syntaxError("Invalid set operation: " + expr.op,filename,expr);		
+			switch(expr.op) {	
+			case ADD:
+				expr.op = Expr.BOp.LISTAPPEND;
+				break;
+			case EQ:
+			case NEQ:
+				break;
+			default:
+				syntaxError("invalid list operation: " + expr.op,filename,expr);		
 			}
 			
-			result = type;			
+			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+				srcType = lhsRawType;
+			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+				srcType = rhsRawType;				
+			} else {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
+				return null; // dead code
+			}					
 		} else {			
 			switch(expr.op) {
 			case IS:
@@ -942,44 +964,44 @@ public final class TypePropagation {
 			case BITWISEXOR:
 				checkIsSubtype(Type.T_BYTE,expr.lhs);
 				checkIsSubtype(Type.T_BYTE,expr.rhs);
-				result = Type.T_BYTE;
+				srcType = Type.T_BYTE;
 				break;
 			case LEFTSHIFT:
 			case RIGHTSHIFT:
 				checkIsSubtype(Type.T_BYTE,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
-				result = Type.T_BYTE;
+				srcType = Type.T_BYTE;
 				break;
 			case RANGE:
 				checkIsSubtype(Type.T_INT,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
-				result = Type.List(Type.T_INT, false);
+				srcType = Type.List(Type.T_INT, false);
 				break;
 			case REM:
 				checkIsSubtype(Type.T_INT,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
-				result = Type.T_INT;
+				srcType = Type.T_INT;
 				break;			
 			default:
 				// all other operations go through here
 				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
 					checkIsSubtype(Type.T_REAL,expr.lhs);
 					if(Type.isSubtype(Type.T_CHAR, lhsRawType)) {
-						result = Type.T_INT;
+						srcType = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, lhsRawType)) {
-						result = Type.T_INT;
+						srcType = Type.T_INT;
 					} else {
-						result = Type.T_REAL;
+						srcType = Type.T_REAL;
 					}				
 				} else {
 					checkIsSubtype(Type.T_REAL,expr.lhs);
 					checkIsSubtype(Type.T_REAL,expr.rhs);				
 					if(Type.isSubtype(Type.T_CHAR, rhsRawType)) {
-						result = Type.T_INT;
+						srcType = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, rhsRawType)) {
-						result = Type.T_INT;
+						srcType = Type.T_INT;
 					} else {
-						result = Type.T_REAL;
+						srcType = Type.T_REAL;
 					}
 				}				
 			}
@@ -989,7 +1011,7 @@ public final class TypePropagation {
 		 * Finally, save the resulting types for this expression.
 		 */
 		
-		expr.srcType = new Nominal<Type>(result,result);
+		expr.srcType = new Nominal<Type>(srcType,srcType);
 		
 		return expr;
 	}
