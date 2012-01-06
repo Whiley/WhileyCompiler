@@ -555,8 +555,8 @@ public final class TypePropagation {
 		// First, check condition and apply variable retypings.
 		Pair<Expr,RefCountedHashMap<String,Nominal<Type>>> p1,p2;
 		
-		p1 = propagateCondition(stmt.condition,true,environment.clone(),imports);
-		p2 = propagateCondition(stmt.condition,false,environment,imports);
+		p1 = propagate(stmt.condition,true,environment.clone(),imports);
+		p2 = propagate(stmt.condition,false,environment,imports);
 		stmt.condition = p1.first();
 		
 		RefCountedHashMap<String,Nominal<Type>> trueEnvironment = p1.second();
@@ -706,118 +706,181 @@ public final class TypePropagation {
 	}		
 	
 
-	private Pair<Expr,RefCountedHashMap<String, Nominal<Type>>> propagateCondition(
+	private Pair<Expr, RefCountedHashMap<String, Nominal<Type>>> propagate(
 			Expr expr, boolean sign,
 			RefCountedHashMap<String, Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		Pair<Expr,RefCountedHashMap<String, Nominal<Type>>> p;
 		
 		if(expr instanceof Expr.UnOp) {
-			Expr.UnOp uop = (Expr.UnOp) expr; 
-			if(uop.op == Expr.UOp.NOT) { 
-				p = propagateCondition(uop.mhs,!sign,environment,imports);
-				uop.mhs = p.first();
-				environment = p.second();
-				checkIsSubtype(Type.T_BOOL,uop.mhs);
-				uop.type = Nominal.T_BOOL;
-			} else {
-				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,expr);
-			}			
+			return propagate((Expr.UnOp)expr,sign,environment,imports);		
 		} else if(expr instanceof Expr.BinOp) {  
-			Expr.BinOp bop = (Expr.BinOp) expr;
-			Expr.BOp op = bop.op;
-			
-			switch (op) {
-			case AND:
-			case OR:
-			case XOR:
-			case IS:
-				break;
-			default:
-				// sanity check return is boolean for all other expression
-				// kinds.
-				expr = propagate(expr,environment,imports);
-				checkIsSubtype(Type.T_BOOL, expr);
-				return new Pair(expr,environment);
-			}
-			
-			boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
-			
-			if(followOn) {
-				p = propagateCondition(bop.lhs,sign,environment,imports);
-				bop.lhs = p.first();
-				p = propagateCondition(bop.rhs,sign,p.second(),imports);
-				bop.rhs = p.first();
-				environment = p.second();		
-			} else {
-				// We could do better here
-				p = propagateCondition(bop.lhs,sign,environment.clone(),imports);
-				bop.lhs = p.first();
-				p = propagateCondition(bop.rhs,sign,environment,imports);
-				bop.rhs = p.first();
-			}
-			
-			switch(op) {
-			case AND:
-			case OR:
-			case XOR:
-				checkIsSubtype(Type.T_BOOL,bop.lhs);
-				checkIsSubtype(Type.T_BOOL,bop.rhs);	
-				bop.srcType = Nominal.T_BOOL;
-				break;
-			case IS:
-				// this one is slightly more difficult. In the special case that
-				// we have a type constant on the right-hand side then we want
-				// to check that it makes sense. Otherwise, we just check that
-				// it has type meta.								
-				
-				if(bop.rhs instanceof Expr.TypeVal) {									
-					// yes, right-hand side is a constant
-					Type lhsRawType = bop.lhs.type().raw();
-					Expr.TypeVal tv = (Expr.TypeVal) bop.rhs;
-					Type testRawType = tv.type.raw();					
-					Type glb = Type.intersect(lhsRawType, testRawType);							
-					if(Type.isSubtype(testRawType,lhsRawType)) {								
-						// DEFINITE TRUE CASE										
-						syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, expr);
-					} else if (glb == Type.T_VOID) {				
-						// DEFINITE FALSE CASE	
-						syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
-								filename, expr);			
-					} 
-					
-					// Finally, if the lhs is local variable then update its
-					// type in the resulting environment. 
-					if(bop.lhs instanceof Expr.LocalVariable) {
-						Expr.LocalVariable lv = (Expr.LocalVariable) bop.lhs;
-						Nominal<Type> newType;
-						if(sign) {
-							newType = new Nominal<Type>(tv.type.first(), glb);
-						} else {
-							Type gdiff = Type.intersect(lhsRawType, Type.Negation(testRawType));							
-							newType = new Nominal<Type>(Type.Negation(tv.type
-									.first()), gdiff);
-						}
-						environment = environment.put(lv.var,newType);
-					}
-				} else {
-					// In this case, we can't update the type of the lhs since
-					// we don't know anything about the rhs. It may be possible
-					// to support bounds here in order to do that, but frankly
-					// that's future work :)
-					checkIsSubtype(Type.T_META,bop.rhs);
-				}	
-
-				bop.srcType = (Nominal) bop.lhs.type();
-				break;								
-			}			
-			
+			return propagate((Expr.BinOp)expr,sign,environment,imports);
 		} else {
 			// for all others just default back to the base rules for expressions.
 			expr = propagate(expr,environment,imports);
+			return new Pair(expr,environment);
 		}		
+	}
+	
+	private Pair<Expr, RefCountedHashMap<String, Nominal<Type>>> propagate(
+			Expr.UnOp expr,
+			boolean sign,
+			RefCountedHashMap<String, Nominal<Type>> environment,
+			ArrayList<WhileyFile.Import> imports) {
+		Expr.UnOp uop = (Expr.UnOp) expr; 
+		if(uop.op == Expr.UOp.NOT) { 
+			Pair<Expr,RefCountedHashMap<String, Nominal<Type>>> p = propagate(uop.mhs,!sign,environment,imports);
+			uop.mhs = p.first();			
+			checkIsSubtype(Type.T_BOOL,uop.mhs);
+			uop.type = Nominal.T_BOOL;
+			return new Pair(uop,p.second());
+		} else {
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,expr);
+			return null; // deadcode
+		}	
+	}
+	
+	private Pair<Expr, RefCountedHashMap<String, Nominal<Type>>> propagate(
+			Expr.BinOp bop,
+			boolean sign,
+			RefCountedHashMap<String, Nominal<Type>> environment,
+			ArrayList<WhileyFile.Import> imports) {		
+		Expr.BOp op = bop.op;
 		
-		return new Pair(expr,environment);
+		// TODO: split binop into arithmetic and conditional operators. This
+		// would avoid the following case analysis since conditional binary
+		// operators and arithmetic binary operators actually behave quite
+		// differently.
+		
+		switch (op) {
+		case EQ:
+		case NEQ:
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+		case ELEMENTOF:
+		case SUBSET:
+		case SUBSETEQ:
+		case IS:
+			break;
+		default:
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, bop);
+		}
+		
+		Pair<Expr,RefCountedHashMap<String, Nominal<Type>>> p;
+		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
+		
+		if(followOn) {
+			p = propagate(bop.lhs,sign,environment,imports);
+			bop.lhs = p.first();
+			p = propagate(bop.rhs,sign,p.second(),imports);
+			bop.rhs = p.first();
+			environment = p.second();		
+		} else {
+			// We could do better here
+			p = propagate(bop.lhs,sign,environment.clone(),imports);
+			bop.lhs = p.first();
+			p = propagate(bop.rhs,sign,environment,imports);
+			bop.rhs = p.first();
+		}
+		
+		Expr lhs = bop.lhs;
+		Expr rhs = bop.rhs;
+		Type lhsRawType = lhs.type().raw();
+		Type rhsRawType = rhs.type().raw();
+		
+		switch(op) {
+		case AND:
+		case OR:
+		case XOR:
+			checkIsSubtype(Type.T_BOOL,lhs);
+			checkIsSubtype(Type.T_BOOL,rhs);	
+			bop.srcType = Nominal.T_BOOL;
+			break;
+		case IS:
+			// this one is slightly more difficult. In the special case that
+			// we have a type constant on the right-hand side then we want
+			// to check that it makes sense. Otherwise, we just check that
+			// it has type meta.								
+			
+			if(rhs instanceof Expr.TypeVal) {									
+				// yes, right-hand side is a constant
+				Expr.TypeVal tv = (Expr.TypeVal) rhs;
+				Type testRawType = tv.type.raw();					
+				Type glb = Type.intersect(lhsRawType, testRawType);							
+				if(Type.isSubtype(testRawType,lhsRawType)) {								
+					// DEFINITE TRUE CASE										
+					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, bop);
+				} else if (glb == Type.T_VOID) {				
+					// DEFINITE FALSE CASE	
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
+							filename, bop);			
+				} 
+				
+				// Finally, if the lhs is local variable then update its
+				// type in the resulting environment. 
+				if(lhs instanceof Expr.LocalVariable) {
+					Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
+					Nominal<Type> newType;
+					if(sign) {
+						newType = new Nominal<Type>(tv.type.first(), glb);
+					} else {
+						Type gdiff = Type.intersect(lhsRawType, Type.Negation(testRawType));							
+						newType = new Nominal<Type>(Type.Negation(tv.type
+								.first()), gdiff);
+					}
+					environment = environment.put(lv.var,newType);
+				}
+			} else {
+				// In this case, we can't update the type of the lhs since
+				// we don't know anything about the rhs. It may be possible
+				// to support bounds here in order to do that, but frankly
+				// that's future work :)
+				checkIsSubtype(Type.T_META,rhs);
+			}	
+
+			bop.srcType = (Nominal) lhs.type();
+			break;
+		case ELEMENTOF:			
+			Type.List listType = Type.effectiveListType(rhsRawType);
+			Type.Set setType = Type.effectiveSetType(rhsRawType);
+			
+			if (listType != null && !Type.isImplicitCoerciveSubtype(listType.element(), lhsRawType)) {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,listType.element()),
+						filename, bop);
+			} else if (setType != null && !Type.isImplicitCoerciveSubtype(setType.element(), lhsRawType)) {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,setType.element()),
+						filename, bop);
+			}						
+			bop.srcType = (Nominal) rhs.type();
+			break;
+		case SUBSET:
+		case SUBSETEQ:
+		case LT:
+		case LTEQ:
+		case GTEQ:
+		case GT:
+			if(op == Expr.BOp.SUBSET || op == Expr.BOp.SUBSETEQ) {
+				checkIsSubtype(Type.Set(Type.T_ANY,false),lhs);
+				checkIsSubtype(Type.Set(Type.T_ANY,false),rhs);
+			} else {
+				checkIsSubtype(Type.T_REAL,lhs);
+				checkIsSubtype(Type.T_REAL,rhs);
+			}
+		case EQ:
+		case NEQ:
+			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+				bop.srcType = (Nominal) lhs.type();
+			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+				bop.srcType = (Nominal) rhs.type();
+			} else {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,bop);	
+				return null; // dead code
+			}		
+		}			
+		
+		return new Pair(bop,environment);
 	}
 	
 	private Expr propagate(Expr expr,
@@ -879,10 +942,32 @@ public final class TypePropagation {
 	private Expr propagate(Expr.BinOp expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
-		expr.lhs = propagate(expr.lhs,environment,imports);
-		expr.rhs = propagate(expr.rhs,environment,imports);
-		Type lhsRawType = expr.lhs.type().raw();
-		Type rhsRawType = expr.rhs.type().raw();
+		
+		// TODO: split binop into arithmetic and conditional operators. This
+		// would avoid the following case analysis since conditional binary
+		// operators and arithmetic binary operators actually behave quite
+		// differently.
+		
+		switch(expr.op) {
+		case EQ:
+		case NEQ:
+		case LT:	
+		case LTEQ:
+		case GT:	
+		case GTEQ:
+		case ELEMENTOF:
+		case SUBSET:	
+		case SUBSETEQ:
+		case IS:								
+			return propagate(expr,true,environment,imports).first();
+		}
+		
+		Expr lhs = propagate(expr.lhs,environment,imports);
+		Expr rhs = propagate(expr.rhs,environment,imports);
+		expr.lhs = lhs;
+		expr.rhs = rhs;
+		Type lhsRawType = lhs.type().raw();
+		Type rhsRawType = rhs.type().raw();
 	
 		boolean lhs_set = Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),lhsRawType);
 		boolean rhs_set = Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),rhsRawType);		
@@ -905,117 +990,80 @@ public final class TypePropagation {
 			}
 			
 			srcType = Type.T_STRING;
-		} else if(expr.op == Expr.BOp.ELEMENTOF && rhs_list) {			
-			Type.List type = Type.effectiveListType(rhsRawType);
-			if (!Type.isImplicitCoerciveSubtype(type.element(), lhsRawType)) {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,type.element()),
-						filename, expr);
-			}			
-			srcType = rhsRawType;			
 		} else if(lhs_list && rhs_list) {
 			switch(expr.op) {	
 			case ADD:
 				expr.op = Expr.BOp.LISTAPPEND;
-				break;
-			case EQ:
-			case NEQ:
+				break;			
 			case LISTAPPEND:
 				break;
 			default:
 				syntaxError("invalid list operation: " + expr.op,filename,expr);		
 			}
 			
-			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-				srcType = lhsRawType;
-			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
-				srcType = rhsRawType;				
-			} else {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
-				return null; // dead code
-			}					
-		} else if(expr.op == Expr.BOp.ELEMENTOF && rhs_set) {
-			Type.Set type = Type.effectiveSetType(rhsRawType);
-			if (!Type.isImplicitCoerciveSubtype(type.element(), lhsRawType)) {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,type.element()),
-						filename, expr);
-			}			
-			srcType = rhsRawType;
-		} else if(lhs_set && rhs_set) {		
+			checkIsSubtype(Type.List(Type.T_ANY,false),lhs);
+			checkIsSubtype(Type.List(Type.T_ANY,false),rhs);						
+		
+			srcType = Type.effectiveListType(Type.Union(lhsRawType,rhsRawType));
+			
+		} else if(lhs_set && rhs_set) {	
+			checkIsSubtype(Type.Set(Type.T_ANY,false),lhs);
+			checkIsSubtype(Type.Set(Type.T_ANY,false),rhs);						
+		
 			switch(expr.op) {				
 				case ADD:																				
-					expr.op = Expr.BOp.UNION;
+					expr.op = Expr.BOp.UNION;					
+				case UNION:
+					srcType = Type.Union(lhsRawType,rhsRawType);
 					break;
 				case BITWISEAND:																				
 					expr.op = Expr.BOp.INTERSECTION;
+				case INTERSECTION:
+					srcType = Type.intersect(lhsRawType,rhsRawType);
 					break;
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
-					break;				
-				case EQ:
-				case NEQ:
-				case SUBSET:
-				case SUBSETEQ:
-				case UNION:
-				case INTERSECTION:
 				case DIFFERENCE:
-					break;
+					srcType = lhsRawType;
+					break;								
 				default:
-					syntaxError("invalid set operation: " + expr.op,filename,expr);		
-			}
-			
-			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-				srcType = lhsRawType;
-			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
-				srcType = rhsRawType;				
-			} else {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
-				return null; // dead code
-			}					
+					syntaxError("invalid set operation: " + expr.op,filename,expr);	
+					return null; // deadcode
+			}							
 		} else {			
 			switch(expr.op) {
 			case IS:
 			case AND:
 			case OR:
 			case XOR:
-				return propagateCondition(expr,true,environment,imports).first();				
+				return propagate(expr,true,environment,imports).first();				
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
-				checkIsSubtype(Type.T_BYTE,expr.lhs);
-				checkIsSubtype(Type.T_BYTE,expr.rhs);
+				checkIsSubtype(Type.T_BYTE,lhs);
+				checkIsSubtype(Type.T_BYTE,rhs);
 				srcType = Type.T_BYTE;
 				break;
 			case LEFTSHIFT:
 			case RIGHTSHIFT:
-				checkIsSubtype(Type.T_BYTE,expr.lhs);
-				checkIsSubtype(Type.T_INT,expr.rhs);
+				checkIsSubtype(Type.T_BYTE,lhs);
+				checkIsSubtype(Type.T_INT,rhs);
 				srcType = Type.T_BYTE;
 				break;
 			case RANGE:
-				checkIsSubtype(Type.T_INT,expr.lhs);
-				checkIsSubtype(Type.T_INT,expr.rhs);
+				checkIsSubtype(Type.T_INT,lhs);
+				checkIsSubtype(Type.T_INT,rhs);
 				srcType = Type.List(Type.T_INT, false);
 				break;
 			case REM:
-				checkIsSubtype(Type.T_INT,expr.lhs);
-				checkIsSubtype(Type.T_INT,expr.rhs);
+				checkIsSubtype(Type.T_INT,lhs);
+				checkIsSubtype(Type.T_INT,rhs);
 				srcType = Type.T_INT;
-				break;
-			case EQ:
-			case NEQ:
-				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-					srcType = lhsRawType;
-				} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
-					srcType = rhsRawType;				
-				} else {
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
-					return null; // dead code
-				}	
-				break;
+				break;			
 			default:
 				// all other operations go through here
 				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-					checkIsSubtype(Type.T_REAL,expr.lhs);
+					checkIsSubtype(Type.T_REAL,lhs);
 					if(Type.isSubtype(Type.T_CHAR, lhsRawType)) {
 						srcType = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, lhsRawType)) {
@@ -1024,8 +1072,8 @@ public final class TypePropagation {
 						srcType = Type.T_REAL;
 					}				
 				} else {
-					checkIsSubtype(Type.T_REAL,expr.lhs);
-					checkIsSubtype(Type.T_REAL,expr.rhs);				
+					checkIsSubtype(Type.T_REAL,lhs);
+					checkIsSubtype(Type.T_REAL,rhs);				
 					if(Type.isSubtype(Type.T_CHAR, rhsRawType)) {
 						srcType = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, rhsRawType)) {
@@ -1060,7 +1108,7 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_BYTE,src);
 			break;
 		case NOT:
-			return propagateCondition(expr,true,environment,imports).first();		
+			return propagate(expr,true,environment,imports).first();		
 		default:		
 			internalFailure("unknown unary operator ("
 					+ expr.op.getClass().getName() + ")" + expr.op, filename,
