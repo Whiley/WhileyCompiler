@@ -1186,21 +1186,31 @@ public final class TypePropagation {
 		Type src = expr.src.type().raw();				
 	
 		// First, check whether this is still only an abstract access and, in
-				// such case, upgrade it to the appropriate access expression.
+		// such case, upgrade it to the appropriate access expression.
 
-		if (!(expr instanceof Expr.StringLength)
-				&& Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
-			expr = new Expr.StringLength(expr.src,expr.attributes());
-		} else if (!(expr instanceof Expr.ListLength)
-				&& Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),
-						src)) {
-			expr = new Expr.ListLength(expr.src,expr.attributes());
-		} else if (!(expr instanceof Expr.SetLength)
-				&& Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),
-						src)) {
-			expr = new Expr.SetLength(expr.src,expr.attributes());
-		} else if (!(expr instanceof Expr.DictionaryLength)) {
-			expr = new Expr.DictionaryLength(expr.src,expr.attributes());
+		if (Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
+			if(!(expr instanceof Expr.StringLength)) {
+				expr = new Expr.StringLength(expr.src, expr.attributes());
+			}
+		} else if (Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),
+				src)) {
+			if(!(expr instanceof Expr.ListLength)) {
+				expr = new Expr.ListLength(expr.src, expr.attributes());
+			}
+		} else if (Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),
+				src)) {
+			if(!(expr instanceof Expr.SetLength)) {
+				expr = new Expr.SetLength(expr.src, expr.attributes());
+			}
+		} else if (Type.isImplicitCoerciveSubtype(
+				Type.Dictionary(Type.T_ANY, Type.T_ANY), src)) {
+			if(!(expr instanceof Expr.DictionaryLength)) {
+				expr = new Expr.DictionaryLength(expr.src, expr.attributes());
+			}
+		} else {
+			syntaxError("found " + expr.src.type().nominal()
+					+ ", expected string, set, list or dictionary.", filename,
+					expr.src);
 		}
 
 		// Second, determine the expanded src type for this access expression
