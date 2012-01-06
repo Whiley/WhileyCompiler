@@ -244,6 +244,7 @@ public final class ModuleLoader {
 		long time = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 		ModuleReader reader = suffixMap.get(entry.suffix());
+		
 		Module mi = reader.read(entry.id(), entry.contents());
 		
 		if(mi != null) {

@@ -157,7 +157,7 @@ public final class WhileyFile {
 		public final List<Modifier> modifiers;
 		public final Expr constant;
 		public final String name;
-		public Value value;
+		public Value resolvedValue;
 
 		public Constant(List<Modifier> modifiers, Expr constant, String name,
 				Attribute... attributes) {

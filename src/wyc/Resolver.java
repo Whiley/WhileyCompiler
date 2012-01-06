@@ -617,11 +617,11 @@ public final class Resolver {
 			WhileyFile.Declaration decl = wf.declaration(key.name());
 			if(decl instanceof WhileyFile.Constant) {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
-				if (cd.value == null) {
-					cd.value = resolveAsConstant(cd.constant, wf.filename,
+				if (cd.resolvedValue == null) {
+					cd.resolvedValue = resolveAsConstant(cd.constant, wf.filename,
 							visited);
 				}
-				return cd.value;
+				return cd.resolvedValue;
 			} else {
 				throw new ResolveError("unable to find constant " + key);
 			}

@@ -149,7 +149,7 @@ public final class TypePropagation {
 				} else if(decl instanceof TypeDef) {
 					propagate((TypeDef)decl,imports);					
 				} else if(decl instanceof Constant) {
-					propagate((Constant)decl,imports);					
+					propagate((Constant)decl,wf,imports);					
 				}			
 			} catch(ResolveError e) {
 				syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,decl,e);
@@ -161,8 +161,10 @@ public final class TypePropagation {
 		}
 	}
 	
-	public void propagate(Constant cd, ArrayList<WhileyFile.Import> imports) {
-		
+	public void propagate(Constant cd, WhileyFile wf,
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		NameID nid = new NameID(wf.module, cd.name);
+		cd.resolvedValue = resolver.resolveAsConstant(nid);
 	}
 	
 	public void propagate(TypeDef td, ArrayList<WhileyFile.Import> imports) throws ResolveError {		

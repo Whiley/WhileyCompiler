@@ -112,7 +112,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		BinaryOutputStream iw = new BinaryOutputStream(out);
 
 		if(type == null) {
-			iw.write_u1(0); // CONSTANT ONLY			
+			iw.write_u1(0); // CONSTANT ONLY				
 			write(value,iw, constantPool);			
 		} else {
 			iw.write_u1(1); // TYPE ONLY
@@ -313,6 +313,7 @@ public class WhileyDefine implements BytecodeAttribute {
 			if (sw == 0) {
 				// Condition only
 				Value value = readValue(input, constantPool);
+				
 				int nattrs = input.read_u2();
 				List<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(
 						nattrs, input, constantPool, attributeReaders);

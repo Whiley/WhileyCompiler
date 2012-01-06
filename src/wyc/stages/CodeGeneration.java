@@ -135,7 +135,7 @@ public final class CodeGeneration {
 	}
 
 	private Module.ConstDef generate(Constant cd, ModuleID module) {
-		return new Module.ConstDef(cd.modifiers, cd.name, cd.value);
+		return new Module.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
 	private Module.TypeDef generate(TypeDef td, ModuleID module) {		
