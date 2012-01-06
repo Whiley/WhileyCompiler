@@ -286,8 +286,8 @@ public final class CodeGeneration {
 				return generate((While) stmt, environment);
 			} else if (stmt instanceof DoWhile) {
 				return generate((DoWhile) stmt, environment);
-			} else if (stmt instanceof For) {
-				return generate((For) stmt, environment);
+			} else if (stmt instanceof ForAll) {
+				return generate((ForAll) stmt, environment);
 			} else if (stmt instanceof Expr.MessageSend) {
 				return generate((Expr.MessageSend) stmt,false,environment);								
 			} else if (stmt instanceof Expr.MethodCall) {
@@ -623,7 +623,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(For s, HashMap<String,Integer> environment) {		
+	private Block generate(ForAll s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
 		
 		Block blk = new Block(1);
@@ -639,14 +639,24 @@ public final class CodeGeneration {
 		blk.append(generate(s.source,environment));	
 		int freeSlot = allocate(environment);
 		if(s.variables.size() > 1) {
-			// this is the destructuring case			
-			blk.append(Code.ForAll(null, freeSlot, label, Collections.EMPTY_SET), attributes(s));
-			blk.append(Code.Load(null, freeSlot), attributes(s));
-			blk.append(Code.Destructure(null), attributes(s));
+			// this is the destructuring case		
+			
+			// FIXME: loss of nominal information
+			Type rawSrcType = s.source.type().raw();
+			// FIXME: support destructuring of lists and sets
+			Type.Dictionary dict = Type.effectiveDictionaryType(rawSrcType);
+			if(dict == null) {
+				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,s.source);
+			}
+			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());
+			List<Type> elements = element.elements();
+			blk.append(Code.ForAll(rawSrcType, freeSlot, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.Load(element, freeSlot), attributes(s));
+			blk.append(Code.Destructure(element), attributes(s));
 			for(int i=s.variables.size();i>0;--i) {
 				String var = s.variables.get(i-1);
 				int varReg = allocate(var,environment);
-				blk.append(Code.Store(null, varReg), attributes(s));
+				blk.append(Code.Store(elements.get(i-1), varReg), attributes(s));
 			}										
 		} else {
 			// easy case.

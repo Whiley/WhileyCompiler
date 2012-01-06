@@ -147,30 +147,32 @@ public interface Stmt extends SyntacticElement {
 		}		
 	}
 	
-	public static final class For extends SyntacticElement.Impl implements Stmt {
-		public final ArrayList<String> variables;		
+	public static final class ForAll extends SyntacticElement.Impl
+			implements Stmt {
+		public final ArrayList<String> variables;
 		public Expr source;
 		public Expr invariant;
 		public final ArrayList<Stmt> body;
 
-		public For(Collection<String> variables, Expr source, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
+		public ForAll(Collection<String> variables, Expr source,
+				Expr invariant, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.variables = new ArrayList<String>(variables);
-			this.source = source;		
+			this.source = source;
 			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
 		}
 
-		public For(Collection<String> variables, Expr source, Expr invariant,
-				Collection<Stmt> body, Collection<Attribute> attributes) {
+		public ForAll(Collection<String> variables, Expr source,
+				Expr invariant, Collection<Stmt> body,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.variables = new ArrayList<String>(variables);
-			this.source = source;	
+			this.source = source;
 			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
-		}		
+		}
 	}
-
 	
 	public static final class IfElse extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;

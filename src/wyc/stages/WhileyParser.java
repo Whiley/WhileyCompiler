@@ -681,7 +681,7 @@ public final class WhileyParser {
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
 
-		return new Stmt.For(variables,source,invariant,blk, sourceAttr(start,end-1));
+		return new Stmt.ForAll(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}
 	
 	private Bytecode parseBytecode() {

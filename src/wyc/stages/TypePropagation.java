@@ -251,8 +251,8 @@ public final class TypePropagation {
 				return propagate((Stmt.IfElse) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.While) {
 				return propagate((Stmt.While) stmt,environment,imports);
-			} else if(stmt instanceof Stmt.For) {
-				return propagate((Stmt.For) stmt,environment,imports);
+			} else if(stmt instanceof Stmt.ForAll) {
+				return propagate((Stmt.ForAll) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.Switch) {
 				return propagate((Stmt.Switch) stmt,environment,imports);
 			} else if(stmt instanceof Stmt.DoWhile) {
@@ -466,7 +466,7 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.For stmt,
+	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.ForAll stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		
