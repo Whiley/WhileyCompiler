@@ -998,7 +998,18 @@ public final class TypePropagation {
 				checkIsSubtype(Type.T_INT,expr.lhs);
 				checkIsSubtype(Type.T_INT,expr.rhs);
 				srcType = Type.T_INT;
-				break;			
+				break;
+			case EQ:
+			case NEQ:
+				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+					srcType = lhsRawType;
+				} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+					srcType = rhsRawType;				
+				} else {
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
+					return null; // dead code
+				}	
+				break;
 			default:
 				// all other operations go through here
 				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
