@@ -151,6 +151,8 @@ public final class TypePropagation {
 				} else if(decl instanceof Constant) {
 					propagate((Constant)decl,imports);					
 				}			
+			} catch(ResolveError e) {
+				syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,decl,e);
 			} catch(SyntaxError e) {
 				throw e;
 			} catch(Throwable t) {
@@ -272,7 +274,7 @@ public final class TypePropagation {
 				return null; // deadcode
 			}
 		} catch(ResolveError e) {
-			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,stmt);
+			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,stmt,e);
 			return null; // dead code
 		} catch(SyntaxError e) {
 			throw e;
@@ -1447,7 +1449,7 @@ public final class TypePropagation {
 				return new Expr.ModuleAccess(pa, expr.name, mid,
 						expr.attributes());
 			} catch (ResolveError err) {
-				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),filename,expr);
+				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),filename,expr,err);
 				return null; // deadcode
 			}			
 		} else if(src instanceof Expr.ModuleAccess) {
