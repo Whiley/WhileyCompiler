@@ -882,10 +882,10 @@ public final class TypePropagation {
 		Type lhsRawType = expr.lhs.type().raw();
 		Type rhsRawType = expr.rhs.type().raw();
 	
-		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),lhsRawType);
-		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY, false),rhsRawType);		
-		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),lhsRawType);
-		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY, false),rhsRawType);
+		boolean lhs_set = Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),lhsRawType);
+		boolean rhs_set = Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),rhsRawType);		
+		boolean lhs_list = Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),lhsRawType);
+		boolean rhs_list = Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),rhsRawType);
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhsRawType);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsRawType);
 		
@@ -903,6 +903,34 @@ public final class TypePropagation {
 			}
 			
 			srcType = Type.T_STRING;
+		} else if(expr.op == Expr.BOp.ELEMENTOF && rhs_list) {			
+			Type.List type = Type.effectiveListType(rhsRawType);
+			if (!Type.isImplicitCoerciveSubtype(type.element(), lhsRawType)) {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,type.element()),
+						filename, expr);
+			}			
+			srcType = rhsRawType;			
+		} else if(lhs_list && rhs_list) {
+			switch(expr.op) {	
+			case ADD:
+				expr.op = Expr.BOp.LISTAPPEND;
+				break;
+			case EQ:
+			case NEQ:
+			case LISTAPPEND:
+				break;
+			default:
+				syntaxError("invalid list operation: " + expr.op,filename,expr);		
+			}
+			
+			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+				srcType = lhsRawType;
+			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+				srcType = rhsRawType;				
+			} else {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
+				return null; // dead code
+			}					
 		} else if(expr.op == Expr.BOp.ELEMENTOF && rhs_set) {
 			Type.Set type = Type.effectiveSetType(rhsRawType);
 			if (!Type.isImplicitCoerciveSubtype(type.element(), lhsRawType)) {
@@ -931,34 +959,6 @@ public final class TypePropagation {
 					break;
 				default:
 					syntaxError("invalid set operation: " + expr.op,filename,expr);		
-			}
-			
-			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-				srcType = lhsRawType;
-			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
-				srcType = rhsRawType;				
-			} else {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,expr);	
-				return null; // dead code
-			}					
-		} else if(expr.op == Expr.BOp.ELEMENTOF && rhs_list) {			
-			Type.List type = Type.effectiveListType(rhsRawType);
-			if (!Type.isImplicitCoerciveSubtype(type.element(), lhsRawType)) {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,type.element()),
-						filename, expr);
-			}			
-			srcType = rhsRawType;			
-		} else if(lhs_list && rhs_list) {
-			switch(expr.op) {	
-			case ADD:
-				expr.op = Expr.BOp.LISTAPPEND;
-				break;
-			case EQ:
-			case NEQ:
-			case LISTAPPEND:
-				break;
-			default:
-				syntaxError("invalid list operation: " + expr.op,filename,expr);		
 			}
 			
 			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
