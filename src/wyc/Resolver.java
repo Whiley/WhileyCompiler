@@ -592,7 +592,11 @@ public final class Resolver {
 	public Value resolveAsConstant(NameID nid) throws ResolveError {				
 		return resolveAsConstant(nid,null);		
 	}
-		
+	
+	public Value resolveAsConstant(Expr e, String filename, List<WhileyFile.Import> imports) throws ResolveError {				
+		return resolveAsConstant(e,filename,imports,null);		
+	}
+	
 	/**
 	 * The expand constant method is responsible for turning a named constant
 	 * expression into a value. This is done by traversing the constant's
@@ -617,9 +621,9 @@ public final class Resolver {
 			WhileyFile.Declaration decl = wf.declaration(key.name());
 			if(decl instanceof WhileyFile.Constant) {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
-				if (cd.resolvedValue == null) {
-					cd.resolvedValue = resolveAsConstant(cd.constant, wf.filename,
-							visited);
+				if (cd.resolvedValue == null) {				
+					cd.resolvedValue = resolveAsConstant(cd.constant,
+							wf.filename, buildImports(wf, cd), visited);
 				}
 				return cd.resolvedValue;
 			} else {
@@ -651,35 +655,36 @@ public final class Resolver {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 */
-	private Value resolveAsConstant(Expr expr, String filename,HashSet<NameID> visited)
+	private Value resolveAsConstant(Expr expr, String filename,
+			List<WhileyFile.Import> imports, HashSet<NameID> visited)
 			throws ResolveError {
 		if (expr instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) expr;
 			return c.value;
 		} else if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
-			Value lhs = resolveAsConstant(bop.lhs, filename, visited);
-			Value rhs = resolveAsConstant(bop.rhs, filename, visited);
-			return evaluate(bop, lhs, rhs, filename);			
+			Value lhs = resolveAsConstant(bop.lhs, filename, imports, visited);
+			Value rhs = resolveAsConstant(bop.rhs, filename, imports, visited);
+			return evaluate(bop,lhs,rhs,filename);			
 		} else if (expr instanceof Expr.Set) {
 			Expr.Set nop = (Expr.Set) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (Expr arg : nop.arguments) {
-				values.add(resolveAsConstant(arg, filename, visited));
+				values.add(resolveAsConstant(arg,filename,imports, visited));
 			}			
 			return Value.V_SET(values);			
 		} else if (expr instanceof Expr.List) {
 			Expr.List nop = (Expr.List) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (Expr arg : nop.arguments) {
-				values.add(resolveAsConstant(arg, filename, visited));
+				values.add(resolveAsConstant(arg,filename,imports, visited));
 			}			
 			return Value.V_LIST(values);			
 		} else if (expr instanceof Expr.Record) {
 			Expr.Record rg = (Expr.Record) expr;
 			HashMap<String,Value> values = new HashMap<String,Value>();
 			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
-				Value v = resolveAsConstant(e.getValue(),filename,visited);
+				Value v = resolveAsConstant(e.getValue(),filename,imports,visited);
 				if(v == null) {
 					return null;
 				}
@@ -690,7 +695,7 @@ public final class Resolver {
 			Expr.Tuple rg = (Expr.Tuple) expr;			
 			ArrayList<Value> values = new ArrayList<Value>();			
 			for(Expr e : rg.fields) {
-				Value v = resolveAsConstant(e,filename,visited);
+				Value v = resolveAsConstant(e, filename, imports,visited);
 				if(v == null) {
 					return null;
 				}
@@ -701,8 +706,8 @@ public final class Resolver {
 			Expr.Dictionary rg = (Expr.Dictionary) expr;			
 			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 			for(Pair<Expr,Expr> e : rg.pairs) {
-				Value key = resolveAsConstant(e.first(),filename,visited);
-				Value value = resolveAsConstant(e.second(),filename,visited);
+				Value key = resolveAsConstant(e.first(), filename, imports,visited);
+				Value value = resolveAsConstant(e.second(), filename, imports,visited);
 				if(key == null || value == null) {
 					return null;
 				}
@@ -711,16 +716,12 @@ public final class Resolver {
 			return Value.V_DICTIONARY(values);
 		} else if(expr instanceof Expr.Function) {
 			Expr.Function f = (Expr.Function) expr;
-			Attributes.Module mid = expr.attribute(Attributes.Module.class);
-			if (mid != null) {
-				NameID name = new NameID(mid.module, f.name);
-				Type.Function tf = null;							
-				return Value.V_FUN(name, tf);	
-			}					
+			NameID name = resolveAsName(f.name, imports);			
+			Type.Function tf = null;							
+			return Value.V_FUN(name, tf);								
 		}
 		
-		syntaxError(errorMessage(INVALID_CONSTANT_EXPRESSION), filename, expr);
-		return null;
+		throw new ResolveError("cyclic constant expression");		
 	}
 
 	private Value evaluate(Expr.BinOp bop, Value v1, Value v2, String filename) {

@@ -608,6 +608,17 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Switch stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
+		
+		stmt.expr = propagate(stmt.expr,environment,imports);		
+		
+		for(Stmt.Case c : stmt.cases) {
+			ArrayList<Value> values = new ArrayList<Value>();
+			for(Expr e : c.expr) {
+				values.add(resolver.resolveAsConstant(e,imports));
+			}
+			c.constants = values;
+		}
+		
 		return environment;
 	}
 	
