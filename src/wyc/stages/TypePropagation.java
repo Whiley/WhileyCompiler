@@ -747,15 +747,11 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) {		
 		Expr.BOp op = bop.op;
 		
-		// TODO: split binop into arithmetic and conditional operators. This
-		// would avoid the following case analysis since conditional binary
-		// operators and arithmetic binary operators actually behave quite
-		// differently.
-		
 		switch (op) {
 		case AND:
 		case OR:
 		case XOR:
+			return propagateNonLeafCondition(bop,sign,environment,imports);
 		case EQ:
 		case NEQ:
 		case LT:
@@ -766,11 +762,20 @@ public final class TypePropagation {
 		case SUBSET:
 		case SUBSETEQ:
 		case IS:
-			break;
+			return propagateLeafCondition(bop,sign,environment,imports);
 		default:
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, bop);
-		}
-		
+			return null; // dead code
+		}		
+	}
+	
+	private Pair<Expr, RefCountedHashMap<String, Nominal<Type>>> propagateNonLeafCondition(
+			Expr.BinOp bop,
+			boolean sign,
+			RefCountedHashMap<String, Nominal<Type>> environment,
+			ArrayList<WhileyFile.Import> imports) {
+
+		Expr.BOp op = bop.op;
 		Pair<Expr,RefCountedHashMap<String, Nominal<Type>>> p;
 		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
 		
@@ -779,7 +784,7 @@ public final class TypePropagation {
 			bop.lhs = p.first();
 			p = propagate(bop.rhs,sign,p.second(),imports);
 			bop.rhs = p.first();
-			environment = p.second();		
+			environment = p.second();	
 		} else {
 			// We could do better here
 			p = propagate(bop.lhs,sign,environment.clone(),imports);
@@ -788,19 +793,29 @@ public final class TypePropagation {
 			bop.rhs = p.first();
 		}
 		
-		Expr lhs = bop.lhs;
-		Expr rhs = bop.rhs;
+		checkIsSubtype(Type.T_BOOL,bop.lhs);
+		checkIsSubtype(Type.T_BOOL,bop.rhs);	
+		bop.srcType = Nominal.T_BOOL;
+		
+		return new Pair<Expr,RefCountedHashMap<String, Nominal<Type>>>(bop,environment);
+	}
+	
+	private Pair<Expr, RefCountedHashMap<String, Nominal<Type>>> propagateLeafCondition(
+			Expr.BinOp bop,
+			boolean sign,
+			RefCountedHashMap<String, Nominal<Type>> environment,
+			ArrayList<WhileyFile.Import> imports) {
+		Expr.BOp op = bop.op;
+		
+		Expr lhs = propagate(bop.lhs,environment,imports);
+		Expr rhs = propagate(bop.rhs,environment,imports);
+		bop.lhs = lhs;
+		bop.rhs = rhs;
+		
 		Type lhsRawType = lhs.type().raw();
 		Type rhsRawType = rhs.type().raw();
 		
-		switch(op) {
-		case AND:
-		case OR:
-		case XOR:
-			checkIsSubtype(Type.T_BOOL,lhs);
-			checkIsSubtype(Type.T_BOOL,rhs);	
-			bop.srcType = Nominal.T_BOOL;
-			break;
+		switch(op) {					
 		case IS:
 			// this one is slightly more difficult. In the special case that
 			// we have a type constant on the right-hand side then we want
@@ -871,8 +886,6 @@ public final class TypePropagation {
 				checkIsSubtype(Type.T_REAL,lhs);
 				checkIsSubtype(Type.T_REAL,rhs);
 			}
-		case EQ:
-		case NEQ:
 			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
 				bop.srcType = (Nominal) lhs.type();
 			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
@@ -880,10 +893,49 @@ public final class TypePropagation {
 			} else {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,bop);	
 				return null; // dead code
-			}		
+			}	
+			break;
+		case NEQ:
+			// following is a sneaky trick for the special case below
+			sign = !sign;
+		case EQ:		
+			
+			// first, check for special case of e.g. x != null. This is then
+			// treated the same as !(x is null) 
+			
+			if (lhs instanceof Expr.LocalVariable
+					&& rhs instanceof Expr.Constant
+					&& ((Expr.Constant) rhs).value == Value.V_NULL) {
+				// bingo, special case
+				Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
+				Nominal<Type> newType;
+				Type glb = Type.intersect(lhsRawType, Type.T_NULL);
+				if(glb == Type.T_VOID) {
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,bop);	
+					return null;
+				} else if(sign) {					
+					newType = new Nominal<Type>(Type.T_NULL, glb);
+				} else {					
+					Type gdiff = Type.intersect(lhsRawType, Type.Negation(Type.T_NULL));							
+					newType = new Nominal<Type>(gdiff, gdiff);
+				}
+				bop.srcType = (Nominal) lhs.type();
+				environment = environment.put(lv.var,newType);
+			} else {
+				// handle general case
+				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+					bop.srcType = (Nominal) lhs.type();
+				} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+					bop.srcType = (Nominal) rhs.type();
+				} else {
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,bop);	
+					return null; // dead code
+				}		
+			}
 		}			
 		
 		return new Pair(bop,environment);
+
 	}
 	
 	private Expr propagate(Expr expr,
