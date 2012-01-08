@@ -607,14 +607,14 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Switch stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<WhileyFile.Import> imports) {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		
 		stmt.expr = propagate(stmt.expr,environment,imports);		
 		
 		for(Stmt.Case c : stmt.cases) {
 			ArrayList<Value> values = new ArrayList<Value>();
 			for(Expr e : c.expr) {
-				values.add(resolver.resolveAsConstant(e,imports));
+				values.add(resolver.resolveAsConstant(e,filename,imports));
 			}
 			c.constants = values;
 		}
@@ -966,8 +966,8 @@ public final class TypePropagation {
 				return propagate((Expr.Convert) expr,environment,imports); 
 			} else if(expr instanceof Expr.Dictionary) {
 				return propagate((Expr.Dictionary) expr,environment,imports); 
-			} else if(expr instanceof Expr.Function) {
-				return propagate((Expr.Function) expr,environment,imports); 
+			} else if(expr instanceof Expr.AbstractFunction) {
+				return propagate((Expr.AbstractFunction) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
 				return propagate((Expr.AbstractInvoke) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractIndexAccess) {
@@ -1214,7 +1214,7 @@ public final class TypePropagation {
 		return c;
 	}
 	
-	private Expr propagate(Expr.Function expr,
+	private Expr propagate(Expr.AbstractFunction expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		return null;

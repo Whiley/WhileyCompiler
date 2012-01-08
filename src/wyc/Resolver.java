@@ -38,7 +38,6 @@ import static wyil.util.SyntaxError.syntaxError;
 import java.util.*;
 
 import wyautl.lang.*;
-import wyc.lang.Attributes;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;

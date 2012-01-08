@@ -1090,112 +1090,15 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Expr.AbstractInvoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
-		List<Expr> args = s.arguments;
-		Block blk = new Block(environment.size());
-		Type[] paramTypes = new Type[args.size()]; 
-		
-		boolean receiverIsThis = s.qualification != null && s.qualification instanceof Expr.LocalVariable && ((Expr.LocalVariable)s.qualification).var.equals("this");
-		
-		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
-
-		/**
-		 * An indirect variable invoke represents an invoke statement on a local
-		 * variable.
-		 */
-		boolean variableIndirectInvoke = environment.containsKey(s.name);
-
-		/**
-		 * A direct invoke indicates no receiver was provided, and there was a
-		 * matching external symbol.
-		 */
-		boolean directInvoke = !variableIndirectInvoke && s.qualification == null && modInfo != null;		
-		
-		/**
-		 * A method invoke indicates the receiver was this, and there was a
-		 * matching external symbol.
-		 */
-		boolean methodInvoke = !variableIndirectInvoke && receiverIsThis && modInfo != null;
-		
-		/**
-		 * An field indirect invoke indicates an invoke statement on a value
-		 * coming out of a field.
-		 */
-		boolean fieldIndirectInvoke = !variableIndirectInvoke && s.qualification != null && modInfo == null;
-
-		/**
-		 * A direct send indicates a message send to a matching external symbol.
-		 */
-		boolean directSend = !variableIndirectInvoke && s.qualification != null
-				&& !receiverIsThis && modInfo != null;
-											
-		if(variableIndirectInvoke) {
-			blk.append(Code.Load(null, environment.get(s.name)),attributes(s));
-		} 
-		
-		if (s.qualification != null) {			
-			blk.append(generate(s.qualification, environment));
-		}
-
-		if(fieldIndirectInvoke) {
-			blk.append(Code.FieldLoad(null, s.name),attributes(s));
-		}
-		
-		int i = 0;
-		for (Expr e : args) {
-			blk.append(generate(e, environment));
-			paramTypes[i++] = Type.T_ANY;
-		}	
-					
-		if(variableIndirectInvoke) {			
-			if(s.qualification != null) {
-				Type.Method mt = checkType(Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),Type.Method.class,s);
-				blk.append(Code.IndirectSend(mt,s.synchronous, retval),attributes(s));
-			} else {
-				Type.Function ft = checkType(Type.Function(Type.T_VOID, Type.T_VOID, paramTypes),Type.Function.class,s);
-				blk.append(Code.IndirectInvoke(ft, retval),attributes(s));
-			}
-		} else if(fieldIndirectInvoke) {
-			Type.Function ft = checkType(Type.Function(Type.T_VOID, Type.T_VOID, paramTypes),Type.Function.class,s);
-			blk.append(Code.IndirectInvoke(ft, retval),attributes(s));
-		} else if(directInvoke || methodInvoke) {
-			NameID name = new NameID(modInfo.module, s.name);
-			if(receiverIsThis) {
-				Type.Method mt = checkType(
-						Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),
-						Type.Method.class, s);
-				blk.append(Code.Invoke(mt, name, retval), attributes(s));
-			} else {
-				Type.Function ft = checkType(
-						Type.Function(Type.T_VOID, Type.T_VOID, paramTypes),
-						Type.Function.class, s);
-				blk.append(Code.Invoke(ft, name, retval), attributes(s));
-			}
-		} else if(directSend) {						
-			NameID name = new NameID(modInfo.module, s.name);
-			Type.Method mt = checkType(
-					Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),
-					Type.Method.class, s);
-			blk.append(Code.Send(mt, name, s.synchronous, retval),
-					attributes(s));
-		} else {
-			syntaxError(errorMessage(UNKNOWN_FUNCTION_OR_METHOD), filename, s);
-		}
-		
-		return blk;
-	}
-
 	private Block generate(Expr.Constant c, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(c.value), attributes(c));		
 		return blk;
 	}
 
-	private Block generate(Expr.Function s, HashMap<String,Integer> environment) {
-		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
-		NameID name = new NameID(modInfo.module, s.name);			
+	private Block generate(Expr.Function s, HashMap<String,Integer> environment) {						
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(Value.V_FUN(name, s.type.raw())),
+		blk.append(Code.Const(Value.V_FUN(s.nid, s.type.raw())),
 				attributes(s));
 		return blk;
 	}

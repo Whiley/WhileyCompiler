@@ -172,12 +172,12 @@ public interface Expr extends SyntacticElement {
 		}		
 	}
 	
-	public static class Function extends SyntacticElement.Impl implements Expr {
+	public static class AbstractFunction extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<UnresolvedType> paramTypes;
 		public Nominal<Type.Function> type;		
 		
-		public Function(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+		public AbstractFunction(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
@@ -186,6 +186,15 @@ public interface Expr extends SyntacticElement {
 		public Nominal<Type.Function> type() {
 			return type;
 		}		
+	}
+	
+	public static class Function extends AbstractFunction {
+		public final NameID nid;					
+		
+		public Function(NameID nid, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+			super(nid.name(),paramTypes,attributes);
+			this.nid = nid;			
+		}			
 	}
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
@@ -512,7 +521,6 @@ public interface Expr extends SyntacticElement {
 		}
 	}		
 	
-	// should extend abstract dot access?
 	public static class ModuleAccess extends AbstractDotAccess {
 		public final ModuleID mid;
 
