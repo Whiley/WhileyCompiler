@@ -593,7 +593,7 @@ public final class TypePropagation {
 			Nominal<Type> lhs = new Nominal<Type>(nominalType,rawType);
 			Nominal<Type> rhs = (Nominal) stmt.expr.type();
 			checkIsSubtype(lhs,rhs, stmt.expr);
-		}
+		}	
 		
 		environment.free();
 		return BOTTOM;
@@ -611,6 +611,9 @@ public final class TypePropagation {
 		
 		stmt.expr = propagate(stmt.expr,environment,imports);		
 		
+		RefCountedHashMap<String,Nominal<Type>> finalEnv = null;
+		boolean hasDefault = false;
+		
 		for(Stmt.Case c : stmt.cases) {
 			
 			// first, resolve the constants
@@ -623,12 +626,32 @@ public final class TypePropagation {
 
 			// second, propagate through the statements
 			
-			RefCountedHashMap<String,Nominal<Type>> local = environment.clone();
-			local = propagate(c.stmts,local,imports);
-			local.free();
+			RefCountedHashMap<String,Nominal<Type>> localEnv = environment.clone();
+			localEnv = propagate(c.stmts,localEnv,imports);
+			
+			if(finalEnv == null) {
+				finalEnv = localEnv;
+			} else {
+				finalEnv = join(finalEnv,localEnv);
+			} 
+			
+			// third, keep track of whether a default
+			hasDefault |= c.expr.isEmpty();
 		}
 		
-		return environment;
+		if(!hasDefault) {
+			
+			// in this case, there is no default case in the switch. We must
+			// therefore assume that there are values which will fall right
+			// through the switch statement without hitting a case. Therefore,
+			// we must include the original environment to accound for this. 
+			
+			finalEnv = join(finalEnv,environment);
+		} else {
+			environment.free();
+		}
+		
+		return finalEnv;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Throw stmt,
