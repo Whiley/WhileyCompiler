@@ -612,11 +612,20 @@ public final class TypePropagation {
 		stmt.expr = propagate(stmt.expr,environment,imports);		
 		
 		for(Stmt.Case c : stmt.cases) {
+			
+			// first, resolve the constants
+			
 			ArrayList<Value> values = new ArrayList<Value>();
 			for(Expr e : c.expr) {
-				values.add(resolver.resolveAsConstant(e,filename,imports));
+				values.add(resolver.resolveAsConstant(e,filename,imports));				
 			}
 			c.constants = values;
+
+			// second, propagate through the statements
+			
+			RefCountedHashMap<String,Nominal<Type>> local = environment.clone();
+			local = propagate(c.stmts,local,imports);
+			local.free();
 		}
 		
 		return environment;
