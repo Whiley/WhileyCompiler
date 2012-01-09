@@ -32,6 +32,13 @@ import java.util.*;
 import wyil.util.SyntaxError;
 import wyjc.runtime.BigRational;
 
+/**
+ * Split a source file into a list of tokens. These tokens can then be fed into
+ * the parser in order to generate an Abstract Syntax Tree (AST).
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class WhileyLexer {	
 	private String filename;
 	private String input;
@@ -47,9 +54,7 @@ public class WhileyLexer {
 		this(new InputStreamReader(instream,"UTF8"));		
 	}
 	
-	public WhileyLexer(Reader reader) throws IOException {
-		BufferedReader in = new BufferedReader(reader);
-		
+	public WhileyLexer(Reader reader) throws IOException {	
 		StringBuilder tmp = new StringBuilder();	    
 	    int len = 0;
 	    char[] buf = new char[1024]; 
@@ -326,8 +331,13 @@ public class WhileyLexer {
 		
 		if(c == '.') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '.') {
-				pos += 2;
-				return new DotDot(pos-2,line);
+				if((pos+2) < input.length() && input.charAt(pos+2) == '.') {
+					pos += 3;
+					return new DotDotDot(pos-3,line);
+				} else {
+					pos += 2;
+					return new DotDot(pos-2,line);
+				}
 			} else {
 				return new Dot(pos++,line);
 			}
@@ -728,6 +738,9 @@ public class WhileyLexer {
 	}
 	public static class DotDot extends Token {
 		public DotDot(int pos, int line) { super("..",pos,line);	}
+	}
+	public static class DotDotDot extends Token {
+		public DotDotDot(int pos, int line) { super("...",pos,line);	}
 	}
 	public static class Bar extends Token {
 		public Bar(int pos, int line) { super("|",pos,line);	}

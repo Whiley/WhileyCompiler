@@ -5,36 +5,36 @@
   <formats>
     <format>tar.gz</format>
     </formats>
+		
   <fileSets>
     <fileSet>
-      <directory>${project.basedir}</directory>
-      <includes>
-        <include>README*</include>
-        <include>build.xml</include>
-		<include>CONTRIBUTORS</include>
-        <include>LICENSE</include>
-        <include>pom.xml</include>
-		<include>asmsrc.xml</include>
-		<include>stdlib/**/*.java</include>
-		<include>stdlib/**/*.whiley</include>
-		<include>lib/wyrt.jar</include>
-		<include>lib/wyjc.jar</include>
-		<include>tests/**/*.whiley</include>
-		<include>tests/**/*.sysout</include>
-		<include>examples/**/*.whiley</include>
-		<include>bin/wyjc</include>
-		<include>bin/whiley</include>
+       <includes>
+			<include>README*</include>
+			<include>build.xml</include>
+			<include>CONTRIBUTORS</include>
+			<include>LICENSE</include>
+			<include>pom.xml</include>
+			<include>Asmsrc.xml</include>
+			<include>stdlib/**/*.java</include>
+			<include>stdlib/**/*.whiley</include>
+			<include>lib/wyrt.jar</include>
+			<include>lib/wyjc.jar</include>
+			<include>tests/**/*.whiley</include>
+			<include>tests/**/*.sysout</include>
+			<include>examples/**/*.whiley</include>
+			<include>bin/wyjc</include>
+			<include>bin/whiley</include>
 		
-      </includes>
-      <useDefaultExcludes>true</useDefaultExcludes>
+		</includes>
+			
     </fileSet>
     <fileSet>
       <!-- TODO: use expresssions instead: ${project.build.sourceDirectory}, etc -->
-      <directory>${project.basedir}/src</directory>
-      <useDefaultExcludes>true</useDefaultExcludes>
+          
 	  <includes>
 			<include>**/*.java</include>
 		</includes>
     </fileSet>
-  </fileSets>
+	</fileSets>
+	
 </assembly>

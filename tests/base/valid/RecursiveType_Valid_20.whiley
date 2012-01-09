@@ -54,7 +54,7 @@ ConstIndex ConstIndex(int offset, int op, int index):
 // Bytecode to String Conversion
 // ===========================================
 
-string code2Any.toString(Bytecode b):
+string code2toString(Bytecode b):
     if b is MethodIndex:
         return bytecodeStrings[b.op]        
     else:
@@ -269,7 +269,7 @@ define bytecodeStrings as [
 ]
 
 void ::main(System sys,[string] args):
-    s1 = code2Any.toString(Unit(0,1))
+    s1 = code2toString(Unit(0,1))
     sys.out.println(s1)
-    s2 = code2Any.toString(FieldIndex(0,180,{ pkg: "java.lang", classes: ["Object"]},"field",T_INT))
+    s2 = code2toString(FieldIndex(0,180,{ pkg: "java.lang", classes: ["Object"]},"field",T_INT))
     sys.out.println(s2)

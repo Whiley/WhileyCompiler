@@ -31,6 +31,15 @@ import wyil.lang.Attribute;
 import wyil.util.*;
 import wyjvm.lang.Bytecode;
 
+/**
+ * Provides classes for representing statements in Whiley's source language.
+ * Examples include <i>assignments</i>, <i>for-loops</i>, <i>conditions</i>,
+ * etc. Each class is an instance of <code>SyntacticElement</code> and, hence,
+ * can be adorned with certain information (such as source location, etc).
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public interface Stmt extends SyntacticElement {
 	
 	public static final class Assign extends SyntacticElement.Impl implements Stmt {

@@ -31,8 +31,25 @@ import wyil.lang.*;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;
 
+/**
+ * Provides classes for representing expressions in Whiley's source language.
+ * Examples include <i>binary operators</i>, <i>integer constants</i>, <i>field
+ * accesses</i>, etc. Each class is an instance of <code>SyntacticElement</code>
+ * and, hence, can be adorned with certain information (such as source location,
+ * etc).
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public interface Expr extends SyntacticElement {
 
+	/**
+	 * An LVal is a special form of expression which may appear on the left-hand
+	 * side of an assignment.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public interface LVal extends Expr {}
 	
 	public static class UnknownVariable extends SyntacticElement.Impl implements Expr, LVal {
@@ -149,21 +166,21 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class TypeConst extends SyntacticElement.Impl implements Expr {
+	public static class Type extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType type;
 
-		public TypeConst(UnresolvedType val, Attribute... attributes) {
+		public Type(UnresolvedType val, Attribute... attributes) {
 			super(attributes);
 			this.type = val;
 		}
 	}
 	
-	public static class FunConst extends SyntacticElement.Impl implements Expr {
+	public static class Function extends SyntacticElement.Impl implements Expr {
 
 		public String name;
 		public final List<UnresolvedType> paramTypes;
 
-		public FunConst(String name, List<UnresolvedType> paramTypes, Attribute... attributes) {
+		public Function(String name, List<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.paramTypes = paramTypes;

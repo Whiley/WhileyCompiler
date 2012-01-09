@@ -29,7 +29,7 @@ import java.util.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 
-public class Module extends ModuleLoader.Skeleton {	
+public final class Module extends ModuleLoader.Skeleton {	
 	private final String filename;
 	private HashMap<Pair<String,Type.Function>,Method> methods;
 	private HashMap<String,TypeDef> types;
@@ -134,7 +134,7 @@ public class Module extends ModuleLoader.Skeleton {
 				|| method(name).size() > 0;
 	}
 	
-	public static class TypeDef extends SyntacticElement.Impl {
+	public static final class TypeDef extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;
 		private String name;
 		private Type type;		
@@ -175,7 +175,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}
 	
-	public static class ConstDef extends SyntacticElement.Impl {
+	public static final class ConstDef extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;
 		private String name;		
 		private Value constant;
@@ -207,7 +207,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}
 		
-	public static class Method extends SyntacticElement.Impl {
+	public static final class Method extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;
 		private String name;		
 		private Type.Function type;		
@@ -268,7 +268,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}	
 	
-	public static class Case extends SyntacticElement.Impl {				
+	public static final class Case extends SyntacticElement.Impl {				
 		private final Block precondition;
 		private final Block postcondition;
 		private final Block body;

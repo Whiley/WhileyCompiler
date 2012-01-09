@@ -35,9 +35,53 @@ import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
 
-public class Compiler implements Logger {		
-	protected NameResolver resolver;	
-	protected ArrayList<Transform> stages;
+/**
+ * Responsible for managing the process of turning source files into binary code
+ * for execution. Each source file is passed through a pipeline of stages that
+ * modify it in a variety of ways. The main stages are:
+ * <ol>
+ * <li>
+ * <p>
+ * <b>Lexing and Parsing</b>, where the source file is converted into an
+ * Abstract Syntax Tree (AST) representation.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Name Resolution</b>, where the fully qualified names of all external
+ * symbols are determined.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Type Propagation</b>, where the types of all expressions are determined by
+ * propagation from e.g. declared parameter types.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>WYIL Generation</b>, where the the AST is converted into the Whiley
+ * Intermediate Language (WYIL). A number of passes are then made over this
+ * before it is ready for code generation.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Code Generation</b>. Here, the executable code is finally generated. This
+ * could be Java bytecode, or something else (e.g. JavaScript).
+ * </p>
+ * </li>
+ * </ol>
+ * Every stage of the compiler can be configured by setting various options.
+ * Stages can also be bypassed (typically for testing) and new ones can be
+ * added.
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public final class Compiler implements Logger {		
+	private NameResolver resolver;	
+	private ArrayList<Transform> stages;
 
 	public Compiler(NameResolver resolver, List<Transform> stages) {
 		this.resolver = resolver;
@@ -48,7 +92,7 @@ public class Compiler implements Logger {
 	 * The logout output stream is used to write log information about the
 	 * status of compilation. The default stream just discards everything.
 	 */
-	protected PrintStream logout = new PrintStream(new OutputStream() {
+	private PrintStream logout = new PrintStream(new OutputStream() {
 		public void write(byte[] b) { /* don't do anything! */
 		}
 
@@ -102,7 +146,7 @@ public class Compiler implements Logger {
 	 * @return
 	 * @throws IOException
 	 */
-	public WhileyFile innerParse(File file) throws IOException {
+	private WhileyFile innerParse(File file) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
@@ -123,7 +167,7 @@ public class Compiler implements Logger {
 	 * 
 	 * @param wf
 	 */
-	public void finishCompilation(List<Module> modules) throws Exception {				
+	private void finishCompilation(List<Module> modules) throws Exception {				
 		// Register the updated file
 		for(Module module : modules) {
 			resolver.register(module);
@@ -136,7 +180,7 @@ public class Compiler implements Logger {
 		}		
 	}
 	
-	protected void process(Module module, Transform stage) throws Exception {
+	private void process(Module module, Transform stage) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
@@ -160,7 +204,7 @@ public class Compiler implements Logger {
 		}
 	}
 	
-	public static String name(String camelCase) {
+	private static String name(String camelCase) {
 		boolean firstTime = true;
 		String r = "";
 		for(int i=0;i!=camelCase.length();++i) {
@@ -174,7 +218,7 @@ public class Compiler implements Logger {
 		return r;
 	}
 	
-	protected void resolveNames(WhileyFile m) {
+	private void resolveNames(WhileyFile m) {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		
@@ -184,7 +228,7 @@ public class Compiler implements Logger {
 		
 	}
 	
-	protected List<Module> buildModules(List<WhileyFile> files) {		
+	private List<Module> buildModules(List<WhileyFile> files) {		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();		

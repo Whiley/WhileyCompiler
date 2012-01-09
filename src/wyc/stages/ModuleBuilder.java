@@ -36,9 +36,47 @@ import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
 import wyc.lang.Stmt.*;
-import wyc.lang.Expr.*;
 
-public class ModuleBuilder {
+/**
+ * <p>
+ * Responsible for expanding all types and constraints for a given module(s), as
+ * well as generating appropriate WYIL code. For example, consider these two
+ * declarations:
+ * </p>
+ * 
+ * <pre>
+ * define Point2D as {int x, int y}
+ * define Point3D as {int x, int y, int z}
+ * define Point as Point2D | Point3D
+ * </pre>
+ * <p>
+ * This stage will expand the type <code>Point</code> to give its full
+ * structural definition. That is,
+ * <code>{int x,int y}|{int x,int y,int z}</code>.
+ * </p>
+ * <p>
+ * Type expansion must also account for any constraints on the types in
+ * question. For example:
+ * </p>
+ * 
+ * <pre>
+ * define nat as int where $ >= 0
+ * define natlist as [nat]
+ * </pre>
+ * <p>
+ * The type <code>natlist</code> expands to <code>[int]</code>, whilst its
+ * constraint is expanded to <code>all {x in $ | x >= 0}</code>.
+ * </p>
+ * <p>
+ * <b>NOTE:</b> As the above description hints, this class currently has two
+ * distinct responsibilities. Therefore, at some point in the future, it will be
+ * split into two separate stages.
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public final class ModuleBuilder {
 	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
@@ -97,7 +135,7 @@ public class ModuleBuilder {
 		return modules;
 	}
 
-	public Module resolve(WhileyFile wf) {
+	private Module resolve(WhileyFile wf) {
 		this.filename = wf.filename;
 		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
@@ -139,7 +177,7 @@ public class ModuleBuilder {
 	 * 
 	 * @param files
 	 */
-	protected void generateConstants(List<WhileyFile> files) {
+	private void generateConstants(List<WhileyFile> files) {
 		HashMap<NameID, Expr> exprs = new HashMap();
 
 		// first construct list.
@@ -194,7 +232,7 @@ public class ModuleBuilder {
 	 * @return
 	 * @throws ResolveError
 	 */
-	protected Value expandConstant(NameID key, HashMap<NameID, Expr> exprs,
+	private Value expandConstant(NameID key, HashMap<NameID, Expr> exprs,
 			HashSet<NameID> visited) throws ResolveError {
 		Expr e = exprs.get(key);
 		Value value = constants.get(key);
@@ -236,22 +274,22 @@ public class ModuleBuilder {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 */
-	protected Value expandConstantHelper(Expr expr, String filename,
+	private Value expandConstantHelper(Expr expr, String filename,
 			HashMap<NameID, Expr> exprs, HashSet<NameID> visited)
 			throws ResolveError {
-		if (expr instanceof Constant) {
-			Constant c = (Constant) expr;
+		if (expr instanceof Expr.Constant) {
+			Expr.Constant c = (Expr.Constant) expr;
 			return c.value;
-		} else if (expr instanceof ExternalAccess) {
-			ExternalAccess v = (ExternalAccess) expr;			
+		} else if (expr instanceof Expr.ExternalAccess) {
+			Expr.ExternalAccess v = (Expr.ExternalAccess) expr;			
 			return expandConstant(v.nid, exprs, visited);
-		} else if (expr instanceof BinOp) {
-			BinOp bop = (BinOp) expr;
+		} else if (expr instanceof Expr.BinOp) {
+			Expr.BinOp bop = (Expr.BinOp) expr;
 			Value lhs = expandConstantHelper(bop.lhs, filename, exprs, visited);
 			Value rhs = expandConstantHelper(bop.rhs, filename, exprs, visited);
 			return evaluate(bop, lhs, rhs);			
-		} else if (expr instanceof NaryOp) {
-			Expr.NaryOp nop = (NaryOp) expr;
+		} else if (expr instanceof Expr.NaryOp) {
+			Expr.NaryOp nop = (Expr.NaryOp) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (Expr arg : nop.arguments) {
 				values.add(expandConstantHelper(arg, filename, exprs, visited));
@@ -261,8 +299,8 @@ public class ModuleBuilder {
 			} else if (nop.nop == Expr.NOp.SETGEN) {
 				return Value.V_SET(values);
 			}
-		} else if (expr instanceof RecordGen) {
-			RecordGen rg = (RecordGen) expr;
+		} else if (expr instanceof Expr.RecordGen) {
+			Expr.RecordGen rg = (Expr.RecordGen) expr;
 			HashMap<String,Value> values = new HashMap<String,Value>();
 			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
 				Value v = expandConstantHelper(e.getValue(),filename,exprs,visited);
@@ -272,8 +310,8 @@ public class ModuleBuilder {
 				values.put(e.getKey(), v);
 			}
 			return Value.V_RECORD(values);
-		} else if (expr instanceof TupleGen) {
-			TupleGen rg = (TupleGen) expr;			
+		} else if (expr instanceof Expr.TupleGen) {
+			Expr.TupleGen rg = (Expr.TupleGen) expr;			
 			ArrayList<Value> values = new ArrayList<Value>();			
 			for(Expr e : rg.fields) {
 				Value v = expandConstantHelper(e,filename,exprs,visited);
@@ -283,8 +321,8 @@ public class ModuleBuilder {
 				values.add(v);				
 			}
 			return Value.V_TUPLE(values);
-		}  else if (expr instanceof DictionaryGen) {
-			DictionaryGen rg = (DictionaryGen) expr;			
+		}  else if (expr instanceof Expr.DictionaryGen) {
+			Expr.DictionaryGen rg = (Expr.DictionaryGen) expr;			
 			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 			for(Pair<Expr,Expr> e : rg.pairs) {
 				Value key = expandConstantHelper(e.first(),filename,exprs,visited);
@@ -295,8 +333,8 @@ public class ModuleBuilder {
 				values.add(new Pair<Value,Value>(key,value));				
 			}
 			return Value.V_DICTIONARY(values);
-		} else if(expr instanceof FunConst) {
-			FunConst f = (FunConst) expr;
+		} else if(expr instanceof Expr.Function) {
+			Expr.Function f = (Expr.Function) expr;
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
 			if (mid != null) {
 				NameID name = new NameID(mid.module, f.name);
@@ -320,7 +358,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Value evaluate(Expr.BinOp bop, Value v1, Value v2) {
+	private Value evaluate(Expr.BinOp bop, Value v1, Value v2) {
 		Type lub = Type.Union(v1.type(), v2.type());
 		
 		// FIXME: there are bugs here related to coercions.
@@ -329,16 +367,16 @@ public class ModuleBuilder {
 			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
 			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2);
-		} else if(Type.isSubtype(Type.List(Type.T_ANY), lub)) {
+		} else if(Type.isSubtype(Type.List(Type.T_ANY, false), lub)) {
 			return evaluate(bop,(Value.List)v1,(Value.List)v2);
-		} else if(Type.isSubtype(Type.Set(Type.T_ANY), lub)) {
+		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false), lub)) {
 			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
 		} 
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),filename,bop);
 		return null;
 	}
 	
-	protected Value evaluateBoolean(Expr.BinOp bop, Value.Bool v1, Value.Bool v2) {				
+	private Value evaluateBoolean(Expr.BinOp bop, Value.Bool v1, Value.Bool v2) {				
 		switch(bop.op) {
 		case AND:
 			return Value.V_BOOL(v1.value & v2.value);
@@ -351,7 +389,7 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Value evaluate(Expr.BinOp bop, Value.Rational v1, Value.Rational v2) {		
+	private Value evaluate(Expr.BinOp bop, Value.Rational v1, Value.Rational v2) {		
 		switch(bop.op) {
 		case ADD:
 			return Value.V_RATIONAL(v1.value.add(v2.value));
@@ -368,7 +406,7 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2) {
+	private Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2) {
 		switch(bop.op) {
 		case ADD:
 			ArrayList<Value> vals = new ArrayList<Value>(v1.values);
@@ -379,7 +417,7 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Value evaluate(Expr.BinOp bop, Value.Set v1, Value.Set v2) {		
+	private Value evaluate(Expr.BinOp bop, Value.Set v1, Value.Set v2) {		
 		switch(bop.op) {
 		case UNION:
 		{
@@ -418,7 +456,7 @@ public class ModuleBuilder {
 	 * 
 	 * @param files
 	 */
-	protected void generateTypes(List<WhileyFile> files) {
+	private void generateTypes(List<WhileyFile> files) {
 		HashMap<NameID, SyntacticElement> srcs = new HashMap<NameID, SyntacticElement>();
 		
 		// The declOrder list is basically a hack. It ensures that types are
@@ -473,7 +511,7 @@ public class ModuleBuilder {
 	 *         question is not actually constrained.
 	 * @throws ResolveError
 	 */
-	protected Pair<Type, Block> expandType(NameID key,
+	private Pair<Type, Block> expandType(NameID key,
 			HashMap<NameID, Type> cache, String filename, SyntacticElement elem)
 			throws ResolveError {
 				
@@ -503,7 +541,7 @@ public class ModuleBuilder {
 		}
 
 		// following is needed to terminate any recursion
-		cache.put(key, Type.Label(key.toString()));
+		cache.put(key, Type.Nominal(key));
 
 		// now, expand the type fully		
 		Pair<UnresolvedType,Expr> ut = unresolved.get(key); 
@@ -513,9 +551,9 @@ public class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpen(key.toString(), t.first());
+		boolean isOpenRecursive = Type.isOpen(key, t.first());
 		if (isOpenRecursive) {
-			t = new Pair<Type, Block>(Type.Recursive(key.toString(),
+			t = new Pair<Type, Block>(Type.Recursive(key,
 					t.first()), t.second());
 		}
 		
@@ -544,7 +582,7 @@ public class ModuleBuilder {
 		return t;
 	}
 
-	protected Pair<Type,Block> expandType(UnresolvedType t, String filename,
+	private Pair<Type,Block> expandType(UnresolvedType t, String filename,
 			HashMap<NameID, Type> cache) {
 		if (t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
@@ -559,7 +597,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}		
-			return new Pair<Type,Block>(Type.List(p.first()),blk);			
+			return new Pair<Type,Block>(Type.List(p.first(), false),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
@@ -573,7 +611,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}						
-			return new Pair<Type,Block>(Type.Set(p.first()),blk);					
+			return new Pair<Type,Block>(Type.Set(p.first(),false),blk);					
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;	
 			Block blk = null;
@@ -621,7 +659,7 @@ public class ModuleBuilder {
 				}	
 				types.put(e.getKey(), p.first());				
 			}
-			return new Pair<Type,Block>(Type.Record(types),blk);						
+			return new Pair<Type, Block>(Type.Record(tt.isOpen, types), blk);						
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type> bounds = new HashSet<Type>();
@@ -702,7 +740,7 @@ public class ModuleBuilder {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
 			ModuleID mid = ut.attribute(Attributes.Module.class).module;			
 			// TODO: need to fix existentials
-			return new Pair<Type,Block>(Type.Existential(new NameID(mid,"1")),null);							
+			return new Pair<Type,Block>(Type.Nominal(new NameID(mid,"1")),null);							
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Block blk = null;
@@ -727,7 +765,7 @@ public class ModuleBuilder {
 		}
 	}
 
-	protected void partResolve(ModuleID module, FunDecl fd) {
+	private void partResolve(ModuleID module, FunDecl fd) {
 
 		ArrayList<Type> parameters = new ArrayList<Type>();
 		for (WhileyFile.Parameter p : fd.parameters) {
@@ -764,17 +802,17 @@ public class ModuleBuilder {
 		fd.attributes().add(new Attributes.Fun(ft));
 	}
 
-	protected Module.ConstDef resolve(ConstDecl td, ModuleID module) {
+	private Module.ConstDef resolve(ConstDecl td, ModuleID module) {
 		Value v = constants.get(new NameID(module, td.name()));
 		return new Module.ConstDef(td.modifiers, td.name(), v);
 	}
 
-	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
+	private Module.TypeDef resolve(TypeDecl td, ModuleID module) {
 		Pair<Type,Block> p = types.get(new NameID(module, td.name()));
 		return new Module.TypeDef(td.modifiers, td.name(), p.first(), p.second());
 	}
 
-	protected Module.Method resolve(FunDecl fd) {		
+	private Module.Method resolve(FunDecl fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
 		// method return type
@@ -898,7 +936,7 @@ public class ModuleBuilder {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	public Block resolve(Stmt stmt, HashMap<String,Integer> environment) {
+	private Block resolve(Stmt stmt, HashMap<String,Integer> environment) {
 		try {
 			if (stmt instanceof Assign) {
 				return resolve((Assign) stmt, environment);
@@ -924,10 +962,10 @@ public class ModuleBuilder {
 				return resolve((DoWhile) stmt, environment);
 			} else if (stmt instanceof For) {
 				return resolve((For) stmt, environment);
-			} else if (stmt instanceof Invoke) {
-				return resolve((Invoke) stmt,false,environment);								
-			} else if (stmt instanceof Spawn) {
-				return resolve((UnOp) stmt, environment);
+			} else if (stmt instanceof Expr.Invoke) {
+				return resolve((Expr.Invoke) stmt,false,environment);								
+			} else if (stmt instanceof Expr.Spawn) {
+				return resolve((Expr.UnOp) stmt, environment);
 			} else if (stmt instanceof Skip) {
 				return resolve((Skip) stmt, environment);
 			} else {
@@ -945,35 +983,35 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Block resolve(Assign s, HashMap<String,Integer> environment) {
+	private Block resolve(Assign s, HashMap<String,Integer> environment) {
 		Block blk = null;
 		
-		if(s.lhs instanceof LocalVariable) {			
+		if(s.lhs instanceof Expr.LocalVariable) {			
 			blk = resolve(s.rhs, environment);			
-			LocalVariable v = (LocalVariable) s.lhs;
+			Expr.LocalVariable v = (Expr.LocalVariable) s.lhs;
 			blk.append(Code.Store(null, allocate(v.var, environment)),
 					attributes(s));			
-		} else if(s.lhs instanceof TupleGen) {					
-			TupleGen tg = (TupleGen) s.lhs;
+		} else if(s.lhs instanceof Expr.TupleGen) {					
+			Expr.TupleGen tg = (Expr.TupleGen) s.lhs;
 			blk = resolve(s.rhs, environment);			
 			blk.append(Code.Destructure(null),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
 			Collections.reverse(fields);
 			
 			for(Expr e : fields) {
-				if(!(e instanceof LocalVariable)) {
+				if(!(e instanceof Expr.LocalVariable)) {
 					syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,e);
 				}
-				LocalVariable v = (LocalVariable) e;
+				Expr.LocalVariable v = (Expr.LocalVariable) e;
 				blk.append(Code.Store(null, allocate(v.var, environment)),
 						attributes(s));				
 			}
 			return blk;
-		} else if(s.lhs instanceof ListAccess || s.lhs instanceof RecordAccess){
+		} else if(s.lhs instanceof Expr.ListAccess || s.lhs instanceof Expr.RecordAccess){
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
-			Pair<LocalVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
+			Pair<Expr.LocalVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
 			if(!environment.containsKey(l.first().var)) {
 				syntaxError("unknown variable",filename,l.first());
 			}
@@ -988,20 +1026,20 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Pair<LocalVariable, Integer> extractLVal(Expr e,
+	private Pair<Expr.LocalVariable, Integer> extractLVal(Expr e,
 			ArrayList<String> fields, Block blk, 
 			HashMap<String, Integer> environment) {
-		if (e instanceof LocalVariable) {
-			LocalVariable v = (LocalVariable) e;
+		if (e instanceof Expr.LocalVariable) {
+			Expr.LocalVariable v = (Expr.LocalVariable) e;
 			return new Pair(v,0);			
-		} else if (e instanceof ListAccess) {
-			ListAccess la = (ListAccess) e;
-			Pair<LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
+		} else if (e instanceof Expr.ListAccess) {
+			Expr.ListAccess la = (Expr.ListAccess) e;
+			Pair<Expr.LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(resolve(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
-		} else if (e instanceof RecordAccess) {
-			RecordAccess ra = (RecordAccess) e;
-			Pair<LocalVariable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
+		} else if (e instanceof Expr.RecordAccess) {
+			Expr.RecordAccess ra = (Expr.RecordAccess) e;
+			Pair<Expr.LocalVariable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
 			fields.add(ra.name);
 			return new Pair(l.first(),l.second() + 1);			
 		} else {
@@ -1010,7 +1048,7 @@ public class ModuleBuilder {
 		}
 	}
 	
-	protected Block resolve(Assert s, HashMap<String,Integer> environment) {
+	private Block resolve(Assert s, HashMap<String,Integer> environment) {
 		String lab = Block.freshLabel();
 		Block blk = new Block(environment.size());
 		blk.append(Code.Assert(lab),attributes(s));
@@ -1020,7 +1058,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(Return s, HashMap<String,Integer> environment) {
+	private Block resolve(Return s, HashMap<String,Integer> environment) {
 
 		if (s.expr != null) {
 			Block blk = resolve(s.expr, environment);
@@ -1034,19 +1072,19 @@ public class ModuleBuilder {
 		}
 	}
 
-	protected Block resolve(Skip s, HashMap<String,Integer> environment) {
+	private Block resolve(Skip s, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Skip, attributes(s));
 		return blk;
 	}
 
-	protected Block resolve(Debug s, HashMap<String,Integer> environment) {		
+	private Block resolve(Debug s, HashMap<String,Integer> environment) {		
 		Block blk = resolve(s.expr, environment);		
 		blk.append(Code.debug, attributes(s));
 		return blk;
 	}
 
-	protected Block resolve(IfElse s, HashMap<String,Integer> environment) {
+	private Block resolve(IfElse s, HashMap<String,Integer> environment) {
 		String falseLab = Block.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
 				.freshLabel();
@@ -1068,13 +1106,13 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(Throw s, HashMap<String,Integer> environment) {
+	private Block resolve(Throw s, HashMap<String,Integer> environment) {
 		Block blk = resolve(s.expr, environment);
 		blk.append(Code.Throw(null), s.attributes());
 		return blk;
 	}
 	
-	protected Block resolve(Break s, HashMap<String,Integer> environment) {
+	private Block resolve(Break s, HashMap<String,Integer> environment) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if(scope == null) {
 			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP), filename, s);
@@ -1084,7 +1122,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(Switch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block resolve(Switch s, HashMap<String,Integer> environment) throws ResolveError {
 		String exitLab = Block.freshLabel();		
 		Block blk = resolve(s.expr, environment);				
 		Block cblk = new Block(environment.size());
@@ -1133,7 +1171,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block resolve(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
 		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {
@@ -1170,7 +1208,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(While s, HashMap<String,Integer> environment) {		
+	private Block resolve(While s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();									
 				
 		Block blk = new Block(environment.size());
@@ -1189,10 +1227,12 @@ public class ModuleBuilder {
 				
 		blk.append(resolveCondition(label, invert(s.condition), environment));
 
+		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
-				
+		scopes.pop(); // break
+		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(Code.Assert(invariantLabel),attributes(s));
@@ -1206,7 +1246,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(DoWhile s, HashMap<String,Integer> environment) {		
+	private Block resolve(DoWhile s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();				
 				
 		Block blk = new Block(environment.size());
@@ -1222,9 +1262,11 @@ public class ModuleBuilder {
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
+		scopes.push(new BreakScope(label));	
 		for (Stmt st : s.body) {
 			blk.append(resolve(st, environment));
 		}		
+		scopes.pop(); // break
 		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
@@ -1242,7 +1284,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(For s, HashMap<String,Integer> environment) {		
+	private Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
 		
 		Block blk = new Block(1);
@@ -1305,31 +1347,31 @@ public class ModuleBuilder {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	protected Block resolveCondition(String target, Expr condition,
+	private Block resolveCondition(String target, Expr condition,
 			 HashMap<String, Integer> environment) {
 		try {
-			if (condition instanceof Constant) {
-				return resolveCondition(target, (Constant) condition, environment);
-			} else if (condition instanceof LocalVariable) {
-				return resolveCondition(target, (LocalVariable) condition, environment);
-			} else if (condition instanceof ExternalAccess) {
-				return resolveCondition(target, (ExternalAccess) condition, environment);
-			} else if (condition instanceof BinOp) {
-				return resolveCondition(target, (BinOp) condition, environment);
-			} else if (condition instanceof UnOp) {
-				return resolveCondition(target, (UnOp) condition, environment);
-			} else if (condition instanceof Invoke) {
-				return resolveCondition(target, (Invoke) condition, environment);
-			} else if (condition instanceof RecordAccess) {
-				return resolveCondition(target, (RecordAccess) condition, environment);
-			} else if (condition instanceof RecordGen) {
-				return resolveCondition(target, (RecordGen) condition, environment);
-			} else if (condition instanceof TupleGen) {
-				return resolveCondition(target, (TupleGen) condition, environment);
-			} else if (condition instanceof ListAccess) {
-				return resolveCondition(target, (ListAccess) condition, environment);
-			} else if (condition instanceof Comprehension) {
-				return resolveCondition(target, (Comprehension) condition, environment);
+			if (condition instanceof Expr.Constant) {
+				return resolveCondition(target, (Expr.Constant) condition, environment);
+			} else if (condition instanceof Expr.LocalVariable) {
+				return resolveCondition(target, (Expr.LocalVariable) condition, environment);
+			} else if (condition instanceof Expr.ExternalAccess) {
+				return resolveCondition(target, (Expr.ExternalAccess) condition, environment);
+			} else if (condition instanceof Expr.BinOp) {
+				return resolveCondition(target, (Expr.BinOp) condition, environment);
+			} else if (condition instanceof Expr.UnOp) {
+				return resolveCondition(target, (Expr.UnOp) condition, environment);
+			} else if (condition instanceof Expr.Invoke) {
+				return resolveCondition(target, (Expr.Invoke) condition, environment);
+			} else if (condition instanceof Expr.RecordAccess) {
+				return resolveCondition(target, (Expr.RecordAccess) condition, environment);
+			} else if (condition instanceof Expr.RecordGen) {
+				return resolveCondition(target, (Expr.RecordGen) condition, environment);
+			} else if (condition instanceof Expr.TupleGen) {
+				return resolveCondition(target, (Expr.TupleGen) condition, environment);
+			} else if (condition instanceof Expr.ListAccess) {
+				return resolveCondition(target, (Expr.ListAccess) condition, environment);
+			} else if (condition instanceof Expr.Comprehension) {
+				return resolveCondition(target, (Expr.Comprehension) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, condition);
 			}
@@ -1342,7 +1384,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Block resolveCondition(String target, Constant c, HashMap<String,Integer> environment) {
+	private Block resolveCondition(String target, Expr.Constant c, HashMap<String,Integer> environment) {
 		Value.Bool b = (Value.Bool) c.value;
 		Block blk = new Block(environment.size());
 		if (b.value) {
@@ -1353,7 +1395,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolveCondition(String target, LocalVariable v, 
+	private Block resolveCondition(String target, Expr.LocalVariable v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());				
@@ -1364,7 +1406,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolveCondition(String target, ExternalAccess v, 
+	private Block resolveCondition(String target, Expr.ExternalAccess v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		
 		Block blk = new Block(environment.size());		
@@ -1382,7 +1424,7 @@ public class ModuleBuilder {
 	}
 	
 	/*
-	protected Block oldResolveCondition(String target, LocalVariable v, 
+	private Block oldResolveCondition(String target, LocalVariable v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 	
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);					
@@ -1439,21 +1481,21 @@ public class ModuleBuilder {
 		return blk;
 	}
 */
-	protected Block resolveCondition(String target, BinOp v, HashMap<String,Integer> environment) {
-		BOp bop = v.op;
+	private Block resolveCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
+		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
 
-		if (bop == BOp.OR) {
+		if (bop == Expr.BOp.OR) {
 			blk.append(resolveCondition(target, v.lhs, environment));
 			blk.append(resolveCondition(target, v.rhs, environment));
 			return blk;
-		} else if (bop == BOp.AND) {
+		} else if (bop == Expr.BOp.AND) {
 			String exitLabel = Block.freshLabel();
 			blk.append(resolveCondition(exitLabel, invert(v.lhs), environment));
 			blk.append(resolveCondition(target, v.rhs, environment));
 			blk.append(Code.Label(exitLabel));
 			return blk;
-		} else if (bop == BOp.TYPEEQ || bop == BOp.TYPEIMPLIES) {
+		} else if (bop == Expr.BOp.TYPEEQ || bop == Expr.BOp.TYPEIMPLIES) {
 			return resolveTypeCondition(target, v, environment);
 		}
 
@@ -1463,7 +1505,7 @@ public class ModuleBuilder {
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {
 			// this is a simple rewrite to enable type inference.
-			LocalVariable lhs = (LocalVariable) v.lhs;
+			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
@@ -1474,7 +1516,7 @@ public class ModuleBuilder {
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
 			// this is a simple rewrite to enable type inference.
 			String exitLabel = Block.freshLabel();
-			LocalVariable lhs = (LocalVariable) v.lhs;
+			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
@@ -1490,12 +1532,12 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolveTypeCondition(String target, BinOp v, HashMap<String,Integer> environment) {
+	private Block resolveTypeCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
 		Block blk;
 		int slot;
 		
-		if (v.lhs instanceof LocalVariable) {
-			LocalVariable lhs = (LocalVariable) v.lhs;
+		if (v.lhs instanceof Expr.LocalVariable) {
+			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
@@ -1506,15 +1548,15 @@ public class ModuleBuilder {
 			slot = -1;
 		}
 
-		Pair<Type,Block> rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
+		Pair<Type,Block> rhs_t = resolve(((Expr.Type) v.rhs).type);
 		// TODO: fix type constraints
 		blk.append(Code.IfType(null, slot, rhs_t.first(), target),
 				attributes(v));
 		return blk;
 	}
 
-	protected Block resolveCondition(String target, UnOp v, HashMap<String,Integer> environment) {
-		UOp uop = v.op;
+	private Block resolveCondition(String target, Expr.UnOp v, HashMap<String,Integer> environment) {
+		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
 			String label = Block.freshLabel();
@@ -1527,28 +1569,28 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Block resolveCondition(String target, ListAccess v, HashMap<String,Integer> environment) {
+	private Block resolveCondition(String target, Expr.ListAccess v, HashMap<String,Integer> environment) {
 		Block blk = resolve(v, environment);
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
-	protected Block resolveCondition(String target, RecordAccess v, HashMap<String,Integer> environment) {
+	private Block resolveCondition(String target, Expr.RecordAccess v, HashMap<String,Integer> environment) {
 		Block blk = resolve(v, environment);		
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));		
 		return blk;
 	}
 
-	protected Block resolveCondition(String target, Invoke v, HashMap<String,Integer> environment) throws ResolveError {
+	private Block resolveCondition(String target, Expr.Invoke v, HashMap<String,Integer> environment) throws ResolveError {
 		Block blk = resolve((Expr) v, environment);	
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
-	protected Block resolveCondition(String target, Comprehension e,  
+	private Block resolveCondition(String target, Expr.Comprehension e,  
 			HashMap<String,Integer> environment) {
 		
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
@@ -1563,10 +1605,10 @@ public class ModuleBuilder {
 			int srcSlot;
 			int varSlot = allocate(src.first(),environment); 
 			
-			if(src.second() instanceof LocalVariable) {
+			if(src.second() instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better
 				// code.
-				LocalVariable v = (LocalVariable) src.second();
+				Expr.LocalVariable v = (Expr.LocalVariable) src.second();
 				if(environment.containsKey(v.var)) {					
 					srcSlot = environment.get(v.var);
 				} else {					
@@ -1626,38 +1668,38 @@ public class ModuleBuilder {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	protected Block resolve(Expr expression, HashMap<String,Integer> environment) {
+	private Block resolve(Expr expression, HashMap<String,Integer> environment) {
 		try {
-			if (expression instanceof Constant) {
-				return resolve((Constant) expression, environment);
-			} else if (expression instanceof LocalVariable) {
-				return resolve((LocalVariable) expression, environment);
-			} else if (expression instanceof ExternalAccess) {
-				return resolve((ExternalAccess) expression, environment);
-			} else if (expression instanceof NaryOp) {
-				return resolve((NaryOp) expression, environment);
-			} else if (expression instanceof BinOp) {
-				return resolve((BinOp) expression, environment);
-			} else if (expression instanceof Convert) {
-				return resolve((Convert) expression, environment);
-			} else if (expression instanceof ListAccess) {
-				return resolve((ListAccess) expression, environment);
-			} else if (expression instanceof UnOp) {
-				return resolve((UnOp) expression, environment);
-			} else if (expression instanceof Invoke) {
-				return resolve((Invoke) expression, true, environment);
-			} else if (expression instanceof Comprehension) {
-				return resolve((Comprehension) expression, environment);
-			} else if (expression instanceof RecordAccess) {
-				return resolve((RecordAccess) expression, environment);
-			} else if (expression instanceof RecordGen) {
-				return resolve((RecordGen) expression, environment);
-			} else if (expression instanceof TupleGen) {
-				return resolve((TupleGen) expression, environment);
-			} else if (expression instanceof DictionaryGen) {
-				return resolve((DictionaryGen) expression, environment);
-			} else if (expression instanceof FunConst) {
-				return resolve((FunConst) expression, environment);
+			if (expression instanceof Expr.Constant) {
+				return resolve((Expr.Constant) expression, environment);
+			} else if (expression instanceof Expr.LocalVariable) {
+				return resolve((Expr.LocalVariable) expression, environment);
+			} else if (expression instanceof Expr.ExternalAccess) {
+				return resolve((Expr.ExternalAccess) expression, environment);
+			} else if (expression instanceof Expr.NaryOp) {
+				return resolve((Expr.NaryOp) expression, environment);
+			} else if (expression instanceof Expr.BinOp) {
+				return resolve((Expr.BinOp) expression, environment);
+			} else if (expression instanceof Expr.Convert) {
+				return resolve((Expr.Convert) expression, environment);
+			} else if (expression instanceof Expr.ListAccess) {
+				return resolve((Expr.ListAccess) expression, environment);
+			} else if (expression instanceof Expr.UnOp) {
+				return resolve((Expr.UnOp) expression, environment);
+			} else if (expression instanceof Expr.Invoke) {
+				return resolve((Expr.Invoke) expression, true, environment);
+			} else if (expression instanceof Expr.Comprehension) {
+				return resolve((Expr.Comprehension) expression, environment);
+			} else if (expression instanceof Expr.RecordAccess) {
+				return resolve((Expr.RecordAccess) expression, environment);
+			} else if (expression instanceof Expr.RecordGen) {
+				return resolve((Expr.RecordGen) expression, environment);
+			} else if (expression instanceof Expr.TupleGen) {
+				return resolve((Expr.TupleGen) expression, environment);
+			} else if (expression instanceof Expr.DictionaryGen) {
+				return resolve((Expr.DictionaryGen) expression, environment);
+			} else if (expression instanceof Expr.Function) {
+				return resolve((Expr.Function) expression, environment);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression encountered: "
@@ -1675,7 +1717,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Block resolve(Invoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
+	private Block resolve(Expr.Invoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block(environment.size());
 		Type[] paramTypes = new Type[args.size()]; 
@@ -1770,13 +1812,13 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(Constant c, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.Constant c, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(c.value), attributes(c));		
 		return blk;
 	}
 
-	protected Block resolve(FunConst s, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.Function s, HashMap<String,Integer> environment) {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		NameID name = new NameID(modInfo.module, s.name);	
 		Type.Function tf = null;
@@ -1797,7 +1839,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
+	private Block resolve(Expr.ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
 		Value val = constants.get(v.nid);		
 		if(val == null) {
 			// indicates an external access
@@ -1809,7 +1851,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
+	private Block resolve(Expr.LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
 		if(environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());						
 			blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
@@ -1839,7 +1881,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Block resolve(UnOp v, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.UnOp v, HashMap<String,Integer> environment) {
 		Block blk = resolve(v.mhs,  environment);	
 		switch (v.op) {
 		case NEG:
@@ -1875,7 +1917,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(ListAccess v, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.ListAccess v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(resolve(v.src, environment));
 		blk.append(resolve(v.index, environment));
@@ -1883,7 +1925,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(Convert v, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(resolve(v.expr, environment));		
 		Pair<Type,Block> p = resolve(v.type);
@@ -1892,13 +1934,13 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(BinOp v, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.BinOp v, HashMap<String,Integer> environment) {
 
 		// could probably use a range test for this somehow
-		if (v.op == BOp.EQ || v.op == BOp.NEQ || v.op == BOp.LT
-				|| v.op == BOp.LTEQ || v.op == BOp.GT || v.op == BOp.GTEQ
-				|| v.op == BOp.SUBSET || v.op == BOp.SUBSETEQ
-				|| v.op == BOp.ELEMENTOF || v.op == BOp.AND || v.op == BOp.OR) {
+		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
+				|| v.op == Expr.BOp.LTEQ || v.op == Expr.BOp.GT || v.op == Expr.BOp.GTEQ
+				|| v.op == Expr.BOp.SUBSET || v.op == Expr.BOp.SUBSETEQ
+				|| v.op == Expr.BOp.ELEMENTOF || v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, v, environment);
@@ -1910,15 +1952,15 @@ public class ModuleBuilder {
 			return blk;
 		}
 
-		BOp bop = v.op;
+		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
 		blk.append(resolve(v.lhs, environment));
 		blk.append(resolve(v.rhs, environment));
 
-		if(bop == BOp.UNION) {
+		if(bop == Expr.BOp.UNION) {
 			blk.append(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
 			return blk;			
-		} else if(bop == BOp.INTERSECTION) {
+		} else if(bop == Expr.BOp.INTERSECTION) {
 			blk.append(Code.SetIntersect(null,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
 		} else {
@@ -1927,9 +1969,9 @@ public class ModuleBuilder {
 		}		
 	}
 
-	protected Block resolve(NaryOp v, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.NaryOp v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
-		if (v.nop == NOp.SUBLIST) {
+		if (v.nop == Expr.NOp.SUBLIST) {
 			if (v.arguments.size() != 3) {
 				// this should be dead-code
 				internalFailure("incorrect number of arguments", filename, v);
@@ -1946,7 +1988,7 @@ public class ModuleBuilder {
 				blk.append(resolve(e, environment));
 			}
 
-			if (v.nop == NOp.LISTGEN) {
+			if (v.nop == Expr.NOp.LISTGEN) {
 				blk.append(Code.NewList(null,nargs),attributes(v));
 			} else {
 				blk.append(Code.NewSet(null,nargs),attributes(v));
@@ -1955,7 +1997,7 @@ public class ModuleBuilder {
 		}
 	}
 	
-	protected Block resolve(Comprehension e, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.Comprehension e, HashMap<String,Integer> environment) {
 
 		// First, check for boolean cases which are handled mostly by
 		// resolveCondition.
@@ -1983,10 +2025,10 @@ public class ModuleBuilder {
 			int srcSlot;
 			int varSlot = allocate(src.first(),environment); 
 			
-			if(src.second() instanceof LocalVariable) {
+			if(src.second() instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better
 				// code.
-				LocalVariable v = (LocalVariable) src.second();
+				Expr.LocalVariable v = (Expr.LocalVariable) src.second();
 				if(environment.containsKey(v.var)) {
 					srcSlot = environment.get(v.var);
 				} else {
@@ -2058,7 +2100,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(RecordGen sg, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.RecordGen sg, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
@@ -2067,12 +2109,12 @@ public class ModuleBuilder {
 			fields.put(key, Type.T_ANY);
 			blk.append(resolve(sg.fields.get(key), environment));
 		}
-		Type.Record rt = checkType(Type.Record(fields),Type.Record.class,sg);
+		Type.Record rt = checkType(Type.Record(false,fields),Type.Record.class,sg);
 		blk.append(Code.NewRecord(rt), attributes(sg));
 		return blk;
 	}
 
-	protected Block resolve(TupleGen sg, HashMap<String,Integer> environment) {		
+	private Block resolve(Expr.TupleGen sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Expr e : sg.fields) {									
 			blk.append(resolve(e, environment));
@@ -2082,7 +2124,7 @@ public class ModuleBuilder {
 		return blk;		
 	}
 
-	protected Block resolve(DictionaryGen sg, HashMap<String,Integer> environment) {		
+	private Block resolve(Expr.DictionaryGen sg, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
 			blk.append(resolve(e.first(), environment));
@@ -2092,17 +2134,17 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(RecordAccess sg, HashMap<String,Integer> environment) {
+	private Block resolve(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
 		Block lhs = resolve(sg.lhs, environment);		
 		lhs.append(Code.FieldLoad(null,sg.name), attributes(sg));
 		return lhs;
 	}
 	
-	protected static int allocate(HashMap<String,Integer> environment) {
+	private static int allocate(HashMap<String,Integer> environment) {
 		return allocate("$" + environment.size(),environment);
 	}
 	
-	protected static int allocate(String var, HashMap<String,Integer> environment) {
+	private static int allocate(String var, HashMap<String,Integer> environment) {
 		// this method is a bit of a hack
 		Integer r = environment.get(var);
 		if(r == null) {
@@ -2114,7 +2156,7 @@ public class ModuleBuilder {
 		}
 	}	
 		
-	protected Pair<Type,Block> resolve(UnresolvedType t) {
+	private Pair<Type,Block> resolve(UnresolvedType t) {
 		if (t instanceof UnresolvedType.Any) {
 			return new Pair<Type,Block>(Type.T_ANY,null);
 		} else if (t instanceof UnresolvedType.Void) {
@@ -2146,7 +2188,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
-			return new Pair<Type,Block>(Type.List(p.first()),blk);			
+			return new Pair<Type,Block>(Type.List(p.first(), false),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;	
 			Pair<Type,Block> p = resolve(st.element);
@@ -2160,7 +2202,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
-			return new Pair<Type,Block>(Type.Set(p.first()),blk);			
+			return new Pair<Type,Block>(Type.Set(p.first(),false),blk);			
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;			
 			Pair<Type,Block> key = resolve(st.key);
@@ -2206,7 +2248,7 @@ public class ModuleBuilder {
 				}
 				types.put(e.getKey(), p.first());				
 			}
-			return new Pair<Type,Block>(Type.Record(types),blk);
+			return new Pair<Type,Block>(Type.Record(tt.isOpen,types),blk);
 		} else if(t instanceof UnresolvedType.Not) {
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
 			Block blk = null;
@@ -2285,7 +2327,7 @@ public class ModuleBuilder {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
 			ModuleID mid = ut.attribute(Attributes.Module.class).module;
 			// TODO: need to fix existentials
-			return new Pair<Type,Block>(Type.Existential(new NameID(mid,"1")),null);							
+			return new Pair<Type,Block>(Type.Nominal(new NameID(mid,"1")),null);							
 		} else if(t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Block blk = null;
@@ -2341,17 +2383,17 @@ public class ModuleBuilder {
 		}
 	}
 	
-	public LocalVariable flattern(Expr e) {
-		if (e instanceof LocalVariable) {
-			return (LocalVariable) e;
-		} else if (e instanceof ListAccess) {
-			ListAccess la = (ListAccess) e;
+	private Expr.LocalVariable flattern(Expr e) {
+		if (e instanceof Expr.LocalVariable) {
+			return (Expr.LocalVariable) e;
+		} else if (e instanceof Expr.ListAccess) {
+			Expr.ListAccess la = (Expr.ListAccess) e;
 			return flattern(la.src);
-		} else if (e instanceof RecordAccess) {
-			RecordAccess la = (RecordAccess) e;
+		} else if (e instanceof Expr.RecordAccess) {
+			Expr.RecordAccess la = (Expr.RecordAccess) e;
 			return flattern(la.lhs);
-		} else if (e instanceof UnOp) {
-			UnOp la = (UnOp) e;
+		} else if (e instanceof Expr.UnOp) {
+			Expr.UnOp la = (Expr.UnOp) e;
 			if (la.op == Expr.UOp.PROCESSACCESS) {
 				return flattern(la.mhs);
 			}
@@ -2360,29 +2402,29 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	public static Expr invert(Expr e) {
+	private static Expr invert(Expr e) {
 		if (e instanceof Expr.BinOp) {
-			BinOp bop = (BinOp) e;
+			Expr.BinOp bop = (Expr.BinOp) e;
 			switch (bop.op) {
 			case AND:
-				return new BinOp(BOp.OR, invert(bop.lhs), invert(bop.rhs), attributes(e));
+				return new Expr.BinOp(Expr.BOp.OR, invert(bop.lhs), invert(bop.rhs), attributes(e));
 			case OR:
-				return new BinOp(BOp.AND, invert(bop.lhs), invert(bop.rhs), attributes(e));
+				return new Expr.BinOp(Expr.BOp.AND, invert(bop.lhs), invert(bop.rhs), attributes(e));
 			case EQ:
-				return new BinOp(BOp.NEQ, bop.lhs, bop.rhs, attributes(e));
+				return new Expr.BinOp(Expr.BOp.NEQ, bop.lhs, bop.rhs, attributes(e));
 			case NEQ:
-				return new BinOp(BOp.EQ, bop.lhs, bop.rhs, attributes(e));
+				return new Expr.BinOp(Expr.BOp.EQ, bop.lhs, bop.rhs, attributes(e));
 			case LT:
-				return new BinOp(BOp.GTEQ, bop.lhs, bop.rhs, attributes(e));
+				return new Expr.BinOp(Expr.BOp.GTEQ, bop.lhs, bop.rhs, attributes(e));
 			case LTEQ:
-				return new BinOp(BOp.GT, bop.lhs, bop.rhs, attributes(e));
+				return new Expr.BinOp(Expr.BOp.GT, bop.lhs, bop.rhs, attributes(e));
 			case GT:
-				return new BinOp(BOp.LTEQ, bop.lhs, bop.rhs, attributes(e));
+				return new Expr.BinOp(Expr.BOp.LTEQ, bop.lhs, bop.rhs, attributes(e));
 			case GTEQ:
-				return new BinOp(BOp.LT, bop.lhs, bop.rhs, attributes(e));
+				return new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs, attributes(e));
 			}
 		} else if (e instanceof Expr.UnOp) {
-			UnOp uop = (UnOp) e;
+			Expr.UnOp uop = (Expr.UnOp) e;
 			switch (uop.op) {
 			case NOT:
 				return uop.mhs;
@@ -2391,7 +2433,7 @@ public class ModuleBuilder {
 		return new Expr.UnOp(Expr.UOp.NOT, e);
 	}
 
-	public Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	private Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case ADD:
 			return Code.BOp.ADD;
@@ -2420,7 +2462,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	public Code.COp OP2COP(Expr.BOp bop, SyntacticElement elem) {
+	private Code.COp OP2COP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case EQ:
 			return Code.COp.EQ;
@@ -2454,7 +2496,7 @@ public class ModuleBuilder {
 	 * @param blk
 	 * @return
 	 */
-	public static Block shiftBlock(int amount, Block blk) {
+	private static Block shiftBlock(int amount, Block blk) {
 		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 		for(int i=0;i!=blk.numSlots();++i) {
 			binding.put(i,i+amount);
@@ -2477,7 +2519,7 @@ public class ModuleBuilder {
 	 * @param blk
 	 * @return
 	 */
-	public static Block chainBlock(String target, Block blk) {	
+	private static Block chainBlock(String target, Block blk) {	
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Fail) {
@@ -2496,13 +2538,13 @@ public class ModuleBuilder {
 	 * @param elem
 	 * @return
 	 */
-	public static Collection<Attribute> attributes(SyntacticElement elem) {
+	private static Collection<Attribute> attributes(SyntacticElement elem) {
 		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
 		attrs.add(elem.attribute(Attribute.Source.class));
 		return attrs;
 	}
 
-	protected <T extends Type> T checkType(Type t, Class<T> clazz,
+	private <T extends Type> T checkType(Type t, Class<T> clazz,
 			SyntacticElement elem) {		
 		if (clazz.isInstance(t)) {
 			return (T) t;
@@ -2514,7 +2556,7 @@ public class ModuleBuilder {
 		}
 	}
 	
-	protected <T extends Scope> T findEnclosingScope(Class<T> c) {
+	private <T extends Scope> T findEnclosingScope(Class<T> c) {
 		for(int i=scopes.size()-1;i>=0;--i) {
 			Scope s = scopes.get(i);
 			if(c.isInstance(s)) {
@@ -2524,14 +2566,14 @@ public class ModuleBuilder {
 		return null;
 	}	
 	
-	public abstract class Scope {}
+	private abstract class Scope {}
 	
-	public class BreakScope extends Scope {
+	private class BreakScope extends Scope {
 		public String label;
 		public BreakScope(String l) { label = l; }
 	}
 
-	public class ContinueScope extends Scope {
+	private class ContinueScope extends Scope {
 		public String label;
 		public ContinueScope(String l) { label = l; }
 	}
