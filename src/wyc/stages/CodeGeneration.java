@@ -299,7 +299,7 @@ public final class CodeGeneration {
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
 				return generate((Expr.IndirectFunctionCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.Spawn) {
-				return generate((Expr.UnOp) stmt, environment);
+				return generate((Expr.Spawn) stmt, environment);
 			} else if (stmt instanceof Skip) {
 				return generate((Skip) stmt, environment);
 			} else {
@@ -730,6 +730,8 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.DictionaryAccess) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
+			} else if (condition instanceof Expr.Spawn) {
+				return generate((Expr.Spawn) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, condition);
 			}
@@ -1037,6 +1039,8 @@ public final class CodeGeneration {
 				return generate((Expr.Dictionary) expression, environment);
 			} else if (expression instanceof Expr.Function) {
 				return generate((Expr.Function) expression, environment);
+			} else if (expression instanceof Expr.Spawn) {
+				return generate((Expr.Spawn) expression, environment);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression encountered: "
@@ -1477,6 +1481,13 @@ public final class CodeGeneration {
 		Block lhs = generate(sg.src, environment);		
 		lhs.append(Code.FieldLoad(sg.srcType.raw(),sg.name), attributes(sg));
 		return lhs;
+	}
+	
+	private Block generate(Expr.Spawn expr,
+			HashMap<String, Integer> environment) throws ResolveError {
+		Block blk = generate(expr.expr,environment);
+		blk.append(Code.Spawn(expr.type.raw()));
+		return blk;
 	}
 	
 	private static int allocate(HashMap<String,Integer> environment) {

@@ -1809,7 +1809,12 @@ public final class TypePropagation {
 	private Expr propagate(Expr.Spawn expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		return null;
+		expr.expr = propagate(expr.expr,environment,imports);
+		Nominal<Type> type = (Nominal) expr.expr.type();
+		Type.Process p = (Type.Process) Type.Process(type.raw());
+		// FIXME: loss of nominal information
+		expr.type = new Nominal<Type.Process>(p,p);
+		return expr;
 	}
 	
 	private Expr propagate(Expr.TypeVal expr,
