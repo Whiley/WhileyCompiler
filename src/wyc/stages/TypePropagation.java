@@ -1466,7 +1466,7 @@ public final class TypePropagation {
 			// Therefore, we must determine which module this
 			// is, and update the tree accordingly.
 			try {
-				NameID nid = resolver.resolveAsName(expr.var, imports);
+				NameID nid = resolver.resolveAsName(expr.var, imports);				
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
 				ca.value = resolver.resolveAsConstant(nid);				
@@ -1632,10 +1632,10 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<WhileyFile.Import> imports) {	
-		
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {	
+				
 		if (expr instanceof Expr.PackageAccess
-				|| expr instanceof Expr.ModuleAccess) {
+				|| expr instanceof Expr.ModuleAccess) {			
 			// don't need to do anything in these cases.
 			return expr;
 		}
@@ -1672,8 +1672,7 @@ public final class TypePropagation {
 			if (resolver.isName(nid)) {
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
 						expr.name, nid, expr.attributes());
-				// FIXME: there is definitely a bug here, as we need to initialise the value.
-				// ca.value = ?
+				ca.value = resolver.resolveAsConstant(nid);
 				return ca;
 			}						
 			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,expr);			
@@ -1705,8 +1704,10 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.ConstantAccess expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<WhileyFile.Import> imports) {
-		return null;
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		// we don't need to do anything here, since the value is already
+		// resolved by case for AbstractDotAccess.
+		return expr;
 	}			
 
 	private Expr propagate(Expr.Spawn expr,
