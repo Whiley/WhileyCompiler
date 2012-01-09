@@ -1344,7 +1344,11 @@ public final class TypePropagation {
 				}
 				
 			} else {
+				// In this case, we definitely have a process type. 
+				
 				Type.Process procType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
+
+				// ok, it's a message send
 				Pair<NameID, Nominal<Type.Method>> p = resolver
 						.resolveAsMessage(expr.name, procType, paramTypes,
 								imports);				
@@ -1353,7 +1357,7 @@ public final class TypePropagation {
 				r.messageType = p.second();
 				// FIXME: loss of nominal information
 				r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
-				return r;
+				return r;				
 			}
 		} else {
 
