@@ -760,6 +760,64 @@ public interface Expr extends SyntacticElement {
 		}		
 	}
 	
+	public static class AbstractIndirectInvoke extends SyntacticElement.Impl implements Expr,
+	Stmt {
+		public Expr src; 
+		public final ArrayList<Expr> arguments;		
+		public final boolean synchronous;		
+		public Nominal<Type> returnType;		
+
+		public AbstractIndirectInvoke(Expr src,
+				Collection<Expr> arguments, boolean synchronous,
+				Attribute... attributes) {
+			super(attributes);
+			this.src = src;
+			this.arguments = new ArrayList<Expr>(arguments);	
+			this.synchronous = synchronous;
+		}
+
+		public AbstractIndirectInvoke(Expr src,
+				Collection<Expr> arguments, boolean synchronous,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.src = src;
+			this.arguments = new ArrayList<Expr>(arguments);
+			this.synchronous = synchronous;
+		}
+
+		public Nominal<Type> type() {
+			return returnType;
+		}				
+	}
+	
+	public static class IndirectMethodCall extends AbstractIndirectInvoke {				
+		public Nominal<Type.Method> methodType;
+		
+		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(src,arguments,true,attributes);
+		}
+		
+		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(src,arguments,true,attributes);
+		}		
+	}
+	
+	public static class IndirectFunctionCall extends AbstractIndirectInvoke {				
+		public Nominal<Type.Function> functionType;
+		
+		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(src,arguments,true,attributes);
+		}
+		
+		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(src,arguments,true,attributes);
+		}		
+	}	
+	
 	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
 		public Expr src;	
 		

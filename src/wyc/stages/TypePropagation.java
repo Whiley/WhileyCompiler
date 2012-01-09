@@ -1331,7 +1331,7 @@ public final class TypePropagation {
 			
 			// FIXME: bad idea to use instanceof Type.Function here
 			if(type != null && type.raw() instanceof Type.Function) {
-				// ok, matching local varaible of function type.
+				// ok, matching local variable of function type.
 				Type.Function funType = (Type.Function) type.raw();
 				List<Type> funTypeParams = funType.params();
 				if(paramTypes.size() != funTypeParams.size()) {
@@ -1344,10 +1344,23 @@ public final class TypePropagation {
 					checkIsSubtype(broken, paramTypes.get(i), exprArgs.get(i));
 				}
 				
-				// FIXME: loss of nominal information
-				expr.returnType = new Nominal(funType.ret(),funType.ret());
-				
-				return expr;
+				Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
+				lv.type = type;
+							
+				if(funType instanceof Type.Method) { 
+					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(lv,expr.arguments,expr.attributes());
+					// FIXME: loss of nominal information
+					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
+					nexpr.methodType = (Nominal) type; 
+					return nexpr;
+				} else {
+					Expr.IndirectFunctionCall nexpr = new Expr.IndirectFunctionCall(lv,expr.arguments,expr.attributes());
+					// FIXME: loss of nominal information
+					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
+					nexpr.functionType = (Nominal) type;
+					return nexpr;					
+				}
+
 			} else {
 				// no matching local variable, so attempt to resolve as direct
 				// call.
