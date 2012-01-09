@@ -964,9 +964,17 @@ public final class Resolver {
 			ArrayList<Pair<NameID, Nominal<Type.Function>>> candidates)
 			throws ResolveError {
 		
-		List<Type> rawParameters = parameters != null ? Nominal.stripNominal(parameters) : null;
-		Type.Function target = (Type.Function) Type.Function(Type.T_ANY,
-				Type.T_ANY, rawParameters);
+		List<Type> rawParameters; 
+		Type.Function target;
+		
+		if (parameters != null) {
+			rawParameters = Nominal.stripNominal(parameters);
+			target = (Type.Function) Type.Function(Type.T_ANY, Type.T_ANY,
+					rawParameters);
+		} else {
+			rawParameters = null;
+			target = null;
+		}
 
 		NameID candidateID = null;
 		Nominal<Type.Function> candidateType = null;			
@@ -980,8 +988,9 @@ public final class Resolver {
 					continue; // cannot resolve as function or method
 				}
 			}
-			if (ft.params().size() == parameters.size()
-					&& paramSubtypes(ft, target)) {
+			if (parameters == null
+					|| (ft.params().size() == parameters.size() && paramSubtypes(
+							ft, target))) {
 				// this is now a genuine candidate
 				if(candidateType == null || paramSubtypes(candidateType.raw(), ft)) {
 					candidateType = nft;
@@ -989,6 +998,7 @@ public final class Resolver {
 				} else if(!paramSubtypes(ft, candidateType.raw())){ 
 					// this is an ambiguous error
 					String msg = name + parameterString(parameters) + " is ambiguous";
+					// FIXME: should report all ambiguous matches here
 					msg += "\n\tfound: " + candidateID + " : " + candidateType.nominal();
 					msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
 					throw new ResolveError(msg);
@@ -1016,10 +1026,18 @@ public final class Resolver {
 			ArrayList<Pair<NameID, Nominal<Type.Method>>> candidates)
 			throws ResolveError {
 		
-		List<Type> rawParameters = parameters != null ? Nominal.stripNominal(parameters) : null;
-		Type.Function target = (Type.Function) Type.Function(Type.T_ANY,
-				Type.T_ANY, rawParameters);
-
+		List<Type> rawParameters; 
+		Type.Function target;
+		
+		if (parameters != null) {
+			rawParameters = Nominal.stripNominal(parameters);
+			target = (Type.Function) Type.Function(Type.T_ANY, Type.T_ANY,
+					rawParameters);
+		} else {
+			rawParameters = null;
+			target = null;
+		}
+		
 		NameID candidateID = null;
 		Nominal<Type.Method> candidateType = null;			
 				
@@ -1032,8 +1050,9 @@ public final class Resolver {
 					|| (receiver != null && funrec != null && Type
 					.isImplicitCoerciveSubtype(receiver, funrec))) {					
 				// receivers match up OK ...				
-				if (mt.params().size() == parameters.size()
-						&& paramSubtypes(mt, target)) {
+				if (parameters == null
+						|| (mt.params().size() == parameters.size() && paramSubtypes(
+								mt, target))) {
 					// this is now a genuine candidate
 					if(candidateType == null || paramSubtypes(candidateType.raw(), mt)) {
 						candidateType = nmt;
@@ -1041,6 +1060,7 @@ public final class Resolver {
 					} else if(!paramSubtypes(mt, candidateType.raw())) {
 						// this is an ambiguous error
 						String msg = name + parameterString(parameters) + " is ambiguous";
+						// FIXME: should report all ambiguous matches here
 						msg += "\n\tfound: " + candidateID + " : " + candidateType.nominal();
 						msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
 						throw new ResolveError(msg);

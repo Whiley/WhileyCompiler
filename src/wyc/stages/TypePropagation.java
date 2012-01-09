@@ -1254,33 +1254,21 @@ public final class TypePropagation {
 			return expr;
 		} 		
 		
-		NameID nid;
-		Nominal<Type.Function> type; 
+		Pair<NameID, Nominal<Type.Function>> p;
 		
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal<Type>> paramTypes = new ArrayList<Nominal<Type>>();
 			for (UnresolvedType t : expr.paramTypes) {
 				paramTypes.add(resolver.resolveAsType(t, imports));
 			}
-			Pair<NameID, Nominal<Type.Function>> p = resolver
-					.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
-			nid = p.first();
-			type = p.second();
+			p = resolver
+					.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);			
 		} else {
-			nid = resolver.resolveAsName(expr.name, imports);
-			Module m = loader.loadModule(nid.module());
-			List<Module.Method> candidates = m.method(nid.name());
-			if(candidates.size() > 1) {
-				syntaxError("ambiguous function reference",filename,expr);
-			}
-			
-			// FIXME: loss of nominal information here
-			Type.Function fn = candidates.get(0).type();
-			type = new Nominal<Type.Function>(fn,fn);
+			p = resolver.resolveAsFunctionOrMethod(expr.name, imports);			
 		}
 		
-		expr = new Expr.Function(nid,expr.paramTypes,expr.attributes());
-		expr.type = type;
+		expr = new Expr.Function(p.first(),expr.paramTypes,expr.attributes());
+		expr.type = p.second();
 		return expr;
 	}
 	
