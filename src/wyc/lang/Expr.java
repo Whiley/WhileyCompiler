@@ -177,10 +177,16 @@ public interface Expr extends SyntacticElement {
 		public final ArrayList<UnresolvedType> paramTypes;
 		public Nominal<Type.Function> type;		
 		
+		public AbstractFunction(String name, Attribute... attributes) {
+			super(attributes);
+			this.name = name;			
+			this.paramTypes = null;			
+		}
+		
 		public AbstractFunction(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
-			this.name = name;
-			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+			this.name = name;			
+			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);			
 		}
 		
 		public Nominal<Type.Function> type() {
