@@ -1311,16 +1311,50 @@ public final class TypePropagation {
 			// function is qualified, so this is used as the scope for resolving
 			// what the function is.
 			
-			Type.Process rawRecType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
-			Pair<NameID, Nominal<Type.Method>> p = resolver
-					.resolveAsMessage(expr.name, rawRecType, paramTypes,
-							imports);				
-			Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
-					exprArgs, expr.synchronous, expr.attributes());			
-			r.messageType = p.second();
-			// FIXME: loss of nominal information
-			r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
-			return r;
+			Type rawRecType = expr.qualification.type().raw();
+			Type.Record recType = Type.effectiveRecordType(rawRecType);
+			
+			if(recType != null) {
+				
+				Type fieldType = recType.fields().get(expr.name);
+				
+				if(fieldType == null) {
+					syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,expr);
+				} else if(!(fieldType instanceof Type.Function)) {
+					syntaxError("function or method type expected",filename,expr);
+				}
+				
+				Type.Function funType = (Type.Function) fieldType;
+				Expr.RecordAccess ra = new Expr.RecordAccess(receiver, expr.name, expr.attributes());
+				ra.fieldType = (Nominal) new Nominal(funType,funType);
+				ra.srcType = (Nominal) expr.qualification.type(); 
+						
+				if(funType instanceof Type.Method) { 
+					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(ra,expr.arguments,expr.attributes());
+					// FIXME: loss of nominal information
+					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
+					nexpr.methodType = (Nominal) ra.fieldType; 
+					return nexpr;
+				} else {
+					Expr.IndirectFunctionCall nexpr = new Expr.IndirectFunctionCall(ra,expr.arguments,expr.attributes());
+					// FIXME: loss of nominal information
+					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
+					nexpr.functionType = (Nominal) ra.fieldType;
+					return nexpr;
+				}
+				
+			} else {
+				Type.Process procType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
+				Pair<NameID, Nominal<Type.Method>> p = resolver
+						.resolveAsMessage(expr.name, procType, paramTypes,
+								imports);				
+				Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
+						exprArgs, expr.synchronous, expr.attributes());			
+				r.messageType = p.second();
+				// FIXME: loss of nominal information
+				r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
+				return r;
+			}
 		} else {
 
 			// no, function is not qualified ... so, it's either a local
@@ -1790,7 +1824,7 @@ public final class TypePropagation {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
-			syntaxError(errorMessage(SUBTYPE_ERROR, clazz.getName(), t),
+			syntaxError(errorMessage(SUBTYPE_ERROR, clazz.getName().replace('$', '.'), t),
 					filename, elem);
 			return null;
 		}
