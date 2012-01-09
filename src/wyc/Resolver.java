@@ -34,6 +34,7 @@ import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
 import static wyil.util.ErrorMessages.errorMessage;
 import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.SyntaxError.internalFailure;
 
 import java.util.*;
 
@@ -657,70 +658,77 @@ public final class Resolver {
 	private Value resolveAsConstant(Expr expr, String filename,
 			List<WhileyFile.Import> imports, HashSet<NameID> visited)
 			throws ResolveError {
-		if (expr instanceof Expr.Constant) {
-			Expr.Constant c = (Expr.Constant) expr;
-			return c.value;
-		} else if (expr instanceof Expr.BinOp) {
-			Expr.BinOp bop = (Expr.BinOp) expr;
-			Value lhs = resolveAsConstant(bop.lhs, filename, imports, visited);
-			Value rhs = resolveAsConstant(bop.rhs, filename, imports, visited);
-			return evaluate(bop,lhs,rhs,filename);			
-		} else if (expr instanceof Expr.Set) {
-			Expr.Set nop = (Expr.Set) expr;
-			ArrayList<Value> values = new ArrayList<Value>();
-			for (Expr arg : nop.arguments) {
-				values.add(resolveAsConstant(arg,filename,imports, visited));
-			}			
-			return Value.V_SET(values);			
-		} else if (expr instanceof Expr.List) {
-			Expr.List nop = (Expr.List) expr;
-			ArrayList<Value> values = new ArrayList<Value>();
-			for (Expr arg : nop.arguments) {
-				values.add(resolveAsConstant(arg,filename,imports, visited));
-			}			
-			return Value.V_LIST(values);			
-		} else if (expr instanceof Expr.Record) {
-			Expr.Record rg = (Expr.Record) expr;
-			HashMap<String,Value> values = new HashMap<String,Value>();
-			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
-				Value v = resolveAsConstant(e.getValue(),filename,imports,visited);
-				if(v == null) {
-					return null;
+		try {
+			if (expr instanceof Expr.Constant) {
+				Expr.Constant c = (Expr.Constant) expr;
+				return c.value;
+			} else if (expr instanceof Expr.BinOp) {
+				Expr.BinOp bop = (Expr.BinOp) expr;
+				Value lhs = resolveAsConstant(bop.lhs, filename, imports, visited);
+				Value rhs = resolveAsConstant(bop.rhs, filename, imports, visited);
+				return evaluate(bop,lhs,rhs,filename);			
+			} else if (expr instanceof Expr.Set) {
+				Expr.Set nop = (Expr.Set) expr;
+				ArrayList<Value> values = new ArrayList<Value>();
+				for (Expr arg : nop.arguments) {
+					values.add(resolveAsConstant(arg,filename,imports, visited));
+				}			
+				return Value.V_SET(values);			
+			} else if (expr instanceof Expr.List) {
+				Expr.List nop = (Expr.List) expr;
+				ArrayList<Value> values = new ArrayList<Value>();
+				for (Expr arg : nop.arguments) {
+					values.add(resolveAsConstant(arg,filename,imports, visited));
+				}			
+				return Value.V_LIST(values);			
+			} else if (expr instanceof Expr.Record) {
+				Expr.Record rg = (Expr.Record) expr;
+				HashMap<String,Value> values = new HashMap<String,Value>();
+				for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
+					Value v = resolveAsConstant(e.getValue(),filename,imports,visited);
+					if(v == null) {
+						return null;
+					}
+					values.put(e.getKey(), v);
 				}
-				values.put(e.getKey(), v);
-			}
-			return Value.V_RECORD(values);
-		} else if (expr instanceof Expr.Tuple) {
-			Expr.Tuple rg = (Expr.Tuple) expr;			
-			ArrayList<Value> values = new ArrayList<Value>();			
-			for(Expr e : rg.fields) {
-				Value v = resolveAsConstant(e, filename, imports,visited);
-				if(v == null) {
-					return null;
+				return Value.V_RECORD(values);
+			} else if (expr instanceof Expr.Tuple) {
+				Expr.Tuple rg = (Expr.Tuple) expr;			
+				ArrayList<Value> values = new ArrayList<Value>();			
+				for(Expr e : rg.fields) {
+					Value v = resolveAsConstant(e, filename, imports,visited);
+					if(v == null) {
+						return null;
+					}
+					values.add(v);				
 				}
-				values.add(v);				
-			}
-			return Value.V_TUPLE(values);
-		}  else if (expr instanceof Expr.Dictionary) {
-			Expr.Dictionary rg = (Expr.Dictionary) expr;			
-			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
-			for(Pair<Expr,Expr> e : rg.pairs) {
-				Value key = resolveAsConstant(e.first(), filename, imports,visited);
-				Value value = resolveAsConstant(e.second(), filename, imports,visited);
-				if(key == null || value == null) {
-					return null;
+				return Value.V_TUPLE(values);
+			}  else if (expr instanceof Expr.Dictionary) {
+				Expr.Dictionary rg = (Expr.Dictionary) expr;			
+				HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
+				for(Pair<Expr,Expr> e : rg.pairs) {
+					Value key = resolveAsConstant(e.first(), filename, imports,visited);
+					Value value = resolveAsConstant(e.second(), filename, imports,visited);
+					if(key == null || value == null) {
+						return null;
+					}
+					values.add(new Pair<Value,Value>(key,value));				
 				}
-				values.add(new Pair<Value,Value>(key,value));				
-			}
-			return Value.V_DICTIONARY(values);
-		} else if(expr instanceof Expr.Function) {
-			Expr.Function f = (Expr.Function) expr;
-			NameID name = resolveAsName(f.name, imports);			
-			Type.Function tf = null;							
-			return Value.V_FUN(name, tf);								
+				return Value.V_DICTIONARY(values);
+			} else if(expr instanceof Expr.Function) {
+				Expr.Function f = (Expr.Function) expr;
+				NameID name = resolveAsName(f.name, imports);			
+				Type.Function tf = null;							
+				return Value.V_FUN(name, tf);								
+			} 
+		} catch(SyntaxError.InternalFailure e) {
+			throw e;
+		} catch(Throwable e) {
+			internalFailure("internal failure",filename,expr,e);
 		}
 		
-		throw new ResolveError("cyclic constant expression");		
+		internalFailure("unknown constant expression",filename,expr);
+		return null; // deadcode
 	}
 
 	private Value evaluate(Expr.BinOp bop, Value v1, Value v2, String filename) {
