@@ -504,7 +504,7 @@ public final class Resolver {
 		
 		WhileyFile.TypeDef td = wf.typeDecl(key.name());
 		if(td == null) {
-			Value v = resolveAsConstant(key,null);
+			Value v = resolveAsConstant(key);
 			Type t = v.type();
 			if(t instanceof Type.Set) {
 				Type.Set ts = (Type.Set) t;
@@ -590,11 +590,11 @@ public final class Resolver {
 	// =========================================================================		
 	
 	public Value resolveAsConstant(NameID nid) throws ResolveError {				
-		return resolveAsConstant(nid,null);		
+		return resolveAsConstant(nid,new HashSet<NameID>());		
 	}
 	
 	public Value resolveAsConstant(Expr e, String filename, List<WhileyFile.Import> imports) throws ResolveError {				
-		return resolveAsConstant(e,filename,imports,null);		
+		return resolveAsConstant(e,filename,imports,new HashSet<NameID>());		
 	}
 	
 	/**
@@ -615,6 +615,12 @@ public final class Resolver {
 	 */
 	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {		
 		// FIXME: cyclic constants
+		
+		if(visited.contains(key)) {
+			throw new ResolveError("cyclic constant definition encountered (" + key + " -> " + key + ")");
+		} else {
+			visited.add(key);
+		}
 		
 		WhileyFile wf = files.get(key.module());
 		if (wf != null) {			
@@ -715,11 +721,11 @@ public final class Resolver {
 					values.add(new Pair<Value,Value>(key,value));				
 				}
 				return Value.V_DICTIONARY(values);
-			} else if(expr instanceof Expr.Function) {
-				Expr.Function f = (Expr.Function) expr;
-				NameID name = resolveAsName(f.name, imports);			
-				Type.Function tf = null;							
-				return Value.V_FUN(name, tf);								
+			} else if(expr instanceof Expr.AbstractFunction) {
+				Expr.AbstractFunction f = (Expr.AbstractFunction) expr;
+				// FIXME: consider function parameters as well
+				Pair<NameID,Nominal<Type.Function>> p = resolveAsFunctionOrMethod(f.name, imports);													
+				return Value.V_FUN(p.first(),p.second().raw());								
 			} 
 		} catch(SyntaxError.InternalFailure e) {
 			throw e;
