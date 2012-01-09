@@ -294,6 +294,10 @@ public final class CodeGeneration {
 				return generate((Expr.MethodCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.FunctionCall) {
 				return generate((Expr.FunctionCall) stmt,false,environment);								
+			} else if (stmt instanceof Expr.IndirectMethodCall) {
+				return generate((Expr.IndirectMethodCall) stmt,false,environment);								
+			} else if (stmt instanceof Expr.IndirectFunctionCall) {
+				return generate((Expr.IndirectFunctionCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.Spawn) {
 				return generate((Expr.UnOp) stmt, environment);
 			} else if (stmt instanceof Skip) {
@@ -1013,10 +1017,14 @@ public final class CodeGeneration {
 				return generate((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.FunctionCall) {
 				return generate((Expr.FunctionCall) expression, true, environment);
-			} else if (expression instanceof Expr.MessageSend) {
-				return generate((Expr.MessageSend) expression, true, environment);
 			} else if (expression instanceof Expr.MethodCall) {
 				return generate((Expr.MethodCall) expression, true, environment);
+			} else if (expression instanceof Expr.IndirectFunctionCall) {
+				return generate((Expr.IndirectFunctionCall) expression, true, environment);
+			} else if (expression instanceof Expr.IndirectMethodCall) {
+				return generate((Expr.IndirectMethodCall) expression, true, environment);
+			} else if (expression instanceof Expr.MessageSend) {
+				return generate((Expr.MessageSend) expression, true, environment);
 			} else if (expression instanceof Expr.Comprehension) {
 				return generate((Expr.Comprehension) expression, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
@@ -1070,8 +1078,6 @@ public final class CodeGeneration {
 			blk.append(generate(e, environment));
 		}
 
-		// FIXME: should split Code.Invoke into Code.FunCall and Code.MethCall.
-		
 		blk.append(Code.Invoke(fc.methodType.raw(), fc.nid(), retval), attributes(fc));
 
 		return blk;
@@ -1086,6 +1092,36 @@ public final class CodeGeneration {
 		}
 
 		blk.append(Code.Invoke(fc.functionType.raw(), fc.nid(), retval), attributes(fc));
+
+		return blk;
+	}
+	
+	private Block generate(Expr.IndirectFunctionCall fc, boolean retval,
+			HashMap<String, Integer> environment) throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		blk.append(generate(fc.src,environment));
+		
+		for (Expr e : fc.arguments) {
+			blk.append(generate(e, environment));
+		}
+
+		blk.append(Code.IndirectInvoke(fc.functionType.raw(), retval), attributes(fc));
+
+		return blk;
+	}
+	
+	private Block generate(Expr.IndirectMethodCall fc, boolean retval,
+			HashMap<String, Integer> environment) throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		blk.append(generate(fc.src,environment));
+		
+		for (Expr e : fc.arguments) {
+			blk.append(generate(e, environment));
+		}
+
+		blk.append(Code.IndirectInvoke(fc.methodType.raw(), retval), attributes(fc));
 
 		return blk;
 	}
