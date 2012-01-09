@@ -1286,22 +1286,51 @@ public final class TypePropagation {
 			// FIXME: loss of nominal information
 			r.returnType = new Nominal<Type>(funType.raw().ret(),funType.raw().ret());
 			return r;
-		} else {
-			// no, function is not qualified ... need to search for it.
+		} else if(receiver != null) {
 			
-			// third, lookup the function					
-			if(receiver != null) {
-				Type.Process rawRecType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
-				Pair<NameID, Nominal<Type.Method>> p = resolver
-						.resolveAsMessage(expr.name, rawRecType, paramTypes,
-								imports);				
-				Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
-						exprArgs, expr.synchronous, expr.attributes());			
-				r.messageType = p.second();
+			// function is qualified, so this is used as the scope for resolving
+			// what the function is.
+			
+			Type.Process rawRecType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
+			Pair<NameID, Nominal<Type.Method>> p = resolver
+					.resolveAsMessage(expr.name, rawRecType, paramTypes,
+							imports);				
+			Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
+					exprArgs, expr.synchronous, expr.attributes());			
+			r.messageType = p.second();
+			// FIXME: loss of nominal information
+			r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
+			return r;
+		} else {
+
+			// no, function is not qualified ... so, it's either a local
+			// variable or a function call the location of which we need to
+			// identify.
+
+			Nominal<Type> type = environment.get(expr.name);
+			
+			// FIXME: bad idea to use instanceof Type.Function here
+			if(type != null && type.raw() instanceof Type.Function) {
+				// ok, matching local varaible of function type.
+				Type.Function funType = (Type.Function) type.raw();
+				List<Type> funTypeParams = funType.params();
+				if(paramTypes.size() != funTypeParams.size()) {
+					syntaxError("insufficient arguments to function call",filename,expr);
+				}
+				for(int i=0;i!=funTypeParams.size();++i) {
+					Type fpt = funTypeParams.get(i);
+					// FIXME: following line is an abomination
+					Nominal<Type> broken = new Nominal(fpt,fpt);
+					checkIsSubtype(broken,paramTypes.get(i),exprArgs.get(i));
+				}
+				
 				// FIXME: loss of nominal information
-				r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
-				return r;
+				expr.returnType = new Nominal(funType.ret(),funType.ret());
+				
+				return expr;
 			} else {
+				// no matching local variable, so attempt to resolve as direct
+				// call.
 				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
 				Type.Function funType = p.second().raw();							
 				if(funType instanceof Type.Method) {					
@@ -1315,8 +1344,8 @@ public final class TypePropagation {
 					mc.functionType = (Nominal) p.second();
 					mc.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
 					return mc;									
-				}								
-			}											
+				}																				
+			}
 		}		
 	}			
 	
