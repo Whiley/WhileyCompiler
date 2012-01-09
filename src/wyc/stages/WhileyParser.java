@@ -1081,7 +1081,8 @@ public final class WhileyParser {
 
 			while (lookahead instanceof LeftSquare 
 					|| lookahead instanceof Dot
-					|| lookahead instanceof Shreak
+					|| lookahead instanceof Question		
+					|| lookahead instanceof Shreak	
 					|| lookahead instanceof LeftBrace) {
 				ostart = start;
 				start = index;
@@ -1143,6 +1144,12 @@ public final class WhileyParser {
 					} else {
 						lhs =  new Expr.AbstractDotAccess(lhs, name, sourceAttr(start,index - 1));
 					}
+				} else if(lookahead instanceof Question) {
+					match(Question.class);								 						
+					Expr.AbstractInvoke ivk = parseInvokeExpr();							
+					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
+							true, sourceAttr(
+									ostart, index - 1));								
 				} else {
 					match(Shreak.class);								 						
 					Expr.AbstractInvoke ivk = parseInvokeExpr();							
