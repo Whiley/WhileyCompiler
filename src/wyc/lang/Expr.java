@@ -176,17 +176,27 @@ public interface Expr extends SyntacticElement {
 		public final String name;
 		public final ArrayList<UnresolvedType> paramTypes;
 		public Nominal<Type.Function> type;		
-		
-		public AbstractFunction(String name, Attribute... attributes) {
-			super(attributes);
-			this.name = name;			
-			this.paramTypes = null;			
-		}
-		
+				
 		public AbstractFunction(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;			
-			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);			
+			if(paramTypes != null) {
+				this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+			} else {
+				this.paramTypes = null;
+			}
+		}
+		
+		public AbstractFunction(String name,
+				Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+			if(paramTypes != null) {
+				this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+			} else {
+				this.paramTypes = null;
+			}
 		}
 		
 		public Nominal<Type.Function> type() {
@@ -197,10 +207,17 @@ public interface Expr extends SyntacticElement {
 	public static class Function extends AbstractFunction {
 		public final NameID nid;					
 		
-		public Function(NameID nid, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
-			super(nid.name(),paramTypes,attributes);
-			this.nid = nid;			
-		}			
+		public Function(NameID nid, Collection<UnresolvedType> paramTypes,
+				Attribute... attributes) {
+			super(nid.name(), paramTypes, attributes);
+			this.nid = nid;
+		}
+		
+		public Function(NameID nid, Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(nid.name(), paramTypes, attributes);
+			this.nid = nid;
+		}
 	}
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {

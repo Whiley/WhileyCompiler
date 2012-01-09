@@ -1248,8 +1248,40 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.AbstractFunction expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
-			ArrayList<WhileyFile.Import> imports) {
-		return null;
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		
+		if(expr instanceof Expr.Function) {
+			return expr;
+		} 		
+		
+		NameID nid;
+		Nominal<Type.Function> type; 
+		
+		if (expr.paramTypes != null) {
+			ArrayList<Nominal<Type>> paramTypes = new ArrayList<Nominal<Type>>();
+			for (UnresolvedType t : expr.paramTypes) {
+				paramTypes.add(resolver.resolveAsType(t, imports));
+			}
+			Pair<NameID, Nominal<Type.Function>> p = resolver
+					.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
+			nid = p.first();
+			type = p.second();
+		} else {
+			nid = resolver.resolveAsName(expr.name, imports);
+			Module m = loader.loadModule(nid.module());
+			List<Module.Method> candidates = m.method(nid.name());
+			if(candidates.size() > 1) {
+				syntaxError("ambiguous function reference",filename,expr);
+			}
+			
+			// FIXME: loss of nominal information here
+			Type.Function fn = candidates.get(0).type();
+			type = new Nominal<Type.Function>(fn,fn);
+		}
+		
+		expr = new Expr.Function(nid,expr.paramTypes,expr.attributes());
+		expr.type = type;
+		return expr;
 	}
 	
 	private Expr propagate(Expr.AbstractInvoke expr,
@@ -1317,11 +1349,11 @@ public final class TypePropagation {
 				if(paramTypes.size() != funTypeParams.size()) {
 					syntaxError("insufficient arguments to function call",filename,expr);
 				}
-				for(int i=0;i!=funTypeParams.size();++i) {
+				for (int i = 0; i != funTypeParams.size(); ++i) {
 					Type fpt = funTypeParams.get(i);
 					// FIXME: following line is an abomination
-					Nominal<Type> broken = new Nominal(fpt,fpt);
-					checkIsSubtype(broken,paramTypes.get(i),exprArgs.get(i));
+					Nominal<Type> broken = new Nominal(fpt, fpt);
+					checkIsSubtype(broken, paramTypes.get(i), exprArgs.get(i));
 				}
 				
 				// FIXME: loss of nominal information
