@@ -1,13 +1,63 @@
 <project name="whiley" default="wyjc">  
   <property name="version" value="0.3.12"/>
-
+	
   <target name="compile">
-    <javac debug="true" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"> 
+    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"> 
       <src path="src"/>
       <src path="stdlib"/>
     </javac>
   </target>
-
+ 
+ <target name="testcompile" depends="compile">
+    <javac debug="true" includeantruntime="true" includes="wyjc/testing/**,wyil/testing/**,wyone/testing/**" classpath="${basedir}/lib/junit.jar" > 
+      <src path="src"/>
+	
+    </javac>
+  </target>
+ <target name="cobertura" depends="testcompile">
+    <property name="cobertura.home" value="${basedir}/lib"/>
+    <property name="cobertura.datafile" value="${basedir}/cobertura.ser"/>
+    <property name="cobertura.inst.classes" value="${basedir}/instrumented-classes"/>
+    <property name="cobertura.coverage" value="${basedir}/coverage"/>
+ 
+    <!-- Cleanup an previous runs -->
+    <delete dir="${cobertura.coverage}"/>
+    <delete dir="${cobertura.inst.classes}"/>
+    <delete file="${cobertura.datafile}"/>
+ 
+    <path id="cobertura.classpath">
+        <fileset dir="${cobertura.home}">
+            <include name="cobertura.jar"/>
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+    <taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
+ 
+    <cobertura-instrument todir="${cobertura.inst.classes}" datafile="${cobertura.datafile}">
+        <fileset dir="${basedir}/src">
+            <include name="**/*.class"/>
+	    <exclude name="**/*Test*.class"/>
+        </fileset>
+    </cobertura-instrument>
+ 
+    <junit showoutput="true" printsummary="withOutAndErr" fork="yes" dir="${basedir}" failureproperty="test.failed">
+        
+        <sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.datafile}" />
+ 
+        <classpath location="${cobertura.inst.classes}" />
+        <classpath location="${basedir}/src"/>
+	
+	<classpath refid="cobertura.classpath" />
+        <batchtest todir="${basedir}/junit">
+          <fileset dir="${basedir}/src">
+            <include name="**/*Test*.java"/>
+          </fileset>
+        </batchtest>
+    </junit>
+ 
+    <cobertura-report format="html" srcdir="${basedir}/src" destdir="${cobertura.coverage}" datafile="${cobertura.datafile}"/>
+</target>
+  
   <target name="stdlib" depends="compile">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
     <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="lib/wyjc.jar"/> 
