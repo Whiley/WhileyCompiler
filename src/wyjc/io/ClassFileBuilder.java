@@ -1778,8 +1778,8 @@ public class ClassFileBuilder {
 			translate((Value.Dictionary)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Tuple) {
 			translate((Value.Tuple)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Function) {
-			translate((Value.Function)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.FunctionOrMethodOrMessage) {
+			translate((Value.FunctionOrMethodOrMessage)v,freeSlot,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
@@ -2041,7 +2041,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void translate(Value.Function e, int freeSlot,
+	protected void translate(Value.FunctionOrMethodOrMessage e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		

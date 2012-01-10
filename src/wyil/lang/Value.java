@@ -90,8 +90,9 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Tuple(values));
 	}
 	
-	public static Function V_FUN(NameID name, wyil.lang.Type.Function type) {
-		return get(new Function(name,type));
+	public static FunctionOrMethodOrMessage V_FUN(NameID name,
+			wyil.lang.Type.FunctionOrMethodOrMessage type) {
+		return get(new FunctionOrMethodOrMessage(name, type));
 	}		
 	
 	public static final class Null extends Value {				
@@ -716,17 +717,19 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static final class Function extends Value {
+	public static final class FunctionOrMethodOrMessage extends Value {
 		public final NameID name;
-		public final wyil.lang.Type.Function type;
+		public final wyil.lang.Type.FunctionOrMethodOrMessage type;
 		
-		private Function(NameID name, wyil.lang.Type.Function type) {
+		private FunctionOrMethodOrMessage(NameID name, wyil.lang.Type.FunctionOrMethodOrMessage type) {
 			this.name = name;
 			this.type = type;
 		}
-		public wyil.lang.Type type() {
-			if (type == null) {				
-				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY, wyil.lang.Type.T_ANY);
+
+		public wyil.lang.Type.FunctionOrMethodOrMessage type() {
+			if (type == null) {
+				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY,
+						wyil.lang.Type.T_ANY);
 			} else {
 				return type;
 			}
@@ -739,8 +742,8 @@ public abstract class Value implements Comparable<Value> {
 			}
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Function) {
-				Function i = (Function) o;
+			if(o instanceof FunctionOrMethodOrMessage) {
+				FunctionOrMethodOrMessage i = (FunctionOrMethodOrMessage) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
 								.equals(i.type)));
@@ -748,8 +751,8 @@ public abstract class Value implements Comparable<Value> {
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof Function) {
-				Function t = (Function) v;
+			if(v instanceof FunctionOrMethodOrMessage) {
+				FunctionOrMethodOrMessage t = (FunctionOrMethodOrMessage) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {
