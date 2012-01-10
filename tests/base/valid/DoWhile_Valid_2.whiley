@@ -2,7 +2,7 @@ import whiley.lang.*
 import * from whiley.lang.Errors
 import * from whiley.lang.System
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys, [string] args):
     i = 0
     do:
         if i == 2:

@@ -11,7 +11,7 @@ int MyProc::get():
 MyProc System::create(int data):
     return spawn {data: data}
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     p1 = this.create(1)
     p2 = this.create(2)
     p1.copy(p2)

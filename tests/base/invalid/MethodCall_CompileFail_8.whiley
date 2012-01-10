@@ -4,6 +4,6 @@ int f():
     x = spawn 1
     return 1
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = f()
     sys.out.println(Any.toString(x))

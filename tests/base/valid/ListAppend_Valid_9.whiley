@@ -6,7 +6,7 @@ bool test([real] xs, [int] ys):
             return true
     return false
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     s = test([1.2,2.3,3.4],[1,2,3,4,5,6,7,8])
     sys.out.println(Any.toString(s))
     s = test([1.2,2.3,3.4],[])

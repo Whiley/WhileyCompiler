@@ -9,7 +9,7 @@ string f({int} xs, {int} ys):
 string g({int} xs, {int} ys):
     return f(xs,ys)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(g({1,2,3},{1,2,3}))
     sys.out.println(g({1,2},{1,2,3}))
     sys.out.println(g({1},{1,2,3}))

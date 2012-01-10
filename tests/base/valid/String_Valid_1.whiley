@@ -10,7 +10,7 @@ public bool has(char c, string str):
         i = i + 1
     return false
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     s = "Hello World"
     sys.out.println(Any.toString(has('l',s)))
     sys.out.println(Any.toString(has('e',s)))

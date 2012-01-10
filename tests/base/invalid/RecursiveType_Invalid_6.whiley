@@ -6,6 +6,6 @@ define junk as junk | int
 int f(junk x):
     return x
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = 1
     sys.out.println(Any.toString(f(x)))

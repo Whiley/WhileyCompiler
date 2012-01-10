@@ -10,7 +10,7 @@ public string repl(char old, char new, string str):
         i = i + 1
     return str    
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     s = "Hello World"
     s = repl('l','1',s)
     sys.out.println(s)

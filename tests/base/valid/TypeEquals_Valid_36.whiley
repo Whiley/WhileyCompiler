@@ -20,7 +20,7 @@ string shortPos2str(ShortPos p):
     else: 
         return pos2str(p)
 
-public void ::main(System sys, [string] args):
+public void ::main(System.Console sys, [string] args):
     sys.out.println(shortPos2str(null))
     sys.out.println(shortPos2str({ row: 1}))
     sys.out.println(shortPos2str({ col: 1}))

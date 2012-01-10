@@ -8,7 +8,7 @@ int f(expr e):
     else:
         return -1
     
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = f({err:"Hello World"})
     sys.out.println(Any.toString(x))
     x = f({op:1,lhs:{err:"Gotcha"}})

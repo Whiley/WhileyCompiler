@@ -6,7 +6,7 @@ int f({(int,any)} xs):
     else:
         return -1
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     s1 = {(1,"Hello")}
     s2 = {(1,"Hello"),(1,"World")}
     s3 = {(1,"Hello"),(2,"Hello")}

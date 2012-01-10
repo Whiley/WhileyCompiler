@@ -5,7 +5,7 @@ define OpenRecord as {int field, ...}
 int getField(OpenRecord r):
     return r.field
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys, [string] args):
     r = {field: 1}
     sys.out.println(getField(r))
     r = {field: 2, x: "hello"}

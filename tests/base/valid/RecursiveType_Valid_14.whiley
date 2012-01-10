@@ -12,7 +12,7 @@ string toString(Expr e):
     else:
         return Any.toString(-1)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     se1 = 0.1234
     se2 = {lhs: se1, data: 1}
     se3 = {lhs: se2, data: 45}

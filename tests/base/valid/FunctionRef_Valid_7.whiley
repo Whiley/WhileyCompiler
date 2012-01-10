@@ -8,7 +8,7 @@ int Proc::read(int x):
 int ::test(Proc p, int arg):
     return p.read(arg)
     
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     p = spawn {data: 1}
     x = test(p,123)
     sys.out.println("GOT: " + Any.toString(x))

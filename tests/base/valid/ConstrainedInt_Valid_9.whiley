@@ -10,7 +10,7 @@ even f(oddeven x):
         return 2
     return x
     
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     y = 1
     y = f(1)
     sys.out.println(Any.toString(y))

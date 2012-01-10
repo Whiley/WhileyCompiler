@@ -9,7 +9,7 @@ int sum(LinkedList l):
     else:
         return l.data + sum(l.next)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     l1 = { next: null, data: 1}
     l2 = { next: l1, data: 2}
     l3 = { next: l2, data: 3}

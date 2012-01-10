@@ -3,5 +3,5 @@ import * from whiley.lang.*
 bool pred():
     return false
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(pred())

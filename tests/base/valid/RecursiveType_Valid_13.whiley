@@ -6,7 +6,7 @@ define Value as real | [Value]
 Value init():
     return 0.0123
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     v = init()
     if v is [Expr]:
         sys.out.println("GOT LIST")

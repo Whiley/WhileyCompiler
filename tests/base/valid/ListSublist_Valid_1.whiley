@@ -9,7 +9,7 @@ int sum(posintlist ls):
         rest = ls[1..|ls|]
         return ls[0] + sum(rest)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     c = sum([1,2,3,4,5,6,7])
     sys.out.println(Any.toString(c))
     

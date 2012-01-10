@@ -30,7 +30,7 @@ Value evaluate(Expr e):
         else:
             return null // stuck
 
-public void ::main(System sys,[string] args):
+public void ::main(System.Console sys,[string] args):
     sys.out.println(Any.toString(evaluate(1)))
     sys.out.println(Any.toString(evaluate({src: [112,212,342], index:0})))
     sys.out.println(Any.toString(evaluate({src: [112312,289712,31231242], index:2})))

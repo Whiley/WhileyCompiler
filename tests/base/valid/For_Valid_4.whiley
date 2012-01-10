@@ -8,7 +8,7 @@ import * from whiley.lang.*
         v = v + y
     return k,v
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     dict = {1=>2,3=>4,4=>5}
     k,v = f(dict)
     sys.out.println(Any.toString(k))

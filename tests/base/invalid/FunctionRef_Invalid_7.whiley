@@ -11,7 +11,7 @@ real Proc::test(real arg):
 real id(real x):
     return x
     
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     p = spawn { func: &id }
     x = p.test(123)
     sys.out.println("GOT: " + Any.toString(x))

@@ -8,7 +8,7 @@ int f(int x) throws string|int:
     else:
         throw x
 
-void ::g(System sys, int x):
+void ::g(System.Console sys, int x):
     try:
         f(x)
     catch(string e):
@@ -17,7 +17,7 @@ void ::g(System sys, int x):
         sys.out.println("CAUGHT EXCEPTION (int): " + Any.toString(e))
     
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     g(sys,1)
     g(sys,0)
     g(sys,-1)

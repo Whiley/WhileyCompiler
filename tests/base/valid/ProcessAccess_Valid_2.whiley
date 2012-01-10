@@ -8,6 +8,6 @@ void pState::send(int z):
     this->out.println(Any.toString(this->y))
     this->out.println(Any.toString(z))
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     ps = spawn {x:1,y:2,out:sys.out}
     ps.send(1)

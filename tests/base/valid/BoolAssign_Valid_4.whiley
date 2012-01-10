@@ -11,5 +11,5 @@ int f(int x, int y):
     else:
         return 123
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(Any.toString(1))

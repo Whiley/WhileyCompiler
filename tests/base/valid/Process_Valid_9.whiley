@@ -15,7 +15,7 @@ Actor ::createActor(int n):
         row = row + [m]
     return row
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     actors = createActors(10)
     r = 0
     for i in 0..|actors|:

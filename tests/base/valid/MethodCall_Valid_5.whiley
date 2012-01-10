@@ -8,6 +8,6 @@ int Proc::get():
 [int] System::f(Proc x):
     return [1,2,3,x.get()]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     proc = spawn { state: 1 }
     sys.out.println(Any.toString(sys.f(proc)))

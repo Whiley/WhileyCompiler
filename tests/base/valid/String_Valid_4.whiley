@@ -8,7 +8,7 @@ int|null indexOf(char c1, string str):
         i = i + 1
     return null
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(Any.toString(indexOf('H',"Hello World")))
     sys.out.println(Any.toString(indexOf('e',"Hello World")))
     sys.out.println(Any.toString(indexOf('l',"Hello World")))

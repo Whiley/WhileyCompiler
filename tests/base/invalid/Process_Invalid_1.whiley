@@ -12,7 +12,7 @@ int MyProc1::get():
 MyProc1 System::create(int data):
     return spawn {data: data}
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     p2 = this.create(1)
     p2.set(1.23)
     sys.out.println(Any.toString(p2.get()))

@@ -268,7 +268,7 @@ define bytecodeStrings as [
     "impdep2"
 ]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     s1 = code2toString(Unit(0,1))
     sys.out.println(s1)
     s2 = code2toString(FieldIndex(0,180,{ pkg: "java.lang", classes: ["Object"]},"field",T_INT))

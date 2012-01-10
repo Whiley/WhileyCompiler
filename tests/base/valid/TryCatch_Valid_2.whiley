@@ -8,13 +8,13 @@ int f(int x) throws string|int:
     else:
         throw x
 
-void ::missed(System sys,int x) throws string:
+void ::missed(System.Console sys,int x) throws string:
     try:
         f(x)
     catch(int e):
         sys.out.println("CAUGHT EXCEPTION (int): " + Any.toString(e))
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     try:
         missed(sys,1)
         missed(sys,-2)

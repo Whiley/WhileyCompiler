@@ -4,6 +4,6 @@ import * from whiley.lang.*
 int constantPool():
     return 12478623847120981
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys, [string] args):
     constantPool = constantPool()
     sys.out.println("GOT: " + Any.toString(constantPool))

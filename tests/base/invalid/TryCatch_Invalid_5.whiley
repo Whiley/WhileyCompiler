@@ -10,7 +10,7 @@ int f(int x) throws string:
 int g(int x):
     return x
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = 1
     try:
         sys.out.println(Any.toString(f(1)))

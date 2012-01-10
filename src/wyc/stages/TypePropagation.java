@@ -135,8 +135,8 @@ public final class TypePropagation {
 		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 
 		// other import statements are inserted here
 		imports.add(new WhileyFile.Import(mid.pkg(), "*", null)); 
-		imports.add(new WhileyFile.Import(PkgID.fromString("whiley.lang"), "*", null)); 
-		
+		imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null)); 
+				
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
 				if (decl instanceof Import) {

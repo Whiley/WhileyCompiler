@@ -7,7 +7,7 @@ int f(Rec2 rec):
     x,y = rec.x
     return x
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     rec = {x: 1}
     sys.out.println(Any.toString(rec))
     num = f(rec)

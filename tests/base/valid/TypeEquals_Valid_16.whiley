@@ -6,7 +6,7 @@ string f(int|null x):
     else:
         return "GOT INT"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = null
     sys.out.println(f(x))
     sys.out.println(f(1))

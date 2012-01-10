@@ -282,7 +282,7 @@ public final class Resolver {
 	public ModuleID resolveAsModule(String name, List<WhileyFile.Import> imports)
 			throws ResolveError {
 		
-		for (WhileyFile.Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {			
 			for(ModuleID mid : matchImport(imp)) {				
 				if(mid.module().equals(name)) {
 					return mid;
@@ -1198,7 +1198,7 @@ public final class Resolver {
 			}
 		}
 		
-		imports.add(new WhileyFile.Import(PkgID.fromString("whiley.lang"), "*", null));
+		imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null));		
 		imports.add(new WhileyFile.Import(mid.pkg(), "*", null));
 		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 		
 		

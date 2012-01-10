@@ -3,7 +3,7 @@ import * from whiley.lang.*
 int get({string=>int} env):
     return env["x"]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     if |args| == 10:
         sys.out.println("GOT HERE")
     else:

@@ -17,7 +17,7 @@ bool Queue::isEmpty():
 Queue ::Queue():
     return spawn { items: [] }
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys, [string] args):
     items = [1,2,3,4,5,6,7,8,9,10]
     q = Queue()
     // first, push items into queue

@@ -6,7 +6,7 @@ import * from whiley.lang.*
 int get(int i, {int=>int} map):
     return map[i]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     m1 = f(1)
     m2 = f(2)
     m3 = f(3)

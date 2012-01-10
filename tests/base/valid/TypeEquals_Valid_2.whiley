@@ -8,7 +8,7 @@ string f(expr e):
     else:
         return "GOT INT"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     e = 1
     sys.out.println(f(e))
     e = [1,2,3,4]

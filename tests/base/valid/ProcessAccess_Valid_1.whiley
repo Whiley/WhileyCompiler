@@ -8,7 +8,7 @@ define Ptype as process etype
     this->rest = 123
     return this->mode,Any.toString(*this)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     p = spawn {mode:1,rest:2}
     sys.out.println(Any.toString(*p))
     x,s = p.get()

@@ -6,7 +6,7 @@ define IntList as int|[int]
 int f([int] xs):
     return |xs|
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     if |args| == 0:
         x = 1
         y = x // OK

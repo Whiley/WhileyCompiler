@@ -10,7 +10,7 @@ int f(intlist x):
         return x
     return 1 
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = f([1,2,3])
     sys.out.println(Any.toString(x))
     x = f(123)

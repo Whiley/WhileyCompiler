@@ -10,7 +10,7 @@ void ::test(Points t):
     else:
         debug "GOT POINT\n"
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys, [string] args):
     p3d = {x:1, y:2, z:3}
     test(p3d)
     p2d = {x:1, y:2}

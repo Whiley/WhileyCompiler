@@ -6,5 +6,5 @@ void f(int x):
 void f(int x):
     sys.out.println()"SECOND"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println()"NOUT"

@@ -6,6 +6,6 @@ string f(real x):
 string f(int x):
     return "GOT INT"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(f(1))
     sys.out.println(f(1.23))

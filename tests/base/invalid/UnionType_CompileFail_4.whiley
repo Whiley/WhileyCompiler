@@ -6,7 +6,7 @@ define IntRealList as [int]|[real]
 [int] f([int] xs):
     return xs
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = [1,2,3] // INT LIST
     ys = x      // OK
     sys.out.println(Any.toString(ys))

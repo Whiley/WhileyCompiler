@@ -13,7 +13,7 @@ string g(ilist e):
     return f(e)
 
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(f(1))
     sys.out.println(f([1]))
     sys.out.println(f([]))

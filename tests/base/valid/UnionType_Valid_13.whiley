@@ -13,7 +13,7 @@ define byteCode as STORE | BRANCH
 string f(byteCode b):
     return Any.toString(b)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     b = {op:0,index:1}
     sys.out.println(f(b))
 

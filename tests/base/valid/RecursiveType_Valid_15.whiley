@@ -22,7 +22,7 @@ SExpr sbuild(int i):
         return build(i)
 
 // Main method
-public void ::main(System sys,[string] args):
+public void ::main(System.Console sys,[string] args):
     i = -5
     while i < 10:
         e = sbuild(i)

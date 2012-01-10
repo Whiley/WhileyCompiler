@@ -14,6 +14,6 @@ expr parse(string input):
 {expr e, state st} parseAddSubExpr(state st):    
     return {e:{num:1},st:st}
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     e = parse("Hello")
     sys.out.println(Any.toString(e))

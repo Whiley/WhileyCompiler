@@ -20,7 +20,7 @@ Sum ::create([int] items):
         result: 0 
     }
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     data = [1,3,5,7,3,198,1,4,6]
     sum = create(data)
     // start the process asynchronously

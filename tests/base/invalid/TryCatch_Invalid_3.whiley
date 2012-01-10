@@ -7,7 +7,7 @@ int f(real x) throws string:
     else:
         throw "error"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     if |args| > 0:
         x = 1
     try:

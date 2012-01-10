@@ -12,7 +12,7 @@ string f(expr e):
     else:
         return "OTHER"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(f(-1))
     sys.out.println(f(1.0))
     sys.out.println(f(1.234))

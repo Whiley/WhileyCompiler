@@ -7,6 +7,6 @@ import * from whiley.lang.*
         rs[c] = i
     return rs
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     xs = reverse("abcdefghijklmnopqrstuvwxyz")
     sys.out.println(Any.toString(xs))

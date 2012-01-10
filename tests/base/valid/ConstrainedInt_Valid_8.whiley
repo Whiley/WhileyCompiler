@@ -7,5 +7,5 @@ string f(code x):
     y = x.op
     return Any.toString(y)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(f({op:1,payload:[1]}))
