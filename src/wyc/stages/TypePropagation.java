@@ -387,6 +387,12 @@ public final class TypePropagation {
 			v.type = beforeType;
 			v.afterType = afterType;			
 			return v;
+		} else if (lv instanceof Expr.ProcessAccess) {
+			Expr.ProcessAccess pa = (Expr.ProcessAccess) lv;
+			// NOTE: the before and after types are the same since an assignment
+			// through a reference does not change its type.
+			checkIsSubtype(beforeType,afterType,lv);
+			return inferBeforeAfterType((Expr.LVal) pa.src, (Nominal) pa.srcType, (Nominal) pa.srcType);
 		} else if (lv instanceof Expr.StringAccess) {
 			Expr.StringAccess la = (Expr.StringAccess) lv;
 			return inferBeforeAfterType((Expr.LVal) la.src, Nominal.T_STRING,
@@ -698,6 +704,15 @@ public final class TypePropagation {
 				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
 				lv.type = p;				
 				return lv;
+			} else if(lval instanceof Expr.ProcessAccess) {
+				Expr.ProcessAccess pa = (Expr.ProcessAccess) lval;
+				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,imports);				
+				Type.Process procType = checkType(src.type().raw(),Type.Process.class,src);				
+				pa.src = src;
+				// FIXME: loss of nominal information here
+				pa.srcType = new Nominal<Type.Process>(procType,procType);
+				pa.elementType = new Nominal<Type>(procType.element(),procType.element());				
+				return pa;
 			} else if(lval instanceof Expr.AbstractIndexAccess) {
 				// this indicates either a list, string or dictionary update
 				Expr.AbstractIndexAccess ai = (Expr.AbstractIndexAccess) lval;				
@@ -1817,7 +1832,6 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Expr src = propagate(expr.src,environment,imports);
 		expr.src = src;
-		
 		Type.Process tp = checkType(src.type().raw(),Type.Process.class,src);
 		// FIXME: loss of nominal information here
 		expr.srcType = (Nominal) src.type();

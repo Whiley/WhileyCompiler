@@ -1143,7 +1143,7 @@ public final class WhileyParser {
 					if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 						// this indicates a method invocation.
 						index = tmp; // slight backtrack
-						Expr.AbstractInvoke ivk = parseInvokeExpr();							
+						Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
 						lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 								true, sourceAttr(
 										ostart, index - 1));				
@@ -1152,13 +1152,13 @@ public final class WhileyParser {
 					}
 				} else if(lookahead instanceof Question) {
 					match(Question.class);								 						
-					Expr.AbstractInvoke ivk = parseInvokeExpr();							
+					Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 							true, sourceAttr(
 									ostart, index - 1));								
 				} else {
 					match(Shreak.class);								 						
-					Expr.AbstractInvoke ivk = parseInvokeExpr();							
+					Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 							false, sourceAttr(
 									ostart, index - 1));								

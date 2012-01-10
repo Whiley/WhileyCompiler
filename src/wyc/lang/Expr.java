@@ -598,7 +598,7 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class ProcessAccess extends SyntacticElement.Impl implements Expr {
+	public static class ProcessAccess extends SyntacticElement.Impl implements LVal {
 		public Expr src;	
 		public Nominal<Type> elementType;
 		public Nominal<Type.Process> srcType;
