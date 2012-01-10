@@ -1268,7 +1268,9 @@ public final class TypePropagation {
 			local = local.put(p.first(),new Nominal<Type>(element,element));
 		}
 		
-		expr.condition = propagate(expr.condition,local,imports);
+		if(expr.condition != null) {
+			expr.condition = propagate(expr.condition,local,imports);
+		}
 		
 		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
 			expr.value = propagate(expr.value,local,imports);
