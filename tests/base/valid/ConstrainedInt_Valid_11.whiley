@@ -10,6 +10,6 @@ b_nat f(a_nat x):
         return f(x-1)
 
 void ::main(System.Console sys):
-    x = |args|    
+    x = |sys.args|    
     x = f(x)    
     sys.out.println(Any.toString(x))

@@ -1,7 +1,7 @@
 
 
 void ::main(System.Console sys):    
-    if |args| == 1:
+    if |sys.args| == 1:
         x = 1
     else:
         x = [1,2,3]
