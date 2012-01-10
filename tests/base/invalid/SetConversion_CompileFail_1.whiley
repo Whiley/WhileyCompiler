@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 void f({real} ls):
     sys.out.println(Any.toString(ls))

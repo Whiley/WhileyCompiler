@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 // this was taken from jasm
 int constantPool():

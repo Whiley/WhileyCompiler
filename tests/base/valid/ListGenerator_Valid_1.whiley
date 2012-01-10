@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 void ::f(System.Console sys, [int] x):
     z = |x|

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 [string] f([string] args):
     return r

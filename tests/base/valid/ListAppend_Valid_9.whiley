@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 bool test([real] xs, [int] ys):
     for x in (xs+ys):

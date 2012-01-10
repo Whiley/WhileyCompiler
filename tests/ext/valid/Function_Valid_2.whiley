@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define fr2nat as int where $ >= 0
 

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 real f(real x):
     return -x

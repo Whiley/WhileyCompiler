@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 string f({int} xs, {int} ys, {int} zs):
     return Any.toString(xs)

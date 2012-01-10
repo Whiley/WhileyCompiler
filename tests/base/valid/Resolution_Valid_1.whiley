@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int f(int b):
     return b + 1

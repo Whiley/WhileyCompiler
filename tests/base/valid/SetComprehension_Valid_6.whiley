@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 {int} f({int} xs):
     return { -x | x ∈ xs } 

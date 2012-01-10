@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 [int] f([int] ls):
     return ls

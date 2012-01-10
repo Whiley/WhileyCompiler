@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 // this is a comment!
 define IntRealList as [int]|[real]

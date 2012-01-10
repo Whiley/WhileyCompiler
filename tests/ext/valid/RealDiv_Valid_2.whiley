@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 real g(int x):
      return x / 3

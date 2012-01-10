@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 bool isChar(any x):
     if x is char:

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 void f([int] x, int i):
     if(i < 0 || i >= |x|):

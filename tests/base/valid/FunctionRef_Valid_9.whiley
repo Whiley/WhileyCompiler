@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define Proc as process { int(int) func }
 

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define sr5nat as int
 

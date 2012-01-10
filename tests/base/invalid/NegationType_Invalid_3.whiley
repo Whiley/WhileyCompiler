@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define LinkedList as null|{LinkedList next, int data}
 

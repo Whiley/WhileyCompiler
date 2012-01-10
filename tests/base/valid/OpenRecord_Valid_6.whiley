@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define IntPoint as {int x, int y, ...}
 define RealPoint as {real x, real y, ...}

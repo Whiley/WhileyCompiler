@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int g(int y) requires y >= 0, ensures $ > 0:
     return y

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define state as {int x, int y, SystemOutWriter out}
 define pState as process state

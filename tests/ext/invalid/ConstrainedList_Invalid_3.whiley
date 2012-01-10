@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 public [char] update(string str):
     return [(char) -1]

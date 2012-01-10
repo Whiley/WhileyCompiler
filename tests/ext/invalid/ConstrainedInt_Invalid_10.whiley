@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 // this is a comment!
 define irf3nat as int where $ < 10

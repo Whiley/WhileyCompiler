@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define utr12nat as int
 define intList as utr12nat|[int]

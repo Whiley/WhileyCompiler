@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 void ::main(System.Console sys):
     x = 12376523476123.98712345

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 [char] append(string input):
     rs = []

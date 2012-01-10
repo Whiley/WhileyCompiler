@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int g(int x) ensures $ > 0 && $ < 125:
     if(x <= 0 || x >= 125):

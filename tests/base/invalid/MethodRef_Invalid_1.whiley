@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define FileReader as {
     int position,

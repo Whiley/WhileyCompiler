@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define Point as {int x, int y}
 define Point3D as {int x, int y, int z}

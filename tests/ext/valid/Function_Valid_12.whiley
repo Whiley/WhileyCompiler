@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int f(int x) ensures $ > x:
     return x+1

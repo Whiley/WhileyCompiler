@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define R2 as { real x }
 define R1 as { int x }

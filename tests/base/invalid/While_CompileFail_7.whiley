@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 [void] extract([int] ls):
     i = 0

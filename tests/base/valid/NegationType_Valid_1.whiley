@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 !null f(any x):
     if x is null:

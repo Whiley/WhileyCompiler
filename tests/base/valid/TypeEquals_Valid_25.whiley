@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define src as int|[src]
 

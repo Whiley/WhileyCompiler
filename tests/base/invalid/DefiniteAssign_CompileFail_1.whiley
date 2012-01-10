@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 void g(int x):
      return

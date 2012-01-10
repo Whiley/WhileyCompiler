@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 void f({int} xs) requires xs ⊆ {1,2,3}:
     debug Any.toString(xs)

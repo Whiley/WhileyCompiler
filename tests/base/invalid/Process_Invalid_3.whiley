@@ -1,5 +1,5 @@
-import * from whiley.lang.*
-import * from whiley.lang.*
+
+
 
 define EmptyQueue as process { [void] items }
 define Queue as process { [int] items }

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define expr as {int}|bool
 

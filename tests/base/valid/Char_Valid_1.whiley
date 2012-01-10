@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 string f(string s, char c):
     return s + c

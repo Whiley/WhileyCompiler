@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 string g(int z):
     return Any.toString(z)

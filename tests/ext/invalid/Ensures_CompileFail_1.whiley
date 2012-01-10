@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int f() ensures 2*$==1:
     return 1
