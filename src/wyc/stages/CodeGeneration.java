@@ -1358,52 +1358,57 @@ public final class CodeGeneration {
 			int freeSlot = allocate(environment);
 			Block blk = generateCondition(trueLabel, e, environment);					
 			blk.append(Code.Const(Value.V_BOOL(false)), attributes(e));
-			blk.append(Code.Store(null,freeSlot),attributes(e));			
+			blk.append(Code.Store(Type.T_BOOL,freeSlot),attributes(e));			
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
 			blk.append(Code.Const(Value.V_BOOL(true)), attributes(e));
-			blk.append(Code.Store(null,freeSlot),attributes(e));
+			blk.append(Code.Store(Type.T_BOOL,freeSlot),attributes(e));
 			blk.append(Code.Label(exitLabel));
-			blk.append(Code.Load(null,freeSlot),attributes(e));
+			blk.append(Code.Load(Type.T_BOOL,freeSlot),attributes(e));
 			return blk;
 		}
 
 		// Ok, non-boolean case.				
 		Block blk = new Block(environment.size());
-		ArrayList<Pair<Integer,Integer>> slots = new ArrayList();		
+		ArrayList<Triple<Integer,Integer,Type>> slots = new ArrayList();		
 		
-		for (Pair<String, Expr> src : e.sources) {
+		for (Pair<String, Expr> p : e.sources) {
 			int srcSlot;
-			int varSlot = allocate(src.first(),environment); 
+			int varSlot = allocate(p.first(),environment); 
+			Expr src = p.second();
+			Type rawSrcType = src.type().raw();
 			
-			if(src.second() instanceof Expr.LocalVariable) {
+			if(src instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better
 				// code.
-				Expr.LocalVariable v = (Expr.LocalVariable) src.second();
+				Expr.LocalVariable v = (Expr.LocalVariable) src;
 				if(environment.containsKey(v.var)) {
 					srcSlot = environment.get(v.var);
 				} else {
 					// fall-back plan ...
-					blk.append(generate(src.second(), environment));
+					blk.append(generate(src, environment));
 					srcSlot = allocate(environment);				
-					blk.append(Code.Store(null, srcSlot),attributes(e));	
+					blk.append(Code.Store(rawSrcType, srcSlot),attributes(e));	
 				}
 			} else {
-				blk.append(generate(src.second(), environment));
+				blk.append(generate(src, environment));
 				srcSlot = allocate(environment);
-				blk.append(Code.Store(null, srcSlot),attributes(e));	
+				blk.append(Code.Store(rawSrcType, srcSlot),attributes(e));	
 			}			
-			slots.add(new Pair(varSlot,srcSlot));											
+			slots.add(new Triple(varSlot,srcSlot,rawSrcType));											
 		}
 		
+		Type resultType;
 		int resultSlot = allocate(environment);
 		
 		if (e.cop == Expr.COp.LISTCOMP) {
-			blk.append(Code.NewList(null,0), attributes(e));
-			blk.append(Code.Store(null,resultSlot),attributes(e));
+			resultType = e.type.raw();
+			blk.append(Code.NewList((Type.List) resultType,0), attributes(e));
+			blk.append(Code.Store((Type.List) resultType,resultSlot),attributes(e));
 		} else {
-			blk.append(Code.NewSet(null,0), attributes(e));
-			blk.append(Code.Store(null,resultSlot),attributes(e));			
+			resultType = e.type.raw();
+			blk.append(Code.NewSet((Type.Set) resultType,0), attributes(e));
+			blk.append(Code.Store((Type.Set) resultType,resultSlot),attributes(e));			
 		}
 		
 		// At this point, it would be good to determine an appropriate loop
@@ -1419,12 +1424,11 @@ public final class CodeGeneration {
 		ArrayList<String> labels = new ArrayList<String>();
 		String loopLabel = Block.freshLabel();
 		
-		for (Pair<Integer, Integer> p : slots) {
+		for (Triple<Integer, Integer, Type> p : slots) {
 			String target = loopLabel + "$" + p.first();
-			blk.append(Code.Load(null, p.second()), attributes(e));
-			blk.append(Code
-					.ForAll(null, p.first(), target, Collections.EMPTY_LIST),
-					attributes(e));
+			blk.append(Code.Load(p.third(), p.second()), attributes(e));
+			blk.append(Code.ForAll(p.third(), p.first(), target,
+					Collections.EMPTY_LIST), attributes(e));
 			labels.add(target);
 		}
 		
@@ -1433,10 +1437,11 @@ public final class CodeGeneration {
 					environment));
 		}
 		
-		blk.append(Code.Load(null,resultSlot),attributes(e));
+		blk.append(Code.Load(resultType,resultSlot),attributes(e));
 		blk.append(generate(e.value, environment));
-		blk.append(Code.SetUnion(null, Code.OpDir.LEFT),attributes(e));
-		blk.append(Code.Store(null,resultSlot),attributes(e));
+		// FIXME: following broken for list comprehensions
+		blk.append(Code.SetUnion((Type.Set) resultType, Code.OpDir.LEFT),attributes(e));
+		blk.append(Code.Store(resultType,resultSlot),attributes(e));
 			
 		if(e.condition != null) {
 			blk.append(Code.Label(continueLabel));			
@@ -1446,7 +1451,7 @@ public final class CodeGeneration {
 			blk.append(Code.End(labels.get(i)));
 		}
 
-		blk.append(Code.Load(null,resultSlot),attributes(e));
+		blk.append(Code.Load(resultType,resultSlot),attributes(e));
 		
 		return blk;
 	}

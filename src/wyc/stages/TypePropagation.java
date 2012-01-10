@@ -1272,7 +1272,11 @@ public final class TypePropagation {
 		
 		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
 			expr.value = propagate(expr.value,local,imports);
-			expr.type = (Nominal) expr.value.type();
+			Nominal<Type> type = (Nominal) expr.value.type();
+			Type.Set rawResultType = (Type.Set) Type.Set(type.raw(),false);
+			// FIXME: loss of nominal information
+			// FIXME: broken for list comprehensions
+			expr.type = new Nominal<Type>(rawResultType,rawResultType);
 		} else {
 			expr.type = Nominal.T_BOOL;
 		}
