@@ -6,7 +6,7 @@ string f([intlist] l):
     return Any.toString(l)
 
 void ::main(System.Console sys):
-    if |sys.args| == 0:
+    if |args| == 0:
         x = [1,2,3]
     else:
         x = [[1],[2,3],[5]]
