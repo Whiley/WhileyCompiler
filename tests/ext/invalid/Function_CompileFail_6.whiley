@@ -9,7 +9,7 @@ int f(anat x):
 int f(bnat x):
     return x
 
-void ::main(System sys,[string] args):    
+void ::main(System.Console sys,[string] args):    
     debug Any.toString(f(1))
     
     

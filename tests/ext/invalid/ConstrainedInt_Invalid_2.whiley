@@ -7,5 +7,5 @@ c2nat f(c2nat x):
     x = x + 1
     return x
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     debug Any.toString(f(9))

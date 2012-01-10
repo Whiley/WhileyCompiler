@@ -11,7 +11,7 @@ int sum(posintlist ls, int i) requires i >=0 && i <= |ls|, ensures $ >= 0:
 int sum(posintlist ls) ensures $ >= 0:
     return sum(ls,0)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     c = sum([1,2,3,4,5,6,7])
     sys.out.println(Any.toString(c))
     

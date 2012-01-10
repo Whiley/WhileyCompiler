@@ -9,7 +9,7 @@ define msgType as msg1 | msg2
 string f(msgType m):
     return Any.toString(m)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     m1 = {op:11,data:[]}
     m2 = {index:1}
     sys.out.println(f(m1))

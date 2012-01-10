@@ -8,6 +8,6 @@ define fr5nat as int where $ >= 0
 string f({fr5nat} x):
     return Any.toString(x)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     ys = {1,2,3}
     sys.out.println(f(g(ys)))

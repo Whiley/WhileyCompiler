@@ -7,7 +7,7 @@ define scf9arr as [{scf9nat f, int g}] where some {z in $ | z.f == 1}
 int f(scf9arr xs):
     return |xs|
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = [{f:1,g:2},{f:4,g:8}]
     x[0].f = 2 // breaks scf9arr constraint
     f(x)

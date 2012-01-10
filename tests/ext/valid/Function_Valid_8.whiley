@@ -9,6 +9,6 @@ string f(fr8nat y):
 string f(fr8neg x):
     return "F(NEG)"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(f(-1))
     sys.out.println(f(1))

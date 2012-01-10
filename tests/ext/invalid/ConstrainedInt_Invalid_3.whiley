@@ -10,5 +10,5 @@ void f(c3num x):
 void g(int z):
     f(z)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     g(5)

@@ -4,5 +4,5 @@ import * from whiley.lang.*
     zs = { z | z in xs, z < 0 }
     return zs
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     pred({-1,0,1})

@@ -9,5 +9,5 @@ void f(irf2nat x):
 void g(int x):
     f(x)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     g(-1)

@@ -9,7 +9,7 @@ string g({int} ys):
 string h({int} ys, {int} zs):
     return f(ys,zs,ys ∪ zs)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(g({}))
     sys.out.println(g({2}))
     sys.out.println(g({1,2,3}))

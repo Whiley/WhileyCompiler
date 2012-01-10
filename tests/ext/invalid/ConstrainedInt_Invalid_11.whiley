@@ -6,7 +6,7 @@ define odd as { 1,3,5 }
 int f(odd x):
     return x
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     y = 2
     f(y)
     debug Any.toString(y)

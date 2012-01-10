@@ -9,5 +9,5 @@ int h() ensures $ <= 3:
 nat f():
     return h()
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     debug Any.toString(f())

@@ -6,7 +6,7 @@ int f(int x):
 (string,string) g(int x, int y) requires y == f(x):
     return Any.toString(x),toString(y)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     (x,y) = g(1,f(1))
     debug x + "\n"
     debug y + "\n"

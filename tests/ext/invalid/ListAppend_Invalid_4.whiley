@@ -8,6 +8,6 @@ int f(plistv6 xs):
 int g(plistv6 left, [int] right):
     return f(left + right)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     r = g([1,2,3],[-1,7,8])
     debug Any.toString(r)

@@ -7,5 +7,5 @@ define nlt as nat | natlist
 nlt g(int y):
     return y
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     g(-1)

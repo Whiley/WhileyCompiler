@@ -6,5 +6,5 @@ void f([int] ls) requires some { i in {0,1,2,3} | i >= 0 && i < |ls| && ls[i] < 
 void g([int] ls) requires |ls| > 0:
     f(ls)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     g([1,2,3])

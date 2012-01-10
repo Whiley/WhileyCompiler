@@ -10,6 +10,6 @@ define expr as int | binop
 expr f(expr e):
     return e
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     e1 = {op:0, left:{op:MUL,left:2,right:2}, right:2}
     debug Any.toString(f(e1))

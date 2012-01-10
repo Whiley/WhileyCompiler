@@ -7,6 +7,6 @@ define msgType as msgType1 | msgType2
 string f(msgType msg):
     return Any.toString(msg.op)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     sys.out.println(f({op:1,payload:[1,2,3]}))
 

@@ -9,7 +9,7 @@ void g({int} ys):
 void h({int} ys, {int} zs):
     f(ys,zs,ys ∪ zs)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     g({})
     g({2})
     g({1,2,3})

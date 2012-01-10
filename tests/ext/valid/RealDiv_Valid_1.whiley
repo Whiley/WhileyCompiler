@@ -6,5 +6,5 @@ real g(int x):
 string f(int x, int y) requires x>=0 && y>0:
     return Any.toString(g(x))
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
      sys.out.println(f(1,2))

@@ -3,7 +3,7 @@ import * from whiley.lang.*
 int f([int] xs) requires no { x in xs | x < 0}:
     return |xs|
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     right = [-1,0,1]
     // now, fool constant propagation
     if(|args| > 1):

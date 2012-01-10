@@ -9,6 +9,6 @@ import * from whiley.lang.*
         i = i + 1
     return r
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     rs = extract([-2,-3,1,2,-23,3,2345,4,5])
     sys.out.println(Any.toString(rs))

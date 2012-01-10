@@ -6,5 +6,5 @@ int ::g(int x):
 void ::f(int x) requires x > g(x):
     debug Any.toString(x)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     f(1)

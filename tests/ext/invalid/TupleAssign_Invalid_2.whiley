@@ -6,7 +6,7 @@ define tac2tb as {int f1, int f2} where (f1+1) < f2
 tac2tb f(tac2tb y):
     return y
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     x = {f1:1, f2:3}
     debug Any.toString(x)
     x.f1 = 2

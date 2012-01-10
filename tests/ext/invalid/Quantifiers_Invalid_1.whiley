@@ -6,5 +6,5 @@ void f({int} ls) requires some { i in ls | i < 0}:
 void g({int} ls):
     f(ls)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys,[string] args):
     g({1,2,3})
