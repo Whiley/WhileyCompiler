@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 int f(int x) throws string|int:
     if x >= 0:

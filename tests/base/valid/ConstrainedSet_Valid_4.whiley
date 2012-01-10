@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define pintset as {int}
 

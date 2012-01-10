@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define sr4set as {int} where |$| > 0
 

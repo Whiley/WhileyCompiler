@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 string f(bool b):
     if(b):

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 bool pred({int} xs) ensures !$ || no { z in xs | z < 0 }:
     zs = { z | z in xs, z < 0 }

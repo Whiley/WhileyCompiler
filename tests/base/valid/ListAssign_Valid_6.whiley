@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 string f([int] a):
      a[0] = 5

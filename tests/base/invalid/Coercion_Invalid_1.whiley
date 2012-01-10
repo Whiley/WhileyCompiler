@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define Rec1 as { real x, int y }
 define Rec2 as { int x, real y }

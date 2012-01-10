@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 {int} append(string input):
     rs = {}

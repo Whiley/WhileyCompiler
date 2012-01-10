@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 int f(int x):
     sys.out.println(Any.toString(x))

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 !null&!int f(int x):
     return x

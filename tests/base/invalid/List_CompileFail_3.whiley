@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 void ::main(System.Console sys):
      a2 = [1,2,3]

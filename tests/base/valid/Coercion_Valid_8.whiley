@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define Expr as real | [Expr]
 

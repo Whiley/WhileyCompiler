@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define realtup as {real op}
 

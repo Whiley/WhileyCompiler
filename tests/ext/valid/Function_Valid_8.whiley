@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define fr8nat as int where $ > 0
 define fr8neg as int where $ < 0

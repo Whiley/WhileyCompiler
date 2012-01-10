@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define MyProc as process { int x }
 

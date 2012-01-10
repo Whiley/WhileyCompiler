@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define msg as {int op, int s}
 

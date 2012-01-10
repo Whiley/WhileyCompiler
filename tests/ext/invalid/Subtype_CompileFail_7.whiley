@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define scf7nat as int where $ < 0
 define scf7tup as {scf7nat f}

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 int sum([int] ls):
     i = 0

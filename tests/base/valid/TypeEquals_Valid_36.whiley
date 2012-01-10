@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define RowCol as int // where 0 <= $ && $ <= 8
 define Pos as { RowCol col, RowCol row } 

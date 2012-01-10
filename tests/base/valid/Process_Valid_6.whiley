@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define out as 123.456
 

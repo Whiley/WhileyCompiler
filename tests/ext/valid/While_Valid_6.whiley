@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 [nat] extract([int] ls):
     i = 0

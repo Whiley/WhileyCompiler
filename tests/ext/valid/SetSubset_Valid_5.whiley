@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 string f({int} xs, {int} ys) requires xs ⊆ ys:
     return "XS IS A SUBSET"

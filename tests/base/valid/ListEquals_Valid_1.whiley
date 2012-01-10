@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 string f([int] xs, [real] ys):
     if xs == ys:

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define List1 as { int|null data, null|List1 next }
 define List2 as { int data, null|List2 next }

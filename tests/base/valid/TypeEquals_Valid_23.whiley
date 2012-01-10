@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define test as {int x} | {int y}
 define src as test | int

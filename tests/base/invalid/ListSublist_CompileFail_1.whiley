@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 void ::main(System.Console sys):
     end = 1.2344

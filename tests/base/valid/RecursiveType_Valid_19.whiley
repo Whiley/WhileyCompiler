@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define Link as { [int] items, null|Link next }
 	 

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define nat as int where $ >= 0
 define pos as int where $ > 0

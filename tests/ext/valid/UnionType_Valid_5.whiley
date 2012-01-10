@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define msgType1 as {int op, [int] payload} where op == 1 
 define msgType2 as {int op, int header, [int] rest} where op == 2

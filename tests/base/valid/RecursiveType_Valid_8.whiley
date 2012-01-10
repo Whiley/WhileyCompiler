@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 // The current parser state
 define state as {string input, int pos}

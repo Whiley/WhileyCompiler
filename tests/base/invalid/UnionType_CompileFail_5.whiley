@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 // The effective type of an IntList is (int op)|([int] op)
 define IntList as {int op, [real] rest}|{[int] op, int mode}

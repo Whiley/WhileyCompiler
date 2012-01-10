@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define ADD as 0
 define SUB as 1

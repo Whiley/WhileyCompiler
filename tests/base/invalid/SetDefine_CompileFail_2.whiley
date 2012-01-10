@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define THIRTYTWO as 32
 define TWELVE as 12

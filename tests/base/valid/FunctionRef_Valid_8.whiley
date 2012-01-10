@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 int read(int a):
     return -a

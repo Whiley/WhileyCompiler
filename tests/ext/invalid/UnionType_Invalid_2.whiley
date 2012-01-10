@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define pos as int where $ > 0
 define poslist as [pos]

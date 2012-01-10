@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define bytes as { int8 b1, int8 b2 }
 

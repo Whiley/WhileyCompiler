@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define OpenRecord as {int field, ...}
 

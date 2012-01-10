@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 string rep(char old, char new, string str):
     i = 0

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 // this implements what is effectively a "raw" interface
 

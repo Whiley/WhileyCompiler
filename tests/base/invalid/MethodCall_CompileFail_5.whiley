@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 [int] f(System x, int x):
     return [1,2,3,x.get()]

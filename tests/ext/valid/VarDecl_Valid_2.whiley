@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 string g(int z) requires z > 1:
     return Any.toString(z)

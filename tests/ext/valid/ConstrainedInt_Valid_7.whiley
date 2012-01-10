@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 // this is a comment!
 define nat as int where $ > 0

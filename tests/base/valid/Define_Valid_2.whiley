@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define dr2point as {real x, real y}
 

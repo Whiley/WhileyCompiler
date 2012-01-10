@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 [int] f([int|real] e):
     if e is [int]:

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define pos as int
 define neg as int

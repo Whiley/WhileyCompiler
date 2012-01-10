@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 int sum({int} xs) ensures $ >= 0:
     r = 0

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 // this is a comment!
 define c3num as {1,2,3,4}

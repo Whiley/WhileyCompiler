@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 // expression tree
 define Expr as int | real |  // constant

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define PointAny as {int x, int y, ...}
 define Point2D as {int x, int y}

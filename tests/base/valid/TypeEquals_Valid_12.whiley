@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define imsg as int|{int op}|{string msg}
 

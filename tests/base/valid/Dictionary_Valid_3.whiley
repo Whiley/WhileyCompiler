@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 {int=>int} f(int x):
     return {1=>x, 3=>2}

@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define sr6nat as int where $ > 0
 define sr6tup as {sr6nat f, int g} where g > f

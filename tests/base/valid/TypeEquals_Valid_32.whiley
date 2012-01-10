@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 import * from whiley.io.File
 import SyntaxError from whiley.lang.Errors
 

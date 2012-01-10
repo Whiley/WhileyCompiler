@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 string f([[int]] x) requires |x| > 0:
     if(|x[0]| > 2):

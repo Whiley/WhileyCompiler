@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 define tenup as int where $ > 10
 define msg1 as {tenup op, [int] data}

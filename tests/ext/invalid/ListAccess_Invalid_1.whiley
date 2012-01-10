@@ -1,4 +1,4 @@
-
+import * from whiley.lang.*
 
 void f([int] x):
     y = x[0]
