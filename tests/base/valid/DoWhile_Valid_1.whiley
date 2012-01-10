@@ -1,11 +1,11 @@
 import * from whiley.lang.System
 
-void ::f(System.Console sys, [int] args):
+void ::f(System.Console sys, [int] sys.args):
     i = 0
     do:
         i = i + 1
-        sys.out.println(args[i])
-    while (i+1) < |args|
+        sys.out.println(sys.args[i])
+    while (i+1) < |sys.args|
 
 void ::main(System.Console sys):
     f(sys,[1,2,3])
