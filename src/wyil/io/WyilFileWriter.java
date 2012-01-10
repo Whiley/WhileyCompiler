@@ -117,7 +117,7 @@ public final class WyilFileWriter implements Transform {
 	
 	private void write(Case mcase, Method method, PrintWriter out) {
 		writeModifiers(method.modifiers(),out);
-		Type.Function ft = method.type(); 
+		Type.FunctionOrMethodOrMessage ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
 		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		

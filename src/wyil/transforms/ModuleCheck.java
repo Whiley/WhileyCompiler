@@ -216,7 +216,7 @@ public class ModuleCheck implements Transform {
 			if (code instanceof Code.Send || code instanceof Code.IndirectSend) {
 				// external message send
 				syntaxError(errorMessage(SEND_NOT_PERMITTED_IN_FUNCTION), filename, stmt);
-			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Message) {
+			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
 			} else if(code instanceof Code.Spawn) {

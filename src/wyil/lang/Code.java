@@ -180,7 +180,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Invoke Invoke(Type.Function fun, NameID name, boolean retval) {
+	public static Invoke Invoke(Type.FunctionOrMethod fun, NameID name, boolean retval) {
 		return get(new Invoke(fun,name,retval));
 	}
 
@@ -344,8 +344,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Message meth, boolean synchronous, boolean retval) {
-		return get(new IndirectSend(meth,synchronous,retval));
+	public static IndirectSend IndirectSend(Type.Message msg, boolean synchronous, boolean retval) {
+		return get(new IndirectSend(msg,synchronous,retval));
 	}
 	
 	/**
@@ -356,7 +356,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectInvoke IndirectInvoke(Type.Function fun, boolean retval) {
+	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun, boolean retval) {
 		return get(new IndirectInvoke(fun,retval));
 	}
 	
@@ -1280,10 +1280,10 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class IndirectInvoke extends Code {		
-		public final Type.Function type;
+		public final Type.FunctionOrMethod type;
 		public final boolean retval;
 		
-		private IndirectInvoke(Type.Function type, boolean retval) {
+		private IndirectInvoke(Type.FunctionOrMethod type, boolean retval) {
 			this.type = type;
 			this.retval = retval;
 		}
@@ -1396,11 +1396,11 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Invoke extends Code {		
-		public final Type.Function type;
+		public final Type.FunctionOrMethod type;
 		public final NameID name;
 		public final boolean retval;
 				
-		private Invoke(Type.Function type, NameID name, boolean retval) {
+		private Invoke(Type.FunctionOrMethod type, NameID name, boolean retval) {
 			this.type = type;
 			this.name = name;
 			this.retval = retval;

@@ -213,7 +213,7 @@ public class ClassFileBuilder {
 		ft1 = new JvmType.Function(WHILEYRECORD,new JvmType.Array(JAVA_LANG_STRING));		
 		codes.add(new Bytecode.Load(0,strArr));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"systemConsole",ft1,Bytecode.STATIC));		
-		Type.Function wyft = (Type.Function) Type.Message(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
+		Type.Method wyft = Type.Method(Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);		
 		// The following is a little bit of hack. Basically we flush the stdout
 		// channel on exit
@@ -322,7 +322,7 @@ public class ClassFileBuilder {
 	public ArrayList<Bytecode> translateNativeOrExport(Module.Method method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		Type.Function ft = method.type();
+		Type.FunctionOrMethodOrMessage ft = method.type();
 		int slot = 0;
 		// first, check to see if need to load receiver
 		if (ft instanceof Type.Message) {
@@ -1613,7 +1613,7 @@ public class ClassFileBuilder {
 		// To make this work, what we'll do is use a temporary register to hold
 		// the array as we build it up.
 
-		Type.Function ft = (Type.Function) c.type;		
+		Type.FunctionOrMethodOrMessage ft = c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
@@ -1651,7 +1651,7 @@ public class ClassFileBuilder {
 		// To make this work, what we'll do is use a temporary register to hold
 		// the array as we build it up.
 
-		Type.Function ft = (Type.Function) c.type;		
+		Type.Message ft = c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
 		bytecodes.add(new Bytecode.New(arrT));
@@ -1709,7 +1709,7 @@ public class ClassFileBuilder {
 		// To make this work, what we'll do is use a temporary register to hold
 		// the array as we build it up.
 
-		Type.Function ft = (Type.Function) c.type;		
+		Type.Message ft = c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
 		bytecodes.add(new Bytecode.New(arrT));
@@ -2770,8 +2770,7 @@ public class ClassFileBuilder {
 	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang","AssertionError");
 	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util","Collection");	
 	
-	public JvmType.Function convertFunType(Type.Function t) {		
-		Type.Function ft = (Type.Function) t; 
+	public JvmType.Function convertFunType(Type.FunctionOrMethodOrMessage ft) {		
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
 		if(ft instanceof Type.Message) {
 			Type.Message mt = (Type.Message)ft; 
@@ -2834,7 +2833,7 @@ public class ClassFileBuilder {
 			}
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
-		} else if(t instanceof Type.Function) {						
+		} else if(t instanceof Type.FunctionOrMethodOrMessage) {						
 			return JAVA_LANG_REFLECT_METHOD;
 		}else {
 			throw new RuntimeException("unknown type encountered: " + t);
@@ -2846,7 +2845,7 @@ public class ClassFileBuilder {
 		return "cfblab" + label++;
 	}	
 	
-	public static String nameMangle(String name, Type.Function ft) {				
+	public static String nameMangle(String name, Type.FunctionOrMethodOrMessage ft) {				
 		try {			
 			return name + "$" + typeMangle(ft);
 		} catch(IOException e) {
@@ -2854,7 +2853,7 @@ public class ClassFileBuilder {
 		}
 	}
 		
-	public static String typeMangle(Type.Function ft) throws IOException {		
+	public static String typeMangle(Type.FunctionOrMethodOrMessage ft) throws IOException {		
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
 		Type.BinaryWriter tm = new Type.BinaryWriter(binout);

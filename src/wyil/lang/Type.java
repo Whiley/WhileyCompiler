@@ -1270,6 +1270,12 @@ public abstract class Type {
 		FunctionOrMethodOrMessage(Automaton automaton) {
 			super(automaton);
 		}
+		
+		public abstract Type ret();
+		
+		public abstract Type throwsClause();
+		
+		public abstract ArrayList<Type> params();
 	}
 	
 	public abstract static class FunctionOrMethod extends FunctionOrMethodOrMessage {

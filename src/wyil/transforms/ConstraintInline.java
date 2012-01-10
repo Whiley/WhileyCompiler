@@ -250,7 +250,7 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
-				Type.Function mtype = method.type();	
+				Type.FunctionOrMethodOrMessage mtype = method.type();	
 				int pIndex = 1;
 				if (mtype instanceof Type.Message
 						&& ((Type.Message) mtype).receiver() != null) {
@@ -356,7 +356,7 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.Function fun) throws ResolveError {
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws ResolveError {
 		Module m = loader.loadModule(name.module());				
 		Module.Method method = m.method(name.name(),fun);
 	

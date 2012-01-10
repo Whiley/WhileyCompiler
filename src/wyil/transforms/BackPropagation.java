@@ -332,14 +332,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 		
 		environment.push(code.type);
-		
-		if(code.type instanceof Type.Message) {
-			Type.Message mt = (Type.Message) code.type;
-			if(mt.receiver() != null) {
-				environment.push(mt.receiver());
-			}
-		}
-		
+				
 		for(Type t : code.type.params()) {
 			environment.push(t);
 		}		
@@ -367,15 +360,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
 			coerceAfter(req,code.type.ret(),index,entry);			
-		}
-		
-
-		if(code.type instanceof Type.Message) {
-			Type.Message mt = (Type.Message) code.type;
-			if(mt.receiver() != null) {
-				environment.push(mt.receiver());
-			}						
-		}
+		}	
 		
 		for(Type t : code.type.params()) {
 			environment.push(t);
