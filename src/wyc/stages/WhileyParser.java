@@ -1370,8 +1370,8 @@ public final class WhileyParser {
 			// empty set definition
 			Value v = Value.V_SET(Collections.EMPTY_LIST); 
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
-		} else if(token instanceof RightArrow) {
-			match(RightArrow.class);		
+		} else if(token instanceof StrongRightArrow) {
+			match(StrongRightArrow.class);		
 			match(RightCurly.class);			
 			// empty dictionary definition
 			Value v = Value.V_DICTIONARY(Collections.EMPTY_SET); 
@@ -1391,7 +1391,7 @@ public final class WhileyParser {
 			setComp=true;
 			match(Bar.class);
 			firstTime=true;
-		} else if(index < tokens.size() && tokens.get(index) instanceof RightArrow) {
+		} else if(index < tokens.size() && tokens.get(index) instanceof StrongRightArrow) {
 			// this is a dictionary constructor					
 			return parseDictionaryVal(start,exprs.get(0));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
@@ -1405,8 +1405,7 @@ public final class WhileyParser {
 		token = tokens.get(index);
 		while(!(token instanceof RightCurly)) {						
 			if(!firstTime) {
-				match(Comma.class);
-				
+				match(Comma.class);				
 			}
 			firstTime=false;
 			exprs.add(parseCondition(false));
@@ -1457,7 +1456,7 @@ public final class WhileyParser {
 	
 	private Expr parseDictionaryVal(int start, Expr key) {
 		ArrayList<Pair<Expr,Expr>> pairs = new ArrayList<Pair<Expr,Expr>>();		
-		match(RightArrow.class);
+		match(StrongRightArrow.class);
 		Expr value = parseCondition(false);	
 		pairs.add(new Pair<Expr,Expr>(key,value));
 		
@@ -1466,7 +1465,7 @@ public final class WhileyParser {
 			match(Comma.class);
 			
 			key = parseCondition(false);
-			match(RightArrow.class);
+			match(StrongRightArrow.class);
 			value = parseCondition(false);
 			pairs.add(new Pair<Expr,Expr>(key,value));
 			
@@ -1782,9 +1781,9 @@ public final class WhileyParser {
 				// set type
 				match(RightCurly.class);
 				t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
-			} else if(tokens.get(index) instanceof RightArrow) {
+			} else if(tokens.get(index) instanceof StrongRightArrow) {
 				// map type
-				match(RightArrow.class);
+				match(StrongRightArrow.class);
 				UnresolvedType v = parseType();			
 				match(RightCurly.class);
 				t = new UnresolvedType.Dictionary(t,v,sourceAttr(start,index-1));				
@@ -1793,7 +1792,7 @@ public final class WhileyParser {
 				HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();
 				Token n = matchIdentifier();				
 				if(types.containsKey(n)) {
-					syntaxError("duplicate tuple key",n);
+					syntaxError("duplicate record key",n);
 				}
 				types.put(n.text, t);
 				
@@ -1819,7 +1818,7 @@ public final class WhileyParser {
 					n = matchIdentifier();
 					
 					if(types.containsKey(n)) {
-						syntaxError("duplicate tuple key",n);
+						syntaxError("duplicate record key",n);
 					}								
 					types.put(n.text, tmp);					
 					checkNotEof();

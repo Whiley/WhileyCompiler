@@ -416,17 +416,14 @@ public class WhileyLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new EqualsEquals(pos-2,line);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
+				pos += 2;
+				return new StrongRightArrow("=>",pos-2,line);
 			} else {
 				return new Equals(pos++,line);				
 			}
 		} else if(c == '<') {
-			if((pos+2) < input.length() && input.charAt(pos+1) == '-' && input.charAt(pos+2) == '>') {
-				pos += 3;				
-				return new LeftRightArrow("<->",pos-3,line);
-			} else if((pos+1) < input.length() && input.charAt(pos+1) == '-') {
-				pos += 2;
-				return new LeftArrow("<-",pos-2,line);
-			} else if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
+			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new LessEquals("<=",pos-2,line);
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '<') {
@@ -819,5 +816,8 @@ public class WhileyLexer {
 	}
 	public static class RightArrow extends Token {
 		public RightArrow(String text, int pos, int line) { super(text,pos,line);	}
+	}
+	public static class StrongRightArrow extends Token {
+		public StrongRightArrow(String text, int pos, int line) { super(text,pos,line);	}
 	}
 }

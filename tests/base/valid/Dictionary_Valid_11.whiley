@@ -2,7 +2,7 @@ import * from whiley.lang.*
 import * from whiley.io.File
 
 public void ::main(System sys, [string] args):
-    l = {1->2,2->3}
+    l = {1=>2,2=>3}
     sys.out.println("Dictionary: " + Any.toString(l))
     sys.out.println("Length: " + Any.toString(|l|))
     l[3] = 123
