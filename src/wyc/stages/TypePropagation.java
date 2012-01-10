@@ -1315,7 +1315,7 @@ public final class TypePropagation {
 			return expr;
 		} 		
 		
-		Pair<NameID, Nominal<Type.Function>> p;
+		Pair<NameID, Nominal<Type.FunctionOrMethod>> p;
 		
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal<Type>> paramTypes = new ArrayList<Nominal<Type>>();
@@ -1361,12 +1361,21 @@ public final class TypePropagation {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Nominal<Type.Function> funType = resolver.resolveAsFunctionOrMethod(name,  paramTypes);	
-			Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
-			r.functionType = funType;
-			// FIXME: loss of nominal information
-			r.returnType = new Nominal<Type>(funType.raw().ret(),funType.raw().ret());
-			return r;
+			Nominal<Type.FunctionOrMethod> funType = resolver.resolveAsFunctionOrMethod(name,  paramTypes);
+			Type.FunctionOrMethod fmt = funType.raw();
+			if(fmt instanceof Type.Function) {
+				Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
+				r.functionType = (Nominal) funType;
+				// FIXME: loss of nominal information
+				r.returnType = new Nominal<Type>(funType.raw().ret(),funType.raw().ret());
+				return r;
+			} else {
+				Expr.MethodCall r = new Expr.MethodCall(name, ma, exprArgs, expr.attributes());
+				r.methodType = (Nominal) funType;
+				// FIXME: loss of nominal information
+				r.returnType = new Nominal<Type>(funType.raw().ret(),funType.raw().ret());
+				return r;
+			}
 		} else if(receiver != null) {
 			
 			// function is qualified, so this is used as the scope for resolving
@@ -1381,16 +1390,16 @@ public final class TypePropagation {
 				
 				if(fieldType == null) {
 					syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,expr);
-				} else if(!(fieldType instanceof Type.Function)) {
+				} else if(!(fieldType instanceof Type.FunctionOrMethod)) {
 					syntaxError("function or method type expected",filename,expr);
 				}
 				
-				Type.Function funType = (Type.Function) fieldType;
+				Type.FunctionOrMethod funType = (Type.FunctionOrMethod) fieldType;
 				Expr.RecordAccess ra = new Expr.RecordAccess(receiver, expr.name, expr.attributes());
 				ra.fieldType = (Nominal) new Nominal(funType,funType);
 				ra.srcType = (Nominal) expr.qualification.type(); 
 						
-				if(funType instanceof Type.Message) { 
+				if(funType instanceof Type.Method) { 
 					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(ra,expr.arguments,expr.attributes());
 					// FIXME: loss of nominal information
 					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
@@ -1429,9 +1438,9 @@ public final class TypePropagation {
 			Nominal<Type> type = environment.get(expr.name);
 			
 			// FIXME: bad idea to use instanceof Type.Function here
-			if(type != null && type.raw() instanceof Type.Function) {
+			if(type != null && type.raw() instanceof Type.FunctionOrMethod) {
 				// ok, matching local variable of function type.
-				Type.Function funType = (Type.Function) type.raw();
+				Type.FunctionOrMethod funType = (Type.FunctionOrMethod) type.raw();
 				List<Type> funTypeParams = funType.params();
 				if(paramTypes.size() != funTypeParams.size()) {
 					syntaxError("insufficient arguments to function call",filename,expr);
@@ -1446,7 +1455,7 @@ public final class TypePropagation {
 				Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
 				lv.type = type;
 							
-				if(funType instanceof Type.Message) { 
+				if(funType instanceof Type.Method) { 
 					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(lv,expr.arguments,expr.attributes());
 					// FIXME: loss of nominal information
 					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
@@ -1463,9 +1472,9 @@ public final class TypePropagation {
 			} else {
 				// no matching local variable, so attempt to resolve as direct
 				// call.
-				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
-				Type.Function funType = p.second().raw();							
-				if(funType instanceof Type.Message) {					
+				Pair<NameID, Nominal<Type.FunctionOrMethod>> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
+				Type.FunctionOrMethod funType = p.second().raw();							
+				if(funType instanceof Type.Method) {					
 					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
 					mc.methodType = (Nominal) p.second();					
 					// FIXME: loss of nominal information

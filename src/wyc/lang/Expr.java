@@ -175,7 +175,7 @@ public interface Expr extends SyntacticElement {
 	public static class AbstractFunction extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<UnresolvedType> paramTypes;
-		public Nominal<Type.Function> type;		
+		public Nominal<Type.FunctionOrMethod> type;		
 				
 		public AbstractFunction(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
@@ -199,7 +199,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal<Type.Function> type() {
+		public Nominal<Type.FunctionOrMethod> type() {
 			return type;
 		}		
 	}
