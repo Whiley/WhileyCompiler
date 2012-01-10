@@ -1873,6 +1873,24 @@ public abstract class Code {
 	}
 	
 	/**
+	 * An LVal with list type.
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class ProcessLVal extends LVal {
+		public ProcessLVal(Type t) {
+			super(t);
+			if(Type.effectiveProcessType(t) == null) {
+				throw new IllegalArgumentException("Invalid Process Type");
+			}
+		}
+		
+		public Type.List type() {
+			return Type.effectiveListType(type);
+		}
+	}
+	
+	/**
 	 * An LVal with string type.
 	 * @author David J. Pearce
 	 *
@@ -1914,13 +1932,7 @@ public abstract class Code {
 		public UpdateIterator(Type type, int level, ArrayList<String> fields) {
 			this.fields = fields;
 			this.iter = type;
-			this.index = level;
-			
-			// TODO: sort out this hack
-			if(Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
-				Type.Process p = (Type.Process) iter;
-				iter = p.element();
-			}	
+			this.index = level;			
 		}
 		
 		public LVal next() {
@@ -1929,6 +1941,10 @@ public abstract class Code {
 			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				return new StringLVal();
+			} else if(Type.isSubtype(Type.Process(Type.T_ANY),iter)) {			
+				Type.Process proc = Type.effectiveProcessType(iter);											
+				iter = proc.element();
+				return new ProcessLVal(raw);
 			} else if(Type.isSubtype(Type.List(Type.T_ANY,false),iter)) {			
 				Type.List list = Type.effectiveListType(iter);											
 				iter = list.element();
@@ -2009,16 +2025,13 @@ public abstract class Code {
 		public Type rhs() {
 			Type iter = afterType;
 			
-			// TODO: sort out this hack
-			if (Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
-				Type.Process p = (Type.Process) iter;
-				iter = p.element();
-			}
-			
 			int fieldIndex = 0;
 			for (int i = 0; i != level; ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
+				} else if (Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
+					Type.Process proc = Type.effectiveProcessType(iter);
+					iter = proc.element();
 				} else if (Type.isSubtype(Type.List(Type.T_ANY,false), iter)) {
 					Type.List list = Type.effectiveListType(iter);
 					iter = list.element();

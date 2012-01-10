@@ -346,7 +346,7 @@ public final class CodeGeneration {
 				|| s.lhs instanceof Expr.StringAccess
 				|| s.lhs instanceof Expr.DictionaryAccess
 				|| s.lhs instanceof Expr.RecordAccess) {
-			// this is where we need a multistore operation						
+				
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
 			Pair<Expr.AssignedVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);

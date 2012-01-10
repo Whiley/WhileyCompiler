@@ -657,6 +657,13 @@ public abstract class Type {
 		return null;
 	}
 			
+	public static Process effectiveProcessType(Type t) {
+		if(t instanceof Type.Process) {
+			return (Type.Process) t;
+		}
+		return null;
+	}
+	
 	// =============================================================
 	// Primitive Types
 	// =============================================================

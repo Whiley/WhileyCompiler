@@ -468,7 +468,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 				DictLVal dlv = (DictLVal) lv;
 				environment.push(dlv.type().key());
 			} else {
-				// RecordLVal has no stack requirement
+				// RecordLVal and ProcessLVal have no stack requirement
 			}
 		}
 		

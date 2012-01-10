@@ -622,7 +622,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 					Bytecode.VIRTUAL));							
 			addReadConversion(pt.element(),bytecodes);
-			multiStoreHelper(pt.element(),level,fields,indexSlot,val_t,freeSlot,bytecodes);						
+			multiStoreHelper(pt.element(),level-1,fields,indexSlot,val_t,freeSlot,bytecodes);						
 			ftype = new JvmType.Function(WHILEYPROCESS,JAVA_LANG_OBJECT);		
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "setState", ftype,
 					Bytecode.VIRTUAL));
