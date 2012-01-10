@@ -144,7 +144,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue") @Test public void FunctionRef_Valid_6_RuntimeTest() { runTest("FunctionRef_Valid_6"); } 
  @Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
  @Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
- @Ignore("Known Issue") @Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
+ @Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
  @Test public void IfElse_Valid_1_RuntimeTest() { runTest("IfElse_Valid_1"); }
  @Test public void IfElse_Valid_2_RuntimeTest() { runTest("IfElse_Valid_2"); }
  @Test public void IfElse_Valid_3_RuntimeTest() { runTest("IfElse_Valid_3"); }

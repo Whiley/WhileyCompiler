@@ -45,6 +45,7 @@ import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Code.OpDir;
 import wyil.lang.Value;
+import wyil.util.ErrorMessages;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
@@ -1241,6 +1242,43 @@ public final class TypePropagation {
 	private Expr propagate(Expr.Comprehension expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
+		
+		ArrayList<Pair<String,Expr>> sources = expr.sources;
+		RefCountedHashMap<String,Nominal<Type>> local = environment.clone();
+		for(int i=0;i!=sources.size();++i) {
+			Pair<String,Expr> p = sources.get(i);
+			Expr e = propagate(p.second(),local,imports);			
+			p = new Pair<String,Expr>(p.first(),e);
+			sources.set(i,p);
+			Type element;
+			Nominal<Type> type = (Nominal) e.type();
+			Type.List listType = Type.effectiveListType(type.raw());
+			Type.Set setType = Type.effectiveSetType(type.raw());
+			if(listType != null) {
+				element = listType.element();
+			} else if(setType != null) {
+				element = setType.element();
+			} else {
+				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,e);
+				return null; // dead code
+			}
+			// update environment for subsequent source expressions, the
+			// condition and the value.
+			// FIXME: loss of nominal information
+			local = local.put(p.first(),new Nominal<Type>(element,element));
+		}
+		
+		expr.condition = propagate(expr.condition,local,imports);
+		
+		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
+			expr.value = propagate(expr.value,local,imports);
+			expr.type = (Nominal) expr.value.type();
+		} else {
+			expr.type = Nominal.T_BOOL;
+		}
+		
+		local.free();				
+		
 		return expr;
 	}
 	

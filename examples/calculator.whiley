@@ -45,7 +45,7 @@ define Stmt as Print | Set
 
 define RuntimeError as { string msg }
 
-Value evaluate(Expr e, {string->Value} env) throws RuntimeError:
+Value evaluate(Expr e, {string=>Value} env) throws RuntimeError:
     if e is int:
         return e
     else if e is Var:
@@ -209,7 +209,7 @@ public void ::main(System sys, [string] args):
         sys.out.println("no parameter provided!")
     else:
         try:
-            env = {"$"->0} 
+            env = {"$"=>0} 
             st = {pos: 0, input: input}
             while st.pos < |st.input|:
                 s,st = parse(st)
