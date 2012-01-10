@@ -10,7 +10,7 @@ string getField(OpenRecord r):
     else:
         return "(? fields): " + r.x + ", ..."
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     r = {x: 1}
     sys.out.println(getField(r))
     r = {x: 2, y: "hello"}

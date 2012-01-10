@@ -7,5 +7,5 @@ string f(cr2num x):
     y = x
     return Any.toString(y)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(3))

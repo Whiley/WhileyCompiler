@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     end = 1.2344
     list = [1,2,3]
     sublist = list[-1..end]

@@ -3,6 +3,6 @@ import * from whiley.lang.*
 void System::f(int x):
     this->out.println(Any.toString(x))
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.f(1)
     sys.out.print("")

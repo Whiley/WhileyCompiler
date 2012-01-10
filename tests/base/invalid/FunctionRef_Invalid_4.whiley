@@ -16,5 +16,5 @@ int g(int d):
     y = table[d]
     return y(123)
     
-void ::main(System.Console sys,[string] args):    
+void ::main(System.Console sys):    
     sys.out.println(Any.toString(g(3)))    

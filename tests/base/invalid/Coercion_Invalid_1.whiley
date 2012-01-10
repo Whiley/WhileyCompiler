@@ -10,7 +10,7 @@ int f(uRec1Rec2 r):
     else:
         return r.x
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     rec = { x: 1, y: 1}
     ans = f(rec)
     sys.out.println(Any.toString(ans))

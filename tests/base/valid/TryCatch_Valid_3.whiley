@@ -17,7 +17,7 @@ void ::g(System.Console sys, int x):
         sys.out.println("CAUGHT EXCEPTION (int): " + Any.toString(e))
     
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     g(sys,1)
     g(sys,0)
     g(sys,-1)

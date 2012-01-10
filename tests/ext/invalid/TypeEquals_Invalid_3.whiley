@@ -11,7 +11,7 @@ void f(expr e):
     if e is pos:
         g(e)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     f(-1)
     f(1)
  

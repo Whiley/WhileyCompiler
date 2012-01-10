@@ -8,6 +8,6 @@ void MyProc::run(System.Console sys):
     else:
         sys.out.println("FALSE")
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     mproc = spawn { flag:false }     
     mproc.run(sys)

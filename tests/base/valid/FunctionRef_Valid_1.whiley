@@ -9,6 +9,6 @@ int f2(int x):
 int g(int(int) func):
     return func(1234)
     
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(g(&f1)))
     sys.out.println(Any.toString(g(&f2)))

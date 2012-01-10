@@ -11,5 +11,5 @@ string f(num x):
 string g({bignum} zs, int z):
     return f(z)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(g({1,2,3,5},3))

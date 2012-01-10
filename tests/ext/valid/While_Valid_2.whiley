@@ -10,7 +10,7 @@ nat sum([nat] ls):
         i = i + 1
     return sum
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(sum([])))
     sys.out.println(Any.toString(sum([1,2,3])))
     sys.out.println(Any.toString(sum([12387,98123,12398,12309,0])))

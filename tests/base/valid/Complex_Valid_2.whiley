@@ -69,7 +69,7 @@ string pos2str(Pos p):
     return "" + ((char) ('a' + p.col)) + ((char) ('1' + p.row))
 
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     m = {piece: WHITE_PAWN, from: A2, to: A1 }
     sys.out.println(move2str(m))
     m = {piece: WHITE_KNIGHT, from: A2, to: A1 }

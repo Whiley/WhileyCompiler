@@ -9,6 +9,6 @@ int Proc::get():
 wmcr6tup System::f(Proc x, int y):
     return {x:y,y:x.get()}
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     proc = spawn { state: 1 }
     sys.out.println(Any.toString(sys.f(proc,1)))

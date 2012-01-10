@@ -7,6 +7,6 @@ int f(int x):
         return -1
     return x
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f(1)))
     sys.out.println(Any.toString(f(-10)))

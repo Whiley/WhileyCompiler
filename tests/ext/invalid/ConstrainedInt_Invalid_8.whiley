@@ -8,6 +8,6 @@ void f(frf1nat y):
 void f(int x):
     debug "F(INT)"
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     f(-1)
     f(1)

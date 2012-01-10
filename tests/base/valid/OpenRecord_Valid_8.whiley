@@ -9,7 +9,7 @@ bool match(Attribute attr):
     else:
         return false
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     r = { name: "Hello" }
     sys.out.println("MATCHED: " + match(r))
     r = { name: "Code", maxLocals: 0, maxStack: 0, data: []}

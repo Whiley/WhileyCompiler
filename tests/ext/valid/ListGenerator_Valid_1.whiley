@@ -5,6 +5,6 @@ void f([int] x) requires |x| > 0:
     debug Any.toString(z) + "\n"
     debug Any.toString(x[z-1]) + "\n"
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
      arr = [1,2,3]
      f(arr)

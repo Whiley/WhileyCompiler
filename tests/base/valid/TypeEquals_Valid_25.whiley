@@ -8,7 +8,7 @@ string f(src e):
     else:
         return "int"
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f([1]))
     sys.out.println(f([[1]]))
     sys.out.println(f([[[1]]]))

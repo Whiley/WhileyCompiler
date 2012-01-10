@@ -6,7 +6,7 @@ import * from whiley.lang.*
 int get(int i, {int=>int} map):
     return map[i]
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(get(1,f(1))))
     sys.out.println(Any.toString(get(1,f(2))))
     sys.out.println(Any.toString(get(1,f(3))))

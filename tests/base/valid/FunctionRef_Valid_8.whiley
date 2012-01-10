@@ -9,7 +9,7 @@ int id(int x):
 int test(int(int) read, int arg):    
     return read(arg)
     
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = test(&id,1)
     sys.out.println(Any.toString(x))
     x = test(&id,123)

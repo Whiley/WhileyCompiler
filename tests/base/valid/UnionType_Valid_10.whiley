@@ -8,7 +8,7 @@ string f(IntList y):
 string g({int op, int mode} z):
     return Any.toString(z)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = {op:1, rest:[1.23]}
     sys.out.println(f(x))
     x = {op:1.23, mode: 0}

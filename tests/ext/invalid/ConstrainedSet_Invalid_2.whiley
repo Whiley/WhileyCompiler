@@ -11,7 +11,7 @@ int g(int x) ensures $ > 0 && $ <= 256:
 {i8} f(int x):
     return {g(x)}
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     bytes = f(256)
     debug Any.toString(bytes)
 

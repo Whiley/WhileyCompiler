@@ -9,7 +9,7 @@ void System::f(int y):
 void System::g([int] z):
     this->out.println(Any.toString(z))
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = 123
     sys.f(x)
     x = [1,2,3]

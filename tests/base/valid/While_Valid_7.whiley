@@ -13,7 +13,7 @@ Leaf dist(LinkedList list):
     // list must be a Leaf
     return list + distance
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     list = 123
     list = { next: list }
     list = { next: list }

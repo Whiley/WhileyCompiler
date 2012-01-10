@@ -9,6 +9,6 @@ expr parseTerm():
 expr parseIdentifier():
     return {err:"err"}
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     e = parseTerm()
     sys.out.println(Any.toString(e))

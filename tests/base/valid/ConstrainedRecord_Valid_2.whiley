@@ -9,7 +9,7 @@ define UNIT as {unitCode op}
 int f(UNIT x):
     return x.op
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     bytes = f({op:NOP})
     sys.out.println(Any.toString(bytes))
 

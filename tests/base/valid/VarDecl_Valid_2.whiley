@@ -7,5 +7,5 @@ string f(int x):
     y = x + 1
     return g(y)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1))

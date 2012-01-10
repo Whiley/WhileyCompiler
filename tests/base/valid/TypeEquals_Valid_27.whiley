@@ -6,7 +6,7 @@ import * from whiley.lang.*
     else:
         return [1,2,3]
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f([1,2,3,4,5,6,7])))
     sys.out.println(Any.toString(f([])))
     sys.out.println(Any.toString(f([1,2,2.01])))

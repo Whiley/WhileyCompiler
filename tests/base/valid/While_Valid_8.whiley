@@ -2,7 +2,7 @@ import whiley.lang.*
 import * from whiley.lang.Errors
 import * from whiley.lang.System
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     i = 0
     while i< 5:
         if(i == 3):

@@ -258,7 +258,7 @@ define constants as [
 	01111110b
 ]
 
-public void ::main(System.Console sys,[string] args):
+public void ::main(System.Console sys):
     for i in constants:
         for j in 0..8:
             sys.out.print(Any.toString(i) + " & 10101010b << ")

@@ -3,7 +3,7 @@ import * from whiley.lang.*
 [int] f() ensures |$| > 1:
     return [1,2]
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
      a1 = f()
      a2 = f()
      a2[0] = 0

@@ -8,6 +8,6 @@ define fr6nat as int
 string f({int} x):
     return Any.toString(x)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     ys = {-12309812,1,2,2987,2349872,234987234987,234987234987234}
     sys.out.println(f(g(ys)))

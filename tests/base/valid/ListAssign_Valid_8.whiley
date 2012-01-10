@@ -8,7 +8,7 @@ import * from whiley.lang.*
     nls = update(ls)
     return ls,nls
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     ls = [[1,2,3,4]]
     ls,nls = f(ls)
     sys.out.println(Any.toString(ls))

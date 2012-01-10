@@ -10,5 +10,5 @@ void f(num x):
 void g(int x, int z) requires (x == 0 || x == 1) && z in {1,2,3,x}:
     f(z)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     g(0,0)

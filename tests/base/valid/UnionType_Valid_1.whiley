@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys,[string] args):    
+void ::main(System.Console sys):    
     if |args| == 1:
         x = 1
     else:

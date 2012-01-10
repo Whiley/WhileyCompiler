@@ -3,7 +3,7 @@ import * from whiley.lang.*
 int f(int x):
     return x
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = 1
     try:
         sys.out.println(Any.toString(f(1)))

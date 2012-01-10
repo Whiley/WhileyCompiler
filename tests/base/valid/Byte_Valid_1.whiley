@@ -258,6 +258,6 @@ define constants as [
 	01111110b
 ]
 
-public void ::main(System.Console sys,[string] args):
+public void ::main(System.Console sys):
     for b in constants:
         sys.out.println(Any.toString(b))

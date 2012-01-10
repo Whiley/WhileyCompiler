@@ -11,7 +11,7 @@ nat sum(LinkedList list):
     else:
         return list.data + sum(list.next)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     l = { next:1, data:1 }
     debug Any.toString(sum(l))
     l = { next:l, data:-2 }

@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
      a1 = [[1,2,3],[0]]
      a2 = a1
      a2[0] = [3,4,5]

@@ -8,7 +8,7 @@ bool run(int n, int x):
             break
     return solution
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     b1 = run(10,4)
     sys.out.println("b1=" + Any.toString(b1))
     b2 = run(10,-1)

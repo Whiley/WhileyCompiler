@@ -1033,11 +1033,12 @@ public class Util {
 	}
 	
 
-	public static Record systemConsole() {
+	public static Record systemConsole(String[] args) {
 		// Not sure what the default value should be yet!!!
 		Actor sysout = new Actor(null);
 		Record data = new Record();
 		data.put("out", sysout);		
+		data.put("args",fromStringList(args));
 		Record console = new Record(data);
 		sysout.start();		
 		return console;

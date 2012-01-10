@@ -6,6 +6,6 @@ import * from whiley.lang.*
         rs = rs + [input[i]]
     return rs
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     xs = append("abcdefghijklmnopqrstuvwxyz")
     sys.out.println(Any.toString(xs))

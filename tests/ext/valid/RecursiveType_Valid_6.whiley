@@ -8,7 +8,7 @@ define binop as {int op, expr left, expr right} where op in {ADD,SUB,MUL,DIV}
 define asbinop as {int op, expr left, expr right} where op in {ADD,SUB}
 define expr as int | binop
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     bop1 = {op:ADD,left:1,right:2}
     bop2 = bop1
     e1 = bop1

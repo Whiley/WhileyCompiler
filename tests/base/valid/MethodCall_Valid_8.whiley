@@ -36,7 +36,7 @@ int ::parSum([int] items):
 int ::sum(int::([int]) m, [int] data):
     return m(data)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     data = [1,3,5,7,3,198,1,4,6]
     s1 = sum(&parSum,data)
     sys.out.println("SUM: " + Any.toString(s1))

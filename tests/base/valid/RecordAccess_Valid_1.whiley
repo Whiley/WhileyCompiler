@@ -7,5 +7,5 @@ int Ptype::get():
     this->mode = 1
     return this->mode
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println("OK")

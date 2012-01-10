@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
      xs = { 1,2,3,4 }
      ys = { 1,2 }
      zs = { x+y | x∈xs, y∈ys }

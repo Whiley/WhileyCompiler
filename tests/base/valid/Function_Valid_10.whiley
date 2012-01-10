@@ -11,6 +11,6 @@ string f([int] ls):
 string f([real] ls):
     return (Any.toString(ls))
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f([1,2,3]))
     sys.out.println(f([1.2,2.2,3.3]))

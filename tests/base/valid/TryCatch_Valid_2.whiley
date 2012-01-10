@@ -14,7 +14,7 @@ void ::missed(System.Console sys,int x) throws string:
     catch(int e):
         sys.out.println("CAUGHT EXCEPTION (int): " + Any.toString(e))
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     try:
         missed(sys,1)
         missed(sys,-2)

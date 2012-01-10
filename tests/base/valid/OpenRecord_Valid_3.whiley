@@ -12,7 +12,7 @@ int sum(VecPoint vp):
             r = r + sum(p)
         return r
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     vp = {x:1, y:2}
     sys.out.println(sum(vp))
     vp = [{x:1, y:2},{x:1, y:2}]

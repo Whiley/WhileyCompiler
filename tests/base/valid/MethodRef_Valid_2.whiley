@@ -19,7 +19,7 @@ Reader ::openReader():
     proc = spawn { position: 123 }
     return { thus: proc, read: &read } 
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     reader = openReader()
     target = reader.thus
     method = reader.read

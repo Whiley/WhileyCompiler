@@ -7,7 +7,7 @@ int f(int x) ensures $ > x:
 int g(int x, int y) requires x > y:
     return x+y
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     a = 2
     b = 1
     if |args| == 0:

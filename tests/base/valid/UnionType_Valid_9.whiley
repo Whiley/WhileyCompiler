@@ -3,7 +3,7 @@ import * from whiley.lang.*
 // this is a comment!
 define IntList as {int|[int] op}
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = {op:1}
     x.op = 1
     y = x // OK

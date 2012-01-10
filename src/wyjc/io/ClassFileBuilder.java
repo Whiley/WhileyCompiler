@@ -210,14 +210,10 @@ public class ClassFileBuilder {
 		ClassFile.Method cm = new ClassFile.Method("main",ft1,modifiers);
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
 		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
-		ft1 = new JvmType.Function(WHILEYRECORD);
-		codes.add(new Bytecode.Invoke(WHILEYUTIL,"systemConsole",ft1,Bytecode.STATIC));
+		ft1 = new JvmType.Function(WHILEYRECORD,new JvmType.Array(JAVA_LANG_STRING));		
 		codes.add(new Bytecode.Load(0,strArr));
-		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
-				new JvmType.Array(JAVA_LANG_STRING));
-		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
-		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T,
-						Type.List(Type.T_STRING, false));
+		codes.add(new Bytecode.Invoke(WHILEYUTIL,"systemConsole",ft1,Bytecode.STATIC));		
+		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);		
 		// The following is a little bit of hack. Basically we flush the stdout
 		// channel on exit
@@ -2747,6 +2743,7 @@ public class ClassFileBuilder {
 			new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
+					put("args", Type.List(Type.T_STRING,false));
 				}
 			});
 		

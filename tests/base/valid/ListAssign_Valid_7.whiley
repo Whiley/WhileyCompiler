@@ -5,7 +5,7 @@ define intlist as int|[int]
 string f([intlist] l):    
     return Any.toString(l)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     if |args| == 0:
         x = [1,2,3]
     else:

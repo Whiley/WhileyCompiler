@@ -6,7 +6,7 @@ int f(int x):
     else:
         return 2
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f(1)))
     sys.out.println(Any.toString(f(10)))
     sys.out.println(Any.toString(f(11)))

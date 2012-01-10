@@ -4,7 +4,7 @@ import * from whiley.lang.*
 void f({int} xs) requires |xs| > 4:
     debug Any.toString(xs)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     if |args| > 1:
         ys = {1,2,3}
     else:

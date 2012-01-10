@@ -7,7 +7,7 @@ DL2 update(DL1 ls):
     ls[0] = 1.234
     return ls
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = {0=>1, 1=>2}
     x = update(x)
     sys.out.println(Any.toString(x))

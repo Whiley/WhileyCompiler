@@ -9,7 +9,7 @@ int f(expr e):
     else:
         return e + 1 // type difference
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = f(1)
     sys.out.println(Any.toString(x))
     x = f({x:4,y:10})   

@@ -10,6 +10,6 @@ void pState::send(int x, System.Console sys):
     sys.out.println("sent")
     sys.out.println(Any.toString(x))
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     ps = spawn {x:1,y:2}
     ps.send(1,sys)

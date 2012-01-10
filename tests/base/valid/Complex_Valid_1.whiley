@@ -93,7 +93,7 @@ define A3 as { col: 1, row: 3 }
 define D3 as { col: 4, row: 3 }
 
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     r = clearRowExcept(A1,H1,startingChessBoard)
     sys.out.println("GOT: " + Any.toString(r))
     r = clearRowExcept(A3,D3,startingChessBoard)

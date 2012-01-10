@@ -10,6 +10,6 @@ string f(int i):
     assert arr2[2] == |arr1|
     return Any.toString(arr1) + Any.toString(arr2)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(2))
     sys.out.println(f(3))

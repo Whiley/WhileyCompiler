@@ -8,7 +8,7 @@ string f(Rtypes e):
     else:
         return "NOPE"
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f({x: 1.2, y: 1.2}))
     sys.out.println(f({x: 1, y: 1}))
     sys.out.println(f({x: 1, z: 1}))

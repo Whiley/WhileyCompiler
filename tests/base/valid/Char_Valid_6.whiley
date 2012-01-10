@@ -11,6 +11,6 @@ define alphabet as [
 string iof(int i):
     return "" + alphabet[i%6] + digits[i%10]
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     for i in 0..100:
         sys.out.println(Any.toString(iof(i)))

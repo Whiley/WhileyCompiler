@@ -8,7 +8,7 @@ define InterList as UnitList & LinkedList
 int f(InterList l):
     return l.data
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     list = { data: 1234, next: null}
     list = { data: 2234, next: list}
     d = f(list)

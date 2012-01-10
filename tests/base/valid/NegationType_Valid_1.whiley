@@ -6,6 +6,6 @@ import * from whiley.lang.*
     else:
         return x
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f(1)))
     sys.out.println(Any.toString(f([1,2,3])))

@@ -14,7 +14,7 @@ void Queue::put(int item):
 bool Queue::isEmpty():
     return |this->items| == 0
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     items = [1,2,3,4,5,6,7,8,9,10]
     q = spawn { items: [] }
     // first, push items into queue

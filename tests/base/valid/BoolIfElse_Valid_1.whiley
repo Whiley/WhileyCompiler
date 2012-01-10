@@ -6,6 +6,6 @@ string f(bool b):
     else:
         return "FALSE"
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(true))
     sys.out.println(f(false))

@@ -53,7 +53,7 @@ Value evaluate(Expr e):
         else:
             return 0 // dumb
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     e = { op: ADD, lhs: 123, rhs: 1}
     v = evaluate(e)
     sys.out.println("RESULT: " + v)

@@ -12,7 +12,7 @@ import * from whiley.lang.*
         i = i + 1
     return r
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     rs = extract([-1,2,3,-4,5,6,7,23987,-23897,0,-1,1,-2389])
     sys.out.println(Any.toString(rs))
     rs = extract([])

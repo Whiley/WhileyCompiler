@@ -8,7 +8,7 @@ public bool has(char c1, string str):
             return true
     return false
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     s = "Hello World"
     sys.out.println(Any.toString(has('l',s)))
     sys.out.println(Any.toString(has('e',s)))

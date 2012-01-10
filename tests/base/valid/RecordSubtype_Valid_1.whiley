@@ -10,7 +10,7 @@ define R4 as R2|R3
 R4 f(R1 x):
     return x
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     z1 = f({x: 1})
     z2 = f({x: null})
     sys.out.println(Any.toString(z1))

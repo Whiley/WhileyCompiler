@@ -12,7 +12,7 @@ state parseTerm(state st):
     st = parseWhiteSpace(st)
     return st
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     st = {input:"  Hello",pos:0}
     st = parseTerm(st)
     sys.out.println(Any.toString(st))

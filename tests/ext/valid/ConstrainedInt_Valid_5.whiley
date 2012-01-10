@@ -10,5 +10,5 @@ string f(num x):
 string g(int x, int z) requires (x == 1 || x == 2) && z in {1,2,3,x}:
     return f(z)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(g(1,2))

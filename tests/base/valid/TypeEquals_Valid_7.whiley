@@ -9,7 +9,7 @@ string f(tup t):
     else:
         return "NO MATCH"
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f({lhs:[0],p:0}))
     sys.out.println(f({lhs:[1],p:0}))
     sys.out.println(f({lhs:[],p:0}))

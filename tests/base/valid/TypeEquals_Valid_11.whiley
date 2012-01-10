@@ -8,6 +8,6 @@ string getMessage(imsg m):
     else:
         return Any.toString(m)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(getMessage({msg:"HELLO WORLD"}))
     sys.out.println(getMessage(1))

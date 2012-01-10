@@ -8,6 +8,6 @@ void f(scf2nat x):
     debug Any.toString(x)
     f(x) // recursive
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     f(1)
     

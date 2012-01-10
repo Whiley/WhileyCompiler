@@ -15,7 +15,7 @@ int id(int x):
 int test(Func f, int arg):
     return f.read(arg)
     
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     x = test({read: &id},123)
     sys.out.println("GOT: " + Any.toString(x))
     x = test({read: &id},12545)

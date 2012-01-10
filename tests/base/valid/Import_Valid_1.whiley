@@ -8,5 +8,5 @@ Type.nat f(int x):
     else:
         return x
 
-public void ::main(System.Console sys,[string] args):
+public void ::main(System.Console sys):
     sys.out.println(Any.toString(f(1)))

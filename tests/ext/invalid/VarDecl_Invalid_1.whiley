@@ -5,6 +5,6 @@ void f(int x) requires x >= 0:
     debug Any.toString(x)
     debug Any.toString(y)
 
-void ::main(System.Console sys,[string] args):
+void ::main(System.Console sys):
     f(10)
     f(0)

@@ -7,7 +7,7 @@ void ::f(System.Console sys, [int] args):
         sys.out.println(args[i])
     while (i+1) < |args|
 
-void ::main(System.Console sys, [string] args):
+void ::main(System.Console sys):
     f(sys,[1,2,3])
     f(sys,[1,2])
     f(sys,[1,2,3,4,5,6])
