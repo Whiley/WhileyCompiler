@@ -371,6 +371,10 @@ public final class CodeGeneration {
 		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return new Pair(v,0);			
+		} else if (e instanceof Expr.ProcessAccess) {
+			Expr.ProcessAccess pa = (Expr.ProcessAccess) e;
+			Pair<Expr.AssignedVariable,Integer> p = extractLVal(pa.src, fields, blk, environment);
+			return new Pair(p.first(),p.second() + 1);			
 		} else if (e instanceof Expr.AbstractIndexAccess) {
 			Expr.AbstractIndexAccess la = (Expr.AbstractIndexAccess) e;
 			Pair<Expr.AssignedVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
