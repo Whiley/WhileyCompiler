@@ -903,10 +903,10 @@ public final class Resolver {
 				candidates).second();		
 	}
 	
-	public Pair<NameID,Nominal<Type.Method>> resolveAsMessage(String name, Type.Process receiver,
+	public Pair<NameID,Nominal<Type.Message>> resolveAsMessage(String name, Type.Process receiver,
 			List<Nominal<Type>> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 
-		ArrayList<Pair<NameID,Nominal<Type.Method>>> candidates = new ArrayList<Pair<NameID,Nominal<Type.Method>>>(); 
+		ArrayList<Pair<NameID,Nominal<Type.Message>>> candidates = new ArrayList<Pair<NameID,Nominal<Type.Message>>>(); 
 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
@@ -921,10 +921,10 @@ public final class Resolver {
 		return selectCandidateMessage(name,receiver,parameters,candidates);
 	}
 	
-	public Nominal<Type.Method> resolveAsMessage(NameID nid,
+	public Nominal<Type.Message> resolveAsMessage(NameID nid,
 			Type.Process receiver, List<Nominal<Type>> parameters)
 			throws ResolveError {
-		ArrayList<Pair<NameID, Nominal<Type.Method>>> candidates = new ArrayList<Pair<NameID, Nominal<Type.Method>>>();
+		ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates = new ArrayList<Pair<NameID, Nominal<Type.Message>>>();
 		
 		addCandidateMessages(nid, parameters, candidates);
 		
@@ -996,8 +996,8 @@ public final class Resolver {
 		for (Pair<NameID,Nominal<Type.Function>> p : candidates) {
 			Nominal<Type.Function> nft = p.second();
 			Type.Function ft = nft.raw();
-			if (ft instanceof Type.Method) {
-				Type.Method mt = (Type.Method) ft;
+			if (ft instanceof Type.Message) {
+				Type.Message mt = (Type.Message) ft;
 				if (mt.receiver() != null) {
 					continue; // cannot resolve as function or method
 				}
@@ -1034,10 +1034,10 @@ public final class Resolver {
 		return new Pair(candidateID,candidateType);
 	}
 			
-	private Pair<NameID,Nominal<Type.Method>> selectCandidateMessage(String name,
+	private Pair<NameID,Nominal<Type.Message>> selectCandidateMessage(String name,
 			Type.Process receiver,
 			List<Nominal<Type>> parameters,
-			ArrayList<Pair<NameID, Nominal<Type.Method>>> candidates)
+			ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates)
 			throws ResolveError {
 		
 		List<Type> rawParameters; 
@@ -1053,11 +1053,11 @@ public final class Resolver {
 		}
 		
 		NameID candidateID = null;
-		Nominal<Type.Method> candidateType = null;			
+		Nominal<Type.Message> candidateType = null;			
 				
-		for (Pair<NameID,Nominal<Type.Method>> p : candidates) {
-			Nominal<Type.Method> nmt = p.second();
-			Type.Method mt = nmt.raw();
+		for (Pair<NameID,Nominal<Type.Message>> p : candidates) {
+			Nominal<Type.Message> nmt = p.second();
+			Type.Message mt = nmt.raw();
 			Type funrec = mt.receiver();
 			
 			if (receiver == funrec
@@ -1088,7 +1088,7 @@ public final class Resolver {
 			String msg = "no match for " + receiver + "::" + name
 					+ parameterString(parameters);
 
-			for (Pair<NameID, Nominal<Type.Method>> p : candidates) {
+			for (Pair<NameID, Nominal<Type.Message>> p : candidates) {
 				msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
 			}
 
@@ -1136,7 +1136,7 @@ public final class Resolver {
 	
 	private void addCandidateMessages(NameID nid,
 			List<?> parameters,
-			ArrayList<Pair<NameID, Nominal<Type.Method>>> candidates)
+			ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates)
 			throws ResolveError {
 		ModuleID mid = nid.module();
 		
@@ -1160,8 +1160,8 @@ public final class Resolver {
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {
 						// FIXME: loss of nominal information
-						Nominal<Type.Method> ft = new Nominal<Type.Method>(
-								mm.type(), (Type.Method) mm.type());
+						Nominal<Type.Message> ft = new Nominal<Type.Message>(
+								mm.type(), (Type.Message) mm.type());
 						candidates.add(new Pair(nid, ft));
 					}
 				}

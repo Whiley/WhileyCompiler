@@ -68,8 +68,8 @@ public class DefiniteAssignment extends
 		
 		int diff = 0;
 						
-		if(method.type() instanceof Type.Method) {
-			Type.Method mt = (Type.Method) method.type();
+		if(method.type() instanceof Type.Message) {
+			Type.Message mt = (Type.Message) method.type();
 			if(mt.receiver() != null) {
 				defined.add(diff);
 				diff++;

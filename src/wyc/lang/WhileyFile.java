@@ -381,7 +381,7 @@ public final class WhileyFile {
 	 * 
 	 */
 	public final static class Method extends FunctionOrMethod {
-		public Nominal<Type.Method> resolvedType;
+		public Nominal<Type.Message> resolvedType;
 		
 		public Method(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
@@ -400,7 +400,7 @@ public final class WhileyFile {
 			return new UnresolvedType.Method(ret, throwType, params, attributes());
 		}
 		
-		public Nominal<Type.Method> resolvedType() {
+		public Nominal<Type.Message> resolvedType() {
 			return resolvedType;
 		}
 	}
@@ -433,7 +433,7 @@ public final class WhileyFile {
 	 */
 	public final static class Message extends FunctionOrMethodOrMessage {
 		public final UnresolvedType receiver;
-		public Nominal<Type.Method> resolvedType;
+		public Nominal<Type.Message> resolvedType;
 		
 		public Message(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,
@@ -453,7 +453,7 @@ public final class WhileyFile {
 			return new UnresolvedType.Message(receiver, ret, throwType, params, attributes());
 		}
 		
-		public Nominal<Type.Method> resolvedType() {
+		public Nominal<Type.Message> resolvedType() {
 			return resolvedType;
 		}
 	}

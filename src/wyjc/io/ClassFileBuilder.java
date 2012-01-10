@@ -213,7 +213,7 @@ public class ClassFileBuilder {
 		ft1 = new JvmType.Function(WHILEYRECORD,new JvmType.Array(JAVA_LANG_STRING));		
 		codes.add(new Bytecode.Load(0,strArr));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"systemConsole",ft1,Bytecode.STATIC));		
-		Type.Function wyft = (Type.Function) Type.Method(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
+		Type.Function wyft = (Type.Function) Type.Message(null,Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);		
 		// The following is a little bit of hack. Basically we flush the stdout
 		// channel on exit
@@ -325,8 +325,8 @@ public class ClassFileBuilder {
 		Type.Function ft = method.type();
 		int slot = 0;
 		// first, check to see if need to load receiver
-		if (ft instanceof Type.Method) {
-			Type.Method mt = (Type.Method) ft;
+		if (ft instanceof Type.Message) {
+			Type.Message mt = (Type.Message) ft;
 			if (mt.receiver() != null) {
 				bytecodes.add(new Bytecode.Load(slot++, convertType(mt
 						.receiver())));
@@ -2773,8 +2773,8 @@ public class ClassFileBuilder {
 	public JvmType.Function convertFunType(Type.Function t) {		
 		Type.Function ft = (Type.Function) t; 
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		if(ft instanceof Type.Method) {
-			Type.Method mt = (Type.Method)ft; 
+		if(ft instanceof Type.Message) {
+			Type.Message mt = (Type.Message)ft; 
 			if(mt.receiver() != null) {
 				paramTypes.add(convertType(mt.receiver()));
 			}

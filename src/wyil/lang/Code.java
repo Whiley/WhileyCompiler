@@ -344,7 +344,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Method meth, boolean synchronous, boolean retval) {
+	public static IndirectSend IndirectSend(Type.Message meth, boolean synchronous, boolean retval) {
 		return get(new IndirectSend(meth,synchronous,retval));
 	}
 	
@@ -410,7 +410,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Method meth, NameID name, boolean synchronous, boolean retval) {
+	public static Send Send(Type.Message meth, NameID name, boolean synchronous, boolean retval) {
 		return get(new Send(meth,name,synchronous,retval));
 	}	
 	
@@ -1333,9 +1333,9 @@ public abstract class Code {
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
-		 public final Type.Method type;
+		 public final Type.Message type;
 			
-		 private IndirectSend(Type.Method type, boolean synchronous, boolean retval) {
+		 private IndirectSend(Type.Message type, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.synchronous = synchronous;
 			 this.retval = retval;
@@ -2714,9 +2714,9 @@ public abstract class Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
 		 public final NameID name;
-		 public final Type.Method type;
+		 public final Type.Message type;
 			
-		 private Send(Type.Method type, NameID name, boolean synchronous, boolean retval) {
+		 private Send(Type.Message type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;

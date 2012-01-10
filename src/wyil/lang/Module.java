@@ -256,20 +256,20 @@ public final class Module {
 		}
 
 		public boolean isFunction() {
-			return !(type instanceof Type.Method);
+			return !(type instanceof Type.Message);
 		}
 		
 		public boolean isMethod() {
-			if(type instanceof Type.Method) {
-				Type.Method m = (Type.Method) type;
+			if(type instanceof Type.Message) {
+				Type.Message m = (Type.Message) type;
 				return m.receiver() == null;
 			}
 			return false;
 		}
 		
 		public boolean isMessage() {
-			if(type instanceof Type.Method) {
-				Type.Method m = (Type.Method) type;
+			if(type instanceof Type.Message) {
+				Type.Message m = (Type.Message) type;
 				return m.receiver() != null;
 			}
 			return false;

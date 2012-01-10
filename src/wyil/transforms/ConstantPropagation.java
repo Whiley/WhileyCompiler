@@ -435,8 +435,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			environment.pop();
 		}
 		
-		if(code.type instanceof Type.Method) {
-			Type.Method mt = (Type.Method) code.type;
+		if(code.type instanceof Type.Message) {
+			Type.Message mt = (Type.Message) code.type;
 			if(mt.receiver() != null) {
 				environment.pop();
 			}

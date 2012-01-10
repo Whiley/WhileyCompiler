@@ -252,8 +252,8 @@ public class ConstraintInline implements Transform {
 				binding.put(0,freeSlot);
 				Type.Function mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Type.Method
-						&& ((Type.Method) mtype).receiver() != null) {
+				if (mtype instanceof Type.Message
+						&& ((Type.Message) mtype).receiver() != null) {
 					binding.put(pIndex++, Code.THIS_SLOT);
 				}
 				int shadowIndex = methodCase.body().numSlots();

@@ -697,7 +697,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class MessageSend extends AbstractInvoke<Expr> {		
 		public final NameID nid;
-		public Nominal<Type.Method> messageType;
+		public Nominal<Type.Message> messageType;
 		
 		public MessageSend(NameID nid, Expr receiver,
 				Collection<Expr> arguments, boolean synchronous,
@@ -720,7 +720,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class MethodCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
-		public Nominal<Type.Method> methodType;
+		public Nominal<Type.Message> methodType;
 		
 		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -791,7 +791,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class IndirectMethodCall extends AbstractIndirectInvoke {				
-		public Nominal<Type.Method> methodType;
+		public Nominal<Type.Message> methodType;
 		
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {

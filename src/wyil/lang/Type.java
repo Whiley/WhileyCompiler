@@ -58,8 +58,13 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Tuple(Type... elements) {		
-		return construct(K_TUPLE, null, elements);			
+	public static final Type.Tuple Tuple(Type... elements) {		
+		Type r = construct(K_TUPLE, null, elements);
+		if(r instanceof Type.Tuple) {
+			return (Type.Tuple) r;
+		} else {
+			throw new IllegalArgumentException("invalid arguments for Type.Tuple()");
+		}
 	}
 	
 	/**
@@ -67,8 +72,13 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Tuple(java.util.List<Type> elements) {
-		return construct(K_TUPLE, null, elements);		
+	public static final Type.Tuple Tuple(java.util.List<Type> elements) {
+		Type r = construct(K_TUPLE, null, elements);	
+		if(r instanceof Type.Tuple) {
+			return (Type.Tuple) r;
+		} else {
+			throw new IllegalArgumentException("invalid arguments for Type.Tuple()");
+		}
 	}
 	
 	/**
@@ -76,8 +86,14 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Process(Type element) {
-		return construct(K_PROCESS, null, element);				
+	public static final Type.Process Process(Type element) {
+		Type r = construct(K_PROCESS, null, element);		
+		if (r instanceof Type.Process) {
+			return (Type.Process) r;
+		} else {
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Process()");
+		}
 	}
 	
 	public static final Nominal Nominal(NameID name) {
@@ -93,8 +109,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Set(Type element, boolean nonEmpty) {
-		return construct(K_SET, nonEmpty, element);
+	public static final Type.Set Set(Type element, boolean nonEmpty) {
+		return (Type.Set) construct(K_SET, nonEmpty, element);
 	}
 	
 	/**
@@ -102,8 +118,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type List(Type element, boolean nonEmpty) {
-		return construct(K_LIST, nonEmpty, element);
+	public static final Type.List List(Type element, boolean nonEmpty) {
+		return (Type.List) construct(K_LIST, nonEmpty, element);
 	}
 
 	/**
@@ -111,8 +127,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Dictionary(Type key, Type value) {
-		return construct(K_DICTIONARY, null, key, value);		
+	public static final Type.Dictionary Dictionary(Type key, Type value) {
+		return (Type.Dictionary) construct(K_DICTIONARY, null, key, value);		
 	}
 	
 	/**
@@ -147,14 +163,20 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Function(Type ret, Type throwsClause,
+	public static final Type.Function Function(Type ret, Type throwsClause,
 			Collection<Type> params) {
 		Type[] rparams = new Type[params.size()+2];		
 		int i = 2;
 		for (Type t : params) { rparams[i++] = t; }		
 		rparams[0] = ret;
 		rparams[1] = throwsClause;
-		return construct(K_FUNCTION, null, rparams); 			
+		Type r = construct(K_FUNCTION, null, rparams); 	
+		if (r instanceof Type.Function) {
+			return (Type.Function) r;
+		} else {
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Function()");
+		}
 	}
 	
 	/**
@@ -162,13 +184,19 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Function(Type ret, Type throwsClause,
+	public static final Type.Function Function(Type ret, Type throwsClause,
 			Type... params) {
 		Type[] rparams = new Type[params.length+2];		
 		System.arraycopy(params, 0, rparams, 2, params.length);
 		rparams[0] = ret;
 		rparams[1] = throwsClause;
-		return construct(K_FUNCTION, null, rparams);								
+		Type r = construct(K_FUNCTION, null, rparams);	
+		if (r instanceof Type.Function) {
+			return (Type.Function) r;
+		} else {
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Function()");
+		}
 	}
 	
 	/**
@@ -176,25 +204,20 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Method(Type receiver, Type ret,
-			Type throwsClause, Collection<Type> params) {
-		if(receiver == null) {
-			// this is a headless method
-			Type[] rparams = new Type[params.size()+2];		
-			int i = 2;
-			for (Type t : params) { rparams[i++] = t; }					
-			rparams[0] = ret;
-			rparams[1] = throwsClause;
-			return construct(K_METHOD, null, rparams);					
+	public static final Type.Method Method(Type ret, Type throwsClause,
+			Collection<Type> params) {
+		Type[] rparams = new Type[params.size()+2];		
+		int i = 2;
+		for (Type t : params) { rparams[i++] = t; }					
+		rparams[0] = ret;
+		rparams[1] = throwsClause;
+		Type r = construct(K_METHOD, null, rparams);		
+		if (r instanceof Type.Method) {
+			return (Type.Method) r;
 		} else {
-			Type[] rparams = new Type[params.size()+3];		
-			int i = 3;
-			for (Type t : params) { rparams[i++] = t; }		
-			rparams[0] = receiver;
-			rparams[1] = ret;
-			rparams[2] = throwsClause;
-			return construct(K_MESSAGE, null, rparams);						
-		}		
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Method()");
+		}
 	}
 	
 	/**
@@ -202,22 +225,61 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Method(Process receiver, Type ret,
+	public static final Type.Method Method(Type ret,
 			Type throwsClause, Type... params) {
-		if(receiver == null) {
-			// this is a headless method
-			Type[] rparams = new Type[params.length+2];		
-			System.arraycopy(params, 0, rparams, 2, params.length);			
-			rparams[0] = ret;
-			rparams[1] = throwsClause;
-			return construct(K_METHOD, null, rparams);						
+		Type[] rparams = new Type[params.length+2];		
+		System.arraycopy(params, 0, rparams, 2, params.length);			
+		rparams[0] = ret;
+		rparams[1] = throwsClause;
+		Type r = construct(K_METHOD, null, rparams);	
+		if (r instanceof Type.Method) {
+			return (Type.Method) r;
 		} else {
-			Type[] rparams = new Type[params.length+3];		
-			System.arraycopy(params, 0, rparams, 3, params.length);
-			rparams[0] = receiver;
-			rparams[1] = ret;
-			rparams[2] = throwsClause;
-			return construct(K_MESSAGE, null, rparams);
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Method()");
+		}
+	}
+	
+	/**
+	 * Construct a method type using the given receiver, return and parameter types.
+	 * 
+	 * @param element
+	 */
+	public static final Type.Message Message(Type receiver, Type ret,
+			Type throwsClause, Collection<Type> params) {		
+		Type[] rparams = new Type[params.size()+3];		
+		int i = 3;
+		for (Type t : params) { rparams[i++] = t; }		
+		rparams[0] = receiver;
+		rparams[1] = ret;
+		rparams[2] = throwsClause;
+		Type r = construct(K_MESSAGE, null, rparams);
+		if (r instanceof Type.Message) {
+			return (Type.Message) r;
+		} else {
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Message()");
+		}
+	}
+	
+	/**
+	 * Construct a function type using the given return and parameter types.
+	 * 
+	 * @param element
+	 */
+	public static final Type.Message Message(Process receiver, Type ret,
+			Type throwsClause, Type... params) {		
+		Type[] rparams = new Type[params.length+3];		
+		System.arraycopy(params, 0, rparams, 3, params.length);
+		rparams[0] = receiver;
+		rparams[1] = ret;
+		rparams[2] = throwsClause;
+		Type r = construct(K_MESSAGE, null, rparams);	
+		if (r instanceof Type.Message) {
+			return (Type.Message) r;
+		} else {
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Message()");
 		}
 	}
 	
@@ -230,7 +292,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Record(boolean isOpen, Map<String,Type> fields) {				
+	public static final Type.Record Record(boolean isOpen, Map<String,Type> fields) {				
 		java.util.Set<String> keySet = fields.keySet();
 		Record.State keys = new Record.State(isOpen,keySet);
 		Collections.sort(keys);
@@ -238,7 +300,13 @@ public abstract class Type {
 		for(int i=0;i!=types.length;++i) {
 			types[i] = fields.get(keys.get(i));
 		}
-		return construct(K_RECORD,keys,types);			
+		Type r = construct(K_RECORD,keys,types);
+		if (r instanceof Type.Record) {
+			return (Type.Record) r;
+		} else {
+			throw new IllegalArgumentException(
+					"invalid arguments for Type.Record()");
+		}
 	}
 
 	/**
@@ -1198,20 +1266,19 @@ public abstract class Type {
 		}		
 	}
 	
-	/**
-	 * A function type, consisting of a list of zero or more parameters and a
-	 * return type.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Function extends Compound  {
-		Function(Automaton automaton) {
+	public abstract static class FunctionOrMethodOrMessage extends Compound {
+		FunctionOrMethodOrMessage(Automaton automaton) {
 			super(automaton);
 		}
-
+	}
+	
+	public abstract static class FunctionOrMethod extends FunctionOrMethodOrMessage {
+		FunctionOrMethod(Automaton automaton) {
+			super(automaton);
+		}
+		
 		/**
-		 * Get the return type of this function type.
+		 * Get the return type of this function or method type.
 		 * 
 		 * @return
 		 */
@@ -1221,7 +1288,7 @@ public abstract class Type {
 		}	
 
 		/**
-		 * Get the throws clause of this function type.
+		 * Get the throws clause of this function or method type.
 		 * 
 		 * @return
 		 */
@@ -1231,7 +1298,7 @@ public abstract class Type {
 		}
 		
 		/**
-		 * Get the parameter types of this function type.
+		 * Get the parameter types of this function or method type.
 		 * 
 		 * @return
 		 */
@@ -1245,8 +1312,27 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class Method extends Function {
+	/**
+	 * A function type, consisting of a list of zero or more parameters and a
+	 * return type.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Function extends FunctionOrMethod  {
+		Function(Automaton automaton) {
+			super(automaton);
+		}
+	}
+	
+	public static final class Method extends FunctionOrMethod {
 		Method(Automaton automaton) {
+			super(automaton);
+		}		
+	}
+	
+	public static final class Message extends FunctionOrMethodOrMessage {
+		Message(Automaton automaton) {
 			super(automaton);
 		}
 
@@ -1256,14 +1342,10 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type receiver() {
-			Automaton.State root = automaton.states[0];
-			if(root.kind == K_METHOD) {
-				return null;
-			} else {
-				int[] fields = root.children;
-				return construct(Automata.extract(automaton,
+			Automaton.State root = automaton.states[0];			
+			int[] fields = root.children;
+			return construct(Automata.extract(automaton,
 					fields[0]));
-			}
 		}
 		
 		/**
@@ -1274,8 +1356,7 @@ public abstract class Type {
 		public Type ret() {
 			Automaton.State root = automaton.states[0];
 			int[] fields = root.children;
-			int start = root.kind == K_METHOD ? 0 : 1;
-			return construct(Automata.extract(automaton, fields[start]));
+			return construct(Automata.extract(automaton, fields[1]));
 		}	
 		
 		/**
@@ -1286,8 +1367,7 @@ public abstract class Type {
 		public Type throwsClause() {
 			Automaton.State root = automaton.states[0];
 			int[] fields = root.children;
-			int start = root.kind == K_METHOD ? 1 : 2;
-			return construct(Automata.extract(automaton, fields[start]));
+			return construct(Automata.extract(automaton, fields[2]));
 		}	
 		
 		/**
@@ -1298,9 +1378,8 @@ public abstract class Type {
 		public ArrayList<Type> params() {
 			Automaton.State root = automaton.states[0];
 			int[] fields = root.children;
-			int start = root.kind == K_METHOD ? 2 : 3;
 			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=start;i<fields.length;++i) {
+			for(int i=3;i<fields.length;++i) {
 				r.add(construct(Automata.extract(automaton, fields[i])));
 			}
 			return r;
@@ -1490,7 +1569,7 @@ public abstract class Type {
 			}
 			if(state.kind == K_FUNCTION) {
 				middle = ret + "(" + middle + ")";
-			} else if(rec != null) {
+			} else if(state.kind == K_METHOD) {
 				middle = rec + "::" + ret + "(" + middle + ")";
 			} else {
 				middle = "::" + ret + "(" + middle + ")";
@@ -1703,7 +1782,7 @@ public abstract class Type {
 			type = new Negation(automaton);
 			break;
 		case K_MESSAGE:
-			type = new Method(automaton);
+			type = new Message(automaton);
 			break;
 		case K_METHOD:
 			type = new Method(automaton);

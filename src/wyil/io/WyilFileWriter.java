@@ -123,8 +123,8 @@ public final class WyilFileWriter implements Transform {
 		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
 		
 		int li = 0;
-		if(ft instanceof Type.Method) {			
-			Type.Method mt = (Type.Method) ft;
+		if(ft instanceof Type.Message) {			
+			Type.Message mt = (Type.Message) ft;
 			if(mt.receiver() != null) {
 				out.print(mt.receiver());
 				li++;

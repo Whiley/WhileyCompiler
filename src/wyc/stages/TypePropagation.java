@@ -1390,7 +1390,7 @@ public final class TypePropagation {
 				ra.fieldType = (Nominal) new Nominal(funType,funType);
 				ra.srcType = (Nominal) expr.qualification.type(); 
 						
-				if(funType instanceof Type.Method) { 
+				if(funType instanceof Type.Message) { 
 					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(ra,expr.arguments,expr.attributes());
 					// FIXME: loss of nominal information
 					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
@@ -1410,7 +1410,7 @@ public final class TypePropagation {
 				Type.Process procType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
 
 				// ok, it's a message send
-				Pair<NameID, Nominal<Type.Method>> p = resolver
+				Pair<NameID, Nominal<Type.Message>> p = resolver
 						.resolveAsMessage(expr.name, procType, paramTypes,
 								imports);				
 				Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
@@ -1446,7 +1446,7 @@ public final class TypePropagation {
 				Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
 				lv.type = type;
 							
-				if(funType instanceof Type.Method) { 
+				if(funType instanceof Type.Message) { 
 					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(lv,expr.arguments,expr.attributes());
 					// FIXME: loss of nominal information
 					nexpr.returnType = new Nominal(funType.ret(),funType.ret());
@@ -1465,7 +1465,7 @@ public final class TypePropagation {
 				// call.
 				Pair<NameID, Nominal<Type.Function>> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
 				Type.Function funType = p.second().raw();							
-				if(funType instanceof Type.Method) {					
+				if(funType instanceof Type.Message) {					
 					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
 					mc.methodType = (Nominal) p.second();					
 					// FIXME: loss of nominal information

@@ -333,8 +333,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		environment.push(code.type);
 		
-		if(code.type instanceof Type.Method) {
-			Type.Method mt = (Type.Method) code.type;
+		if(code.type instanceof Type.Message) {
+			Type.Message mt = (Type.Message) code.type;
 			if(mt.receiver() != null) {
 				environment.push(mt.receiver());
 			}
@@ -370,8 +370,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 		
 
-		if(code.type instanceof Type.Method) {
-			Type.Method mt = (Type.Method) code.type;
+		if(code.type instanceof Type.Message) {
+			Type.Message mt = (Type.Message) code.type;
 			if(mt.receiver() != null) {
 				environment.push(mt.receiver());
 			}						
