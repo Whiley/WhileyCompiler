@@ -4,7 +4,7 @@ define state as {int x, int y}
 define pState as process state
 
 void pState::send(int x, System sys):
-    this.x = x
+    this->x = x
     assert *this.x == x
     sys.out.println(Any.toString(*this))
     sys.out.println("sent")

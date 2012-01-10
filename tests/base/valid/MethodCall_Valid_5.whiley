@@ -3,7 +3,7 @@ import * from whiley.lang.*
 define Proc as process { int state }
 
 int Proc::get():
-    return this.state
+    return this->state
 
 [int] System::f(Proc x):
     return [1,2,3,x.get()]

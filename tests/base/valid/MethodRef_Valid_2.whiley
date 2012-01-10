@@ -12,7 +12,7 @@ define Reader as {
 }
 
 int FileReader::read(int amount):
-    r = amount + this.position
+    r = amount + this->position
     return r
     
 Reader ::openReader():

@@ -4,15 +4,15 @@ import * from whiley.lang.*
 define Queue as process { [int] items }
 	 
 int Queue::get():
-    item = this.items[0]
-    this.items = this.items[1..]
+    item = this->items[0]
+    this->items = this->items[1..]
     return item
 	 
 void Queue::put(int item):
-    this.items = this.items + [item]
+    this->items = this->items + [item]
 
 bool Queue::isEmpty():
-    return |this.items| == 0
+    return |this->items| == 0
 
 Queue ::Queue():
     return spawn { items: [] }

@@ -3,7 +3,7 @@ import * from whiley.lang.*
 define MyProc as process { int x }
 
 void MyProc::inc(int i):
-    this.x = this.x + i
+    this->x = this->x + i
 
 void ::main(System sys,[string] args):
     mproc = spawn { x:1 }

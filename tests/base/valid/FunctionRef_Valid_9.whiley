@@ -6,7 +6,7 @@ int Proc::func(int x):
     return x + 1
 
 int Proc::test(int arg):
-    return this.func(arg)
+    return this->func(arg)
 
 int id(int x):
     return x

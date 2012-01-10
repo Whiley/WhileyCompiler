@@ -11,8 +11,8 @@ define FileReader as process {
 
 [byte] FileReader::read(int amount):
     end = position + amount
-    r = this.data[position..end]
-    this.position = this.position + amount
+    r = this->data[position..end]
+    this->position = this->position + amount
     return r
     
 Reader openReader(FileReader fr):

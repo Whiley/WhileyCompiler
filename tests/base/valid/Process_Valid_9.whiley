@@ -3,7 +3,7 @@ import * from whiley.lang.*
 define Actor as process { int data }
 
 int Actor::get():
-    return this.data
+    return this->data
 
 Actor ::createActor(int n):
     return spawn { data: n }

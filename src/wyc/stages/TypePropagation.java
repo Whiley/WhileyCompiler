@@ -699,7 +699,7 @@ public final class TypePropagation {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
 				Nominal<Type> p = environment.get(av.var);
 				if(p == null) {
-					syntaxError(errorMessage(UNKNOWN_VARIABLE),filename,av);
+					syntaxError(errorMessage(UNKNOWN_VARIABLE),filename,lval);
 				}				
 				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
 				lv.type = p;				
@@ -736,7 +736,7 @@ public final class TypePropagation {
 					da.elementType = new Nominal<Type>(lt.value(),lt.value());
 					return da;
 				} else {				
-					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,src);
+					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
 				}
 			} else if(lval instanceof Expr.AbstractDotAccess) {
 				// this indicates a record update
@@ -745,7 +745,7 @@ public final class TypePropagation {
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
 				Type.Record rawSrcType = Type.effectiveRecordType(src.type().raw());
 				if(rawSrcType == null) {								
-					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,src);					
+					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
 				}
 				ra.srcType = new Nominal<Type.Record>(src.type().nominal(),rawSrcType);
 				// FIXME: loss of nominal information

@@ -3,7 +3,7 @@ import * from whiley.lang.*
 define MyProc as process { bool flag }
 
 void MyProc::run(System sys):
-    if this.flag:
+    if this->flag:
         sys.out.println("TRUE")
     else:
         sys.out.println("FALSE")

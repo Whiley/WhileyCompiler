@@ -4,9 +4,9 @@ define etype as {int mode, int rest}
 define Ptype as process etype
 
 (int,string) Ptype::get():
-    this.mode = 1
-    this.rest = 123
-    return this.mode,Any.toString(*this)
+    this->mode = 1
+    this->rest = 123
+    return this->mode,Any.toString(*this)
 
 void ::main(System sys,[string] args):
     p = spawn {mode:1,rest:2}
