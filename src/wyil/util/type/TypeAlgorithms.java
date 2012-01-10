@@ -263,8 +263,8 @@ public final class TypeAlgorithms {
 		case Type.K_RECORD:
 		case Type.K_TUPLE:
 		case Type.K_FUNCTION:
-		case Type.K_METHOD:
-		case Type.K_HEADLESS:			
+		case Type.K_MESSAGE:
+		case Type.K_METHOD:			
 			changed = simplifyCompound(index, state, automaton);			
 			break;
 		}				
@@ -292,10 +292,10 @@ public final class TypeAlgorithms {
 		}
 		
 		for(int i=0;i<children.length;++i) {
-			if ((i == 0 || i == 1) && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
+			if ((i == 0 || i == 1) && (kind == Type.K_METHOD || kind == Type.K_FUNCTION)) {
 				// headless method and function return or throws type allowed to be void
 				continue;
-			} else if((i == 1 || i == 2) && kind == Type.K_METHOD) {
+			} else if((i == 1 || i == 2) && kind == Type.K_MESSAGE) {
 				// method return or throws type allowed to be void
 				continue;
 			} 
@@ -728,8 +728,8 @@ public final class TypeAlgorithms {
 			case Type.K_UNION: 
 				return intersectUnions(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_FUNCTION:
-			case Type.K_HEADLESS:
-			case Type.K_METHOD: 
+			case Type.K_METHOD:
+			case Type.K_MESSAGE: 
 				return intersectFunctionsOrMethods(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
 			default: {
 				return intersectPrimitives(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
@@ -1113,7 +1113,7 @@ public final class TypeAlgorithms {
 		int[] myChildren = new int[fromChildren.length];
 		int returnIndex = 0; // index of return value in children
 		
-		if(fromState.kind == Type.K_METHOD) {
+		if(fromState.kind == Type.K_MESSAGE) {
 			// receiver is invariant
 			myChildren[0] = intersect(fromChildren[0],
 					true, from, toChildren[0], true, to,

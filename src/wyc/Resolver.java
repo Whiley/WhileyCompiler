@@ -455,10 +455,10 @@ public final class Resolver {
 			if(ut instanceof UnresolvedType.Message) {
 				UnresolvedType.Message mt = (UnresolvedType.Message) ut;
 				receiver = mt.receiver;				
-				myKind = Type.K_METHOD;
+				myKind = Type.K_MESSAGE;
 				start++;				
 			} else if(ut instanceof UnresolvedType.Method) {
-				myKind = Type.K_HEADLESS;
+				myKind = Type.K_METHOD;
 			} else {
 				myKind = Type.K_FUNCTION;
 			}

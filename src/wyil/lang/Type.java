@@ -185,7 +185,7 @@ public abstract class Type {
 			for (Type t : params) { rparams[i++] = t; }					
 			rparams[0] = ret;
 			rparams[1] = throwsClause;
-			return construct(K_HEADLESS, null, rparams);					
+			return construct(K_METHOD, null, rparams);					
 		} else {
 			Type[] rparams = new Type[params.size()+3];		
 			int i = 3;
@@ -193,7 +193,7 @@ public abstract class Type {
 			rparams[0] = receiver;
 			rparams[1] = ret;
 			rparams[2] = throwsClause;
-			return construct(K_METHOD, null, rparams);						
+			return construct(K_MESSAGE, null, rparams);						
 		}		
 	}
 	
@@ -210,14 +210,14 @@ public abstract class Type {
 			System.arraycopy(params, 0, rparams, 2, params.length);			
 			rparams[0] = ret;
 			rparams[1] = throwsClause;
-			return construct(K_HEADLESS, null, rparams);						
+			return construct(K_METHOD, null, rparams);						
 		} else {
 			Type[] rparams = new Type[params.length+3];		
 			System.arraycopy(params, 0, rparams, 3, params.length);
 			rparams[0] = receiver;
 			rparams[1] = ret;
 			rparams[2] = throwsClause;
-			return construct(K_METHOD, null, rparams);
+			return construct(K_MESSAGE, null, rparams);
 		}
 	}
 	
@@ -1257,7 +1257,7 @@ public abstract class Type {
 		 */
 		public Type receiver() {
 			Automaton.State root = automaton.states[0];
-			if(root.kind == K_HEADLESS) {
+			if(root.kind == K_METHOD) {
 				return null;
 			} else {
 				int[] fields = root.children;
@@ -1274,7 +1274,7 @@ public abstract class Type {
 		public Type ret() {
 			Automaton.State root = automaton.states[0];
 			int[] fields = root.children;
-			int start = root.kind == K_HEADLESS ? 0 : 1;
+			int start = root.kind == K_METHOD ? 0 : 1;
 			return construct(Automata.extract(automaton, fields[start]));
 		}	
 		
@@ -1286,7 +1286,7 @@ public abstract class Type {
 		public Type throwsClause() {
 			Automaton.State root = automaton.states[0];
 			int[] fields = root.children;
-			int start = root.kind == K_HEADLESS ? 1 : 2;
+			int start = root.kind == K_METHOD ? 1 : 2;
 			return construct(Automata.extract(automaton, fields[start]));
 		}	
 		
@@ -1298,7 +1298,7 @@ public abstract class Type {
 		public ArrayList<Type> params() {
 			Automaton.State root = automaton.states[0];
 			int[] fields = root.children;
-			int start = root.kind == K_HEADLESS ? 2 : 3;
+			int start = root.kind == K_METHOD ? 2 : 3;
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=start;i<fields.length;++i) {
 				r.add(construct(Automata.extract(automaton, fields[i])));
@@ -1467,14 +1467,14 @@ public abstract class Type {
 			}			
 			break;
 		}
+		case K_MESSAGE:
 		case K_METHOD:
-		case K_HEADLESS:
 		case K_FUNCTION: {
 			middle = "";
 			int[] children = state.children;
 			int start = 0;
 			String rec = null;
-			if(state.kind == K_METHOD) {
+			if(state.kind == K_MESSAGE) {
 				rec = toString(children[0],visited,headers,automaton);
 				start++;
 			}
@@ -1531,8 +1531,8 @@ public abstract class Type {
 		switch(state.kind) {		
 			case K_UNION:
 			case K_FUNCTION:
+			case K_MESSAGE:
 			case K_METHOD:
-			case K_HEADLESS:
 				return "(" + middle + ")";
 			default:
 				return middle;
@@ -1702,10 +1702,10 @@ public abstract class Type {
 		case K_NEGATION:
 			type = new Negation(automaton);
 			break;
-		case K_METHOD:
+		case K_MESSAGE:
 			type = new Method(automaton);
 			break;
-		case K_HEADLESS:
+		case K_METHOD:
 			type = new Method(automaton);
 			break;
 		case K_FUNCTION:
@@ -1871,8 +1871,8 @@ public abstract class Type {
 	public static final byte K_UNION = 16;
 	public static final byte K_NEGATION = 17;
 	public static final byte K_FUNCTION = 18;
-	public static final byte K_METHOD = 19;
-	public static final byte K_HEADLESS = 20; // headless method
+	public static final byte K_MESSAGE = 19;
+	public static final byte K_METHOD = 20; 
 	public static final byte K_NOMINAL = 21;
 	
 	private static final ArrayList<Automaton> values = new ArrayList<Automaton>();

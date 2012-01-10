@@ -227,8 +227,8 @@ public class SubtypeOperator {
 				break;
 			// === Heterogenous Compound States ===
 			case K_FUNCTION:
-			case K_HEADLESS:
 			case K_METHOD:
+			case K_MESSAGE:
 				if(fromSign || toSign) {
 					// nary nodes
 					int[] fromChildren = fromState.children;
@@ -237,8 +237,8 @@ public class SubtypeOperator {
 						return false;
 					}
 					
-					int recIndex = fromKind == Type.K_METHOD ? 0 : -1;					
-					int retIndex = fromKind == Type.K_METHOD ? 1 : 0;
+					int recIndex = fromKind == Type.K_MESSAGE ? 0 : -1;					
+					int retIndex = fromKind == Type.K_MESSAGE ? 1 : 0;
 					int throwsIndex = retIndex+1;
 					boolean andChildren = true;
 					boolean orChildren = false;					
