@@ -1016,6 +1016,8 @@ public final class TypePropagation {
 				return propagate((Expr.SubList) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractDotAccess) {
 				return propagate((Expr.AbstractDotAccess) expr,environment,imports); 
+			} else if(expr instanceof Expr.ProcessAccess) {
+				return propagate((Expr.ProcessAccess) expr,environment,imports); 
 			} else if(expr instanceof Expr.Record) {
 				return propagate((Expr.Record) expr,environment,imports); 
 			} else if(expr instanceof Expr.Spawn) {
@@ -1783,7 +1785,7 @@ public final class TypePropagation {
 			return propagate(ra,environment,imports);
 		}
 	}
-	
+		
 	private Expr propagate(Expr.RecordAccess ra,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
@@ -1810,6 +1812,19 @@ public final class TypePropagation {
 		return expr;
 	}			
 
+	private Expr propagate(Expr.ProcessAccess expr,
+			RefCountedHashMap<String,Nominal<Type>> environment,
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		Expr src = propagate(expr.src,environment,imports);
+		expr.src = src;
+		
+		Type.Process tp = checkType(src.type().raw(),Type.Process.class,src);
+		// FIXME: loss of nominal information here
+		expr.srcType = (Nominal) src.type();
+		expr.elementType = new Nominal<Type>(tp.element(),tp.element());
+		return expr;
+	}
+	
 	private Expr propagate(Expr.Spawn expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {

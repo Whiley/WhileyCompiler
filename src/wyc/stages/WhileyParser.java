@@ -1082,7 +1082,8 @@ public final class WhileyParser {
 			while (lookahead instanceof LeftSquare 
 					|| lookahead instanceof Dot
 					|| lookahead instanceof Question		
-					|| lookahead instanceof Shreak	
+					|| lookahead instanceof Shreak
+					|| lookahead instanceof RightArrow
 					|| lookahead instanceof LeftBrace) {
 				ostart = start;
 				start = index;
@@ -1130,8 +1131,13 @@ public final class WhileyParser {
 						lhs = new Expr.AbstractIndexAccess(lhs, rhs, sourceAttr(start,
 								index - 1));
 					}
-				} else if(lookahead instanceof Dot) {				
-					match(Dot.class);
+				} else if(lookahead instanceof Dot || lookahead instanceof RightArrow) {				
+					if(lookahead instanceof Dot) {
+						match(Dot.class);
+					} else {
+						match(RightArrow.class);
+						lhs = new Expr.ProcessAccess(lhs,sourceAttr(start,index - 1));	
+					}
 					int tmp = index;
 					String name = matchIdentifier().text; 	
 					if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
