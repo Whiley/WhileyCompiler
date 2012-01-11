@@ -598,12 +598,12 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class ProcessAccess extends SyntacticElement.Impl implements LVal {
+	public static class Dereference extends SyntacticElement.Impl implements LVal {
 		public Expr src;	
 		public Nominal<Type> elementType;
 		public Nominal<Type.Process> srcType;
 		
-		public ProcessAccess(Expr src, Attribute... attributes) {
+		public Dereference(Expr src, Attribute... attributes) {
 			super(attributes);
 			this.src = src;			
 		}
@@ -886,11 +886,11 @@ public interface Expr extends SyntacticElement {
 		}		
 	}	
 	
-	public static class Spawn  extends SyntacticElement.Impl implements Expr,Stmt {
+	public static class New extends SyntacticElement.Impl implements Expr,Stmt {
 		public Expr expr;
 		public Nominal<Type.Process> type;
 
-		public Spawn(Expr expr, Attribute... attributes) {
+		public New(Expr expr, Attribute... attributes) {
 			this.expr = expr;						
 		}
 		

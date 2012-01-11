@@ -298,8 +298,8 @@ public final class CodeGeneration {
 				return generate((Expr.IndirectMethodCall) stmt,false,environment);								
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
 				return generate((Expr.IndirectFunctionCall) stmt,false,environment);								
-			} else if (stmt instanceof Expr.Spawn) {
-				return generate((Expr.Spawn) stmt, environment);
+			} else if (stmt instanceof Expr.New) {
+				return generate((Expr.New) stmt, environment);
 			} else if (stmt instanceof Skip) {
 				return generate((Skip) stmt, environment);
 			} else {
@@ -371,8 +371,8 @@ public final class CodeGeneration {
 		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return new Pair(v,0);			
-		} else if (e instanceof Expr.ProcessAccess) {
-			Expr.ProcessAccess pa = (Expr.ProcessAccess) e;
+		} else if (e instanceof Expr.Dereference) {
+			Expr.Dereference pa = (Expr.Dereference) e;
 			Pair<Expr.AssignedVariable,Integer> p = extractLVal(pa.src, fields, blk, environment);
 			return new Pair(p.first(),p.second() + 1);			
 		} else if (e instanceof Expr.AbstractIndexAccess) {
@@ -734,8 +734,8 @@ public final class CodeGeneration {
 				return generateCondition(target, (Expr.DictionaryAccess) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
-			} else if (condition instanceof Expr.Spawn) {
-				return generate((Expr.Spawn) condition, environment);
+			} else if (condition instanceof Expr.New) {
+				return generate((Expr.New) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, condition);
 			}
@@ -1009,8 +1009,8 @@ public final class CodeGeneration {
 				return generate((Expr.StringLength) expression, environment);
 			} else if (expression instanceof Expr.DictionaryLength) {
 				return generate((Expr.DictionaryLength) expression, environment);
-			} else if (expression instanceof Expr.ProcessAccess) {
-				return generate((Expr.ProcessAccess) expression, environment);
+			} else if (expression instanceof Expr.Dereference) {
+				return generate((Expr.Dereference) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
 				return generate((Expr.Convert) expression, environment);
 			} else if (expression instanceof Expr.ListAccess) {
@@ -1043,8 +1043,8 @@ public final class CodeGeneration {
 				return generate((Expr.Dictionary) expression, environment);
 			} else if (expression instanceof Expr.Function) {
 				return generate((Expr.Function) expression, environment);
-			} else if (expression instanceof Expr.Spawn) {
-				return generate((Expr.Spawn) expression, environment);
+			} else if (expression instanceof Expr.New) {
+				return generate((Expr.New) expression, environment);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression encountered: "
@@ -1221,7 +1221,7 @@ public final class CodeGeneration {
 		return blk;
 	}	
 	
-	private Block generate(Expr.ProcessAccess v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Dereference v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
 		blk.append(Code.ProcLoad(v.srcType.raw()), attributes(v));
 		return blk;
@@ -1492,7 +1492,7 @@ public final class CodeGeneration {
 		return lhs;
 	}
 	
-	private Block generate(Expr.Spawn expr,
+	private Block generate(Expr.New expr,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = generate(expr.expr,environment);
 		blk.append(Code.Spawn(expr.type.raw()));

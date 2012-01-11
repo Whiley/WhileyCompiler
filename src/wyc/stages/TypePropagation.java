@@ -388,8 +388,8 @@ public final class TypePropagation {
 			v.type = beforeType;
 			v.afterType = afterType;			
 			return v;
-		} else if (lv instanceof Expr.ProcessAccess) {
-			Expr.ProcessAccess pa = (Expr.ProcessAccess) lv;
+		} else if (lv instanceof Expr.Dereference) {
+			Expr.Dereference pa = (Expr.Dereference) lv;
 			// NOTE: the before and after types are the same since an assignment
 			// through a reference does not change its type.
 			checkIsSubtype(beforeType,afterType,lv);
@@ -705,8 +705,8 @@ public final class TypePropagation {
 				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
 				lv.type = p;				
 				return lv;
-			} else if(lval instanceof Expr.ProcessAccess) {
-				Expr.ProcessAccess pa = (Expr.ProcessAccess) lval;
+			} else if(lval instanceof Expr.Dereference) {
+				Expr.Dereference pa = (Expr.Dereference) lval;
 				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,imports);				
 				Type.Process procType = checkType(src.type().raw(),Type.Process.class,src);				
 				pa.src = src;
@@ -1032,12 +1032,12 @@ public final class TypePropagation {
 				return propagate((Expr.SubList) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractDotAccess) {
 				return propagate((Expr.AbstractDotAccess) expr,environment,imports); 
-			} else if(expr instanceof Expr.ProcessAccess) {
-				return propagate((Expr.ProcessAccess) expr,environment,imports); 
+			} else if(expr instanceof Expr.Dereference) {
+				return propagate((Expr.Dereference) expr,environment,imports); 
 			} else if(expr instanceof Expr.Record) {
 				return propagate((Expr.Record) expr,environment,imports); 
-			} else if(expr instanceof Expr.Spawn) {
-				return propagate((Expr.Spawn) expr,environment,imports); 
+			} else if(expr instanceof Expr.New) {
+				return propagate((Expr.New) expr,environment,imports); 
 			} else if(expr instanceof Expr.Tuple) {
 				return  propagate((Expr.Tuple) expr,environment,imports); 
 			} else if(expr instanceof Expr.TypeVal) {
@@ -1880,7 +1880,7 @@ public final class TypePropagation {
 		return expr;
 	}			
 
-	private Expr propagate(Expr.ProcessAccess expr,
+	private Expr propagate(Expr.Dereference expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Expr src = propagate(expr.src,environment,imports);
@@ -1892,7 +1892,7 @@ public final class TypePropagation {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.Spawn expr,
+	private Expr propagate(Expr.New expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		expr.expr = propagate(expr.expr,environment,imports);
@@ -1975,9 +1975,9 @@ public final class TypePropagation {
 				}
 				aliases.add(s);
 			}
-		} else if (t instanceof UnresolvedType.Process) {			
-			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			addExposedNames(new Expr.ProcessAccess(src),
+		} else if (t instanceof UnresolvedType.Reference) {			
+			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
+			addExposedNames(new Expr.Dereference(src),
 					ut.element, environment);
 		}
 	}

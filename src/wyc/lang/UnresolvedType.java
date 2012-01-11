@@ -166,9 +166,9 @@ public interface UnresolvedType extends SyntacticElement {
 		}	
 	}
 	
-	public static final class Process extends SyntacticElement.Impl implements NonUnion {
+	public static final class Reference extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType element;
-		public Process(UnresolvedType element, Attribute... attributes) {
+		public Reference(UnresolvedType element, Attribute... attributes) {
 			this.element = element;
 		}
 	}

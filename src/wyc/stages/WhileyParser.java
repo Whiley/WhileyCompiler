@@ -1136,7 +1136,7 @@ public final class WhileyParser {
 						match(Dot.class);
 					} else {
 						match(RightArrow.class);
-						lhs = new Expr.ProcessAccess(lhs,sourceAttr(start,index - 1));	
+						lhs = new Expr.Dereference(lhs,sourceAttr(start,index - 1));	
 					}
 					int tmp = index;
 					String name = matchIdentifier().text; 	
@@ -1195,7 +1195,7 @@ public final class WhileyParser {
 			match(Star.class);
 			
 			Expr e = parseTerm();
-			return new Expr.ProcessAccess(e, sourceAttr(start,
+			return new Expr.Dereference(e, sourceAttr(start,
 					index - 1));
 		} else if ((index + 1) < tokens.size()
 				&& token instanceof Identifier
@@ -1286,12 +1286,12 @@ public final class WhileyParser {
 		return new Expr.AbstractFunction(funName, paramTypes, sourceAttr(start, index - 1));			
 	}
 
-	private Expr.Spawn parseSpawn() {
+	private Expr.New parseSpawn() {
 		int start = index;
 		matchKeyword("spawn");
 		
 		Expr state = parseBitwiseExpression(false);
-		return new Expr.Spawn(state, sourceAttr(start,index - 1));
+		return new Expr.New(state, sourceAttr(start,index - 1));
 	}
 	
 	private Expr parseListVal() {
@@ -1751,7 +1751,7 @@ public final class WhileyParser {
 			t = new UnresolvedType.Bool(sourceAttr(start,index-1));
 		} else if(token.text.equals("process")) {
 			matchKeyword("process");
-			t = new UnresolvedType.Process(parseType(),sourceAttr(start,index-1));			
+			t = new UnresolvedType.Reference(parseType(),sourceAttr(start,index-1));			
 		} else if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			

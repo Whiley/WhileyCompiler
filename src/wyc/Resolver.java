@@ -441,8 +441,8 @@ public final class Resolver {
 				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);				
 			}	
 			myDeterministic = false;
-		} else if(t instanceof UnresolvedType.Process) {	
-			UnresolvedType.Process ut = (UnresolvedType.Process) t;
+		} else if(t instanceof UnresolvedType.Reference) {	
+			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
 			myKind = Type.K_PROCESS;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
