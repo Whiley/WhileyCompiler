@@ -623,7 +623,7 @@ public final class Resolver {
 		// FIXME: cyclic constants
 		
 		Value result = constantCache.get(key);
-		if(key != null) {
+		if(result != null) {
 			return result;
 		} else if(visited.contains(key)) {
 			throw new ResolveError("cyclic constant definition encountered (" + key + " -> " + key + ")");

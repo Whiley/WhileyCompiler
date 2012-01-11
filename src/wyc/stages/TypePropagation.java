@@ -1639,7 +1639,7 @@ public final class TypePropagation {
 				NameID nid = resolver.resolveAsName(expr.var, imports);					
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
-				ca.value = resolver.resolveAsConstant(nid);				
+				ca.value = resolver.resolveAsConstant(nid);
 				return ca;
 			} catch (ResolveError err) {
 			}
