@@ -1636,7 +1636,7 @@ public final class TypePropagation {
 			// Therefore, we must determine which module this
 			// is, and update the tree accordingly.
 			try {
-				NameID nid = resolver.resolveAsName(expr.var, imports);				
+				NameID nid = resolver.resolveAsName(expr.var, imports);					
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
 				ca.value = resolver.resolveAsConstant(nid);				
@@ -1810,8 +1810,12 @@ public final class TypePropagation {
 			return expr;
 		}
 		
-		Expr src = propagate(expr.src,environment,imports);
-		expr.src = src;
+		Expr src = expr.src;
+		
+		if(src != null) {
+			src = propagate(expr.src,environment,imports);
+			expr.src = src;
+		}
 				
 		if(expr instanceof Expr.RecordAccess) {			
 			return propagate((Expr.RecordAccess)expr,environment,imports);
