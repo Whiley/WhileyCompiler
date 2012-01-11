@@ -668,6 +668,10 @@ public final class Resolver {
 			if (expr instanceof Expr.Constant) {
 				Expr.Constant c = (Expr.Constant) expr;
 				return c.value;
+			} else if (expr instanceof Expr.AbstractVariable) {
+				Expr.AbstractVariable av = (Expr.AbstractVariable) expr;
+				NameID nid = resolveAsName(av.var,imports);
+				return resolveAsConstant(nid,visited);				
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp bop = (Expr.BinOp) expr;
 				Value lhs = resolveAsConstant(bop.lhs, filename, imports, visited);
@@ -734,7 +738,7 @@ public final class Resolver {
 			internalFailure("internal failure",filename,expr,e);
 		}
 		
-		internalFailure("unknown constant expression",filename,expr);
+		internalFailure("unknown constant expression (" + expr.getClass().getName() + ")",filename,expr);
 		return null; // deadcode
 	}
 
