@@ -1,3 +1,4 @@
+import println from whiley.lang.System
 import toString from whiley.lang.Int
 
 string f(int x):
