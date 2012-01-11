@@ -1,14 +1,12 @@
 import * from whiley.lang.*
 
 define wmcr6tup as {int x, int y}
-define Proc as ref { int state }
 
-int Proc::get():
-    return this->state
+int ::get():
+    return 1
 
-wmcr6tup System::f(Proc x, int y):
-    return {x:y,y:x.get()}
+wmcr6tup ::f(int y):
+    return {x:y,y:get()}
 
 void ::main(System.Console sys):
-    proc = new { state: 1 }
-    sys.out.println(Any.toString(sys.f(proc,1)))
+    sys.out.println(Any.toString(f(1)))
