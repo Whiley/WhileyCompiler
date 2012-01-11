@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-string rep(char old, char new, string str):
+string rep(char old, char n, string str):
     i = 0
     while i < |str|:
         if str[i] == old:
-            str[i] = new
+            str[i] = n
         i = i + 1
     return str    
 
