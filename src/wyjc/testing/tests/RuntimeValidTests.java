@@ -202,8 +202,7 @@ public class RuntimeValidTests extends TestHarness {
  
  @Test public void MethodCall_Valid_5_RuntimeTest() { runTest("MethodCall_Valid_5"); }
  @Test public void MethodCall_Valid_6_RuntimeTest() { runTest("MethodCall_Valid_6"); }
- @Test public void MethodCall_Valid_7_RuntimeTest() { runTest("MethodCall_Valid_7"); }
- 
+  
  @Test public void MessageSend_Valid_3_RuntimeTest() { runTest("MessageSend_Valid_3"); }
  @Test public void MessageSend_Valid_4_RuntimeTest() { runTest("MessageSend_Valid_4"); }
  @Test public void MessageSend_Valid_5_RuntimeTest() { runTest("MessageSend_Valid_5"); }
