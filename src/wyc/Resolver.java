@@ -79,6 +79,12 @@ public final class Resolver {
 	 */
 	private HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();
 	
+	
+	/**
+	 * The constant cache contains a cache of expanded constant values.
+	 */
+	HashMap<NameID, Value> constantCache = new HashMap();
+	
 	public Resolver(ModuleLoader loader) {
 		this.loader = loader;
 	}
@@ -616,13 +622,17 @@ public final class Resolver {
 	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {		
 		// FIXME: cyclic constants
 		
-		if(visited.contains(key)) {
+		Value result = constantCache.get(key);
+		if(key != null) {
+			return result;
+		} else if(visited.contains(key)) {
 			throw new ResolveError("cyclic constant definition encountered (" + key + " -> " + key + ")");
 		} else {
 			visited.add(key);
 		}
 		
 		WhileyFile wf = files.get(key.module());
+		
 		if (wf != null) {			
 			WhileyFile.Declaration decl = wf.declaration(key.name());
 			if(decl instanceof WhileyFile.Constant) {
@@ -631,7 +641,7 @@ public final class Resolver {
 					cd.resolvedValue = resolveAsConstant(cd.constant,
 							wf.filename, buildImports(wf, cd), visited);
 				}
-				return cd.resolvedValue;
+				result = cd.resolvedValue;
 			} else {
 				throw new ResolveError("unable to find constant " + key);
 			}
@@ -639,11 +649,15 @@ public final class Resolver {
 			Module module = loader.loadModule(key.module());
 			Module.ConstDef cd = module.constant(key.name());
 			if(cd != null) {
-				return cd.constant();
+				result = cd.constant();
 			} else {
 				throw new ResolveError("unable to find constant " + key);
 			}
 		}		
+		
+		constantCache.put(key, result);
+		
+		return result;
 	}
 	
 	/**
