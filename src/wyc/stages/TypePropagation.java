@@ -542,8 +542,13 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}
 		
-		// FIXME: need to iterate to a fixed point
-		environment = propagate(stmt.body,environment,imports);
+		// Iterate to a fixed point
+		RefCountedHashMap<String,Nominal<Type>> old = null;
+		do {
+			old = environment.clone();
+			environment = propagate(stmt.body,old,imports);
+			old.free(); // hacky, but safe
+		} while(!environment.equals(old));
 		
 		// Remove loop variables from the environment, since they are only
 		// declared for the duration of the body but not beyond.

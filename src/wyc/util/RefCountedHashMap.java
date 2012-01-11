@@ -79,4 +79,16 @@ public final class RefCountedHashMap<K,V> {
 	public String toString() {
 		return map.toString();
 	}
+	
+	public int hashCode() {
+		return map.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		if (o instanceof RefCountedHashMap) {
+			RefCountedHashMap r = (RefCountedHashMap) o;
+			return map.equals(r.map);
+		}
+		return false;
+	}
 }
