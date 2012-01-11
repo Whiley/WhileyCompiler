@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define MyProc as process { int data }
+define MyProc as ref { int data }
 
 int MyProc::copy(MyProc p):
     p.data = this.data // NOT OK
@@ -9,7 +9,7 @@ int MyProc::get():
     return this.data
 
 MyProc System::create(int data):
-    return spawn {data: data}
+    return new {data: data}
 
 void ::main(System.Console sys):
     p1 = this.create(1)

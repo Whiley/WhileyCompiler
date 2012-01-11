@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define Proc as process { int(int) func }
+define Proc as ref { int(int) func }
 
 int Proc::func(int x):
     return x + 1
@@ -12,7 +12,7 @@ int id(int x):
     return x
     
 void ::main(System.Console sys):
-    p = spawn { func: &id }
+    p = new { func: &id }
     x = p.test(123)
     sys.out.println("GOT: " + Any.toString(x))
     x = p.test(12545)

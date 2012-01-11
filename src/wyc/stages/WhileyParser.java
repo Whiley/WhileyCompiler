@@ -396,8 +396,8 @@ public final class WhileyParser {
 			return parseWhile(indent);
 		} else if(token.text.equals("for")) {			
 			return parseFor(indent);
-		} else if(token.text.equals("spawn")) {			
-			return parseSpawn();
+		} else if(token.text.equals("new")) {			
+			return parseNew();
 		} else if ((index + 1) < tokens.size()
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
@@ -1214,8 +1214,8 @@ public final class WhileyParser {
 			matchKeyword("false");
 			return new Expr.Constant(Value.V_BOOL(false),
 					sourceAttr(start, index - 1));			
-		} else if(token.text.equals("spawn")) {
-			return parseSpawn();			
+		} else if(token.text.equals("new")) {
+			return parseNew();			
 		} else if (token instanceof Identifier) {
 			return new Expr.AbstractVariable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
@@ -1286,9 +1286,9 @@ public final class WhileyParser {
 		return new Expr.AbstractFunction(funName, paramTypes, sourceAttr(start, index - 1));			
 	}
 
-	private Expr.New parseSpawn() {
+	private Expr.New parseNew() {
 		int start = index;
-		matchKeyword("spawn");
+		matchKeyword("new");
 		
 		Expr state = parseBitwiseExpression(false);
 		return new Expr.New(state, sourceAttr(start,index - 1));
@@ -1749,8 +1749,8 @@ public final class WhileyParser {
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
 			t = new UnresolvedType.Bool(sourceAttr(start,index-1));
-		} else if(token.text.equals("process")) {
-			matchKeyword("process");
+		} else if(token.text.equals("ref")) {
+			matchKeyword("ref");
 			t = new UnresolvedType.Reference(parseType(),sourceAttr(start,index-1));			
 		} else if(token instanceof LeftBrace) {
 			match(LeftBrace.class);

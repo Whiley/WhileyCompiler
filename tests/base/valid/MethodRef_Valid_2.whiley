@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 // this implements what is effectively a "raw" interface
 
-define FileReader as process {
+define FileReader as ref {
     int position
 }
 
@@ -16,7 +16,7 @@ int FileReader::read(int amount):
     return r
     
 Reader ::openReader():
-    proc = spawn { position: 123 }
+    proc = new { position: 123 }
     return { thus: proc, read: &read } 
 
 void ::main(System.Console sys):

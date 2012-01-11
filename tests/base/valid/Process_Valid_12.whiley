@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 import * from whiley.lang.*
 
-define Queue as process { [int] items }
+define Queue as ref { [int] items }
 	 
 int Queue::get():
     item = this->items[0]
@@ -15,7 +15,7 @@ bool Queue::isEmpty():
     return |this->items| == 0
 
 Queue ::Queue():
-    return spawn { items: [] }
+    return new { items: [] }
 
 void ::main(System.Console sys):
     items = [1,2,3,4,5,6,7,8,9,10]

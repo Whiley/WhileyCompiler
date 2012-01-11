@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 define state as {int x, int y}
-define pState as process state
+define pState as ref state
 
 void pState::send(int x, System.Console sys):
     this->x = x
@@ -11,5 +11,5 @@ void pState::send(int x, System.Console sys):
     sys.out.println(Any.toString(x))
 
 void ::main(System.Console sys):
-    ps = spawn {x:1,y:2}
+    ps = new {x:1,y:2}
     ps.send(1,sys)

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define i8 as int where $ >=-128 && $ <= 127
 

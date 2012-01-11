@@ -11,7 +11,7 @@ For detail, see `comment-dwim'."
      (comment-dwim arg)))
 
 (defvar whiley-keywords
-  '("process" "native" "export" "extern" "null" "return" "if" "is" "throw" "throws" "try" "catch" "switch" "case" "default" "break" "skip" "do" "while" "for" "else" "define" "assert" "as" "package" "import" "from" "debug" "where" "ensures" "requires" "public" "protected" "private" "this" "str" "spawn" "in" "no" "some" "false" "true")
+  '("ref" "native" "export" "extern" "null" "return" "if" "is" "throw" "throws" "try" "catch" "switch" "case" "default" "break" "skip" "do" "while" "for" "else" "define" "assert" "as" "package" "import" "from" "debug" "where" "ensures" "requires" "public" "protected" "private" "this" "str" "new" "in" "no" "some" "false" "true")
     "Whiley keywords.")
 
 (defvar whiley-types

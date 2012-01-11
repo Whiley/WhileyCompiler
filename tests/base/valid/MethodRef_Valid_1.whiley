@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define MyProc as process {
+define MyProc as ref {
     int position
 }
 
@@ -13,7 +13,7 @@ int ::test(MyMeth m, MyProc proc):
     return proc.m(1)
 
 void ::main(System.Console sys):
-    p = spawn { position: 0 }
+    p = new { position: 0 }
     r = test(&read,p)
     sys.out.println(Any.toString(r))
 

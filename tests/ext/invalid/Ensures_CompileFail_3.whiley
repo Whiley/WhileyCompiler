@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int ::g(int x):
     return x + 1

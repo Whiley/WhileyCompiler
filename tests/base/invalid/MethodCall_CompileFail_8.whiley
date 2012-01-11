@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 int f():
-    x = spawn 1
+    x = new 1
     return 1
 
 void ::main(System.Console sys):

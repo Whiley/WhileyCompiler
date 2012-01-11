@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define Proc as process { int data }
+define Proc as ref { int data }
 
 int Proc::read(int x):
     return x + 1

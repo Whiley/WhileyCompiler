@@ -25,9 +25,9 @@
 
 package whiley.io
 
-define Reader as process { string fileName }
+define Reader as ref { string fileName }
 
-define Writer as process { string fileName, int writer }
+define Writer as ref { string fileName, int writer }
 
 // create file reader
 public native Reader ::Reader(string fileName):

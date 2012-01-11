@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define state as {int x, int y} where x < y
 define pState as process state

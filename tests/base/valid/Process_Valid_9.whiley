@@ -1,12 +1,12 @@
 import * from whiley.lang.*
 
-define Actor as process { int data }
+define Actor as ref { int data }
 
 int Actor::get():
     return this->data
 
 Actor ::createActor(int n):
-    return spawn { data: n }
+    return new { data: n }
 
 [Actor] ::createActors(int n):
     row = []

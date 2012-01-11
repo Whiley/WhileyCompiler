@@ -25,7 +25,7 @@
 
 package whiley.lang
 
-define SystemOutWriter as process any
+define SystemOutWriter as ref any
 define Console as { 
     SystemOutWriter out,
     [string] args    

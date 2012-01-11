@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define MyProc as process { bool flag }
+define MyProc as ref { bool flag }
 
 void MyProc::run(System.Console sys):
     if this->flag:
@@ -9,5 +9,5 @@ void MyProc::run(System.Console sys):
         sys.out.println("FALSE")
 
 void ::main(System.Console sys):
-    mproc = spawn { flag:false }     
+    mproc = new { flag:false }     
     mproc.run(sys)

@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define Proc as process { int state }
+define Proc as ref { int state }
 
 int Proc::get():
     return this->state
@@ -9,5 +9,5 @@ int System::f(Proc x):
     return x.get()
 
 void ::main(System.Console sys):
-    proc = spawn { state: 123 }
+    proc = new { state: 123 }
     sys.out.println(Any.toString(sys.f(proc)))

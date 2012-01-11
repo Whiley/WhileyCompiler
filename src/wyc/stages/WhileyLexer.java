@@ -489,7 +489,7 @@ public class WhileyLexer {
 		"real",
 		"string",
 		"bool",
-		"process",
+		"ref",
 		"void",			
 		"if",		
 		"switch",
@@ -517,7 +517,7 @@ public class WhileyLexer {
 		"native",
 		"export",
 		"extern",
-		"spawn",
+		"new",
 		"try"
 	};
 	

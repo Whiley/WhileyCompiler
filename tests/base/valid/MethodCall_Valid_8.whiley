@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define Sum as process { 
+define Sum as ref { 
     [int] items, 
     int result 
 }
@@ -15,7 +15,7 @@ int Sum::get():
     return this->result
 
 Sum ::create([int] items):
-    return spawn { 
+    return new { 
         items: items, 
         result: 0 
     }
@@ -28,7 +28,7 @@ int seqSum([int] items):
 
 int ::parSum([int] items):
     sum = create(items)
-    // start the process asynchronously
+    // start the ref asynchronously
     sum!start()
     // get the result synchronously
     return sum.get()

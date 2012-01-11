@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 real f(real x) requires x>0:
     return 0.0
