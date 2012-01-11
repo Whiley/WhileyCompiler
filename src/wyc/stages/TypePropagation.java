@@ -334,7 +334,7 @@ public final class TypePropagation {
 			// nice to support more expressive destructuring assignment
 			// operations.
 			if(Type.isImplicitCoerciveSubtype(Type.T_REAL, rawRhs)) {
-				rawTupleRhs = (Type.Tuple) Type.Tuple(Type.T_INT,Type.T_INT);
+				rawTupleRhs = Type.Tuple(Type.T_INT,Type.T_INT);
 			} else if(!(rawRhs instanceof Type.Tuple)) {
 				syntaxError("tuple value expected, got " + rawRhs,filename,rhs);
 				return null; // deadcode
@@ -1275,7 +1275,7 @@ public final class TypePropagation {
 		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
 			expr.value = propagate(expr.value,local,imports);
 			Nominal<Type> type = (Nominal) expr.value.type();
-			Type.Set rawResultType = (Type.Set) Type.Set(type.raw(),false);
+			Type.Set rawResultType = Type.Set(type.raw(),false);
 			// FIXME: loss of nominal information
 			// FIXME: broken for list comprehensions
 			expr.type = new Nominal<Type>(rawResultType,rawResultType);
@@ -1678,7 +1678,7 @@ public final class TypePropagation {
 		}
 				
 		Type nominalType = Type.Set(nominalElementType, false);
-		Type.Set rawType = (Type.Set) Type.Set(rawElementType, false);
+		Type.Set rawType = Type.Set(rawElementType, false);
 		
 		expr.type = new Nominal<Type.Set>(nominalType,rawType);
 		
@@ -1702,7 +1702,7 @@ public final class TypePropagation {
 		}
 		
 		Type nominalType = Type.List(nominalElementType, false);
-		Type.List rawType = (Type.List) Type.List(rawElementType, false);
+		Type.List rawType = Type.List(rawElementType, false);
 		
 		expr.type = new Nominal<Type.List>(nominalType,rawType);
 		
@@ -1754,7 +1754,7 @@ public final class TypePropagation {
 		}		
 		
 		Type nominalType = Type.Record(false, nominalFieldTypes);
-		Type.Record rawType = (Type.Record) Type.Record(false, rawFieldTypes);
+		Type.Record rawType = Type.Record(false, rawFieldTypes);
 		expr.type = new Nominal<Type.Record>(nominalType,rawType);
 		
 		return expr;
@@ -1776,7 +1776,7 @@ public final class TypePropagation {
 		}
 		
 		Type nominalType = Type.Tuple(nominalFieldTypes);
-		Type.Tuple rawType = (Type.Tuple) Type.Tuple(rawFieldTypes);
+		Type.Tuple rawType =  Type.Tuple(rawFieldTypes);
 		
 		expr.type = new Nominal<Type.Tuple>(nominalType,rawType);
 		
@@ -1897,7 +1897,7 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) {
 		expr.expr = propagate(expr.expr,environment,imports);
 		Nominal<Type> type = (Nominal) expr.expr.type();
-		Type.Process p = (Type.Process) Type.Process(type.raw());
+		Type.Process p = Type.Process(type.raw());
 		// FIXME: loss of nominal information
 		expr.type = new Nominal<Type.Process>(p,p);
 		return expr;
