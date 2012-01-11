@@ -416,10 +416,10 @@ public final class WhileyFile {
 	 * </pre>
 	 * 
 	 * <p>
-	 * Here, a message <code>m</code> is defined for the process type
+	 * Here, a message <code>m</code> is defined for a given object type
 	 * <code>MyData</code>, which is referred to as the <i>receiver</i>. The
 	 * special variable <code>this</code> is used to access fields within the
-	 * process type. Like methods, messages in Whiley as they may have
+	 * object type. Like methods, messages in Whiley as they may have
 	 * side-effects. This includes reading/writing I/O and modifying the state
 	 * of their receiver. Methods may also be <i>headless</i>, meaning they are
 	 * not attached to any specific receiver.

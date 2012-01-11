@@ -491,12 +491,12 @@ public abstract class Code {
 		return get(new Negate(type));
 	}		
 	
-	public static Spawn Spawn(Type.Process type) {
-		return get(new Spawn(type));
+	public static New Spawn(Type.Reference type) {
+		return get(new New(type));
 	}
 	
-	public static ProcLoad ProcLoad(Type.Process type) {
-		return get(new ProcLoad(type));
+	public static Dereference Dereference(Type.Reference type) {
+		return get(new Dereference(type));
 	}
 	
 	/**
@@ -1818,7 +1818,7 @@ public abstract class Code {
 
 	/**
 	 * Represents a type which may appear on the left of an assignment
-	 * expression. Lists, Dictionaries, Strings, Records and Processes are the
+	 * expression. Lists, Dictionaries, Strings, Records and References are the
 	 * only valid types for an lval.
 	 * 
 	 * @author David J. Pearce
@@ -1877,11 +1877,11 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ProcessLVal extends LVal {
-		public ProcessLVal(Type t) {
+	public static final class ReferenceLVal extends LVal {
+		public ReferenceLVal(Type t) {
 			super(t);
-			if(Type.effectiveProcessType(t) == null) {
-				throw new IllegalArgumentException("Invalid Process Type");
+			if(Type.effectiveReferenceType(t) == null) {
+				throw new IllegalArgumentException("invalid reference type");
 			}
 		}
 		
@@ -1941,10 +1941,10 @@ public abstract class Code {
 			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				return new StringLVal();
-			} else if(Type.isSubtype(Type.Process(Type.T_ANY),iter)) {			
-				Type.Process proc = Type.effectiveProcessType(iter);											
+			} else if(Type.isSubtype(Type.Reference(Type.T_ANY),iter)) {			
+				Type.Reference proc = Type.effectiveReferenceType(iter);											
 				iter = proc.element();
-				return new ProcessLVal(raw);
+				return new ReferenceLVal(raw);
 			} else if(Type.isSubtype(Type.List(Type.T_ANY,false),iter)) {			
 				Type.List list = Type.effectiveListType(iter);											
 				iter = list.element();
@@ -1978,7 +1978,7 @@ public abstract class Code {
 	 * Pops a compound structure, zero or more indices and a value from the
 	 * stack and updates the compound structure with the given value. Valid
 	 * compound structures are lists, dictionaries, strings, records and
-	 * processes.
+	 * references.
 	 * </p>
 	 * <p>
 	 * Ideally, this operation is done in-place, meaning the operation is
@@ -2029,8 +2029,8 @@ public abstract class Code {
 			for (int i = 0; i != level; ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
-				} else if (Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
-					Type.Process proc = Type.effectiveProcessType(iter);
+				} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
+					Type.Reference proc = Type.effectiveReferenceType(iter);
 					iter = proc.element();
 				} else if (Type.isSubtype(Type.List(Type.T_ANY,false), iter)) {
 					Type.List list = Type.effectiveListType(iter);
@@ -2946,10 +2946,10 @@ public abstract class Code {
 		}
 	}
 	
-	public static final class Spawn extends Code {
-		public final Type.Process type;		
+	public static final class New extends Code {
+		public final Type.Reference type;		
 		
-		private Spawn(Type.Process type) {			
+		private New(Type.Reference type) {			
 			this.type = type;
 		}
 		
@@ -2962,8 +2962,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Spawn) {
-				Spawn bo = (Spawn) o;
+			if(o instanceof New) {
+				New bo = (New) o;
 				return (type == bo.type || (type != null && type
 						.equals(bo.type))); 
 			}
@@ -2971,7 +2971,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("spawn",type);
+			return toString("new",type);
 		}
 	}
 	
@@ -3005,10 +3005,10 @@ public abstract class Code {
 		}	
 	}
 	
-	public static final class ProcLoad extends Code {
-		public final Type.Process type;		
+	public static final class Dereference extends Code {
+		public final Type.Reference type;		
 		
-		private ProcLoad(Type.Process type) {			
+		private Dereference(Type.Reference type) {			
 			this.type = type;
 		}
 		
@@ -3021,8 +3021,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof ProcLoad) {
-				ProcLoad bo = (ProcLoad) o;
+			if(o instanceof Dereference) {
+				Dereference bo = (Dereference) o;
 				return (type == bo.type || (type != null && type
 						.equals(bo.type))); 
 			}
@@ -3030,7 +3030,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("procload",type);
+			return toString("deref",type);
 		}
 	}
 	

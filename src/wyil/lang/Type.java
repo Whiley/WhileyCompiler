@@ -82,17 +82,17 @@ public abstract class Type {
 	}
 	
 	/**
-	 * Construct a process type using the given element type.
+	 * Construct a reference type using the given element type.
 	 * 
 	 * @param element
 	 */
-	public static final Type.Process Process(Type element) {
-		Type r = construct(K_PROCESS, null, element);		
-		if (r instanceof Type.Process) {
-			return (Type.Process) r;
+	public static final Type.Reference Reference(Type element) {
+		Type r = construct(K_REFERENCE, null, element);		
+		if (r instanceof Type.Reference) {
+			return (Type.Reference) r;
 		} else {
 			throw new IllegalArgumentException(
-					"invalid arguments for Type.Process()");
+					"invalid arguments for Type.Reference()");
 		}
 	}
 	
@@ -267,7 +267,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type.Message Message(Process receiver, Type ret,
+	public static final Type.Message Message(Reference receiver, Type ret,
 			Type throwsClause, Type... params) {		
 		Type[] rparams = new Type[params.length+3];		
 		System.arraycopy(params, 0, rparams, 3, params.length);
@@ -725,9 +725,9 @@ public abstract class Type {
 		return null;
 	}
 			
-	public static Process effectiveProcessType(Type t) {
-		if(t instanceof Type.Process) {
-			return (Type.Process) t;
+	public static Reference effectiveReferenceType(Type t) {
+		if(t instanceof Type.Reference) {
+			return (Type.Reference) t;
 		}
 		return null;
 	}
@@ -1105,13 +1105,13 @@ public abstract class Type {
 	}
 
 	/**
-	 * A process represents a reference to an actor in Whiley.
+	 * Represents a reference to an object in Whiley.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Process extends Compound  {
-		private Process(Automaton automaton) {
+	public static final class Reference extends Compound  {
+		private Reference(Automaton automaton) {
 			super(automaton);
 		}
 		public Type element() {
@@ -1493,7 +1493,7 @@ public abstract class Type {
 		case K_NOMINAL:
 			middle = state.data.toString();
 			break;
-		case K_PROCESS:
+		case K_REFERENCE:
 			middle = "ref(" + toString(state.children[0], visited, headers, automaton) + ")";
 			break;
 		case K_NEGATION: {
@@ -1772,8 +1772,8 @@ public abstract class Type {
 		case K_LIST:
 			type = new List(automaton);
 			break;
-		case K_PROCESS:
-			type = new Process(automaton);
+		case K_REFERENCE:
+			type = new Reference(automaton);
 			break;
 		case K_DICTIONARY:
 			type = new Dictionary(automaton);
@@ -1951,7 +1951,7 @@ public abstract class Type {
 	public static final byte K_SET = 11;
 	public static final byte K_LIST = 12;	
 	public static final byte K_DICTIONARY = 13;	
-	public static final byte K_PROCESS = 14;	
+	public static final byte K_REFERENCE = 14;	
 	public static final byte K_RECORD = 15;	
 	public static final byte K_UNION = 16;
 	public static final byte K_NEGATION = 17;
@@ -2022,7 +2022,7 @@ public abstract class Type {
 		if(n == 0) {
 			return Nominal(new NameID(ModuleID.fromString(""),"X"));			
 		} else {
-			Type leaf = Process(innerLinkedList(n-1)); 
+			Type leaf = Reference(innerLinkedList(n-1)); 
 			HashMap<String,Type> fields = new HashMap<String,Type>();
 			fields.put("next", Union(T_NULL,leaf));
 			fields.put("data", T_BOOL);

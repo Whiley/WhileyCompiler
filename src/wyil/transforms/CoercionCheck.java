@@ -134,9 +134,9 @@ public class CoercionCheck implements Transform {
 				Type e2 = t2_elements.get(i);
 				check(e1,e2,visited,elem);
 			}
-		} else if(from instanceof Type.Process && to instanceof Type.Process) {
-			Type.Process t1 = (Type.Process) from;
-			Type.Process t2 = (Type.Process) to;
+		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
+			Type.Reference t1 = (Type.Reference) from;
+			Type.Reference t2 = (Type.Reference) to;
 			check(t1.element(),t2.element(),visited,elem);
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
 			Type.Set t1 = (Type.Set) from;

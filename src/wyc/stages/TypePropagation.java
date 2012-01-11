@@ -708,10 +708,10 @@ public final class TypePropagation {
 			} else if(lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
 				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,imports);				
-				Type.Process procType = checkType(src.type().raw(),Type.Process.class,src);				
+				Type.Reference procType = checkType(src.type().raw(),Type.Reference.class,src);				
 				pa.src = src;
 				// FIXME: loss of nominal information here
-				pa.srcType = new Nominal<Type.Process>(procType,procType);
+				pa.srcType = new Nominal<Type.Reference>(procType,procType);
 				pa.elementType = new Nominal<Type>(procType.element(),procType.element());				
 				return pa;
 			} else if(lval instanceof Expr.AbstractIndexAccess) {
@@ -1414,9 +1414,9 @@ public final class TypePropagation {
 				}
 				
 			} else {
-				// In this case, we definitely have a process type. 
+				// In this case, we definitely have an object type. 
 				
-				Type.Process procType = checkType(expr.qualification.type().raw(),Type.Process.class,receiver);							
+				Type.Reference procType = checkType(expr.qualification.type().raw(),Type.Reference.class,receiver);							
 
 				// ok, it's a message send
 				Pair<NameID, Nominal<Type.Message>> p = resolver
@@ -1885,7 +1885,7 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Expr src = propagate(expr.src,environment,imports);
 		expr.src = src;
-		Type.Process tp = checkType(src.type().raw(),Type.Process.class,src);
+		Type.Reference tp = checkType(src.type().raw(),Type.Reference.class,src);
 		// FIXME: loss of nominal information here
 		expr.srcType = (Nominal) src.type();
 		expr.elementType = new Nominal<Type>(tp.element(),tp.element());
@@ -1897,9 +1897,9 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) {
 		expr.expr = propagate(expr.expr,environment,imports);
 		Nominal<Type> type = (Nominal) expr.expr.type();
-		Type.Process p = Type.Process(type.raw());
+		Type.Reference p = Type.Reference(type.raw());
 		// FIXME: loss of nominal information
-		expr.type = new Nominal<Type.Process>(p,p);
+		expr.type = new Nominal<Type.Reference>(p,p);
 		return expr;
 	}
 	

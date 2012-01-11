@@ -74,12 +74,12 @@ public class ErrorMessages {
 	public static final int DUPLICATE_CASE_LABEL = 24;
 	public static final int DEAD_CODE = 25;
 	public static final int UNREACHABLE_CODE = 26;
-	public static final int RECEIVER_NOT_PROCESS = 27;
-	public static final int PROCESS_NOT_PERMITTED_IN_FUNCTION = 28;
+	public static final int RECEIVER_NOT_REFERENCE = 27;
+	public static final int REFERENCE_NOT_PERMITTED_IN_FUNCTION = 28;
 	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 29;
 	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 30;
 	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 31;
-	public static final int PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION = 32;
+	public static final int REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION = 32;
 	public static final int SUBTYPE_ERROR = 33;
 	public static final int INCOMPARABLE_OPERANDS = 34;
 	public static final int RECORD_TYPE_REQUIRED = 35;
@@ -118,12 +118,12 @@ public class ErrorMessages {
 			"duplicate case label",
 			"dead-code encountered (i.e. this statement has no effect)",
 			"unreachable code encountered (i.e. execution can never reach this statement)",
-			"method receiver must have process type",
-			"process not permitted in function",
+			"method receiver must have reference type",
+			"reference not permitted in function",
 			"message send not permitted in function",
 			"method invocation not permitted in function",
-			"process spawning not permitted in function",
-			"process access not permitted in function",
+			"object creation not permitted in function",
+			"dereference not permitted in function",
 			"expected type $0, found $1",
 			"incomparable operands: $0 and $1",
 			"record required, got: $0",

@@ -219,10 +219,10 @@ public class ModuleCheck implements Transform {
 			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.Spawn) {
+			} else if(code instanceof Code.New) {
 				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.ProcLoad){ 
-				syntaxError(errorMessage(PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
+			} else if(code instanceof Code.Dereference){ 
+				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
 			}
 		}	
 	}

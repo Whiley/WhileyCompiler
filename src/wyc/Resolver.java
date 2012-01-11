@@ -443,7 +443,7 @@ public final class Resolver {
 			myDeterministic = false;
 		} else if(t instanceof UnresolvedType.Reference) {	
 			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
-			myKind = Type.K_PROCESS;
+			myKind = Type.K_REFERENCE;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
 		} else {	
@@ -904,7 +904,7 @@ public final class Resolver {
 				candidates).second();		
 	}
 	
-	public Pair<NameID,Nominal<Type.Message>> resolveAsMessage(String name, Type.Process receiver,
+	public Pair<NameID,Nominal<Type.Message>> resolveAsMessage(String name, Type.Reference receiver,
 			List<Nominal<Type>> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 
 		ArrayList<Pair<NameID,Nominal<Type.Message>>> candidates = new ArrayList<Pair<NameID,Nominal<Type.Message>>>(); 
@@ -923,7 +923,7 @@ public final class Resolver {
 	}
 	
 	public Nominal<Type.Message> resolveAsMessage(NameID nid,
-			Type.Process receiver, List<Nominal<Type>> parameters)
+			Type.Reference receiver, List<Nominal<Type>> parameters)
 			throws ResolveError {
 		ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates = new ArrayList<Pair<NameID, Nominal<Type.Message>>>();
 		
@@ -1030,7 +1030,7 @@ public final class Resolver {
 	}
 			
 	private Pair<NameID,Nominal<Type.Message>> selectCandidateMessage(String name,
-			Type.Process receiver,
+			Type.Reference receiver,
 			List<Nominal<Type>> parameters,
 			ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates)
 			throws ResolveError {

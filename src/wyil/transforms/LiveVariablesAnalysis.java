@@ -153,7 +153,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment.remove(store.slot);
 		} else if(code instanceof Code.Update) {
 			Code.Update update = (Code.Update) code;
-			if(update.beforeType instanceof Type.Process) {
+			if(update.beforeType instanceof Type.Reference) {
 				// updating a field on this constitutes a use
 				environment = new Env(environment);
 				environment.add(update.slot);

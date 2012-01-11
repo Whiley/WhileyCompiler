@@ -601,7 +601,7 @@ public interface Expr extends SyntacticElement {
 	public static class Dereference extends SyntacticElement.Impl implements LVal {
 		public Expr src;	
 		public Nominal<Type> elementType;
-		public Nominal<Type.Process> srcType;
+		public Nominal<Type.Reference> srcType;
 		
 		public Dereference(Expr src, Attribute... attributes) {
 			super(attributes);
@@ -888,13 +888,13 @@ public interface Expr extends SyntacticElement {
 	
 	public static class New extends SyntacticElement.Impl implements Expr,Stmt {
 		public Expr expr;
-		public Nominal<Type.Process> type;
+		public Nominal<Type.Reference> type;
 
 		public New(Expr expr, Attribute... attributes) {
 			this.expr = expr;						
 		}
 		
-		public Nominal<Type.Process> type() {
+		public Nominal<Type.Reference> type() {
 			return type;
 		}		
 	}

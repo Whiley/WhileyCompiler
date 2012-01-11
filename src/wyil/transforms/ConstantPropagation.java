@@ -182,8 +182,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(NewTuple)code,entry,environment);
 		} else if(code instanceof Negate) {
 			infer(index,(Negate)code,entry,environment);
-		} else if(code instanceof ProcLoad) {
-			infer(index,(ProcLoad)code,entry,environment);
+		} else if(code instanceof Dereference) {
+			infer(index,(Dereference)code,entry,environment);
 		} else if(code instanceof Return) {
 			infer((Return)code,entry,environment);
 		} else if(code instanceof Send) {
@@ -208,8 +208,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(SubString)code,entry,environment);
 		} else if(code instanceof Skip) {
 			// skip			
-		} else if(code instanceof Spawn) {
-			infer(index,(Spawn)code,entry,environment);
+		} else if(code instanceof New) {
+			infer(index,(New)code,entry,environment);
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
 		} else {
@@ -952,7 +952,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(result);
 	}
 	
-	public void infer(int index, Code.Spawn code, Block.Entry entry,
+	public void infer(int index, Code.New code, Block.Entry entry,
 			Env environment) {
 		Value val = environment.pop();
 		Value result = null;
@@ -970,7 +970,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value val = environment.pop();
 	}
 	
-	public void infer(int index, Code.ProcLoad code, Block.Entry entry,
+	public void infer(int index, Code.Dereference code, Block.Entry entry,
 			Env environment) {
 		Value val = environment.pop();
 		Value result = null;

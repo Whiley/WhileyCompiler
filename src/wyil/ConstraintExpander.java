@@ -93,7 +93,7 @@ public final class ConstraintExpander {
 				return expandList(index,state,automaton);
 			case Type.K_DICTIONARY:	
 				return expandDictionary(index,state,automaton);
-			case Type.K_PROCESS:	
+			case Type.K_REFERENCE:	
 				return expandProcess(index,state,automaton);
 			case Type.K_RECORD:	
 				return expandRecord(index,state,automaton);

@@ -1223,7 +1223,7 @@ public final class CodeGeneration {
 	
 	private Block generate(Expr.Dereference v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
-		blk.append(Code.ProcLoad(v.srcType.raw()), attributes(v));
+		blk.append(Code.Dereference(v.srcType.raw()), attributes(v));
 		return blk;
 	}	
 	

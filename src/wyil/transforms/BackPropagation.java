@@ -203,8 +203,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(NewTuple)code,entry,environment);
 		} else if(code instanceof Negate) {
 			infer(index,(Negate)code,entry,environment);
-		} else if(code instanceof ProcLoad) {
-			infer(index,(ProcLoad)code,entry,environment);
+		} else if(code instanceof Dereference) {
+			infer(index,(Dereference)code,entry,environment);
 		} else if(code instanceof Return) {
 			infer(index,(Return)code,entry,environment);
 		} else if(code instanceof Skip) {
@@ -229,8 +229,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(StringLoad)code,entry,environment);
 		} else if(code instanceof SubString) {
 			infer(index,(SubString)code,entry,environment);
-		} else if(code instanceof Spawn) {
-			infer(index,(Spawn)code,entry,environment);
+		} else if(code instanceof New) {
+			infer(index,(New)code,entry,environment);
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
 		} else if(code instanceof TupleLoad) {
@@ -669,10 +669,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.push(code.type);
 	}
 	
-	private void infer(int index, Code.Spawn code, Block.Entry entry,
+	private void infer(int index, Code.New code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-		Type.Process tp = (Type.Process) req;
+		Type.Reference tp = (Type.Reference) req;
 		// I'm not sure where we should be really applying conversions
 		// here??
 		// coerce(tp.element(),code.type,index,entry);
@@ -691,7 +691,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.push(code.type);
 	}
 	
-	private void infer(int index, Code.ProcLoad code, Block.Entry entry,
+	private void infer(int index, Code.Dereference code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();	
 		coerceAfter(req,code.type.element(),index,entry);		

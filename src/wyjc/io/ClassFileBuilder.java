@@ -490,8 +490,8 @@ public class ClassFileBuilder {
 				 translate((NewTuple)code,freeSlot,bytecodes);
 			} else if(code instanceof Negate) {
 				 translate((Negate)code,freeSlot,bytecodes);
-			} else if(code instanceof ProcLoad) {
-				 translate((ProcLoad)code,freeSlot,bytecodes);
+			} else if(code instanceof Dereference) {
+				 translate((Dereference)code,freeSlot,bytecodes);
 			} else if(code instanceof Return) {
 				 translate((Return)code,freeSlot,bytecodes);
 			} else if(code instanceof Skip) {
@@ -520,8 +520,8 @@ public class ClassFileBuilder {
 				 translate((Switch)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof TryCatch) {
 				 translate((TryCatch)code,entry,freeSlot,handlers,constants,bytecodes);
-			} else if(code instanceof Spawn) {
-				 translate((Spawn)code,freeSlot,bytecodes);
+			} else if(code instanceof New) {
+				 translate((New)code,freeSlot,bytecodes);
 			} else if(code instanceof Throw) {
 				 translate((Throw)code,freeSlot,bytecodes);
 			} else if(code instanceof TupleLoad) {
@@ -611,8 +611,8 @@ public class ClassFileBuilder {
 		// doing this. Probably, if I change the multistore bytecode, that would
 		// help.
 		
-		if(Type.isSubtype(Type.Process(Type.T_ANY), type)) {			
-			Type.Process pt = (Type.Process) type;
+		if(Type.isSubtype(Type.Reference(Type.T_ANY), type)) {			
+			Type.Reference pt = (Type.Reference) type;
 			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
@@ -1437,7 +1437,7 @@ public class ClassFileBuilder {
 				ftype, Bytecode.VIRTUAL));		
 	}
 	
-	public void translate(Code.Spawn c, int freeSlot,
+	public void translate(Code.New c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {							
 		bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
 		bytecodes.add(new Bytecode.DupX1());
@@ -1452,13 +1452,13 @@ public class ClassFileBuilder {
 				Bytecode.VIRTUAL));
 	}
 	
-	public void translate(Code.ProcLoad c, int freeSlot,
+	public void translate(Code.Dereference c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 				Bytecode.VIRTUAL));
 		// finally, we need to cast the object we got back appropriately.		
-		Type.Process pt = (Type.Process) c.type;						
+		Type.Reference pt = (Type.Reference) c.type;						
 		addReadConversion(pt.element(), bytecodes);
 	}
 	
@@ -2170,7 +2170,7 @@ public class ClassFileBuilder {
 		// Second, case analysis on the various kinds of coercion
 		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
 			buildCoercion((Type.Tuple) from, (Type.Tuple) to, freeSlot, constants, bytecodes);
-		} else if(from instanceof Type.Process && to instanceof Type.Process) {
+		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
 			// TODO			
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
 			buildCoercion((Type.Set) from, (Type.Set) to, freeSlot, constants, bytecodes);			
@@ -2736,8 +2736,8 @@ public class ClassFileBuilder {
 				Bytecode.SPECIAL));
 	}		 	
 		
-	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
-			.Process(Type.T_ANY);
+	public final static Type.Reference WHILEY_SYSTEM_OUT_T = (Type.Reference) Type
+			.Reference(Type.T_ANY);
 
 	public final static Type WHILEY_SYSTEM_T = Type.Record(false,
 			new HashMap() {
@@ -2814,7 +2814,7 @@ public class ClassFileBuilder {
 			return WHILEYMAP;
 		} else if(t instanceof Type.Record) {
 			return WHILEYRECORD;
-		} else if(t instanceof Type.Process) {
+		} else if(t instanceof Type.Reference) {
 			return WHILEYPROCESS;
 		} else if(t instanceof Type.Tuple) {
 			return WHILEYTUPLE;

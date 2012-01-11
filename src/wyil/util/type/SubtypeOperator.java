@@ -190,7 +190,7 @@ public class SubtypeOperator {
 					}
 				}
 				return true;
-			case K_PROCESS:
+			case K_REFERENCE:
 			case K_DICTIONARY:
 			case K_TUPLE:  {				
 				if(fromSign || toSign) {					
