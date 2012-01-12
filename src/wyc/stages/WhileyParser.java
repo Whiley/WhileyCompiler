@@ -1571,13 +1571,13 @@ public final class WhileyParser {
 	
 	private UnresolvedType parseType() {
 		int start = index;
-		UnresolvedType t = parseUnionIntersectionType();
-		if ((index + 1) < tokens.size()
-				&& tokens.get(index) instanceof ColonColon
-				&& tokens.get(index + 1) instanceof LeftBrace) {
+		
+		if (index < tokens.size()
+				&& tokens.get(index) instanceof ColonColon) {
 			// this is a headless method type
 					
 			match(ColonColon.class);			
+			UnresolvedType t = parseUnionIntersectionType();
 			match(LeftBrace.class);
 			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
 			boolean firstTime = true;
@@ -1592,7 +1592,11 @@ public final class WhileyParser {
 			match(RightBrace.class);
 			// headless method
 			return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+		} 
+		
+		UnresolvedType t = parseUnionIntersectionType();
+		
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 			// this is a function or method type type
 			match(LeftBrace.class);
 			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
