@@ -172,12 +172,12 @@ public interface Expr extends SyntacticElement {
 		}		
 	}
 	
-	public static class AbstractFunction extends SyntacticElement.Impl implements Expr {
+	public static class AbstractFunctionOrMethodOrMessage extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<UnresolvedType> paramTypes;
-		public Nominal<Type.FunctionOrMethod> type;		
+		public Nominal<Type.FunctionOrMethodOrMessage> type;		
 				
-		public AbstractFunction(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+		public AbstractFunctionOrMethodOrMessage(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;			
 			if(paramTypes != null) {
@@ -187,7 +187,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public AbstractFunction(String name,
+		public AbstractFunctionOrMethodOrMessage(String name,
 				Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
@@ -199,21 +199,21 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal<Type.FunctionOrMethod> type() {
+		public Nominal<Type.FunctionOrMethodOrMessage> type() {
 			return type;
 		}		
 	}
 	
-	public static class Function extends AbstractFunction {
+	public static class FunctionOrMethodOrMessage extends AbstractFunctionOrMethodOrMessage {
 		public final NameID nid;					
 		
-		public Function(NameID nid, Collection<UnresolvedType> paramTypes,
+		public FunctionOrMethodOrMessage(NameID nid, Collection<UnresolvedType> paramTypes,
 				Attribute... attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
 		}
 		
-		public Function(NameID nid, Collection<UnresolvedType> paramTypes,
+		public FunctionOrMethodOrMessage(NameID nid, Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
@@ -817,6 +817,25 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,true,attributes);
 		}		
 	}	
+	
+	public static class IndirectMessageSend extends AbstractIndirectInvoke {				
+		public final Expr receiver;
+		public Nominal<Type.Method> methodType;		
+		
+		public IndirectMessageSend(Expr src, Expr receiver,
+				Collection<Expr> arguments, boolean synchronous,
+				Attribute... attributes) {
+			super(src, arguments, synchronous, attributes);
+			this.receiver = receiver;
+		}
+		
+		public IndirectMessageSend(Expr src, Expr receiver,
+				Collection<Expr> arguments, boolean synchronous,
+				Collection<Attribute> attributes) {
+			super(src, arguments, synchronous, attributes);
+			this.receiver = receiver;
+		}
+	}
 	
 	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
 		public Expr src;	

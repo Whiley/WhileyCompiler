@@ -739,8 +739,8 @@ public final class Resolver {
 					values.add(new Pair<Value,Value>(key,value));				
 				}
 				return Value.V_DICTIONARY(values);
-			} else if(expr instanceof Expr.AbstractFunction) {
-				Expr.AbstractFunction f = (Expr.AbstractFunction) expr;
+			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
+				Expr.AbstractFunctionOrMethodOrMessage f = (Expr.AbstractFunctionOrMethodOrMessage) expr;
 				// FIXME: consider function parameters as well
 				Pair<NameID,Nominal<Type.FunctionOrMethod>> p = resolveAsFunctionOrMethod(f.name, imports);
 				Type.FunctionOrMethod fmt = p.second().raw();				
@@ -871,6 +871,28 @@ public final class Resolver {
 	}
 	
 	/**
+	 * Responsible for determining the true type of a method, function or
+	 * message. In this case, no argument types are given. This means that any
+	 * match is returned. However, if there are multiple matches, then an
+	 * ambiguity error is reported.
+	 * 
+	 * @param nid
+	 * @param qualification
+	 * @param parameters
+	 * @param elem
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Pair<NameID,Nominal<Type.FunctionOrMethodOrMessage>> resolveAsFunctionOrMethodOrMessage(String name, 
+			List<WhileyFile.Import> imports) throws ResolveError {
+		try {
+			return (Pair) resolveAsFunctionOrMethod(name,null,imports);
+		} catch(ResolveError e) {
+			return (Pair) resolveAsMessage(name,null,null,imports);
+		}
+	}
+	
+	/**
 	 * Responsible for determining the true type of a method or function being
 	 * invoked. To do this, it must find the function/method with the most
 	 * precise type that matches the argument types.
@@ -969,25 +991,16 @@ public final class Resolver {
 	private String parameterString(List<Nominal<Type>> paramTypes) {
 		String paramStr = "(";
 		boolean firstTime = true;
-		for(Nominal<Type> t : paramTypes) {
-			if(!firstTime) {
-				paramStr += ",";
+		if(paramTypes == null) {
+			paramStr += "...";
+		} else {
+			for(Nominal<Type> t : paramTypes) {
+				if(!firstTime) {
+					paramStr += ",";
+				}
+				firstTime=false;
+				paramStr += t.nominal();
 			}
-			firstTime=false;
-			paramStr += t.nominal();
-		}
-		return paramStr + ")";		
-	}
-	
-	private String rawParameterString(List<Type> paramTypes) {
-		String paramStr = "(";
-		boolean firstTime = true;
-		for(Type t : paramTypes) {
-			if(!firstTime) {
-				paramStr += ",";
-			}
-			firstTime=false;
-			paramStr += t;
 		}
 		return paramStr + ")";		
 	}
@@ -1074,8 +1087,9 @@ public final class Resolver {
 			Type funrec = mt.receiver();
 			
 			if (receiver == funrec
-					|| (receiver != null && funrec != null && Type
-					.isImplicitCoerciveSubtype(receiver, funrec))) {					
+					|| receiver == null
+					|| (funrec != null && Type
+							.isImplicitCoerciveSubtype(receiver, funrec))) {					
 				// receivers match up OK ...				
 				if (parameters == null
 						|| (mt.params().size() == parameters.size() && paramSubtypes(

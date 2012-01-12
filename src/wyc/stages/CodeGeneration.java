@@ -1041,8 +1041,8 @@ public final class CodeGeneration {
 				return generate((Expr.Tuple) expression, environment);
 			} else if (expression instanceof Expr.Dictionary) {
 				return generate((Expr.Dictionary) expression, environment);
-			} else if (expression instanceof Expr.Function) {
-				return generate((Expr.Function) expression, environment);
+			} else if (expression instanceof Expr.FunctionOrMethodOrMessage) {
+				return generate((Expr.FunctionOrMethodOrMessage) expression, environment);
 			} else if (expression instanceof Expr.New) {
 				return generate((Expr.New) expression, environment);
 			} else {
@@ -1140,7 +1140,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generate(Expr.Function s, HashMap<String,Integer> environment) {						
+	private Block generate(Expr.FunctionOrMethodOrMessage s, HashMap<String,Integer> environment) {						
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(Value.V_FUN(s.nid, s.type.raw())),
 				attributes(s));

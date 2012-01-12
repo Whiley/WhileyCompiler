@@ -1033,8 +1033,8 @@ public final class TypePropagation {
 				return propagate((Expr.Convert) expr,environment,imports); 
 			} else if(expr instanceof Expr.Dictionary) {
 				return propagate((Expr.Dictionary) expr,environment,imports); 
-			} else if(expr instanceof Expr.AbstractFunction) {
-				return propagate((Expr.AbstractFunction) expr,environment,imports); 
+			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
+				return propagate((Expr.AbstractFunctionOrMethodOrMessage) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
 				return propagate((Expr.AbstractInvoke) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractIndexAccess) {
@@ -1324,28 +1324,29 @@ public final class TypePropagation {
 		return c;
 	}
 	
-	private Expr propagate(Expr.AbstractFunction expr,
+	private Expr propagate(Expr.AbstractFunctionOrMethodOrMessage expr,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		
-		if(expr instanceof Expr.Function) {
+		if(expr instanceof Expr.FunctionOrMethodOrMessage) {
 			return expr;
 		} 		
 		
-		Pair<NameID, Nominal<Type.FunctionOrMethod>> p;
+		Pair<NameID, Nominal<Type.FunctionOrMethodOrMessage>> p;
 		
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal<Type>> paramTypes = new ArrayList<Nominal<Type>>();
 			for (UnresolvedType t : expr.paramTypes) {
 				paramTypes.add(resolver.resolveAsType(t, imports));
 			}
-			p = resolver
+			// FIXME: clearly a bug here in the case of message reference
+			p = (Pair) resolver
 					.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);			
 		} else {
-			p = resolver.resolveAsFunctionOrMethod(expr.name, imports);			
+			p = resolver.resolveAsFunctionOrMethodOrMessage(expr.name, imports);			
 		}
 		
-		expr = new Expr.Function(p.first(),expr.paramTypes,expr.attributes());
+		expr = new Expr.FunctionOrMethodOrMessage(p.first(),expr.paramTypes,expr.attributes());
 		expr.type = p.second();
 		return expr;
 	}
@@ -1435,16 +1436,47 @@ public final class TypePropagation {
 				
 				Type.Reference procType = checkType(expr.qualification.type().raw(),Type.Reference.class,receiver);							
 
-				// ok, it's a message send
-				Pair<NameID, Nominal<Type.Message>> p = resolver
-						.resolveAsMessage(expr.name, procType, paramTypes,
-								imports);				
-				Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
-						exprArgs, expr.synchronous, expr.attributes());			
-				r.messageType = p.second();
-				// FIXME: loss of nominal information
-				r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
-				return r;				
+				// ok, it's a message send (possibly indirect)
+				Nominal<Type> type = environment.get(expr.name);
+				
+				// FIXME: bad idea to use instanceof Type.Message here
+				if(type != null && type.raw() instanceof Type.Message) {
+					// ok, matching local variable of message type.
+					Type.Message msgType = (Type.Message) type.raw();
+					List<Type> funTypeParams = msgType.params();
+					// FIXME: is this broken since should be equivalent, not subtype?
+					checkIsSubtype(msgType.receiver(),expr.qualification);
+					if(paramTypes.size() != funTypeParams.size()) {
+						syntaxError("insufficient arguments to message send",filename,expr);
+					}
+					for (int i = 0; i != funTypeParams.size(); ++i) {
+						Type fpt = funTypeParams.get(i);
+						// FIXME: following line is an abomination
+						Nominal<Type> broken = new Nominal(fpt, fpt);
+						checkIsSubtype(broken, paramTypes.get(i), exprArgs.get(i));
+					}
+					
+					Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
+					lv.type = type;								
+					Expr.IndirectMessageSend nexpr = new Expr.IndirectMessageSend(
+							lv, expr.qualification, expr.arguments,
+							expr.synchronous, expr.attributes());
+					// FIXME: loss of nominal information
+					nexpr.returnType = new Nominal(msgType.ret(),msgType.ret());
+					nexpr.methodType = (Nominal) type; 
+					return nexpr;					
+				} else {
+
+					Pair<NameID, Nominal<Type.Message>> p = resolver
+							.resolveAsMessage(expr.name, procType, paramTypes,
+									imports);				
+					Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
+							exprArgs, expr.synchronous, expr.attributes());			
+					r.messageType = p.second();
+					// FIXME: loss of nominal information
+					r.returnType = new Nominal<Type>(p.second().raw().ret(),p.second().raw().ret());
+					return r;
+				}
 			}
 		} else {
 

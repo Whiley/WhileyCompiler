@@ -1576,9 +1576,9 @@ public abstract class Type {
 			if(state.kind == K_FUNCTION) {
 				middle = ret + "(" + middle + ")";
 			} else if(state.kind == K_METHOD) {
-				middle = rec + "::" + ret + "(" + middle + ")";
-			} else {
 				middle = "::" + ret + "(" + middle + ")";
+			} else {
+				middle = rec + "::" + ret + "(" + middle + ")";
 			}
 			if(!thros.equals("void")) {
 				middle = middle + " throws " + thros;

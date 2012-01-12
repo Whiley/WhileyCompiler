@@ -1283,7 +1283,7 @@ public final class WhileyParser {
 			}
 			match(RightBrace.class);
 		}
-		return new Expr.AbstractFunction(funName, paramTypes, sourceAttr(start, index - 1));			
+		return new Expr.AbstractFunctionOrMethodOrMessage(funName, paramTypes, sourceAttr(start, index - 1));			
 	}
 
 	private Expr.New parseNew() {
