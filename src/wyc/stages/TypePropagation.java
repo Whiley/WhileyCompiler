@@ -468,11 +468,12 @@ public final class TypePropagation {
 			
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal<Type>> old = null;
+		RefCountedHashMap<String,Nominal<Type>> orig = environment.clone();
 		do {
 			old = environment.clone();
-			environment = propagate(stmt.body,old,imports);
+			environment = join(orig.clone(),propagate(stmt.body,old,imports));
 			old.free(); // hacky, but safe
-		} while(!environment.equals(old));		
+		} while(!environment.equals(old));
 		
 		stmt.condition = propagate(stmt.condition,environment,imports);
 		checkIsSubtype(Type.T_BOOL,stmt.condition);			
@@ -549,9 +550,10 @@ public final class TypePropagation {
 		
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal<Type>> old = null;
+		RefCountedHashMap<String,Nominal<Type>> orig = environment.clone();
 		do {
 			old = environment.clone();
-			environment = propagate(stmt.body,old,imports);
+			environment = join(orig.clone(),propagate(stmt.body,old,imports));
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
 		
@@ -698,9 +700,10 @@ public final class TypePropagation {
 		
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal<Type>> old = null;
+		RefCountedHashMap<String,Nominal<Type>> orig = environment.clone();
 		do {
 			old = environment.clone();
-			environment = propagate(stmt.body,old,imports);
+			environment = join(orig.clone(),propagate(stmt.body,old,imports));
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
 		
@@ -900,7 +903,8 @@ public final class TypePropagation {
 				// yes, right-hand side is a constant
 				Expr.TypeVal tv = (Expr.TypeVal) rhs;
 				Type testRawType = tv.type.raw();					
-				Type glb = Type.intersect(lhsRawType, testRawType);							
+				Type glb = Type.intersect(lhsRawType, testRawType);	
+				
 				if(Type.isSubtype(testRawType,lhsRawType)) {								
 					// DEFINITE TRUE CASE										
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, bop);
@@ -1125,21 +1129,19 @@ public final class TypePropagation {
 			
 			srcType = Type.T_STRING;
 		} else if(lhs_list && rhs_list) {
+			checkIsSubtype(Type.List(Type.T_ANY,false),lhs);
+			checkIsSubtype(Type.List(Type.T_ANY,false),rhs);
+			
 			switch(expr.op) {	
 			case ADD:
 				expr.op = Expr.BOp.LISTAPPEND;
-				break;			
-			case LISTAPPEND:
+			case LISTAPPEND:				
+				srcType = Type.effectiveListType(Type.Union(lhsRawType,rhsRawType));
 				break;
 			default:
-				syntaxError("invalid list operation: " + expr.op,filename,expr);		
-			}
-			
-			checkIsSubtype(Type.List(Type.T_ANY,false),lhs);
-			checkIsSubtype(Type.List(Type.T_ANY,false),rhs);						
-		
-			srcType = Type.effectiveListType(Type.Union(lhsRawType,rhsRawType));
-			
+				syntaxError("invalid list operation: " + expr.op,filename,expr);	
+				return null; // dead-code
+			}										
 		} else if(lhs_set && rhs_set) {	
 			checkIsSubtype(Type.Set(Type.T_ANY,false),lhs);
 			checkIsSubtype(Type.Set(Type.T_ANY,false),rhs);						
@@ -1148,17 +1150,17 @@ public final class TypePropagation {
 				case ADD:																				
 					expr.op = Expr.BOp.UNION;					
 				case UNION:
-					srcType = Type.Union(lhsRawType,rhsRawType);
+					srcType = Type.effectiveSetType(Type.Union(lhsRawType,rhsRawType));					
 					break;
 				case BITWISEAND:																				
 					expr.op = Expr.BOp.INTERSECTION;
 				case INTERSECTION:
-					srcType = Type.intersect(lhsRawType,rhsRawType);
+					srcType = Type.effectiveSetType(Type.intersect(lhsRawType,rhsRawType));
 					break;
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
 				case DIFFERENCE:
-					srcType = lhsRawType;
+					srcType = Type.effectiveSetType(lhsRawType);
 					break;								
 				default:
 					syntaxError("invalid set operation: " + expr.op,filename,expr);	
