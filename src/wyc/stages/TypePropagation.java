@@ -1146,7 +1146,20 @@ public final class TypePropagation {
 		} else if(lhs_set && rhs_set) {	
 			checkIsSubtype(Type.Set(Type.T_ANY,false),lhs);
 			checkIsSubtype(Type.Set(Type.T_ANY,false),rhs);						
-		
+			
+			// FIXME: something tells me there should be a function for doing
+			// this.  Perhaps effectiveSetType?
+			
+			if(lhs_list) {
+				 Type.List tmp = Type.effectiveListType(lhsRawType);
+				 lhsRawType = Type.Set(tmp.element(),false);
+			} 
+			
+			if(rhs_list) {
+				 Type.List tmp = Type.effectiveListType(rhsRawType);
+				 rhsRawType = Type.Set(tmp.element(),false);
+			}  
+			
 			switch(expr.op) {				
 				case ADD:																				
 					expr.op = Expr.BOp.UNION;					
