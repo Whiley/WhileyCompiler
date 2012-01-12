@@ -820,7 +820,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class IndirectMessageSend extends AbstractIndirectInvoke {				
 		public final Expr receiver;
-		public Nominal<Type.Method> methodType;		
+		public Nominal<Type.Message> messageType;		
 		
 		public IndirectMessageSend(Expr src, Expr receiver,
 				Collection<Expr> arguments, boolean synchronous,

@@ -1463,7 +1463,7 @@ public final class TypePropagation {
 							expr.synchronous, expr.attributes());
 					// FIXME: loss of nominal information
 					nexpr.returnType = new Nominal(msgType.ret(),msgType.ret());
-					nexpr.methodType = (Nominal) type; 
+					nexpr.messageType = (Nominal) type; 
 					return nexpr;					
 				} else {
 

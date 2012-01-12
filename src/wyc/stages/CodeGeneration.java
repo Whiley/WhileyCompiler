@@ -1029,6 +1029,8 @@ public final class CodeGeneration {
 				return generate((Expr.IndirectFunctionCall) expression, true, environment);
 			} else if (expression instanceof Expr.IndirectMethodCall) {
 				return generate((Expr.IndirectMethodCall) expression, true, environment);
+			} else if (expression instanceof Expr.IndirectMessageSend) {
+				return generate((Expr.IndirectMessageSend) expression, true, environment);
 			} else if (expression instanceof Expr.MessageSend) {
 				return generate((Expr.MessageSend) expression, true, environment);
 			} else if (expression instanceof Expr.Comprehension) {
@@ -1130,6 +1132,23 @@ public final class CodeGeneration {
 		}
 
 		blk.append(Code.IndirectInvoke(fc.methodType.raw(), retval), attributes(fc));
+
+		return blk;
+	}
+	
+	private Block generate(Expr.IndirectMessageSend fc, boolean retval,
+			HashMap<String, Integer> environment) throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		blk.append(generate(fc.src,environment));
+		
+		blk.append(generate(fc.receiver,environment));
+		
+		for (Expr e : fc.arguments) {
+			blk.append(generate(e, environment));
+		}
+
+		blk.append(Code.IndirectSend(fc.messageType.raw(), fc.synchronous, retval), attributes(fc));
 
 		return blk;
 	}
