@@ -1323,9 +1323,9 @@ public final class CodeGeneration {
 			Code.OpDir dir;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
 				dir = Code.OpDir.UNIFORM;
-			} else if(lhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, lhs)) {
+			} else if(lhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, rhs)) {
 				dir = Code.OpDir.LEFT;
-			} else if(rhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, rhs)) {
+			} else if(rhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, lhs)) {
 				dir = Code.OpDir.RIGHT;
 			} else {
 				// this indicates that one operand must be explicitly converted
