@@ -1323,10 +1323,14 @@ public final class CodeGeneration {
 			Code.OpDir dir;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
 				dir = Code.OpDir.UNIFORM;
-			} else if(lhs == Type.T_STRING) {
+			} else if(lhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, lhs)) {
 				dir = Code.OpDir.LEFT;
-			} else {
+			} else if(rhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, rhs)) {
 				dir = Code.OpDir.RIGHT;
+			} else {
+				// this indicates that one operand must be explicitly converted
+				// into a string.
+				dir = Code.OpDir.UNIFORM;
 			}
 			blk.append(Code.StringAppend(dir),attributes(v));
 			return blk;	

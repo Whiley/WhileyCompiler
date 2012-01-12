@@ -1116,7 +1116,8 @@ public final class TypePropagation {
 		
 		Type srcType;
 
-		if(lhs_str || rhs_str) {	
+		if(lhs_str || rhs_str) {
+			
 			switch(expr.op) {				
 			case ADD:								
 				expr.op = Expr.BOp.STRINGAPPEND;
