@@ -202,7 +202,7 @@ public final class WhileyFile {
 	public static class TypeDef extends SyntacticElement.Impl implements Declaration {
 		public final List<Modifier> modifiers;
 		public final UnresolvedType unresolvedType;
-		public Nominal<Type> resolvedType;
+		public Nominal resolvedType;
 		public final Expr constraint;
 		public final String name;		
 
@@ -293,7 +293,7 @@ public final class WhileyFile {
 		
 		public abstract UnresolvedType.FunctionOrMethodOrMessage unresolvedType();
 		
-		public abstract Nominal<? extends Type.FunctionOrMethodOrMessage> resolvedType();
+		public abstract Nominal.FunctionOrMethodOrMessage resolvedType();
 	}
 
 	public static abstract class FunctionOrMethod extends FunctionOrMethodOrMessage {
@@ -308,7 +308,7 @@ public final class WhileyFile {
 		
 		public abstract UnresolvedType.FunctionOrMethod unresolvedType();
 		
-		public abstract Nominal<? extends Type.FunctionOrMethod> resolvedType();
+		public abstract Nominal.FunctionOrMethod resolvedType();
 	}
 	
 	/**
@@ -335,7 +335,7 @@ public final class WhileyFile {
 	 * 
 	 */
 	public final static class Function extends FunctionOrMethod {
-		public Nominal<Type.Function> resolvedType;
+		public Nominal.Function resolvedType;
 		
 		public Function(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
@@ -354,7 +354,7 @@ public final class WhileyFile {
 			return new UnresolvedType.Function(ret, throwType, params, attributes());
 		}
 		
-		public Nominal<Type.Function> resolvedType() {
+		public Nominal.Function resolvedType() {
 			return resolvedType;
 		}
 	}
@@ -383,7 +383,7 @@ public final class WhileyFile {
 	 * 
 	 */
 	public final static class Method extends FunctionOrMethod {
-		public Nominal<Type.Method> resolvedType;
+		public Nominal.Method resolvedType;
 		
 		public Method(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
@@ -402,7 +402,7 @@ public final class WhileyFile {
 			return new UnresolvedType.Method(ret, throwType, params, attributes());
 		}
 		
-		public Nominal<Type.Method> resolvedType() {
+		public Nominal.Method resolvedType() {
 			return resolvedType;
 		}
 	}
@@ -435,7 +435,7 @@ public final class WhileyFile {
 	 */
 	public final static class Message extends FunctionOrMethodOrMessage {
 		public final UnresolvedType receiver;
-		public Nominal<Type.Message> resolvedType;
+		public Nominal.Message resolvedType;
 		
 		public Message(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,
@@ -455,7 +455,7 @@ public final class WhileyFile {
 			return new UnresolvedType.Message(receiver, ret, throwType, params, attributes());
 		}
 		
-		public Nominal<Type.Message> resolvedType() {
+		public Nominal.Message resolvedType() {
 			return resolvedType;
 		}
 	}

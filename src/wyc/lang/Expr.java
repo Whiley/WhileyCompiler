@@ -56,7 +56,7 @@ public interface Expr extends SyntacticElement {
 	 * 
 	 * @return
 	 */
-	public Nominal<? extends Type> type();
+	public Nominal type();
 	
 	/**
 	 * An LVal is a special form of expression which may appear on the left-hand
@@ -80,7 +80,7 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return null;
 		}
 		
@@ -90,7 +90,7 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class LocalVariable extends AbstractVariable {		
-		public Nominal<Type> type;		
+		public Nominal type;		
 
 		public LocalVariable(String var, Attribute... attributes) {
 			super(var, attributes);			
@@ -100,7 +100,7 @@ public interface Expr extends SyntacticElement {
 			super(var, attributes);			
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return type;
 		}		
 		
@@ -110,7 +110,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class AssignedVariable extends LocalVariable {		
-		public Nominal<Type> afterType;
+		public Nominal afterType;
 
 		public AssignedVariable(String var, Attribute... attributes) {
 			super(var, attributes);			
@@ -129,8 +129,8 @@ public interface Expr extends SyntacticElement {
 			this.value = val;
 		}
 		
-		public Nominal<Type> type() {
-			return new Nominal<Type>(value.type(),value.type());
+		public Nominal type() {
+			return Nominal.construct(value.type(),value.type());
 		}
 		
 		public String toString() {
@@ -140,7 +140,7 @@ public interface Expr extends SyntacticElement {
 
 	public static class Convert extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType unresolvedType;
-		public Nominal<Type> type;					
+		public Nominal type;					
 		public Expr expr;	
 		
 		public Convert(UnresolvedType type, Expr expr, Attribute... attributes) {
@@ -149,7 +149,7 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return type;
 		}		
 		
@@ -160,14 +160,14 @@ public interface Expr extends SyntacticElement {
 	
 	public static class TypeVal extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType unresolvedType;
-		public Nominal<Type> type;		
+		public Nominal type;		
 		
 		public TypeVal(UnresolvedType val, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = val;
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return Nominal.T_META;
 		}		
 	}
@@ -175,7 +175,7 @@ public interface Expr extends SyntacticElement {
 	public static class AbstractFunctionOrMethodOrMessage extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<UnresolvedType> paramTypes;
-		public Nominal<Type.FunctionOrMethodOrMessage> type;		
+		public Nominal.FunctionOrMethodOrMessage type;		
 				
 		public AbstractFunctionOrMethodOrMessage(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
@@ -199,7 +199,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal<Type.FunctionOrMethodOrMessage> type() {
+		public Nominal.FunctionOrMethodOrMessage type() {
 			return type;
 		}		
 	}
@@ -224,7 +224,7 @@ public interface Expr extends SyntacticElement {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
-		public Nominal<Type> srcType;
+		public Nominal srcType;
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -240,7 +240,7 @@ public interface Expr extends SyntacticElement {
 			this.rhs = rhs;
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			switch(op) {
 			case EQ:
 			case NEQ:
@@ -258,7 +258,7 @@ public interface Expr extends SyntacticElement {
 			}			
 		}
 		
-		public Nominal<Type> srcType() {
+		public Nominal srcType() {
 			return srcType;		
 		}
 		
@@ -285,7 +285,7 @@ public interface Expr extends SyntacticElement {
 			this.index = index;
 		}
 				
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return null;
 		}
 				
@@ -295,8 +295,7 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class ListAccess extends AbstractIndexAccess {					
-		public Nominal<Type.List> srcType;
-		public Nominal<Type> elementType;
+		public Nominal.List srcType;		
 
 		public ListAccess(Expr src, Expr index, Attribute... attributes) {
 			super(src,index,attributes);
@@ -306,14 +305,13 @@ public interface Expr extends SyntacticElement {
 			super(src,index,attributes);			
 		}
 		
-		public Nominal<Type> type() {
-			return elementType;
+		public Nominal type() {
+			return srcType.element();
 		}
 	}
 
 	public static class DictionaryAccess extends AbstractIndexAccess {				
-		public Nominal<Type.Dictionary> srcType;
-		public Nominal<Type> elementType;
+		public Nominal.Dictionary srcType;
 
 		public DictionaryAccess(Expr src, Expr index, Attribute... attributes) {
 			super(src,index,attributes);
@@ -323,8 +321,8 @@ public interface Expr extends SyntacticElement {
 			super(src,index,attributes);			
 		}		
 		
-		public Nominal<Type> type() {
-			return elementType;
+		public Nominal type() {
+			return srcType.value();
 		}
 	}
 	
@@ -337,7 +335,7 @@ public interface Expr extends SyntacticElement {
 			super(src,index,attributes);			
 		}
 
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return Nominal.T_CHAR;
 		}
 	}
@@ -351,7 +349,7 @@ public interface Expr extends SyntacticElement {
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
 		public Expr mhs;	
-		public Nominal<Type> type;
+		public Nominal type;
 		
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -359,7 +357,7 @@ public interface Expr extends SyntacticElement {
 			this.mhs = mhs;			
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return type;
 		}		
 		
@@ -370,7 +368,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Set extends SyntacticElement.Impl implements Expr {		
 		public final ArrayList<Expr> arguments;
-		public Nominal<Type.Set> type;		
+		public Nominal.Set type;		
 		
 		public Set(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
@@ -385,14 +383,14 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal<Type.Set> type() {
+		public Nominal.Set type() {
 			return type;
 		}		
 	}
 	
 	public static class List extends SyntacticElement.Impl implements Expr {		
 		public final ArrayList<Expr> arguments;
-		public Nominal<Type.List> type;		
+		public Nominal.List type;		
 		
 		public List(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
@@ -407,7 +405,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal<Type.List> type() {
+		public Nominal.List type() {
 			return type;
 		}		
 	}
@@ -416,7 +414,7 @@ public interface Expr extends SyntacticElement {
 		public Expr src;
 		public Expr start;
 		public Expr end;	
-		public Nominal<Type.List> type;
+		public Nominal.List type;
 		
 		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
 			super(attributes);
@@ -432,7 +430,7 @@ public interface Expr extends SyntacticElement {
 			this.end = end;
 		}
 		
-		public Nominal<Type.List> type() {
+		public Nominal.List type() {
 			return type;
 		}		
 	}
@@ -442,7 +440,7 @@ public interface Expr extends SyntacticElement {
 		public Expr value;
 		public final ArrayList<Pair<String,Expr>> sources;
 		public Expr condition;
-		public Nominal<Type> type;
+		public Nominal type;
 		
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<String, Expr>> sources, Expr condition,
@@ -454,7 +452,7 @@ public interface Expr extends SyntacticElement {
 			this.sources = new ArrayList<Pair<String, Expr>>(sources);
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return type;
 		}		
 	}
@@ -485,7 +483,7 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return null;
 		}
 
@@ -495,8 +493,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class RecordAccess extends AbstractDotAccess {		
-		public Nominal<Type> fieldType;
-		public Nominal<Type.Record> srcType;
+		public Nominal.Record srcType;
 
 		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
 			super(lhs,name,attributes);			
@@ -506,8 +503,8 @@ public interface Expr extends SyntacticElement {
 			super(lhs,name,attributes);			
 		}
 		
-		public Nominal<Type> type() {
-			return fieldType;
+		public Nominal type() {
+			return srcType.field(name);
 		}		
 	}		
 	
@@ -528,10 +525,10 @@ public interface Expr extends SyntacticElement {
 			this.nid = nid;
 		}
 				
-		public Nominal<Type> type() {
+		public Nominal type() {
 			// FIXME: loss of nominal information here, since the type of the
 			// constant in question is always fully expanded.
-			return new Nominal(value.type(), value.type());
+			return Nominal.construct(value.type(), value.type());
 		}
 		
 		public String toString() {
@@ -557,7 +554,7 @@ public interface Expr extends SyntacticElement {
 			this.mid = mid;
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return null;
 		}
 		
@@ -584,7 +581,7 @@ public interface Expr extends SyntacticElement {
 			this.pid = pid;
 		}			
 
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return null;
 		}
 		
@@ -600,16 +597,15 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Dereference extends SyntacticElement.Impl implements LVal {
 		public Expr src;	
-		public Nominal<Type> elementType;
-		public Nominal<Type.Reference> srcType;
+		public Nominal.Reference srcType;
 		
 		public Dereference(Expr src, Attribute... attributes) {
 			super(attributes);
 			this.src = src;			
 		}
 		
-		public Nominal<Type> type() {
-			return elementType;
+		public Nominal type() {
+			return srcType.element();
 		}
 		
 		public String toString() {
@@ -619,14 +615,14 @@ public interface Expr extends SyntacticElement {
 		
 	public static class Dictionary extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Pair<Expr,Expr>> pairs;		
-		public Nominal<Type.Dictionary> type;		
+		public Nominal.Dictionary type;		
 		
 		public Dictionary(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
 			super(attributes);
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
 		
-		public Nominal<Type.Dictionary> type() {
+		public Nominal.Dictionary type() {
 			return type;
 		}		
 	}
@@ -634,7 +630,7 @@ public interface Expr extends SyntacticElement {
 	public static class Record extends SyntacticElement.Impl implements
 			Expr {
 		public final HashMap<String, Expr> fields;
-		public Nominal<Type.Record> type;		
+		public Nominal.Record type;		
 
 		public Record(Map<String, Expr> fields,
 				Attribute... attributes) {
@@ -642,7 +638,7 @@ public interface Expr extends SyntacticElement {
 			this.fields = new HashMap<String, Expr>(fields);
 		}
 
-		public Nominal<Type.Record> type() {
+		public Nominal.Record type() {
 			return type;
 		}
 	}
@@ -650,14 +646,14 @@ public interface Expr extends SyntacticElement {
 	public static class Tuple extends SyntacticElement.Impl implements
 			LVal {
 		public final ArrayList<Expr> fields;
-		public Nominal<Type.Tuple> type;		
+		public Nominal.Tuple type;		
 		
 		public Tuple(Collection<Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
 		}
 
-		public Nominal<Type.Tuple> type() {
+		public Nominal.Tuple type() {
 			return type;
 		}
 	}
@@ -668,7 +664,6 @@ public interface Expr extends SyntacticElement {
 		public R qualification;
 		public final ArrayList<Expr> arguments;		
 		public final boolean synchronous;		
-		public Nominal<Type> returnType;		
 		
 		public AbstractInvoke(String name, R receiver,
 				Collection<Expr> arguments, boolean synchronous,
@@ -690,14 +685,14 @@ public interface Expr extends SyntacticElement {
 			this.synchronous = synchronous;
 		}
 		
-		public Nominal<Type> type() {
-			return returnType;
-		}				
+		public Nominal type() {
+			return null;
+		}
 	}
 	
 	public static class MessageSend extends AbstractInvoke<Expr> {		
 		public final NameID nid;
-		public Nominal<Type.Message> messageType;
+		public Nominal.Message messageType;
 		
 		public MessageSend(NameID nid, Expr receiver,
 				Collection<Expr> arguments, boolean synchronous,
@@ -715,12 +710,16 @@ public interface Expr extends SyntacticElement {
 		
 		public NameID nid() {
 			return nid;
-		}			
+		}		
+		
+		public Nominal type() {
+			return messageType.ret();
+		}
 	}
 	
 	public static class MethodCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
-		public Nominal<Type.Method> methodType;
+		public Nominal.Method methodType;
 		
 		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -736,12 +735,16 @@ public interface Expr extends SyntacticElement {
 		
 		public NameID nid() {
 			return nid;
-		}		
+		}
+		
+		public Nominal type() {
+			return methodType.ret();
+		}
 	}
 	
 	public static class FunctionCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
-		public Nominal<Type.Function> functionType;
+		public Nominal.Function functionType;
 		
 		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -757,15 +760,18 @@ public interface Expr extends SyntacticElement {
 		
 		public NameID nid() {
 			return nid;
-		}		
+		}
+		
+		public Nominal type() {
+			return functionType.ret();
+		}
 	}
 	
 	public static class AbstractIndirectInvoke extends SyntacticElement.Impl implements Expr,
 	Stmt {
 		public Expr src; 
 		public final ArrayList<Expr> arguments;		
-		public final boolean synchronous;		
-		public Nominal<Type> returnType;		
+		public final boolean synchronous;				
 
 		public AbstractIndirectInvoke(Expr src,
 				Collection<Expr> arguments, boolean synchronous,
@@ -785,13 +791,13 @@ public interface Expr extends SyntacticElement {
 			this.synchronous = synchronous;
 		}
 
-		public Nominal<Type> type() {
-			return returnType;
+		public Nominal type() {
+			return null;
 		}				
 	}
 	
 	public static class IndirectMethodCall extends AbstractIndirectInvoke {				
-		public Nominal<Type.Method> methodType;
+		public Nominal.Method methodType;
 		
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -801,11 +807,15 @@ public interface Expr extends SyntacticElement {
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(src,arguments,true,attributes);
-		}		
+		}
+		
+		public Nominal type() {
+			return methodType.ret();
+		}
 	}
 	
 	public static class IndirectFunctionCall extends AbstractIndirectInvoke {				
-		public Nominal<Type.Function> functionType;
+		public Nominal.Function functionType;
 		
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -815,12 +825,16 @@ public interface Expr extends SyntacticElement {
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(src,arguments,true,attributes);
-		}		
+		}
+		
+		public Nominal type() {
+			return functionType.ret();
+		}
 	}	
 	
 	public static class IndirectMessageSend extends AbstractIndirectInvoke {				
 		public final Expr receiver;
-		public Nominal<Type.Message> messageType;		
+		public Nominal.Message messageType;		
 		
 		public IndirectMessageSend(Expr src, Expr receiver,
 				Collection<Expr> arguments, boolean synchronous,
@@ -834,6 +848,10 @@ public interface Expr extends SyntacticElement {
 				Collection<Attribute> attributes) {
 			super(src, arguments, synchronous, attributes);
 			this.receiver = receiver;
+		}
+		
+		public Nominal type() {
+			return messageType.ret();
 		}
 	}
 	
@@ -850,7 +868,7 @@ public interface Expr extends SyntacticElement {
 			this.src = mhs;			
 		}
 		
-		public Nominal<Type> type() {
+		public Nominal type() {
 			return Nominal.T_INT;
 		}				
 		
@@ -860,7 +878,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class SetLength extends AbstractLength {
-		public Nominal<Type.Set> srcType;
+		public Nominal.Set srcType;
 		
 		public SetLength(Expr src, Attribute... attributes) {
 			super(src,attributes);
@@ -872,7 +890,7 @@ public interface Expr extends SyntacticElement {
 	}		
 	
 	public static class ListLength extends AbstractLength {		
-		public Nominal<Type.List> srcType;
+		public Nominal.List srcType;
 		
 		public ListLength(Expr src, Attribute... attributes) {
 			super(src,attributes);
@@ -894,7 +912,7 @@ public interface Expr extends SyntacticElement {
 	}	
 	
 	public static class DictionaryLength extends AbstractLength {		
-		public Nominal<Type.Dictionary> srcType;
+		public Nominal.Dictionary srcType;
 		
 		public DictionaryLength(Expr src, Attribute... attributes) {
 			super(src,attributes);
@@ -907,13 +925,13 @@ public interface Expr extends SyntacticElement {
 	
 	public static class New extends SyntacticElement.Impl implements Expr,Stmt {
 		public Expr expr;
-		public Nominal<Type.Reference> type;
+		public Nominal.Reference type;
 
 		public New(Expr expr, Attribute... attributes) {
 			this.expr = expr;						
 		}
 		
-		public Nominal<Type.Reference> type() {
+		public Nominal.Reference type() {
 			return type;
 		}		
 	}

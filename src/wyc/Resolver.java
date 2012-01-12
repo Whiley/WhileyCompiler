@@ -312,11 +312,11 @@ public final class Resolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Nominal<Type> resolveAsType(UnresolvedType t,
+	public Nominal resolveAsType(UnresolvedType t,
 			List<WhileyFile.Import> imports) throws ResolveError {
 		Type nominalType = resolveAsType(t, imports, true);		
 		Type rawType = resolveAsType(t, imports, false);		
-		return new Nominal<Type>(nominalType, rawType);
+		return Nominal.construct(nominalType, rawType);
 	}
 	
 	private Type resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
@@ -742,7 +742,7 @@ public final class Resolver {
 			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
 				Expr.AbstractFunctionOrMethodOrMessage f = (Expr.AbstractFunctionOrMethodOrMessage) expr;
 				// FIXME: consider function parameters as well
-				Pair<NameID,Nominal<Type.FunctionOrMethod>> p = resolveAsFunctionOrMethod(f.name, imports);
+				Pair<NameID,Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(f.name, imports);
 				Type.FunctionOrMethod fmt = p.second().raw();				
 				return Value.V_FUN(p.first(),p.second().raw());				
 			} 
@@ -865,7 +865,7 @@ public final class Resolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Pair<NameID,Nominal<Type.FunctionOrMethod>> resolveAsFunctionOrMethod(String name, 
+	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
 			List<WhileyFile.Import> imports) throws ResolveError {
 		return resolveAsFunctionOrMethod(name,null,imports);
 	}
@@ -883,7 +883,7 @@ public final class Resolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Pair<NameID,Nominal<Type.FunctionOrMethodOrMessage>> resolveAsFunctionOrMethodOrMessage(String name, 
+	public Pair<NameID,Nominal.FunctionOrMethodOrMessage> resolveAsFunctionOrMethodOrMessage(String name, 
 			List<WhileyFile.Import> imports) throws ResolveError {
 		try {
 			return (Pair) resolveAsFunctionOrMethod(name,null,imports);
@@ -904,10 +904,10 @@ public final class Resolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Pair<NameID,Nominal<Type.FunctionOrMethod>> resolveAsFunctionOrMethod(String name, 
-			List<Nominal<Type>> parameters, List<WhileyFile.Import> imports) throws ResolveError {
+	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
+			List<Nominal> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 		
-		ArrayList<Pair<NameID,Nominal<Type.FunctionOrMethod>>> candidates = new ArrayList(); 
+		ArrayList<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new ArrayList(); 
 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
@@ -934,9 +934,9 @@ public final class Resolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Nominal<Type.FunctionOrMethod> resolveAsFunctionOrMethod(NameID nid, 
-			List<Nominal<Type>> parameters) throws ResolveError {
-		ArrayList<Pair<NameID, Nominal<Type.FunctionOrMethod>>> candidates = new ArrayList();
+	public Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid, 
+			List<Nominal> parameters) throws ResolveError {
+		ArrayList<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new ArrayList();
 		
 		addCandidateFunctionsAndMethods(nid, parameters, candidates);
 		
@@ -944,10 +944,10 @@ public final class Resolver {
 				candidates).second();		
 	}
 	
-	public Pair<NameID,Nominal<Type.Message>> resolveAsMessage(String name, Type.Reference receiver,
-			List<Nominal<Type>> parameters, List<WhileyFile.Import> imports) throws ResolveError {
+	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
+			List<Nominal> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 
-		ArrayList<Pair<NameID,Nominal<Type.Message>>> candidates = new ArrayList<Pair<NameID,Nominal<Type.Message>>>(); 
+		ArrayList<Pair<NameID,Nominal.Message>> candidates = new ArrayList<Pair<NameID,Nominal.Message>>(); 
 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
@@ -962,10 +962,10 @@ public final class Resolver {
 		return selectCandidateMessage(name,receiver,parameters,candidates);
 	}
 	
-	public Nominal<Type.Message> resolveAsMessage(NameID nid,
-			Type.Reference receiver, List<Nominal<Type>> parameters)
+	public Nominal.Message resolveAsMessage(NameID nid,
+			Type.Reference receiver, List<Nominal> parameters)
 			throws ResolveError {
-		ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates = new ArrayList<Pair<NameID, Nominal<Type.Message>>>();
+		ArrayList<Pair<NameID, Nominal.Message>> candidates = new ArrayList<Pair<NameID, Nominal.Message>>();
 		
 		addCandidateMessages(nid, parameters, candidates);
 		
@@ -988,13 +988,13 @@ public final class Resolver {
 		return false;
 	}
 	
-	private String parameterString(List<Nominal<Type>> paramTypes) {
+	private String parameterString(List<Nominal> paramTypes) {
 		String paramStr = "(";
 		boolean firstTime = true;
 		if(paramTypes == null) {
 			paramStr += "...";
 		} else {
-			for(Nominal<Type> t : paramTypes) {
+			for(Nominal t : paramTypes) {
 				if(!firstTime) {
 					paramStr += ",";
 				}
@@ -1005,16 +1005,16 @@ public final class Resolver {
 		return paramStr + ")";		
 	}
 	
-	private Pair<NameID,Nominal<Type.FunctionOrMethod>> selectCandidateFunctionOrMethod(String name,
-			List<Nominal<Type>> parameters,
-			ArrayList<Pair<NameID, Nominal<Type.FunctionOrMethod>>> candidates)
+	private Pair<NameID,Nominal.FunctionOrMethod> selectCandidateFunctionOrMethod(String name,
+			List<Nominal> parameters,
+			ArrayList<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
 			throws ResolveError {
 		
 		List<Type> rawParameters; 
 		Type.Function target;
 		
 		if (parameters != null) {
-			rawParameters = Nominal.stripNominal(parameters);
+			rawParameters = stripNominal(parameters);
 			target = (Type.Function) Type.Function(Type.T_ANY, Type.T_ANY,
 					rawParameters);
 		} else {
@@ -1023,10 +1023,10 @@ public final class Resolver {
 		}
 
 		NameID candidateID = null;
-		Nominal<Type.FunctionOrMethod> candidateType = null;			
+		Nominal.FunctionOrMethod candidateType = null;			
 				
-		for (Pair<NameID,Nominal<Type.FunctionOrMethod>> p : candidates) {
-			Nominal<Type.FunctionOrMethod> nft = p.second();
+		for (Pair<NameID,Nominal.FunctionOrMethod> p : candidates) {
+			Nominal.FunctionOrMethod nft = p.second();
 			Type.FunctionOrMethod ft = nft.raw();			
 			if (parameters == null
 					|| (ft.params().size() == parameters.size() && paramSubtypes(
@@ -1050,7 +1050,7 @@ public final class Resolver {
 			// second, didn't find matching message so generate error message
 			String msg = "no match for " + name + parameterString(parameters);			
 							
-			for (Pair<NameID, Nominal<Type.FunctionOrMethod>> p : candidates) {
+			for (Pair<NameID, Nominal.FunctionOrMethod> p : candidates) {
 				msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
 			}
 			
@@ -1060,17 +1060,17 @@ public final class Resolver {
 		return new Pair(candidateID,candidateType);
 	}
 			
-	private Pair<NameID,Nominal<Type.Message>> selectCandidateMessage(String name,
+	private Pair<NameID,Nominal.Message> selectCandidateMessage(String name,
 			Type.Reference receiver,
-			List<Nominal<Type>> parameters,
-			ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates)
+			List<Nominal> parameters,
+			ArrayList<Pair<NameID, Nominal.Message>> candidates)
 			throws ResolveError {
 		
 		List<Type> rawParameters; 
 		Type.Function target;
 		
 		if (parameters != null) {
-			rawParameters = Nominal.stripNominal(parameters);
+			rawParameters = stripNominal(parameters);
 			target = (Type.Function) Type.Function(Type.T_ANY, Type.T_ANY,
 					rawParameters);
 		} else {
@@ -1079,10 +1079,10 @@ public final class Resolver {
 		}
 		
 		NameID candidateID = null;
-		Nominal<Type.Message> candidateType = null;			
+		Nominal.Message candidateType = null;			
 				
-		for (Pair<NameID,Nominal<Type.Message>> p : candidates) {
-			Nominal<Type.Message> nmt = p.second();
+		for (Pair<NameID,Nominal.Message> p : candidates) {
+			Nominal.Message nmt = p.second();
 			Type.Message mt = nmt.raw();
 			Type funrec = mt.receiver();
 			
@@ -1115,7 +1115,7 @@ public final class Resolver {
 			String msg = "no match for " + receiver + "::" + name
 					+ parameterString(parameters);
 
-			for (Pair<NameID, Nominal<Type.Message>> p : candidates) {
+			for (Pair<NameID, Nominal.Message> p : candidates) {
 				msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
 			}
 
@@ -1127,7 +1127,7 @@ public final class Resolver {
 	
 	private void addCandidateFunctionsAndMethods(NameID nid,
 			List<?> parameters,
-			ArrayList<Pair<NameID, Nominal<Type.FunctionOrMethod>>> candidates)
+			ArrayList<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
 			throws ResolveError {
 		ModuleID mid = nid.module();
 		
@@ -1139,7 +1139,7 @@ public final class Resolver {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {		
-					Nominal<Type.Function> ft = (Nominal) resolveAsType(f.unresolvedType(),buildImports(wf,f));  
+					Nominal.Function ft = (Nominal.Function) resolveAsType(f.unresolvedType(),buildImports(wf,f));  
 					candidates.add(new Pair(nid,ft));							
 				}
 			}
@@ -1151,10 +1151,16 @@ public final class Resolver {
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {
 						// FIXME: loss of nominal information
-						// FIXME: cast should be unnecessary
-						Nominal<Type.FunctionOrMethod> ft = (Nominal) new Nominal<Type.FunctionOrMethodOrMessage>(
-								mm.type(), mm.type());   
-						candidates.add(new Pair(nid,ft));
+						Type.FunctionOrMethod t = (Type.FunctionOrMethod) mm.type();
+						Nominal.FunctionOrMethod fom;
+						if(t instanceof Type.Function) {
+							Type.Function ft = (Type.Function) t;
+							fom = new Nominal.Function(ft,ft);  
+						} else {
+							Type.Method mt = (Type.Method) t;
+							fom = new Nominal.Method(mt,mt);
+						}
+						candidates.add(new Pair(nid,fom));
 					}
 				}
 			} catch(ResolveError e) {
@@ -1165,7 +1171,7 @@ public final class Resolver {
 	
 	private void addCandidateMessages(NameID nid,
 			List<?> parameters,
-			ArrayList<Pair<NameID, Nominal<Type.Message>>> candidates)
+			ArrayList<Pair<NameID, Nominal.Message>> candidates)
 			throws ResolveError {
 		ModuleID mid = nid.module();
 		
@@ -1177,7 +1183,7 @@ public final class Resolver {
 			for (WhileyFile.Message m : wf.declarations(
 					WhileyFile.Message.class, nid.name())) {
 				if (nparams == -1 || m.parameters.size() == nparams) {		
-					Nominal<Type.Function> ft = (Nominal) resolveAsType(m.unresolvedType(),buildImports(wf,m));  
+					Nominal.Message ft = (Nominal.Message) resolveAsType(m.unresolvedType(),buildImports(wf,m));  
 					candidates.add(new Pair(nid,ft));							
 				}
 			}
@@ -1189,7 +1195,7 @@ public final class Resolver {
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {
 						// FIXME: loss of nominal information
-						Nominal<Type.Message> ft = new Nominal<Type.Message>(
+						Nominal.Message ft = new Nominal.Message(
 								mm.type(), (Type.Message) mm.type());
 						candidates.add(new Pair(nid, ft));
 					}
@@ -1235,4 +1241,14 @@ public final class Resolver {
 		
 		return imports;
 	}
+	
+
+	private static List<Type> stripNominal(List<Nominal> types) {
+		ArrayList<Type> r = new ArrayList<Type>();
+		for (Nominal t : types) {
+			r.add(t.raw());
+		}
+		return r;
+	}
+	
 }

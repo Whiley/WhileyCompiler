@@ -1,7 +1,6 @@
 package wyc.util;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import wyil.lang.Type;
 import wyil.util.Pair;
@@ -15,51 +14,354 @@ import wyil.util.Pair;
  * 
  * @param <T>
  */
-public class Nominal<T extends Type> extends Pair<Type,T> {
-	public Nominal(Type nominal, T raw) {
-		super(nominal,raw);
+public abstract class Nominal {
+	private Type nominal;
+	
+	private Nominal(Type nominal) {
+		this.nominal = nominal;
 	}
 	
 	public Type nominal() {
-		return super.first;
+		return nominal;
 	}
 	
-	public T raw() {
-		return super.second;
+	public abstract Type raw();
+	
+	public static final Nominal T_ANY = new Base(Type.T_ANY,Type.T_ANY);
+	public static final Nominal T_VOID = new Base(Type.T_VOID,Type.T_VOID);
+	public static final Nominal T_NULL = new Base(Type.T_NULL,Type.T_NULL);
+	public static final Nominal T_NOTNULL = Negation(T_NULL);
+	public static final Nominal T_META = new Base(Type.T_META,Type.T_META);
+	public static final Nominal T_BOOL = new Base(Type.T_BOOL,Type.T_BOOL);
+	public static final Nominal T_BYTE = new Base(Type.T_BYTE,Type.T_BYTE);
+	public static final Nominal T_CHAR = new Base(Type.T_CHAR,Type.T_CHAR);
+	public static final Nominal T_INT = new Base(Type.T_INT,Type.T_INT);
+	public static final Nominal T_REAL = new Base(Type.T_REAL,Type.T_REAL);
+	public static final Nominal T_STRING = new Base(Type.T_STRING,Type.T_STRING);
+	
+	public static Nominal construct(Type nominal, Type raw) {
+		if(raw instanceof Type.Reference) {
+			return new Reference(nominal,(Type.Reference)raw);
+		} else if(raw instanceof Type.Tuple) {
+			return new Tuple(nominal,(Type.Tuple)raw);
+		} else if(raw instanceof Type.Set) {
+			return new Set(nominal,(Type.Set)raw);
+		} else if(raw instanceof Type.List) {
+			return new List(nominal,(Type.List)raw);
+		} else if(raw instanceof Type.Dictionary) {
+			return new Dictionary(nominal,(Type.Dictionary)raw);
+		} else if(raw instanceof Type.Record) {
+			return new Record(nominal,(Type.Record)raw);
+		} else if(raw instanceof Type.Function) {
+			return new Function(nominal,(Type.Function)raw);
+		} else if(raw instanceof Type.Method) {
+			return new Method(nominal,(Type.Method)raw);
+		} else if(raw instanceof Type.Message) {
+			return new Message(nominal,(Type.Message)raw);
+		} else {
+			return new Base(nominal,raw);
+		}
 	}
 	
-	public static final Nominal<Type> T_ANY = new Nominal<Type>(Type.T_ANY,Type.T_ANY);
-	public static final Nominal<Type> T_VOID = new Nominal<Type>(Type.T_VOID,Type.T_VOID);
-	public static final Nominal<Type> T_META = new Nominal<Type>(Type.T_META,Type.T_META);
-	public static final Nominal<Type> T_BOOL = new Nominal<Type>(Type.T_BOOL,Type.T_BOOL);
-	public static final Nominal<Type> T_BYTE = new Nominal<Type>(Type.T_BYTE,Type.T_BYTE);
-	public static final Nominal<Type> T_CHAR = new Nominal<Type>(Type.T_CHAR,Type.T_CHAR);
-	public static final Nominal<Type> T_INT = new Nominal<Type>(Type.T_INT,Type.T_INT);
-	public static final Nominal<Type> T_REAL = new Nominal<Type>(Type.T_REAL,Type.T_REAL);
-	public static final Nominal<Type> T_STRING = new Nominal<Type>(Type.T_STRING,Type.T_STRING);
+	public static Nominal intersect(Nominal lhs, Nominal rhs) {
+		// TODO
+	}
 	
-	public static <S extends Type> Nominal<Type> Union(Nominal<S> t1, Nominal<S> t2) {
+	public static Nominal.Set effectiveSetType(Nominal lhs) {
+		// TODO
+	}
+	
+	public static Nominal.List effectiveListType(Nominal lhs) {
+		// TODO
+	}
+	
+	public static Nominal.Dictionary effectiveDictionaryType(Nominal lhs) {
+		// TODO
+	}
+	
+	public static Set Set(Nominal element, boolean nonEmpty) {
+		Type.Set nominal = Type.Set(element.nominal(), nonEmpty);
+		Type.Set raw = Type.Set(element.raw(), nonEmpty);
+		return new Set(nominal,raw);
+	}
+	
+	public static List List(Nominal element, boolean nonEmpty) {
+		Type.List nominal = Type.List(element.nominal(), nonEmpty);
+		Type.List raw = Type.List(element.raw(), nonEmpty);
+		return new List(nominal,raw);
+	}
+	
+	public static Dictionary Dictionary(Nominal key, Nominal value) {
+		Type.Dictionary nominal = Type.Dictionary(key.nominal(),value.nominal());
+		Type.Dictionary raw = Type.Dictionary(key.raw(),value.raw());
+		return new Dictionary(nominal,raw);
+	}
+	
+	public static Record Record(boolean isOpen, java.util.Map<String,Nominal> fields) {
+		HashMap<String,Type> nominalFields = new HashMap<String,Type>();
+		HashMap<String,Type> rawFields = new HashMap<String,Type>();
+		
+		for(Map.Entry<String,Nominal> e : fields.entrySet()) {
+			String field = e.getKey();
+			Nominal type = e.getValue();
+			nominalFields.put(field,type.nominal());
+			rawFields.put(field,type.raw());
+		}
+		
+		Type.Record nominal = Type.Record(isOpen,nominalFields);
+		Type.Record raw = Type.Record(isOpen,rawFields);
+		return new Record(nominal,raw);
+	}
+	
+	public static Nominal Union(Nominal t1, Nominal t2) {
 		Type nominal = Type.Union(t1.nominal(),t2.nominal());
 		Type raw = Type.Union(t1.raw(),t2.raw());
-		return new Nominal<Type>(nominal,raw);
+		return construct(nominal,raw);
+	}		
+	
+	public static Nominal Negation(Nominal type) {
+		Type nominal = Type.Negation(type.nominal());
+		Type raw = Type.Negation(type.raw());
+		return construct(nominal,raw);		
 	}
 	
-	public static Nominal<Type.Dictionary> Dictionary(Nominal<Type> key, Nominal<Type> value) {
-		Type.Dictionary nominal = (Type.Dictionary) Type.Dictionary(key.nominal(),value.nominal());
-		Type.Dictionary raw = (Type.Dictionary) Type.Dictionary(key.nominal(),value.nominal());
-		return new Nominal<Type.Dictionary>(nominal,raw);
-	}
-	
-	public static Nominal<Type> Negation(Nominal<Type> type) {
-		return new Nominal<Type>(Type.Negation(type.nominal()),
-				Type.Negation(type.raw()));
-	}
-	
-	public static <T extends Type> List<Type> stripNominal(List<Nominal<T>> types) {
-		ArrayList<Type> r = new ArrayList<Type>();
-		for (Nominal<? extends Type> t : types) {
-			r.add(t.raw());
+	public static final class Base extends Nominal {
+		private final Type raw;
+		
+		Base(Type nominal, Type raw) {
+			super(nominal);
+			this.raw = raw;
 		}
-		return r;
+		
+		public Type raw() {
+			return raw;
+		}
 	}
+	
+	public static final class Reference extends Nominal {
+		private final Type.Reference raw;
+		
+		public Reference(Type nominal, Type.Reference raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Reference raw() {
+			return raw;
+		}
+		
+		public Nominal element() {
+			// FIXME: loss of nominal information
+			return construct(raw.element(),raw.element());
+		}
+	}
+	
+	public static final class Set extends Nominal {
+		private final Type.Set raw;
+		
+		public Set(Type nominal, Type.Set raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Set raw() {
+			return raw;
+		}
+		
+		public Nominal element() {
+			// FIXME: loss of nominal information
+			return construct(raw.element(),raw.element());			
+		}
+	}
+	
+	public static final class List extends Nominal {
+		private final Type.List raw;
+		public List(Type nominal, Type.List raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.List raw() {
+			return raw;
+		}
+		
+		public Nominal element() {
+			// FIXME: loss of nominal information
+			return construct(raw.element(),raw.element());			
+		}
+	}
+	
+	public static final class Dictionary extends Nominal {
+		private final Type.Dictionary raw;
+		
+		public Dictionary(Type nominal, Type.Dictionary raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Dictionary raw() {
+			return raw;
+		}
+		
+		public Nominal key() {
+			// FIXME: loss of nominal information
+			return construct(raw.key(),raw.key());			
+		}
+		
+		public Nominal value() {
+			// FIXME: loss of nominal information
+			return construct(raw.value(),raw.value());			
+		}
+	}
+	
+	public static final class Tuple extends Nominal {
+		private final Type.Tuple raw;
+		
+		public Tuple(Type nominal, Type.Tuple raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Tuple raw() {
+			return raw;
+		}
+		
+		public java.util.List<Nominal> elements() {			
+			// FIXME: loss of nominal information
+			ArrayList<Nominal> r = new ArrayList<Nominal>();
+			for(Type e : raw.elements()) {
+				r.add(construct(e,e));
+			}
+			return r;			
+		}
+	}
+		
+	public static final class Record extends Nominal {
+		private final Type.Record raw;
+		
+		public Record(Type nominal, Type.Record raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Record raw() {
+			return raw;
+		}
+		
+		public Nominal field(String field) {
+			// FIXME: loss of nominal information
+			Type t = raw.fields().get(field);
+			if(t == null) {
+				return null;
+			} else {
+				return construct(t,t);
+			}
+		}
+	}
+	
+	public abstract static class FunctionOrMethodOrMessage extends Nominal {
+		public FunctionOrMethodOrMessage(Type nominal) {
+			super(nominal);
+		}
+		
+		abstract public Type.FunctionOrMethodOrMessage raw();
+		
+		abstract public Nominal ret();
+		
+		abstract public java.util.List<Nominal> params();
+	}
+	
+	public abstract static class FunctionOrMethod extends FunctionOrMethodOrMessage {
+		public FunctionOrMethod(Type nominal) {
+			super(nominal);
+		}
+		
+		abstract public Type.FunctionOrMethod raw();		
+	}
+	
+	public static final class Function extends FunctionOrMethod {
+		private final Type.Function raw;
+		
+		public Function(Type nominal, Type.Function raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Function raw() {
+			return raw;
+		}
+		
+		public Nominal ret() {
+			// FIXME: loss of nominal type information here
+			return construct(raw.ret(),raw.ret());
+		}
+		
+		public java.util.List<Nominal> params() {			
+			// FIXME: loss of nominal information
+			ArrayList<Nominal> r = new ArrayList<Nominal>();
+			for(Type e : raw.params()) {
+				r.add(construct(e,e));
+			}
+			return r;			
+		}
+	}
+	
+	public static final class Method extends FunctionOrMethod {
+		private final Type.Method raw;
+		
+		public Method(Type nominal, Type.Method raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Method raw() {
+			return raw;
+		}
+		
+		public Nominal ret() {
+			// FIXME: loss of nominal type information here
+			return construct(raw.ret(),raw.ret());
+		}
+		
+		public java.util.List<Nominal> params() {			
+			// FIXME: loss of nominal information
+			ArrayList<Nominal> r = new ArrayList<Nominal>();
+			for(Type e : raw.params()) {
+				r.add(construct(e,e));
+			}
+			return r;			
+		}
+	}
+	
+	public static final class Message extends FunctionOrMethodOrMessage {
+		private final Type.Message raw;
+		
+		public Message(Type nominal, Type.Message raw) {
+			super(nominal);
+			this.raw = raw;
+		}
+		
+		public Type.Message raw() {
+			return raw;
+		}
+		
+		public Nominal receiver() {
+			// FIXME: loss of nominal type information here
+			return construct(raw.receiver(),raw.receiver());
+		}
+		
+		public Nominal ret() {
+			// FIXME: loss of nominal type information here
+			return construct(raw.ret(),raw.ret());
+		}
+		
+		public java.util.List<Nominal> params() {			
+			// FIXME: loss of nominal information
+			ArrayList<Nominal> r = new ArrayList<Nominal>();
+			for(Type e : raw.params()) {
+				r.add(construct(e,e));
+			}
+			return r;			
+		}
+	}	
 }
