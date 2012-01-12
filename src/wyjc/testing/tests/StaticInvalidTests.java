@@ -108,6 +108,8 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void MethodCall_CompileFail_7_StaticTest() { contextFailTest("MethodCall_CompileFail_7"); }
  @Test public void MethodCall_CompileFail_8_StaticTest() { contextFailTest("MethodCall_CompileFail_8"); }
  @Test public void MethodRef_Invalid_1_StaticTest() { contextFailTest("MethodRef_Invalid_1"); }
+ @Test public void MethodRef_Invalid_2_StaticTest() { contextFailTest("MethodRef_Invalid_2"); }
+ @Test public void MethodRef_Invalid_3_StaticTest() { contextFailTest("MethodRef_Invalid_3"); }
  @Ignore("Known Issue") @Test public void Native_CompileFail_1_RuntimeFailTest() { contextFailTest("Native_Invalid_1"); }
  @Test public void NegationType_Invalid_1_RuntimeTest() { contextFailTest("NegationType_Invalid_1"); }
  @Test public void NegationType_Invalid_2_RuntimeTest() { contextFailTest("NegationType_Invalid_2"); }

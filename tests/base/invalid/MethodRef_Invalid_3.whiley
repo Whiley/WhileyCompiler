@@ -6,7 +6,7 @@ define MyMeth as ::int(int)
 int ::read(int x):
     return x + 123
 
-int ::test(MyMeth m):
+int test(MyMeth m):
     return m(1)
 
 void ::main(System.Console sys):
