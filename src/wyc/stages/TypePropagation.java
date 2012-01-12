@@ -445,8 +445,8 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Break stmt,
 			RefCountedHashMap<String,Nominal<Type>> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		// nothing to do
-		return environment;
+		// FIXME: need to propagate environment to the break destination
+		return BOTTOM;
 	}
 	
 	private RefCountedHashMap<String,Nominal<Type>> propagate(Stmt.Debug stmt,
