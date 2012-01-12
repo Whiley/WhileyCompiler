@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 
-define MyMeth as ::int(int)
+define MyMeth as int::(int)
 
 int ::read(int x):
     return x + 123

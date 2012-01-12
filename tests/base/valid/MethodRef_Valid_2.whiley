@@ -3,7 +3,7 @@ import * from whiley.lang.*
 // this implements what is effectively a "raw" interface
 
 define Reader as { 
-    ::int(int) read
+    int::(int) read
 }
 
 int ::f(int amount):
