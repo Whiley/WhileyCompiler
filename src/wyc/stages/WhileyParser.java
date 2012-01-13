@@ -1073,7 +1073,6 @@ public final class WhileyParser {
 	private Expr parseIndexTerm() {
 		checkNotEof();
 		int start = index;
-		int ostart = index;		
 		Expr lhs = parseTerm();
 		
 		if(index < tokens.size()) {
@@ -1084,9 +1083,7 @@ public final class WhileyParser {
 					|| lookahead instanceof Question		
 					|| lookahead instanceof Shreak
 					|| lookahead instanceof RightArrow
-					|| lookahead instanceof LeftBrace) {
-				ostart = start;
-				start = index;
+					|| lookahead instanceof LeftBrace) {				
 				if(lookahead instanceof LeftSquare) {
 					match(LeftSquare.class);				
 
@@ -1146,7 +1143,7 @@ public final class WhileyParser {
 						Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
 						lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 								true, sourceAttr(
-										ostart, index - 1));				
+										start, index - 1));				
 					} else {
 						lhs =  new Expr.AbstractDotAccess(lhs, name, sourceAttr(start,index - 1));
 					}
@@ -1155,13 +1152,13 @@ public final class WhileyParser {
 					Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 							true, sourceAttr(
-									ostart, index - 1));								
+									start, index - 1));								
 				} else {
 					match(Shreak.class);								 						
 					Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 							false, sourceAttr(
-									ostart, index - 1));								
+									start, index - 1));								
 				}
 				if(index < tokens.size()) {
 					lookahead = tokens.get(index);	
