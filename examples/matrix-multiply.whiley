@@ -107,7 +107,7 @@ void ::printMat(System.Console sys, Matrix A):
         sys.out.println("")
 
 void ::main(System.Console sys):
-    file = File.Reader(args[0])
+    file = File.Reader(sys.args[0])
     // first, read data
     input = String.fromASCII(file.read())
     // second, build the matrices
