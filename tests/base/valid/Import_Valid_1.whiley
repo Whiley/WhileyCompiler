@@ -1,6 +1,4 @@
 import * from whiley.lang.*
-import * from whiley.lang.*
-import * from whiley.lang.*
 
 Type.nat f(int x):
     if x < 0:
