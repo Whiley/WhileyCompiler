@@ -1182,9 +1182,7 @@ public final class Resolver {
 		for (Pair<NameID,Nominal.FunctionOrMethod> p : candidates) {
 			Nominal.FunctionOrMethod nft = p.second();
 			Type.FunctionOrMethod ft = nft.raw();			
-			if (parameters == null
-					|| (ft.params().size() == parameters.size() && paramSubtypes(
-							ft, target))) {
+			if (parameters == null || paramSubtypes(ft, target)) {
 				// this is now a genuine candidate
 				if(candidateType == null || paramStrictSubtypes(candidateType.raw(), ft)) {
 					candidateType = nft;
@@ -1245,9 +1243,7 @@ public final class Resolver {
 					|| (funrec != null && Type
 							.isImplicitCoerciveSubtype(receiver, funrec))) {					
 				// receivers match up OK ...				
-				if (parameters == null
-						|| (mt.params().size() == parameters.size() && paramSubtypes(
-								mt, target))) {
+				if (parameters == null || paramSubtypes(mt, target)) {
 					// this is now a genuine candidate
 					if(candidateType == null || paramStrictSubtypes(candidateType.raw(), mt)) {
 						candidateType = nmt;
