@@ -56,7 +56,7 @@ public interface Expr extends SyntacticElement {
 	 * 
 	 * @return
 	 */
-	public Nominal type();
+	public Nominal result();
 	
 	/**
 	 * An LVal is a special form of expression which may appear on the left-hand
@@ -80,7 +80,7 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return null;
 		}
 		
@@ -100,7 +100,7 @@ public interface Expr extends SyntacticElement {
 			super(var, attributes);			
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return type;
 		}		
 		
@@ -129,7 +129,7 @@ public interface Expr extends SyntacticElement {
 			this.value = val;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return Nominal.construct(value.type(),value.type());
 		}
 		
@@ -149,7 +149,7 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return type;
 		}		
 		
@@ -167,7 +167,7 @@ public interface Expr extends SyntacticElement {
 			this.unresolvedType = val;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return Nominal.T_META;
 		}		
 	}
@@ -199,7 +199,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal.FunctionOrMethodOrMessage type() {
+		public Nominal.FunctionOrMethodOrMessage result() {
 			return type;
 		}		
 	}
@@ -240,7 +240,7 @@ public interface Expr extends SyntacticElement {
 			this.rhs = rhs;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			switch(op) {
 			case EQ:
 			case NEQ:
@@ -285,7 +285,7 @@ public interface Expr extends SyntacticElement {
 			this.index = index;
 		}
 				
-		public Nominal type() {
+		public Nominal result() {
 			return null;
 		}
 				
@@ -305,7 +305,7 @@ public interface Expr extends SyntacticElement {
 			super(src,index,attributes);			
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return srcType.element();
 		}
 	}
@@ -321,7 +321,7 @@ public interface Expr extends SyntacticElement {
 			super(src,index,attributes);			
 		}		
 		
-		public Nominal type() {
+		public Nominal result() {
 			return srcType.value();
 		}
 	}
@@ -335,7 +335,7 @@ public interface Expr extends SyntacticElement {
 			super(src,index,attributes);			
 		}
 
-		public Nominal type() {
+		public Nominal result() {
 			return Nominal.T_CHAR;
 		}
 	}
@@ -357,7 +357,7 @@ public interface Expr extends SyntacticElement {
 			this.mhs = mhs;			
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return type;
 		}		
 		
@@ -383,7 +383,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal.Set type() {
+		public Nominal.Set result() {
 			return type;
 		}		
 	}
@@ -405,7 +405,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal.List type() {
+		public Nominal.List result() {
 			return type;
 		}		
 	}
@@ -430,7 +430,7 @@ public interface Expr extends SyntacticElement {
 			this.end = end;
 		}
 		
-		public Nominal.List type() {
+		public Nominal.List result() {
 			return type;
 		}		
 	}
@@ -452,7 +452,7 @@ public interface Expr extends SyntacticElement {
 			this.sources = new ArrayList<Pair<String, Expr>>(sources);
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return type;
 		}		
 	}
@@ -483,7 +483,7 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return null;
 		}
 
@@ -503,7 +503,7 @@ public interface Expr extends SyntacticElement {
 			super(lhs,name,attributes);			
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return srcType.field(name);
 		}		
 	}		
@@ -525,7 +525,7 @@ public interface Expr extends SyntacticElement {
 			this.nid = nid;
 		}
 				
-		public Nominal type() {
+		public Nominal result() {
 			// FIXME: loss of nominal information here, since the type of the
 			// constant in question is always fully expanded.
 			return Nominal.construct(value.type(), value.type());
@@ -554,7 +554,7 @@ public interface Expr extends SyntacticElement {
 			this.mid = mid;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return null;
 		}
 		
@@ -581,7 +581,7 @@ public interface Expr extends SyntacticElement {
 			this.pid = pid;
 		}			
 
-		public Nominal type() {
+		public Nominal result() {
 			return null;
 		}
 		
@@ -604,7 +604,7 @@ public interface Expr extends SyntacticElement {
 			this.src = src;			
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return srcType.element();
 		}
 		
@@ -622,7 +622,7 @@ public interface Expr extends SyntacticElement {
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
 		
-		public Nominal.Dictionary type() {
+		public Nominal.Dictionary result() {
 			return type;
 		}		
 	}
@@ -638,7 +638,7 @@ public interface Expr extends SyntacticElement {
 			this.fields = new HashMap<String, Expr>(fields);
 		}
 
-		public Nominal.Record type() {
+		public Nominal.Record result() {
 			return type;
 		}
 	}
@@ -653,7 +653,7 @@ public interface Expr extends SyntacticElement {
 			this.fields = new ArrayList<Expr>(fields);
 		}
 
-		public Nominal.Tuple type() {
+		public Nominal.Tuple result() {
 			return type;
 		}
 	}
@@ -685,7 +685,7 @@ public interface Expr extends SyntacticElement {
 			this.synchronous = synchronous;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return null;
 		}
 	}
@@ -712,7 +712,7 @@ public interface Expr extends SyntacticElement {
 			return nid;
 		}		
 		
-		public Nominal type() {
+		public Nominal result() {
 			return messageType.ret();
 		}
 	}
@@ -737,7 +737,7 @@ public interface Expr extends SyntacticElement {
 			return nid;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return methodType.ret();
 		}
 	}
@@ -762,7 +762,7 @@ public interface Expr extends SyntacticElement {
 			return nid;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return functionType.ret();
 		}
 	}
@@ -791,7 +791,7 @@ public interface Expr extends SyntacticElement {
 			this.synchronous = synchronous;
 		}
 
-		public Nominal type() {
+		public Nominal result() {
 			return null;
 		}				
 	}
@@ -809,7 +809,7 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,true,attributes);
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return methodType.ret();
 		}
 	}
@@ -827,7 +827,7 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,true,attributes);
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return functionType.ret();
 		}
 	}	
@@ -850,7 +850,7 @@ public interface Expr extends SyntacticElement {
 			this.receiver = receiver;
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return messageType.ret();
 		}
 	}
@@ -868,7 +868,7 @@ public interface Expr extends SyntacticElement {
 			this.src = mhs;			
 		}
 		
-		public Nominal type() {
+		public Nominal result() {
 			return Nominal.T_INT;
 		}				
 		
@@ -931,7 +931,7 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;						
 		}
 		
-		public Nominal.Reference type() {
+		public Nominal.Reference result() {
 			return type;
 		}		
 	}

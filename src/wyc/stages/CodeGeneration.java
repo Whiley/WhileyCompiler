@@ -328,7 +328,7 @@ public final class CodeGeneration {
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
 			blk = generate(s.rhs, environment);			
-			blk.append(Code.Destructure(s.rhs.type().raw()),attributes(s));
+			blk.append(Code.Destructure(s.rhs.result().raw()),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
 			Collections.reverse(fields);
 			
@@ -457,7 +457,7 @@ public final class CodeGeneration {
 	
 	private Block generate(Throw s, HashMap<String,Integer> environment) {
 		Block blk = generate(s.expr, environment);
-		blk.append(Code.Throw(s.expr.type().raw()), s.attributes());
+		blk.append(Code.Throw(s.expr.result().raw()), s.attributes());
 		return blk;
 	}
 	
@@ -512,7 +512,7 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNREACHABLE_CODE), filename, c);
 			}
 		}		
-		blk.append(Code.Switch(s.expr.type().raw(),defaultTarget,cases),attributes(s));
+		blk.append(Code.Switch(s.expr.result().raw(),defaultTarget,cases),attributes(s));
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));		
 		return blk;
@@ -650,7 +650,7 @@ public final class CodeGeneration {
 			// this is the destructuring case		
 			
 			// FIXME: loss of nominal information
-			Type rawSrcType = s.source.type().raw();
+			Type rawSrcType = s.source.result().raw();
 			// FIXME: support destructuring of lists and sets
 			Type.Dictionary dict = Type.effectiveDictionaryType(rawSrcType);
 			if(dict == null) {
@@ -669,7 +669,7 @@ public final class CodeGeneration {
 		} else {
 			// easy case.
 			int freeReg = allocate(s.variables.get(0),environment);
-			blk.append(Code.ForAll(s.source.type().raw(), freeReg, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.ForAll(s.source.result().raw(), freeReg, label, Collections.EMPTY_SET), attributes(s));
 		}		
 		
 		// FIXME: add a continue scope
@@ -779,7 +779,7 @@ public final class CodeGeneration {
 		// Obviously, this will be evaluated one way or another.
 		blk.append(Code.Const(val));
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(v.type().raw(),Code.COp.EQ, target),attributes(v));			
+		blk.append(Code.IfGoto(v.result().raw(),Code.COp.EQ, target),attributes(v));			
 		return blk;
 	}
 		
@@ -1177,7 +1177,7 @@ public final class CodeGeneration {
 		
 		if (environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Load(v.type().raw(), environment.get(v.var)), attributes(v));
+			blk.append(Code.Load(v.result().raw(), environment.get(v.var)), attributes(v));
 			return blk;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -1193,10 +1193,10 @@ public final class CodeGeneration {
 		Block blk = generate(v.mhs,  environment);	
 		switch (v.op) {
 		case NEG:
-			blk.append(Code.Negate(v.type().raw()), attributes(v));
+			blk.append(Code.Negate(v.result().raw()), attributes(v));
 			break;
 		case INVERT:
-			blk.append(Code.Invert(v.type().raw()), attributes(v));
+			blk.append(Code.Invert(v.result().raw()), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
@@ -1273,8 +1273,8 @@ public final class CodeGeneration {
 	private Block generate(Expr.Convert v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.expr, environment));		
-		Type from = v.expr.type().raw();
-		Type to = v.type().raw();
+		Type from = v.expr.result().raw();
+		Type to = v.result().raw();
 		// TODO: include constraints
 		blk.append(Code.Convert(from,to),attributes(v));
 		return blk;
@@ -1302,7 +1302,7 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.lhs, environment));
 		blk.append(generate(v.rhs, environment));
-		Type result = v.type().raw();
+		Type result = v.result().raw();
 		
 		switch(bop) {		
 		case UNION:
@@ -1318,8 +1318,8 @@ public final class CodeGeneration {
 			blk.append(Code.ListAppend((Type.List)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;	
 		case STRINGAPPEND:
-			Type lhs = v.lhs.type().raw();
-			Type rhs = v.rhs.type().raw();
+			Type lhs = v.lhs.result().raw();
+			Type rhs = v.rhs.result().raw();
 			Code.OpDir dir;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
 				dir = Code.OpDir.UNIFORM;
@@ -1367,7 +1367,7 @@ public final class CodeGeneration {
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.start, environment));
 		blk.append(generate(v.end, environment));
-		blk.append(Code.SubList(v.type().raw()), attributes(v));
+		blk.append(Code.SubList(v.result().raw()), attributes(v));
 		return blk;
 	}
 	
@@ -1399,7 +1399,7 @@ public final class CodeGeneration {
 			int srcSlot;
 			int varSlot = allocate(p.first(),environment); 
 			Expr src = p.second();
-			Type rawSrcType = src.type().raw();
+			Type rawSrcType = src.result().raw();
 			
 			if(src instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better
@@ -1486,7 +1486,7 @@ public final class CodeGeneration {
 		for (String key : keys) {		
 			blk.append(generate(sg.fields.get(key), environment));
 		}		
-		blk.append(Code.NewRecord(sg.type().raw()), attributes(sg));
+		blk.append(Code.NewRecord(sg.result().raw()), attributes(sg));
 		return blk;
 	}
 
@@ -1495,7 +1495,7 @@ public final class CodeGeneration {
 		for (Expr e : sg.fields) {									
 			blk.append(generate(e, environment));
 		}
-		blk.append(Code.NewTuple(sg.type().raw(),sg.fields.size()),attributes(sg));
+		blk.append(Code.NewTuple(sg.result().raw(),sg.fields.size()),attributes(sg));
 		return blk;		
 	}
 
@@ -1505,7 +1505,7 @@ public final class CodeGeneration {
 			blk.append(generate(e.first(), environment));
 			blk.append(generate(e.second(), environment));
 		}
-		blk.append(Code.NewDict(sg.type().raw(),sg.pairs.size()),attributes(sg));
+		blk.append(Code.NewDict(sg.result().raw(),sg.pairs.size()),attributes(sg));
 		return blk;
 	}
 	
