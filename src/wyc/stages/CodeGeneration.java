@@ -999,6 +999,8 @@ public final class CodeGeneration {
 				return generate((Expr.List) expression, environment);
 			} else if (expression instanceof Expr.SubList) {
 				return generate((Expr.SubList) expression, environment);
+			} else if (expression instanceof Expr.SubString) {
+				return generate((Expr.SubString) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment);
 			} else if (expression instanceof Expr.SetLength) {
@@ -1368,6 +1370,15 @@ public final class CodeGeneration {
 		blk.append(generate(v.start, environment));
 		blk.append(generate(v.end, environment));
 		blk.append(Code.SubList(v.result().raw()), attributes(v));
+		return blk;
+	}
+	
+	private Block generate(Expr.SubString v, HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(generate(v.src, environment));
+		blk.append(generate(v.start, environment));
+		blk.append(generate(v.end, environment));
+		blk.append(Code.SubString(), attributes(v));
 		return blk;
 	}
 	

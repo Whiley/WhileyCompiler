@@ -31,7 +31,6 @@ import static wyil.util.ErrorMessages.*;
 import java.util.*;
 
 import wyc.Resolver;
-import wyc.Expander;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.Nominal;
@@ -1015,6 +1014,8 @@ public final class TypePropagation {
 				return propagate((Expr.Set) expr,environment,imports); 
 			} else if(expr instanceof Expr.SubList) {
 				return propagate((Expr.SubList) expr,environment,imports); 
+			} else if(expr instanceof Expr.SubString) {
+				return propagate((Expr.SubString) expr,environment,imports); 
 			} else if(expr instanceof Expr.AbstractDotAccess) {
 				return propagate((Expr.AbstractDotAccess) expr,environment,imports); 
 			} else if(expr instanceof Expr.Dereference) {
@@ -1770,6 +1771,25 @@ public final class TypePropagation {
 		checkIsSubtype(Type.T_INT,expr.end);
 		
 		expr.type = resolver.expandAsList(expr.src.result());
+		if(expr.type == null) {
+			// must be a substring
+			return new Expr.SubString(expr.src,expr.start,expr.end,expr.attributes());
+		}
+		
+		return expr;
+	}
+	
+	private Expr propagate(Expr.SubString expr,
+			RefCountedHashMap<String,Nominal> environment,
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {	
+		
+		expr.src = propagate(expr.src,environment,imports);
+		expr.start = propagate(expr.start,environment,imports);
+		expr.end = propagate(expr.end,environment,imports);
+		
+		checkIsSubtype(Type.T_STRING,expr.src);
+		checkIsSubtype(Type.T_INT,expr.start);
+		checkIsSubtype(Type.T_INT,expr.end);
 		
 		return expr;
 	}
