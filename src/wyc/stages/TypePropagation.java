@@ -846,7 +846,18 @@ public final class TypePropagation {
 			// We could do better here
 			p = propagate(bop.lhs,sign,environment.clone(),imports);
 			bop.lhs = p.first();
-			// FIXME: is this right?
+			// Recompue the lhs assuming that it is false. This is necessary to
+			// generate the right environment going into the rhs, which is only
+			// evaluated if the lhs is false.  For example:
+			//
+			// if(e is int && e > 0):
+			//     //
+			// else:
+			//     // <-
+			// 
+			// In the false branch, we're determing the environment for 
+			// !(e is int && e > 0).  This becomes !(e is int) || (e > 0) where 
+			// on the rhs we require (e is int).
 			p = propagate(bop.lhs,!sign,environment.clone(),imports);
 			p = propagate(bop.rhs,sign,p.second(),imports);
 			bop.rhs = p.first();
@@ -1528,7 +1539,7 @@ public final class TypePropagation {
 				expr = new Expr.DictionaryAccess(expr.src, expr.index,
 						expr.attributes());
 			} else {
-				syntaxError("invalid index expression", filename, expr);
+				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), filename, expr.src);
 			}
 		}
 		
