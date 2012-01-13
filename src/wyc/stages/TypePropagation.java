@@ -832,22 +832,22 @@ public final class TypePropagation {
 			boolean sign,
 			RefCountedHashMap<String, Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) {
-
 		Expr.BOp op = bop.op;
 		Pair<Expr,RefCountedHashMap<String, Nominal>> p;
 		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
 		
-		if(followOn) {
-			p = propagate(bop.lhs,sign,environment,imports);
+		if(followOn) {			
+			p = propagate(bop.lhs,sign,environment.clone(),imports);			
 			bop.lhs = p.first();
 			p = propagate(bop.rhs,sign,p.second(),imports);
-			bop.rhs = p.first();
-			environment = p.second();	
+			bop.rhs = p.first();						
 		} else {
 			// We could do better here
 			p = propagate(bop.lhs,sign,environment.clone(),imports);
 			bop.lhs = p.first();
-			p = propagate(bop.rhs,sign,environment,imports);
+			// FIXME: this aint right?
+			p = propagate(bop.lhs,!sign,environment.clone(),imports);
+			p = propagate(bop.rhs,sign,p.second(),imports);
 			bop.rhs = p.first();
 		}
 		
@@ -904,7 +904,7 @@ public final class TypePropagation {
 						newType = glb;
 					} else {
 						newType = Nominal.intersect(lhs.result(), Nominal.Negation(tv.type));						
-					}
+					}					
 					environment = environment.put(lv.var,newType);
 				}
 			} else {
