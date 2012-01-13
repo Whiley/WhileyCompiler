@@ -6,6 +6,7 @@ define expr as pos|neg|[int]
 
 string f(expr e):
     if e is pos && e > 0:
+        e = e + 1
         return "POSITIVE: " + Any.toString(e)
     else:
         return "NEGATIVE: " + Any.toString(e)

@@ -845,7 +845,7 @@ public final class TypePropagation {
 			// We could do better here
 			p = propagate(bop.lhs,sign,environment.clone(),imports);
 			bop.lhs = p.first();
-			// FIXME: this aint right?
+			// FIXME: is this right?
 			p = propagate(bop.lhs,!sign,environment.clone(),imports);
 			p = propagate(bop.rhs,sign,p.second(),imports);
 			bop.rhs = p.first();
