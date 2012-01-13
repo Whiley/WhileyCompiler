@@ -1848,7 +1848,7 @@ public final class TypePropagation {
 		
 	private Expr propagate(Expr.RecordAccess ra,
 			RefCountedHashMap<String,Nominal> environment,
-			ArrayList<WhileyFile.Import> imports) {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Nominal srcType = (Nominal) ra.src.result();
 		Nominal.Record recType = resolver.expandAsRecord(srcType);
 		if(recType == null) {
