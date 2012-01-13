@@ -37,21 +37,15 @@ import wyc.util.Nominal;
 import wyc.util.RefCountedHashMap;
 import wyil.ModuleLoader;
 import wyil.lang.Attribute;
-import wyil.lang.Code;
-import wyil.lang.Module;
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
 import wyil.lang.PkgID;
 import wyil.lang.Type;
-import wyil.lang.Code.OpDir;
 import wyil.lang.Value;
-import wyil.util.ErrorMessages;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
-import wyil.util.Triple;
-import static wyil.util.SyntaxError.*;
 
 /**
  * Propagates type information in a flow-sensitive fashion from declared

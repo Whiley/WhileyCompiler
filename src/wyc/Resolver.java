@@ -610,10 +610,11 @@ public final class Resolver {
 	// expandAsType
 	// =========================================================================	
 
-	public static Nominal.Set expandAsSet(Nominal lhs) {
-		Type.Set r = Type.effectiveSetType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Set) Nominal.construct(r,r);
+	public Nominal.Set expandAsSet(Nominal lhs) throws ResolveError {
+		Type.Set raw = Type.effectiveSetType(lhs.raw());
+		if(raw != null) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			return (Nominal.Set) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}
@@ -629,28 +630,31 @@ public final class Resolver {
 		}
 	}
 
-	public static Nominal.Dictionary expandAsDictionary(Nominal lhs) {
-		Type.Dictionary r = Type.effectiveDictionaryType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Dictionary) Nominal.construct(r,r);
+	public Nominal.Dictionary expandAsDictionary(Nominal lhs) throws ResolveError {
+		Type.Dictionary raw = Type.effectiveDictionaryType(lhs.raw());
+		if(raw != null) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			return (Nominal.Dictionary) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}
 	}
 
-	public static Nominal.Record expandAsRecord(Nominal lhs) {
-		Type.Record r = Type.effectiveRecordType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Record) Nominal.construct(r,r);
+	public Nominal.Record expandAsRecord(Nominal lhs) throws ResolveError {
+		Type.Record raw = Type.effectiveRecordType(lhs.raw());
+		if(raw != null) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			return (Nominal.Record) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}
 	}
 
-	public static Nominal.Reference expandAsReference(Nominal lhs) {
-		Type.Reference r = Type.effectiveReferenceType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Reference) Nominal.construct(r,r);
+	public Nominal.Reference expandAsReference(Nominal lhs) throws ResolveError {
+		Type.Reference raw = Type.effectiveReferenceType(lhs.raw());
+		if(raw != null) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			return (Nominal.Reference) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}
