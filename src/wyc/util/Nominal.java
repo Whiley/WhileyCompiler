@@ -33,32 +33,67 @@ public abstract class Nominal {
 	public static final Nominal T_STRING = new Base(Type.T_STRING,Type.T_STRING);
 	
 	public static Nominal construct(Type nominal, Type raw) {
-		if(nominal instanceof Type.Reference && raw instanceof Type.Reference) {
-			return new Reference((Type.Reference)nominal,(Type.Reference)raw);
-		} else if(nominal instanceof Type.Tuple && raw instanceof Type.Tuple) {
-			return new Tuple((Type.Tuple)nominal,(Type.Tuple)raw);
-		} else if(nominal instanceof Type.Set && raw instanceof Type.Set) {
-			return new Set((Type.Set)nominal,(Type.Set)raw);
-		} else if(nominal instanceof Type.List && raw instanceof Type.List) {
-			return new List((Type.List)nominal,(Type.List)raw);
-		} else if(nominal instanceof Type.Dictionary && raw instanceof Type.Dictionary) {
-			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);
-		} else if(nominal instanceof Type.Record && raw instanceof Type.Record) {
-			return new Record((Type.Record)nominal,(Type.Record)raw);
-		} else if(nominal instanceof Type.Function && raw instanceof Type.Function) {
-			return new Function((Type.Function)nominal,(Type.Function)raw);
-		} else if(nominal instanceof Type.Method && raw instanceof Type.Method) {
-			return new Method((Type.Method)nominal,(Type.Method)raw);
-		} else if(nominal instanceof Type.Message && raw instanceof Type.Message) {
-			return new Message((Type.Message)nominal,(Type.Message)raw);
+		if(raw instanceof Type.Reference) {
+			if(nominal instanceof Type.Reference) {
+				return new Reference((Type.Reference)nominal,(Type.Reference)raw);
+			} else {
+				return new Reference((Type.Reference)raw,(Type.Reference)raw);
+			}
+		} else if(raw instanceof Type.Tuple) {
+			if(nominal instanceof Type.Tuple) {
+				return new Tuple((Type.Tuple)nominal,(Type.Tuple)raw);
+			} else {
+				return new Tuple((Type.Tuple)raw,(Type.Tuple)raw);
+			}
+		} else if(raw instanceof Type.Set) {
+			if(nominal instanceof Type.Set) { 
+				return new Set((Type.Set)nominal,(Type.Set)raw);
+			} else {
+				return new Set((Type.Set)raw,(Type.Set)raw);
+			}			
+		} else if(raw instanceof Type.List) {
+			if(nominal instanceof Type.List) {
+				return new List((Type.List)nominal,(Type.List)raw);
+			} else {
+				return new List((Type.List)raw,(Type.List)raw);
+			}
+		} else if(raw instanceof Type.Dictionary) {
+			if(nominal instanceof Type.Dictionary) {
+				return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);
+			} else {
+				return new Dictionary((Type.Dictionary)raw,(Type.Dictionary)raw);
+			}
+		} else if(raw instanceof Type.Record) {
+			if(nominal instanceof Type.Record) {
+				return new Record((Type.Record)nominal,(Type.Record)raw);
+			} else {
+				return new Record((Type.Record)raw,(Type.Record)raw);
+			}
+		} else if(raw instanceof Type.Function) {
+			if(nominal instanceof Type.Function) {
+				return new Function((Type.Function)nominal,(Type.Function)raw);
+			} else {
+				return new Function((Type.Function)raw,(Type.Function)raw);
+			}
+		} else if(raw instanceof Type.Method) {
+			if(nominal instanceof Type.Method) {
+				return new Method((Type.Method)nominal,(Type.Method)raw);
+			} else {
+				return new Method((Type.Method)raw,(Type.Method)raw);
+			}
+		} else if(raw instanceof Type.Message) {
+			if(nominal instanceof Type.Message) {
+				return new Message((Type.Message)nominal,(Type.Message)raw);
+			} else {
+				return new Message((Type.Message)raw,(Type.Message)raw);
+			}
 		} else {
 			return new Base(nominal,raw);
 		}
 	}
 	
 	public static Nominal intersect(Nominal lhs, Nominal rhs) {		
-		Type nominal = Type.intersect(lhs.nominal(),rhs.nominal());
-		System.out.println(lhs.nominal() + "&" + rhs.nominal() + " => " + nominal);
+		Type nominal = Type.intersect(lhs.nominal(),rhs.nominal());		
 		Type raw = Type.intersect(lhs.raw(),rhs.raw());
 		return Nominal.construct(nominal, raw);
 	}

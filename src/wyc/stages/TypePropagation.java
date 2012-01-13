@@ -874,8 +874,6 @@ public final class TypePropagation {
 				Type testRawType = tv.type.raw();					
 				Nominal glb = Nominal.intersect(lhs.result(), tv.type);	
 				
-				System.out.println("GOT: " + glb.nominal() + ", " + glb.raw());
-				
 				if(Type.isSubtype(testRawType,lhsRawType)) {								
 					// DEFINITE TRUE CASE										
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, bop);
