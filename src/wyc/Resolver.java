@@ -1049,7 +1049,7 @@ public final class Resolver {
 				}
 			}
 		}
-
+		
 		return selectCandidateFunctionOrMethod(name,parameters,candidates);
 	}
 	
@@ -1106,7 +1106,7 @@ public final class Resolver {
 	private boolean paramSubtypes(Type.FunctionOrMethodOrMessage f1, Type.FunctionOrMethodOrMessage f2) {		
 		List<Type> f1_params = f1.params();
 		List<Type> f2_params = f2.params();
-		if(f1_params.size() == f2_params.size()) {
+		if(f1_params.size() == f2_params.size()) {			
 			for(int i=0;i!=f1_params.size();++i) {
 				Type f1_param = f1_params.get(i);
 				Type f2_param = f2_params.get(i);				
@@ -1114,7 +1114,30 @@ public final class Resolver {
 					return false;
 				}
 			}			
+			
 			return true;
+		}
+		return false;
+	}
+	
+	private boolean paramStrictSubtypes(Type.FunctionOrMethodOrMessage f1, Type.FunctionOrMethodOrMessage f2) {		
+		List<Type> f1_params = f1.params();
+		List<Type> f2_params = f2.params();
+		if(f1_params.size() == f2_params.size()) {
+			boolean allEqual = true;
+			for(int i=0;i!=f1_params.size();++i) {
+				Type f1_param = f1_params.get(i);
+				Type f2_param = f2_params.get(i);				
+				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
+					return false;
+				}
+				allEqual &= f1_param.equals(f2_param);
+			}			
+			
+			// This function returns true if the parameters are a strict
+			// subtype. Therefore, if they are all equal it must return false.
+			
+			return !allEqual;
 		}
 		return false;
 	}
@@ -1163,10 +1186,10 @@ public final class Resolver {
 					|| (ft.params().size() == parameters.size() && paramSubtypes(
 							ft, target))) {
 				// this is now a genuine candidate
-				if(candidateType == null || paramSubtypes(candidateType.raw(), ft)) {
+				if(candidateType == null || paramStrictSubtypes(candidateType.raw(), ft)) {
 					candidateType = nft;
 					candidateID = p.first();
-				} else if(!paramSubtypes(ft, candidateType.raw())){ 
+				} else if(!paramStrictSubtypes(ft, candidateType.raw())){ 
 					// this is an ambiguous error
 					String msg = name + parameterString(parameters) + " is ambiguous";
 					// FIXME: should report all ambiguous matches here
@@ -1226,10 +1249,10 @@ public final class Resolver {
 						|| (mt.params().size() == parameters.size() && paramSubtypes(
 								mt, target))) {
 					// this is now a genuine candidate
-					if(candidateType == null || paramSubtypes(candidateType.raw(), mt)) {
+					if(candidateType == null || paramStrictSubtypes(candidateType.raw(), mt)) {
 						candidateType = nmt;
 						candidateID = p.first();						
-					} else if(!paramSubtypes(mt, candidateType.raw())) {
+					} else if(!paramStrictSubtypes(mt, candidateType.raw())) {
 						// this is an ambiguous error
 						String msg = name + parameterString(parameters) + " is ambiguous";
 						// FIXME: should report all ambiguous matches here
