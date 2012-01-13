@@ -15,7 +15,7 @@ import wyil.util.Pair;
  * @param <T>
  */
 public abstract class Nominal {
-	private Type nominal;
+	protected Type nominal;
 	
 	private Nominal(Type nominal) {
 		this.nominal = nominal;
@@ -64,19 +64,72 @@ public abstract class Nominal {
 	}
 	
 	public static Nominal intersect(Nominal lhs, Nominal rhs) {
-		// TODO
+		Type nominal = Type.intersect(lhs.nominal(),rhs.nominal());
+		Type raw = Type.intersect(lhs.raw(),rhs.raw());
+		return Nominal.construct(nominal, raw);
 	}
 	
 	public static Nominal.Set effectiveSetType(Nominal lhs) {
-		// TODO
+		Type.Set r = Type.effectiveSetType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Set) construct(r,r);
+		} else {
+			return null;
+		}
 	}
 	
 	public static Nominal.List effectiveListType(Nominal lhs) {
-		// TODO
+		Type.List r = Type.effectiveListType(lhs.raw());
+		if(r != null) {
+			return (Nominal.List) construct(r,r);
+		} else {
+			return null;
+		}
 	}
 	
 	public static Nominal.Dictionary effectiveDictionaryType(Nominal lhs) {
-		// TODO
+		Type.Dictionary r = Type.effectiveDictionaryType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Dictionary) construct(r,r);
+		} else {
+			return null;
+		}
+	}
+	
+	public static Nominal.Record effectiveRecordType(Nominal lhs) {
+		Type.Record r = Type.effectiveRecordType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Record) construct(r,r);
+		} else {
+			return null;
+		}
+	}
+	
+	public static Nominal.Reference effectiveReferenceType(Nominal lhs) {
+		Type.Reference r = Type.effectiveReferenceType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Reference) construct(r,r);
+		} else {
+			return null;
+		}
+	}
+	
+	public static Tuple Tuple(Nominal... elements) {
+		ArrayList<Type> rawElements = new ArrayList<Type>();
+		ArrayList<Type> nominalElements = new ArrayList<Type>();
+		for(Nominal e : elements) {
+			rawElements.add(e.raw());
+			nominalElements.add(e.raw());
+		}
+		Type.Tuple rawType = Type.Tuple(rawElements);
+		Type.Tuple nominalType = Type.Tuple(nominalElements);
+		return new Tuple(nominalType,rawType);
+	}
+	
+	public static Reference Reference(Nominal element) {
+		Type.Reference nominal = Type.Reference(element.nominal());
+		Type.Reference raw = Type.Reference(element.raw());
+		return new Reference(nominal,raw);
 	}
 	
 	public static Set Set(Nominal element, boolean nonEmpty) {
@@ -136,6 +189,18 @@ public abstract class Nominal {
 		public Type raw() {
 			return raw;
 		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Base) {
+				Base b = (Base) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
 	}
 	
 	public static final class Reference extends Nominal {
@@ -153,6 +218,18 @@ public abstract class Nominal {
 		public Nominal element() {
 			// FIXME: loss of nominal information
 			return construct(raw.element(),raw.element());
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Reference) {
+				Reference b = (Reference) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
 		}
 	}
 	
@@ -172,6 +249,18 @@ public abstract class Nominal {
 			// FIXME: loss of nominal information
 			return construct(raw.element(),raw.element());			
 		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Set) {
+				Set b = (Set) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
 	}
 	
 	public static final class List extends Nominal {
@@ -188,6 +277,18 @@ public abstract class Nominal {
 		public Nominal element() {
 			// FIXME: loss of nominal information
 			return construct(raw.element(),raw.element());			
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof List) {
+				List b = (List) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
 		}
 	}
 	
@@ -212,6 +313,18 @@ public abstract class Nominal {
 			// FIXME: loss of nominal information
 			return construct(raw.value(),raw.value());			
 		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Dictionary) {
+				Dictionary b = (Dictionary) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
 	}
 	
 	public static final class Tuple extends Nominal {
@@ -234,6 +347,18 @@ public abstract class Nominal {
 			}
 			return r;			
 		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Tuple) {
+				Tuple b = (Tuple) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
 	}
 		
 	public static final class Record extends Nominal {
@@ -244,8 +369,20 @@ public abstract class Nominal {
 			this.raw = raw;
 		}
 		
+		public boolean isOpen() {
+			return raw.isOpen();
+		}
+		
 		public Type.Record raw() {
 			return raw;
+		}
+		
+		public HashMap<String,Nominal> fields() {
+			HashMap<String,Nominal> r = new HashMap<String,Nominal>();
+			for(Map.Entry<String, Type> e : raw.fields().entrySet()) {
+				r.put(e.getKey(), Nominal.construct(e.getValue(),e.getValue()));
+			}
+			return r;
 		}
 		
 		public Nominal field(String field) {
@@ -256,6 +393,18 @@ public abstract class Nominal {
 			} else {
 				return construct(t,t);
 			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Record) {
+				Record b = (Record) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
 		}
 	}
 	
@@ -304,6 +453,18 @@ public abstract class Nominal {
 			}
 			return r;			
 		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Function) {
+				Function b = (Function) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
 	}
 	
 	public static final class Method extends FunctionOrMethod {
@@ -330,6 +491,19 @@ public abstract class Nominal {
 				r.add(construct(e,e));
 			}
 			return r;			
+		}
+		
+		
+		public boolean equals(Object o) {
+			if (o instanceof Method) {
+				Method b = (Method) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
 		}
 	}
 	
@@ -362,6 +536,18 @@ public abstract class Nominal {
 				r.add(construct(e,e));
 			}
 			return r;			
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Message) {
+				Message b = (Message) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
 		}
 	}	
 }

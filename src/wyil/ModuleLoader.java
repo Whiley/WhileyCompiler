@@ -70,6 +70,13 @@ public final class ModuleLoader {
 	private HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
 	
 	/**
+	 * Contains a set of ModuleIDs which have been ignored. This is purely to
+	 * prevent continually rereading those modules.
+	 **/
+	private HashSet<ModuleID> ignored = new HashSet<ModuleID>();
+	
+	
+	/**
 	 * This identifies which packages have had their contents fully resolved.
 	 * All items in a resolved package must have been loaded into the filetable.
 	 */
@@ -146,9 +153,11 @@ public final class ModuleLoader {
 	 */
 	public Module loadModule(ModuleID module) throws ResolveError {		
 		Module m = moduletable.get(module);
-		
-		if(m != null) {
+						
+		if (m != null) {
 			return m; // module was previously loaded and cached
+		} else if (ignored.contains(module)) {
+			throw new ResolveError("Unable to find module: " + module);
 		}
 			
 		// module has not been previously loaded.
@@ -244,16 +253,19 @@ public final class ModuleLoader {
 		long time = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 		ModuleReader reader = suffixMap.get(entry.suffix());
+		ModuleID mid = entry.id();
 		
-		Module mi = reader.read(entry.id(), entry.contents());
+		Module mi = reader.read(mid, entry.contents());
 		
 		if(mi != null) {
-			logger.logTimedMessage("Loaded " + entry.location() + ":" + entry.id(),
+			logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
 			moduletable.put(mi.id(), mi);
 		} else {
-			logger.logTimedMessage("Ignored " + entry.location() + ":" + entry.id(),
+			
+			logger.logTimedMessage("Ignored " + entry.location() + ":" + mid,
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
+			ignored.add(mid);
 		}
 		return mi;
 	}

@@ -328,27 +328,27 @@ public final class TypePropagation {
 			
 			// FIXME: loss of nominal information here			
 			Type rawRhs = rhs.type().raw();		
-			Type.Tuple rawTupleRhs;
+			Nominal.Tuple tupleRhs;
 			
 			// FIXME: the following is something of a kludge. It would also be
 			// nice to support more expressive destructuring assignment
 			// operations.
 			if(Type.isImplicitCoerciveSubtype(Type.T_REAL, rawRhs)) {
-				rawTupleRhs = Type.Tuple(Type.T_INT,Type.T_INT);
+				tupleRhs = Nominal.Tuple(Nominal.T_INT,Nominal.T_INT);
 			} else if(!(rawRhs instanceof Type.Tuple)) {
 				syntaxError("tuple value expected, got " + rawRhs,filename,rhs);
 				return null; // deadcode
 			} else {
-				rawTupleRhs = (Type.Tuple) rawRhs;
+				tupleRhs = (Nominal.Tuple) rhs.type();
 			}
 			
-			List<Type> rhsElements = rawTupleRhs.elements();
+			List<Nominal> rhsElements = tupleRhs.elements();
 			if(rhsElements.size() != tvFields.size()) {
 				syntaxError("incompatible tuple assignment",filename,rhs);
 			}			
 			for(int i=0;i!=tvFields.size();++i) {
 				Expr f = tvFields.get(i);
-				Nominal t = new Nominal(rhsElements.get(i),rhsElements.get(i));
+				Nominal t = rhsElements.get(i);
 				
 				if(f instanceof Expr.AbstractVariable) {
 					Expr.AbstractVariable av = (Expr.AbstractVariable) f; 				
@@ -400,41 +400,26 @@ public final class TypePropagation {
 					Nominal.T_STRING);
 		} else if (lv instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) lv;
-			Type nominalAfterType = Type.List(
-					Type.Union(la.type().nominal(), afterType.nominal()), false);
-			Type rawAfterType = Type.List(
-					Type.Union(la.type().raw(), afterType.raw()), false);
-			// FIXME: loss of nominal information here.
-			afterType = new Nominal(nominalAfterType,rawAfterType);
-			return inferBeforeAfterType((Expr.LVal) la.src, (Nominal) la.srcType, afterType);
+			afterType = Nominal.List(Nominal.Union(la.type(), afterType), false);						
+			return inferBeforeAfterType((Expr.LVal) la.src, la.srcType, afterType);
 		} else if(lv instanceof Expr.DictionaryAccess)  {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		
-			Type.Dictionary rawSrcType = da.srcType.raw();
-			// FIXME: loss of nominal information here
-			Type nominalAfterType = Type.Dictionary(
-					Type.Union(rawSrcType.key(), da.index.type().nominal()),
-					Type.Union(da.elementType.nominal(), afterType.nominal()));
-			Type rawAfterType = Type.Dictionary(
-					Type.Union(rawSrcType.key(), da.index.type().raw()),
-					Type.Union(rawSrcType.value(), afterType.raw()));
-			// FIXME: loss of nominal information here.
-			afterType = new Nominal(nominalAfterType,rawAfterType);
-			return inferBeforeAfterType((Expr.LVal) da.src, (Nominal) da.srcType, afterType);
+			Nominal.Dictionary srcType = da.srcType;
+			afterType = Nominal.Dictionary(
+					Nominal.Union(srcType.key(), da.index.type()),
+					Nominal.Union(srcType.value(), afterType));			
+			return inferBeforeAfterType((Expr.LVal) da.src, srcType, afterType);
 		} else if(lv instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) lv;
-			Type.Record srcType = la.srcType.raw();
-			HashMap<String,Type> beforeFields = new HashMap<String,Type>(srcType.fields());
-			HashMap<String,Type> afterFields = new HashMap<String,Type>(srcType.fields());
-			beforeFields.put(la.name, beforeType.raw());
-			afterFields.put(la.name, afterType.raw());
-			
-			Type rawBeforeType = Type.Record(srcType.isOpen(), beforeFields);
-			Type rawAfterType = Type.Record(srcType.isOpen(), afterFields);
+			Nominal.Record srcType = la.srcType;			
+			// FIXME: I know I can modify this hash map
+			HashMap<String,Nominal> afterFields = srcType.fields();			
+			afterFields.put(la.name, afterType);
+						
+			afterType = Nominal.Record(srcType.isOpen(), afterFields);
 			
 			// FIXME: loss of nominal information here.
-			return inferBeforeAfterType((Expr.LVal) la.src, new Nominal(
-					rawBeforeType, rawBeforeType), new Nominal(
-					rawAfterType, rawAfterType));
+			return inferBeforeAfterType((Expr.LVal) la.src, srcType, afterType);
 		} else {
 			internalFailure("unknown lval encountered ("
 					+ lv.getClass().getName() + ")", filename, lv);
@@ -493,30 +478,27 @@ public final class TypePropagation {
 		// is permitted in some cases.
 		
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];		
-		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {
-			Type.List lt = Type.effectiveListType(rawType);
+		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {			
+			Nominal.List lt = Nominal.effectiveListType(stmt.source.type());
 			if(elementTypes.length == 1) {
-				// FIXME: loss of nominal information
-				elementTypes[0] = new Nominal(lt.element(),lt.element());
+				elementTypes[0] = lt.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}			
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
-			Type.Set st = Type.effectiveSetType(rawType);
+			Nominal.Set st = Nominal.effectiveSetType(stmt.source.type());
 			if(elementTypes.length == 1) {
-				// FIXME: loss of nominal information
-				elementTypes[0] = new Nominal(st.element(),st.element());
+				elementTypes[0] = st.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}					
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
-			Type.Dictionary dt = Type.effectiveDictionaryType(rawType);
+			Nominal.Dictionary dt = Nominal.effectiveDictionaryType(stmt.source.type());
 			if(elementTypes.length == 1) {
-				Type elemType = Type.Tuple(dt.key(),dt.value()); 
-				elementTypes[0] = new Nominal(elemType,elemType);			
+				elementTypes[0] = Nominal.Tuple(dt.key(),dt.value());			
 			} else if(elementTypes.length == 2) {					
-				elementTypes[0] = new Nominal(dt.key(),dt.key());
-				elementTypes[1] = new Nominal(dt.value(),dt.value());
+				elementTypes[0] = dt.key();
+				elementTypes[1] = dt.value();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}
@@ -719,12 +701,9 @@ public final class TypePropagation {
 				return lv;
 			} else if(lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
-				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,imports);				
-				Type.Reference procType = checkType(src.type().raw(),Type.Reference.class,src);				
+				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,imports);												
 				pa.src = src;
-				// FIXME: loss of nominal information here
-				pa.srcType = new Nominal<Type.Reference>(procType,procType);
-				pa.elementType = new Nominal(procType.element(),procType.element());				
+				pa.srcType = Nominal.effectiveReferenceType(src.type());							
 				return pa;
 			} else if(lval instanceof Expr.AbstractIndexAccess) {
 				// this indicates either a list, string or dictionary update
@@ -738,15 +717,11 @@ public final class TypePropagation {
 					return new Expr.StringAccess(src,index,lval.attributes());
 				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
 					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
-					Type.List lt = Type.effectiveListType(rawSrcType); 
-					la.srcType = new Nominal<Type.List>(lt,lt);
-					la.elementType = new Nominal(lt.element(),lt.element());
+					la.srcType = Nominal.effectiveListType(src.type()); 			
 					return la;
 				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
-					Type.Dictionary lt = Type.effectiveDictionaryType(rawSrcType);
-					da.srcType = new Nominal<Type.Dictionary>(lt,lt);
-					da.elementType = new Nominal(lt.value(),lt.value());
+					da.srcType = Nominal.effectiveDictionaryType(src.type());										
 					return da;
 				} else {				
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
@@ -756,14 +731,13 @@ public final class TypePropagation {
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,imports);
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
-				Type.Record rawSrcType = Type.effectiveRecordType(src.type().raw());
-				if(rawSrcType == null) {								
+				Nominal.Record srcType = Nominal.effectiveRecordType(src.type());
+				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
+				} else if(srcType.field(ra.name) == null) {
+					syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,lval);
 				}
-				ra.srcType = new Nominal<Type.Record>(src.type().nominal(),rawSrcType);
-				// FIXME: loss of nominal information
-				Type fieldType = rawSrcType.fields().get(ad.name);
-				ra.fieldType = new Nominal(fieldType,fieldType);
+				ra.srcType = srcType;
 				return ra;
 			}
 		} catch(SyntaxError e) {
@@ -1269,10 +1243,10 @@ public final class TypePropagation {
 			Expr e = propagate(p.second(),local,imports);			
 			p = new Pair<String,Expr>(p.first(),e);
 			sources.set(i,p);
-			Type element;
-			Nominal type = (Nominal) e.type();
-			Type.List listType = Type.effectiveListType(type.raw());
-			Type.Set setType = Type.effectiveSetType(type.raw());
+			Nominal element;
+			Nominal type = e.type();
+			Nominal.List listType = Nominal.effectiveListType(type);
+			Nominal.Set setType = Nominal.effectiveSetType(type);
 			if(listType != null) {
 				element = listType.element();
 			} else if(setType != null) {
@@ -1283,8 +1257,7 @@ public final class TypePropagation {
 			}
 			// update environment for subsequent source expressions, the
 			// condition and the value.
-			// FIXME: loss of nominal information
-			local = local.put(p.first(),new Nominal(element,element));
+			local = local.put(p.first(),element);
 		}
 		
 		if(expr.condition != null) {
@@ -1293,11 +1266,7 @@ public final class TypePropagation {
 		
 		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
 			expr.value = propagate(expr.value,local,imports);
-			Nominal type = (Nominal) expr.value.type();
-			Type.Set rawResultType = Type.Set(type.raw(),false);
-			// FIXME: loss of nominal information
-			// FIXME: broken for list comprehensions
-			expr.type = new Nominal(rawResultType,rawResultType);
+			expr.type = Nominal.Set(expr.value.type(), false);
 		} else {
 			expr.type = Nominal.T_BOOL;
 		}
@@ -1787,7 +1756,7 @@ public final class TypePropagation {
 		Type nominalType = Type.Tuple(nominalFieldTypes);
 		Type.Tuple rawType =  Type.Tuple(rawFieldTypes);
 		
-		expr.type = new Nominal<Type.Tuple>(nominalType,rawType);
+		expr.type = new Nominal.Tuple(nominalType,rawType);
 		
 		return expr;
 	}
@@ -1804,7 +1773,7 @@ public final class TypePropagation {
 		checkIsSubtype(Type.T_INT,expr.start);
 		checkIsSubtype(Type.T_INT,expr.end);
 		
-		expr.type = (Nominal) expr.src.type();
+		expr.type = Nominal.effectiveListType(expr.src.type());
 		
 		return expr;
 	}
@@ -1871,17 +1840,15 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		Nominal srcType = (Nominal) ra.src.type();
-		Type.Record rawType = Type.effectiveRecordType(srcType.raw());
-		if(rawType == null) {
+		Nominal.Record recType = Nominal.effectiveRecordType(srcType);
+		if(recType == null) {
 			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),filename,ra);
 		} 
-		Type fieldType = rawType.fields().get(ra.name);
+		Nominal fieldType = recType.field(ra.name);
 		if(fieldType == null) {
 			syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,ra);
 		}
-		ra.srcType = new Nominal<Type.Record>(srcType.nominal(),rawType);		
-		// FIXME: loss of nominal information here
-		ra.fieldType = new Nominal(fieldType,fieldType);
+		ra.srcType = recType;		
 		return ra;
 	}	
 	
@@ -1898,10 +1865,11 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Expr src = propagate(expr.src,environment,imports);
 		expr.src = src;
-		Type.Reference tp = checkType(src.type().raw(),Type.Reference.class,src);
-		// FIXME: loss of nominal information here
-		expr.srcType = (Nominal) src.type();
-		expr.elementType = new Nominal(tp.element(),tp.element());
+		Nominal.Reference srcType = Nominal.effectiveReferenceType(src.type());
+		if(srcType == null) {
+			syntaxError("invalid reference expression",filename,src);
+		}
+		expr.srcType = srcType;		
 		return expr;
 	}
 	
@@ -1909,10 +1877,7 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		expr.expr = propagate(expr.expr,environment,imports);
-		Nominal type = (Nominal) expr.expr.type();
-		Type.Reference p = Type.Reference(type.raw());
-		// FIXME: loss of nominal information
-		expr.type = new Nominal<Type.Reference>(p,p);
+		expr.type = Nominal.Reference(expr.expr.type());
 		return expr;
 	}
 	
@@ -2070,10 +2035,8 @@ public final class TypePropagation {
 		for(String key : lhs.keySet()) {
 			if(rhs.containsKey(key)) {
 				Nominal lhs_t = lhs.get(key);
-				Nominal rhs_t = rhs.get(key);
-				Type nominalType = Type.Union(lhs_t.first(),rhs_t.first());
-				Type rawType = Type.Union(lhs_t.second(),rhs_t.second());
-				result.put(key, new Nominal(nominalType,rawType));
+				Nominal rhs_t = rhs.get(key);				
+				result.put(key, Nominal.Union(lhs_t, rhs_t));
 			}
 		}
 		

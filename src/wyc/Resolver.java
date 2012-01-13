@@ -303,6 +303,21 @@ public final class Resolver {
 	// ResolveAsType
 	// =========================================================================
 	
+	public Nominal.Function resolveAsType(UnresolvedType.Function t,
+			List<WhileyFile.Import> imports) throws ResolveError {
+		return (Nominal.Function) resolveAsType((UnresolvedType)t,imports);
+	}
+	
+	public Nominal.Method resolveAsType(UnresolvedType.Method t,
+			List<WhileyFile.Import> imports) throws ResolveError {		
+		return (Nominal.Method) resolveAsType((UnresolvedType)t,imports);
+	}
+	
+	public Nominal.Message resolveAsType(UnresolvedType.Message t,
+			List<WhileyFile.Import> imports) throws ResolveError {		
+		return (Nominal.Message) resolveAsType((UnresolvedType)t,imports);
+	}
+	
 	/**
 	 * Resolve a given type by identifying all unknown names and replacing them
 	 * with nominal types.
@@ -317,7 +332,7 @@ public final class Resolver {
 		Type nominalType = resolveAsType(t, imports, true);		
 		Type rawType = resolveAsType(t, imports, false);		
 		return Nominal.construct(nominalType, rawType);
-	}
+	}		
 	
 	private Type resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
 			boolean nominal) throws ResolveError {
