@@ -11,4 +11,4 @@ void ::main(System.Console sys):
     sys.out.println(Any.toString(f(10)))
     sys.out.println(Any.toString(f(11)))
     sys.out.println(Any.toString(f(1212)))
-    sys.out.println(Any.toString(f()-1212))
+    sys.out.println(Any.toString(f(-1212))

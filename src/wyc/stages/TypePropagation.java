@@ -776,6 +776,7 @@ public final class TypePropagation {
 		} else {
 			// for all others just default back to the base rules for expressions.
 			expr = propagate(expr,environment,imports);
+			checkIsSubtype(Type.T_BOOL,expr);
 			return new Pair(expr,environment);
 		}		
 	}
