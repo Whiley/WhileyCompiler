@@ -69,50 +69,7 @@ public abstract class Nominal {
 		return Nominal.construct(nominal, raw);
 	}
 	
-	public static Nominal.Set effectiveSetType(Nominal lhs) {
-		Type.Set r = Type.effectiveSetType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Set) construct(r,r);
-		} else {
-			return null;
-		}
-	}
 	
-	public static Nominal.List effectiveListType(Nominal lhs) {
-		Type.List r = Type.effectiveListType(lhs.raw());
-		if(r != null) {
-			return (Nominal.List) construct(r,r);
-		} else {
-			return null;
-		}
-	}
-	
-	public static Nominal.Dictionary effectiveDictionaryType(Nominal lhs) {
-		Type.Dictionary r = Type.effectiveDictionaryType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Dictionary) construct(r,r);
-		} else {
-			return null;
-		}
-	}
-	
-	public static Nominal.Record effectiveRecordType(Nominal lhs) {
-		Type.Record r = Type.effectiveRecordType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Record) construct(r,r);
-		} else {
-			return null;
-		}
-	}
-	
-	public static Nominal.Reference effectiveReferenceType(Nominal lhs) {
-		Type.Reference r = Type.effectiveReferenceType(lhs.raw());
-		if(r != null) {
-			return (Nominal.Reference) construct(r,r);
-		} else {
-			return null;
-		}
-	}
 	
 	public static Tuple Tuple(Nominal... elements) {
 		ArrayList<Type> rawElements = new ArrayList<Type>();

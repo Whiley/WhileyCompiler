@@ -317,7 +317,7 @@ public final class Resolver {
 			List<WhileyFile.Import> imports) throws ResolveError {		
 		return (Nominal.Message) resolveAsType((UnresolvedType)t,imports);
 	}
-	
+			
 	/**
 	 * Resolve a given type by identifying all unknown names and replacing them
 	 * with nominal types.
