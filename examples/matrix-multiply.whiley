@@ -6,16 +6,16 @@ import * from whiley.io.File
 // ========================================================
 
 define Matrix as [[int]]
-define Multiplier as process { int i, int j, int r, Matrix A, Matrix B }
+define Multiplier as ref { int i, int j, int r, Matrix A, Matrix B }
 
 void Multiplier::start():
     r = 0
-    for k in 0 .. |this.A|:
-        r = r + (this.A[this.j][k] * this.B[k][this.i])
-    this.r = r
+    for k in 0 .. |this->A|:
+        r = r + (this->A[this->j][k] * this->B[k][this->i])
+    this->r = r
 
 int Multiplier::get():
-    return this.r
+    return this->r
 
 // ========================================================
 // Parser
@@ -68,7 +68,7 @@ bool isWhiteSpace(char c):
 // ========================================================
 
 Multiplier ::createMultiplier(int i, int j, Matrix A, Matrix B):
-    return spawn { i: i, j: j, r: 0, A: A, B: B }
+    return new { i: i, j: j, r: 0, A: A, B: B }
 
 [[Multiplier]] ::createMultipliers(int n, Matrix A, Matrix B):
     rows = []
@@ -98,7 +98,7 @@ Matrix ::run(Matrix A, Matrix B):
         rows = rows + [row]
     return rows
 
-void ::printMat(System sys, Matrix A):
+void ::printMat(System.Console sys, Matrix A):
     for i in 0 .. |A|:
         row = A[i]
         for j in 0 .. |row|:
@@ -106,7 +106,7 @@ void ::printMat(System sys, Matrix A):
             sys.out.print(" ")
         sys.out.println("")
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys):
     file = File.Reader(args[0])
     // first, read data
     input = String.fromASCII(file.read())

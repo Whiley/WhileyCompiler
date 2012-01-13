@@ -201,7 +201,7 @@ bool isWhiteSpace(char c):
 // Main Method
 // ====================================================
 
-public void ::main(System sys, [string] args):
+public void ::main(System.Console sys):
     file = File.Reader(args[0])
     input = String.fromASCII(file.read())
 
