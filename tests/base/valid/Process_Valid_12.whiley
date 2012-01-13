@@ -1,5 +1,4 @@
 import * from whiley.lang.*
-import * from whiley.lang.*
 
 define Queue as ref { [int] items }
 	 
