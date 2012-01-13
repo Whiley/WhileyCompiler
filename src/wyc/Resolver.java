@@ -1038,7 +1038,7 @@ public final class Resolver {
 	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
 			List<Nominal> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 		
-		ArrayList<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new ArrayList(); 
+		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 
 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
@@ -1067,7 +1067,7 @@ public final class Resolver {
 	 */
 	public Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid, 
 			List<Nominal> parameters) throws ResolveError {
-		ArrayList<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new ArrayList();
+		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
 		
 		addCandidateFunctionsAndMethods(nid, parameters, candidates);
 		
@@ -1078,7 +1078,7 @@ public final class Resolver {
 	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
 			List<Nominal> parameters, List<WhileyFile.Import> imports) throws ResolveError {
 
-		ArrayList<Pair<NameID,Nominal.Message>> candidates = new ArrayList<Pair<NameID,Nominal.Message>>(); 
+		HashSet<Pair<NameID,Nominal.Message>> candidates = new HashSet<Pair<NameID,Nominal.Message>>(); 
 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
@@ -1096,7 +1096,7 @@ public final class Resolver {
 	public Nominal.Message resolveAsMessage(NameID nid,
 			Type.Reference receiver, List<Nominal> parameters)
 			throws ResolveError {
-		ArrayList<Pair<NameID, Nominal.Message>> candidates = new ArrayList<Pair<NameID, Nominal.Message>>();
+		HashSet<Pair<NameID, Nominal.Message>> candidates = new HashSet<Pair<NameID, Nominal.Message>>();
 		
 		addCandidateMessages(nid, parameters, candidates);
 		
@@ -1161,7 +1161,7 @@ public final class Resolver {
 	
 	private Pair<NameID,Nominal.FunctionOrMethod> selectCandidateFunctionOrMethod(String name,
 			List<Nominal> parameters,
-			ArrayList<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
+			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
 			throws ResolveError {
 		
 		List<Type> rawParameters; 
@@ -1215,7 +1215,7 @@ public final class Resolver {
 	private Pair<NameID,Nominal.Message> selectCandidateMessage(String name,
 			Type.Reference receiver,
 			List<Nominal> parameters,
-			ArrayList<Pair<NameID, Nominal.Message>> candidates)
+			Collection<Pair<NameID, Nominal.Message>> candidates)
 			throws ResolveError {
 		
 		List<Type> rawParameters; 
@@ -1277,7 +1277,7 @@ public final class Resolver {
 	
 	private void addCandidateFunctionsAndMethods(NameID nid,
 			List<?> parameters,
-			ArrayList<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
+			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
 			throws ResolveError {
 		ModuleID mid = nid.module();
 		
@@ -1321,7 +1321,7 @@ public final class Resolver {
 	
 	private void addCandidateMessages(NameID nid,
 			List<?> parameters,
-			ArrayList<Pair<NameID, Nominal.Message>> candidates)
+			Collection<Pair<NameID, Nominal.Message>> candidates)
 			throws ResolveError {
 		ModuleID mid = nid.module();
 		
