@@ -126,7 +126,7 @@ public final class CodeGeneration {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure("internal failure", wf.filename, d, ex);
+				internalFailure(ex.getMessage(), wf.filename, d, ex);
 			}
 		}
 		
@@ -304,7 +304,7 @@ public final class CodeGeneration {
 				return generate((Skip) stmt, environment);
 			} else {
 				// should be dead-code
-				internalFailure("unknown statement encountered: "
+				internalFailure("unknown statement: "
 						+ stmt.getClass().getName(), filename, stmt);
 			}
 		} catch (ResolveError rex) {
@@ -312,7 +312,7 @@ public final class CodeGeneration {
 		} catch (SyntaxError sex) {
 			throw sex;
 		} catch (Exception ex) {			
-			internalFailure("internal failure", filename, stmt, ex);
+			internalFailure(ex.getMessage(), filename, stmt, ex);
 		}
 		return null;
 	}
@@ -742,7 +742,7 @@ public final class CodeGeneration {
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			internalFailure("internal failure", filename, condition, ex);
+			internalFailure(ex.getMessage(), filename, condition, ex);
 		}
 
 		return null;
@@ -1051,16 +1051,15 @@ public final class CodeGeneration {
 				return generate((Expr.New) expression, environment);
 			} else {
 				// should be dead-code
-				internalFailure("unknown expression encountered: "
-						+ expression.getClass().getName() + " (" + expression
-						+ ")", filename, expression);
+				internalFailure("unknown expression: "
+						+ expression.getClass().getName(), filename, expression);
 			}
 		} catch (ResolveError rex) {
 			syntaxError(rex.getMessage(), filename, expression, rex);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			internalFailure("internal failure", filename, expression, ex);
+			internalFailure(ex.getMessage(), filename, expression, ex);
 		}
 
 		return null;

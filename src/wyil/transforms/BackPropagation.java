@@ -236,7 +236,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		} else if(code instanceof TupleLoad) {
 			infer(index,(TupleLoad)code,entry,environment);
 		} else {			
-			internalFailure("unknown wyil code (" + code + ")",filename,entry);
+			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
 		}	
 		

@@ -213,7 +213,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
 		} else {
-			internalFailure("unknown wyil code encountered: " + code,filename,entry);
+			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
 		}	
 		

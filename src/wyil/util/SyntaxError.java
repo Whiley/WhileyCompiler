@@ -227,6 +227,14 @@ public class SyntaxError extends RuntimeException {
 				Throwable ex) {
 			super(msg, filename, start, end, ex);
 		}
+		public String getMessage() {
+			String msg = super.getMessage();
+			if(msg == null) {
+				return "internal failure";
+			} else {
+				return "internal failure (" + msg + ")";
+			}
+		}
 	}
 	
 	public static void internalFailure(String msg, String filename,

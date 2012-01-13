@@ -151,7 +151,7 @@ public final class TypePropagation {
 			} catch(SyntaxError e) {
 				throw e;
 			} catch(Throwable t) {
-				internalFailure("internal failure",filename,decl,t);
+				internalFailure(t.getMessage(),filename,decl,t);
 			}
 		}
 	}
@@ -267,7 +267,7 @@ public final class TypePropagation {
 			} else if(stmt instanceof Stmt.Skip) {
 				return propagate((Stmt.Skip) stmt,environment,imports);
 			} else {
-				internalFailure("unknown statement encountered",filename,stmt);
+				internalFailure("unknown statement: " + stmt.getClass().getName(),filename,stmt);
 				return null; // deadcode
 			}
 		} catch(ResolveError e) {
@@ -276,7 +276,7 @@ public final class TypePropagation {
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure("internal failure",filename,stmt,e);
+			internalFailure(e.getMessage(),filename,stmt,e);
 			return null; // dead code
 		}
 	}
@@ -415,8 +415,8 @@ public final class TypePropagation {
 			// FIXME: loss of nominal information here.
 			return inferBeforeAfterType((Expr.LVal) la.src, srcType, afterType);
 		} else {
-			internalFailure("unknown lval encountered ("
-					+ lv.getClass().getName() + ")", filename, lv);
+			internalFailure("unknown lval: "
+					+ lv.getClass().getName(), filename, lv);
 			return null; //deadcode
 		}
 	}
@@ -740,7 +740,7 @@ public final class TypePropagation {
 			internalFailure("internal failure",filename,lval,e);
 			return null; // dead code
 		}		
-		internalFailure("unknown lval encountered (" + lval.getClass().getName() +")",filename,lval);
+		internalFailure("unknown lval: " + lval.getClass().getName(),filename,lval);
 		return null; // dead code
 	}		
 	
@@ -1031,7 +1031,7 @@ public final class TypePropagation {
 			internalFailure("internal failure",filename,expr,e);
 			return null; // dead code
 		}		
-		internalFailure("unknown expression encountered (" + expr.getClass().getName() +")",filename,expr);
+		internalFailure("unknown expression: " + expr.getClass().getName(),filename,expr);
 		return null; // dead code
 	}
 	
@@ -1218,9 +1218,9 @@ public final class TypePropagation {
 		case NOT:
 			return propagate(expr,true,environment,imports).first();		
 		default:		
-			internalFailure("unknown unary operator ("
-					+ expr.op.getClass().getName() + ")" + expr.op, filename,
-					expr);
+			internalFailure(
+					"unknown operator: " + expr.op.getClass().getName(),
+					filename, expr);
 		}
 		
 		expr.type = (Nominal) src.result();		

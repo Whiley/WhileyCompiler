@@ -865,10 +865,10 @@ public final class Resolver {
 		} catch(SyntaxError.InternalFailure e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure("internal failure",filename,expr,e);
+			internalFailure(e.getMessage(),filename,expr,e);
 		}
 		
-		internalFailure("unknown constant expression (" + expr.getClass().getName() + ")",filename,expr);
+		internalFailure("unknown constant expression: " + expr.getClass().getName(),filename,expr);
 		return null; // deadcode
 	}
 

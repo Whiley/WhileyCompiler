@@ -319,7 +319,7 @@ public class Main {
 			}
 			return SYNTAX_ERROR;
 		} catch (Throwable e) {
-			errout.println("internal failure: " + e.getMessage());
+			errout.println("internal failure (" + e.getMessage() + ")");
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
