@@ -652,7 +652,26 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.TryCatch stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ArrayList<WhileyFile.Import> imports) {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		
+
+		for(Stmt.Catch handler : stmt.catches) {
+			
+			// FIXME: need to deal with handler environments properly!
+			
+			Nominal type = resolver.resolveAsType(handler.unresolvedType, imports); 
+			handler.type = type;
+			RefCountedHashMap<String,Nominal> local = environment.clone();
+			local = local.put(handler.variable, type);									
+			propagate(handler.stmts,local,imports);
+			local.free();
+		}
+		
+		environment = propagate(stmt.body,environment,imports);
+		
+		
+		// need to do handlers here
+		
 		return environment;
 	}
 	
@@ -1464,7 +1483,7 @@ public final class TypePropagation {
 					return nexpr;					
 				}
 
-			} else {
+			} else {				
 				// no matching local variable, so attempt to resolve as direct
 				// call.
 				Pair<NameID, Nominal.FunctionOrMethod> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);

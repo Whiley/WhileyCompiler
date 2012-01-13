@@ -27,6 +27,7 @@ package wyc.lang;
 
 import java.util.*;
 
+import wyc.util.Nominal;
 import wyil.lang.Attribute;
 import wyil.lang.Type;
 import wyil.lang.Value;
@@ -213,7 +214,7 @@ public interface Stmt extends SyntacticElement {
 		public UnresolvedType unresolvedType; 		
 		public final String variable;
 		public final ArrayList<Stmt> stmts;
-		public Type type;
+		public Nominal type;
 
 		public Catch(UnresolvedType type, String variable, List<Stmt> statements,
 				Attribute... attributes) {

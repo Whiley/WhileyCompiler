@@ -537,7 +537,7 @@ public final class CodeGeneration {
 			} else {
 				lab = Code.Label(Block.freshLabel());
 			}
-			Type pt = c.type;
+			Type pt = c.type.raw();
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt,lab.label));
 			cblk.append(lab, attributes(c));
