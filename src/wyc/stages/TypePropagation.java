@@ -840,7 +840,8 @@ public final class TypePropagation {
 			p = propagate(bop.lhs,sign,environment.clone(),imports);			
 			bop.lhs = p.first();
 			p = propagate(bop.rhs,sign,p.second(),imports);
-			bop.rhs = p.first();						
+			bop.rhs = p.first();
+			environment = p.second();
 		} else {
 			// We could do better here
 			p = propagate(bop.lhs,sign,environment.clone(),imports);
