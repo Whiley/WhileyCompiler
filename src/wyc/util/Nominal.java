@@ -362,10 +362,13 @@ public abstract class Nominal {
 		}
 		
 		public java.util.List<Nominal> elements() {			
-			// FIXME: loss of nominal information
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			for(Type e : raw.elements()) {
-				r.add(construct(e,e));
+			java.util.List<Type> rawElements = raw.elements();
+			java.util.List<Type> nominalElements = nominal.elements();
+			for(int i=0;i!=rawElements.size();++i) {
+				Type nominalElement = nominalElements.get(i);
+				Type rawElement = rawElements.get(i);				
+				r.add(construct(nominalElement,rawElement));
 			}
 			return r;			
 		}
@@ -406,19 +409,22 @@ public abstract class Nominal {
 		
 		public HashMap<String,Nominal> fields() {
 			HashMap<String,Nominal> r = new HashMap<String,Nominal>();
+			HashMap<String,Type> nominalFields = nominal.fields();
 			for(Map.Entry<String, Type> e : raw.fields().entrySet()) {
-				r.put(e.getKey(), Nominal.construct(e.getValue(),e.getValue()));
+				String key = e.getKey();
+				Type rawField = e.getValue();
+				Type nominalField = nominalFields.get(key);
+				r.put(e.getKey(), Nominal.construct(nominalField,rawField));
 			}
 			return r;
 		}
 		
 		public Nominal field(String field) {
-			// FIXME: loss of nominal information
-			Type t = raw.fields().get(field);
-			if(t == null) {
+			Type rawField = raw.fields().get(field);
+			if(rawField == null) {
 				return null;
 			} else {
-				return construct(t,t);
+				return construct(nominal.fields().get(field),rawField);
 			}
 		}
 		
@@ -475,12 +481,15 @@ public abstract class Nominal {
 		}
 		
 		public java.util.List<Nominal> params() {			
-			// FIXME: loss of nominal information
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			for(Type e : raw.params()) {
-				r.add(construct(e,e));
-			}
-			return r;			
+			java.util.List<Type> rawElements = raw.params();
+			java.util.List<Type> nominalElements = nominal.params();
+			for(int i=0;i!=rawElements.size();++i) {
+				Type nominalElement = nominalElements.get(i);
+				Type rawElement = rawElements.get(i);				
+				r.add(construct(nominalElement,rawElement));
+			}				
+			return r;
 		}
 		
 		public boolean equals(Object o) {
@@ -518,12 +527,15 @@ public abstract class Nominal {
 		}
 		
 		public java.util.List<Nominal> params() {			
-			// FIXME: loss of nominal information
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			for(Type e : raw.params()) {
-				r.add(construct(e,e));
-			}
-			return r;			
+			java.util.List<Type> rawElements = raw.params();
+			java.util.List<Type> nominalElements = nominal.params();
+			for(int i=0;i!=rawElements.size();++i) {
+				Type nominalElement = nominalElements.get(i);
+				Type rawElement = rawElements.get(i);				
+				r.add(construct(nominalElement,rawElement));
+			}				
+			return r;		
 		}
 		
 		
@@ -566,11 +578,14 @@ public abstract class Nominal {
 		}
 		
 		public java.util.List<Nominal> params() {			
-			// FIXME: loss of nominal information
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			for(Type e : raw.params()) {
-				r.add(construct(e,e));
-			}
+			java.util.List<Type> rawElements = raw.params();
+			java.util.List<Type> nominalElements = nominal.params();
+			for(int i=0;i!=rawElements.size();++i) {
+				Type nominalElement = nominalElements.get(i);
+				Type rawElement = rawElements.get(i);				
+				r.add(construct(nominalElement,rawElement));
+			}				
 			return r;			
 		}
 		
