@@ -118,7 +118,6 @@ import static wyil.util.SyntaxError.*;
 public final class TypePropagation {
 	private final ModuleLoader loader;
 	private final Resolver resolver;
-	private final Expander expander;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethodOrMessage current;
@@ -126,7 +125,6 @@ public final class TypePropagation {
 	public TypePropagation(ModuleLoader loader, Resolver resolver) {
 		this.loader = loader;
 		this.resolver = resolver;
-		this.expander = new Expander();
 	}
 	
 	public void propagate(WhileyFile wf) {
@@ -471,7 +469,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.ForAll stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ArrayList<WhileyFile.Import> imports) {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		
 		stmt.source = propagate(stmt.source,environment,imports);
 		Type rawType = stmt.source.result().raw(); 		
@@ -482,21 +480,21 @@ public final class TypePropagation {
 		
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];		
 		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {			
-			Nominal.List lt = expander.expandAsList(stmt.source.result());
+			Nominal.List lt = resolver.expandAsList(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = lt.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}			
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
-			Nominal.Set st = expander.expandAsSet(stmt.source.result());
+			Nominal.Set st = resolver.expandAsSet(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = st.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}					
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
-			Nominal.Dictionary dt = expander.expandAsDictionary(stmt.source.result());
+			Nominal.Dictionary dt = resolver.expandAsDictionary(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = Nominal.Tuple(dt.key(),dt.value());			
 			} else if(elementTypes.length == 2) {					
@@ -589,7 +587,7 @@ public final class TypePropagation {
 		
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment,imports);
-			Nominal rhs = (Nominal) stmt.expr.result();
+			Nominal rhs = stmt.expr.result();
 			checkIsSubtype(current.resolvedType().ret(),rhs, stmt.expr);
 		}	
 		
@@ -706,7 +704,7 @@ public final class TypePropagation {
 				Expr.Dereference pa = (Expr.Dereference) lval;
 				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,imports);												
 				pa.src = src;
-				pa.srcType = expander.expandAsReference(src.result());							
+				pa.srcType = resolver.expandAsReference(src.result());							
 				return pa;
 			} else if(lval instanceof Expr.AbstractIndexAccess) {
 				// this indicates either a list, string or dictionary update
@@ -720,11 +718,11 @@ public final class TypePropagation {
 					return new Expr.StringAccess(src,index,lval.attributes());
 				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
 					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
-					la.srcType = expander.expandAsList(src.result()); 			
+					la.srcType = resolver.expandAsList(src.result()); 			
 					return la;
 				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
-					da.srcType = expander.expandAsDictionary(src.result());										
+					da.srcType = resolver.expandAsDictionary(src.result());										
 					return da;
 				} else {				
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
@@ -734,7 +732,7 @@ public final class TypePropagation {
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,imports);
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
-				Nominal.Record srcType = expander.expandAsRecord(src.result());
+				Nominal.Record srcType = resolver.expandAsRecord(src.result());
 				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
 				} else if(srcType.field(ra.name) == null) {
@@ -875,6 +873,8 @@ public final class TypePropagation {
 				Expr.TypeVal tv = (Expr.TypeVal) rhs;
 				Type testRawType = tv.type.raw();					
 				Nominal glb = Nominal.intersect(lhs.result(), tv.type);	
+				
+				System.out.println("GOT: " + glb.nominal() + ", " + glb.raw());
 				
 				if(Type.isSubtype(testRawType,lhsRawType)) {								
 					// DEFINITE TRUE CASE										
@@ -1237,7 +1237,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.Comprehension expr,
 			RefCountedHashMap<String,Nominal> environment,
-			ArrayList<WhileyFile.Import> imports) {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		
 		ArrayList<Pair<String,Expr>> sources = expr.sources;
 		RefCountedHashMap<String,Nominal> local = environment.clone();
@@ -1248,8 +1248,8 @@ public final class TypePropagation {
 			sources.set(i,p);
 			Nominal element;
 			Nominal type = e.result();
-			Nominal.List listType = Expander.expandAsList(type);
-			Nominal.Set setType = Expander.expandAsSet(type);
+			Nominal.List listType = resolver.expandAsList(type);
+			Nominal.Set setType = resolver.expandAsSet(type);
 			if(listType != null) {
 				element = listType.element();
 			} else if(setType != null) {
@@ -1368,7 +1368,7 @@ public final class TypePropagation {
 			// function is qualified, so this is used as the scope for resolving
 			// what the function is.
 			
-			Nominal.Record recType = expander.expandAsRecord(expr.qualification.result());
+			Nominal.Record recType = resolver.expandAsRecord(expr.qualification.result());
 			
 			if(recType != null) {
 				
@@ -1527,7 +1527,7 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_INT,expr.index);				
 		} else if(expr instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) expr; 
-			Nominal.List list = expander.expandAsList(srcType);			
+			Nominal.List list = resolver.expandAsList(srcType);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
 			}
@@ -1535,7 +1535,7 @@ public final class TypePropagation {
 			la.srcType = list;			
 		} else {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
-			Nominal.Dictionary dict = expander.expandAsDictionary(srcType);
+			Nominal.Dictionary dict = resolver.expandAsDictionary(srcType);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
 			}			
@@ -1588,21 +1588,21 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_STRING,expr.src);								
 		} else if(expr instanceof Expr.ListLength) {
 			Expr.ListLength ll = (Expr.ListLength) expr; 
-			Nominal.List list = expander.expandAsList(srcType);			
+			Nominal.List list = resolver.expandAsList(srcType);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
 			}
 			ll.srcType = list;
 		} else if(expr instanceof Expr.SetLength) {
 			Expr.SetLength sl = (Expr.SetLength) expr; 
-			Nominal.Set set = expander.expandAsSet(srcType);			
+			Nominal.Set set = resolver.expandAsSet(srcType);			
 			if(set == null) {
 				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,expr);				
 			}
 			sl.srcType = set;			
 		} else {
 			Expr.DictionaryLength dl = (Expr.DictionaryLength) expr; 
-			Nominal.Dictionary dict = expander.expandAsDictionary(srcType);
+			Nominal.Dictionary dict = resolver.expandAsDictionary(srcType);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
 			}				
@@ -1761,7 +1761,7 @@ public final class TypePropagation {
 	
 	private Expr propagate(Expr.SubList expr,
 			RefCountedHashMap<String,Nominal> environment,
-			ArrayList<WhileyFile.Import> imports) {	
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {	
 		
 		expr.src = propagate(expr.src,environment,imports);
 		expr.start = propagate(expr.start,environment,imports);
@@ -1771,7 +1771,7 @@ public final class TypePropagation {
 		checkIsSubtype(Type.T_INT,expr.start);
 		checkIsSubtype(Type.T_INT,expr.end);
 		
-		expr.type = expander.expandAsList(expr.src.result());
+		expr.type = resolver.expandAsList(expr.src.result());
 		
 		return expr;
 	}
@@ -1838,7 +1838,7 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		Nominal srcType = (Nominal) ra.src.result();
-		Nominal.Record recType = expander.expandAsRecord(srcType);
+		Nominal.Record recType = resolver.expandAsRecord(srcType);
 		if(recType == null) {
 			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),filename,ra);
 		} 
@@ -1863,7 +1863,7 @@ public final class TypePropagation {
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Expr src = propagate(expr.src,environment,imports);
 		expr.src = src;
-		Nominal.Reference srcType = expander.expandAsReference(src.result());
+		Nominal.Reference srcType = resolver.expandAsReference(src.result());
 		if(srcType == null) {
 			syntaxError("invalid reference expression",filename,src);
 		}

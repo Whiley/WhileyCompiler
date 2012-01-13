@@ -607,6 +607,103 @@ public final class Resolver {
 	}
 	
 	// =========================================================================
+	// expandAsType
+	// =========================================================================	
+
+	public static Nominal.Set expandAsSet(Nominal lhs) {
+		Type.Set r = Type.effectiveSetType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Set) Nominal.construct(r,r);
+		} else {
+			return null;
+		}
+	}
+
+	public Nominal.List expandAsList(Nominal lhs) throws ResolveError {
+		Type.List raw = Type.effectiveListType(lhs.raw());
+		if(raw != null) {
+			Type nominal = expandOneLevel(lhs.nominal());			
+			return (Nominal.List) Nominal.construct(nominal,raw);
+		} else {
+			return null;
+		}
+	}
+
+	public static Nominal.Dictionary expandAsDictionary(Nominal lhs) {
+		Type.Dictionary r = Type.effectiveDictionaryType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Dictionary) Nominal.construct(r,r);
+		} else {
+			return null;
+		}
+	}
+
+	public static Nominal.Record expandAsRecord(Nominal lhs) {
+		Type.Record r = Type.effectiveRecordType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Record) Nominal.construct(r,r);
+		} else {
+			return null;
+		}
+	}
+
+	public static Nominal.Reference expandAsReference(Nominal lhs) {
+		Type.Reference r = Type.effectiveReferenceType(lhs.raw());
+		if(r != null) {
+			return (Nominal.Reference) Nominal.construct(r,r);
+		} else {
+			return null;
+		}
+	}
+
+	private Type expandOneLevel(Type type) throws ResolveError {
+		if(type instanceof Type.Nominal){
+			Type.Nominal nt = (Type.Nominal) type;
+			NameID nid = nt.name();			
+			ModuleID mid = nid.module();
+			
+			WhileyFile wf = files.get(mid);
+			Type r = null;
+			
+			if (wf != null) {			
+				WhileyFile.Declaration decl = wf.declaration(nid.name());
+				if(decl instanceof WhileyFile.TypeDef) {
+					WhileyFile.TypeDef td = (WhileyFile.TypeDef) decl;
+					r = resolveAsType(td.unresolvedType,
+							buildImports(wf, decl), true);
+				} 
+			} else {
+				Module m = loader.loadModule(mid);
+				Module.TypeDef td = m.type(nid.name());
+				if(td != null) {
+					r = td.type();
+				}
+			}
+			if(r == null) {
+				throw new ResolveError("unable to locate " + nid);
+			}
+			return expandOneLevel(r);
+		} else if(type instanceof Type.Leaf 
+				|| type instanceof Type.Reference
+				|| type instanceof Type.Tuple
+				|| type instanceof Type.Set
+				|| type instanceof Type.List
+				|| type instanceof Type.Dictionary
+				|| type instanceof Type.Record
+				|| type instanceof Type.FunctionOrMethodOrMessage
+				|| type instanceof Type.Negation) {
+			return type;
+		} else {
+			Type.Union ut = (Type.Union) type;
+			ArrayList<Type> bounds = new ArrayList<Type>();
+			for(Type b : ut.bounds()) {
+				bounds.add(expandOneLevel(b));
+			}
+			return Type.Union(bounds);
+		} 
+	}
+	
+	// =========================================================================
 	// ResolveAsConstant
 	// =========================================================================		
 	

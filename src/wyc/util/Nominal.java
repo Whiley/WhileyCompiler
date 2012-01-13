@@ -56,8 +56,9 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static Nominal intersect(Nominal lhs, Nominal rhs) {
+	public static Nominal intersect(Nominal lhs, Nominal rhs) {		
 		Type nominal = Type.intersect(lhs.nominal(),rhs.nominal());
+		System.out.println(lhs.nominal() + "&" + rhs.nominal() + " => " + nominal);
 		Type raw = Type.intersect(lhs.raw(),rhs.raw());
 		return Nominal.construct(nominal, raw);
 	}
@@ -186,8 +187,7 @@ public abstract class Nominal {
 		}
 		
 		public Nominal element() {
-			// FIXME: loss of nominal information
-			return construct(raw.element(),raw.element());
+			return construct(nominal.element(),raw.element());
 		}
 		
 		public boolean equals(Object o) {
@@ -221,8 +221,7 @@ public abstract class Nominal {
 		}
 		
 		public Nominal element() {
-			// FIXME: loss of nominal information
-			return construct(raw.element(),raw.element());			
+			return construct(nominal.element(),raw.element());			
 		}
 		
 		public boolean equals(Object o) {
@@ -256,8 +255,7 @@ public abstract class Nominal {
 		}
 		
 		public Nominal element() {
-			// FIXME: loss of nominal information
-			return construct(raw.element(),raw.element());			
+			return construct(nominal.element(),raw.element());			
 		}
 		
 		public boolean equals(Object o) {
@@ -291,13 +289,11 @@ public abstract class Nominal {
 		}
 		
 		public Nominal key() {
-			// FIXME: loss of nominal information
-			return construct(raw.key(),raw.key());			
+			return construct(nominal.key(),raw.key());			
 		}
 		
 		public Nominal value() {
-			// FIXME: loss of nominal information
-			return construct(raw.value(),raw.value());			
+			return construct(nominal.value(),raw.value());			
 		}
 		
 		public boolean equals(Object o) {
@@ -440,8 +436,7 @@ public abstract class Nominal {
 		}
 		
 		public Nominal ret() {
-			// FIXME: loss of nominal type information here
-			return construct(raw.ret(),raw.ret());
+			return construct(nominal.ret(),raw.ret());
 		}
 		
 		public java.util.List<Nominal> params() {			
@@ -484,8 +479,7 @@ public abstract class Nominal {
 		}
 		
 		public Nominal ret() {
-			// FIXME: loss of nominal type information here
-			return construct(raw.ret(),raw.ret());
+			return construct(nominal.ret(),raw.ret());
 		}
 		
 		public java.util.List<Nominal> params() {			
@@ -529,13 +523,11 @@ public abstract class Nominal {
 		}
 		
 		public Nominal receiver() {
-			// FIXME: loss of nominal type information here
-			return construct(raw.receiver(),raw.receiver());
+			return construct(nominal.receiver(),raw.receiver());
 		}
 		
 		public Nominal ret() {
-			// FIXME: loss of nominal type information here
-			return construct(raw.ret(),raw.ret());
+			return construct(nominal.ret(),raw.ret());
 		}
 		
 		public java.util.List<Nominal> params() {			
