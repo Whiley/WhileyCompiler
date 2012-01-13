@@ -124,7 +124,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
  @Test public void For_Valid_4_RuntimeTest() { runTest("For_Valid_4"); }
- @Test public void For_Valid_5_RuntimeTest() { runTest("For_Valid_5"); }
+ @Ignore("Future Work") @Test public void For_Valid_5_RuntimeTest() { runTest("For_Valid_5"); }
  @Test public void For_Valid_6_RuntimeTest() { runTest("For_Valid_6"); }
  @Test public void For_Valid_7_RuntimeTest() { runTest("For_Valid_7"); }
  @Ignore("Future Work") @Test public void For_Valid_8_RuntimeTest() { runTest("For_Valid_8"); }
@@ -414,6 +414,6 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void While_Valid_4_RuntimeTest() { runTest("While_Valid_4"); }
  @Test public void While_Valid_5_RuntimeTest() { runTest("While_Valid_5"); }
  @Test public void While_Valid_6_RuntimeTest() { runTest("While_Valid_6"); }
- @Test public void While_Valid_7_RuntimeTest() { runTest("While_Valid_7"); }
+ @Ignore("Future Work") @Test public void While_Valid_7_RuntimeTest() { runTest("While_Valid_7"); }
  @Test public void While_Valid_8_RuntimeTest() { runTest("While_Valid_8"); }
 }

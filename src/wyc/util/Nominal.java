@@ -20,6 +20,10 @@ public abstract class Nominal {
 	
 	public abstract Type raw();
 	
+	public String toString() {
+		return "(" + nominal() + ", " + raw() + ")";
+	}
+	
 	public static final Nominal T_ANY = new Base(Type.T_ANY,Type.T_ANY);
 	public static final Nominal T_VOID = new Base(Type.T_VOID,Type.T_VOID);
 	public static final Nominal T_NULL = new Base(Type.T_NULL,Type.T_NULL);
