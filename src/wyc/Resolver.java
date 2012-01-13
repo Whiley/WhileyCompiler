@@ -1154,7 +1154,7 @@ public final class Resolver {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {		
-					Nominal.Function ft = (Nominal.Function) resolveAsType(f.unresolvedType(),buildImports(wf,f));  
+					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(f.unresolvedType(),buildImports(wf,f));  
 					candidates.add(new Pair(nid,ft));							
 				}
 			}
