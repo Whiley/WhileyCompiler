@@ -1,4 +1,6 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
+import print from whiley.lang.System
+import * from whiley.lang.Errors
 import * from whiley.io.File
 
 // ========================================================
@@ -22,7 +24,7 @@ int Multiplier::get():
 // ========================================================
 
 (Matrix,Matrix) parseFile(string input) throws SyntaxError:
-    data,pos = parseLine(2,0,input)    
+    data,pos = parseLine(2,0,input)
     nrows = data[0]
     ncols = data[1]
     A,pos = parseMatrix(nrows,ncols,pos,input)
