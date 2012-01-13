@@ -614,6 +614,9 @@ public final class Resolver {
 		Type.Set raw = Type.effectiveSetType(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.Set)) {
+				nominal = raw; // discard nominal information
+			}
 			return (Nominal.Set) Nominal.construct(nominal,raw);
 		} else {
 			return null;
@@ -623,7 +626,10 @@ public final class Resolver {
 	public Nominal.List expandAsList(Nominal lhs) throws ResolveError {
 		Type.List raw = Type.effectiveListType(lhs.raw());
 		if(raw != null) {
-			Type nominal = expandOneLevel(lhs.nominal());			
+			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.List)) {
+				nominal = raw; // discard nominal information
+			}
 			return (Nominal.List) Nominal.construct(nominal,raw);
 		} else {
 			return null;
@@ -634,6 +640,9 @@ public final class Resolver {
 		Type.Dictionary raw = Type.effectiveDictionaryType(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.Dictionary)) {
+				nominal = raw; // discard nominal information
+			}
 			return (Nominal.Dictionary) Nominal.construct(nominal,raw);
 		} else {
 			return null;
@@ -644,6 +653,9 @@ public final class Resolver {
 		Type.Record raw = Type.effectiveRecordType(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.Record)) {
+				nominal = raw; // discard nominal information
+			}
 			return (Nominal.Record) Nominal.construct(nominal,raw);
 		} else {
 			return null;
@@ -654,6 +666,9 @@ public final class Resolver {
 		Type.Reference raw = Type.effectiveReferenceType(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.Reference)) {
+				nominal = raw; // discard nominal information
+			}
 			return (Nominal.Reference) Nominal.construct(nominal,raw);
 		} else {
 			return null;
