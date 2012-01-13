@@ -1745,21 +1745,16 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) {
 		ArrayList<Expr> exprFields = expr.fields;
-		ArrayList<Type> nominalFieldTypes = new ArrayList<Type>();
-		ArrayList<Type> rawFieldTypes = new ArrayList<Type>();
-		
+		ArrayList<Nominal> fieldTypes = new ArrayList<Nominal>();
+				
 		for(int i=0;i!=exprFields.size();++i) {
 			Expr e = propagate(exprFields.get(i),environment,imports);
 			Nominal t = (Nominal) e.result();
 			exprFields.set(i,e);
-			nominalFieldTypes.add(t.nominal());
-			rawFieldTypes.add(t.raw());
+			fieldTypes.add(t);			
 		}
-		
-		Type nominalType = Type.Tuple(nominalFieldTypes);
-		Type.Tuple rawType =  Type.Tuple(rawFieldTypes);
-		
-		expr.type = new Nominal.Tuple(nominalType,rawType);
+				
+		expr.type = Nominal.Tuple(fieldTypes);
 		
 		return expr;
 	}

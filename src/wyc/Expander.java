@@ -1,10 +1,17 @@
 package wyc;
 
+import java.util.ArrayList;
+
 import wyc.util.Nominal;
+import wyil.ModuleLoader;
+import wyil.lang.Module;
+import wyil.lang.ModuleID;
+import wyil.lang.NameID;
 import wyil.lang.Type;
+import wyil.util.ResolveError;
 
 public class Expander {
-
+	private ModuleLoader loader;
 
 	// =========================================================================
 	// expandAsList
@@ -53,5 +60,36 @@ public class Expander {
 		} else {
 			return null;
 		}
+	}
+	
+	private Type expandOneLevel(Type type) throws ResolveError {
+		if(type instanceof Type.Leaf 
+			|| type instanceof Type.Reference
+			|| type instanceof Type.Tuple
+			|| type instanceof Type.Set
+			|| type instanceof Type.List
+			|| type instanceof Type.Dictionary
+			|| type instanceof Type.Record
+			|| type instanceof Type.FunctionOrMethodOrMessage
+			|| type instanceof Type.Negation) {
+			return type;
+		} else if(type instanceof Type.Union) {
+			Type.Union ut = (Type.Union) type;
+			ArrayList<Type> bounds = new ArrayList<Type>();
+			for(Type b : ut.bounds()) {
+				bounds.add(expandOneLevel(b));
+			}
+			return Type.Union(bounds);
+		} else {
+			Type.Nominal nt = (Type.Nominal) type;
+			NameID nid = nt.name();
+			ModuleID mid = nid.module();
+			Module m = loader.loadModule(mid);
+			Module.TypeDef td = m.type(nid.name());
+			if(td == null) {
+				throw new ResolveError("unable to locate " + nid);
+			}
+			return expandOneLevel(td.type());
+		} 
 	}
 }

@@ -1211,7 +1211,7 @@ public final class Resolver {
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {
 						// FIXME: loss of nominal information
 						Nominal.Message ft = new Nominal.Message(
-								mm.type(), (Type.Message) mm.type());
+								(Type.Message) mm.type(), (Type.Message) mm.type());
 						candidates.add(new Pair(nid, ft));
 					}
 				}
