@@ -364,8 +364,7 @@ public final class TypePropagation {
 			}										
 		} else {	
 			lhs = propagate(lhs,environment,imports);			
-			Expr.AssignedVariable av = inferBeforeAfterType(lhs,
-					(Nominal) lhs.result(), (Nominal) rhs.result());
+			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
 			environment = environment.put(av.var, av.afterType);
 		}
 		
@@ -375,45 +374,43 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private Expr.AssignedVariable inferBeforeAfterType(Expr.LVal lv,
-			Nominal beforeType, Nominal afterType) {
+	private Expr.AssignedVariable inferAfterType(Expr.LVal lv,
+			Nominal afterType) {
 		if (lv instanceof Expr.AssignedVariable) {
-			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;
-			v.type = beforeType;
+			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;			
 			v.afterType = afterType;			
 			return v;
 		} else if (lv instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) lv;
 			// NOTE: the before and after types are the same since an assignment
 			// through a reference does not change its type.
-			checkIsSubtype(beforeType,afterType,lv);
-			return inferBeforeAfterType((Expr.LVal) pa.src, (Nominal) pa.srcType, (Nominal) pa.srcType);
+			checkIsSubtype(pa.srcType,afterType,lv);
+			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.StringAccess) {
 			Expr.StringAccess la = (Expr.StringAccess) lv;
-			return inferBeforeAfterType((Expr.LVal) la.src, Nominal.T_STRING,
+			return inferAfterType((Expr.LVal) la.src, 
 					Nominal.T_STRING);
 		} else if (lv instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) lv;
 			afterType = Nominal.List(Nominal.Union(la.result(), afterType), false);						
-			return inferBeforeAfterType((Expr.LVal) la.src, la.srcType, afterType);
+			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else if(lv instanceof Expr.DictionaryAccess)  {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		
 			Nominal.Dictionary srcType = da.srcType;
 			afterType = Nominal.Dictionary(
 					Nominal.Union(srcType.key(), da.index.result()),
 					Nominal.Union(srcType.value(), afterType));			
-			return inferBeforeAfterType((Expr.LVal) da.src, srcType, afterType);
+			return inferAfterType((Expr.LVal) da.src, afterType);
 		} else if(lv instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) lv;
 			Nominal.Record srcType = la.srcType;			
-			// FIXME: I know I can modify this hash map
+			// NOTE: I know I can modify this hash map, since it's created fresh
+			// in Nominal.Record.fields().
 			HashMap<String,Nominal> afterFields = srcType.fields();			
-			afterFields.put(la.name, afterType);
-						
+			afterFields.put(la.name, afterType);						
 			afterType = Nominal.Record(srcType.isOpen(), afterFields);
-			
-			// FIXME: loss of nominal information here.
-			return inferBeforeAfterType((Expr.LVal) la.src, srcType, afterType);
+			System.out.println("AFTER TYPE: " + afterType);
+			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else {
 			internalFailure("unknown lval: "
 					+ lv.getClass().getName(), filename, lv);
