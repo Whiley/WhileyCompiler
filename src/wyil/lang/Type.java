@@ -2017,7 +2017,7 @@ public abstract class Type {
 	public static void main(String[] args) {
 		//Type from = fromString("(null,null)");
 		//Type to = fromString("X<[X]>");				
-		Type from = fromString("{int maxLocals,string name}");
+		Type from = fromString("!(!{int x,int z} | !{int x,int y})");
 		Type to = fromString("{string name,...}");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));		
 		System.out.println(from + " & " + to + " = " + intersect(from,to));

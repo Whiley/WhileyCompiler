@@ -157,8 +157,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Import_Valid_4_RuntimeTest() { runTest("Import_Valid_4"); }
  @Test public void Import_Valid_5_RuntimeTest() { runTest("Import_Valid_5"); }
  @Ignore("Future Work") @Test public void Interface_Valid_1_RuntimeTest() { runTest("Interface_Valid_1"); }
- @Test public void Intersection_Valid_1_RuntimeTest() { runTest("Intersection_Valid_1"); }
- @Test public void Intersection_Valid_2_RuntimeTest() { runTest("Intersection_Valid_2"); }
+ @Ignore("Future Work") @Test public void Intersection_Valid_1_RuntimeTest() { runTest("Intersection_Valid_1"); }
+ @Ignore("Future Work") @Test public void Intersection_Valid_2_RuntimeTest() { runTest("Intersection_Valid_2"); }
  @Test public void IntConst_Valid_1_RuntimeTest() { runTest("IntConst_Valid_1"); }
  @Test public void IntDefine_Valid_1_RuntimeTest() { runTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { runTest("IntDiv_Valid_1"); }
@@ -219,7 +219,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void MessageRef_Valid_2_RuntimeTest() { runTest("MessageRef_Valid_2"); }
  @Test public void NegationType_Valid_1_RuntimeTest() { runTest("NegationType_Valid_1"); }
  @Test public void NegationType_Valid_2_RuntimeTest() { runTest("NegationType_Valid_2"); }
- @Test public void NegationType_Valid_3_RuntimeTest() { runTest("NegationType_Valid_3"); }
+ @Ignore("Future Work") @Test public void NegationType_Valid_3_RuntimeTest() { runTest("NegationType_Valid_3"); }
  @Test public void NegationType_Valid_4_RuntimeTest() { runTest("NegationType_Valid_4"); }
  @Test public void OpenRecord_Valid_1_RuntimeTest() { runTest("OpenRecord_Valid_1"); }
  @Test public void OpenRecord_Valid_2_RuntimeTest() { runTest("OpenRecord_Valid_2"); }

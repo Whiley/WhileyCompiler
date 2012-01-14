@@ -462,12 +462,14 @@ public final class Resolver {
 				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);				
 			}	
 			myDeterministic = false;
+		} else if(t instanceof UnresolvedType.Intersection) {
+			throw new ResolveError("intersection types not supported yet");
 		} else if(t instanceof UnresolvedType.Reference) {	
 			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
 			myKind = Type.K_REFERENCE;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
-		} else {	
+		} else {			
 			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) t;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
 			UnresolvedType receiver = null;
