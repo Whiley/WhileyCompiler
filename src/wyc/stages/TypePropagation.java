@@ -312,7 +312,7 @@ public final class TypePropagation {
 				lv = new Expr.AssignedVariable(av.var, av.attributes());
 			}
 			lv.type = Nominal.T_VOID;
-			lv.afterType = (Nominal) rhs.result();			
+			lv.afterType = rhs.result();			
 			environment = environment.put(lv.var, lv.afterType);
 			lhs = lv;
 		} else if(lhs instanceof Expr.Tuple) {
@@ -927,7 +927,7 @@ public final class TypePropagation {
 				checkIsSubtype(Type.T_META,rhs);
 			}	
 
-			bop.srcType = (Nominal) lhs.result();
+			bop.srcType = lhs.result();
 			break;
 		case ELEMENTOF:			
 			Type.List listType = Type.effectiveList(rhsRawType);
@@ -940,7 +940,7 @@ public final class TypePropagation {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,setType.element()),
 						filename, bop);
 			}						
-			bop.srcType = (Nominal) rhs.result();
+			bop.srcType = rhs.result();
 			break;
 		case SUBSET:
 		case SUBSETEQ:
@@ -956,9 +956,9 @@ public final class TypePropagation {
 				checkIsSubtype(Type.T_REAL,rhs);
 			}
 			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-				bop.srcType = (Nominal) lhs.result();
+				bop.srcType = lhs.result();
 			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
-				bop.srcType = (Nominal) rhs.result();
+				bop.srcType = rhs.result();
 			} else {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,bop);	
 				return null; // dead code
@@ -987,14 +987,14 @@ public final class TypePropagation {
 				} else {					
 					newType = Nominal.intersect(lhs.result(), Nominal.T_NOTNULL);												
 				}
-				bop.srcType = (Nominal) lhs.result();
+				bop.srcType = lhs.result();
 				environment = environment.put(lv.var,newType);
 			} else {
 				// handle general case
 				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-					bop.srcType = (Nominal) lhs.result();
+					bop.srcType = lhs.result();
 				} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
-					bop.srcType = (Nominal) rhs.result();
+					bop.srcType = rhs.result();
 				} else {
 					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),filename,bop);	
 					return null; // dead code
@@ -1254,7 +1254,7 @@ public final class TypePropagation {
 					filename, expr);
 		}
 		
-		expr.type = (Nominal) src.result();		
+		expr.type = src.result();		
 		
 		return expr;
 	}
@@ -1367,7 +1367,7 @@ public final class TypePropagation {
 		for(int i=0;i!=exprArgs.size();++i) {
 			Expr arg = propagate(exprArgs.get(i),environment,imports);
 			exprArgs.set(i, arg);
-			paramTypes.add((Nominal) arg.result());			
+			paramTypes.add(arg.result());			
 		}
 		
 		// second, determine whether we already have a fully qualified name and
@@ -1731,8 +1731,8 @@ public final class TypePropagation {
 			Pair<Expr,Expr> p = exprs.get(i);
 			Expr key = propagate(p.first(),environment,imports);
 			Expr value = propagate(p.second(),environment,imports);
-			Nominal kt = (Nominal) key.result();
-			Nominal vt = (Nominal) value.result();
+			Nominal kt = key.result();
+			Nominal vt = value.result();
 			exprs.set(i,new Pair<Expr,Expr>(key,value));
 			
 			keyType = Nominal.Union(kt,keyType);			
@@ -1755,7 +1755,7 @@ public final class TypePropagation {
 		ArrayList<String> fields = new ArrayList<String>(exprFields.keySet());
 		for(String field : fields) {
 			Expr e = propagate(exprFields.get(field),environment,imports);
-			Nominal t = (Nominal) e.result();
+			Nominal t = e.result();
 			exprFields.put(field,e);
 			fieldTypes.put(field,t);				
 		}		
@@ -1773,7 +1773,7 @@ public final class TypePropagation {
 				
 		for(int i=0;i!=exprFields.size();++i) {
 			Expr e = propagate(exprFields.get(i),environment,imports);
-			Nominal t = (Nominal) e.result();
+			Nominal t = e.result();
 			exprFields.set(i,e);
 			fieldTypes.add(t);			
 		}
@@ -1880,7 +1880,7 @@ public final class TypePropagation {
 	private Expr propagate(Expr.RecordAccess ra,
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
-		Nominal srcType = (Nominal) ra.src.result();
+		Nominal srcType = ra.src.result();
 		Nominal.Record recType = resolver.expandAsRecord(srcType);
 		if(recType == null) {
 			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),filename,ra);
