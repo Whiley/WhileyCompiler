@@ -847,6 +847,7 @@ public final class TypePropagation {
 			// We could do better here
 			p = propagate(bop.lhs,sign,environment.clone(),imports);
 			bop.lhs = p.first();
+			RefCountedHashMap<String, Nominal> local = p.second();
 			// Recompue the lhs assuming that it is false. This is necessary to
 			// generate the right environment going into the rhs, which is only
 			// evaluated if the lhs is false.  For example:
@@ -862,6 +863,7 @@ public final class TypePropagation {
 			p = propagate(bop.lhs,!sign,environment.clone(),imports);
 			p = propagate(bop.rhs,sign,p.second(),imports);
 			bop.rhs = p.first();
+			environment = join(local,p.second());
 		}
 		
 		checkIsSubtype(Type.T_BOOL,bop.lhs);
