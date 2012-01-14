@@ -1428,11 +1428,11 @@ public final class TypePropagation {
 
 				// ok, it's a message send (possibly indirect)
 				Nominal type = environment.get(expr.name);
+				Nominal.Message msgType = type != null ? resolver.expandAsMessage(type) : null;
 				
 				// FIXME: bad idea to use instanceof Nominal.Message here
-				if(type instanceof Nominal.Message) {
+				if(msgType != null) {
 					// ok, matching local variable of message type.
-					Nominal.Message msgType = (Nominal.Message) type;
 					List<Nominal> funTypeParams = msgType.params();
 					// FIXME: is this broken since should be equivalent, not subtype?
 					checkIsSubtype(msgType.receiver(),expr.qualification);
@@ -1449,7 +1449,7 @@ public final class TypePropagation {
 					Expr.IndirectMessageSend nexpr = new Expr.IndirectMessageSend(
 							lv, expr.qualification, expr.arguments,
 							expr.synchronous, expr.attributes());
-					nexpr.messageType = (Nominal.Message) type; 
+					nexpr.messageType = msgType; 
 					return nexpr;					
 				} else {
 

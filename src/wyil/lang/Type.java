@@ -739,6 +739,13 @@ public abstract class Type {
 		return null;
 	}
 	
+	public static Message effectiveMessage(Type t) {
+		if(t instanceof Type.Message) {
+			return (Type.Message) t;
+		}
+		return null;
+	}
+	
 	// =============================================================
 	// Primitive Types
 	// =============================================================

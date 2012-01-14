@@ -679,10 +679,23 @@ public final class Resolver {
 		Type.FunctionOrMethod raw = Type.effectiveFunctionOrMethod(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.Reference)) {
+			if(!(nominal instanceof Type.FunctionOrMethod)) {
 				nominal = raw; // discard nominal information
 			}
 			return (Nominal.FunctionOrMethod) Nominal.construct(nominal,raw);
+		} else {
+			return null;
+		}
+	}
+	
+	public Nominal.Message expandAsMessage(Nominal lhs) throws ResolveError {
+		Type.Message raw = Type.effectiveMessage(lhs.raw());
+		if(raw != null) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.Message)) {
+				nominal = raw; // discard nominal information
+			}
+			return (Nominal.Message) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}
