@@ -176,7 +176,7 @@ public abstract class Nominal {
 		private final Type.Reference nominal;
 		private final Type.Reference raw;
 		
-		public Reference(Type.Reference nominal, Type.Reference raw) {
+		Reference(Type.Reference nominal, Type.Reference raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
@@ -210,7 +210,7 @@ public abstract class Nominal {
 		private final Type.Set nominal;
 		private final Type.Set raw;
 		
-		public Set(Type.Set nominal, Type.Set raw) {
+		Set(Type.Set nominal, Type.Set raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
@@ -244,7 +244,7 @@ public abstract class Nominal {
 		private final Type.List nominal;
 		private final Type.List raw;
 		
-		public List(Type.List nominal, Type.List raw) {
+		List(Type.List nominal, Type.List raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
@@ -278,7 +278,7 @@ public abstract class Nominal {
 		private final Type.Dictionary nominal;
 		private final Type.Dictionary raw;
 		
-		public Dictionary(Type.Dictionary nominal, Type.Dictionary raw) {
+		Dictionary(Type.Dictionary nominal, Type.Dictionary raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
@@ -316,7 +316,7 @@ public abstract class Nominal {
 		private final Type.Tuple nominal;
 		private final Type.Tuple raw;
 		
-		public Tuple(Type.Tuple nominal, Type.Tuple raw) {
+		Tuple(Type.Tuple nominal, Type.Tuple raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
@@ -358,7 +358,7 @@ public abstract class Nominal {
 		private final Type.Record nominal;
 		private final Type.Record raw;
 		
-		public Record(Type.Record nominal, Type.Record raw) {
+		Record(Type.Record nominal, Type.Record raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}

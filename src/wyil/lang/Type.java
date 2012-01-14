@@ -610,7 +610,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Record effectiveRecordType(Type t) {
+	public static Record effectiveRecord(Type t) {
 		if (t instanceof Type.Record) {
 			return (Type.Record) t;
 		} else if (t instanceof Type.Union) {
@@ -649,7 +649,7 @@ public abstract class Type {
 		return null;
 	}
 
-	public static Set effectiveSetType(Type t) {
+	public static Set effectiveSet(Type t) {
 		if (t instanceof Type.Set) {
 			return (Type.Set) t;
 		} else if (t instanceof Type.Union) {			
@@ -673,7 +673,7 @@ public abstract class Type {
 		return null;
 	}
 	
-	public static List effectiveListType(Type t) {
+	public static List effectiveList(Type t) {
 		if (t instanceof Type.List) {
 			return (Type.List) t;
 		} else if (t instanceof Type.Union) {			
@@ -697,7 +697,7 @@ public abstract class Type {
 		return null;
 	}
 	
-	public static Dictionary effectiveDictionaryType(Type t) {
+	public static Dictionary effectiveDictionary(Type t) {
 		if (t instanceof Type.Dictionary) {
 			return (Type.Dictionary) t;
 		} else if (t instanceof Type.Union) {
@@ -725,9 +725,16 @@ public abstract class Type {
 		return null;
 	}
 			
-	public static Reference effectiveReferenceType(Type t) {
+	public static Reference effectiveReference(Type t) {
 		if(t instanceof Type.Reference) {
 			return (Type.Reference) t;
+		}
+		return null;
+	}
+	
+	public static FunctionOrMethod effectiveFunctionOrMethod(Type t) {
+		if(t instanceof Type.FunctionOrMethod) {
+			return (Type.FunctionOrMethod) t;
 		}
 		return null;
 	}

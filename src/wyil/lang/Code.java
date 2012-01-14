@@ -1844,13 +1844,13 @@ public abstract class Code {
 	public static final class DictLVal extends LVal {
 		public DictLVal(Type t) {
 			super(t);			
-			if(Type.effectiveDictionaryType(t) == null) {
+			if(Type.effectiveDictionary(t) == null) {
 				throw new IllegalArgumentException("Invalid Dictionary Type");
 			}
 		}
 		
 		public Type.Dictionary type() {			
-			return Type.effectiveDictionaryType(type);
+			return Type.effectiveDictionary(type);
 		}
 	}
 	
@@ -1862,13 +1862,13 @@ public abstract class Code {
 	public static final class ListLVal extends LVal {
 		public ListLVal(Type t) {
 			super(t);
-			if(Type.effectiveListType(t) == null) {
+			if(Type.effectiveList(t) == null) {
 				throw new IllegalArgumentException("Invalid List Type");
 			}
 		}
 		
 		public Type.List type() {
-			return Type.effectiveListType(type);
+			return Type.effectiveList(type);
 		}
 	}
 	
@@ -1880,13 +1880,13 @@ public abstract class Code {
 	public static final class ReferenceLVal extends LVal {
 		public ReferenceLVal(Type t) {
 			super(t);
-			if(Type.effectiveReferenceType(t) == null) {
+			if(Type.effectiveReference(t) == null) {
 				throw new IllegalArgumentException("invalid reference type");
 			}
 		}
 		
 		public Type.List type() {
-			return Type.effectiveListType(type);
+			return Type.effectiveList(type);
 		}
 	}
 	
@@ -1912,14 +1912,14 @@ public abstract class Code {
 		public RecordLVal(Type t, String field) {
 			super(t);
 			this.field = field;
-			Type.Record rt = Type.effectiveRecordType(t);
+			Type.Record rt = Type.effectiveRecord(t);
 			if(rt == null || !rt.fields().containsKey(field)) {
 				throw new IllegalArgumentException("Invalid Record Type");
 			}		
 		}
 		
 		public Type.Record type() {
-			return Type.effectiveRecordType(type);
+			return Type.effectiveRecord(type);
 		}
 	}	
 	
@@ -1942,20 +1942,20 @@ public abstract class Code {
 				iter = Type.T_CHAR;
 				return new StringLVal();
 			} else if(Type.isSubtype(Type.Reference(Type.T_ANY),iter)) {			
-				Type.Reference proc = Type.effectiveReferenceType(iter);											
+				Type.Reference proc = Type.effectiveReference(iter);											
 				iter = proc.element();
 				return new ReferenceLVal(raw);
 			} else if(Type.isSubtype(Type.List(Type.T_ANY,false),iter)) {			
-				Type.List list = Type.effectiveListType(iter);											
+				Type.List list = Type.effectiveList(iter);											
 				iter = list.element();
 				return new ListLVal(raw);
 			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
+				Type.Dictionary dict = Type.effectiveDictionary(iter);											
 				iter = dict.value();	
 				return new DictLVal(raw);
-			} else  if(Type.effectiveRecordType(iter) != null) {
-				Type.Record rec = Type.effectiveRecordType(iter);				
+			} else  if(Type.effectiveRecord(iter) != null) {
+				Type.Record rec = Type.effectiveRecord(iter);				
 				String field = fields.get(fieldIndex++);
 				iter = rec.fields().get(field);
 				return new RecordLVal(raw,field);
@@ -2030,19 +2030,19 @@ public abstract class Code {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
 				} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
-					Type.Reference proc = Type.effectiveReferenceType(iter);
+					Type.Reference proc = Type.effectiveReference(iter);
 					iter = proc.element();
 				} else if (Type.isSubtype(Type.List(Type.T_ANY,false), iter)) {
-					Type.List list = Type.effectiveListType(iter);
+					Type.List list = Type.effectiveList(iter);
 					iter = list.element();
 				} else if (Type.isSubtype(
 						Type.Dictionary(Type.T_ANY, Type.T_ANY), iter)) {
 					// this indicates a dictionary access, rather than a list
 					// access
-					Type.Dictionary dict = Type.effectiveDictionaryType(iter);
+					Type.Dictionary dict = Type.effectiveDictionary(iter);
 					iter = dict.value();
-				} else if (Type.effectiveRecordType(iter) != null) {
-					Type.Record rec = Type.effectiveRecordType(iter);
+				} else if (Type.effectiveRecord(iter) != null) {
+					Type.Record rec = Type.effectiveRecord(iter);
 					String field = fields.get(fieldIndex++);
 					iter = rec.fields().get(field);
 				} else {

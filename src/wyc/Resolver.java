@@ -611,7 +611,7 @@ public final class Resolver {
 	// =========================================================================	
 
 	public Nominal.Set expandAsSet(Nominal lhs) throws ResolveError {
-		Type.Set raw = Type.effectiveSetType(lhs.raw());
+		Type.Set raw = Type.effectiveSet(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
 			if(!(nominal instanceof Type.Set)) {
@@ -624,7 +624,7 @@ public final class Resolver {
 	}
 
 	public Nominal.List expandAsList(Nominal lhs) throws ResolveError {
-		Type.List raw = Type.effectiveListType(lhs.raw());
+		Type.List raw = Type.effectiveList(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
 			if(!(nominal instanceof Type.List)) {
@@ -637,7 +637,7 @@ public final class Resolver {
 	}
 
 	public Nominal.Dictionary expandAsDictionary(Nominal lhs) throws ResolveError {
-		Type.Dictionary raw = Type.effectiveDictionaryType(lhs.raw());
+		Type.Dictionary raw = Type.effectiveDictionary(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
 			if(!(nominal instanceof Type.Dictionary)) {
@@ -650,7 +650,7 @@ public final class Resolver {
 	}
 
 	public Nominal.Record expandAsRecord(Nominal lhs) throws ResolveError {
-		Type.Record raw = Type.effectiveRecordType(lhs.raw());
+		Type.Record raw = Type.effectiveRecord(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
 			if(!(nominal instanceof Type.Record)) {
@@ -663,7 +663,7 @@ public final class Resolver {
 	}
 
 	public Nominal.Reference expandAsReference(Nominal lhs) throws ResolveError {
-		Type.Reference raw = Type.effectiveReferenceType(lhs.raw());
+		Type.Reference raw = Type.effectiveReference(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
 			if(!(nominal instanceof Type.Reference)) {
@@ -675,6 +675,19 @@ public final class Resolver {
 		}
 	}
 
+	public Nominal.FunctionOrMethod expandAsFunctionOrMethod(Nominal lhs) throws ResolveError {
+		Type.FunctionOrMethod raw = Type.effectiveFunctionOrMethod(lhs.raw());
+		if(raw != null) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.Reference)) {
+				nominal = raw; // discard nominal information
+			}
+			return (Nominal.FunctionOrMethod) Nominal.construct(nominal,raw);
+		} else {
+			return null;
+		}
+	}
+	
 	private Type expandOneLevel(Type type) throws ResolveError {
 		if(type instanceof Type.Nominal){
 			Type.Nominal nt = (Type.Nominal) type;

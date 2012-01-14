@@ -756,7 +756,7 @@ public final class TypePropagation {
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure("internal failure",filename,lval,e);
+			internalFailure(e.getMessage(),filename,lval,e);
 			return null; // dead code
 		}		
 		internalFailure("unknown lval: " + lval.getClass().getName(),filename,lval);
@@ -931,8 +931,8 @@ public final class TypePropagation {
 			bop.srcType = (Nominal) lhs.result();
 			break;
 		case ELEMENTOF:			
-			Type.List listType = Type.effectiveListType(rhsRawType);
-			Type.Set setType = Type.effectiveSetType(rhsRawType);
+			Type.List listType = Type.effectiveList(rhsRawType);
+			Type.Set setType = Type.effectiveSet(rhsRawType);
 			
 			if (listType != null && !Type.isImplicitCoerciveSubtype(listType.element(), lhsRawType)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,listType.element()),
@@ -1060,7 +1060,7 @@ public final class TypePropagation {
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure("internal failure",filename,expr,e);
+			internalFailure(e.getMessage(),filename,expr,e);
 			return null; // dead code
 		}		
 		internalFailure("unknown expression: " + expr.getClass().getName(),filename,expr);
@@ -1130,7 +1130,7 @@ public final class TypePropagation {
 			case ADD:
 				expr.op = Expr.BOp.LISTAPPEND;
 			case LISTAPPEND:				
-				srcType = Type.effectiveListType(Type.Union(lhsRawType,rhsRawType));
+				srcType = Type.effectiveList(Type.Union(lhsRawType,rhsRawType));
 				break;
 			default:
 				syntaxError("invalid list operation: " + expr.op,filename,expr);	
@@ -1144,12 +1144,12 @@ public final class TypePropagation {
 			// this.  Perhaps effectiveSetType?
 			
 			if(lhs_list) {
-				 Type.List tmp = Type.effectiveListType(lhsRawType);
+				 Type.List tmp = Type.effectiveList(lhsRawType);
 				 lhsRawType = Type.Set(tmp.element(),false);
 			} 
 			
 			if(rhs_list) {
-				 Type.List tmp = Type.effectiveListType(rhsRawType);
+				 Type.List tmp = Type.effectiveList(rhsRawType);
 				 rhsRawType = Type.Set(tmp.element(),false);
 			}  
 			
@@ -1157,17 +1157,17 @@ public final class TypePropagation {
 				case ADD:																				
 					expr.op = Expr.BOp.UNION;					
 				case UNION:
-					srcType = Type.effectiveSetType(Type.Union(lhsRawType,rhsRawType));					
+					srcType = Type.effectiveSet(Type.Union(lhsRawType,rhsRawType));					
 					break;
 				case BITWISEAND:																				
 					expr.op = Expr.BOp.INTERSECTION;
 				case INTERSECTION:
-					srcType = Type.effectiveSetType(Type.intersect(lhsRawType,rhsRawType));
+					srcType = Type.effectiveSet(Type.intersect(lhsRawType,rhsRawType));
 					break;
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
 				case DIFFERENCE:
-					srcType = Type.effectiveSetType(lhsRawType);
+					srcType = Type.effectiveSet(lhsRawType);
 					break;								
 				default:
 					syntaxError("invalid set operation: " + expr.op,filename,expr);	
@@ -1468,12 +1468,12 @@ public final class TypePropagation {
 			// variable or a function call the location of which we need to
 			// identify.
 
-			Nominal type = environment.get(expr.name);
+			Nominal type = environment.get(expr.name);			
+			Nominal.FunctionOrMethod funType = type != null ? resolver.expandAsFunctionOrMethod(type) : null;
 			
 			// FIXME: bad idea to use instanceof Nominal.FunctionOrMethod here
-			if(type instanceof Nominal.FunctionOrMethod) {
-				// ok, matching local variable of function type.
-				Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) type;
+			if(funType != null) {
+				// ok, matching local variable of function type.				
 				List<Nominal> funTypeParams = funType.params();
 				if(paramTypes.size() != funTypeParams.size()) {
 					syntaxError("insufficient arguments to function call",filename,expr);
@@ -1488,11 +1488,11 @@ public final class TypePropagation {
 							
 				if(funType instanceof Nominal.Method) { 
 					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(lv,expr.arguments,expr.attributes());				
-					nexpr.methodType = (Nominal.Method) type; 
+					nexpr.methodType = (Nominal.Method) funType; 
 					return nexpr;
 				} else {
 					Expr.IndirectFunctionCall nexpr = new Expr.IndirectFunctionCall(lv,expr.arguments,expr.attributes());
-					nexpr.functionType = (Nominal.Function) type;
+					nexpr.functionType = (Nominal.Function) funType;
 					return nexpr;					
 				}
 
@@ -1500,15 +1500,15 @@ public final class TypePropagation {
 				// no matching local variable, so attempt to resolve as direct
 				// call.
 				Pair<NameID, Nominal.FunctionOrMethod> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, imports);
-				Nominal.FunctionOrMethod funType = p.second();							
-				if(funType instanceof Nominal.Method) {					
-					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
-					mc.methodType = (Nominal.Method) p.second();					
-					return mc;
-				} else {
+				funType = p.second();							
+				if(funType instanceof Nominal.Function) {					
 					Expr.FunctionCall mc = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
-					mc.functionType = (Nominal.Function) p.second();
-					return mc;									
+					mc.functionType = (Nominal.Function) funType;
+					return mc;
+				} else {								
+					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
+					mc.methodType = (Nominal.Method) funType;					
+					return mc;
 				}																				
 			}
 		}		

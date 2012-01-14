@@ -229,7 +229,7 @@ public class SyntaxError extends RuntimeException {
 		}
 		public String getMessage() {
 			String msg = super.getMessage();
-			if(msg == null) {
+			if(msg == null || msg.equals("")) {
 				return "internal failure";
 			} else {
 				return "internal failure (" + msg + ")";

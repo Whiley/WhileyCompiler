@@ -652,7 +652,7 @@ public final class CodeGeneration {
 			// FIXME: loss of nominal information
 			Type rawSrcType = s.source.result().raw();
 			// FIXME: support destructuring of lists and sets
-			Type.Dictionary dict = Type.effectiveDictionaryType(rawSrcType);
+			Type.Dictionary dict = Type.effectiveDictionary(rawSrcType);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,s.source);
 			}

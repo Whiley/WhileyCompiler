@@ -624,7 +624,7 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 			
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),type)) {
-			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
+			Type.Dictionary dict = Type.effectiveDictionary(type);				
 			
 			if(level != 0) {				
 				bytecodes.add(new Bytecode.Dup(WHILEYMAP));				
@@ -663,7 +663,7 @@ public class ClassFileBuilder {
 					Bytecode.STATIC));						
 			
 		} else if(Type.isSubtype(Type.List(Type.T_ANY, false),type)) {
-			Type.List list = Type.effectiveListType(type);				
+			Type.List list = Type.effectiveList(type);				
 										
 			if(level != 0) {
 				bytecodes.add(new Bytecode.Dup(WHILEYLIST));											
@@ -687,7 +687,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.STATIC));							
 		} else {
-			Type.Record rec = Type.effectiveRecordType(type);			
+			Type.Record rec = Type.effectiveRecord(type);			
 			String field = fields.next();			
 			if(level != 0) {				
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));				
@@ -2825,7 +2825,7 @@ public class ClassFileBuilder {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
 			// contains ?
-			Type.Record tt = Type.effectiveRecordType(t);
+			Type.Record tt = Type.effectiveRecord(t);
 			if(tt != null) {
 				return WHILEYRECORD;
 			} else {
