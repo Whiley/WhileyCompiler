@@ -384,7 +384,7 @@ public final class TypePropagation {
 			Expr.Dereference pa = (Expr.Dereference) lv;
 			// NOTE: the before and after types are the same since an assignment
 			// through a reference does not change its type.
-			checkIsSubtype(pa.srcType,afterType,lv);
+			checkIsSubtype(pa.srcType,Nominal.Reference(afterType),lv);
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.StringAccess) {
 			Expr.StringAccess la = (Expr.StringAccess) lv;
