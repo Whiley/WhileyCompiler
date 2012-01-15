@@ -434,8 +434,9 @@ public final class Resolver {
 			// This case corresponds to a user-defined type. This will be
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
-			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;						
+			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;									
 			NameID nid = resolveAsName(dt.names, imports);
+			
 			if(nominal) {
 				myKind = Type.K_NOMINAL;
 				myData = nid;
@@ -447,7 +448,7 @@ public final class Resolver {
 				// Therefore, we need to remove the initial null we loaded on.
 				states.remove(myIndex); 
 				return resolveAsType(nid,imports,states,roots);				
-			}
+			}			
 		} else if(t instanceof UnresolvedType.Not) {	
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
 			myKind = Type.K_NEGATION;
@@ -552,7 +553,12 @@ public final class Resolver {
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
 		} else {
-			return resolveAsType(type,imports,states,roots,false);
+			try {
+				return resolveAsType(type,imports,states,roots,false);
+			} catch(ResolveError e) {
+				syntaxError(e.getMessage(),wf.filename,type,e);
+				return 0; // dead-code
+			}
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the
