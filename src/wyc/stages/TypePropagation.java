@@ -164,7 +164,7 @@ public final class TypePropagation {
 	
 	public void propagate(TypeDef td, ArrayList<WhileyFile.Import> imports) throws ResolveError {		
 		// first, expand the declared type
-		td.resolvedType = resolver.resolveAsType(td.unresolvedType, imports);
+		td.resolvedType = resolver.resolveAsType(td.unresolvedType, imports,filename);
 		
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			
@@ -183,12 +183,12 @@ public final class TypePropagation {
 		RefCountedHashMap<String,Nominal> environment = new RefCountedHashMap<String,Nominal>();
 						
 		for (WhileyFile.Parameter p : d.parameters) {							
-			environment = environment.put(p.name,resolver.resolveAsType(p.type,imports));
+			environment = environment.put(p.name,resolver.resolveAsType(p.type,imports,filename));
 		}
 		
 		if(d instanceof Message) {
 			Message md = (Message) d;							
-			environment = environment.put("this",resolver.resolveAsType(md.receiver,imports));			
+			environment = environment.put("this",resolver.resolveAsType(md.receiver,imports,filename));			
 		}
 		
 		if(d.precondition != null) {
@@ -196,7 +196,7 @@ public final class TypePropagation {
 		}
 		
 		if(d.postcondition != null) {			
-			environment = environment.put("$", resolver.resolveAsType(d.ret,imports));
+			environment = environment.put("$", resolver.resolveAsType(d.ret,imports,filename));
 			propagate(d.postcondition,environment.clone(),imports);
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
@@ -205,13 +205,13 @@ public final class TypePropagation {
 
 		if(d instanceof Function) {
 			Function f = (Function) d;
-			f.resolvedType = resolver.resolveAsType(f.unresolvedType(),imports);					
+			f.resolvedType = resolver.resolveAsType(f.unresolvedType(),imports,filename);					
 		} else if(d instanceof Method) {
 			Method m = (Method) d;			
-			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),imports);		
+			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),imports,filename);		
 		} else {
 			Message m = (Message) d;
-			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),imports);		
+			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),imports,filename);		
 		}
 		
 		propagate(d.statements,environment,imports);
@@ -652,7 +652,7 @@ public final class TypePropagation {
 			
 			// FIXME: need to deal with handler environments properly!
 			try {
-				Nominal type = resolver.resolveAsType(handler.unresolvedType, imports); 
+				Nominal type = resolver.resolveAsType(handler.unresolvedType, imports, filename); 
 				handler.type = type;
 				RefCountedHashMap<String,Nominal> local = environment.clone();
 				local = local.put(handler.variable, type);									
@@ -660,6 +660,8 @@ public final class TypePropagation {
 				local.free();
 			} catch(ResolveError e) {
 				syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,handler,e);
+			} catch(SyntaxError e) {
+				throw e;
 			} catch(Throwable t) {
 				internalFailure(t.getMessage(),filename,handler,t);
 			}
@@ -1317,7 +1319,7 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		c.expr = propagate(c.expr,environment,imports);		
-		c.type = resolver.resolveAsType(c.unresolvedType, imports);
+		c.type = resolver.resolveAsType(c.unresolvedType, imports, filename);
 		Type from = c.expr.result().raw();		
 		Type to = c.type.raw();
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
@@ -1339,7 +1341,7 @@ public final class TypePropagation {
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
 			for (UnresolvedType t : expr.paramTypes) {
-				paramTypes.add(resolver.resolveAsType(t, imports));
+				paramTypes.add(resolver.resolveAsType(t, imports, filename));
 			}
 			// FIXME: clearly a bug here in the case of message reference
 			p = (Pair) resolver
@@ -1929,7 +1931,7 @@ public final class TypePropagation {
 	private Expr propagate(Expr.TypeVal expr,
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
-		expr.type = resolver.resolveAsType(expr.unresolvedType, imports); 
+		expr.type = resolver.resolveAsType(expr.unresolvedType, imports, filename); 
 		return expr;
 	}
 	

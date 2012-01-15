@@ -304,18 +304,18 @@ public final class Resolver {
 	// =========================================================================
 	
 	public Nominal.Function resolveAsType(UnresolvedType.Function t,
-			List<WhileyFile.Import> imports) throws ResolveError {
-		return (Nominal.Function) resolveAsType((UnresolvedType)t,imports);
+			List<WhileyFile.Import> imports, String filename) throws ResolveError {
+		return (Nominal.Function) resolveAsType((UnresolvedType)t,imports,filename);
 	}
 	
 	public Nominal.Method resolveAsType(UnresolvedType.Method t,
-			List<WhileyFile.Import> imports) throws ResolveError {		
-		return (Nominal.Method) resolveAsType((UnresolvedType)t,imports);
+			List<WhileyFile.Import> imports, String filename) throws ResolveError {		
+		return (Nominal.Method) resolveAsType((UnresolvedType)t,imports,filename);
 	}
 	
 	public Nominal.Message resolveAsType(UnresolvedType.Message t,
-			List<WhileyFile.Import> imports) throws ResolveError {		
-		return (Nominal.Message) resolveAsType((UnresolvedType)t,imports);
+			List<WhileyFile.Import> imports, String filename) throws ResolveError {		
+		return (Nominal.Message) resolveAsType((UnresolvedType)t,imports,filename);
 	}
 			
 	/**
@@ -328,14 +328,15 @@ public final class Resolver {
 	 * @throws ResolveError
 	 */
 	public Nominal resolveAsType(UnresolvedType t,
-			List<WhileyFile.Import> imports) throws ResolveError {
-		Type nominalType = resolveAsType(t, imports, true);		
-		Type rawType = resolveAsType(t, imports, false);		
+			List<WhileyFile.Import> imports, String filename)
+			throws ResolveError {
+		Type nominalType = resolveAsType(t, imports, filename, true);
+		Type rawType = resolveAsType(t, imports, filename, false);
 		return Nominal.construct(nominalType, rawType);
-	}		
+	}
 	
 	private Type resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
-			boolean nominal) throws ResolveError {
+			String filename, boolean nominal) {
 		if(t instanceof UnresolvedType.Primitive) { 
 			if (t instanceof UnresolvedType.Any) {
 				return Type.T_ANY;
@@ -356,13 +357,14 @@ public final class Resolver {
 			} else if (t instanceof UnresolvedType.Strung) {
 				return Type.T_STRING;
 			} else {
-				throw new ResolveError("unrecognised type encountered ("
-						+ t.getClass().getName() + ")");
+				internalFailure("unrecognised type encountered ("
+						+ t.getClass().getName() + ")",filename,t);
+				return null; // deadcode
 			}
 		} else {
 			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-			resolveAsType(t,imports,states,roots,nominal);
+			resolveAsType(t,imports,states,roots,filename,nominal);
 			return Type.construct(new Automaton(states));
 		}
 	}
@@ -378,10 +380,10 @@ public final class Resolver {
 	 */
 	private int resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
-			boolean nominal) throws ResolveError {				
+			String filename, boolean nominal) {				
 		
 		if(t instanceof UnresolvedType.Primitive) {
-			return resolveAsType((UnresolvedType.Primitive)t,imports,states);
+			return resolveAsType((UnresolvedType.Primitive)t,imports,filename,states);
 		} 
 		
 		int myIndex = states.size();
@@ -396,20 +398,20 @@ public final class Resolver {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			myKind = Type.K_LIST;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(lt.element,imports,states,roots,nominal);
+			myChildren[0] = resolveAsType(lt.element,imports,states,roots,filename,nominal);
 			myData = false;
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			myKind = Type.K_SET;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(st.element,imports,states,roots,nominal);
+			myChildren[0] = resolveAsType(st.element,imports,states,roots,filename,nominal);
 			myData = false;
 		} else if(t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
 			myKind = Type.K_DICTIONARY;
 			myChildren = new int[2];
-			myChildren[0] = resolveAsType(st.key,imports,states,roots,nominal);
-			myChildren[1] = resolveAsType(st.value,imports,states,roots,nominal);			
+			myChildren[0] = resolveAsType(st.key,imports,states,roots,filename,nominal);
+			myChildren[1] = resolveAsType(st.value,imports,states,roots,filename,nominal);			
 		} else if(t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String,UnresolvedType> ttTypes = tt.types;			
@@ -419,7 +421,7 @@ public final class Resolver {
 			myChildren = new int[fields.size()];
 			for(int i=0;i!=fields.size();++i) {	
 				String field = fields.get(i);
-				myChildren[i] = resolveAsType(ttTypes.get(field),imports,states,roots,nominal);
+				myChildren[i] = resolveAsType(ttTypes.get(field),imports,states,roots,filename,nominal);
 			}						
 			myData = fields;
 		} else if(t instanceof UnresolvedType.Tuple) {
@@ -428,48 +430,61 @@ public final class Resolver {
 			myKind = Type.K_TUPLE;
 			myChildren = new int[ttTypes.size()];
 			for(int i=0;i!=ttTypes.size();++i) {
-				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,nominal);				
+				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,filename,nominal);				
 			}			
 		} else if(t instanceof UnresolvedType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
 			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;									
-			NameID nid = resolveAsName(dt.names, imports);
-			
-			if(nominal) {
-				myKind = Type.K_NOMINAL;
-				myData = nid;
-				myChildren = Automaton.NOCHILDREN;
-			} else {
-				// At this point, we're going to expand the given nominal type.
-				// We're going to use resolveAsType(NameID,...) to do this which
-				// will load the expanded type onto states at the current point.
-				// Therefore, we need to remove the initial null we loaded on.
-				states.remove(myIndex); 
-				return resolveAsType(nid,imports,states,roots);				
-			}			
+			NameID nid;
+			try {
+				nid = resolveAsName(dt.names, imports);
+
+
+				if(nominal) {
+					myKind = Type.K_NOMINAL;
+					myData = nid;
+					myChildren = Automaton.NOCHILDREN;
+				} else {
+					// At this point, we're going to expand the given nominal type.
+					// We're going to use resolveAsType(NameID,...) to do this which
+					// will load the expanded type onto states at the current point.
+					// Therefore, we need to remove the initial null we loaded on.
+					states.remove(myIndex); 
+					return resolveAsType(nid,imports,states,roots);				
+				}	
+			} catch(ResolveError e) {
+				syntaxError(e.getMessage(),filename,dt,e);
+				return 0; // dead-code
+			} catch(SyntaxError e) {
+				throw e;
+			} catch(Throwable e) {
+				internalFailure(e.getMessage(),filename,dt,e);
+				return 0; // dead-code
+			}
 		} else if(t instanceof UnresolvedType.Not) {	
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
 			myKind = Type.K_NEGATION;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);			
+			myChildren[0] = resolveAsType(ut.element,imports,states,roots,filename,nominal);			
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
 			myKind = Type.K_UNION;
 			myChildren = new int[utTypes.size()];
 			for(int i=0;i!=utTypes.size();++i) {
-				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,nominal);				
+				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,filename,nominal);				
 			}	
 			myDeterministic = false;
 		} else if(t instanceof UnresolvedType.Intersection) {
-			throw new ResolveError("intersection types not supported yet");
+			internalFailure("intersection types not supported yet",filename,t);
+			return 0; // dead-code
 		} else if(t instanceof UnresolvedType.Reference) {	
 			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
 			myKind = Type.K_REFERENCE;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,imports,states,roots,nominal);		
+			myChildren[0] = resolveAsType(ut.element,imports,states,roots,filename,nominal);		
 		} else {			
 			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) t;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
@@ -490,17 +505,17 @@ public final class Resolver {
 			myChildren = new int[start + 2 + utParamTypes.size()];
 			
 			if(receiver != null) {
-				myChildren[0] = resolveAsType(receiver,imports,states,roots,nominal);
+				myChildren[0] = resolveAsType(receiver,imports,states,roots,filename,nominal);
 			}			
-			myChildren[start++] = resolveAsType(ut.ret,imports,states,roots,nominal);
+			myChildren[start++] = resolveAsType(ut.ret,imports,states,roots,filename,nominal);
 			if(ut.throwType == null) {
 				// this case indicates the user did not provide a throws clause.
-				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,nominal);
+				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,filename,nominal);
 			} else {
-				myChildren[start++] = resolveAsType(ut.throwType,imports,states,roots,nominal);
+				myChildren[start++] = resolveAsType(ut.throwType,imports,states,roots,filename,nominal);
 			}
 			for(UnresolvedType pt : utParamTypes) {
-				myChildren[start++] = resolveAsType(pt,imports,states,roots,nominal);				
+				myChildren[start++] = resolveAsType(pt,imports,states,roots,filename,nominal);				
 			}						
 		}
 		
@@ -552,13 +567,8 @@ public final class Resolver {
 			Object data = Type.leafData((Type.Leaf)type);
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
-		} else {
-			try {
-				return resolveAsType(type,imports,states,roots,false);
-			} catch(ResolveError e) {
-				syntaxError(e.getMessage(),wf.filename,type,e);
-				return 0; // dead-code
-			}
+		} else {			
+			return resolveAsType(type,imports,states,roots,wf.filename,false);			
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the
@@ -569,8 +579,8 @@ public final class Resolver {
 	}	
 	
 	private int resolveAsType(UnresolvedType.Primitive t,
-			List<WhileyFile.Import> imports, ArrayList<Automaton.State> states)
-			throws ResolveError {
+			List<WhileyFile.Import> imports, String filename,
+			ArrayList<Automaton.State> states) {
 		int myIndex = states.size();
 		int kind;
 		if (t instanceof UnresolvedType.Any) {
@@ -592,8 +602,9 @@ public final class Resolver {
 		} else if (t instanceof UnresolvedType.Strung) {
 			kind = Type.K_STRING;
 		} else {		
-			throw new ResolveError("unrecognised type encountered ("
-					+ t.getClass().getName() + ")");
+			internalFailure("unrecognised type encountered ("
+					+ t.getClass().getName() + ")",filename,t);
+			return 0; // dead-code
 		}
 		states.add(new Automaton.State(kind, null, true,
 				Automaton.NOCHILDREN));
@@ -756,7 +767,7 @@ public final class Resolver {
 				if(decl instanceof WhileyFile.TypeDef) {
 					WhileyFile.TypeDef td = (WhileyFile.TypeDef) decl;
 					r = resolveAsType(td.unresolvedType,
-							buildImports(wf, decl), true);
+							buildImports(wf, decl), wf.filename, true);
 				} 
 			} else {
 				Module m = loader.loadModule(mid);
@@ -1358,7 +1369,7 @@ public final class Resolver {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {		
-					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(f.unresolvedType(),buildImports(wf,f));  
+					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(f.unresolvedType(),buildImports(wf,f),wf.filename);  
 					candidates.add(new Pair(nid,ft));							
 				}
 			}
@@ -1402,7 +1413,7 @@ public final class Resolver {
 			for (WhileyFile.Message m : wf.declarations(
 					WhileyFile.Message.class, nid.name())) {
 				if (nparams == -1 || m.parameters.size() == nparams) {		
-					Nominal.Message ft = (Nominal.Message) resolveAsType(m.unresolvedType(),buildImports(wf,m));  
+					Nominal.Message ft = (Nominal.Message) resolveAsType(m.unresolvedType(),buildImports(wf,m),wf.filename);  
 					candidates.add(new Pair(nid,ft));							
 				}
 			}
