@@ -670,6 +670,19 @@ public final class Resolver {
 			return null;
 		}
 	}
+	
+	public Nominal.Tuple expandAsTuple(Nominal lhs) throws ResolveError {
+		Type raw = lhs.raw();
+		if(raw instanceof Type.Tuple) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.Tuple)) {
+				nominal = raw; // discard nominal information
+			}
+			return (Nominal.Tuple) Nominal.construct(nominal,raw);
+		} else {
+			return null;
+		}
+	}
 
 	public Nominal.Record expandAsRecord(Nominal lhs) throws ResolveError {
 		Type raw = lhs.raw();

@@ -291,7 +291,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Assign stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ArrayList<WhileyFile.Import> imports) {
+			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = propagate(stmt.rhs,environment,imports);
@@ -322,19 +322,17 @@ public final class TypePropagation {
 			
 			// FIXME: loss of nominal information here			
 			Type rawRhs = rhs.result().raw();		
-			Nominal.Tuple tupleRhs;
+			Nominal.Tuple tupleRhs = resolver.expandAsTuple(rhs.result());
 			
 			// FIXME: the following is something of a kludge. It would also be
 			// nice to support more expressive destructuring assignment
 			// operations.
 			if(Type.isImplicitCoerciveSubtype(Type.T_REAL, rawRhs)) {
 				tupleRhs = Nominal.Tuple(Nominal.T_INT,Nominal.T_INT);
-			} else if(!(rawRhs instanceof Type.Tuple)) {
-				syntaxError("tuple value expected, got " + rawRhs,filename,rhs);
+			} else if(tupleRhs == null) {
+				syntaxError("tuple value expected, got " + tupleRhs.nominal(),filename,rhs);
 				return null; // deadcode
-			} else {
-				tupleRhs = (Nominal.Tuple) rhs.result();
-			}
+			} 
 			
 			List<Nominal> rhsElements = tupleRhs.elements();
 			if(rhsElements.size() != tvFields.size()) {
