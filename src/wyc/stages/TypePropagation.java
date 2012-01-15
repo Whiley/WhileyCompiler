@@ -678,10 +678,8 @@ public final class TypePropagation {
 		RefCountedHashMap<String,Nominal> old = null;
 		RefCountedHashMap<String,Nominal> orig = environment.clone();
 		do {
-			old = environment.clone();
-			System.out.println("BEFORE: " + environment);
-			environment = join(orig.clone(),propagate(stmt.body,old,imports));
-			System.out.println("AFTER: " + environment);
+			old = environment.clone();			
+			environment = join(orig.clone(),propagate(stmt.body,old,imports));			
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
 		
@@ -1646,8 +1644,7 @@ public final class TypePropagation {
 		Nominal type = environment.get(expr.var);
 
 		if (expr instanceof Expr.LocalVariable) {
-			Expr.LocalVariable lv = (Expr.LocalVariable) expr;
-			System.out.println("GOT: " + type);
+			Expr.LocalVariable lv = (Expr.LocalVariable) expr;			
 			lv.type = type;			
 			return lv;
 		} else if (type != null) {
