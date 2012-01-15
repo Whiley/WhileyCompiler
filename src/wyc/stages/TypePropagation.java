@@ -651,13 +651,18 @@ public final class TypePropagation {
 		for(Stmt.Catch handler : stmt.catches) {
 			
 			// FIXME: need to deal with handler environments properly!
-			
-			Nominal type = resolver.resolveAsType(handler.unresolvedType, imports); 
-			handler.type = type;
-			RefCountedHashMap<String,Nominal> local = environment.clone();
-			local = local.put(handler.variable, type);									
-			propagate(handler.stmts,local,imports);
-			local.free();
+			try {
+				Nominal type = resolver.resolveAsType(handler.unresolvedType, imports); 
+				handler.type = type;
+				RefCountedHashMap<String,Nominal> local = environment.clone();
+				local = local.put(handler.variable, type);									
+				propagate(handler.stmts,local,imports);
+				local.free();
+			} catch(ResolveError e) {
+				syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,handler,e);
+			} catch(Throwable t) {
+				internalFailure(t.getMessage(),filename,handler,t);
+			}
 		}
 		
 		environment = propagate(stmt.body,environment,imports);
