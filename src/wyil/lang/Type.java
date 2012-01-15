@@ -596,29 +596,6 @@ public abstract class Type {
 		return TypeAlgorithms.intersect(t1,t2);
 	}
 
-	/**
-	 * A type which is either a record, or a union of records. An effective
-	 * record gives access to a subset of the visible fields which are
-	 * guaranteed to be in the type. For example, consider this type:
-	 * 
-	 * <pre>
-	 * {int op, int x} | {int op, [int] y}
-	 * </pre>
-	 * 
-	 * Here, the field op is guaranteed to be present. Therefore, the effective
-	 * record type is just <code>{int op}</code>.
-	 * 
-	 * @return
-	 */
-	public interface EffectiveRecord {
-		
-		public Type field(String field);
-		
-		public HashMap<String,Type> fields();
-		
-		public EffectiveRecord update(String field, Type type);
-	}
-		
 	public static Set effectiveSet(Type t) {
 		if (t instanceof Type.Set) {
 			return (Type.Set) t;
@@ -1127,6 +1104,29 @@ public abstract class Type {
 		}
 	}
 	
+	/**
+	 * A type which is either a record, or a union of records. An effective
+	 * record gives access to a subset of the visible fields which are
+	 * guaranteed to be in the type. For example, consider this type:
+	 * 
+	 * <pre>
+	 * {int op, int x} | {int op, [int] y}
+	 * </pre>
+	 * 
+	 * Here, the field op is guaranteed to be present. Therefore, the effective
+	 * record type is just <code>{int op}</code>.
+	 * 
+	 * @return
+	 */
+	public interface EffectiveRecord {
+		
+		public Type field(String field);
+		
+		public HashMap<String,Type> fields();
+		
+		public EffectiveRecord update(String field, Type type);
+	}
+		
 	/**
 	 * A record is made up of a number of fields, each of which has a unique
 	 * name. Each field has a corresponding type. One can think of a record as a

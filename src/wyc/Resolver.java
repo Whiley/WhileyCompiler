@@ -653,13 +653,20 @@ public final class Resolver {
 
 	public Nominal.EffectiveRecord expandAsEffectiveRecord(Nominal lhs) throws ResolveError {		
 		Type raw = lhs.raw();
-		if(raw instanceof Type.EffectiveRecord) {
+				
+		if(raw instanceof Type.Record) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.EffectiveRecord)) {
+			if(!(nominal instanceof Type.Record)) {
 				nominal = (Type) raw; // discard nominal information
 			}			
-			return (Nominal.EffectiveRecord) Nominal.construct(nominal,(Type) raw);
-		} else {
+			return (Nominal.Record) Nominal.construct(nominal,raw);
+		} else if(raw instanceof Type.UnionOfRecords) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.UnionOfRecords)) {
+				nominal = (Type) raw; // discard nominal information
+			}			
+			return (Nominal.UnionOfRecords) Nominal.construct(nominal,raw);
+		} {
 			return null;
 		}
 	}
