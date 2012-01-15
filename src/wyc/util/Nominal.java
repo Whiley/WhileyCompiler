@@ -467,10 +467,10 @@ public abstract class Nominal {
 			}
 		}
 		
-		public UnionOfRecords update(String field, Nominal type) {
-			Type.UnionOfRecords n = nominal.update(field,type.nominal());
-			Type.UnionOfRecords r = raw.update(field,type.raw());
-			return new UnionOfRecords(n,r);
+		public EffectiveRecord update(String field, Nominal type) {
+			Type.EffectiveRecord n = nominal.update(field,type.nominal());
+			Type.EffectiveRecord r = raw.update(field,type.raw());
+			return (EffectiveRecord) construct((Type) n, (Type)r);
 		}
 		
 		public boolean equals(Object o) {

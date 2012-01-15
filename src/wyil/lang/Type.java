@@ -1296,13 +1296,21 @@ public abstract class Type {
 			return m3;
 		}
 		
-		public UnionOfRecords update(String field, Type type) {
+		public EffectiveRecord update(String field, Type type) {
 			HashSet<Type> nbounds = new HashSet<Type>();
 			HashSet<Type.Record> bounds = (HashSet) bounds();
 			for(Type.Record bound : bounds) {
 				nbounds.add(bound.update(field, type));
 			}
-			return (UnionOfRecords) Type.Union(nbounds);
+			
+			// we can only safely return an EffectiveRecord here since an update
+			// can fold multiple records into one.  For example:
+			//
+			// {int x,string y}|{int x,real y} 
+			//
+			// updating y to type int gives {int x,int y}
+			
+			return (EffectiveRecord) Type.Union(nbounds);
 		}
 	}
 	
