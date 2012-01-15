@@ -927,6 +927,8 @@ public final class Resolver {
 			} 
 		} catch(SyntaxError.InternalFailure e) {
 			throw e;
+		} catch(ResolveError e) {
+			throw e;
 		} catch(Throwable e) {
 			internalFailure(e.getMessage(),filename,expr,e);
 		}
