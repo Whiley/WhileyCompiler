@@ -198,8 +198,10 @@ public final class WhileyParser {
 			Identifier n = matchIdentifier();
 			if(paramNames.contains(n.text)) {
 				syntaxError("duplicate parameter name",n);
-			} else {
+			} else if(!n.text.equals("$") && !n.text.equals("this")){
 				paramNames.add(n.text);
+			} else {
+				syntaxError("parameter name not permitted",n);
 			}
 			paramTypes.add(new Parameter(t, n.text, sourceAttr(pstart,
 					index - 1)));
