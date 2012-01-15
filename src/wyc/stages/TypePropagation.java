@@ -434,12 +434,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.DoWhile stmt,
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) {
-		
-		if (stmt.invariant != null) {
-			stmt.invariant = propagate(stmt.invariant, environment, imports);
-			checkIsSubtype(Type.T_BOOL,stmt.invariant);
-		}
-			
+				
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal> old = null;
 		RefCountedHashMap<String,Nominal> orig = environment.clone();
@@ -452,6 +447,11 @@ public final class TypePropagation {
 		stmt.condition = propagate(stmt.condition,environment,imports);
 		checkIsSubtype(Type.T_BOOL,stmt.condition);			
 		
+		if (stmt.invariant != null) {
+			stmt.invariant = propagate(stmt.invariant, environment, imports);
+			checkIsSubtype(Type.T_BOOL,stmt.invariant);
+		}
+					
 		return environment;
 	}
 	
@@ -513,12 +513,7 @@ public final class TypePropagation {
 			}			
 			environment = environment.put(var, elementTypes[i]);
 		} 
-		
-		if (stmt.invariant != null) {
-			stmt.invariant = propagate(stmt.invariant, environment, imports);
-			checkIsSubtype(Type.T_BOOL,stmt.invariant);
-		}
-		
+				
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal> old = null;
 		RefCountedHashMap<String,Nominal> orig = environment.clone();
@@ -535,6 +530,11 @@ public final class TypePropagation {
 			environment = environment.remove(var);
 		} 
 		
+		if (stmt.invariant != null) {
+			stmt.invariant = propagate(stmt.invariant, environment, imports);
+			checkIsSubtype(Type.T_BOOL,stmt.invariant);
+		}
+				
 		return environment;
 	}
 	
@@ -674,6 +674,20 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) {
 
+		// Iterate to a fixed point
+		RefCountedHashMap<String,Nominal> old = null;
+		RefCountedHashMap<String,Nominal> orig = environment.clone();
+		do {
+			old = environment.clone();
+			System.out.println("BEFORE: " + environment);
+			environment = join(orig.clone(),propagate(stmt.body,old,imports));
+			System.out.println("AFTER: " + environment);
+			old.free(); // hacky, but safe
+		} while(!environment.equals(old));
+		
+		// Note, we must propagate the condition after finding the fixed-point.
+		// Otherwise, our environment will not be set properly.
+		
 		stmt.condition = propagate(stmt.condition,environment,imports);
 		checkIsSubtype(Type.T_BOOL,stmt.condition);			
 		
@@ -681,15 +695,6 @@ public final class TypePropagation {
 			stmt.invariant = propagate(stmt.invariant, environment, imports);
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}		
-		
-		// Iterate to a fixed point
-		RefCountedHashMap<String,Nominal> old = null;
-		RefCountedHashMap<String,Nominal> orig = environment.clone();
-		do {
-			old = environment.clone();
-			environment = join(orig.clone(),propagate(stmt.body,old,imports));
-			old.free(); // hacky, but safe
-		} while(!environment.equals(old));
 		
 		return environment;
 	}
@@ -1642,6 +1647,7 @@ public final class TypePropagation {
 
 		if (expr instanceof Expr.LocalVariable) {
 			Expr.LocalVariable lv = (Expr.LocalVariable) expr;
+			System.out.println("GOT: " + type);
 			lv.type = type;			
 			return lv;
 		} else if (type != null) {
