@@ -403,13 +403,10 @@ public final class TypePropagation {
 			return inferAfterType((Expr.LVal) da.src, afterType);
 		} else if(lv instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) lv;
-			Nominal.Record srcType = la.srcType;			
+			Nominal.EffectiveRecord srcType = la.srcType;			
 			// NOTE: I know I can modify this hash map, since it's created fresh
 			// in Nominal.Record.fields().
-			HashMap<String,Nominal> afterFields = srcType.fields();			
-			afterFields.put(la.name, afterType);						
-			afterType = Nominal.Record(srcType.isOpen(), afterFields);
-			System.out.println("AFTER TYPE: " + afterType);
+			afterType = (Nominal) srcType.update(la.name, afterType);			
 			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else {
 			internalFailure("unknown lval: "
@@ -741,7 +738,7 @@ public final class TypePropagation {
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,imports);
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
-				Nominal.Record srcType = resolver.expandAsRecord(src.result());
+				Nominal.EffectiveRecord srcType = resolver.expandAsEffectiveRecord(src.result());
 				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
 				} else if(srcType.field(ra.name) == null) {
@@ -1392,7 +1389,7 @@ public final class TypePropagation {
 			// function is qualified, so this is used as the scope for resolving
 			// what the function is.
 			
-			Nominal.Record recType = resolver.expandAsRecord(expr.qualification.result());
+			Nominal.EffectiveRecord recType = resolver.expandAsEffectiveRecord(expr.qualification.result());
 			
 			if(recType != null) {
 				
@@ -1881,7 +1878,7 @@ public final class TypePropagation {
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
 		Nominal srcType = ra.src.result();
-		Nominal.Record recType = resolver.expandAsRecord(srcType);
+		Nominal.EffectiveRecord recType = resolver.expandAsEffectiveRecord(srcType);
 		if(recType == null) {
 			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),filename,ra);
 		} 

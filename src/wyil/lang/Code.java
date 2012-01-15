@@ -157,7 +157,7 @@ public abstract class Code {
 	 *            --- field to load.
 	 * @return
 	 */
-	public static FieldLoad FieldLoad(Type.Record type, String field) {
+	public static FieldLoad FieldLoad(Type.EffectiveRecord type, String field) {
 		return get(new FieldLoad(type,field));
 	}	
 	
@@ -976,10 +976,10 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class FieldLoad extends Code {
-		public final Type.Record type;		
+		public final Type.EffectiveRecord type;		
 		public final String field;
 				
-		private FieldLoad(Type.Record type, String field) {
+		private FieldLoad(Type.EffectiveRecord type, String field) {
 			if (field == null) {
 				throw new IllegalArgumentException(
 						"FieldLoad field argument cannot be null");
@@ -1010,7 +1010,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("fieldload " + field,type);			
+			return toString("fieldload " + field,(Type) type);			
 		}	
 	}
 
@@ -1911,15 +1911,15 @@ public abstract class Code {
 		
 		public RecordLVal(Type t, String field) {
 			super(t);
-			this.field = field;
-			Type.Record rt = Type.effectiveRecord(t);
-			if(rt == null || !rt.fields().containsKey(field)) {
+			this.field = field;			
+			if (!(t instanceof Type.EffectiveRecord)
+					|| !((Type.EffectiveRecord) t).fields().containsKey(field)) {
 				throw new IllegalArgumentException("Invalid Record Type");
 			}		
 		}
 		
-		public Type.Record type() {
-			return Type.effectiveRecord(type);
+		public Type.EffectiveRecord type() {
+			return (Type.EffectiveRecord) type;
 		}
 	}	
 	
@@ -1954,8 +1954,8 @@ public abstract class Code {
 				Type.Dictionary dict = Type.effectiveDictionary(iter);											
 				iter = dict.value();	
 				return new DictLVal(raw);
-			} else  if(Type.effectiveRecord(iter) != null) {
-				Type.Record rec = Type.effectiveRecord(iter);				
+			} else  if(iter instanceof Type.EffectiveRecord) {
+				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;				
 				String field = fields.get(fieldIndex++);
 				iter = rec.fields().get(field);
 				return new RecordLVal(raw,field);
@@ -2041,8 +2041,8 @@ public abstract class Code {
 					// access
 					Type.Dictionary dict = Type.effectiveDictionary(iter);
 					iter = dict.value();
-				} else if (Type.effectiveRecord(iter) != null) {
-					Type.Record rec = Type.effectiveRecord(iter);
+				} else if (iter instanceof Type.EffectiveRecord) {
+					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 					String field = fields.get(fieldIndex++);
 					iter = rec.fields().get(field);
 				} else {

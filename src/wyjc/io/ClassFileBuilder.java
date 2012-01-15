@@ -687,7 +687,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.STATIC));							
 		} else {
-			Type.Record rec = Type.effectiveRecord(type);			
+			Type.EffectiveRecord rec = (Type.EffectiveRecord) type;			
 			String field = fields.next();			
 			if(level != 0) {				
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));				
@@ -2812,7 +2812,7 @@ public class ClassFileBuilder {
 			return WHILEYSET;
 		} else if(t instanceof Type.Dictionary) {
 			return WHILEYMAP;
-		} else if(t instanceof Type.Record) {
+		} else if(t instanceof Type.EffectiveRecord) {
 			return WHILEYRECORD;
 		} else if(t instanceof Type.Reference) {
 			return WHILEYPROCESS;
@@ -2821,16 +2821,8 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Negation) {
 			// can we do any better?
 			return JAVA_LANG_OBJECT;
-		} else if(t instanceof Type.Union) {
-			// There's an interesting question as to whether we need to do more
-			// here. For example, a union of a set and a list could result in
-			// contains ?
-			Type.Record tt = Type.effectiveRecord(t);
-			if(tt != null) {
-				return WHILEYRECORD;
-			} else {
-				return JAVA_LANG_OBJECT;
-			}
+		} else if(t instanceof Type.Union) {			
+			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.FunctionOrMethodOrMessage) {						

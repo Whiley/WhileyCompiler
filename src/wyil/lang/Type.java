@@ -597,7 +597,8 @@ public abstract class Type {
 	}
 
 	/**
-	 * The effective record type gives a subset of the visible fields which are
+	 * A type which is either a record, or a union of records. An effective
+	 * record gives access to a subset of the visible fields which are
 	 * guaranteed to be in the type. For example, consider this type:
 	 * 
 	 * <pre>
@@ -607,48 +608,17 @@ public abstract class Type {
 	 * Here, the field op is guaranteed to be present. Therefore, the effective
 	 * record type is just <code>{int op}</code>.
 	 * 
-	 * @param t
 	 * @return
 	 */
-	public static Record effectiveRecord(Type t) {
-		if (t instanceof Type.Record) {
-			return (Type.Record) t;
-		} else if (t instanceof Type.Union) {
-			Union ut = (Type.Union) t;
-			Record r = null;
-			for (Type b : ut.bounds()) {
-				if (!(b instanceof Record)) {
-					return null;
-				}
-				Record br = (Record) b;
-				if (r == null) {
-					r = br;
-				} else {
-					HashMap<String, Type> rfields = r.fields();
-					HashMap<String, Type> bfields = br.fields();
-					HashMap<String, Type> nfields = new HashMap<String,Type>();
-					for (Map.Entry<String, Type> e : rfields.entrySet()) {
-						Type bt = bfields.get(e.getKey());
-						if (bt != null) {
-							nfields.put(e.getKey(),
-									Union(e.getValue(), bt));
-						}
-					}				
-					boolean isOpen = r.isOpen() || br.isOpen()
-							|| nfields.size() < rfields.size();
-					Type tmp = Record(isOpen, nfields);
-					if(tmp instanceof Record) {
-						r = (Record) tmp;
-					} else {
-						return null;
-					}
-				}
-			}
-			return r;
-		}
-		return null;
+	public interface EffectiveRecord {
+		
+		public Type field(String field);
+		
+		public HashMap<String,Type> fields();
+		
+		public EffectiveRecord update(String field, Type type);
 	}
-
+		
 	public static Set effectiveSet(Type t) {
 		if (t instanceof Type.Set) {
 			return (Type.Set) t;
@@ -1156,7 +1126,7 @@ public abstract class Type {
 			return construct(Automata.extract(automaton,valueIdx));	
 		}
 	}
-
+	
 	/**
 	 * A record is made up of a number of fields, each of which has a unique
 	 * name. Each field has a corresponding type. One can think of a record as a
@@ -1166,7 +1136,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Record extends Compound  {
+	public static final class Record extends Compound implements EffectiveRecord {
 		private Record(Automaton automaton) {
 			super(automaton);
 		}
@@ -1192,6 +1162,17 @@ public abstract class Type {
 			return r;
 		}
 
+		public Type field(String field) {
+			State fields = (State) automaton.states[0].data;
+			int index = Collections.binarySearch(fields, field);
+			if (index < 0) {
+				return null; // not found
+			} else {
+				int[] children = automaton.states[0].children;
+				return construct(Automata.extract(automaton, children[index]));
+			}
+		}
+		
 		/**
 		 * Return a mapping from field names to their types.
 		 * 
@@ -1207,8 +1188,13 @@ public abstract class Type {
 			}
 			return r;
 		}
-		
 
+		public Record update(String field, Type type) {
+			HashMap<String,Type> fields = fields();
+			fields.put(field, type);
+			return Type.Record(isOpen(),fields);
+		}
+		
 		public static final class State extends ArrayList<String> {
 			public final boolean isOpen;
 			
@@ -1241,7 +1227,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Union extends Compound {
+	public static class Union extends Compound {
 		private Union(Automaton automaton) {
 			super(automaton);
 		}
@@ -1262,6 +1248,64 @@ public abstract class Type {
 		}
 	}
 
+	public static final class UnionOfRecords extends Union implements
+			EffectiveRecord {
+		private UnionOfRecords(Automaton automaton) {
+			super(automaton);
+		}
+		
+		public Type field(String field) {
+			Type r = null;
+			HashSet<Type.Record> bounds = (HashSet) bounds();
+			for(Type.Record bound : bounds) {
+				Type t = bound.field(field);
+				if(r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r,t);
+				}
+			}
+			return r;
+		}
+		
+		public HashMap<String,Type> fields() {
+			// TODO: this method could be optimised to avoid creating so many
+			// HashMaps.
+			HashMap<String,Type> fields = null;
+			HashSet<Type.Record> bounds = (HashSet) bounds();
+			for(Type.Record bound : bounds) {
+				fields = join(fields,bound.fields());
+			}
+			return fields;
+		}
+		
+		private static HashMap<String, Type> join(HashMap<String, Type> m1,
+				HashMap<String, Type> m2) {
+			if (m1 == null) {
+				return m2;
+			}
+			HashMap<String, Type> m3 = new HashMap<String, Type>();
+			for (Map.Entry<String, Type> e : m1.entrySet()) {
+				String field = e.getKey();
+				Type t1 = e.getValue();
+				Type t2 = m2.get(field);
+				if (t2 != null) {
+					m3.put(field, Type.Union(t1, t2));
+				}
+			}
+			return m3;
+		}
+		
+		public UnionOfRecords update(String field, Type type) {
+			HashSet<Type> nbounds = new HashSet<Type>();
+			HashSet<Type.Record> bounds = (HashSet) bounds();
+			for(Type.Record bound : bounds) {
+				nbounds.add(bound.update(field, type));
+			}
+			return (UnionOfRecords) Type.Union(nbounds);
+		}
+	}
+	
 	/**
 	 * A difference type represents a type which accepts values in the
 	 * difference between its bounds. 
@@ -1795,9 +1839,19 @@ public abstract class Type {
 		case K_RECORD:
 			type = new Record(automaton);
 			break;
-		case K_UNION:
-			type = new Union(automaton);
+		case K_UNION: {
+			boolean allRecords = true;			
+			Type.Union union = new Union(automaton);
+			for(Type bound : union.bounds()) {
+				allRecords &= bound instanceof Record;				
+			}
+			if(allRecords) {
+				type = new UnionOfRecords(automaton);
+			} else {
+				type = union;
+			}
 			break;
+		}
 		case K_NEGATION:
 			type = new Negation(automaton);
 			break;

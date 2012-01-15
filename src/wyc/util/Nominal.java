@@ -49,6 +49,8 @@ public abstract class Nominal {
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
 		} else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
 			return new Record((Type.Record)nominal,(Type.Record)raw);		
+		} else if(raw instanceof Type.UnionOfRecords && nominal instanceof Type.UnionOfRecords) {
+			return new UnionOfRecords((Type.UnionOfRecords)nominal,(Type.UnionOfRecords)raw);		
 		} else if(raw instanceof Type.Function && nominal instanceof Type.Function) {
 			return new Function((Type.Function)nominal,(Type.Function)raw);			
 		} else if(raw instanceof Type.Method && nominal instanceof Type.Method) {
@@ -140,7 +142,7 @@ public abstract class Nominal {
 		Type nominal = Type.Negation(type.nominal());
 		Type raw = Type.Negation(type.raw());
 		return construct(nominal,raw);		
-	}
+	}	
 	
 	public static final class Base extends Nominal {
 		private final Type raw;
@@ -353,8 +355,20 @@ public abstract class Nominal {
 			return raw.hashCode();
 		}
 	}
+	
+	public interface EffectiveRecord {
+		public Type.EffectiveRecord raw();
 		
-	public static final class Record extends Nominal {
+		public Type.EffectiveRecord nominal();
+		
+		public Nominal field(String field);
+		
+		public HashMap<String,Nominal> fields();
+		
+		public EffectiveRecord update(String field, Nominal type);
+	}
+	
+	public static final class Record extends Nominal implements EffectiveRecord {
 		private final Type.Record nominal;
 		private final Type.Record raw;
 		
@@ -396,9 +410,72 @@ public abstract class Nominal {
 			}
 		}
 		
+		public Record update(String field, Nominal type) {
+			Type.Record n = nominal.update(field,type.nominal());
+			Type.Record r = raw.update(field,type.raw());
+			return new Record(n,r);
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof Record) {
 				Record b = (Record) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
+	}
+	
+	public static final class UnionOfRecords extends Nominal implements EffectiveRecord {
+		private final Type.UnionOfRecords nominal;
+		private final Type.UnionOfRecords raw;
+		
+		UnionOfRecords(Type.UnionOfRecords nominal, Type.UnionOfRecords raw) {
+			this.nominal = nominal;
+			this.raw = raw;
+		}
+		
+		public Type.UnionOfRecords nominal() {
+			return nominal;
+		}
+		
+		public Type.UnionOfRecords raw() {
+			return raw;
+		}
+		
+		public HashMap<String,Nominal> fields() {
+			HashMap<String,Nominal> r = new HashMap<String,Nominal>();
+			HashMap<String,Type> nominalFields = nominal.fields();
+			for(Map.Entry<String, Type> e : raw.fields().entrySet()) {
+				String key = e.getKey();
+				Type rawField = e.getValue();
+				Type nominalField = nominalFields.get(key);
+				r.put(e.getKey(), Nominal.construct(nominalField,rawField));
+			}
+			return r;
+		}
+		
+		public Nominal field(String field) {
+			Type rawField = raw.fields().get(field);
+			if(rawField == null) {
+				return null;
+			} else {
+				return construct(nominal.fields().get(field),rawField);
+			}
+		}
+		
+		public UnionOfRecords update(String field, Nominal type) {
+			Type.UnionOfRecords n = nominal.update(field,type.nominal());
+			Type.UnionOfRecords r = raw.update(field,type.raw());
+			return new UnionOfRecords(n,r);
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof UnionOfRecords) {
+				UnionOfRecords b = (UnionOfRecords) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;

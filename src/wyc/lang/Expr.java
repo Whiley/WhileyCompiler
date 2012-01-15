@@ -517,7 +517,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class RecordAccess extends AbstractDotAccess {		
-		public Nominal.Record srcType;
+		public Nominal.EffectiveRecord srcType;
 
 		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
 			super(lhs,name,attributes);			
