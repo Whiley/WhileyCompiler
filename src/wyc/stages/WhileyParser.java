@@ -185,6 +185,7 @@ public final class WhileyParser {
 		
 		// Now build up the parameter types
 		List<Parameter> paramTypes = new ArrayList();
+		HashSet<String> paramNames = new HashSet<String>();
 		boolean firstTime=true;		
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightBrace)) {
@@ -195,6 +196,11 @@ public final class WhileyParser {
 			int pstart = index;
 			UnresolvedType t = parseType();
 			Identifier n = matchIdentifier();
+			if(paramNames.contains(n.text)) {
+				syntaxError("duplicate parameter name",n);
+			} else {
+				paramNames.add(n.text);
+			}
 			paramTypes.add(new Parameter(t, n.text, sourceAttr(pstart,
 					index - 1)));
 		}
