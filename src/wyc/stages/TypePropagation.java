@@ -388,6 +388,7 @@ public final class TypePropagation {
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.StringAccess) {
 			Expr.StringAccess la = (Expr.StringAccess) lv;
+			checkIsSubtype(Nominal.T_CHAR,afterType,lv);
 			return inferAfterType((Expr.LVal) la.src, 
 					Nominal.T_STRING);
 		} else if (lv instanceof Expr.ListAccess) {
