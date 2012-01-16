@@ -826,9 +826,7 @@ public final class Resolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {		
-		// FIXME: cyclic constants
-		
+	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {				
 		Value result = constantCache.get(key);
 		if(result != null) {
 			return result;
