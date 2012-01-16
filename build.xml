@@ -60,7 +60,7 @@
   
   <target name="stdlib" depends="compile">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
-    <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="src/"/> 
+    <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="lib/wyjc.jar"/> 
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 
     <jar destfile="lib/wyrt.jar">
@@ -111,7 +111,7 @@
       <include name="bin/wyjc"/>
       <include name="bin/whiley"/>
     </fileset>
-    <fileset dir="." includes="LICENSE,README,build.xml,pom.xml,CONTRIBUTORS,Asmsrc.xml"/>
+    <fileset dir="." includes="LICENSE,README,build.xml"/>
     <fileset dir="." includes="lib/wyrt.jar,lib/wyjc.jar"/>
   </copy>
   <tar destfile="wdk-src-v${version}.tar" longfile="gnu">  
@@ -122,7 +122,7 @@
       <include name="wdk-v${version}/bin/wyjc"/>
       <include name="wdk-v${version}/bin/whiley"/>
     </tarfileset>
-    <tarfileset dir="." includes="wdk-v${version}/LICENSE,wdk-v${version}/README,wdk-v${version}/build.xml,wdk-v${version}/pom.xml,wdk-v${version}/Asmsrc.xml,wdk-v${version}/CONTRIBUTORS"/>
+    <tarfileset dir="." includes="wdk-v${version}/LICENSE,wdk-v${version}/README,wdk-v${version}/build.xml"/>
     <tarfileset dir="." includes="wdk-v${version}/lib/wyrt.jar,wdk-v${version}/lib/wyjc.jar"/>
   </tar>
   <gzip destfile="wdk-src-v${version}.tgz" src="wdk-src-v${version}.tar"/>
@@ -142,9 +142,8 @@
        author="true"
        version="true"
        use="true"
-       private="false"
-       windowtitle="Whiley Compiler API">
-      <doctitle><![CDATA[<h1>The Whiley Compiler Framework (v${version})</h1>]]></doctitle>
+       windowtitle="Whiley API">
+      <doctitle><![CDATA[<h1>The Whiley Programming Language (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2010 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       </javadoc>
   </target>
@@ -155,10 +154,60 @@
    <fileset file="*.jar"/>
    <fileset file="*.tgz"/>
    <fileset dir="src" includes="**/*.class"/>
-   <fileset dir="stdlib" includes="**/*.class"/>
-   <fileset dir="stdlib" includes="**/*.wyil"/>
    <fileset dir="tmp/" includes="**"/>
   </delete>
  </target>
+	 <target name="testcompile" depends="compile">
+    <javac debug="true" includeantruntime="true" includes="wyjc/testing/**,wyil/testing/**,wyone/testing/**" classpath="${basedir}/lib/junit.jar" > 
+      <src path="src"/>
+	
+    </javac>
+  </target>
+ 
+	<target name="cobertura" depends="testcompile">
+    <property name="cobertura.home" value="${basedir}/lib"/>
+    <property name="cobertura.datafile" value="${basedir}/cobertura.ser"/>
+    <property name="cobertura.inst.classes" value="${basedir}/instrumented-classes"/>
+    <property name="cobertura.coverage" value="${basedir}/coverage"/>
+ 
+    <!-- Cleanup an previous runs -->
+    <delete dir="${cobertura.coverage}"/>
+    <delete dir="${cobertura.inst.classes}"/>
+    <delete file="${cobertura.datafile}"/>
+ 
+    <path id="cobertura.classpath">
+        <fileset dir="${cobertura.home}">
+            <include name="cobertura.jar"/>
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+    <taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
+ 
+    <cobertura-instrument todir="${cobertura.inst.classes}" datafile="${cobertura.datafile}">
+        <fileset dir="${basedir}/src">
+            <include name="**/*.class"/>
+	    <exclude name="**/*Test*.class"/>
+        </fileset>
+    </cobertura-instrument>
+ 
+    <junit showoutput="true" printsummary="withOutAndErr" fork="yes" failureproperty="test.failed">
+        
+        <sysproperty key="net.sourceforge.cobertura.datafile" file="${cobertura.datafile}" />
+ 
+        <classpath location="${cobertura.inst.classes}" />
+        <classpath location="${basedir}/src"/>
+	
+	<classpath refid="cobertura.classpath" />
+        <batchtest todir="${basedir}/junit">
+          <fileset dir="${basedir}/src">
+            <include name="**/*AllTest*.java"/>
+          </fileset>
+        </batchtest>
+    </junit>
+ 
+    <cobertura-report format="html" srcdir="${basedir}/src" destdir="${cobertura.coverage}" datafile="${cobertura.datafile}"/>
+</target>
+	
+ 
 
 </project>
