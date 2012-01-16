@@ -1249,8 +1249,8 @@ public abstract class Type {
 
 		public Type element() {
 			Type r = null;
-			HashSet<Type.List> bounds = (HashSet) bounds();
-			for(Type.List bound : bounds) {
+			HashSet<Type.Set> bounds = (HashSet) bounds();
+			for(Type.Set bound : bounds) {
 				Type t = bound.element();
 				if(r == null || t == null) {
 					r = t;
