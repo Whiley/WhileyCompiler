@@ -1909,7 +1909,9 @@ public abstract class Type {
 				allSets &= bound instanceof Set;
 				allLists &= bound instanceof List;
 			}
-			if(allLists) {
+			if(allSets) {
+				type = new UnionOfSets(automaton);
+			} else if(allLists) {
 				type = new UnionOfLists(automaton);
 			} else if(allRecords) {
 				type = new UnionOfRecords(automaton);
