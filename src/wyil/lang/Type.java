@@ -974,6 +974,23 @@ public abstract class Type {
 	}	
 	
 	/**
+	 * A type which is either a set, or a union of sets. An effective set gives
+	 * access to an effective element type, which is the union of possible
+	 * element types.
+	 * 
+	 * <pre>
+	 * {int} | {real}
+	 * </pre>
+	 * 
+	 * Here, the effective element type is int|real.
+	 * 
+	 * @return
+	 */
+	public interface EffectiveSet {		
+		public Type element();		
+	}
+	
+	/**
 	 * A set type describes set values whose elements are subtypes of the
 	 * element type. For example, <code>{1,2,3}</code> is an instance of set
 	 * type <code>{int}</code>; however, <code>{1.345}</code> is not.
@@ -992,23 +1009,6 @@ public abstract class Type {
 		public boolean nonEmpty() {
 			return (Boolean) automaton.states[0].data;
 		}
-	}
-
-	/**
-	 * A type which is either a set, or a union of sets. An effective set gives
-	 * access to an effective element type, which is the union of possible
-	 * element types.
-	 * 
-	 * <pre>
-	 * {int} | {real}
-	 * </pre>
-	 * 
-	 * Here, the effective element type is int|real.
-	 * 
-	 * @return
-	 */
-	public interface EffectiveSet {		
-		public Type element();		
 	}
 	
 	/**
@@ -1075,6 +1075,28 @@ public abstract class Type {
 	}
 
 	/**
+	 * A type which is either a dictionary, or a union of dictionaries. An
+	 * effective dictionary gives access to effective key and value types, which are
+	 * the union of possible key and value types (respectively).
+	 * 
+	 * <pre>
+	 * [int] | [real]
+	 * </pre>
+	 * 
+	 * Here, the effective element type is int|real.
+	 * 
+	 * @return
+	 */
+	public interface EffectiveDictionary {
+		
+		public Type key();
+		
+		public Type value();
+		
+		public EffectiveDictionary update(Type key, Type Value);
+	}
+	
+	/**
 	 * A dictionary represents a one-many mapping from variables of one type to
 	 * variables of another type. For example, the dictionary type
 	 * <code>int->real</code> represents a map from integers to real values. A
@@ -1083,7 +1105,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Dictionary extends Compound  {
+	public static final class Dictionary extends Compound implements EffectiveDictionary {
 		private Dictionary(Automaton automaton) {
 			super(automaton);
 		}
@@ -1094,6 +1116,11 @@ public abstract class Type {
 		public Type value() {
 			int valueIdx = automaton.states[0].children[1];
 			return construct(Automata.extract(automaton,valueIdx));	
+		}
+		public Dictionary update(Type key, Type value) {
+			key = Type.Union(key,key());
+			value = Type.Union(value,value());
+			return Type.Dictionary(key,value);
 		}
 	}
 	
@@ -1297,6 +1324,58 @@ public abstract class Type {
 			// assigning type any into this yields [any]
 			
 			return (EffectiveList) Type.Union(nbounds);
+		}
+	}
+	
+	public static final class UnionOfDictionaries extends Union implements
+	EffectiveDictionary {
+		private UnionOfDictionaries(Automaton automaton) {
+			super(automaton);
+		}
+
+		public Type key() {
+			Type r = null;
+			HashSet<Type.Dictionary> bounds = (HashSet) bounds();
+			for(Type.Dictionary bound : bounds) {
+				Type t = bound.key();
+				if(r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r,t);
+				}
+			}
+			return r;
+		}
+
+		public Type value() {
+			Type r = null;
+			HashSet<Type.Dictionary> bounds = (HashSet) bounds();
+			for(Type.Dictionary bound : bounds) {
+				Type t = bound.value();
+				if(r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r,t);
+				}
+			}
+			return r;
+		}		
+		
+		public EffectiveDictionary update(Type key, Type value) {
+			HashSet<Type> nbounds = new HashSet<Type>();
+			HashSet<Type.Dictionary> bounds = (HashSet) bounds();
+			for(Type.Dictionary bound : bounds) {
+				nbounds.add(bound.update(key,value));
+			}			
+
+			// we can only safely return an EffectiveDictionary here since an
+			// update can fold multiple dictionaries into one. For example:
+			//
+			// {int=>string}|{int=>real} 
+			//
+			// assigning int=>any into this yields {int=>any}
+
+			return (EffectiveDictionary) Type.Union(nbounds);
 		}
 	}
 	
@@ -1902,15 +1981,19 @@ public abstract class Type {
 		case K_UNION: {
 			boolean allRecords = true;
 			boolean allLists = true;
-			boolean allSets = true;
+			boolean allDictionaries = true;
+			boolean allSets = true;			
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
 				allRecords &= bound instanceof Record;				
 				allSets &= bound instanceof Set;
+				allDictionaries &= bound instanceof Dictionary;
 				allLists &= bound instanceof List;
 			}
 			if(allSets) {
 				type = new UnionOfSets(automaton);
+			} else if(allDictionaries) {
+				type = new UnionOfDictionaries(automaton);
 			} else if(allLists) {
 				type = new UnionOfLists(automaton);
 			} else if(allRecords) {
