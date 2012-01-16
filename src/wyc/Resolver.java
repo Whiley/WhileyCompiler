@@ -212,10 +212,10 @@ public final class Resolver {
 	public NameID resolveAsName(String name, List<WhileyFile.Import> imports)
 			throws ResolveError {		
 		
-		for (WhileyFile.Import imp : imports) {
+		for (WhileyFile.Import imp : imports) {			
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {					
-					NameID nid = new NameID(mid, name); 
+					NameID nid = new NameID(mid, name); 					
 					if (isName(nid)) {
 						return nid;
 					}					
@@ -441,7 +441,6 @@ public final class Resolver {
 			try {
 				nid = resolveAsName(dt.names, imports);
 
-
 				if(nominal) {
 					myKind = Type.K_NOMINAL;
 					myData = nid;
@@ -452,7 +451,7 @@ public final class Resolver {
 					// will load the expanded type onto states at the current point.
 					// Therefore, we need to remove the initial null we loaded on.
 					states.remove(myIndex); 
-					return resolveAsType(nid,imports,states,roots);				
+					return resolveAsType(nid,states,roots);				
 				}	
 			} catch(ResolveError e) {
 				syntaxError(e.getMessage(),filename,dt,e);
@@ -524,8 +523,7 @@ public final class Resolver {
 		return myIndex;
 	}
 	
-	private int resolveAsType(NameID key, List<WhileyFile.Import> imports,
-			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots)
+	private int resolveAsType(NameID key, ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots)
 			throws ResolveError {
 		
 		// First, check the various caches we have
@@ -567,8 +565,8 @@ public final class Resolver {
 			Object data = Type.leafData((Type.Leaf)type);
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
-		} else {			
-			return resolveAsType(type,imports,states,roots,wf.filename,false);			
+		} else {						
+			return resolveAsType(type,buildImports(wf,td),states,roots,wf.filename,false);			
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the
