@@ -306,6 +306,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetComprehension_Valid_7_RuntimeTest() { runTest("SetComprehension_Valid_7"); }
  @Test public void SetConversion_Valid_1_RuntimeTest() { runTest("SetConversion_Valid_1"); }
  @Test public void SetDefine_Valid_1_RuntimeTest() { runTest("SetDefine_Valid_1"); }
+ @Test public void SetDifference_Valid_1_RuntimeTest() { runTest("SetDifference_Valid_1"); }
  @Test public void SetElemOf_Valid_1_RuntimeTest() { runTest("SetElemOf_Valid_1"); }
  @Test public void SetEmpty_Valid_1_RuntimeTest() { runTest("SetEmpty_Valid_1"); }
  @Test public void SetGenerator_Valid_1_RuntimeTest() { runTest("SetGenerator_Valid_1"); }
@@ -329,6 +330,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetUnion_Valid_7_RuntimeTest() { runTest("SetUnion_Valid_7"); }
  @Test public void SetUnion_Valid_8_RuntimeTest() { runTest("SetUnion_Valid_8"); }
  @Test public void SetUnion_Valid_9_RuntimeTest() { runTest("SetUnion_Valid_9"); }
+ @Test public void SingleLineComment_Valid_1_RuntimeTest() { runTest("SingleLineComment_Valid_1"); }
  @Test public void Subtype_Valid_3_RuntimeTest() { runTest("Subtype_Valid_3"); }
  @Test public void Subtype_Valid_4_RuntimeTest() { runTest("Subtype_Valid_4"); }
  @Test public void Subtype_Valid_5_RuntimeTest() { runTest("Subtype_Valid_5"); }
@@ -342,6 +344,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void String_Valid_4_RuntimeTest() { runTest("String_Valid_4"); }
  @Test public void String_Valid_5_RuntimeTest() { runTest("String_Valid_5"); }
  @Test public void String_Valid_6_RuntimeTest() { runTest("String_Valid_6"); }
+ @Test public void String_Valid_7_RuntimeTest() { runTest("String_Valid_7"); }
  @Test public void Switch_Valid_1_RuntimeTest() { runTest("Switch_Valid_1"); }
  @Test public void Switch_Valid_2_RuntimeTest() { runTest("Switch_Valid_2"); }
  @Test public void Switch_Valid_3_RuntimeTest() { runTest("Switch_Valid_3"); }
