@@ -43,8 +43,12 @@ public abstract class Nominal {
 			return new Tuple((Type.Tuple)nominal,(Type.Tuple)raw);			
 		} else if(raw instanceof Type.Set && nominal instanceof Type.Set) { 
 			return new Set((Type.Set)nominal,(Type.Set)raw);					
+		}  else if(raw instanceof Type.UnionOfSets && nominal instanceof Type.UnionOfSets) {
+			return new UnionOfSets((Type.UnionOfSets)nominal,(Type.UnionOfSets)raw);			
 		} else if(raw instanceof Type.List && nominal instanceof Type.List) {
 			return new List((Type.List)nominal,(Type.List)raw);			
+		} else if(raw instanceof Type.UnionOfLists && nominal instanceof Type.UnionOfLists) {
+			return new UnionOfLists((Type.UnionOfLists)nominal,(Type.UnionOfLists)raw);			
 		} else if(raw instanceof Type.Dictionary && nominal instanceof Type.Dictionary) {
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
 		} else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
