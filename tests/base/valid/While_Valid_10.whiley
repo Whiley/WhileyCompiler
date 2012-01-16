@@ -5,11 +5,8 @@ define LinkedList as null | {int data, LinkedList next}
 int sum(LinkedList l):
     r = 0
     while !(l is null):
-        // Note, following condition not strictly required.  
-        // But at time of writing this test case, it doesn't work!
-        if l != null:
-            r = r + l.data
-            l = l.next
+        r = r + l.data
+        l = l.next
     return r
 
 void ::main(System.Console sys):
