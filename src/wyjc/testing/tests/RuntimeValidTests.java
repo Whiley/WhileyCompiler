@@ -102,6 +102,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ConstrainedSet_Valid_2_RuntimeTest() { runTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RuntimeTest() { runTest("ConstrainedSet_Valid_3"); }
  @Test public void ConstrainedSet_Valid_4_RuntimeTest() { runTest("ConstrainedSet_Valid_4"); }
+ @Test public void DecimalAssignment_Valid_1_RuntimeTest() { runTest("DecimalAssignment_Valid_1"); }
  @Test public void Define_Valid_1_RuntimeTest() { runTest("Define_Valid_1"); }
  @Test public void Define_Valid_2_RuntimeTest() { runTest("Define_Valid_2"); }
  @Test public void Define_Valid_3_RuntimeTest() { runTest("Define_Valid_3"); }
@@ -148,6 +149,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
  @Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
  @Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
+ @Test public void HexAssign_Valid_1_RuntimeTest() { runTest("HexAssign_Valid_1"); }
  @Test public void IfElse_Valid_1_RuntimeTest() { runTest("IfElse_Valid_1"); }
  @Test public void IfElse_Valid_2_RuntimeTest() { runTest("IfElse_Valid_2"); }
  @Test public void IfElse_Valid_3_RuntimeTest() { runTest("IfElse_Valid_3"); }
@@ -157,6 +159,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Import_Valid_3_RuntimeTest() { runTest("Import_Valid_3"); }
  @Test public void Import_Valid_4_RuntimeTest() { runTest("Import_Valid_4"); }
  @Test public void Import_Valid_5_RuntimeTest() { runTest("Import_Valid_5"); }
+ @Test public void Import_Valid_6_RuntimeTest() { runTest("Import_Valid_6"); }
  @Ignore("Future Work") @Test public void Interface_Valid_1_RuntimeTest() { runTest("Interface_Valid_1"); }
  @Ignore("Future Work") @Test public void Intersection_Valid_1_RuntimeTest() { runTest("Intersection_Valid_1"); }
  @Ignore("Future Work") @Test public void Intersection_Valid_2_RuntimeTest() { runTest("Intersection_Valid_2"); }
@@ -218,6 +221,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void MethodRef_Valid_2_RuntimeTest() { runTest("MethodRef_Valid_2"); }
  @Test public void MessageRef_Valid_1_RuntimeTest() { runTest("MessageRef_Valid_1"); }
  @Test public void MessageRef_Valid_2_RuntimeTest() { runTest("MessageRef_Valid_2"); }
+ @Test public void MultiLineComment_Valid_1_RuntimeTest() { runTest("MultiLineComment_Valid_1"); }
+ @Test public void MultiLineComment_Valid_2_RuntimeTest() { runTest("MultiLineComment_Valid_2"); }
  @Test public void NegationType_Valid_1_RuntimeTest() { runTest("NegationType_Valid_1"); }
  @Test public void NegationType_Valid_2_RuntimeTest() { runTest("NegationType_Valid_2"); }
  @Ignore("Future Work") @Test public void NegationType_Valid_3_RuntimeTest() { runTest("NegationType_Valid_3"); }
@@ -246,6 +251,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Process_Valid_11_RuntimeTest() { runTest("Process_Valid_11"); }
  @Test public void Process_Valid_12_RuntimeTest() { runTest("Process_Valid_12"); }
  @Ignore("Known Issue") @Test public void Process_Valid_13_RuntimeTest() { runTest("Process_Valid_13"); }
+ @Test public void Real_Valid_1_RuntimeTest() { runTest("Real_Valid_1"); }
  @Test public void RealConst_Valid_1_RuntimeTest() { runTest("RealConst_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { runTest("RealDiv_Valid_2"); }
