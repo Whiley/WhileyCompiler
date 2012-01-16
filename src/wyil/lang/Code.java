@@ -116,7 +116,7 @@ public abstract class Code {
 		return get(new Destructure(from));
 	}
 	
-	public static DictLength DictLength(Type.Dictionary type) {
+	public static DictLength DictLength(Type.EffectiveDictionary type) {
 		return get(new DictLength(type));
 	}
 	
@@ -128,7 +128,7 @@ public abstract class Code {
 	 *            --- dictionary type.
 	 * @return
 	 */
-	public static DictLoad DictLoad(Type.Dictionary type) {
+	public static DictLoad DictLoad(Type.EffectiveDictionary type) {
 		return get(new DictLoad(type));
 	}
 	
@@ -839,9 +839,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class DictLength extends Code {				
-		public final Type.Dictionary type;
+		public final Type.EffectiveDictionary type;
 		
-		private DictLength(Type.Dictionary type) {
+		private DictLength(Type.EffectiveDictionary type) {
 			this.type = type;			
 		}
 		
@@ -863,7 +863,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("dictlength",type);
+			return toString("dictlength", (Type) type);
 		}
 	}
 	
@@ -876,9 +876,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class DictLoad extends Code {
-		public final Type.Dictionary type;				
+		public final Type.EffectiveDictionary type;				
 		
-		private DictLoad(Type.Dictionary type) {
+		private DictLoad(Type.EffectiveDictionary type) {
 			this.type = type;
 		}
 		
@@ -899,7 +899,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("dictload",type);
+			return toString("dictload", (Type) type);
 		}	
 	}	
 	
