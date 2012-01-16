@@ -419,4 +419,5 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Future Work") @Test public void While_Valid_7_RuntimeTest() { runTest("While_Valid_7"); }
  @Test public void While_Valid_8_RuntimeTest() { runTest("While_Valid_8"); }
  @Test public void While_Valid_9_RuntimeTest() { runTest("While_Valid_9"); }
+ @Test public void While_Valid_10_RuntimeTest() { runTest("While_Valid_10"); }
 }
