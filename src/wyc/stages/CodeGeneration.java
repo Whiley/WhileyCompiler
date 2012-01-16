@@ -1307,16 +1307,16 @@ public final class CodeGeneration {
 		
 		switch(bop) {		
 		case UNION:
-			blk.append(Code.SetUnion((Type.Set)result,Code.OpDir.UNIFORM),attributes(v));			
+			blk.append(Code.SetUnion((Type.EffectiveSet)result,Code.OpDir.UNIFORM),attributes(v));			
 			return blk;			
 		case INTERSECTION:
-			blk.append(Code.SetIntersect((Type.Set)result,Code.OpDir.UNIFORM),attributes(v));
+			blk.append(Code.SetIntersect((Type.EffectiveSet)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
 		case DIFFERENCE:
-			blk.append(Code.SetDifference((Type.Set)result,Code.OpDir.UNIFORM),attributes(v));
+			blk.append(Code.SetDifference((Type.EffectiveSet)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
 		case LISTAPPEND:
-			blk.append(Code.ListAppend((Type.List)result,Code.OpDir.UNIFORM),attributes(v));
+			blk.append(Code.ListAppend((Type.EffectiveList)result,Code.OpDir.UNIFORM),attributes(v));
 			return blk;	
 		case STRINGAPPEND:
 			Type lhs = v.lhs.result().raw();
