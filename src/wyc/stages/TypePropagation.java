@@ -680,23 +680,24 @@ public final class TypePropagation {
 
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal> old = null;
+		RefCountedHashMap<String,Nominal> tmp = null;
 		RefCountedHashMap<String,Nominal> orig = environment.clone();
 		do {
-			old = environment.clone();			
-			environment = join(orig.clone(),propagate(stmt.body,old,imports));			
+			old = environment.clone();
+			tmp = propagate(stmt.condition,true,old.clone(),imports).second();			
+			environment = join(orig.clone(),propagate(stmt.body,tmp,imports));			
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
-		
-		// Note, we must propagate the condition after finding the fixed-point.
-		// Otherwise, our environment will not be set properly.
-		
-		stmt.condition = propagate(stmt.condition,environment,imports);
-		checkIsSubtype(Type.T_BOOL,stmt.condition);			
 		
 		if (stmt.invariant != null) {
 			stmt.invariant = propagate(stmt.invariant, environment, imports);
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}		
+				
+		Pair<Expr,RefCountedHashMap<String,Nominal>> p = propagate(stmt.condition,false,environment,imports);
+		stmt.condition = p.first();
+		environment = p.second();
+		checkIsSubtype(Type.T_BOOL,stmt.condition);			
 		
 		return environment;
 	}
