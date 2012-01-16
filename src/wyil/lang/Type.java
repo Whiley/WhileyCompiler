@@ -1907,6 +1907,7 @@ public abstract class Type {
 			for(Type bound : union.bounds()) {
 				allRecords &= bound instanceof Record;				
 				allSets &= bound instanceof Set;
+				allLists &= bound instanceof List;
 			}
 			if(allLists) {
 				type = new UnionOfLists(automaton);
