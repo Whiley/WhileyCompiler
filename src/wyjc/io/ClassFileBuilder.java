@@ -1073,13 +1073,11 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {	
 		JvmType.Clazz srcType = (JvmType.Clazz) convertType(c.type);
 		Type elementType;
-		
-		// FIXME: following is broken because we need to use the effective type.
 
-		if (c.type instanceof Type.Set) {
-			elementType = ((Type.Set) c.type).element();
-		} else if(c.type instanceof Type.List) {
-			elementType = ((Type.List) c.type).element();
+		if (c.type instanceof Type.EffectiveSet) {
+			elementType = ((Type.EffectiveSet) c.type).element();
+		} else if(c.type instanceof Type.EffectiveList) {
+			elementType = ((Type.EffectiveList) c.type).element();
 		} else if(c.type instanceof Type.Dictionary) {
 			Type.Dictionary dict = (Type.Dictionary) c.type;
 			elementType = Type.Tuple(dict.key(),dict.value());
