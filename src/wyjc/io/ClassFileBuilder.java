@@ -662,8 +662,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));						
 			
-		} else if(Type.isSubtype(Type.List(Type.T_ANY, false),type)) {
-			Type.List list = Type.effectiveList(type);				
+		} else if(type instanceof Type.EffectiveList) {
+			Type.EffectiveList list = (Type.EffectiveList) type;				
 										
 			if(level != 0) {
 				bytecodes.add(new Bytecode.Dup(WHILEYLIST));											
@@ -2806,9 +2806,9 @@ public class ClassFileBuilder {
 			return WHILEYTYPE;
 		} else if(t instanceof Type.Strung) {
 			return JAVA_LANG_STRING;
-		} else if(t instanceof Type.List) {
+		} else if(t instanceof Type.EffectiveList) {
 			return WHILEYLIST;
-		} else if(t instanceof Type.Set) {
+		} else if(t instanceof Type.EffectiveSet) {
 			return WHILEYSET;
 		} else if(t instanceof Type.Dictionary) {
 			return WHILEYMAP;

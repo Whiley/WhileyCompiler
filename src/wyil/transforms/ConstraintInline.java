@@ -282,20 +282,20 @@ public class ConstraintInline implements Transform {
 		Block blk = new Block(0);
 		// TODO: mark as check block
 		blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
-		blk.append(Code.Store(code.type, freeSlot+1),attributes(elem));
+		blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
 		String falseLabel = Block.freshLabel();
 		String exitLabel = Block.freshLabel();
 		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
 		blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
 		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
 		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
+		blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
 		blk.append(Code.ListLength(code.type),attributes(elem));
 		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
 		blk.append(Code.Label(falseLabel),attributes(elem));
 		blk.append(Code.Fail("index out of bounds"),attributes(elem));
 		blk.append(Code.Label(exitLabel),attributes(elem));
-		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
+		blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
 		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
 		return blk;		
 	}

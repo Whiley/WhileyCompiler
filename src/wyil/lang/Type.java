@@ -595,55 +595,7 @@ public abstract class Type {
 	public static Type intersect(Type t1, Type t2) {
 		return TypeAlgorithms.intersect(t1,t2);
 	}
-
-	public static Set effectiveSet(Type t) {
-		if (t instanceof Type.Set) {
-			return (Type.Set) t;
-		} else if (t instanceof Type.Union) {			
-			Union ut = (Type.Union) t;
-			Set r = null;
-			for (Type b : ut.bounds()) {
-				if (!(b instanceof Set)) {
-					return null;
-				}
-				Set br = (Set) b;
-				if (r == null) {
-					r = br;
-				} else {
-					Type element = Union(r.element(),br.element());
-					boolean nonEmpty = r.nonEmpty() & br.nonEmpty();
-					r = (Set) Set(element,nonEmpty);					
-				}
-			}			
-			return r;
-		}
-		return null;
-	}
-	
-	public static List effectiveList(Type t) {
-		if (t instanceof Type.List) {
-			return (Type.List) t;
-		} else if (t instanceof Type.Union) {			
-			Union ut = (Type.Union) t;
-			List r = null;			
-			for (Type b : ut.bounds()) {
-				if (!(b instanceof List)) {
-					return null;
-				}
-				List br = (List) b;
-				if (r == null) {
-					r = br;
-				} else {
-					Type element = Union(r.element(),br.element());
-					boolean nonEmpty = r.nonEmpty() & br.nonEmpty();
-					r = (List) List(element,nonEmpty);
-				}
-			}			
-			return r;
-		}
-		return null;
-	}
-	
+		
 	public static Dictionary effectiveDictionary(Type t) {
 		if (t instanceof Type.Dictionary) {
 			return (Type.Dictionary) t;
@@ -1037,12 +989,8 @@ public abstract class Type {
 			int elemIdx = automaton.states[0].children[0];
 			return construct(Automata.extract(automaton,elemIdx));			
 		}
-		boolean nonEmpty() {
+		public boolean nonEmpty() {
 			return (Boolean) automaton.states[0].data;
-		}
-
-		public Set update(Type type) {
-			return Type.Set(Type.Union(type, element()), nonEmpty());
 		}
 	}
 
@@ -1059,11 +1007,8 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveSet {
-		
-		public Type element();
-		
-		public EffectiveSet update(Type type);
+	public interface EffectiveSet {		
+		public Type element();		
 	}
 	
 	/**
@@ -1104,7 +1049,7 @@ public abstract class Type {
 			return construct(Automata.extract(automaton,elemIdx));	
 		}
 		
-		boolean nonEmpty() {
+		public boolean nonEmpty() {
 			return (Boolean) automaton.states[0].data;
 		}
 		
@@ -1314,23 +1259,6 @@ public abstract class Type {
 				}
 			}
 			return r;
-		}
-
-		public EffectiveSet update(Type type) {
-			HashSet<Type> nbounds = new HashSet<Type>();
-			HashSet<Type.Set> bounds = (HashSet) bounds();
-			for(Type.Set bound : bounds) {
-				nbounds.add(bound.update(type));
-			}			
-			
-			// we can only safely return an EffectiveSet here since an update
-			// can fold multiple lists into one.  For example:
-			//
-			// {int}|{real} 
-			//
-			// assigning type any into this yields {any}
-			
-			return (EffectiveSet) Type.Union(nbounds);
 		}
 	}
 	

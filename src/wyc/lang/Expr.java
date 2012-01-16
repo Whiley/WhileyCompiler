@@ -295,7 +295,7 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class ListAccess extends AbstractIndexAccess {					
-		public Nominal.List srcType;		
+		public Nominal.EffectiveList srcType;		
 
 		public ListAccess(Expr src, Expr index, Attribute... attributes) {
 			super(src,index,attributes);
@@ -414,7 +414,7 @@ public interface Expr extends SyntacticElement {
 		public Expr src;
 		public Expr start;
 		public Expr end;	
-		public Nominal.List type;
+		public Nominal.EffectiveList type;
 		
 		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
 			super(attributes);
@@ -430,8 +430,8 @@ public interface Expr extends SyntacticElement {
 			this.end = end;
 		}
 		
-		public Nominal.List result() {
-			return type;
+		public Nominal result() {
+			return (Nominal) type;
 		}		
 	}
 	
@@ -902,7 +902,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class SetLength extends AbstractLength {
-		public Nominal.Set srcType;
+		public Nominal.EffectiveSet srcType;
 		
 		public SetLength(Expr src, Attribute... attributes) {
 			super(src,attributes);
@@ -914,7 +914,7 @@ public interface Expr extends SyntacticElement {
 	}		
 	
 	public static class ListLength extends AbstractLength {		
-		public Nominal.List srcType;
+		public Nominal.EffectiveList srcType;
 		
 		public ListLength(Expr src, Attribute... attributes) {
 			super(src,attributes);

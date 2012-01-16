@@ -477,14 +477,14 @@ public final class TypePropagation {
 		
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];		
 		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {			
-			Nominal.List lt = resolver.expandAsList(stmt.source.result());
+			Nominal.EffectiveList lt = resolver.expandAsEffectiveList(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = lt.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}			
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
-			Nominal.Set st = resolver.expandAsSet(stmt.source.result());
+			Nominal.EffectiveSet st = resolver.expandAsEffectiveSet(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = st.element();
 			} else {
@@ -743,7 +743,7 @@ public final class TypePropagation {
 					return new Expr.StringAccess(src,index,lval.attributes());
 				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
 					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
-					la.srcType = resolver.expandAsList(src.result()); 			
+					la.srcType = resolver.expandAsEffectiveList(src.result()); 			
 					return la;
 				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
@@ -946,8 +946,8 @@ public final class TypePropagation {
 			bop.srcType = lhs.result();
 			break;
 		case ELEMENTOF:			
-			Type.List listType = Type.effectiveList(rhsRawType);
-			Type.Set setType = Type.effectiveSet(rhsRawType);
+			Type.EffectiveList listType = rhsRawType instanceof Type.EffectiveList ? (Type.EffectiveList) rhsRawType : null;
+			Type.EffectiveSet setType = rhsRawType instanceof Type.EffectiveSet ? (Type.EffectiveSet) rhsRawType : null;			
 			
 			if (listType != null && !Type.isImplicitCoerciveSubtype(listType.element(), lhsRawType)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,listType.element()),
@@ -1145,7 +1145,7 @@ public final class TypePropagation {
 			case ADD:
 				expr.op = Expr.BOp.LISTAPPEND;
 			case LISTAPPEND:				
-				srcType = Type.effectiveList(Type.Union(lhsRawType,rhsRawType));
+				srcType = Type.Union(lhsRawType,rhsRawType);
 				break;
 			default:
 				syntaxError("invalid list operation: " + expr.op,filename,expr);	
@@ -1159,12 +1159,12 @@ public final class TypePropagation {
 			// this.  Perhaps effectiveSetType?
 			
 			if(lhs_list) {
-				 Type.List tmp = Type.effectiveList(lhsRawType);
+				 Type.EffectiveList tmp = (Type.EffectiveList) lhsRawType;
 				 lhsRawType = Type.Set(tmp.element(),false);
 			} 
 			
 			if(rhs_list) {
-				 Type.List tmp = Type.effectiveList(rhsRawType);
+				 Type.EffectiveList tmp = (Type.EffectiveList) rhsRawType;
 				 rhsRawType = Type.Set(tmp.element(),false);
 			}  
 			
@@ -1172,17 +1172,17 @@ public final class TypePropagation {
 				case ADD:																				
 					expr.op = Expr.BOp.UNION;					
 				case UNION:
-					srcType = Type.effectiveSet(Type.Union(lhsRawType,rhsRawType));					
+					srcType = Type.Union(lhsRawType,rhsRawType);					
 					break;
 				case BITWISEAND:																				
 					expr.op = Expr.BOp.INTERSECTION;
 				case INTERSECTION:
-					srcType = Type.effectiveSet(Type.intersect(lhsRawType,rhsRawType));
+					srcType = Type.intersect(lhsRawType,rhsRawType);
 					break;
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
 				case DIFFERENCE:
-					srcType = Type.effectiveSet(lhsRawType);
+					srcType = lhsRawType;
 					break;								
 				default:
 					syntaxError("invalid set operation: " + expr.op,filename,expr);	
@@ -1293,8 +1293,8 @@ public final class TypePropagation {
 			sources.set(i,p);
 			Nominal element;
 			Nominal type = e.result();
-			Nominal.List listType = resolver.expandAsList(type);
-			Nominal.Set setType = resolver.expandAsSet(type);
+			Nominal.EffectiveList listType = resolver.expandAsEffectiveList(type);
+			Nominal.EffectiveSet setType = resolver.expandAsEffectiveSet(type);
 			if(listType != null) {
 				element = listType.element();
 			} else if(setType != null) {
@@ -1572,7 +1572,7 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_INT,expr.index);				
 		} else if(expr instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) expr; 
-			Nominal.List list = resolver.expandAsList(srcType);			
+			Nominal.EffectiveList list = resolver.expandAsEffectiveList(srcType);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
 			}
@@ -1633,14 +1633,14 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_STRING,expr.src);								
 		} else if(expr instanceof Expr.ListLength) {
 			Expr.ListLength ll = (Expr.ListLength) expr; 
-			Nominal.List list = resolver.expandAsList(srcType);			
+			Nominal.EffectiveList list = resolver.expandAsEffectiveList(srcType);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,expr);				
 			}
 			ll.srcType = list;
 		} else if(expr instanceof Expr.SetLength) {
 			Expr.SetLength sl = (Expr.SetLength) expr; 
-			Nominal.Set set = resolver.expandAsSet(srcType);			
+			Nominal.EffectiveSet set = resolver.expandAsEffectiveSet(srcType);			
 			if(set == null) {
 				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,expr);				
 			}
@@ -1816,7 +1816,7 @@ public final class TypePropagation {
 		checkIsSubtype(Type.T_INT,expr.start);
 		checkIsSubtype(Type.T_INT,expr.end);
 		
-		expr.type = resolver.expandAsList(expr.src.result());
+		expr.type = resolver.expandAsEffectiveList(expr.src.result());
 		if(expr.type == null) {
 			// must be a substring
 			return new Expr.SubString(expr.src,expr.start,expr.end,expr.attributes());

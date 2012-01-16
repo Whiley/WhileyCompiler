@@ -202,7 +202,7 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
-	public static ListLength ListLength(Type.List type) {
+	public static ListLength ListLength(Type.EffectiveList type) {
 		return get(new ListLength(type));
 	}
 	
@@ -221,11 +221,11 @@ public abstract class Code {
 		return get(new Move(type,reg));
 	}
 	
-	public static SubList SubList(Type.List type) {
+	public static SubList SubList(Type.EffectiveList type) {
 		return get(new SubList(type));
 	}
 	
-	public static ListAppend ListAppend(Type.List type, OpDir dir) {
+	public static ListAppend ListAppend(Type.EffectiveList type, OpDir dir) {
 		return get(new ListAppend(type,dir));
 	}
 	
@@ -237,7 +237,7 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static ListLoad ListLoad(Type.List type) {
+	public static ListLoad ListLoad(Type.EffectiveList type) {
 		return get(new ListLoad(type));
 	}
 
@@ -370,19 +370,19 @@ public abstract class Code {
 	
 	public static final Skip Skip = new Skip();
 	
-	public static SetLength SetLength(Type.Set type) {
+	public static SetLength SetLength(Type.EffectiveSet type) {
 		return get(new SetLength(type));
 	}
 	
-	public static SetUnion SetUnion(Type.Set type, OpDir dir) {
+	public static SetUnion SetUnion(Type.EffectiveSet type, OpDir dir) {
 		return get(new SetUnion(type,dir));
 	}
 	
-	public static SetIntersect SetIntersect(Type.Set type, OpDir dir) {
+	public static SetIntersect SetIntersect(Type.EffectiveSet type, OpDir dir) {
 		return get(new SetIntersect(type,dir));
 	}
 	
-	public static SetDifference SetDifference(Type.Set type, OpDir dir) {
+	public static SetDifference SetDifference(Type.EffectiveSet type, OpDir dir) {
 		return get(new SetDifference(type,dir));
 	}
 	
@@ -1482,9 +1482,9 @@ public abstract class Code {
 	 */
 	public static final class ListAppend extends Code {				
 		public final OpDir dir;
-		public final Type.List type;
+		public final Type.EffectiveList type;
 		
-		private ListAppend(Type.List type, OpDir dir) {			
+		private ListAppend(Type.EffectiveList type, OpDir dir) {			
 			if(dir == null) {
 				throw new IllegalArgumentException("ListAppend direction cannot be null");
 			}			
@@ -1511,7 +1511,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("listappend" + dir.toString(),type);
+			return toString("listappend" + dir.toString(), (Type) type);
 		}
 	}
 
@@ -1522,9 +1522,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class ListLength extends Code {						
-		public final Type.List type;
+		public final Type.EffectiveList type;
 		
-		private ListLength(Type.List type) {									
+		private ListLength(Type.EffectiveList type) {									
 			this.type = type;			
 		}
 		
@@ -1546,14 +1546,14 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("listlength",type);
+			return toString("listlength", (Type) type);
 		}
 	}
 	
 	public static final class SubList extends Code {						
-		public final Type.List type;
+		public final Type.EffectiveList type;
 		
-		private SubList(Type.List type) {									
+		private SubList(Type.EffectiveList type) {									
 			this.type = type;			
 		}
 		
@@ -1575,7 +1575,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("sublist",type);
+			return toString("sublist", (Type) type);
 		}
 	}
 
@@ -1587,9 +1587,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class ListLoad extends Code {
-		public final Type.List type;				
+		public final Type.EffectiveList type;				
 		
-		private ListLoad(Type.List type) {
+		private ListLoad(Type.EffectiveList type) {
 			this.type = type;
 		}
 		
@@ -1610,7 +1610,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("listload",type);
+			return toString("listload", (Type) type);
 		}	
 	}
 
@@ -1862,13 +1862,13 @@ public abstract class Code {
 	public static final class ListLVal extends LVal {
 		public ListLVal(Type t) {
 			super(t);
-			if(Type.effectiveList(t) == null) {
-				throw new IllegalArgumentException("Invalid List Type");
+			if(!(t instanceof Type.EffectiveList)) {
+				throw new IllegalArgumentException("invalid List Type");
 			}
 		}
 		
-		public Type.List type() {
-			return Type.effectiveList(type);
+		public Type.EffectiveList type() {
+			return (Type.EffectiveList) type;
 		}
 	}
 	
@@ -1885,8 +1885,8 @@ public abstract class Code {
 			}
 		}
 		
-		public Type.List type() {
-			return Type.effectiveList(type);
+		public Type.Reference type() {
+			return Type.effectiveReference(type);
 		}
 	}
 	
@@ -1945,8 +1945,8 @@ public abstract class Code {
 				Type.Reference proc = Type.effectiveReference(iter);											
 				iter = proc.element();
 				return new ReferenceLVal(raw);
-			} else if(Type.isSubtype(Type.List(Type.T_ANY,false),iter)) {			
-				Type.List list = Type.effectiveList(iter);											
+			} else if(iter instanceof Type.EffectiveList) {			
+				Type.EffectiveList list = (Type.EffectiveList) iter;											
 				iter = list.element();
 				return new ListLVal(raw);
 			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
@@ -2032,8 +2032,8 @@ public abstract class Code {
 				} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
 					Type.Reference proc = Type.effectiveReference(iter);
 					iter = proc.element();
-				} else if (Type.isSubtype(Type.List(Type.T_ANY,false), iter)) {
-					Type.List list = Type.effectiveList(iter);
+				} else if (iter instanceof Type.EffectiveList) {
+					Type.EffectiveList list = (Type.EffectiveList) iter;
 					iter = list.element();
 				} else if (Type.isSubtype(
 						Type.Dictionary(Type.T_ANY, Type.T_ANY), iter)) {
@@ -2379,9 +2379,9 @@ public abstract class Code {
 	
 	public static final class SetUnion extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Type.EffectiveSet type;
 		
-		private SetUnion(Type.Set type, OpDir dir) {
+		private SetUnion(Type.EffectiveSet type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -2408,15 +2408,15 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("union" + dir.toString(),type);
+			return toString("union" + dir.toString(), (Type) type);
 		}
 	}
 	
 	public static final class SetIntersect extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Type.EffectiveSet type;
 		
-		private SetIntersect(Type.Set type, OpDir dir) {
+		private SetIntersect(Type.EffectiveSet type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -2443,15 +2443,15 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("intersect" + dir.toString(),type);
+			return toString("intersect" + dir.toString(), (Type) type);
 		}
 	}
 	
 	public static final class SetDifference extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Type.EffectiveSet type;
 		
-		private SetDifference(Type.Set type, OpDir dir) {
+		private SetDifference(Type.EffectiveSet type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -2478,14 +2478,14 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("difference" + dir.toString(),type);
+			return toString("difference" + dir.toString(), (Type) type);
 		}
 	}
 	
 	public static final class SetLength extends Code {				
-		public final Type.Set type;
+		public final Type.EffectiveSet type;
 		
-		private SetLength(Type.Set type) {
+		private SetLength(Type.EffectiveSet type) {
 			this.type = type;			
 		}
 		
@@ -2507,7 +2507,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("setlength",type);
+			return toString("setlength", (Type) type);
 		}
 	}
 	

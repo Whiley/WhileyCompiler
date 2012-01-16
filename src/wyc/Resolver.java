@@ -627,27 +627,27 @@ public final class Resolver {
 	// expandAsType
 	// =========================================================================	
 
-	public Nominal.Set expandAsSet(Nominal lhs) throws ResolveError {
-		Type.Set raw = Type.effectiveSet(lhs.raw());
-		if(raw != null) {
+	public Nominal.EffectiveSet expandAsEffectiveSet(Nominal lhs) throws ResolveError {
+		Type raw = lhs.raw();
+		if(raw instanceof Type.EffectiveSet) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.Set)) {
+			if(!(nominal instanceof Type.EffectiveSet)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.Set) Nominal.construct(nominal,raw);
+			return (Nominal.EffectiveSet) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}
 	}
 
-	public Nominal.List expandAsList(Nominal lhs) throws ResolveError {
-		Type.List raw = Type.effectiveList(lhs.raw());
-		if(raw != null) {
+	public Nominal.EffectiveList expandAsEffectiveList(Nominal lhs) throws ResolveError {
+		Type raw = lhs.raw();
+		if(raw instanceof Type.EffectiveList) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.List)) {
+			if(!(nominal instanceof Type.EffectiveList)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.List) Nominal.construct(nominal,raw);
+			return (Nominal.EffectiveList) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}

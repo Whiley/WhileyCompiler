@@ -379,16 +379,17 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Code.ListAppend code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		coerceAfter(req,code.type,index,entry);
+		Type codeType = (Type) code.type;
+		coerceAfter(req,codeType,index,entry);
 		if(code.dir == OpDir.UNIFORM) { 
-			environment.push(code.type);
-			environment.push(code.type);
+			environment.push(codeType);
+			environment.push(codeType);
 		} else if(code.dir == OpDir.LEFT) {
-			environment.push(code.type);
+			environment.push(codeType);
 			environment.push(code.type.element());					
 		} else {					
 			environment.push(code.type.element());
-			environment.push(code.type);
+			environment.push(codeType);
 		}
 	}
 	
@@ -396,14 +397,15 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {		
 		Type req = environment.pop();
 		coerceAfter(req,Type.T_INT,index,entry);
-		environment.push(code.type);
+		environment.push((Type) code.type);
 	}
 	
 	private void infer(int index, Code.SubList code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		coerceAfter(req,code.type,index,entry);
-		environment.push(code.type);
+		Type codeType = (Type) code.type;
+		coerceAfter(req,codeType,index,entry);
+		environment.push(codeType);
 		environment.push(Type.T_INT);
 		environment.push(Type.T_INT);
 	}
@@ -412,7 +414,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {
 		Type req = environment.pop();
 		coerceAfter(req,code.type.element(),index,entry);		
-		environment.push(code.type);
+		environment.push((Type) code.type);
 		environment.push(Type.T_INT);				
 	}
 	
@@ -570,47 +572,47 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Code.SetUnion code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		
-		coerceAfter(req,code.type,index,entry);
+		Type codeType = (Type) code.type;
+		coerceAfter(req,codeType,index,entry);
 		if(code.dir == OpDir.UNIFORM) { 
-			environment.push(code.type);
-			environment.push(code.type);
+			environment.push(codeType);
+			environment.push(codeType);
 		} else if(code.dir == OpDir.LEFT) {
-			environment.push(code.type);
+			environment.push(codeType);
 			environment.push(code.type.element());					
 		} else {					
 			environment.push(code.type.element());
-			environment.push(code.type);
+			environment.push(codeType);
 		}
 	}
 
 	private void infer(int index, Code.SetIntersect code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		
-		coerceAfter(req,code.type,index,entry);
+		Type codeType = (Type) code.type;
+		coerceAfter(req,codeType,index,entry);
 		if(code.dir == OpDir.UNIFORM) { 
-			environment.push(code.type);
-			environment.push(code.type);
+			environment.push(codeType);
+			environment.push(codeType);
 		} else if(code.dir == OpDir.LEFT) {
-			environment.push(code.type);
+			environment.push(codeType);
 			environment.push(code.type.element());					
 		} else {					
 			environment.push(code.type.element());
-			environment.push(code.type);
+			environment.push(codeType);
 		}
 	}
 	
 	private void infer(int index, Code.SetDifference code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		
-		coerceAfter(req,code.type,index,entry);
+		Type codeType = (Type) code.type;
+		coerceAfter(req,codeType,index,entry);
 		if(code.dir == OpDir.UNIFORM) { 
-			environment.push(code.type);
-			environment.push(code.type);
+			environment.push(codeType);
+			environment.push(codeType);
 		} else {
-			environment.push(code.type);
+			environment.push(codeType);
 			environment.push(code.type.element());					
 		} 
 	}
@@ -619,7 +621,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {		
 		Type req = environment.pop();
 		coerceAfter(req,Type.T_INT,index,entry);
-		environment.push(code.type);						
+		environment.push((Type) code.type);						
 	}
 	
 	private void infer(int index, Code.StringAppend code, Block.Entry entry,
