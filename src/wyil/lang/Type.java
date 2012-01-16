@@ -1029,7 +1029,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Set extends Compound  {
+	public static final class Set extends Compound implements EffectiveSet {
 		private Set(Automaton automaton) {
 			super(automaton);
 		}
@@ -1040,8 +1040,52 @@ public abstract class Type {
 		boolean nonEmpty() {
 			return (Boolean) automaton.states[0].data;
 		}
+
+		public Set update(Type type) {
+			return Type.Set(Type.Union(type, element()), nonEmpty());
+		}
 	}
 
+	/**
+	 * A type which is either a set, or a union of sets. An effective set gives
+	 * access to an effective element type, which is the union of possible
+	 * element types.
+	 * 
+	 * <pre>
+	 * {int} | {real}
+	 * </pre>
+	 * 
+	 * Here, the effective element type is int|real.
+	 * 
+	 * @return
+	 */
+	public interface EffectiveSet {
+		
+		public Type element();
+		
+		public EffectiveSet update(Type type);
+	}
+	
+	/**
+	 * A type which is either a list, or a union of lists. An effective list
+	 * gives access to an effective element type, which is the union of possible
+	 * element types.
+	 * 
+	 * <pre>
+	 * [int] | [real]
+	 * </pre>
+	 * 
+	 * Here, the effective element type is int|real.  
+	 * 
+	 * @return
+	 */
+	public interface EffectiveList {
+		
+		public Type element();
+		
+		public EffectiveList update(Type type);
+	}
+	
 	/**
 	 * A list type describes list values whose elements are subtypes of the
 	 * element type. For example, <code>[1,2,3]</code> is an instance of list
@@ -1050,7 +1094,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class List extends Compound  {
+	public static final class List extends Compound implements EffectiveList {
 		private List(Automaton automaton) {
 			super(automaton);
 		}
@@ -1062,6 +1106,10 @@ public abstract class Type {
 		
 		boolean nonEmpty() {
 			return (Boolean) automaton.states[0].data;
+		}
+		
+		public List update(Type type) {
+			return Type.List(Type.Union(type, element()), nonEmpty());
 		}
 	}
 
@@ -1248,6 +1296,82 @@ public abstract class Type {
 		}
 	}
 
+	public static final class UnionOfSets extends Union implements
+	EffectiveSet {
+		private UnionOfSets(Automaton automaton) {
+			super(automaton);
+		}
+
+		public Type element() {
+			Type r = null;
+			HashSet<Type.List> bounds = (HashSet) bounds();
+			for(Type.List bound : bounds) {
+				Type t = bound.element();
+				if(r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r,t);
+				}
+			}
+			return r;
+		}
+
+		public EffectiveSet update(Type type) {
+			HashSet<Type> nbounds = new HashSet<Type>();
+			HashSet<Type.Set> bounds = (HashSet) bounds();
+			for(Type.Set bound : bounds) {
+				nbounds.add(bound.update(type));
+			}			
+			
+			// we can only safely return an EffectiveSet here since an update
+			// can fold multiple lists into one.  For example:
+			//
+			// {int}|{real} 
+			//
+			// assigning type any into this yields {any}
+			
+			return (EffectiveSet) Type.Union(nbounds);
+		}
+	}
+	
+	public static final class UnionOfLists extends Union implements
+			EffectiveList {
+		private UnionOfLists(Automaton automaton) {
+			super(automaton);
+		}
+		
+		public Type element() {
+			Type r = null;
+			HashSet<Type.List> bounds = (HashSet) bounds();
+			for(Type.List bound : bounds) {
+				Type t = bound.element();
+				if(r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r,t);
+				}
+			}
+			return r;
+		}
+		
+		public EffectiveList update(Type type) {
+			HashSet<Type> nbounds = new HashSet<Type>();
+			HashSet<Type.List> bounds = (HashSet) bounds();
+			for(Type.List bound : bounds) {
+				nbounds.add(bound.update(type));
+			}			
+			
+			// we can only safely return an EffectiveList here since an update
+			// can fold multiple lists into one.  For example:
+			//
+			// [int]|[real] 
+			//
+			// assigning type any into this yields [any]
+			
+			return (EffectiveList) Type.Union(nbounds);
+		}
+	}
+	
 	public static final class UnionOfRecords extends Union implements
 			EffectiveRecord {
 		private UnionOfRecords(Automaton automaton) {
@@ -1848,12 +1972,17 @@ public abstract class Type {
 			type = new Record(automaton);
 			break;
 		case K_UNION: {
-			boolean allRecords = true;			
+			boolean allRecords = true;
+			boolean allLists = true;
+			boolean allSets = true;
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
 				allRecords &= bound instanceof Record;				
+				allSets &= bound instanceof Set;
 			}
-			if(allRecords) {
+			if(allLists) {
+				type = new UnionOfLists(automaton);
+			} else if(allRecords) {
 				type = new UnionOfRecords(automaton);
 			} else {
 				type = union;
