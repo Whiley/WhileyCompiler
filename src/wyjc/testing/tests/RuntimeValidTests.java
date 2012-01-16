@@ -118,6 +118,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_9_RuntimeTest() { runTest("Dictionary_Valid_9"); }
  @Test public void Dictionary_Valid_10_RuntimeTest() { runTest("Dictionary_Valid_10"); }
  @Test public void Dictionary_Valid_11_RuntimeTest() { runTest("Dictionary_Valid_11"); }
+ @Test public void Dictionary_Valid_12_RuntimeTest() { runTest("Dictionary_Valid_12"); }
+ @Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
  @Test public void DoWhile_Valid_1_RuntimeTest() { runTest("DoWhile_Valid_1"); }
  @Test public void DoWhile_Valid_2_RuntimeTest() { runTest("DoWhile_Valid_2"); }
  @Ignore("Future Work") @Test public void DoWhile_Valid_3_RuntimeTest() { runTest("DoWhile_Valid_3"); }
@@ -149,6 +151,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
  @Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
  @Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
+ @Test public void FunctionRef_Valid_10_RuntimeTest() { runTest("FunctionRef_Valid_10"); }
  @Test public void HexAssign_Valid_1_RuntimeTest() { runTest("HexAssign_Valid_1"); }
  @Test public void IfElse_Valid_1_RuntimeTest() { runTest("IfElse_Valid_1"); }
  @Test public void IfElse_Valid_2_RuntimeTest() { runTest("IfElse_Valid_2"); }
@@ -363,6 +366,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TupleType_Valid_3_RuntimeTest() { runTest("TupleType_Valid_3"); }
  @Test public void TupleType_Valid_4_RuntimeTest() { runTest("TupleType_Valid_4"); }
  @Test public void TupleType_Valid_5_RuntimeTest() { runTest("TupleType_Valid_5"); }
+ @Test public void TupleType_Valid_6_RuntimeTest() { runTest("TupleType_Valid_6"); }
+ @Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); }
  @Test public void TypeEquals_Valid_1_RuntimeTest() { runTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_RuntimeTest() { runTest("TypeEquals_Valid_2"); }
  @Test public void TypeEquals_Valid_3_RuntimeTest() { runTest("TypeEquals_Valid_3"); }

@@ -65,7 +65,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 			}
 			firstTime=false;
 			Object val = get(key);			
-			r = r + whiley.lang.Any$native.toString(key) + "->" + val;
+			r = r + whiley.lang.Any$native.toString(key) + "=>" + val;
 		}
 		return r + "}";
 	} 
