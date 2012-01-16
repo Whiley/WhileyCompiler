@@ -561,8 +561,7 @@ public final class TypePropagation {
 			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment,imports);		
 		} 
 		
-		// Finally, join results back together
-		
+		// Finally, join results back together		
 		return join(trueEnvironment,falseEnvironment);							
 	}
 	
@@ -583,7 +582,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Skip stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ArrayList<WhileyFile.Import> imports) {
+			ArrayList<WhileyFile.Import> imports) {		
 		return environment;
 	}
 	
@@ -904,7 +903,7 @@ public final class TypePropagation {
 				Type testRawType = tv.type.raw();					
 				Nominal glb = Nominal.intersect(lhs.result(), tv.type);	
 				
-				if(Type.isSubtype(testRawType,lhsRawType)) {								
+				if(Type.isSubtype(testRawType,lhsRawType)) {					
 					// DEFINITE TRUE CASE										
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, bop);
 				} else if (glb.raw() == Type.T_VOID) {				
@@ -920,9 +919,9 @@ public final class TypePropagation {
 					Nominal newType;
 					if(sign) {
 						newType = glb;
-					} else {
+					} else {						
 						newType = Nominal.intersect(lhs.result(), Nominal.Negation(tv.type));						
-					}					
+					}										
 					environment = environment.put(lv.var,newType);
 				}
 			} else {
@@ -1242,6 +1241,12 @@ public final class TypePropagation {
 	private Expr propagate(Expr.UnOp expr,
 			RefCountedHashMap<String,Nominal> environment,
 			ArrayList<WhileyFile.Import> imports) throws ResolveError {
+		
+		if(expr.op == Expr.UOp.NOT) {
+			// hand off to special method for conditions
+			return propagate(expr,true,environment,imports).first();	
+		}
+		
 		Expr src = propagate(expr.mhs, environment, imports);
 		expr.mhs = src;
 		
@@ -1252,8 +1257,7 @@ public final class TypePropagation {
 		case INVERT:
 			checkIsSubtype(Type.T_BYTE,src);
 			break;
-		case NOT:
-			return propagate(expr,true,environment,imports).first();		
+				
 		default:		
 			internalFailure(
 					"unknown operator: " + expr.op.getClass().getName(),
