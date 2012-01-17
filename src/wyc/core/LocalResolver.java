@@ -12,7 +12,7 @@ import java.util.List;
 import wyc.lang.*;
 import wyc.util.Context;
 import wyc.util.Nominal;
-import wyc.util.RefCountedHashMap;
+import wyc.util.Environment;
 import wyc.util.Nominal.EffectiveDictionary;
 import wyc.util.Nominal.EffectiveList;
 import wyc.util.Nominal.EffectiveRecord;
@@ -35,11 +35,12 @@ import wyil.util.SyntaxError;
 
 /**
  * <p>
- * An expression typer is responsible for typing expressions in a given context.
- * The context varies and may represent an expression within a statement, or
- * within some global declaration (e.g. a constant or type definition). The key
- * point is that a local expression typer doesn't really care about the context
- * --- it just gets on with typing expressions.
+ * A local resolver is responsible for typing and resolving names for
+ * expressions in a given context. The context varies and may represent an
+ * expression within a statement, or within some global declaration (e.g. a
+ * constant or type definition). The key point is that a local expression typer
+ * doesn't really care about the context --- it just gets on with typing
+ * expressions.
  * </p>
  * <p>
  * The context must include the Whiley source file which contains the
@@ -91,9 +92,9 @@ public final class LocalResolver {
 		return context;
 	}
 	
-	public Pair<Expr, RefCountedHashMap<String, Nominal>> propagate(
+	public Pair<Expr, Environment> propagate(
 			Expr expr, boolean sign,
-			RefCountedHashMap<String, Nominal> environment) {
+			Environment environment) {
 		
 		if(expr instanceof Expr.UnOp) {
 			return propagate((Expr.UnOp)expr,sign,environment);		
@@ -107,13 +108,13 @@ public final class LocalResolver {
 		}		
 	}
 	
-	private Pair<Expr, RefCountedHashMap<String, Nominal>> propagate(
+	private Pair<Expr, Environment> propagate(
 			Expr.UnOp expr,
 			boolean sign,
-			RefCountedHashMap<String, Nominal> environment) {
+			Environment environment) {
 		Expr.UnOp uop = (Expr.UnOp) expr; 
 		if(uop.op == Expr.UOp.NOT) { 
-			Pair<Expr,RefCountedHashMap<String, Nominal>> p = propagate(uop.mhs,!sign,environment);
+			Pair<Expr,Environment> p = propagate(uop.mhs,!sign,environment);
 			uop.mhs = p.first();			
 			checkIsSubtype(Type.T_BOOL,uop.mhs);
 			uop.type = Nominal.T_BOOL;
@@ -124,10 +125,10 @@ public final class LocalResolver {
 		}	
 	}
 	
-	private Pair<Expr, RefCountedHashMap<String, Nominal>> propagate(
+	private Pair<Expr, Environment> propagate(
 			Expr.BinOp bop,
 			boolean sign,
-			RefCountedHashMap<String, Nominal> environment) {		
+			Environment environment) {		
 		Expr.BOp op = bop.op;
 		
 		switch (op) {
@@ -152,12 +153,12 @@ public final class LocalResolver {
 		}		
 	}
 	
-	private Pair<Expr, RefCountedHashMap<String, Nominal>> propagateNonLeafCondition(
+	private Pair<Expr, Environment> propagateNonLeafCondition(
 			Expr.BinOp bop,
 			boolean sign,
-			RefCountedHashMap<String, Nominal> environment) {
+			Environment environment) {
 		Expr.BOp op = bop.op;
-		Pair<Expr,RefCountedHashMap<String, Nominal>> p;
+		Pair<Expr,Environment> p;
 		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
 		
 		if(followOn) {			
@@ -170,7 +171,7 @@ public final class LocalResolver {
 			// We could do better here
 			p = propagate(bop.lhs,sign,environment.clone());
 			bop.lhs = p.first();
-			RefCountedHashMap<String, Nominal> local = p.second();
+			Environment local = p.second();
 			// Recompue the lhs assuming that it is false. This is necessary to
 			// generate the right environment going into the rhs, which is only
 			// evaluated if the lhs is false.  For example:
@@ -193,13 +194,13 @@ public final class LocalResolver {
 		checkIsSubtype(Type.T_BOOL,bop.rhs);	
 		bop.srcType = Nominal.T_BOOL;
 		
-		return new Pair<Expr,RefCountedHashMap<String, Nominal>>(bop,environment);
+		return new Pair<Expr,Environment>(bop,environment);
 	}
 	
-	private Pair<Expr, RefCountedHashMap<String, Nominal>> propagateLeafCondition(
+	private Pair<Expr, Environment> propagateLeafCondition(
 			Expr.BinOp bop,
 			boolean sign,
-			RefCountedHashMap<String, Nominal> environment) {
+			Environment environment) {
 		Expr.BOp op = bop.op;
 		
 		Expr lhs = propagate(bop.lhs,environment);
@@ -331,7 +332,7 @@ public final class LocalResolver {
 	}
 	
 	public Expr propagate(Expr expr,
-			RefCountedHashMap<String,Nominal> environment) {
+			Environment environment) {
 		
 		try {
 			if(expr instanceof Expr.BinOp) {
@@ -390,7 +391,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.BinOp expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
 		// TODO: split binop into arithmetic and conditional operators. This
 		// would avoid the following case analysis since conditional binary
@@ -567,7 +568,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.UnOp expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
 		if(expr.op == Expr.UOp.NOT) {
 			// hand off to special method for conditions
@@ -597,10 +598,10 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.Comprehension expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
 		ArrayList<Pair<String,Expr>> sources = expr.sources;
-		RefCountedHashMap<String,Nominal> local = environment.clone();
+		Environment local = environment.clone();
 		for(int i=0;i!=sources.size();++i) {
 			Pair<String,Expr> p = sources.get(i);
 			Expr e = propagate(p.second(),local);			
@@ -640,12 +641,12 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.Constant expr,
-			RefCountedHashMap<String,Nominal> environment) {
+			Environment environment) {
 		return expr;
 	}
 
 	private Expr propagate(Expr.Convert c,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		c.expr = propagate(c.expr,environment);		
 		c.type = resolver.resolveAsType(c.unresolvedType, context);
 		Type from = c.expr.result().raw();		
@@ -657,7 +658,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.AbstractFunctionOrMethodOrMessage expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
 		if(expr instanceof Expr.FunctionOrMethodOrMessage) {
 			return expr;
@@ -683,7 +684,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.AbstractInvoke expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
 		// first, propagate through receiver and parameters.
 		
@@ -846,7 +847,7 @@ public final class LocalResolver {
 	}			
 	
 	private Expr propagate(Expr.AbstractIndexAccess expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {			
+			Environment environment) throws ResolveError {			
 		expr.src = propagate(expr.src,environment);
 		expr.index = propagate(expr.index,environment);		
 		Nominal srcType = expr.src.result();
@@ -902,7 +903,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.AbstractLength expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {			
+			Environment environment) throws ResolveError {			
 		expr.src = propagate(expr.src,environment);			
 		Nominal srcType = expr.src.result();
 		Type rawSrcType = srcType.raw();				
@@ -967,7 +968,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.AbstractVariable expr,
-			RefCountedHashMap<String, Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 
 		Nominal type = environment.get(expr.var);
 
@@ -1013,7 +1014,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.Set expr,
-			RefCountedHashMap<String,Nominal> environment) {
+			Environment environment) {
 		Nominal element = Nominal.T_VOID;		
 		
 		ArrayList<Expr> exprs = expr.arguments;
@@ -1030,7 +1031,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.List expr,
-			RefCountedHashMap<String,Nominal> environment) {		
+			Environment environment) {		
 		Nominal element = Nominal.T_VOID;		
 		
 		ArrayList<Expr> exprs = expr.arguments;
@@ -1048,7 +1049,7 @@ public final class LocalResolver {
 	
 	
 	private Expr propagate(Expr.Dictionary expr,
-			RefCountedHashMap<String,Nominal> environment) {
+			Environment environment) {
 		Nominal keyType = Nominal.T_VOID;
 		Nominal valueType = Nominal.T_VOID;		
 				
@@ -1072,7 +1073,7 @@ public final class LocalResolver {
 	
 
 	private Expr propagate(Expr.Record expr,
-			RefCountedHashMap<String,Nominal> environment) {
+			Environment environment) {
 		
 		HashMap<String,Expr> exprFields = expr.fields;
 		HashMap<String,Nominal> fieldTypes = new HashMap<String,Nominal>();
@@ -1091,7 +1092,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.Tuple expr,
-			RefCountedHashMap<String,Nominal> environment) {
+			Environment environment) {
 		ArrayList<Expr> exprFields = expr.fields;
 		ArrayList<Nominal> fieldTypes = new ArrayList<Nominal>();
 				
@@ -1108,7 +1109,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.SubList expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {	
+			Environment environment) throws ResolveError {	
 		
 		expr.src = propagate(expr.src,environment);
 		expr.start = propagate(expr.start,environment);
@@ -1128,7 +1129,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.SubString expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {	
+			Environment environment) throws ResolveError {	
 		
 		expr.src = propagate(expr.src,environment);
 		expr.start = propagate(expr.start,environment);
@@ -1142,7 +1143,7 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {	
+			Environment environment) throws ResolveError {	
 				
 		if (expr instanceof Expr.PackageAccess
 				|| expr instanceof Expr.ModuleAccess) {			
@@ -1198,7 +1199,7 @@ public final class LocalResolver {
 	}
 		
 	private Expr propagate(Expr.RecordAccess ra,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = resolver.expandAsEffectiveRecord(srcType);
 		if(recType == null) {
@@ -1213,14 +1214,14 @@ public final class LocalResolver {
 	}	
 	
 	private Expr propagate(Expr.ConstantAccess expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		// we don't need to do anything here, since the value is already
 		// resolved by case for AbstractDotAccess.
 		return expr;
 	}			
 
 	private Expr propagate(Expr.Dereference expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		Expr src = propagate(expr.src,environment);
 		expr.src = src;
 		Nominal.Reference srcType = resolver.expandAsReference(src.result());
@@ -1232,14 +1233,14 @@ public final class LocalResolver {
 	}
 	
 	private Expr propagate(Expr.New expr,
-			RefCountedHashMap<String,Nominal> environment) {
+			Environment environment) {
 		expr.expr = propagate(expr.expr,environment);
 		expr.type = Nominal.Reference(expr.expr.result());
 		return expr;
 	}
 	
 	private Expr propagate(Expr.TypeVal expr,
-			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
+			Environment environment) throws ResolveError {
 		expr.type = resolver.resolveAsType(expr.unresolvedType, context); 
 		return expr;
 	}
@@ -1284,11 +1285,11 @@ public final class LocalResolver {
 		}
 	}
 	
-	private static final RefCountedHashMap<String,Nominal> BOTTOM = new RefCountedHashMap<String,Nominal>();
+	private static final Environment BOTTOM = new Environment();
 	
-	private static final RefCountedHashMap<String, Nominal> join(
-			RefCountedHashMap<String, Nominal> lhs,
-			RefCountedHashMap<String, Nominal> rhs) {
+	private static final Environment join(
+			Environment lhs,
+			Environment rhs) {
 		
 		// first, need to check for the special bottom value case.
 		
@@ -1303,7 +1304,7 @@ public final class LocalResolver {
 		lhs.free();
 		rhs.free(); 		
 		
-		RefCountedHashMap<String,Nominal> result = new RefCountedHashMap<String,Nominal>();
+		Environment result = new Environment();
 		for(String key : lhs.keySet()) {
 			if(rhs.containsKey(key)) {
 				Nominal lhs_t = lhs.get(key);

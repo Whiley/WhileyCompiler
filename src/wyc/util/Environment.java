@@ -3,71 +3,71 @@ package wyc.util;
 import java.util.HashMap;
 import java.util.Set;
 
-public final class RefCountedHashMap<K,V> {
-	private final HashMap<K,V> map;
+public final class Environment {
+	private final HashMap<String,Nominal> map;
 	private int count; // refCount
 	
-	public RefCountedHashMap() {
+	public Environment() {
 		count = 1;
-		map = new HashMap<K,V>();
+		map = new HashMap<String,Nominal>();
 	}
 	
-	private RefCountedHashMap(HashMap<K,V> types) {
+	private Environment(HashMap<String,Nominal> types) {
 		count = 1;
-		this.map = (HashMap<K,V>) types.clone();
+		this.map = (HashMap<String,Nominal>) types.clone();
 	}
 
-	public V get(K key) {
+	public Nominal get(String key) {
 		return map.get(key);
 	}
 	
-	public boolean containsKey(K key) {
+	public boolean containsKey(String key) {
 		return map.containsKey(key);
 	}
 	
-	public Set<K> keySet() {
+	public Set<String> keySet() {
 		return map.keySet();
 	}
 	
-	public RefCountedHashMap<K,V> put(K key, V value) {
+	public Environment put(String key, Nominal value) {
 		if(count == 1) {
 			map.put(key,value);
 			return this;
 		} else {				
-			RefCountedHashMap<K,V> nenv = new RefCountedHashMap<K,V>(map);
+			Environment nenv = new Environment(map);
 			nenv.map.put(key,value);
 			count--;
 			return nenv;
 		}
 	}
 	
-	public RefCountedHashMap<K,V> putAll(RefCountedHashMap<K,V> env) {
+	public Environment putAll(Environment env) {
 		if(count == 1) {
-			HashMap<K,V> envTypes = env.map;							
+			HashMap<String,Nominal> envTypes = env.map;							
 			map.putAll(envTypes);			
 			return this;
 		} else { 
-			RefCountedHashMap<K,V> nenv = new RefCountedHashMap<K,V>(map);
-			HashMap<K,V> envTypes = env.map;			
+			Environment nenv = new Environment(map);
+			HashMap<String,Nominal> envTypes = env.map;			
 			nenv.map.putAll(envTypes);			
 			count--;
 			return nenv;				
 		}
 	}
 	
-	public RefCountedHashMap<K,V> remove(K key) {
+	public Environment remove(String key) {
 		if(count == 1) {
 			map.remove(key);
 			return this;
 		} else {				
-			RefCountedHashMap<K,V> nenv = new RefCountedHashMap<K,V>(map);
+			Environment nenv = new Environment(map);
 			nenv.map.remove(key);
 			count--;
 			return nenv;
 		}
 	}		
 	
-	public RefCountedHashMap<K,V> clone() {
+	public Environment clone() {
 		count++;
 		return this;
 	}
@@ -85,8 +85,8 @@ public final class RefCountedHashMap<K,V> {
 	}
 	
 	public boolean equals(Object o) {
-		if (o instanceof RefCountedHashMap) {
-			RefCountedHashMap r = (RefCountedHashMap) o;
+		if (o instanceof Environment) {
+			Environment r = (Environment) o;
 			return map.equals(r.map);
 		}
 		return false;

@@ -36,7 +36,7 @@ import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.Context;
 import wyc.util.Nominal;
-import wyc.util.RefCountedHashMap;
+import wyc.util.Environment;
 import wyil.ModuleLoader;
 import wyil.lang.Attribute;
 import wyil.lang.ModuleID;
@@ -158,7 +158,7 @@ public final class TypePropagation {
 		
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			
-			RefCountedHashMap<String,Nominal> environment = new RefCountedHashMap<String,Nominal>();
+			Environment environment = new Environment();
 			environment.put("$", td.resolvedType);
 			
 			// FIXME: add names exposed from records and other types
@@ -171,7 +171,7 @@ public final class TypePropagation {
 	public void propagate(FunctionOrMethodOrMessage d, LocalResolver typer) throws ResolveError {		
 		this.current = d; // ugly
 		Context context = typer.context();		
-		RefCountedHashMap<String,Nominal> environment = new RefCountedHashMap<String,Nominal>();					
+		Environment environment = new Environment();					
 		
 		for (WhileyFile.Parameter p : d.parameters) {							
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,context));
@@ -208,9 +208,9 @@ public final class TypePropagation {
 		propagate(d.statements,environment,typer);
 	}
 	
-	private RefCountedHashMap<String, Nominal> propagate(
+	private Environment propagate(
 			ArrayList<Stmt> body,
-			RefCountedHashMap<String, Nominal> environment,
+			Environment environment,
 			LocalResolver typer) {
 		
 		
@@ -226,8 +226,8 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt stmt,
-			RefCountedHashMap<String, Nominal> environment,
+	private Environment propagate(Stmt stmt,
+			Environment environment,
 			LocalResolver typer) {
 				
 		try {
@@ -272,16 +272,16 @@ public final class TypePropagation {
 		}
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.Assert stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.Assert stmt,
+			Environment environment,
 			LocalResolver typer) {
 		stmt.expr = typer.propagate(stmt.expr,environment);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.Assign stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.Assign stmt,
+			Environment environment,
 			LocalResolver typer) throws ResolveError {
 			
 		Expr.LVal lhs = stmt.lhs;
@@ -404,29 +404,29 @@ public final class TypePropagation {
 		}
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.Break stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.Break stmt,
+			Environment environment,
 			LocalResolver typer) {
 		// FIXME: need to propagate environment to the break destination
 		return BOTTOM;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.Debug stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.Debug stmt,
+			Environment environment,
 			LocalResolver typer) {
 		stmt.expr = typer.propagate(stmt.expr,environment);				
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.DoWhile stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.DoWhile stmt,
+			Environment environment,
 			LocalResolver typer) {
 								
 		// Iterate to a fixed point
-		RefCountedHashMap<String,Nominal> old = null;
-		RefCountedHashMap<String,Nominal> tmp = null;
-		RefCountedHashMap<String,Nominal> orig = environment.clone();
+		Environment old = null;
+		Environment tmp = null;
+		Environment orig = environment.clone();
 		boolean firstTime=true;
 		do {
 			old = environment.clone();
@@ -447,15 +447,15 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}		
 
-		Pair<Expr,RefCountedHashMap<String,Nominal>> p = typer.propagate(stmt.condition,false,environment);
+		Pair<Expr,Environment> p = typer.propagate(stmt.condition,false,environment);
 		stmt.condition = p.first();
 		environment = p.second();
 		
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.ForAll stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.ForAll stmt,
+			Environment environment,
 			LocalResolver typer) throws ResolveError {
 		
 		stmt.source = typer.propagate(stmt.source,environment);
@@ -514,8 +514,8 @@ public final class TypePropagation {
 		} 
 				
 		// Iterate to a fixed point
-		RefCountedHashMap<String,Nominal> old = null;
-		RefCountedHashMap<String,Nominal> orig = environment.clone();
+		Environment old = null;
+		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
 			environment = join(orig.clone(),propagate(stmt.body,old,typer));
@@ -537,19 +537,19 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.IfElse stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.IfElse stmt,
+			Environment environment,
 			LocalResolver typer) {
 		
 		// First, check condition and apply variable retypings.
-		Pair<Expr,RefCountedHashMap<String,Nominal>> p1,p2;
+		Pair<Expr,Environment> p1,p2;
 		
 		p1 = typer.propagate(stmt.condition,true,environment.clone());
 		p2 = typer.propagate(stmt.condition,false,environment);
 		stmt.condition = p1.first();
 		
-		RefCountedHashMap<String,Nominal> trueEnvironment = p1.second();
-		RefCountedHashMap<String,Nominal> falseEnvironment = p2.second();
+		Environment trueEnvironment = p1.second();
+		Environment falseEnvironment = p2.second();
 				
 		// Second, update environments for true and false branches
 		if(stmt.trueBranch != null && stmt.falseBranch != null) {
@@ -566,9 +566,9 @@ public final class TypePropagation {
 		return join(trueEnvironment,falseEnvironment);							
 	}
 	
-	private RefCountedHashMap<String, Nominal> propagate(
+	private Environment propagate(
 			Stmt.Return stmt,
-			RefCountedHashMap<String, Nominal> environment,
+			Environment environment,
 			LocalResolver typer) throws ResolveError {
 		
 		if (stmt.expr != null) {
@@ -581,19 +581,19 @@ public final class TypePropagation {
 		return BOTTOM;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.Skip stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.Skip stmt,
+			Environment environment,
 			ArrayList<WhileyFile.Import> imports) {		
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.Switch stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.Switch stmt,
+			Environment environment,
 			LocalResolver typer) throws ResolveError {
 		
 		stmt.expr = typer.propagate(stmt.expr,environment);		
 		
-		RefCountedHashMap<String,Nominal> finalEnv = null;
+		Environment finalEnv = null;
 		boolean hasDefault = false;
 		
 		for(Stmt.Case c : stmt.cases) {
@@ -608,7 +608,7 @@ public final class TypePropagation {
 
 			// second, propagate through the statements
 			
-			RefCountedHashMap<String,Nominal> localEnv = environment.clone();
+			Environment localEnv = environment.clone();
 			localEnv = propagate(c.stmts,localEnv,typer);
 			
 			if(finalEnv == null) {
@@ -636,15 +636,15 @@ public final class TypePropagation {
 		return finalEnv;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.Throw stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.Throw stmt,
+			Environment environment,
 			LocalResolver typer) {
 		stmt.expr = typer.propagate(stmt.expr,environment);
 		return BOTTOM;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.TryCatch stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.TryCatch stmt,
+			Environment environment,
 			LocalResolver typer) throws ResolveError {
 		
 
@@ -654,7 +654,7 @@ public final class TypePropagation {
 			try {
 				Nominal type = resolver.resolveAsType(handler.unresolvedType, typer.context()); 
 				handler.type = type;
-				RefCountedHashMap<String,Nominal> local = environment.clone();
+				Environment local = environment.clone();
 				local = local.put(handler.variable, type);									
 				propagate(handler.stmts,local,typer);
 				local.free();
@@ -674,14 +674,14 @@ public final class TypePropagation {
 		return environment;
 	}
 	
-	private RefCountedHashMap<String,Nominal> propagate(Stmt.While stmt,
-			RefCountedHashMap<String,Nominal> environment,
+	private Environment propagate(Stmt.While stmt,
+			Environment environment,
 			LocalResolver typer) {
 
 		// Iterate to a fixed point
-		RefCountedHashMap<String,Nominal> old = null;
-		RefCountedHashMap<String,Nominal> tmp = null;
-		RefCountedHashMap<String,Nominal> orig = environment.clone();
+		Environment old = null;
+		Environment tmp = null;
+		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
 			tmp = typer.propagate(stmt.condition,true,old.clone()).second();			
@@ -694,7 +694,7 @@ public final class TypePropagation {
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}		
 				
-		Pair<Expr,RefCountedHashMap<String,Nominal>> p = typer.propagate(stmt.condition,false,environment);
+		Pair<Expr,Environment> p = typer.propagate(stmt.condition,false,environment);
 		stmt.condition = p.first();
 		environment = p.second();			
 		
@@ -702,7 +702,7 @@ public final class TypePropagation {
 	}
 	
 	private Expr.LVal propagate(Expr.LVal lval,
-			RefCountedHashMap<String, Nominal> environment,
+			Environment environment,
 			LocalResolver typer) {
 		try {
 			if(lval instanceof Expr.AbstractVariable) {
@@ -854,12 +854,12 @@ public final class TypePropagation {
 	private static final class Handler {
 		public final Type exception;
 		public final String variable;
-		public RefCountedHashMap<String,Nominal> environment;
+		public Environment environment;
 		
 		public Handler(Type exception, String variable) {
 			this.exception = exception;
 			this.variable = variable;
-			this.environment = new RefCountedHashMap<String,Nominal>();
+			this.environment = new Environment();
 		}
 	}
 	
@@ -874,7 +874,7 @@ public final class TypePropagation {
 	}
 	
 	private static final class BreakScope extends Scope {
-		public RefCountedHashMap<String,Nominal> environment;
+		public Environment environment;
 		
 		public void free() {
 			environment.free();
@@ -882,18 +882,16 @@ public final class TypePropagation {
 	}
 
 	private static final class ContinueScope extends Scope {
-		public RefCountedHashMap<String,Nominal> environment;
+		public Environment environment;
 		
 		public void free() {
 			environment.free();
 		}
 	}
 	
-	private static final RefCountedHashMap<String,Nominal> BOTTOM = new RefCountedHashMap<String,Nominal>();
+	private static final Environment BOTTOM = new Environment();
 	
-	private static final RefCountedHashMap<String, Nominal> join(
-			RefCountedHashMap<String, Nominal> lhs,
-			RefCountedHashMap<String, Nominal> rhs) {
+	private static final Environment join(Environment lhs,Environment rhs) {
 		
 		// first, need to check for the special bottom value case.
 		
@@ -908,7 +906,7 @@ public final class TypePropagation {
 		lhs.free();
 		rhs.free(); 		
 		
-		RefCountedHashMap<String,Nominal> result = new RefCountedHashMap<String,Nominal>();
+		Environment result = new Environment();
 		for(String key : lhs.keySet()) {
 			if(rhs.containsKey(key)) {
 				Nominal lhs_t = lhs.get(key);

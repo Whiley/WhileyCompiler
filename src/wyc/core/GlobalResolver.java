@@ -803,7 +803,7 @@ public final class GlobalResolver {
 	
 	public Value resolveAsConstant(Expr e, Context context) throws ResolveError {
 		LocalResolver typer = new LocalResolver(this,context);
-		e = typer.propagate(e, new RefCountedHashMap());
+		e = typer.propagate(e, new Environment());
 		return resolveAsConstant(e,context,new HashSet<NameID>());		
 	}
 	
@@ -841,7 +841,7 @@ public final class GlobalResolver {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
 				if (cd.resolvedValue == null) {			
 					Context context = context(wf, cd);
-					cd.constant = new LocalResolver(this,context).propagate(cd.constant, new RefCountedHashMap());
+					cd.constant = new LocalResolver(this,context).propagate(cd.constant, new Environment());
 					cd.resolvedValue = resolveAsConstant(cd.constant,
 							context, visited);
 				}
