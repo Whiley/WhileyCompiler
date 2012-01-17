@@ -32,7 +32,7 @@ import java.util.jar.JarFile;
 
 import wyc.Pipeline;
 import wyc.Compiler;
-import wyc.core.Resolver;
+import wyc.core.GlobalResolver;
 import wyc.util.*;
 import wyil.*;
 import wyil.util.*;

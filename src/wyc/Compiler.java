@@ -32,7 +32,7 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
-import wyc.core.Resolver;
+import wyc.core.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;
 
@@ -82,13 +82,13 @@ import wyc.stages.*;
  */
 public final class Compiler implements Logger {		
 	private ModuleLoader loader;	
-	private Resolver nameResolver;
+	private GlobalResolver nameResolver;
 	private ArrayList<Transform> stages;
 
 	public Compiler(ModuleLoader loader, List<Transform> stages) {
 		this.loader = loader;
 		this.stages = new ArrayList<Transform>(stages);
-		nameResolver = new Resolver(loader);		
+		nameResolver = new GlobalResolver(loader);		
 	}
 	
 	/**

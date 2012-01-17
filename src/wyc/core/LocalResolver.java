@@ -78,11 +78,11 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public final class ExpressionTyper {
-	private final Resolver resolver;
+public final class LocalResolver {
+	private final GlobalResolver resolver;
 	private final Context context;
 	
-	public ExpressionTyper(Resolver resolver, Context context) {
+	public LocalResolver(GlobalResolver resolver, Context context) {
 		this.resolver = resolver;
 		this.context = context;
 	}

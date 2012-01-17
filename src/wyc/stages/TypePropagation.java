@@ -30,8 +30,8 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.core.ExpressionTyper;
-import wyc.core.Resolver;
+import wyc.core.LocalResolver;
+import wyc.core.GlobalResolver;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.Context;
@@ -99,12 +99,12 @@ import wyil.util.SyntaxError;
  */
 public final class TypePropagation {
 	private final ModuleLoader loader;
-	private final Resolver resolver;
+	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethodOrMessage current;
 	
-	public TypePropagation(ModuleLoader loader, Resolver resolver) {
+	public TypePropagation(ModuleLoader loader, GlobalResolver resolver) {
 		this.loader = loader;
 		this.resolver = resolver;
 	}
@@ -119,7 +119,7 @@ public final class TypePropagation {
 		// other import statements are inserted here
 		imports.add(new WhileyFile.Import(mid.pkg(), "*", null)); 
 		imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null)); 		
-		ExpressionTyper typer = new ExpressionTyper(resolver,new Context(wf,imports));
+		LocalResolver typer = new LocalResolver(resolver,new Context(wf,imports));
 		
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
@@ -129,7 +129,7 @@ public final class TypePropagation {
 					// between that for this file, and those for its package and
 					// whiley.lang (see above).
 					imports.add(1, impd);
-					typer = new ExpressionTyper(resolver,new Context(wf,imports));
+					typer = new LocalResolver(resolver,new Context(wf,imports));
 				} else if(decl instanceof FunctionOrMethodOrMessage) {
 					propagate((FunctionOrMethodOrMessage)decl,typer);
 				} else if(decl instanceof TypeDef) {
@@ -152,7 +152,7 @@ public final class TypePropagation {
 		cd.resolvedValue = resolver.resolveAsConstant(nid);
 	}
 	
-	public void propagate(TypeDef td, ExpressionTyper typer) throws ResolveError {		
+	public void propagate(TypeDef td, LocalResolver typer) throws ResolveError {		
 		// first, resolve the declared type
 		td.resolvedType = resolver.resolveAsType(td.unresolvedType, typer.context());
 		
@@ -168,7 +168,7 @@ public final class TypePropagation {
 		}
 	}
 
-	public void propagate(FunctionOrMethodOrMessage d, ExpressionTyper typer) throws ResolveError {		
+	public void propagate(FunctionOrMethodOrMessage d, LocalResolver typer) throws ResolveError {		
 		this.current = d; // ugly
 		Context context = typer.context();		
 		RefCountedHashMap<String,Nominal> environment = new RefCountedHashMap<String,Nominal>();					
@@ -211,7 +211,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String, Nominal> propagate(
 			ArrayList<Stmt> body,
 			RefCountedHashMap<String, Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 		
 		
 		for (int i=0;i!=body.size();++i) {
@@ -228,7 +228,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt stmt,
 			RefCountedHashMap<String, Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 				
 		try {
 			if(stmt instanceof Stmt.Assign) {
@@ -274,7 +274,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Assert stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 		stmt.expr = typer.propagate(stmt.expr,environment);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
@@ -282,7 +282,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Assign stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) throws ResolveError {
+			LocalResolver typer) throws ResolveError {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = typer.propagate(stmt.rhs,environment);
@@ -406,14 +406,14 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Break stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 		// FIXME: need to propagate environment to the break destination
 		return BOTTOM;
 	}
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Debug stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 		stmt.expr = typer.propagate(stmt.expr,environment);				
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
@@ -421,7 +421,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.DoWhile stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 								
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal> old = null;
@@ -456,7 +456,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.ForAll stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) throws ResolveError {
+			LocalResolver typer) throws ResolveError {
 		
 		stmt.source = typer.propagate(stmt.source,environment);
 		Type rawType = stmt.source.result().raw(); 		
@@ -539,7 +539,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.IfElse stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 		
 		// First, check condition and apply variable retypings.
 		Pair<Expr,RefCountedHashMap<String,Nominal>> p1,p2;
@@ -569,7 +569,7 @@ public final class TypePropagation {
 	private RefCountedHashMap<String, Nominal> propagate(
 			Stmt.Return stmt,
 			RefCountedHashMap<String, Nominal> environment,
-			ExpressionTyper typer) throws ResolveError {
+			LocalResolver typer) throws ResolveError {
 		
 		if (stmt.expr != null) {
 			stmt.expr = typer.propagate(stmt.expr, environment);
@@ -589,7 +589,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Switch stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) throws ResolveError {
+			LocalResolver typer) throws ResolveError {
 		
 		stmt.expr = typer.propagate(stmt.expr,environment);		
 		
@@ -638,14 +638,14 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.Throw stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 		stmt.expr = typer.propagate(stmt.expr,environment);
 		return BOTTOM;
 	}
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.TryCatch stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) throws ResolveError {
+			LocalResolver typer) throws ResolveError {
 		
 
 		for(Stmt.Catch handler : stmt.catches) {
@@ -676,7 +676,7 @@ public final class TypePropagation {
 	
 	private RefCountedHashMap<String,Nominal> propagate(Stmt.While stmt,
 			RefCountedHashMap<String,Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 
 		// Iterate to a fixed point
 		RefCountedHashMap<String,Nominal> old = null;
@@ -703,7 +703,7 @@ public final class TypePropagation {
 	
 	private Expr.LVal propagate(Expr.LVal lval,
 			RefCountedHashMap<String, Nominal> environment,
-			ExpressionTyper typer) {
+			LocalResolver typer) {
 		try {
 			if(lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;

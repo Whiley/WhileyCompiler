@@ -54,7 +54,7 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public final class Resolver {
+public final class GlobalResolver {
 	private final ModuleLoader loader;
 	
 	/**
@@ -77,7 +77,7 @@ public final class Resolver {
 	 */
 	HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public Resolver(ModuleLoader loader) {
+	public GlobalResolver(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
@@ -802,7 +802,7 @@ public final class Resolver {
 	}
 	
 	public Value resolveAsConstant(Expr e, Context context) throws ResolveError {
-		ExpressionTyper typer = new ExpressionTyper(this,context);
+		LocalResolver typer = new LocalResolver(this,context);
 		e = typer.propagate(e, new RefCountedHashMap());
 		return resolveAsConstant(e,context,new HashSet<NameID>());		
 	}
@@ -841,7 +841,7 @@ public final class Resolver {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
 				if (cd.resolvedValue == null) {			
 					Context context = context(wf, cd);
-					cd.constant = new ExpressionTyper(this,context).propagate(cd.constant, new RefCountedHashMap());
+					cd.constant = new LocalResolver(this,context).propagate(cd.constant, new RefCountedHashMap());
 					cd.resolvedValue = resolveAsConstant(cd.constant,
 							context, visited);
 				}
