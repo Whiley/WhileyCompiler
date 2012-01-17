@@ -1078,8 +1078,8 @@ public class ClassFileBuilder {
 			elementType = ((Type.EffectiveSet) c.type).element();
 		} else if(c.type instanceof Type.EffectiveList) {
 			elementType = ((Type.EffectiveList) c.type).element();
-		} else if(c.type instanceof Type.Dictionary) {
-			Type.Dictionary dict = (Type.Dictionary) c.type;
+		} else if(c.type instanceof Type.EffectiveDictionary) {
+			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) c.type;
 			elementType = Type.Tuple(dict.key(),dict.value());
 		} else {
 			return translateForAllString(c,freeSlot,bytecodes);

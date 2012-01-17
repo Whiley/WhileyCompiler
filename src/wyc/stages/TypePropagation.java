@@ -397,7 +397,7 @@ public final class TypePropagation {
 		} else if(lv instanceof Expr.DictionaryAccess)  {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		
 			Nominal.EffectiveDictionary srcType = da.srcType;
-			afterType = (Nominal) srcType.update(srcType.key(),afterType);
+			afterType = (Nominal) srcType.update(da.index.result(),afterType);
 			return inferAfterType((Expr.LVal) da.src, afterType);
 		} else if(lv instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) lv;
