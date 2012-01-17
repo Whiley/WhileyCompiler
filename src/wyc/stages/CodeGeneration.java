@@ -651,11 +651,11 @@ public final class CodeGeneration {
 			
 			// FIXME: loss of nominal information
 			Type rawSrcType = s.source.result().raw();
-			// FIXME: support destructuring of lists and sets
-			Type.Dictionary dict = Type.effectiveDictionary(rawSrcType);
-			if(dict == null) {
+			// FIXME: support destructuring of lists and sets			
+			if(!(rawSrcType instanceof Type.EffectiveDictionary)) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,s.source);
 			}
+			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) rawSrcType;
 			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());
 			List<Type> elements = element.elements();
 			blk.append(Code.ForAll(rawSrcType, freeSlot, label, Collections.EMPTY_SET), attributes(s));

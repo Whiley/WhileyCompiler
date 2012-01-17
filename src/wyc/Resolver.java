@@ -653,14 +653,14 @@ public final class Resolver {
 		}
 	}
 
-	public Nominal.Dictionary expandAsDictionary(Nominal lhs) throws ResolveError {
-		Type.Dictionary raw = Type.effectiveDictionary(lhs.raw());
-		if(raw != null) {
+	public Nominal.EffectiveDictionary expandAsEffectiveDictionary(Nominal lhs) throws ResolveError {
+		Type raw = lhs.raw();
+		if(raw instanceof Type.EffectiveDictionary) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.Dictionary)) {
+			if(!(nominal instanceof Type.EffectiveDictionary)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.Dictionary) Nominal.construct(nominal,raw);
+			return (Nominal.EffectiveDictionary) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}

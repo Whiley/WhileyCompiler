@@ -391,14 +391,13 @@ public final class TypePropagation {
 					Nominal.T_STRING);
 		} else if (lv instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) lv;
-			afterType = Nominal.List(Nominal.Union(la.result(), afterType), false);						
+			Nominal.EffectiveList srcType = la.srcType;
+			afterType = (Nominal) srcType.update(afterType);								
 			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else if(lv instanceof Expr.DictionaryAccess)  {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		
-			Nominal.Dictionary srcType = da.srcType;
-			afterType = Nominal.Dictionary(
-					Nominal.Union(srcType.key(), da.index.result()),
-					Nominal.Union(srcType.value(), afterType));			
+			Nominal.EffectiveDictionary srcType = da.srcType;
+			afterType = (Nominal) srcType.update(srcType.key(),afterType);
 			return inferAfterType((Expr.LVal) da.src, afterType);
 		} else if(lv instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) lv;
@@ -491,7 +490,7 @@ public final class TypePropagation {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}					
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
-			Nominal.Dictionary dt = resolver.expandAsDictionary(stmt.source.result());
+			Nominal.EffectiveDictionary dt = resolver.expandAsEffectiveDictionary(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = Nominal.Tuple(dt.key(),dt.value());			
 			} else if(elementTypes.length == 2) {					
@@ -747,7 +746,7 @@ public final class TypePropagation {
 					return la;
 				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
-					da.srcType = resolver.expandAsDictionary(src.result());										
+					da.srcType = resolver.expandAsEffectiveDictionary(src.result());										
 					return da;
 				} else {				
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
@@ -1580,7 +1579,7 @@ public final class TypePropagation {
 			la.srcType = list;			
 		} else {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
-			Nominal.Dictionary dict = resolver.expandAsDictionary(srcType);
+			Nominal.EffectiveDictionary dict = resolver.expandAsEffectiveDictionary(srcType);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
 			}			
@@ -1647,7 +1646,7 @@ public final class TypePropagation {
 			sl.srcType = set;			
 		} else {
 			Expr.DictionaryLength dl = (Expr.DictionaryLength) expr; 
-			Nominal.Dictionary dict = resolver.expandAsDictionary(srcType);
+			Nominal.EffectiveDictionary dict = resolver.expandAsEffectiveDictionary(srcType);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,expr);
 			}				

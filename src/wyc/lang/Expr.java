@@ -311,7 +311,7 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class DictionaryAccess extends AbstractIndexAccess {				
-		public Nominal.Dictionary srcType;
+		public Nominal.EffectiveDictionary srcType;
 
 		public DictionaryAccess(Expr src, Expr index, Attribute... attributes) {
 			super(src,index,attributes);
@@ -936,7 +936,7 @@ public interface Expr extends SyntacticElement {
 	}	
 	
 	public static class DictionaryLength extends AbstractLength {		
-		public Nominal.Dictionary srcType;
+		public Nominal.EffectiveDictionary srcType;
 		
 		public DictionaryLength(Expr src, Attribute... attributes) {
 			super(src,attributes);

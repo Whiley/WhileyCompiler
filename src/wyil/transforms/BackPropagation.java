@@ -304,14 +304,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {		
 		Type req = environment.pop();
 		coerceAfter(req,Type.T_INT,index,entry);
-		environment.push(code.type);
+		environment.push((Type) code.type);
 	}
 	
 	private void infer(int index, Code.DictLoad code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
 		coerceAfter(req,code.type.value(),index,entry);		
-		environment.push(code.type);
+		environment.push( (Type) code.type);
 		environment.push(code.type.key());				
 	}		
 	

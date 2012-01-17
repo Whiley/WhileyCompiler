@@ -596,34 +596,6 @@ public abstract class Type {
 		return TypeAlgorithms.intersect(t1,t2);
 	}
 		
-	public static Dictionary effectiveDictionary(Type t) {
-		if (t instanceof Type.Dictionary) {
-			return (Type.Dictionary) t;
-		} else if (t instanceof Type.Union) {
-			Union ut = (Type.Union) t;
-			Dictionary r = null;
-			for (Type b : ut.bounds()) {
-				if (!(b instanceof Dictionary)) {
-					return null;
-				}
-				Dictionary br = (Dictionary) b;
-				if (r == null) {
-					r = br;
-				} else {
-					Type tmp = Dictionary(Union(r.key(), br.key()),
-							Union(r.value(), br.value()));
-					if(tmp instanceof Dictionary) {
-						r = (Dictionary) tmp;
-					} else {
-						return null;
-					}
-				}
-			}
-			return r;
-		}
-		return null;
-	}
-			
 	public static Reference effectiveReference(Type t) {
 		if(t instanceof Type.Reference) {
 			return (Type.Reference) t;

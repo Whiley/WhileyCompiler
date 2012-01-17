@@ -51,6 +51,8 @@ public abstract class Nominal {
 			return new UnionOfLists((Type.UnionOfLists)nominal,(Type.UnionOfLists)raw);			
 		} else if(raw instanceof Type.Dictionary && nominal instanceof Type.Dictionary) {
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
+		} else if(raw instanceof Type.UnionOfDictionaries && nominal instanceof Type.UnionOfDictionaries) {
+			return new UnionOfDictionaries((Type.UnionOfDictionaries)nominal,(Type.UnionOfDictionaries)raw);
 		} else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
 			return new Record((Type.Record)nominal,(Type.Record)raw);		
 		} else if(raw instanceof Type.UnionOfRecords && nominal instanceof Type.UnionOfRecords) {
@@ -297,7 +299,15 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class Dictionary extends Nominal {
+	public interface EffectiveDictionary {
+		public Type.EffectiveDictionary raw();		
+		public Type.EffectiveDictionary nominal();		
+		public Nominal key();					
+		public Nominal value();
+		public EffectiveDictionary update(Nominal key, Nominal value);
+	}
+	
+	public static final class Dictionary extends Nominal implements EffectiveDictionary {
 		private final Type.Dictionary nominal;
 		private final Type.Dictionary raw;
 		
@@ -321,6 +331,12 @@ public abstract class Nominal {
 		public Nominal value() {
 			return construct(nominal.value(),raw.value());			
 		}
+		
+		public Nominal.Dictionary update(Nominal key, Nominal value) {
+			key = Nominal.Union(key, key());
+			value = Nominal.Union(value, value());
+			return Nominal.Dictionary(key,value);
+		}		
 		
 		public boolean equals(Object o) {
 			if (o instanceof Dictionary) {
@@ -483,7 +499,51 @@ public abstract class Nominal {
 			return raw.hashCode();
 		}
 	}	
+	
+	public static final class UnionOfDictionaries extends Nominal implements EffectiveDictionary {
+		private final Type.UnionOfDictionaries nominal;
+		private final Type.UnionOfDictionaries raw;
 		
+		UnionOfDictionaries(Type.UnionOfDictionaries nominal, Type.UnionOfDictionaries raw) {
+			this.nominal = nominal;
+			this.raw = raw;
+		}
+		
+		public Type.UnionOfDictionaries nominal() {
+			return nominal;
+		}
+		
+		public Type.UnionOfDictionaries raw() {
+			return raw;
+		}
+				
+		public Nominal key() {
+			return construct(nominal.key(),raw.key());			
+		}
+		
+		public Nominal value() {
+			return construct(nominal.value(),raw.value());			
+		}
+		
+		public EffectiveDictionary update(Nominal key, Nominal value) {
+			Type.EffectiveDictionary n = nominal.update(key.nominal(),value.nominal());
+			Type.EffectiveDictionary r = raw.update(key.raw(),value.raw());
+			return (EffectiveDictionary) construct((Type) n, (Type)r);
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof UnionOfDictionaries) {
+				UnionOfDictionaries b = (UnionOfDictionaries) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
+	}	
+	
 	public static final class UnionOfLists extends Nominal implements EffectiveList {
 		private final Type.UnionOfLists nominal;
 		private final Type.UnionOfLists raw;

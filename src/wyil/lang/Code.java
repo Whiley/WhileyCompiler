@@ -1844,13 +1844,13 @@ public abstract class Code {
 	public static final class DictLVal extends LVal {
 		public DictLVal(Type t) {
 			super(t);			
-			if(Type.effectiveDictionary(t) == null) {
+			if(!(t instanceof Type.EffectiveDictionary)) {
 				throw new IllegalArgumentException("Invalid Dictionary Type");
 			}
 		}
 		
-		public Type.Dictionary type() {			
-			return Type.effectiveDictionary(type);
+		public Type.EffectiveDictionary type() {			
+			return (Type.EffectiveDictionary) type;
 		}
 	}
 	
@@ -1949,9 +1949,8 @@ public abstract class Code {
 				Type.EffectiveList list = (Type.EffectiveList) iter;											
 				iter = list.element();
 				return new ListLVal(raw);
-			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
-				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionary(iter);											
+			} else if(iter instanceof Type.EffectiveDictionary) {					
+				Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter; 											
 				iter = dict.value();	
 				return new DictLVal(raw);
 			} else  if(iter instanceof Type.EffectiveRecord) {
@@ -2035,11 +2034,8 @@ public abstract class Code {
 				} else if (iter instanceof Type.EffectiveList) {
 					Type.EffectiveList list = (Type.EffectiveList) iter;
 					iter = list.element();
-				} else if (Type.isSubtype(
-						Type.Dictionary(Type.T_ANY, Type.T_ANY), iter)) {
-					// this indicates a dictionary access, rather than a list
-					// access
-					Type.Dictionary dict = Type.effectiveDictionary(iter);
+				} else if (iter instanceof Type.EffectiveDictionary) {
+					Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter;
 					iter = dict.value();
 				} else if (iter instanceof Type.EffectiveRecord) {
 					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;

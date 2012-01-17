@@ -623,8 +623,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "setState", ftype,
 					Bytecode.VIRTUAL));
 			
-		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),type)) {
-			Type.Dictionary dict = Type.effectiveDictionary(type);				
+		} else if(type instanceof Type.EffectiveDictionary) {
+			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) type;				
 			
 			if(level != 0) {				
 				bytecodes.add(new Bytecode.Dup(WHILEYMAP));				
@@ -650,7 +650,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 					Bytecode.STATIC));			
 						
-		} else if(Type.isSubtype(Type.T_STRING,type)) {
+		} else if(type == Type.T_STRING) {
 			
 			// assert: level must be zero here
 			bytecodes.add(new Bytecode.Load(indexSlot, BIG_INTEGER));
@@ -2808,7 +2808,7 @@ public class ClassFileBuilder {
 			return WHILEYLIST;
 		} else if(t instanceof Type.EffectiveSet) {
 			return WHILEYSET;
-		} else if(t instanceof Type.Dictionary) {
+		} else if(t instanceof Type.EffectiveDictionary) {
 			return WHILEYMAP;
 		} else if(t instanceof Type.EffectiveRecord) {
 			return WHILEYRECORD;

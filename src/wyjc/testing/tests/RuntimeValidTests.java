@@ -122,6 +122,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
  @Test public void Dictionary_Valid_14_RuntimeTest() { runTest("Dictionary_Valid_14"); }
  @Test public void Dictionary_Valid_15_RuntimeTest() { runTest("Dictionary_Valid_15"); }
+ @Test public void Dictionary_Valid_16_RuntimeTest() { runTest("Dictionary_Valid_16"); }
  @Test public void DoWhile_Valid_1_RuntimeTest() { runTest("DoWhile_Valid_1"); }
  @Test public void DoWhile_Valid_2_RuntimeTest() { runTest("DoWhile_Valid_2"); }
  @Ignore("Future Work") @Test public void DoWhile_Valid_3_RuntimeTest() { runTest("DoWhile_Valid_3"); }
