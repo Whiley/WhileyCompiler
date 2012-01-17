@@ -1,7 +1,8 @@
-package wyc.util;
+package wyc.core;
 
 import java.util.HashMap;
 import java.util.Set;
+
 
 public final class Environment {
 	private final HashMap<String,Nominal> map;

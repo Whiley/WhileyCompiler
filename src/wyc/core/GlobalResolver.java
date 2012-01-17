@@ -26,8 +26,8 @@
 package wyc.core;
 
 import static wyil.util.ErrorMessages.*;
-import static wyc.util.Context.syntaxError;
-import static wyc.util.Context.internalFailure;
+import static wyc.core.Context.internalFailure;
+import static wyc.core.Context.syntaxError;
 
 import java.util.*;
 

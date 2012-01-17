@@ -1,4 +1,4 @@
-package wyc.util;
+package wyc.core;
 
 import java.util.*;
 

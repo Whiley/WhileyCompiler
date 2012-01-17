@@ -30,13 +30,13 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
+import wyc.core.Context;
+import wyc.core.Environment;
 import wyc.core.LocalResolver;
 import wyc.core.GlobalResolver;
+import wyc.core.Nominal;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
-import wyc.util.Context;
-import wyc.util.Nominal;
-import wyc.util.Environment;
 import wyil.ModuleLoader;
 import wyil.lang.Attribute;
 import wyil.lang.ModuleID;

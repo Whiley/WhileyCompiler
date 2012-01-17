@@ -32,11 +32,11 @@ import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
+import wyc.core.Nominal;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
 import wyc.lang.Stmt.*;
-import wyc.util.Nominal;
 
 /**
  * <p>
