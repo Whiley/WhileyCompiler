@@ -118,8 +118,11 @@ public class TestHarness {
 			new StreamGrabber(p.getErrorStream(), syserr);
 			new StreamGrabber(p.getInputStream(), sysout);
 			int exitCode = p.waitFor();
-			System.err.println(syserr);
 			if (exitCode != 0) {
+				System.err.println("============================================================");
+				System.err.println(name);
+				System.err.println("============================================================");
+				System.err.println(syserr);
 				return null;
 			} else {
 				return sysout.toString();
