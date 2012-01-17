@@ -155,9 +155,9 @@ public final class WhileyFile {
 				SyntacticElement.Impl implements Declaration {
 		
 		public final List<Modifier> modifiers;
-		public final Expr constant;
 		public final String name;
-		public Value resolvedValue;
+		public Expr constant;
+		public Value resolvedValue;		
 
 		public Constant(List<Modifier> modifiers, Expr constant, String name,
 				Attribute... attributes) {
