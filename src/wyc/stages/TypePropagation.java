@@ -81,20 +81,7 @@ import wyil.util.SyntaxError;
  * (based on the type of the rhs) and, hence, the resulting type inferred for
  * <code>i</code> is <code>real</code>. At this point, the loop must be
  * reconsidered taking into account this updated type for <code>i</code>.
- * 
- * In some cases, this process must update the underlying expressions to reflect
- * the correct operator. For example:
- * 
- * <pre>
- * {int} f({int} x, {int} y):
- *    return x+y
- * </pre>
- * 
- * Initially, the expression <code>x+y</code> is assumed to be arithmetic
- * addition. During type propagation, however, it becomes apparent that its
- * operands are both sets. Therefore, the underlying AST node is updated to
- * represent a set union.
- * 
+ *
  * <h3>References</h3>
  * <ul>
  * <li>
