@@ -29,8 +29,8 @@ import java.io.*;
 import java.util.*;
 
 import wyc.Compiler;
-import wyc.Resolver;
 import wyc.Pipeline;
+import wyc.core.Resolver;
 import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.util.SyntaxError;

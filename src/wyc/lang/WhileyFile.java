@@ -27,7 +27,7 @@ package wyc.lang;
 
 import java.util.*;
 
-import wyc.Resolver;
+import wyc.core.Resolver;
 import wyc.util.Nominal;
 import wyil.ModuleLoader;
 import wyil.lang.*;

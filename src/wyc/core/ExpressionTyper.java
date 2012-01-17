@@ -1,4 +1,4 @@
-package wyc.util;
+package wyc.core;
 
 import static wyil.util.ErrorMessages.*;
 import static wyil.util.SyntaxError.syntaxError;
@@ -9,8 +9,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wyc.Resolver;
 import wyc.lang.*;
+import wyc.util.Context;
+import wyc.util.Nominal;
+import wyc.util.RefCountedHashMap;
+import wyc.util.Nominal.EffectiveDictionary;
+import wyc.util.Nominal.EffectiveList;
+import wyc.util.Nominal.EffectiveRecord;
+import wyc.util.Nominal.EffectiveSet;
+import wyc.util.Nominal.Function;
+import wyc.util.Nominal.FunctionOrMethod;
+import wyc.util.Nominal.FunctionOrMethodOrMessage;
+import wyc.util.Nominal.Message;
+import wyc.util.Nominal.Method;
+import wyc.util.Nominal.Reference;
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
 import wyil.lang.PkgID;

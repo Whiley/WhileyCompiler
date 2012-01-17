@@ -30,9 +30,9 @@ import java.net.URI;
 import java.util.*;
 import java.util.jar.JarFile;
 
-import wyc.Resolver;
 import wyc.Pipeline;
 import wyc.Compiler;
+import wyc.core.Resolver;
 import wyc.util.*;
 import wyil.*;
 import wyil.util.*;

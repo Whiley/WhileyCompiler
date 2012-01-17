@@ -30,11 +30,11 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.Resolver;
+import wyc.core.ExpressionTyper;
+import wyc.core.Resolver;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.Context;
-import wyc.util.ExpressionTyper;
 import wyc.util.Nominal;
 import wyc.util.RefCountedHashMap;
 import wyil.ModuleLoader;
