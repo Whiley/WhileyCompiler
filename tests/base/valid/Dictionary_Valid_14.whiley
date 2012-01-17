@@ -12,4 +12,4 @@ public void ::main(System.Console sys):
     d = f(-1)
     sys.out.println("Dictionary=" + d[1])
     d = f(2)
-    sys.out.println("Dictionary=" + d[1])
+    sys.out.println("Dictionary=" + d[1.0])

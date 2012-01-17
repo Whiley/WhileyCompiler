@@ -12,5 +12,6 @@ public void ::main(System.Console sys):
     d = f(-1)
     d[3] = 4
     sys.out.println("Dictionary=" + d)
+    d = f(2)
     d[3] = 4
     sys.out.println("Dictionary=" + d)
