@@ -322,7 +322,7 @@ public final class TypePropagation {
 			
 			// FIXME: loss of nominal information here			
 			Type rawRhs = rhs.result().raw();		
-			Nominal.Tuple tupleRhs = resolver.expandAsTuple(rhs.result());
+			Nominal.EffectiveTuple tupleRhs = resolver.expandAsEffectiveTuple(rhs.result());
 			
 			// FIXME: the following is something of a kludge. It would also be
 			// nice to support more expressive destructuring assignment

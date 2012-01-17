@@ -41,6 +41,8 @@ public abstract class Nominal {
 			return new Reference((Type.Reference)nominal,(Type.Reference)raw);			
 		} else if(raw instanceof Type.Tuple && nominal instanceof Type.Tuple) {
 			return new Tuple((Type.Tuple)nominal,(Type.Tuple)raw);			
+		} else if(raw instanceof Type.UnionOfTuples && nominal instanceof Type.UnionOfTuples) {
+			return new UnionOfTuples((Type.UnionOfTuples)nominal,(Type.UnionOfTuples)raw);			
 		} else if(raw instanceof Type.Set && nominal instanceof Type.Set) { 
 			return new Set((Type.Set)nominal,(Type.Set)raw);					
 		}  else if(raw instanceof Type.UnionOfSets && nominal instanceof Type.UnionOfSets) {
@@ -351,7 +353,17 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class Tuple extends Nominal {
+	public interface EffectiveTuple {
+		public Type.EffectiveTuple raw();
+		
+		public Type.EffectiveTuple nominal();
+		
+		public Nominal element(int index);
+		
+		public ArrayList<Nominal> elements();		
+	}
+		
+	public static final class Tuple extends Nominal implements EffectiveTuple {
 		private final Type.Tuple nominal;
 		private final Type.Tuple raw;
 		
@@ -368,7 +380,11 @@ public abstract class Nominal {
 			return raw;
 		}
 		
-		public java.util.List<Nominal> elements() {			
+		public Nominal element(int index) {
+			return construct(nominal.element(index),raw.element(index));
+		}
+		
+		public ArrayList<Nominal> elements() {			
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
 			java.util.List<Type> rawElements = raw.elements();
 			java.util.List<Type> nominalElements = nominal.elements();
@@ -631,6 +647,48 @@ public abstract class Nominal {
 		public boolean equals(Object o) {
 			if (o instanceof UnionOfRecords) {
 				UnionOfRecords b = (UnionOfRecords) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
+	}
+	
+	public static final class UnionOfTuples extends Nominal implements EffectiveTuple {
+		private final Type.UnionOfTuples nominal;
+		private final Type.UnionOfTuples raw;
+		
+		UnionOfTuples(Type.UnionOfTuples nominal, Type.UnionOfTuples raw) {
+			this.nominal = nominal;
+			this.raw = raw;
+		}
+		
+		public Type.UnionOfTuples nominal() {
+			return nominal;
+		}
+		
+		public Type.UnionOfTuples raw() {
+			return raw;
+		}
+		
+		public Nominal element(int index) {
+			return construct(nominal.element(index),raw.element(index));
+		}
+		
+		public ArrayList<Nominal> elements() {
+			ArrayList<Nominal> r = new ArrayList<Nominal>();			
+			for(int i=0;i!=raw.size();++i) {
+				r.add(Nominal.construct(nominal.element(i),raw.element(i)));
+			}
+			return r;
+		}		
+				
+		public boolean equals(Object o) {
+			if (o instanceof UnionOfTuples) {
+				UnionOfTuples b = (UnionOfTuples) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;

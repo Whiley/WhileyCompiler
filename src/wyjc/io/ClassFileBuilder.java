@@ -1154,8 +1154,8 @@ public class ClassFileBuilder {
 	public void translate(Code.Destructure code, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(code.type instanceof Type.Tuple) {
-			Type.Tuple t = (Type.Tuple) code.type;
+		if(code.type instanceof Type.EffectiveTuple) {
+			Type.EffectiveTuple t = (Type.EffectiveTuple) code.type;
 			List<Type> elements = t.elements();
 			for(int i=0;i!=elements.size();++i) {
 				Type elem = elements.get(i);
@@ -2814,7 +2814,7 @@ public class ClassFileBuilder {
 			return WHILEYRECORD;
 		} else if(t instanceof Type.Reference) {
 			return WHILEYPROCESS;
-		} else if(t instanceof Type.Tuple) {
+		} else if(t instanceof Type.EffectiveTuple) {
 			return WHILEYTUPLE;
 		} else if(t instanceof Type.Negation) {
 			// can we do any better?

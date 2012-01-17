@@ -1398,9 +1398,19 @@ public abstract class Type {
 			return r;
 		}
 
+		public int size() {
+			HashSet<Type.Tuple> bounds = (HashSet) bounds();
+			int max = Integer.MAX_VALUE;
+			// first, determine maximum number of elements in effective tuple.
+			for(Type.Tuple bound : bounds) {
+				max = Math.min(max,bound.size()); 
+			}
+			return max;
+		}
+		
 		public ArrayList<Type> elements() {			
 			HashSet<Type.Tuple> bounds = (HashSet) bounds();
-			int max = 0;
+			int max = Integer.MAX_VALUE;
 			// first, determine maximum number of elements in effective tuple.
 			for(Type.Tuple bound : bounds) {
 				max = Math.min(max,bound.size()); 
