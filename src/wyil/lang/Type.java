@@ -924,6 +924,25 @@ public abstract class Type {
 	}
 	
 	/**
+	 * A type which is either a tuple, or a union of tuples. An effective
+	 * tuple gives access to a subset of the accessible elements
+	 * guaranteed to be in the type. For example, consider this type:
+	 * 
+	 * <pre>
+	 * (int,int,int) | (int,[int])
+	 * </pre>
+	 * 
+	 * Here, we're guaranteed to have at least two elements. Therefore, the effective
+	 * tuple type is <code>(int,int|[int])</code>.
+	 * 
+	 * @return
+	 */
+	public interface EffectiveTuple {	
+		public Type element(int index);		
+		public java.util.List<Type> elements();		
+	}
+	
+	/**
 	 * A tuple type describes a compound type made up of two or more
 	 * subcomponents. It is similar to a record, except that fields are
 	 * effectively anonymous.
@@ -931,10 +950,18 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Tuple extends Compound  {
+	public static final class Tuple extends Compound implements EffectiveTuple {
 		private Tuple(Automaton automaton) {
 			super(automaton);
 		}		
+		public int size() {
+			int[] values = (int[]) automaton.states[0].children;
+			return values.length;
+		}
+		public Type element(int index) {
+			int[] values = (int[]) automaton.states[0].children;
+			return construct(Automata.extract(automaton,values[index]));			
+		}
 		public java.util.List<Type> elements() {
 			int[] values = (int[]) automaton.states[0].children;
 			ArrayList<Type> elems = new ArrayList<Type>();
@@ -1348,6 +1375,47 @@ public abstract class Type {
 			// assigning int=>any into this yields {int=>any}
 
 			return (EffectiveDictionary) Type.Union(nbounds);
+		}
+	}
+	
+	public static final class UnionOfTuples extends Union implements
+	EffectiveTuple {
+		private UnionOfTuples(Automaton automaton) {
+			super(automaton);
+		}
+
+		public Type element(int index) {
+			Type r = null;
+			HashSet<Type.Tuple> bounds = (HashSet) bounds();
+			for(Type.Tuple bound : bounds) {
+				Type t = bound.element(index);
+				if(r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r,t);
+				}
+			}
+			return r;
+		}
+
+		public ArrayList<Type> elements() {			
+			HashSet<Type.Tuple> bounds = (HashSet) bounds();
+			int max = 0;
+			// first, determine maximum number of elements in effective tuple.
+			for(Type.Tuple bound : bounds) {
+				max = Math.min(max,bound.size()); 
+			}
+			
+			// now, create list of elements
+			ArrayList<Type> elements = new ArrayList<Type>();
+			for(int i=0;i!=max;++i) {
+				Type element = Type.T_VOID;
+				for(Type.Tuple bound : bounds) {
+					element = Type.Union(bound.element(i),element);
+				}
+				elements.add(element);
+			}
+			return elements;
 		}
 	}
 	
@@ -1955,12 +2023,14 @@ public abstract class Type {
 			boolean allLists = true;
 			boolean allDictionaries = true;
 			boolean allSets = true;			
+			boolean allTuples = true;
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
 				allRecords &= bound instanceof Record;				
 				allSets &= bound instanceof Set;
 				allDictionaries &= bound instanceof Dictionary;
 				allLists &= bound instanceof List;
+				allTuples &= bound instanceof Tuple;
 			}
 			if(allSets) {
 				type = new UnionOfSets(automaton);
@@ -1968,6 +2038,8 @@ public abstract class Type {
 				type = new UnionOfDictionaries(automaton);
 			} else if(allLists) {
 				type = new UnionOfLists(automaton);
+			} else if(allTuples) {
+				type = new UnionOfTuples(automaton);
 			} else if(allRecords) {
 				type = new UnionOfRecords(automaton);
 			} else {

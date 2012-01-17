@@ -483,7 +483,7 @@ public abstract class Code {
 	 *            --- dictionary type.
 	 * @return
 	 */
-	public static TupleLoad TupleLoad(Type.Tuple type, int index) {
+	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int index) {
 		return get(new TupleLoad(type,index));
 	}
 	
@@ -2972,10 +2972,10 @@ public abstract class Code {
 	}
 	
 	public static final class TupleLoad extends Code {
-		public final Type.Tuple type;
+		public final Type.EffectiveTuple type;
 		public final int index;
 		
-		private TupleLoad(Type.Tuple type, int index) {
+		private TupleLoad(Type.EffectiveTuple type, int index) {
 			this.type = type;
 			this.index = index;
 		}
@@ -2997,7 +2997,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("tupleload " + index,type);
+			return toString("tupleload " + index, (Type) type);
 		}	
 	}
 	
