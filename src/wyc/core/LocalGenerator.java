@@ -5,8 +5,6 @@ import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
 import static wyil.util.ErrorMessages.UNKNOWN_VARIABLE;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyil.util.ErrorMessages.errorMessage;
-import static wyil.util.SyntaxError.internalFailure;
-import static wyil.util.SyntaxError.syntaxError;
 import static wyc.core.Context.internalFailure;
 import static wyc.core.Context.syntaxError;
 
@@ -64,6 +62,10 @@ public final class LocalGenerator {
 	
 	public LocalGenerator(Context context) {
 		this.context = context;
+	}
+	
+	public Context context() {
+		return context;
 	}
 	
 	/**
@@ -440,7 +442,7 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	private Block generate(Expr.MessageSend fc, boolean retval,
+	public Block generate(Expr.MessageSend fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
@@ -456,7 +458,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.MethodCall fc, boolean retval,
+	public Block generate(Expr.MethodCall fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
@@ -469,7 +471,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.FunctionCall fc, boolean retval,
+	public Block generate(Expr.FunctionCall fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
@@ -482,7 +484,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.IndirectFunctionCall fc, boolean retval,
+	public Block generate(Expr.IndirectFunctionCall fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
@@ -497,7 +499,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.IndirectMethodCall fc, boolean retval,
+	public Block generate(Expr.IndirectMethodCall fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
@@ -512,7 +514,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.IndirectMessageSend fc, boolean retval,
+	public Block generate(Expr.IndirectMessageSend fc, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
