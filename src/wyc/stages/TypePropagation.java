@@ -1167,16 +1167,27 @@ public final class TypePropagation {
 				 rhsRawType = Type.Set(tmp.element(),false);
 			}  
 			
+			// FIXME: loss of nominal information here
+			Type.EffectiveSet ls = (Type.EffectiveSet) lhsRawType;
+			Type.EffectiveSet rs = (Type.EffectiveSet) rhsRawType;	
+			
 			switch(expr.op) {				
 				case ADD:																				
 					expr.op = Expr.BOp.UNION;					
-				case UNION:
-					srcType = Type.Union(lhsRawType,rhsRawType);					
+				case UNION:					
+					// TODO: this forces unnecessary coercions, which would be
+					// good to remove.
+					srcType = Type.Set(Type.Union(ls.element(),rs.element()),false);					
 					break;
 				case BITWISEAND:																				
 					expr.op = Expr.BOp.INTERSECTION;
 				case INTERSECTION:
-					srcType = Type.intersect(lhsRawType,rhsRawType);
+					// FIXME: this is just plain wierd.
+					if(Type.isSubtype(lhsRawType, rhsRawType)) {
+						srcType = rhsRawType;
+					} else {
+						srcType = lhsRawType;
+					}					
 					break;
 				case SUB:																				
 					expr.op = Expr.BOp.DIFFERENCE;
