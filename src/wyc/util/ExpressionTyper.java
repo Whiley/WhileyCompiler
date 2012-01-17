@@ -1,8 +1,9 @@
 package wyc.util;
 
 import static wyil.util.ErrorMessages.*;
-import static wyil.util.SyntaxError.internalFailure;
 import static wyil.util.SyntaxError.syntaxError;
+import static wyc.util.Context.internalFailure;
+import static wyc.util.Context.syntaxError;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,15 +18,16 @@ import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
+import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 
 /**
  * <p>
- * A local expression type is responsible for typing expressions in a given
- * context. The context varies and may represent an expression within a
- * statement, or within some global declaration (e.g. a constant or type
- * definition). The key point is that a local expression typer doesn't really
- * care about the context --- it just gets on with typing expressions.
+ * An expression typer is responsible for typing expressions in a given context.
+ * The context varies and may represent an expression within a statement, or
+ * within some global declaration (e.g. a constant or type definition). The key
+ * point is that a local expression typer doesn't really care about the context
+ * --- it just gets on with typing expressions.
  * </p>
  * <p>
  * The context must include the Whiley source file which contains the
@@ -64,18 +66,20 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public class LocalExpressionTyper {
+public final class ExpressionTyper {
 	private final Resolver resolver;
-	private final WhileyFile file;
-	private final ArrayList<WhileyFile.Import> imports;
+	private final Context context;
 	
-	public LocalExpressionTyper(Resolver resolver, WhileyFile file, List<WhileyFile.Import> imports) {
+	public ExpressionTyper(Resolver resolver, Context context) {
 		this.resolver = resolver;
-		this.file = file;
-		this.imports = new ArrayList(imports);
+		this.context = context;
 	}
 	
-	private Pair<Expr, RefCountedHashMap<String, Nominal>> propagate(
+	public Context context() {
+		return context;
+	}
+	
+	public Pair<Expr, RefCountedHashMap<String, Nominal>> propagate(
 			Expr expr, boolean sign,
 			RefCountedHashMap<String, Nominal> environment) {
 		
@@ -103,7 +107,7 @@ public class LocalExpressionTyper {
 			uop.type = Nominal.T_BOOL;
 			return new Pair(uop,p.second());
 		} else {
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),file.filename,expr);
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),context,expr);
 			return null; // deadcode
 		}	
 	}
@@ -131,7 +135,7 @@ public class LocalExpressionTyper {
 		case IS:
 			return propagateLeafCondition(bop,sign,environment);
 		default:
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), file.filename, bop);
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
 			return null; // dead code
 		}		
 	}
@@ -209,11 +213,11 @@ public class LocalExpressionTyper {
 				
 				if(Type.isSubtype(testRawType,lhsRawType)) {					
 					// DEFINITE TRUE CASE										
-					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), file.filename, bop);
+					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
 				} else if (glb.raw() == Type.T_VOID) {				
 					// DEFINITE FALSE CASE	
 					syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
-							file.filename, bop);			
+							context, bop);			
 				} 
 				
 				// Finally, if the lhs is local variable then update its
@@ -244,10 +248,10 @@ public class LocalExpressionTyper {
 			
 			if (listType != null && !Type.isImplicitCoerciveSubtype(listType.element(), lhsRawType)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,listType.element()),
-						file.filename, bop);
+						context, bop);
 			} else if (setType != null && !Type.isImplicitCoerciveSubtype(setType.element(), lhsRawType)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,setType.element()),
-						file.filename, bop);
+						context, bop);
 			}						
 			bop.srcType = rhs.result();
 			break;
@@ -269,7 +273,7 @@ public class LocalExpressionTyper {
 			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
 				bop.srcType = rhs.result();
 			} else {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),file.filename,bop);	
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),context,bop);	
 				return null; // dead code
 			}	
 			break;
@@ -289,7 +293,7 @@ public class LocalExpressionTyper {
 				Nominal newType;
 				Nominal glb = Nominal.intersect(lhs.result(), Nominal.T_NULL);
 				if(glb.raw() == Type.T_VOID) {
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),file.filename,bop);	
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),context,bop);	
 					return null;
 				} else if(sign) {					
 					newType = glb;
@@ -305,7 +309,7 @@ public class LocalExpressionTyper {
 				} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
 					bop.srcType = rhs.result();
 				} else {
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),file.filename,bop);	
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),context,bop);	
 					return null; // dead code
 				}		
 			}
@@ -314,7 +318,7 @@ public class LocalExpressionTyper {
 		return new Pair(bop,environment);
 	}
 	
-	private Expr propagate(Expr expr,
+	public Expr propagate(Expr expr,
 			RefCountedHashMap<String,Nominal> environment) {
 		
 		try {
@@ -362,14 +366,14 @@ public class LocalExpressionTyper {
 				return propagate((Expr.TypeVal) expr,environment); 
 			} 
 		} catch(ResolveError e) {
-			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),file.filename,expr,e);
+			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),context,expr,e);
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure(e.getMessage(),file.filename,expr,e);
+			internalFailure(e.getMessage(),context,expr,e);
 			return null; // dead code
 		}		
-		internalFailure("unknown expression: " + expr.getClass().getName(),file.filename,expr);
+		internalFailure("unknown expression: " + expr.getClass().getName(),context,expr);
 		return null; // dead code
 	}
 	
@@ -422,7 +426,7 @@ public class LocalExpressionTyper {
 			case STRINGAPPEND:
 				break;
 			default:			
-				syntaxError("Invalid string operation: " + expr.op, file.filename,
+				syntaxError("Invalid string operation: " + expr.op, context,
 						expr);
 			}
 			
@@ -438,7 +442,7 @@ public class LocalExpressionTyper {
 				srcType = Type.Union(lhsRawType,rhsRawType);
 				break;
 			default:
-				syntaxError("invalid list operation: " + expr.op,file.filename,expr);	
+				syntaxError("invalid list operation: " + expr.op,context,expr);	
 				return null; // dead-code
 			}										
 		} else if(lhs_set && rhs_set) {	
@@ -486,7 +490,7 @@ public class LocalExpressionTyper {
 					srcType = lhsRawType;
 					break;								
 				default:
-					syntaxError("invalid set operation: " + expr.op,file.filename,expr);	
+					syntaxError("invalid set operation: " + expr.op,context,expr);	
 					return null; // deadcode
 			}							
 		} else {			
@@ -572,7 +576,7 @@ public class LocalExpressionTyper {
 		default:		
 			internalFailure(
 					"unknown operator: " + expr.op.getClass().getName(),
-					file.filename, expr);
+					context, expr);
 		}
 		
 		expr.type = src.result();		
@@ -599,7 +603,7 @@ public class LocalExpressionTyper {
 			} else if(setType != null) {
 				element = setType.element();
 			} else {
-				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),file.filename,e);
+				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),context,e);
 				return null; // dead code
 			}
 			// update environment for subsequent source expressions, the
@@ -631,11 +635,11 @@ public class LocalExpressionTyper {
 	private Expr propagate(Expr.Convert c,
 			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
 		c.expr = propagate(c.expr,environment);		
-		c.type = resolver.resolveAsType(c.unresolvedType, file.filename);
+		c.type = resolver.resolveAsType(c.unresolvedType, context);
 		Type from = c.expr.result().raw();		
 		Type to = c.type.raw();
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
-			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), file.filename, c);
+			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), context, c);
 		}	
 		return c;
 	}
@@ -652,13 +656,13 @@ public class LocalExpressionTyper {
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
 			for (UnresolvedType t : expr.paramTypes) {
-				paramTypes.add(resolver.resolveAsType(t, file.filename));
+				paramTypes.add(resolver.resolveAsType(t, context));
 			}
 			// FIXME: clearly a bug here in the case of message reference
 			p = (Pair) resolver
-					.resolveAsFunctionOrMethod(expr.name, paramTypes);			
+					.resolveAsFunctionOrMethod(expr.name, paramTypes, context);			
 		} else {
-			p = resolver.resolveAsFunctionOrMethodOrMessage(expr.name);			
+			p = resolver.resolveAsFunctionOrMethodOrMessage(expr.name, context);			
 		}
 		
 		expr = new Expr.FunctionOrMethodOrMessage(p.first(),expr.paramTypes,expr.attributes());
@@ -715,9 +719,9 @@ public class LocalExpressionTyper {
 				Nominal fieldType = recType.field(expr.name);
 				
 				if(fieldType == null) {
-					syntaxError(errorMessage(RECORD_MISSING_FIELD),file.filename,expr);
+					syntaxError(errorMessage(RECORD_MISSING_FIELD),context,expr);
 				} else if(!(fieldType instanceof Nominal.FunctionOrMethod)) {
-					syntaxError("function or method type expected",file.filename,expr);
+					syntaxError("function or method type expected",context,expr);
 				}
 				
 				Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) fieldType;
@@ -752,7 +756,7 @@ public class LocalExpressionTyper {
 					// FIXME: is this broken since should be equivalent, not subtype?
 					checkIsSubtype(msgType.receiver(),expr.qualification);
 					if(paramTypes.size() != funTypeParams.size()) {
-						syntaxError("insufficient arguments to message send",file.filename,expr);
+						syntaxError("insufficient arguments to message send",context,expr);
 					}
 					for (int i = 0; i != funTypeParams.size(); ++i) {
 						Nominal fpt = funTypeParams.get(i);
@@ -770,7 +774,7 @@ public class LocalExpressionTyper {
 
 					Pair<NameID, Nominal.Message> p = resolver
 							.resolveAsMessage(expr.name, procType, paramTypes,
-									imports);				
+									context);				
 					Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
 							exprArgs, expr.synchronous, expr.attributes());			
 					r.messageType = p.second();
@@ -791,7 +795,7 @@ public class LocalExpressionTyper {
 				// ok, matching local variable of function type.				
 				List<Nominal> funTypeParams = funType.params();
 				if(paramTypes.size() != funTypeParams.size()) {
-					syntaxError("insufficient arguments to function call",file.filename,expr);
+					syntaxError("insufficient arguments to function call",context,expr);
 				}
 				for (int i = 0; i != funTypeParams.size(); ++i) {
 					Nominal fpt = funTypeParams.get(i);
@@ -814,7 +818,7 @@ public class LocalExpressionTyper {
 			} else {				
 				// no matching local variable, so attempt to resolve as direct
 				// call.
-				Pair<NameID, Nominal.FunctionOrMethod> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes);
+				Pair<NameID, Nominal.FunctionOrMethod> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, context);
 				funType = p.second();							
 				if(funType instanceof Nominal.Function) {					
 					Expr.FunctionCall mc = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
@@ -854,7 +858,7 @@ public class LocalExpressionTyper {
 				expr = new Expr.DictionaryAccess(expr.src, expr.index,
 						expr.attributes());
 			} else {
-				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), file.filename, expr.src);
+				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), context, expr.src);
 			}
 		}
 		
@@ -868,7 +872,7 @@ public class LocalExpressionTyper {
 			Expr.ListAccess la = (Expr.ListAccess) expr; 
 			Nominal.EffectiveList list = resolver.expandAsEffectiveList(srcType);			
 			if(list == null) {
-				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),file.filename,expr);				
+				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,expr);				
 			}
 			checkIsSubtype(Type.T_INT,expr.index);	
 			la.srcType = list;			
@@ -876,7 +880,7 @@ public class LocalExpressionTyper {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
 			Nominal.EffectiveDictionary dict = resolver.expandAsEffectiveDictionary(srcType);
 			if(dict == null) {
-				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),file.filename,expr);
+				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),context,expr);
 			}			
 			checkIsSubtype(dict.key(),expr.index);			
 			da.srcType = dict;						
@@ -915,7 +919,7 @@ public class LocalExpressionTyper {
 			}
 		} else {
 			syntaxError("found " + expr.src.result().nominal()
-					+ ", expected string, set, list or dictionary.", file.filename,
+					+ ", expected string, set, list or dictionary.", context,
 					expr.src);
 		}
 
@@ -928,21 +932,21 @@ public class LocalExpressionTyper {
 			Expr.ListLength ll = (Expr.ListLength) expr; 
 			Nominal.EffectiveList list = resolver.expandAsEffectiveList(srcType);			
 			if(list == null) {
-				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),file.filename,expr);				
+				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,expr);				
 			}
 			ll.srcType = list;
 		} else if(expr instanceof Expr.SetLength) {
 			Expr.SetLength sl = (Expr.SetLength) expr; 
 			Nominal.EffectiveSet set = resolver.expandAsEffectiveSet(srcType);			
 			if(set == null) {
-				syntaxError(errorMessage(INVALID_SET_EXPRESSION),file.filename,expr);				
+				syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,expr);				
 			}
 			sl.srcType = set;			
 		} else {
 			Expr.DictionaryLength dl = (Expr.DictionaryLength) expr; 
 			Nominal.EffectiveDictionary dict = resolver.expandAsEffectiveDictionary(srcType);
 			if(dict == null) {
-				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),file.filename,expr);
+				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),context,expr);
 			}				
 			dl.srcType = dict;	
 		}
@@ -970,7 +974,7 @@ public class LocalExpressionTyper {
 			// Therefore, we must determine which module this
 			// is, and update the tree accordingly.
 			try {
-				NameID nid = resolver.resolveAsName(expr.var);					
+				NameID nid = resolver.resolveAsName(expr.var, context);					
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
 				ca.value = resolver.resolveAsConstant(nid);
@@ -980,7 +984,7 @@ public class LocalExpressionTyper {
 			// In this case, we may still be OK if this corresponds to an
 			// explicit module or package access.
 			try {
-				ModuleID mid = resolver.resolveAsModule(expr.var);
+				ModuleID mid = resolver.resolveAsModule(expr.var, context);
 				return new Expr.ModuleAccess(null, expr.var, mid,
 						expr.attributes());
 			} catch (ResolveError err) {
@@ -991,7 +995,7 @@ public class LocalExpressionTyper {
 						expr.attributes());
 			}
 			// ok, failed.
-			syntaxError(errorMessage(UNKNOWN_VARIABLE), file.filename, expr);
+			syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
 			return null; // deadcode
 		}
 	}
@@ -1153,16 +1157,15 @@ public class LocalExpressionTyper {
 			if (resolver.isPackage(pid)) {
 				return new Expr.PackageAccess(pa, expr.name, pid,
 						expr.attributes());
-			}
-			try {				
-				ModuleID mid = new ModuleID(pa.pid,expr.name);
-				loader.loadModule(mid);
+			}			
+			ModuleID mid = new ModuleID(pa.pid,expr.name);
+			if (resolver.isModule(mid)) {
 				return new Expr.ModuleAccess(pa, expr.name, mid,
 						expr.attributes());
-			} catch (ResolveError err) {
-				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),file.filename,expr,err);
+			} else {
+				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS), context, expr);
 				return null; // deadcode
-			}			
+			}		
 		} else if(src instanceof Expr.ModuleAccess) {
 			// must be a constant access
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 													
@@ -1173,7 +1176,7 @@ public class LocalExpressionTyper {
 				ca.value = resolver.resolveAsConstant(nid);
 				return ca;
 			}						
-			syntaxError(errorMessage(INVALID_MODULE_ACCESS),file.filename,expr);			
+			syntaxError(errorMessage(INVALID_MODULE_ACCESS),context,expr);			
 			return null; // deadcode
 		} else {
 			// must be a RecordAccess
@@ -1187,11 +1190,11 @@ public class LocalExpressionTyper {
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = resolver.expandAsEffectiveRecord(srcType);
 		if(recType == null) {
-			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),file.filename,ra);
+			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),context,ra);
 		} 
 		Nominal fieldType = recType.field(ra.name);
 		if(fieldType == null) {
-			syntaxError(errorMessage(RECORD_MISSING_FIELD),file.filename,ra);
+			syntaxError(errorMessage(RECORD_MISSING_FIELD),context,ra);
 		}
 		ra.srcType = recType;		
 		return ra;
@@ -1210,7 +1213,7 @@ public class LocalExpressionTyper {
 		expr.src = src;
 		Nominal.Reference srcType = resolver.expandAsReference(src.result());
 		if(srcType == null) {
-			syntaxError("invalid reference expression",file.filename,src);
+			syntaxError("invalid reference expression",context,src);
 		}
 		expr.srcType = srcType;		
 		return expr;
@@ -1225,21 +1228,50 @@ public class LocalExpressionTyper {
 	
 	private Expr propagate(Expr.TypeVal expr,
 			RefCountedHashMap<String,Nominal> environment) throws ResolveError {
-		expr.type = resolver.resolveAsType(expr.unresolvedType, file.filename); 
+		expr.type = resolver.resolveAsType(expr.unresolvedType, context); 
 		return expr;
 	}
 	
+	private <T extends Type> T checkType(Type t, Class<T> clazz,
+			SyntacticElement elem) {
+		if (clazz.isInstance(t)) {
+			return (T) t;
+		} else {
+			syntaxError(errorMessage(SUBTYPE_ERROR, clazz.getName().replace('$', '.'), t),
+					context, elem);
+			return null;
+		}
+	}
+	
+	// Check t1 :> t2
+	private void checkIsSubtype(Nominal t1, Nominal t2,
+			SyntacticElement elem) {
+		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
+			syntaxError(
+					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
+					context, elem);
+		}
+	}	
+	
+	private void checkIsSubtype(Nominal t1, Expr t2) {
+		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {
+			// We use the nominal type for error reporting, since this includes
+			// more helpful names.
+			syntaxError(
+					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.result()
+							.nominal()), context, t2);
+		}
+	}
 	
 	private void checkIsSubtype(Type t1, Expr t2) {
 		if (!Type.isImplicitCoerciveSubtype(t1, t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()),
-					file.filename, t2);
+					context, t2);
 		}
 	}
 	
-
 	private static final RefCountedHashMap<String,Nominal> BOTTOM = new RefCountedHashMap<String,Nominal>();
 	
 	private static final RefCountedHashMap<String, Nominal> join(

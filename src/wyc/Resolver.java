@@ -25,13 +25,7 @@
 
 package wyc;
 
-import static wyil.util.ErrorMessages.CYCLIC_CONSTANT_DECLARATION;
-import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_CONSTANT_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
+import static wyil.util.ErrorMessages.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import static wyil.util.SyntaxError.syntaxError;
 import static wyil.util.SyntaxError.internalFailure;
@@ -43,7 +37,7 @@ import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Declaration;
-import wyc.util.Nominal;
+import wyc.util.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
@@ -117,6 +111,23 @@ public final class Resolver {
 			return false;
 		}
 	}		
+	
+	/**
+	 * This function checks whether the supplied module exists or not.
+	 * 
+	 * @param pkg
+	 *            The package whose existence we want to check for.
+	 * 
+	 * @return true if the package exists, false otherwise.
+	 */
+	public boolean isModule(ModuleID mid) {
+		try {
+			loader.loadModule(mid);
+			return true;
+		} catch(ResolveError e) {
+			return false;
+		}
+	}	
 	
 	/**
 	 * This function checks whether the supplied name exists or not.
@@ -209,6 +220,26 @@ public final class Resolver {
 	 * @throws ResolveError
 	 *             if it couldn't resolve the name
 	 */
+	public NameID resolveAsName(String name, Context context)
+			throws ResolveError {		
+		return resolveAsName(name,context.imports);
+	}
+	
+	/**
+	 * This methods attempts to resolve the correct package for a named item,
+	 * given a list of imports. Resolving the correct package may require
+	 * loading modules as necessary from the WHILEYPATH and/or compiling modules
+	 * for which only source code is currently available.
+	 * 
+	 * @param name
+	 *            A module name without package specifier.
+	 * @param imports
+	 *            A list of import declarations to search through. Imports are
+	 *            searched in order of appearance.
+	 * @return The resolved name.
+	 * @throws ResolveError
+	 *             if it couldn't resolve the name
+	 */
 	public NameID resolveAsName(String name, List<WhileyFile.Import> imports)
 			throws ResolveError {		
 		
@@ -226,6 +257,28 @@ public final class Resolver {
 		throw new ResolveError("name not found: " + name);
 	}
 
+	/**
+	 * This methods attempts to resolve the given list of names into a single
+	 * named item (e.g. type, method, constant, etc). For example,
+	 * <code>["whiley","lang","Math","max"]</code> would be resolved, since
+	 * <code>whiley.lang.Math.max</code> is a valid function name. In contrast,
+	 * <code>["whiley","lang","Math"]</code> does not resolve since
+	 * <code>whiley.lang.Math</code> refers to a module.
+	 * 
+	 * @param names
+	 *            A list of components making up the name, which may include the
+	 *            package and enclosing module.
+	 * @param imports
+	 *            A list of import declarations to search through. Imports are
+	 *            searched in order of appearance.
+	 * @return The resolved name.
+	 * @throws ResolveError
+	 *             if it couldn't resolve the name
+	 */
+	public NameID resolveAsName(List<String> names, Context context) throws ResolveError {
+		return resolveAsName(names,context.imports);
+	}
+	
 	/**
 	 * This methods attempts to resolve the given list of names into a single
 	 * named item (e.g. type, method, constant, etc). For example,
@@ -299,6 +352,29 @@ public final class Resolver {
 		throw new ResolveError("module not found: " + name);
 	}
 	
+	/**
+	 * This method attempts to resolve the given name as a module name, given a
+	 * list of imports.
+	 * 
+	 * @param name
+	 * @param imports
+	 * @return
+	 * @throws ResolveError
+	 */
+	public ModuleID resolveAsModule(String name, Context context)
+			throws ResolveError {
+		
+		for (WhileyFile.Import imp : context.imports) {			
+			for(ModuleID mid : matchImport(imp)) {				
+				if(mid.module().equals(name)) {
+					return mid;
+				}
+			}
+		}
+				
+		throw new ResolveError("module not found: " + name);
+	}
+	
 	// =========================================================================
 	// ResolveAsType
 	// =========================================================================
@@ -317,7 +393,22 @@ public final class Resolver {
 			List<WhileyFile.Import> imports, String filename) throws ResolveError {		
 		return (Nominal.Message) resolveAsType((UnresolvedType)t,imports,filename);
 	}
-			
+	
+	public Nominal.Function resolveAsType(UnresolvedType.Function t,
+			Context context) throws ResolveError {
+		return (Nominal.Function) resolveAsType((UnresolvedType)t,context);
+	}
+	
+	public Nominal.Method resolveAsType(UnresolvedType.Method t,
+			Context context) throws ResolveError {		
+		return (Nominal.Method) resolveAsType((UnresolvedType)t,context);
+	}
+	
+	public Nominal.Message resolveAsType(UnresolvedType.Message t,
+			Context context) throws ResolveError {		
+		return (Nominal.Message) resolveAsType((UnresolvedType)t,context);
+	}
+	
 	/**
 	 * Resolve a given type by identifying all unknown names and replacing them
 	 * with nominal types.
@@ -332,6 +423,22 @@ public final class Resolver {
 			throws ResolveError {
 		Type nominalType = resolveAsType(t, imports, filename, true);
 		Type rawType = resolveAsType(t, imports, filename, false);
+		return Nominal.construct(nominalType, rawType);
+	}
+	
+	/**
+	 * Resolve a given type by identifying all unknown names and replacing them
+	 * with nominal types.
+	 * 
+	 * @param t
+	 * @param imports
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Nominal resolveAsType(UnresolvedType t, Context context)
+			throws ResolveError {
+		Type nominalType = resolveAsType(t, context.imports, context.file.filename, true);
+		Type rawType = resolveAsType(t, context.imports, context.file.filename, false);
 		return Nominal.construct(nominalType, rawType);
 	}
 	
@@ -797,6 +904,10 @@ public final class Resolver {
 		return resolveAsConstant(e,filename,imports,new HashSet<NameID>());		
 	}
 	
+	public Value resolveAsConstant(Expr e, Context context) throws ResolveError {				
+		return resolveAsConstant(e,context.file.filename,context.imports,new HashSet<NameID>());		
+	}
+	
 	/**
 	 * The expand constant method is responsible for turning a named constant
 	 * expression into a value. This is done by traversing the constant's
@@ -1065,6 +1176,24 @@ public final class Resolver {
 	}
 	
 	/**
+	 * Responsible for determining the true type of a method or function being
+	 * invoked. In this case, no argument types are given. This means that any
+	 * match is returned. However, if there are multiple matches, then an
+	 * ambiguity error is reported.
+	 * 
+	 * @param nid
+	 * @param qualification
+	 * @param parameters
+	 * @param elem
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
+			Context context) throws ResolveError {
+		return resolveAsFunctionOrMethod(name,null,context.imports);
+	}
+	
+	/**
 	 * Responsible for determining the true type of a method, function or
 	 * message. In this case, no argument types are given. This means that any
 	 * match is returned. However, if there are multiple matches, then an
@@ -1083,6 +1212,28 @@ public final class Resolver {
 			return (Pair) resolveAsFunctionOrMethod(name,null,imports);
 		} catch(ResolveError e) {
 			return (Pair) resolveAsMessage(name,null,null,imports);
+		}
+	}
+	
+	/**
+	 * Responsible for determining the true type of a method, function or
+	 * message. In this case, no argument types are given. This means that any
+	 * match is returned. However, if there are multiple matches, then an
+	 * ambiguity error is reported.
+	 * 
+	 * @param nid
+	 * @param qualification
+	 * @param parameters
+	 * @param elem
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Pair<NameID,Nominal.FunctionOrMethodOrMessage> resolveAsFunctionOrMethodOrMessage(String name, 
+			Context context) throws ResolveError {
+		try {
+			return (Pair) resolveAsFunctionOrMethod(name,null,context.imports);
+		} catch(ResolveError e) {
+			return (Pair) resolveAsMessage(name,null,null,context.imports);
 		}
 	}
 	
@@ -1128,6 +1279,36 @@ public final class Resolver {
 	 * @return
 	 * @throws ResolveError
 	 */
+	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
+			List<Nominal> parameters, Context context) throws ResolveError {
+		
+		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 
+		
+		// first, try to find the matching message
+		for (WhileyFile.Import imp : context.imports) {
+			if (imp.matchName(name)) {
+				for (ModuleID mid : matchImport(imp)) {					
+					NameID nid = new NameID(mid,name);				
+					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
+				}
+			}
+		}
+		
+		return selectCandidateFunctionOrMethod(name,parameters,candidates);
+	}
+	
+	/**
+	 * Responsible for determining the true type of a method or function being
+	 * invoked. To do this, it must find the function/method with the most
+	 * precise type that matches the argument types.
+	 * 
+	 * @param nid
+	 * @param qualification
+	 * @param parameters
+	 * @param elem
+	 * @return
+	 * @throws ResolveError
+	 */
 	public Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid, 
 			List<Nominal> parameters) throws ResolveError {
 		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
@@ -1145,6 +1326,24 @@ public final class Resolver {
 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : imports) {
+			if (imp.matchName(name)) {
+				for (ModuleID mid : matchImport(imp)) {					
+					NameID nid = new NameID(mid,name);				
+					addCandidateMessages(nid,parameters,candidates);					
+				}
+			}
+		}
+
+		return selectCandidateMessage(name,receiver,parameters,candidates);
+	}
+	
+	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
+			List<Nominal> parameters, Context context) throws ResolveError {
+
+		HashSet<Pair<NameID,Nominal.Message>> candidates = new HashSet<Pair<NameID,Nominal.Message>>(); 
+		
+		// first, try to find the matching message
+		for (WhileyFile.Import imp : context.imports) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {					
 					NameID nid = new NameID(mid,name);				

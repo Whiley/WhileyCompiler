@@ -203,7 +203,7 @@ public final class WhileyFile {
 		public final List<Modifier> modifiers;
 		public final UnresolvedType unresolvedType;
 		public Nominal resolvedType;
-		public final Expr constraint;
+		public Expr constraint;
 		public final String name;		
 
 		public TypeDef(List<Modifier> modifiers, UnresolvedType type, String name,
@@ -242,10 +242,10 @@ public final class WhileyFile {
 		public final UnresolvedType ret;
 		public final UnresolvedType throwType;
 		public final ArrayList<Parameter> parameters;
-		public final Expr precondition;
-		public final Expr postcondition;		
 		public final ArrayList<Stmt> statements;			
-
+		public Expr precondition;
+		public Expr postcondition;		
+		
 		/**
 		 * Construct an object representing a Whiley function.
 		 * 
