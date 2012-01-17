@@ -26,9 +26,8 @@
 package wyc;
 
 import static wyil.util.ErrorMessages.*;
-import static wyil.util.ErrorMessages.errorMessage;
-import static wyil.util.SyntaxError.syntaxError;
-import static wyil.util.SyntaxError.internalFailure;
+import static wyc.util.Context.syntaxError;
+import static wyc.util.Context.internalFailure;
 
 import java.util.*;
 
@@ -41,7 +40,6 @@ import wyc.util.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
-import wyil.util.path.Path;
 
 /**
  * <p>
@@ -213,7 +211,7 @@ public final class Resolver {
 	 * 
 	 * @param name
 	 *            A module name without package specifier.
-	 * @param imports
+	 * @param context - context in which to resolve
 	 *            A list of import declarations to search through. Imports are
 	 *            searched in order of appearance.
 	 * @return The resolved name.
@@ -222,28 +220,7 @@ public final class Resolver {
 	 */
 	public NameID resolveAsName(String name, Context context)
 			throws ResolveError {		
-		return resolveAsName(name,context.imports);
-	}
-	
-	/**
-	 * This methods attempts to resolve the correct package for a named item,
-	 * given a list of imports. Resolving the correct package may require
-	 * loading modules as necessary from the WHILEYPATH and/or compiling modules
-	 * for which only source code is currently available.
-	 * 
-	 * @param name
-	 *            A module name without package specifier.
-	 * @param imports
-	 *            A list of import declarations to search through. Imports are
-	 *            searched in order of appearance.
-	 * @return The resolved name.
-	 * @throws ResolveError
-	 *             if it couldn't resolve the name
-	 */
-	public NameID resolveAsName(String name, List<WhileyFile.Import> imports)
-			throws ResolveError {		
-		
-		for (WhileyFile.Import imp : imports) {			
+		for (WhileyFile.Import imp : context.imports) {			
 			if (imp.matchName(name)) {
 				for (ModuleID mid : matchImport(imp)) {					
 					NameID nid = new NameID(mid, name); 					
@@ -268,41 +245,19 @@ public final class Resolver {
 	 * @param names
 	 *            A list of components making up the name, which may include the
 	 *            package and enclosing module.
-	 * @param imports
+	 * @param context - context in which to resolve
 	 *            A list of import declarations to search through. Imports are
 	 *            searched in order of appearance.
 	 * @return The resolved name.
 	 * @throws ResolveError
 	 *             if it couldn't resolve the name
 	 */
-	public NameID resolveAsName(List<String> names, Context context) throws ResolveError {
-		return resolveAsName(names,context.imports);
-	}
-	
-	/**
-	 * This methods attempts to resolve the given list of names into a single
-	 * named item (e.g. type, method, constant, etc). For example,
-	 * <code>["whiley","lang","Math","max"]</code> would be resolved, since
-	 * <code>whiley.lang.Math.max</code> is a valid function name. In contrast,
-	 * <code>["whiley","lang","Math"]</code> does not resolve since
-	 * <code>whiley.lang.Math</code> refers to a module.
-	 * 
-	 * @param names
-	 *            A list of components making up the name, which may include the
-	 *            package and enclosing module.
-	 * @param imports
-	 *            A list of import declarations to search through. Imports are
-	 *            searched in order of appearance.
-	 * @return The resolved name.
-	 * @throws ResolveError
-	 *             if it couldn't resolve the name
-	 */
-	public NameID resolveAsName(List<String> names, List<WhileyFile.Import> imports) throws ResolveError {
+	public NameID resolveAsName(List<String> names, Context context) throws ResolveError {		
 		if(names.size() == 1) {
-			return resolveAsName(names.get(0),imports);
+			return resolveAsName(names.get(0),context);
 		} else if(names.size() == 2) {
 			String name = names.get(1);
-			ModuleID mid = resolveAsModule(names.get(0),imports);		
+			ModuleID mid = resolveAsModule(names.get(0),context);		
 			NameID nid = new NameID(mid, name); 
 			if (isName(nid)) {
 				return nid;
@@ -334,30 +289,7 @@ public final class Resolver {
 	 * list of imports.
 	 * 
 	 * @param name
-	 * @param imports
-	 * @return
-	 * @throws ResolveError
-	 */
-	public ModuleID resolveAsModule(String name, List<WhileyFile.Import> imports)
-			throws ResolveError {
-		
-		for (WhileyFile.Import imp : imports) {			
-			for(ModuleID mid : matchImport(imp)) {				
-				if(mid.module().equals(name)) {
-					return mid;
-				}
-			}
-		}
-				
-		throw new ResolveError("module not found: " + name);
-	}
-	
-	/**
-	 * This method attempts to resolve the given name as a module name, given a
-	 * list of imports.
-	 * 
-	 * @param name
-	 * @param imports
+	 * @param context - context in which to resolve
 	 * @return
 	 * @throws ResolveError
 	 */
@@ -380,21 +312,6 @@ public final class Resolver {
 	// =========================================================================
 	
 	public Nominal.Function resolveAsType(UnresolvedType.Function t,
-			List<WhileyFile.Import> imports, String filename) throws ResolveError {
-		return (Nominal.Function) resolveAsType((UnresolvedType)t,imports,filename);
-	}
-	
-	public Nominal.Method resolveAsType(UnresolvedType.Method t,
-			List<WhileyFile.Import> imports, String filename) throws ResolveError {		
-		return (Nominal.Method) resolveAsType((UnresolvedType)t,imports,filename);
-	}
-	
-	public Nominal.Message resolveAsType(UnresolvedType.Message t,
-			List<WhileyFile.Import> imports, String filename) throws ResolveError {		
-		return (Nominal.Message) resolveAsType((UnresolvedType)t,imports,filename);
-	}
-	
-	public Nominal.Function resolveAsType(UnresolvedType.Function t,
 			Context context) throws ResolveError {
 		return (Nominal.Function) resolveAsType((UnresolvedType)t,context);
 	}
@@ -408,42 +325,25 @@ public final class Resolver {
 			Context context) throws ResolveError {		
 		return (Nominal.Message) resolveAsType((UnresolvedType)t,context);
 	}
-	
+
 	/**
 	 * Resolve a given type by identifying all unknown names and replacing them
 	 * with nominal types.
 	 * 
 	 * @param t
-	 * @param imports
-	 * @return
-	 * @throws ResolveError
-	 */
-	public Nominal resolveAsType(UnresolvedType t,
-			List<WhileyFile.Import> imports, String filename)
-			throws ResolveError {
-		Type nominalType = resolveAsType(t, imports, filename, true);
-		Type rawType = resolveAsType(t, imports, filename, false);
-		return Nominal.construct(nominalType, rawType);
-	}
-	
-	/**
-	 * Resolve a given type by identifying all unknown names and replacing them
-	 * with nominal types.
-	 * 
-	 * @param t
-	 * @param imports
+	 * @param context - context in which to resolve
 	 * @return
 	 * @throws ResolveError
 	 */
 	public Nominal resolveAsType(UnresolvedType t, Context context)
 			throws ResolveError {
-		Type nominalType = resolveAsType(t, context.imports, context.file.filename, true);
-		Type rawType = resolveAsType(t, context.imports, context.file.filename, false);
+		Type nominalType = resolveAsType(t, context, true);
+		Type rawType = resolveAsType(t, context, false);
 		return Nominal.construct(nominalType, rawType);
 	}
 	
-	private Type resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
-			String filename, boolean nominal) {
+	private Type resolveAsType(UnresolvedType t, Context context,
+			boolean nominal) {
 		if(t instanceof UnresolvedType.Primitive) { 
 			if (t instanceof UnresolvedType.Any) {
 				return Type.T_ANY;
@@ -465,13 +365,13 @@ public final class Resolver {
 				return Type.T_STRING;
 			} else {
 				internalFailure("unrecognised type encountered ("
-						+ t.getClass().getName() + ")",filename,t);
+						+ t.getClass().getName() + ")",context,t);
 				return null; // deadcode
 			}
 		} else {
 			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-			resolveAsType(t,imports,states,roots,filename,nominal);
+			resolveAsType(t,context,states,roots,nominal);
 			return Type.construct(new Automaton(states));
 		}
 	}
@@ -481,16 +381,15 @@ public final class Resolver {
 	 * statements.
 	 * 
 	 * @param t
-	 * @param imports
+	 * @param context - context in which to resolve
 	 * @return
 	 * @throws ResolveError
 	 */
-	private int resolveAsType(UnresolvedType t, List<WhileyFile.Import> imports,
-			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
-			String filename, boolean nominal) {				
+	private int resolveAsType(UnresolvedType t, Context context,
+			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots, boolean nominal) {				
 		
 		if(t instanceof UnresolvedType.Primitive) {
-			return resolveAsType((UnresolvedType.Primitive)t,imports,filename,states);
+			return resolveAsType((UnresolvedType.Primitive)t,context,states);
 		} 
 		
 		int myIndex = states.size();
@@ -505,20 +404,20 @@ public final class Resolver {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			myKind = Type.K_LIST;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(lt.element,imports,states,roots,filename,nominal);
+			myChildren[0] = resolveAsType(lt.element,context,states,roots,nominal);
 			myData = false;
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			myKind = Type.K_SET;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(st.element,imports,states,roots,filename,nominal);
+			myChildren[0] = resolveAsType(st.element,context,states,roots,nominal);
 			myData = false;
 		} else if(t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
 			myKind = Type.K_DICTIONARY;
 			myChildren = new int[2];
-			myChildren[0] = resolveAsType(st.key,imports,states,roots,filename,nominal);
-			myChildren[1] = resolveAsType(st.value,imports,states,roots,filename,nominal);			
+			myChildren[0] = resolveAsType(st.key,context,states,roots,nominal);
+			myChildren[1] = resolveAsType(st.value,context,states,roots,nominal);			
 		} else if(t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String,UnresolvedType> ttTypes = tt.types;			
@@ -528,7 +427,7 @@ public final class Resolver {
 			myChildren = new int[fields.size()];
 			for(int i=0;i!=fields.size();++i) {	
 				String field = fields.get(i);
-				myChildren[i] = resolveAsType(ttTypes.get(field),imports,states,roots,filename,nominal);
+				myChildren[i] = resolveAsType(ttTypes.get(field),context,states,roots,nominal);
 			}						
 			myData = fields;
 		} else if(t instanceof UnresolvedType.Tuple) {
@@ -537,7 +436,7 @@ public final class Resolver {
 			myKind = Type.K_TUPLE;
 			myChildren = new int[ttTypes.size()];
 			for(int i=0;i!=ttTypes.size();++i) {
-				myChildren[i] = resolveAsType(ttTypes.get(i),imports,states,roots,filename,nominal);				
+				myChildren[i] = resolveAsType(ttTypes.get(i),context,states,roots,nominal);				
 			}			
 		} else if(t instanceof UnresolvedType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
@@ -546,7 +445,7 @@ public final class Resolver {
 			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;									
 			NameID nid;
 			try {
-				nid = resolveAsName(dt.names, imports);
+				nid = resolveAsName(dt.names, context);
 
 				if(nominal) {
 					myKind = Type.K_NOMINAL;
@@ -561,36 +460,36 @@ public final class Resolver {
 					return resolveAsType(nid,states,roots);				
 				}	
 			} catch(ResolveError e) {
-				syntaxError(e.getMessage(),filename,dt,e);
+				syntaxError(e.getMessage(),context,dt,e);
 				return 0; // dead-code
 			} catch(SyntaxError e) {
 				throw e;
 			} catch(Throwable e) {
-				internalFailure(e.getMessage(),filename,dt,e);
+				internalFailure(e.getMessage(),context,dt,e);
 				return 0; // dead-code
 			}
 		} else if(t instanceof UnresolvedType.Not) {	
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
 			myKind = Type.K_NEGATION;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,imports,states,roots,filename,nominal);			
+			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal);			
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
 			myKind = Type.K_UNION;
 			myChildren = new int[utTypes.size()];
 			for(int i=0;i!=utTypes.size();++i) {
-				myChildren[i] = resolveAsType(utTypes.get(i),imports,states,roots,filename,nominal);				
+				myChildren[i] = resolveAsType(utTypes.get(i),context,states,roots,nominal);				
 			}	
 			myDeterministic = false;
 		} else if(t instanceof UnresolvedType.Intersection) {
-			internalFailure("intersection types not supported yet",filename,t);
+			internalFailure("intersection types not supported yet",context,t);
 			return 0; // dead-code
 		} else if(t instanceof UnresolvedType.Reference) {	
 			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
 			myKind = Type.K_REFERENCE;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,imports,states,roots,filename,nominal);		
+			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal);		
 		} else {			
 			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) t;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
@@ -611,17 +510,17 @@ public final class Resolver {
 			myChildren = new int[start + 2 + utParamTypes.size()];
 			
 			if(receiver != null) {
-				myChildren[0] = resolveAsType(receiver,imports,states,roots,filename,nominal);
+				myChildren[0] = resolveAsType(receiver,context,states,roots,nominal);
 			}			
-			myChildren[start++] = resolveAsType(ut.ret,imports,states,roots,filename,nominal);
+			myChildren[start++] = resolveAsType(ut.ret,context,states,roots,nominal);
 			if(ut.throwType == null) {
 				// this case indicates the user did not provide a throws clause.
-				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),imports,states,roots,filename,nominal);
+				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),context,states,roots,nominal);
 			} else {
-				myChildren[start++] = resolveAsType(ut.throwType,imports,states,roots,filename,nominal);
+				myChildren[start++] = resolveAsType(ut.throwType,context,states,roots,nominal);
 			}
 			for(UnresolvedType pt : utParamTypes) {
-				myChildren[start++] = resolveAsType(pt,imports,states,roots,filename,nominal);				
+				myChildren[start++] = resolveAsType(pt,context,states,roots,nominal);				
 			}						
 		}
 		
@@ -673,7 +572,7 @@ public final class Resolver {
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
 		} else {						
-			return resolveAsType(type,buildImports(wf,td),states,roots,wf.filename,false);			
+			return resolveAsType(type,context(wf,td),states,roots,false);			
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the
@@ -684,8 +583,7 @@ public final class Resolver {
 	}	
 	
 	private int resolveAsType(UnresolvedType.Primitive t,
-			List<WhileyFile.Import> imports, String filename,
-			ArrayList<Automaton.State> states) {
+			Context context, ArrayList<Automaton.State> states) {
 		int myIndex = states.size();
 		int kind;
 		if (t instanceof UnresolvedType.Any) {
@@ -708,7 +606,7 @@ public final class Resolver {
 			kind = Type.K_STRING;
 		} else {		
 			internalFailure("unrecognised type encountered ("
-					+ t.getClass().getName() + ")",filename,t);
+					+ t.getClass().getName() + ")",context,t);
 			return 0; // dead-code
 		}
 		states.add(new Automaton.State(kind, null, true,
@@ -859,7 +757,7 @@ public final class Resolver {
 				if(decl instanceof WhileyFile.TypeDef) {
 					WhileyFile.TypeDef td = (WhileyFile.TypeDef) decl;
 					r = resolveAsType(td.unresolvedType,
-							buildImports(wf, decl), wf.filename, true);
+							context(wf, decl), true);
 				} 
 			} else {
 				Module m = loader.loadModule(mid);
@@ -900,12 +798,8 @@ public final class Resolver {
 		return resolveAsConstant(nid,new HashSet<NameID>());		
 	}
 	
-	public Value resolveAsConstant(Expr e, String filename, List<WhileyFile.Import> imports) throws ResolveError {				
-		return resolveAsConstant(e,filename,imports,new HashSet<NameID>());		
-	}
-	
 	public Value resolveAsConstant(Expr e, Context context) throws ResolveError {				
-		return resolveAsConstant(e,context.file.filename,context.imports,new HashSet<NameID>());		
+		return resolveAsConstant(e,context,new HashSet<NameID>());		
 	}
 	
 	/**
@@ -942,7 +836,7 @@ public final class Resolver {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
 				if (cd.resolvedValue == null) {				
 					cd.resolvedValue = resolveAsConstant(cd.constant,
-							wf.filename, buildImports(wf, cd), visited);
+							context(wf, cd), visited);
 				}
 				result = cd.resolvedValue;
 			} else {
@@ -978,41 +872,40 @@ public final class Resolver {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 */
-	private Value resolveAsConstant(Expr expr, String filename,
-			List<WhileyFile.Import> imports, HashSet<NameID> visited)
-			throws ResolveError {
+	private Value resolveAsConstant(Expr expr, Context context,
+			HashSet<NameID> visited) throws ResolveError {
 		try {
 			if (expr instanceof Expr.Constant) {
 				Expr.Constant c = (Expr.Constant) expr;
 				return c.value;
 			} else if (expr instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) expr;
-				NameID nid = resolveAsName(av.var,imports);
+				NameID nid = resolveAsName(av.var,context);
 				return resolveAsConstant(nid,visited);				
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp bop = (Expr.BinOp) expr;
-				Value lhs = resolveAsConstant(bop.lhs, filename, imports, visited);
-				Value rhs = resolveAsConstant(bop.rhs, filename, imports, visited);
-				return evaluate(bop,lhs,rhs,filename);			
+				Value lhs = resolveAsConstant(bop.lhs, context, visited);
+				Value rhs = resolveAsConstant(bop.rhs, context, visited);
+				return evaluate(bop,lhs,rhs,context);			
 			} else if (expr instanceof Expr.Set) {
 				Expr.Set nop = (Expr.Set) expr;
 				ArrayList<Value> values = new ArrayList<Value>();
 				for (Expr arg : nop.arguments) {
-					values.add(resolveAsConstant(arg,filename,imports, visited));
+					values.add(resolveAsConstant(arg,context, visited));
 				}			
 				return Value.V_SET(values);			
 			} else if (expr instanceof Expr.List) {
 				Expr.List nop = (Expr.List) expr;
 				ArrayList<Value> values = new ArrayList<Value>();
 				for (Expr arg : nop.arguments) {
-					values.add(resolveAsConstant(arg,filename,imports, visited));
+					values.add(resolveAsConstant(arg,context, visited));
 				}			
 				return Value.V_LIST(values);			
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String,Value> values = new HashMap<String,Value>();
 				for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
-					Value v = resolveAsConstant(e.getValue(),filename,imports,visited);
+					Value v = resolveAsConstant(e.getValue(),context,visited);
 					if(v == null) {
 						return null;
 					}
@@ -1023,7 +916,7 @@ public final class Resolver {
 				Expr.Tuple rg = (Expr.Tuple) expr;			
 				ArrayList<Value> values = new ArrayList<Value>();			
 				for(Expr e : rg.fields) {
-					Value v = resolveAsConstant(e, filename, imports,visited);
+					Value v = resolveAsConstant(e, context,visited);
 					if(v == null) {
 						return null;
 					}
@@ -1034,8 +927,8 @@ public final class Resolver {
 				Expr.Dictionary rg = (Expr.Dictionary) expr;			
 				HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 				for(Pair<Expr,Expr> e : rg.pairs) {
-					Value key = resolveAsConstant(e.first(), filename, imports,visited);
-					Value value = resolveAsConstant(e.second(), filename, imports,visited);
+					Value key = resolveAsConstant(e.first(), context,visited);
+					Value value = resolveAsConstant(e.second(), context,visited);
 					if(key == null || value == null) {
 						return null;
 					}
@@ -1045,7 +938,7 @@ public final class Resolver {
 			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
 				Expr.AbstractFunctionOrMethodOrMessage f = (Expr.AbstractFunctionOrMethodOrMessage) expr;
 				// FIXME: consider function parameters as well
-				Pair<NameID,Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(f.name, imports);
+				Pair<NameID,Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(f.name, context);
 				Type.FunctionOrMethod fmt = p.second().raw();				
 				return Value.V_FUN(p.first(),p.second().raw());				
 			} 
@@ -1054,32 +947,32 @@ public final class Resolver {
 		} catch(ResolveError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure(e.getMessage(),filename,expr,e);
+			internalFailure(e.getMessage(),context,expr,e);
 		}
 		
-		internalFailure("unknown constant expression: " + expr.getClass().getName(),filename,expr);
+		internalFailure("unknown constant expression: " + expr.getClass().getName(),context,expr);
 		return null; // deadcode
 	}
 
-	private Value evaluate(Expr.BinOp bop, Value v1, Value v2, String filename) {
+	private Value evaluate(Expr.BinOp bop, Value v1, Value v2, Context context) {
 		Type lub = Type.Union(v1.type(), v2.type());
 		
 		// FIXME: there are bugs here related to coercions.
 		
 		if(Type.isSubtype(Type.T_BOOL, lub)) {
-			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2, filename);
+			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2, context);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
-			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2, filename);
+			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2, context);
 		} else if(Type.isSubtype(Type.List(Type.T_ANY, false), lub)) {
-			return evaluate(bop,(Value.List)v1,(Value.List)v2, filename);
+			return evaluate(bop,(Value.List)v1,(Value.List)v2, context);
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false), lub)) {
-			return evaluate(bop,(Value.Set) v1, (Value.Set) v2, filename);
+			return evaluate(bop,(Value.Set) v1, (Value.Set) v2, context);
 		} 
-		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),filename,bop);
+		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),context,bop);
 		return null;
 	}
 	
-	private Value evaluateBoolean(Expr.BinOp bop, Value.Bool v1, Value.Bool v2, String filename) {				
+	private Value evaluateBoolean(Expr.BinOp bop, Value.Bool v1, Value.Bool v2, Context context) {				
 		switch(bop.op) {
 		case AND:
 			return Value.V_BOOL(v1.value & v2.value);
@@ -1088,11 +981,11 @@ public final class Resolver {
 		case XOR:
 			return Value.V_BOOL(v1.value ^ v2.value);
 		}
-		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,bop);
+		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),context,bop);
 		return null;
 	}
 	
-	private Value evaluate(Expr.BinOp bop, Value.Rational v1, Value.Rational v2, String filename) {		
+	private Value evaluate(Expr.BinOp bop, Value.Rational v1, Value.Rational v2, Context context) {		
 		switch(bop.op) {
 		case ADD:
 			return Value.V_RATIONAL(v1.value.add(v2.value));
@@ -1105,22 +998,22 @@ public final class Resolver {
 		case REM:
 			return Value.V_RATIONAL(v1.value.intRemainder(v2.value));	
 		}
-		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),filename,bop);
+		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),context,bop);
 		return null;
 	}
 	
-	private Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2, String filename) {
+	private Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2, Context context) {
 		switch(bop.op) {
 		case ADD:
 			ArrayList<Value> vals = new ArrayList<Value>(v1.values);
 			vals.addAll(v2.values);
 			return Value.V_LIST(vals);
 		}
-		syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,bop);
+		syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,bop);
 		return null;
 	}
 	
-	private Value evaluate(Expr.BinOp bop, Value.Set v1, Value.Set v2, String filename) {		
+	private Value evaluate(Expr.BinOp bop, Value.Set v1, Value.Set v2, Context context) {		
 		switch(bop.op) {
 		case UNION:
 		{
@@ -1149,7 +1042,7 @@ public final class Resolver {
 			return Value.V_SET(vals);
 		}
 		}
-		syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,bop);
+		syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,bop);
 		return null;
 	}	
 
@@ -1171,50 +1064,10 @@ public final class Resolver {
 	 * @throws ResolveError
 	 */
 	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
-			List<WhileyFile.Import> imports) throws ResolveError {
-		return resolveAsFunctionOrMethod(name,null,imports);
-	}
-	
-	/**
-	 * Responsible for determining the true type of a method or function being
-	 * invoked. In this case, no argument types are given. This means that any
-	 * match is returned. However, if there are multiple matches, then an
-	 * ambiguity error is reported.
-	 * 
-	 * @param nid
-	 * @param qualification
-	 * @param parameters
-	 * @param elem
-	 * @return
-	 * @throws ResolveError
-	 */
-	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
 			Context context) throws ResolveError {
-		return resolveAsFunctionOrMethod(name,null,context.imports);
+		return resolveAsFunctionOrMethod(name,null,context);
 	}
-	
-	/**
-	 * Responsible for determining the true type of a method, function or
-	 * message. In this case, no argument types are given. This means that any
-	 * match is returned. However, if there are multiple matches, then an
-	 * ambiguity error is reported.
-	 * 
-	 * @param nid
-	 * @param qualification
-	 * @param parameters
-	 * @param elem
-	 * @return
-	 * @throws ResolveError
-	 */
-	public Pair<NameID,Nominal.FunctionOrMethodOrMessage> resolveAsFunctionOrMethodOrMessage(String name, 
-			List<WhileyFile.Import> imports) throws ResolveError {
-		try {
-			return (Pair) resolveAsFunctionOrMethod(name,null,imports);
-		} catch(ResolveError e) {
-			return (Pair) resolveAsMessage(name,null,null,imports);
-		}
-	}
-	
+
 	/**
 	 * Responsible for determining the true type of a method, function or
 	 * message. In this case, no argument types are given. This means that any
@@ -1231,40 +1084,10 @@ public final class Resolver {
 	public Pair<NameID,Nominal.FunctionOrMethodOrMessage> resolveAsFunctionOrMethodOrMessage(String name, 
 			Context context) throws ResolveError {
 		try {
-			return (Pair) resolveAsFunctionOrMethod(name,null,context.imports);
+			return (Pair) resolveAsFunctionOrMethod(name,null,context);
 		} catch(ResolveError e) {
-			return (Pair) resolveAsMessage(name,null,null,context.imports);
+			return (Pair) resolveAsMessage(name,null,null,context);
 		}
-	}
-	
-	/**
-	 * Responsible for determining the true type of a method or function being
-	 * invoked. To do this, it must find the function/method with the most
-	 * precise type that matches the argument types.
-	 * 
-	 * @param nid
-	 * @param qualification
-	 * @param parameters
-	 * @param elem
-	 * @return
-	 * @throws ResolveError
-	 */
-	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
-			List<Nominal> parameters, List<WhileyFile.Import> imports) throws ResolveError {
-		
-		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 
-		
-		// first, try to find the matching message
-		for (WhileyFile.Import imp : imports) {
-			if (imp.matchName(name)) {
-				for (ModuleID mid : matchImport(imp)) {					
-					NameID nid = new NameID(mid,name);				
-					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
-				}
-			}
-		}
-		
-		return selectCandidateFunctionOrMethod(name,parameters,candidates);
 	}
 	
 	/**
@@ -1295,7 +1118,7 @@ public final class Resolver {
 		}
 		
 		return selectCandidateFunctionOrMethod(name,parameters,candidates);
-	}
+	}		
 	
 	/**
 	 * Responsible for determining the true type of a method or function being
@@ -1317,24 +1140,6 @@ public final class Resolver {
 		
 		return selectCandidateFunctionOrMethod(nid.name(), parameters,
 				candidates).second();		
-	}
-	
-	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
-			List<Nominal> parameters, List<WhileyFile.Import> imports) throws ResolveError {
-
-		HashSet<Pair<NameID,Nominal.Message>> candidates = new HashSet<Pair<NameID,Nominal.Message>>(); 
-		
-		// first, try to find the matching message
-		for (WhileyFile.Import imp : imports) {
-			if (imp.matchName(name)) {
-				for (ModuleID mid : matchImport(imp)) {					
-					NameID nid = new NameID(mid,name);				
-					addCandidateMessages(nid,parameters,candidates);					
-				}
-			}
-		}
-
-		return selectCandidateMessage(name,receiver,parameters,candidates);
 	}
 	
 	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
@@ -1551,7 +1356,7 @@ public final class Resolver {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {		
-					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(f.unresolvedType(),buildImports(wf,f),wf.filename);  
+					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(f.unresolvedType(),context(wf,f));  
 					candidates.add(new Pair(nid,ft));							
 				}
 			}
@@ -1595,7 +1400,7 @@ public final class Resolver {
 			for (WhileyFile.Message m : wf.declarations(
 					WhileyFile.Message.class, nid.name())) {
 				if (nparams == -1 || m.parameters.size() == nparams) {		
-					Nominal.Message ft = (Nominal.Message) resolveAsType(m.unresolvedType(),buildImports(wf,m),wf.filename);  
+					Nominal.Message ft = (Nominal.Message) resolveAsType(m.unresolvedType(),context(wf,m));  
 					candidates.add(new Pair(nid,ft));							
 				}
 			}
@@ -1630,7 +1435,7 @@ public final class Resolver {
 	 *            --- declaration in Whiley File for which the list is desired.
 	 * @return
 	 */
-	private ArrayList<WhileyFile.Import> buildImports(WhileyFile wf,
+	private Context context(WhileyFile wf,
 			WhileyFile.Declaration decl) {		
 		ModuleID mid = wf.module;
 		ArrayList<WhileyFile.Import> imports = new ArrayList<WhileyFile.Import>();
@@ -1651,7 +1456,7 @@ public final class Resolver {
 		
 		Collections.reverse(imports);
 		
-		return imports;
+		return new Context(wf,imports);
 	}
 	
 
