@@ -204,16 +204,15 @@ public final class Resolver {
 	// =========================================================================		
 	
 	/**
-	 * This methods attempts to resolve the correct package for a named item,
-	 * given a list of imports. Resolving the correct package may require
-	 * loading modules as necessary from the WHILEYPATH and/or compiling modules
-	 * for which only source code is currently available.
+	 * This methods attempts to resolve the correct package for a named item in
+	 * a given context. Resolving the correct package may require loading
+	 * modules as necessary from the WHILEYPATH and/or compiling modules for
+	 * which only source code is currently available.
 	 * 
 	 * @param name
 	 *            A module name without package specifier.
-	 * @param context - context in which to resolve
-	 *            A list of import declarations to search through. Imports are
-	 *            searched in order of appearance.
+	 * @param context
+	 *            --- context in which to resolve.
 	 * @return The resolved name.
 	 * @throws ResolveError
 	 *             if it couldn't resolve the name
@@ -245,9 +244,8 @@ public final class Resolver {
 	 * @param names
 	 *            A list of components making up the name, which may include the
 	 *            package and enclosing module.
-	 * @param context - context in which to resolve
-	 *            A list of import declarations to search through. Imports are
-	 *            searched in order of appearance.
+	 * @param context
+	 *            --- context in which to resolve *
 	 * @return The resolved name.
 	 * @throws ResolveError
 	 *             if it couldn't resolve the name
@@ -285,11 +283,13 @@ public final class Resolver {
 	}	
 	
 	/**
-	 * This method attempts to resolve the given name as a module name, given a
-	 * list of imports.
+	 * This method attempts to resolve a name as a module in a given name
+	 * context.
 	 * 
 	 * @param name
-	 * @param context - context in which to resolve
+	 *            --- name to be resolved
+	 * @param context
+	 *            --- context in which to resolve
 	 * @return
 	 * @throws ResolveError
 	 */
@@ -327,18 +327,20 @@ public final class Resolver {
 	}
 
 	/**
-	 * Resolve a given type by identifying all unknown names and replacing them
-	 * with nominal types.
+	 * Resolve a type in a given context by identifying all unknown names and
+	 * replacing them with nominal types.
 	 * 
-	 * @param t
-	 * @param context - context in which to resolve
+	 * @param type
+	 *            --- type to be resolved.
+	 * @param context
+	 *            --- context in which to resolve the type.
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Nominal resolveAsType(UnresolvedType t, Context context)
+	public Nominal resolveAsType(UnresolvedType type, Context context)
 			throws ResolveError {
-		Type nominalType = resolveAsType(t, context, true);
-		Type rawType = resolveAsType(t, context, false);
+		Type nominalType = resolveAsType(type, context, true);
+		Type rawType = resolveAsType(type, context, false);
 		return Nominal.construct(nominalType, rawType);
 	}
 	
@@ -377,19 +379,20 @@ public final class Resolver {
 	}
 	
 	/**
-	 * The following method resolves a given type using a list of import
-	 * statements.
+	 * The following method resolves a type in a given context.
 	 * 
-	 * @param t
-	 * @param context - context in which to resolve
+	 * @param type
+	 *            --- type to be resolved
+	 * @param context
+	 *            --- context in which to resolve the type
 	 * @return
 	 * @throws ResolveError
 	 */
-	private int resolveAsType(UnresolvedType t, Context context,
+	private int resolveAsType(UnresolvedType type, Context context,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots, boolean nominal) {				
 		
-		if(t instanceof UnresolvedType.Primitive) {
-			return resolveAsType((UnresolvedType.Primitive)t,context,states);
+		if(type instanceof UnresolvedType.Primitive) {
+			return resolveAsType((UnresolvedType.Primitive)type,context,states);
 		} 
 		
 		int myIndex = states.size();
@@ -400,26 +403,26 @@ public final class Resolver {
 		
 		states.add(null); // reserve space for me
 		
-		if(t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
+		if(type instanceof UnresolvedType.List) {
+			UnresolvedType.List lt = (UnresolvedType.List) type;
 			myKind = Type.K_LIST;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(lt.element,context,states,roots,nominal);
 			myData = false;
-		} else if(t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;
+		} else if(type instanceof UnresolvedType.Set) {
+			UnresolvedType.Set st = (UnresolvedType.Set) type;
 			myKind = Type.K_SET;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(st.element,context,states,roots,nominal);
 			myData = false;
-		} else if(t instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
+		} else if(type instanceof UnresolvedType.Dictionary) {
+			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) type;
 			myKind = Type.K_DICTIONARY;
 			myChildren = new int[2];
 			myChildren[0] = resolveAsType(st.key,context,states,roots,nominal);
 			myChildren[1] = resolveAsType(st.value,context,states,roots,nominal);			
-		} else if(t instanceof UnresolvedType.Record) {
-			UnresolvedType.Record tt = (UnresolvedType.Record) t;
+		} else if(type instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) type;
 			HashMap<String,UnresolvedType> ttTypes = tt.types;			
 			Type.Record.State fields = new Type.Record.State(tt.isOpen,ttTypes.keySet());
 			Collections.sort(fields);			
@@ -430,19 +433,19 @@ public final class Resolver {
 				myChildren[i] = resolveAsType(ttTypes.get(field),context,states,roots,nominal);
 			}						
 			myData = fields;
-		} else if(t instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+		} else if(type instanceof UnresolvedType.Tuple) {
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) type;
 			ArrayList<UnresolvedType> ttTypes = tt.types;
 			myKind = Type.K_TUPLE;
 			myChildren = new int[ttTypes.size()];
 			for(int i=0;i!=ttTypes.size();++i) {
 				myChildren[i] = resolveAsType(ttTypes.get(i),context,states,roots,nominal);				
 			}			
-		} else if(t instanceof UnresolvedType.Nominal) {
+		} else if(type instanceof UnresolvedType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
-			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;									
+			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) type;									
 			NameID nid;
 			try {
 				nid = resolveAsName(dt.names, context);
@@ -468,13 +471,13 @@ public final class Resolver {
 				internalFailure(e.getMessage(),context,dt,e);
 				return 0; // dead-code
 			}
-		} else if(t instanceof UnresolvedType.Not) {	
-			UnresolvedType.Not ut = (UnresolvedType.Not) t;
+		} else if(type instanceof UnresolvedType.Not) {	
+			UnresolvedType.Not ut = (UnresolvedType.Not) type;
 			myKind = Type.K_NEGATION;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal);			
-		} else if(t instanceof UnresolvedType.Union) {
-			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+		} else if(type instanceof UnresolvedType.Union) {
+			UnresolvedType.Union ut = (UnresolvedType.Union) type;
 			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
 			myKind = Type.K_UNION;
 			myChildren = new int[utTypes.size()];
@@ -482,16 +485,16 @@ public final class Resolver {
 				myChildren[i] = resolveAsType(utTypes.get(i),context,states,roots,nominal);				
 			}	
 			myDeterministic = false;
-		} else if(t instanceof UnresolvedType.Intersection) {
-			internalFailure("intersection types not supported yet",context,t);
+		} else if(type instanceof UnresolvedType.Intersection) {
+			internalFailure("intersection types not supported yet",context,type);
 			return 0; // dead-code
-		} else if(t instanceof UnresolvedType.Reference) {	
-			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
+		} else if(type instanceof UnresolvedType.Reference) {	
+			UnresolvedType.Reference ut = (UnresolvedType.Reference) type;
 			myKind = Type.K_REFERENCE;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal);		
 		} else {			
-			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) t;			
+			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) type;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
 			UnresolvedType receiver = null;
 			int start = 0;
@@ -803,10 +806,10 @@ public final class Resolver {
 	}
 	
 	/**
-	 * The expand constant method is responsible for turning a named constant
-	 * expression into a value. This is done by traversing the constant's
-	 * expression and recursively expanding any named constants it contains.
-	 * Simplification of constants is also performed where possible.
+	 * Responsible for turning a named constant expression into a value. This is
+	 * done by traversing the constant's expression and recursively expanding
+	 * any named constants it contains. Simplification of constants is also
+	 * performed where possible.
 	 * 
 	 * @param key
 	 *            --- name of constant we are expanding.
@@ -866,8 +869,8 @@ public final class Resolver {
 	 * 
 	 * @param key
 	 *            --- name of constant we are expanding.
-	 * @param exprs
-	 *            --- mapping of all names to their( declared) expressions
+	 * @param context
+	 *            --- context in which to resolve this constant.
 	 * @param visited
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
@@ -1056,10 +1059,10 @@ public final class Resolver {
 	 * match is returned. However, if there are multiple matches, then an
 	 * ambiguity error is reported.
 	 * 
-	 * @param nid
-	 * @param qualification
-	 * @param parameters
-	 * @param elem
+	 * @param name
+	 *            --- function or method name whose type to determine.
+	 * @param context
+	 *            --- context in which to resolve this name.
 	 * @return
 	 * @throws ResolveError
 	 */
@@ -1069,15 +1072,15 @@ public final class Resolver {
 	}
 
 	/**
-	 * Responsible for determining the true type of a method, function or
-	 * message. In this case, no argument types are given. This means that any
-	 * match is returned. However, if there are multiple matches, then an
-	 * ambiguity error is reported.
+	 * Responsible for determining the true type of a funciont, method or
+	 * message being invoked. In this case, no argument types are given. This
+	 * means that any match is returned. However, if there are multiple matches,
+	 * then an ambiguity error is reported.
 	 * 
-	 * @param nid
-	 * @param qualification
-	 * @param parameters
-	 * @param elem
+	 * @param name
+	 *            --- function or method name whose type to determine.
+	 * @param context
+	 *            --- context in which to resolve this name.
 	 * @return
 	 * @throws ResolveError
 	 */
@@ -1095,10 +1098,12 @@ public final class Resolver {
 	 * invoked. To do this, it must find the function/method with the most
 	 * precise type that matches the argument types.
 	 * 
-	 * @param nid
-	 * @param qualification
+	 * @param name
+	 *            --- name of function or method whose type to determine.
 	 * @param parameters
-	 * @param elem
+	 *            --- required parameter types for the function or method.
+	 * @param context
+	 *            --- context in which to resolve this name.
 	 * @return
 	 * @throws ResolveError
 	 */
@@ -1126,9 +1131,7 @@ public final class Resolver {
 	 * precise type that matches the argument types.
 	 * 
 	 * @param nid
-	 * @param qualification
 	 * @param parameters
-	 * @param elem
 	 * @return
 	 * @throws ResolveError
 	 */
