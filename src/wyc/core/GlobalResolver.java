@@ -58,10 +58,9 @@ public final class GlobalResolver {
 	private final ModuleLoader loader;
 	
 	/**
-	 * A map from module identifiers to WhileyFile objects. This is required to
-	 * permit registration of source files during compilation.
+	 * The set of source files being compiled in this run.
 	 */
-	private HashMap<ModuleID, WhileyFile> files = new HashMap<ModuleID, WhileyFile>();
+	private final CompilationGroup files;
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -77,21 +76,10 @@ public final class GlobalResolver {
 	 */
 	HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(ModuleLoader loader) {
+	public GlobalResolver(ModuleLoader loader, CompilationGroup files) {
 		this.loader = loader;
-	}
-	
-	/**
-	 * Register a given WhileyFile with this loader. This ensures that when
-	 * WhileyFile requests are made, this WhileyFile will be used instead of
-	 * searching for it on the whileypath.
-	 * 
-	 * @param WhileyFile
-	 *            --- WhileyFile to preregister.
-	 */
-	public void register(WhileyFile WhileyFile) {		
-		files.put(WhileyFile.module, WhileyFile);			
-	}
+		this.files = files;
+	}	
 	
 	/**
 	 * This function checks whether the supplied package exists or not.

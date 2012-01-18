@@ -82,14 +82,12 @@ import wyc.stages.*;
  * 
  */
 public final class Compiler implements Logger {		
-	private ModuleLoader loader;	
-	private GlobalResolver nameResolver;
+	private ModuleLoader loader;		
 	private ArrayList<Transform> stages;
 
 	public Compiler(ModuleLoader loader, List<Transform> stages) {
 		this.loader = loader;
 		this.stages = new ArrayList<Transform>(stages);
-		nameResolver = new GlobalResolver(loader);		
 	}
 	
 	/**
@@ -152,8 +150,7 @@ public final class Compiler implements Logger {
 		logTimedMessage("[" + file + "] Parsing complete",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		
-		WhileyFile wf = wfr.read();
-		nameResolver.register(wf);		
+		WhileyFile wf = wfr.read();		
 		return wf;
 	}		
 	
@@ -217,11 +214,13 @@ public final class Compiler implements Logger {
 	}	
 	
 	private List<Module> buildModules(CompilationGroup files) {
+		GlobalResolver resolver = new GlobalResolver(loader,files);
+		
 		for(WhileyFile wf : files) {
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();		
 			long memory = runtime.freeMemory();					
-			new FlowTyping(loader, nameResolver).propagate(wf);
+			new FlowTyping(loader, resolver).propagate(wf);
 			logTimedMessage("[" + wf.filename + "] flow typing",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
 		}		
@@ -229,7 +228,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();	
-		List<Module> modules = new CodeGeneration(loader,nameResolver).generate(files);			
+		List<Module> modules = new CodeGeneration(loader,resolver).generate(files);			
 		logTimedMessage("code generation",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		return modules;
