@@ -32,6 +32,7 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
+import wyc.core.CompilationGroup;
 import wyc.core.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;
@@ -110,24 +111,18 @@ public final class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public List<WhileyFile> compile(List<File> files) throws Exception {
+	public CompilationGroup compile(List<File> files) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 		
-		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
+		CompilationGroup wyfiles = new CompilationGroup();
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
 			wyfiles.add(wf);								
 		}
 		
-		ArrayList<Module> modules = new ArrayList<Module>();
-		for (WhileyFile wf : wyfiles) {
-			Module m = buildModule(wf);	
-			loader.register(m);
-			modules.add(m);
-		}
-		
+		List<Module> modules = buildModules(wyfiles);					
 		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
@@ -221,15 +216,23 @@ public final class Compiler implements Logger {
 		return r;
 	}	
 	
-	private Module buildModule(WhileyFile wf) {		
+	private List<Module> buildModules(CompilationGroup files) {
+		for(WhileyFile wf : files) {
+			Runtime runtime = Runtime.getRuntime();
+			long start = System.currentTimeMillis();		
+			long memory = runtime.freeMemory();					
+			new TypePropagation(loader, nameResolver).propagate(wf);
+			logTimedMessage("[" + wf.filename + "] type propagation",
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
+		}		
+		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
-		long memory = runtime.freeMemory();		
-		new TypePropagation(loader, nameResolver).propagate(wf);
-		Module m = new CodeGeneration(loader).generate(wf);		
-		logTimedMessage("[" + wf.filename + "] generated wyil module",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());
-		return m;
+		long memory = runtime.freeMemory();	
+		List<Module> modules = new CodeGeneration(loader).generate(files);			
+		logTimedMessage("code generation",
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
+		return modules;
 	}	
 	
 	/**

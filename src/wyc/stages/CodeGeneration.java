@@ -78,10 +78,10 @@ import wyc.lang.Stmt.*;
  * 
  */
 public final class CodeGeneration {
-	private final ModuleLoader loader;	
-	private HashSet<ModuleID> modules;	
+	private final ModuleLoader loader;			
+	private GlobalGenerator globalGenerator;
+	private LocalGenerator localGenerator;
 	private Stack<Scope> scopes = new Stack<Scope>();
-	private LocalGenerator localGenerator;	
 	private FunctionOrMethodOrMessage currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
@@ -96,13 +96,23 @@ public final class CodeGeneration {
 		this.loader = loader;		
 	}
 
-	public Module generate(WhileyFile wf) {
+	public List<Module> generate(CompilationGroup files) {
+		globalGenerator = new GlobalGenerator(loader,files);
+		
+		ArrayList<Module> modules = new ArrayList<Module>();
+		for(WhileyFile wf : files) {
+			modules.add(generate(wf));
+		}
+		return modules;
+	}
+	
+	private Module generate(WhileyFile wf) {
 		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 
 		// TODO: I don't need to use imports here, which is a little odd.
-		localGenerator = new LocalGenerator(new Context(wf,Collections.EMPTY_LIST));
+		localGenerator = new LocalGenerator(globalGenerator,new Context(wf,Collections.EMPTY_LIST));
 		
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {

@@ -58,10 +58,12 @@ import wyil.util.Triple;
  * 
  */
 public final class LocalGenerator {
+	private final GlobalGenerator global;
 	private final Context context;
 	
-	public LocalGenerator(Context context) {
+	public LocalGenerator(GlobalGenerator global, Context context) {
 		this.context = context;
+		this.global = global;
 	}
 	
 	public Context context() {
@@ -228,7 +230,9 @@ public final class LocalGenerator {
 			slot = -1;
 		}
 
-		Expr.TypeVal rhs =(Expr.TypeVal) v.rhs;		
+		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;		
+		
+		// FIXME: need to expand constraints here!
 		
 		blk.append(Code.IfType(v.srcType.raw(), slot, rhs.type.raw(), target),
 				attributes(v));
