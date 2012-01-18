@@ -85,10 +85,10 @@ public class GlobalGenerator {
 				String lab = Block.freshLabel();
 				blk.append(new LocalGenerator(this,context).generateCondition(lab, td.constraint, environment));		
 				blk.append(Code.Fail("constraint not satisfied"), td.constraint.attributes());
-				blk.append(Code.Label(lab));				
-				cache.put(nid, blk);
-				return blk;
+				blk.append(Code.Label(lab));								
 			}
+			cache.put(nid, blk);
+			return blk;
 		} else {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.

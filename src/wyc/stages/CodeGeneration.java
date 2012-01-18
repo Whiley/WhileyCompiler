@@ -421,7 +421,8 @@ public final class CodeGeneration {
 			// has the effect of forcing an implicit coercion between the
 			// actual value being returned and its required type. 
 			
-			Type ret = currentFunDecl.resolvedType().raw().ret();
+			Type ret = currentFunDecl.resolvedType().raw().ret();	
+			
 			blk.append(Code.Return(ret), attributes(s));
 			return blk;
 		} else {
