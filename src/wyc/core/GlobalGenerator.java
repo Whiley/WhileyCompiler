@@ -1,6 +1,11 @@
 package wyc.core;
 
+import java.util.*;
+
+import wyc.lang.WhileyFile;
 import wyil.ModuleLoader;
+import wyil.lang.*;
+import wyil.util.ResolveError;
 
 /**
  * <p>
@@ -47,9 +52,50 @@ import wyil.ModuleLoader;
 public class GlobalGenerator {
 	private CompilationGroup srcfiles;
 	private ModuleLoader loader;
+	private HashMap<NameID,Block> cache;
 	
 	public GlobalGenerator(ModuleLoader loader, CompilationGroup files) {
 		this.srcfiles = files;
 		this.loader = loader;
+	}
+	
+	public Block generate(NameID nid, Context context) throws ResolveError {
+		Block blk = cache.get(nid);
+		if(blk != null) {
+			return blk;
+		}
+		
+		// first, check whether the item in question is in one of the source
+		// files being compiled.
+		ModuleID mid = nid.module();
+		WhileyFile wf = srcfiles.get(mid);
+		if(wf != null) {
+			WhileyFile.TypeDef td = wf.typeDecl(nid.name());
+			if(td != null) {				
+				
+				// FIXME: this is completely broken because I need to actually expand the constraint!!!
+				
+				HashMap<String,Integer> environment = new HashMap<String,Integer>();
+				environment.put("$",0);
+				String lab = Block.freshLabel();
+				blk = new LocalGenerator(this,context).generateCondition(lab, td.constraint, environment);		
+				blk.append(Code.Fail("constraint not satisfied"), td.constraint.attributes());
+				blk.append(Code.Label(lab));
+				cache.put(nid, blk);
+				return blk;
+			}
+		} else {
+			// now check whether it's already compiled and available on the
+			// WHILEYPATH.
+			Module m = loader.loadModule(mid);
+			Module.TypeDef td = m.type(nid.name());
+			if(td != null) {
+				// should I cache this?
+				return td.constraint();
+			}
+		}
+		
+		// FIXME: better error message?
+		throw new ResolveError("cannot find " + nid);
 	}
 }
