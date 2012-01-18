@@ -30,7 +30,7 @@ import java.util.*;
 
 import wyc.Compiler;
 import wyc.Pipeline;
-import wyc.core.GlobalResolver;
+import wyc.core.CompilationManager;
 import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.util.SyntaxError;

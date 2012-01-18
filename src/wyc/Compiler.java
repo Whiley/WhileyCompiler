@@ -33,7 +33,7 @@ import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.core.CompilationGroup;
-import wyc.core.GlobalResolver;
+import wyc.core.CompilationManager;
 import wyc.lang.*;
 import wyc.stages.*;
 
@@ -214,7 +214,7 @@ public final class Compiler implements Logger {
 	}	
 	
 	private List<Module> buildModules(CompilationGroup files) {
-		GlobalResolver resolver = new GlobalResolver(loader,files);
+		CompilationManager resolver = new CompilationManager(loader,files);
 		
 		for(WhileyFile wf : files) {
 			Runtime runtime = Runtime.getRuntime();

@@ -33,7 +33,7 @@ import java.util.*;
 import wyc.core.Context;
 import wyc.core.Environment;
 import wyc.core.LocalResolver;
-import wyc.core.GlobalResolver;
+import wyc.core.CompilationManager;
 import wyc.core.Nominal;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
@@ -99,12 +99,12 @@ import wyil.util.SyntaxError;
  */
 public final class FlowTyping {
 	private final ModuleLoader loader;
-	private final GlobalResolver resolver;
+	private final CompilationManager resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethodOrMessage current;
 	
-	public FlowTyping(ModuleLoader loader, GlobalResolver resolver) {
+	public FlowTyping(ModuleLoader loader, CompilationManager resolver) {
 		this.loader = loader;
 		this.resolver = resolver;
 	}
@@ -658,8 +658,6 @@ public final class FlowTyping {
 				local = local.put(handler.variable, type);									
 				propagate(handler.stmts,local,typer);
 				local.free();
-			} catch(ResolveError e) {
-				syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,handler,e);
 			} catch(SyntaxError e) {
 				throw e;
 			} catch(Throwable t) {

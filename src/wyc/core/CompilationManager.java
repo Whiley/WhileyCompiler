@@ -54,7 +54,7 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public final class GlobalResolver {
+public final class CompilationManager {
 	private final ModuleLoader loader;
 	
 	/**
@@ -76,7 +76,7 @@ public final class GlobalResolver {
 	 */
 	HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(ModuleLoader loader, CompilationGroup files) {
+	public CompilationManager(ModuleLoader loader, CompilationGroup files) {
 		this.loader = loader;
 		this.files = files;
 	}	

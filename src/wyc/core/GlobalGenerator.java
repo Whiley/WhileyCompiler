@@ -53,11 +53,11 @@ import wyil.util.ResolveError;
  */
 public class GlobalGenerator {
 	private final CompilationGroup srcfiles;
-	private final GlobalResolver resolver;
+	private final CompilationManager resolver;
 	private final ModuleLoader loader;
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(ModuleLoader loader, GlobalResolver resolver, CompilationGroup files) {
+	public GlobalGenerator(ModuleLoader loader, CompilationManager resolver, CompilationGroup files) {
 		this.srcfiles = files;
 		this.loader = loader;
 		this.resolver = resolver;

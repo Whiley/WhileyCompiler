@@ -77,10 +77,10 @@ import wyil.util.SyntaxError;
  * 
  */
 public final class LocalResolver {
-	private final GlobalResolver resolver;
+	private final CompilationManager resolver;
 	private final Context context;
 	
-	public LocalResolver(GlobalResolver resolver, Context context) {
+	public LocalResolver(CompilationManager resolver, Context context) {
 		this.resolver = resolver;
 		this.context = context;
 	}
