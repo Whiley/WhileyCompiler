@@ -98,7 +98,7 @@ public final class CodeGeneration {
 		this.resolver = resolver;
 	}
 
-	public List<Module> generate(SourceCompiler files) {
+	public List<Module> generate(CompilationGroup files) {
 		globalGenerator = new GlobalGenerator(loader,resolver,files);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();

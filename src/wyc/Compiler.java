@@ -32,7 +32,7 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
-import wyc.core.SourceCompiler;
+import wyc.core.CompilationGroup;
 import wyc.core.CompilationManager;
 import wyc.lang.*;
 import wyc.stages.*;
@@ -109,12 +109,12 @@ public final class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public SourceCompiler compile(List<File> files) throws Exception {
+	public CompilationGroup compile(List<File> files) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 		
-		SourceCompiler wyfiles = new SourceCompiler();
+		CompilationGroup wyfiles = new CompilationGroup();
 		for (File f : files) {
 			WhileyFile wf = parse(f);			
 			wyfiles.add(wf);								
@@ -213,7 +213,7 @@ public final class Compiler implements Logger {
 		return r;
 	}	
 	
-	private List<Module> build(SourceCompiler files) {
+	private List<Module> build(CompilationGroup files) {
 		CompilationManager manager = new CompilationManager(loader,files);
 		
 		for(WhileyFile wf : files) {

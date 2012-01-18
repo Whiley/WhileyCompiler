@@ -20,6 +20,7 @@ import wyc.core.Nominal.Message;
 import wyc.core.Nominal.Method;
 import wyc.core.Nominal.Reference;
 import wyc.lang.*;
+import wyil.ModuleLoader;
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
 import wyil.lang.PkgID;
@@ -76,12 +77,11 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public final class LocalResolver {
-	private final CompilationManager resolver;
+public final class LocalResolver extends AbstractResolver {
 	private final Context context;
 	
-	public LocalResolver(CompilationManager resolver, Context context) {
-		this.resolver = resolver;
+	public LocalResolver(GlobalResolver resolver, Context context) {
+		super(resolver);
 		this.context = context;
 	}
 	
@@ -606,8 +606,8 @@ public final class LocalResolver {
 			sources.set(i,p);
 			Nominal element;
 			Nominal type = e.result();
-			Nominal.EffectiveList listType = resolver.expandAsEffectiveList(type);
-			Nominal.EffectiveSet setType = resolver.expandAsEffectiveSet(type);
+			Nominal.EffectiveList listType = expandAsEffectiveList(type);
+			Nominal.EffectiveSet setType = expandAsEffectiveSet(type);
 			if(listType != null) {
 				element = listType.element();
 			} else if(setType != null) {
@@ -669,10 +669,9 @@ public final class LocalResolver {
 				paramTypes.add(resolver.resolveAsType(t, context));
 			}
 			// FIXME: clearly a bug here in the case of message reference
-			p = (Pair) resolver
-					.resolveAsFunctionOrMethod(expr.name, paramTypes, context);			
+			p = (Pair) resolveAsFunctionOrMethod(expr.name, paramTypes, context);			
 		} else {
-			p = resolver.resolveAsFunctionOrMethodOrMessage(expr.name, context);			
+			p = resolveAsFunctionOrMethodOrMessage(expr.name, context);			
 		}
 		
 		expr = new Expr.FunctionOrMethodOrMessage(p.first(),expr.paramTypes,expr.attributes());
@@ -707,7 +706,7 @@ public final class LocalResolver {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Nominal.FunctionOrMethod funType = resolver.resolveAsFunctionOrMethod(name,  paramTypes);			
+			Nominal.FunctionOrMethod funType = resolveAsFunctionOrMethod(name,  paramTypes);			
 			if(funType instanceof Nominal.Function) {
 				Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 				r.functionType = (Nominal.Function) funType;				
@@ -722,7 +721,7 @@ public final class LocalResolver {
 			// function is qualified, so this is used as the scope for resolving
 			// what the function is.
 			
-			Nominal.EffectiveRecord recType = resolver.expandAsEffectiveRecord(expr.qualification.result());
+			Nominal.EffectiveRecord recType = expandAsEffectiveRecord(expr.qualification.result());
 			
 			if(recType != null) {
 				
@@ -757,7 +756,7 @@ public final class LocalResolver {
 
 				// ok, it's a message send (possibly indirect)
 				Nominal type = environment.get(expr.name);
-				Nominal.Message msgType = type != null ? resolver.expandAsMessage(type) : null;
+				Nominal.Message msgType = type != null ? expandAsMessage(type) : null;
 				
 				// FIXME: bad idea to use instanceof Nominal.Message here
 				if(msgType != null) {
@@ -782,8 +781,7 @@ public final class LocalResolver {
 					return nexpr;					
 				} else {
 
-					Pair<NameID, Nominal.Message> p = resolver
-							.resolveAsMessage(expr.name, procType, paramTypes,
+					Pair<NameID, Nominal.Message> p = resolveAsMessage(expr.name, procType, paramTypes,
 									context);				
 					Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
 							exprArgs, expr.synchronous, expr.attributes());			
@@ -798,7 +796,7 @@ public final class LocalResolver {
 			// identify.
 
 			Nominal type = environment.get(expr.name);			
-			Nominal.FunctionOrMethod funType = type != null ? resolver.expandAsFunctionOrMethod(type) : null;
+			Nominal.FunctionOrMethod funType = type != null ? expandAsFunctionOrMethod(type) : null;
 			
 			// FIXME: bad idea to use instanceof Nominal.FunctionOrMethod here
 			if(funType != null) {
@@ -828,7 +826,7 @@ public final class LocalResolver {
 			} else {				
 				// no matching local variable, so attempt to resolve as direct
 				// call.
-				Pair<NameID, Nominal.FunctionOrMethod> p = resolver.resolveAsFunctionOrMethod(expr.name, paramTypes, context);
+				Pair<NameID, Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(expr.name, paramTypes, context);
 				funType = p.second();							
 				if(funType instanceof Nominal.Function) {					
 					Expr.FunctionCall mc = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
@@ -880,7 +878,7 @@ public final class LocalResolver {
 			checkIsSubtype(Type.T_INT,expr.index);				
 		} else if(expr instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) expr; 
-			Nominal.EffectiveList list = resolver.expandAsEffectiveList(srcType);			
+			Nominal.EffectiveList list = expandAsEffectiveList(srcType);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,expr);				
 			}
@@ -888,7 +886,7 @@ public final class LocalResolver {
 			la.srcType = list;			
 		} else {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
-			Nominal.EffectiveDictionary dict = resolver.expandAsEffectiveDictionary(srcType);
+			Nominal.EffectiveDictionary dict = expandAsEffectiveDictionary(srcType);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),context,expr);
 			}			
@@ -940,21 +938,21 @@ public final class LocalResolver {
 			checkIsSubtype(Type.T_STRING,expr.src);								
 		} else if(expr instanceof Expr.ListLength) {
 			Expr.ListLength ll = (Expr.ListLength) expr; 
-			Nominal.EffectiveList list = resolver.expandAsEffectiveList(srcType);			
+			Nominal.EffectiveList list = expandAsEffectiveList(srcType);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,expr);				
 			}
 			ll.srcType = list;
 		} else if(expr instanceof Expr.SetLength) {
 			Expr.SetLength sl = (Expr.SetLength) expr; 
-			Nominal.EffectiveSet set = resolver.expandAsEffectiveSet(srcType);			
+			Nominal.EffectiveSet set = expandAsEffectiveSet(srcType);			
 			if(set == null) {
 				syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,expr);				
 			}
 			sl.srcType = set;			
 		} else {
 			Expr.DictionaryLength dl = (Expr.DictionaryLength) expr; 
-			Nominal.EffectiveDictionary dict = resolver.expandAsEffectiveDictionary(srcType);
+			Nominal.EffectiveDictionary dict = expandAsEffectiveDictionary(srcType);
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),context,expr);
 			}				
@@ -1116,7 +1114,7 @@ public final class LocalResolver {
 		checkIsSubtype(Type.T_INT,expr.start);
 		checkIsSubtype(Type.T_INT,expr.end);
 		
-		expr.type = resolver.expandAsEffectiveList(expr.src.result());
+		expr.type = expandAsEffectiveList(expr.src.result());
 		if(expr.type == null) {
 			// must be a substring
 			return new Expr.SubString(expr.src,expr.start,expr.end,expr.attributes());
@@ -1198,7 +1196,7 @@ public final class LocalResolver {
 	private Expr propagate(Expr.RecordAccess ra,
 			Environment environment) throws ResolveError {
 		Nominal srcType = ra.src.result();
-		Nominal.EffectiveRecord recType = resolver.expandAsEffectiveRecord(srcType);
+		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
 		if(recType == null) {
 			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),context,ra);
 		} 
@@ -1221,7 +1219,7 @@ public final class LocalResolver {
 			Environment environment) throws ResolveError {
 		Expr src = propagate(expr.src,environment);
 		expr.src = src;
-		Nominal.Reference srcType = resolver.expandAsReference(src.result());
+		Nominal.Reference srcType = expandAsReference(src.result());
 		if(srcType == null) {
 			syntaxError("invalid reference expression",context,src);
 		}

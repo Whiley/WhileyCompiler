@@ -30,11 +30,7 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.core.Context;
-import wyc.core.Environment;
-import wyc.core.LocalResolver;
-import wyc.core.CompilationManager;
-import wyc.core.Nominal;
+import wyc.core.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyil.ModuleLoader;
@@ -97,14 +93,15 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public final class FlowTyping {
+public final class FlowTyping extends AbstractResolver {
 	private final ModuleLoader loader;
-	private final CompilationManager resolver;
+	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethodOrMessage current;
 	
-	public FlowTyping(ModuleLoader loader, CompilationManager resolver) {
+	public FlowTyping(ModuleLoader loader, GlobalResolver resolver) {
+		super(resolver);
 		this.loader = loader;
 		this.resolver = resolver;
 	}
@@ -313,7 +310,7 @@ public final class FlowTyping {
 			
 			// FIXME: loss of nominal information here			
 			Type rawRhs = rhs.result().raw();		
-			Nominal.EffectiveTuple tupleRhs = resolver.expandAsEffectiveTuple(rhs.result());
+			Nominal.EffectiveTuple tupleRhs = expandAsEffectiveTuple(rhs.result());
 			
 			// FIXME: the following is something of a kludge. It would also be
 			// nice to support more expressive destructuring assignment
@@ -467,21 +464,21 @@ public final class FlowTyping {
 		
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];		
 		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {			
-			Nominal.EffectiveList lt = resolver.expandAsEffectiveList(stmt.source.result());
+			Nominal.EffectiveList lt = expandAsEffectiveList(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = lt.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}			
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
-			Nominal.EffectiveSet st = resolver.expandAsEffectiveSet(stmt.source.result());
+			Nominal.EffectiveSet st = expandAsEffectiveSet(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = st.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}					
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
-			Nominal.EffectiveDictionary dt = resolver.expandAsEffectiveDictionary(stmt.source.result());
+			Nominal.EffectiveDictionary dt = expandAsEffectiveDictionary(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = Nominal.Tuple(dt.key(),dt.value());			
 			} else if(elementTypes.length == 2) {					
@@ -716,7 +713,7 @@ public final class FlowTyping {
 				Expr.Dereference pa = (Expr.Dereference) lval;
 				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,typer);												
 				pa.src = src;
-				pa.srcType = resolver.expandAsReference(src.result());							
+				pa.srcType = expandAsReference(src.result());							
 				return pa;
 			} else if(lval instanceof Expr.AbstractIndexAccess) {
 				// this indicates either a list, string or dictionary update
@@ -730,11 +727,11 @@ public final class FlowTyping {
 					return new Expr.StringAccess(src,index,lval.attributes());
 				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
 					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
-					la.srcType = resolver.expandAsEffectiveList(src.result()); 			
+					la.srcType = expandAsEffectiveList(src.result()); 			
 					return la;
 				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
-					da.srcType = resolver.expandAsEffectiveDictionary(src.result());										
+					da.srcType = expandAsEffectiveDictionary(src.result());										
 					return da;
 				} else {				
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
@@ -744,7 +741,7 @@ public final class FlowTyping {
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,typer);
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
-				Nominal.EffectiveRecord srcType = resolver.expandAsEffectiveRecord(src.result());
+				Nominal.EffectiveRecord srcType = expandAsEffectiveRecord(src.result());
 				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
 				} else if(srcType.field(ra.name) == null) {

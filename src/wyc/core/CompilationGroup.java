@@ -12,7 +12,7 @@ import wyil.lang.ModuleID;
  * 
  * @author David J. Pearce
  */
-public final class SourceCompiler implements Iterable<WhileyFile> {	
+public final class CompilationGroup implements Iterable<WhileyFile> {	
 	private final HashMap<ModuleID,WhileyFile> files = new HashMap<ModuleID,WhileyFile>();
 	
 	
