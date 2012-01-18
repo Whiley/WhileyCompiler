@@ -78,7 +78,8 @@ import wyc.lang.Stmt.*;
  * 
  */
 public final class CodeGeneration {
-	private final ModuleLoader loader;			
+	private final ModuleLoader loader;	
+	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
 	private Stack<Scope> scopes = new Stack<Scope>();
@@ -92,12 +93,13 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(ModuleLoader loader) {
+	public CodeGeneration(ModuleLoader loader, GlobalResolver resolver) {
 		this.loader = loader;		
+		this.resolver = resolver;
 	}
 
 	public List<Module> generate(CompilationGroup files) {
-		globalGenerator = new GlobalGenerator(loader,files);
+		globalGenerator = new GlobalGenerator(loader,resolver,files);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();
 		for(WhileyFile wf : files) {
@@ -150,15 +152,12 @@ public final class CodeGeneration {
 		return new Module.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private Module.TypeDef generate(TypeDef td) {		
+	private Module.TypeDef generate(TypeDef td) throws ResolveError {		
 		Block constraint = null;
 		if(td.constraint != null) {
-			HashMap<String,Integer> environment = new HashMap<String,Integer>();
-			environment.put("$",0);
-			String lab = Block.freshLabel();
-			constraint = localGenerator.generateCondition(lab, td.constraint, environment);		
-			constraint.append(Code.Fail("constraint not satisfied"), attributes(td.constraint));
-			constraint.append(Code.Label(lab));
+			Context context = localGenerator.context();
+			NameID nid = new NameID(context.file.module,td.name);
+			constraint = globalGenerator.generate(nid, context);			
 		}
 		
 		return new Module.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
@@ -763,49 +762,6 @@ public final class CodeGeneration {
 		Expr.UnOp r = new Expr.UnOp(Expr.UOp.NOT, e);
 		r.type = Nominal.T_BOOL;		
 		return r;
-	}
-
-	/**
-	 * The shiftBlock method takes a block and shifts every slot a given amount
-	 * to the right. The number of inputs remains the same. This method is used 
-	 * 
-	 * @param amount
-	 * @param blk
-	 * @return
-	 */
-	private static Block shiftBlock(int amount, Block blk) {
-		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-		for(int i=0;i!=blk.numSlots();++i) {
-			binding.put(i,i+amount);
-		}
-		Block nblock = new Block(blk.numInputs());
-		for(Block.Entry e : blk) {
-			Code code = e.code.remap(binding);
-			nblock.append(code,e.attributes());
-		}
-		return nblock.relabel();
-	}
-	
-	/**
-	 * The chainBlock method takes a block and replaces every fail statement
-	 * with a goto to a given label. This is useful for handling constraints in
-	 * union types, since if the constraint is not met that doesn't mean its
-	 * game over.
-	 * 
-	 * @param target
-	 * @param blk
-	 * @return
-	 */
-	private static Block chainBlock(String target, Block blk) {	
-		Block nblock = new Block(blk.numInputs());
-		for (Block.Entry e : blk) {
-			if (e.code instanceof Code.Fail) {
-				nblock.append(Code.Goto(target), e.attributes());
-			} else {
-				nblock.append(e.code, e.attributes());
-			}
-		}
-		return nblock.relabel();
 	}
 	
 	/**

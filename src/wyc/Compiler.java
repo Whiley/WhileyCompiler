@@ -229,7 +229,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();	
-		List<Module> modules = new CodeGeneration(loader).generate(files);			
+		List<Module> modules = new CodeGeneration(loader,nameResolver).generate(files);			
 		logTimedMessage("code generation",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		return modules;
