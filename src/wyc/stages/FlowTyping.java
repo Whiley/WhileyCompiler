@@ -97,14 +97,14 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public final class TypePropagation {
+public final class FlowTyping {
 	private final ModuleLoader loader;
 	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethodOrMessage current;
 	
-	public TypePropagation(ModuleLoader loader, GlobalResolver resolver) {
+	public FlowTyping(ModuleLoader loader, GlobalResolver resolver) {
 		this.loader = loader;
 		this.resolver = resolver;
 	}
