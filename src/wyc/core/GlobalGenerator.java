@@ -52,12 +52,12 @@ import wyil.util.ResolveError;
  * 
  */
 public class GlobalGenerator {
-	private final CompilationGroup srcfiles;
+	private final SourceCompiler srcfiles;
 	private final CompilationManager resolver;
 	private final ModuleLoader loader;
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(ModuleLoader loader, CompilationManager resolver, CompilationGroup files) {
+	public GlobalGenerator(ModuleLoader loader, CompilationManager resolver, SourceCompiler files) {
 		this.srcfiles = files;
 		this.loader = loader;
 		this.resolver = resolver;

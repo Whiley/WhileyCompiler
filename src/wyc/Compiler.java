@@ -32,7 +32,7 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
-import wyc.core.CompilationGroup;
+import wyc.core.SourceCompiler;
 import wyc.core.CompilationManager;
 import wyc.lang.*;
 import wyc.stages.*;
@@ -109,18 +109,18 @@ public final class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public CompilationGroup compile(List<File> files) throws Exception {
+	public SourceCompiler compile(List<File> files) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 		
-		CompilationGroup wyfiles = new CompilationGroup();
+		SourceCompiler wyfiles = new SourceCompiler();
 		for (File f : files) {
-			WhileyFile wf = innerParse(f);			
+			WhileyFile wf = parse(f);			
 			wyfiles.add(wf);								
 		}
 		
-		List<Module> modules = buildModules(wyfiles);					
+		List<Module> modules = build(wyfiles);					
 		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
@@ -139,7 +139,7 @@ public final class Compiler implements Logger {
 	 * @return
 	 * @throws IOException
 	 */
-	private WhileyFile innerParse(File file) throws IOException {
+	private WhileyFile parse(File file) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
@@ -213,14 +213,14 @@ public final class Compiler implements Logger {
 		return r;
 	}	
 	
-	private List<Module> buildModules(CompilationGroup files) {
-		CompilationManager resolver = new CompilationManager(loader,files);
+	private List<Module> build(SourceCompiler files) {
+		CompilationManager manager = new CompilationManager(loader,files);
 		
 		for(WhileyFile wf : files) {
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();		
 			long memory = runtime.freeMemory();					
-			new FlowTyping(loader, resolver).propagate(wf);
+			new FlowTyping(loader, manager).propagate(wf);
 			logTimedMessage("[" + wf.filename + "] flow typing",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
 		}		
@@ -228,7 +228,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();	
-		List<Module> modules = new CodeGeneration(loader,resolver).generate(files);			
+		List<Module> modules = new CodeGeneration(loader,manager).generate(files);			
 		logTimedMessage("code generation",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		return modules;

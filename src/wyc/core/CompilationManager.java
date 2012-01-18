@@ -43,6 +43,10 @@ import wyil.util.*;
 
 /**
  * <p>
+ * Responsible for overseeing the compilation of a group Whiley source files
+ * into wyil modules.  
+ * </p>
+ * <p>
  * A Name Resolver is responsible for searching the WHILEYPATH to resolve given
  * names and packages. For example, we may wish to resolve a name "Reader"
  * within a given import context of "import whiley.io.*". In such case, the name
@@ -60,7 +64,7 @@ public final class CompilationManager {
 	/**
 	 * The set of source files being compiled in this run.
 	 */
-	private final CompilationGroup files;
+	private final SourceCompiler files;
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -76,7 +80,7 @@ public final class CompilationManager {
 	 */
 	HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public CompilationManager(ModuleLoader loader, CompilationGroup files) {
+	public CompilationManager(ModuleLoader loader, SourceCompiler files) {
 		this.loader = loader;
 		this.files = files;
 	}	
