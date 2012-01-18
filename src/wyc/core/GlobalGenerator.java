@@ -69,7 +69,7 @@ public class GlobalGenerator {
 			return blk;
 		}
 		
-		// first, check whether the item in question is in one of the source
+		// check whether the item in question is in one of the source
 		// files being compiled.
 		ModuleID mid = nid.module();
 		WhileyFile wf = srcfiles.get(mid);
@@ -101,10 +101,10 @@ public class GlobalGenerator {
 		}
 		
 		// FIXME: better error message?
-		throw new ResolveError("cannot find " + nid);
+		throw new ResolveError("name not found: " + nid);
 	}
 	
-	private Block generate(UnresolvedType t, Context context) throws ResolveError {
+	private Block generate(UnresolvedType t, Context context) {
 		if (t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			Block blk = generate(lt.element, context);			

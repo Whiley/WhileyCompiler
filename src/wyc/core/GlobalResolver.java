@@ -312,17 +312,17 @@ public final class GlobalResolver {
 	// =========================================================================
 	
 	public Nominal.Function resolveAsType(UnresolvedType.Function t,
-			Context context) throws ResolveError {
+			Context context) {
 		return (Nominal.Function) resolveAsType((UnresolvedType)t,context);
 	}
 	
 	public Nominal.Method resolveAsType(UnresolvedType.Method t,
-			Context context) throws ResolveError {		
+			Context context) {		
 		return (Nominal.Method) resolveAsType((UnresolvedType)t,context);
 	}
 	
 	public Nominal.Message resolveAsType(UnresolvedType.Message t,
-			Context context) throws ResolveError {		
+			Context context) {		
 		return (Nominal.Message) resolveAsType((UnresolvedType)t,context);
 	}
 
@@ -337,8 +337,7 @@ public final class GlobalResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public Nominal resolveAsType(UnresolvedType type, Context context)
-			throws ResolveError {
+	public Nominal resolveAsType(UnresolvedType type, Context context) {
 		Type nominalType = resolveAsType(type, context, true);
 		Type rawType = resolveAsType(type, context, false);
 		return Nominal.construct(nominalType, rawType);
@@ -801,7 +800,7 @@ public final class GlobalResolver {
 		return resolveAsConstant(nid,new HashSet<NameID>());		
 	}
 	
-	public Value resolveAsConstant(Expr e, Context context) throws ResolveError {
+	public Value resolveAsConstant(Expr e, Context context) {
 		LocalResolver typer = new LocalResolver(this,context);
 		e = typer.propagate(e, new Environment());
 		return resolveAsConstant(e,context,new HashSet<NameID>());		
@@ -880,7 +879,7 @@ public final class GlobalResolver {
 	 *            detect cycles).
 	 */
 	private Value resolveAsConstant(Expr expr, Context context,
-			HashSet<NameID> visited) throws ResolveError {
+			HashSet<NameID> visited) {
 		try {
 			if (expr instanceof Expr.Constant) {
 				Expr.Constant c = (Expr.Constant) expr;
@@ -943,7 +942,7 @@ public final class GlobalResolver {
 				return Value.V_DICTIONARY(values);
 			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
 				Expr.AbstractFunctionOrMethodOrMessage f = (Expr.AbstractFunctionOrMethodOrMessage) expr;
-				// FIXME: consider function parameters as well
+				// FIXME: consider function parameters as well				
 				Pair<NameID,Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(f.name, context);
 				Type.FunctionOrMethod fmt = p.second().raw();				
 				return Value.V_FUN(p.first(),p.second().raw());				
@@ -951,7 +950,7 @@ public final class GlobalResolver {
 		} catch(SyntaxError.InternalFailure e) {
 			throw e;
 		} catch(ResolveError e) {
-			throw e;
+			syntaxError(e.getMessage(),context,expr,e);
 		} catch(Throwable e) {
 			internalFailure(e.getMessage(),context,expr,e);
 		}
