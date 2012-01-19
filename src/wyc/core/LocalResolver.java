@@ -81,7 +81,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		} else {
 			// for all others just default back to the base rules for expressions.
 			expr = resolve(expr,environment,context);
-			checkIsSubtype(Type.T_BOOL,expr);
+			checkIsSubtype(Type.T_BOOL,expr,context);
 			return new Pair(expr,environment);
 		}		
 	}
@@ -92,7 +92,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		if(uop.op == Expr.UOp.NOT) { 
 			Pair<Expr,Environment> p = resolve(uop.mhs,!sign,environment,context);
 			uop.mhs = p.first();			
-			checkIsSubtype(Type.T_BOOL,uop.mhs);
+			checkIsSubtype(Type.T_BOOL,uop.mhs,context);
 			uop.type = Nominal.T_BOOL;
 			return new Pair(uop,p.second());
 		} else {
@@ -164,8 +164,8 @@ public abstract class LocalResolver extends AbstractResolver {
 			environment = join(local,p.second());
 		}
 		
-		checkIsSubtype(Type.T_BOOL,bop.lhs);
-		checkIsSubtype(Type.T_BOOL,bop.rhs);	
+		checkIsSubtype(Type.T_BOOL,bop.lhs,context);
+		checkIsSubtype(Type.T_BOOL,bop.rhs,context);	
 		bop.srcType = Nominal.T_BOOL;
 		
 		return new Pair<Expr,Environment>(bop,environment);
@@ -222,7 +222,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				// we don't know anything about the rhs. It may be possible
 				// to support bounds here in order to do that, but frankly
 				// that's future work :)
-				checkIsSubtype(Type.T_META,rhs);
+				checkIsSubtype(Type.T_META,rhs,context);
 			}	
 
 			bop.srcType = lhs.result();
@@ -247,11 +247,11 @@ public abstract class LocalResolver extends AbstractResolver {
 		case GTEQ:
 		case GT:
 			if(op == Expr.BOp.SUBSET || op == Expr.BOp.SUBSETEQ) {
-				checkIsSubtype(Type.Set(Type.T_ANY,false),lhs);
-				checkIsSubtype(Type.Set(Type.T_ANY,false),rhs);
+				checkIsSubtype(Type.Set(Type.T_ANY,false),lhs,context);
+				checkIsSubtype(Type.Set(Type.T_ANY,false),rhs,context);
 			} else {
-				checkIsSubtype(Type.T_REAL,lhs);
-				checkIsSubtype(Type.T_REAL,rhs);
+				checkIsSubtype(Type.T_REAL,lhs,context);
+				checkIsSubtype(Type.T_REAL,rhs,context);
 			}
 			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
 				bop.srcType = lhs.result();
@@ -416,8 +416,8 @@ public abstract class LocalResolver extends AbstractResolver {
 			
 			srcType = Type.T_STRING;
 		} else if(lhs_list && rhs_list) {
-			checkIsSubtype(Type.List(Type.T_ANY,false),lhs);
-			checkIsSubtype(Type.List(Type.T_ANY,false),rhs);
+			checkIsSubtype(Type.List(Type.T_ANY,false),lhs,context);
+			checkIsSubtype(Type.List(Type.T_ANY,false),rhs,context);
 			
 			switch(expr.op) {	
 			case ADD:
@@ -430,8 +430,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return null; // dead-code
 			}										
 		} else if(lhs_set && rhs_set) {	
-			checkIsSubtype(Type.Set(Type.T_ANY,false),lhs);
-			checkIsSubtype(Type.Set(Type.T_ANY,false),rhs);						
+			checkIsSubtype(Type.Set(Type.T_ANY,false),lhs,context);
+			checkIsSubtype(Type.Set(Type.T_ANY,false),rhs,context);						
 			
 			// FIXME: something tells me there should be a function for doing
 			// this.  Perhaps effectiveSetType?
@@ -487,30 +487,30 @@ public abstract class LocalResolver extends AbstractResolver {
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
-				checkIsSubtype(Type.T_BYTE,lhs);
-				checkIsSubtype(Type.T_BYTE,rhs);
+				checkIsSubtype(Type.T_BYTE,lhs,context);
+				checkIsSubtype(Type.T_BYTE,rhs,context);
 				srcType = Type.T_BYTE;
 				break;
 			case LEFTSHIFT:
 			case RIGHTSHIFT:
-				checkIsSubtype(Type.T_BYTE,lhs);
-				checkIsSubtype(Type.T_INT,rhs);
+				checkIsSubtype(Type.T_BYTE,lhs,context);
+				checkIsSubtype(Type.T_INT,rhs,context);
 				srcType = Type.T_BYTE;
 				break;
 			case RANGE:
-				checkIsSubtype(Type.T_INT,lhs);
-				checkIsSubtype(Type.T_INT,rhs);
+				checkIsSubtype(Type.T_INT,lhs,context);
+				checkIsSubtype(Type.T_INT,rhs,context);
 				srcType = Type.List(Type.T_INT, false);
 				break;
 			case REM:
-				checkIsSubtype(Type.T_INT,lhs);
-				checkIsSubtype(Type.T_INT,rhs);
+				checkIsSubtype(Type.T_INT,lhs,context);
+				checkIsSubtype(Type.T_INT,rhs,context);
 				srcType = Type.T_INT;
 				break;			
 			default:
 				// all other operations go through here
 				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-					checkIsSubtype(Type.T_REAL,lhs);
+					checkIsSubtype(Type.T_REAL,lhs,context);
 					if(Type.isSubtype(Type.T_CHAR, lhsRawType)) {
 						srcType = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, lhsRawType)) {
@@ -519,8 +519,8 @@ public abstract class LocalResolver extends AbstractResolver {
 						srcType = Type.T_REAL;
 					}				
 				} else {
-					checkIsSubtype(Type.T_REAL,lhs);
-					checkIsSubtype(Type.T_REAL,rhs);				
+					checkIsSubtype(Type.T_REAL,lhs,context);
+					checkIsSubtype(Type.T_REAL,rhs,context);				
 					if(Type.isSubtype(Type.T_CHAR, rhsRawType)) {
 						srcType = Type.T_INT;
 					} else if(Type.isSubtype(Type.T_INT, rhsRawType)) {
@@ -551,10 +551,10 @@ public abstract class LocalResolver extends AbstractResolver {
 		
 		switch(expr.op) {
 		case NEG:
-			checkIsSubtype(Type.T_REAL,src);			
+			checkIsSubtype(Type.T_REAL,src,context);			
 			break;
 		case INVERT:
-			checkIsSubtype(Type.T_BYTE,src);
+			checkIsSubtype(Type.T_BYTE,src,context);
 			break;
 				
 		default:		
@@ -726,7 +726,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			} else {
 				// In this case, we definitely have an object type. 
 				
-				Type.Reference procType = checkType(expr.qualification.result().raw(),Type.Reference.class,receiver);							
+				Type.Reference procType = checkType(expr.qualification.result().raw(),Type.Reference.class,receiver,context);							
 
 				// ok, it's a message send (possibly indirect)
 				Nominal type = environment.get(expr.name);
@@ -737,13 +737,13 @@ public abstract class LocalResolver extends AbstractResolver {
 					// ok, matching local variable of message type.
 					List<Nominal> funTypeParams = msgType.params();
 					// FIXME: is this broken since should be equivalent, not subtype?
-					checkIsSubtype(msgType.receiver(),expr.qualification);
+					checkIsSubtype(msgType.receiver(),expr.qualification,context);
 					if(paramTypes.size() != funTypeParams.size()) {
 						syntaxError("insufficient arguments to message send",context,expr);
 					}
 					for (int i = 0; i != funTypeParams.size(); ++i) {
 						Nominal fpt = funTypeParams.get(i);
-						checkIsSubtype(fpt, paramTypes.get(i), exprArgs.get(i));
+						checkIsSubtype(fpt, paramTypes.get(i), exprArgs.get(i),context);
 					}
 					
 					Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
@@ -781,7 +781,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				}
 				for (int i = 0; i != funTypeParams.size(); ++i) {
 					Nominal fpt = funTypeParams.get(i);
-					checkIsSubtype(fpt, paramTypes.get(i), exprArgs.get(i));
+					checkIsSubtype(fpt, paramTypes.get(i), exprArgs.get(i),context);
 				}
 				
 				Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
@@ -848,15 +848,15 @@ public abstract class LocalResolver extends AbstractResolver {
 		// and check the key value.
 		
 		if(expr instanceof Expr.StringAccess) {
-			checkIsSubtype(Type.T_STRING,expr.src);	
-			checkIsSubtype(Type.T_INT,expr.index);				
+			checkIsSubtype(Type.T_STRING,expr.src,context);	
+			checkIsSubtype(Type.T_INT,expr.index,context);				
 		} else if(expr instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) expr; 
 			Nominal.EffectiveList list = expandAsEffectiveList(srcType);			
 			if(list == null) {
 				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,expr);				
 			}
-			checkIsSubtype(Type.T_INT,expr.index);	
+			checkIsSubtype(Type.T_INT,expr.index,context);	
 			la.srcType = list;			
 		} else {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
@@ -864,7 +864,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			if(dict == null) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),context,expr);
 			}			
-			checkIsSubtype(dict.key(),expr.index);			
+			checkIsSubtype(dict.key(),expr.index,context);			
 			da.srcType = dict;						
 		}
 		
@@ -909,7 +909,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		// and check the key value.
 
 		if(expr instanceof Expr.StringLength) {
-			checkIsSubtype(Type.T_STRING,expr.src);								
+			checkIsSubtype(Type.T_STRING,expr.src,context);								
 		} else if(expr instanceof Expr.ListLength) {
 			Expr.ListLength ll = (Expr.ListLength) expr; 
 			Nominal.EffectiveList list = expandAsEffectiveList(srcType);			
@@ -1084,9 +1084,9 @@ public abstract class LocalResolver extends AbstractResolver {
 		expr.start = resolve(expr.start,environment,context);
 		expr.end = resolve(expr.end,environment,context);
 		
-		checkIsSubtype(Type.List(Type.T_ANY, false),expr.src);
-		checkIsSubtype(Type.T_INT,expr.start);
-		checkIsSubtype(Type.T_INT,expr.end);
+		checkIsSubtype(Type.List(Type.T_ANY, false),expr.src,context);
+		checkIsSubtype(Type.T_INT,expr.start,context);
+		checkIsSubtype(Type.T_INT,expr.end,context);
 		
 		expr.type = expandAsEffectiveList(expr.src.result());
 		if(expr.type == null) {
@@ -1104,9 +1104,9 @@ public abstract class LocalResolver extends AbstractResolver {
 		expr.start = resolve(expr.start,environment,context);
 		expr.end = resolve(expr.end,environment,context);
 		
-		checkIsSubtype(Type.T_STRING,expr.src);
-		checkIsSubtype(Type.T_INT,expr.start);
-		checkIsSubtype(Type.T_INT,expr.end);
+		checkIsSubtype(Type.T_STRING,expr.src,context);
+		checkIsSubtype(Type.T_INT,expr.start,context);
+		checkIsSubtype(Type.T_INT,expr.end,context);
 		
 		return expr;
 	}
@@ -1215,7 +1215,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem) {
+			SyntacticElement elem, Context context) {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
@@ -1226,7 +1226,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	// Check t1 :> t2
-	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem) {
+	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem, Context context) {
 		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
 			syntaxError(
 					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
@@ -1234,7 +1234,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		}
 	}
 	
-	private void checkIsSubtype(Nominal t1, Expr t2) {
+	private void checkIsSubtype(Nominal t1, Expr t2, Context context) {
 		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
@@ -1244,7 +1244,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		}
 	}
 	
-	private void checkIsSubtype(Type t1, Expr t2) {
+	private void checkIsSubtype(Type t1, Expr t2, Context context) {
 		if (!Type.isImplicitCoerciveSubtype(t1, t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
