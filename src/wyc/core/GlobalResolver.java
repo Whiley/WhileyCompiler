@@ -32,18 +32,7 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public class GlobalResolver {
-	private final ModuleLoader loader;
-	private final CompilationGroup files;
-	
-	/**
-	 * The import cache caches specific import queries to their result sets.
-	 * This is extremely important to avoid recomputing these result sets every
-	 * time. For example, the statement <code>import whiley.lang.*</code>
-	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
-	 */
-	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
-	
+public class GlobalResolver extends LocalResolver {
 	/**
 	 * The constant cache contains a cache of expanded constant values.
 	 */
@@ -51,8 +40,7 @@ public class GlobalResolver {
 	
 	
 	public GlobalResolver(ModuleLoader loader, CompilationGroup files) {
-		this.loader = loader;
-		this.files = files;
+		super(loader,files);
 	}
 	
 	public ModuleLoader loader() {
@@ -63,117 +51,7 @@ public class GlobalResolver {
 		return files;
 	}
 	
-	/**
-	 * This function checks whether the supplied name exists or not.
-	 * 
-	 * @param nid
-	 *            The name whose existence we want to check for.
-	 * 
-	 * @return true if the package exists, false otherwise.
-	 */
-	protected boolean isName(NameID nid) {		
-		ModuleID mid = nid.module();
-		WhileyFile wf = files.get(mid);
-		if(wf != null) {
-			return wf.hasName(nid.name());
-		} else {
-			try {
-				Module m = loader.loadModule(mid);
-				return m.hasName(nid.name());
-			} catch(ResolveError e) {
-				return false;
-			}
-		}
-	}		
 	
-
-	/**
-	 * This method takes a given import declaration, and expands it to find all
-	 * matching modules.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	public List<ModuleID> imports(WhileyFile.Import imp) {			
-		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
-		ArrayList<ModuleID> matches = importCache.get(key);
-		if(matches != null) {
-			// cache hit
-			return matches;
-		} else {					
-			// cache miss
-			matches = new ArrayList<ModuleID>();
-			for (PkgID pid : matchPackage(imp.pkg)) {
-				try {					
-					for(ModuleID mid : loader.loadPackage(pid)) {
-						if (imp.matchModule(mid.module())) {
-							matches.add(mid);
-						}
-					}					
-				} catch (ResolveError ex) {
-					// dead code
-				} 
-			}
-			importCache.put(key, matches);
-		}
-		return matches;
-	}
-	
-	/**
-	 * This function checks whether the supplied package exists or not.
-	 * 
-	 * @param pkg
-	 *            The package whose existence we want to check for.
-	 * 
-	 * @return true if the package exists, false otherwise.
-	 */
-	protected boolean isPackage(PkgID pkg) {
-		try {
-			loader.resolvePackage(pkg);
-			return true;
-		} catch(ResolveError e) {
-			return false;
-		}
-	}		
-	
-	/**
-	 * This function checks whether the supplied module exists or not.
-	 * 
-	 * @param pkg
-	 *            The package whose existence we want to check for.
-	 * 
-	 * @return true if the package exists, false otherwise.
-	 */
-	protected boolean isModule(ModuleID mid) {
-		try {
-			if(files.get(mid) == null) {
-				loader.loadModule(mid);
-			}
-			return true;
-		} catch(ResolveError e) {
-			return false;
-		}
-	}	
-
-	
-	/**
-	 * This method takes a given package id from an import declaration, and
-	 * expands it to find all matching packages. Note, the package id may
-	 * contain various wildcard characters to match multiple actual packages.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	private List<PkgID> matchPackage(PkgID pkg) {
-		ArrayList<PkgID> matches = new ArrayList<PkgID>();
-		try {
-			loader.resolvePackage(pkg);
-			matches.add(pkg);
-		} catch(ResolveError er) {}
-		return matches;
-	}
-
-
 	// =========================================================================
 	// ResolveAsName
 	// =========================================================================		
@@ -610,9 +488,8 @@ public class GlobalResolver {
 		return resolveAsConstant(nid,new HashSet<NameID>());		
 	}
 
-	public Value resolveAsConstant(Expr e, Context context) {
-		LocalResolver typer = new LocalResolver(this,context);
-		e = typer.propagate(e, new Environment());
+	public Value resolveAsConstant(Expr e, Context context) {		
+		e = resolve(e, new Environment(),context);
 		return resolveAsConstant(e,context,new HashSet<NameID>());		
 	}
 
@@ -649,7 +526,7 @@ public class GlobalResolver {
 			if(decl instanceof WhileyFile.Constant) {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
 				if (cd.resolvedValue == null) {			
-					cd.constant = new LocalResolver(this,cd).propagate(cd.constant, new Environment());
+					cd.constant = resolve(cd.constant, new Environment(), cd);
 					cd.resolvedValue = resolveAsConstant(cd.constant,
 							cd, visited);
 				}

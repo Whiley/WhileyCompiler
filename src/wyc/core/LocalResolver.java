@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import wyc.lang.*;
+import wyil.ModuleLoader;
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
 import wyil.lang.PkgID;
@@ -64,41 +65,32 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public final class LocalResolver extends AbstractResolver {
-	private final Context context;
+public abstract class LocalResolver extends AbstractResolver {
 	
-	public LocalResolver(GlobalResolver resolver, Context context) {
-		super(resolver);
-		this.context = context;
-	}
+	public LocalResolver(ModuleLoader loader, CompilationGroup files) {
+		super(loader,files);
+	}			
 	
-	public Context context() {
-		return context;
-	}
-	
-	public Pair<Expr, Environment> propagate(
-			Expr expr, boolean sign,
-			Environment environment) {
+	public Pair<Expr, Environment> resolve(Expr expr, boolean sign,
+			Environment environment, Context context) {
 		
 		if(expr instanceof Expr.UnOp) {
-			return propagate((Expr.UnOp)expr,sign,environment);		
+			return resolve((Expr.UnOp)expr,sign,environment,context);		
 		} else if(expr instanceof Expr.BinOp) {  
-			return propagate((Expr.BinOp)expr,sign,environment);
+			return resolve((Expr.BinOp)expr,sign,environment,context);
 		} else {
 			// for all others just default back to the base rules for expressions.
-			expr = propagate(expr,environment);
+			expr = resolve(expr,environment,context);
 			checkIsSubtype(Type.T_BOOL,expr);
 			return new Pair(expr,environment);
 		}		
 	}
 	
-	private Pair<Expr, Environment> propagate(
-			Expr.UnOp expr,
-			boolean sign,
-			Environment environment) {
+	private Pair<Expr, Environment> resolve(Expr.UnOp expr, boolean sign,
+			Environment environment, Context context) {
 		Expr.UnOp uop = (Expr.UnOp) expr; 
 		if(uop.op == Expr.UOp.NOT) { 
-			Pair<Expr,Environment> p = propagate(uop.mhs,!sign,environment);
+			Pair<Expr,Environment> p = resolve(uop.mhs,!sign,environment,context);
 			uop.mhs = p.first();			
 			checkIsSubtype(Type.T_BOOL,uop.mhs);
 			uop.type = Nominal.T_BOOL;
@@ -109,17 +101,15 @@ public final class LocalResolver extends AbstractResolver {
 		}	
 	}
 	
-	private Pair<Expr, Environment> propagate(
-			Expr.BinOp bop,
-			boolean sign,
-			Environment environment) {		
+	private Pair<Expr, Environment> resolve(Expr.BinOp bop, boolean sign,
+			Environment environment, Context context) {		
 		Expr.BOp op = bop.op;
 		
 		switch (op) {
 		case AND:
 		case OR:
 		case XOR:
-			return propagateNonLeafCondition(bop,sign,environment);
+			return resolveNonLeafCondition(bop,sign,environment,context);
 		case EQ:
 		case NEQ:
 		case LT:
@@ -130,30 +120,30 @@ public final class LocalResolver extends AbstractResolver {
 		case SUBSET:
 		case SUBSETEQ:
 		case IS:
-			return propagateLeafCondition(bop,sign,environment);
+			return resolveLeafCondition(bop,sign,environment,context);
 		default:
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
 			return null; // dead code
 		}		
 	}
 	
-	private Pair<Expr, Environment> propagateNonLeafCondition(
+	private Pair<Expr, Environment> resolveNonLeafCondition(
 			Expr.BinOp bop,
 			boolean sign,
-			Environment environment) {
+			Environment environment, Context context) {
 		Expr.BOp op = bop.op;
 		Pair<Expr,Environment> p;
 		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
 		
 		if(followOn) {			
-			p = propagate(bop.lhs,sign,environment.clone());			
+			p = resolve(bop.lhs,sign,environment.clone(),context);			
 			bop.lhs = p.first();
-			p = propagate(bop.rhs,sign,p.second());
+			p = resolve(bop.rhs,sign,p.second(),context);
 			bop.rhs = p.first();
 			environment = p.second();
 		} else {
 			// We could do better here
-			p = propagate(bop.lhs,sign,environment.clone());
+			p = resolve(bop.lhs,sign,environment.clone(),context);
 			bop.lhs = p.first();
 			Environment local = p.second();
 			// Recompue the lhs assuming that it is false. This is necessary to
@@ -168,8 +158,8 @@ public final class LocalResolver extends AbstractResolver {
 			// In the false branch, we're determing the environment for 
 			// !(e is int && e > 0).  This becomes !(e is int) || (e > 0) where 
 			// on the rhs we require (e is int).
-			p = propagate(bop.lhs,!sign,environment.clone());
-			p = propagate(bop.rhs,sign,p.second());
+			p = resolve(bop.lhs,!sign,environment.clone(),context);
+			p = resolve(bop.rhs,sign,p.second(),context);
 			bop.rhs = p.first();
 			environment = join(local,p.second());
 		}
@@ -181,14 +171,12 @@ public final class LocalResolver extends AbstractResolver {
 		return new Pair<Expr,Environment>(bop,environment);
 	}
 	
-	private Pair<Expr, Environment> propagateLeafCondition(
-			Expr.BinOp bop,
-			boolean sign,
-			Environment environment) {
+	private Pair<Expr, Environment> resolveLeafCondition(Expr.BinOp bop,
+			boolean sign, Environment environment, Context context) {
 		Expr.BOp op = bop.op;
 		
-		Expr lhs = propagate(bop.lhs,environment);
-		Expr rhs = propagate(bop.rhs,environment);
+		Expr lhs = resolve(bop.lhs,environment,context);
+		Expr rhs = resolve(bop.rhs,environment,context);
 		bop.lhs = lhs;
 		bop.rhs = rhs;
 		
@@ -315,52 +303,51 @@ public final class LocalResolver extends AbstractResolver {
 		return new Pair(bop,environment);
 	}
 	
-	public Expr propagate(Expr expr,
-			Environment environment) {
+	public Expr resolve(Expr expr, Environment environment, Context context) {
 		
 		try {
 			if(expr instanceof Expr.BinOp) {
-				return propagate((Expr.BinOp) expr,environment); 
+				return resolve((Expr.BinOp) expr,environment,context); 
 			} else if(expr instanceof Expr.UnOp) {
-				return propagate((Expr.UnOp) expr,environment); 
+				return resolve((Expr.UnOp) expr,environment,context); 
 			} else if(expr instanceof Expr.Comprehension) {
-				return propagate((Expr.Comprehension) expr,environment); 
+				return resolve((Expr.Comprehension) expr,environment,context); 
 			} else if(expr instanceof Expr.Constant) {
-				return propagate((Expr.Constant) expr,environment); 
+				return resolve((Expr.Constant) expr,environment,context); 
 			} else if(expr instanceof Expr.Convert) {
-				return propagate((Expr.Convert) expr,environment); 
+				return resolve((Expr.Convert) expr,environment,context); 
 			} else if(expr instanceof Expr.Dictionary) {
-				return propagate((Expr.Dictionary) expr,environment); 
+				return resolve((Expr.Dictionary) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
-				return propagate((Expr.AbstractFunctionOrMethodOrMessage) expr,environment); 
+				return resolve((Expr.AbstractFunctionOrMethodOrMessage) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
-				return propagate((Expr.AbstractInvoke) expr,environment); 
+				return resolve((Expr.AbstractInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractIndexAccess) {
-				return propagate((Expr.AbstractIndexAccess) expr,environment); 
+				return resolve((Expr.AbstractIndexAccess) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractLength) {
-				return propagate((Expr.AbstractLength) expr,environment); 
+				return resolve((Expr.AbstractLength) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractVariable) {
-				return propagate((Expr.AbstractVariable) expr,environment); 
+				return resolve((Expr.AbstractVariable) expr,environment,context); 
 			} else if(expr instanceof Expr.List) {
-				return propagate((Expr.List) expr,environment); 
+				return resolve((Expr.List) expr,environment,context); 
 			} else if(expr instanceof Expr.Set) {
-				return propagate((Expr.Set) expr,environment); 
+				return resolve((Expr.Set) expr,environment,context); 
 			} else if(expr instanceof Expr.SubList) {
-				return propagate((Expr.SubList) expr,environment); 
+				return resolve((Expr.SubList) expr,environment,context); 
 			} else if(expr instanceof Expr.SubString) {
-				return propagate((Expr.SubString) expr,environment); 
+				return resolve((Expr.SubString) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractDotAccess) {
-				return propagate((Expr.AbstractDotAccess) expr,environment); 
+				return resolve((Expr.AbstractDotAccess) expr,environment,context); 
 			} else if(expr instanceof Expr.Dereference) {
-				return propagate((Expr.Dereference) expr,environment); 
+				return resolve((Expr.Dereference) expr,environment,context); 
 			} else if(expr instanceof Expr.Record) {
-				return propagate((Expr.Record) expr,environment); 
+				return resolve((Expr.Record) expr,environment,context); 
 			} else if(expr instanceof Expr.New) {
-				return propagate((Expr.New) expr,environment); 
+				return resolve((Expr.New) expr,environment,context); 
 			} else if(expr instanceof Expr.Tuple) {
-				return  propagate((Expr.Tuple) expr,environment); 
+				return  resolve((Expr.Tuple) expr,environment,context); 
 			} else if(expr instanceof Expr.TypeVal) {
-				return propagate((Expr.TypeVal) expr,environment); 
+				return resolve((Expr.TypeVal) expr,environment,context); 
 			} 
 		} catch(ResolveError e) {
 			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),context,expr,e);
@@ -374,8 +361,8 @@ public final class LocalResolver extends AbstractResolver {
 		return null; // dead code
 	}
 	
-	private Expr propagate(Expr.BinOp expr,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.BinOp expr,
+			Environment environment, Context context) throws ResolveError {
 		
 		// TODO: split binop into arithmetic and conditional operators. This
 		// would avoid the following case analysis since conditional binary
@@ -396,11 +383,11 @@ public final class LocalResolver extends AbstractResolver {
 		case SUBSET:	
 		case SUBSETEQ:
 		case IS:								
-			return propagate(expr,true,environment).first();
+			return resolve(expr,true,environment,context).first();
 		}
 		
-		Expr lhs = propagate(expr.lhs,environment);
-		Expr rhs = propagate(expr.rhs,environment);
+		Expr lhs = resolve(expr.lhs,environment,context);
+		Expr rhs = resolve(expr.rhs,environment,context);
 		expr.lhs = lhs;
 		expr.rhs = rhs;
 		Type lhsRawType = lhs.result().raw();
@@ -496,7 +483,7 @@ public final class LocalResolver extends AbstractResolver {
 			case AND:
 			case OR:
 			case XOR:
-				return propagate(expr,true,environment).first();				
+				return resolve(expr,true,environment,context).first();				
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
@@ -551,15 +538,15 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.UnOp expr,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.UnOp expr,
+			Environment environment, Context context) throws ResolveError {
 		
 		if(expr.op == Expr.UOp.NOT) {
 			// hand off to special method for conditions
-			return propagate(expr,true,environment).first();	
+			return resolve(expr,true,environment,context).first();	
 		}
 		
-		Expr src = propagate(expr.mhs, environment);
+		Expr src = resolve(expr.mhs, environment,context);
 		expr.mhs = src;
 		
 		switch(expr.op) {
@@ -581,14 +568,14 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.Comprehension expr,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.Comprehension expr,
+			Environment environment, Context context) throws ResolveError {
 		
 		ArrayList<Pair<String,Expr>> sources = expr.sources;
 		Environment local = environment.clone();
 		for(int i=0;i!=sources.size();++i) {
 			Pair<String,Expr> p = sources.get(i);
-			Expr e = propagate(p.second(),local);			
+			Expr e = resolve(p.second(),local,context);			
 			p = new Pair<String,Expr>(p.first(),e);
 			sources.set(i,p);
 			Nominal element;
@@ -609,11 +596,11 @@ public final class LocalResolver extends AbstractResolver {
 		}
 		
 		if(expr.condition != null) {
-			expr.condition = propagate(expr.condition,local);
+			expr.condition = resolve(expr.condition,local,context);
 		}
 		
 		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
-			expr.value = propagate(expr.value,local);
+			expr.value = resolve(expr.value,local,context);
 			expr.type = Nominal.Set(expr.value.result(), false);
 		} else {
 			expr.type = Nominal.T_BOOL;
@@ -624,15 +611,15 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.Constant expr,
-			Environment environment) {
+	private Expr resolve(Expr.Constant expr,
+			Environment environment, Context context) {
 		return expr;
 	}
 
-	private Expr propagate(Expr.Convert c,
-			Environment environment) throws ResolveError {
-		c.expr = propagate(c.expr,environment);		
-		c.type = resolver.resolveAsType(c.unresolvedType, context);
+	private Expr resolve(Expr.Convert c,
+			Environment environment, Context context) throws ResolveError {
+		c.expr = resolve(c.expr,environment,context);		
+		c.type = resolveAsType(c.unresolvedType, context);
 		Type from = c.expr.result().raw();		
 		Type to = c.type.raw();
 		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
@@ -641,8 +628,8 @@ public final class LocalResolver extends AbstractResolver {
 		return c;
 	}
 	
-	private Expr propagate(Expr.AbstractFunctionOrMethodOrMessage expr,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.AbstractFunctionOrMethodOrMessage expr,
+			Environment environment, Context context) throws ResolveError {
 		
 		if(expr instanceof Expr.FunctionOrMethodOrMessage) {
 			return expr;
@@ -653,7 +640,7 @@ public final class LocalResolver extends AbstractResolver {
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
 			for (UnresolvedType t : expr.paramTypes) {
-				paramTypes.add(resolver.resolveAsType(t, context));
+				paramTypes.add(resolveAsType(t, context));
 			}
 			// FIXME: clearly a bug here in the case of message reference
 			p = (Pair) resolveAsFunctionOrMethod(expr.name, paramTypes, context);			
@@ -666,22 +653,22 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.AbstractInvoke expr,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.AbstractInvoke expr,
+			Environment environment, Context context) throws ResolveError {
 		
-		// first, propagate through receiver and parameters.
+		// first, resolve through receiver and parameters.
 		
 		Expr receiver = expr.qualification;
 		
 		if(receiver != null) {
-			receiver = propagate(receiver,environment);
+			receiver = resolve(receiver,environment,context);
 			expr.qualification = receiver;						
 		}
 		
 		ArrayList<Expr> exprArgs = expr.arguments;
 		ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
 		for(int i=0;i!=exprArgs.size();++i) {
-			Expr arg = propagate(exprArgs.get(i),environment);
+			Expr arg = resolve(exprArgs.get(i),environment,context);
 			exprArgs.set(i, arg);
 			paramTypes.add(arg.result());			
 		}
@@ -828,10 +815,10 @@ public final class LocalResolver extends AbstractResolver {
 		}		
 	}			
 	
-	private Expr propagate(Expr.AbstractIndexAccess expr,
-			Environment environment) throws ResolveError {			
-		expr.src = propagate(expr.src,environment);
-		expr.index = propagate(expr.index,environment);		
+	private Expr resolve(Expr.AbstractIndexAccess expr,
+			Environment environment, Context context) throws ResolveError {			
+		expr.src = resolve(expr.src,environment,context);
+		expr.index = resolve(expr.index,environment,context);		
 		Nominal srcType = expr.src.result();
 		Type rawSrcType = srcType.raw();			
 		
@@ -884,9 +871,9 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.AbstractLength expr,
-			Environment environment) throws ResolveError {			
-		expr.src = propagate(expr.src,environment);			
+	private Expr resolve(Expr.AbstractLength expr, Environment environment,
+			Context context) throws ResolveError {			
+		expr.src = resolve(expr.src,environment, context);			
 		Nominal srcType = expr.src.result();
 		Type rawSrcType = srcType.raw();				
 	
@@ -949,8 +936,8 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.AbstractVariable expr,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.AbstractVariable expr,
+			Environment environment, Context context) throws ResolveError {
 
 		Nominal type = environment.get(expr.var);
 
@@ -969,23 +956,23 @@ public final class LocalResolver extends AbstractResolver {
 			// Therefore, we must determine which module this
 			// is, and update the tree accordingly.
 			try {
-				NameID nid = resolver.resolveAsName(expr.var, context);					
+				NameID nid = resolveAsName(expr.var, context);					
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
 						expr.attributes());
-				ca.value = resolver.resolveAsConstant(nid);
+				ca.value = resolveAsConstant(nid);
 				return ca;
 			} catch (ResolveError err) {
 			}
 			// In this case, we may still be OK if this corresponds to an
 			// explicit module or package access.
 			try {
-				ModuleID mid = resolver.resolveAsModule(expr.var, context);
+				ModuleID mid = resolveAsModule(expr.var, context);
 				return new Expr.ModuleAccess(null, expr.var, mid,
 						expr.attributes());
 			} catch (ResolveError err) {
 			}
 			PkgID pid = new PkgID(expr.var);
-			if (resolver.isPackage(pid)) {
+			if (isPackage(pid)) {
 				return new Expr.PackageAccess(null, expr.var, pid,
 						expr.attributes());
 			}
@@ -995,13 +982,13 @@ public final class LocalResolver extends AbstractResolver {
 		}
 	}
 	
-	private Expr propagate(Expr.Set expr,
-			Environment environment) {
+	private Expr resolve(Expr.Set expr,
+			Environment environment, Context context) {
 		Nominal element = Nominal.T_VOID;		
 		
 		ArrayList<Expr> exprs = expr.arguments;
 		for(int i=0;i!=exprs.size();++i) {
-			Expr e = propagate(exprs.get(i),environment);
+			Expr e = resolve(exprs.get(i),environment,context);
 			Nominal t = e.result();
 			exprs.set(i,e);
 			element = Nominal.Union(t,element);			
@@ -1012,13 +999,13 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.List expr,
-			Environment environment) {		
+	private Expr resolve(Expr.List expr,
+			Environment environment, Context context) {		
 		Nominal element = Nominal.T_VOID;		
 		
 		ArrayList<Expr> exprs = expr.arguments;
 		for(int i=0;i!=exprs.size();++i) {
-			Expr e = propagate(exprs.get(i),environment);
+			Expr e = resolve(exprs.get(i),environment,context);
 			Nominal t = e.result();
 			exprs.set(i,e);
 			element = Nominal.Union(t,element);			
@@ -1030,16 +1017,16 @@ public final class LocalResolver extends AbstractResolver {
 	}
 	
 	
-	private Expr propagate(Expr.Dictionary expr,
-			Environment environment) {
+	private Expr resolve(Expr.Dictionary expr,
+			Environment environment, Context context) {
 		Nominal keyType = Nominal.T_VOID;
 		Nominal valueType = Nominal.T_VOID;		
 				
 		ArrayList<Pair<Expr,Expr>> exprs = expr.pairs;
 		for(int i=0;i!=exprs.size();++i) {
 			Pair<Expr,Expr> p = exprs.get(i);
-			Expr key = propagate(p.first(),environment);
-			Expr value = propagate(p.second(),environment);
+			Expr key = resolve(p.first(),environment,context);
+			Expr value = resolve(p.second(),environment,context);
 			Nominal kt = key.result();
 			Nominal vt = value.result();
 			exprs.set(i,new Pair<Expr,Expr>(key,value));
@@ -1054,15 +1041,15 @@ public final class LocalResolver extends AbstractResolver {
 	}
 	
 
-	private Expr propagate(Expr.Record expr,
-			Environment environment) {
+	private Expr resolve(Expr.Record expr,
+			Environment environment, Context context) {
 		
 		HashMap<String,Expr> exprFields = expr.fields;
 		HashMap<String,Nominal> fieldTypes = new HashMap<String,Nominal>();
 				
 		ArrayList<String> fields = new ArrayList<String>(exprFields.keySet());
 		for(String field : fields) {
-			Expr e = propagate(exprFields.get(field),environment);
+			Expr e = resolve(exprFields.get(field),environment,context);
 			Nominal t = e.result();
 			exprFields.put(field,e);
 			fieldTypes.put(field,t);				
@@ -1073,13 +1060,13 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.Tuple expr,
-			Environment environment) {
+	private Expr resolve(Expr.Tuple expr,
+			Environment environment, Context context) {
 		ArrayList<Expr> exprFields = expr.fields;
 		ArrayList<Nominal> fieldTypes = new ArrayList<Nominal>();
 				
 		for(int i=0;i!=exprFields.size();++i) {
-			Expr e = propagate(exprFields.get(i),environment);
+			Expr e = resolve(exprFields.get(i),environment,context);
 			Nominal t = e.result();
 			exprFields.set(i,e);
 			fieldTypes.add(t);			
@@ -1090,12 +1077,12 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.SubList expr,
-			Environment environment) throws ResolveError {	
+	private Expr resolve(Expr.SubList expr,
+			Environment environment, Context context) throws ResolveError {	
 		
-		expr.src = propagate(expr.src,environment);
-		expr.start = propagate(expr.start,environment);
-		expr.end = propagate(expr.end,environment);
+		expr.src = resolve(expr.src,environment,context);
+		expr.start = resolve(expr.start,environment,context);
+		expr.end = resolve(expr.end,environment,context);
 		
 		checkIsSubtype(Type.List(Type.T_ANY, false),expr.src);
 		checkIsSubtype(Type.T_INT,expr.start);
@@ -1110,12 +1097,12 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.SubString expr,
-			Environment environment) throws ResolveError {	
+	private Expr resolve(Expr.SubString expr,
+			Environment environment, Context context) throws ResolveError {	
 		
-		expr.src = propagate(expr.src,environment);
-		expr.start = propagate(expr.start,environment);
-		expr.end = propagate(expr.end,environment);
+		expr.src = resolve(expr.src,environment,context);
+		expr.start = resolve(expr.start,environment,context);
+		expr.end = resolve(expr.end,environment,context);
 		
 		checkIsSubtype(Type.T_STRING,expr.src);
 		checkIsSubtype(Type.T_INT,expr.start);
@@ -1124,8 +1111,8 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.AbstractDotAccess expr,
-			Environment environment) throws ResolveError {	
+	private Expr resolve(Expr.AbstractDotAccess expr,
+			Environment environment, Context context) throws ResolveError {	
 				
 		if (expr instanceof Expr.PackageAccess
 				|| expr instanceof Expr.ModuleAccess) {			
@@ -1136,25 +1123,25 @@ public final class LocalResolver extends AbstractResolver {
 		Expr src = expr.src;
 		
 		if(src != null) {
-			src = propagate(expr.src,environment);
+			src = resolve(expr.src,environment,context);
 			expr.src = src;
 		}
 				
 		if(expr instanceof Expr.RecordAccess) {			
-			return propagate((Expr.RecordAccess)expr,environment);
+			return resolve((Expr.RecordAccess)expr,environment,context);
 		} else if(expr instanceof Expr.ConstantAccess) {
-			return propagate((Expr.ConstantAccess)expr,environment);
+			return resolve((Expr.ConstantAccess)expr,environment,context);
 		} else if(src instanceof Expr.PackageAccess) {
 			// either a package access, module access or constant access
 			// This variable access may correspond to an external access.			
 			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
 			PkgID pid = pa.pid.append(expr.name);
-			if (resolver.isPackage(pid)) {
+			if (isPackage(pid)) {
 				return new Expr.PackageAccess(pa, expr.name, pid,
 						expr.attributes());
 			}			
 			ModuleID mid = new ModuleID(pa.pid,expr.name);
-			if (resolver.isModule(mid)) {
+			if (isModule(mid)) {
 				return new Expr.ModuleAccess(pa, expr.name, mid,
 						expr.attributes());
 			} else {
@@ -1165,10 +1152,10 @@ public final class LocalResolver extends AbstractResolver {
 			// must be a constant access
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 													
 			NameID nid = new NameID(ma.mid,expr.name);
-			if (resolver.isName(nid)) {
+			if (isName(nid)) {
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
 						expr.name, nid, expr.attributes());
-				ca.value = resolver.resolveAsConstant(nid);
+				ca.value = resolveAsConstant(nid);
 				return ca;
 			}						
 			syntaxError(errorMessage(INVALID_MODULE_ACCESS),context,expr);			
@@ -1176,12 +1163,12 @@ public final class LocalResolver extends AbstractResolver {
 		} else {
 			// must be a RecordAccess
 			Expr.RecordAccess ra = new Expr.RecordAccess(src,expr.name,expr.attributes());			
-			return propagate(ra,environment);
+			return resolve(ra,environment,context);
 		}
 	}
 		
-	private Expr propagate(Expr.RecordAccess ra,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.RecordAccess ra,
+			Environment environment, Context context) throws ResolveError {
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
 		if(recType == null) {
@@ -1195,16 +1182,16 @@ public final class LocalResolver extends AbstractResolver {
 		return ra;
 	}	
 	
-	private Expr propagate(Expr.ConstantAccess expr,
-			Environment environment) throws ResolveError {
+	private Expr resolve(Expr.ConstantAccess expr,
+			Environment environment, Context context) throws ResolveError {
 		// we don't need to do anything here, since the value is already
 		// resolved by case for AbstractDotAccess.
 		return expr;
 	}			
 
-	private Expr propagate(Expr.Dereference expr,
-			Environment environment) throws ResolveError {
-		Expr src = propagate(expr.src,environment);
+	private Expr resolve(Expr.Dereference expr,
+			Environment environment, Context context) throws ResolveError {
+		Expr src = resolve(expr.src,environment,context);
 		expr.src = src;
 		Nominal.Reference srcType = expandAsReference(src.result());
 		if(srcType == null) {
@@ -1214,16 +1201,16 @@ public final class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.New expr,
-			Environment environment) {
-		expr.expr = propagate(expr.expr,environment);
+	private Expr resolve(Expr.New expr,
+			Environment environment, Context context) {
+		expr.expr = resolve(expr.expr,environment,context);
 		expr.type = Nominal.Reference(expr.expr.result());
 		return expr;
 	}
 	
-	private Expr propagate(Expr.TypeVal expr,
-			Environment environment) throws ResolveError {
-		expr.type = resolver.resolveAsType(expr.unresolvedType, context); 
+	private Expr resolve(Expr.TypeVal expr,
+			Environment environment, Context context) throws ResolveError {
+		expr.type = resolveAsType(expr.unresolvedType, context); 
 		return expr;
 	}
 	
@@ -1239,14 +1226,13 @@ public final class LocalResolver extends AbstractResolver {
 	}
 	
 	// Check t1 :> t2
-	private void checkIsSubtype(Nominal t1, Nominal t2,
-			SyntacticElement elem) {
+	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem) {
 		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
 			syntaxError(
 					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
 					context, elem);
 		}
-	}	
+	}
 	
 	private void checkIsSubtype(Nominal t1, Expr t2) {
 		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {

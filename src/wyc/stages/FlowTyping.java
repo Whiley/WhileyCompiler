@@ -93,7 +93,7 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public final class FlowTyping extends AbstractResolver {
+public final class FlowTyping {
 	private final ModuleLoader loader;
 	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
@@ -101,7 +101,6 @@ public final class FlowTyping extends AbstractResolver {
 	private WhileyFile.FunctionOrMethodOrMessage current;
 	
 	public FlowTyping(ModuleLoader loader, GlobalResolver resolver) {
-		super(resolver);
 		this.loader = loader;
 		this.resolver = resolver;
 	}
@@ -159,13 +158,12 @@ public final class FlowTyping extends AbstractResolver {
 			// FIXME: add names exposed from records and other types
 			
 			// third, propagate type information through the constraint 			
-			td.constraint = new LocalResolver(resolver,td).propagate(td.constraint,environment);
+			td.constraint = resolver.resolve(td.constraint,environment,td);
 		}
 	}
 
 	public void propagate(FunctionOrMethodOrMessage d) throws ResolveError {		
-		this.current = d; // ugly
-		LocalResolver typer = new LocalResolver(resolver,d);
+		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
 		for (WhileyFile.Parameter p : d.parameters) {							
@@ -178,12 +176,12 @@ public final class FlowTyping extends AbstractResolver {
 		}
 		
 		if(d.precondition != null) {
-			d.precondition = typer.propagate(d.precondition,environment.clone());
+			d.precondition = resolver.resolve(d.precondition,environment.clone(),d);
 		}
 		
 		if(d.postcondition != null) {			
 			environment = environment.put("$", resolver.resolveAsType(d.ret,d));
-			d.postcondition = typer.propagate(d.postcondition,environment.clone());
+			d.postcondition = resolver.resolve(d.postcondition,environment.clone(),d);
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
 			environment = environment.remove("$");
@@ -200,21 +198,20 @@ public final class FlowTyping extends AbstractResolver {
 			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
 		}
 		
-		propagate(d.statements,environment,typer);
+		propagate(d.statements,environment);
 	}
 	
 	private Environment propagate(
 			ArrayList<Stmt> body,
-			Environment environment,
-			LocalResolver typer) {
+			Environment environment) {
 		
 		
 		for (int i=0;i!=body.size();++i) {
 			Stmt stmt = body.get(i);
 			if(stmt instanceof Expr) {
-				body.set(i,(Stmt) typer.propagate((Expr)stmt,environment));
+				body.set(i,(Stmt) resolver.resolve((Expr)stmt,environment,current));
 			} else {
-				environment = propagate(stmt, environment, typer);
+				environment = propagate(stmt, environment);
 			}
 		}
 		
@@ -222,36 +219,35 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt stmt,
-			Environment environment,
-			LocalResolver typer) {
+			Environment environment) {
 				
 		try {
 			if(stmt instanceof Stmt.Assign) {
-				return propagate((Stmt.Assign) stmt,environment,typer);
+				return propagate((Stmt.Assign) stmt,environment);
 			} else if(stmt instanceof Stmt.Return) {
-				return propagate((Stmt.Return) stmt,environment,typer);
+				return propagate((Stmt.Return) stmt,environment);
 			} else if(stmt instanceof Stmt.IfElse) {
-				return propagate((Stmt.IfElse) stmt,environment,typer);
+				return propagate((Stmt.IfElse) stmt,environment);
 			} else if(stmt instanceof Stmt.While) {
-				return propagate((Stmt.While) stmt,environment,typer);
+				return propagate((Stmt.While) stmt,environment);
 			} else if(stmt instanceof Stmt.ForAll) {
-				return propagate((Stmt.ForAll) stmt,environment,typer);
+				return propagate((Stmt.ForAll) stmt,environment);
 			} else if(stmt instanceof Stmt.Switch) {
-				return propagate((Stmt.Switch) stmt,environment,typer);
+				return propagate((Stmt.Switch) stmt,environment);
 			} else if(stmt instanceof Stmt.DoWhile) {
-				return propagate((Stmt.DoWhile) stmt,environment,typer);
+				return propagate((Stmt.DoWhile) stmt,environment);
 			} else if(stmt instanceof Stmt.Break) {
-				return propagate((Stmt.Break) stmt,environment,typer);
+				return propagate((Stmt.Break) stmt,environment);
 			} else if(stmt instanceof Stmt.Throw) {
-				return propagate((Stmt.Throw) stmt,environment,typer);
+				return propagate((Stmt.Throw) stmt,environment);
 			} else if(stmt instanceof Stmt.TryCatch) {
-				return propagate((Stmt.TryCatch) stmt,environment,typer);
+				return propagate((Stmt.TryCatch) stmt,environment);
 			} else if(stmt instanceof Stmt.Assert) {
-				return propagate((Stmt.Assert) stmt,environment,typer);
+				return propagate((Stmt.Assert) stmt,environment);
 			} else if(stmt instanceof Stmt.Debug) {
-				return propagate((Stmt.Debug) stmt,environment,typer);
+				return propagate((Stmt.Debug) stmt,environment);
 			} else if(stmt instanceof Stmt.Skip) {
-				return propagate((Stmt.Skip) stmt,environment,typer);
+				return propagate((Stmt.Skip) stmt,environment);
 			} else {
 				internalFailure("unknown statement: " + stmt.getClass().getName(),filename,stmt);
 				return null; // deadcode
@@ -268,19 +264,17 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt.Assert stmt,
-			Environment environment,
-			LocalResolver typer) {
-		stmt.expr = typer.propagate(stmt.expr,environment);
+			Environment environment) {
+		stmt.expr = resolver.resolve(stmt.expr,environment,current);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
 	}
 	
 	private Environment propagate(Stmt.Assign stmt,
-			Environment environment,
-			LocalResolver typer) throws ResolveError {
+			Environment environment) throws ResolveError {
 			
 		Expr.LVal lhs = stmt.lhs;
-		Expr rhs = typer.propagate(stmt.rhs,environment);
+		Expr rhs = resolver.resolve(stmt.rhs,environment,current);
 		
 		if(lhs instanceof Expr.AbstractVariable) {
 			// An assignment to a local variable is slightly different from
@@ -308,7 +302,7 @@ public final class FlowTyping extends AbstractResolver {
 			
 			// FIXME: loss of nominal information here			
 			Type rawRhs = rhs.result().raw();		
-			Nominal.EffectiveTuple tupleRhs = expandAsEffectiveTuple(rhs.result());
+			Nominal.EffectiveTuple tupleRhs = resolver.expandAsEffectiveTuple(rhs.result());
 			
 			// FIXME: the following is something of a kludge. It would also be
 			// nice to support more expressive destructuring assignment
@@ -347,7 +341,7 @@ public final class FlowTyping extends AbstractResolver {
 				}								
 			}										
 		} else {	
-			lhs = propagate(lhs,environment,typer);			
+			lhs = propagate(lhs,environment);			
 			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
 			environment = environment.put(av.var, av.afterType);
 		}
@@ -400,23 +394,20 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt.Break stmt,
-			Environment environment,
-			LocalResolver typer) {
+			Environment environment) {
 		// FIXME: need to propagate environment to the break destination
 		return BOTTOM;
 	}
 	
 	private Environment propagate(Stmt.Debug stmt,
-			Environment environment,
-			LocalResolver typer) {
-		stmt.expr = typer.propagate(stmt.expr,environment);				
+			Environment environment) {
+		stmt.expr = resolver.resolve(stmt.expr,environment,current);				
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
 	}
 	
 	private Environment propagate(Stmt.DoWhile stmt,
-			Environment environment,
-			LocalResolver typer) {
+			Environment environment) {
 								
 		// Iterate to a fixed point
 		Environment old = null;
@@ -428,21 +419,21 @@ public final class FlowTyping extends AbstractResolver {
 			if(!firstTime) {
 				// don't do this on the first go around, to mimick how the
 				// do-while loop works.
-				tmp = typer.propagate(stmt.condition,true,old.clone()).second();
-				environment = join(orig.clone(),propagate(stmt.body,tmp,typer));
+				tmp = resolver.resolve(stmt.condition,true,old.clone(),current).second();
+				environment = join(orig.clone(),propagate(stmt.body,tmp));
 			} else {
 				firstTime=false;
-				environment = join(orig.clone(),propagate(stmt.body,old,typer));
+				environment = join(orig.clone(),propagate(stmt.body,old));
 			}					
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
 
 		if (stmt.invariant != null) {
-			stmt.invariant = typer.propagate(stmt.invariant, environment);
+			stmt.invariant = resolver.resolve(stmt.invariant, environment, current);
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}		
 
-		Pair<Expr,Environment> p = typer.propagate(stmt.condition,false,environment);
+		Pair<Expr,Environment> p = resolver.resolve(stmt.condition,false,environment,current);
 		stmt.condition = p.first();
 		environment = p.second();
 		
@@ -450,10 +441,9 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt.ForAll stmt,
-			Environment environment,
-			LocalResolver typer) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
-		stmt.source = typer.propagate(stmt.source,environment);
+		stmt.source = resolver.resolve(stmt.source,environment,current);
 		Type rawType = stmt.source.result().raw(); 		
 		
 		// At this point, the major task is to determine what the types for the
@@ -462,21 +452,21 @@ public final class FlowTyping extends AbstractResolver {
 		
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];		
 		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {			
-			Nominal.EffectiveList lt = expandAsEffectiveList(stmt.source.result());
+			Nominal.EffectiveList lt = resolver.expandAsEffectiveList(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = lt.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}			
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
-			Nominal.EffectiveSet st = expandAsEffectiveSet(stmt.source.result());
+			Nominal.EffectiveSet st = resolver.expandAsEffectiveSet(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = st.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}					
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
-			Nominal.EffectiveDictionary dt = expandAsEffectiveDictionary(stmt.source.result());
+			Nominal.EffectiveDictionary dt = resolver.expandAsEffectiveDictionary(stmt.source.result());
 			if(elementTypes.length == 1) {
 				elementTypes[0] = Nominal.Tuple(dt.key(),dt.value());			
 			} else if(elementTypes.length == 2) {					
@@ -513,7 +503,7 @@ public final class FlowTyping extends AbstractResolver {
 		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
-			environment = join(orig.clone(),propagate(stmt.body,old,typer));
+			environment = join(orig.clone(),propagate(stmt.body,old));
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
 		
@@ -525,7 +515,7 @@ public final class FlowTyping extends AbstractResolver {
 		} 
 		
 		if (stmt.invariant != null) {
-			stmt.invariant = typer.propagate(stmt.invariant, environment);
+			stmt.invariant = resolver.resolve(stmt.invariant, environment, current);
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}
 				
@@ -533,14 +523,13 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt.IfElse stmt,
-			Environment environment,
-			LocalResolver typer) {
+			Environment environment) {
 		
 		// First, check condition and apply variable retypings.
 		Pair<Expr,Environment> p1,p2;
 		
-		p1 = typer.propagate(stmt.condition,true,environment.clone());
-		p2 = typer.propagate(stmt.condition,false,environment);
+		p1 = resolver.resolve(stmt.condition,true,environment.clone(),current);
+		p2 = resolver.resolve(stmt.condition,false,environment,current);
 		stmt.condition = p1.first();
 		
 		Environment trueEnvironment = p1.second();
@@ -548,13 +537,13 @@ public final class FlowTyping extends AbstractResolver {
 				
 		// Second, update environments for true and false branches
 		if(stmt.trueBranch != null && stmt.falseBranch != null) {
-			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment,typer);
-			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment,typer);						
+			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment);
+			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment);						
 		} else if(stmt.trueBranch != null) {			
-			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment,typer);
+			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment);
 		} else if(stmt.falseBranch != null){								
 			trueEnvironment = environment;
-			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment,typer);		
+			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment);		
 		} 
 		
 		// Finally, join results back together		
@@ -563,11 +552,10 @@ public final class FlowTyping extends AbstractResolver {
 	
 	private Environment propagate(
 			Stmt.Return stmt,
-			Environment environment,
-			LocalResolver typer) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
 		if (stmt.expr != null) {
-			stmt.expr = typer.propagate(stmt.expr, environment);
+			stmt.expr = resolver.resolve(stmt.expr, environment,current);
 			Nominal rhs = stmt.expr.result();
 			checkIsSubtype(current.resolvedType().ret(),rhs, stmt.expr);
 		}	
@@ -577,16 +565,14 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt.Skip stmt,
-			Environment environment,
-			ArrayList<WhileyFile.Import> imports) {		
+			Environment environment) {		
 		return environment;
 	}
 	
 	private Environment propagate(Stmt.Switch stmt,
-			Environment environment,
-			LocalResolver typer) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
-		stmt.expr = typer.propagate(stmt.expr,environment);		
+		stmt.expr = resolver.resolve(stmt.expr,environment,current);		
 		
 		Environment finalEnv = null;
 		boolean hasDefault = false;
@@ -597,14 +583,14 @@ public final class FlowTyping extends AbstractResolver {
 			
 			ArrayList<Value> values = new ArrayList<Value>();
 			for(Expr e : c.expr) {
-				values.add(resolver.resolveAsConstant(e,typer.context()));				
+				values.add(resolver.resolveAsConstant(e,current));				
 			}
 			c.constants = values;
 
 			// second, propagate through the statements
 			
 			Environment localEnv = environment.clone();
-			localEnv = propagate(c.stmts,localEnv,typer);
+			localEnv = propagate(c.stmts,localEnv);
 			
 			if(finalEnv == null) {
 				finalEnv = localEnv;
@@ -632,26 +618,24 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt.Throw stmt,
-			Environment environment,
-			LocalResolver typer) {
-		stmt.expr = typer.propagate(stmt.expr,environment);
+			Environment environment) {
+		stmt.expr = resolver.resolve(stmt.expr,environment,current);
 		return BOTTOM;
 	}
 	
 	private Environment propagate(Stmt.TryCatch stmt,
-			Environment environment,
-			LocalResolver typer) throws ResolveError {
+			Environment environment) throws ResolveError {
 		
 
 		for(Stmt.Catch handler : stmt.catches) {
 			
 			// FIXME: need to deal with handler environments properly!
 			try {
-				Nominal type = resolver.resolveAsType(handler.unresolvedType, typer.context()); 
+				Nominal type = resolver.resolveAsType(handler.unresolvedType,current); 
 				handler.type = type;
 				Environment local = environment.clone();
 				local = local.put(handler.variable, type);									
-				propagate(handler.stmts,local,typer);
+				propagate(handler.stmts,local);
 				local.free();
 			} catch(SyntaxError e) {
 				throw e;
@@ -660,7 +644,7 @@ public final class FlowTyping extends AbstractResolver {
 			}
 		}
 		
-		environment = propagate(stmt.body,environment,typer);
+		environment = propagate(stmt.body,environment);
 				
 		// need to do handlers here
 		
@@ -668,8 +652,7 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Environment propagate(Stmt.While stmt,
-			Environment environment,
-			LocalResolver typer) {
+			Environment environment) {
 
 		// Iterate to a fixed point
 		Environment old = null;
@@ -677,17 +660,17 @@ public final class FlowTyping extends AbstractResolver {
 		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
-			tmp = typer.propagate(stmt.condition,true,old.clone()).second();			
-			environment = join(orig.clone(),propagate(stmt.body,tmp,typer));			
+			tmp = resolver.resolve(stmt.condition,true,old.clone(),current).second();			
+			environment = join(orig.clone(),propagate(stmt.body,tmp));			
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
 		
 		if (stmt.invariant != null) {
-			stmt.invariant = typer.propagate(stmt.invariant, environment);
+			stmt.invariant = resolver.resolve(stmt.invariant, environment, current);
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}		
 				
-		Pair<Expr,Environment> p = typer.propagate(stmt.condition,false,environment);
+		Pair<Expr,Environment> p = resolver.resolve(stmt.condition,false,environment,current);
 		stmt.condition = p.first();
 		environment = p.second();			
 		
@@ -695,8 +678,7 @@ public final class FlowTyping extends AbstractResolver {
 	}
 	
 	private Expr.LVal propagate(Expr.LVal lval,
-			Environment environment,
-			LocalResolver typer) {
+			Environment environment) {
 		try {
 			if(lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
@@ -709,15 +691,15 @@ public final class FlowTyping extends AbstractResolver {
 				return lv;
 			} else if(lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
-				Expr.LVal src = propagate((Expr.LVal) pa.src,environment,typer);												
+				Expr.LVal src = propagate((Expr.LVal) pa.src,environment);												
 				pa.src = src;
-				pa.srcType = expandAsReference(src.result());							
+				pa.srcType = resolver.expandAsReference(src.result());							
 				return pa;
 			} else if(lval instanceof Expr.AbstractIndexAccess) {
 				// this indicates either a list, string or dictionary update
 				Expr.AbstractIndexAccess ai = (Expr.AbstractIndexAccess) lval;				
-				Expr.LVal src = propagate((Expr.LVal) ai.src,environment,typer);				
-				Expr index = typer.propagate(ai.index,environment);				
+				Expr.LVal src = propagate((Expr.LVal) ai.src,environment);				
+				Expr index = resolver.resolve(ai.index,environment,current);				
 				Type rawSrcType = src.result().raw();
 				// FIXME: problem if list is only an effective list, similarly
 				// for dictionaries.
@@ -725,11 +707,11 @@ public final class FlowTyping extends AbstractResolver {
 					return new Expr.StringAccess(src,index,lval.attributes());
 				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
 					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
-					la.srcType = expandAsEffectiveList(src.result()); 			
+					la.srcType = resolver.expandAsEffectiveList(src.result()); 			
 					return la;
 				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
-					da.srcType = expandAsEffectiveDictionary(src.result());										
+					da.srcType = resolver.expandAsEffectiveDictionary(src.result());										
 					return da;
 				} else {				
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
@@ -737,9 +719,9 @@ public final class FlowTyping extends AbstractResolver {
 			} else if(lval instanceof Expr.AbstractDotAccess) {
 				// this indicates a record update
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
-				Expr.LVal src = propagate((Expr.LVal) ad.src,environment,typer);
+				Expr.LVal src = propagate((Expr.LVal) ad.src,environment);
 				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
-				Nominal.EffectiveRecord srcType = expandAsEffectiveRecord(src.result());
+				Nominal.EffectiveRecord srcType = resolver.expandAsEffectiveRecord(src.result());
 				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
 				} else if(srcType.field(ra.name) == null) {
