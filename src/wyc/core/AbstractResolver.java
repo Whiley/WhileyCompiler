@@ -24,8 +24,8 @@ public abstract class AbstractResolver {
 	
 	public AbstractResolver(GlobalResolver resolver) {
 		this.resolver = resolver;
-		this.loader = loader;
-		this.files = files;
+		this.loader = resolver.loader();
+		this.files = resolver.files();
 	}
 	
 	// =========================================================================
@@ -292,7 +292,7 @@ public abstract class AbstractResolver {
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports) {
 			if (imp.matchName(name)) {
-				for (ModuleID mid : matchImport(imp)) {					
+				for (ModuleID mid : resolver.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
 				}
@@ -310,7 +310,7 @@ public abstract class AbstractResolver {
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports) {
 			if (imp.matchName(name)) {
-				for (ModuleID mid : matchImport(imp)) {					
+				for (ModuleID mid : resolver.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateMessages(nid,parameters,candidates);					
 				}
@@ -501,7 +501,7 @@ public abstract class AbstractResolver {
 		int nparams = parameters != null ? parameters.size() : -1;				
 
 		WhileyFile wf = files.get(mid);
-		if(wf != null) {
+		if (wf != null) {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {

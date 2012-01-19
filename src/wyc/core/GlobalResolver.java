@@ -43,7 +43,7 @@ public class GlobalResolver {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();
+	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
 	
 	/**
 	 * The constant cache contains a cache of expanded constant values.
@@ -56,7 +56,14 @@ public class GlobalResolver {
 		this.files = files;
 	}
 	
-
+	public ModuleLoader loader() {
+		return loader;		
+	}
+	
+	public CompilationGroup files() {
+		return files;
+	}
+	
 	/**
 	 * This function checks whether the supplied name exists or not.
 	 * 
@@ -88,7 +95,7 @@ public class GlobalResolver {
 	 * @param imp
 	 * @return
 	 */
-	private List<ModuleID> matchImport(WhileyFile.Import imp) {			
+	public List<ModuleID> imports(WhileyFile.Import imp) {			
 		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
 		ArrayList<ModuleID> matches = importCache.get(key);
 		if(matches != null) {
@@ -140,7 +147,9 @@ public class GlobalResolver {
 	 */
 	protected boolean isModule(ModuleID mid) {
 		try {
-			loader.loadModule(mid);
+			if(files.get(mid) == null) {
+				loader.loadModule(mid);
+			}
 			return true;
 		} catch(ResolveError e) {
 			return false;
@@ -188,7 +197,7 @@ public class GlobalResolver {
 			throws ResolveError {		
 		for (WhileyFile.Import imp : context.imports) {			
 			if (imp.matchName(name)) {
-				for (ModuleID mid : matchImport(imp)) {					
+				for (ModuleID mid : imports(imp)) {					
 					NameID nid = new NameID(mid, name); 					
 					if (isName(nid)) {
 						return nid;
@@ -264,7 +273,7 @@ public class GlobalResolver {
 			throws ResolveError {
 		
 		for (WhileyFile.Import imp : context.imports) {			
-			for(ModuleID mid : matchImport(imp)) {				
+			for(ModuleID mid : imports(imp)) {				
 				if(mid.module().equals(name)) {
 					return mid;
 				}

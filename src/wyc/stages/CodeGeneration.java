@@ -79,7 +79,7 @@ import wyc.lang.Stmt.*;
  */
 public final class CodeGeneration {
 	private final ModuleLoader loader;	
-	private final CompilationManager resolver;
+	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
 	private Stack<Scope> scopes = new Stack<Scope>();
@@ -93,7 +93,7 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(ModuleLoader loader, CompilationManager resolver) {
+	public CodeGeneration(ModuleLoader loader, GlobalResolver resolver) {
 		this.loader = loader;		
 		this.resolver = resolver;
 	}

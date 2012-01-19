@@ -34,6 +34,7 @@ import wyil.lang.*;
 import wyil.util.*;
 import wyc.core.CompilationGroup;
 import wyc.core.CompilationManager;
+import wyc.core.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;
 
@@ -214,13 +215,13 @@ public final class Compiler implements Logger {
 	}	
 	
 	private List<Module> build(CompilationGroup files) {
-		CompilationManager manager = new CompilationManager(loader,files);
+		GlobalResolver resolver = new GlobalResolver(loader,files);
 		
 		for(WhileyFile wf : files) {
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();		
 			long memory = runtime.freeMemory();					
-			new FlowTyping(loader, manager).propagate(wf);
+			new FlowTyping(loader, resolver).propagate(wf);
 			logTimedMessage("[" + wf.filename + "] flow typing",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
 		}		
@@ -228,7 +229,7 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();	
-		List<Module> modules = new CodeGeneration(loader,manager).generate(files);			
+		List<Module> modules = new CodeGeneration(loader,resolver).generate(files);			
 		logTimedMessage("code generation",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		return modules;
