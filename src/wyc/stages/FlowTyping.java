@@ -108,23 +108,9 @@ public final class FlowTyping {
 	public void propagate(WhileyFile wf) {
 		this.filename = wf.filename;
 		
-		ModuleID mid = wf.module;
-		ArrayList<WhileyFile.Import> imports = new ArrayList<WhileyFile.Import>();
-		
-		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 
-		// other import statements are inserted here
-		imports.add(new WhileyFile.Import(mid.pkg(), "*", null)); 
-		imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null)); 		
-		
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
-				if (decl instanceof Import) {
-					Import impd = (Import) decl;
-					// insert import statement into the appropriate space
-					// between that for this file, and those for its package and
-					// whiley.lang (see above).
-					imports.add(1, impd);					
-				} else if(decl instanceof FunctionOrMethodOrMessage) {
+				if(decl instanceof FunctionOrMethodOrMessage) {
 					propagate((FunctionOrMethodOrMessage)decl);
 				} else if(decl instanceof TypeDef) {
 					propagate((TypeDef)decl);					
@@ -154,9 +140,7 @@ public final class FlowTyping {
 			// second, construct the appropriate typing environment			
 			Environment environment = new Environment();
 			environment.put("$", td.resolvedType);
-			
-			// FIXME: add names exposed from records and other types
-			
+			environment = addExposedNames(td.unresolvedType,environment,td);
 			// third, propagate type information through the constraint 			
 			td.constraint = resolver.resolve(td.constraint,environment,td);
 		}
@@ -796,8 +780,8 @@ public final class FlowTyping {
 	 * @param t
 	 * @param environment
 	 */
-	private static void addExposedNames(Expr src, UnresolvedType t,
-			HashMap<String, Set<Expr>> environment) {
+	private Environment addExposedNames(UnresolvedType t,
+			Environment environment, Context context) {
 		// Extended this method to handle lists and sets etc, is very difficult.
 		// The primary problem is that we need to expand expressions involved
 		// names exposed in this way into quantified
@@ -805,21 +789,15 @@ public final class FlowTyping {
 		if(t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
-				Expr s = new Expr.RecordAccess(src, e
-						.getKey(), src.attribute(Attribute.Source.class));
-				addExposedNames(s,e.getValue(),environment);
-				Set<Expr> aliases = environment.get(e.getKey());
-				if(aliases == null) {
-					aliases = new HashSet<Expr>();
-					environment.put(e.getKey(),aliases);
-				}
-				aliases.add(s);
+				Nominal alias = environment.get(e.getKey());
+				if(alias == null) {
+					alias = resolver.resolveAsType(e.getValue(),context);
+					environment = environment.put(e.getKey(),alias);
+				}				
 			}
-		} else if (t instanceof UnresolvedType.Reference) {			
-			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;
-			addExposedNames(new Expr.Dereference(src),
-					ut.element, environment);
-		}
+		} 
+		
+		return environment;
 	}
 	
 	private abstract static class Scope {

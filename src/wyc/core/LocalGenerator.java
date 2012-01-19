@@ -11,8 +11,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import wyc.lang.Expr;
+import wyc.lang.UnresolvedType;
+import wyc.lang.WhileyFile.Context;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
@@ -1027,7 +1030,7 @@ public final class LocalGenerator {
 		Expr.UnOp r = new Expr.UnOp(Expr.UOp.NOT, e);
 		r.type = Nominal.T_BOOL;		
 		return r;
-	}
+	}		
 	
 	/**
 	 * The attributes method extracts those attributes of relevance to wyil, and
