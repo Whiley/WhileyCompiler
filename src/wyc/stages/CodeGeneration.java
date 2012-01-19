@@ -27,7 +27,7 @@ package wyc.stages;
 
 import java.util.*;
 
-import static wyc.core.Context.*;
+import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
@@ -113,9 +113,6 @@ public final class CodeGeneration {
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 
-		// TODO: I don't need to use imports here, which is a little odd.
-		localGenerator = new LocalGenerator(globalGenerator,new Context(wf,Collections.EMPTY_LIST));
-		
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
 				if (d instanceof TypeDef) {
@@ -154,16 +151,18 @@ public final class CodeGeneration {
 
 	private Module.TypeDef generate(TypeDef td) throws ResolveError {		
 		Block constraint = null;
-		if(td.constraint != null) {
-			Context context = localGenerator.context();
-			NameID nid = new NameID(context.file.module,td.name);
-			constraint = globalGenerator.generate(nid, context);			
+		if(td.constraint != null) {			
+			localGenerator = new LocalGenerator(globalGenerator,td);			
+			NameID nid = new NameID(td.file().module,td.name);
+			constraint = globalGenerator.generate(nid, td);			
 		}
 		
 		return new Module.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
 	private Module.Method generate(FunctionOrMethodOrMessage fd) {		
+		localGenerator = new LocalGenerator(globalGenerator,fd);	
+		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
 		// method return type		

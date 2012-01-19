@@ -4,7 +4,7 @@ import java.util.*;
 
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
-import static wyc.core.Context.*;
+import static wyc.lang.WhileyFile.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.Pair;

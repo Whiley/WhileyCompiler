@@ -33,7 +33,6 @@ import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.core.CompilationGroup;
-import wyc.core.CompilationManager;
 import wyc.core.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;

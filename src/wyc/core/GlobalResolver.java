@@ -1,7 +1,6 @@
 package wyc.core;
 
-import static wyc.core.Context.internalFailure;
-import static wyc.core.Context.syntaxError;
+import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
@@ -195,7 +194,7 @@ public class GlobalResolver {
 	 */
 	public NameID resolveAsName(String name, Context context)
 			throws ResolveError {		
-		for (WhileyFile.Import imp : context.imports) {			
+		for (WhileyFile.Import imp : context.imports()) {			
 			if (imp.matchName(name)) {
 				for (ModuleID mid : imports(imp)) {					
 					NameID nid = new NameID(mid, name); 					
@@ -272,7 +271,7 @@ public class GlobalResolver {
 	public ModuleID resolveAsModule(String name, Context context)
 			throws ResolveError {
 		
-		for (WhileyFile.Import imp : context.imports) {			
+		for (WhileyFile.Import imp : context.imports()) {			
 			for(ModuleID mid : imports(imp)) {				
 				if(mid.module().equals(name)) {
 					return mid;
@@ -507,8 +506,8 @@ public class GlobalResolver {
 		return myIndex;
 	}
 	
-	private int resolveAsType(NameID key, ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots)
-			throws ResolveError {
+	private int resolveAsType(NameID key, ArrayList<Automaton.State> states,
+			HashMap<NameID, Integer> roots) throws ResolveError {
 		
 		// First, check the various caches we have
 		Integer root = roots.get(key);			
@@ -547,7 +546,7 @@ public class GlobalResolver {
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
 		} else {						
-			return resolveAsType(type,context(wf,td),states,roots,false);			
+			return resolveAsType(type,td,states,roots,false);			
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the
@@ -650,10 +649,9 @@ public class GlobalResolver {
 			if(decl instanceof WhileyFile.Constant) {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
 				if (cd.resolvedValue == null) {			
-					Context context = context(wf, cd);
-					cd.constant = new LocalResolver(this,context).propagate(cd.constant, new Environment());
+					cd.constant = new LocalResolver(this,cd).propagate(cd.constant, new Environment());
 					cd.resolvedValue = resolveAsConstant(cd.constant,
-							context, visited);
+							cd, visited);
 				}
 				result = cd.resolvedValue;
 			} else {
@@ -857,42 +855,5 @@ public class GlobalResolver {
 		}
 		syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,bop);
 		return null;
-	}	
-
-	
-	/**
-	 * Construct an appropriate list of import statements for a declaration in a
-	 * given file. Thus, only import statements up to and including the given
-	 * declaration will be included in the returned list.
-	 * 
-	 * @param wf
-	 *            --- Whiley File in question to obtain list of import
-	 *            statements.
-	 * @param decl
-	 *            --- declaration in Whiley File for which the list is desired.
-	 * @return
-	 */
-	protected static Context context(WhileyFile wf,
-			WhileyFile.Declaration decl) {		
-		ModuleID mid = wf.module;
-		ArrayList<WhileyFile.Import> imports = new ArrayList<WhileyFile.Import>();
-		
-		
-		for (WhileyFile.Declaration d : wf.declarations) {
-			if (d instanceof WhileyFile.Import) {
-				imports.add((WhileyFile.Import) d);
-			}
-			if (d == decl) {
-				break;
-			}
-		}
-		
-		imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null));		
-		imports.add(new WhileyFile.Import(mid.pkg(), "*", null));
-		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 		
-		
-		Collections.reverse(imports);
-		
-		return new Context(wf,imports);
-	}
+	}		
 }

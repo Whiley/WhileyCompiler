@@ -5,8 +5,7 @@ import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
 import static wyil.util.ErrorMessages.UNKNOWN_VARIABLE;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyil.util.ErrorMessages.errorMessage;
-import static wyc.core.Context.internalFailure;
-import static wyc.core.Context.syntaxError;
+import static wyc.lang.WhileyFile.*;
 
 import java.util.ArrayList;
 import java.util.Collection;

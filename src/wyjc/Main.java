@@ -32,7 +32,6 @@ import java.util.jar.JarFile;
 
 import wyc.Pipeline;
 import wyc.Compiler;
-import wyc.core.CompilationManager;
 import wyc.util.*;
 import wyil.*;
 import wyil.util.*;

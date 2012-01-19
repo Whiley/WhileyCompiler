@@ -27,7 +27,6 @@ package wyc.lang;
 
 import java.util.*;
 
-import wyc.core.CompilationManager;
 import wyc.core.Nominal;
 import wyil.ModuleLoader;
 import wyil.lang.*;
@@ -48,16 +47,20 @@ public final class WhileyFile {
 	public final String filename;
 	public final ArrayList<Declaration> declarations;
 	
-	public WhileyFile(ModuleID module, String filename, List<Declaration> decls) {
+	public WhileyFile(ModuleID module, String filename) {
 		this.module = module;
 		this.filename = filename;
-		this.declarations = new ArrayList<Declaration>(decls);
+		this.declarations = new ArrayList<Declaration>();
 	}
 	
 	public boolean hasName(String name) {
 		return declaration(name) != null;
 	}			
 
+	public void add(Declaration declaration) {
+		declarations.add(declaration);
+	}
+	
 	public Declaration declaration(String name) {
 		for(Declaration d : declarations) {
 			if(d.name().equals(name)) {
@@ -95,11 +98,64 @@ public final class WhileyFile {
 		}
 		return null;
 	}
-	
+		
 	public interface Declaration extends SyntacticElement {
 		public String name();
 	}
 
+	public interface Context extends SyntacticElement {
+		public WhileyFile file();
+		public List<Import> imports();
+	}
+	
+	private abstract class AbstractContext extends SyntacticElement.Impl implements Context {
+
+		private AbstractContext(Attribute... attributes) {
+			super(attributes);
+		}
+		
+		private AbstractContext(Collection<Attribute> attributes) {
+			super(attributes);
+		}
+		
+		public WhileyFile file() {
+			return WhileyFile.this;
+		}
+		
+		/**
+		 * Construct an appropriate list of import statements for a declaration in a
+		 * given file. Thus, only import statements up to and including the given
+		 * declaration will be included in the returned list.
+		 * 
+		 * @param wf
+		 *            --- Whiley File in question to obtain list of import
+		 *            statements.
+		 * @param decl
+		 *            --- declaration in Whiley File for which the list is desired.
+		 * @return
+		 */
+		public List<Import> imports() {
+			// this computation could (should?) be cached.
+			ArrayList<Import> imports = new ArrayList<Import>();		
+			imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null)); 	
+			imports.add(new WhileyFile.Import(module.pkg(), "*", null)); 
+			
+			for(Declaration d : declarations) {
+				if(d == this) {
+					break;
+				} else if(d instanceof Import) {
+					imports.add((Import)d);
+				}
+			}
+			
+			imports.add(new WhileyFile.Import(module.pkg(), module.module(), "*")); 
+
+			Collections.reverse(imports);	
+			
+			return imports;
+		}			
+	}
+	
 	/**
 	 * Represents an import declaration in a Whiley source file. For example:
 	 * 
@@ -151,8 +207,8 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public static class Constant extends
-				SyntacticElement.Impl implements Declaration {
+	public class Constant extends
+				AbstractContext implements Declaration {
 		
 		public final List<Modifier> modifiers;
 		public final String name;
@@ -199,7 +255,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */	
-	public static class TypeDef extends SyntacticElement.Impl implements Declaration {
+	public class TypeDef extends AbstractContext implements Declaration {
 		public final List<Modifier> modifiers;
 		public final UnresolvedType unresolvedType;
 		public Nominal resolvedType;
@@ -235,7 +291,7 @@ public final class WhileyFile {
 		}
 	}
 	
-	public static abstract class FunctionOrMethodOrMessage extends SyntacticElement.Impl implements
+	public abstract class FunctionOrMethodOrMessage extends AbstractContext implements
 			Declaration {
 		public final ArrayList<Modifier> modifiers;
 		public final String name;		
@@ -289,14 +345,14 @@ public final class WhileyFile {
 
 		public String name() {
 			return name;
-		}
+		}		
 		
 		public abstract UnresolvedType.FunctionOrMethodOrMessage unresolvedType();
 		
 		public abstract Nominal.FunctionOrMethodOrMessage resolvedType();
 	}
 
-	public static abstract class FunctionOrMethod extends FunctionOrMethodOrMessage {
+	public abstract class FunctionOrMethod extends FunctionOrMethodOrMessage {
 		public FunctionOrMethod(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
 				Expr precondition, Expr postcondition,
@@ -334,7 +390,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class Function extends FunctionOrMethod {
+	public final class Function extends FunctionOrMethod {
 		public Nominal.Function resolvedType;
 		
 		public Function(List<Modifier> modifiers, String name,
@@ -382,7 +438,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class Method extends FunctionOrMethod {
+	public final class Method extends FunctionOrMethod {
 		public Nominal.Method resolvedType;
 		
 		public Method(List<Modifier> modifiers, String name,
@@ -433,7 +489,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public final static class Message extends FunctionOrMethodOrMessage {
+	public final class Message extends FunctionOrMethodOrMessage {
 		public final UnresolvedType receiver;
 		public Nominal.Message resolvedType;
 		
@@ -482,5 +538,22 @@ public final class WhileyFile {
 		public String name() {
 			return name;
 		}
-	}	
+	}
+	
+
+	public static void syntaxError(String msg, Context context, SyntacticElement elem) {
+		SyntaxError.syntaxError(msg,context.file().filename,elem);
+	}
+	
+	public static void syntaxError(String msg, Context context, SyntacticElement elem, Throwable ex) {
+		SyntaxError.syntaxError(msg,context.file().filename,elem,ex);
+	}
+	
+	public static void internalFailure(String msg, Context context, SyntacticElement elem) {
+		SyntaxError.internalFailure(msg,context.file().filename,elem);
+	}
+	
+	public static void internalFailure(String msg, Context context, SyntacticElement elem, Throwable ex) {
+		SyntaxError.internalFailure(msg,context.file().filename,elem,ex);
+	}
 }

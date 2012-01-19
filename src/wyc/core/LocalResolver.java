@@ -1,26 +1,13 @@
 package wyc.core;
 
 import static wyil.util.ErrorMessages.*;
-import static wyil.util.SyntaxError.syntaxError;
-import static wyc.core.Context.internalFailure;
-import static wyc.core.Context.syntaxError;
+import static wyc.lang.WhileyFile.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wyc.core.Nominal.EffectiveDictionary;
-import wyc.core.Nominal.EffectiveList;
-import wyc.core.Nominal.EffectiveRecord;
-import wyc.core.Nominal.EffectiveSet;
-import wyc.core.Nominal.Function;
-import wyc.core.Nominal.FunctionOrMethod;
-import wyc.core.Nominal.FunctionOrMethodOrMessage;
-import wyc.core.Nominal.Message;
-import wyc.core.Nominal.Method;
-import wyc.core.Nominal.Reference;
 import wyc.lang.*;
-import wyil.ModuleLoader;
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
 import wyil.lang.PkgID;

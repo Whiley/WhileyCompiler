@@ -57,9 +57,14 @@ public final class WhileyParser {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens); 		
 	}
-	public WhileyFile read() {
-		ArrayList<Declaration> decls = new ArrayList<Declaration>();		
+	public WhileyFile read() {		
 		ArrayList<String> pkg = parsePackage();
+
+		// Now, figure out module name from filename
+		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,
+				filename.length() - 7);
+
+		WhileyFile wf = new WhileyFile(new ModuleID(pkg,name),filename);
 		
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
@@ -68,28 +73,24 @@ public final class WhileyParser {
 			} else if(t instanceof Keyword) {
 				Keyword k = (Keyword) t;
 				if(k.text.equals("import")) {					
-					decls.add(parseImport());
+					parseImport(wf);
 				} else {
 					List<Modifier> modifiers = parseModifiers();
 					
 					t = tokens.get(index);
 					
 					if (t.text.equals("define")) {
-						decls.add(parseDefType(modifiers));
+						parseDefType(modifiers, wf);
 					} else {
-						decls.add(parseFunctionOrMethodOrMessage(modifiers));
+						parseFunctionOrMethodOrMessage(modifiers, wf);
 					} 
 				}
 			} else {
-				decls.add(parseFunctionOrMethodOrMessage(new ArrayList<Modifier>()));				
+				parseFunctionOrMethodOrMessage(new ArrayList<Modifier>(),wf);				
 			}			
 		}
 		
-		// Now, figure out module name from filename
-		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 7);
-
-		return new WhileyFile(new ModuleID(pkg,name),filename,decls);
+		return wf;
 	}
 	
 	private ArrayList<String> parsePackage() {
@@ -117,7 +118,7 @@ public final class WhileyParser {
 		}
 	}
 	
-	private Import parseImport() {
+	private void parseImport(WhileyFile wf) {
 		int start = index;
 		matchKeyword("import");
 		
@@ -157,11 +158,11 @@ public final class WhileyParser {
 		int end = index;
 		matchEndLine();
 		
-		return new Import(new PkgID(pkg), module, name, sourceAttr(start,
-				end - 1));
+		wf.add(new Import(new PkgID(pkg), module, name, sourceAttr(start,
+				end - 1)));
 	}
 	
-	private Declaration parseFunctionOrMethodOrMessage(List<Modifier> modifiers) {			
+	private void parseFunctionOrMethodOrMessage(List<Modifier> modifiers, WhileyFile wf) {			
 		int start = index;		
 		UnresolvedType ret = parseType();				
 		// FIXME: potential bug here at end of file		
@@ -215,23 +216,24 @@ public final class WhileyParser {
 		matchEndLine();
 		
 		List<Stmt> stmts = parseBlock(1);
-		
+		Declaration declaration;
 		if(message) {
-			return new Message(modifiers, name.text, receiver, ret, paramTypes,
+			declaration = wf.new Message(modifiers, name.text, receiver, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
 		} else if(method) {
-			return new Method(modifiers, name.text, ret, paramTypes,
+			declaration = wf.new Method(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
 		}else {
-			return new Function(modifiers, name.text, ret, paramTypes,
+			declaration = wf.new Function(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
 		}
+		wf.add(declaration);
 	}
 	
-	private Declaration parseDefType(List<Modifier> modifiers) {		
+	private void parseDefType(List<Modifier> modifiers, WhileyFile wf) {		
 		int start = index; 
 		matchKeyword("define");
 		
@@ -256,8 +258,9 @@ public final class WhileyParser {
 			}
 			int end = index;			
 			matchEndLine();			
-			return new TypeDef(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
-		
+			Declaration declaration = wf.new TypeDef(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
+			wf.add(declaration);
+			return;
 		} catch(Exception e) {}
 		
 		// Ok, failed parsing type constructor. So, backtrack and try for
@@ -266,7 +269,8 @@ public final class WhileyParser {
 		Expr e = parseCondition(false);
 		int end = index;
 		matchEndLine();		
-		return new Constant(modifiers, e, name.text, sourceAttr(start,end-1));
+		Declaration declaration = wf.new Constant(modifiers, e, name.text, sourceAttr(start,end-1));
+		wf.add(declaration);
 	}
 	
 	private List<Modifier> parseModifiers() {

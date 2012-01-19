@@ -116,7 +116,6 @@ public final class FlowTyping extends AbstractResolver {
 		// other import statements are inserted here
 		imports.add(new WhileyFile.Import(mid.pkg(), "*", null)); 
 		imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null)); 		
-		LocalResolver typer = new LocalResolver(resolver,new Context(wf,imports));
 		
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
@@ -125,14 +124,13 @@ public final class FlowTyping extends AbstractResolver {
 					// insert import statement into the appropriate space
 					// between that for this file, and those for its package and
 					// whiley.lang (see above).
-					imports.add(1, impd);
-					typer = new LocalResolver(resolver,new Context(wf,imports));
+					imports.add(1, impd);					
 				} else if(decl instanceof FunctionOrMethodOrMessage) {
-					propagate((FunctionOrMethodOrMessage)decl,typer);
+					propagate((FunctionOrMethodOrMessage)decl);
 				} else if(decl instanceof TypeDef) {
-					propagate((TypeDef)decl,typer);					
+					propagate((TypeDef)decl);					
 				} else if(decl instanceof Constant) {
-					propagate((Constant)decl,typer.context());					
+					propagate((Constant)decl);					
 				}			
 			} catch(ResolveError e) {
 				syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,decl,e);
@@ -144,14 +142,14 @@ public final class FlowTyping extends AbstractResolver {
 		}
 	}
 	
-	public void propagate(Constant cd, Context context) throws ResolveError {
-		NameID nid = new NameID(context.file.module, cd.name);
+	public void propagate(Constant cd) throws ResolveError {
+		NameID nid = new NameID(cd.file().module, cd.name);
 		cd.resolvedValue = resolver.resolveAsConstant(nid);
 	}
 	
-	public void propagate(TypeDef td, LocalResolver typer) throws ResolveError {		
+	public void propagate(TypeDef td) throws ResolveError {		
 		// first, resolve the declared type
-		td.resolvedType = resolver.resolveAsType(td.unresolvedType, typer.context());
+		td.resolvedType = resolver.resolveAsType(td.unresolvedType, td);
 		
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			
@@ -161,22 +159,22 @@ public final class FlowTyping extends AbstractResolver {
 			// FIXME: add names exposed from records and other types
 			
 			// third, propagate type information through the constraint 			
-			td.constraint = typer.propagate(td.constraint,environment);
+			td.constraint = new LocalResolver(resolver,td).propagate(td.constraint,environment);
 		}
 	}
 
-	public void propagate(FunctionOrMethodOrMessage d, LocalResolver typer) throws ResolveError {		
+	public void propagate(FunctionOrMethodOrMessage d) throws ResolveError {		
 		this.current = d; // ugly
-		Context context = typer.context();		
+		LocalResolver typer = new LocalResolver(resolver,d);
 		Environment environment = new Environment();					
 		
 		for (WhileyFile.Parameter p : d.parameters) {							
-			environment = environment.put(p.name,resolver.resolveAsType(p.type,context));
+			environment = environment.put(p.name,resolver.resolveAsType(p.type,d));
 		}
 		
 		if(d instanceof Message) {
 			Message md = (Message) d;							
-			environment = environment.put("this",resolver.resolveAsType(md.receiver,context));			
+			environment = environment.put("this",resolver.resolveAsType(md.receiver,d));			
 		}
 		
 		if(d.precondition != null) {
@@ -184,7 +182,7 @@ public final class FlowTyping extends AbstractResolver {
 		}
 		
 		if(d.postcondition != null) {			
-			environment = environment.put("$", resolver.resolveAsType(d.ret,context));
+			environment = environment.put("$", resolver.resolveAsType(d.ret,d));
 			d.postcondition = typer.propagate(d.postcondition,environment.clone());
 			// The following is a little sneaky and helps to avoid unnecessary
 			// copying of environments. 
@@ -193,13 +191,13 @@ public final class FlowTyping extends AbstractResolver {
 
 		if(d instanceof Function) {
 			Function f = (Function) d;
-			f.resolvedType = resolver.resolveAsType(f.unresolvedType(),context);					
+			f.resolvedType = resolver.resolveAsType(f.unresolvedType(),d);					
 		} else if(d instanceof Method) {
 			Method m = (Method) d;			
-			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),context);		
+			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
 		} else {
 			Message m = (Message) d;
-			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),context);		
+			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
 		}
 		
 		propagate(d.statements,environment,typer);

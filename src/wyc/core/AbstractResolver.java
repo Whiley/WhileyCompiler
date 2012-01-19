@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import static wyc.lang.WhileyFile.*;
 import wyc.lang.*;
 import wyil.ModuleLoader;
 import wyil.lang.Module;
@@ -16,6 +17,7 @@ import wyil.lang.Type;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.Triple;
+
 
 public abstract class AbstractResolver {
 	protected final GlobalResolver resolver;
@@ -156,7 +158,7 @@ public abstract class AbstractResolver {
 				WhileyFile.Declaration decl = wf.declaration(nid.name());
 				if(decl instanceof WhileyFile.TypeDef) {
 					WhileyFile.TypeDef td = (WhileyFile.TypeDef) decl;
-					r = resolver.resolveAsType(td.unresolvedType, context(wf, decl))
+					r = resolver.resolveAsType(td.unresolvedType, td)
 							.nominal();
 				} 
 			} else {
@@ -290,7 +292,7 @@ public abstract class AbstractResolver {
 		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 
 
 		// first, try to find the matching message
-		for (WhileyFile.Import imp : context.imports) {
+		for (WhileyFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : resolver.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
@@ -308,7 +310,7 @@ public abstract class AbstractResolver {
 		HashSet<Pair<NameID,Nominal.Message>> candidates = new HashSet<Pair<NameID,Nominal.Message>>(); 
 
 		// first, try to find the matching message
-		for (WhileyFile.Import imp : context.imports) {
+		for (WhileyFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {
 				for (ModuleID mid : resolver.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
@@ -506,7 +508,7 @@ public abstract class AbstractResolver {
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
 					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolver
-							.resolveAsType(f.unresolvedType(), context(wf, f));
+							.resolveAsType(f.unresolvedType(), f);
 					candidates.add(new Pair<NameID, Nominal.FunctionOrMethod>(
 							nid, ft));
 				}
@@ -553,7 +555,7 @@ public abstract class AbstractResolver {
 					WhileyFile.Message.class, nid.name())) {
 				if (nparams == -1 || m.parameters.size() == nparams) {
 					Nominal.Message ft = (Nominal.Message) resolver
-							.resolveAsType(m.unresolvedType(), context(wf, m));
+							.resolveAsType(m.unresolvedType(), m);
 					candidates.add(new Pair<NameID, Nominal.Message>(nid, ft));
 				}
 			}
@@ -598,27 +600,5 @@ public abstract class AbstractResolver {
 	 *            --- declaration in Whiley File for which the list is desired.
 	 * @return
 	 */
-	protected static Context context(WhileyFile wf,
-			WhileyFile.Declaration decl) {		
-		ModuleID mid = wf.module;
-		ArrayList<WhileyFile.Import> imports = new ArrayList<WhileyFile.Import>();
-		
-		
-		for (WhileyFile.Declaration d : wf.declarations) {
-			if (d instanceof WhileyFile.Import) {
-				imports.add((WhileyFile.Import) d);
-			}
-			if (d == decl) {
-				break;
-			}
-		}
-		
-		imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null));		
-		imports.add(new WhileyFile.Import(mid.pkg(), "*", null));
-		imports.add(new WhileyFile.Import(mid.pkg(), mid.module(), "*")); 		
-		
-		Collections.reverse(imports);
-		
-		return new Context(wf,imports);
-	}
+
 }
