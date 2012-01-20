@@ -175,7 +175,7 @@ public abstract class Type {
 			return (Type.Function) r;
 		} else {
 			throw new IllegalArgumentException(
-					"invalid arguments for Type.Function()");
+					"invalid arguments for Type.Function() - " + params);
 		}
 	}
 	
