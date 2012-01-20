@@ -105,7 +105,9 @@ public class GlobalGenerator {
 		throw new ResolveError("name not found: " + nid);
 	}
 	
-	private Block generate(UnresolvedType t, Context context) {
+	public Block generate(UnresolvedType t, Context context) {
+		Nominal nt = resolver.resolveAsType(t, context);
+		Type raw = nt.raw();
 		if (t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			Block blk = generate(lt.element, context);			
@@ -181,43 +183,39 @@ public class GlobalGenerator {
 			}
 			return blk;
 		} else if (t instanceof UnresolvedType.Union) {
-			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			HashSet<Type> bounds = new HashSet<Type>();
+			UnresolvedType.Union ut = (UnresolvedType.Union) t;			
 			Block blk = new Block(1);
 			String exitLabel = Block.freshLabel();
 			boolean constraints = false;
 			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
-			for (int i = 0; i != ut_bounds.size(); ++i) {
+			for (int i = 0; i != ut_bounds.size(); ++i) {				
 				boolean lastBound = (i + 1) == ut_bounds.size();
 				UnresolvedType b = ut_bounds.get(i);
 				Type bt = resolver.resolveAsType(b, context).raw();
 				Block p = generate(b, context);
-				
+								
 				if (p != null) {
 					// In this case, there are constraints so we check the
 					// negated type and branch over the constraint test if we
 					// don't have the require type.
-
-					// TODO: in principle, the following should work. However,
-					// it's broken in the case of recurisve types being used in
-					// the type tests. This should be resolvable when we support
-					// proper named types, since we won't be expanding fully at
-					// this stage.
-					// constraints = true;
-					// String nextLabel = Block.freshLabel();
-					// blk.append(
-					// Code.IfType(null, Code.THIS_SLOT,
-					// Type.Negation(bt), nextLabel),
-					// t.attributes());
-					// blk.append(chainBlock(nextLabel,p.second()));
-					// blk.append(Code.Goto(exitLabel));
-					// blk.append(Code.Label(nextLabel));
-				} else {
+					constraints = true;
+					String nextLabel = Block.freshLabel();
+					if (!lastBound) {
+						blk.append(
+								Code.IfType(raw, Code.THIS_SLOT,
+										Type.Negation(bt), nextLabel),
+								t.attributes());
+					}
+					blk.append(chainBlock(nextLabel, p));
+					blk.append(Code.Goto(exitLabel));
+					blk.append(Code.Label(nextLabel));
+				} else if(!lastBound) {
 					// In this case, there are no constraints so we can use a
 					// direct type test.					
 					blk.append(
-							Code.IfType(null, Code.THIS_SLOT, bt, exitLabel),
+							Code.IfType(raw, Code.THIS_SLOT, bt, exitLabel),
 							t.attributes());
+					raw = Type.intersect(raw, Type.Negation(bt));					
 				}
 			}
 

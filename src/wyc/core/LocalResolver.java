@@ -194,7 +194,6 @@ public abstract class LocalResolver extends AbstractResolver {
 				// yes, right-hand side is a constant
 				Expr.TypeVal tv = (Expr.TypeVal) rhs;
 				Nominal testType = resolveAsUnconstrainedType(tv.unresolvedType,context);
-				tv.type = testType; // hack
 				Type testRawType = testType.raw();					
 				Nominal glb = Nominal.intersect(lhs.result(), testType);	
 				

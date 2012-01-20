@@ -232,13 +232,30 @@ public final class LocalGenerator {
 			blk = generate(v.lhs, environment);
 			slot = -1;
 		}
+		
+		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
+		Block constraint = global.generate(rhs.unresolvedType, context);
+		if(constraint != null) {
+			String exitLabel = Block.freshLabel();
+			Type glb = Type.intersect(v.srcType.raw(), Type.Negation(rhs.type.raw()));
+			if(glb != Type.T_VOID) {
+				System.out.println("GOT: " + glb);
+				// Only put the actual type test in if it is necessary.
+				blk.append(Code.IfType(v.srcType.raw(), slot, glb, exitLabel),
+						attributes(v));			
+			}
+			// FIXME: I think there's a bug here when slot == -1
+			blk.append(Code.Load(v.srcType.raw(), slot));
+			blk.append(Code.Store(v.srcType.raw(), environment.size()));
+			constraint = shiftBlock(environment.size(),constraint);
+			blk.append(chainBlock(exitLabel,constraint)); 
 
-		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;		
-		
-		// FIXME: need to expand constraints here!
-		
-		blk.append(Code.IfType(v.srcType.raw(), slot, rhs.type.raw(), target),
-				attributes(v));
+			blk.append(Code.Goto(target));
+			blk.append(Code.Label(exitLabel));
+		} else {
+			blk.append(Code.IfType(v.srcType.raw(), slot, rhs.type.raw(), target),
+					attributes(v));
+		}
 		return blk;
 	}
 
@@ -1034,6 +1051,40 @@ public final class LocalGenerator {
 		r.type = Nominal.T_BOOL;		
 		return r;
 	}		
+	
+	/**
+	 * The shiftBlock method takes a block and shifts every slot a given amount
+	 * to the right. The number of inputs remains the same. This method is used 
+	 * 
+	 * @param amount
+	 * @param blk
+	 * @return
+	 */
+	private static Block shiftBlock(int amount, Block blk) {
+		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
+		for(int i=0;i!=blk.numSlots();++i) {
+			binding.put(i,i+amount);
+		}
+		Block nblock = new Block(blk.numInputs());
+		for(Block.Entry e : blk) {
+			Code code = e.code.remap(binding);
+			nblock.append(code,e.attributes());
+		}
+		return nblock.relabel();
+	}
+	
+	private static Block chainBlock(String target, Block blk) {	
+		Block nblock = new Block(blk.numInputs());
+		for (Block.Entry e : blk) {
+			if (e.code instanceof Code.Fail) {
+				nblock.append(Code.Goto(target), e.attributes());
+			} else {
+				nblock.append(e.code, e.attributes());
+			}
+		}
+		return nblock.relabel();
+	}
+	
 	
 	/**
 	 * The attributes method extracts those attributes of relevance to wyil, and

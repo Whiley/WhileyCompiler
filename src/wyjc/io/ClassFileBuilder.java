@@ -1000,8 +1000,7 @@ public class ClassFileBuilder {
 			addReadConversion(gdiff,bytecodes);		
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
-			bytecodes.add(new Bytecode.Label(trueLabel));
-
+			bytecodes.add(new Bytecode.Label(trueLabel));			
 			Type glb = Type.intersect(c.type, c.test);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcast
