@@ -193,16 +193,40 @@ public abstract class LocalResolver extends AbstractResolver {
 			if(rhs instanceof Expr.TypeVal) {									
 				// yes, right-hand side is a constant
 				Expr.TypeVal tv = (Expr.TypeVal) rhs;
-				Nominal testType = resolveAsUnconstrainedType(tv.unresolvedType,context);
-				Type testRawType = testType.raw();					
-				Nominal glb = Nominal.intersect(lhs.result(), testType);	
+				Nominal unconstrainedTestType = resolveAsUnconstrainedType(tv.unresolvedType,context);
 				
-				if(Type.isSubtype(testRawType,lhsRawType)) {					
+				/**
+				 * Determine the types guaranteed to hold on the true and false
+				 * branches respectively. We have to use the negated
+				 * unconstrainedTestType for the false branch because only that
+				 * is guaranteed if the test fails. For example:
+				 * 
+				 * <pre>
+				 * define nat as int where $ &gt;= 0
+				 * define listnat as [int]|nat
+				 * 
+				 * int f([int]|int x):
+				 *    if x if listnat:
+				 *        x : [int]|int
+				 *        ...
+				 *    else:
+				 *        x : int
+				 * </pre>
+				 * 
+				 * The unconstrained type of listnat is [int], since nat is a
+				 * constrained type.
+				 */
+				Nominal glbForFalseBranch = Nominal.intersect(lhs.result(),
+						Nominal.Negation(unconstrainedTestType));
+				Nominal glbForTrueBranch = Nominal.intersect(lhs.result(),
+						tv.type);
+
+				if(glbForFalseBranch.raw() == Type.T_VOID) {					
 					// DEFINITE TRUE CASE										
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
-				} else if (glb.raw() == Type.T_VOID) {				
+				} else if (glbForTrueBranch.raw() == Type.T_VOID) {				
 					// DEFINITE FALSE CASE	
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, tv.type.raw()),
 							context, bop);			
 				} 
 				
@@ -212,9 +236,9 @@ public abstract class LocalResolver extends AbstractResolver {
 					Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
 					Nominal newType;
 					if(sign) {
-						newType = glb;
+						newType = glbForTrueBranch;
 					} else {						
-						newType = Nominal.intersect(lhs.result(), Nominal.Negation(testType));						
+						newType = glbForFalseBranch;						
 					}										
 					environment = environment.put(lv.var,newType);
 				}
