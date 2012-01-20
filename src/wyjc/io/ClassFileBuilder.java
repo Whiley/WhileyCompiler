@@ -996,15 +996,15 @@ public class ClassFileBuilder {
 
 			Type gdiff = Type.intersect(c.type,Type.Negation(c.test));			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-			// now, add checkcast
-			addReadConversion(gdiff,bytecodes);		
+			// now, add checkcast									
+			addReadConversion(gdiff,bytecodes);
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));			
 			Type glb = Type.intersect(c.type, c.test);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-			// now, add checkcast
-			addReadConversion(glb,bytecodes);		
+			// now, add checkcast						
+			addReadConversion(glb,bytecodes);
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
 			bytecodes.add(new Bytecode.Goto(c.target));
 			bytecodes.add(new Bytecode.Label(exitLabel));
