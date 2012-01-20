@@ -62,10 +62,12 @@ public class GlobalGenerator {
 		this.loader = loader;
 		this.resolver = resolver;
 	}
-	
+		
 	public Block generate(NameID nid, Context context) throws ResolveError {
 		Block blk = cache.get(nid);
-		if(blk != null) {
+		if(blk == EMPTY_BLOCK) {
+			return null;
+		} else if(blk != null) {
 			return blk;
 		}
 		
@@ -74,22 +76,31 @@ public class GlobalGenerator {
 		ModuleID mid = nid.module();
 		WhileyFile wf = srcfiles.get(mid);
 		if(wf != null) {
+			// FIXME: the following line is necessary to terminate infinite
+			// recursion. However, we really need to do better in the
+			// context of recurisve types with constraints.
+
+			cache.put(nid, EMPTY_BLOCK);
+			
 			WhileyFile.TypeDef td = wf.typeDecl(nid.name());
-			blk = generate(td.unresolvedType,context);
-			if(td != null) {								
-				if(blk == null) {
-					blk = new Block(1);					
+			if(td != null) {
+				blk = generate(td.unresolvedType,context);
+				if(td.constraint != null) {								
+					if(blk == null) {
+						blk = new Block(1);					
+					}
+
+					HashMap<String,Integer> environment = new HashMap<String,Integer>();
+					environment.put("$",0);
+					addExposedNames(td.resolvedType.raw(),environment,blk);
+					String lab = Block.freshLabel();
+					blk.append(new LocalGenerator(this,context).generateCondition(lab, td.constraint, environment));		
+					blk.append(Code.Fail("constraint not satisfied"), td.constraint.attributes());
+					blk.append(Code.Label(lab));								
 				}
-				HashMap<String,Integer> environment = new HashMap<String,Integer>();
-				environment.put("$",0);
-				addExposedNames(td.resolvedType.raw(),environment,blk);
-				String lab = Block.freshLabel();
-				blk.append(new LocalGenerator(this,context).generateCondition(lab, td.constraint, environment));		
-				blk.append(Code.Fail("constraint not satisfied"), td.constraint.attributes());
-				blk.append(Code.Label(lab));								
+				cache.put(nid, blk);
+				return blk;
 			}
-			cache.put(nid, blk);
-			return blk;
 		} else {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.
@@ -345,4 +356,6 @@ public class GlobalGenerator {
 			}
 		} 		
 	}
+	
+	private static final Block EMPTY_BLOCK = new Block(1);
 }

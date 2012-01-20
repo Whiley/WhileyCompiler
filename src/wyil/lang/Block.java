@@ -78,7 +78,7 @@ import wyil.util.*;
 public final class Block implements Iterable<Block.Entry> {
 	private final ArrayList<Entry> stmts;
 	private final int numInputs;
-	
+			
 	public Block(int numInputs) {
 		this.stmts = new ArrayList<Entry>();
 		this.numInputs = numInputs;

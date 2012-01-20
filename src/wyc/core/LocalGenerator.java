@@ -123,7 +123,7 @@ public final class LocalGenerator {
 			}
 		} catch (SyntaxError se) {
 			throw se;
-		} catch (Exception ex) {
+		} catch (Exception ex) {			
 			internalFailure(ex.getMessage(), context, condition, ex);
 		}
 
