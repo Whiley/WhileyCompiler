@@ -12,6 +12,6 @@ string f(expr e):
 
 void ::main(System.Console sys):
     sys.out.println(f(-1))
-    sys.out.println(f(1))
-    sys.out.println(f(1234))
+    sys.out.println(f(1.0))
+    sys.out.println(f(1234.0))
  
