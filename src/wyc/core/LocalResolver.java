@@ -193,23 +193,15 @@ public abstract class LocalResolver extends AbstractResolver {
 			if(rhs instanceof Expr.TypeVal) {									
 				// yes, right-hand side is a constant
 				Expr.TypeVal tv = (Expr.TypeVal) rhs;
-				Type testRawType = tv.type.raw();					
-				Nominal glb = Nominal.intersect(lhs.result(), tv.type);	
+				Nominal testType = resolveAsUnconstrainedType(tv.unresolvedType,context);
+				tv.type = testType; // hack
+				Type testRawType = testType.raw();					
+				Nominal glb = Nominal.intersect(lhs.result(), testType);	
 				
-					// The following is commented out because it cannot be used
-					// in the front-end anymore. The reason for this is that we
-					// haven't expanded constraints at this point, therefore it
-					// mistakenly things somethings are always taken when they
-					// are not.
-//				if(Type.isSubtype(testRawType,lhsRawType)) {					
-//					// DEFINITE TRUE CASE										
-//					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
-//				} else 
-//					
-
-				//boolean isConstrained = resolver.isConstrainedType()
-				
-				if (glb.raw() == Type.T_VOID) {				
+				if(Type.isSubtype(testRawType,lhsRawType)) {					
+					// DEFINITE TRUE CASE										
+					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
+				} else if (glb.raw() == Type.T_VOID) {				
 					// DEFINITE FALSE CASE	
 					syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, testRawType),
 							context, bop);			
@@ -223,7 +215,7 @@ public abstract class LocalResolver extends AbstractResolver {
 					if(sign) {
 						newType = glb;
 					} else {						
-						newType = Nominal.intersect(lhs.result(), Nominal.Negation(tv.type));						
+						newType = Nominal.intersect(lhs.result(), Nominal.Negation(testType));						
 					}										
 					environment = environment.put(lv.var,newType);
 				}

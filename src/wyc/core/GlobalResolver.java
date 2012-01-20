@@ -191,13 +191,32 @@ public class GlobalResolver extends LocalResolver {
 	 * @throws ResolveError
 	 */
 	public Nominal resolveAsType(UnresolvedType type, Context context) {
-		Type nominalType = resolveAsType(type, context, true);
-		Type rawType = resolveAsType(type, context, false);
+		Type nominalType = resolveAsType(type, context, true, false);
+		Type rawType = resolveAsType(type, context, false, false);
+		return Nominal.construct(nominalType, rawType);
+	}
+	
+	/**
+	 * Resolve a type in a given context by identifying all unknown names and
+	 * replacing them with nominal types. In this case, any constrained types
+	 * are treated as void. This is critical for properly dealing with type
+	 * tests, which may otherwise assume types are unconstrained.
+	 * 
+	 * @param type
+	 *            --- type to be resolved.
+	 * @param context
+	 *            --- context in which to resolve the type.
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Nominal resolveAsUnconstrainedType(UnresolvedType type, Context context) {
+		Type nominalType = resolveAsType(type, context, true, true);
+		Type rawType = resolveAsType(type, context, false, true);
 		return Nominal.construct(nominalType, rawType);
 	}
 	
 	private Type resolveAsType(UnresolvedType t, Context context,
-			boolean nominal) {
+			boolean nominal, boolean unconstrained) {
 		if(t instanceof UnresolvedType.Primitive) { 
 			if (t instanceof UnresolvedType.Any) {
 				return Type.T_ANY;
@@ -225,7 +244,7 @@ public class GlobalResolver extends LocalResolver {
 		} else {
 			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 			HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-			resolveAsType(t,context,states,roots,nominal);
+			resolveAsType(t,context,states,roots,nominal,unconstrained);
 			return Type.construct(new Automaton(states));
 		}
 	}
@@ -241,7 +260,8 @@ public class GlobalResolver extends LocalResolver {
 	 * @throws ResolveError
 	 */
 	private int resolveAsType(UnresolvedType type, Context context,
-			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots, boolean nominal) {				
+			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
+			boolean nominal, boolean unconstrained) {			
 		
 		if(type instanceof UnresolvedType.Primitive) {
 			return resolveAsType((UnresolvedType.Primitive)type,context,states);
@@ -259,20 +279,20 @@ public class GlobalResolver extends LocalResolver {
 			UnresolvedType.List lt = (UnresolvedType.List) type;
 			myKind = Type.K_LIST;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(lt.element,context,states,roots,nominal);
+			myChildren[0] = resolveAsType(lt.element,context,states,roots,nominal,unconstrained);
 			myData = false;
 		} else if(type instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) type;
 			myKind = Type.K_SET;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(st.element,context,states,roots,nominal);
+			myChildren[0] = resolveAsType(st.element,context,states,roots,nominal,unconstrained);
 			myData = false;
 		} else if(type instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) type;
 			myKind = Type.K_DICTIONARY;
 			myChildren = new int[2];
-			myChildren[0] = resolveAsType(st.key,context,states,roots,nominal);
-			myChildren[1] = resolveAsType(st.value,context,states,roots,nominal);			
+			myChildren[0] = resolveAsType(st.key,context,states,roots,nominal,unconstrained);
+			myChildren[1] = resolveAsType(st.value,context,states,roots,nominal,unconstrained);			
 		} else if(type instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) type;
 			HashMap<String,UnresolvedType> ttTypes = tt.types;			
@@ -282,7 +302,7 @@ public class GlobalResolver extends LocalResolver {
 			myChildren = new int[fields.size()];
 			for(int i=0;i!=fields.size();++i) {	
 				String field = fields.get(i);
-				myChildren[i] = resolveAsType(ttTypes.get(field),context,states,roots,nominal);
+				myChildren[i] = resolveAsType(ttTypes.get(field),context,states,roots,nominal,unconstrained);
 			}						
 			myData = fields;
 		} else if(type instanceof UnresolvedType.Tuple) {
@@ -291,7 +311,7 @@ public class GlobalResolver extends LocalResolver {
 			myKind = Type.K_TUPLE;
 			myChildren = new int[ttTypes.size()];
 			for(int i=0;i!=ttTypes.size();++i) {
-				myChildren[i] = resolveAsType(ttTypes.get(i),context,states,roots,nominal);				
+				myChildren[i] = resolveAsType(ttTypes.get(i),context,states,roots,nominal,unconstrained);				
 			}			
 		} else if(type instanceof UnresolvedType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
@@ -312,7 +332,7 @@ public class GlobalResolver extends LocalResolver {
 					// will load the expanded type onto states at the current point.
 					// Therefore, we need to remove the initial null we loaded on.
 					states.remove(myIndex); 
-					return resolveAsType(nid,states,roots);				
+					return resolveAsType(nid,states,roots,unconstrained);				
 				}	
 			} catch(ResolveError e) {
 				syntaxError(e.getMessage(),context,dt,e);
@@ -327,14 +347,14 @@ public class GlobalResolver extends LocalResolver {
 			UnresolvedType.Not ut = (UnresolvedType.Not) type;
 			myKind = Type.K_NEGATION;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal);			
+			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal,unconstrained);			
 		} else if(type instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) type;
 			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
 			myKind = Type.K_UNION;
 			myChildren = new int[utTypes.size()];
 			for(int i=0;i!=utTypes.size();++i) {
-				myChildren[i] = resolveAsType(utTypes.get(i),context,states,roots,nominal);				
+				myChildren[i] = resolveAsType(utTypes.get(i),context,states,roots,nominal,unconstrained);				
 			}	
 			myDeterministic = false;
 		} else if(type instanceof UnresolvedType.Intersection) {
@@ -344,7 +364,7 @@ public class GlobalResolver extends LocalResolver {
 			UnresolvedType.Reference ut = (UnresolvedType.Reference) type;
 			myKind = Type.K_REFERENCE;
 			myChildren = new int[1];
-			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal);		
+			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal,unconstrained);		
 		} else {			
 			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) type;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
@@ -365,17 +385,17 @@ public class GlobalResolver extends LocalResolver {
 			myChildren = new int[start + 2 + utParamTypes.size()];
 			
 			if(receiver != null) {
-				myChildren[0] = resolveAsType(receiver,context,states,roots,nominal);
+				myChildren[0] = resolveAsType(receiver,context,states,roots,nominal,unconstrained);
 			}			
-			myChildren[start++] = resolveAsType(ut.ret,context,states,roots,nominal);
+			myChildren[start++] = resolveAsType(ut.ret,context,states,roots,nominal,unconstrained);
 			if(ut.throwType == null) {
 				// this case indicates the user did not provide a throws clause.
-				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),context,states,roots,nominal);
+				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),context,states,roots,nominal,unconstrained);
 			} else {
-				myChildren[start++] = resolveAsType(ut.throwType,context,states,roots,nominal);
+				myChildren[start++] = resolveAsType(ut.throwType,context,states,roots,nominal,unconstrained);
 			}
 			for(UnresolvedType pt : utParamTypes) {
-				myChildren[start++] = resolveAsType(pt,context,states,roots,nominal);				
+				myChildren[start++] = resolveAsType(pt,context,states,roots,nominal,unconstrained);				
 			}						
 		}
 		
@@ -385,7 +405,7 @@ public class GlobalResolver extends LocalResolver {
 	}
 	
 	private int resolveAsType(NameID key, ArrayList<Automaton.State> states,
-			HashMap<NameID, Integer> roots) throws ResolveError {
+			HashMap<NameID, Integer> roots, boolean unconstrained) throws ResolveError {
 		
 		// First, check the various caches we have
 		Integer root = roots.get(key);			
@@ -394,7 +414,10 @@ public class GlobalResolver extends LocalResolver {
 		// check whether this type is external or not
 		WhileyFile wf = files.get(key.module());
 		if (wf == null) {						
-			// indicates a non-local key which we can resolve immediately			
+			// indicates a non-local key which we can resolve immediately	
+			
+			// FIXME: need to properly support unconstrained types here
+			
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());	
 			return append(td.type(),states);			
@@ -415,8 +438,14 @@ public class GlobalResolver extends LocalResolver {
 		roots.put(key, states.size());
 		UnresolvedType type = td.unresolvedType;
 		
-		// now, expand the given type fully			
-		if(type instanceof Type.Leaf) {
+		// now, expand the given type fully	
+		if(unconstrained && td.constraint != null) {
+			int myIndex = states.size();
+			int kind = Type.leafKind(Type.T_VOID);			
+			Object data = null;
+			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
+			return myIndex;
+		} else if(type instanceof Type.Leaf) {
 			// to avoid unnecessarily creating an array of size one
 			int myIndex = states.size();
 			int kind = Type.leafKind((Type.Leaf)type);			
@@ -424,7 +453,7 @@ public class GlobalResolver extends LocalResolver {
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
 		} else {						
-			return resolveAsType(type,td,states,roots,false);			
+			return resolveAsType(type,td,states,roots,false,unconstrained);			
 		}
 		
 		// TODO: performance can be improved here, but actually assigning the

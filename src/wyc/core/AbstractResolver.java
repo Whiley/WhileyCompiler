@@ -154,6 +154,8 @@ public abstract class AbstractResolver {
 	
 	public abstract Nominal resolveAsType(UnresolvedType type, Context context);
 	
+	public abstract Nominal resolveAsUnconstrainedType(UnresolvedType type, Context context);
+	
 	public abstract NameID resolveAsName(String name, Context context) throws ResolveError;
 	
 	public abstract ModuleID resolveAsModule(String name, Context context) throws ResolveError;
