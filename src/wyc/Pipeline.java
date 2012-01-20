@@ -73,7 +73,8 @@ public class Pipeline {
 			.unmodifiableList(new ArrayList<Template>() {
 				{														
 					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
-					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));							
+					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
+					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));										
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					// Constant Propagation is disabled as there are some

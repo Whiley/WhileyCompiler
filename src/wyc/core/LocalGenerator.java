@@ -2,6 +2,7 @@ package wyc.core;
 
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_SET_OR_LIST_EXPRESSION;
 import static wyil.util.ErrorMessages.UNKNOWN_VARIABLE;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyil.util.ErrorMessages.errorMessage;
@@ -299,11 +300,12 @@ public final class LocalGenerator {
 					
 		// Ok, non-boolean case.				
 		Block blk = new Block(environment.size());
-		ArrayList<Pair<Integer,Integer>> slots = new ArrayList();		
+		ArrayList<Triple<Integer,Integer,Type>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> src : e.sources) {
 			int srcSlot;
 			int varSlot = allocate(src.first(),environment); 
+			Nominal srcType = src.second().result();			
 			
 			if(src.second() instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better
@@ -315,24 +317,25 @@ public final class LocalGenerator {
 					// fall-back plan ...
 					blk.append(generate(src.second(), environment));
 					srcSlot = allocate(environment);
-					blk.append(Code.Store(null, srcSlot),attributes(e));	
+					blk.append(Code.Store(srcType.raw(), srcSlot),attributes(e));	
 				}
 			} else {
 				blk.append(generate(src.second(), environment));
 				srcSlot = allocate(environment);
-				blk.append(Code.Store(null, srcSlot),attributes(e));	
+				blk.append(Code.Store(srcType.raw(), srcSlot),attributes(e));	
 			}			
-			slots.add(new Pair(varSlot,srcSlot));											
+			slots.add(new Triple(varSlot,srcSlot,srcType.raw()));											
 		}
 				
 		ArrayList<String> labels = new ArrayList<String>();
 		String loopLabel = Block.freshLabel();
 		
-		for (Pair<Integer, Integer> p : slots) {
-			String lab = loopLabel + "$" + p.first();
-			blk.append(Code.Load(null, p.second()), attributes(e));			
+		for (Triple<Integer, Integer, Type> p : slots) {
+			Type srcType = p.third();			
+			String lab = loopLabel + "$" + p.first();									
+			blk.append(Code.Load(srcType, p.second()), attributes(e));			
 			blk.append(Code
-					.ForAll(null, p.first(), lab, Collections.EMPTY_LIST),
+					.ForAll(srcType, p.first(), lab, Collections.EMPTY_LIST),
 					attributes(e));
 			labels.add(lab);
 		}
