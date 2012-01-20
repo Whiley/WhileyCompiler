@@ -154,7 +154,7 @@ public final class CodeGeneration {
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
 			NameID nid = new NameID(td.file().module,td.name);
-			constraint = globalGenerator.generate(nid, td);			
+			constraint = globalGenerator.generate(td.unresolvedType,td);			
 		}
 		
 		return new Module.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);

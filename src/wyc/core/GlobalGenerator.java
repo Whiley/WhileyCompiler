@@ -63,7 +63,7 @@ public class GlobalGenerator {
 		this.resolver = resolver;
 	}
 		
-	public Block generate(NameID nid, Context context) throws ResolveError {
+	public Block generate(NameID nid) throws ResolveError {
 		Block blk = cache.get(nid);
 		if(blk == EMPTY_BLOCK) {
 			return null;
@@ -79,12 +79,11 @@ public class GlobalGenerator {
 			// FIXME: the following line is necessary to terminate infinite
 			// recursion. However, we really need to do better in the
 			// context of recurisve types with constraints.
-
-			cache.put(nid, EMPTY_BLOCK);
-			
+	
 			WhileyFile.TypeDef td = wf.typeDecl(nid.name());
 			if(td != null) {
-				blk = generate(td.unresolvedType,context);
+				cache.put(nid, EMPTY_BLOCK);
+				blk = generate(td.unresolvedType,td);
 				if(td.constraint != null) {								
 					if(blk == null) {
 						blk = new Block(1);					
@@ -94,13 +93,22 @@ public class GlobalGenerator {
 					environment.put("$",0);
 					addExposedNames(td.resolvedType.raw(),environment,blk);
 					String lab = Block.freshLabel();
-					blk.append(new LocalGenerator(this,context).generateCondition(lab, td.constraint, environment));		
+					blk.append(new LocalGenerator(this,td).generateCondition(lab, td.constraint, environment));		
 					blk.append(Code.Fail("constraint not satisfied"), td.constraint.attributes());
 					blk.append(Code.Label(lab));								
 				}
 				cache.put(nid, blk);
 				return blk;
-			}
+			} else {
+				Type t = resolver.resolveAsConstant(nid).type();
+				if(t instanceof Type.Set) {
+					Type.Set ts = (Type.Set) t;
+					
+					// TODO: add constraints here
+					
+					return null;	
+				} 
+			}			
 		} else {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.
@@ -109,6 +117,8 @@ public class GlobalGenerator {
 			if(td != null) {
 				// should I cache this?
 				return td.constraint();
+			} else {
+				return null;
 			}
 		}
 		
@@ -264,7 +274,7 @@ public class GlobalGenerator {
 			
 			try {
 				NameID nid = resolver.resolveAsName(dt.names,context);
-				return generate(nid, context);
+				return generate(nid);
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), context, t, rex);
 				return null;
