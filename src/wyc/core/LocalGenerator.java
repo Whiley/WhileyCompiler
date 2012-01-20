@@ -239,7 +239,6 @@ public final class LocalGenerator {
 			String exitLabel = Block.freshLabel();
 			Type glb = Type.intersect(v.srcType.raw(), Type.Negation(rhs.type.raw()));
 			if(glb != Type.T_VOID) {
-				System.out.println("GOT: " + glb);
 				// Only put the actual type test in if it is necessary.
 				blk.append(Code.IfType(v.srcType.raw(), slot, glb, exitLabel),
 						attributes(v));			
@@ -247,7 +246,7 @@ public final class LocalGenerator {
 			// FIXME: I think there's a bug here when slot == -1
 			blk.append(Code.Load(v.srcType.raw(), slot));
 			blk.append(Code.Store(v.srcType.raw(), environment.size()));
-			constraint = shiftBlock(environment.size(),constraint);
+			constraint = shiftBlockExceptionZero(environment.size()-1,slot,constraint);
 			blk.append(chainBlock(exitLabel,constraint)); 
 
 			blk.append(Code.Goto(target));
@@ -1060,11 +1059,12 @@ public final class LocalGenerator {
 	 * @param blk
 	 * @return
 	 */
-	private static Block shiftBlock(int amount, Block blk) {
+	private static Block shiftBlockExceptionZero(int amount, int zeroDest, Block blk) {
 		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-		for(int i=0;i!=blk.numSlots();++i) {
-			binding.put(i,i+amount);
+		for(int i=1;i!=blk.numSlots();++i) {
+			binding.put(i,i+amount);		
 		}
+		binding.put(0, zeroDest);
 		Block nblock = new Block(blk.numInputs());
 		for(Block.Entry e : blk) {
 			Code code = e.code.remap(binding);
