@@ -363,9 +363,9 @@ public class GlobalGenerator {
 				if(i == null) {
 					int slot = environment.size(); 
 					environment.put(field, slot);
-					blk.append(Code.Load(e.getValue(), 0));
+					blk.append(Code.Load(t, 0));
 					blk.append(Code.FieldLoad(tt, field));
-					blk.append(Code.Store(tt.field(field), slot));
+					blk.append(Code.Store(e.getValue(), slot));
 				}				
 			}
 		} 		
