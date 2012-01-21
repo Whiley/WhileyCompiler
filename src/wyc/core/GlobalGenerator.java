@@ -217,14 +217,14 @@ public class GlobalGenerator {
 				boolean lastBound = (i + 1) == ut_bounds.size();
 				UnresolvedType b = ut_bounds.get(i);
 				Type bt = resolver.resolveAsType(b, context).raw();
-				Block p = generate(b, context);
-								
+				Block p = generate(b, context);				
+				
 				if (p != null) {
 					// In this case, there are constraints so we check the
 					// negated type and branch over the constraint test if we
 					// don't have the require type.
-					constraints = true;
 					String nextLabel = Block.freshLabel();
+					constraints = true;					
 					if (!lastBound) {
 						blk.append(
 								Code.IfType(raw, Code.THIS_SLOT,
@@ -234,7 +234,7 @@ public class GlobalGenerator {
 					blk.append(chainBlock(nextLabel, p));
 					blk.append(Code.Goto(exitLabel));
 					blk.append(Code.Label(nextLabel));
-				} else if(!lastBound) {
+				} else {
 					// In this case, there are no constraints so we can use a
 					// direct type test.					
 					blk.append(
@@ -242,6 +242,8 @@ public class GlobalGenerator {
 							t.attributes());
 					raw = Type.intersect(raw, Type.Negation(bt));					
 				}
+				
+				
 			}
 
 			if (constraints) {
