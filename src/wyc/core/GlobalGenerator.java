@@ -135,8 +135,8 @@ public class GlobalGenerator {
 			if (blk != null) {
 				Block nblk = new Block(1);
 				String label = Block.freshLabel();
-				nblk.append(Code.Load(null, Code.THIS_SLOT), t.attributes());
-				nblk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
+				nblk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
+				nblk.append(Code.ForAll(raw, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST), t.attributes());
 				nblk.append(shiftBlock(1, blk));
 				nblk.append(Code.End(label));
@@ -149,8 +149,8 @@ public class GlobalGenerator {
 			if (blk != null) {
 				Block nblk = new Block(1);
 				String label = Block.freshLabel();
-				nblk.append(Code.Load(null, Code.THIS_SLOT), t.attributes());
-				nblk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
+				nblk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
+				nblk.append(Code.ForAll(raw, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST), t.attributes());
 				nblk.append(shiftBlock(1, blk));
 				nblk.append(Code.End(label));
@@ -167,6 +167,8 @@ public class GlobalGenerator {
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			Type.EffectiveTuple ett = (Type.EffectiveTuple) raw;
+			List<Type> ettElements = ett.elements();
 			Block blk = null;
 			
 			int i = 0;
@@ -176,9 +178,9 @@ public class GlobalGenerator {
 					if (blk == null) {
 						blk = new Block(1);
 					}
-					blk.append(Code.Load(null, Code.THIS_SLOT), t.attributes());
-					blk.append(Code.TupleLoad(null, i), t.attributes());
-					blk.append(Code.Store(null, Code.THIS_SLOT + 1),
+					blk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
+					blk.append(Code.TupleLoad(ett, i), t.attributes());
+					blk.append(Code.Store(ettElements.get(i), Code.THIS_SLOT + 1),
 							t.attributes());
 					blk.append(shiftBlock(1, p));
 				}
@@ -188,6 +190,8 @@ public class GlobalGenerator {
 			return blk;
 		} else if (t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
+			Type.EffectiveRecord ert = (Type.EffectiveRecord) raw;
+			Map<String,Type> fields = ert.fields();
 			Block blk = null;			
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
 				Block p = generate(e.getValue(), context);
@@ -195,9 +199,9 @@ public class GlobalGenerator {
 					if (blk == null) {
 						blk = new Block(1);
 					}
-					blk.append(Code.Load(null, Code.THIS_SLOT), t.attributes());
-					blk.append(Code.FieldLoad(null, e.getKey()), t.attributes());
-					blk.append(Code.Store(null, Code.THIS_SLOT + 1),
+					blk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
+					blk.append(Code.FieldLoad(ert, e.getKey()), t.attributes());
+					blk.append(Code.Store(fields.get(e.getKey()), Code.THIS_SLOT + 1),
 							t.attributes());
 					blk.append(shiftBlock(1, p));
 				}
