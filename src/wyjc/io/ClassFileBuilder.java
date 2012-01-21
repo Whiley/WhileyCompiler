@@ -533,7 +533,7 @@ public class ClassFileBuilder {
 		} catch (SyntaxError ex) {
 			throw ex;
 		} catch (Exception ex) {		
-			internalFailure("internal failure", filename, entry, ex);
+			internalFailure(ex.getMessage(), filename, entry, ex);
 		}
 		
 		return freeSlot;

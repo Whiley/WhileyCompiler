@@ -213,6 +213,10 @@ public class GlobalGenerator {
 			String exitLabel = Block.freshLabel();
 			boolean constraints = false;
 			List<UnresolvedType.NonUnion> ut_bounds = ut.bounds;
+			
+			// TODO: need to really make a decision tree here to handle
+			// constrained types with matching underlying types.
+			
 			for (int i = 0; i != ut_bounds.size(); ++i) {				
 				boolean lastBound = (i + 1) == ut_bounds.size();
 				UnresolvedType b = ut_bounds.get(i);
@@ -241,9 +245,7 @@ public class GlobalGenerator {
 							Code.IfType(raw, Code.THIS_SLOT, bt, exitLabel),
 							t.attributes());
 					raw = Type.intersect(raw, Type.Negation(bt));					
-				}
-				
-				
+				}								
 			}
 
 			if (constraints) {
