@@ -204,7 +204,7 @@ public final class WhileyParser {
 			} else {
 				syntaxError("parameter name not permitted",n);
 			}
-			paramTypes.add(new Parameter(t, n.text, sourceAttr(pstart,
+			paramTypes.add(wf.new Parameter(t, n.text, sourceAttr(pstart,
 					index - 1)));
 		}
 		

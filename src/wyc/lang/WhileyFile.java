@@ -525,7 +525,7 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public static final class Parameter extends SyntacticElement.Impl implements Declaration {
+	public final class Parameter extends AbstractContext implements Declaration {
 		public final UnresolvedType type;
 		public final String name;
 

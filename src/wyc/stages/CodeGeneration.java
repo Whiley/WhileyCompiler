@@ -154,7 +154,7 @@ public final class CodeGeneration {
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
 			NameID nid = new NameID(td.file().module,td.name);
-			constraint = globalGenerator.generate(td.unresolvedType,td);			
+			constraint = globalGenerator.generate(nid);			
 		}
 		
 		return new Module.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
@@ -182,16 +182,30 @@ public final class CodeGeneration {
 		// Generate pre-condition
 		// ==================================================================
 		
-		for (WhileyFile.Parameter p : fd.parameters) {			
-			// First, generate and inline any constraints associated with the type.	
+		Block precondition = null;
+		for (WhileyFile.Parameter p : fd.parameters) {
+			// First, generate and inline any constraints associated with the
+			// type.
 			// Now, map the parameter to its index
-			environment.put(p.name(),paramIndex++);
-		}		
+
+			Block constraint = globalGenerator.generate(p.type, p);
+			if (constraint != null) {
+				if (precondition == null) {
+					precondition = new Block(nparams);
+				}
+				constraint = shiftBlockExceptionZero(nparams, paramIndex,
+						constraint);
+				precondition.append(constraint);
+			}
+			environment.put(p.name(), paramIndex++);
+		}
 		
 		// Resolve pre- and post-condition								
-		Block precondition = null;		
-		if(fd.precondition != null) {			
-			precondition = new Block(nparams);				
+		
+		if(fd.precondition != null) {	
+			if(precondition == null) {
+				precondition = new Block(nparams);
+			}
 			String lab = Block.freshLabel();
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
 			precondition.append(localGenerator.generateCondition(lab, fd.precondition, preEnv));		
@@ -202,8 +216,8 @@ public final class CodeGeneration {
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Block postcondition = null;		
-						
+		Block postcondition = globalGenerator.generate(fd.ret,fd);						
+		
 		if (fd.postcondition != null) {
 			HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
 			postEnv.put("$", 0);
@@ -763,6 +777,29 @@ public final class CodeGeneration {
 		r.type = Nominal.T_BOOL;		
 		return r;
 	}
+	
+	/**
+	 * The shiftBlock method takes a block and shifts every slot a given amount
+	 * to the right. The number of inputs remains the same. This method is used 
+	 * 
+	 * @param amount
+	 * @param blk
+	 * @return
+	 */
+	private static Block shiftBlockExceptionZero(int amount, int zeroDest, Block blk) {
+		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
+		for(int i=1;i!=blk.numSlots();++i) {
+			binding.put(i,i+amount);		
+		}
+		binding.put(0, zeroDest);
+		Block nblock = new Block(blk.numInputs());
+		for(Block.Entry e : blk) {
+			Code code = e.code.remap(binding);
+			nblock.append(code,e.attributes());
+		}
+		return nblock.relabel();
+	}
+	
 	
 	/**
 	 * The attributes method extracts those attributes of relevance to wyil, and
