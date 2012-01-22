@@ -38,7 +38,6 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	
 	public GlobalResolver(ModuleLoader loader, CompilationGroup files) {
 		super(loader,files);
 	}
@@ -50,7 +49,6 @@ public class GlobalResolver extends LocalResolver {
 	public CompilationGroup files() {
 		return files;
 	}
-	
 	
 	// =========================================================================
 	// ResolveAsName

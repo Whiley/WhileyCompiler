@@ -373,7 +373,7 @@ public abstract class Value implements Comparable<Value> {
 		private List(Collection<Value> value) {
 			this.values = new ArrayList<Value>(value);
 		}
-		public wyil.lang.Type type() {
+		public wyil.lang.Type.List type() {
 			wyil.lang.Type t = wyil.lang.Type.T_VOID;
 			for(Value arg : values) {
 				t = wyil.lang.Type.Union(t,arg.type());
@@ -434,7 +434,7 @@ public abstract class Value implements Comparable<Value> {
 		private Set(Collection<Value> value) {
 			this.values = new HashSet<Value>(value);
 		}
-		public wyil.lang.Type type() {
+		public wyil.lang.Type.Set type() {
 			wyil.lang.Type t = wyil.lang.Type.T_VOID;
 			for(Value arg : values) {
 				t = wyil.lang.Type.Union(t,arg.type());
@@ -537,7 +537,7 @@ public abstract class Value implements Comparable<Value> {
 			this.values = new HashMap<String,Value>(value);
 		}
 
-		public wyil.lang.Type type() {
+		public wyil.lang.Type.Record type() {
 			HashMap<String, wyil.lang.Type> types = new HashMap<String, wyil.lang.Type>();
 			for (Map.Entry<String, Value> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
@@ -612,7 +612,7 @@ public abstract class Value implements Comparable<Value> {
 				this.values.put(p.first(), p.second());
 			}
 		}
-		public wyil.lang.Type type() {
+		public wyil.lang.Type.Dictionary type() {
 			wyil.lang.Type key = wyil.lang.Type.T_VOID;
 			wyil.lang.Type value = wyil.lang.Type.T_VOID;
 			for (Map.Entry<Value, Value> e : values.entrySet()) {
@@ -690,7 +690,7 @@ public abstract class Value implements Comparable<Value> {
 		private Type(wyil.lang.Type type) {
 			this.type = type;
 		}
-		public wyil.lang.Type type() {
+		public wyil.lang.Type.Meta type() {
 			return wyil.lang.Type.T_META;
 		}
 		public int hashCode() {
@@ -770,7 +770,7 @@ public abstract class Value implements Comparable<Value> {
 			this.values = new ArrayList<Value>(values);
 		}
 
-		public wyil.lang.Type type() {
+		public wyil.lang.Type.Tuple type() {
 			ArrayList<wyil.lang.Type> types = new ArrayList<wyil.lang.Type>();			
 			for (Value e : values) {
 				types.add(e.type());				

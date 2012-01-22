@@ -100,13 +100,20 @@ public class GlobalGenerator {
 				cache.put(nid, blk);
 				return blk;
 			} else {
-				Type t = resolver.resolveAsConstant(nid).type();
-				if(t instanceof Type.Set) {
-					Type.Set ts = (Type.Set) t;
-					
-					// TODO: add constraints here
-					
-					return null;	
+				Value v = resolver.resolveAsConstant(nid);				
+				if(v instanceof Value.Set) {
+					Value.Set vs = (Value.Set) v;
+					Type.Set type = vs.type();
+					blk = new Block(1);
+					String lab = Block.freshLabel();
+					blk.append(Code.Load(type.element(),0));
+					blk.append(Code.Const(v));	
+					blk.append(Code.IfGoto(vs.type(), Code.COp.ELEMOF, lab));
+					// FIXME: missing attributes here.
+					blk.append(Code.Fail("constraint not satisfied"));
+					blk.append(Code.Label(lab));
+					cache.put(nid, blk);
+					return blk;
 				} 
 			}			
 		} else {
