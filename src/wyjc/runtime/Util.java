@@ -635,10 +635,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(List object, Type type) {
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.List) {			
 			Type.List tl = (Type.List) type;
 			Type el = tl.element;
 			if(el.kind == K_ANY) {
@@ -653,6 +650,8 @@ public class Util {
 				}
 				return true;
 			}
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}
 	
@@ -672,10 +671,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Set object, Type type) {
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Set) {			
 			Type.Set tl = (Type.Set) type;
 			Type el = tl.element;
 			if(el.kind == K_ANY) {
@@ -690,6 +686,8 @@ public class Util {
 				}
 				return true;
 			}
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}
 	
@@ -709,10 +707,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Dictionary object, Type type) {		
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Dictionary) {			
 			Type.Dictionary tl = (Type.Dictionary) type;
 			Type key = tl.key;
 			Type value = tl.value;
@@ -731,6 +726,8 @@ public class Util {
 				}
 				return true;
 			}
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}
 	
@@ -750,10 +747,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Record object, Type type) {
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Record) {			
 			Type.Record tl = (Type.Record) type;
 			String[] names = tl.names;
 			Type[] types = tl.types;
@@ -773,6 +767,8 @@ public class Util {
 				}
 			}
 			return true;
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}	
 	
@@ -792,10 +788,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Tuple object, Type type) {				
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Tuple) {			
 			Type.Tuple tl = (Type.Tuple) type;
 			Type[] types = tl.types;
 			if(types.length == object.size()) {	
@@ -808,6 +801,8 @@ public class Util {
 				return true;					
 			}
 			return false;
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}		
 	
