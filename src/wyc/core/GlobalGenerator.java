@@ -229,7 +229,6 @@ public class GlobalGenerator {
 				UnresolvedType b = ut_bounds.get(i);
 				Type bt = resolver.resolveAsType(b, context).raw();
 				Block p = generate(b, context);				
-				
 				if (p != null) {
 					// In this case, there are constraints so we check the
 					// negated type and branch over the constraint test if we
@@ -252,7 +251,7 @@ public class GlobalGenerator {
 							Code.IfType(raw, Code.THIS_SLOT, bt, exitLabel),
 							t.attributes());
 					raw = Type.intersect(raw, Type.Negation(bt));					
-				}								
+				}
 			}
 
 			if (constraints) {
