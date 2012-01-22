@@ -137,6 +137,10 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void For_Valid_6_RuntimeTest() { runTest("For_Valid_6"); }
  @Test public void For_Valid_7_RuntimeTest() { runTest("For_Valid_7"); }
  @Ignore("Future Work") @Test public void For_Valid_8_RuntimeTest() { runTest("For_Valid_8"); }
+ @Test public void For_Valid_9_RuntimeTest() { runTest("For_Valid_9"); }
+ @Test public void For_Valid_10_RuntimeTest() { runTest("For_Valid_10"); }
+ @Test public void For_Valid_11_RuntimeTest() { runTest("For_Valid_11"); }
+ @Test public void For_Valid_12_RuntimeTest() { runTest("For_Valid_12"); }
  @Test public void Function_Valid_1_RuntimeTest() { runTest("Function_Valid_1"); }
  @Test public void Function_Valid_2_RuntimeTest() { runTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RuntimeTest() { runTest("Function_Valid_3"); }
@@ -179,6 +183,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void IntMul_Valid_1_RuntimeTest() { runTest("IntMul_Valid_1"); }
  @Test public void IntOp_Valid_1_RuntimeTest() { runTest("IntOp_Valid_1"); }
  @Test public void LengthOf_Valid_1_RuntimeTest() { runTest("LengthOf_Valid_1"); }
+ @Test public void LengthOf_Valid_2_RuntimeTest() { runTest("LengthOf_Valid_2"); }
+ @Test public void LengthOf_Valid_3_RuntimeTest() { runTest("LengthOf_Valid_3"); }
+ @Test public void LengthOf_Valid_4_RuntimeTest() { runTest("LengthOf_Valid_4"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { runTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { runTest("ListAccess_Valid_2"); }
  @Test public void ListAccess_Valid_3_RuntimeTest() { runTest("ListAccess_Valid_3"); }
@@ -413,6 +420,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_34_RuntimeTest() { runTest("TypeEquals_Valid_34"); }
  @Test public void TypeEquals_Valid_35_RuntimeTest() { runTest("TypeEquals_Valid_35"); }
  @Test public void TypeEquals_Valid_36_RuntimeTest() { runTest("TypeEquals_Valid_36"); }
+ @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
  @Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
  @Test public void UnionType_Valid_4_RuntimeTest() { runTest("UnionType_Valid_4"); }
