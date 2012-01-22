@@ -1,5 +1,12 @@
 package wyc.core;
 
+import java.util.*;
+
+import wyc.lang.UnresolvedType;
+import wyil.lang.Code;
+import wyil.lang.Type;
+import wyil.lang.Block;
+
 /**
  * Decision tres are used for the constraints induced by union types. The key
  * problem arises when we have a union type of two or more constrained types
@@ -86,5 +93,99 @@ package wyc.core;
  * 
  */
 public class DecisionTree {
+	private static class Node {		
+		/**
+		 * The test that will determines whether or not to traverse this node.
+		 */
+		private Type test;
 
+		/**
+		 * The children of this node. The types of all child nodes must be
+		 * independent, otherwise the tree is malformed.
+		 */
+		private ArrayList<Node> children;
+		
+		/**
+		 * Constraints for this level (if any)
+		 */
+		private Block constraints;
+	}
+	
+	/**
+	 * Root of the decision tree
+	 */
+	private Node root;
+	
+	/**
+	 * Raw type representing the value on entry to the tree. 
+	 */
+	private final Type type;
+	
+	public DecisionTree(Type type) {
+		this.type = type;
+	}
+	
+	/**
+	 * Add another constrained type into the tree.
+	 * 
+	 * @param type
+	 *            --- raw type to be tested.
+	 * 
+	 * @param constraint
+	 *            --- constraint which must hold for given type. This may be
+	 *            null if there is no constraint.
+	 */
+	public void add(Type type, Block constraint) {
+		
+	}
+	
+	/**
+	 * Flattern this tree into a sequential block. If the test passes then the
+	 * block exists, otherwise a fail statement is reached.
+	 * 
+	 * @return
+	 */
+	public Block flattern() {
+		return null;
+	}
+	
+	/*
+	 for (int i = 0; i != ut_bounds.size(); ++i) {				
+				boolean lastBound = (i + 1) == ut_bounds.size();
+				UnresolvedType b = ut_bounds.get(i);
+				Type bt = resolver.resolveAsType(b, context).raw();
+				Block p = generate(b, context);				
+				if (p != null) {
+					// In this case, there are constraints so we check the
+					// negated type and branch over the constraint test if we
+					// don't have the require type.
+					String nextLabel = Block.freshLabel();
+					constraints = true;					
+					if (!lastBound) {
+						blk.append(
+								Code.IfType(raw, Code.THIS_SLOT,
+										Type.Negation(bt), nextLabel),
+								t.attributes());
+					}
+					blk.append(chainBlock(nextLabel, p));
+					blk.append(Code.Goto(exitLabel));
+					blk.append(Code.Label(nextLabel));
+				} else {
+					// In this case, there are no constraints so we can use a
+					// direct type test.					
+					blk.append(
+							Code.IfType(raw, Code.THIS_SLOT, bt, exitLabel),
+							t.attributes());
+					raw = Type.intersect(raw, Type.Negation(bt));					
+				}
+			}
+
+			if (constraints) {
+				blk.append(Code.Fail("type constraint not satisfied"),
+						ut.attributes());
+				blk.append(Code.Label(exitLabel));
+			} else {
+				blk = null;
+			}
+ */
 }
