@@ -33,6 +33,7 @@ public class RuntimeValidTests extends TestHarness {
   super("tests/base/valid","tests/base/valid","sysout");
  }
 
+ @Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }
  @Test public void BoolAssign_Valid_1_RuntimeTest() { runTest("BoolAssign_Valid_1"); }
  @Test public void BoolAssign_Valid_2_RuntimeTest() { runTest("BoolAssign_Valid_2"); }
  @Test public void BoolAssign_Valid_3_RuntimeTest() { runTest("BoolAssign_Valid_3"); }
@@ -177,6 +178,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void IntEquals_Valid_1_RuntimeTest() { runTest("IntEquals_Valid_1"); }
  @Test public void IntMul_Valid_1_RuntimeTest() { runTest("IntMul_Valid_1"); }
  @Test public void IntOp_Valid_1_RuntimeTest() { runTest("IntOp_Valid_1"); }
+ @Test public void LengthOf_Valid_1_RuntimeTest() { runTest("LengthOf_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { runTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { runTest("ListAccess_Valid_2"); }
  @Test public void ListAccess_Valid_3_RuntimeTest() { runTest("ListAccess_Valid_3"); }
