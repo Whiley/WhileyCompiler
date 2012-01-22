@@ -320,6 +320,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetComprehension_Valid_5_RuntimeTest() { runTest("SetComprehension_Valid_5"); }
  @Test public void SetComprehension_Valid_6_RuntimeTest() { runTest("SetComprehension_Valid_6"); }
  @Test public void SetComprehension_Valid_7_RuntimeTest() { runTest("SetComprehension_Valid_7"); }
+ @Test public void SetComprehension_Valid_8_RuntimeTest() { runTest("SetComprehension_Valid_8"); }
  @Test public void SetConversion_Valid_1_RuntimeTest() { runTest("SetConversion_Valid_1"); }
  @Test public void SetDefine_Valid_1_RuntimeTest() { runTest("SetDefine_Valid_1"); }
  @Test public void SetDifference_Valid_1_RuntimeTest() { runTest("SetDifference_Valid_1"); }
