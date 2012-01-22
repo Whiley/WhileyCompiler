@@ -232,7 +232,7 @@ public class SyntaxError extends RuntimeException {
 			if(msg == null || msg.equals("")) {
 				return "internal failure";
 			} else {
-				return "internal failure (" + msg + ")";
+				return "internal failure, " + msg;
 			}
 		}
 	}
