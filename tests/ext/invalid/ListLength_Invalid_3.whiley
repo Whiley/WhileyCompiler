@@ -5,4 +5,4 @@ int f(int x) requires x+1 > 0, ensures $ < 0:
     return -1
 
 void ::main(System.Console sys):
-    f(|args|-1)
+    f(|sys.args|-1)

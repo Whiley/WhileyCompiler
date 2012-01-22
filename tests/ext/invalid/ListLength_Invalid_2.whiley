@@ -1,7 +1,7 @@
 
 
 void ::main(System.Console sys):
-    if |args| > 0:
+    if |sys.args| > 0:
         arr = [1,2,4]
     else:
         arr = [1,2,3]
