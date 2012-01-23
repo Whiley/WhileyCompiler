@@ -63,8 +63,8 @@ import wyil.util.*;
  * convert {int x,int y} => {real x,int y}|{int x,real y}
  * </pre>
  * <p>
- * However, this conversion is ambiguous. This is because we could convert the
- * left-hand side to either of the two options in the right-hand side.  
+ * However, this conversion is <i>ambiguous</i> because we could convert the
+ * left-hand side to either of the two options in the right-hand side.
  * </p>
  * 
  * @author David J. Pearce
