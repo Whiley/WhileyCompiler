@@ -2989,9 +2989,11 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof TupleLoad) {
+			if (o instanceof TupleLoad) {
 				TupleLoad i = (TupleLoad) o;
-				return index == i.index && (type == i.type || (type != null && type.equals(i.type)));
+				return index == i.index
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
 			}
 			return false;
 		}

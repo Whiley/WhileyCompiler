@@ -423,8 +423,16 @@ public class GlobalResolver extends LocalResolver {
 		
 		WhileyFile.TypeDef td = wf.typeDecl(key.name());
 		if(td == null) {
-			Type t = resolveAsConstant(key).type();
+			Type t = resolveAsConstant(key).type();			
 			if(t instanceof Type.Set) {
+				if(unconstrained) {
+					// crikey this is ugly
+					int myIndex = states.size();
+					int kind = Type.leafKind(Type.T_VOID);			
+					Object data = null;
+					states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
+					return myIndex;					
+				}
 				Type.Set ts = (Type.Set) t;
 				return append(ts.element(),states);	
 			} else {
