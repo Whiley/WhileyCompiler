@@ -13,7 +13,7 @@
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 
     <jar destfile="lib/wyrt.jar">
-      <fileset dir="src" includes="wyjc/runtime/**/*.class"/>
+      <fileset dir="src" includes="wyjc/runtime/**/*.class,wyjc/io/JavaIdentifierInputStream.class,wyjvm/io/BinaryInputStream.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
   </target>

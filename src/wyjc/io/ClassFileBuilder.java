@@ -1798,7 +1798,17 @@ public class ClassFileBuilder {
 
 	protected void translate(Value.Type e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst(e.toString()));
+		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
+		BinaryOutputStream bout = new BinaryOutputStream(jout);
+		Type.BinaryWriter writer = new Type.BinaryWriter(bout);		
+		try {
+			writer.write(e.type);
+			writer.close();
+		} catch(IOException ex) {
+			throw new RuntimeException(ex.getMessage(),ex);
+		}
+		
+		bytecodes.add(new Bytecode.LoadConst(jout.toString()));
 		JvmType.Function ftype = new JvmType.Function(WHILEYTYPE,
 				JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "valueOf", ftype,
