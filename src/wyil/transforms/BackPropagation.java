@@ -181,8 +181,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			// skip			
 		} else if(code instanceof ListAppend) {
 			infer(index,(ListAppend)code,entry,environment);
-		} else if(code instanceof ListLength) {
-			infer(index,(ListLength)code,entry,environment);
+		} else if(code instanceof LengthOf) {
+			infer(index,(LengthOf)code,entry,environment);
 		} else if(code instanceof SubList) {
 			infer(index,(SubList)code,entry,environment);
 		} else if(code instanceof ListLoad) {
@@ -219,8 +219,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(SetDifference)code,entry,environment);
 		} else if(code instanceof SetIntersect) {
 			infer(index,(SetIntersect)code,entry,environment);
-		} else if(code instanceof SetLength) {
-			infer(index,(SetLength)code,entry,environment);
 		} else if(code instanceof StringAppend) {
 			infer(index,(StringAppend)code,entry,environment);
 		} else if(code instanceof StringLength) {
@@ -393,7 +391,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.ListLength code, Block.Entry entry,
+	private void infer(int index, Code.LengthOf code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
 		coerceAfter(req,Type.T_INT,index,entry);
@@ -615,14 +613,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			environment.push(codeType);
 			environment.push(code.type.element());					
 		} 
-	}
-	
-	private void infer(int index, Code.SetLength code, Block.Entry entry,
-			Env environment) {		
-		Type req = environment.pop();
-		coerceAfter(req,Type.T_INT,index,entry);
-		environment.push((Type) code.type);						
-	}
+	}	
 	
 	private void infer(int index, Code.StringAppend code, Block.Entry entry,
 			Env environment) {				

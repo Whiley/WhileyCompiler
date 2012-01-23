@@ -464,8 +464,8 @@ public class ClassFileBuilder {
 				translate((Label)code,freeSlot,bytecodes);
 			} else if(code instanceof ListAppend) {
 				 translate((ListAppend)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof ListLength) {
-				 translate((ListLength)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof LengthOf) {
+				 translate((LengthOf)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SubList) {
 				 translate((SubList)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof ListLoad) {
@@ -498,8 +498,6 @@ public class ClassFileBuilder {
 				// do nothing
 			} else if(code instanceof Send) {
 				 translate((Send)code,freeSlot,bytecodes);
-			} else if(code instanceof SetLength) {
-				 translate((SetLength)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SetUnion) {
 				 translate((SetUnion)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SetIntersect) {
@@ -1246,10 +1244,11 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));			
 	}
 	
-	public void translate(Code.ListLength c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {		
-		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,WHILEYLIST);						
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "length",
+	public void translate(Code.LengthOf c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {				
+		JvmType.Clazz ctype = (JvmType.Clazz) convertType((Type) c.type);
+		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,ctype);						
+		bytecodes.add(new Bytecode.Invoke(ctype, "length",
 				ftype, Bytecode.STATIC));								
 	}
 	
@@ -1372,13 +1371,6 @@ public class ClassFileBuilder {
 		} 												
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
 				Bytecode.STATIC));
-	}
-	
-	public void translate(Code.SetLength c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {		
-		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,WHILEYSET);			
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "length",
-				ftype, Bytecode.STATIC));									
 	}
 		
 	public void translate(Code.StringAppend c, Entry stmt, int freeSlot,

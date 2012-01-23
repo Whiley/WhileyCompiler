@@ -290,7 +290,7 @@ public class ConstraintInline implements Transform {
 		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
 		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
 		blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
-		blk.append(Code.ListLength(code.type),attributes(elem));
+		blk.append(Code.LengthOf(code.type),attributes(elem));
 		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
 		blk.append(Code.Label(falseLabel),attributes(elem));
 		blk.append(Code.Fail("index out of bounds"),attributes(elem));

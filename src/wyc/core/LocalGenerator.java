@@ -403,14 +403,12 @@ public final class LocalGenerator {
 				return generate((Expr.SubString) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment);
-			} else if (expression instanceof Expr.SetLength) {
-				return generate((Expr.SetLength) expression, environment);
-			} else if (expression instanceof Expr.ListLength) {
-				return generate((Expr.ListLength) expression, environment);
 			} else if (expression instanceof Expr.StringLength) {
 				return generate((Expr.StringLength) expression, environment);
 			} else if (expression instanceof Expr.DictionaryLength) {
 				return generate((Expr.DictionaryLength) expression, environment);
+			} else if (expression instanceof Expr.AbstractLength) {
+				return generate((Expr.AbstractLength) expression, environment);
 			} else if (expression instanceof Expr.Dereference) {
 				return generate((Expr.Dereference) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
@@ -617,17 +615,11 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.ListLength v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.AbstractLength v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
-		blk.append(Code.ListLength(v.srcType.raw()), attributes(v));
+		blk.append(Code.LengthOf(v.srcType.raw()), attributes(v));
 		return blk;
 	}
-
-	private Block generate(Expr.SetLength v, HashMap<String,Integer> environment) {
-		Block blk = generate(v.src,  environment);	
-		blk.append(Code.SetLength(v.srcType.raw()), attributes(v));
-		return blk;
-	}	
 	
 	private Block generate(Expr.StringLength v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	

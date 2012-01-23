@@ -880,7 +880,8 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
-		public Expr src;	
+		public Expr src;
+		public Nominal.EffectiveSetOrList srcType;
 		
 		public AbstractLength(Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -899,31 +900,7 @@ public interface Expr extends SyntacticElement {
 		public String toString() {
 			return "|" + src.toString() + "|";
 		}
-	}
-	
-	public static class SetLength extends AbstractLength {
-		public Nominal.EffectiveSet srcType;
-		
-		public SetLength(Expr src, Attribute... attributes) {
-			super(src,attributes);
-		}
-		
-		public SetLength(Expr src, Collection<Attribute> attributes) {
-			super(src,attributes);
-		}		
 	}		
-	
-	public static class ListLength extends AbstractLength {		
-		public Nominal.EffectiveList srcType;
-		
-		public ListLength(Expr src, Attribute... attributes) {
-			super(src,attributes);
-		}
-		
-		public ListLength(Expr src, Collection<Attribute> attributes) {
-			super(src,attributes);
-		}		
-	}	
 	
 	public static class StringLength extends AbstractLength {		
 		public StringLength(Expr src, Attribute... attributes) {

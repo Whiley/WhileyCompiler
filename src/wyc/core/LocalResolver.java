@@ -911,16 +911,9 @@ public abstract class LocalResolver extends AbstractResolver {
 			if(!(expr instanceof Expr.StringLength)) {
 				expr = new Expr.StringLength(expr.src, expr.attributes());
 			}
-		} else if (Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),
-				rawSrcType)) {
-			if(!(expr instanceof Expr.ListLength)) {
-				expr = new Expr.ListLength(expr.src, expr.attributes());
-			}
-		} else if (Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),
-				rawSrcType)) {
-			if(!(expr instanceof Expr.SetLength)) {
-				expr = new Expr.SetLength(expr.src, expr.attributes());
-			}
+		} else if (rawSrcType instanceof Type.EffectiveSetOrList) {
+			expr.srcType = expandAsEffectiveSetOrList(srcType);
+			return expr;
 		} else if (Type.isImplicitCoerciveSubtype(
 				Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
 			if(!(expr instanceof Expr.DictionaryLength)) {
@@ -937,20 +930,6 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		if(expr instanceof Expr.StringLength) {
 			checkIsSubtype(Type.T_STRING,expr.src,context);								
-		} else if(expr instanceof Expr.ListLength) {
-			Expr.ListLength ll = (Expr.ListLength) expr; 
-			Nominal.EffectiveList list = expandAsEffectiveList(srcType);			
-			if(list == null) {
-				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,expr);				
-			}
-			ll.srcType = list;
-		} else if(expr instanceof Expr.SetLength) {
-			Expr.SetLength sl = (Expr.SetLength) expr; 
-			Nominal.EffectiveSet set = expandAsEffectiveSet(srcType);			
-			if(set == null) {
-				syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,expr);				
-			}
-			sl.srcType = set;			
 		} else {
 			Expr.DictionaryLength dl = (Expr.DictionaryLength) expr; 
 			Nominal.EffectiveDictionary dict = expandAsEffectiveDictionary(srcType);

@@ -45,12 +45,14 @@ public abstract class Nominal {
 			return new UnionOfTuples((Type.UnionOfTuples)nominal,(Type.UnionOfTuples)raw);			
 		} else if(raw instanceof Type.Set && nominal instanceof Type.Set) { 
 			return new Set((Type.Set)nominal,(Type.Set)raw);					
-		}  else if(raw instanceof Type.UnionOfSets && nominal instanceof Type.UnionOfSets) {
+		} else if(raw instanceof Type.UnionOfSets && nominal instanceof Type.UnionOfSets) {
 			return new UnionOfSets((Type.UnionOfSets)nominal,(Type.UnionOfSets)raw);			
 		} else if(raw instanceof Type.List && nominal instanceof Type.List) {
 			return new List((Type.List)nominal,(Type.List)raw);			
 		} else if(raw instanceof Type.UnionOfLists && nominal instanceof Type.UnionOfLists) {
 			return new UnionOfLists((Type.UnionOfLists)nominal,(Type.UnionOfLists)raw);			
+		} else if(raw instanceof Type.UnionOfSetsOrLists && nominal instanceof Type.UnionOfSetsOrLists) {
+			return new UnionOfSetsOrLists((Type.UnionOfSetsOrLists)nominal,(Type.UnionOfSetsOrLists)raw);			
 		} else if(raw instanceof Type.Dictionary && nominal instanceof Type.Dictionary) {
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
 		} else if(raw instanceof Type.UnionOfDictionaries && nominal instanceof Type.UnionOfDictionaries) {
@@ -216,7 +218,13 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveSet {
+	public interface EffectiveSetOrList {
+		public Type.EffectiveSetOrList raw();		
+		public Type.EffectiveSetOrList nominal();		
+		public Nominal element();			
+	}
+	
+	public interface EffectiveSet extends EffectiveSetOrList {
 		public Type.EffectiveSet raw();		
 		public Type.EffectiveSet nominal();		
 		public Nominal element();							
@@ -472,6 +480,40 @@ public abstract class Nominal {
 		public boolean equals(Object o) {
 			if (o instanceof Record) {
 				Record b = (Record) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
+	}
+	
+	public static final class UnionOfSetsOrLists extends Nominal implements EffectiveSetOrList {
+		private final Type.UnionOfSetsOrLists nominal;
+		private final Type.UnionOfSetsOrLists raw;
+		
+		UnionOfSetsOrLists(Type.UnionOfSetsOrLists nominal, Type.UnionOfSetsOrLists raw) {
+			this.nominal = nominal;
+			this.raw = raw;
+		}
+		
+		public Type.UnionOfSetsOrLists nominal() {
+			return nominal;
+		}
+		
+		public Type.UnionOfSetsOrLists raw() {
+			return raw;
+		}
+				
+		public Nominal element() {
+			return construct(nominal.element(),raw.element());			
+		}		
+		
+		public boolean equals(Object o) {
+			if (o instanceof UnionOfSetsOrLists) {
+				UnionOfSetsOrLists b = (UnionOfSetsOrLists) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;

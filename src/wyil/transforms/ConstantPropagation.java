@@ -160,8 +160,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			// skip			
 		} else if(code instanceof ListAppend) {
 			infer(index,(ListAppend)code,entry,environment);
-		} else if(code instanceof ListLength) {
-			infer(index,(ListLength)code,entry,environment);
+		} else if(code instanceof LengthOf) {
+			infer(index,(LengthOf)code,entry,environment);
 		} else if(code instanceof SubList) {
 			infer(index,(SubList)code,entry,environment);
 		} else if(code instanceof ListLoad) {
@@ -196,8 +196,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(SetDifference)code,entry,environment);
 		} else if(code instanceof SetIntersect) {
 			infer(index,(SetIntersect)code,entry,environment);
-		} else if(code instanceof SetLength) {
-			infer(index,(SetLength)code,entry,environment);
 		} else if(code instanceof StringAppend) {
 			infer(index,(StringAppend)code,entry,environment);
 		} else if(code instanceof StringLength) {
@@ -473,13 +471,18 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(result);
 	}
 	
-	public void infer(int index, Code.ListLength code, Block.Entry entry,
+	public void infer(int index, Code.LengthOf code, Block.Entry entry,
 			Env environment) {
 		Value val = environment.pop();
 		Value result = null;
 		
 		if(val instanceof Value.List) {
 			Value.List list = (Value.List) val;
+			result = Value.V_INTEGER(BigInteger.valueOf(list.values.size()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
+		} else if(val instanceof Value.Set) {
+			Value.Set list = (Value.Set) val;
 			result = Value.V_INTEGER(BigInteger.valueOf(list.values.size()));
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,1));
@@ -808,25 +811,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment.push(result);
 	}
-	
-	public void infer(int index, Code.SetLength code, Block.Entry entry,
-			Env environment) {						
-		Value result = null;
-		
-		Value val = environment.pop();
-		
-		if(val instanceof Value.Set) {
-			Value.Set set = (Value.Set) val;
-			result = Value.V_INTEGER(BigInteger.valueOf(set.values.size()));			
-		}
-		
-		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
-		}
-		
-		environment.push(result);
-	}	
 	
 	public void infer(int index, Code.StringAppend code, Block.Entry entry,
 			Env environment) {

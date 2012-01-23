@@ -973,6 +973,23 @@ public abstract class Type {
 	}	
 	
 	/**
+	 * A type which is either a set, list, or a union of sets and lists. An
+	 * effective set or list gives access to an effective element type, which is
+	 * the union of possible element types.
+	 * 
+	 * <pre>
+	 * {int} | [real]
+	 * </pre>
+	 * 
+	 * Here, the effective element type is int|real.
+	 * 
+	 * @return
+	 */
+	public interface EffectiveSetOrList {		
+		public Type element();		
+	}
+	
+	/**
 	 * A type which is either a set, or a union of sets. An effective set gives
 	 * access to an effective element type, which is the union of possible
 	 * element types.
@@ -985,7 +1002,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveSet {		
+	public interface EffectiveSet extends EffectiveSetOrList {		
 		public Type element();		
 	}
 	
@@ -1023,7 +1040,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveList {
+	public interface EffectiveList extends EffectiveSetOrList {
 		
 		public Type element();
 		
@@ -1323,6 +1340,27 @@ public abstract class Type {
 			// assigning type any into this yields [any]
 			
 			return (EffectiveList) Type.Union(nbounds);
+		}
+	}
+	
+	public static final class UnionOfSetsOrLists extends Union implements
+	EffectiveSetOrList {
+		private UnionOfSetsOrLists(Automaton automaton) {
+			super(automaton);
+		}
+
+		public Type element() {
+			Type r = null;
+			HashSet<EffectiveSetOrList> bounds = (HashSet) bounds();
+			for(EffectiveSetOrList bound : bounds) {
+				Type t = bound.element();
+				if(r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r,t);
+				}
+			}
+			return r;
 		}
 	}
 	
@@ -2033,6 +2071,7 @@ public abstract class Type {
 			boolean allLists = true;
 			boolean allDictionaries = true;
 			boolean allSets = true;			
+			boolean allSetsOrLists = true;
 			boolean allTuples = true;
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
@@ -2040,6 +2079,7 @@ public abstract class Type {
 				allSets &= bound instanceof Set;
 				allDictionaries &= bound instanceof Dictionary;
 				allLists &= bound instanceof List;
+				allSetsOrLists &= (bound instanceof List || bound instanceof Set);
 				allTuples &= bound instanceof Tuple;
 			}
 			if(allSets) {
@@ -2048,6 +2088,8 @@ public abstract class Type {
 				type = new UnionOfDictionaries(automaton);
 			} else if(allLists) {
 				type = new UnionOfLists(automaton);
+			} else if(allSetsOrLists) {
+				type = new UnionOfSetsOrLists(automaton);
 			} else if(allTuples) {
 				type = new UnionOfTuples(automaton);
 			} else if(allRecords) {

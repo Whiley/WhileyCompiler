@@ -202,8 +202,8 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
-	public static ListLength ListLength(Type.EffectiveList type) {
-		return get(new ListLength(type));
+	public static LengthOf LengthOf(Type.EffectiveSetOrList type) {
+		return get(new LengthOf(type));
 	}
 	
 	/**
@@ -369,10 +369,6 @@ public abstract class Code {
 	}
 	
 	public static final Skip Skip = new Skip();
-	
-	public static SetLength SetLength(Type.EffectiveSet type) {
-		return get(new SetLength(type));
-	}
 	
 	public static SetUnion SetUnion(Type.EffectiveSet type, OpDir dir) {
 		return get(new SetUnion(type,dir));
@@ -1521,10 +1517,10 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ListLength extends Code {						
-		public final Type.EffectiveList type;
+	public static final class LengthOf extends Code {						
+		public final Type.EffectiveSetOrList type;
 		
-		private ListLength(Type.EffectiveList type) {									
+		private LengthOf(Type.EffectiveSetOrList type) {									
 			this.type = type;			
 		}
 		
@@ -1537,8 +1533,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof ListLength) {
-				ListLength setop = (ListLength) o;
+			if (o instanceof LengthOf) {
+				LengthOf setop = (LengthOf) o;
 				return (type == setop.type || (type != null && type
 						.equals(setop.type)));
 			}
@@ -1546,7 +1542,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("listlength", (Type) type);
+			return toString("length", (Type) type);
 		}
 	}
 	
@@ -2477,36 +2473,7 @@ public abstract class Code {
 			return toString("difference" + dir.toString(), (Type) type);
 		}
 	}
-	
-	public static final class SetLength extends Code {				
-		public final Type.EffectiveSet type;
 		
-		private SetLength(Type.EffectiveSet type) {
-			this.type = type;			
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 558723; 
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof SetLength) {
-				SetLength setop = (SetLength) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("setlength", (Type) type);
-		}
-	}
-	
 	public static final class StringAppend extends Code {			
 		public final OpDir dir;		
 		
