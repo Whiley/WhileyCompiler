@@ -217,14 +217,21 @@ public class GlobalGenerator {
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;			
 			
+			boolean constraints = false;
 			DecisionTree tree = new DecisionTree(raw);
 			for (UnresolvedType b : ut.bounds) {
 				Type type = resolver.resolveAsType(b, context).raw();
 				Block constraint = generate(b, context);
+				constraints |= constraint != null;
 				tree.add(type,constraint);
 			}
 			
-			return tree.flattern();
+			if(constraints) {
+				return tree.flattern();
+			} else {
+				// no constraints, no need to do anything.
+				return null;
+			}
 		} else if (t instanceof UnresolvedType.Not) {
 			UnresolvedType.Not st = (UnresolvedType.Not) t;
 			Block p = generate(st.element, context);

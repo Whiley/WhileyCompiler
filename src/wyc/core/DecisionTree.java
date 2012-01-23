@@ -214,6 +214,7 @@ public final class DecisionTree {
 			// root is treated as special case because it's constraint is always
 			// zero.
 			blk.append(Code.Goto(target));
+			return;
 		}
 
 		ArrayList<Node> children = node.children;
