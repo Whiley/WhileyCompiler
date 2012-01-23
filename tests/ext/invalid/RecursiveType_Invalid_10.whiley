@@ -1,5 +1,5 @@
 
-
+define nat as int where $ >= 0
 define LinkedList as int | {LinkedList next, int data}
 
 define posLink as {posList next, nat data}
