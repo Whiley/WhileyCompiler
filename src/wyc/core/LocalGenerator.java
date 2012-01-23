@@ -403,8 +403,8 @@ public final class LocalGenerator {
 				return generate((Expr.SubString) expression, environment);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment);
-			} else if (expression instanceof Expr.AbstractLength) {
-				return generate((Expr.AbstractLength) expression, environment);
+			} else if (expression instanceof Expr.LengthOf) {
+				return generate((Expr.LengthOf) expression, environment);
 			} else if (expression instanceof Expr.Dereference) {
 				return generate((Expr.Dereference) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
@@ -611,7 +611,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.AbstractLength v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.LengthOf v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
 		blk.append(Code.LengthOf(v.srcType.raw()), attributes(v));
 		return blk;

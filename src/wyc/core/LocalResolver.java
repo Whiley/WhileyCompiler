@@ -349,8 +349,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.AbstractInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractIndexAccess) {
 				return resolve((Expr.AbstractIndexAccess) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractLength) {
-				return resolve((Expr.AbstractLength) expr,environment,context); 
+			} else if(expr instanceof Expr.LengthOf) {
+				return resolve((Expr.LengthOf) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractVariable) {
 				return resolve((Expr.AbstractVariable) expr,environment,context); 
 			} else if(expr instanceof Expr.List) {
@@ -898,7 +898,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.AbstractLength expr, Environment environment,
+	private Expr resolve(Expr.LengthOf expr, Environment environment,
 			Context context) throws ResolveError {			
 		expr.src = resolve(expr.src,environment, context);			
 		Nominal srcType = expr.src.result();

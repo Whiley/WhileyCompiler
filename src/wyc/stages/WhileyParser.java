@@ -1127,7 +1127,7 @@ public final class WhileyParser {
 							// In this case, no end of the slice has been provided.
 							// Therefore, it is taken to be the length of the source
 							// expression.						
-							end = new Expr.AbstractLength(lhs, lhs
+							end = new Expr.LengthOf(lhs, lhs
 									.attribute(Attribute.Source.class));
 						} else {
 							end = parseBitwiseExpression(false);						
@@ -1527,7 +1527,7 @@ public final class WhileyParser {
 		Expr e = parseIndexTerm();
 		
 		match(Bar.class);
-		return new Expr.AbstractLength(e, sourceAttr(start, index - 1));
+		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseNegation() {

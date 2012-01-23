@@ -879,16 +879,16 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
+	public static class LengthOf extends SyntacticElement.Impl implements Expr {
 		public Expr src;
 		public Nominal.EffectiveCollection srcType;
 		
-		public AbstractLength(Expr mhs, Attribute... attributes) {
+		public LengthOf(Expr mhs, Attribute... attributes) {
 			super(attributes);
 			this.src = mhs;			
 		}
 		
-		public AbstractLength(Expr mhs, Collection<Attribute> attributes) {
+		public LengthOf(Expr mhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = mhs;			
 		}
