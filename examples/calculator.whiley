@@ -72,7 +72,7 @@ Value evaluate(Expr e, {string=>Value} env) throws RuntimeError:
             v = evaluate(i, env)
             r = r + [v]
         return r
-    else:
+    else if e is ListAccess:
         src = evaluate(e.src, env)
         index = evaluate(e.index, env)
         // santity checks
@@ -80,6 +80,8 @@ Value evaluate(Expr e, {string=>Value} env) throws RuntimeError:
             return src[index]
         else:
             throw {msg: "invalid list access"}
+    else:
+        return 0 // dead-code
 
 // ====================================================
 // Expression Parser

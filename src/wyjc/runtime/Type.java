@@ -441,5 +441,11 @@ public class Type {
 			index += match.length();
 		}		
 	}
+
 	
+	public static void main(String[] args) {
+		String input = "X<{Y<X|{Y lhs,int op,Y rhs}|int|[Y]|{string id}> index,Y<X|{Y lhs,int op,Y rhs}|int|[Y]|{string id}> src}>"
+				+ "|{Y<X|{Y lhs,int op,Y rhs}|int|[Y]|{string id}> lhs,int op,Y<X|{Y lhs,int op,Y rhs}|int|[Y]|{string id}> rhs}";
+		Type t = valueOf(input);
+	}
 }

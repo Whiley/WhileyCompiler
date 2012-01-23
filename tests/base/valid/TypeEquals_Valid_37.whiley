@@ -36,11 +36,13 @@ int evaluate(Expr e):
         return 2
     else if e is [Expr]:
         return 3
-    else:
+    else if e is ListAccess:
         src = evaluate(e.src)
         index = evaluate(e.index)
         // santity checks
         return src + index
+    else:
+        return -1 // deadcode
 
 void ::main(System.Console sys):
     e = 1
