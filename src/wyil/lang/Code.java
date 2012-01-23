@@ -198,7 +198,7 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
-	public static LengthOf LengthOf(Type.EffectiveSetOrListOrDictionary type) {
+	public static LengthOf LengthOf(Type.EffectiveCollection type) {
 		return get(new LengthOf(type));
 	}
 	
@@ -384,10 +384,6 @@ public abstract class Code {
 	
 	public static SubString SubString() {
 		return get(new SubString());
-	}
-	
-	public static StringLength StringLength() {
-		return get(new StringLength());
 	}
 	
 	public static StringLoad StringLoad() {
@@ -1479,9 +1475,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class LengthOf extends Code {						
-		public final Type.EffectiveSetOrListOrDictionary type;
+		public final Type.EffectiveCollection type;
 		
-		private LengthOf(Type.EffectiveSetOrListOrDictionary type) {									
+		private LengthOf(Type.EffectiveCollection type) {									
 			this.type = type;			
 		}
 		
@@ -2478,24 +2474,7 @@ public abstract class Code {
 			return toString("substring",Type.T_STRING);
 		}
 	}
-	
-	public static final class StringLength extends Code {		
-		private StringLength() {
-		}
 		
-		public int hashCode() {			
-			return 982345;			
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof StringLength;
-		}
-				
-		public String toString() {
-			return toString("stringlen",Type.T_STRING);
-		}
-	}
-	
 	public static final class StringLoad extends Code {		
 		private StringLoad() {
 		}

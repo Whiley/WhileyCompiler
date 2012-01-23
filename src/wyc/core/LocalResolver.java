@@ -907,12 +907,8 @@ public abstract class LocalResolver extends AbstractResolver {
 		// First, check whether this is still only an abstract access and, in
 		// such case, upgrade it to the appropriate access expression.
 
-		if (Type.isImplicitCoerciveSubtype(Type.T_STRING, rawSrcType)) {
-			if(!(expr instanceof Expr.StringLength)) {
-				expr = new Expr.StringLength(expr.src, expr.attributes());
-			}
-		} else if (rawSrcType instanceof Type.EffectiveSetOrListOrDictionary) {
-			expr.srcType = expandAsEffectiveSetOrListOrDictionary(srcType);
+		if (rawSrcType instanceof Type.EffectiveCollection) {
+			expr.srcType = expandAsEffectiveCollection(srcType);
 			return expr;
 		} else {
 			syntaxError("found " + expr.src.result().nominal()

@@ -195,14 +195,14 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.EffectiveSetOrListOrDictionary expandAsEffectiveSetOrListOrDictionary(Nominal lhs) throws ResolveError {
+	public Nominal.EffectiveCollection expandAsEffectiveCollection(Nominal lhs) throws ResolveError {
 		Type raw = lhs.raw();
-		if(raw instanceof Type.EffectiveSetOrListOrDictionary) {
+		if(raw instanceof Type.EffectiveCollection) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.EffectiveSetOrListOrDictionary)) {
+			if(!(nominal instanceof Type.EffectiveCollection)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.EffectiveSetOrListOrDictionary) Nominal.construct(nominal,raw);
+			return (Nominal.EffectiveCollection) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}

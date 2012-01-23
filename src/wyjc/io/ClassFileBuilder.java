@@ -506,8 +506,6 @@ public class ClassFileBuilder {
 				 translate((StringAppend)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof StringLoad) {
 				 translate((StringLoad)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof StringLength) {
-				 translate((StringLength)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SubString) {
 				 translate((SubString)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Store) {
@@ -1389,14 +1387,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
 				Bytecode.VIRTUAL));				
 	}
-	
-	public void translate(Code.StringLength c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {						
-		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,JAVA_LANG_STRING);						
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "stringlength",
-				ftype, Bytecode.STATIC));								
-	}
-	
+		
 	public void translate(Code.SubString c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,

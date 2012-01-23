@@ -826,10 +826,13 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Strung extends Leaf {
+	public static final class Strung extends Leaf implements EffectiveCollection {
 		private Strung() {}
 		public boolean equals(Object o) {
 			return o == T_STRING;
+		}
+		public Type element() {
+			return T_CHAR;
 		}
 		public int hashCode() {
 			return 6;
@@ -973,9 +976,9 @@ public abstract class Type {
 	}	
 	
 	/**
-	 * A type which is either a set, list, dictionary or a union of sets, lists
-	 * and dictionaries. An effective set or list gives access to an effective
-	 * element type, which is the union of possible element types.
+	 * A type which is either a set, list, dictionary, string or a union of such
+	 * types. An effective collection gives access to an effective element type,
+	 * which is the union of possible element types.
 	 * 
 	 * <pre>
 	 * {int} | [real]
@@ -985,7 +988,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveSetOrListOrDictionary {		
+	public interface EffectiveCollection {		
 		public Type element();		
 	}
 	
@@ -1002,7 +1005,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveSet extends EffectiveSetOrListOrDictionary {		
+	public interface EffectiveSet extends EffectiveCollection {		
 		public Type element();		
 	}
 	
@@ -1040,7 +1043,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveList extends EffectiveSetOrListOrDictionary {
+	public interface EffectiveList extends EffectiveCollection {
 		
 		public Type element();
 		
@@ -1103,7 +1106,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveDictionary extends EffectiveSetOrListOrDictionary {
+	public interface EffectiveDictionary extends EffectiveCollection {
 		
 		public Type key();
 		
@@ -1346,17 +1349,17 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class UnionOfSetsOrListsOrDictionaries extends Union
+	public static final class UnionOfCollections extends Union
 			implements
-				EffectiveSetOrListOrDictionary {
-		private UnionOfSetsOrListsOrDictionaries(Automaton automaton) {
+				EffectiveCollection {
+		private UnionOfCollections(Automaton automaton) {
 			super(automaton);
 		}
 
 		public Type element() {
 			Type r = null;
-			HashSet<EffectiveSetOrListOrDictionary> bounds = (HashSet) bounds();
-			for (EffectiveSetOrListOrDictionary bound : bounds) {
+			HashSet<EffectiveCollection> bounds = (HashSet) bounds();
+			for (EffectiveCollection bound : bounds) {
 				Type t = bound.element();
 				if (r == null || t == null) {
 					r = t;
@@ -2079,15 +2082,19 @@ public abstract class Type {
 			boolean allLists = true;
 			boolean allDictionaries = true;
 			boolean allSets = true;			
-			boolean allSetsOrListsOrDicts = true;
+			boolean allCollections = true;
 			boolean allTuples = true;
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
+				boolean isSet = bound instanceof Set;
+				boolean isList = bound instanceof List;
+				boolean isString = bound instanceof Strung;
+				boolean isDictionary = bound instanceof Dictionary;
 				allRecords &= bound instanceof Record;				
-				allSets &= bound instanceof Set;
-				allDictionaries &= bound instanceof Dictionary;
-				allLists &= bound instanceof List;
-				allSetsOrListsOrDicts &= (bound instanceof List || bound instanceof Set || bound instanceof Dictionary);
+				allSets &= isSet;
+				allLists &= isList;
+				allDictionaries &= isDictionary;				
+				allCollections &= isSet || isList || isDictionary || isString;
 				allTuples &= bound instanceof Tuple;
 			}
 			if(allSets) {
@@ -2096,8 +2103,8 @@ public abstract class Type {
 				type = new UnionOfDictionaries(automaton);
 			} else if(allLists) {
 				type = new UnionOfLists(automaton);
-			} else if(allSetsOrListsOrDicts) {
-				type = new UnionOfSetsOrListsOrDictionaries(automaton);
+			} else if(allCollections) {
+				type = new UnionOfCollections(automaton);
 			} else if(allTuples) {
 				type = new UnionOfTuples(automaton);
 			} else if(allRecords) {

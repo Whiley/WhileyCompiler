@@ -34,7 +34,7 @@ public abstract class Nominal {
 	public static final Nominal T_CHAR = new Base(Type.T_CHAR,Type.T_CHAR);
 	public static final Nominal T_INT = new Base(Type.T_INT,Type.T_INT);
 	public static final Nominal T_REAL = new Base(Type.T_REAL,Type.T_REAL);
-	public static final Nominal T_STRING = new Base(Type.T_STRING,Type.T_STRING);
+	public static final Nominal T_STRING = new Strung(Type.T_STRING,Type.T_STRING);
 	
 	public static Nominal construct(Type nominal, Type raw) {
 		if(raw instanceof Type.Reference && nominal instanceof Type.Reference) {
@@ -51,8 +51,8 @@ public abstract class Nominal {
 			return new List((Type.List)nominal,(Type.List)raw);			
 		} else if(raw instanceof Type.UnionOfLists && nominal instanceof Type.UnionOfLists) {
 			return new UnionOfLists((Type.UnionOfLists)nominal,(Type.UnionOfLists)raw);			
-		} else if(raw instanceof Type.UnionOfSetsOrListsOrDictionaries && nominal instanceof Type.UnionOfSetsOrListsOrDictionaries) {
-			return new UnionOfSetsOrListsOrDictionaries((Type.UnionOfSetsOrListsOrDictionaries)nominal,(Type.UnionOfSetsOrListsOrDictionaries)raw);			
+		} else if(raw instanceof Type.UnionOfCollections && nominal instanceof Type.UnionOfCollections) {
+			return new UnionOfCollections((Type.UnionOfCollections)nominal,(Type.UnionOfCollections)raw);			
 		} else if(raw instanceof Type.Dictionary && nominal instanceof Type.Dictionary) {
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
 		} else if(raw instanceof Type.UnionOfDictionaries && nominal instanceof Type.UnionOfDictionaries) {
@@ -154,7 +154,7 @@ public abstract class Nominal {
 		return construct(nominal,raw);		
 	}	
 	
-	public static final class Base extends Nominal {
+	public static class Base extends Nominal {
 		private final Type raw;
 		private final Type nominal;
 		
@@ -181,6 +181,22 @@ public abstract class Nominal {
 		
 		public int hashCode() {
 			return raw.hashCode();
+		}
+	}
+	
+	public static final class Strung extends Base implements EffectiveCollection {
+		Strung(Type nominal, Type raw) {
+			super(nominal,raw);
+		}
+		public Nominal element() {
+			return Nominal.T_CHAR;
+		}
+		public Type.Strung nominal() {
+			return Type.T_STRING;
+		}
+		
+		public Type.Strung raw() {
+			return Type.T_STRING;
 		}
 	}
 	
@@ -218,13 +234,13 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveSetOrListOrDictionary {
-		public Type.EffectiveSetOrListOrDictionary raw();		
-		public Type.EffectiveSetOrListOrDictionary nominal();		
+	public interface EffectiveCollection {
+		public Type.EffectiveCollection raw();		
+		public Type.EffectiveCollection nominal();		
 		public Nominal element();			
 	}
 	
-	public interface EffectiveSet extends EffectiveSetOrListOrDictionary {
+	public interface EffectiveSet extends EffectiveCollection {
 		public Type.EffectiveSet raw();		
 		public Type.EffectiveSet nominal();		
 		public Nominal element();							
@@ -264,7 +280,7 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveList extends EffectiveSetOrListOrDictionary {
+	public interface EffectiveList extends EffectiveCollection {
 		public Type.EffectiveList raw();		
 		public Type.EffectiveList nominal();		
 		public Nominal element();					
@@ -309,7 +325,7 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveDictionary extends EffectiveSetOrListOrDictionary {
+	public interface EffectiveDictionary extends EffectiveCollection {
 		public Type.EffectiveDictionary raw();		
 		public Type.EffectiveDictionary nominal();		
 		public Nominal key();					
@@ -494,20 +510,20 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class UnionOfSetsOrListsOrDictionaries extends Nominal implements EffectiveSetOrListOrDictionary {
-		private final Type.UnionOfSetsOrListsOrDictionaries nominal;
-		private final Type.UnionOfSetsOrListsOrDictionaries raw;
+	public static final class UnionOfCollections extends Nominal implements EffectiveCollection {
+		private final Type.UnionOfCollections nominal;
+		private final Type.UnionOfCollections raw;
 		
-		UnionOfSetsOrListsOrDictionaries(Type.UnionOfSetsOrListsOrDictionaries nominal, Type.UnionOfSetsOrListsOrDictionaries raw) {
+		UnionOfCollections(Type.UnionOfCollections nominal, Type.UnionOfCollections raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
 		
-		public Type.UnionOfSetsOrListsOrDictionaries nominal() {
+		public Type.UnionOfCollections nominal() {
 			return nominal;
 		}
 		
-		public Type.UnionOfSetsOrListsOrDictionaries raw() {
+		public Type.UnionOfCollections raw() {
 			return raw;
 		}
 				
@@ -516,8 +532,8 @@ public abstract class Nominal {
 		}		
 		
 		public boolean equals(Object o) {
-			if (o instanceof UnionOfSetsOrListsOrDictionaries) {
-				UnionOfSetsOrListsOrDictionaries b = (UnionOfSetsOrListsOrDictionaries) o;
+			if (o instanceof UnionOfCollections) {
+				UnionOfCollections b = (UnionOfCollections) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;

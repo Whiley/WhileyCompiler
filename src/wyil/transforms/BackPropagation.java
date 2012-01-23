@@ -219,8 +219,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(SetIntersect)code,entry,environment);
 		} else if(code instanceof StringAppend) {
 			infer(index,(StringAppend)code,entry,environment);
-		} else if(code instanceof StringLength) {
-			infer(index,(StringLength)code,entry,environment);
 		} else if(code instanceof StringLoad) {
 			infer(index,(StringLoad)code,entry,environment);
 		} else if(code instanceof SubString) {
@@ -628,13 +626,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		coerceAfter(req,Type.T_CHAR,index,entry);		
 		environment.push(Type.T_STRING);
 		environment.push(Type.T_INT);
-	}
-	
-	private void infer(int index, Code.StringLength code, Block.Entry entry,
-			Env environment) {				
-		Type req = environment.pop();
-		coerceAfter(req,Type.T_INT,index,entry);
-		environment.push(Type.T_STRING);
 	}
 	
 	private void infer(int index, Code.SubString code, Block.Entry entry,

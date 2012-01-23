@@ -152,9 +152,12 @@ public final class List extends java.util.ArrayList {
 		if(col instanceof java.util.Collection) {
 			java.util.Collection c = (java.util.Collection) col;
 			return BigInteger.valueOf(c.size());
-		} else {
+		} else if (col instanceof java.util.Map) {
 			java.util.Map m = (java.util.Map) col;
 			return BigInteger.valueOf(m.size());
+		} else {
+			String s = (String) col;
+			return BigInteger.valueOf(s.length());
 		}
 	}
 	

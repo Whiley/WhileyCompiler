@@ -198,8 +198,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(SetIntersect)code,entry,environment);
 		} else if(code instanceof StringAppend) {
 			infer(index,(StringAppend)code,entry,environment);
-		} else if(code instanceof StringLength) {
-			infer(index,(StringLength)code,entry,environment);
 		} else if(code instanceof StringLoad) {
 			infer(index,(StringLoad)code,entry,environment);
 		} else if(code instanceof SubString) {
@@ -850,21 +848,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				}
 			}
 		}
-		
-		environment.push(result);
-	}
-	
-	public void infer(int index, Code.StringLength code, Block.Entry entry,
-			Env environment) {
-		Value val = environment.pop();
-		Value result = null;
-		
-		if(val instanceof Value.Strung) {
-			Value.Strung str = (Value.Strung) val;
-			result = Value.V_INTEGER(BigInteger.valueOf(str.value.length()));
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
-		} 				
 		
 		environment.push(result);
 	}
