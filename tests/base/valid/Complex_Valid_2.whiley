@@ -55,9 +55,11 @@ string move2str(Move m):
             return "O-O"
         else:
             return "O-O-O"
-    else:
+    else if m is CheckMove:
         // check move
         return move2str(m.check) + "+"  
+    else:
+        return "" // deadcode
 
 string piece2str(Piece p):
     if p.kind == PAWN:

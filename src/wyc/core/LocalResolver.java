@@ -1201,7 +1201,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		} 
 		Nominal fieldType = recType.field(ra.name);
 		if(fieldType == null) {
-			syntaxError(errorMessage(RECORD_MISSING_FIELD),context,ra);
+			syntaxError(errorMessage(RECORD_MISSING_FIELD,ra.name),context,ra);
 		}
 		ra.srcType = recType;		
 		return ra;
