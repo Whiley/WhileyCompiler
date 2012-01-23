@@ -229,7 +229,7 @@ public class GlobalGenerator {
 			if(constraints) {
 				return tree.flattern();
 			} else {
-				// no constraints, no need to do anything.
+				// no constraints, must not do anything!
 				return null;
 			}
 		} else if (t instanceof UnresolvedType.Not) {
