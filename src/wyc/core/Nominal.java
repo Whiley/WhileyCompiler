@@ -264,7 +264,7 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveList {
+	public interface EffectiveList extends EffectiveSetOrList {
 		public Type.EffectiveList raw();		
 		public Type.EffectiveList nominal();		
 		public Nominal element();					
