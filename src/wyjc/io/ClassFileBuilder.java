@@ -434,8 +434,6 @@ public class ClassFileBuilder {
 				 translate((Debug)code,freeSlot,bytecodes);
 			} else if(code instanceof Destructure) {
 				 translate((Destructure)code,freeSlot,bytecodes);
-			} else if(code instanceof DictLength) {
-				 translate((DictLength)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof DictLoad) {
 				 translate((DictLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof LoopEnd) {
@@ -1213,14 +1211,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(1.0F));
 		bytecodes.add(new Bytecode.Store(c.slot, T_FLOAT));
 	}
-		
-	public void translate(Code.DictLength c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,WHILEYMAP);						
-		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "length",
-				ftype, Bytecode.STATIC));								
-	}
-	
+			
 	public void translate(Code.DictLoad c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {					
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYMAP,
@@ -1246,9 +1237,11 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.LengthOf c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
-		JvmType.Clazz ctype = (JvmType.Clazz) convertType((Type) c.type);
+		// FIXME: the following is a bit of a hack which works for now. When I
+		// refactor the collections library then it can be fixed properly.
+		JvmType.Clazz ctype = JAVA_LANG_OBJECT;
 		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,ctype);						
-		bytecodes.add(new Bytecode.Invoke(ctype, "length",
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "length",
 				ftype, Bytecode.STATIC));								
 	}
 	

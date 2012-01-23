@@ -911,14 +911,9 @@ public abstract class LocalResolver extends AbstractResolver {
 			if(!(expr instanceof Expr.StringLength)) {
 				expr = new Expr.StringLength(expr.src, expr.attributes());
 			}
-		} else if (rawSrcType instanceof Type.EffectiveSetOrList) {
-			expr.srcType = expandAsEffectiveSetOrList(srcType);
+		} else if (rawSrcType instanceof Type.EffectiveSetOrListOrDictionary) {
+			expr.srcType = expandAsEffectiveSetOrListOrDictionary(srcType);
 			return expr;
-		} else if (Type.isImplicitCoerciveSubtype(
-				Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
-			if(!(expr instanceof Expr.DictionaryLength)) {
-				expr = new Expr.DictionaryLength(expr.src, expr.attributes());
-			}
 		} else {
 			syntaxError("found " + expr.src.result().nominal()
 					+ ", expected string, set, list or dictionary.", context,
@@ -927,17 +922,8 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		// Second, determine the expanded src type for this access expression
 		// and check the key value.
-
-		if(expr instanceof Expr.StringLength) {
-			checkIsSubtype(Type.T_STRING,expr.src,context);								
-		} else {
-			Expr.DictionaryLength dl = (Expr.DictionaryLength) expr; 
-			Nominal.EffectiveDictionary dict = expandAsEffectiveDictionary(srcType);
-			if(dict == null) {
-				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),context,expr);
-			}				
-			dl.srcType = dict;	
-		}
+		
+		checkIsSubtype(Type.T_STRING,expr.src,context);								
 		
 		return expr;
 	}

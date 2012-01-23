@@ -147,6 +147,17 @@ public final class List extends java.util.ArrayList {
 		}							
 	}
 	
+	public static BigInteger length(Object col) {				
+		Util.decRefs(col);
+		if(col instanceof java.util.Collection) {
+			java.util.Collection c = (java.util.Collection) col;
+			return BigInteger.valueOf(c.size());
+		} else {
+			java.util.Map m = (java.util.Map) col;
+			return BigInteger.valueOf(m.size());
+		}
+	}
+	
 	public static BigInteger length(List list) {				
 		Util.decRefs(list);
 		return BigInteger.valueOf(list.size());

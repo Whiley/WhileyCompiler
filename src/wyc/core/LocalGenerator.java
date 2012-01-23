@@ -405,8 +405,6 @@ public final class LocalGenerator {
 				return generate((Expr.BinOp) expression, environment);
 			} else if (expression instanceof Expr.StringLength) {
 				return generate((Expr.StringLength) expression, environment);
-			} else if (expression instanceof Expr.DictionaryLength) {
-				return generate((Expr.DictionaryLength) expression, environment);
 			} else if (expression instanceof Expr.AbstractLength) {
 				return generate((Expr.AbstractLength) expression, environment);
 			} else if (expression instanceof Expr.Dereference) {
@@ -626,13 +624,7 @@ public final class LocalGenerator {
 		blk.append(Code.StringLength(), attributes(v));
 		return blk;
 	}	
-	
-	private Block generate(Expr.DictionaryLength v, HashMap<String,Integer> environment) {
-		Block blk = generate(v.src,  environment);	
-		blk.append(Code.DictLength(v.srcType.raw()), attributes(v));
-		return blk;
-	}	
-	
+			
 	private Block generate(Expr.Dereference v, HashMap<String,Integer> environment) {
 		Block blk = generate(v.src,  environment);	
 		blk.append(Code.Dereference(v.srcType.raw()), attributes(v));

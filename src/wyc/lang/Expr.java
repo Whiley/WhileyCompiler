@@ -881,7 +881,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class AbstractLength extends SyntacticElement.Impl implements Expr {
 		public Expr src;
-		public Nominal.EffectiveSetOrList srcType;
+		public Nominal.EffectiveSetOrListOrDictionary srcType;
 		
 		public AbstractLength(Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -910,18 +910,6 @@ public interface Expr extends SyntacticElement {
 		public StringLength(Expr src, Collection<Attribute> attributes) {
 			super(src,attributes);
 		}
-	}	
-	
-	public static class DictionaryLength extends AbstractLength {		
-		public Nominal.EffectiveDictionary srcType;
-		
-		public DictionaryLength(Expr src, Attribute... attributes) {
-			super(src,attributes);
-		}
-		
-		public DictionaryLength(Expr src, Collection<Attribute> attributes) {
-			super(src,attributes);
-		}		
 	}	
 	
 	public static class New extends SyntacticElement.Impl implements Expr,Stmt {

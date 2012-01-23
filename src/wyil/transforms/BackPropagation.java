@@ -161,8 +161,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Debug)code,entry,environment);
 		} else if(code instanceof Destructure) {
 			infer(index,(Destructure)code,entry,environment);
-		} else if(code instanceof DictLength) {
-			infer(index,(DictLength)code,entry,environment);
 		} else if(code instanceof DictLoad) {
 			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof Fail) {
@@ -296,13 +294,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		} 
 		
 		environment.push(code.type);
-	}
-		
-	private void infer(int index, Code.DictLength code, Block.Entry entry,
-			Env environment) {		
-		Type req = environment.pop();
-		coerceAfter(req,Type.T_INT,index,entry);
-		environment.push((Type) code.type);
 	}
 	
 	private void infer(int index, Code.DictLoad code, Block.Entry entry,

@@ -116,10 +116,6 @@ public abstract class Code {
 		return get(new Destructure(from));
 	}
 	
-	public static DictLength DictLength(Type.EffectiveDictionary type) {
-		return get(new DictLength(type));
-	}
-	
 	/**
 	 * Construct a <code>dictload</code> bytecode which reads the value
 	 * associated with a given key in a dictionary.
@@ -202,7 +198,7 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
-	public static LengthOf LengthOf(Type.EffectiveSetOrList type) {
+	public static LengthOf LengthOf(Type.EffectiveSetOrListOrDictionary type) {
 		return get(new LengthOf(type));
 	}
 	
@@ -828,41 +824,6 @@ public abstract class Code {
 		}
 	}
 
-	/**
-	 * Pops a dictionary value from stack, and pushes it's length back on.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class DictLength extends Code {				
-		public final Type.EffectiveDictionary type;
-		
-		private DictLength(Type.EffectiveDictionary type) {
-			this.type = type;			
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 558723; 
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof DictLength) {
-				DictLength setop = (DictLength) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("dictlength", (Type) type);
-		}
-	}
-	
 	/**
 	 * Pops a key and dictionary from the stack, and looks up the value for that
 	 * key in the dictionary. If no value exists, a dictionary fault is raised.
@@ -1518,9 +1479,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class LengthOf extends Code {						
-		public final Type.EffectiveSetOrList type;
+		public final Type.EffectiveSetOrListOrDictionary type;
 		
-		private LengthOf(Type.EffectiveSetOrList type) {									
+		private LengthOf(Type.EffectiveSetOrListOrDictionary type) {									
 			this.type = type;			
 		}
 		

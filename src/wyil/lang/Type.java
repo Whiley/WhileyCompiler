@@ -973,9 +973,9 @@ public abstract class Type {
 	}	
 	
 	/**
-	 * A type which is either a set, list, or a union of sets and lists. An
-	 * effective set or list gives access to an effective element type, which is
-	 * the union of possible element types.
+	 * A type which is either a set, list, dictionary or a union of sets, lists
+	 * and dictionaries. An effective set or list gives access to an effective
+	 * element type, which is the union of possible element types.
 	 * 
 	 * <pre>
 	 * {int} | [real]
@@ -985,7 +985,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveSetOrList {		
+	public interface EffectiveSetOrListOrDictionary {		
 		public Type element();		
 	}
 	
@@ -1002,7 +1002,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveSet extends EffectiveSetOrList {		
+	public interface EffectiveSet extends EffectiveSetOrListOrDictionary {		
 		public Type element();		
 	}
 	
@@ -1040,7 +1040,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveList extends EffectiveSetOrList {
+	public interface EffectiveList extends EffectiveSetOrListOrDictionary {
 		
 		public Type element();
 		
@@ -1343,21 +1343,22 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class UnionOfSetsOrLists extends Union implements
-	EffectiveSetOrList {
-		private UnionOfSetsOrLists(Automaton automaton) {
+	public static final class UnionOfSetsOrListsOrDictionaries extends Union
+			implements
+				EffectiveSetOrListOrDictionary {
+		private UnionOfSetsOrListsOrDictionaries(Automaton automaton) {
 			super(automaton);
 		}
 
 		public Type element() {
 			Type r = null;
-			HashSet<EffectiveSetOrList> bounds = (HashSet) bounds();
-			for(EffectiveSetOrList bound : bounds) {
+			HashSet<EffectiveSetOrListOrDictionary> bounds = (HashSet) bounds();
+			for (EffectiveSetOrListOrDictionary bound : bounds) {
 				Type t = bound.element();
-				if(r == null || t == null) {
+				if (r == null || t == null) {
 					r = t;
 				} else {
-					r = Type.Union(r,t);
+					r = Type.Union(r, t);
 				}
 			}
 			return r;
@@ -2071,7 +2072,7 @@ public abstract class Type {
 			boolean allLists = true;
 			boolean allDictionaries = true;
 			boolean allSets = true;			
-			boolean allSetsOrLists = true;
+			boolean allSetsOrListsOrDicts = true;
 			boolean allTuples = true;
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
@@ -2079,7 +2080,7 @@ public abstract class Type {
 				allSets &= bound instanceof Set;
 				allDictionaries &= bound instanceof Dictionary;
 				allLists &= bound instanceof List;
-				allSetsOrLists &= (bound instanceof List || bound instanceof Set);
+				allSetsOrListsOrDicts &= (bound instanceof List || bound instanceof Set || bound instanceof Dictionary);
 				allTuples &= bound instanceof Tuple;
 			}
 			if(allSets) {
@@ -2088,8 +2089,8 @@ public abstract class Type {
 				type = new UnionOfDictionaries(automaton);
 			} else if(allLists) {
 				type = new UnionOfLists(automaton);
-			} else if(allSetsOrLists) {
-				type = new UnionOfSetsOrLists(automaton);
+			} else if(allSetsOrListsOrDicts) {
+				type = new UnionOfSetsOrListsOrDictionaries(automaton);
 			} else if(allTuples) {
 				type = new UnionOfTuples(automaton);
 			} else if(allRecords) {
