@@ -27,6 +27,7 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
   super("tests/ext/invalid","tests/ext/invalid","sysout");
  }
 
+ @Test public void ConstrainedDictionary_Invalid_1_RuntimeTest() { runtimeFailTest("ConstrainedDictionary_Invalid_1"); }
  @Test public void ConstrainedInt_Invalid_1_RuntimeFailTest() { runtimeFailTest("ConstrainedInt_Invalid_1"); }
  @Test public void ConstrainedInt_Invalid_10_RuntimeFailTest() { runtimeFailTest("ConstrainedInt_Invalid_10"); }
  @Test public void ConstrainedInt_Invalid_11_RuntimeFailTest() { runtimeFailTest("ConstrainedInt_Invalid_11"); }

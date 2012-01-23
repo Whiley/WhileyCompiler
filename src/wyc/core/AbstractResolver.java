@@ -123,25 +123,26 @@ public abstract class AbstractResolver {
 	 * @param imp
 	 * @return
 	 */
-	public List<ModuleID> imports(WhileyFile.Import imp) {			
-		Triple<PkgID,String,String> key = new Triple(imp.pkg,imp.module,imp.name);
+	public List<ModuleID> imports(WhileyFile.Import imp) {
+		Triple<PkgID, String, String> key = new Triple(imp.pkg, imp.module,
+				imp.name);
 		ArrayList<ModuleID> matches = importCache.get(key);
-		if(matches != null) {
+		if (matches != null) {
 			// cache hit
 			return matches;
-		} else {					
+		} else {
 			// cache miss
 			matches = new ArrayList<ModuleID>();
 			for (PkgID pid : matchPackage(imp.pkg)) {
-				try {					
-					for(ModuleID mid : loader.loadPackage(pid)) {
+				try {
+					for (ModuleID mid : loader.loadPackage(pid)) {
 						if (imp.matchModule(mid.module())) {
 							matches.add(mid);
 						}
-					}					
+					}
 				} catch (ResolveError ex) {
 					// dead code
-				} 
+				}
 			}
 			importCache.put(key, matches);
 		}

@@ -29,6 +29,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void BoolAssign_Valid_3_RuntimeTest() { runTest("BoolAssign_Valid_3"); }
  @Test public void BoolAssign_Valid_4_RuntimeTest() { runTest("BoolAssign_Valid_4"); }
  @Test public void BoolRequires_Valid_1_RuntimeTest() { runTest("BoolRequires_Valid_1"); }
+ @Test public void ConstrainedDictionary_Valid_1_RuntimeTest() { runTest("ConstrainedDictionary_Valid_1"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_10_RuntimeTest() { runTest("ConstrainedInt_Valid_10"); }
  @Test public void ConstrainedInt_Valid_11_RuntimeTest() { runTest("ConstrainedInt_Valid_11"); }
@@ -43,6 +44,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_2_RuntimeTest() { runTest("ConstrainedList_Valid_2"); }
  @Test public void ConstrainedList_Valid_3_RuntimeTest() { runTest("ConstrainedList_Valid_3"); }
  @Test public void ConstrainedList_Valid_4_RuntimeTest() { runTest("ConstrainedList_Valid_4"); }
+ @Ignore("Future Work") @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { runTest("ConstrainedNegation_Valid_1"); }
  @Test public void ConstrainedRecord_Valid_4_RuntimeTest() { runTest("ConstrainedRecord_Valid_4"); }
  @Test public void ConstrainedRecord_Valid_5_RuntimeTest() { runTest("ConstrainedRecord_Valid_5"); }
  @Test public void ConstrainedSet_Valid_1_RuntimeTest() { runTest("ConstrainedSet_Valid_1"); }

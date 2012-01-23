@@ -290,16 +290,16 @@ public class GlobalGenerator {
 	}
 	
 	/**
-	 * The purpose of the exposed names method is capture the case when we have
-	 * a define statement like this:
+	 * The purpose of this method is to capture the case when we have a define
+	 * statement like this:
 	 * 
 	 * <pre>
 	 * define tup as {int x, int y} where x < y
 	 * </pre>
 	 * 
-	 * In this case, <code>x</code> and <code>y</code> are "exposed" --- meaning
+	 * We say that <code>x</code> and <code>y</code> are "exposed" --- meaning
 	 * their real names are different in some way. In this case, the aliases we
-	 * have are: x->$.x and y->$.y
+	 * have are: x->$.x and y->$.y.  
 	 * 
 	 * @param src
 	 * @param t
@@ -307,10 +307,9 @@ public class GlobalGenerator {
 	 */
 	private void addExposedNames(Type t,
 			HashMap<String, Integer> environment, Block blk) {
-		// Extended this method to handle lists and sets etc, is very difficult.
-		// The primary problem is that we need to expand expressions involved
-		// names exposed in this way into quantified
-		// expressions.		
+		// Extending this method to handle lists and sets etc, is very difficult.
+		// The primary problem is that we need to expand expressions involving
+		// names exposed in this way into quantified expressions (or something).		
 		if(t instanceof Type.Record) {
 			Type.Record tt = (Type.Record) t;
 			for(Map.Entry<String,Type> e : tt.fields().entrySet()) {
