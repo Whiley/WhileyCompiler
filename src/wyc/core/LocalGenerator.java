@@ -912,7 +912,7 @@ public final class LocalGenerator {
 	private Block generate(Expr.New expr,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = generate(expr.expr,environment);
-		blk.append(Code.Spawn(expr.type.raw()));
+		blk.append(Code.New(expr.type.raw()));
 		return blk;
 	}
 	

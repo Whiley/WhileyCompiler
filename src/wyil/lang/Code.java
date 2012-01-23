@@ -483,7 +483,7 @@ public abstract class Code {
 		return get(new Negate(type));
 	}		
 	
-	public static New Spawn(Type.Reference type) {
+	public static New New(Type.Reference type) {
 		return get(new New(type));
 	}
 	

@@ -1103,7 +1103,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveDictionary {
+	public interface EffectiveDictionary extends EffectiveSetOrListOrDictionary {
 		
 		public Type key();
 		
@@ -1132,6 +1132,9 @@ public abstract class Type {
 		public Type value() {
 			int valueIdx = automaton.states[0].children[1];
 			return construct(Automata.extract(automaton,valueIdx));	
+		}
+		public Type element() {
+			return Type.Tuple(key(),value());
 		}
 		public Dictionary update(Type key, Type value) {
 			key = Type.Union(key,key());
@@ -1398,6 +1401,10 @@ public abstract class Type {
 			}
 			return r;
 		}		
+		
+		public Type element() {
+			return Type.Tuple(key(),value());
+		}
 		
 		public EffectiveDictionary update(Type key, Type value) {
 			HashSet<Type> nbounds = new HashSet<Type>();

@@ -309,7 +309,7 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveDictionary {
+	public interface EffectiveDictionary extends EffectiveSetOrListOrDictionary {
 		public Type.EffectiveDictionary raw();		
 		public Type.EffectiveDictionary nominal();		
 		public Nominal key();					
@@ -340,6 +340,10 @@ public abstract class Nominal {
 		
 		public Nominal value() {
 			return construct(nominal.value(),raw.value());			
+		}
+		
+		public Nominal element() {
+			return Tuple(key(),value());
 		}
 		
 		public Nominal.Dictionary update(Nominal key, Nominal value) {
@@ -581,6 +585,10 @@ public abstract class Nominal {
 		
 		public Nominal value() {
 			return construct(nominal.value(),raw.value());			
+		}
+				
+		public Nominal element() {
+			return Tuple(key(),value());
 		}
 		
 		public EffectiveDictionary update(Nominal key, Nominal value) {
