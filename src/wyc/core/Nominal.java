@@ -51,13 +51,13 @@ public abstract class Nominal {
 			return new List((Type.List)nominal,(Type.List)raw);			
 		} else if(raw instanceof Type.UnionOfLists && nominal instanceof Type.UnionOfLists) {
 			return new UnionOfLists((Type.UnionOfLists)nominal,(Type.UnionOfLists)raw);			
-		} else if(raw instanceof Type.UnionOfCollections && nominal instanceof Type.UnionOfCollections) {
-			return new UnionOfCollections((Type.UnionOfCollections)nominal,(Type.UnionOfCollections)raw);			
-		} else if(raw instanceof Type.Dictionary && nominal instanceof Type.Dictionary) {
+		}  else if(raw instanceof Type.Dictionary && nominal instanceof Type.Dictionary) {
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
 		} else if(raw instanceof Type.UnionOfDictionaries && nominal instanceof Type.UnionOfDictionaries) {
 			return new UnionOfDictionaries((Type.UnionOfDictionaries)nominal,(Type.UnionOfDictionaries)raw);
-		} else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
+		} else if(raw instanceof Type.UnionOfCollections && nominal instanceof Type.UnionOfCollections) {
+			return new UnionOfCollections((Type.UnionOfCollections)nominal,(Type.UnionOfCollections)raw);			
+		}else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
 			return new Record((Type.Record)nominal,(Type.Record)raw);		
 		} else if(raw instanceof Type.UnionOfRecords && nominal instanceof Type.UnionOfRecords) {
 			return new UnionOfRecords((Type.UnionOfRecords)nominal,(Type.UnionOfRecords)raw);		
@@ -67,6 +67,8 @@ public abstract class Nominal {
 			return new Method((Type.Method)nominal,(Type.Method)raw);			
 		} else if(raw instanceof Type.Message && nominal instanceof Type.Message) {
 			return new Message((Type.Message)nominal,(Type.Message)raw);			
+		} else if(raw instanceof Type.Strung && nominal instanceof Type.Strung) {
+			return new Strung(nominal,raw);
 		} else {
 			return new Base(nominal,raw);
 		}
