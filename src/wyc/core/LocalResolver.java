@@ -443,12 +443,14 @@ public abstract class LocalResolver extends AbstractResolver {
 		} else if(lhs_list && rhs_list) {
 			checkIsSubtype(Type.List(Type.T_ANY,false),lhs,context);
 			checkIsSubtype(Type.List(Type.T_ANY,false),rhs,context);
+			Type.EffectiveList lel = (Type.EffectiveList) lhsRawType;
+			Type.EffectiveList rel = (Type.EffectiveList) rhsRawType;
 			
 			switch(expr.op) {	
 			case ADD:
 				expr.op = Expr.BOp.LISTAPPEND;
 			case LISTAPPEND:				
-				srcType = Type.Union(lhsRawType,rhsRawType);
+				srcType = Type.List(Type.Union(lel.element(),rel.element()),false);
 				break;
 			default:
 				syntaxError("invalid list operation: " + expr.op,context,expr);	
