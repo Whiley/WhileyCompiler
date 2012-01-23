@@ -17,7 +17,7 @@ import wyil.lang.Block;
  * define neg as int where $ < 0
  * define posneg as pos|neg
  * 
- * boolean isPosNeg(any v):
+ * bool isPosNeg(any v):
  *     if v is posneg:
  *         return true
  *     else: 
@@ -28,7 +28,7 @@ import wyil.lang.Block;
  * constrained types. That is, the following expansion does not work:
  * 
  * <pre>
- * boolean isPosNeg(any v):
+ * bool isPosNeg(any v):
  *     // expand pos
  *     if v is int:
  *         if v > 0:
@@ -45,7 +45,7 @@ import wyil.lang.Block;
  * That is, to expand our example like so:
  * 
  * <pre>
- * boolean isPosNeg(any v):
+ * bool isPosNeg(any v):
  *     if v is int:
  *         if v > 0:
  *             return true
@@ -63,7 +63,7 @@ import wyil.lang.Block;
  * define r3 as {int x, int y} where x < y
  * define recs as r1|r2|r3
  * 
- * boolean isRecs(any v):
+ * bool isRecs(any v):
  *     if v is recs:
  *         return true
  *     else: 
@@ -75,7 +75,7 @@ import wyil.lang.Block;
  * succession of tests before checking the constraints.
  * 
  * <pre>
- * boolean isRecs(any v):
+ * bool isRecs(any v):
  *     if v is {int x, any y}:
  *         if v.x > 0:
  *             return true
@@ -97,18 +97,30 @@ public class DecisionTree {
 		/**
 		 * The test that will determines whether or not to traverse this node.
 		 */
-		private Type test;
+		private final Type type;
 
 		/**
 		 * The children of this node. The types of all child nodes must be
 		 * independent, otherwise the tree is malformed.
 		 */
-		private ArrayList<Node> children;
+		private final ArrayList<Node> children;
 		
 		/**
 		 * Constraints for this level (if any)
 		 */
-		private Block constraints;
+		private Block constraint;
+		
+		public Node(Type type, Block constraint) {
+			this.type = type;			
+			this.constraint = constraint;
+			this.children = new ArrayList<Node>();			
+		}
+		
+		public Node(Type type, Block constraint, ArrayList<Node> children) {
+			this.type = type;			
+			this.constraint = constraint;
+			this.children = children;
+		}
 	}
 	
 	/**
@@ -116,13 +128,8 @@ public class DecisionTree {
 	 */
 	private Node root;
 	
-	/**
-	 * Raw type representing the value on entry to the tree. 
-	 */
-	private final Type type;
-	
 	public DecisionTree(Type type) {
-		this.type = type;
+		root = new Node(type,null);
 	}
 	
 	/**
@@ -135,8 +142,53 @@ public class DecisionTree {
 	 *            --- constraint which must hold for given type. This may be
 	 *            null if there is no constraint.
 	 */
-	public void add(Type type, Block constraint) {
+	public void add(Type type, Block constraint) {		
+		root = add(root,type,constraint);
+	}
+	
+	private Node add(Node node, Type type, Block constraint) {
+		// requires node.type :> type
 		
+		ArrayList<Node> children = node.children;
+		// first, check whether a child subsumes type
+		for(int i=0;i!=children.size();++i) {
+			Node n = children.get(i);			
+			if(Type.isSubtype(n.type,type)) {
+				children.set(i,add(n,type,constraint));
+				return node;
+			}
+		}
+		
+		// No child subsumes type.  So construct its child set.
+		ArrayList<Node> nchildren = new ArrayList<Node>();
+		for(int i=0;i!=children.size();) {
+			Node n = children.get(i);		
+			Type nType = n.type;
+			if(Type.isSubtype(type,nType)) {
+				if(nType.equals(type)) {
+					if(n.constraint != null) {
+						String nextLabel = Block.freshLabel();			
+						Block blk = chainBlock(nextLabel, n.constraint);								
+						blk.append(Code.Label(nextLabel));
+						blk.append(constraint);
+						n.constraint = blk;
+					} 
+					return node;
+				} else {
+					if(constraint != null) {
+						// child is completely subsumed
+						nchildren.add(n);
+					}
+					children.remove(i);
+				}				
+			} else {
+				++i;
+			}
+		}
+		
+		children.add(new Node(type,constraint,nchildren));
+		
+		return node;
 	}
 	
 	/**
@@ -146,8 +198,67 @@ public class DecisionTree {
 	 * @return
 	 */
 	public Block flattern() {
-		return null;
+		Block blk = new Block(1);
+		String exitLabel = Block.freshLabel();
+		flattern(root,blk,exitLabel); // ?
+		blk.append(Code.Label(exitLabel));
+		return blk;
 	}
+	
+	private void flattern(Node node, Block blk, String target) {
+		if(node.constraint != null) {
+			String nextLabel = Block.freshLabel();
+			blk.append(chainBlock(nextLabel, node.constraint));											
+			blk.append(Code.Goto(target));						
+			blk.append(Code.Label(nextLabel));
+		} else if(node != root) {
+			// root is treated as special case because it's constraint is always
+			// zero.
+			blk.append(Code.Goto(target));
+		}
+
+		ArrayList<Node> children = node.children;
+		String nextLabel = null;
+
+		int lastIndex = children.size()-1;
+		for(int i=0;i!=children.size();++i) {
+			if(i!=0) {
+				blk.append(Code.Label(nextLabel));
+			}
+			nextLabel = Block.freshLabel();
+			Node child = children.get(i);
+			if (i != lastIndex) {
+				blk.append(Code.IfType(node.type, Code.THIS_SLOT,
+						Type.Negation(child.type), nextLabel));
+			}
+			flattern(child,blk,target);				
+		}
+
+		blk.append(Code.Fail("constraint not satisified"));		
+	}
+	
+	/**
+	 * The chainBlock method takes a block and replaces every fail statement
+	 * with a goto to a given label. This is useful for handling constraints in
+	 * union types, since if the constraint is not met that doesn't mean its
+	 * game over.
+	 * 
+	 * @param target
+	 * @param blk
+	 * @return
+	 */
+	private static Block chainBlock(String target, Block blk) {	
+		Block nblock = new Block(blk.numInputs());
+		for (Block.Entry e : blk) {
+			if (e.code instanceof Code.Fail) {
+				nblock.append(Code.Goto(target), e.attributes());
+			} else {
+				nblock.append(e.code, e.attributes());
+			}
+		}
+		return nblock.relabel();
+	}
+	
 	
 	/*
 	 for (int i = 0; i != ut_bounds.size(); ++i) {				

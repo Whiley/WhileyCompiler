@@ -244,8 +244,6 @@ public final class LocalGenerator {
 						attributes(v));			
 			}
 			// FIXME: I think there's a bug here when slot == -1
-			blk.append(Code.Load(v.srcType.raw(), slot));
-			blk.append(Code.Store(v.srcType.raw(), environment.size()));
 			constraint = shiftBlockExceptionZero(environment.size()-1,slot,constraint);
 			blk.append(chainBlock(exitLabel,constraint)); 
 

@@ -283,29 +283,6 @@ public class GlobalGenerator {
 	}
 	
 	/**
-	 * The chainBlock method takes a block and replaces every fail statement
-	 * with a goto to a given label. This is useful for handling constraints in
-	 * union types, since if the constraint is not met that doesn't mean its
-	 * game over.
-	 * 
-	 * @param target
-	 * @param blk
-	 * @return
-	 */
-	private static Block chainBlock(String target, Block blk) {	
-		Block nblock = new Block(blk.numInputs());
-		for (Block.Entry e : blk) {
-			if (e.code instanceof Code.Fail) {
-				nblock.append(Code.Goto(target), e.attributes());
-			} else {
-				nblock.append(e.code, e.attributes());
-			}
-		}
-		return nblock.relabel();
-	}
-	
-
-	/**
 	 * The purpose of the exposed names method is capture the case when we have
 	 * a define statement like this:
 	 * 
