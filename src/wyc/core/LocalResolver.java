@@ -607,19 +607,14 @@ public abstract class LocalResolver extends AbstractResolver {
 			sources.set(i,p);
 			Nominal element;
 			Nominal type = e.result();
-			Nominal.EffectiveList listType = expandAsEffectiveList(type);
-			Nominal.EffectiveSet setType = expandAsEffectiveSet(type);
-			if(listType != null) {
-				element = listType.element();
-			} else if(setType != null) {
-				element = setType.element();
-			} else {
+			Nominal.EffectiveCollection colType = expandAsEffectiveCollection(type);			
+			if(colType == null) {
 				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),context,e);
 				return null; // dead code
 			}
 			// update environment for subsequent source expressions, the
 			// condition and the value.
-			local = local.put(p.first(),element);
+			local = local.put(p.first(),colType.element());
 		}
 		
 		if(expr.condition != null) {
