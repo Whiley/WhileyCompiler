@@ -656,12 +656,15 @@ public final class FlowTyping {
 				// this indicates either a list, string or dictionary update
 				Expr.IndexOf ai = (Expr.IndexOf) lval;				
 				Expr.LVal src = propagate((Expr.LVal) ai.src,environment);				
-				Expr index = resolver.resolve(ai.index,environment,current);				
+				Expr index = resolver.resolve(ai.index,environment,current);
+				ai.src = src;
+				ai.index = index;
 				Nominal.EffectiveMap srcType = resolver.expandAsEffectiveMap(src.result());
 				if(srcType == null) {
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
 				}
 				ai.srcType = srcType;
+				return ai;
 			} else if(lval instanceof Expr.AbstractDotAccess) {
 				// this indicates a record update
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
