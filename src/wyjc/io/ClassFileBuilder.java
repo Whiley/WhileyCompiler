@@ -1207,7 +1207,7 @@ public class ClassFileBuilder {
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "indexOf", ftype,
 				Bytecode.STATIC));
-		addReadConversion(c.type.element(), bytecodes);
+		addReadConversion(c.type.value(), bytecodes);
 	}
 	
 	public void translate(Code.FieldLoad c, int freeSlot,
