@@ -428,48 +428,29 @@ public final class FlowTyping {
 			Environment environment) throws ResolveError {
 		
 		stmt.source = resolver.resolve(stmt.source,environment,current);
-		Type rawType = stmt.source.result().raw(); 		
+		Nominal.EffectiveCollection srcType = resolver.expandAsEffectiveCollection(stmt.source.result()); 		
+		stmt.srcType = srcType;
+		
+		if(srcType == null) {
+			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
+		}
 		
 		// At this point, the major task is to determine what the types for the
 		// iteration variables declared in the for loop. More than one variable
 		// is permitted in some cases.
 		
-		Nominal[] elementTypes = new Nominal[stmt.variables.size()];		
-		if(Type.isSubtype(Type.List(Type.T_ANY, false),rawType)) {			
-			Nominal.EffectiveList lt = resolver.expandAsEffectiveList(stmt.source.result());
+		Nominal[] elementTypes = new Nominal[stmt.variables.size()];
+		if(elementTypes.length == 2 && srcType instanceof Nominal.EffectiveDictionary) {
+			Nominal.EffectiveDictionary dt = (Nominal.EffectiveDictionary) srcType;
+			elementTypes[0] = dt.key();
+			elementTypes[1] = dt.value();
+		} else {			
 			if(elementTypes.length == 1) {
-				elementTypes[0] = lt.element();
-			} else {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
-			}			
-		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false),rawType)) {
-			Nominal.EffectiveSet st = resolver.expandAsEffectiveSet(stmt.source.result());
-			if(elementTypes.length == 1) {
-				elementTypes[0] = st.element();
-			} else {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
-			}					
-		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),rawType)) {
-			Nominal.EffectiveDictionary dt = resolver.expandAsEffectiveDictionary(stmt.source.result());
-			if(elementTypes.length == 1) {
-				elementTypes[0] = Nominal.Tuple(dt.key(),dt.value());			
-			} else if(elementTypes.length == 2) {					
-				elementTypes[0] = dt.key();
-				elementTypes[1] = dt.value();
+				elementTypes[0] = srcType.element();
 			} else {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
 			}
-			
-		} else if(Type.isSubtype(Type.T_STRING,rawType)) {
-			if(elementTypes.length == 1) {
-				elementTypes[0] = Nominal.T_CHAR;
-			} else {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
-			}				
-		} else {
-			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
-			return null; // deadcode
-		}
+		} 		
 		
 		// Now, update the environment to include those declared variables
 		ArrayList<String> stmtVariables = stmt.variables;

@@ -1064,7 +1064,7 @@ public class ClassFileBuilder {
 	
 	public int translate(Code.ForAll c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
-		JvmType.Clazz srcType = (JvmType.Clazz) convertType(c.type);
+		JvmType.Clazz srcType = (JvmType.Clazz) convertType((Type) c.type);
 		Type elementType;
 
 		if (c.type instanceof Type.EffectiveSet) {
@@ -1075,6 +1075,7 @@ public class ClassFileBuilder {
 			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) c.type;
 			elementType = Type.Tuple(dict.key(),dict.value());
 		} else {
+			// FIXME: BROKEN!!!
 			return translateForAllString(c,freeSlot,bytecodes);
 		}
 

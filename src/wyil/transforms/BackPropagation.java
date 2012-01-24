@@ -760,7 +760,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 								
-			environment.push(fall.type);			
+			environment.push((Type) fall.type);			
 			// FIXME: a conversion here might be necessary?			
 			environment.set(fall.slot,Type.T_VOID);
 		} 		

@@ -152,8 +152,9 @@ public interface Stmt extends SyntacticElement {
 			implements Stmt {
 		public final ArrayList<String> variables;
 		public Expr source;
-		public Expr invariant;
+		public Expr invariant;		
 		public final ArrayList<Stmt> body;
+		public Nominal.EffectiveCollection srcType;
 
 		public ForAll(Collection<String> variables, Expr source,
 				Expr invariant, Collection<Stmt> body, Attribute... attributes) {

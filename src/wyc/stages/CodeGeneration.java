@@ -674,7 +674,7 @@ public final class CodeGeneration {
 			// this is the destructuring case		
 			
 			// FIXME: loss of nominal information
-			Type rawSrcType = s.source.result().raw();
+			Type.EffectiveCollection rawSrcType = s.srcType.raw();
 			// FIXME: support destructuring of lists and sets			
 			if(!(rawSrcType instanceof Type.EffectiveDictionary)) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),localGenerator.context(),s.source);
@@ -682,7 +682,7 @@ public final class CodeGeneration {
 			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) rawSrcType;
 			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());
 			List<Type> elements = element.elements();
-			blk.append(Code.ForAll(rawSrcType, freeSlot, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.ForAll((Type.EffectiveDictionary) rawSrcType, freeSlot, label, Collections.EMPTY_SET), attributes(s));
 			blk.append(Code.Load(element, freeSlot), attributes(s));
 			blk.append(Code.Destructure(element), attributes(s));
 			for(int i=s.variables.size();i>0;--i) {
@@ -693,7 +693,7 @@ public final class CodeGeneration {
 		} else {
 			// easy case.
 			int freeReg = allocate(s.variables.get(0),environment);
-			blk.append(Code.ForAll(s.source.result().raw(), freeReg, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.ForAll(s.srcType.raw(), freeReg, label, Collections.EMPTY_SET), attributes(s));
 		}		
 		
 		// FIXME: add a continue scope

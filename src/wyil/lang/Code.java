@@ -260,7 +260,7 @@ public abstract class Code {
 	 *            --- exit label.
 	 * @return
 	 */
-	public static ForAll ForAll(Type type, int var,
+	public static ForAll ForAll(Type.EffectiveCollection type, int var,
 			String label, Collection<Integer> modifies) {
 		return get(new ForAll(type, var, label, modifies));
 	}				
@@ -1719,9 +1719,9 @@ public abstract class Code {
 	 */
 	public static final class ForAll extends Loop {
 		public final int slot;
-		public final Type type;
+		public final Type.EffectiveCollection type;
 				
-		private ForAll(Type type, int slot, String target, Collection<Integer> modifies) {
+		private ForAll(Type.EffectiveCollection type, int slot, String target, Collection<Integer> modifies) {
 			super(target,modifies);
 			this.type = type;
 			this.slot = slot;			
@@ -1765,7 +1765,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {			
-			return toString("forall " + slot + " " + modifies,type);
+			return toString("forall " + slot + " " + modifies,(Type) type);
 		}		
 	}
 

@@ -314,7 +314,7 @@ public final class LocalGenerator {
 					
 		// Ok, non-boolean case.				
 		Block blk = new Block(environment.size());
-		ArrayList<Triple<Integer,Integer,Type>> slots = new ArrayList();		
+		ArrayList<Triple<Integer,Integer,Type.EffectiveCollection>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> src : e.sources) {
 			int srcSlot;
@@ -344,10 +344,10 @@ public final class LocalGenerator {
 		ArrayList<String> labels = new ArrayList<String>();
 		String loopLabel = Block.freshLabel();
 		
-		for (Triple<Integer, Integer, Type> p : slots) {
-			Type srcType = p.third();			
+		for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
+			Type.EffectiveCollection srcType = p.third();			
 			String lab = loopLabel + "$" + p.first();									
-			blk.append(Code.Load(srcType, p.second()), attributes(e));			
+			blk.append(Code.Load((Type) srcType, p.second()), attributes(e));			
 			blk.append(Code
 					.ForAll(srcType, p.first(), lab, Collections.EMPTY_LIST),
 					attributes(e));
@@ -779,7 +779,7 @@ public final class LocalGenerator {
 
 		// Ok, non-boolean case.				
 		Block blk = new Block(environment.size());
-		ArrayList<Triple<Integer,Integer,Type>> slots = new ArrayList();		
+		ArrayList<Triple<Integer,Integer,Type.EffectiveCollection>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> p : e.sources) {
 			int srcSlot;
@@ -833,9 +833,9 @@ public final class LocalGenerator {
 		ArrayList<String> labels = new ArrayList<String>();
 		String loopLabel = Block.freshLabel();
 		
-		for (Triple<Integer, Integer, Type> p : slots) {
+		for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
 			String target = loopLabel + "$" + p.first();
-			blk.append(Code.Load(p.third(), p.second()), attributes(e));
+			blk.append(Code.Load((Type) p.third(), p.second()), attributes(e));
 			blk.append(Code.ForAll(p.third(), p.first(), target,
 					Collections.EMPTY_LIST), attributes(e));
 			labels.add(target);

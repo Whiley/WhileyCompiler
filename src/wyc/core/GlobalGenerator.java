@@ -143,7 +143,7 @@ public class GlobalGenerator {
 				Block nblk = new Block(1);
 				String label = Block.freshLabel();
 				nblk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
-				nblk.append(Code.ForAll(raw, Code.THIS_SLOT + 1, label,
+				nblk.append(Code.ForAll((Type.EffectiveCollection) raw, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST), t.attributes());
 				nblk.append(shiftBlock(1, blk));
 				nblk.append(Code.End(label));
@@ -157,7 +157,7 @@ public class GlobalGenerator {
 				Block nblk = new Block(1);
 				String label = Block.freshLabel();
 				nblk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
-				nblk.append(Code.ForAll(raw, Code.THIS_SLOT + 1, label,
+				nblk.append(Code.ForAll((Type.EffectiveCollection) raw, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST), t.attributes());
 				nblk.append(shiftBlock(1, blk));
 				nblk.append(Code.End(label));
