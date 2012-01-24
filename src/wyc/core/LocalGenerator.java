@@ -108,12 +108,8 @@ public final class LocalGenerator {
 				return generateCondition(target, (Expr.Record) condition, environment);
 			} else if (condition instanceof Expr.Tuple) {
 				return generateCondition(target, (Expr.Tuple) condition, environment);
-			} else if (condition instanceof Expr.ListAccess) {
-				return generateCondition(target, (Expr.ListAccess) condition, environment);
-			} else if (condition instanceof Expr.StringAccess) {
-				return generateCondition(target, (Expr.StringAccess) condition, environment);
-			} else if (condition instanceof Expr.DictionaryAccess) {
-				return generateCondition(target, (Expr.DictionaryAccess) condition, environment);
+			} else if (condition instanceof Expr.IndexOf) {
+				return generateCondition(target, (Expr.IndexOf) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
 			} else if (condition instanceof Expr.New) {
@@ -270,21 +266,7 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	private Block generateCondition(String target, Expr.ListAccess v, HashMap<String,Integer> environment) {
-		Block blk = generate(v, environment);
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
-		return blk;
-	}
-
-	private Block generateCondition(String target, Expr.StringAccess v, HashMap<String,Integer> environment) {
-		Block blk = generate(v, environment);
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
-		return blk;
-	}
-	
-	private Block generateCondition(String target, Expr.DictionaryAccess v, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.IndexOf v, HashMap<String,Integer> environment) {
 		Block blk = generate(v, environment);
 		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
 		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
@@ -409,12 +391,8 @@ public final class LocalGenerator {
 				return generate((Expr.Dereference) expression, environment);
 			} else if (expression instanceof Expr.Convert) {
 				return generate((Expr.Convert) expression, environment);
-			} else if (expression instanceof Expr.ListAccess) {
-				return generate((Expr.ListAccess) expression, environment);
-			} else if (expression instanceof Expr.StringAccess) {
-				return generate((Expr.StringAccess) expression, environment);
-			} else if (expression instanceof Expr.DictionaryAccess) {
-				return generate((Expr.DictionaryAccess) expression, environment);
+			} else if (expression instanceof Expr.IndexOf) {
+				return generate((Expr.IndexOf) expression, environment);
 			} else if (expression instanceof Expr.UnOp) {
 				return generate((Expr.UnOp) expression, environment);
 			} else if (expression instanceof Expr.FunctionCall) {
@@ -623,27 +601,11 @@ public final class LocalGenerator {
 		return blk;
 	}	
 	
-	private Block generate(Expr.ListAccess v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.IndexOf v, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, environment));
 		blk.append(generate(v.index, environment));
-		blk.append(Code.ListLoad(v.srcType.raw()),attributes(v));
-		return blk;
-	}
-
-	private Block generate(Expr.StringAccess v, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, environment));
-		blk.append(generate(v.index, environment));
-		blk.append(Code.StringLoad(),attributes(v));
-		return blk;
-	}
-	
-	private Block generate(Expr.DictionaryAccess v, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, environment));
-		blk.append(generate(v.index, environment));
-		blk.append(Code.DictLoad(v.srcType.raw()),attributes(v));
+		blk.append(Code.IndexOf(v.srcType.raw()),attributes(v));
 		return blk;
 	}
 	

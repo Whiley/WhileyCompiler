@@ -365,9 +365,7 @@ public final class CodeGeneration {
 								allocate(v.var, environment)), attributes(s));
 			}
 			return blk;
-		} else if (s.lhs instanceof Expr.ListAccess
-				|| s.lhs instanceof Expr.StringAccess
-				|| s.lhs instanceof Expr.DictionaryAccess
+		} else if (s.lhs instanceof Expr.IndexOf
 				|| s.lhs instanceof Expr.RecordAccess) {
 				
 			ArrayList<String> fields = new ArrayList<String>();
@@ -398,8 +396,8 @@ public final class CodeGeneration {
 			Expr.Dereference pa = (Expr.Dereference) e;
 			Pair<Expr.AssignedVariable,Integer> p = extractLVal(pa.src, fields, blk, environment);
 			return new Pair(p.first(),p.second() + 1);			
-		} else if (e instanceof Expr.AbstractIndexAccess) {
-			Expr.AbstractIndexAccess la = (Expr.AbstractIndexAccess) e;
+		} else if (e instanceof Expr.IndexOf) {
+			Expr.IndexOf la = (Expr.IndexOf) e;
 			Pair<Expr.AssignedVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(localGenerator.generate(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);

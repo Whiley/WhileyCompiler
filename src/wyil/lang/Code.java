@@ -116,18 +116,6 @@ public abstract class Code {
 		return get(new Destructure(from));
 	}
 	
-	/**
-	 * Construct a <code>dictload</code> bytecode which reads the value
-	 * associated with a given key in a dictionary.
-	 * 
-	 * @param type
-	 *            --- dictionary type.
-	 * @return
-	 */
-	public static DictLoad DictLoad(Type.EffectiveDictionary type) {
-		return get(new DictLoad(type));
-	}
-	
 	public static LoopEnd End(String label) {
 		return get(new LoopEnd(label));
 	}
@@ -233,8 +221,8 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static ListLoad ListLoad(Type.EffectiveList type) {
-		return get(new ListLoad(type));
+	public static IndexOf IndexOf(Type.EffectiveMap type) {
+		return get(new IndexOf(type));
 	}
 
 	/**
@@ -384,10 +372,6 @@ public abstract class Code {
 	
 	public static SubString SubString() {
 		return get(new SubString());
-	}
-	
-	public static StringLoad StringLoad() {
-		return get(new StringLoad());
 	}
 	
 	/**
@@ -819,42 +803,6 @@ public abstract class Code {
 			return "destructure " + type;
 		}
 	}
-
-	/**
-	 * Pops a key and dictionary from the stack, and looks up the value for that
-	 * key in the dictionary. If no value exists, a dictionary fault is raised.
-	 * Otherwise, the value is pushed onto the stack.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class DictLoad extends Code {
-		public final Type.EffectiveDictionary type;				
-		
-		private DictLoad(Type.EffectiveDictionary type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof DictLoad) {
-				DictLoad i = (DictLoad) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("dictload", (Type) type);
-		}	
-	}	
 	
 	/**
 	 * Marks the end of a loop block.
@@ -1539,10 +1487,10 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ListLoad extends Code {
-		public final Type.EffectiveList type;				
+	public static final class IndexOf extends Code {
+		public final Type.EffectiveMap type;				
 		
-		private ListLoad(Type.EffectiveList type) {
+		private IndexOf(Type.EffectiveMap type) {
 			this.type = type;
 		}
 		
@@ -1555,15 +1503,15 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof ListLoad) {
-				ListLoad i = (ListLoad) o;
+			if(o instanceof IndexOf) {
+				IndexOf i = (IndexOf) o;
 				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return toString("listload", (Type) type);
+			return toString("indexof", (Type) type);
 		}	
 	}
 
@@ -2475,23 +2423,6 @@ public abstract class Code {
 		}
 	}
 		
-	public static final class StringLoad extends Code {		
-		private StringLoad() {
-		}
-		
-		public int hashCode() {			
-			return 12387;			
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof StringLoad;
-		}
-				
-		public String toString() {
-			return toString("stringload",Type.T_STRING);
-		}
-	}
-	
 	public static final class Skip extends Code {
 		Skip() {}
 		public int hashCode() {

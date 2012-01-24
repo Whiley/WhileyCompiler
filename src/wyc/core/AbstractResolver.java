@@ -208,6 +208,19 @@ public abstract class AbstractResolver {
 		}
 	}
 	
+	public Nominal.EffectiveMap expandAsEffectiveMap(Nominal lhs) throws ResolveError {
+		Type raw = lhs.raw();
+		if(raw instanceof Type.EffectiveMap) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.EffectiveMap)) {
+				nominal = raw; // discard nominal information
+			}
+			return (Nominal.EffectiveMap) Nominal.construct(nominal,raw);
+		} else {
+			return null;
+		}
+	}
+	
 	public Nominal.EffectiveDictionary expandAsEffectiveDictionary(Nominal lhs) throws ResolveError {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveDictionary) {

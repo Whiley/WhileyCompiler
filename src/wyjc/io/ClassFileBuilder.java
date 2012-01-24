@@ -434,8 +434,6 @@ public class ClassFileBuilder {
 				 translate((Debug)code,freeSlot,bytecodes);
 			} else if(code instanceof Destructure) {
 				 translate((Destructure)code,freeSlot,bytecodes);
-			} else if(code instanceof DictLoad) {
-				 translate((DictLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof LoopEnd) {
 				 translate((LoopEnd)code,freeSlot,bytecodes);
 			} else if(code instanceof Fail) {
@@ -466,8 +464,8 @@ public class ClassFileBuilder {
 				 translate((LengthOf)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SubList) {
 				 translate((SubList)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof ListLoad) {
-				 translate((ListLoad)code,freeSlot,bytecodes);
+			} else if(code instanceof IndexOf) {
+				 translate((IndexOf)code,freeSlot,bytecodes);
 			} else if(code instanceof Load) {
 				 translate((Load)code,freeSlot,bytecodes);
 			} else if(code instanceof Loop) {
@@ -504,8 +502,6 @@ public class ClassFileBuilder {
 				 translate((SetDifference)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof StringAppend) {
 				 translate((StringAppend)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof StringLoad) {
-				 translate((StringLoad)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SubString) {
 				 translate((SubString)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Store) {
@@ -1171,16 +1167,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(1.0F));
 		bytecodes.add(new Bytecode.Store(c.slot, T_FLOAT));
 	}
-			
-	public void translate(Code.DictLoad c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {					
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYMAP,
-				JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
-				Bytecode.STATIC));
-		addReadConversion(c.type.value(),bytecodes);	
-	}
-	
+		
 	public void translate(Code.ListAppend c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType.Function ftype;
@@ -1213,8 +1200,11 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 	}	
 	
-	public void translate(Code.ListLoad c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {		
+	public void translate(Code.IndexOf c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		
+		// FIXME: BROKEN!
+		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				WHILEYLIST, BIG_INTEGER);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
@@ -1338,16 +1328,6 @@ public class ClassFileBuilder {
 		}													
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
 				Bytecode.STATIC));
-	}
-	
-	public void translate(Code.StringLoad c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {						
-		JvmType.Function ftype = new JvmType.Function(T_INT);
-		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "intValue",
-				ftype, Bytecode.VIRTUAL));
-		ftype = new JvmType.Function(T_CHAR,T_INT);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
-				Bytecode.VIRTUAL));				
 	}
 		
 	public void translate(Code.SubString c, Entry stmt, int freeSlot,

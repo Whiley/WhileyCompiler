@@ -347,8 +347,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.AbstractFunctionOrMethodOrMessage) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
 				return resolve((Expr.AbstractInvoke) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractIndexAccess) {
-				return resolve((Expr.AbstractIndexAccess) expr,environment,context); 
+			} else if(expr instanceof Expr.IndexOf) {
+				return resolve((Expr.IndexOf) expr,environment,context); 
 			} else if(expr instanceof Expr.LengthOf) {
 				return resolve((Expr.LengthOf) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractVariable) {
@@ -837,59 +837,20 @@ public abstract class LocalResolver extends AbstractResolver {
 		}		
 	}			
 	
-	private Expr resolve(Expr.AbstractIndexAccess expr,
+	private Expr resolve(Expr.IndexOf expr,
 			Environment environment, Context context) throws ResolveError {			
 		expr.src = resolve(expr.src,environment,context);
 		expr.index = resolve(expr.index,environment,context);		
-		Nominal srcType = expr.src.result();
-		Type rawSrcType = srcType.raw();			
+		Nominal.EffectiveMap srcType = expandAsEffectiveMap(expr.src.result());
 		
-		// First, check whether this is still only an abstract access and, in
-		// such case, upgrade it to the appropriate access expression.
-		
-		if (!(expr instanceof Expr.StringAccess
-				|| expr instanceof Expr.ListAccess || expr instanceof Expr.DictionaryAccess)) {
-			// first time through
-			if (Type.isImplicitCoerciveSubtype(Type.T_STRING, rawSrcType)) {
-				expr = new Expr.StringAccess(expr.src, expr.index,
-						expr.attributes());
-			} else if (Type.isImplicitCoerciveSubtype(
-					Type.List(Type.T_ANY, false), rawSrcType)) {
-				expr = new Expr.ListAccess(expr.src, expr.index,
-						expr.attributes());
-			} else if (Type.isImplicitCoerciveSubtype(
-					Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
-				expr = new Expr.DictionaryAccess(expr.src, expr.index,
-						expr.attributes());
-			} else {
-				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), context, expr.src);
-			}
-		}
-		
-		// Second, determine the expanded src type for this access expression
-		// and check the key value.
-		
-		if(expr instanceof Expr.StringAccess) {
-			checkIsSubtype(Type.T_STRING,expr.src,context);	
-			checkIsSubtype(Type.T_INT,expr.index,context);				
-		} else if(expr instanceof Expr.ListAccess) {
-			Expr.ListAccess la = (Expr.ListAccess) expr; 
-			Nominal.EffectiveList list = expandAsEffectiveList(srcType);			
-			if(list == null) {
-				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,expr);				
-			}
-			checkIsSubtype(Type.T_INT,expr.index,context);	
-			la.srcType = list;			
+		if(srcType == null) {
+			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), context, expr.src);
 		} else {
-			Expr.DictionaryAccess da = (Expr.DictionaryAccess) expr; 
-			Nominal.EffectiveDictionary dict = expandAsEffectiveDictionary(srcType);
-			if(dict == null) {
-				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),context,expr);
-			}			
-			checkIsSubtype(dict.key(),expr.index,context);			
-			da.srcType = dict;						
+			expr.srcType = srcType;
 		}
 		
+		checkIsSubtype(srcType.key(),expr.index,context);
+				
 		return expr;
 	}
 	

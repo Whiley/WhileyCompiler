@@ -348,21 +348,13 @@ public final class FlowTyping {
 			// through a reference does not change its type.
 			checkIsSubtype(pa.srcType,Nominal.Reference(afterType),lv);
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
-		} else if (lv instanceof Expr.StringAccess) {
-			Expr.StringAccess la = (Expr.StringAccess) lv;
-			checkIsSubtype(Nominal.T_CHAR,afterType,lv);
+		} else if (lv instanceof Expr.IndexOf) {
+			Expr.IndexOf la = (Expr.IndexOf) lv;
+			Nominal.EffectiveMap srcType = la.srcType;
+			checkIsSubtype(srcType.value(),afterType,lv);
+			afterType = (Nominal) srcType.update(la.index.result(), afterType);
 			return inferAfterType((Expr.LVal) la.src, 
-					Nominal.T_STRING);
-		} else if (lv instanceof Expr.ListAccess) {
-			Expr.ListAccess la = (Expr.ListAccess) lv;
-			Nominal.EffectiveList srcType = la.srcType;
-			afterType = (Nominal) srcType.update(Nominal.T_INT,afterType);								
-			return inferAfterType((Expr.LVal) la.src, afterType);
-		} else if(lv instanceof Expr.DictionaryAccess)  {
-			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		
-			Nominal.EffectiveDictionary srcType = da.srcType;
-			afterType = (Nominal) srcType.update(da.index.result(),afterType);
-			return inferAfterType((Expr.LVal) da.src, afterType);
+					afterType);
 		} else if(lv instanceof Expr.RecordAccess) {
 			Expr.RecordAccess la = (Expr.RecordAccess) lv;
 			Nominal.EffectiveRecord srcType = la.srcType;			
@@ -660,27 +652,16 @@ public final class FlowTyping {
 				pa.src = src;
 				pa.srcType = resolver.expandAsReference(src.result());							
 				return pa;
-			} else if(lval instanceof Expr.AbstractIndexAccess) {
+			} else if(lval instanceof Expr.IndexOf) {
 				// this indicates either a list, string or dictionary update
-				Expr.AbstractIndexAccess ai = (Expr.AbstractIndexAccess) lval;				
+				Expr.IndexOf ai = (Expr.IndexOf) lval;				
 				Expr.LVal src = propagate((Expr.LVal) ai.src,environment);				
 				Expr index = resolver.resolve(ai.index,environment,current);				
-				Type rawSrcType = src.result().raw();
-				// FIXME: problem if list is only an effective list, similarly
-				// for dictionaries.
-				if(Type.isSubtype(Type.T_STRING, rawSrcType)) {
-					return new Expr.StringAccess(src,index,lval.attributes());
-				} else if(Type.isSubtype(Type.List(Type.T_ANY,false), rawSrcType)) {
-					Expr.ListAccess la = new Expr.ListAccess(src,index,lval.attributes());
-					la.srcType = resolver.expandAsEffectiveList(src.result()); 			
-					return la;
-				} else  if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY), rawSrcType)) {
-					Expr.DictionaryAccess da = new Expr.DictionaryAccess(src,index,lval.attributes());
-					da.srcType = resolver.expandAsEffectiveDictionary(src.result());										
-					return da;
-				} else {				
+				Nominal.EffectiveMap srcType = resolver.expandAsEffectiveMap(src.result());
+				if(srcType == null) {
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
 				}
+				ai.srcType = srcType;
 			} else if(lval instanceof Expr.AbstractDotAccess) {
 				// this indicates a record update
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;

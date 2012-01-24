@@ -1137,7 +1137,7 @@ public final class WhileyParser {
 								index - 1));
 					} else {
 						match(RightSquare.class);							
-						lhs = new Expr.AbstractIndexAccess(lhs, rhs, sourceAttr(start,
+						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
 								index - 1));
 					}
 				} else if(lookahead instanceof Dot || lookahead instanceof RightArrow) {				

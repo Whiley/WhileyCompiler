@@ -37,7 +37,9 @@ public abstract class Nominal {
 	public static final Nominal T_STRING = new Strung(Type.T_STRING,Type.T_STRING);
 	
 	public static Nominal construct(Type nominal, Type raw) {
-		if(raw instanceof Type.Reference && nominal instanceof Type.Reference) {
+		if(raw instanceof Type.Strung && nominal instanceof Type.Strung) {
+			return new Strung((Type.Strung)nominal,(Type.Strung)raw);
+		} else if(raw instanceof Type.Reference && nominal instanceof Type.Reference) {
 			return new Reference((Type.Reference)nominal,(Type.Reference)raw);			
 		} else if(raw instanceof Type.Tuple && nominal instanceof Type.Tuple) {
 			return new Tuple((Type.Tuple)nominal,(Type.Tuple)raw);			
@@ -69,8 +71,6 @@ public abstract class Nominal {
 			return new Method((Type.Method)nominal,(Type.Method)raw);			
 		} else if(raw instanceof Type.Message && nominal instanceof Type.Message) {
 			return new Message((Type.Message)nominal,(Type.Message)raw);			
-		} else if(raw instanceof Type.Strung && nominal instanceof Type.Strung) {
-			return new Strung(nominal,raw);
 		} else {
 			return new Base(nominal,raw);
 		}
@@ -188,9 +188,19 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class Strung extends Base implements EffectiveCollection {
-		Strung(Type nominal, Type raw) {
-			super(nominal,raw);
+	public static final class Strung extends Nominal implements EffectiveMap {
+		private final Type.Strung raw;
+		private final Type.Strung nominal;
+		
+		Strung(Type.Strung nominal, Type.Strung raw) {
+			this.nominal = nominal;
+			this.raw = raw;
+		}
+		public Nominal key() {
+			return Nominal.T_INT;
+		}
+		public Nominal value() {
+			return Nominal.T_CHAR;
 		}
 		public Nominal element() {
 			return Nominal.T_CHAR;
@@ -201,6 +211,24 @@ public abstract class Nominal {
 		
 		public Type.Strung raw() {
 			return Type.T_STRING;
+		}
+		
+		public EffectiveMap update(Nominal key, Nominal value) {
+			return (EffectiveMap) construct(
+					(Type) nominal.update(key.nominal(), value.nominal()),
+					(Type) raw.update(key.raw(), value.raw()));
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Strung) {
+				Strung b = (Strung) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
 		}
 	}
 	
@@ -287,7 +315,8 @@ public abstract class Nominal {
 	public interface EffectiveMap extends EffectiveCollection {
 		public Type.EffectiveMap raw();		
 		public Type.EffectiveMap nominal();		
-		public Nominal element();					
+		public Nominal key();					
+		public Nominal value();
 		public EffectiveMap update(Nominal key,Nominal value);
 	}
 	

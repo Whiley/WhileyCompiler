@@ -268,25 +268,26 @@ public interface Expr extends SyntacticElement {
 	}
 
 	// A list access is very similar to a BinOp, except that it can be assiged.
-	public static class AbstractIndexAccess extends SyntacticElement.Impl implements
+	public static class IndexOf extends SyntacticElement.Impl implements
 			Expr, LVal {		
 		public Expr src;
-		public Expr index;		
+		public Expr index;	
+		public Nominal.EffectiveMap srcType;
 	
-		public AbstractIndexAccess(Expr src, Expr index, Attribute... attributes) {
+		public IndexOf(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
 		
-		public AbstractIndexAccess(Expr src, Expr index, Collection<Attribute> attributes) {
+		public IndexOf(Expr src, Expr index, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
 				
 		public Nominal result() {
-			return null;
+			return srcType.value();
 		}
 				
 		public String toString() {
@@ -294,52 +295,6 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class ListAccess extends AbstractIndexAccess {					
-		public Nominal.EffectiveList srcType;		
-
-		public ListAccess(Expr src, Expr index, Attribute... attributes) {
-			super(src,index,attributes);
-		}
-
-		public ListAccess(Expr src, Expr index, Collection<Attribute> attributes) {
-			super(src,index,attributes);			
-		}
-		
-		public Nominal result() {
-			return srcType.element();
-		}
-	}
-
-	public static class DictionaryAccess extends AbstractIndexAccess {				
-		public Nominal.EffectiveDictionary srcType;
-
-		public DictionaryAccess(Expr src, Expr index, Attribute... attributes) {
-			super(src,index,attributes);
-		}
-
-		public DictionaryAccess(Expr src, Expr index, Collection<Attribute> attributes) {
-			super(src,index,attributes);			
-		}		
-		
-		public Nominal result() {
-			return srcType.value();
-		}
-	}
-	
-	public static class StringAccess extends AbstractIndexAccess {				
-		public StringAccess(Expr src, Expr index, Attribute... attributes) {
-			super(src,index,attributes);			
-		}
-
-		public StringAccess(Expr src, Expr index, Collection<Attribute> attributes) {
-			super(src,index,attributes);			
-		}
-
-		public Nominal result() {
-			return Nominal.T_CHAR;
-		}
-	}
-	
 	public enum UOp {
 		NOT,
 		NEG,

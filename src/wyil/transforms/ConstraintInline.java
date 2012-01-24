@@ -166,10 +166,8 @@ public class ConstraintInline implements Transform {
 				return transform((Code.Invoke)code, freeSlot, entry);
 			} else if(code instanceof Code.Send) {
 
-			} else if(code instanceof Code.ListLoad) {
-				return transform((Code.ListLoad)code,freeSlot,entry);
-			} else if(code instanceof Code.DictLoad) {
-
+			} else if(code instanceof Code.IndexOf) {
+				return transform((Code.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Code.Update) {
 
 			} else if(code instanceof Code.BinOp) {
@@ -278,40 +276,32 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {		
-		Block blk = new Block(0);
-		// TODO: mark as check block
-		blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
-		blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
-		String falseLabel = Block.freshLabel();
-		String exitLabel = Block.freshLabel();
-		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-		blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
-		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-		blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
-		blk.append(Code.LengthOf(code.type),attributes(elem));
-		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
-		blk.append(Code.Label(falseLabel),attributes(elem));
-		blk.append(Code.Fail("index out of bounds"),attributes(elem));
-		blk.append(Code.Label(exitLabel),attributes(elem));
-		blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
-		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
-		return blk;		
+	public Block transform(Code.IndexOf code, int freeSlot, SyntacticElement elem) {		
+		if(code.type instanceof Type.EffectiveList) {
+			Block blk = new Block(0);
+			// TODO: mark as check block
+			blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
+			blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
+			String falseLabel = Block.freshLabel();
+			String exitLabel = Block.freshLabel();
+			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+			blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
+			blk.append(Code.LengthOf(code.type),attributes(elem));
+			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
+			blk.append(Code.Label(falseLabel),attributes(elem));
+			blk.append(Code.Fail("index out of bounds"),attributes(elem));
+			blk.append(Code.Label(exitLabel),attributes(elem));
+			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
+			return blk;		
+		} else {
+			return null; // FIXME
+		}
 	}
 
-	/**
-	 * For the dictload bytecode, we need to add a check that the key is
-	 * contained in the list.
-	 * 
-	 * @param code
-	 * @param elem
-	 * @return
-	 */
-	public Block transform(Code.DictLoad code, SyntacticElement elem) {
-		return null;
-	}
-	
 	/**
 	 * For the update bytecode, we need to add a check the indices of any lists 
 	 * used in the update are within bounds.
