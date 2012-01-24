@@ -79,7 +79,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Coercion_Valid_8_RuntimeTest() { runTest("Coercion_Valid_8"); }
  @Test public void Complex_Valid_1_RuntimeTest() { runTest("Complex_Valid_1"); }
  @Test public void Complex_Valid_2_RuntimeTest() { runTest("Complex_Valid_2"); }
- @Test public void Constant_Valid_1_RuntimeTest() { runTest("Constant_Valid_1"); }
+ @Ignore("Known Issue") @Test public void Constant_Valid_1_RuntimeTest() { runTest("Constant_Valid_1"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_2_RuntimeTest() { runTest("ConstrainedInt_Valid_2"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { runTest("ConstrainedInt_Valid_3"); }
@@ -255,6 +255,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void OpenRecord_Valid_6_RuntimeTest() { runTest("OpenRecord_Valid_6"); }
  @Test public void OpenRecord_Valid_7_RuntimeTest() { runTest("OpenRecord_Valid_7"); }
  @Test public void OpenRecord_Valid_8_RuntimeTest() { runTest("OpenRecord_Valid_8"); }
+ @Test public void OpenRecord_Valid_9_RuntimeTest() { runTest("OpenRecord_Valid_9"); }
  @Test public void Print_Valid_1_RuntimeTest() { runTest("Print_Valid_1"); }
  @Test public void ProcessAccess_Valid_1_RuntimeTest() { runTest("ProcessAccess_Valid_1"); }
  @Test public void ProcessAccess_Valid_2_RuntimeTest() { runTest("ProcessAccess_Valid_2"); }
@@ -428,8 +429,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_35_RuntimeTest() { runTest("TypeEquals_Valid_35"); }
  @Test public void TypeEquals_Valid_36_RuntimeTest() { runTest("TypeEquals_Valid_36"); }
  @Test public void TypeEquals_Valid_37_RuntimeTest() { runTest("TypeEquals_Valid_37"); }
- @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
- @Test public void Update_Valid_2_RuntimeTest() { runTest("Update_Valid_2"); }
+ @Ignore("Known Issue") @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
+ @Ignore("Known Issue") @Test public void Update_Valid_2_RuntimeTest() { runTest("Update_Valid_2"); }
  @Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
  @Test public void UnionType_Valid_4_RuntimeTest() { runTest("UnionType_Valid_4"); }
