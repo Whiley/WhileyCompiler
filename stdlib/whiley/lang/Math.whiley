@@ -112,15 +112,16 @@ int isqrt(int x) requires x >= 0, ensures $ >= 0:
         delta = delta + 2
     return (delta/2) - 1
 
-// The following is a first approximation at this.  It's not a great
-// algorithm, and should be replaced ASAP.
+// The following is a first approximation at this.  It computes the
+// square root of a number to within a given error threshold.
 public real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
-    root = isqrt(x)
+    error = -error
+    root = isqrt(x) + 1
     rem = 0.0
     do:
         rem = (real) x - (root*root)       
-        root = root + (rem / (0.5+root+root))
-    while rem > error
+        root = root + (rem / (root+root))
+    while rem < error
     return root
 
 public real sqrt(real x) requires x >= 0.0, ensures $ >= 0.0:
