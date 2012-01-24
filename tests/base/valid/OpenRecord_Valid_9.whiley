@@ -23,14 +23,13 @@ define CodeAttribute as {
  [Bytecode] data
 }
 
-null|int codeLength([Attribute] attributes):
-    for a in attributes:
-        if a is CodeAttribute:
-            return |a.data|
+null|int codeLength(Attribute a):
+    if a is CodeAttribute:
+        return |a.data|
     return null
 
 public void ::main(System.Console sys):
-    attrs = [{name: "Blah"},{name: "Code",data: [11101b]}]
-    sys.out.println(codeLength(attrs))
-    attrs = [{name: "Blah"},{name: "Other",index: 1}]
-    sys.out.println(codeLength(attrs))
+    attr = {name: "Code",data: [{offset: 1, op: 2}]}
+    sys.out.println(codeLength(attr))
+    attr = {name: "Blah"}
+    sys.out.println(codeLength(attr))

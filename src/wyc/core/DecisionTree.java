@@ -127,7 +127,7 @@ public final class DecisionTree {
 	 */
 	private Node root;
 	
-	public DecisionTree(Type type) {
+	public DecisionTree(Type type) {		
 		root = new Node(type,null);
 	}
 	

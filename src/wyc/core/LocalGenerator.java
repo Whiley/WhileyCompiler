@@ -232,17 +232,25 @@ public final class LocalGenerator {
 		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
 		Block constraint = global.generate(rhs.unresolvedType, context);
 		if(constraint != null) {
-			String exitLabel = Block.freshLabel();
+			String exitLabel = Block.freshLabel();			
 			Type glb = Type.intersect(v.srcType.raw(), Type.Negation(rhs.type.raw()));
+			
 			if(glb != Type.T_VOID) {
 				// Only put the actual type test in if it is necessary.
-				blk.append(Code.IfType(v.srcType.raw(), slot, glb, exitLabel),
-						attributes(v));			
+				String nextLabel = Block.freshLabel();
+				
+				// FIXME: should be able to just test the glb here and branch to
+				// exit label directly. However, this currently doesn't work
+				// because of limitations with intersection of open records.
+				
+				blk.append(Code.IfType(v.srcType.raw(), slot, rhs.type.raw(), nextLabel),
+						attributes(v));		
+				blk.append(Code.Goto(exitLabel));
+				blk.append(Code.Label(nextLabel));
 			}
 			// FIXME: I think there's a bug here when slot == -1
 			constraint = shiftBlockExceptionZero(environment.size()-1,slot,constraint);
 			blk.append(chainBlock(exitLabel,constraint)); 
-
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {

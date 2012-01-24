@@ -987,7 +987,7 @@ public class ClassFileBuilder {
 			Type gdiff = Type.intersect(c.type,Type.Negation(c.test));			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcast									
-			addReadConversion(gdiff,bytecodes);
+			addReadConversion(gdiff,bytecodes);			
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));			
