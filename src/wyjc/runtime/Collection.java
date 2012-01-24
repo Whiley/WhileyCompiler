@@ -54,4 +54,19 @@ public class Collection {
 			return string.charAt(index++);			
 		}
 	}
+	
+	public static Object indexOf(Object col, Object key) {
+		if(col instanceof List) {
+			List l = (List) col;
+			BigInteger index = (BigInteger) key;
+			return l.get(index.intValue());
+		} else if(col instanceof Dictionary) {
+			Dictionary d = (Dictionary) col;			
+			return d.get(key);
+		} else {
+			String s = (String) col;
+			BigInteger index = (BigInteger) key;
+			return s.charAt(index.intValue());
+		}
+	}
 }

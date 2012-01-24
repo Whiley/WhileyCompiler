@@ -1203,12 +1203,10 @@ public class ClassFileBuilder {
 	public void translate(Code.IndexOf c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
-		// FIXME: BROKEN!
-		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-				WHILEYLIST, BIG_INTEGER);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-				Bytecode.STATIC));		
+				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "indexOf", ftype,
+				Bytecode.STATIC));
 		addReadConversion(c.type.element(), bytecodes);
 	}
 	
