@@ -34,6 +34,7 @@ public class RuntimeValidTests extends TestHarness {
  }
 
  @Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }
+ @Test public void Access_Valid_2_RuntimeTest() { runTest("Access_Valid_2"); }
  @Test public void BoolAssign_Valid_1_RuntimeTest() { runTest("BoolAssign_Valid_1"); }
  @Test public void BoolAssign_Valid_2_RuntimeTest() { runTest("BoolAssign_Valid_2"); }
  @Test public void BoolAssign_Valid_3_RuntimeTest() { runTest("BoolAssign_Valid_3"); }
@@ -428,6 +429,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_36_RuntimeTest() { runTest("TypeEquals_Valid_36"); }
  @Test public void TypeEquals_Valid_37_RuntimeTest() { runTest("TypeEquals_Valid_37"); }
  @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
+ @Test public void Update_Valid_2_RuntimeTest() { runTest("Update_Valid_2"); }
  @Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
  @Test public void UnionType_Valid_4_RuntimeTest() { runTest("UnionType_Valid_4"); }
