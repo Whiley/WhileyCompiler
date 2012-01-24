@@ -147,6 +147,19 @@ public final class List extends java.util.ArrayList {
 		}							
 	}
 	
+	public static java.util.Iterator iterator(Object col) {				
+		Util.decRefs(col);
+		if(col instanceof java.util.Collection) {
+			java.util.Collection c = (java.util.Collection) col;
+			return c.iterator();
+		} else if (col instanceof java.util.Map) {
+			java.util.Map m = (java.util.Map) col;
+			return m.entrySet().iterator();
+		} else {
+			throw new RuntimeException("Need to support string iterator");
+		}
+	}
+	
 	public static BigInteger length(Object col) {				
 		Util.decRefs(col);
 		if(col instanceof java.util.Collection) {
@@ -159,7 +172,7 @@ public final class List extends java.util.ArrayList {
 			String s = (String) col;
 			return BigInteger.valueOf(s.length());
 		}
-	}
+	}		
 	
 	public static BigInteger length(List list) {				
 		Util.decRefs(list);

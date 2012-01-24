@@ -1064,23 +1064,16 @@ public class ClassFileBuilder {
 	
 	public int translate(Code.ForAll c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
-		JvmType.Clazz srcType = (JvmType.Clazz) convertType((Type) c.type);
-		Type elementType;
-
-		if (c.type instanceof Type.EffectiveSet) {
-			elementType = ((Type.EffectiveSet) c.type).element();
-		} else if(c.type instanceof Type.EffectiveList) {
-			elementType = ((Type.EffectiveList) c.type).element();
-		} else if(c.type instanceof Type.EffectiveDictionary) {
-			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) c.type;
-			elementType = Type.Tuple(dict.key(),dict.value());
-		} else {
-			// FIXME: BROKEN!!!
+		if(c.type == Type.T_STRING) {
+			// FIXME: bug here for e.g. string|[int] types
 			return translateForAllString(c,freeSlot,bytecodes);
 		}
+					
+		Type elementType = c.type.element();		
 
-		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
-		bytecodes.add(new Bytecode.Invoke(srcType, "iterator", ftype, Bytecode.VIRTUAL));
+		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "iterator", ftype, Bytecode.STATIC));
+		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
 		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
 		bytecodes.add(new Bytecode.Label(c.target + "$head"));
 		ftype = new JvmType.Function(T_BOOL);
@@ -2798,10 +2791,10 @@ public class ClassFileBuilder {
 			return WHILEYMAP;
 		} else if(t instanceof Type.EffectiveRecord) {
 			return WHILEYRECORD;
-		} else if(t instanceof Type.Reference) {
-			return WHILEYPROCESS;
 		} else if(t instanceof Type.EffectiveTuple) {
 			return WHILEYTUPLE;
+		} else if(t instanceof Type.Reference) {
+			return WHILEYPROCESS;
 		} else if(t instanceof Type.Negation) {
 			// can we do any better?
 			return JAVA_LANG_OBJECT;
