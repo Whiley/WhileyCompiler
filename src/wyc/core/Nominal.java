@@ -37,39 +37,90 @@ public abstract class Nominal {
 	public static final Nominal T_STRING = new Strung(Type.T_STRING,Type.T_STRING);
 	
 	public static Nominal construct(Type nominal, Type raw) {
-		if(raw instanceof Type.Strung && nominal instanceof Type.Strung) {
+		if(raw instanceof Type.Strung) {
+			if(!(nominal instanceof Type.Strung)) {
+				nominal = raw;
+			}
 			return new Strung((Type.Strung)nominal,(Type.Strung)raw);
-		} else if(raw instanceof Type.Reference && nominal instanceof Type.Reference) {
+		} else if(raw instanceof Type.Reference) {
+			if(!(nominal instanceof Type.Reference)) {
+				nominal = raw;
+			}
 			return new Reference((Type.Reference)nominal,(Type.Reference)raw);			
-		} else if(raw instanceof Type.Tuple && nominal instanceof Type.Tuple) {
+		} else if(raw instanceof Type.Tuple) {
+			if(!(nominal instanceof Type.Tuple)) {
+				nominal = raw;
+			}
 			return new Tuple((Type.Tuple)nominal,(Type.Tuple)raw);			
-		} else if(raw instanceof Type.UnionOfTuples && nominal instanceof Type.UnionOfTuples) {
+		} else if(raw instanceof Type.UnionOfTuples) {
+			if(!(nominal instanceof Type.UnionOfTuples)) {
+				nominal = raw;
+			}
 			return new UnionOfTuples((Type.UnionOfTuples)nominal,(Type.UnionOfTuples)raw);			
-		} else if(raw instanceof Type.Set && nominal instanceof Type.Set) { 
+		} else if(raw instanceof Type.Set) { 
+			if(!(nominal instanceof Type.Set)) {
+				nominal = raw;
+			}
 			return new Set((Type.Set)nominal,(Type.Set)raw);					
-		} else if(raw instanceof Type.UnionOfSets && nominal instanceof Type.UnionOfSets) {
+		} else if(raw instanceof Type.UnionOfSets) {
+			if(!(nominal instanceof Type.UnionOfSets)) {
+				nominal = raw;
+			}
 			return new UnionOfSets((Type.UnionOfSets)nominal,(Type.UnionOfSets)raw);			
-		} else if(raw instanceof Type.List && nominal instanceof Type.List) {
+		} else if(raw instanceof Type.List) {
+			if(!(nominal instanceof Type.List)) {
+				nominal = raw;
+			}
 			return new List((Type.List)nominal,(Type.List)raw);			
-		} else if(raw instanceof Type.UnionOfLists && nominal instanceof Type.UnionOfLists) {
-			return new UnionOfLists((Type.UnionOfLists)nominal,(Type.UnionOfLists)raw);			
-		}  else if(raw instanceof Type.Dictionary && nominal instanceof Type.Dictionary) {
+		} else if(raw instanceof Type.UnionOfLists) {
+			if(!(nominal instanceof Type.UnionOfLists)) {
+				nominal = raw;
+			}
+			return new UnionOfLists((Type.UnionOfLists)raw,(Type.UnionOfLists)raw);			
+		} else if(raw instanceof Type.Dictionary) {
+			if(!(nominal instanceof Type.Dictionary)) {
+				nominal = raw;
+			}
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
-		} else if(raw instanceof Type.UnionOfDictionaries && nominal instanceof Type.UnionOfDictionaries) {
+		} else if(raw instanceof Type.UnionOfDictionaries) {
+			if(!(nominal instanceof Type.UnionOfDictionaries)) {
+				nominal = raw;
+			}
 			return new UnionOfDictionaries((Type.UnionOfDictionaries)nominal,(Type.UnionOfDictionaries)raw);
-		} else if(raw instanceof Type.UnionOfMaps && nominal instanceof Type.UnionOfMaps) {
+		} else if(raw instanceof Type.UnionOfMaps) {
+			if(!(nominal instanceof Type.UnionOfMaps)) {
+				nominal = raw;
+			}
 			return new UnionOfMaps((Type.UnionOfMaps)nominal,(Type.UnionOfMaps)raw);			
-		}else if(raw instanceof Type.UnionOfCollections && nominal instanceof Type.UnionOfCollections) {
+		} else if(raw instanceof Type.UnionOfCollections) {
+			if(!(nominal instanceof Type.UnionOfCollections)) {
+				nominal = raw;
+			}
 			return new UnionOfCollections((Type.UnionOfCollections)nominal,(Type.UnionOfCollections)raw);			
-		} else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
+		} else if(raw instanceof Type.Record) {
+			if(!(nominal instanceof Type.Record)) {
+				nominal = raw;
+			}
 			return new Record((Type.Record)nominal,(Type.Record)raw);		
-		} else if(raw instanceof Type.UnionOfRecords && nominal instanceof Type.UnionOfRecords) {
+		} else if(raw instanceof Type.UnionOfRecords) {
+			if(!(nominal instanceof Type.UnionOfRecords)) {
+				nominal = raw;
+			}
 			return new UnionOfRecords((Type.UnionOfRecords)nominal,(Type.UnionOfRecords)raw);		
-		} else if(raw instanceof Type.Function && nominal instanceof Type.Function) {
+		} else if(raw instanceof Type.Function) {
+			if(!(nominal instanceof Type.Function)) {
+				nominal = raw;
+			}
 			return new Function((Type.Function)nominal,(Type.Function)raw);			
-		} else if(raw instanceof Type.Method && nominal instanceof Type.Method) {
+		} else if(raw instanceof Type.Method) {
+			if(!(nominal instanceof Type.Method)) {
+				nominal = raw;
+			}
 			return new Method((Type.Method)nominal,(Type.Method)raw);			
-		} else if(raw instanceof Type.Message && nominal instanceof Type.Message) {
+		} else if(raw instanceof Type.Message) {
+			if(!(nominal instanceof Type.Message)) {
+				nominal = raw;
+			}
 			return new Message((Type.Message)nominal,(Type.Message)raw);			
 		} else {
 			return new Base(nominal,raw);
@@ -356,8 +407,9 @@ public abstract class Nominal {
 		}
 		
 		public Nominal.EffectiveMap update(Nominal key, Nominal value) {
-			return (EffectiveMap) construct((Type) nominal.update(key.nominal(), value.nominal()),
-					(Type) raw.update(key.raw(), value.raw()));
+			Type n = (Type) nominal.update(key.nominal(), value.nominal());
+			Type r = (Type) raw.update(key.raw(), value.raw());			
+			return (EffectiveMap) construct(n,r);
 		}
 		
 		public boolean equals(Object o) {
