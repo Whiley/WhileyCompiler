@@ -55,9 +55,11 @@ public abstract class Nominal {
 			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
 		} else if(raw instanceof Type.UnionOfDictionaries && nominal instanceof Type.UnionOfDictionaries) {
 			return new UnionOfDictionaries((Type.UnionOfDictionaries)nominal,(Type.UnionOfDictionaries)raw);
-		} else if(raw instanceof Type.UnionOfCollections && nominal instanceof Type.UnionOfCollections) {
+		} else if(raw instanceof Type.UnionOfMaps && nominal instanceof Type.UnionOfMaps) {
+			return new UnionOfMaps((Type.UnionOfMaps)nominal,(Type.UnionOfMaps)raw);			
+		}else if(raw instanceof Type.UnionOfCollections && nominal instanceof Type.UnionOfCollections) {
 			return new UnionOfCollections((Type.UnionOfCollections)nominal,(Type.UnionOfCollections)raw);			
-		}else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
+		} else if(raw instanceof Type.Record && nominal instanceof Type.Record) {
 			return new Record((Type.Record)nominal,(Type.Record)raw);		
 		} else if(raw instanceof Type.UnionOfRecords && nominal instanceof Type.UnionOfRecords) {
 			return new UnionOfRecords((Type.UnionOfRecords)nominal,(Type.UnionOfRecords)raw);		
@@ -282,11 +284,17 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveList extends EffectiveCollection {
+	public interface EffectiveMap extends EffectiveCollection {
+		public Type.EffectiveMap raw();		
+		public Type.EffectiveMap nominal();		
+		public Nominal element();					
+		public EffectiveMap update(Nominal key,Nominal value);
+	}
+	
+	public interface EffectiveList extends EffectiveMap {
 		public Type.EffectiveList raw();		
 		public Type.EffectiveList nominal();		
-		public Nominal element();					
-		public EffectiveList update(Nominal type);
+		public Nominal element();							
 	}
 	
 	public static final class List extends Nominal implements EffectiveList {
@@ -306,12 +314,21 @@ public abstract class Nominal {
 			return raw;
 		}
 		
+		public Nominal key() {
+			return T_INT;
+		}
+		
+		public Nominal value() {
+			return element();
+		}
+		
 		public Nominal element() {
 			return construct(nominal.element(),raw.element());			
 		}
 		
-		public Nominal.List update(Nominal element) {
-			return Nominal.List(Nominal.Union(element(), element),raw.nonEmpty());
+		public Nominal.EffectiveMap update(Nominal key, Nominal value) {
+			return (EffectiveMap) construct((Type) nominal.update(key.nominal(), value.nominal()),
+					(Type) raw.update(key.raw(), value.raw()));
 		}
 		
 		public boolean equals(Object o) {
@@ -327,7 +344,7 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveDictionary extends EffectiveCollection {
+	public interface EffectiveDictionary extends EffectiveMap {
 		public Type.EffectiveDictionary raw();		
 		public Type.EffectiveDictionary nominal();		
 		public Nominal key();					
@@ -546,6 +563,53 @@ public abstract class Nominal {
 		}
 	}
 	
+	public static final class UnionOfMaps extends Nominal implements EffectiveMap {
+		private final Type.UnionOfMaps nominal;
+		private final Type.UnionOfMaps raw;
+		
+		UnionOfMaps(Type.UnionOfMaps nominal, Type.UnionOfMaps raw) {
+			this.nominal = nominal;
+			this.raw = raw;
+		}
+		
+		public Type.UnionOfMaps nominal() {
+			return nominal;
+		}
+		
+		public Type.UnionOfMaps raw() {
+			return raw;
+		}
+			
+		public Nominal key() {
+			return construct(nominal.key(),raw.key());
+		}
+		
+		public Nominal value() {
+			return construct(nominal.value(),raw.value());			
+		}
+		
+		public Nominal element() {
+			return construct(nominal.element(),raw.element());			
+		}
+		
+		public Nominal.EffectiveMap update(Nominal key, Nominal value) {
+			return (EffectiveMap) construct((Type) nominal.update(key.nominal(), value.nominal()),
+					(Type) raw.update(key.raw(), value.raw()));
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof UnionOfMaps) {
+				UnionOfMaps b = (UnionOfMaps) o;
+				return nominal.equals(b.nominal()) && raw.equals(b.raw());
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return raw.hashCode();
+		}
+	}
+	
 	public static final class UnionOfSets extends Nominal implements EffectiveSet {
 		private final Type.UnionOfSets nominal;
 		private final Type.UnionOfSets raw;
@@ -644,15 +708,22 @@ public abstract class Nominal {
 		public Type.UnionOfLists raw() {
 			return raw;
 		}
-				
+			
+		public Nominal key() {
+			return T_INT;
+		}
+		
+		public Nominal value() {
+			return element();
+		}
+		
 		public Nominal element() {
 			return construct(nominal.element(),raw.element());			
 		}
 		
-		public EffectiveList update(Nominal type) {
-			Type.EffectiveList n = nominal.update(type.nominal());
-			Type.EffectiveList r = raw.update(type.raw());
-			return (EffectiveList) construct((Type) n, (Type)r);
+		public Nominal.EffectiveMap update(Nominal key, Nominal value) {
+			return (EffectiveMap) construct((Type) nominal.update(key.nominal(), value.nominal()),
+					(Type) raw.update(key.raw(), value.raw()));
 		}
 		
 		public boolean equals(Object o) {

@@ -356,7 +356,7 @@ public final class FlowTyping {
 		} else if (lv instanceof Expr.ListAccess) {
 			Expr.ListAccess la = (Expr.ListAccess) lv;
 			Nominal.EffectiveList srcType = la.srcType;
-			afterType = (Nominal) srcType.update(afterType);								
+			afterType = (Nominal) srcType.update(Nominal.T_INT,afterType);								
 			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else if(lv instanceof Expr.DictionaryAccess)  {
 			Expr.DictionaryAccess da = (Expr.DictionaryAccess) lv;		

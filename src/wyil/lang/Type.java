@@ -826,19 +826,38 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Strung extends Leaf implements EffectiveCollection {
+	public static final class Strung extends Leaf implements EffectiveMap {
 		private Strung() {}
 		public boolean equals(Object o) {
 			return o == T_STRING;
 		}
+		
+		public Type key() {
+			return T_INT;
+		}
+		
+		public Type value() {
+			return T_CHAR;
+		}
+		
 		public Type element() {
 			return T_CHAR;
 		}
+		
 		public int hashCode() {
 			return 6;
 		}
+		
 		public String toString() {
 			return "string";
+		}
+		
+		public EffectiveMap update(Type key, Type value) {
+			if(key == T_INT && value == T_CHAR) {
+				return this;
+			} else {
+				return Dictionary(Type.Union(key,T_INT),Type.Union(value,T_CHAR));
+			}
 		}
 	}
 	
@@ -993,6 +1012,29 @@ public abstract class Type {
 	}
 	
 	/**
+	 * A type which is either a list, dictionary, string or a union of such
+	 * types. An effective collection gives access to an effective element type,
+	 * which is the union of possible key and value types, and allows them to be
+	 * updated.
+	 * 
+	 * <pre>
+	 * {int=>string} | [real]
+	 * </pre>
+	 * 
+	 * Here, the effective key type is int, whilst the effective value type is
+	 * string|real.
+	 * 
+	 * @return
+	 */
+	public interface EffectiveMap extends EffectiveCollection {		
+		public Type key();
+		
+		public Type value();
+		
+		public EffectiveMap update(Type key, Type Value);
+	}
+	
+	/**
 	 * A type which is either a set, or a union of sets. An effective set gives
 	 * access to an effective element type, which is the union of possible
 	 * element types.
@@ -1043,11 +1085,10 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveList extends EffectiveCollection {
+	public interface EffectiveList extends EffectiveMap {
 		
 		public Type element();
-		
-		public EffectiveList update(Type type);
+	
 	}
 	
 	/**
@@ -1063,6 +1104,14 @@ public abstract class Type {
 			super(automaton);
 		}
 		
+		public Type key() {
+			return Type.T_INT;
+		}
+		
+		public Type value() {
+			return element();
+		}
+		
 		public Type element() {			
 			int elemIdx = automaton.states[0].children[0];
 			return construct(Automata.extract(automaton,elemIdx));	
@@ -1072,8 +1121,12 @@ public abstract class Type {
 			return (Boolean) automaton.states[0].data;
 		}
 		
-		public List update(Type type) {
-			return Type.List(Type.Union(type, element()), nonEmpty());
+		public EffectiveMap update(Type key, Type value) {
+			if(key == T_INT) {
+				return Type.List(Type.Union(value, element()), nonEmpty());
+			} else {
+				return Type.Dictionary(Type.Union(T_INT,key),Type.Union(value, element()));
+			}
 		}
 	}
 
@@ -1106,7 +1159,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveDictionary extends EffectiveCollection {
+	public interface EffectiveDictionary extends EffectiveMap {
 		
 		public Type key();
 		
@@ -1317,6 +1370,14 @@ public abstract class Type {
 			super(automaton);
 		}
 		
+		public Type key() {
+			return T_INT;
+		}
+		
+		public Type value() {
+			return element();
+		}
+		
 		public Type element() {
 			Type r = null;
 			HashSet<Type.List> bounds = (HashSet) bounds();
@@ -1331,11 +1392,11 @@ public abstract class Type {
 			return r;
 		}
 		
-		public EffectiveList update(Type type) {
+		public EffectiveMap update(Type key, Type type) {
 			HashSet<Type> nbounds = new HashSet<Type>();
 			HashSet<Type.List> bounds = (HashSet) bounds();
 			for(Type.List bound : bounds) {
-				nbounds.add(bound.update(type));
+				nbounds.add((Type) bound.update(key,type));
 			}			
 			
 			// we can only safely return an EffectiveList here since an update
@@ -1345,7 +1406,73 @@ public abstract class Type {
 			//
 			// assigning type any into this yields [any]
 			
-			return (EffectiveList) Type.Union(nbounds);
+			return (EffectiveMap) Type.Union(nbounds);
+		}
+	}
+	
+	public static final class UnionOfMaps extends Union
+	implements EffectiveMap {
+		private UnionOfMaps(Automaton automaton) {
+			super(automaton);
+		}
+
+		public Type key() {
+			Type r = null;
+			HashSet<EffectiveMap> bounds = (HashSet) bounds();
+			for (EffectiveMap bound : bounds) {
+				Type t = bound.key();
+				if (r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r, t);
+				}
+			}
+			return r;
+		}
+		
+		public Type value() {
+			Type r = null;
+			HashSet<EffectiveMap> bounds = (HashSet) bounds();
+			for (EffectiveMap bound : bounds) {
+				Type t = bound.value();
+				if (r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r, t);
+				}
+			}
+			return r;
+		}
+		
+		public Type element() {
+			Type r = null;
+			HashSet<EffectiveMap> bounds = (HashSet) bounds();
+			for (EffectiveMap bound : bounds) {
+				Type t = bound.element();
+				if (r == null || t == null) {
+					r = t;
+				} else {
+					r = Type.Union(r, t);
+				}
+			}
+			return r;
+		}
+		
+		public EffectiveMap update(Type key, Type type) {
+			HashSet<Type> nbounds = new HashSet<Type>();
+			HashSet<Type.List> bounds = (HashSet) bounds();
+			for(Type.List bound : bounds) {
+				nbounds.add((Type) bound.update(key,type));
+			}			
+			
+			// we can only safely return an EffectiveList here since an update
+			// can fold multiple lists into one.  For example:
+			//
+			// [int]|[real] 
+			//
+			// assigning type any into this yields [any]
+			
+			return (EffectiveMap) Type.Union(nbounds);
 		}
 	}
 	
@@ -2082,6 +2209,7 @@ public abstract class Type {
 			boolean allLists = true;
 			boolean allDictionaries = true;
 			boolean allSets = true;			
+			boolean allMaps = true;
 			boolean allCollections = true;
 			boolean allTuples = true;
 			Type.Union union = new Union(automaton);
@@ -2094,6 +2222,7 @@ public abstract class Type {
 				allSets &= isSet;
 				allLists &= isList;
 				allDictionaries &= isDictionary;				
+				allMaps &= isList || isDictionary || isString;
 				allCollections &= isSet || isList || isDictionary || isString;
 				allTuples &= bound instanceof Tuple;
 			}
@@ -2103,6 +2232,8 @@ public abstract class Type {
 				type = new UnionOfDictionaries(automaton);
 			} else if(allLists) {
 				type = new UnionOfLists(automaton);
+			} else if(allMaps) {
+				type = new UnionOfMaps(automaton);
 			} else if(allCollections) {
 				type = new UnionOfCollections(automaton);
 			} else if(allTuples) {
