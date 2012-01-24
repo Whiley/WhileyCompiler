@@ -1064,15 +1064,11 @@ public class ClassFileBuilder {
 	
 	public int translate(Code.ForAll c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
-		if(c.type == Type.T_STRING) {
-			// FIXME: bug here for e.g. string|[int] types
-			return translateForAllString(c,freeSlot,bytecodes);
-		}
-					
+		
 		Type elementType = c.type.element();		
 
 		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR,JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "iterator", ftype, Bytecode.STATIC));
+		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "iterator", ftype, Bytecode.STATIC));
 		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
 		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
 		bytecodes.add(new Bytecode.Label(c.target + "$head"));
@@ -1093,35 +1089,7 @@ public class ClassFileBuilder {
 		
 		return freeSlot + 1;
 	}
-
-	public int translateForAllString(Code.ForAll c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {			
-		int srcSlot = freeSlot++;		
-		int indexSlot = freeSlot++;		
-		bytecodes.add(new Bytecode.Store(srcSlot, JAVA_LANG_STRING));
-		bytecodes.add(new Bytecode.LoadConst(0));
-		bytecodes.add(new Bytecode.Store(indexSlot, T_INT));
-		bytecodes.add(new Bytecode.Label(c.target + "$head"));
-		bytecodes.add(new Bytecode.Load(indexSlot, T_INT));		
-		bytecodes.add(new Bytecode.Load(srcSlot, JAVA_LANG_STRING));
-		JvmType.Function ftype = new JvmType.Function(T_INT);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "length", ftype,
-				Bytecode.VIRTUAL));		
-		bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GE, T_INT, c.target));
-		bytecodes.add(new Bytecode.Load(srcSlot, JAVA_LANG_STRING));
-		bytecodes.add(new Bytecode.Load(indexSlot, T_INT));
-		ftype = new JvmType.Function(T_CHAR,T_INT);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
-				Bytecode.VIRTUAL));		
-		bytecodes.add(new Bytecode.Store(c.slot, T_CHAR));
-		bytecodes.add(new Bytecode.Iinc(indexSlot,1));
-		
-		// we need to increase the freeSlot, since we've allocated one slot to
-		// hold the register.
-		
-		return freeSlot;
-	}
-
+	
 	public void translate(Code.Goto c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Goto(c.target));
@@ -1233,7 +1201,7 @@ public class ClassFileBuilder {
 		// refactor the collections library then it can be fixed properly.
 		JvmType.Clazz ctype = JAVA_LANG_OBJECT;
 		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,ctype);						
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "length",
+		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "length",
 				ftype, Bytecode.STATIC));								
 	}
 	
@@ -2725,9 +2693,10 @@ public class ClassFileBuilder {
 			});
 		
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
-	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
+	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");	
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");
 	public final static JvmType.Clazz WHILEYTUPLE = new JvmType.Clazz("wyjc.runtime","Tuple");
+	public final static JvmType.Clazz WHILEYCOLLECTION = new JvmType.Clazz("wyjc.runtime","Collection");
 	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz("wyjc.runtime","Type");	
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("wyjc.runtime","Dictionary");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","Record");	
