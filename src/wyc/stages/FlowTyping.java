@@ -351,7 +351,6 @@ public final class FlowTyping {
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
 			Nominal.EffectiveMap srcType = la.srcType;
-			checkIsSubtype(srcType.value(),afterType,lv);
 			afterType = (Nominal) srcType.update(la.index.result(), afterType);
 			return inferAfterType((Expr.LVal) la.src, 
 					afterType);
