@@ -102,8 +102,8 @@ public final class CodeGeneration {
 		globalGenerator = new GlobalGenerator(loader,resolver,files);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();
-		for(WhileyFile wf : files) {
-			modules.add(generate(wf));
+		for(WhileyFile wf : files) {			
+			modules.add(generate(wf));			
 		}
 		return modules;
 	}

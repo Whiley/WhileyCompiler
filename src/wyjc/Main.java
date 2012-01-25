@@ -103,7 +103,7 @@ public class Main {
 	 * The command-line options accepted by the main method.
 	 */
 	public static final OptArg[] options = new OptArg[] {
-			new OptArg("version", "Print version information"),
+			new OptArg("version", "Print version information"),			
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("whileypath", "wp", PATHLIST,
@@ -121,7 +121,11 @@ public class Main {
 			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("C", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
-			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage") };
+			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage"),
+			new OptArg(
+					"pause",
+					"Do not start compiling until character read from input stream (this is to allow time for visualvm to connect)"),	
+		};
 
 	/**
 	 * In the case that no explicit bootpath has been specified on the
@@ -247,7 +251,16 @@ public class Main {
 			OptArg.usage(System.out, options);
 			System.exit(1);
 		}
+		
+		if(values.containsKey("pause")) {
+			System.out.println("Press any key to begin...");
+			try {
+				System.in.read();
+			} catch(IOException e) {
 				
+			}
+		}
+		
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
 		String outputdir = (String) values.get("outputdir");
