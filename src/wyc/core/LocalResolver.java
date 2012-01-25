@@ -418,10 +418,10 @@ public abstract class LocalResolver extends AbstractResolver {
 		Type lhsRawType = lhs.result().raw();
 		Type rhsRawType = rhs.result().raw();
 	
-		boolean lhs_set = Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),lhsRawType);
-		boolean rhs_set = Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY, false),rhsRawType);		
-		boolean lhs_list = Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),lhsRawType);
-		boolean rhs_list = Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY, false),rhsRawType);
+		boolean lhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,lhsRawType);
+		boolean rhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,rhsRawType);		
+		boolean lhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,lhsRawType);
+		boolean rhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,rhsRawType);
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhsRawType);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsRawType);
 		
@@ -441,8 +441,8 @@ public abstract class LocalResolver extends AbstractResolver {
 			
 			srcType = Type.T_STRING;
 		} else if(lhs_list && rhs_list) {
-			checkIsSubtype(Type.List(Type.T_ANY,false),lhs,context);
-			checkIsSubtype(Type.List(Type.T_ANY,false),rhs,context);
+			checkIsSubtype(Type.T_LIST_ANY,lhs,context);
+			checkIsSubtype(Type.T_LIST_ANY,rhs,context);
 			Type.EffectiveList lel = (Type.EffectiveList) lhsRawType;
 			Type.EffectiveList rel = (Type.EffectiveList) rhsRawType;
 			
@@ -1028,7 +1028,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		expr.start = resolve(expr.start,environment,context);
 		expr.end = resolve(expr.end,environment,context);
 		
-		checkIsSubtype(Type.List(Type.T_ANY, false),expr.src,context);
+		checkIsSubtype(Type.T_LIST_ANY,expr.src,context);
 		checkIsSubtype(Type.T_INT,expr.start,context);
 		checkIsSubtype(Type.T_INT,expr.end,context);
 		

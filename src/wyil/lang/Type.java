@@ -37,6 +37,33 @@ import wyjvm.io.*;
  * 
  */
 public abstract class Type {
+	// =============================================================
+	// Debug Code
+	// =============================================================
+
+	private static final HashSet<Type> distinctTypes = new HashSet<Type>();
+	
+	private static boolean canonicalisation = true;
+	private static int equalsCount = 0;	
+	private static int normalisedCount = 0;
+	private static int unminimisedCount = 0;
+	private static int minimisedCount = 0;	
+
+//	static {
+//		Thread _shutdownHook = new Thread(Type.class.getName()
+//				+ ".shutdownHook") {
+//			public void run() {
+//				shutdown();
+//			}
+//		};
+//		Runtime.getRuntime().addShutdownHook(_shutdownHook);
+//	}
+	
+	public static void shutdown() {
+		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);	
+		System.err.println("#TYPE NORMALISATIONS: " + normalisedCount + " (" + unminimisedCount + " -> " + minimisedCount +")");
+		System.err.println("#DISTINCT TYPES: " + distinctTypes.size());
+	}
 	
 	// =============================================================
 	// Type Constructors
@@ -52,6 +79,24 @@ public abstract class Type {
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();	
 	public static final Meta T_META = new Meta();
+	
+	// the following are strictly unnecessary, but since they occur very
+	// commonly it is helpful to provide them as constants.
+	
+	/**
+	 * The type representing all possible set types.
+	 */
+	public static final Set T_SET_ANY = Set(T_ANY,false);
+	
+	/**
+	 * The type representing all possible list types.
+	 */
+	public static final List T_LIST_ANY = List(T_ANY,false);
+	
+	/**
+	 * The type representing all possible dictionary types.
+	 */
+	public static final Dictionary T_DICT_ANY = Dictionary(T_ANY,T_ANY);
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -2436,30 +2481,7 @@ public abstract class Type {
 			values.add(type);
 			return type;
 		}
-	}
-
-	private static boolean canonicalisation = true;
-	private static int equalsCount = 0;	
-	private static int normalisedCount = 0;
-	private static int unminimisedCount = 0;
-	private static int minimisedCount = 0;
-	private static final HashSet<Type> distinctTypes = new HashSet<Type>();
-
-//	static {
-//		Thread _shutdownHook = new Thread(Type.class.getName()
-//				+ ".shutdownHook") {
-//			public void run() {
-//				shutdown();
-//			}
-//		};
-//		Runtime.getRuntime().addShutdownHook(_shutdownHook);
-//	}
-	
-	public static void shutdown() {
-		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);	
-		System.err.println("#TYPE NORMALISATIONS: " + normalisedCount + " (" + unminimisedCount + " -> " + minimisedCount +")");
-		System.err.println("#DISTINCT TYPES: " + distinctTypes.size());
-	}
+	}	
 	
 	public static void main(String[] args) {
 		//Type from = fromString("(null,null)");
