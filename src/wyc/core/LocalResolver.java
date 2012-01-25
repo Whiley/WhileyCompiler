@@ -272,8 +272,8 @@ public abstract class LocalResolver extends AbstractResolver {
 		case GTEQ:
 		case GT:
 			if(op == Expr.BOp.SUBSET || op == Expr.BOp.SUBSETEQ) {
-				checkIsSubtype(Type.Set(Type.T_ANY,false),lhs,context);
-				checkIsSubtype(Type.Set(Type.T_ANY,false),rhs,context);
+				checkIsSubtype(Type.T_SET_ANY,lhs,context);
+				checkIsSubtype(Type.T_SET_ANY,rhs,context);
 			} else {
 				checkIsSubtype(Type.T_REAL,lhs,context);
 				checkIsSubtype(Type.T_REAL,rhs,context);
@@ -457,8 +457,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return null; // dead-code
 			}										
 		} else if(lhs_set && rhs_set) {	
-			checkIsSubtype(Type.Set(Type.T_ANY,false),lhs,context);
-			checkIsSubtype(Type.Set(Type.T_ANY,false),rhs,context);						
+			checkIsSubtype(Type.T_SET_ANY,lhs,context);
+			checkIsSubtype(Type.T_SET_ANY,rhs,context);						
 			
 			// FIXME: something tells me there should be a function for doing
 			// this.  Perhaps effectiveSetType?
