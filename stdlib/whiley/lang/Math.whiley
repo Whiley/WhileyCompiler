@@ -124,6 +124,6 @@ public real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
     while rem < error
     return root
 
-public real sqrt(real x) requires x >= 0.0, ensures $ >= 0.0:
+public real sqrt(real x, real error) requires x >= 0.0, ensures $ >= 0.0:
     numerator,denominator = x
-    return sqrt(numerator) / sqrt(denominator)
+    return sqrt(numerator,error) / sqrt(denominator,error)
