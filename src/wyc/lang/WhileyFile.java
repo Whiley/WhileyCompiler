@@ -182,7 +182,11 @@ public final class WhileyFile {
 		}
 	
 		public boolean matchName(String name) {
-			return this.name != null && (this.name.equals(name) || this.name.equals("*"));
+			if(this.name != null) {
+				return (this.name.equals(name) || this.name.equals("*"));	
+			} else {
+				return this.module.equals(name);
+			}			
 		}
 		
 		public boolean matchModule(String module) {
