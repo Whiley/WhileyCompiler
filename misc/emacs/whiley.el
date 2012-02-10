@@ -39,6 +39,10 @@ For detail, see `comment-dwim'."
   (modify-syntax-entry ?\/ ". 12b" whiley-mode-syntax-table)
   (modify-syntax-entry ?\n "> b" whiley-mode-syntax-table)
 
+  ;; java-style comment “/* … */” 
+  (modify-syntax-entry ?\/ ". 14" whiley-mode-syntax-table)
+  (modify-syntax-entry ?* ". 23" whiley-mode-syntax-table)
+
   ;; Indentation.  Needs work!
   (setq indent-tabs-mode nil)
   (local-set-key (kbd "TAB") 'tab-to-tab-stop)
