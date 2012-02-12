@@ -45,12 +45,6 @@ rewrite Or({Term} xs):
            zs = { z | y in ys, z in y#0 }
        in Or(((xs - ys) - {False}) + zs)
 	
-// ==================================================
-// Overall Theory
-// ==================================================
-
-term Var(string)
-
 class Term as Bool | And | Or | Not
 
 

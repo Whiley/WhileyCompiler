@@ -1,0 +1,117 @@
+<project name="whiley" default="stdlib">  
+  <property name="version" value="0.3.1"/>
+
+  <target name="compile-wyone">
+    <javac debug="true" srcdir="." includeantruntime="true" includes="wyone/**" excludes="wyone/testing/**"/> 
+  </target>
+
+  <target name="compile-wytwo">
+    <javac debug="true" srcdir="." includeantruntime="true" includes="wytwo/**" excludes="wytwo/testing/**"/> 
+  </target>
+
+  <target name="build-wyone" depends="compile-wyone">
+    <buildnumber file="build.num"/>
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyone.Main"/>
+      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+    </manifest>
+    <jar destfile="lib/wyone.jar" basedir="." includes="wyone/**/*.class" manifest="tmp/MANIFEST.MF"/>
+    <delete dir="tmp"/>
+  </target>
+
+  <target name="build-wytwo" depends="compile-wytwo">
+    <buildnumber file="build.num"/>
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wytwo.logic"/>
+      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+    </manifest>
+    <jar destfile="lib/wytwo.jar" basedir="." includes="wytwo/**/*.class" manifest="tmp/MANIFEST.MF"/>
+    <delete dir="tmp"/>
+  </target>
+
+  <target name="stdlib" depends="build-wyone">
+    <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
+    <wyjc srcdir="stdlib" includes="whiley/**/*.whiley" excludes="whiley/io/**"/>
+    <jar destfile="lib/wyrt.jar">
+      <fileset dir="." includes="wyil/jvm/rt**/*.class"/>
+      <fileset dir="stdlib" includes="whiley/**/*.class"/>
+    </jar>
+  </target>
+
+  <target name="distjar" depends="stdlib">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyjc.Main"/>
+      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+      <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="." includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
+      <fileset dir="stdlib" includes="whiley/**/*.class"/>
+    </jar>
+    <delete dir="tmp"/>
+  </target>
+
+  <target name="distsrc" depends="stdlib">
+  <mkdir dir="wdk-v${version}"/>
+  <copy todir="wdk-v${version}">
+    <fileset dir="." includes="wyjc/**/*.java,wyjvm/**/*.java,wyil/**/*.java,wyone/**/*.java"/>
+    <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
+    <fileset dir="." includes="examples/**/*.whiley"/>
+    <fileset dir="." includes="stdlib/**/*.whiley"/>
+    <fileset dir=".">
+      <include name="bin/wyjc"/>
+      <include name="bin/whiley"/>
+    </fileset>
+    <fileset dir="." includes="LICENSE,README,build.xml"/>
+    <fileset dir="." includes="lib/wyrt.jar,lib/wyjc.jar"/>
+  </copy>
+  <tar destfile="wdk-src-v${version}.tar" longfile="gnu">  
+    <tarfileset dir="." includes="wdk-v${version}/**/*.java"/>
+    <tarfileset dir="." includes="wdk-v${version}/**/*.whiley"/>
+    <tarfileset dir="." includes="wdk-v${version}/**/*.sysout"/>
+    <tarfileset dir="." filemode="755">
+      <include name="wdk-v${version}/bin/wyjc"/>
+      <include name="wdk-v${version}/bin/whiley"/>
+    </tarfileset>
+    <tarfileset dir="." includes="wdk-v${version}/LICENSE,wdk-v${version}/README,wdk-v${version}/build.xml"/>
+    <tarfileset dir="." includes="wdk-v${version}/lib/wyrt.jar,wdk-v${version}/lib/wyjc.jar"/>
+  </tar>
+  <gzip destfile="wdk-src-v${version}.tgz" src="wdk-src-v${version}.tar"/>
+  <delete file="wdk-src-v${version}.tar"/>
+  <delete dir="wdk-v${version}"/>
+  </target>
+
+  <target name="dist" depends="distsrc,distjar">
+  </target>
+
+  <target name="doc">
+    <javadoc
+       packagenames="wyjc.*,wyone.*,wyil.*,wyjvm.*"
+       sourcepath="."
+       destdir="docs/api"
+       author="true"
+       version="true"
+       use="true"
+       windowtitle="Whiley API">
+      <doctitle><![CDATA[<h1>The Whiley Programming Language</h1>]]></doctitle>
+      <bottom><![CDATA[<i>Copyright &#169; 2010 David J. Pearce. All Rights Reserved.</i>]]></bottom>
+      </javadoc>
+  </target>
+
+ <target name="clean">
+  <delete includeEmptyDirs="true" failonerror="false">
+   <fileset file="lib/*.jar"/>
+   <fileset file="*.jar"/>
+   <fileset file="*.tgz"/>
+   <fileset dir="." includes="**/*.class"/>
+   <fileset dir="tmp/" includes="**"/>
+  </delete>
+ </target>
+
+</project>
