@@ -20,8 +20,17 @@ public class SpecParser {
 	}
 	
 	public SpecFile parse() {
-		ArrayList<Decl> decls = new ArrayList<Decl>();
-		
+		;
+		return parse((SpecFile) null);
+	}
+	
+	public SpecFile parse(SpecFile partial) {
+		ArrayList<Decl> decls;
+		if (partial == null) {
+			decls = new ArrayList<Decl>();
+		} else {
+			decls = partial.declarations;
+		}
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
 			if (t instanceof NewLine || t instanceof Comment) {

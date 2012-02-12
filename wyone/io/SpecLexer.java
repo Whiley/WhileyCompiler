@@ -115,34 +115,75 @@ public class SpecLexer {
 	}
 	
 	public Token scanChar() {
+		char ans = ' ';		// set to keep javac out of trouble.
 		int start = pos;
-		pos++;
-		char c = input.charAt(pos++);				
-		if(c == '\\') {
+		boolean addflag = false;
+		boolean escflag = false;
+		boolean gotflag = false;
+		boolean ovflag = false;
+		pos ++;
+		while(pos < input.length()) {
+			char c = input.charAt(pos);
+			if (addflag) {
+				addflag = false;
+				ans = c;
+				continue;
+			}
+			if (c == '\\') {
+				gotflag = true;
+				escflag = true;
+				continue;
+			}
+			if (c == '\'') {
+				break;
+			}
+			ans = c;
+			ovflag = gotflag;
+			gotflag = true;
+			pos = pos + 1;
+		}
+		if (!( pos < input.length())) {
+			syntaxError("unexpected end-of-character", pos-1);
+			return null;
+		}
+		if (!gotflag) {
+			syntaxError("empty character", pos-1);
+			return null;
+		}
+		if (ovflag) {
+			syntaxError("character overflow", pos-1);
+			return null;
+		}
+		if (escflag) {
 			// escape code
-			switch(input.charAt(pos++)) {
-				case 't':
-					c = '\t';
-					break;
-				case 'n':
-					c = '\n';
-					break;
-				default:
-					syntaxError("unrecognised escape character",pos);
+			switch(ans) {
+			case 't':
+				ans = '\t';
+				break;
+			case 'n':
+				ans = '\n';
+				break;
+			default:
+				syntaxError("unrecognised escape character",pos-1);
 			}
 		}
-		if(input.charAt(pos) != '\'') {
-			syntaxError("unexpected end-of-character",pos);
-		}
-		pos = pos + 1;
-		return new Int(BigInteger.valueOf(c),input.substring(start,pos),start);
+		return new Int(BigInteger.valueOf(ans),input.substring(start,pos),start);
 	}
 	
 	public Token scanString() {
 		int start = pos;
+		boolean flag = false;
 		pos ++;
 		while(pos < input.length()) {
-			char c = input.charAt(pos);			
+			char c = input.charAt(pos);
+			if (flag) {
+				flag = false;
+				continue;
+			}
+			if (c == '\\') {
+				flag = true;
+				continue;
+			}
 			if (c == '"') {				
 				String v = input.substring(start,++pos);
 				return new Strung(parseString(v),v, start);
