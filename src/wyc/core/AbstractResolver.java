@@ -96,7 +96,6 @@ public abstract class AbstractResolver {
 			return false;
 		}
 	}	
-
 	
 	/**
 	 * This method takes a given package id from an import declaration, and
