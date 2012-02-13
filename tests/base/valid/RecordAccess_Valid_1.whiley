@@ -1,11 +1,11 @@
 import * from whiley.lang.*
 
-define etype as {int mode, ? rest}
-define Ptype as process etype
+define etype as {int mode, ...}
+define Ptype as ref etype
 
 int Ptype::get():
-    this.mode = 1
-    return this.mode
+    this->mode = 1
+    return this->mode
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println("OK")

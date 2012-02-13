@@ -451,8 +451,27 @@ public final class ClassFileReader {
 	}
 		
 	protected ConstantValue parseConstantValue(int offset, String name) {
-		Object obj = getConstant(read_u2(offset+6));
-		return new ConstantValue(obj);
+		Constant.Info c = getConstant(read_u2(offset+6));
+		Object constant;
+		if(c instanceof Constant.Integer) {
+			Constant.Integer v = (Constant.Integer) c;
+			constant = v.value;
+		} else if(c instanceof Constant.Long) {
+			Constant.Long v = (Constant.Long) c;
+			constant = v.value;
+		} else if(c instanceof Constant.Float) {
+			Constant.Float v = (Constant.Float) c;
+			constant = v.value;
+		} else if(c instanceof Constant.Double) {
+			Constant.Double v = (Constant.Double) c;
+			constant = v.value;
+		} else if(c instanceof Constant.String) {
+			Constant.String v = (Constant.String) c;
+			constant = v.str;
+		} else {
+			throw new RuntimeException("invalid constant value requested");
+		}
+		return new ConstantValue(constant);
 	}	
 	
 	protected InnerClasses parseInnerClasses(int offset, String name, JvmType.Clazz type) {			

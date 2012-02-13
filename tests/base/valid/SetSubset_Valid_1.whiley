@@ -6,7 +6,7 @@ string f({int} xs, {int} ys):
     else:
         return "XS IS NOT A SUBSET"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f({1,2,3},{1,2,3}))
     sys.out.println(f({1,4},{1,2,3}))
     sys.out.println(f({1},{1,2,3}))

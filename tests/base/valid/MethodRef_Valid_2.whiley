@@ -2,28 +2,19 @@ import * from whiley.lang.*
 
 // this implements what is effectively a "raw" interface
 
-define FileReader as process {
-    int position
-}
-
 define Reader as { 
-    FileReader thus,
-    int(FileReader)::(int) read
+    int::(int) read
 }
 
-int FileReader::read(int amount):
-    r = amount + this.position
-    return r
-    
-Reader ::openReader():
-    proc = spawn { position: 123 }
-    return { thus: proc, read: &read } 
+int ::f(int amount):
+    return 1
 
-void ::main(System sys,[string] args):
-    reader = openReader()
-    target = reader.thus
-    method = reader.read
-    data = target.method(5)
+int ::m(Reader r, int x):
+    return r.read(x)    
+
+void ::main(System.Console sys):
+    reader = { read: &f }
+    data = m(reader,1)
     sys.out.println(Any.toString(data))
 
 

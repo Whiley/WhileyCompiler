@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = true
     y = false
     sys.out.println(x)

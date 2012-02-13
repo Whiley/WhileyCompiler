@@ -7,6 +7,6 @@ string f([[int]] x):
         return ""
 
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
      arr = [[1,2,3],[1]]
      sys.out.println(f(arr))

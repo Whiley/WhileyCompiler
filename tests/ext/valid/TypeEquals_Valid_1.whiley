@@ -9,7 +9,7 @@ string f(expr e):
     else:
         return "GOT BOB"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     e = 1
     sys.out.println(f(e))
     e = {x:1,y:2}

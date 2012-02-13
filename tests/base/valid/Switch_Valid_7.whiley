@@ -20,7 +20,7 @@ string f(string input):
             r = "GOT NOTHING"
     return r
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f("N"))
     sys.out.println(f("K"))
     sys.out.println(f("Q"))

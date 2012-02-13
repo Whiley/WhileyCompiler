@@ -3,7 +3,7 @@ import * from whiley.lang.*
 bool f(char c):
     return c <= '9'
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = f('0')    
     sys.out.println(Any.toString(x))
     x = f('1')    

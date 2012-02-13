@@ -11,7 +11,7 @@ bnat atob(anat x):
 anat btoa(bnat x):
     return x
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = 1
     sys.out.println(Any.toString(atob(x)))
     sys.out.println(Any.toString(btoa(x)))

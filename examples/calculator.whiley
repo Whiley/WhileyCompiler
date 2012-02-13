@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.*
 import * from whiley.io.File
 import SyntaxError from whiley.lang.Errors
 
@@ -45,7 +45,7 @@ define Stmt as Print | Set
 
 define RuntimeError as { string msg }
 
-Value evaluate(Expr e, {string->Value} env) throws RuntimeError:
+Value evaluate(Expr e, {string=>Value} env) throws RuntimeError:
     if e is int:
         return e
     else if e is Var:
@@ -72,7 +72,7 @@ Value evaluate(Expr e, {string->Value} env) throws RuntimeError:
             v = evaluate(i, env)
             r = r + [v]
         return r
-    else:
+    else if e is ListAccess:
         src = evaluate(e.src, env)
         index = evaluate(e.index, env)
         // santity checks
@@ -80,6 +80,8 @@ Value evaluate(Expr e, {string->Value} env) throws RuntimeError:
             return src[index]
         else:
             throw {msg: "invalid list access"}
+    else:
+        return 0 // dead-code
 
 // ====================================================
 // Expression Parser
@@ -146,9 +148,9 @@ define State as { string input, int pos }
 (Expr, State) parseTerm(State st) throws SyntaxError:
     st = parseWhiteSpace(st)        
     if st.pos < |st.input|:
-        if isLetter(st.input[st.pos]):
+        if Char.isLetter(st.input[st.pos]):
             return parseIdentifier(st)
-        else if isDigit(st.input[st.pos]):
+        else if Char.isDigit(st.input[st.pos]):
             return parseNumber(st)
         else if st.input[st.pos] == '[':
             return parseList(st)
@@ -157,7 +159,7 @@ define State as { string input, int pos }
 (Var, State) parseIdentifier(State st):    
     txt = ""
     // inch forward until end of identifier reached
-    while st.pos < |st.input| && isLetter(st.input[st.pos]):
+    while st.pos < |st.input| && Char.isLetter(st.input[st.pos]):
         txt = txt + st.input[st.pos]
         st.pos = st.pos + 1
     return ({id:txt}, st)
@@ -165,7 +167,7 @@ define State as { string input, int pos }
 (Expr, State) parseNumber(State st) throws SyntaxError:    
     // inch forward until end of identifier reached
     start = st.pos
-    while st.pos < |st.input| && isDigit(st.input[st.pos]):
+    while st.pos < |st.input| && Char.isDigit(st.input[st.pos]):
         st.pos = st.pos + 1    
     return Int.parse(st.input[start..st.pos]), st
 
@@ -189,27 +191,23 @@ define State as { string input, int pos }
  
 // Parse all whitespace upto end-of-file
 State parseWhiteSpace(State st):
-    while st.pos < |st.input| && isWhiteSpace(st.input[st.pos]):
+    while st.pos < |st.input| && Char.isWhiteSpace(st.input[st.pos]):
         st.pos = st.pos + 1
     return st
-
-// Determine what is whitespace
-bool isWhiteSpace(char c):
-    return c == ' ' || c == '\t' || c == '\n' || c == '\r'
 
 // ====================================================
 // Main Method
 // ====================================================
 
-public void ::main(System sys, [string] args):
-    file = File.Reader(args[0])
-    input = String.fromASCII(file.read())
-
-    if(|args| == 0):
+public void ::main(System.Console sys):
+    if(|sys.args| == 0):
         sys.out.println("no parameter provided!")
     else:
+        file = File.Reader(sys.args[0])
+        input = String.fromASCII(file.read())
+
         try:
-            env = {"$"->0} 
+            env = {"$"=>0} 
             st = {pos: 0, input: input}
             while st.pos < |st.input|:
                 s,st = parse(st)

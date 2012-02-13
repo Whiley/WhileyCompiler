@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyjc;
 
 import java.io.*;
@@ -5,13 +30,12 @@ import java.net.URI;
 import java.util.*;
 import java.util.jar.JarFile;
 
-import wyc.NameResolver;
 import wyc.Pipeline;
 import wyc.Compiler;
 import wyc.util.*;
 import wyil.*;
-import wyil.path.*;
 import wyil.util.*;
+import wyil.util.path.*;
 import static wyil.util.SyntaxError.*;
 import static wyc.util.OptArg.*;
 import wyjc.io.*;
@@ -56,7 +80,11 @@ public class Main {
 		if(versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
-			BUILD_NUMBER = Integer.parseInt(vb[1]);
+			if(vb.length == 1) {
+				BUILD_NUMBER=0;
+			} else {
+			BUILD_NUMBER = Integer.parseInt(vb[1]); }
+			
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
 			MINOR_REVISION = Integer.parseInt(pts[2]);
@@ -77,7 +105,7 @@ public class Main {
 	 * The command-line options accepted by the main method.
 	 */
 	public static final OptArg[] options = new OptArg[] {
-			new OptArg("version", "Print version information"),
+			new OptArg("version", "Print version information"),			
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("whileypath", "wp", PATHLIST,
@@ -97,7 +125,11 @@ public class Main {
 			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("C", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
-			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage") };
+			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage"),
+			new OptArg(
+					"pause",
+					"Do not start compiling until character read from input stream (this is to allow time for visualvm to connect)"),	
+		};
 
 	/**
 	 * In the case that no explicit bootpath has been specified on the
@@ -223,7 +255,16 @@ public class Main {
 			OptArg.usage(System.out, options);
 			System.exit(1);
 		}
+		
+		if(values.containsKey("pause")) {
+			System.out.println("Press any key to begin...");
+			try {
+				System.in.read();
+			} catch(IOException e) {
 				
+			}
+		}
+		
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
 
@@ -252,12 +293,12 @@ public class Main {
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			NameResolver resolver = new NameResolver(sourcepath,whileypath);
-			resolver.setModuleReader("class",  new ClassFileLoader());
+			ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
+			loader.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
 
-			Pipeline pipeline = new Pipeline(templates, resolver);
+			Pipeline pipeline = new Pipeline(templates, loader);
 			
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
@@ -269,8 +310,8 @@ public class Main {
 			}
 			
 			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(resolver,stages);		
-			resolver.setLogger(compiler);		
+			Compiler compiler = new Compiler(loader,stages);		
+			loader.setLogger(compiler);		
 
 			if(verbose) {			
 				compiler.setLogOut(System.err);
@@ -296,7 +337,7 @@ public class Main {
 			}
 			return SYNTAX_ERROR;
 		} catch (Throwable e) {
-			errout.println("internal failure: " + e.getMessage());
+			errout.println("internal failure (" + e.getMessage() + ")");
 			if (verbose) {
 				e.printStackTrace(errout);
 			}

@@ -1,13 +1,13 @@
 import * from whiley.lang.*
 
-define MyProc as process { bool flag }
+define MyProc as ref { bool flag }
 
-void MyProc::run(System sys):
-    if this.flag:
+void MyProc::run(System.Console sys):
+    if this->flag:
         sys.out.println("TRUE")
     else:
         sys.out.println("FALSE")
 
-void ::main(System sys,[string] args):
-    mproc = spawn { flag:false }     
+void ::main(System.Console sys):
+    mproc = new { flag:false }     
     mproc.run(sys)

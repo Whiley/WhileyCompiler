@@ -86,8 +86,9 @@ public abstract class Bytecode {
 		public final JvmType type;
 		
 		public Store(int slot, JvmType type) {
+			typeChar(type); // check valid type
 			this.slot=slot;
-			this.type=type;
+			this.type=type;			
 		}
 		
 		public int stackDiff() {
@@ -135,8 +136,9 @@ public abstract class Bytecode {
 		public final JvmType type;
 		
 		public Load(int slot, JvmType type) {
+			typeChar(type); // check valid type
 			this.slot=slot;
-			this.type=type;
+			this.type=type;			
 		}
 		
 		public int stackDiff() {
@@ -184,7 +186,7 @@ public abstract class Bytecode {
 		
 		public Iinc(int slot, int increment) {
 			if(increment < Byte.MIN_VALUE || increment > Byte.MAX_VALUE) {
-				throw new IllegalArgumentException("Illegal Iinc increment --- must be between -127 and 128");
+				throw new IllegalArgumentException("illegal iinc increment --- must be between -127 and 128");
 			}
 			this.slot=slot;
 			this.increment = increment;			
@@ -500,7 +502,10 @@ public abstract class Bytecode {
 	 */
 	public static final class Return extends Bytecode {
 		public final JvmType type;
-		public Return(JvmType type) { this.type = type; }		
+		public Return(JvmType type) {
+			if(type != null) { typeChar(type); } // check valid
+			this.type = type;			
+		}		
 		
 		public int stackDiff() {
 			if(type == null) { return 0; }
@@ -570,7 +575,10 @@ public abstract class Bytecode {
 	public static final class Neg extends Bytecode {
 		public final JvmType type;
 		
-		public Neg(JvmType type) { this.type = type; }
+		public Neg(JvmType type) {
+			typeChar(type); // check valid type
+			this.type = type; 
+		}
 		
 		public int stackDiff() {
 			return 0;
@@ -622,6 +630,7 @@ public abstract class Bytecode {
 		public final JvmType type;
 		public final int op;
 		public BinOp(int op, JvmType type) {
+			typeChar(type); // check valid type
 			assert op >= 0 && op <= USHR;
 			this.op = op;
 			this.type = type;
@@ -1137,7 +1146,7 @@ public abstract class Bytecode {
 			}			
 			
 			// following should be unreachable
-			throw new RuntimeException("Invalid conversion operator (" + from + "=>" + to + ")");					
+			throw new RuntimeException("invalid conversion operator (" + from + "=>" + to + ")");					
 		}
 		
 		public boolean equals(Object o) {
@@ -1189,7 +1198,7 @@ public abstract class Bytecode {
 		
 		public byte[] toBytes(int offset, Map<String,Integer> labelOffsets,  Map<Constant.Info,Integer> constantPool) {
 			if (!labelOffsets.keySet().contains(label)) {
-				throw new IllegalArgumentException("Unable to resolve label \"" + label
+				throw new IllegalArgumentException("unable to resolve label \"" + label
 						+ "\" in labelOffsets");
 			}
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -1261,7 +1270,7 @@ public abstract class Bytecode {
 		
 		public byte[] toBytes(int offset, Map<String,Integer> labelOffsets,  Map<Constant.Info,Integer> constantPool) {
 			if (!labelOffsets.keySet().contains(label)) {
-				throw new IllegalArgumentException("Unable to resolve label \"" + label
+				throw new IllegalArgumentException("unable to resolve label \"" + label
 						+ "\" in labelOffsets");
 			}
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -1574,7 +1583,7 @@ public abstract class Bytecode {
 		public byte[] toBytes(int offset, Map<String,Integer> labelOffsets,  
 				Map<Constant.Info,Integer> constantPool) {
 			if (!labelOffsets.keySet().contains(defaultLabel)) {
-				throw new IllegalArgumentException("Unable to resolve label \""
+				throw new IllegalArgumentException("unable to resolve label \""
 						+ defaultLabel + "\" in labelOffsets");
 			}			
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -2188,9 +2197,9 @@ public abstract class Bytecode {
 				}				
 			}
 		} catch(IllegalAccessException e) {
-			throw new RuntimeException("Illegal Access Exception");
+			throw new RuntimeException("illegal access exception");
 		} catch(ClassNotFoundException e) {
-			throw new RuntimeException("Unable to initialise OpcodeMap");
+			throw new RuntimeException("unable to initialise OpcodeMap");
 		}
 		return map;
 	}
@@ -2211,7 +2220,7 @@ public abstract class Bytecode {
 		} else if(type instanceof JvmType.Double) {
 			return 'd';
 		} else {
-			throw new RuntimeException("Unknown type encountered (" + type + ")");
+			throw new RuntimeException("unknown type encountered (" + type + ")");
 		}
 	}
 	
@@ -2232,7 +2241,7 @@ public abstract class Bytecode {
 		} else if(type instanceof JvmType.Double) {
 			return 3;
 		} else {
-			throw new RuntimeException("Unknown type encountered (" + type + ")");
+			throw new RuntimeException("unknown type encountered (" + type + ")");
 		}
 	}
 
@@ -2260,7 +2269,7 @@ public abstract class Bytecode {
 		} else if(type instanceof JvmType.Short) {
 			return 7;
 		} else {
-			throw new RuntimeException("Unknown type in array: " + type);
+			throw new RuntimeException("unknown type in array: " + type);
 		}
 	}
 	

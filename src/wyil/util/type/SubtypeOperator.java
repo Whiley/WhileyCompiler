@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.util.type;
 
 import static wyil.lang.Type.*;
@@ -51,11 +76,11 @@ import wyil.lang.Type;
  * 
  */
 public class SubtypeOperator {
-	protected final Automata from; 
-	protected final Automata to;
+	protected final Automaton from; 
+	protected final Automaton to;
 	private final BitSet assumptions;
 	
-	public SubtypeOperator(Automata from, Automata to) {
+	public SubtypeOperator(Automaton from, Automaton to) {
 		this.from = from;
 		this.to = to;
 		// matrix is twice the size to accommodate positive and negative signs 
@@ -127,8 +152,8 @@ public class SubtypeOperator {
 	protected boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {
 		
-		Automata.State fromState = from.states[fromIndex];
-		Automata.State toState = to.states[toIndex];
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
 		
@@ -139,7 +164,7 @@ public class SubtypeOperator {
 			case K_ANY:
 				return fromSign && toSign;
 			// === Leaf States First ===
-			case K_EXISTENTIAL: {
+			case K_NOMINAL: {
 				NameID nid1 = (NameID) fromState.data;
 				NameID nid2 = (NameID) toState.data;	
 				if(fromSign || toSign) {
@@ -150,22 +175,10 @@ public class SubtypeOperator {
 					}
 				}
 				return true;
-			}
-			case K_LABEL: {
-				String lab1 = (String) fromState.data;
-				String lab2 = (String) toState.data;	
-				if(fromSign || toSign) {
-					if(lab1.equals(lab2)) {
-						return fromSign && toSign;
-					} else {
-						return !fromSign || !toSign;
-					}
-				}
-				return true;
-			}
+			}			
 			// === Homogenous Compound States ===
 			case K_SET:
-			case K_LIST:
+			case K_LIST:			
 				// != below not ||. This is because lists and sets can intersect
 				// on the empty list/set.
 				if(fromSign != toSign) {					
@@ -177,7 +190,7 @@ public class SubtypeOperator {
 					}
 				}
 				return true;
-			case K_PROCESS:
+			case K_REFERENCE:
 			case K_DICTIONARY:
 			case K_TUPLE:  {				
 				if(fromSign || toSign) {					
@@ -205,36 +218,8 @@ public class SubtypeOperator {
 				}
 				return true;
 			}
-			case K_RECORD: {				
-				if(fromSign || toSign) {					
-					int[] fromChildren = fromState.children;
-					int[] toChildren = toState.children;
-					if (fromChildren.length != toChildren.length) {
-						return !fromSign || !toSign;
-					}				
-					ArrayList<String> fromFields = (ArrayList<String>) fromState.data;
-					ArrayList<String> toFields = (ArrayList<String>) toState.data;				
-					boolean andChildren = true;
-					boolean orChildren = false;
-					for (int i = 0; i != fromFields.size(); ++i) {
-						String e1 = fromFields.get(i);
-						String e2 = toFields.get(i);
-						if(!e1.equals(e2)) { return !fromSign || !toSign; }
-						int fromChild = fromChildren[i];
-						int toChild = toChildren[i];
-						boolean v = isIntersection(fromChild, fromSign, toChild,
-								toSign);
-						andChildren &= v;
-						orChildren |= v;
-					}
-					if(!fromSign || !toSign) {
-						return orChildren;
-					} else {
-						return andChildren;
-					}
-				}
-				return true;
-			}
+			case K_RECORD: 
+				return intersectRecords(fromIndex,fromSign,toIndex,toSign);			
 			case K_NEGATION: 
 			case K_UNION : 			
 					// let these cases fall through to if-statements after
@@ -242,8 +227,8 @@ public class SubtypeOperator {
 				break;
 			// === Heterogenous Compound States ===
 			case K_FUNCTION:
-			case K_HEADLESS:
 			case K_METHOD:
+			case K_MESSAGE:
 				if(fromSign || toSign) {
 					// nary nodes
 					int[] fromChildren = fromState.children;
@@ -252,8 +237,8 @@ public class SubtypeOperator {
 						return false;
 					}
 					
-					int recIndex = fromKind == Type.K_METHOD ? 0 : -1;					
-					int retIndex = fromKind == Type.K_METHOD ? 1 : 0;
+					int recIndex = fromKind == Type.K_MESSAGE ? 0 : -1;					
+					int retIndex = fromKind == Type.K_MESSAGE ? 1 : 0;
 					int throwsIndex = retIndex+1;
 					boolean andChildren = true;
 					boolean orChildren = false;					
@@ -343,6 +328,124 @@ public class SubtypeOperator {
 		}  
 		
 		return !fromSign || !toSign;		
+	}
+
+	/**
+	 * <p>
+	 * Check for intersection between two states with kind K_RECORD. The
+	 * distinction between open and closed records adds complexity here.
+	 * </p>
+	 * 
+	 * <p>
+	 * Intersection between <b>closed</b> records is the easiest case. The main
+	 * examples are:
+	 * </p>
+	 * <ul>
+	 * <li><code>{T1 f, T2 g} & {T3 f, T4 g} = if T1&T3 and T2&T4</code>.</li>
+	 * <li><code>{T1 f, T2 g} & {T3 f, T4 h} = false</code>.</li>
+	 * <li><code>{T1 f, T2 g} & !{T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>
+	 * <li><code>{T1 f, T2 g} & !{T3 f} = false</code>.</li>
+	 * <li><code>!{T1 f} & !{T2 f} = true</code>.</li>
+	 * </ul>
+	 * <p>
+	 * Intersection between a <b>closed</b> and <b>open</b> record is similar. The main examples are:
+	 * </p>
+	 * <ul>
+	 * <li><code>{T1 f, T2 g, ...} & {T3 f, T4 g} = if T1&T3 and T2&T4</code>.</li>
+	 * <li><code>{T1 f, ...} & {T2 f, T3 g} = if T1&T2</code>.</li>
+	 * <li><code>{T1 f, T2 g, ...} & {T3 f, T4 h} = false</code>.</li>
+	 * <li><code>{T1 f, T2 g, ...} & !{T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>	 * 
+	 * <li><code>!{T1 f, T2 g, ...} & {T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>	 *
+	 * <li><code>{T1 f, ...} & !{T2 f, T3 g} = true</code>.</li>
+	 * <li><code>{T1 f, T2 g, ...} & !{T3 f, T4 h} = false</code>.</li>
+     * <li><code>!{T1 f,...} & !{T2 f} = true</code>.</li>
+	 * </ul>
+	 * 
+	 * @param fromIndex
+	 *            --- index of from state
+	 * @param fromSign
+	 *            --- sign of from state (true = normal, false = inverted).
+	 * @param toIndex
+	 *            --- index of to state
+	 * @param toSign
+	 *            --- sign of from state (true = normal, false = inverted).
+	 * @return --- true if such an intersection exists, false otherwise.
+	 */
+	protected boolean intersectRecords(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {				
+		Automaton.State fromState = from.states[fromIndex];
+		Automaton.State toState = to.states[toIndex];
+		if(fromSign || toSign) {					
+			int[] fromChildren = fromState.children;
+			int[] toChildren = toState.children;						
+			Type.Record.State fromFields = (Type.Record.State) fromState.data;
+			Type.Record.State toFields = (Type.Record.State) toState.data;
+			
+			boolean fromOpen = fromFields.isOpen;
+			boolean toOpen = toFields.isOpen;
+			
+			if (fromChildren.length < toChildren.length && !fromOpen) {
+				return !fromSign || !toSign;
+			} else if (fromChildren.length > toChildren.length  && !toOpen) {
+				return !fromSign || !toSign;
+			} else if (!fromSign && !fromOpen && toOpen) {
+				return true; // guaranteed true!
+			} else if (!toSign && !toOpen && fromOpen) {
+				return true; // guaranteed true!
+			}
+			
+			boolean andChildren = true;
+			boolean orChildren = false;
+						
+			int fi=0;
+			int ti=0;
+			while(fi != fromFields.size() && ti != toFields.size()) {
+				boolean v;
+				String fn = fromFields.get(fi);
+				String tn = toFields.get(ti);
+				int c = fn.compareTo(tn);
+				if(c == 0) {					
+					int fromChild = fromChildren[fi++];
+					int toChild = toChildren[ti++];
+					v = isIntersection(fromChild, fromSign, toChild,
+							toSign);									
+				} else if(c < 0 && toOpen) {
+					fi++;
+					v = toSign;					
+				} else if(c > 0 && fromOpen) {
+					ti++;
+					v = fromSign;
+				} else {										
+					return !fromSign || !toSign; 
+				}
+				andChildren &= v;
+				orChildren |= v;
+			}
+						
+			if(fi < fromFields.size()) {
+				if(toOpen) {
+					// assert fromSign || fromOpen
+					orChildren |= toSign;
+					andChildren &= toSign;
+				} else {
+					return !fromSign || !toSign;
+				}
+			} else if(ti < toFields.size()) {
+				if(fromOpen) {
+					// assert toSign || toOpen
+					orChildren |= fromSign;
+					andChildren &= fromSign;
+				} else {
+					return !fromSign || !toSign;
+				}
+			} 
+			
+			if(!fromSign || !toSign) {
+				return orChildren;
+			} else {			
+				return andChildren;
+			}
+		}
+		return true;
 	}
 	
 	private int indexOf(int fromIndex, boolean fromSign,

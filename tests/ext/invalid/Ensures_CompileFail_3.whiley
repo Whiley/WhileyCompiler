@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int ::g(int x):
     return x + 1
@@ -6,5 +6,5 @@ int ::g(int x):
 void ::f(int x) requires x > g(x):
     debug Any.toString(x)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     f(1)

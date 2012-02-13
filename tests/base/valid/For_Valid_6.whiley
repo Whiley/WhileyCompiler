@@ -13,7 +13,7 @@ int f(bool flag, [int] list):
             r = r - pos
     return r
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     r1 = f(true,[1,2,3,4,5,6,7,8,9,10])
     r2 = f(false,[1,2,3,4,5,6,7,8,9,10])
     sys.out.println(Any.toString(r1))

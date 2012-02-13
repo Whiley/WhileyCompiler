@@ -8,7 +8,7 @@ string f(int x):
     else:
         return "EQUALS"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1))
     sys.out.println(f(10))
     sys.out.println(f(11))

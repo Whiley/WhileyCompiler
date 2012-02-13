@@ -67,10 +67,10 @@ public class WhileyType implements BytecodeAttribute {
 		
 	public static void addPoolItems(Type type, Set<Constant.Info> constantPool) {
 		if (type instanceof Type.Compound) {
-			Automata automata = Type.destruct(type);
-			for (int i = 0; i != automata.size(); ++i) {
-				Automata.State s = automata.states[i];
-				if (s.kind == Type.K_EXISTENTIAL) {
+			Automaton automaton = Type.destruct(type);
+			for (int i = 0; i != automaton.size(); ++i) {
+				Automaton.State s = automaton.states[i];
+				if (s.kind == Type.K_NOMINAL) {
 					NameID name = (NameID) s.data;
 					Constant.Utf8 utf8 = new Constant.Utf8(name.module()
 							.toString());
@@ -135,27 +135,29 @@ public class WhileyType implements BytecodeAttribute {
 			this.constantPool = pool;
 		}
 				
-		public Automata.State readState() throws IOException {
-			Automata.State state = super.readState();			
-			if (state.kind == Type.K_EXISTENTIAL) {
+		public Automaton.State readState() throws IOException {
+			Automaton.State state = super.readState();			
+			if (state.kind == Type.K_NOMINAL) {
 				String modstr = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
 				ModuleID mid = ModuleID.fromString(modstr);
 				String name = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
 				NameID data = new NameID(mid, name);
-				return new Automata.State(state.kind, data,
-						state.deterministic, state.children);
+				state.data = data;				
 			} else if (state.kind == Type.K_RECORD) {
+				boolean isOpen = reader.read_bit();
 				int nfields = reader.read_uv();				
-				ArrayList<String> fields = new ArrayList<String>();
+				Type.Record.State fields = new Type.Record.State(isOpen);
 				for (int i = 0; i != nfields; ++i) {
 					int index = reader.read_uv();					
 					String f = ((Constant.Utf8) constantPool.get(index)).str;
 					fields.add(f);
 				}
-				return new Automata.State(state.kind, fields,
-						state.deterministic, state.children);
+				state.data = fields;				
+			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) { 
+				boolean nonEmpty = reader.read_bit();				
+				state.data = nonEmpty;			
 			}
 			return state;
 		}
@@ -169,23 +171,27 @@ public class WhileyType implements BytecodeAttribute {
 			this.constantPool = pool;
 		}
 		
-		public void write(Automata.State state) throws IOException {
+		public void write(Automaton.State state) throws IOException {
 			super.write(state);
-			if(state.kind == Type.K_EXISTENTIAL) {
+			if(state.kind == Type.K_NOMINAL) {
 				NameID name = (NameID) state.data;
 				Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
 				writer.write_uv(constantPool.get(utf8));
 				utf8 = new Constant.Utf8(name.name());
 				writer.write_uv(constantPool.get(utf8));
 			} else if(state.kind == Type.K_RECORD) {
-				ArrayList<String> fields = (ArrayList<String>) state.data;
+				Type.Record.State fields = (Type.Record.State) state.data;
+				writer.write_bit(fields.isOpen);
 				writer.write_uv(fields.size());				
 				for (String f : fields) {
 					Constant.Utf8 utf8 = new Constant.Utf8(f);
 					int index = constantPool.get(utf8);					
 					writer.write_uv(index);
 				}
-			}			
+			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) { 
+				boolean nonEmpty = (Boolean) state.data;
+				writer.write_bit(nonEmpty);			
+			}		
 		}
 	}		
 }

@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 
-[int8] f(int x) requires x == 0 || x == 169:
+[i8] f(int x) requires x == 0 || x == 169:
     return [x]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     bytes = f(0)
     sys.out.println(Any.toString(bytes))
 

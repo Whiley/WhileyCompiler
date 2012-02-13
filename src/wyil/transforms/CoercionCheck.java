@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.transforms;
 
 import java.util.*;
@@ -38,8 +63,8 @@ import wyil.util.*;
  * convert {int x,int y} => {real x,int y}|{int x,real y}
  * </pre>
  * <p>
- * However, this conversion is ambiguous. This is because we could convert the
- * left-hand side to either of the two options in the right-hand side.  
+ * However, this conversion is <i>ambiguous</i> because we could convert the
+ * left-hand side to either of the two options in the right-hand side.
  * </p>
  * 
  * @author David J. Pearce
@@ -109,9 +134,9 @@ public class CoercionCheck implements Transform {
 				Type e2 = t2_elements.get(i);
 				check(e1,e2,visited,elem);
 			}
-		} else if(from instanceof Type.Process && to instanceof Type.Process) {
-			Type.Process t1 = (Type.Process) from;
-			Type.Process t2 = (Type.Process) to;
+		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
+			Type.Reference t1 = (Type.Reference) from;
+			Type.Reference t2 = (Type.Reference) to;
 			check(t1.element(),t2.element(),visited,elem);
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
 			Type.Set t1 = (Type.Set) from;

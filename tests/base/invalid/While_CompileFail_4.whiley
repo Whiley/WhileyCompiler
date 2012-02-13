@@ -10,6 +10,6 @@ int sum([int] ls):
         i = i + 1
     return r
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     rs = sum([-2,-3,1,2,-23,3,2345,4,5])
     debug Any.toString(rs)

@@ -7,7 +7,7 @@ int f(int x):
         return 2
     return 0
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f(1)))
     sys.out.println(Any.toString(f(10)))
     sys.out.println(Any.toString(f(11)))

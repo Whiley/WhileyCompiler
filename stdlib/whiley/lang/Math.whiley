@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package whiley.lang
 
 // return absolute value
@@ -77,3 +102,28 @@ int round(real x):
 // approximation, it should be sufficient for most purposes.
 define PI as 3.14159265358979323846 
 
+// Based on an excellent article entitled "Integer Square Roots" 
+// by Jack W. Crenshaw, published in the eetimes, 1998.
+int isqrt(int x) requires x >= 0, ensures $ >= 0:
+    square = 1
+    delta = 3
+    while square <= x:
+        square = square + delta
+        delta = delta + 2
+    return (delta/2) - 1
+
+// The following is a first approximation at this.  It computes the
+// square root of a number to within a given error threshold.
+public real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
+    error = -error
+    root = isqrt(x) + 1
+    rem = 0.0
+    do:
+        rem = (real) x - (root*root)       
+        root = root + (rem / (root+root))
+    while rem < error
+    return root
+
+public real sqrt(real x, real error) requires x >= 0.0, ensures $ >= 0.0:
+    numerator,denominator = x
+    return sqrt(numerator,error) / sqrt(denominator,error)

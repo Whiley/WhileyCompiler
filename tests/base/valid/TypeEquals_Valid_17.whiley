@@ -17,6 +17,6 @@ string f(int x):
 SyntaxError syntaxError(string errorMessage):
     return {msg: errorMessage}
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(0))
     sys.out.println(f(1))

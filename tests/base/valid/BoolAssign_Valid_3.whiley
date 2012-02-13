@@ -15,7 +15,7 @@ int g(int x, int y):
         return 1
 
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f(1,1)))
     sys.out.println(Any.toString(f(0,0)))
     sys.out.println(Any.toString(f(4,345)))

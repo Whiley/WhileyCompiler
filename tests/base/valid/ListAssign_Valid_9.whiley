@@ -22,6 +22,6 @@ Board f(Board board):
     board.rows[0] = BLACK_PAWN
     return board
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     r1 = {rows: [WHITE_PAWN], flag: false }
     sys.out.println(Any.toString(f(r1)))

@@ -6,5 +6,5 @@ int f(int x):
 int g(int(real) func):
     return func(1.2345)
     
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(g(&f)))

@@ -6,7 +6,7 @@ define IntReal as int | real
 int f(int x):
     return x
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     if |args| > 0:
         x = 1.23
     else:

@@ -10,5 +10,5 @@ string f(real e):
     else:
         return "[int]"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1))

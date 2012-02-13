@@ -29,9 +29,10 @@ import java.util.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 
-public class Module extends ModuleLoader.Skeleton {	
+public final class Module {
+	private final ModuleID mid;
 	private final String filename;
-	private HashMap<Pair<String,Type.Function>,Method> methods;
+	private HashMap<Pair<String,Type.FunctionOrMethodOrMessage>,Method> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
 	
@@ -40,17 +41,17 @@ public class Module extends ModuleLoader.Skeleton {
 			Collection<Method> methods,
 			Collection<TypeDef> types,
 			Collection<ConstDef> constants) {		
-		super(mid);
+		this.mid = mid;
 		this.filename = filename;
 		
 		// first, init the caches
-		this.methods = new HashMap<Pair<String,Type.Function>, Method>();
+		this.methods = new HashMap<Pair<String,Type.FunctionOrMethodOrMessage>, Method>();
 		this.types = new HashMap<String, TypeDef>();
 		this.constants = new HashMap<String, ConstDef>();
 		
 		// second, build the caches
 		for(Method m : methods) {
-			Pair<String,Type.Function> p = new Pair<String,Type.Function>(m.name(),m.type());
+			Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
 			Method tmp = this.methods.get(p);
 			if (tmp != null) {
 				throw new IllegalArgumentException(
@@ -78,6 +79,10 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}
 	
+	public ModuleID id() {
+		return mid;
+	}
+	
 	public String filename() {
 		return filename;
 	}
@@ -100,7 +105,7 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public List<Method> method(String name) {
 		ArrayList<Method> r = new ArrayList<Method>();
-		for(Pair<String,Type.Function> p : methods.keySet()) {
+		for(Pair<String,Type.FunctionOrMethodOrMessage> p : methods.keySet()) {
 			if(p.first().equals(name)) {
 				r.add(methods.get(p));
 			}
@@ -108,8 +113,8 @@ public class Module extends ModuleLoader.Skeleton {
 		return r;
 	}
 	
-	public Method method(String name, Type.Function ft) {
-		return methods.get(new Pair<String, Type.Function>(name, ft));
+	public Method method(String name, Type.FunctionOrMethod ft) {
+		return methods.get(new Pair<String, Type.FunctionOrMethod>(name, ft));
 	}
 	
 	public Collection<Module.Method> methods() {
@@ -117,7 +122,7 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public void add(Module.Method m) {
-		Pair<String,Type.Function> p = new Pair<String,Type.Function>(m.name(),m.type());
+		Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
 		this.methods.put(p,m);
 	}
 	
@@ -134,7 +139,7 @@ public class Module extends ModuleLoader.Skeleton {
 				|| method(name).size() > 0;
 	}
 	
-	public static class TypeDef extends SyntacticElement.Impl {
+	public static final class TypeDef extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;
 		private String name;
 		private Type type;		
@@ -175,7 +180,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}
 	
-	public static class ConstDef extends SyntacticElement.Impl {
+	public static final class ConstDef extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;
 		private String name;		
 		private Value constant;
@@ -207,14 +212,14 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}
 		
-	public static class Method extends SyntacticElement.Impl {
+	public static final class Method extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;
 		private String name;		
-		private Type.Function type;		
+		private Type.FunctionOrMethodOrMessage type;		
 		private List<Case> cases;		
 				
 		public Method(Collection<Modifier> modifiers, String name,
-				Type.Function type, Collection<Case> cases,
+				Type.FunctionOrMethodOrMessage type, Collection<Case> cases,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
@@ -224,8 +229,9 @@ public class Module extends ModuleLoader.Skeleton {
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
-		public Method(Collection<Modifier> modifiers, String name, Type.Function type,
-				Collection<Case> cases, Collection<Attribute> attributes) {
+		public Method(Collection<Modifier> modifiers, String name,
+				Type.FunctionOrMethodOrMessage type, Collection<Case> cases,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
@@ -242,7 +248,7 @@ public class Module extends ModuleLoader.Skeleton {
 			return name;
 		}
 		
-		public Type.Function type() {
+		public Type.FunctionOrMethodOrMessage type() {
 			return type;
 		}
 
@@ -251,7 +257,15 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 
 		public boolean isFunction() {
-			return !(type instanceof Type.Method);
+			return type instanceof Type.Function;
+		}
+		
+		public boolean isMethod() {
+			return type instanceof Type.Method;
+		}
+		
+		public boolean isMessage() {
+			return type instanceof Type.Message;
 		}
 		
 		public boolean isPublic() {
@@ -268,7 +282,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}	
 	
-	public static class Case extends SyntacticElement.Impl {				
+	public static final class Case extends SyntacticElement.Impl {				
 		private final Block precondition;
 		private final Block postcondition;
 		private final Block body;

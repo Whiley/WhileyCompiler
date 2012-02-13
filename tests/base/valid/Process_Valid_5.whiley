@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     // the should override the implicit field 
     // scope of the field "out" in System.
     out = 1

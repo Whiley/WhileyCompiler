@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.transforms;
 
 import java.math.BigInteger;
@@ -141,10 +166,8 @@ public class ConstraintInline implements Transform {
 				return transform((Code.Invoke)code, freeSlot, entry);
 			} else if(code instanceof Code.Send) {
 
-			} else if(code instanceof Code.ListLoad) {
-				return transform((Code.ListLoad)code,freeSlot,entry);
-			} else if(code instanceof Code.DictLoad) {
-
+			} else if(code instanceof Code.IndexOf) {
+				return transform((Code.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Code.Update) {
 
 			} else if(code instanceof Code.BinOp) {
@@ -225,10 +248,10 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
-				Type.Function mtype = method.type();	
+				Type.FunctionOrMethodOrMessage mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Type.Method
-						&& ((Type.Method) mtype).receiver() != null) {
+				if (mtype instanceof Type.Message
+						&& ((Type.Message) mtype).receiver() != null) {
 					binding.put(pIndex++, Code.THIS_SLOT);
 				}
 				int shadowIndex = methodCase.body().numSlots();
@@ -253,40 +276,32 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {		
-		Block blk = new Block(0);
-		// TODO: mark as check block
-		blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
-		blk.append(Code.Store(code.type, freeSlot+1),attributes(elem));
-		String falseLabel = Block.freshLabel();
-		String exitLabel = Block.freshLabel();
-		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-		blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
-		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
-		blk.append(Code.ListLength(code.type),attributes(elem));
-		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
-		blk.append(Code.Label(falseLabel),attributes(elem));
-		blk.append(Code.Fail("index out of bounds"),attributes(elem));
-		blk.append(Code.Label(exitLabel),attributes(elem));
-		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
-		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
-		return blk;		
+	public Block transform(Code.IndexOf code, int freeSlot, SyntacticElement elem) {		
+		if(code.type instanceof Type.EffectiveList) {
+			Block blk = new Block(0);
+			// TODO: mark as check block
+			blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
+			blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
+			String falseLabel = Block.freshLabel();
+			String exitLabel = Block.freshLabel();
+			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+			blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
+			blk.append(Code.LengthOf(code.type),attributes(elem));
+			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
+			blk.append(Code.Label(falseLabel),attributes(elem));
+			blk.append(Code.Fail("index out of bounds"),attributes(elem));
+			blk.append(Code.Label(exitLabel),attributes(elem));
+			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
+			return blk;		
+		} else {
+			return null; // FIXME
+		}
 	}
 
-	/**
-	 * For the dictload bytecode, we need to add a check that the key is
-	 * contained in the list.
-	 * 
-	 * @param code
-	 * @param elem
-	 * @return
-	 */
-	public Block transform(Code.DictLoad code, SyntacticElement elem) {
-		return null;
-	}
-	
 	/**
 	 * For the update bytecode, we need to add a check the indices of any lists 
 	 * used in the update are within bounds.
@@ -331,7 +346,7 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.Function fun) throws ResolveError {
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws ResolveError {
 		Module m = loader.loadModule(name.module());				
 		Module.Method method = m.method(name.name(),fun);
 	

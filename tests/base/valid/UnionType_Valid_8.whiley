@@ -8,7 +8,7 @@ define msgType as msg1 | msg2
 string f(msgType m):
     return Any.toString(m)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = {op:1,data:[1,2,3]}
     sys.out.println(f(x))
     list = x.data

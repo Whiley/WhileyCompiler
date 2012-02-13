@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     arr1 = [1,2,3]
     arr2 = arr1
     arr2[2] = 2

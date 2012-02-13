@@ -30,65 +30,85 @@ import java.util.*;
 import wyil.lang.Attribute;
 import wyil.util.SyntacticElement;
 
+/**
+ * <p>
+ * Provides classes for representing types in Whiley's source language. These
+ * are referred to as <i>unresolved types</i> as they include nominal types
+ * whose full NameID remains unknown. Unresolved types are <i>resolved</i>
+ * during the name resolution> stage of the compiler.
+ * </p>
+ * 
+ * <p>
+ * Each class is an instance of <code>SyntacticElement</code> and, hence, can be
+ * adorned with certain information (such as source location, etc).
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public interface UnresolvedType extends SyntacticElement {
 
+	/**
+	 * A non-union type represents a type which is not an instance of
+	 * <code>Union</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public interface NonUnion extends UnresolvedType {
 	}
+	public interface Primitive extends UnresolvedType {
+		
+	}
 	
-	public static final class Any extends SyntacticElement.Impl implements NonUnion {
+	public static final class Any extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Any(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Void extends SyntacticElement.Impl implements NonUnion {
+	public static final class Void extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Void(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Null extends SyntacticElement.Impl implements NonUnion {
+	public static final class Null extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Null(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Existential extends SyntacticElement.Impl
-			implements NonUnion {
-		public Existential(Attribute... attributes) {
-			super(attributes);
-		}
-	}
-	public static final class Bool extends SyntacticElement.Impl implements NonUnion {
+	public static final class Bool extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Bool(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Byte extends SyntacticElement.Impl implements NonUnion {
+	public static final class Byte extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Byte(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Char extends SyntacticElement.Impl implements NonUnion {
+	public static final class Char extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Char(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Int extends SyntacticElement.Impl implements NonUnion {
+	public static final class Int extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Int(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Real extends SyntacticElement.Impl implements NonUnion {
+	public static final class Real extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Real(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Strung extends SyntacticElement.Impl implements NonUnion {
+	public static final class Strung extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Strung(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
-	public static final class Named extends SyntacticElement.Impl implements NonUnion {		
+	public static final class Nominal extends SyntacticElement.Impl implements NonUnion {		
 		public final ArrayList<String> names;		
-		public Named(Collection<String> names, Attribute... attributes) {
+		public Nominal(Collection<String> names, Attribute... attributes) {
 			super(attributes);
 			this.names = new ArrayList<String>(names);
 		}		
@@ -146,20 +166,22 @@ public interface UnresolvedType extends SyntacticElement {
 		}	
 	}
 	
-	public static final class Process extends SyntacticElement.Impl implements NonUnion {
+	public static final class Reference extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType element;
-		public Process(UnresolvedType element, Attribute... attributes) {
+		public Reference(UnresolvedType element, Attribute... attributes) {
 			this.element = element;
 		}
 	}
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
-		public Record(Map<String,UnresolvedType> types, Attribute... attributes) {
+		public final boolean isOpen;
+		public Record(boolean isOpen, Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(
 						"Cannot create type tuple with no fields");
 			}
+			this.isOpen = isOpen;
 			this.types = new HashMap<String,UnresolvedType>(types);
 		}
 	}
@@ -174,18 +196,84 @@ public interface UnresolvedType extends SyntacticElement {
 			this.types = new ArrayList<UnresolvedType>(types);
 		}
 	}
-	public static final class Fun extends SyntacticElement.Impl
-	implements NonUnion {
+	
+	public abstract static class FunctionOrMethodOrMessage extends
+			SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType ret;
-		public final UnresolvedType receiver;
+		public final UnresolvedType throwType;
 		public final ArrayList<UnresolvedType> paramTypes;
 
-		public Fun(UnresolvedType ret, UnresolvedType receiver, Collection<UnresolvedType> paramTypes,
-				Attribute... attributes) {
+		public FunctionOrMethodOrMessage(UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.ret = ret;
-			this.receiver = receiver;
+			this.throwType = throwType;
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+		}
+
+		public FunctionOrMethodOrMessage(UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.ret = ret;
+			this.throwType = throwType;
+			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+		}
+	}
+
+	public static class FunctionOrMethod extends FunctionOrMethodOrMessage
+			implements NonUnion {
+		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+			super(ret, throwType, paramTypes, attributes);
+		}
+
+		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(ret, throwType, paramTypes, attributes);
+		}
+	}
+	
+	public static class Function extends FunctionOrMethod
+	implements NonUnion {
+		public Function(UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes,
+				Attribute... attributes) {
+			super(ret,throwType,paramTypes,attributes);			
+		}
+		public Function(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(ret,throwType,paramTypes,attributes);			
+		}
+	}
+	
+	public static class Method extends FunctionOrMethod
+	implements NonUnion {
+				public Method(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
+				Attribute... attributes) {
+			super(ret,throwType,paramTypes,attributes);			
+		}
+		public Method(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(ret,throwType,paramTypes,attributes);			
+		}
+	}
+		
+	public static final class Message extends FunctionOrMethodOrMessage {
+		public final UnresolvedType receiver;
+
+		public Message(UnresolvedType receiver, UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+			super(ret, throwType, paramTypes, attributes);
+			this.receiver = receiver;
+		}
+
+		public Message(UnresolvedType receiver, UnresolvedType ret, UnresolvedType throwType,
+				Collection<UnresolvedType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(ret, throwType, paramTypes, attributes);
+			this.receiver = receiver;
 		}
 	}
 }

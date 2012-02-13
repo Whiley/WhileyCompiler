@@ -77,7 +77,7 @@ int f(int x) throws InvalidMove|InvalidShortMove:
     else:
         throw InvalidMove( {piece: WHITE_ROOK, from: POS, to: POS} )
 
-void ::g(System sys, int x):
+void ::g(System.Console sys, int x):
     try:
         f(x)
     catch(InvalidMove e):
@@ -85,7 +85,7 @@ void ::g(System sys, int x):
     catch(InvalidShortMove e):
         sys.out.println("CAUGHT EXCEPTION (InvalidShortMove)")
     
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     g(sys,1)
     g(sys,0)
     g(sys,-1)

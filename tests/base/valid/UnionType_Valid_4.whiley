@@ -7,6 +7,6 @@ define wur4nat as ur4nat|tur4nat
 string f(wur4nat x):
     return Any.toString(x)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1))  
 

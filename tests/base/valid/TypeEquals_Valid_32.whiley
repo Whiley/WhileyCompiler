@@ -44,7 +44,7 @@ Value evaluate(Expr e):
         return evaluate(e.lhs)
     else if e is [Expr]:
         return []
-    else:
+    else if e is ListAccess:
         src = evaluate(e.src)
         index = evaluate(e.index)
         // santity checks
@@ -52,8 +52,10 @@ Value evaluate(Expr e):
             return src[index]
         else:
             return 0 // dumb
+    else:
+        return 0 // deadcode
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys):
     e = { op: ADD, lhs: 123, rhs: 1}
     v = evaluate(e)
     sys.out.println("RESULT: " + v)

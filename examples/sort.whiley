@@ -24,7 +24,7 @@ import * from whiley.lang.*
             r=r+1
     return items
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys):
     sys.out.println(sort([]))
     sys.out.println(sort([4,3,5,2,1]))
     sys.out.println(sort([3,4,7,1,2]))

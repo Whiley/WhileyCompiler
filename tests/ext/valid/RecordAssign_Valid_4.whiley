@@ -1,11 +1,11 @@
 import * from whiley.lang.*
 
-define bytes as {int8 b1, int8 b2}
+define bytes as {i8 b1, i8 b2}
 
-bytes f(int8 b):
+bytes f(i8 b):
     return {b1:b,b2:2}
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     b = 1
     bs = f(b)
     sys.out.println(Any.toString(bs))

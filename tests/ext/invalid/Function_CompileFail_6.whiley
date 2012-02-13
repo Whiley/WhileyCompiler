@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define anat as int where $ >= 0
 define bnat as int where 2*$ >= $
@@ -9,7 +9,7 @@ int f(anat x):
 int f(bnat x):
     return x
 
-void ::main(System sys,[string] args):    
+void ::main(System.Console sys):    
     debug Any.toString(f(1))
     
     

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define i8 as int where $ >=-128 && $ <= 127
 
@@ -11,7 +11,7 @@ int g(int x) ensures $ > 0 && $ <= 256:
 [i8] f(int x):
     return [g(x)]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     bytes = f(256)
     debug Any.toString(bytes)
 

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 // The current parser state
 define state as {string input, int pos}
@@ -14,6 +14,6 @@ expr parse(string input):
 {expr e, state st} parseAddSubExpr(state st):    
     return {e:{num:1},st:st}
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     e = parse("Hello")
     sys.out.println(Any.toString(e))

@@ -10,7 +10,7 @@ string f(int x):
         return Any.toString(y)
     return ""
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1))
     sys.out.println(f(2))
     sys.out.println(f(3))

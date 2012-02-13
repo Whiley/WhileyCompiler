@@ -3,6 +3,6 @@ import * from whiley.lang.*
 string f([int] x):
      return Any.toString(|x|)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
      arr = []
      sys.out.println(f(arr))

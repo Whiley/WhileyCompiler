@@ -1,20 +1,16 @@
 import * from whiley.lang.*
 
-define MyProc as process {
-    int position
-}
 
-define MyMeth as int(MyProc)::(int)
+define MyMeth as int::(int)
 
-int MyProc::read(int x):
+int ::read(int x):
     return x + 123
 
-int ::test(MyMeth m, MyProc proc):
-    return proc.m(1)
+int ::test(MyMeth m):
+    return m(1)
 
-void ::main(System sys,[string] args):
-    p = spawn { position: 0 }
-    r = test(&read,p)
+void ::main(System.Console sys):
+    r = test(&read)
     sys.out.println(Any.toString(r))
 
 

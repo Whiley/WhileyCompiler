@@ -8,6 +8,6 @@ string f(iset e):
     else:
         return "int"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f({1,2,3}))
     sys.out.println(f(1))

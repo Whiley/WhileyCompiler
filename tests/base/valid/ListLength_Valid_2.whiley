@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
      arr = [1,2,3]
      assert arr[0] < |arr|
      assert arr[1] < |arr|

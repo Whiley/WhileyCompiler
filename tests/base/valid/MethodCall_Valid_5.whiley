@@ -1,13 +1,11 @@
 import * from whiley.lang.*
 
-define Proc as process { int state }
+int ::get():
+    return 1
 
-int Proc::get():
-    return this.state
+[int] ::f():
+    return [1,2,3,get()]
 
-[int] System::f(Proc x):
-    return [1,2,3,x.get()]
-
-void ::main(System sys,[string] args):
-    proc = spawn { state: 1 }
-    sys.out.println(Any.toString(sys.f(proc)))
+void ::main(System.Console sys):
+    proc = new { state: 1 }
+    sys.out.println(Any.toString(f()))

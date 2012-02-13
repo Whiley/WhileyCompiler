@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define pos as int where $ > 0
 define poslist as [pos]
@@ -14,5 +14,5 @@ nlt g(int y) requires y >= 0:
 plt f(int x) requires x >= 0:
     return g(x)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     debug Any.toString(f(0))

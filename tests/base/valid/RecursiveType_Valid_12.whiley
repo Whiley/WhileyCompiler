@@ -13,7 +13,7 @@ int maxDepth(Link l):
     else:
         return 0    
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     l1 = null
     l2 = [l1]
     l3 = [l2]

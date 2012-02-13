@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 [int] extract([int] ls, [int] rs):
     i = 0
@@ -9,6 +9,6 @@ import * from whiley.lang.*
         i = i + 1
     return r
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     rs = extract([-2,-3,1,2,-23,3,2345,4,5],[])
     debug Any.toString(rs)

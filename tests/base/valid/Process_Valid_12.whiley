@@ -1,23 +1,22 @@
 import * from whiley.lang.*
-import * from whiley.lang.*
 
-define Queue as process { [int] items }
+define Queue as ref { [int] items }
 	 
 int Queue::get():
-    item = this.items[0]
-    this.items = this.items[1..]
+    item = this->items[0]
+    this->items = this->items[1..]
     return item
 	 
 void Queue::put(int item):
-    this.items = this.items + [item]
+    this->items = this->items + [item]
 
 bool Queue::isEmpty():
-    return |this.items| == 0
+    return |this->items| == 0
 
 Queue ::Queue():
-    return spawn { items: [] }
+    return new { items: [] }
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys):
     items = [1,2,3,4,5,6,7,8,9,10]
     q = Queue()
     // first, push items into queue

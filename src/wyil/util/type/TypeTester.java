@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.util.type;
 
 import java.io.*;
@@ -6,12 +31,10 @@ import java.util.BitSet;
 
 import wyautl.io.*;
 import wyautl.lang.*;
-import wyautl.lang.DefaultInterpretation.Value;
+import wyautl.lang.DefaultInterpretation.Term;
 import wyautl.util.Tester;
 import wyjvm.io.*;
 import wyil.lang.Type;
-
-
 
 public class TypeTester {
 		
@@ -32,13 +55,13 @@ public class TypeTester {
 		 */
 		private BitSet visited;
 		
-		public boolean accepts(Automata automata, Value value) {
-			visited = new BitSet(automata.size());
-			return super.accepts(automata,value); 
+		public boolean accepts(Automaton automaton, Term value) {
+			visited = new BitSet(automaton.size());
+			return super.accepts(automaton,value); 
 		}
 		
-		public boolean accepts(int index, Automata automata, Value value) {
-			Automata.State state = automata.states[index];
+		public boolean accepts(int index, Automaton automaton, Term value) {
+			Automaton.State state = automaton.states[index];
 			
 			if (visited.get(index)) {
 				return false;
@@ -57,22 +80,22 @@ public class TypeTester {
 				if(value.kind != state.kind) { 
 					return false;
 				}				
-				int child = automata.states[index].children[0];
-				Value[] values = value.children;				
+				int child = automaton.states[index].children[0];
+				Term[] values = value.children;				
 				for(int i=0;i!=values.length;++i) {									
-					Value vchild = values[i];
-					if(!accepts(child,automata,vchild)) {
+					Term vchild = values[i];
+					if(!accepts(child,automaton,vchild)) {
 						return false;
 					}
 				}
 				return true;
 			}			
 			case Type.K_FUNCTION: 
-			case Type.K_HEADLESS:
-			case Type.K_METHOD: {				
-				int start = state.kind == Type.K_METHOD ? 3 : 2;
+			case Type.K_METHOD:
+			case Type.K_MESSAGE: {				
+				int start = state.kind == Type.K_MESSAGE ? 3 : 2;
 				int[] schildren = state.children;
-				Value[] vchildren = value.children;
+				Term[] vchildren = value.children;
 				if(schildren.length != vchildren.length) {
 					return false;
 				}				
@@ -80,35 +103,35 @@ public class TypeTester {
 				// First, do parameters (which are contravariant).
 				for(int i=start;i<length;++i) {
 					int schild = schildren[i];					
-					Value vchild = vchildren[i];
-					if(accepts(schild,automata,vchild)) {
+					Term vchild = vchildren[i];
+					if(accepts(schild,automaton,vchild)) {
 						return false;
 					}
 				}
 				// Second, do return values (which are covariant)
-				if(!accepts(schildren[start],automata,vchildren[start])) {
+				if(!accepts(schildren[start],automaton,vchildren[start])) {
 					return false;
 				}
 				// Third, do return values (which should be contra-variant)
-				if(state.kind == Type.K_METHOD) {
-					if(accepts(schildren[start],automata,vchildren[start])) {
+				if(state.kind == Type.K_MESSAGE) {
+					if(accepts(schildren[start],automaton,vchildren[start])) {
 						return false;
 					}
 				}
 				return true;
 			}			
 			case Type.K_NEGATION: {
-				int child = automata.states[index].children[0];
+				int child = automaton.states[index].children[0];
 				visited.set(index);				
-				return !accepts(child,automata,value);
+				return !accepts(child,automaton,value);
 			}
 			case Type.K_UNION: {
-				int[] children = automata.states[index].children;
+				int[] children = automaton.states[index].children;
 				visited.set(index);
 				BitSet copy = visited;
 				for(int child : children) {
 					visited = (BitSet) copy.clone();
-					if(accepts(child,automata,value)) {
+					if(accepts(child,automaton,value)) {
 						return true;
 					}
 				}				
@@ -116,14 +139,14 @@ public class TypeTester {
 				return false;
 			}			
 			}
-			return super.accepts(index,automata,value);
+			return super.accepts(index,automaton,value);
 		}
 	}
 	
 	private static final TypeInterpretation interpretation = new TypeInterpretation();
 	
-	public static boolean isModelSubtype(Automata a1, Automata a2, ArrayList<Value> model) {
-		for(Value v : model) {
+	public static boolean isModelSubtype(Automaton a1, Automaton a2, ArrayList<Term> model) {
+		for(Term v : model) {
 			if (interpretation.accepts(a2, v) && !interpretation.accepts(a1, v)) {
 				return false;
 			}
@@ -131,8 +154,8 @@ public class TypeTester {
 		return true;
 	}
 	
-	public static boolean isModelEmpty(Automata a1, ArrayList<Value> model) {
-		for(Value v : model) {
+	public static boolean isModelEmpty(Automaton a1, ArrayList<Term> model) {
+		for(Term v : model) {
 			if (interpretation.accepts(a1, v)) {
 				return false;
 			}
@@ -140,7 +163,7 @@ public class TypeTester {
 		return true;
 	}
 
-	public static void generateCanonicalisationTests(ArrayList<Automata> types)
+	public static void generateCanonicalisationTests(ArrayList<Automaton> types)
 			throws IOException {
 
 		System.out.println("package wyil.testing;");
@@ -151,7 +174,7 @@ public class TypeTester {
 		System.out.println("public class SimplifyTests {");
 		int count = 1;
 		for (int i = 0; i != types.size(); ++i) {
-			Automata a1 = types.get(i);
+			Automaton a1 = types.get(i);
 			Type t1 = Type.construct(types.get(i));
 			if (t1 == Type.T_VOID) {
 				continue;
@@ -172,8 +195,8 @@ public class TypeTester {
 		System.err.println("Wrote " + count + " simplification tests.");
 	}
 	
-	public static void generateSubtypeTests(ArrayList<Automata> types,
-			ArrayList<Value> model) throws IOException {		
+	public static void generateSubtypeTests(ArrayList<Automaton> types,
+			ArrayList<Term> model) throws IOException {		
 		System.out.println("// This file was automatically generated.");
 		System.out.println("package wyil.testing;");
 		System.out.println("import org.junit.*;");
@@ -183,11 +206,11 @@ public class TypeTester {
 		System.out.println("public class SubtypeTests {");
 		int count = 1;
 		for(int i=0;i!=types.size();++i) {
-			Automata a1 = types.get(i);
+			Automaton a1 = types.get(i);
 			Type t1 = Type.construct(types.get(i));			
 			if(t1 == Type.T_VOID) { continue; } 
 			for(int j=0;j<types.size();++j) {
-				Automata a2 = types.get(j);
+				Automaton a2 = types.get(j);
 				Type t2 = Type.construct(types.get(j));				
 				if(t2 == Type.T_VOID) { continue; }				
 				System.out.print("\t@Test public void test_" + count++ + "() { ");
@@ -220,10 +243,10 @@ public class TypeTester {
 			boolean binaryIn = true;
 			int index = 0;
 			String mode = args[index++];
-			ArrayList<DefaultInterpretation.Value> model = Tester.readModel(
+			ArrayList<DefaultInterpretation.Term> model = Tester.readModel(
 					new Type.BinaryReader(new BinaryInputStream(
 							new FileInputStream(args[index]))), verbose);
-			ArrayList<Automata> types = Tester.readAutomatas(
+			ArrayList<Automaton> types = Tester.readAutomatas(
 					new Type.BinaryReader(new BinaryInputStream(
 							new FileInputStream(args[index+1]))), verbose);	
 			

@@ -6,6 +6,6 @@ define R2 as { int x }
 R1 f(R2 i):
     return (R1) i
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f({x:123542})))
     

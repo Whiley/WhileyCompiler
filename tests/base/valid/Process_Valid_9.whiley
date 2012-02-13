@@ -1,12 +1,12 @@
 import * from whiley.lang.*
 
-define Actor as process { int data }
+define Actor as ref { int data }
 
 int Actor::get():
-    return this.data
+    return this->data
 
 Actor ::createActor(int n):
-    return spawn { data: n }
+    return new { data: n }
 
 [Actor] ::createActors(int n):
     row = []
@@ -15,7 +15,7 @@ Actor ::createActor(int n):
         row = row + [m]
     return row
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     actors = createActors(10)
     r = 0
     for i in 0..|actors|:

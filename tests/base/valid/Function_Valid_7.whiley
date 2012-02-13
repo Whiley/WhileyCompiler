@@ -6,6 +6,6 @@ define tcode as {1,2}
 string g(fcode f):
     return Any.toString(f)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = 1
     sys.out.println(g(x))

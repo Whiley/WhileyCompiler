@@ -1,7 +1,7 @@
-import * from whiley.lang.*
 
-void ::main(System sys,[string] args):
-    if |args| > 0:
+
+void ::main(System.Console sys):
+    if |sys.args| > 0:
         arr = [1,2,4]
     else:
         arr = [1,2,3]

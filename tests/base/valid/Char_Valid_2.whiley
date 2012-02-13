@@ -3,7 +3,7 @@ import * from whiley.lang.*
 char iof(string s, int i):
     return s[i]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(iof("Hello",0)))
     sys.out.println(Any.toString(iof("Hello",1)))
     sys.out.println(Any.toString(iof("Hello",2)))

@@ -25,6 +25,6 @@
 
 package whiley.lang
 
-define Time as process {int dummy}
+define Time as ref {int dummy}
 
 public native int Time::currentTime():

@@ -7,7 +7,7 @@ define tupper as {int op, intList il}
 int f(tupper y):
     return y.op
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = {op:1,il:1}
     sys.out.println(Any.toString(x))
     f(x)

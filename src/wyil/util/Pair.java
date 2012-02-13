@@ -34,8 +34,8 @@ package wyil.util;
  * @param <SECOND> Type of second item
  */
 public class Pair<FIRST,SECOND> {
-	private final FIRST first;
-	private final SECOND second;	
+	protected final FIRST first;
+	protected final SECOND second;	
 	
 	public Pair(FIRST f, SECOND s) {
 		first=f;

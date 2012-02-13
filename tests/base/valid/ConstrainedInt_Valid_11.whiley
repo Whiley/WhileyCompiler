@@ -9,7 +9,7 @@ b_nat f(a_nat x):
     else:
         return f(x-1)
 
-void ::main(System sys,[string] args):
-    x = |args|    
+void ::main(System.Console sys):
+    x = |sys.args|    
     x = f(x)    
     sys.out.println(Any.toString(x))

@@ -71,11 +71,10 @@ public class ModuleCheck implements Transform {
 		}
 	}
 		
-	public void check(Module.Method method) {
-		boolean isFunction = !(method.type() instanceof Type.Method);
+	public void check(Module.Method method) {		
 		for (Module.Case c : method.cases()) {
 			checkTryCatchBlocks(c, method);
-			if(isFunction) {
+			if(method.isFunction()) {
 				checkFunctionPure(c);
 			}
 		}		
@@ -220,10 +219,10 @@ public class ModuleCheck implements Transform {
 			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.Spawn) {
+			} else if(code instanceof Code.New) {
 				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.ProcLoad){ 
-				syntaxError(errorMessage(PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
+			} else if(code instanceof Code.Dereference){ 
+				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
 			}
 		}	
 	}

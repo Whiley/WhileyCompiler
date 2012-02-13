@@ -258,7 +258,7 @@ define constants as [
 	01111110b
 ]
 
-public void ::main(System sys,[string] args):
+public void ::main(System.Console sys):
     for i in constants:
         for j in constants:
             sys.out.print(Any.toString(i) + " ^ ")

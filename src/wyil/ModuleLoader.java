@@ -33,29 +33,33 @@ import java.util.jar.JarFile;
 import wyjc.io.ClassFileLoader; // to be deprecated
 import wyil.io.*;
 import wyil.lang.*;
-import wyil.path.Path;
 import wyil.util.*;
+import wyil.util.path.Path;
 
 /**
- * Responsible for locating whiley modules on the WHILEYPATH, and retaining
- * information about them which can be used to compile other whiley files. This
- * is a critical component of the Whiley compiler.
+ * Responsible for locating whiley modules on the WHILEYPATH and SOURCEPATH, and
+ * retaining information about them which can be used to compile other whiley
+ * files. The WHILEYPATH and SOURCEPATH consist of a list of "package roots",
+ * where each root can be a directory, a Jar file, or even something else.
+ * 
+ * <b>NOTE:</b> This class is designed to be subclassed. However, in the future,
+ * it should be turned into an interface.
  * 
  * @author David J. Pearce
  * 
  */
-public class ModuleLoader {
+public final class ModuleLoader {
 	/**
 	 * The source path is a list of locations which must be searched in
 	 * ascending order for whiley files.
 	 */
-	protected ArrayList<Path.Root> sourcepath;
+	private ArrayList<Path.Root> sourcepath;
 	
 	/**
 	 * The whiley path is a list of locations which must be searched in
 	 * ascending order for wyil files.
 	 */
-	protected ArrayList<Path.Root> whileypath;
+	private ArrayList<Path.Root> whileypath;
 	
 	/**
 	 * A map from module identifiers to module objects. This is the master cache
@@ -63,55 +67,33 @@ public class ModuleLoader {
 	 * module has been entered into the moduletable, it will not be loaded
 	 * again.
 	 */
-	protected HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
-
+	private HashMap<ModuleID, Module> moduletable = new HashMap<ModuleID, Module>();
+	
 	/**
-	 * A map from module identifiers to skeleton objects. This is required to
-	 * permit preregistration of source files during compilation.
-	 */
-	protected HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
-
+	 * Contains a set of ModuleIDs which have been ignored. This is purely to
+	 * prevent continually rereading those modules.
+	 **/
+	private HashSet<ModuleID> ignored = new HashSet<ModuleID>();
+	
+	
 	/**
 	 * This identifies which packages have had their contents fully resolved.
 	 * All items in a resolved package must have been loaded into the filetable.
 	 */
-	protected HashMap<PkgID, ArrayList<Path.Root>> packageroots = new HashMap<PkgID, ArrayList<Path.Root>>();
+	private HashMap<PkgID, ArrayList<Path.Root>> packageroots = new HashMap<PkgID, ArrayList<Path.Root>>();
 
 	/**
      * The failed packages set is a collection of packages which have been
      * requested, but are known not to exist. The purpose of this cache is
      * simply to speed up package resolution.
      */
-	protected final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
+	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
 	
 	/**
 	 * The suffix map maps suffixes to module readers for those suffixes.
 	 */
-	protected final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
+	private final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();	
 	
-	/**
-	 * Provides basic information regarding what names are defined within a
-	 * module. It represents the minimal knowledge regarding a module that we
-	 * can have. Skeletons are used early on in the compilation process to help
-	 * with name resolution.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public abstract static class Skeleton {
-		protected final ModuleID mid;
-
-		public Skeleton(ModuleID mid) {
-			this.mid = mid;
-		}
-		
-		public ModuleID id() {
-			return mid;
-		}
-
-		public abstract boolean hasName(String name);
-	}
-		
 	/**
 	 * The logger is used to log messages from the module loader.
 	 */
@@ -146,19 +128,7 @@ public class ModuleLoader {
 	 */
 	public void setModuleReader(String suffix, ModuleReader reader) {
 		suffixMap.put(suffix, reader);
-	}
-		
-	/**
-	 * Register a given skeleton with this loader. This ensures that when
-	 * skeleton requests are made, this skeleton will be used instead of
-	 * searching for it on the whileypath.
-	 * 
-	 * @param skeleton
-	 *            --- skeleton to preregister.
-	 */
-	public void preregister(Skeleton skeleton) {		
-		skeletontable.put(skeleton.id(), skeleton);			
-	}
+	}	
 	
 	/**
 	 * Register a given module with this loader. This ensures that when requests
@@ -183,9 +153,11 @@ public class ModuleLoader {
 	 */
 	public Module loadModule(ModuleID module) throws ResolveError {		
 		Module m = moduletable.get(module);
-		
-		if(m != null) {
+						
+		if (m != null) {
 			return m; // module was previously loaded and cached
+		} else if (ignored.contains(module)) {
+			throw new ResolveError("Unable to find module: " + module);
 		}
 			
 		// module has not been previously loaded.
@@ -213,56 +185,22 @@ public class ModuleLoader {
 		} catch(Exception e) {				
 			throw new ResolveError("Unable to find module: " + module,e);
 		}	
-	}
+	}	
 	
-	/**
-	 * This method attempts to load a whiley module skeleton. A skeleton
-	 * provides signature information about a module. For example, the signature
-	 * of all methods. However, a skeleton does not provide access to a methods
-	 * body. The skeleton is looked up in the internal skeleton table. If not
-	 * found there, then the WHILEYPATH is searched. A resolve error is thrown
-	 * if the module cannot be found or otherwise loaded.
-	 * 
-	 * @param module
-	 *            The module skeleton to load
-	 * @return the loaded module
-	 */
-	public Skeleton loadSkeleton(ModuleID module) throws ResolveError {
-		Skeleton skeleton = skeletontable.get(module);
-		if(skeleton != null) {
-			return skeleton;
-		} 		
-		Module m = moduletable.get(module);
-		if(m != null) {
-			return m; // module was previously loaded and cached
-		}
-		
-		// module has not been previously loaded.
-		resolvePackage(module.pkg());
-				
+	public Set<ModuleID> loadPackage(PkgID pid) throws ResolveError {
+		resolvePackage(pid);
+		HashSet<ModuleID> contents = new HashSet<ModuleID>();
 		try {
-			// ok, now look for skeleton inside package roots.
-			Path.Entry entry = null;
-			for(Path.Root root : packageroots.get(module.pkg())) {
-				entry = root.lookup(module);
-				if(entry != null) {
-					break;
+			for(Path.Root root : packageroots.get(pid)) {			
+				for (Path.Entry e : root.list(pid)) {
+					contents.add(e.id());
 				}
 			}
-			if(entry == null) {
-				throw new ResolveError("Unable to find module: " + module);
-			}
-			m = readModuleInfo(entry);
-			if(m == null) {
-				throw new ResolveError("Unable to find module: " + module);
-			}
-			return m;
-		} catch(RuntimeException e) {
-			throw e;
-		} catch(Exception e) {				
-			throw new ResolveError("Unable to find module: " + module,e);
-		}		
-	}	
+		} catch(Exception e) {
+			throw new ResolveError("unknown failure",e);
+		}
+		return contents;
+	}
 	
 	/**
 	 * This method searches the WHILEYPATH looking for a matching package. If
@@ -315,15 +253,19 @@ public class ModuleLoader {
 		long time = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 		ModuleReader reader = suffixMap.get(entry.suffix());
-		Module mi = reader.read(entry.id(), entry.contents());
+		ModuleID mid = entry.id();
+		
+		Module mi = reader.read(mid, entry.contents());
 		
 		if(mi != null) {
-			logger.logTimedMessage("Loaded " + entry.location() + ":" + entry.id(),
+			logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
 			moduletable.put(mi.id(), mi);
 		} else {
-			logger.logTimedMessage("Ignored " + entry.location() + ":" + entry.id(),
+			
+			logger.logTimedMessage("Ignored " + entry.location() + ":" + mid,
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
+			ignored.add(mid);
 		}
 		return mi;
 	}

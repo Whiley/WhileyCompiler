@@ -57,11 +57,11 @@ public int|null lastIndexOf(string str, char c):
 
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED
-public string replace(string str, char old, char new):
+public string replace(string str, char old, char n):
     i = 0
     while i < |str|:
         if str[i] == old:
-            str[i] = new
+            str[i] = n
         i = i + 1
     return str    
 

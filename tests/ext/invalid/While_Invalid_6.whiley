@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 int sumOver([int] ls):
     i = 0
@@ -9,6 +9,6 @@ int sumOver([int] ls):
         i = i + 1
     return sum
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     rs = sumOver([-2,-3,1,2,-23,3,2345,4,5])
     debug Any.toString(rs)

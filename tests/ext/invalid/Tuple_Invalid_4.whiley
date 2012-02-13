@@ -10,6 +10,6 @@ int min(natpair p):
     else:
         return x
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys):
     p = (-1,0)
     x = min(p)

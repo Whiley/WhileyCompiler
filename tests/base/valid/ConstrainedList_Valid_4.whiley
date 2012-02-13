@@ -8,7 +8,7 @@ char f(state st):
             return st.input[st.pos]
     return ' '
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     c = f({input:"hello",pos:0})
     sys.out.println(Any.toString(c))
  

@@ -25,8 +25,11 @@
 
 package whiley.lang
 
-define SystemOutWriter as process ?
-define System as process { SystemOutWriter out, ? rest}
+define SystemOutWriter as ref any
+define Console as { 
+    SystemOutWriter out,
+    [string] args    
+}
 
 // Print a given string to stdout
 void SystemOutWriter::print(string str):

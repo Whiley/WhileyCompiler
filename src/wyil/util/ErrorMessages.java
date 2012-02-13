@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.util;
 
 /**
@@ -49,12 +74,12 @@ public class ErrorMessages {
 	public static final int DUPLICATE_CASE_LABEL = 24;
 	public static final int DEAD_CODE = 25;
 	public static final int UNREACHABLE_CODE = 26;
-	public static final int RECEIVER_NOT_PROCESS = 27;
-	public static final int PROCESS_NOT_PERMITTED_IN_FUNCTION = 28;
+	public static final int RECEIVER_NOT_REFERENCE = 27;
+	public static final int REFERENCE_NOT_PERMITTED_IN_FUNCTION = 28;
 	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 29;
 	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 30;
 	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 31;
-	public static final int PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION = 32;
+	public static final int REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION = 32;
 	public static final int SUBTYPE_ERROR = 33;
 	public static final int INCOMPARABLE_OPERANDS = 34;
 	public static final int RECORD_TYPE_REQUIRED = 35;
@@ -93,12 +118,12 @@ public class ErrorMessages {
 			"duplicate case label",
 			"dead-code encountered (i.e. this statement has no effect)",
 			"unreachable code encountered (i.e. execution can never reach this statement)",
-			"method receiver must have process type",
-			"process not permitted in function",
+			"method receiver must have reference type",
+			"reference not permitted in function",
 			"message send not permitted in function",
 			"method invocation not permitted in function",
-			"process spawning not permitted in function",
-			"process access not permitted in function",
+			"object creation not permitted in function",
+			"dereference not permitted in function",
 			"expected type $0, found $1",
 			"incomparable operands: $0 and $1",
 			"record required, got: $0",
@@ -125,7 +150,7 @@ public class ErrorMessages {
 		}
 		String r = messages[kind];
 		for (int i = 0; i != data.length; ++i) {
-			String rep = data[i].toString();
+			String rep = data[i].toString();			
 			r = r.replaceAll("\\$" + i, rep);			
 		}
 		return r;		

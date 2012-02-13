@@ -7,5 +7,5 @@ string f(int x) requires x > 0:
     y = x + 1
     return g(y)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1))

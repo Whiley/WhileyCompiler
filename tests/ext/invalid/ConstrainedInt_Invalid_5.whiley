@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 // this is a comment!
 define nat as {1,2,3,4,5}
@@ -9,5 +9,5 @@ int h() ensures $ <= 3:
 nat f():
     return h()
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     debug Any.toString(f())

@@ -55,9 +55,11 @@ string move2str(Move m):
             return "O-O"
         else:
             return "O-O-O"
-    else:
+    else if m is CheckMove:
         // check move
         return move2str(m.check) + "+"  
+    else:
+        return "" // deadcode
 
 string piece2str(Piece p):
     if p.kind == PAWN:
@@ -69,7 +71,7 @@ string pos2str(Pos p):
     return "" + ((char) ('a' + p.col)) + ((char) ('1' + p.row))
 
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     m = {piece: WHITE_PAWN, from: A2, to: A1 }
     sys.out.println(move2str(m))
     m = {piece: WHITE_KNIGHT, from: A2, to: A1 }

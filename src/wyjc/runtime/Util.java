@@ -31,12 +31,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-import wyil.lang.Value;
-import wyil.util.Pair;
-
 import static wyil.lang.Type.K_VOID;
 import static wyil.lang.Type.K_ANY;
-import static wyil.lang.Type.K_META;
 import static wyil.lang.Type.K_NULL;
 import static wyil.lang.Type.K_BOOL;
 import static wyil.lang.Type.K_BYTE;
@@ -48,15 +44,9 @@ import static wyil.lang.Type.K_TUPLE;
 import static wyil.lang.Type.K_SET;
 import static wyil.lang.Type.K_LIST;
 import static wyil.lang.Type.K_DICTIONARY;
-import static wyil.lang.Type.K_PROCESS;
-import static wyil.lang.Type.K_PROCESS;
 import static wyil.lang.Type.K_RECORD;
 import static wyil.lang.Type.K_UNION;
 import static wyil.lang.Type.K_NEGATION;
-import static wyil.lang.Type.K_FUNCTION;
-import static wyil.lang.Type.K_EXISTENTIAL;
-import static wyil.lang.Type.K_LABEL;
-
 
 public class Util {
 
@@ -501,6 +491,9 @@ public class Util {
 				if(obj instanceof List) {
 					List ol = (List) obj;
 					Type.List tl = (Type.List) t;
+					if(tl.nonEmpty && ol.isEmpty()) {
+						return false;
+					}
 					Type el = tl.element;
 					if(el.kind == K_ANY) {
 						return true;
@@ -587,7 +580,10 @@ public class Util {
 					Record ol = (Record) obj;
 					Type.Record tl = (Type.Record) t;
 					String[] names = tl.names;
-					Type[] types = tl.types;
+					Type[] types = tl.types;					
+					if(!tl.isOpen && names.length != ol.size()) {
+						return false;
+					}
 					for(int i=0;i!=names.length;++i) {
 						String name = names[i];
 						if(ol.containsKey(name)) {
@@ -639,10 +635,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(List object, Type type) {
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.List) {			
 			Type.List tl = (Type.List) type;
 			Type el = tl.element;
 			if(el.kind == K_ANY) {
@@ -657,6 +650,8 @@ public class Util {
 				}
 				return true;
 			}
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}
 	
@@ -676,10 +671,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Set object, Type type) {
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Set) {			
 			Type.Set tl = (Type.Set) type;
 			Type el = tl.element;
 			if(el.kind == K_ANY) {
@@ -694,6 +686,8 @@ public class Util {
 				}
 				return true;
 			}
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}
 	
@@ -713,10 +707,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Dictionary object, Type type) {		
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Dictionary) {			
 			Type.Dictionary tl = (Type.Dictionary) type;
 			Type key = tl.key;
 			Type value = tl.value;
@@ -735,6 +726,8 @@ public class Util {
 				}
 				return true;
 			}
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}
 	
@@ -754,13 +747,13 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Record object, Type type) {
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Record) {			
 			Type.Record tl = (Type.Record) type;
 			String[] names = tl.names;
 			Type[] types = tl.types;
+			if (!tl.isOpen && names.length != object.size()) {
+				return false;
+			}
 			for(int i=0;i!=names.length;++i) {
 				String name = names[i];
 				if(object.containsKey(name)) {
@@ -774,6 +767,8 @@ public class Util {
 				}
 			}
 			return true;
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}	
 	
@@ -793,10 +788,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(Tuple object, Type type) {				
-		if(type instanceof Type.Negation) {
-			Type.Negation not = (Type.Negation) type;			
-			return !instanceOf(object,not.element);
-		} else {
+		if(type instanceof Type.Tuple) {			
 			Type.Tuple tl = (Type.Tuple) type;
 			Type[] types = tl.types;
 			if(types.length == object.size()) {	
@@ -809,6 +801,8 @@ public class Util {
 				return true;					
 			}
 			return false;
+		} else {
+			return instanceOf((Object)object,type);
 		}
 	}		
 	
@@ -1032,4 +1026,17 @@ public class Util {
 			return 0;
 		}
 	}
+	
+
+	public static Record systemConsole(String[] args) {
+		// Not sure what the default value should be yet!!!
+		Actor sysout = new Actor(null);
+		Record data = new Record();
+		data.put("out", sysout);		
+		data.put("args",fromStringList(args));
+		Record console = new Record(data);
+		sysout.start();		
+		return console;
+	}
+	
 }

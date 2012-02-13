@@ -155,7 +155,7 @@ public class ClassFileLoader implements ModuleReader {
 			// then read the type
 			BinaryInputStream bin = new BinaryInputStream(
 					new JavaIdentifierInputStream(mangle));
-			Type.Function type = (Type.Function) new Type.BinaryReader(bin).readType();
+			Type.FunctionOrMethodOrMessage type = (Type.FunctionOrMethodOrMessage) new Type.BinaryReader(bin).readType();
 			// now build the parameter names
 			List<Attribute> attrs = new ArrayList<Attribute>();
 			for (BytecodeAttribute ba : cm.attributes()) {

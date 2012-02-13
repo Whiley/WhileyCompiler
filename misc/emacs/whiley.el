@@ -1,6 +1,29 @@
-; ==================================================================
-; BEGIN WHILEY MODE
-; ==================================================================
+;; Copyright (c) 2012, David J. Pearce (djp@ecs.vuw.ac.nz)
+;; All rights reserved.
+;;
+;; Redistribution and use in source and binary forms, with or without
+;; modification, are permitted provided that the following conditions are met:
+;;    * Redistributions of source code must retain the above copyright
+;;      notice, this list of conditions and the following disclaimer.
+;;    * Redistributions in binary form must reproduce the above copyright
+;;      notice, this list of conditions and the following disclaimer in the
+;;      documentation and/or other materials provided with the distribution.
+;;    * Neither the name of the <organization> nor the
+;;      names of its contributors may be used to endorse or promote products
+;;      derived from this software without specific prior written permission.
+;;
+;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+;; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+;; DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+;; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+;; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+;; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+(require 'cc-mode)
 
 (defun whiley-comment-dwim (arg)
   "Comment or uncomment current line or region in a smart way.
@@ -11,11 +34,11 @@ For detail, see `comment-dwim'."
      (comment-dwim arg)))
 
 (defvar whiley-keywords
-  '("process" "native" "export" "extern" "null" "return" "if" "is" "throw" "throws" "try" "catch" "switch" "case" "default" "break" "skip" "do" "while" "for" "else" "define" "assert" "as" "package" "import" "from" "debug" "where" "ensures" "requires" "public" "protected" "private" "this" "str" "spawn" "in" "no" "some" "false" "true")
+  '("native" "export" "extern" "null" "return" "if" "is" "throw" "throws" "try" "catch" "switch" "case" "default" "break" "skip" "do" "while" "for" "else" "define" "assert" "as" "package" "import" "from" "debug" "where" "ensures" "requires" "public" "protected" "private" "this" "str" "new" "in" "no" "some" "false" "true")
     "Whiley keywords.")
 
 (defvar whiley-types
-  '("real" "int" "bool" "void" "string" "char" "void" "process")
+  '("real" "int" "bool" "void" "string" "char" "void" "ref")
   "Whiley types.")
 
 (defvar whiley-keywords-regexp (regexp-opt whiley-keywords 'words))
@@ -34,12 +57,17 @@ For detail, see `comment-dwim'."
   (setq whiley-keywords-regexp nil)
   (setq whiley-types-regexp nil)
 
-  ;; c-style comment "// ..."
+  ;; borrow adaptive fill for comments from cc-mode
+  (substitute-key-definition 'fill-paragraph 'c-fill-paragraph
+			     c-mode-base-map global-map)
+
+  ;; java-style comments "// ..." and “/* … */” 
   (define-key whiley-mode-map [remap comment-dwim] 'whiley-comment-dwim)
-  (modify-syntax-entry ?\/ ". 12b" whiley-mode-syntax-table)
+  (modify-syntax-entry ?\/ ". 124b" whiley-mode-syntax-table)
+  (modify-syntax-entry ?* ". 23" whiley-mode-syntax-table)
   (modify-syntax-entry ?\n "> b" whiley-mode-syntax-table)
 
-  ;; Indentation.  Needs work!
+  ;; indentation.  Needs work!
   (setq indent-tabs-mode nil)
   (local-set-key (kbd "TAB") 'tab-to-tab-stop)
   (setq tab-stop-list (list 4 8 12 16 20 24 28))  
@@ -50,6 +78,4 @@ For detail, see `comment-dwim'."
   (local-set-key "\M-e" '(lambda () (interactive) (ucs-insert #x2208)))
 )
 
-; ==================================================================
-; END WHILEY MODE
-; ==================================================================
+(provide 'whiley)

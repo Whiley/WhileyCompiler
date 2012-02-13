@@ -3,5 +3,5 @@ import * from whiley.lang.*
 string f(string s, char c):
     return s + c
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f("Hello Worl",'d'))    

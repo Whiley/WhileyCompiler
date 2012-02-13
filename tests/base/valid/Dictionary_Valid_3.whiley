@@ -1,12 +1,12 @@
 import * from whiley.lang.*
 
-{int->int} f(int x):
-    return {1->x, 3->2}
+{int=>int} f(int x):
+    return {1=>x, 3=>2}
 
-int get(int i, {int->int} map):
+int get(int i, {int=>int} map):
     return map[i]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(get(1,f(1))))
     sys.out.println(Any.toString(get(1,f(2))))
     sys.out.println(Any.toString(get(1,f(3))))

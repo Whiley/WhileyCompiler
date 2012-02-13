@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 void f([int] x, int i) requires |x| > 0:
     if i < 0 || i >= |x|:
@@ -9,7 +9,7 @@ void f([int] x, int i) requires |x| > 0:
     debug Any.toString(y)
     debug Any.toString(z)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     arr = [1,2,3]
     f(arr, 1)
     debug Any.toString(arr)    

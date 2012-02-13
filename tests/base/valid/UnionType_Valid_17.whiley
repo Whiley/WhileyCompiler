@@ -19,7 +19,7 @@ define SExpr as SyntaxError | Expr
         st.pos = st.pos + 1    
     return n, st
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     e,s = parseTerm({input: "123", pos: 0})
     sys.out.println(Any.toString(e))
     e,s = parseTerm({input: "abc", pos: 0})

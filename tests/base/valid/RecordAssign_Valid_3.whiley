@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = {f1:2,f2:3}
     y = {f1:1,f2:3}
     sys.out.println(Any.toString(x))

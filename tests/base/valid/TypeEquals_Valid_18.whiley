@@ -8,7 +8,7 @@ string f(intreal e):
     else:
         return "real"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1))
     sys.out.println(f(1.134))
     sys.out.println(f(1.0))

@@ -32,6 +32,13 @@ import java.util.*;
 import wyil.util.SyntaxError;
 import wyjc.runtime.BigRational;
 
+/**
+ * Split a source file into a list of tokens. These tokens can then be fed into
+ * the parser in order to generate an Abstract Syntax Tree (AST).
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class WhileyLexer {	
 	private String filename;
 	private String input;
@@ -47,9 +54,7 @@ public class WhileyLexer {
 		this(new InputStreamReader(instream,"UTF8"));		
 	}
 	
-	public WhileyLexer(Reader reader) throws IOException {
-		BufferedReader in = new BufferedReader(reader);
-		
+	public WhileyLexer(Reader reader) throws IOException {	
 		StringBuilder tmp = new StringBuilder();	    
 	    int len = 0;
 	    char[] buf = new char[1024]; 
@@ -326,8 +331,13 @@ public class WhileyLexer {
 		
 		if(c == '.') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '.') {
-				pos += 2;
-				return new DotDot(pos-2,line);
+				if((pos+2) < input.length() && input.charAt(pos+2) == '.') {
+					pos += 3;
+					return new DotDotDot(pos-3,line);
+				} else {
+					pos += 2;
+					return new DotDot(pos-2,line);
+				}
 			} else {
 				return new Dot(pos++,line);
 			}
@@ -406,17 +416,14 @@ public class WhileyLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new EqualsEquals(pos-2,line);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
+				pos += 2;
+				return new StrongRightArrow("=>",pos-2,line);
 			} else {
 				return new Equals(pos++,line);				
 			}
 		} else if(c == '<') {
-			if((pos+2) < input.length() && input.charAt(pos+1) == '-' && input.charAt(pos+2) == '>') {
-				pos += 3;				
-				return new LeftRightArrow("<->",pos-3,line);
-			} else if((pos+1) < input.length() && input.charAt(pos+1) == '-') {
-				pos += 2;
-				return new LeftArrow("<-",pos-2,line);
-			} else if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
+			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new LessEquals("<=",pos-2,line);
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '<') {
@@ -482,7 +489,7 @@ public class WhileyLexer {
 		"real",
 		"string",
 		"bool",
-		"process",
+		"ref",
 		"void",			
 		"if",		
 		"switch",
@@ -510,7 +517,7 @@ public class WhileyLexer {
 		"native",
 		"export",
 		"extern",
-		"spawn",
+		"new",
 		"try"
 	};
 	
@@ -537,7 +544,7 @@ public class WhileyLexer {
 		} else if(text.equals("some")) {
 			return new Some(text,start,line);
 		} else if(text.equals("is")) {			
-			return new TypeEquals(start,line);			 
+			return new InstanceOf(start,line);			 
 		}
 	
 		// otherwise, must be identifier
@@ -729,6 +736,9 @@ public class WhileyLexer {
 	public static class DotDot extends Token {
 		public DotDot(int pos, int line) { super("..",pos,line);	}
 	}
+	public static class DotDotDot extends Token {
+		public DotDotDot(int pos, int line) { super("...",pos,line);	}
+	}
 	public static class Bar extends Token {
 		public Bar(int pos, int line) { super("|",pos,line);	}
 	}	
@@ -747,8 +757,8 @@ public class WhileyLexer {
 	public static class GreaterEquals extends Token {
 		public GreaterEquals(String text, int pos, int line) { super(text,pos,line);	}
 	}
-	public static class TypeEquals extends Token {
-		public TypeEquals(int pos, int line) { super("is",pos,line);	}
+	public static class InstanceOf extends Token {
+		public InstanceOf(int pos, int line) { super("is",pos,line);	}
 	}
 	public static class None extends Token {
 		public None(String text, int pos, int line) { super(text,pos,line);	}
@@ -806,5 +816,8 @@ public class WhileyLexer {
 	}
 	public static class RightArrow extends Token {
 		public RightArrow(String text, int pos, int line) { super(text,pos,line);	}
+	}
+	public static class StrongRightArrow extends Token {
+		public StrongRightArrow(String text, int pos, int line) { super(text,pos,line);	}
 	}
 }

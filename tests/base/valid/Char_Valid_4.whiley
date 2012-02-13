@@ -6,7 +6,7 @@ bool isChar(any x):
     else:
         return false
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(isChar('c')))
     sys.out.println(Any.toString(isChar(1)))
     sys.out.println(Any.toString(isChar([1,2,3])))

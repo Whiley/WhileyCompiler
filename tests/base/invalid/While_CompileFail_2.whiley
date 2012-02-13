@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     i=0
     r=0
     while i < |args| where j > 0:

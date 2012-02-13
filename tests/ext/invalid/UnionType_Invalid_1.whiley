@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define urf1nat as int where $ > 0
 define turf1nat as int where $ > 10
@@ -10,7 +10,7 @@ void f(wurf1nat x):
 void g(int x):
     f(x)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     g(1)
     g(-1)
 

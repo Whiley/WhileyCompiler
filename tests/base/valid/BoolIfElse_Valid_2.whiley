@@ -11,7 +11,7 @@ int sum(LinkedList ls):
     else:
         return 1 + sum(ls.next)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     ls = { val: true, next: null}
     sys.out.println(Any.toString(sum(ls)))
     ls = { val: true, next: ls}

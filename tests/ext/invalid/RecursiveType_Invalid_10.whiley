@@ -1,5 +1,5 @@
-import * from whiley.lang.*
 
+define nat as int where $ >= 0
 define LinkedList as int | {LinkedList next, int data}
 
 define posLink as {posList next, nat data}
@@ -11,7 +11,7 @@ nat sum(LinkedList list):
     else:
         return list.data + sum(list.next)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     l = { next:1, data:1 }
     debug Any.toString(sum(l))
     l = { next:l, data:-2 }

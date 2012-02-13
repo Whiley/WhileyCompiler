@@ -7,7 +7,7 @@ int f(real x) throws string:
     else:
         throw "error"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     try:
         sys.out.println(Any.toString(f(1)))
         sys.out.println(Any.toString(f(0)))

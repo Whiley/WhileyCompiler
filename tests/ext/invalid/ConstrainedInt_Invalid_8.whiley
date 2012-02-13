@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+
 
 define frf1nat as int where $ >= 0
 
@@ -8,6 +8,6 @@ void f(frf1nat y):
 void f(int x):
     debug "F(INT)"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     f(-1)
     f(1)

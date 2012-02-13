@@ -7,5 +7,5 @@ string f(cr1nat x):
     y = x
     return Any.toString(y)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(9))

@@ -7,7 +7,7 @@ void f([int] x, int i):
     z = x[i]
     assert y == z
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     arr = [1,2,3]
     f(arr, 1)
     sys.out.println(Any.toString(arr))

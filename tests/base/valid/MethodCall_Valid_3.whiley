@@ -1,8 +1,8 @@
 import * from whiley.lang.*
 
-void System::f(int x):
-    this.out.println(Any.toString(x))
+void ::f(System.Console sys, int x):
+    sys.out.println(Any.toString(x))
 
-void ::main(System sys,[string] args):
-    sys.f(1)
+void ::main(System.Console sys):
+    f(sys,1)
     sys.out.print("")

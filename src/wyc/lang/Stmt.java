@@ -27,10 +27,22 @@ package wyc.lang;
 
 import java.util.*;
 
+import wyc.core.Nominal;
 import wyil.lang.Attribute;
+import wyil.lang.Type;
+import wyil.lang.Value;
 import wyil.util.*;
 import wyjvm.lang.Bytecode;
 
+/**
+ * Provides classes for representing statements in Whiley's source language.
+ * Examples include <i>assignments</i>, <i>for-loops</i>, <i>conditions</i>,
+ * etc. Each class is an instance of <code>SyntacticElement</code> and, hence,
+ * can be adorned with certain information (such as source location, etc).
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public interface Stmt extends SyntacticElement {
 	
 	public static final class Assign extends SyntacticElement.Impl implements Stmt {
@@ -136,30 +148,33 @@ public interface Stmt extends SyntacticElement {
 		}		
 	}
 	
-	public static final class For extends SyntacticElement.Impl implements Stmt {
-		public final ArrayList<String> variables;		
+	public static final class ForAll extends SyntacticElement.Impl
+			implements Stmt {
+		public final ArrayList<String> variables;
 		public Expr source;
-		public Expr invariant;
+		public Expr invariant;		
 		public final ArrayList<Stmt> body;
+		public Nominal.EffectiveCollection srcType;
 
-		public For(Collection<String> variables, Expr source, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
+		public ForAll(Collection<String> variables, Expr source,
+				Expr invariant, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.variables = new ArrayList<String>(variables);
-			this.source = source;		
+			this.source = source;
 			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
 		}
 
-		public For(Collection<String> variables, Expr source, Expr invariant,
-				Collection<Stmt> body, Collection<Attribute> attributes) {
+		public ForAll(Collection<String> variables, Expr source,
+				Expr invariant, Collection<Stmt> body,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.variables = new ArrayList<String>(variables);
-			this.source = source;	
+			this.source = source;
 			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
-		}		
+		}
 	}
-
 	
 	public static final class IfElse extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
@@ -184,26 +199,28 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {
-		public ArrayList<Expr> values; // needs to be proved all constants
+		public ArrayList<Expr> expr; // needs to be proved all constants
+		public ArrayList<Value> constants; // needs to be proved all constants
 		public final ArrayList<Stmt> stmts;
 		
 		public Case(List<Expr> values, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
-			this.values = new ArrayList<Expr>(values);
+			this.expr = new ArrayList<Expr>(values);
 			this.stmts = new ArrayList<Stmt>(statements);
 		}
 	}	
 	
 	public static final class Catch extends SyntacticElement.Impl {
-		public UnresolvedType type; 
+		public UnresolvedType unresolvedType; 		
 		public final String variable;
 		public final ArrayList<Stmt> stmts;
+		public Nominal type;
 
 		public Catch(UnresolvedType type, String variable, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
-			this.type = type;
+			this.unresolvedType = type;
 			this.variable = variable;
 			this.stmts = new ArrayList<Stmt>(statements);
 		}

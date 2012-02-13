@@ -9,7 +9,7 @@ int f(Expr e):
     else:
         return 0
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     v = f([1.0,2.0,3.0])
     sys.out.println(Any.toString(v))
     v = f(1.234)

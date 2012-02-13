@@ -6,10 +6,10 @@ int g(int x) ensures $ > 0 && $ < 125:
     else:
         return x
 
-{int8} f(int x):
+{i8} f(int x):
     return {g(x)}
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     bytes = f(0)
     sys.out.println(Any.toString(bytes))
 

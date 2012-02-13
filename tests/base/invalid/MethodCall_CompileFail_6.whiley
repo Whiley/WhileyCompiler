@@ -8,5 +8,5 @@ wmccf6tup f(System x, int y):
 int System::get():
     return 1
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f(this),1))

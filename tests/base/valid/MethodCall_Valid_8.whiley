@@ -1,21 +1,21 @@
 import * from whiley.lang.*
 
-define Sum as process { 
+define Sum as ref { 
     [int] items, 
     int result 
 }
 
 void Sum::start():
     sum = 0
-    for i in this.items:
+    for i in this->items:
         sum = sum + i
-    this.result = sum    
+    this->result = sum    
 
 int Sum::get():
-    return this.result
+    return this->result
 
 Sum ::create([int] items):
-    return spawn { 
+    return new { 
         items: items, 
         result: 0 
     }
@@ -28,7 +28,7 @@ int seqSum([int] items):
 
 int ::parSum([int] items):
     sum = create(items)
-    // start the process asynchronously
+    // start the ref asynchronously
     sum!start()
     // get the result synchronously
     return sum.get()
@@ -36,7 +36,7 @@ int ::parSum([int] items):
 int ::sum(int::([int]) m, [int] data):
     return m(data)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     data = [1,3,5,7,3,198,1,4,6]
     s1 = sum(&parSum,data)
     sys.out.println("SUM: " + Any.toString(s1))

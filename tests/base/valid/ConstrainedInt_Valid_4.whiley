@@ -6,5 +6,5 @@ define nat as int
 nat f():
     return 1
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(f()))

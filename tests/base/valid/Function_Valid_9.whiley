@@ -13,7 +13,7 @@ string f({int} xs):
     return "F({int})"
 
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(f(1.234))
     sys.out.println(f(1))
     sys.out.println(f([1,2,3]))

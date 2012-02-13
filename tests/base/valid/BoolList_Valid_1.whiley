@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     ls = [true,false,true]
     sys.out.println(Any.toString(ls))
     x = ls[0]

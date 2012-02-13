@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyil.util.type;
 
 import java.io.*;
@@ -6,9 +31,9 @@ import java.util.*;
 import wyil.lang.Type;
 import wyjvm.io.*;
 import wyautl.io.*;
+import wyautl.lang.Automaton;
 import wyautl.lang.Automata;
-import wyautl.lang.Automatas;
-import wyautl.lang.DefaultInterpretation.Value;
+import wyautl.lang.DefaultInterpretation.Term;
 import wyautl.util.*;
 import wyautl.util.Generator.Config;
 import wyautl.util.Generator.Kind;
@@ -20,10 +45,10 @@ public class TypeGenerator {
 			super(output);
 		}
 		
-		public void write(Automata automata) throws IOException {						
-			Type t = Type.construct(new Automata(automata));
+		public void write(Automaton automaton) throws IOException {						
+			Type t = Type.construct(new Automaton(automaton));
 			if (t != Type.T_VOID) {
-				super.write(automata);
+				super.write(automaton);
 				count++;
 				if (verbose) {
 					System.err.print("\rWrote " + count + " types.");					
@@ -32,15 +57,15 @@ public class TypeGenerator {
 		}
 	}
 	
-	public static class TextTypeWriter implements GenericWriter<Automata> {
+	public static class TextTypeWriter implements GenericWriter<Automaton> {
 		private PrintStream output;
 
 		public TextTypeWriter(PrintStream output) {
 			this.output = output;
 		}
 
-		public void write(Automata automata) throws IOException {						
-			Type t = Type.construct(Automatas.extract(automata,0));
+		public void write(Automaton automaton) throws IOException {						
+			Type t = Type.construct(Automata.extract(automaton,0));
 			if (t != Type.T_VOID) {
 				output.println(t);
 				count++;
@@ -59,8 +84,8 @@ public class TypeGenerator {
 		}
 	}	
 	
-	public static boolean isContractive(Automata automata) {		
-		BitSet contractives = new BitSet(automata.size());
+	public static boolean isContractive(Automaton automaton) {		
+		BitSet contractives = new BitSet(automaton.size());
 		// initially all nodes are considered contracive.
 		contractives.set(0,contractives.size(),true);
 		boolean changed = true;
@@ -68,9 +93,9 @@ public class TypeGenerator {
 		while(changed) {
 			changed=false;
 			contractive = false;
-			for(int i=0;i!=automata.size();++i) {
+			for(int i=0;i!=automaton.size();++i) {
 				boolean oldVal = contractives.get(i);
-				boolean newVal = isContractive(i,contractives,automata);
+				boolean newVal = isContractive(i,contractives,automaton);
 				if(oldVal && !newVal) {
 					contractives.set(i,newVal);
 					changed = true;
@@ -83,8 +108,8 @@ public class TypeGenerator {
 	}
 	
 	private static boolean isContractive(int index, BitSet contractives,
-			Automata automata) {
-		Automata.State state = automata.states[index];
+			Automaton automaton) {
+		Automaton.State state = automaton.states[index];
 		int[] children = state.children;
 		if(children.length == 0) {
 			return false;
@@ -109,7 +134,7 @@ public class TypeGenerator {
 	}
 	
 	private static final Generator.Data DATA_GENERATOR = new Generator.Data() {
-		public List<Object> generate(Automata.State state) {
+		public List<Object> generate(Automaton.State state) {
 			if(state.kind == Type.K_RECORD) {
 				return recordGenerator(state);
 			} else {
@@ -147,7 +172,7 @@ public class TypeGenerator {
 	
 	private static final String[] fields = {"f1","f2","f3","f4","f5"};	
 	
-	private static List<Object> recordGenerator(Automata.State state) {		
+	private static List<Object> recordGenerator(Automaton.State state) {		
 		ArrayList<String> data1 = new ArrayList();
 		ArrayList<String> data2 = new ArrayList();
 		for(int i=0;i!=state.children.length;++i) {
@@ -171,7 +196,7 @@ public class TypeGenerator {
 	
 	public static void main(String[] args) {		
 		boolean binary = false;
-		GenericWriter<Automata> writer;
+		GenericWriter<Automaton> writer;
 		PrintStream out = System.out;
 		int minSize = 1;
 		int maxSize = config.SIZE;

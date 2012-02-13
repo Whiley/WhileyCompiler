@@ -29,15 +29,14 @@ import java.io.*;
 import java.util.*;
 
 import wyc.Compiler;
-import wyc.NameResolver;
 import wyc.Pipeline;
 import wyil.ModuleLoader;
 import wyil.Transform;
-import wyil.path.BinaryDirectoryRoot;
-import wyil.path.Path;
-import wyil.path.SourceDirectoryRoot;
 import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
+import wyil.util.path.BinaryDirectoryRoot;
+import wyil.util.path.Path;
+import wyil.util.path.SourceDirectoryRoot;
 import wyjc.Main;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
@@ -130,13 +129,13 @@ public class AntTask extends MatchingTask {
     		List<Path.Root> whileypath = initialiseWhileyPath();
 
     		// second, construct the module loader
-    		NameResolver resolver = new NameResolver(sourcepath,whileypath);
-    		resolver.setModuleReader("class",  new ClassFileLoader());
+    		ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
+    		loader.setModuleReader("class",  new ClassFileLoader());
     		
     		// third, initialise the pipeline
-    		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
+    		ArrayList<Pipeline.Template> templates = new ArrayList<Pipeline.Template>(Pipeline.defaultPipeline);
     		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-    		Pipeline pipeline = new Pipeline(templates, resolver);
+    		Pipeline pipeline = new Pipeline(templates, loader);
     		if(destdir != null) {
     			pipeline.setOption(ClassWriter.class, "outputDirectory",
 					destdir.getPath());
@@ -144,8 +143,8 @@ public class AntTask extends MatchingTask {
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the compiler
-    		Compiler compiler = new Compiler(resolver,stages);		
-    		resolver.setLogger(compiler);		
+    		Compiler compiler = new Compiler(loader,stages);		
+    		loader.setLogger(compiler);		
 
     		if(verbose) {			
     			compiler.setLogOut(System.err);

@@ -11,5 +11,5 @@ int f(int x, int y) requires x>=0 && y>=0, ensures $>0:
     else:
         return 123
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     sys.out.println(Any.toString(1))

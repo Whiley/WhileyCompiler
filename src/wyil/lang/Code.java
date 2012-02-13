@@ -1,4 +1,4 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// Copyright (c) 2011, David J. Pearce (David J. Pearce@ecs.vuw.ac.nz)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,43 @@ import wyil.util.*;
 
 /**
  * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
- * stack-based bytecodes, similar to the Java Virtual Machine. Bytecodes may
- * push/pop values from the stack, and store/load them from the local variable
- * array.
+ * stack-based bytecodes, similar to the Java Virtual Machine. The frame of each
+ * function/method consists of zero or more <i>local variables</i> (a.k.a
+ * registers) and a <i>stack of unbounded depth</i>. Bytecodes may push/pop
+ * values from the stack, and store/load them from local variables. Like Java
+ * bytecode, WYIL uses unstructured control-flow and allows variables to take on
+ * different types at different points. For example:
  * 
- * @author djp
+ * <pre>
+ * int sum([int] data):
+ *    r = 0
+ *    for item in data:
+ *       r = r + item
+ *    return r
+ * </pre>
+ * 
+ * This function is compiled into the following WYIL bytecode:
+ * 
+ * <pre>
+ * int sum([int] data):
+ * body: 
+ *   var r, $2, item
+ *   const 0 : int                           
+ *   store r : int                           
+ *   move data : [int]                       
+ *   forall item [r] : [int]                 
+ *       move r : int                            
+ *       load item : int                         
+ *       add : int                               
+ *       store r : int                           
+ *   move r : int                            
+ *   return : int
+ * </pre>
+ * 
+ * Here, we can see that every bytecode is associated with one (or more) types.
+ * These types are inferred by the compiler during type propagation.
+ * 
+ * @author David J. Pearce
  * 
  */
 public abstract class Code {
@@ -84,22 +116,6 @@ public abstract class Code {
 		return get(new Destructure(from));
 	}
 	
-	public static DictLength DictLength(Type.Dictionary type) {
-		return get(new DictLength(type));
-	}
-	
-	/**
-	 * Construct a <code>dictload</code> bytecode which reads the value
-	 * associated with a given key in a dictionary.
-	 * 
-	 * @param type
-	 *            --- dictionary type.
-	 * @return
-	 */
-	public static DictLoad DictLoad(Type.Dictionary type) {
-		return get(new DictLoad(type));
-	}
-	
 	public static LoopEnd End(String label) {
 		return get(new LoopEnd(label));
 	}
@@ -125,7 +141,7 @@ public abstract class Code {
 	 *            --- field to load.
 	 * @return
 	 */
-	public static FieldLoad FieldLoad(Type.Record type, String field) {
+	public static FieldLoad FieldLoad(Type.EffectiveRecord type, String field) {
 		return get(new FieldLoad(type,field));
 	}	
 	
@@ -148,7 +164,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Invoke Invoke(Type.Function fun, NameID name, boolean retval) {
+	public static Invoke Invoke(Type.FunctionOrMethod fun, NameID name, boolean retval) {
 		return get(new Invoke(fun,name,retval));
 	}
 
@@ -170,8 +186,8 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
-	public static ListLength ListLength(Type.List type) {
-		return get(new ListLength(type));
+	public static LengthOf LengthOf(Type.EffectiveCollection type) {
+		return get(new LengthOf(type));
 	}
 	
 	/**
@@ -189,11 +205,11 @@ public abstract class Code {
 		return get(new Move(type,reg));
 	}
 	
-	public static SubList SubList(Type.List type) {
+	public static SubList SubList(Type.EffectiveList type) {
 		return get(new SubList(type));
 	}
 	
-	public static ListAppend ListAppend(Type.List type, OpDir dir) {
+	public static ListAppend ListAppend(Type.EffectiveList type, OpDir dir) {
 		return get(new ListAppend(type,dir));
 	}
 	
@@ -205,8 +221,8 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static ListLoad ListLoad(Type.List type) {
-		return get(new ListLoad(type));
+	public static IndexOf IndexOf(Type.EffectiveMap type) {
+		return get(new IndexOf(type));
 	}
 
 	/**
@@ -232,7 +248,7 @@ public abstract class Code {
 	 *            --- exit label.
 	 * @return
 	 */
-	public static ForAll ForAll(Type type, int var,
+	public static ForAll ForAll(Type.EffectiveCollection type, int var,
 			String label, Collection<Integer> modifies) {
 		return get(new ForAll(type, var, label, modifies));
 	}				
@@ -312,8 +328,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Method meth, boolean synchronous, boolean retval) {
-		return get(new IndirectSend(meth,synchronous,retval));
+	public static IndirectSend IndirectSend(Type.Message msg, boolean synchronous, boolean retval) {
+		return get(new IndirectSend(msg,synchronous,retval));
 	}
 	
 	/**
@@ -324,7 +340,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectInvoke IndirectInvoke(Type.Function fun, boolean retval) {
+	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun, boolean retval) {
 		return get(new IndirectInvoke(fun,retval));
 	}
 	
@@ -338,19 +354,15 @@ public abstract class Code {
 	
 	public static final Skip Skip = new Skip();
 	
-	public static SetLength SetLength(Type.Set type) {
-		return get(new SetLength(type));
-	}
-	
-	public static SetUnion SetUnion(Type.Set type, OpDir dir) {
+	public static SetUnion SetUnion(Type.EffectiveSet type, OpDir dir) {
 		return get(new SetUnion(type,dir));
 	}
 	
-	public static SetIntersect SetIntersect(Type.Set type, OpDir dir) {
+	public static SetIntersect SetIntersect(Type.EffectiveSet type, OpDir dir) {
 		return get(new SetIntersect(type,dir));
 	}
 	
-	public static SetDifference SetDifference(Type.Set type, OpDir dir) {
+	public static SetDifference SetDifference(Type.EffectiveSet type, OpDir dir) {
 		return get(new SetDifference(type,dir));
 	}
 	
@@ -362,14 +374,6 @@ public abstract class Code {
 		return get(new SubString());
 	}
 	
-	public static StringLength StringLength() {
-		return get(new StringLength());
-	}
-	
-	public static StringLoad StringLoad() {
-		return get(new StringLoad());
-	}
-	
 	/**
 	 * Construct an <code>send</code> bytecode which sends a message to an
 	 * actor. This may be either synchronous or asynchronous.
@@ -378,7 +382,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Method meth, NameID name, boolean synchronous, boolean retval) {
+	public static Send Send(Type.Message meth, NameID name, boolean synchronous, boolean retval) {
 		return get(new Send(meth,name,synchronous,retval));
 	}	
 	
@@ -451,7 +455,7 @@ public abstract class Code {
 	 *            --- dictionary type.
 	 * @return
 	 */
-	public static TupleLoad TupleLoad(Type.Tuple type, int index) {
+	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int index) {
 		return get(new TupleLoad(type,index));
 	}
 	
@@ -459,12 +463,12 @@ public abstract class Code {
 		return get(new Negate(type));
 	}		
 	
-	public static Spawn Spawn(Type.Process type) {
-		return get(new Spawn(type));
+	public static New New(Type.Reference type) {
+		return get(new New(type));
 	}
 	
-	public static ProcLoad ProcLoad(Type.Process type) {
-		return get(new ProcLoad(type));
+	public static Dereference Dereference(Type.Reference type) {
+		return get(new Dereference(type));
 	}
 	
 	/**
@@ -557,7 +561,14 @@ public abstract class Code {
 			return "assert " + target;
 		}		
 	}
-	
+
+	/**
+	 * Represents a binary operator (e.g. '+','-',etc) that is provided to a
+	 * <code>BinOp</code> bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public enum BOp { 
 		ADD{
 			public String toString() { return "add"; }
@@ -663,7 +674,7 @@ public abstract class Code {
 	 * </p>
 	 * 
 	 * <p>
-	 * A convert bytecode must be inserted whenever the type of a variable
+	 * A convert bytecode must be inserted whenever the type of a register
 	 * changes. This includes at control-flow meet points, when the value is
 	 * passed as a parameter, assigned to a field, etc.
 	 * </p>
@@ -741,7 +752,7 @@ public abstract class Code {
 	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
 	 * nop.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Debug extends Code {
@@ -792,75 +803,10 @@ public abstract class Code {
 			return "destructure " + type;
 		}
 	}
-
-	public static final class DictLength extends Code {				
-		public final Type.Dictionary type;
-		
-		private DictLength(Type.Dictionary type) {
-			this.type = type;			
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 558723; 
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof DictLength) {
-				DictLength setop = (DictLength) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("dictlength",type);
-		}
-	}
-	
-	/**
-	 * Pops a key and dictionary from the stack, and looks up the value for that
-	 * key in the dictionary. If no value exists, a dictionary fault is raised.
-	 * Otherwise, the value is pushed onto the stack.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class DictLoad extends Code {
-		public final Type.Dictionary type;				
-		
-		private DictLoad(Type.Dictionary type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof DictLoad) {
-				DictLoad i = (DictLoad) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("dictload",type);
-		}	
-	}	
 	
 	/**
 	 * Marks the end of a loop block.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class LoopEnd extends Label {
@@ -897,7 +843,7 @@ public abstract class Code {
 	 * Raises an assertion failure fault with the given message. Fail bytecodes
 	 * may only appear within assertion blocks.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Fail extends Code {
@@ -931,10 +877,10 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class FieldLoad extends Code {
-		public final Type.Record type;		
+		public final Type.EffectiveRecord type;		
 		public final String field;
 				
-		private FieldLoad(Type.Record type, String field) {
+		private FieldLoad(Type.EffectiveRecord type, String field) {
 			if (field == null) {
 				throw new IllegalArgumentException(
 						"FieldLoad field argument cannot be null");
@@ -965,7 +911,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("fieldload " + field,type);			
+			return toString("fieldload " + field,(Type) type);			
 		}	
 	}
 
@@ -978,7 +924,7 @@ public abstract class Code {
 	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Goto extends Code {
@@ -1015,7 +961,7 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label, by popping two operands from
+	 * Branches conditionally to the given label by popping two operands from
 	 * the stack and comparing them. The possible comparators are:
 	 * </p>
 	 * <ul>
@@ -1032,10 +978,10 @@ public abstract class Code {
 	 * </ul>
 	 *  
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class IfGoto extends Code {
@@ -1088,6 +1034,13 @@ public abstract class Code {
 		}
 	}
 	
+	/**
+	 * Represents a comparison operator (e.g. '==','!=',etc) that is provided to a
+	 * <code>IfGoto</code> bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public enum COp { 
 		EQ() {
 			public String toString() { return "eq"; }
@@ -1116,8 +1069,29 @@ public abstract class Code {
 		SUBSETEQ{
 			public String toString() { return "sbe"; }
 		}		
-	};		
-	
+	};
+
+	/**
+	 * <p>
+	 * Branches conditionally to the given label based on the result of a
+	 * runtime type test against a given value. More specifically, it checks
+	 * whether the value is a subtype of the type test. The value in question is
+	 * either loaded directly from a register, or popped off the stack.
+	 * </p>
+	 * <p>
+	 * In the case that the value is obtained from a register, then that
+	 * variable is automatically <i>retyped</i> as a result of the type test. On
+	 * the true branch, its type is intersected with type test. On the false
+	 * branch, its type is intersected with the <i>negation</i> of the type
+	 * test.
+	 * </p>
+	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
+	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
+	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */	
 	public static final class IfType extends Code {
 		public final Type type;
 		public final int slot;
@@ -1190,12 +1164,27 @@ public abstract class Code {
 			}
 		}
 	}
-	
+
+	/**
+	 * Represents an indirect function call. For example, consider the
+	 * following:
+	 * 
+	 * <pre>
+	 * int function(int(int) f, int x):
+	 *    return f(x)
+	 * </pre>
+	 * 
+	 * Here, the function call <code>f(x)</code> is indirect as the called
+	 * function is determined by the variable <code>f</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class IndirectInvoke extends Code {		
-		public final Type.Function type;
+		public final Type.FunctionOrMethod type;
 		public final boolean retval;
 		
-		private IndirectInvoke(Type.Function type, boolean retval) {
+		private IndirectInvoke(Type.FunctionOrMethod type, boolean retval) {
 			this.type = type;
 			this.retval = retval;
 		}
@@ -1226,13 +1215,28 @@ public abstract class Code {
 			}
 		}		
 	}
-	
+
+	/**
+	 * Represents an indirect message send (either synchronous or asynchronous).
+	 * For example, consider the following:
+	 * 
+	 * <pre>
+	 * int ::method(Rec::int(int) m, Rec r, int x):
+	 *    return r.m(x)
+	 * </pre>
+	 * 
+	 * Here, the message send <code>r.m(x)</code> is indirect as the message
+	 * sent is determined by the variable <code>m</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
-		 public final Type.Method type;
+		 public final Type.Message type;
 			
-		 private IndirectSend(Type.Method type, boolean synchronous, boolean retval) {
+		 private IndirectSend(Type.Message type, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.synchronous = synchronous;
 			 this.retval = retval;
@@ -1283,13 +1287,21 @@ public abstract class Code {
 			return toString("not",Type.T_BYTE);
 		}
 	}
-	
+
+	/**
+	 * Corresponds to a direct function call whose parameters are found on the
+	 * stack in the order corresponding to the function type. If a return value
+	 * is required, this is pushed onto the stack after the function call.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Invoke extends Code {		
-		public final Type.Function type;
+		public final Type.FunctionOrMethod type;
 		public final NameID name;
 		public final boolean retval;
 				
-		private Invoke(Type.Function type, NameID name, boolean retval) {
+		private Invoke(Type.FunctionOrMethod type, NameID name, boolean retval) {
 			this.type = type;
 			this.name = name;
 			this.retval = retval;
@@ -1323,7 +1335,13 @@ public abstract class Code {
 		}	
 		
 	}
-	
+
+	/**
+	 * Represents the labelled destination of a branch or loop statement.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static class Label extends Code {
 		public final String label;
 		
@@ -1355,12 +1373,19 @@ public abstract class Code {
 			return "." + label;
 		}
 	}
-		
+
+	/**
+	 * Pops two lists from the stack, appends them together and pushes the
+	 * result back onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ListAppend extends Code {				
 		public final OpDir dir;
-		public final Type.List type;
+		public final Type.EffectiveList type;
 		
-		private ListAppend(Type.List type, OpDir dir) {			
+		private ListAppend(Type.EffectiveList type, OpDir dir) {			
 			if(dir == null) {
 				throw new IllegalArgumentException("ListAppend direction cannot be null");
 			}			
@@ -1387,14 +1412,20 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("listappend" + dir.toString(),type);
+			return toString("listappend" + dir.toString(), (Type) type);
 		}
 	}
-	
-	public static final class ListLength extends Code {						
-		public final Type.List type;
+
+	/**
+	 * Pops a list from the stack and pushes its length back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class LengthOf extends Code {						
+		public final Type.EffectiveCollection type;
 		
-		private ListLength(Type.List type) {									
+		private LengthOf(Type.EffectiveCollection type) {									
 			this.type = type;			
 		}
 		
@@ -1407,8 +1438,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof ListLength) {
-				ListLength setop = (ListLength) o;
+			if (o instanceof LengthOf) {
+				LengthOf setop = (LengthOf) o;
 				return (type == setop.type || (type != null && type
 						.equals(setop.type)));
 			}
@@ -1416,14 +1447,14 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("listlength",type);
+			return toString("length", (Type) type);
 		}
 	}
 	
 	public static final class SubList extends Code {						
-		public final Type.List type;
+		public final Type.EffectiveList type;
 		
-		private SubList(Type.List type) {									
+		private SubList(Type.EffectiveList type) {									
 			this.type = type;			
 		}
 		
@@ -1445,14 +1476,21 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("sublist",type);
+			return toString("sublist", (Type) type);
 		}
 	}
-	
-	public static final class ListLoad extends Code {
-		public final Type.List type;				
+
+	/**
+	 * Pops am integer index from the stack, followed by a list and pushes the
+	 * element at the given index back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class IndexOf extends Code {
+		public final Type.EffectiveMap type;				
 		
-		private ListLoad(Type.List type) {
+		private IndexOf(Type.EffectiveMap type) {
 			this.type = type;
 		}
 		
@@ -1465,18 +1503,24 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof ListLoad) {
-				ListLoad i = (ListLoad) o;
+			if(o instanceof IndexOf) {
+				IndexOf i = (IndexOf) o;
 				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return toString("listload",type);
+			return toString("indexof", (Type) type);
 		}	
-	}		
-	
+	}
+
+	/**
+	 * Loads the contents of the given register onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Load extends Code {		
 		public final Type type;
 		public final int slot;		
@@ -1520,8 +1564,18 @@ public abstract class Code {
 		public String toString() {
 			return toString("load " + slot,type);
 		}	
-	}		
-	
+	}
+
+	/**
+	 * Moves the contents of the given register onto the stack. This is similar
+	 * to a <code>load</code> bytecode, except that the register's contents are
+	 * "voided" afterwards. This guarantees that the register is no longer live,
+	 * which is useful for determining the live ranges of register in a
+	 * function or method.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Move extends Code {		
 		public final Type type;
 		public final int slot;		
@@ -1601,13 +1655,21 @@ public abstract class Code {
 		public String toString() {
 			return "loop " + modifies;
 		}		
-	}		
+	}
 
+	/**
+	 * Pops a set, list or dictionary from the stack and iterates over every
+	 * element it contains. An register is identified to hold the current value
+	 * being iterated over.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ForAll extends Loop {
 		public final int slot;
-		public final Type type;
+		public final Type.EffectiveCollection type;
 				
-		private ForAll(Type type, int slot, String target, Collection<Integer> modifies) {
+		private ForAll(Type.EffectiveCollection type, int slot, String target, Collection<Integer> modifies) {
 			super(target,modifies);
 			this.type = type;
 			this.slot = slot;			
@@ -1651,16 +1713,16 @@ public abstract class Code {
 		}
 		
 		public String toString() {			
-			return toString("forall " + slot + " " + modifies,type);
+			return toString("forall " + slot + " " + modifies,(Type) type);
 		}		
 	}
 
 	/**
 	 * Represents a type which may appear on the left of an assignment
-	 * expression. Lists, Dictionaries, Strings, Records and Processes are the
+	 * expression. Lists, Dictionaries, Strings, Records and References are the
 	 * only valid types for an lval.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static abstract class LVal {
@@ -1677,43 +1739,61 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with dictionary type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class DictLVal extends LVal {
 		public DictLVal(Type t) {
 			super(t);			
-			if(Type.effectiveDictionaryType(t) == null) {
+			if(!(t instanceof Type.EffectiveDictionary)) {
 				throw new IllegalArgumentException("Invalid Dictionary Type");
 			}
 		}
 		
-		public Type.Dictionary type() {			
-			return Type.effectiveDictionaryType(type);
+		public Type.EffectiveDictionary type() {			
+			return (Type.EffectiveDictionary) type;
 		}
 	}
 	
 	/**
 	 * An LVal with list type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class ListLVal extends LVal {
 		public ListLVal(Type t) {
 			super(t);
-			if(Type.effectiveListType(t) == null) {
-				throw new IllegalArgumentException("Invalid List Type");
+			if(!(t instanceof Type.EffectiveList)) {
+				throw new IllegalArgumentException("invalid List Type");
 			}
 		}
 		
-		public Type.List type() {
-			return Type.effectiveListType(type);
+		public Type.EffectiveList type() {
+			return (Type.EffectiveList) type;
+		}
+	}
+	
+	/**
+	 * An LVal with list type.
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class ReferenceLVal extends LVal {
+		public ReferenceLVal(Type t) {
+			super(t);
+			if(Type.effectiveReference(t) == null) {
+				throw new IllegalArgumentException("invalid reference type");
+			}
+		}
+		
+		public Type.Reference type() {
+			return Type.effectiveReference(type);
 		}
 	}
 	
 	/**
 	 * An LVal with string type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class StringLVal extends LVal {
@@ -1724,7 +1804,7 @@ public abstract class Code {
 	
 	/**
 	 * An LVal with record type.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class RecordLVal extends LVal {
@@ -1732,15 +1812,15 @@ public abstract class Code {
 		
 		public RecordLVal(Type t, String field) {
 			super(t);
-			this.field = field;
-			Type.Record rt = Type.effectiveRecordType(t);
-			if(rt == null || !rt.fields().containsKey(field)) {
+			this.field = field;			
+			if (!(t instanceof Type.EffectiveRecord)
+					|| !((Type.EffectiveRecord) t).fields().containsKey(field)) {
 				throw new IllegalArgumentException("Invalid Record Type");
 			}		
 		}
 		
-		public Type.Record type() {
-			return Type.effectiveRecordType(type);
+		public Type.EffectiveRecord type() {
+			return (Type.EffectiveRecord) type;
 		}
 	}	
 	
@@ -1753,13 +1833,7 @@ public abstract class Code {
 		public UpdateIterator(Type type, int level, ArrayList<String> fields) {
 			this.fields = fields;
 			this.iter = type;
-			this.index = level;
-			
-			// TODO: sort out this hack
-			if(Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
-				Type.Process p = (Type.Process) iter;
-				iter = p.element();
-			}	
+			this.index = level;			
 		}
 		
 		public LVal next() {
@@ -1768,17 +1842,20 @@ public abstract class Code {
 			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				return new StringLVal();
-			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
-				Type.List list = Type.effectiveListType(iter);											
+			} else if(Type.isSubtype(Type.Reference(Type.T_ANY),iter)) {			
+				Type.Reference proc = Type.effectiveReference(iter);											
+				iter = proc.element();
+				return new ReferenceLVal(raw);
+			} else if(iter instanceof Type.EffectiveList) {			
+				Type.EffectiveList list = (Type.EffectiveList) iter;											
 				iter = list.element();
 				return new ListLVal(raw);
-			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
-				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
+			} else if(iter instanceof Type.EffectiveDictionary) {					
+				Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter; 											
 				iter = dict.value();	
 				return new DictLVal(raw);
-			} else  if(Type.effectiveRecordType(iter) != null) {
-				Type.Record rec = Type.effectiveRecordType(iter);				
+			} else  if(iter instanceof Type.EffectiveRecord) {
+				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;				
 				String field = fields.get(fieldIndex++);
 				iter = rec.fields().get(field);
 				return new RecordLVal(raw,field);
@@ -1801,7 +1878,7 @@ public abstract class Code {
 	 * Pops a compound structure, zero or more indices and a value from the
 	 * stack and updates the compound structure with the given value. Valid
 	 * compound structures are lists, dictionaries, strings, records and
-	 * processes.
+	 * references.
 	 * </p>
 	 * <p>
 	 * Ideally, this operation is done in-place, meaning the operation is
@@ -1811,7 +1888,7 @@ public abstract class Code {
 	 * the compound structure.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Update extends Code implements Iterable<LVal> {
@@ -1848,27 +1925,21 @@ public abstract class Code {
 		public Type rhs() {
 			Type iter = afterType;
 			
-			// TODO: sort out this hack
-			if (Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
-				Type.Process p = (Type.Process) iter;
-				iter = p.element();
-			}
-			
 			int fieldIndex = 0;
 			for (int i = 0; i != level; ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
-				} else if (Type.isSubtype(Type.List(Type.T_ANY), iter)) {
-					Type.List list = Type.effectiveListType(iter);
+				} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
+					Type.Reference proc = Type.effectiveReference(iter);
+					iter = proc.element();
+				} else if (iter instanceof Type.EffectiveList) {
+					Type.EffectiveList list = (Type.EffectiveList) iter;
 					iter = list.element();
-				} else if (Type.isSubtype(
-						Type.Dictionary(Type.T_ANY, Type.T_ANY), iter)) {
-					// this indicates a dictionary access, rather than a list
-					// access
-					Type.Dictionary dict = Type.effectiveDictionaryType(iter);
+				} else if (iter instanceof Type.EffectiveDictionary) {
+					Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter;
 					iter = dict.value();
-				} else if (Type.effectiveRecordType(iter) != null) {
-					Type.Record rec = Type.effectiveRecordType(iter);
+				} else if (iter instanceof Type.EffectiveRecord) {
+					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 					String field = fields.get(fieldIndex++);
 					iter = rec.fields().get(field);
 				} else {
@@ -1923,7 +1994,25 @@ public abstract class Code {
 		}
 	}
 
-	
+	/**
+	 * Constructs a new dictionary value from zero or more key-value pairs on
+	 * the stack. For each pair, the key must occur directly before the value on
+	 * the stack.  For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const "Hello" : string                  
+	 *   const 2 : int                           
+	 *   const "World" : string                  
+	 *   newdict #2 : {int->string}
+	 * </pre>
+	 * 
+	 * Pushes the dictionary value <code>{1->"Hello",2->"World"}</code> onto the
+	 * stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewDict extends Code {
 		public final Type.Dictionary type;
 		public final int nargs;
@@ -1953,7 +2042,23 @@ public abstract class Code {
 			return toString("newdict #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new record value from zero or more values on the stack. Each
+	 * value is associated with a field name, and will be popped from the stack
+	 * in the reverse order. For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const 2 : int                           
+	 *   newrec : {int x,int y}
+	 * </pre>
+	 * 
+	 * Pushes the record value <code>{x:1,y:2}</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewRecord extends Code {
 		public final Type.Record type;
 		
@@ -1981,7 +2086,23 @@ public abstract class Code {
 			return toString("newrec",type);
 		}	
 	}
-		
+
+	/**
+	 * Constructs a new tuple value from two or more values on the stack. Values
+	 * are popped from the stack in the reverse order they occur in the tuple.
+	 * For example:
+	 * 
+	 * <pre>
+	 *   const 1 : int                           
+	 *   const 2 : int                           
+	 *   newtuple #2 : (int,int)
+	 * </pre>
+	 * 
+	 * Pushes the tuple value <code>(1,2)</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class NewTuple extends Code {
 		public final Type.Tuple type;
 		public final int nargs;
@@ -2011,7 +2132,23 @@ public abstract class Code {
 			return toString("newtuple #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new set value from zero or more values on the stack. The new
+	 * set is load onto the stack. For example:
+	 * 
+	 * <pre>
+	 *     const 1 : int                           
+	 *     const 2 : int                           
+	 *     const 3 : int                           
+	 *     newset #3 : {int}
+	 * </pre>
+	 * 
+	 * Pushes the set value <code>{1,2,3}</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */		
 	public static final class NewSet extends Code {
 		public final Type.Set type;
 		public final int nargs;
@@ -2042,7 +2179,24 @@ public abstract class Code {
 			return toString("newset #" + nargs,type);
 		}	
 	}
-	
+
+	/**
+	 * Constructs a new list value from zero or more values on the stack. The
+	 * values are popped from the stack in the reverse order they will occur in
+	 * the new list. The new list is load onto the stack. For example:
+	 * 
+	 * <pre>
+	 *     const 1 : int                           
+	 *     const 2 : int                           
+	 *     const 3 : int                           
+	 *     newlist #3 : [int]
+	 * </pre>
+	 * 
+	 * Pushes the list value <code>[1,2,3]</code> onto the stack.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */	
 	public static final class NewList extends Code {
 		public final Type.List type;
 		public final int nargs;
@@ -2122,9 +2276,9 @@ public abstract class Code {
 	
 	public static final class SetUnion extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Type.EffectiveSet type;
 		
-		private SetUnion(Type.Set type, OpDir dir) {
+		private SetUnion(Type.EffectiveSet type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -2151,15 +2305,15 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("union" + dir.toString(),type);
+			return toString("union" + dir.toString(), (Type) type);
 		}
 	}
 	
 	public static final class SetIntersect extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Type.EffectiveSet type;
 		
-		private SetIntersect(Type.Set type, OpDir dir) {
+		private SetIntersect(Type.EffectiveSet type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -2186,15 +2340,15 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("intersect" + dir.toString(),type);
+			return toString("intersect" + dir.toString(), (Type) type);
 		}
 	}
 	
 	public static final class SetDifference extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Type.EffectiveSet type;
 		
-		private SetDifference(Type.Set type, OpDir dir) {
+		private SetDifference(Type.EffectiveSet type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -2221,39 +2375,10 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("difference" + dir.toString(),type);
+			return toString("difference" + dir.toString(), (Type) type);
 		}
 	}
-	
-	public static final class SetLength extends Code {				
-		public final Type.Set type;
 		
-		private SetLength(Type.Set type) {
-			this.type = type;			
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 558723; 
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof SetLength) {
-				SetLength setop = (SetLength) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("setlength",type);
-		}
-	}
-	
 	public static final class StringAppend extends Code {			
 		public final OpDir dir;		
 		
@@ -2297,41 +2422,7 @@ public abstract class Code {
 			return toString("substring",Type.T_STRING);
 		}
 	}
-	
-	public static final class StringLength extends Code {		
-		private StringLength() {
-		}
 		
-		public int hashCode() {			
-			return 982345;			
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof StringLength;
-		}
-				
-		public String toString() {
-			return toString("stringlen",Type.T_STRING);
-		}
-	}
-	
-	public static final class StringLoad extends Code {		
-		private StringLoad() {
-		}
-		
-		public int hashCode() {			
-			return 12387;			
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof StringLoad;
-		}
-				
-		public String toString() {
-			return toString("stringload",Type.T_STRING);
-		}
-	}
-	
 	public static final class Skip extends Code {
 		Skip() {}
 		public int hashCode() {
@@ -2457,9 +2548,9 @@ public abstract class Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
 		 public final NameID name;
-		 public final Type.Method type;
+		 public final Type.Message type;
 			
-		 private Send(Type.Method type, NameID name, boolean synchronous, boolean retval) {
+		 private Send(Type.Message type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;
@@ -2577,7 +2668,7 @@ public abstract class Code {
 	
 	/**
 	 * Marks the end of a try-catch block.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class TryEnd extends Label {
@@ -2608,8 +2699,15 @@ public abstract class Code {
 		public String toString() {
 			return "tryend " + label;
 		}
-	}	
-	
+	}
+
+	/**
+	 * Pops a number (int or real) from the stack, negates it and pushes the
+	 * result back on.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Negate extends Code {
 		public final Type type;		
 		
@@ -2638,7 +2736,21 @@ public abstract class Code {
 			return toString("neg",type);
 		}
 	}
-	
+
+	/**
+	 * Corresponds to a bitwise inversion operation, which pops a byte off the
+	 * stack and pushes the result back on. For example:
+	 * 
+	 * <pre>
+	 * byte f(byte x):
+	 *    return ~x
+	 * </pre>
+	 * 
+	 * Here, the expression <code>~x</code> generates an inverstion bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Invert extends Code {
 		public final Type type;		
 		
@@ -2668,10 +2780,10 @@ public abstract class Code {
 		}
 	}
 	
-	public static final class Spawn extends Code {
-		public final Type.Process type;		
+	public static final class New extends Code {
+		public final Type.Reference type;		
 		
-		private Spawn(Type.Process type) {			
+		private New(Type.Reference type) {			
 			this.type = type;
 		}
 		
@@ -2684,8 +2796,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Spawn) {
-				Spawn bo = (Spawn) o;
+			if(o instanceof New) {
+				New bo = (New) o;
 				return (type == bo.type || (type != null && type
 						.equals(bo.type))); 
 			}
@@ -2693,15 +2805,15 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("spawn",type);
+			return toString("new",type);
 		}
 	}
 	
 	public static final class TupleLoad extends Code {
-		public final Type.Tuple type;
+		public final Type.EffectiveTuple type;
 		public final int index;
 		
-		private TupleLoad(Type.Tuple type, int index) {
+		private TupleLoad(Type.EffectiveTuple type, int index) {
 			this.type = type;
 			this.index = index;
 		}
@@ -2715,22 +2827,24 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof TupleLoad) {
+			if (o instanceof TupleLoad) {
 				TupleLoad i = (TupleLoad) o;
-				return type == i.type || (type != null && type.equals(i.type));
+				return index == i.index
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return toString("tupleload " + index,type);
+			return toString("tupleload " + index, (Type) type);
 		}	
 	}
 	
-	public static final class ProcLoad extends Code {
-		public final Type.Process type;		
+	public static final class Dereference extends Code {
+		public final Type.Reference type;		
 		
-		private ProcLoad(Type.Process type) {			
+		private Dereference(Type.Reference type) {			
 			this.type = type;
 		}
 		
@@ -2743,8 +2857,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof ProcLoad) {
-				ProcLoad bo = (ProcLoad) o;
+			if(o instanceof Dereference) {
+				Dereference bo = (Dereference) o;
 				return (type == bo.type || (type != null && type
 						.equals(bo.type))); 
 			}
@@ -2752,7 +2866,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("procload",type);
+			return toString("deref",type);
 		}
 	}
 	

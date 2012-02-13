@@ -8,7 +8,7 @@ string f(expr e):
     else:
         return "GOT BOOL"
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     e = true
     sys.out.println(f(e))
     e = {1,2,3,4}

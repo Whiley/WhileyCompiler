@@ -3,6 +3,6 @@ import * from whiley.lang.*
 int f(int b):
     return b + 1
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     b = f(10)
     sys.out.println(Any.toString(b))

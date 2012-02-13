@@ -9,6 +9,6 @@ define msgType as msg1 | msg2
 string f(msgType m):
     return Any.toString(m)
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = {op:11,data:[]}
     sys.out.println(f(x))

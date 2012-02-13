@@ -32,15 +32,61 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
+import wyc.core.CompilationGroup;
+import wyc.core.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;
 
-public class Compiler implements Logger {		
-	protected NameResolver resolver;	
-	protected ArrayList<Transform> stages;
+/**
+ * Responsible for managing the process of turning source files into binary code
+ * for execution. Each source file is passed through a pipeline of stages that
+ * modify it in a variety of ways. The main stages are:
+ * <ol>
+ * <li>
+ * <p>
+ * <b>Lexing and Parsing</b>, where the source file is converted into an
+ * Abstract Syntax Tree (AST) representation.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Name Resolution</b>, where the fully qualified names of all external
+ * symbols are determined.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Type Propagation</b>, where the types of all expressions are determined by
+ * propagation from e.g. declared parameter types.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>WYIL Generation</b>, where the the AST is converted into the Whiley
+ * Intermediate Language (WYIL). A number of passes are then made over this
+ * before it is ready for code generation.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Code Generation</b>. Here, the executable code is finally generated. This
+ * could be Java bytecode, or something else (e.g. JavaScript).
+ * </p>
+ * </li>
+ * </ol>
+ * Every stage of the compiler can be configured by setting various options.
+ * Stages can also be bypassed (typically for testing) and new ones can be
+ * added.
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public final class Compiler implements Logger {		
+	private ModuleLoader loader;		
+	private ArrayList<Transform> stages;
 
-	public Compiler(NameResolver resolver, List<Transform> stages) {
-		this.resolver = resolver;
+	public Compiler(ModuleLoader loader, List<Transform> stages) {
+		this.loader = loader;
 		this.stages = new ArrayList<Transform>(stages);
 	}
 	
@@ -48,7 +94,7 @@ public class Compiler implements Logger {
 	 * The logout output stream is used to write log information about the
 	 * status of compilation. The default stream just discards everything.
 	 */
-	protected PrintStream logout = new PrintStream(new OutputStream() {
+	private PrintStream logout = new PrintStream(new OutputStream() {
 		public void write(byte[] b) { /* don't do anything! */
 		}
 
@@ -63,27 +109,18 @@ public class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public List<WhileyFile> compile(List<File> files) throws Exception {
+	public CompilationGroup compile(List<File> files) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 		
-		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
+		CompilationGroup wyfiles = new CompilationGroup();
 		for (File f : files) {
-			WhileyFile wf = innerParse(f);			
-			wyfiles.add(wf);			
-			resolver.preregister(wf.skeleton());			
-		}
-				
-		for (WhileyFile m : wyfiles) {
-			resolveNames(m);			
+			WhileyFile wf = parse(f);			
+			wyfiles.add(wf);								
 		}
 		
-		List<Module> modules = buildModules(wyfiles);				
-		for(Module m : modules) {
-			resolver.register(m);
-		}		
-		
+		List<Module> modules = build(wyfiles);					
 		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
@@ -102,7 +139,7 @@ public class Compiler implements Logger {
 	 * @return
 	 * @throws IOException
 	 */
-	public WhileyFile innerParse(File file) throws IOException {
+	private WhileyFile parse(File file) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
@@ -111,8 +148,10 @@ public class Compiler implements Logger {
 
 		WhileyParser wfr = new WhileyParser(file.getPath(), tokens);
 		logTimedMessage("[" + file + "] Parsing complete",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
-		return wfr.read(); 
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+		
+		WhileyFile wf = wfr.read();		
+		return wf;
 	}		
 	
 	/**
@@ -123,10 +162,10 @@ public class Compiler implements Logger {
 	 * 
 	 * @param wf
 	 */
-	public void finishCompilation(List<Module> modules) throws Exception {				
+	private void finishCompilation(List<Module> modules) throws Exception {				
 		// Register the updated file
 		for(Module module : modules) {
-			resolver.register(module);
+			loader.register(module);
 		}
 		
 		for(Transform stage : stages) {
@@ -136,7 +175,7 @@ public class Compiler implements Logger {
 		}		
 	}
 	
-	protected void process(Module module, Transform stage) throws Exception {
+	private void process(Module module, Transform stage) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
@@ -160,7 +199,7 @@ public class Compiler implements Logger {
 		}
 	}
 	
-	public static String name(String camelCase) {
+	private static String name(String camelCase) {
 		boolean firstTime = true;
 		String r = "";
 		for(int i=0;i!=camelCase.length();++i) {
@@ -172,26 +211,27 @@ public class Compiler implements Logger {
 			r += Character.toLowerCase(c);;
 		}
 		return r;
-	}
+	}	
 	
-	protected void resolveNames(WhileyFile m) {
-		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();		
-		long memory = runtime.freeMemory();		
-		new NameResolution(resolver).resolve(m);
-		logTimedMessage("[" + m.filename + "] resolved names",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());		
+	private List<Module> build(CompilationGroup files) {
+		GlobalResolver resolver = new GlobalResolver(loader,files);
 		
-	}
-	
-	protected List<Module> buildModules(List<WhileyFile> files) {		
+		for(WhileyFile wf : files) {
+			Runtime runtime = Runtime.getRuntime();
+			long start = System.currentTimeMillis();		
+			long memory = runtime.freeMemory();					
+			new FlowTyping(loader, resolver).propagate(wf);
+			logTimedMessage("[" + wf.filename + "] flow typing",
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
+		}		
+		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
-		long memory = runtime.freeMemory();		
-		List<Module> modules = new ModuleBuilder(resolver).resolve(files);
-		logTimedMessage("built modules",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());
-		return modules;		
+		long memory = runtime.freeMemory();	
+		List<Module> modules = new CodeGeneration(loader,resolver).generate(files);			
+		logTimedMessage("code generation",
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
+		return modules;
 	}	
 	
 	/**

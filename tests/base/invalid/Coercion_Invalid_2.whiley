@@ -8,7 +8,7 @@ define List4 as List3|List2
 List4 f(List1 r):
     return r
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     list = { data: 1, next: null}
     list = { data: null, next: list}
     ans = f(list)

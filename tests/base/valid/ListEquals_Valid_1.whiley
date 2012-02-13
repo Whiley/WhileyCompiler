@@ -6,13 +6,12 @@ string f([int] xs, [real] ys):
     else:
         return "NOT EQUAL"
 
-void System::g([int] xs, [real] ys):
-    this.out.println(Any.toString(xs))
-    this.out.println(Any.toString(ys))
-    this.out.println(f(xs,ys))
+void ::g(System.Console sys, [int] xs, [real] ys):
+    sys.out.println(Any.toString(xs))
+    sys.out.println(Any.toString(ys))
+    sys.out.println(f(xs,ys))
 
-void ::main(System sys,[string] args):
-    // following lines should block
-    sys.g([1,4],[1.0,4.0])
-    sys.g([1,4],[1.0,4.2])
-    sys.g([],[])
+void ::main(System.Console sys):
+    g(sys,[1,4],[1.0,4.0])
+    g(sys,[1,4],[1.0,4.2])
+    g(sys,[],[])

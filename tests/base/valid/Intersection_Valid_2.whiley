@@ -8,7 +8,7 @@ define InterList as UnitList & LinkedList
 int f(InterList l):
     return l.data
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys):
     list = { data: 1234, next: null}
     d = f(list)
     sys.out.println("GOT: " + Any.toString(d))

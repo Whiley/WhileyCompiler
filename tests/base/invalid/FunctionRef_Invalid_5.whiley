@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-define Proc as process { int data }
+define Proc as ref { int data }
 
 int Proc::read(int x):
     return x + 1
@@ -15,7 +15,7 @@ int id(int x):
 int test(Func f, int arg):
     return f.read(arg)
     
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = test({read: &id},123)
     sys.out.println("GOT: " + Any.toString(x))
     x = test({read: &id},12545)

@@ -3,7 +3,7 @@ import * from whiley.lang.*
 [int] f():
     return [1,2]
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
      a1 = f()
      a2 = f()
      a2[0] = 0

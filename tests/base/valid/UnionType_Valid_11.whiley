@@ -3,14 +3,14 @@ import * from whiley.lang.*
 // this is a comment!
 define IntList as int|[int]
 
-void System::f(int y):
-    this.out.println(Any.toString(y))
+void ::f(System.Console sys, int y):
+    sys.out.println(Any.toString(y))
 
-void System::g([int] z):
-    this.out.println(Any.toString(z))
+void ::g(System.Console sys, [int] z):
+    sys.out.println(Any.toString(z))
 
-void ::main(System sys,[string] args):
+void ::main(System.Console sys):
     x = 123
-    sys.f(x)
+    f(sys,x)
     x = [1,2,3]
-    sys.g(x)
+    g(sys,x)

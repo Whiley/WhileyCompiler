@@ -16,6 +16,6 @@ C1 ::h(C3 x):
 C2 ::i(C3 x):
     return x
 
-void ::main(System sys, [string] args):
+void ::main(System.Console sys):
     x = f(null)
     sys.out.println(Any.toString(x))
