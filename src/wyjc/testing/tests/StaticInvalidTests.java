@@ -179,6 +179,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void TryCatch_Invalid_4_StaticTest() { contextFailTest("TryCatch_Invalid_4"); }
  @Test public void TryCatch_Invalid_5_StaticTest() { contextFailTest("TryCatch_Invalid_5"); }
  @Test public void TupleDefine_CompileFail_1_StaticTest() { contextFailTest("TupleDefine_CompileFail_1"); }
+ @Test public void Tuple_Invalid_2_StaticTest() { contextFailTest("Tuple_Invalid_2"); }
  @Test public void TypeEquals_Invalid_1_StaticTest() { contextFailTest("TypeEquals_Invalid_1"); }
  @Test public void TypeEquals_Invalid_2_StaticTest() { contextFailTest("TypeEquals_Invalid_2"); }
  @Test public void TypeEquals_Invalid_3_StaticTest() { contextFailTest("TypeEquals_Invalid_3"); }
