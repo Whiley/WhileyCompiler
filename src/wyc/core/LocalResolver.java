@@ -287,7 +287,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
 				bop.srcType = rhs.result();
 			} else {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS),context,bop);	
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS,lhsRawType,rhsRawType),context,bop);	
 				return null; // dead code
 			}	
 			break;
@@ -307,7 +307,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				Nominal newType;
 				Nominal glb = Nominal.intersect(lhs.result(), Nominal.T_NULL);
 				if(glb.raw() == Type.T_VOID) {
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),context,bop);	
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS,lhs.result().raw(),Type.T_NULL),context,bop);	
 					return null;
 				} else if(sign) {					
 					newType = glb;
@@ -323,7 +323,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
 					bop.srcType = rhs.result();
 				} else {
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS),context,bop);	
+					syntaxError(errorMessage(INCOMPARABLE_OPERANDS,lhsRawType,rhsRawType),context,bop);	
 					return null; // dead code
 				}		
 			}
@@ -728,7 +728,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				Nominal fieldType = recType.field(expr.name);
 				
 				if(fieldType == null) {
-					syntaxError(errorMessage(RECORD_MISSING_FIELD),context,expr);
+					syntaxError(errorMessage(RECORD_MISSING_FIELD,expr.name),context,expr);
 				} else if(!(fieldType instanceof Nominal.FunctionOrMethod)) {
 					syntaxError("function or method type expected",context,expr);
 				}
@@ -751,8 +751,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				
 			} else {
 				// In this case, we definitely have an object type. 
-				
-				Type.Reference procType = checkType(expr.qualification.result().raw(),Type.Reference.class,receiver,context);							
+				checkIsSubtype(Type.T_REF_ANY,expr.qualification,context);
+				Type.Reference procType = (Type.Reference) expr.qualification.result().raw(); 						
 
 				// ok, it's a message send (possibly indirect)
 				Nominal type = environment.get(expr.name);
@@ -1550,19 +1550,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		}
 		return r;
 	}
-
-	
-	private <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem, Context context) {
-		if (clazz.isInstance(t)) {
-			return (T) t;
-		} else {
-			syntaxError(errorMessage(SUBTYPE_ERROR, clazz.getName().replace('$', '.'), t),
-					context, elem);
-			return null;
-		}
-	}
-	
+		
 	// Check t1 :> t2
 	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem, Context context) {
 		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {

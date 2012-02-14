@@ -83,6 +83,8 @@ public abstract class Type {
 	// the following are strictly unnecessary, but since they occur very
 	// commonly it is helpful to provide them as constants.
 	
+	public static final Reference T_REF_ANY = Reference(T_ANY);
+	
 	/**
 	 * The type representing all possible set types.
 	 */

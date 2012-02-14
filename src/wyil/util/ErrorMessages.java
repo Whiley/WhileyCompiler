@@ -152,7 +152,7 @@ public class ErrorMessages {
 	 * @param data
 	 * @return
 	 */
-	public static String errorMessage(MsgWithTypeParams msg, Type t1) {				
+	public static String errorMessage(MsgWithTypeParam msg, Type t1) {				
 		return msg.msg.replaceAll("\\$0",t1.toString());
 	}
 	

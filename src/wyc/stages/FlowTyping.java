@@ -673,7 +673,7 @@ public final class FlowTyping {
 				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
 				} else if(srcType.field(ra.name) == null) {
-					syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,lval);
+					syntaxError(errorMessage(RECORD_MISSING_FIELD,ra.name),filename,lval);
 				}
 				ra.srcType = srcType;
 				return ra;
@@ -686,18 +686,7 @@ public final class FlowTyping {
 		}		
 		internalFailure("unknown lval: " + lval.getClass().getName(),filename,lval);
 		return null; // dead code
-	}		
-	
-	private <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem) {
-		if (clazz.isInstance(t)) {
-			return (T) t;
-		} else {
-			syntaxError(errorMessage(SUBTYPE_ERROR, clazz.getName().replace('$', '.'), t),
-					filename, elem);
-			return null;
-		}
-	}
+	}			
 	
 	// Check t1 :> t2
 	private void checkIsSubtype(Nominal t1, Nominal t2,
