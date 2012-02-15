@@ -204,6 +204,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Dictionary) val, writer, constantPool);
 		} else if(val instanceof Value.Record) {
 			write((Value.Record) val, writer, constantPool);
+		} else if(val instanceof Value.FunctionOrMethodOrMessage) {
+			write((Value.FunctionOrMethodOrMessage) val, writer, constantPool);
 		} else {
 			throw new RuntimeException("Unknown value encountered - " + val);
 		}
@@ -312,7 +314,28 @@ public class WhileyDefine implements BytecodeAttribute {
 			write(v.getValue(), writer, constantPool);
 		}
 	}
+	
+	public static void write(Value.FunctionOrMethodOrMessage expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		Type.FunctionOrMethodOrMessage t = expr.type();
+		if(t instanceof Type.Function) {
+			writer.write_u1(FUNCTIONVAL);			
+		} else if(t instanceof Type.Method) {
+			writer.write_u1(METHODVAL);
+		} else {
+			writer.write_u1(MESSAGEVAL);
+		}
 		
+		WhileyType.write(t, writer, constantPool);
+		String value = expr.name.toString();
+		int valueLength = value.length();		
+		writer.write_u2(valueLength);
+		for(int i=0;i!=valueLength;++i) {
+			writer.write_u2(value.charAt(i));
+		}
+		
+	}
+	
 	public static final class Reader implements BytecodeAttribute.Reader {		
 		private HashMap<String,BytecodeAttribute.Reader> attributeReaders;
 		
@@ -372,6 +395,11 @@ public class WhileyDefine implements BytecodeAttribute {
 				return Value.V_BOOL(false);
 			case TRUE:
 				return Value.V_BOOL(true);				
+			case BYTEVAL:			
+			{
+				byte val = (byte) reader.read_u1();				
+				return Value.V_BYTE(val);
+			}
 			case CHARVAL:			
 			{
 				char val = (char) reader.read_u2();				
@@ -397,6 +425,16 @@ public class WhileyDefine implements BytecodeAttribute {
 				BigInteger den = new BigInteger(bytes);
 				BigRational br = new BigRational(num,den);
 				return Value.V_RATIONAL(br);
+			}
+			case STRINGVAL:
+			{
+				int len = reader.read_u2();
+				StringBuffer sb = new StringBuffer();
+				for(int i=0;i!=len;++i) {
+					char c = (char) reader.read_u2();
+					sb.append(c);
+				}
+				return Value.V_STRING(sb.toString());
 			}
 			case LISTVAL:
 			{
@@ -448,5 +486,8 @@ public class WhileyDefine implements BytecodeAttribute {
 	public final static int RECORDVAL = 8;
 	public final static int BYTEVAL = 10;
 	public final static int STRINGVAL = 11;
-	public final static int DICTIONARYVAL = 12;	
+	public final static int DICTIONARYVAL = 12;
+	public final static int FUNCTIONVAL = 13;	
+	public final static int METHODVAL = 14;
+	public final static int MESSAGEVAL = 15;
 }
