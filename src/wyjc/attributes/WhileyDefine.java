@@ -186,19 +186,27 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Null) val, writer, constantPool);
 		} else if(val instanceof Value.Bool) {
 			write((Value.Bool) val, writer, constantPool);
+		} else if(val instanceof Value.Byte) {
+			write((Value.Byte) val, writer, constantPool);
 		} else if(val instanceof Value.Char) {
 			write((Value.Char) val, writer, constantPool);
 		} else if(val instanceof Value.Integer) {
 			write((Value.Integer) val, writer, constantPool);
 		} else if(val instanceof Value.Rational) {
 			write((Value.Rational) val, writer, constantPool);
+		} else if(val instanceof Value.Strung) {
+			write((Value.Strung) val, writer, constantPool);
 		} else if(val instanceof Value.Set) {
 			write((Value.Set) val, writer, constantPool);
 		} else if(val instanceof Value.List) {
 			write((Value.List) val, writer, constantPool);
+		} else if(val instanceof Value.Dictionary) {
+			write((Value.Dictionary) val, writer, constantPool);
 		} else if(val instanceof Value.Record) {
 			write((Value.Record) val, writer, constantPool);
-		} 
+		} else {
+			throw new RuntimeException("Unknown value encountered - " + val);
+		}
 	}
 	
 	public static void write(Value.Null expr, BinaryOutputStream writer,
@@ -214,6 +222,12 @@ public class WhileyDefine implements BytecodeAttribute {
 		} else {
 			writer.write_u1(FALSE);
 		}
+	}
+	
+	public static void write(Value.Byte expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {		
+		writer.write_u1(BYTEVAL);		
+		writer.write_u1(expr.value);		
 	}
 	
 	public static void write(Value.Char expr, BinaryOutputStream writer,
@@ -250,7 +264,17 @@ public class WhileyDefine implements BytecodeAttribute {
 		writer.write_u2(denbytes.length);
 		writer.write(denbytes);
 	}
-	
+		
+	public static void write(Value.Strung expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {	
+		writer.write_u1(STRINGVAL);
+		String value = expr.value;
+		int valueLength = value.length();		
+		writer.write_u2(valueLength);
+		for(int i=0;i!=valueLength;++i) {
+			writer.write_u2(value.charAt(i));
+		}
+	}
 	public static void write(Value.Set expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(SETVAL);
@@ -266,6 +290,16 @@ public class WhileyDefine implements BytecodeAttribute {
 		writer.write_u2(expr.values.size());
 		for(Value v : expr.values) {
 			write(v,writer,constantPool);
+		}
+	}
+	
+	public static void write(Value.Dictionary expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(DICTIONARYVAL);
+		writer.write_u2(expr.values.size());
+		for(Map.Entry<Value,Value> e : expr.values.entrySet()) {
+			write(e.getKey(),writer,constantPool);
+			write(e.getValue(),writer,constantPool);
 		}
 	}
 	
@@ -312,8 +346,7 @@ public class WhileyDefine implements BytecodeAttribute {
 			
 			if (sw == 0) {
 				// Condition only
-				Value value = readValue(input, constantPool);
-				
+				Value value = readValue(input, constantPool);				
 				int nattrs = input.read_u2();
 				List<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(
 						nattrs, input, constantPool, attributeReaders);
@@ -411,6 +444,9 @@ public class WhileyDefine implements BytecodeAttribute {
 	public final static int INTVAL = 4;
 	public final static int REALVAL = 5;
 	public final static int SETVAL = 6;
-	public final static int LISTVAL = 7;
-	public final static int RECORDVAL = 8;		
+	public final static int LISTVAL = 7;	
+	public final static int RECORDVAL = 8;
+	public final static int BYTEVAL = 10;
+	public final static int STRINGVAL = 11;
+	public final static int DICTIONARYVAL = 12;	
 }
