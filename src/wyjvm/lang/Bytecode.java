@@ -1542,11 +1542,11 @@ public abstract class Bytecode {
 			Collections.sort(cases, switchcomp);			
 			
 			if(cases.size() > 0) {
-				int lo = cases.get(0).first();
-				int hi = cases.get(cases.size()-1).first();
+				long lo = cases.get(0).first();
+				long hi = cases.get(cases.size()-1).first();
 				
-				int tableSize = 4+4*(hi-lo+1);
-				int lookupSize = 8*(cases.size());
+				long tableSize = 4+4*(hi-lo+1);
+				long lookupSize = 8*(cases.size());
 				
 				if (tableSize < lookupSize) {
 					this.type = TABLESWITCH;
@@ -1604,7 +1604,7 @@ public abstract class Bytecode {
 				int lo = cases.get(0).first();
 				int hi = cases.get(cases.size()-1).first();
 				write_i4(out, lo);
-				write_i4(out, hi);
+				write_i4(out, hi);				
 				
 				int index = 0;
 				for (int i = lo; i <= hi; i++) {
