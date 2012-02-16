@@ -35,6 +35,7 @@ import wyil.Transform;
 import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
 import wyil.util.path.BinaryDirectoryRoot;
+import wyil.util.path.JarFileRoot;
 import wyil.util.path.Path;
 import wyil.util.path.SourceDirectoryRoot;
 import wyjc.Main;
@@ -65,6 +66,8 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * 
  */
 public class AntTask extends MatchingTask {
+	ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
+	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
 	private File srcdir;
 	private File destdir;
 	private boolean verbose = false;
@@ -75,6 +78,28 @@ public class AntTask extends MatchingTask {
 
     public void setDestdir (File destdir) {
         this.destdir = destdir;
+    }
+    
+    public void setWhileyPath (org.apache.tools.ant.types.Path path) throws IOException {
+    	whileypath.clear(); // just to be sure
+    	for(String file : path.list()) {
+    		if(file.endsWith(".jar")) {
+    			whileypath.add(new JarFileRoot(file));
+    		} else {
+    			whileypath.add(new BinaryDirectoryRoot(file));
+    		}
+    	}
+    }
+    
+    public void setBootPath (org.apache.tools.ant.types.Path path) throws IOException {
+    	bootpath.clear(); // just to be sure
+    	for(String file : path.list()) {
+    		if(file.endsWith(".jar")) {
+    			bootpath.add(new JarFileRoot(file));
+    		} else {
+    			bootpath.add(new BinaryDirectoryRoot(file));
+    		}
+    	}
     }
     
     public void setVerbose(boolean b) {
@@ -128,7 +153,7 @@ public class AntTask extends MatchingTask {
     		List<Path.Root> sourcepath = initialiseSourcePath();
     		List<Path.Root> whileypath = initialiseWhileyPath();
 
-    		// second, construct the module loader
+    		// second, construct the module loader    		
     		ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
     		loader.setModuleReader("class",  new ClassFileLoader());
     		
@@ -185,10 +210,9 @@ public class AntTask extends MatchingTask {
     	return sourcepath;
     }
     
-    protected List<Path.Root> initialiseWhileyPath() {
-    	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
-    	// FIXME: what's the best way to do this?
-    	wyjc.Main.initialiseBootPath(whileypath);
+    protected List<Path.Root> initialiseWhileyPath() {    	
+    	wyjc.Main.initialiseBootPath(bootpath);
+    	whileypath.addAll(bootpath);
     	return whileypath;
     }
 }
