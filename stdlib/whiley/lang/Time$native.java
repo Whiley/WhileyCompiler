@@ -23,9 +23,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package whiley.lang
+package whiley.lang;
 
-define Time as ref {int dummy}
+import java.math.BigInteger;
+import wyjc.runtime.BigRational;
 
-// Return the current time in seconds
-public native real Time::current():
+public final class Time$native {
+    public static final BigInteger MILLIS = BigInteger.valueOf(1000);
+
+    public static BigRational current() {
+	long current = java.lang.System.currentTimeMillis();
+	return new BigRational(BigInteger.valueOf(current),MILLIS);
+    }
+}
