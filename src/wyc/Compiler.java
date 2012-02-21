@@ -32,7 +32,6 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
-import wyc.core.CompilationGroup;
 import wyc.core.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;
@@ -109,12 +108,12 @@ public final class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public CompilationGroup compile(List<File> files) throws Exception {
+	public WhileyProject compile(List<File> files) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 		
-		CompilationGroup wyfiles = new CompilationGroup();
+		WhileyProject wyfiles = new WhileyProject();
 		for (File f : files) {
 			WhileyFile wf = parse(f);
 			wyfiles.add(wf);								
@@ -213,7 +212,7 @@ public final class Compiler implements Logger {
 		return r;
 	}	
 	
-	private List<Module> build(CompilationGroup files) {
+	private List<Module> build(WhileyProject files) {
 		GlobalResolver resolver = new GlobalResolver(loader,files);
 		
 		for(WhileyFile wf : files) {

@@ -71,7 +71,7 @@ import wyil.util.SyntaxError;
  */
 public abstract class LocalResolver extends AbstractResolver {
 	
-	public LocalResolver(ModuleLoader loader, CompilationGroup files) {
+	public LocalResolver(ModuleLoader loader, WhileyProject files) {
 		super(loader,files);
 	}			
 	

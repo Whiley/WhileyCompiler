@@ -24,7 +24,7 @@ import wyil.util.Triple;
 
 public abstract class AbstractResolver {	
 	protected final ModuleLoader loader;
-	protected final CompilationGroup files;
+	protected final WhileyProject files;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -33,7 +33,7 @@ public abstract class AbstractResolver {
 	 */
 	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
 	
-	public AbstractResolver(ModuleLoader loader, CompilationGroup files) {		
+	public AbstractResolver(ModuleLoader loader, WhileyProject files) {		
 		this.loader = loader;
 		this.files = files;
 	}

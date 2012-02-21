@@ -13,6 +13,7 @@ import java.util.*;
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
 import wyc.lang.Expr;
+import wyc.lang.WhileyProject;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wyil.ModuleLoader;
@@ -38,7 +39,7 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(ModuleLoader loader, CompilationGroup files) {
+	public GlobalResolver(ModuleLoader loader, WhileyProject files) {
 		super(loader,files);
 	}
 	
@@ -46,7 +47,7 @@ public class GlobalResolver extends LocalResolver {
 		return loader;		
 	}
 	
-	public CompilationGroup files() {
+	public WhileyProject files() {
 		return files;
 	}
 	
