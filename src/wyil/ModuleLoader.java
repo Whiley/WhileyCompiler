@@ -254,8 +254,8 @@ public final class ModuleLoader {
 		long memory = runtime.freeMemory();
 		ModuleReader reader = suffixMap.get(entry.suffix());
 		ModuleID mid = entry.id();
-		
 		Module mi = reader.read(mid, entry.contents());
+		
 		
 		if(mi != null) {
 			logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
@@ -267,6 +267,7 @@ public final class ModuleLoader {
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
 			ignored.add(mid);
 		}
+		
 		return mi;
 	}
 }
