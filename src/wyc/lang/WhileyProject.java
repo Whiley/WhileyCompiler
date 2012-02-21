@@ -1,8 +1,10 @@
 package wyc.lang;
 
 import java.util.*;
+
 import wyc.lang.*;
 import wyil.lang.ModuleID;
+import wyil.util.path.Path;
 
 /**
  * A whiley project represents the contextual information underpinning a given
@@ -14,18 +16,32 @@ import wyil.lang.ModuleID;
  * @author David J. Pearce
  */
 public final class WhileyProject implements Iterable<WhileyFile> {	
-	private final HashMap<ModuleID,WhileyFile> files = new HashMap<ModuleID,WhileyFile>();
+	/**
+	 * The source path is a list of locations which must be searched in
+	 * ascending order for whiley files.
+	 */
+	private ArrayList<Path.Root> sourcepath;
 	
+	/**
+	 * The whiley path is a list of locations which must be searched in
+	 * ascending order for wyil files.
+	 */
+	private ArrayList<Path.Root> whileypath;	
 	
+	/**
+	 * A cache of those source files which have already been loaded.
+	 */
+	private final HashMap<ModuleID,WhileyFile> srcFileCache = new HashMap<ModuleID,WhileyFile>();
+		
 	public Iterator<WhileyFile> iterator() {
-		return files.values().iterator();
+		return srcFileCache.values().iterator();
 	}
 	
 	public boolean add(WhileyFile file) {
-		return files.put(file.module, file) != null;
+		return srcFileCache.put(file.module, file) != null;
 	}
 	
 	public WhileyFile get(ModuleID mid) {
-		return files.get(mid);
+		return srcFileCache.get(mid);
 	}
 }
