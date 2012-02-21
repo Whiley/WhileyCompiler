@@ -116,7 +116,7 @@ public final class Compiler implements Logger {
 		
 		CompilationGroup wyfiles = new CompilationGroup();
 		for (File f : files) {
-			WhileyFile wf = parse(f);			
+			WhileyFile wf = parse(f);
 			wyfiles.add(wf);								
 		}
 		

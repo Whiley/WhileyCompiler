@@ -256,6 +256,7 @@ public final class ModuleLoader {
 		ModuleID mid = entry.id();		
 		Module mi = reader.read(mid, entry.contents());
 		
+		
 		if(mi != null) {
 			logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
@@ -266,6 +267,7 @@ public final class ModuleLoader {
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
 			ignored.add(mid);
 		}
+		
 		return mi;
 	}
 }
