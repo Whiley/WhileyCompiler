@@ -1256,7 +1256,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
-			if (imp.matchName(name)) {
+			if (imp.matchName(name)) {				
 				for (ModuleID mid : imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateFunctionsAndMethods(nid,parameters,candidates);					

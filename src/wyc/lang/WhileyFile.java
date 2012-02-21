@@ -186,7 +186,7 @@ public final class WhileyFile {
 			if(this.name != null) {
 				return (this.name.equals(name) || this.name.equals("*"));	
 			} else {
-				return this.module.equals(name) || this.module.equals("*");
+				return this.module.equals(name); // || this.module.equals("*");
 			}					
 		}
 		
