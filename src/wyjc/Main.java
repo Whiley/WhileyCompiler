@@ -30,8 +30,8 @@ import java.net.URI;
 import java.util.*;
 import java.util.jar.JarFile;
 
-import wyc.Pipeline;
 import wyc.builder.Builder;
+import wyc.builder.Pipeline;
 import wyc.lang.WhileyProject;
 import wyc.util.*;
 import wyc.util.path.*;
@@ -269,25 +269,7 @@ public class Main {
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
 		try {	
-			// initialise compiler appropriately
-			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
-
-			Pipeline pipeline = new Pipeline(templates, project);
-			
-			if(pipelineModifiers != null) {
-				pipeline.apply(pipelineModifiers);
-			}
-			
-			if (outputdir != null) {
-				pipeline.setOption(ClassWriter.class, "outputDirectory",
-						outputdir);
-			}
-			
-			List<Transform> stages = pipeline.instantiate();
-			Builder compiler = new Builder(stages);		
-			
-			// initialise the boot path appropriately
+						// initialise the boot path appropriately
 			List<Path.Root> bootpath = initialiseBinaryRoots((ArrayList) values.get("bootpath"),verbose);
 			initialiseBootPath(bootpath);
 
@@ -305,14 +287,32 @@ public class Main {
 			// now initialise the whiley path			
 			whileypath.addAll(bootpath);
 
-			// now construct a pipline and initialise the compiler		
-			WhileyProject project = new WhileyProject(compiler,sourcepath,whileypath);
+			// finally, construct the project		
+			WhileyProject project = new WhileyProject(sourcepath,whileypath);
 			project.setModuleReader("class",  new ClassFileLoader());
-			
+
 			if(verbose) {			
-				//compiler.setLogOut(System.err);
+				project.setLogger(new Logger.Default(System.err));
+			}		
+			
+			// now, initialise builder appropriately
+			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
+			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
+
+			Pipeline pipeline = new Pipeline(templates, project);
+
+			if(pipelineModifiers != null) {
+				pipeline.apply(pipelineModifiers);
 			}
-		
+
+			if (outputdir != null) {
+				pipeline.setOption(ClassWriter.class, "outputDirectory",
+						outputdir);
+			}
+
+			List<Transform> stages = pipeline.instantiate();
+			project.setBuilder(new Builder(project,stages));		
+
 			ArrayList<File> files = new ArrayList<File>();
 			for (String file : args) {
 				files.add(new File(file));

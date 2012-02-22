@@ -81,14 +81,15 @@ import wyc.util.path.Path;
  * 
  */
 public final class Builder {		
-	//private final WhileyProject project;		
+	private final WhileyProject project;		
 	private final ArrayList<Transform> stages;
 
-	public Builder(List<Transform> stages) {
+	public Builder(WhileyProject project, List<Transform> stages) {
 		this.stages = new ArrayList<Transform>(stages);
+		this.project = project;
 	}
 	
-	public void compile(WhileyProject project, List<Path.Entry> delta) throws Exception {
+	public void compile(List<Path.Entry> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();

@@ -25,6 +25,8 @@
 
 package wyil.util;
 
+import java.io.PrintStream;
+
 public interface Logger {
 	/**
 	 * Log a message, along with a time. The time is used to indicate how long
@@ -46,4 +48,65 @@ public interface Logger {
 			// do nothing.
 		}
 	};	
+	
+	public static class Default implements Logger {
+		private PrintStream logout;
+		
+		public Default(PrintStream out) {
+			logout=out;
+		}
+		/**
+		 * This method is just a helper to format the output
+		 */
+		public void logTimedMessage(String msg, long time, long memory) {
+			logout.print(msg);
+			logout.print(" ");
+			double mem = memory;
+			mem = mem / (1024*1024);
+			memory = (long) mem;
+			String stats = " [" + Long.toString(time) + "ms";
+			if(memory > 0) {
+				stats += "+" + Long.toString(memory) + "mb]";
+			} else if(memory < 0) {
+				stats += Long.toString(memory) + "mb]";
+			} else {
+				stats += "]";
+			}
+			for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
+				logout.print(".");
+			}		
+			logout.println(stats);
+		}	
+		
+		public void logTotalTime(String msg, long time, long memory) {
+			memory = memory / 1024;
+			
+			for (int i = 0; i <= 90; ++i) {
+				logout.print("=");
+			}
+			
+			logout.println();
+			
+			logout.print(msg);
+			logout.print(" ");
+
+			double mem = memory;
+			mem = mem / (1024*1024);
+			memory = (long) mem;
+			String stats = " [" + Long.toString(time) + "ms";
+			if(memory > 0) {
+				stats += "+" + Long.toString(memory) + "mb]";
+			} else if(memory < 0) {
+				stats += Long.toString(memory) + "mb]";
+			} else {
+				stats += "]";
+			}
+
+			for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
+				logout.print(".");
+			}
+			
+			logout.println(stats);		
+		}
+	};
 }

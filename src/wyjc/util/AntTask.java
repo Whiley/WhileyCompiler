@@ -28,8 +28,8 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.Pipeline;
 import wyc.builder.Builder;
+import wyc.builder.Pipeline;
 import wyc.lang.WhileyProject;
 import wyc.util.path.BinaryDirectoryRoot;
 import wyc.util.path.JarFileRoot;
@@ -37,6 +37,7 @@ import wyc.util.path.Path;
 import wyc.util.path.SourceDirectoryRoot;
 import wyil.ModuleLoader;
 import wyil.Transform;
+import wyil.util.Logger;
 import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
 import wyjc.Main;
@@ -157,6 +158,10 @@ public class AntTask extends MatchingTask {
     		// second, construct the module loader    		
     		WhileyProject project = new WhileyProject(sourcepath,whileypath);
     		project.setModuleReader("class",  new ClassFileLoader());
+
+    		if(verbose) {			
+    			project.setLogger(new Logger.Default(System.err));
+    		}
     		
     		// third, initialise the pipeline
     		ArrayList<Pipeline.Template> templates = new ArrayList<Pipeline.Template>(Pipeline.defaultPipeline);
@@ -168,13 +173,9 @@ public class AntTask extends MatchingTask {
     		}
     		List<Transform> stages = pipeline.instantiate();
     		
-    		// fourth initialise the compiler
-    		Builder compiler = new Builder(stages);			
-
-    		if(verbose) {			
-    			// compiler.setLogOut(System.err);
-    		}
-
+    		// fourth initialise the builder
+    		project.setBuilder(new Builder(project,stages));
+    		
     		// finally, compile away!
     		project.build();
     		

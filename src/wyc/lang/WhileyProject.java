@@ -35,14 +35,9 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	private ArrayList<Path.Root> externalRoots;	
 	
 	/**
-	 * The project compiler used for compiling source files into modules.
+	 * The builder used for compiling source files into modules.
 	 */
-	private Builder compiler;
-	
-	/**
-	 * A cache of those source files which have already been loaded.
-	 */
-	private final HashMap<ModuleID,WhileyFile> srcFileCache = new HashMap<ModuleID,WhileyFile>();
+	private Builder builder;
 	
 	/**
 	 * A map from module identifiers to module objects. This is the master cache
@@ -68,13 +63,12 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	/**
 	 * The logger is used to log messages for the project.
 	 */
-	private Logger logger;
+	private Logger logger = Logger.NULL;
 	
-	public WhileyProject(Builder compiler, Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
-		this.compiler = compiler;
+	public WhileyProject(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
+		this.builder = builder;
 		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
 		this.externalRoots = new ArrayList<Path.Root>(libRoots);
-		logger = Logger.NULL;
 	}
 	
 	// ======================================================================
@@ -87,6 +81,15 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 */
 	public void setLogger(Logger logger) {
 		this.logger = logger;
+	}
+	
+	/**
+	 * Set the builder associated with this project.
+	 * 
+	 * @param builder
+	 */
+	public void setBuilder(Builder builder) {
+		this.builder = builder;
 	}
 	
 	/**
@@ -124,7 +127,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 			}
 		}
 		
-		compiler.compile(this,delta);
+		builder.compile(delta);
 	}
 	
 	// ======================================================================
@@ -224,6 +227,17 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	}	
 	
 	/**
+	 * Return the module for the given id, or null if none-exists. This may
+	 * result in the module being loaded from the file-system.
+	 * 
+	 * @param mid
+	 * @return
+	 */
+	public Module get(ModuleID mid) throws Exception {
+		return binFileCache.get(mid);
+	}
+	
+	/**
 	 * This method takes a given import declaration, and expands it to find all
 	 * matching modules.
 	 * 
@@ -255,19 +269,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 		}
 		return matches;
 	}	
-	
-	public Iterator<WhileyFile> iterator() {
-		return srcFileCache.values().iterator();
-	}
-	
-	public boolean add(WhileyFile file) {
-		return srcFileCache.put(file.module, file) != null;
-	}
-	
-	public WhileyFile get(ModuleID mid) {
-		return srcFileCache.get(mid);
-	}
-	
+		
 	// ======================================================================
 	// Private Implementation
 	// ======================================================================
