@@ -78,6 +78,25 @@ public final class JarFileRoot implements Path.Root {
 		return contents;
 	}
 	
+	public List<Path.Entry> list() throws IOException {				
+		Enumeration<JarEntry> entries = jf.entries();
+		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>();
+		while (entries.hasMoreElements()) {
+			JarEntry e = entries.nextElement();
+			String filename = e.getName();
+			if(filename.endsWith(".class")) {				
+				int pos = filename.lastIndexOf('/');
+				PkgID pkg = PkgID.fromString(filename.substring(0, pos));
+				// strip suffix
+				filename = filename.substring(pos + 1,
+						filename.length() - 6);
+				ModuleID mid = new ModuleID(pkg, filename);
+				contents.add(new Entry(mid, jf, e));				
+			}
+		}		
+		return contents;
+	}
+	
 	public Entry lookup(ModuleID mid) throws IOException {
 		String filename = mid.toString().replace('.', '/') + ".class";
 		JarEntry entry = jf.getJarEntry(filename);
