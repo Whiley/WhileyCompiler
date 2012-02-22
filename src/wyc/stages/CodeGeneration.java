@@ -99,7 +99,7 @@ public final class CodeGeneration {
 	}
 
 	public List<Module> generate(List<SourceFile> files) {
-		globalGenerator = new GlobalGenerator(builder,resolver,files);
+		globalGenerator = new GlobalGenerator(builder,resolver);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();
 		for(SourceFile wf : files) {			
