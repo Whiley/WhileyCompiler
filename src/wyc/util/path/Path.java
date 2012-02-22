@@ -94,12 +94,11 @@ public class Path {
 		public String location();
 		
 		/**
-		 * Check whether this entry is "dirty". That is, the source file has
-		 * been modified since the last time it was compiled.
+		 * Get the last modification time for this file.
 		 * 
 		 * @return
 		 */
-		public boolean isModified();
+		public long lastModified();
 		
 		/**
 		 * Open the source file for reading.

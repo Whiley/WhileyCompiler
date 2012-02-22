@@ -43,8 +43,8 @@ public class SourceDirectoryRoot implements Path.Root {
 		}
 	};
 	
-	private final java.io.File dir;	
-	private final BinaryDirectoryRoot bindir;
+	private final java.io.File srcDirectory;	
+	private final BinaryDirectoryRoot outputDirectory;
 	
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
@@ -54,14 +54,14 @@ public class SourceDirectoryRoot implements Path.Root {
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
-	 * @param filter
-	 *            --- filter which determines what constitutes a valid entry for
-	 *            this directory.
+	 * @param outputDirectory
+	 *            --- the output directory for this source directory (or null if
+	 *            source directory is output directory).
 	 * @throws IOException
 	 */
-	public SourceDirectoryRoot(String path, BinaryDirectoryRoot bindir) throws IOException {
-		this.dir = new File(path);				
-		this.bindir = bindir;
+	public SourceDirectoryRoot(String path, BinaryDirectoryRoot outputDirectory) throws IOException {
+		this.srcDirectory = new File(path);				
+		this.outputDirectory = outputDirectory;
 	}
 	
 	/**
@@ -72,30 +72,30 @@ public class SourceDirectoryRoot implements Path.Root {
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
-	 * @param filter
-	 *            --- filter which determines what constitutes a valid entry for
-	 *            this directory.
+	 * @param outputDirectory
+	 *            --- the output directory for this source directory (or null if
+	 *            source directory is output directory).
 	 * @throws IOException
 	 */
-	public SourceDirectoryRoot(File dir, BinaryDirectoryRoot bindir) throws IOException {
-		this.dir = dir;			
-		this.bindir = bindir;
+	public SourceDirectoryRoot(File dir, BinaryDirectoryRoot outputDirectory) throws IOException {
+		this.srcDirectory = dir;			
+		this.outputDirectory = outputDirectory;
 	}
 	
 	public boolean exists(PkgID pkg) throws IOException {		
-		File location = new File(dir + File.separator + pkg.fileName());
+		File location = new File(srcDirectory + File.separator + pkg.fileName());
 		return location.exists() && location.isDirectory();
 	}
 	
 	public List<Path.Entry> list() throws IOException { 
-		File root = new File(dir + File.separator);
+		File root = new File(srcDirectory + File.separator);
 		ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
 		traverse(root,PkgID.ROOT,entries);
 		return entries;
 	}
 	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {		
-		File location = new File(dir + File.separator + pkg.fileName());
+		File location = new File(srcDirectory + File.separator + pkg.fileName());
 
 		if (location.exists() && location.isDirectory()) {
 			ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
@@ -111,8 +111,8 @@ public class SourceDirectoryRoot implements Path.Root {
 				// a modification date no earlier. Binary files are always preferred
 				// over source entries.
 				
-				if (bindir != null) {
-					binEntry = bindir.lookup(mid);					
+				if (outputDirectory != null) {
+					binEntry = outputDirectory.lookup(mid);					
 				} else {
 					File binFile = new File(name + ".class");
 					if(binFile.exists()) {
@@ -133,7 +133,7 @@ public class SourceDirectoryRoot implements Path.Root {
 	}
 	
 	public Entry lookup(ModuleID mid) throws IOException {
-		File srcFile = new File(dir + File.separator + mid.fileName()
+		File srcFile = new File(srcDirectory + File.separator + mid.fileName()
 				+ ".whiley");
 		if (srcFile.exists()) {
 			Entry srcEntry = new Entry(mid, srcFile);
@@ -143,10 +143,10 @@ public class SourceDirectoryRoot implements Path.Root {
 			// a modification date no earlier. Binary files are always preferred
 			// over source entries.
 			
-			if (bindir != null) {
-				binEntry = bindir.lookup(mid);					
+			if (outputDirectory != null) {
+				binEntry = outputDirectory.lookup(mid);					
 			} else {
-				File binFile = new File(dir + File.separator + mid.fileName()
+				File binFile = new File(srcDirectory + File.separator + mid.fileName()
 						+ ".class");				
 				if(binFile.exists()) {
 					binEntry = new Entry(mid,binFile);
@@ -164,7 +164,7 @@ public class SourceDirectoryRoot implements Path.Root {
 	}
 
 	public String toString() {
-		return dir.getPath();
+		return srcDirectory.getPath();
 	}
 	
 	/**
@@ -194,8 +194,8 @@ public class SourceDirectoryRoot implements Path.Root {
 					// a modification date no earlier. Binary files are always preferred
 					// over source entries.
 
-					if (bindir != null) {
-						binEntry = bindir.lookup(mid);					
+					if (outputDirectory != null) {
+						binEntry = outputDirectory.lookup(mid);					
 					} else {
 						File binFile = new File(name + ".class");
 						if(binFile.exists()) {

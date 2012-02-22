@@ -246,8 +246,8 @@ public final class WhileyProject implements ModuleLoader {
 	 * @return
 	 */
 	public List<ModuleID> imports(WhileyFile.Import imp) {
-		Triple<PkgID, String, String> key = new Triple(imp.pkg, imp.module,
-				imp.name);
+		Triple<PkgID, String, String> key = new Triple<PkgID, String, String>(
+				imp.pkg, imp.module, imp.name);
 		ArrayList<ModuleID> matches = importCache.get(key);
 		if (matches != null) {
 			// cache hit

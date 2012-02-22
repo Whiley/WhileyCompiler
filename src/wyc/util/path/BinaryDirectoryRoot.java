@@ -83,6 +83,13 @@ public class BinaryDirectoryRoot implements Path.Root {
 		return location.exists() && location.isDirectory();
 	}
 	
+	public List<Path.Entry> list() throws IOException { 
+		File root = new File(dir + File.separator);
+		ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
+		traverse(root,PkgID.ROOT,entries);
+		return entries;
+	}
+	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {
 		File location = new File(dir + File.separator + pkg.fileName());
 
@@ -158,4 +165,29 @@ public class BinaryDirectoryRoot implements Path.Root {
 			return new FileInputStream(file);
 		}		
 	}	
+	
+	/**
+	 * Recursively traverse a file system from a given location.
+	 * 
+	 * @param location
+	 *            --- current directory in file system.
+	 * @param pkg
+	 *            --- package that location represents.
+	 * @param entries
+	 *            --- list of entries being accumulated into.
+	 */
+	private void traverse(File location, PkgID pkg, ArrayList<Path.Entry> entries) throws IOException {
+		if (location.exists() && location.isDirectory()) {			
+			for (File file : location.listFiles()) {				
+				if(file.isDirectory()) {
+					traverse(file,pkg.append(file.getName()),entries);
+				} else if(filter.accept(file)) {
+					String filename = file.getName();
+					String name = filename.substring(0, filename.lastIndexOf('.'));
+					ModuleID mid = new ModuleID(pkg, name);
+					entries.add(new Entry(mid, file));
+				}
+			}	
+		}
+	}
 }
