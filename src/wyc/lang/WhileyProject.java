@@ -48,13 +48,6 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	private HashMap<ModuleID, Module> binFileCache = new HashMap<ModuleID, Module>();	
 	
 	/**
-	 * Contains a set of ModuleIDs which have been ignored because they do not
-	 * correspond to Whiley Modules. This is purely to prevent continually
-	 * rereading those modules.
-	 */
-	private HashSet<ModuleID> ignored = new HashSet<ModuleID>();
-	
-	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
 	 * time. For example, the statement <code>import whiley.lang.*</code>
@@ -304,9 +297,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 						
 		if (m != null) {
 			return m; // module was previously loaded and cached
-		} else if (ignored.contains(module)) {
-			throw new ResolveError("Unable to find module: " + module);
-		}
+		} 
 		
 		try {
 			// ok, now look for module inside package roots.
@@ -354,7 +345,6 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 			
 			logger.logTimedMessage("Ignored " + entry.location() + ":" + mid,
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
-			ignored.add(mid);
 		}
 		
 		return mi;

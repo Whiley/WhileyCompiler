@@ -1,4 +1,4 @@
-package wyc.core;
+package wyc.compiler;
 
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;

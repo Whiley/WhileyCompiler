@@ -30,7 +30,7 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.core.*;
+import wyc.compiler.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyil.ModuleLoader;
