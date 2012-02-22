@@ -12,7 +12,7 @@ import wyil.util.ResolveError;
 import wyil.util.Triple;
 
 /**
- * A whiley project represents the contextual information underpinning a given
+ * A Whiley project represents the contextual information underpinning a given
  * compilation. This includes the WHILEYPATH, the package roots for all source
  * files and the binary destination folders as well. Bringing all of this
  * information together helps manage it, and enables a certain amount of global
@@ -22,17 +22,17 @@ import wyil.util.Triple;
  */
 public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {	
 	/**
-	 * The source soots are locations which may contain the root of a package
+	 * The source roots are locations which may contain the root of a package
 	 * structure containing source files.
 	 */
-	private ArrayList<Path.Root> sourceRoots;
+	private ArrayList<Path.Root> srcRoots;
 	
 	/**
-	 * The library roots represent external libraries required for compiling
+	 * The external roots represent external libraries required for compiling
 	 * this project. They may exist in several forms, including as jar files or
 	 * directory roots (for binary files).
 	 */
-	private ArrayList<Path.Root> whileypath;	
+	private ArrayList<Path.Root> externalRoots;	
 	
 	/**
 	 * A cache of those source files which have already been loaded.
@@ -48,34 +48,11 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	private HashMap<ModuleID, Module> binFileCache = new HashMap<ModuleID, Module>();	
 	
 	/**
-	 * This identifies which packages have had their contents fully resolved.
-	 * All items in a resolved package must have been loaded into the filetable.
-	 */
-	private HashMap<PkgID, ArrayList<Path.Root>> pkgRoots = new HashMap<PkgID, ArrayList<Path.Root>>();
-	
-	/**
 	 * Contains a set of ModuleIDs which have been ignored because they do not
 	 * correspond to Whiley Modules. This is purely to prevent continually
 	 * rereading those modules.
 	 */
 	private HashSet<ModuleID> ignored = new HashSet<ModuleID>();
-	
-	/**
-	 * The failed packages set is a collection of packages which have been
-	 * requested, but are known not to exist. The purpose of this cache is
-	 * simply to speed up package resolution. Requests for failed packages can
-	 * occur regularly when resolving source files. For example, in the
-	 * following:
-	 * 
-	 * <pre>
-	 * int f(byte b):
-	 *    return whiley.lang.Byte.toUnsignedInt()
-	 * </pre>
-	 * 
-	 * Here, the compiler will query whether <code>whiley.lang.Byte</code> is,
-	 * in fact, a package.  
-	 */
-	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
 	
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -96,8 +73,8 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	private Logger logger;
 	
 	public WhileyProject(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
-		this.sourceRoots = new ArrayList<Path.Root>(srcRoots);
-		this.whileypath = new ArrayList<Path.Root>(libRoots);
+		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
+		this.externalRoots = new ArrayList<Path.Root>(libRoots);
 		logger = Logger.NULL;
 	}
 	
@@ -162,11 +139,21 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 */
 	public boolean isPackage(PkgID pid) {
 		try {
-			resolvePackage(pid);
-			return true;
-		} catch(ResolveError e) {
-			return false;
+			for(Path.Root root : srcRoots) {
+				if(root.exists(pid)) {
+					return true;
+				}
+			}
+			for(Path.Root root : externalRoots) {
+				if(root.exists(pid)) {
+					return true;
+				}
+			}
+		} catch(Exception e) {
+			// FIXME: figure how best to propagate this exception
 		}
+		
+		return false;
 	}
 	
 	/**
@@ -177,13 +164,20 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 */
 	public boolean isModule(ModuleID mid) {
 		try {
-			if(get(mid) == null) {
-				loadModule(mid);
+			for(Path.Root root : srcRoots) {
+				if(root.lookup(mid) != null) {
+					return true;
+				}
 			}
-			return true;
-		} catch(ResolveError e) {
-			return false;
+			for(Path.Root root : externalRoots) {
+				if(root.lookup(mid) != null) {
+					return true;
+				}
+			}
+		} catch(Exception e) {
+			// FIXME: figure how best to propagate this exception
 		}
+		return false;
 	}
 		
 	/**
@@ -258,69 +252,25 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	// Private Implementation
 	// ======================================================================
 	
-
 	private Set<ModuleID> loadPackage(PkgID pid) throws ResolveError {
-		resolvePackage(pid);
 		HashSet<ModuleID> contents = new HashSet<ModuleID>();
 		try {
-			for(Path.Root root : pkgRoots.get(pid)) {			
+			for(Path.Root root : srcRoots) {			
+				for (Path.Entry e : root.list(pid)) {
+					contents.add(e.id());
+				}
+			}
+			for(Path.Root root : externalRoots) {			
 				for (Path.Entry e : root.list(pid)) {
 					contents.add(e.id());
 				}
 			}
 		} catch(Exception e) {
-			throw new ResolveError("unknown failure",e);
+			// FIXME: figure how best to propagate this exception
 		}
 		return contents;
 	}
 	
-	/**
-	 * This method searches the WHILEYPATH looking for a matching package. If
-	 * the package is found, it's contents are loaded. Otherwise, a resolve
-	 * error is thrown.
-	 * 
-	 * @param pkg
-	 *            --- the package to look for
-	 * @return
-	 */
-	private void resolvePackage(PkgID pkg) throws ResolveError {							
-		// First, check if we have already resolved this package.						
-		if(pkgRoots.containsKey(pkg)) {
-			return;
-		} else if(failedPackages.contains(pkg)) {			
-			// yes, it's already been resolved but it doesn't exist.
-			throw new ResolveError("package not found: " + pkg);
-		}
-
-		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-		try {
-			// package not been previously resolved, so first try sourcepath.
-			for (Path.Root c : sourceRoots) {
-				if(c.exists(pkg)) {					
-					roots.add(c);
-				}				
-			}
-			// second, try whileypath.
-			for (Path.Root c : whileypath) {
-				if(c.exists(pkg)) {					
-					roots.add(c);
-				}
-			}
-		} catch(RuntimeException e) {
-			throw e;
-		} catch(Exception e) {							
-			// silently ignore.
-		}
-				
-		if(!roots.isEmpty()) {	
-			pkgRoots.put(pkg,roots);
-		} else {
-			failedPackages.add(pkg);
-			throw new ResolveError("package not found: " + pkg);
-		}
-	}	
-	
-
 	/**
 	 * This method takes a given package id from an import declaration, and
 	 * expands it to find all matching packages. Note, the package id may
@@ -331,12 +281,13 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 */
 	private List<PkgID> matchPackage(PkgID pkg) {
 		// FIXME: this method is junk
-		ArrayList<PkgID> matches = new ArrayList<PkgID>();
-		try {
-			resolvePackage(pkg);
+		if(isPackage(pkg)) {
+			ArrayList<PkgID> matches = new ArrayList<PkgID>();				
 			matches.add(pkg);
-		} catch(ResolveError er) {}
-		return matches;
+			return matches;
+		} else {
+			return Collections.EMPTY_LIST;
+		}
 	}
 	
 	/**
@@ -356,19 +307,22 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 		} else if (ignored.contains(module)) {
 			throw new ResolveError("Unable to find module: " + module);
 		}
-			
-		// module has not been previously loaded.
-		resolvePackage(module.pkg());						
 		
 		try {
 			// ok, now look for module inside package roots.
 			Path.Entry entry = null;
-			for(Path.Root root : pkgRoots.get(module.pkg())) {
+			for(Path.Root root : srcRoots) {
 				entry = root.lookup(module);
 				if(entry != null) {
 					break;
 				}
-			}			
+			}
+			for(Path.Root root : externalRoots) {
+				entry = root.lookup(module);
+				if(entry != null) {
+					break;
+				}
+			}
 			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}			
