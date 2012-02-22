@@ -29,8 +29,23 @@ import java.util.*;
 import java.io.File;
 
 public final class PkgID implements Iterable<String> {
-	private final ArrayList<String> components;
 	
+	// =========================================================
+	// Public Constants
+	// =========================================================
+	
+	public static final PkgID ROOT = new PkgID();
+	
+	// =========================================================
+	// Private State
+	// =========================================================
+			
+	private final ArrayList<String> components;		
+
+	// =========================================================
+	// Public Methods
+	// =========================================================
+			
 	public PkgID(String... cs) {
 		components = new ArrayList<String>();
 		for(String s : cs) {

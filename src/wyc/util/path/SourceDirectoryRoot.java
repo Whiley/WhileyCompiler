@@ -87,6 +87,13 @@ public class SourceDirectoryRoot implements Path.Root {
 		return location.exists() && location.isDirectory();
 	}
 	
+	public List<Path.Entry> list() throws IOException { 
+		File root = new File(dir + File.separator);
+		ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
+		traverse(root,PkgID.ROOT,entries);
+		return entries;
+	}
+	
 	public List<Path.Entry> list(PkgID pkg) throws IOException {		
 		File location = new File(dir + File.separator + pkg.fileName());
 
@@ -158,5 +165,51 @@ public class SourceDirectoryRoot implements Path.Root {
 
 	public String toString() {
 		return dir.getPath();
+	}
+	
+	/**
+	 * Recursively traverse a file system from a given location.
+	 * 
+	 * @param location
+	 *            --- current directory in file system.
+	 * @param pkg
+	 *            --- package that location represents.
+	 * @param entries
+	 *            --- list of entries being accumulated into.
+	 */
+	private void traverse(File location, PkgID pkg, ArrayList<Path.Entry> entries) throws IOException {
+		if (location.exists() && location.isDirectory()) {
+			
+			for (File file : location.listFiles()) {				
+				if(file.isDirectory()) {
+					traverse(file,pkg.append(file.getName()),entries);
+				} else if(filter.accept(file)) {
+					String filename = file.getName();
+					String name = filename.substring(0, filename.lastIndexOf('.'));
+					ModuleID mid = new ModuleID(pkg, name);
+					Entry srcEntry = new Entry(mid, file);
+					Entry binEntry = null;
+
+					// Now, see if there exists a binary version of this file which has
+					// a modification date no earlier. Binary files are always preferred
+					// over source entries.
+
+					if (bindir != null) {
+						binEntry = bindir.lookup(mid);					
+					} else {
+						File binFile = new File(name + ".class");
+						if(binFile.exists()) {
+							binEntry = new Entry(mid,binFile);
+						}
+					}
+
+					if (binEntry != null && binEntry.lastModified() >= srcEntry.lastModified()) {
+						entries.add(binEntry);
+					} else {
+						entries.add(srcEntry);
+					}
+				}
+			}	
+		}
 	}
 }
