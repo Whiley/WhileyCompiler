@@ -5,6 +5,7 @@ import java.util.*;
 import wyc.lang.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
+import wyil.ModuleLoader;
 import wyil.util.Logger;
 import wyil.util.ResolveError;
 import wyil.util.Triple;
@@ -19,7 +20,7 @@ import wyil.util.path.Path;
  * 
  * @author David J. Pearce
  */
-public final class WhileyProject implements Iterable<WhileyFile> {	
+public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {	
 	/**
 	 * The source soots are locations which may contain the root of a package
 	 * structure containing source files.
