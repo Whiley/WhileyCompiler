@@ -30,7 +30,6 @@ import java.util.*;
 
 import wyc.builder.Builder;
 import wyc.builder.Pipeline;
-import wyc.lang.WhileyProject;
 import wyc.util.path.BinaryDirectoryRoot;
 import wyc.util.path.JarFileRoot;
 import wyc.util.path.Path;
@@ -156,7 +155,7 @@ public class AntTask extends MatchingTask {
     		List<Path.Root> whileypath = initialiseWhileyPath();
 
     		// second, construct the module loader    		
-    		WhileyProject project = new WhileyProject(sourcepath,whileypath);
+    		wyc.lang.Project project = new wyc.lang.Project(sourcepath,whileypath);
     		project.setModuleReader("class",  new ClassFileLoader());
 
     		if(verbose) {			

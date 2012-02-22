@@ -32,7 +32,7 @@ import java.util.*;
 
 import wyc.builder.*;
 import wyc.lang.*;
-import wyc.lang.WhileyFile.*;
+import wyc.lang.SourceFile.*;
 import wyil.ModuleLoader;
 import wyil.lang.Attribute;
 import wyil.lang.ModuleID;
@@ -97,16 +97,16 @@ public final class FlowTyping {
 	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
-	private WhileyFile.FunctionOrMethodOrMessage current;
+	private SourceFile.FunctionOrMethodOrMessage current;
 	
-	public FlowTyping(WhileyProject project, GlobalResolver resolver) {		
+	public FlowTyping(Project project, GlobalResolver resolver) {		
 		this.resolver = resolver;
 	}
 	
-	public void propagate(WhileyFile wf) {
+	public void propagate(SourceFile wf) {
 		this.filename = wf.filename;
 		
-		for(WhileyFile.Declaration decl : wf.declarations) {
+		for(SourceFile.Declaration decl : wf.declarations) {
 			try {
 				if(decl instanceof FunctionOrMethodOrMessage) {
 					propagate((FunctionOrMethodOrMessage)decl);
@@ -148,7 +148,7 @@ public final class FlowTyping {
 		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
-		for (WhileyFile.Parameter p : d.parameters) {							
+		for (SourceFile.Parameter p : d.parameters) {							
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,d));
 		}
 		

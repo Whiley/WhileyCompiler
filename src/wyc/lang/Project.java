@@ -20,7 +20,7 @@ import wyil.util.Triple;
  * 
  * @author David J. Pearce
  */
-public final class WhileyProject implements ModuleLoader {	
+public final class Project implements ModuleLoader {	
 	/**
 	 * The source roots are locations which may contain the root of a package
 	 * structure containing source files.
@@ -65,7 +65,7 @@ public final class WhileyProject implements ModuleLoader {
 	 */
 	private Logger logger = Logger.NULL;
 	
-	public WhileyProject(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
+	public Project(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
 		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
 		this.externalRoots = new ArrayList<Path.Root>(libRoots);
 	}
@@ -212,7 +212,7 @@ public final class WhileyProject implements ModuleLoader {
 	 */
 	public boolean isName(NameID nid) {
 		ModuleID mid = nid.module();
-		WhileyFile wf = get(mid);
+		SourceFile wf = get(mid);
 		if(wf != null) {
 			// FIXME: check for the right kind of name
 			return wf.hasName(nid.name());
@@ -245,7 +245,7 @@ public final class WhileyProject implements ModuleLoader {
 	 * @param imp
 	 * @return
 	 */
-	public List<ModuleID> imports(WhileyFile.Import imp) {
+	public List<ModuleID> imports(SourceFile.Import imp) {
 		Triple<PkgID, String, String> key = new Triple<PkgID, String, String>(
 				imp.pkg, imp.module, imp.name);
 		ArrayList<ModuleID> matches = importCache.get(key);

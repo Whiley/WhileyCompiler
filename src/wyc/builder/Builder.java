@@ -81,10 +81,10 @@ import wyc.util.path.Path;
  * 
  */
 public final class Builder {		
-	private final WhileyProject project;		
+	private final Project project;		
 	private final ArrayList<Transform> stages;
 
-	public Builder(WhileyProject project, List<Transform> stages) {
+	public Builder(Project project, List<Transform> stages) {
 		this.stages = new ArrayList<Transform>(stages);
 		this.project = project;
 	}
@@ -94,9 +94,9 @@ public final class Builder {
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 				
-		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
+		ArrayList<SourceFile> wyfiles = new ArrayList<SourceFile>();
 		for (Path.Entry f : delta) {
-			WhileyFile wf = parse(f);
+			SourceFile wf = parse(f);
 			wyfiles.add(wf);
 		}
 				
@@ -117,7 +117,7 @@ public final class Builder {
 	 * @return
 	 * @throws IOException
 	 */
-	private WhileyFile parse(Path.Entry file) throws Exception {
+	private SourceFile parse(Path.Entry file) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -133,7 +133,7 @@ public final class Builder {
 				System.currentTimeMillis() - start,
 				memory - runtime.freeMemory());
 
-		WhileyFile wf = wfr.read();
+		SourceFile wf = wfr.read();
 		return wf;
 	}		
 	
@@ -191,10 +191,10 @@ public final class Builder {
 		return r;
 	}	
 	
-	private List<Module> build(WhileyProject project, List<WhileyFile> delta) {
+	private List<Module> build(Project project, List<SourceFile> delta) {
 		GlobalResolver resolver = new GlobalResolver(project);
 		
-		for(WhileyFile wf : delta) {
+		for(SourceFile wf : delta) {
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();		
 			long memory = runtime.freeMemory();					

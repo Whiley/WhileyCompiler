@@ -30,7 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import wyc.lang.WhileyProject;
+import wyc.lang.Project;
 import wyc.stages.FlowTyping;
 import wyil.*;
 import wyil.io.WyilFileWriter;
@@ -58,7 +58,7 @@ public class Pipeline {
 	 * files in the project. For example, to check that a particular method
 	 * exists, etc.
 	 */
-	private final WhileyProject project;
+	private final Project project;
 
 	/**
 	 * The list of stage templates which make up this pipeline. When the
@@ -67,7 +67,7 @@ public class Pipeline {
 	private final ArrayList<Template> stages;
 	
 	public Pipeline(List<Template> stages,
-			WhileyProject project) {		
+			Project project) {		
 		this.stages = new ArrayList<Template>(stages);
 		this.project = project;
 	}
@@ -202,7 +202,7 @@ public class Pipeline {
 		 * 
 		 * @return
 		 */
-		public Transform instantiate(WhileyProject project) {			
+		public Transform instantiate(Project project) {			
 			Transform stage;
 			
 			// first, instantiate the transform

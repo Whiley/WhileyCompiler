@@ -27,14 +27,14 @@ package wyc.stages;
 
 import java.util.*;
 
-import static wyc.lang.WhileyFile.*;
+import static wyc.lang.SourceFile.*;
 import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wyc.builder.*;
 import wyc.lang.*;
-import wyc.lang.WhileyFile.*;
+import wyc.lang.SourceFile.*;
 import wyc.lang.Stmt;
 import wyc.lang.Stmt.*;
 
@@ -78,7 +78,7 @@ import wyc.lang.Stmt.*;
  * 
  */
 public final class CodeGeneration {
-	private final WhileyProject project;	
+	private final Project project;	
 	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
@@ -93,27 +93,27 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(WhileyProject project, GlobalResolver resolver) {
+	public CodeGeneration(Project project, GlobalResolver resolver) {
 		this.project = project;		
 		this.resolver = resolver;
 	}
 
-	public List<Module> generate(WhileyProject files) {
+	public List<Module> generate(Project files) {
 		globalGenerator = new GlobalGenerator(project,resolver,files);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();
-		for(WhileyFile wf : files) {			
+		for(SourceFile wf : files) {			
 			modules.add(generate(wf));			
 		}
 		return modules;
 	}
 	
-	private Module generate(WhileyFile wf) {
+	private Module generate(SourceFile wf) {
 		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 
-		for (WhileyFile.Declaration d : wf.declarations) {
+		for (SourceFile.Declaration d : wf.declarations) {
 			try {
 				if (d instanceof TypeDef) {
 					types.add(generate((TypeDef) d));
@@ -183,7 +183,7 @@ public final class CodeGeneration {
 		// ==================================================================
 		
 		Block precondition = null;
-		for (WhileyFile.Parameter p : fd.parameters) {
+		for (SourceFile.Parameter p : fd.parameters) {
 			// First, generate and inline any constraints associated with the
 			// type.
 			// Now, map the parameter to its index
@@ -263,14 +263,14 @@ public final class CodeGeneration {
 		
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
 				
-		if(fd instanceof WhileyFile.Function) {
-			WhileyFile.Function f = (WhileyFile.Function) fd;
+		if(fd instanceof SourceFile.Function) {
+			SourceFile.Function f = (SourceFile.Function) fd;
 			return new Module.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
-		} else if(fd instanceof WhileyFile.Method) {
-			WhileyFile.Method md = (WhileyFile.Method) fd;			
+		} else if(fd instanceof SourceFile.Method) {
+			SourceFile.Method md = (SourceFile.Method) fd;			
 			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		} else {
-			WhileyFile.Message md = (WhileyFile.Message) fd;					
+			SourceFile.Message md = (SourceFile.Message) fd;					
 			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		}		
 	}

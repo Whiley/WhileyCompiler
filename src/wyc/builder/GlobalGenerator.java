@@ -2,10 +2,10 @@ package wyc.builder;
 
 import java.util.*;
 
-import wyc.lang.WhileyProject;
+import wyc.lang.Project;
 import wyc.lang.UnresolvedType;
-import wyc.lang.WhileyFile;
-import static wyc.lang.WhileyFile.*;
+import wyc.lang.SourceFile;
+import static wyc.lang.SourceFile.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.Pair;
@@ -53,11 +53,11 @@ import wyil.util.ResolveError;
  * 
  */
 public class GlobalGenerator {
-	private final WhileyProject project;
+	private final Project project;
 	private final GlobalResolver resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(WhileyProject project, GlobalResolver resolver, WhileyProject files) {		
+	public GlobalGenerator(Project project, GlobalResolver resolver, Project files) {		
 		this.project = project;
 		this.resolver = resolver;
 	}
@@ -73,13 +73,13 @@ public class GlobalGenerator {
 		// check whether the item in question is in one of the source
 		// files being compiled.
 		ModuleID mid = nid.module();
-		WhileyFile wf = project.get(mid);
+		SourceFile wf = project.get(mid);
 		if(wf != null) {
 			// FIXME: the following line is necessary to terminate infinite
 			// recursion. However, we really need to do better in the
 			// context of recurisve types with constraints.
 	
-			WhileyFile.TypeDef td = wf.typeDecl(nid.name());
+			SourceFile.TypeDef td = wf.typeDecl(nid.name());
 			if(td != null) {
 				cache.put(nid, EMPTY_BLOCK);
 				blk = generate(td.unresolvedType,td);

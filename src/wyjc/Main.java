@@ -32,7 +32,7 @@ import java.util.jar.JarFile;
 
 import wyc.builder.Builder;
 import wyc.builder.Pipeline;
-import wyc.lang.WhileyProject;
+import wyc.lang.Project;
 import wyc.util.*;
 import wyc.util.path.*;
 import wyil.*;
@@ -288,7 +288,7 @@ public class Main {
 			whileypath.addAll(bootpath);
 
 			// finally, construct the project		
-			WhileyProject project = new WhileyProject(sourcepath,whileypath);
+			Project project = new Project(sourcepath,whileypath);
 			project.setModuleReader("class",  new ClassFileLoader());
 
 			if(verbose) {			

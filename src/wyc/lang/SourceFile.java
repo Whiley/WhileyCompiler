@@ -42,12 +42,12 @@ import wyil.util.SyntaxError;
  * @author djp
  * 
  */
-public final class WhileyFile {
+public final class SourceFile {
 	public final ModuleID module;
 	public final String filename;
 	public final ArrayList<Declaration> declarations;
 	
-	public WhileyFile(ModuleID module, String filename) {
+	public SourceFile(ModuleID module, String filename) {
 		this.module = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
@@ -104,7 +104,7 @@ public final class WhileyFile {
 	}
 
 	public interface Context extends SyntacticElement {
-		public WhileyFile file();
+		public SourceFile file();
 		public List<Import> imports();
 	}
 	
@@ -118,8 +118,8 @@ public final class WhileyFile {
 			super(attributes);
 		}
 		
-		public WhileyFile file() {
-			return WhileyFile.this;
+		public SourceFile file() {
+			return SourceFile.this;
 		}
 		
 		/**
@@ -137,8 +137,8 @@ public final class WhileyFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null)); 	
-			imports.add(new WhileyFile.Import(module.pkg(), "*", null)); 
+			imports.add(new SourceFile.Import(new PkgID("whiley","lang"), "*", null)); 	
+			imports.add(new SourceFile.Import(module.pkg(), "*", null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -148,7 +148,7 @@ public final class WhileyFile {
 				}
 			}
 			
-			imports.add(new WhileyFile.Import(module.pkg(), module.module(), "*")); 
+			imports.add(new SourceFile.Import(module.pkg(), module.module(), "*")); 
 
 			Collections.reverse(imports);	
 			

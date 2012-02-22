@@ -1,6 +1,6 @@
 package wyc.builder;
 
-import static wyc.lang.WhileyFile.*;
+import static wyc.lang.SourceFile.*;
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
@@ -13,9 +13,9 @@ import java.util.*;
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
 import wyc.lang.Expr;
-import wyc.lang.WhileyProject;
+import wyc.lang.Project;
 import wyc.lang.UnresolvedType;
-import wyc.lang.WhileyFile;
+import wyc.lang.SourceFile;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
@@ -39,11 +39,11 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(WhileyProject project) {
+	public GlobalResolver(Project project) {
 		super(project);
 	}
 	
-	public WhileyProject loader() {
+	public Project loader() {
 		return project;		
 	}
 	
@@ -67,7 +67,7 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	public NameID resolveAsName(String name, Context context)
 			throws ResolveError {		
-		for (WhileyFile.Import imp : context.imports()) {			
+		for (SourceFile.Import imp : context.imports()) {			
 			if (imp.matchName(name)) {
 				for (ModuleID mid : project.imports(imp)) {					
 					NameID nid = new NameID(mid, name); 					
@@ -144,7 +144,7 @@ public class GlobalResolver extends LocalResolver {
 	public ModuleID resolveAsModule(String name, Context context)
 			throws ResolveError {
 		
-		for (WhileyFile.Import imp : context.imports()) {			
+		for (SourceFile.Import imp : context.imports()) {			
 			for(ModuleID mid : project.imports(imp)) {				
 				if(mid.module().equals(name)) {
 					return mid;
@@ -407,7 +407,7 @@ public class GlobalResolver extends LocalResolver {
 		if (root != null) { return root; } 		
 		
 		// check whether this type is external or not
-		WhileyFile wf = project.get(key.module());
+		SourceFile wf = project.get(key.module());
 		if (wf == null) {						
 			// indicates a non-local key which we can resolve immediately	
 			
@@ -418,7 +418,7 @@ public class GlobalResolver extends LocalResolver {
 			return append(td.type(),states);			
 		} 
 		
-		WhileyFile.TypeDef td = wf.typeDecl(key.name());
+		SourceFile.TypeDef td = wf.typeDecl(key.name());
 		if(td == null) {
 			Type t = resolveAsConstant(key).type();			
 			if(t instanceof Type.Set) {
@@ -551,12 +551,12 @@ public class GlobalResolver extends LocalResolver {
 			visited.add(key);
 		}
 
-		WhileyFile wf = project.get(key.module());
+		SourceFile wf = project.get(key.module());
 
 		if (wf != null) {			
-			WhileyFile.Declaration decl = wf.declaration(key.name());
-			if(decl instanceof WhileyFile.Constant) {
-				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
+			SourceFile.Declaration decl = wf.declaration(key.name());
+			if(decl instanceof SourceFile.Constant) {
+				SourceFile.Constant cd = (SourceFile.Constant) decl; 				
 				if (cd.resolvedValue == null) {			
 					cd.constant = resolve(cd.constant, new Environment(), cd);
 					cd.resolvedValue = resolveAsConstant(cd.constant,

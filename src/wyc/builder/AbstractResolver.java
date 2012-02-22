@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import static wyc.lang.WhileyFile.*;
+import static wyc.lang.SourceFile.*;
 import wyc.lang.*;
-import wyc.lang.WhileyFile.Context;
+import wyc.lang.SourceFile.Context;
 import wyil.ModuleLoader;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
@@ -23,7 +23,7 @@ import wyil.util.Triple;
 
 
 public abstract class AbstractResolver {	
-	protected final WhileyProject project;
+	protected final Project project;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -32,7 +32,7 @@ public abstract class AbstractResolver {
 	 */
 	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
 	
-	public AbstractResolver(WhileyProject project) {				
+	public AbstractResolver(Project project) {				
 		this.project = project;
 	}
 	
@@ -199,13 +199,13 @@ public abstract class AbstractResolver {
 			NameID nid = nt.name();			
 			ModuleID mid = nid.module();
 
-			WhileyFile wf = project.get(mid);
+			SourceFile wf = project.get(mid);
 			Type r = null;
 
 			if (wf != null) {			
-				WhileyFile.Declaration decl = wf.declaration(nid.name());
-				if(decl instanceof WhileyFile.TypeDef) {
-					WhileyFile.TypeDef td = (WhileyFile.TypeDef) decl;
+				SourceFile.Declaration decl = wf.declaration(nid.name());
+				if(decl instanceof SourceFile.TypeDef) {
+					SourceFile.TypeDef td = (SourceFile.TypeDef) decl;
 					r = resolveAsType(td.unresolvedType, td)
 							.nominal();
 				} 
