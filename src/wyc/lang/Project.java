@@ -48,14 +48,6 @@ public final class Project implements Logger,ModuleLoader {
 	private HashMap<ModuleID, Module> moduleCache = new HashMap<ModuleID, Module>();	
 	
 	/**
-	 * The import cache caches specific import queries to their result sets.
-	 * This is extremely important to avoid recomputing these result sets every
-	 * time. For example, the statement <code>import whiley.lang.*</code>
-	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
-	 */
-	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
-	
-	/**
 	 * The suffix map maps suffixes to module readers for those suffixes.
 	 */
 	private final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();
@@ -149,26 +141,6 @@ public final class Project implements Logger,ModuleLoader {
 	// ======================================================================		
 
 	/**
-	 * Determine the complete set of files that need to be recompiled. This
-	 * includes all source files either out a binary equivalent, or whose
-	 * modification time is more recent. Furthermore, it additionally includes
-	 * all dependents for those files, and their dependents, etc.
-	 * 
-	 * @return
-	 */
-//	public List<Path.Entry> getDelta() {
-//		ArrayList<Path.Entry> delta = new ArrayList<Path.Entry>();
-//		for(Path.Root srcRoot : sourcepath) {
-//			for(Path.Entry e : srcRoot.list()) {
-//				if(e.suffix().equals("whiley")) {
-//					delta.add(e);
-//				}
-//			}
-//		}
-//		return delta;
-//	}
-	
-	/**
 	 * Determine whether a given package actually exists or not.
 	 * 
 	 * @param pid --- Package ID to check
@@ -229,79 +201,33 @@ public final class Project implements Logger,ModuleLoader {
 	}
 	
 	/**
-	 * This method takes a given import declaration, and expands it to find all
-	 * matching modules.
+	 * Return the set of all modules in a given package.
 	 * 
-	 * @param imp
+	 * @param pid
+	 *            --- package to list.
 	 * @return
+	 * @throws Exception
 	 */
-	public List<ModuleID> imports(SourceFile.Import imp) {
-		Triple<PkgID, String, String> key = new Triple<PkgID, String, String>(
-				imp.pkg, imp.module, imp.name);
-		ArrayList<ModuleID> matches = importCache.get(key);
-		if (matches != null) {
-			// cache hit
-			return matches;
-		} else {
-			// cache miss
-			matches = new ArrayList<ModuleID>();
-			for (PkgID pid : matchPackage(imp.pkg)) {
-				try {
-					for (ModuleID mid : loadPackage(pid)) {
-						if (imp.matchModule(mid.module())) {
-							matches.add(mid);
-						}
-					}
-				} catch (ResolveError ex) {
-					// dead code
-				}
-			}
-			importCache.put(key, matches);
-		}
-		return matches;
-	}	
+	public Set<ModuleID> get(PkgID pid) throws Exception {
+		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
 		
+		for(Path.Root root : srcRoots) {			
+			for (Path.Entry e : root.list(pid)) {
+				contents.add(e.id());
+			}
+		}
+		for(Path.Root root : externalRoots) {			
+			for (Path.Entry e : root.list(pid)) {
+				contents.add(e.id());
+			}
+		}
+
+		return contents;
+	}	
+			
 	// ======================================================================
 	// Private Implementation
 	// ======================================================================
-	
-	private Set<ModuleID> loadPackage(PkgID pid) throws ResolveError {
-		HashSet<ModuleID> contents = new HashSet<ModuleID>();
-		try {
-			for(Path.Root root : srcRoots) {			
-				for (Path.Entry e : root.list(pid)) {
-					contents.add(e.id());
-				}
-			}
-			for(Path.Root root : externalRoots) {			
-				for (Path.Entry e : root.list(pid)) {
-					contents.add(e.id());
-				}
-			}
-		} catch(Exception e) {
-			// FIXME: figure how best to propagate this exception
-		}
-		return contents;
-	}
-	
-	/**
-	 * This method takes a given package id from an import declaration, and
-	 * expands it to find all matching packages. Note, the package id may
-	 * contain various wildcard characters to match multiple actual packages.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	private List<PkgID> matchPackage(PkgID pkg) {
-		// FIXME: this method is junk
-		if(isPackage(pkg)) {
-			ArrayList<PkgID> matches = new ArrayList<PkgID>();				
-			matches.add(pkg);
-			return matches;
-		} else {
-			return Collections.EMPTY_LIST;
-		}
-	}
 	
 	/**
 	 * This method attempts to load a whiley module. The module is searched for

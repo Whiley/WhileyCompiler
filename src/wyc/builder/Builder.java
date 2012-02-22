@@ -83,8 +83,21 @@ import wyc.util.path.Path;
 public final class Builder {		
 	private final Project project;		
 	private final ArrayList<Transform> stages;
+	
+	/**
+	 * A map of the source files currently being compiled.
+	 */
 	private HashMap<ModuleID,SourceFile> srcFiles;
 
+	/**
+	 * The import cache caches specific import queries to their result sets.
+	 * This is extremely important to avoid recomputing these result sets every
+	 * time. For example, the statement <code>import whiley.lang.*</code>
+	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
+	 */
+	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
+	
+	
 	public Builder(Project project, List<Transform> stages) {
 		this.stages = new ArrayList<Transform>(stages);
 		this.project = project;
@@ -133,6 +146,39 @@ public final class Builder {
 		}
 	}	
 	
+	/**
+	 * This method takes a given import declaration, and expands it to find all
+	 * matching modules.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	public List<ModuleID> imports(SourceFile.Import imp) throws Exception {
+		Triple<PkgID, String, String> key = new Triple<PkgID, String, String>(
+				imp.pkg, imp.module, imp.name);
+		ArrayList<ModuleID> matches = importCache.get(key);
+		if (matches != null) {
+			// cache hit
+			return matches;
+		} else {
+			// cache miss
+			matches = new ArrayList<ModuleID>();
+			if(project.isPackage(imp.pkg)) {						
+				for (ModuleID mid : project.get(imp.pkg)) {
+					if (imp.matchModule(mid.module())) {
+						matches.add(mid);
+					}
+				}				
+			}
+			importCache.put(key, matches);
+		}
+		return matches;
+	}	
+	
+	// ======================================================================
+	// Private Implementation
+	// ======================================================================
+
 	/**
 	 * This method simply parses a whiley file into an abstract syntax tree. It
 	 * makes little effort to check whether or not the file is syntactically
