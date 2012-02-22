@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.util.path;
+package wyc.util.path;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -32,9 +32,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import wyc.util.path.BinaryDirectoryRoot.Entry;
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
-import wyil.util.path.BinaryDirectoryRoot.Entry;
 
 public class SourceDirectoryRoot implements Path.Root {
 	private static final FileFilter filter = new FileFilter() {

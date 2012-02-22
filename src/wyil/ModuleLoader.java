@@ -31,10 +31,10 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import wyjc.io.ClassFileLoader; // to be deprecated
+import wyc.util.path.Path;
 import wyil.io.*;
 import wyil.lang.*;
 import wyil.util.*;
-import wyil.util.path.Path;
 
 /**
  * An abstraction allowing Wyil stages access to other modules. For example, one

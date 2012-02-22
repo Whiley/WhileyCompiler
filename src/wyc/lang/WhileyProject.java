@@ -3,13 +3,13 @@ package wyc.lang;
 import java.util.*;
 
 import wyc.lang.*;
+import wyc.util.path.Path;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.ModuleLoader;
 import wyil.util.Logger;
 import wyil.util.ResolveError;
 import wyil.util.Triple;
-import wyil.util.path.Path;
 
 /**
  * A whiley project represents the contextual information underpinning a given
