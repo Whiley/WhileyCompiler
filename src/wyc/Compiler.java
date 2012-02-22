@@ -146,10 +146,6 @@ public final class Compiler {
 	 * @param wf
 	 */
 	private void finishCompilation(List<Module> modules) throws Exception {				
-		// Register the updated file
-		for(Module module : modules) {
-			project.register(module);
-		}
 		for(Transform stage : stages) {
 			for(Module module : modules) {
 				process(module,stage);

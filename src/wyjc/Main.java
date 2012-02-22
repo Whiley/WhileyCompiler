@@ -308,19 +308,19 @@ public class Main {
 			// now construct a pipline and initialise the compiler		
 			WhileyProject project = new WhileyProject(compiler,sourcepath,whileypath);
 			project.setModuleReader("class",  new ClassFileLoader());
-			project.setLogger(compiler);		
-
+			
 			if(verbose) {			
-				compiler.setLogOut(System.err);
+				//compiler.setLogOut(System.err);
 			}
-		
-			// finally, let's compile some files!!!
 		
 			ArrayList<File> files = new ArrayList<File>();
 			for (String file : args) {
 				files.add(new File(file));
 			}
-			compiler.compile(files);
+		
+			// finally, let's compile some files!!!
+			
+			project.build();
 		} catch (InternalFailure e) {
 			e.outputSourceError(errout);
 			if (verbose) {

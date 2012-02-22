@@ -2,7 +2,7 @@ package wyc.lang;
 
 import java.util.*;
 
-import wyc.lang.*;
+import wyc.Compiler;
 import wyc.util.path.Path;
 import wyil.io.ModuleReader;
 import wyil.lang.*;

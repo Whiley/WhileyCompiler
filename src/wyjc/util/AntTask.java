@@ -169,15 +169,14 @@ public class AntTask extends MatchingTask {
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the compiler
-    		Compiler compiler = new Compiler(project,stages);		
-    		project.setLogger(compiler);		
+    		Compiler compiler = new Compiler(stages);			
 
     		if(verbose) {			
-    			compiler.setLogOut(System.err);
+    			// compiler.setLogOut(System.err);
     		}
 
     		// finally, compile away!
-    		compiler.compile(srcfiles);
+    		project.build();
     		
     		return true;
     	} catch (InternalFailure e) {
