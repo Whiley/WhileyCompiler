@@ -25,7 +25,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 * The source soots are locations which may contain the root of a package
 	 * structure containing source files.
 	 */
-	private ArrayList<Path.Root> sourcepath;
+	private ArrayList<Path.Root> sourceRoots;
 	
 	/**
 	 * The library roots represent external libraries required for compiling
@@ -51,7 +51,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 * This identifies which packages have had their contents fully resolved.
 	 * All items in a resolved package must have been loaded into the filetable.
 	 */
-	private HashMap<PkgID, ArrayList<Path.Root>> packageroots = new HashMap<PkgID, ArrayList<Path.Root>>();
+	private HashMap<PkgID, ArrayList<Path.Root>> pkgRoots = new HashMap<PkgID, ArrayList<Path.Root>>();
 	
 	/**
 	 * Contains a set of ModuleIDs which have been ignored because they do not
@@ -96,13 +96,13 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	private Logger logger;
 	
 	public WhileyProject(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
-		this.sourcepath = new ArrayList<Path.Root>(srcRoots);
+		this.sourceRoots = new ArrayList<Path.Root>(srcRoots);
 		this.whileypath = new ArrayList<Path.Root>(libRoots);
 		logger = Logger.NULL;
 	}
 	
 	// ======================================================================
-	// Public Interface
+	// Public Configuration Interface
 	// ======================================================================		
 	
 	/**
@@ -123,6 +123,16 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	public void setModuleReader(String suffix, ModuleReader reader) {
 		suffixMap.put(suffix, reader);
 	}
+
+	
+	// FIXME: to be deprecated
+	public void register(Module m) {
+		binFileCache.put(m.id(), m);
+	}
+	
+	// ======================================================================
+	// Public Accessor Interface
+	// ======================================================================		
 	
 	/**
 	 * Determine the complete set of files that need to be recompiled. This
@@ -253,7 +263,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 		resolvePackage(pid);
 		HashSet<ModuleID> contents = new HashSet<ModuleID>();
 		try {
-			for(Path.Root root : packageroots.get(pid)) {			
+			for(Path.Root root : pkgRoots.get(pid)) {			
 				for (Path.Entry e : root.list(pid)) {
 					contents.add(e.id());
 				}
@@ -275,7 +285,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 */
 	private void resolvePackage(PkgID pkg) throws ResolveError {							
 		// First, check if we have already resolved this package.						
-		if(packageroots.containsKey(pkg)) {
+		if(pkgRoots.containsKey(pkg)) {
 			return;
 		} else if(failedPackages.contains(pkg)) {			
 			// yes, it's already been resolved but it doesn't exist.
@@ -285,7 +295,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		try {
 			// package not been previously resolved, so first try sourcepath.
-			for (Path.Root c : sourcepath) {
+			for (Path.Root c : sourceRoots) {
 				if(c.exists(pkg)) {					
 					roots.add(c);
 				}				
@@ -303,7 +313,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 		}
 				
 		if(!roots.isEmpty()) {	
-			packageroots.put(pkg,roots);
+			pkgRoots.put(pkg,roots);
 		} else {
 			failedPackages.add(pkg);
 			throw new ResolveError("package not found: " + pkg);
@@ -353,7 +363,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 		try {
 			// ok, now look for module inside package roots.
 			Path.Entry entry = null;
-			for(Path.Root root : packageroots.get(module.pkg())) {
+			for(Path.Root root : pkgRoots.get(module.pkg())) {
 				entry = root.lookup(module);
 				if(entry != null) {
 					break;
@@ -361,7 +371,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 			}			
 			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
-			}
+			}			
 			m = readModuleInfo(entry);
 			if(m == null) {
 				throw new ResolveError("Unable to find module: " + module);

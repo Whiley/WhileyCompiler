@@ -116,7 +116,8 @@ public final class Compiler implements Logger {
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
 		for (File f : files) {
 			WhileyFile wf = parse(f);
-			wyfiles.add(wf);								
+			wyfiles.add(wf);	
+			project.add(wf);
 		}
 		
 		List<Module> modules = build(wyfiles);					
@@ -160,6 +161,10 @@ public final class Compiler implements Logger {
 	 * @param wf
 	 */
 	private void finishCompilation(List<Module> modules) throws Exception {				
+		// Register the updated file
+		for(Module module : modules) {
+			project.register(module);
+		}
 		for(Transform stage : stages) {
 			for(Module module : modules) {
 				process(module,stage);
