@@ -268,7 +268,25 @@ public class Main {
 						
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
-		try {											
+		try {	
+			// initialise compiler appropriately
+			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
+			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
+
+			Pipeline pipeline = new Pipeline(templates, project);
+			
+			if(pipelineModifiers != null) {
+				pipeline.apply(pipelineModifiers);
+			}
+			
+			if (outputdir != null) {
+				pipeline.setOption(ClassWriter.class, "outputDirectory",
+						outputdir);
+			}
+			
+			List<Transform> stages = pipeline.instantiate();
+			Compiler compiler = new Compiler(stages);		
+			
 			// initialise the boot path appropriately
 			List<Path.Root> bootpath = initialiseBinaryRoots((ArrayList) values.get("bootpath"),verbose);
 			initialiseBootPath(bootpath);
@@ -288,24 +306,8 @@ public class Main {
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			WhileyProject project = new WhileyProject(sourcepath,whileypath);
+			WhileyProject project = new WhileyProject(compiler,sourcepath,whileypath);
 			project.setModuleReader("class",  new ClassFileLoader());
-			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
-
-			Pipeline pipeline = new Pipeline(templates, project);
-			
-			if(pipelineModifiers != null) {
-				pipeline.apply(pipelineModifiers);
-			}
-			
-			if (outputdir != null) {
-				pipeline.setOption(ClassWriter.class, "outputDirectory",
-						outputdir);
-			}
-			
-			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(project,stages);		
 			project.setLogger(compiler);		
 
 			if(verbose) {			

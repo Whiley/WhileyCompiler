@@ -35,6 +35,11 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	private ArrayList<Path.Root> externalRoots;	
 	
 	/**
+	 * The project compiler used for compiling source files into modules.
+	 */
+	private Compiler compiler;
+	
+	/**
 	 * A cache of those source files which have already been loaded.
 	 */
 	private final HashMap<ModuleID,WhileyFile> srcFileCache = new HashMap<ModuleID,WhileyFile>();
@@ -65,7 +70,8 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 */
 	private Logger logger;
 	
-	public WhileyProject(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
+	public WhileyProject(Compiler compiler, Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
+		this.compiler = compiler;
 		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
 		this.externalRoots = new ArrayList<Path.Root>(libRoots);
 		logger = Logger.NULL;
@@ -101,9 +107,30 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	}
 	
 	// ======================================================================
+	// Public Mutator Interface
+	// ======================================================================		
+
+	/**
+	 * Build the project using the given project compiler.
+	 */
+	public void build() {
+		// first, determine what has changed.
+		ArrayList<Path.Entry> delta = new ArrayList<Path.Entry>(); 
+		for(Path.Root root : srcRoots) {
+			for(Path.Entry e : root.list()) {
+				if(e.isDirty()) {
+					delta.add(e);
+				}
+			}
+		}
+		
+		compiler.compile(this,delta);
+	}
+	
+	// ======================================================================
 	// Public Accessor Interface
 	// ======================================================================		
-	
+
 	/**
 	 * Determine the complete set of files that need to be recompiled. This
 	 * includes all source files either out a binary equivalent, or whose

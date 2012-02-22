@@ -35,6 +35,7 @@ import wyil.util.*;
 import wyc.compiler.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;
+import wyc.util.path.Path;
 
 /**
  * Responsible for managing the process of turning source files into binary code
@@ -80,51 +81,30 @@ import wyc.stages.*;
  * @author David J. Pearce
  * 
  */
-public final class Compiler implements Logger {		
-	private WhileyProject project;		
-	private ArrayList<Transform> stages;
+public final class Compiler {		
+	//private final WhileyProject project;		
+	private final ArrayList<Transform> stages;
 
-	public Compiler(WhileyProject project, List<Transform> stages) {
-		this.project = project;
+	public Compiler(List<Transform> stages) {
 		this.stages = new ArrayList<Transform>(stages);
 	}
 	
-	/**
-	 * The logout output stream is used to write log information about the
-	 * status of compilation. The default stream just discards everything.
-	 */
-	private PrintStream logout = new PrintStream(new OutputStream() {
-		public void write(byte[] b) { /* don't do anything! */
-		}
-
-		public void write(byte[] b, int x, int y) { /* don't do anything! */
-		}
-
-		public void write(int x) { /* don't do anything! */
-		}
-	});
-	
-	public void setLogOut(OutputStream logout) {
-		this.logout = new PrintStream(logout);
-	}
-
-	public void compile(List<File> files) throws Exception {
+	public void compile(WhileyProject project, List<Path.Entry> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 				
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
-		for (File f : files) {
+		for (Path.Entry f : delta) {
 			WhileyFile wf = parse(f);
-			wyfiles.add(wf);	
-			project.add(wf);
+			wyfiles.add(wf);
 		}
-		
-		List<Module> modules = build(wyfiles);					
+				
+		List<Module> modules = build(project,wyfiles);
 		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
-		logTotalTime("Compiled " + files.size() + " file(s)",endTime-start, memory - runtime.freeMemory());		
+		logTotalTime("Compiled " + delta.size() + " file(s)",endTime-start, memory - runtime.freeMemory());		
 	}
 		
 	/**
@@ -137,18 +117,23 @@ public final class Compiler implements Logger {
 	 * @return
 	 * @throws IOException
 	 */
-	private WhileyFile parse(File file) throws IOException {
+	private WhileyFile parse(Path.Entry file) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();		
+		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-		WhileyLexer wlexer = new WhileyLexer(file.getPath());		
-		List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer.scan());		
 
-		WhileyParser wfr = new WhileyParser(file.getPath(), tokens);
+		WhileyLexer wlexer = new WhileyLexer(file.contents());
+
+		List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer
+				.scan());
+
+		WhileyParser wfr = new WhileyParser(file.id().toString() + ".whiley",
+				tokens);
 		logTimedMessage("[" + file + "] Parsing complete",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());
-		
-		WhileyFile wf = wfr.read();		
+				System.currentTimeMillis() - start,
+				memory - runtime.freeMemory());
+
+		WhileyFile wf = wfr.read();
 		return wf;
 	}		
 	
@@ -210,7 +195,7 @@ public final class Compiler implements Logger {
 		return r;
 	}	
 	
-	private List<Module> build(List<WhileyFile> delta) {
+	private List<Module> build(WhileyProject project, List<WhileyFile> delta) {
 		GlobalResolver resolver = new GlobalResolver(project);
 		
 		for(WhileyFile wf : delta) {
@@ -236,8 +221,8 @@ public final class Compiler implements Logger {
 	 * This method is just a helper to format the output
 	 */
 	public void logTimedMessage(String msg, long time, long memory) {
-		logout.print(msg);
-		logout.print(" ");
+		//logout.print(msg);
+		//logout.print(" ");
 		double mem = memory;
 		mem = mem / (1024*1024);
 		memory = (long) mem;
@@ -250,22 +235,22 @@ public final class Compiler implements Logger {
 			stats += "]";
 		}
 		for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
-			logout.print(".");
+			//logout.print(".");
 		}		
-		logout.println(stats);
+		//logout.println(stats);
 	}	
 	
 	public void logTotalTime(String msg, long time, long memory) {
 		memory = memory / 1024;
 		
 		for (int i = 0; i <= 90; ++i) {
-			logout.print("=");
+			//logout.print("=");
 		}
 		
-		logout.println();
+		//logout.println();
 		
-		logout.print(msg);
-		logout.print(" ");
+		//logout.print(msg);
+		//logout.print(" ");
 
 		double mem = memory;
 		mem = mem / (1024*1024);
@@ -280,9 +265,9 @@ public final class Compiler implements Logger {
 		}
 
 		for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
-			logout.print(".");
+			//logout.print(".");
 		}
 		
-		logout.println(stats);		
+		//logout.println(stats);		
 	}	
 }
