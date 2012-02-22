@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.jar.JarFile;
 
 import wyc.Pipeline;
-import wyc.Compiler;
+import wyc.builder.Builder;
 import wyc.lang.WhileyProject;
 import wyc.util.*;
 import wyc.util.path.*;
@@ -285,7 +285,7 @@ public class Main {
 			}
 			
 			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(stages);		
+			Builder compiler = new Builder(stages);		
 			
 			// initialise the boot path appropriately
 			List<Path.Root> bootpath = initialiseBinaryRoots((ArrayList) values.get("bootpath"),verbose);

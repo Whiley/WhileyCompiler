@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc;
+package wyc.builder;
 
 import java.io.*;
 import java.util.*;
@@ -32,7 +32,6 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
-import wyc.compiler.GlobalResolver;
 import wyc.lang.*;
 import wyc.stages.*;
 import wyc.util.path.Path;
@@ -81,11 +80,11 @@ import wyc.util.path.Path;
  * @author David J. Pearce
  * 
  */
-public final class Compiler {		
+public final class Builder {		
 	//private final WhileyProject project;		
 	private final ArrayList<Transform> stages;
 
-	public Compiler(List<Transform> stages) {
+	public Builder(List<Transform> stages) {
 		this.stages = new ArrayList<Transform>(stages);
 	}
 	

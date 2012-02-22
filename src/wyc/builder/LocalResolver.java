@@ -1,4 +1,4 @@
-package wyc.compiler;
+package wyc.builder;
 
 import static wyil.util.ErrorMessages.*;
 import static wyc.lang.WhileyFile.*;

@@ -1,4 +1,4 @@
-package wyc.compiler;
+package wyc.builder;
 
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;

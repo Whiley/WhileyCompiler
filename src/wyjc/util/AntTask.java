@@ -28,8 +28,8 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.Compiler;
 import wyc.Pipeline;
+import wyc.builder.Builder;
 import wyc.lang.WhileyProject;
 import wyc.util.path.BinaryDirectoryRoot;
 import wyc.util.path.JarFileRoot;
@@ -169,7 +169,7 @@ public class AntTask extends MatchingTask {
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the compiler
-    		Compiler compiler = new Compiler(stages);			
+    		Builder compiler = new Builder(stages);			
 
     		if(verbose) {			
     			// compiler.setLogOut(System.err);

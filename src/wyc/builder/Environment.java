@@ -1,4 +1,4 @@
-package wyc.compiler;
+package wyc.builder;
 
 import java.util.HashMap;
 import java.util.Set;

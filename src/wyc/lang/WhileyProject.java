@@ -2,7 +2,7 @@ package wyc.lang;
 
 import java.util.*;
 
-import wyc.Compiler;
+import wyc.builder.Builder;
 import wyc.util.path.Path;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
@@ -37,7 +37,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	/**
 	 * The project compiler used for compiling source files into modules.
 	 */
-	private Compiler compiler;
+	private Builder compiler;
 	
 	/**
 	 * A cache of those source files which have already been loaded.
@@ -70,7 +70,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	 */
 	private Logger logger;
 	
-	public WhileyProject(Compiler compiler, Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
+	public WhileyProject(Builder compiler, Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
 		this.compiler = compiler;
 		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
 		this.externalRoots = new ArrayList<Path.Root>(libRoots);
