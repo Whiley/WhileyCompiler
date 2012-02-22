@@ -89,7 +89,7 @@ public final class Builder {
 		this.project = project;
 	}
 	
-	public void compile(List<Path.Entry> delta) throws Exception {
+	public void build(List<Path.Entry> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();

@@ -20,7 +20,7 @@ import wyil.util.Triple;
  * 
  * @author David J. Pearce
  */
-public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {	
+public final class WhileyProject implements ModuleLoader {	
 	/**
 	 * The source roots are locations which may contain the root of a package
 	 * structure containing source files.
@@ -66,7 +66,6 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	private Logger logger = Logger.NULL;
 	
 	public WhileyProject(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
-		this.builder = builder;
 		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
 		this.externalRoots = new ArrayList<Path.Root>(libRoots);
 	}
@@ -77,6 +76,7 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	
 	/**
 	 * Set the logger for this module loader.
+	 * 
 	 * @param logger
 	 */
 	public void setLogger(Logger logger) {
@@ -114,20 +114,21 @@ public final class WhileyProject implements Iterable<WhileyFile>, ModuleLoader {
 	// ======================================================================		
 
 	/**
-	 * Build the project using the given project compiler.
+	 * Build the project using the given project builder.
 	 */
-	public void build() {
+	public void build() throws Exception {
+		
 		// first, determine what has changed.
 		ArrayList<Path.Entry> delta = new ArrayList<Path.Entry>(); 
 		for(Path.Root root : srcRoots) {
 			for(Path.Entry e : root.list()) {
-				if(e.isDirty()) {
+				if(e.isModified()) {
 					delta.add(e);
 				}
 			}
 		}
 		
-		builder.compile(delta);
+		builder.build(delta);
 	}
 	
 	// ======================================================================

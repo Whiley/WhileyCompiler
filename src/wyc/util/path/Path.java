@@ -35,7 +35,7 @@ import wyil.lang.PkgID;
 public class Path {
 	
 	public interface Root {		
-				
+		
 		/**
 		 * Check whether or not a given package is contained.
 		 */
@@ -59,6 +59,14 @@ public class Path {
 		 * @throws IOException
 		 */
 		public Collection<Entry> list(PkgID pid) throws Exception;
+		
+		/**
+		 * List contents of all packages.
+		 * 
+		 * @return
+		 * @throws IOException
+		 */
+		public Collection<Entry> list() throws Exception;		
 	}
 	
 	/**
@@ -86,10 +94,12 @@ public class Path {
 		public String location();
 		
 		/**
+		 * Check whether this entry is "dirty". That is, the source file has
+		 * been modified since the last time it was compiled.
 		 * 
 		 * @return
 		 */
-		public long lastModified();
+		public boolean isModified();
 		
 		/**
 		 * Open the source file for reading.
