@@ -83,6 +83,7 @@ import wyc.util.path.Path;
 public final class Builder {		
 	private final Project project;		
 	private final ArrayList<Transform> stages;
+	private HashMap<ModuleID,SourceFile> srcFiles;
 
 	public Builder(Project project, List<Transform> stages) {
 		this.stages = new ArrayList<Transform>(stages);
@@ -98,15 +99,40 @@ public final class Builder {
 		for (Path.Entry f : delta) {
 			SourceFile wf = parse(f);
 			wyfiles.add(wf);
+			srcFiles.put(wf.module, wf);
 		}
 				
-		List<Module> modules = build(project,wyfiles);
+		List<Module> modules = buildModules(wyfiles);
 		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
-		logTotalTime("Compiled " + delta.size() + " file(s)",endTime-start, memory - runtime.freeMemory());		
+		project.logTimedMessage("Compiled " + delta.size() + " file(s)",endTime-start, memory - runtime.freeMemory());		
 	}
-		
+	
+	
+	/**
+	 * Determine whether a given name exists or not.
+	 * 
+	 * @param nid --- Name ID to check
+	 * @return
+	 */
+	public boolean isName(NameID nid) throws Exception {
+		ModuleID mid = nid.module();
+		SourceFile wf = srcFiles.get(mid);
+		if(wf != null) {
+			// FIXME: check for the right kind of name
+			return wf.hasName(nid.name());
+		} else {
+			try {
+				Module m = project.get(mid);
+				// FIXME: check for the right kind of name
+				return m.hasName(nid.name());
+			} catch(ResolveError e) {
+				return false;
+			}
+		}
+	}	
+	
 	/**
 	 * This method simply parses a whiley file into an abstract syntax tree. It
 	 * makes little effort to check whether or not the file is syntactically
@@ -129,7 +155,7 @@ public final class Builder {
 
 		WhileyParser wfr = new WhileyParser(file.id().toString() + ".whiley",
 				tokens);
-		logTimedMessage("[" + file + "] Parsing complete",
+		project.logTimedMessage("[" + file + "] Parsing complete",
 				System.currentTimeMillis() - start,
 				memory - runtime.freeMemory());
 
@@ -161,16 +187,16 @@ public final class Builder {
 		
 		try {						
 			stage.apply(module);			
-			logTimedMessage("[" + module.filename() + "] applied "
+			project.logTimedMessage("[" + module.filename() + "] applied "
 					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			System.gc();
 		} catch (RuntimeException ex) {
-			logTimedMessage("[" + module.filename() + "] failed on "
+			project.logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		} catch (IOException ex) {
-			logTimedMessage("[" + module.filename() + "] failed on "
+			project.logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
@@ -191,15 +217,15 @@ public final class Builder {
 		return r;
 	}	
 	
-	private List<Module> build(Project project, List<SourceFile> delta) {
-		GlobalResolver resolver = new GlobalResolver(project);
+	private List<Module> buildModules(List<SourceFile> delta) {
+		GlobalResolver resolver = new GlobalResolver(this);
 		
 		for(SourceFile wf : delta) {
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();		
 			long memory = runtime.freeMemory();					
-			new FlowTyping(project, resolver).propagate(wf);
-			logTimedMessage("[" + wf.filename + "] flow typing",
+			new FlowTyping(resolver).propagate(wf);
+			project.logTimedMessage("[" + wf.filename + "] flow typing",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
 		}		
 		
@@ -207,63 +233,9 @@ public final class Builder {
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();	
 		// FIXME: this is knackered!
-		List<Module> modules = new CodeGeneration(project,resolver).generate(project);			
-		logTimedMessage("code generation",
+		List<Module> modules = new CodeGeneration(this,resolver).generate(delta);			
+		project.logTimedMessage("code generation",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		return modules;
-	}	
-	
-	/**
-	 * This method is just a helper to format the output
-	 */
-	public void logTimedMessage(String msg, long time, long memory) {
-		//logout.print(msg);
-		//logout.print(" ");
-		double mem = memory;
-		mem = mem / (1024*1024);
-		memory = (long) mem;
-		String stats = " [" + Long.toString(time) + "ms";
-		if(memory > 0) {
-			stats += "+" + Long.toString(memory) + "mb]";
-		} else if(memory < 0) {
-			stats += Long.toString(memory) + "mb]";
-		} else {
-			stats += "]";
-		}
-		for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
-			//logout.print(".");
-		}		
-		//logout.println(stats);
-	}	
-	
-	public void logTotalTime(String msg, long time, long memory) {
-		memory = memory / 1024;
-		
-		for (int i = 0; i <= 90; ++i) {
-			//logout.print("=");
-		}
-		
-		//logout.println();
-		
-		//logout.print(msg);
-		//logout.print(" ");
-
-		double mem = memory;
-		mem = mem / (1024*1024);
-		memory = (long) mem;
-		String stats = " [" + Long.toString(time) + "ms";
-		if(memory > 0) {
-			stats += "+" + Long.toString(memory) + "mb]";
-		} else if(memory < 0) {
-			stats += Long.toString(memory) + "mb]";
-		} else {
-			stats += "]";
-		}
-
-		for (int i = 0; i < (90 - msg.length() - stats.length()); ++i) {
-			//logout.print(".");
-		}
-		
-		//logout.println(stats);		
-	}	
+	}		
 }

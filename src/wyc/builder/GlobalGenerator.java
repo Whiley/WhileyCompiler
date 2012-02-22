@@ -2,7 +2,7 @@ package wyc.builder;
 
 import java.util.*;
 
-import wyc.lang.Project;
+import wyc.lang.Builder;
 import wyc.lang.UnresolvedType;
 import wyc.lang.SourceFile;
 import static wyc.lang.SourceFile.*;
@@ -53,12 +53,12 @@ import wyil.util.ResolveError;
  * 
  */
 public class GlobalGenerator {
-	private final Project project;
+	private final Builder builder;
 	private final GlobalResolver resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(Project project, GlobalResolver resolver, Project files) {		
-		this.project = project;
+	public GlobalGenerator(Builder builder, GlobalResolver resolver) {		
+		this.builder = builder;
 		this.resolver = resolver;
 	}
 		
@@ -73,7 +73,7 @@ public class GlobalGenerator {
 		// check whether the item in question is in one of the source
 		// files being compiled.
 		ModuleID mid = nid.module();
-		SourceFile wf = project.get(mid);
+		SourceFile wf = builder.get(mid);
 		if(wf != null) {
 			// FIXME: the following line is necessary to terminate infinite
 			// recursion. However, we really need to do better in the
@@ -118,7 +118,7 @@ public class GlobalGenerator {
 		} else {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.
-			Module m = project.loadModule(mid);
+			Module m = builder.loadModule(mid);
 			Module.TypeDef td = m.type(nid.name());
 			if(td != null) {
 				// should I cache this?

@@ -23,7 +23,7 @@ import wyil.util.Triple;
 
 
 public abstract class AbstractResolver {	
-	protected final Project project;
+	protected final Builder project;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -32,7 +32,7 @@ public abstract class AbstractResolver {
 	 */
 	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
 	
-	public AbstractResolver(Project project) {				
+	public AbstractResolver(Builder project) {				
 		this.project = project;
 	}
 	

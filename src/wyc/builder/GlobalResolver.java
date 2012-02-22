@@ -13,7 +13,7 @@ import java.util.*;
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
 import wyc.lang.Expr;
-import wyc.lang.Project;
+import wyc.lang.Builder;
 import wyc.lang.UnresolvedType;
 import wyc.lang.SourceFile;
 import wyil.ModuleLoader;
@@ -39,11 +39,11 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(Project project) {
+	public GlobalResolver(Builder project) {
 		super(project);
 	}
 	
-	public Project loader() {
+	public Builder loader() {
 		return project;		
 	}
 	

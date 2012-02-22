@@ -34,12 +34,10 @@ import wyc.util.path.BinaryDirectoryRoot;
 import wyc.util.path.JarFileRoot;
 import wyc.util.path.Path;
 import wyc.util.path.SourceDirectoryRoot;
-import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.util.Logger;
 import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
-import wyjc.Main;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
 

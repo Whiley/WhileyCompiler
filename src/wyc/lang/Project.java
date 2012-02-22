@@ -20,7 +20,7 @@ import wyil.util.Triple;
  * 
  * @author David J. Pearce
  */
-public final class Project implements ModuleLoader {	
+public final class Project implements Logger,ModuleLoader {	
 	/**
 	 * The source roots are locations which may contain the root of a package
 	 * structure containing source files.
@@ -45,7 +45,7 @@ public final class Project implements ModuleLoader {
 	 * module has been entered into the moduletable, it will not be loaded
 	 * again.
 	 */
-	private HashMap<ModuleID, Module> binFileCache = new HashMap<ModuleID, Module>();	
+	private HashMap<ModuleID, Module> moduleCache = new HashMap<ModuleID, Module>();	
 	
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -102,11 +102,10 @@ public final class Project implements ModuleLoader {
 	public void setModuleReader(String suffix, ModuleReader reader) {
 		suffixMap.put(suffix, reader);
 	}
-
 	
 	// FIXME: to be deprecated
-	public void register(Module m) {
-		binFileCache.put(m.id(), m);
+	public void update(Module m) {
+		moduleCache.put(m.id(), m);
 	}
 	
 	// ======================================================================
@@ -122,13 +121,27 @@ public final class Project implements ModuleLoader {
 		ArrayList<Path.Entry> delta = new ArrayList<Path.Entry>(); 
 		for(Path.Root root : srcRoots) {
 			for(Path.Entry e : root.list()) {
-				if(e.isModified()) {
+				// FIXME: surely there must be a better way!
+				if(e.suffix().equals("whiley")) {
 					delta.add(e);
 				}
 			}
 		}
 		
 		builder.build(delta);
+	}
+	
+	/**
+	 * Log a message, along with a time. The time is used to indicate how long
+	 * it took for the action being reported. This is used primarily to signal
+	 * that a given stage has been completed in a certain amount of time.
+	 * 
+	 * @param msg
+	 * @param time --- total time taken for stage
+     * @param memory --- difference in available free memory
+	 */
+	public void logTimedMessage(String msg, long time, long memory) {
+		logger.logTimedMessage(msg, time, memory);
 	}
 	
 	// ======================================================================
@@ -202,29 +215,6 @@ public final class Project implements ModuleLoader {
 			// FIXME: figure how best to propagate this exception
 		}
 		return false;
-	}
-		
-	/**
-	 * Determine whether a given name exists or not.
-	 * 
-	 * @param nid --- Name ID to check
-	 * @return
-	 */
-	public boolean isName(NameID nid) {
-		ModuleID mid = nid.module();
-		SourceFile wf = get(mid);
-		if(wf != null) {
-			// FIXME: check for the right kind of name
-			return wf.hasName(nid.name());
-		} else {
-			try {
-				Module m = loadModule(mid);
-				// FIXME: check for the right kind of name
-				return m.hasName(nid.name());
-			} catch(ResolveError e) {
-				return false;
-			}
-		}
 	}	
 	
 	/**
@@ -235,7 +225,7 @@ public final class Project implements ModuleLoader {
 	 * @return
 	 */
 	public Module get(ModuleID mid) throws Exception {
-		return binFileCache.get(mid);
+		return moduleCache.get(mid);
 	}
 	
 	/**
@@ -323,7 +313,7 @@ public final class Project implements ModuleLoader {
 	 * @return the loaded module
 	 */
 	public Module loadModule(ModuleID module) throws ResolveError {		
-		Module m = binFileCache.get(module);
+		Module m = moduleCache.get(module);
 						
 		if (m != null) {
 			return m; // module was previously loaded and cached
@@ -370,7 +360,7 @@ public final class Project implements ModuleLoader {
 		if(mi != null) {
 			logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
 					System.currentTimeMillis() - time, memory - runtime.freeMemory());
-			binFileCache.put(mi.id(), mi);
+			moduleCache.put(mi.id(), mi);
 		} else {
 			
 			logger.logTimedMessage("Ignored " + entry.location() + ":" + mid,

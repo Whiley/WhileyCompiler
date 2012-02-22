@@ -99,7 +99,7 @@ public final class FlowTyping {
 	private String filename;
 	private SourceFile.FunctionOrMethodOrMessage current;
 	
-	public FlowTyping(Project project, GlobalResolver resolver) {		
+	public FlowTyping(GlobalResolver resolver) {		
 		this.resolver = resolver;
 	}
 	

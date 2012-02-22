@@ -71,8 +71,8 @@ import wyil.util.SyntaxError;
  */
 public abstract class LocalResolver extends AbstractResolver {
 	
-	public LocalResolver(Project project) {
-		super(project);
+	public LocalResolver(Builder builder) {
+		super(builder);
 	}			
 	
 	public Pair<Expr, Environment> resolve(Expr expr, boolean sign,
