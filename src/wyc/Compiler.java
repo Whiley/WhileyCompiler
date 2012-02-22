@@ -81,11 +81,11 @@ import wyc.stages.*;
  * 
  */
 public final class Compiler implements Logger {		
-	private ModuleLoader loader;		
+	private WhileyProject project;		
 	private ArrayList<Transform> stages;
 
-	public Compiler(ModuleLoader loader, List<Transform> stages) {
-		this.loader = loader;
+	public Compiler(WhileyProject project, List<Transform> stages) {
+		this.project = project;
 		this.stages = new ArrayList<Transform>(stages);
 	}
 	
@@ -108,12 +108,12 @@ public final class Compiler implements Logger {
 		this.logout = new PrintStream(logout);
 	}
 
-	public WhileyProject compile(List<File> files) throws Exception {
+	public void compile(List<File> files) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
-		
-		WhileyProject wyfiles = new WhileyProject();
+				
+		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
 		for (File f : files) {
 			WhileyFile wf = parse(f);
 			wyfiles.add(wf);								
@@ -123,9 +123,7 @@ public final class Compiler implements Logger {
 		finishCompilation(modules);		
 		
 		long endTime = System.currentTimeMillis();
-		logTotalTime("Compiled " + files.size() + " file(s)",endTime-start, memory - runtime.freeMemory());
-		
-		return wyfiles;
+		logTotalTime("Compiled " + files.size() + " file(s)",endTime-start, memory - runtime.freeMemory());		
 	}
 		
 	/**
@@ -162,11 +160,6 @@ public final class Compiler implements Logger {
 	 * @param wf
 	 */
 	private void finishCompilation(List<Module> modules) throws Exception {				
-		// Register the updated file
-		for(Module module : modules) {
-			loader.register(module);
-		}
-		
 		for(Transform stage : stages) {
 			for(Module module : modules) {
 				process(module,stage);
@@ -212,14 +205,14 @@ public final class Compiler implements Logger {
 		return r;
 	}	
 	
-	private List<Module> build(WhileyProject files) {
-		GlobalResolver resolver = new GlobalResolver(loader,files);
+	private List<Module> build(List<WhileyFile> delta) {
+		GlobalResolver resolver = new GlobalResolver(project);
 		
-		for(WhileyFile wf : files) {
+		for(WhileyFile wf : delta) {
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();		
 			long memory = runtime.freeMemory();					
-			new FlowTyping(loader, resolver).propagate(wf);
+			new FlowTyping(project, resolver).propagate(wf);
 			logTimedMessage("[" + wf.filename + "] flow typing",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
 		}		
@@ -227,7 +220,8 @@ public final class Compiler implements Logger {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();	
-		List<Module> modules = new CodeGeneration(loader,resolver).generate(files);			
+		// FIXME: this is knackered!
+		List<Module> modules = new CodeGeneration(project,resolver).generate(project);			
 		logTimedMessage("code generation",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
 		return modules;

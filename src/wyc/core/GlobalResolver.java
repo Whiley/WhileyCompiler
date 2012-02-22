@@ -39,16 +39,12 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(ModuleLoader loader, WhileyProject files) {
-		super(loader,files);
+	public GlobalResolver(WhileyProject project) {
+		super(project);
 	}
 	
-	public ModuleLoader loader() {
-		return loader;		
-	}
-	
-	public WhileyProject files() {
-		return files;
+	public WhileyProject loader() {
+		return project;		
 	}
 	
 	// =========================================================================
@@ -73,9 +69,9 @@ public class GlobalResolver extends LocalResolver {
 			throws ResolveError {		
 		for (WhileyFile.Import imp : context.imports()) {			
 			if (imp.matchName(name)) {
-				for (ModuleID mid : imports(imp)) {					
+				for (ModuleID mid : project.imports(imp)) {					
 					NameID nid = new NameID(mid, name); 					
-					if (isName(nid)) {
+					if (project.isName(nid)) {
 						return nid;
 					}					
 				}
@@ -109,7 +105,7 @@ public class GlobalResolver extends LocalResolver {
 			String name = names.get(1);
 			ModuleID mid = resolveAsModule(names.get(0),context);		
 			NameID nid = new NameID(mid, name); 
-			if (isName(nid)) {
+			if (project.isName(nid)) {
 				return nid;
 			} 
 		} else {
@@ -118,7 +114,7 @@ public class GlobalResolver extends LocalResolver {
 			PkgID pkg = new PkgID(names.subList(0,names.size()-2));
 			ModuleID mid = new ModuleID(pkg,module);
 			NameID nid = new NameID(mid, name); 
-			if (isName(nid)) {
+			if (project.isName(nid)) {
 				return nid;
 			} 			
 		}
@@ -149,7 +145,7 @@ public class GlobalResolver extends LocalResolver {
 			throws ResolveError {
 		
 		for (WhileyFile.Import imp : context.imports()) {			
-			for(ModuleID mid : imports(imp)) {				
+			for(ModuleID mid : project.imports(imp)) {				
 				if(mid.module().equals(name)) {
 					return mid;
 				}
@@ -411,13 +407,13 @@ public class GlobalResolver extends LocalResolver {
 		if (root != null) { return root; } 		
 		
 		// check whether this type is external or not
-		WhileyFile wf = files.get(key.module());
+		WhileyFile wf = project.get(key.module());
 		if (wf == null) {						
 			// indicates a non-local key which we can resolve immediately	
 			
 			// FIXME: need to properly support unconstrained types here
 			
-			Module mi = loader.loadModule(key.module());
+			Module mi = project.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());	
 			return append(td.type(),states);			
 		} 
@@ -555,7 +551,7 @@ public class GlobalResolver extends LocalResolver {
 			visited.add(key);
 		}
 
-		WhileyFile wf = files.get(key.module());
+		WhileyFile wf = project.get(key.module());
 
 		if (wf != null) {			
 			WhileyFile.Declaration decl = wf.declaration(key.name());
@@ -571,7 +567,7 @@ public class GlobalResolver extends LocalResolver {
 				throw new ResolveError("unable to find constant " + key);
 			}
 		} else {		
-			Module module = loader.loadModule(key.module());
+			Module module = project.loadModule(key.module());
 			Module.ConstDef cd = module.constant(key.name());
 			if(cd != null) {
 				result = cd.constant();

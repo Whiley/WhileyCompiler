@@ -30,6 +30,7 @@ import java.util.*;
 
 import wyc.Compiler;
 import wyc.Pipeline;
+import wyc.lang.WhileyProject;
 import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.util.SyntaxError;
@@ -154,13 +155,13 @@ public class AntTask extends MatchingTask {
     		List<Path.Root> whileypath = initialiseWhileyPath();
 
     		// second, construct the module loader    		
-    		ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
-    		loader.setModuleReader("class",  new ClassFileLoader());
+    		WhileyProject project = new WhileyProject(sourcepath,whileypath);
+    		project.setModuleReader("class",  new ClassFileLoader());
     		
     		// third, initialise the pipeline
     		ArrayList<Pipeline.Template> templates = new ArrayList<Pipeline.Template>(Pipeline.defaultPipeline);
     		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-    		Pipeline pipeline = new Pipeline(templates, loader);
+    		Pipeline pipeline = new Pipeline(templates, project);
     		if(destdir != null) {
     			pipeline.setOption(ClassWriter.class, "outputDirectory",
 					destdir.getPath());
@@ -168,8 +169,8 @@ public class AntTask extends MatchingTask {
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the compiler
-    		Compiler compiler = new Compiler(loader,stages);		
-    		loader.setLogger(compiler);		
+    		Compiler compiler = new Compiler(project,stages);		
+    		project.setLogger(compiler);		
 
     		if(verbose) {			
     			compiler.setLogOut(System.err);

@@ -32,6 +32,7 @@ import java.util.jar.JarFile;
 
 import wyc.Pipeline;
 import wyc.Compiler;
+import wyc.lang.WhileyProject;
 import wyc.util.*;
 import wyil.*;
 import wyil.util.*;
@@ -287,12 +288,12 @@ public class Main {
 			whileypath.addAll(bootpath);
 
 			// now construct a pipline and initialise the compiler		
-			ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
-			loader.setModuleReader("class",  new ClassFileLoader());
+			WhileyProject project = new WhileyProject(sourcepath,whileypath);
+			project.setModuleReader("class",  new ClassFileLoader());
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
 
-			Pipeline pipeline = new Pipeline(templates, loader);
+			Pipeline pipeline = new Pipeline(templates, project);
 			
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
@@ -304,8 +305,8 @@ public class Main {
 			}
 			
 			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(loader,stages);		
-			loader.setLogger(compiler);		
+			Compiler compiler = new Compiler(project,stages);		
+			project.setLogger(compiler);		
 
 			if(verbose) {			
 				compiler.setLogOut(System.err);

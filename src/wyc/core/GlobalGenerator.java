@@ -53,14 +53,12 @@ import wyil.util.ResolveError;
  * 
  */
 public class GlobalGenerator {
-	private final WhileyProject srcfiles;
-	private final GlobalResolver resolver;
-	private final ModuleLoader loader;
+	private final WhileyProject project;
+	private final GlobalResolver resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(ModuleLoader loader, GlobalResolver resolver, WhileyProject files) {
-		this.srcfiles = files;
-		this.loader = loader;
+	public GlobalGenerator(WhileyProject project, GlobalResolver resolver, WhileyProject files) {		
+		this.project = project;
 		this.resolver = resolver;
 	}
 		
@@ -75,7 +73,7 @@ public class GlobalGenerator {
 		// check whether the item in question is in one of the source
 		// files being compiled.
 		ModuleID mid = nid.module();
-		WhileyFile wf = srcfiles.get(mid);
+		WhileyFile wf = project.get(mid);
 		if(wf != null) {
 			// FIXME: the following line is necessary to terminate infinite
 			// recursion. However, we really need to do better in the
@@ -120,7 +118,7 @@ public class GlobalGenerator {
 		} else {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.
-			Module m = loader.loadModule(mid);
+			Module m = project.loadModule(mid);
 			Module.TypeDef td = m.type(nid.name());
 			if(td != null) {
 				// should I cache this?

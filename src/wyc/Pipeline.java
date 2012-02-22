@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import wyc.lang.WhileyProject;
 import wyc.stages.FlowTyping;
 import wyil.*;
 import wyil.io.WyilFileWriter;
@@ -52,10 +53,12 @@ public class Pipeline {
 	private static final ArrayList<Class<? extends Transform>> transforms = new ArrayList();
 
 	/**
-	 * The module loader is passed to a given transform when it is instantiated.
-	 * In some special cases, a transform will want access to the module loader.
+	 * The whiley project is passed to a given transform when it is
+	 * instantiated. In some special cases, a transform will want access to
+	 * files in the project. For example, to check that a particular method
+	 * exists, etc.
 	 */
-	private final ModuleLoader loader;
+	private final WhileyProject project;
 
 	/**
 	 * The list of stage templates which make up this pipeline. When the
@@ -64,9 +67,9 @@ public class Pipeline {
 	private final ArrayList<Template> stages;
 	
 	public Pipeline(List<Template> stages,
-			ModuleLoader loader) {		
+			WhileyProject project) {		
 		this.stages = new ArrayList<Template>(stages);
-		this.loader = loader;
+		this.project = project;
 	}
 
 	public static final List<Template> defaultPipeline = Collections
@@ -170,7 +173,7 @@ public class Pipeline {
 	public List<Transform> instantiate() {
 		ArrayList<Transform> pipeline = new ArrayList<Transform>();
 		for (Template s : stages) {
-			pipeline.add(s.instantiate(loader));
+			pipeline.add(s.instantiate(project));
 		}
 		return pipeline;
 	}
@@ -199,14 +202,14 @@ public class Pipeline {
 		 * 
 		 * @return
 		 */
-		public Transform instantiate(ModuleLoader loader) {			
+		public Transform instantiate(WhileyProject project) {			
 			Transform stage;
 			
 			// first, instantiate the transform
 			try {				
 				Constructor<? extends Transform> c = clazz.getConstructor(
 						ModuleLoader.class);
-				stage = (Transform) c.newInstance(loader);
+				stage = (Transform) c.newInstance(project);
 										
 			} catch (NoSuchMethodException e) {
 				throw new IllegalArgumentException(

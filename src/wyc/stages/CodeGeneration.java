@@ -78,7 +78,7 @@ import wyc.lang.Stmt.*;
  * 
  */
 public final class CodeGeneration {
-	private final ModuleLoader loader;	
+	private final WhileyProject project;	
 	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
@@ -93,13 +93,13 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(ModuleLoader loader, GlobalResolver resolver) {
-		this.loader = loader;		
+	public CodeGeneration(WhileyProject project, GlobalResolver resolver) {
+		this.project = project;		
 		this.resolver = resolver;
 	}
 
 	public List<Module> generate(WhileyProject files) {
-		globalGenerator = new GlobalGenerator(loader,resolver,files);
+		globalGenerator = new GlobalGenerator(project,resolver,files);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();
 		for(WhileyFile wf : files) {			

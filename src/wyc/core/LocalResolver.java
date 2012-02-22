@@ -71,8 +71,8 @@ import wyil.util.SyntaxError;
  */
 public abstract class LocalResolver extends AbstractResolver {
 	
-	public LocalResolver(ModuleLoader loader, WhileyProject files) {
-		super(loader,files);
+	public LocalResolver(WhileyProject project) {
+		super(project);
 	}			
 	
 	public Pair<Expr, Environment> resolve(Expr expr, boolean sign,
@@ -920,7 +920,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			} catch (ResolveError err) {
 			}
 			PkgID pid = new PkgID(expr.var);
-			if (isPackage(pid)) {
+			if (project.isPackage(pid)) {
 				return new Expr.PackageAccess(null, expr.var, pid,
 						expr.attributes());
 			}
@@ -1084,12 +1084,12 @@ public abstract class LocalResolver extends AbstractResolver {
 			// This variable access may correspond to an external access.			
 			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
 			PkgID pid = pa.pid.append(expr.name);
-			if (isPackage(pid)) {
+			if (project.isPackage(pid)) {
 				return new Expr.PackageAccess(pa, expr.name, pid,
 						expr.attributes());
 			}			
 			ModuleID mid = new ModuleID(pa.pid,expr.name);
-			if (isModule(mid)) {
+			if (project.isModule(mid)) {
 				return new Expr.ModuleAccess(pa, expr.name, mid,
 						expr.attributes());
 			} else {
@@ -1100,7 +1100,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			// must be a constant access
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 													
 			NameID nid = new NameID(ma.mid,expr.name);
-			if (isName(nid)) {
+			if (project.isName(nid)) {
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
 						expr.name, nid, expr.attributes());
 				ca.value = resolveAsConstant(nid);
@@ -1257,7 +1257,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {				
-				for (ModuleID mid : imports(imp)) {					
+				for (ModuleID mid : project.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
 				}
@@ -1275,7 +1275,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {
-				for (ModuleID mid : imports(imp)) {					
+				for (ModuleID mid : project.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateMessages(nid,parameters,candidates);					
 				}
@@ -1465,7 +1465,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		int nparams = parameters != null ? parameters.size() : -1;				
 
-		WhileyFile wf = files.get(mid);
+		WhileyFile wf = project.get(mid);
 		if (wf != null) {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
@@ -1478,7 +1478,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			}
 		} else {
 			try {
-				Module m = loader.loadModule(mid);
+				Module m = project.loadModule(mid);
 				for (Module.Method mm : m.methods()) {
 					if ((mm.isFunction() || mm.isMethod())
 							&& mm.name().equals(nid.name())
@@ -1512,7 +1512,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		int nparams = parameters != null ? parameters.size() : -1;
 
-		WhileyFile wf = files.get(mid);
+		WhileyFile wf = project.get(mid);
 		if (wf != null) {
 			for (WhileyFile.Message m : wf.declarations(
 					WhileyFile.Message.class, nid.name())) {
@@ -1524,7 +1524,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			}
 		} else {
 			try {
-				Module m = loader.loadModule(mid);
+				Module m = project.loadModule(mid);
 				for (Module.Method mm : m.methods()) {
 					if (mm.isMessage()
 							&& mm.name().equals(nid.name())

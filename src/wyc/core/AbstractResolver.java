@@ -23,8 +23,7 @@ import wyil.util.Triple;
 
 
 public abstract class AbstractResolver {	
-	protected final ModuleLoader loader;
-	protected final WhileyProject files;
+	protected final WhileyProject project;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -33,119 +32,8 @@ public abstract class AbstractResolver {
 	 */
 	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
 	
-	public AbstractResolver(ModuleLoader loader, WhileyProject files) {		
-		this.loader = loader;
-		this.files = files;
-	}
-
-	/**
-	 * This function checks whether the supplied name exists or not.
-	 * 
-	 * @param nid
-	 *            The name whose existence we want to check for.
-	 * 
-	 * @return true if the package exists, false otherwise.
-	 */
-	protected boolean isName(NameID nid) {		
-		ModuleID mid = nid.module();
-		WhileyFile wf = files.get(mid);
-		if(wf != null) {
-			return wf.hasName(nid.name());
-		} else {
-			try {
-				Module m = loader.loadModule(mid);
-				return m.hasName(nid.name());
-			} catch(ResolveError e) {
-				return false;
-			}
-		}
-	}		
-	
-	/**
-	 * This function checks whether the supplied package exists or not.
-	 * 
-	 * @param pkg
-	 *            The package whose existence we want to check for.
-	 * 
-	 * @return true if the package exists, false otherwise.
-	 */
-	protected boolean isPackage(PkgID pkg) {
-		try {
-			loader.resolvePackage(pkg);
-			return true;
-		} catch(ResolveError e) {
-			return false;
-		}
-	}		
-	
-	/**
-	 * This function checks whether the supplied module exists or not.
-	 * 
-	 * @param pkg
-	 *            The package whose existence we want to check for.
-	 * 
-	 * @return true if the package exists, false otherwise.
-	 */
-	protected boolean isModule(ModuleID mid) {
-		try {
-			if(files.get(mid) == null) {
-				loader.loadModule(mid);
-			}
-			return true;
-		} catch(ResolveError e) {
-			return false;
-		}
-	}	
-	
-	/**
-	 * This method takes a given package id from an import declaration, and
-	 * expands it to find all matching packages. Note, the package id may
-	 * contain various wildcard characters to match multiple actual packages.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	private List<PkgID> matchPackage(PkgID pkg) {
-		ArrayList<PkgID> matches = new ArrayList<PkgID>();
-		try {
-			loader.resolvePackage(pkg);
-			matches.add(pkg);
-		} catch(ResolveError er) {}
-		return matches;
-	}
-
-
-	/**
-	 * This method takes a given import declaration, and expands it to find all
-	 * matching modules.
-	 * 
-	 * @param imp
-	 * @return
-	 */
-	public List<ModuleID> imports(WhileyFile.Import imp) {
-		Triple<PkgID, String, String> key = new Triple(imp.pkg, imp.module,
-				imp.name);
-		ArrayList<ModuleID> matches = importCache.get(key);
-		if (matches != null) {
-			// cache hit
-			return matches;
-		} else {
-			// cache miss
-			matches = new ArrayList<ModuleID>();
-			for (PkgID pid : matchPackage(imp.pkg)) {
-				try {
-					for (ModuleID mid : loader.loadPackage(pid)) {
-						if (imp.matchModule(mid.module())) {
-							matches.add(mid);
-						}
-					}
-				} catch (ResolveError ex) {
-					// dead code
-				}
-			}
-			importCache.put(key, matches);
-		}
-		return matches;
+	public AbstractResolver(WhileyProject project) {				
+		this.project = project;
 	}
 	
 	// =========================================================================
@@ -311,7 +199,7 @@ public abstract class AbstractResolver {
 			NameID nid = nt.name();			
 			ModuleID mid = nid.module();
 
-			WhileyFile wf = files.get(mid);
+			WhileyFile wf = project.get(mid);
 			Type r = null;
 
 			if (wf != null) {			
@@ -322,7 +210,7 @@ public abstract class AbstractResolver {
 							.nominal();
 				} 
 			} else {
-				Module m = loader.loadModule(mid);
+				Module m = project.loadModule(mid);
 				Module.TypeDef td = m.type(nid.name());
 				if(td != null) {
 					r = td.type();
