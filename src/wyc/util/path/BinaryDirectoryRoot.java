@@ -133,10 +133,12 @@ public class BinaryDirectoryRoot implements Path.Root {
 	public static class Entry implements Path.Entry {
 		private final ModuleID mid;
 		private final java.io.File file;		
+		private boolean modified;
 		
 		public Entry(ModuleID mid, java.io.File file) {
 			this.mid = mid;
 			this.file = file;
+			this.modified = false;
 		}
 		
 		public ModuleID id() {
@@ -145,6 +147,14 @@ public class BinaryDirectoryRoot implements Path.Root {
 		
 		public String location() {
 			return file.getPath();
+		}
+		
+		public void touch() {
+			this.modified = true;
+		}
+		
+		public boolean isModified() {
+			return modified;
 		}
 		
 		public long lastModified() {

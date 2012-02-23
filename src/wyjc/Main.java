@@ -36,6 +36,7 @@ import wyc.lang.Project;
 import wyc.util.*;
 import wyc.util.path.*;
 import wyil.*;
+import wyil.lang.ModuleID;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
 import static wyc.util.OptArg.*;
@@ -179,10 +180,10 @@ public class Main {
 	 * @param sourcepath
 	 * @throws IOException
 	 */
-	public static ArrayList<Path.Root> initialiseSourceRoots(
+	public static ArrayList<SourceDirectoryRoot> initialiseSourceRoots(
 			List<String> sourcepath, BinaryDirectoryRoot outputDirectory,
 			boolean verbose) throws IOException {
-		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
+		ArrayList<SourceDirectoryRoot> nitems = new ArrayList<SourceDirectoryRoot>();
 		if (sourcepath.isEmpty()) {
 			nitems.add(new SourceDirectoryRoot(".", outputDirectory));
 		} else {			
@@ -281,7 +282,7 @@ public class Main {
 			if (outputdir != null) {
 				bindir = new BinaryDirectoryRoot(outputdir);
 			}
-			List<Path.Root> sourcepath = initialiseSourceRoots(
+			List<SourceDirectoryRoot> sourcepath = initialiseSourceRoots(
 					(ArrayList) values.get("sourcepath"), bindir, verbose);
 			
 			// now initialise the whiley path			
@@ -313,13 +314,31 @@ public class Main {
 			List<Transform> stages = pipeline.instantiate();
 			project.setBuilder(new Builder(project,stages));		
 
-			ArrayList<File> files = new ArrayList<File>();
-			for (String file : args) {
-				files.add(new File(file));
+			// Now, touch all files indicated on command-line			
+			for(SourceDirectoryRoot src : sourcepath) {
+				File loc = src.location();
+				String locPath = loc.getCanonicalPath();
+				for (String _file : args) {
+					String filePath = new File(_file).getCanonicalPath();
+					if(filePath.startsWith(locPath)) {
+						int end = locPath.length();
+						if(end > 1) {
+							end++;
+						}
+						String module = filePath.substring(end).replace(File.separatorChar, '.');
+						module = module.substring(0,module.length()-7);						
+						ModuleID mid = ModuleID.fromString(module);			
+						Path.Entry entry = src.lookup(mid);
+						if(entry == null) {
+							throw new FileNotFoundException(_file);
+						} else {
+							entry.touch();
+						}
+					}
+				}
 			}
 		
-			// finally, let's compile some files!!!
-			
+			// finally, let's compile some files!!!		
 			project.build();
 		} catch (InternalFailure e) {
 			e.outputSourceError(errout);

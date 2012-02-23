@@ -134,6 +134,15 @@ public final class JarFileRoot implements Path.Root {
 			return entry.getTime();
 		}
 		
+		public boolean isModified() {
+			// cannot modify something in a Jar file.
+			return false;
+		}
+		
+		public void touch() {
+			throw new UnsupportedOperationException();
+		}
+		
 		public String suffix() {
 			String suffix = "";
 			String filename = entry.getName();

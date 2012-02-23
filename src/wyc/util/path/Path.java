@@ -58,7 +58,7 @@ public class Path {
 		 * @return
 		 * @throws IOException
 		 */
-		public Collection<Entry> list(PkgID pid) throws Exception;
+		public Collection<? extends Entry> list(PkgID pid) throws Exception;
 		
 		/**
 		 * List contents of all packages.
@@ -66,7 +66,7 @@ public class Path {
 		 * @return
 		 * @throws IOException
 		 */
-		public Collection<Entry> list() throws Exception;		
+		public Collection<? extends Entry> list() throws Exception;		
 	}
 	
 	/**
@@ -99,6 +99,20 @@ public class Path {
 		 * @return
 		 */
 		public long lastModified();
+		
+		/**
+		 * Check whether this file has been modified or not.
+		 * 
+		 * @return
+		 */
+		public boolean isModified();
+		
+		/**
+		 * Mark this entry as being modified
+		 * 
+		 * @return
+		 */
+		public void touch();
 		
 		/**
 		 * Open the source file for reading.

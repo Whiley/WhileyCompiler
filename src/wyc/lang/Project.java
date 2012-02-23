@@ -56,7 +56,7 @@ public final class Project implements Logger,ModuleLoader {
 	 */
 	private Logger logger = Logger.NULL;
 	
-	public Project(Collection<Path.Root> srcRoots, Collection<Path.Root> libRoots) {
+	public Project(Collection<? extends Path.Root> srcRoots, Collection<? extends Path.Root> libRoots) {
 		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
 		this.externalRoots = new ArrayList<Path.Root>(libRoots);
 	}
@@ -113,7 +113,7 @@ public final class Project implements Logger,ModuleLoader {
 		for(Path.Root root : srcRoots) {
 			for(Path.Entry e : root.list()) {
 				// FIXME: surely there must be a better way!
-				if(e.suffix().equals("whiley")) {
+				if(e.suffix().equals("whiley") && e.isModified()) {
 					delta.add(e);
 				}
 			}
@@ -246,13 +246,17 @@ public final class Project implements Logger,ModuleLoader {
 		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
 		
 		for(Path.Root root : srcRoots) {			
-			for (Path.Entry e : root.list(pid)) {
-				contents.add(e.id());
+			if(root.exists(pid)) {
+				for (Path.Entry e : root.list(pid)) {
+					contents.add(e.id());
+				}
 			}
 		}
-		for(Path.Root root : externalRoots) {			
-			for (Path.Entry e : root.list(pid)) {
-				contents.add(e.id());
+		for(Path.Root root : externalRoots) {
+			if(root.exists(pid)) {
+				for (Path.Entry e : root.list(pid)) {
+					contents.add(e.id());
+				}
 			}
 		}
 

@@ -28,9 +28,7 @@ package wyc.util.path;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import wyc.util.path.BinaryDirectoryRoot.Entry;
 import wyil.lang.ModuleID;
@@ -45,6 +43,7 @@ public class SourceDirectoryRoot implements Path.Root {
 	
 	private final java.io.File srcDirectory;	
 	private final BinaryDirectoryRoot outputDirectory;
+	private HashMap<PkgID,ArrayList<Entry>> cache = null;
 	
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
@@ -82,85 +81,52 @@ public class SourceDirectoryRoot implements Path.Root {
 		this.outputDirectory = outputDirectory;
 	}
 	
-	public boolean exists(PkgID pkg) throws IOException {		
-		File location = new File(srcDirectory + File.separator + pkg.fileName());
-		return location.exists() && location.isDirectory();
+	public File location() {
+		return srcDirectory;
 	}
 	
-	public List<Path.Entry> list() throws IOException { 
-		File root = new File(srcDirectory + File.separator);
-		ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
-		traverse(root,PkgID.ROOT,entries);
+	public boolean exists(PkgID pkg) throws IOException {
+		if(cache == null) {
+			cache = new HashMap<PkgID,ArrayList<Entry>>();
+			traverse(srcDirectory,PkgID.ROOT);
+		}
+		return cache.containsKey(pkg);
+	}
+	
+	public List<Entry> list() throws IOException {
+		if(cache == null) {
+			cache = new HashMap<PkgID,ArrayList<Entry>>();
+			traverse(srcDirectory,PkgID.ROOT);
+		}	
+		ArrayList<Entry> entries = new ArrayList<Entry>();
+		for(PkgID pid : cache.keySet()) {
+			entries.addAll(cache.get(pid));
+		}
 		return entries;
 	}
 	
-	public List<Path.Entry> list(PkgID pkg) throws IOException {		
-		File location = new File(srcDirectory + File.separator + pkg.fileName());
-
-		if (location.exists() && location.isDirectory()) {
-			ArrayList<Path.Entry> entries = new ArrayList<Path.Entry>();
-
-			for (File file : location.listFiles(filter)) {
-				String filename = file.getName();
-				String name = filename.substring(0, filename.lastIndexOf('.'));
-				ModuleID mid = new ModuleID(pkg, name);
-				Entry srcEntry = new Entry(mid, file);
-				Entry binEntry = null;
-				
-				// Now, see if there exists a binary version of this file which has
-				// a modification date no earlier. Binary files are always preferred
-				// over source entries.
-				
-				if (outputDirectory != null) {
-					binEntry = outputDirectory.lookup(mid);					
-				} else {
-					File binFile = new File(name + ".class");
-					if(binFile.exists()) {
-						binEntry = new Entry(mid,binFile);
-					}
-				}
-				
-				if (binEntry != null && binEntry.lastModified() >= srcEntry.lastModified()) {
-					entries.add(binEntry);
-				} else {
-					entries.add(srcEntry);
+	public List<Entry> list(PkgID pkg) throws IOException {
+		if(cache == null) {
+			cache = new HashMap<PkgID,ArrayList<Entry>>();
+			traverse(srcDirectory,PkgID.ROOT);
+		}	
+		return cache.get(pkg);
+	}
+		
+	public Entry lookup(ModuleID mid) throws IOException {
+		if(cache == null) {
+			cache = new HashMap<PkgID,ArrayList<Entry>>();
+			traverse(srcDirectory,PkgID.ROOT);
+		}
+		ArrayList<Entry> contents = cache.get(mid.pkg());
+		if(contents != null) {			
+			for(Entry e : contents) {
+				if(e.id().equals(mid)) {
+					return e;
 				}
 			}			
-			return entries;
-		} else {			
-			return Collections.EMPTY_LIST;
 		}
-	}
-	
-	public Entry lookup(ModuleID mid) throws IOException {
-		File srcFile = new File(srcDirectory + File.separator + mid.fileName()
-				+ ".whiley");
-		if (srcFile.exists()) {
-			Entry srcEntry = new Entry(mid, srcFile);
-			Entry binEntry = null;
-			
-			// Now, see if there exists a binary version of this file which has
-			// a modification date no earlier. Binary files are always preferred
-			// over source entries.
-			
-			if (outputDirectory != null) {
-				binEntry = outputDirectory.lookup(mid);					
-			} else {
-				File binFile = new File(srcDirectory + File.separator + mid.fileName()
-						+ ".class");				
-				if(binFile.exists()) {
-					binEntry = new Entry(mid,binFile);
-				}
-			}
-			
-			if (binEntry != null && binEntry.lastModified() >= srcEntry.lastModified()) {
-				return binEntry;
-			} else {
-				return srcEntry;
-			}
-		} else {
-			return null; // not found
-		}
+		return null;
 	}
 
 	public String toString() {
@@ -177,14 +143,14 @@ public class SourceDirectoryRoot implements Path.Root {
 	 * @param entries
 	 *            --- list of entries being accumulated into.
 	 */
-	private void traverse(File location, PkgID pkg, ArrayList<Path.Entry> entries) throws IOException {
-		if (location.exists() && location.isDirectory()) {
-			
-			for (File file : location.listFiles()) {				
+	private void traverse(File location, PkgID pkg) throws IOException {
+		if (location.exists() && location.isDirectory()) {			
+			ArrayList<Entry> entries = new ArrayList<Entry>();
+			for (File file : location.listFiles()) {						
 				if(file.isDirectory()) {
-					traverse(file,pkg.append(file.getName()),entries);
-				} else if(filter.accept(file)) {
-					String filename = file.getName();
+					traverse(file,pkg.append(file.getName()));
+				} else if(filter.accept(file)) {					
+					String filename = file.getName();					
 					String name = filename.substring(0, filename.lastIndexOf('.'));
 					ModuleID mid = new ModuleID(pkg, name);
 					Entry srcEntry = new Entry(mid, file);
@@ -208,8 +174,9 @@ public class SourceDirectoryRoot implements Path.Root {
 					} else {
 						entries.add(srcEntry);
 					}
-				}
+				}				
 			}	
+			cache.put(pkg, entries);
 		}
 	}
 }
