@@ -27,13 +27,15 @@ package wyc.util.path;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
-public class SourceDirectoryRoot implements Path.Root {
+public class DirectoryRoot implements Path.Root {
 	private static final FileFilter filter = new FileFilter() {
 		public boolean accept(File file) {
 			return file.getName().endsWith(".whiley");
@@ -57,7 +59,7 @@ public class SourceDirectoryRoot implements Path.Root {
 	 *            source directory is output directory).
 	 * @throws IOException
 	 */
-	public SourceDirectoryRoot(String path, BinaryDirectoryRoot outputDirectory) throws IOException {
+	public DirectoryRoot(String path, BinaryDirectoryRoot outputDirectory) throws IOException {
 		this.srcDirectory = new File(path);				
 		this.outputDirectory = outputDirectory;
 	}
@@ -75,7 +77,7 @@ public class SourceDirectoryRoot implements Path.Root {
 	 *            source directory is output directory).
 	 * @throws IOException
 	 */
-	public SourceDirectoryRoot(File dir, BinaryDirectoryRoot outputDirectory) throws IOException {
+	public DirectoryRoot(File dir, BinaryDirectoryRoot outputDirectory) throws IOException {
 		this.srcDirectory = dir;			
 		this.outputDirectory = outputDirectory;
 	}
@@ -133,18 +135,66 @@ public class SourceDirectoryRoot implements Path.Root {
 		return srcDirectory.getPath();
 	}
 	
-	public static class Entry extends BinaryDirectoryRoot.Entry
-			implements
-				Path.SourceEntry {
-		private Path.Entry binary;
-
-		public Entry(ModuleID mid, java.io.File file, Path.Entry binary) {
-			super(mid, file);
-			this.binary = binary;
+	/**
+	 * A WFile is a file on the file system which represents a Whiley module. The
+	 * file may be encoded in a range of different formats. For example, it may be a
+	 * source file and/or a binary wyil file.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class Entry<T> implements Path.Entry<T> {
+		private final ModuleID mid;
+		private final java.io.File file;
+		private ContentType<T> contentType;
+		private T contents;
+		private boolean modified;
+		
+		public Entry(ModuleID mid, java.io.File file) {
+			this.mid = mid;
+			this.file = file;
+			this.modified = false;
 		}
-
-		public Path.Entry binary() {
-			return binary;
+		
+		public ModuleID id() {
+			return mid;
+		}
+		
+		public String location() {
+			return file.getPath();
+		}
+		
+		public void touch() {
+			this.modified = true;
+		}
+		
+		public boolean isModified() {
+			return modified;
+		}
+		
+		public long lastModified() {
+			return file.lastModified();
+		}
+		
+		public String suffix() {
+			String filename = file.getName();
+			String suffix = "";
+			int pos = filename.lastIndexOf('.');
+			if (pos > 0) {
+				suffix = filename.substring(pos + 1);
+			}
+			return suffix;
+		}
+		
+		public T read() throws IOException {
+			if (contents == null) {
+				contents = contentType.read(new FileInputStream(file));
+			}
+			return contents;
+		}		
+		
+		public void write(T contents) throws IOException {
+			this.contents = contents; 
 		}
 	}
 	

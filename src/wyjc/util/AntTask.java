@@ -33,7 +33,7 @@ import wyc.builder.Pipeline;
 import wyc.util.path.BinaryDirectoryRoot;
 import wyc.util.path.JarFileRoot;
 import wyc.util.path.Path;
-import wyc.util.path.SourceDirectoryRoot;
+import wyc.util.path.DirectoryRoot;
 import wyil.Transform;
 import wyil.util.Logger;
 import wyil.util.SyntaxError;
@@ -122,7 +122,7 @@ public class AntTask extends MatchingTask {
     protected boolean compile() {
     	try {
     		// first, initialise sourcepath and whileypath
-    		List<SourceDirectoryRoot> sourcepath = initialiseSourcePath();
+    		List<DirectoryRoot> sourcepath = initialiseSourcePath();
     		List<Path.Root> whileypath = initialiseWhileyPath();
 
     		// second, construct the module loader    		
@@ -149,7 +149,7 @@ public class AntTask extends MatchingTask {
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
     		int count = 0;
-			for (SourceDirectoryRoot src : sourcepath) {
+			for (DirectoryRoot src : sourcepath) {
 				for (Path.SourceEntry e : src.list()) {
 					Path.Entry binary = e.binary();					
 					if (binary == null
@@ -189,13 +189,13 @@ public class AntTask extends MatchingTask {
     	
     }
     
-    protected List<SourceDirectoryRoot> initialiseSourcePath() throws IOException {
-    	ArrayList<SourceDirectoryRoot> sourcepath = new ArrayList<SourceDirectoryRoot>();
+    protected List<DirectoryRoot> initialiseSourcePath() throws IOException {
+    	ArrayList<DirectoryRoot> sourcepath = new ArrayList<DirectoryRoot>();
     	BinaryDirectoryRoot bindir = null;
     	if(destdir != null) {
     		bindir = new BinaryDirectoryRoot(destdir);
     	}
-    	sourcepath.add(new SourceDirectoryRoot(srcdir,bindir));    	
+    	sourcepath.add(new DirectoryRoot(srcdir,bindir));    	
     	return sourcepath;
     }
     

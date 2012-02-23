@@ -76,7 +76,7 @@ public class Path {
 	 * @author djp
 	 * 
 	 */
-	public interface Entry {
+	public interface Entry<T> {
 		public ModuleID id();
 
 		/**
@@ -115,20 +115,20 @@ public class Path {
 		public void touch();
 		
 		/**
-		 * Open the source file for reading.
+		 * Get the content type associated with this file.
 		 */
-		public InputStream contents() throws Exception;
-	}
-	
-	/**
-	 * A source entry represents a source file of some description.
-	 */
-	public interface SourceEntry extends Entry {
+		public ContentType<T> contentType;
+		
 		/**
-		 * Returns the binary entry associated with this source file.
-		 * 
-		 * @return
+		 * Read contents of file
 		 */
-		public Path.Entry binary();
-	}
+		public T read() throws Exception;
+		
+		/**
+		 * Write contents of file.
+		 * 
+		 * @param contents
+		 */
+		public void write(T contents) throws Exception;
+	}	
 }

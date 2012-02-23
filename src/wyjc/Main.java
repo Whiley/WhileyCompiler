@@ -180,16 +180,16 @@ public class Main {
 	 * @param sourcepath
 	 * @throws IOException
 	 */
-	public static ArrayList<SourceDirectoryRoot> initialiseSourceRoots(
+	public static ArrayList<DirectoryRoot> initialiseSourceRoots(
 			List<String> sourcepath, BinaryDirectoryRoot outputDirectory,
 			boolean verbose) throws IOException {
-		ArrayList<SourceDirectoryRoot> nitems = new ArrayList<SourceDirectoryRoot>();
+		ArrayList<DirectoryRoot> nitems = new ArrayList<DirectoryRoot>();
 		if (sourcepath.isEmpty()) {
-			nitems.add(new SourceDirectoryRoot(".", outputDirectory));
+			nitems.add(new DirectoryRoot(".", outputDirectory));
 		} else {			
 			for (String root : sourcepath) {
 				try {
-					nitems.add(new SourceDirectoryRoot(root,outputDirectory));					
+					nitems.add(new DirectoryRoot(root,outputDirectory));					
 				} catch (IOException e) {
 					if (verbose) {
 						System.err.println("Warning: " + root
@@ -282,7 +282,7 @@ public class Main {
 			if (outputdir != null) {
 				bindir = new BinaryDirectoryRoot(outputdir);
 			}
-			List<SourceDirectoryRoot> sourcepath = initialiseSourceRoots(
+			List<DirectoryRoot> sourcepath = initialiseSourceRoots(
 					(ArrayList) values.get("sourcepath"), bindir, verbose);
 			
 			// now initialise the whiley path			
@@ -315,7 +315,7 @@ public class Main {
 			project.setBuilder(new Builder(project,stages));		
 
 			// Now, touch all files indicated on command-line			
-			for(SourceDirectoryRoot src : sourcepath) {
+			for(DirectoryRoot src : sourcepath) {
 				File loc = src.location();
 				String locPath = loc.getCanonicalPath();
 				for (String _file : args) {

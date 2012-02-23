@@ -28,6 +28,8 @@ package wyc.lang;
 import java.util.*;
 
 import wyc.builder.Nominal;
+import wyc.util.path.ContentType;
+import wyc.util.path.Path;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
@@ -43,24 +45,52 @@ import wyil.util.SyntaxError;
  * 
  */
 public final class SourceFile {
+	
+	// =========================================================================
+	// Content Type
+	// =========================================================================
+	
+	public static final ContentType<SourceFile> WHILEY_FILE = new ContentType<SourceFile>() {
+		public Path.Entry<SourceFile> accept(Path.Entry<?> e) {
+			/*
+			if (e.contentType() == this) {
+				return (Path.Entry<SourceFile>) e;
+			} 
+			*/
+			return null;
+		}
+
+		public boolean matches(String suffix) {
+			return suffix.equals("whiley");
+		}
+	};
+
+	// =========================================================================
+	// State
+	// =========================================================================
+	
 	public final ModuleID module;
 	public final String filename;
 	public final ArrayList<Declaration> declarations;
+
+	// =========================================================================
+	// Constructors
+	// =========================================================================
 	
 	public SourceFile(ModuleID module, String filename) {
 		this.module = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
 	}
+
+	// =========================================================================
+	// Accessors
+	// =========================================================================
 	
 	public boolean hasName(String name) {
 		return declaration(name) != null;
 	}			
 
-	public void add(Declaration declaration) {
-		declarations.add(declaration);
-	}
-	
 	public Declaration declaration(String name) {
 		for(Declaration d : declarations) {
 			if(d.name().equals(name)) {
@@ -99,6 +129,18 @@ public final class SourceFile {
 		return null;
 	}
 		
+	// =========================================================================
+	// Mutators
+	// =========================================================================
+	
+	public void add(Declaration declaration) {
+		declarations.add(declaration);
+	}
+	
+	// =========================================================================
+	// Types
+	// =========================================================================		
+	
 	public interface Declaration extends SyntacticElement {
 		public String name();
 	}
