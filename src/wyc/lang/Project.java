@@ -209,8 +209,13 @@ public final class Project implements Logger,ModuleLoader {
 			Path.Entry entry = null;
 			for(Path.Root root : srcRoots) {
 				entry = root.lookup(module);
-				if(entry != null) {
-					break;
+				// FIXME: this seems like something of a hack.
+				if(entry instanceof Path.SourceEntry) {
+					Path.SourceEntry se = (Path.SourceEntry) entry;					
+					entry = se.binary();
+					if(entry != null) {
+						break;
+					}
 				}
 			}
 			for(Path.Root root : externalRoots) {
