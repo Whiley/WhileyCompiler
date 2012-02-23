@@ -347,7 +347,7 @@ public class ConstraintInline implements Transform {
 	}
 	
 	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws ResolveError {
-		Module m = loader.loadModule(name.module());				
+		Module m = loader.get(name.module());				
 		Module.Method method = m.method(name.name(),fun);
 	
 		for(Module.Case c : method.cases()) {

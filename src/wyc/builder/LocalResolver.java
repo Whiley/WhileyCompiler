@@ -920,7 +920,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			} catch (ResolveError err) {
 			}
 			PkgID pid = new PkgID(expr.var);
-			if (project.isPackage(pid)) {
+			if (builder.isPackage(pid)) {
 				return new Expr.PackageAccess(null, expr.var, pid,
 						expr.attributes());
 			}
@@ -1084,12 +1084,12 @@ public abstract class LocalResolver extends AbstractResolver {
 			// This variable access may correspond to an external access.			
 			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
 			PkgID pid = pa.pid.append(expr.name);
-			if (project.isPackage(pid)) {
+			if (builder.isPackage(pid)) {
 				return new Expr.PackageAccess(pa, expr.name, pid,
 						expr.attributes());
 			}			
 			ModuleID mid = new ModuleID(pa.pid,expr.name);
-			if (project.isModule(mid)) {
+			if (builder.isModule(mid)) {
 				return new Expr.ModuleAccess(pa, expr.name, mid,
 						expr.attributes());
 			} else {
@@ -1100,7 +1100,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			// must be a constant access
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 													
 			NameID nid = new NameID(ma.mid,expr.name);
-			if (project.isName(nid)) {
+			if (builder.isName(nid)) {
 				Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
 						expr.name, nid, expr.attributes());
 				ca.value = resolveAsConstant(nid);
@@ -1257,7 +1257,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		// first, try to find the matching message
 		for (SourceFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {				
-				for (ModuleID mid : project.imports(imp)) {					
+				for (ModuleID mid : builder.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
 				}
@@ -1275,7 +1275,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		// first, try to find the matching message
 		for (SourceFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {
-				for (ModuleID mid : project.imports(imp)) {					
+				for (ModuleID mid : builder.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateMessages(nid,parameters,candidates);					
 				}
@@ -1465,7 +1465,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		int nparams = parameters != null ? parameters.size() : -1;				
 
-		SourceFile wf = project.get(mid);
+		SourceFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
 			for (SourceFile.FunctionOrMethod f : wf.declarations(
 					SourceFile.FunctionOrMethod.class, nid.name())) {
@@ -1478,7 +1478,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			}
 		} else {
 			try {
-				Module m = project.loadModule(mid);
+				Module m = builder.getModule(mid);
 				for (Module.Method mm : m.methods()) {
 					if ((mm.isFunction() || mm.isMethod())
 							&& mm.name().equals(nid.name())
@@ -1512,7 +1512,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		int nparams = parameters != null ? parameters.size() : -1;
 
-		SourceFile wf = project.get(mid);
+		SourceFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
 			for (SourceFile.Message m : wf.declarations(
 					SourceFile.Message.class, nid.name())) {
@@ -1524,7 +1524,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			}
 		} else {
 			try {
-				Module m = project.loadModule(mid);
+				Module m = builder.getModule(mid);
 				for (Module.Method mm : m.methods()) {
 					if (mm.isMessage()
 							&& mm.name().equals(nid.name())

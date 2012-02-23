@@ -41,9 +41,8 @@ public final class Project implements Logger,ModuleLoader {
 	
 	/**
 	 * A map from module identifiers to module objects. This is the master cache
-	 * of modules which have been loaded during the compilation process. Once a
-	 * module has been entered into the moduletable, it will not be loaded
-	 * again.
+	 * of modules which have been loaded or compiled. Once a module has been
+	 * entered into the moduleCache, it will not be loaded again.
 	 */
 	private HashMap<ModuleID, Module> moduleCache = new HashMap<ModuleID, Module>();	
 	
@@ -190,46 +189,6 @@ public final class Project implements Logger,ModuleLoader {
 	}	
 	
 	/**
-	 * Return the module for the given id, or null if none-exists. This may
-	 * result in the module being loaded from the file-system.
-	 * 
-	 * @param mid
-	 * @return
-	 */
-	public Module get(ModuleID mid) throws Exception {
-		return moduleCache.get(mid);
-	}
-	
-	/**
-	 * Return the set of all modules in a given package.
-	 * 
-	 * @param pid
-	 *            --- package to list.
-	 * @return
-	 * @throws Exception
-	 */
-	public Set<ModuleID> get(PkgID pid) throws Exception {
-		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
-		
-		for(Path.Root root : srcRoots) {			
-			for (Path.Entry e : root.list(pid)) {
-				contents.add(e.id());
-			}
-		}
-		for(Path.Root root : externalRoots) {			
-			for (Path.Entry e : root.list(pid)) {
-				contents.add(e.id());
-			}
-		}
-
-		return contents;
-	}	
-			
-	// ======================================================================
-	// Private Implementation
-	// ======================================================================
-	
-	/**
 	 * This method attempts to load a whiley module. The module is searched for
 	 * on the WHILEYPATH. A resolve error is thrown if the module cannot be
 	 * found or otherwise loaded.
@@ -238,7 +197,7 @@ public final class Project implements Logger,ModuleLoader {
 	 *            The module to load
 	 * @return the loaded module
 	 */
-	public Module loadModule(ModuleID module) throws ResolveError {		
+	public Module get(ModuleID module) throws ResolveError {		
 		Module m = moduleCache.get(module);
 						
 		if (m != null) {
@@ -273,7 +232,36 @@ public final class Project implements Logger,ModuleLoader {
 		} catch(Exception e) {				
 			throw new ResolveError("Unable to find module: " + module,e);
 		}	
-	}		
+	}	
+	
+	/**
+	 * Return the set of all modules in a given package.
+	 * 
+	 * @param pid
+	 *            --- package to list.
+	 * @return
+	 * @throws Exception
+	 */
+	public Set<ModuleID> get(PkgID pid) throws Exception {
+		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
+		
+		for(Path.Root root : srcRoots) {			
+			for (Path.Entry e : root.list(pid)) {
+				contents.add(e.id());
+			}
+		}
+		for(Path.Root root : externalRoots) {			
+			for (Path.Entry e : root.list(pid)) {
+				contents.add(e.id());
+			}
+		}
+
+		return contents;
+	}	
+			
+	// ======================================================================
+	// Private Implementation
+	// ======================================================================		
 	
 	private Module readModuleInfo(Path.Entry entry) throws Exception {
 		Runtime runtime = Runtime.getRuntime();

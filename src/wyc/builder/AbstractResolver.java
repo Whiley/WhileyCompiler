@@ -23,7 +23,7 @@ import wyil.util.Triple;
 
 
 public abstract class AbstractResolver {	
-	protected final Builder project;
+	protected final Builder builder;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -33,7 +33,7 @@ public abstract class AbstractResolver {
 	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
 	
 	public AbstractResolver(Builder project) {				
-		this.project = project;
+		this.builder = project;
 	}
 	
 	// =========================================================================
@@ -199,7 +199,7 @@ public abstract class AbstractResolver {
 			NameID nid = nt.name();			
 			ModuleID mid = nid.module();
 
-			SourceFile wf = project.get(mid);
+			SourceFile wf = builder.getSourceFile(mid);
 			Type r = null;
 
 			if (wf != null) {			
@@ -210,7 +210,7 @@ public abstract class AbstractResolver {
 							.nominal();
 				} 
 			} else {
-				Module m = project.loadModule(mid);
+				Module m = builder.getModule(mid);
 				Module.TypeDef td = m.type(nid.name());
 				if(td != null) {
 					r = td.type();

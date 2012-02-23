@@ -13,7 +13,7 @@ import java.util.*;
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
 import wyc.lang.Expr;
-import wyc.lang.Builder;
+import wyc.builder.Builder;
 import wyc.lang.UnresolvedType;
 import wyc.lang.SourceFile;
 import wyil.ModuleLoader;
@@ -44,7 +44,7 @@ public class GlobalResolver extends LocalResolver {
 	}
 	
 	public Builder loader() {
-		return project;		
+		return builder;		
 	}
 	
 	// =========================================================================
@@ -69,9 +69,9 @@ public class GlobalResolver extends LocalResolver {
 			throws ResolveError {		
 		for (SourceFile.Import imp : context.imports()) {			
 			if (imp.matchName(name)) {
-				for (ModuleID mid : project.imports(imp)) {					
+				for (ModuleID mid : builder.imports(imp)) {					
 					NameID nid = new NameID(mid, name); 					
-					if (project.isName(nid)) {
+					if (builder.isName(nid)) {
 						return nid;
 					}					
 				}
@@ -105,7 +105,7 @@ public class GlobalResolver extends LocalResolver {
 			String name = names.get(1);
 			ModuleID mid = resolveAsModule(names.get(0),context);		
 			NameID nid = new NameID(mid, name); 
-			if (project.isName(nid)) {
+			if (builder.isName(nid)) {
 				return nid;
 			} 
 		} else {
@@ -114,7 +114,7 @@ public class GlobalResolver extends LocalResolver {
 			PkgID pkg = new PkgID(names.subList(0,names.size()-2));
 			ModuleID mid = new ModuleID(pkg,module);
 			NameID nid = new NameID(mid, name); 
-			if (project.isName(nid)) {
+			if (builder.isName(nid)) {
 				return nid;
 			} 			
 		}
@@ -145,7 +145,7 @@ public class GlobalResolver extends LocalResolver {
 			throws ResolveError {
 		
 		for (SourceFile.Import imp : context.imports()) {			
-			for(ModuleID mid : project.imports(imp)) {				
+			for(ModuleID mid : builder.imports(imp)) {				
 				if(mid.module().equals(name)) {
 					return mid;
 				}
@@ -407,13 +407,13 @@ public class GlobalResolver extends LocalResolver {
 		if (root != null) { return root; } 		
 		
 		// check whether this type is external or not
-		SourceFile wf = project.get(key.module());
+		SourceFile wf = builder.getSourceFile(key.module());
 		if (wf == null) {						
 			// indicates a non-local key which we can resolve immediately	
 			
 			// FIXME: need to properly support unconstrained types here
 			
-			Module mi = project.loadModule(key.module());
+			Module mi = builder.getModule(key.module());
 			Module.TypeDef td = mi.type(key.name());	
 			return append(td.type(),states);			
 		} 
@@ -551,7 +551,7 @@ public class GlobalResolver extends LocalResolver {
 			visited.add(key);
 		}
 
-		SourceFile wf = project.get(key.module());
+		SourceFile wf = builder.getSourceFile(key.module());
 
 		if (wf != null) {			
 			SourceFile.Declaration decl = wf.declaration(key.name());
@@ -567,7 +567,7 @@ public class GlobalResolver extends LocalResolver {
 				throw new ResolveError("unable to find constant " + key);
 			}
 		} else {		
-			Module module = project.loadModule(key.module());
+			Module module = builder.getModule(key.module());
 			Module.ConstDef cd = module.constant(key.name());
 			if(cd != null) {
 				result = cd.constant();

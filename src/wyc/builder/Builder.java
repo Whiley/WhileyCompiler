@@ -122,6 +122,17 @@ public final class Builder {
 		project.logTimedMessage("Compiled " + delta.size() + " file(s)",endTime-start, memory - runtime.freeMemory());		
 	}
 	
+	// ======================================================================
+	// Public Accessors
+	// ======================================================================
+	
+	public boolean isPackage(PkgID pid) {
+		return project.isPackage(pid);
+	}
+	
+	public boolean isModule(ModuleID mid) {
+		return project.isModule(mid);
+	}
 	
 	/**
 	 * Determine whether a given name exists or not.
@@ -129,7 +140,7 @@ public final class Builder {
 	 * @param nid --- Name ID to check
 	 * @return
 	 */
-	public boolean isName(NameID nid) throws Exception {
+	public boolean isName(NameID nid) throws ResolveError {
 		ModuleID mid = nid.module();
 		SourceFile wf = srcFiles.get(mid);
 		if(wf != null) {
@@ -153,27 +164,58 @@ public final class Builder {
 	 * @param imp
 	 * @return
 	 */
-	public List<ModuleID> imports(SourceFile.Import imp) throws Exception {
+	public List<ModuleID> imports(SourceFile.Import imp) throws ResolveError {
 		Triple<PkgID, String, String> key = new Triple<PkgID, String, String>(
 				imp.pkg, imp.module, imp.name);
-		ArrayList<ModuleID> matches = importCache.get(key);
-		if (matches != null) {
-			// cache hit
-			return matches;
-		} else {
-			// cache miss
-			matches = new ArrayList<ModuleID>();
-			if(project.isPackage(imp.pkg)) {						
-				for (ModuleID mid : project.get(imp.pkg)) {
-					if (imp.matchModule(mid.module())) {
-						matches.add(mid);
-					}
-				}				
+		try {
+			ArrayList<ModuleID> matches = importCache.get(key);
+			if (matches != null) {
+				// cache hit
+				return matches;
+			} else {
+				// cache miss
+				matches = new ArrayList<ModuleID>();
+				if(project.isPackage(imp.pkg)) {						
+					for (ModuleID mid : project.get(imp.pkg)) {
+						if (imp.matchModule(mid.module())) {
+							matches.add(mid);
+						}
+					}				
+				}
+				importCache.put(key, matches);
 			}
-			importCache.put(key, matches);
+			
+			return matches;
+		} catch(ResolveError e) {
+			throw e;
+		} catch(Exception e) {
+			throw new ResolveError(e.getMessage(),e);
 		}
-		return matches;
 	}	
+	
+	/**
+	 * Get the source file associated with a given module identifier. If the
+	 * source file does not exist, null is returned.
+	 * 
+	 * @param mid
+	 * @return
+	 * @throws Exception
+	 */
+	public SourceFile getSourceFile(ModuleID mid) {
+		return srcFiles.get(mid);
+	}
+	
+	/**
+	 * Get the (compiled) module associated with a given module identifier. If
+	 * the module does not exist, a resolve error is thrown.
+	 * 
+	 * @param mid
+	 * @return
+	 * @throws Exception
+	 */
+	public Module getModule(ModuleID mid) throws ResolveError {
+		return project.get(mid);
+	}
 	
 	// ======================================================================
 	// Private Implementation
