@@ -36,14 +36,16 @@ import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
 public class DirectoryRoot implements Path.Root {
-	private static final FileFilter filter = new FileFilter() {
+	
+	public final static FileFilter NULL_FILTER = new FileFilter() {
 		public boolean accept(File file) {
-			return file.getName().endsWith(".whiley");
+			return true;
 		}
 	};
 	
+	private final FileFilter filter;	
+	private final ContentType.Factory contentTypes;
 	private final java.io.File srcDirectory;	
-	private final BinaryDirectoryRoot outputDirectory;
 	private HashMap<PkgID,ArrayList<Entry>> cache = null;
 	
 	/**
@@ -54,14 +56,12 @@ public class DirectoryRoot implements Path.Root {
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
-	 * @param outputDirectory
-	 *            --- the output directory for this source directory (or null if
-	 *            source directory is output directory).
 	 * @throws IOException
 	 */
-	public DirectoryRoot(String path, BinaryDirectoryRoot outputDirectory) throws IOException {
+	public DirectoryRoot(String path, ContentType.Factory contentTypes) throws IOException {
 		this.srcDirectory = new File(path);				
-		this.outputDirectory = outputDirectory;
+		this.filter = NULL_FILTER;
+		this.contentTypes = contentTypes;
 	}
 	
 	/**
@@ -72,14 +72,48 @@ public class DirectoryRoot implements Path.Root {
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
-	 * @param outputDirectory
-	 *            --- the output directory for this source directory (or null if
-	 *            source directory is output directory).
+	 * @param filter
+	 *            --- filter on which files are included.
 	 * @throws IOException
 	 */
-	public DirectoryRoot(File dir, BinaryDirectoryRoot outputDirectory) throws IOException {
+	public DirectoryRoot(String path, FileFilter filter, ContentType.Factory contentTypes) throws IOException {
+		this.srcDirectory = new File(path);				
+		this.filter = filter;
+		this.contentTypes = contentTypes;
+	}
+
+	/**
+	 * Construct a directory root from a filesystem path expressed as a string,
+	 * and an appropriate file filter. In converting the path to a File object,
+	 * an IOException may arise if it is an invalid path.
+	 * 
+	 * @param path
+	 *            --- location of directory on filesystem, expressed as a native
+	 *            path (i.e. separated using File.separatorChar, etc)
+	 * @throws IOException
+	 */
+	public DirectoryRoot(File dir, ContentType.Factory contentTypes) throws IOException {
 		this.srcDirectory = dir;			
-		this.outputDirectory = outputDirectory;
+		this.filter = NULL_FILTER;
+		this.contentTypes = contentTypes;
+	}
+	
+	/**
+	 * Construct a directory root from a filesystem path expressed as a string,
+	 * and an appropriate file filter. In converting the path to a File object,
+	 * an IOException may arise if it is an invalid path.
+	 * 
+	 * @param path
+	 *            --- location of directory on filesystem, expressed as a native
+	 *            path (i.e. separated using File.separatorChar, etc)
+	 * @param filter
+	 *            --- filter on which files are included.
+	 * @throws IOException
+	 */
+	public DirectoryRoot(File dir, FileFilter filter, ContentType.Factory contentTypes) throws IOException {
+		this.srcDirectory = dir;			
+		this.filter = filter;
+		this.contentTypes = contentTypes;
 	}
 	
 	public File location() {
@@ -114,17 +148,16 @@ public class DirectoryRoot implements Path.Root {
 		return cache.get(pkg);
 	}
 		
-	public <T extends Path.Entry> T get(ModuleID mid, ContentType<T> ct) throws IOException {
+	public <T> Path.Entry<T> get(ModuleID mid, ContentType<T> ct) throws IOException {
 		if(cache == null) {
 			cache = new HashMap<PkgID,ArrayList<Entry>>();
 			traverse(srcDirectory,PkgID.ROOT);
 		}
 		ArrayList<Entry> contents = cache.get(mid.pkg());
 		if(contents != null) {			
-			for(Entry e : contents) {
-				T t = ct.accept(e);
-				if(t != null && e.id().equals(mid)) {					
-					return t;
+			for(Entry e : contents) {				
+				if (e.id().equals(mid) && ct.matches(e.suffix())) {
+					return e;
 				}
 			}			
 		}
@@ -146,14 +179,14 @@ public class DirectoryRoot implements Path.Root {
 	public static class Entry<T> implements Path.Entry<T> {
 		private final ModuleID mid;
 		private final java.io.File file;
-		private ContentType<T> contentType;
+		private final ContentType<T> contentType;
 		private T contents;
-		private boolean modified;
+		private boolean modified = false;
 		
-		public Entry(ModuleID mid, java.io.File file) {
+		public Entry(ModuleID mid, java.io.File file, ContentType<T> contentType) {
 			this.mid = mid;
 			this.file = file;
-			this.modified = false;
+			this.contentType = contentType;
 		}
 		
 		public ModuleID id() {
@@ -186,6 +219,10 @@ public class DirectoryRoot implements Path.Root {
 			return suffix;
 		}
 		
+		public ContentType<T> contentType() {
+			return contentType;
+		}
+		
 		public T read() throws IOException {
 			if (contents == null) {
 				contents = contentType.read(new FileInputStream(file));
@@ -216,25 +253,12 @@ public class DirectoryRoot implements Path.Root {
 				if(file.isDirectory()) {
 					traverse(file,pkg.append(file.getName()));
 				} else if(filter.accept(file)) {					
-					String filename = file.getName();					
-					String name = filename.substring(0, filename.lastIndexOf('.'));
-					ModuleID mid = new ModuleID(pkg, name);					
-					BinaryDirectoryRoot.Entry binEntry = null;
-
-					// Now, see if there exists a binary version of this file which has
-					// a modification date no earlier. Binary files are always preferred
-					// over source entries.
-
-					if (outputDirectory != null) {
-						binEntry = outputDirectory.get(mid);					
-					} else {
-						File binFile = new File(path + File.separatorChar + name + ".class");
-						if(binFile.exists()) {
-							binEntry = new BinaryDirectoryRoot.Entry(mid,binFile);
-						}
-					}
-
-					entries.add(new Entry(mid, file, binEntry));					
+					String filename = file.getName();	
+					int i = filename.lastIndexOf('.');
+					String name = filename.substring(0, i);
+					String suffix = filename.substring(i+1);
+					ModuleID mid = new ModuleID(pkg, name);										
+					entries.add(new Entry(mid, file, contentTypes.get(suffix)));					
 				}				
 			}	
 			cache.put(pkg, entries);

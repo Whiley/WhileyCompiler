@@ -32,7 +32,7 @@ import java.util.*;
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
-public class Path {
+public interface Path {
 	
 	public interface Root {		
 		
@@ -49,7 +49,7 @@ public class Path {
 		 * @return
 		 * @throws IOException
 		 */
-		public <T extends Entry> T get(ModuleID mid, ContentType<T> ct) throws Exception;
+		public <T> Path.Entry<T> get(ModuleID mid, ContentType<T> ct) throws Exception;
 		
 		/**
 		 * List contents of a given package.
@@ -117,7 +117,7 @@ public class Path {
 		/**
 		 * Get the content type associated with this file.
 		 */
-		public ContentType<T> contentType;
+		public ContentType<T> contentType();
 		
 		/**
 		 * Read contents of file
