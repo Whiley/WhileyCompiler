@@ -260,7 +260,10 @@ public final class Builder {
 	 * 
 	 * @param wf
 	 */
-	private void finishCompilation(List<Module> modules) throws Exception {				
+	private void finishCompilation(List<Module> modules) throws Exception {	
+		for(Module m : modules) {
+			project.update(m);
+		}
 		for(Transform stage : stages) {
 			for(Module module : modules) {
 				process(module,stage);
