@@ -108,14 +108,18 @@ public class BinaryDirectoryRoot implements Path.Root {
 		}
 	}
 	
-	public Entry lookup(ModuleID mid) throws IOException {
+	public <T extends Path.Entry> T get(ModuleID mid, ContentType<T> ct) throws IOException {
 		File location = new File(dir + File.separator + mid.fileName()
 				+ ".class");
 		if (location.exists()) {
-			return new Entry(mid, location);
-		} else {
-			return null; // not found
+			Entry e = new Entry(mid, location); 		
+			T t = ct.accept(e);
+			if(t != null && e.id().equals(mid)) {
+				return t;
+			}
 		}
+		
+		return null; // not found		
 	}
 
 	public String toString() {

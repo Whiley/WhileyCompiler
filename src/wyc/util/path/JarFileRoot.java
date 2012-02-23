@@ -97,14 +97,17 @@ public final class JarFileRoot implements Path.Root {
 		return contents;
 	}
 	
-	public Entry lookup(ModuleID mid) throws IOException {
+	public <T extends Path.Entry> T get(ModuleID mid, ContentType<T> ct) throws IOException {
 		String filename = mid.toString().replace('.', '/') + ".class";
 		JarEntry entry = jf.getJarEntry(filename);
 		if(entry != null) {
-			return new Entry(mid,jf,entry);
-		} else {
-			return null;
-		}
+			Entry e = new Entry(mid,jf,entry);
+			T t = ct.accept(e);
+			if(t != null) {
+				return t;
+			}
+		} 
+		return null;		
 	}
 	
 	public String toString() {

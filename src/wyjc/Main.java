@@ -328,7 +328,7 @@ public class Main {
 						String module = filePath.substring(end).replace(File.separatorChar, '.');
 						module = module.substring(0,module.length()-7);						
 						ModuleID mid = ModuleID.fromString(module);			
-						Path.Entry entry = src.lookup(mid);
+						Path.Entry entry = src.get(mid);
 						if(entry == null) {
 							throw new FileNotFoundException(_file);
 						} else {

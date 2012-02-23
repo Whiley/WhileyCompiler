@@ -112,7 +112,7 @@ public class SourceDirectoryRoot implements Path.Root {
 		return cache.get(pkg);
 	}
 		
-	public Entry lookup(ModuleID mid) throws IOException {
+	public <T extends Path.Entry> T get(ModuleID mid, ContentType<T> ct) throws IOException {
 		if(cache == null) {
 			cache = new HashMap<PkgID,ArrayList<Entry>>();
 			traverse(srcDirectory,PkgID.ROOT);
@@ -120,8 +120,9 @@ public class SourceDirectoryRoot implements Path.Root {
 		ArrayList<Entry> contents = cache.get(mid.pkg());
 		if(contents != null) {			
 			for(Entry e : contents) {
-				if(e.id().equals(mid)) {
-					return e;
+				T t = ct.accept(e);
+				if(t != null && e.id().equals(mid)) {					
+					return t;
 				}
 			}			
 		}
@@ -175,7 +176,7 @@ public class SourceDirectoryRoot implements Path.Root {
 					// over source entries.
 
 					if (outputDirectory != null) {
-						binEntry = outputDirectory.lookup(mid);					
+						binEntry = outputDirectory.get(mid);					
 					} else {
 						File binFile = new File(path + File.separatorChar + name + ".class");
 						if(binFile.exists()) {

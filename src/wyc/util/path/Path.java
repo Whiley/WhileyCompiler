@@ -49,7 +49,7 @@ public class Path {
 		 * @return
 		 * @throws IOException
 		 */
-		public Entry lookup(ModuleID mid) throws Exception;
+		public <T extends Entry> T get(ModuleID mid, ContentType<T> ct) throws Exception;
 		
 		/**
 		 * List contents of a given package.

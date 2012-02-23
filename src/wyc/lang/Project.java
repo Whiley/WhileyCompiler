@@ -173,12 +173,12 @@ public final class Project implements Logger,ModuleLoader {
 	public boolean isModule(ModuleID mid) {
 		try {
 			for(Path.Root root : srcRoots) {
-				if(root.lookup(mid) != null) {
+				if(root.get(mid) != null) {
 					return true;
 				}
 			}
 			for(Path.Root root : externalRoots) {
-				if(root.lookup(mid) != null) {
+				if(root.get(mid) != null) {
 					return true;
 				}
 			}
@@ -208,7 +208,7 @@ public final class Project implements Logger,ModuleLoader {
 			// ok, now look for module inside package roots.
 			Path.Entry entry = null;
 			for(Path.Root root : srcRoots) {
-				entry = root.lookup(module);
+				entry = root.get(module);
 				// FIXME: this seems like something of a hack.
 				if(entry instanceof Path.SourceEntry) {
 					Path.SourceEntry se = (Path.SourceEntry) entry;					
@@ -219,7 +219,7 @@ public final class Project implements Logger,ModuleLoader {
 				}
 			}
 			for(Path.Root root : externalRoots) {
-				entry = root.lookup(module);
+				entry = root.get(module);
 				if(entry != null) {
 					break;
 				}
