@@ -30,7 +30,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.*;
 
-import wyc.util.path.BinaryDirectoryRoot.Entry;
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
@@ -133,6 +132,21 @@ public class SourceDirectoryRoot implements Path.Root {
 		return srcDirectory.getPath();
 	}
 	
+	public static class Entry extends BinaryDirectoryRoot.Entry
+			implements
+				Path.SourceEntry {
+		private Path.Entry binary;
+
+		public Entry(ModuleID mid, java.io.File file, Path.Entry binary) {
+			super(mid, file);
+			this.binary = binary;
+		}
+
+		public Path.Entry binary() {
+			return binary;
+		}
+	}
+	
 	/**
 	 * Recursively traverse a file system from a given location.
 	 * 
@@ -152,9 +166,8 @@ public class SourceDirectoryRoot implements Path.Root {
 				} else if(filter.accept(file)) {					
 					String filename = file.getName();					
 					String name = filename.substring(0, filename.lastIndexOf('.'));
-					ModuleID mid = new ModuleID(pkg, name);
-					Entry srcEntry = new Entry(mid, file);
-					Entry binEntry = null;
+					ModuleID mid = new ModuleID(pkg, name);					
+					BinaryDirectoryRoot.Entry binEntry = null;
 
 					// Now, see if there exists a binary version of this file which has
 					// a modification date no earlier. Binary files are always preferred
@@ -165,15 +178,11 @@ public class SourceDirectoryRoot implements Path.Root {
 					} else {
 						File binFile = new File(name + ".class");
 						if(binFile.exists()) {
-							binEntry = new Entry(mid,binFile);
+							binEntry = new BinaryDirectoryRoot.Entry(mid,binFile);
 						}
 					}
 
-					if (binEntry != null && binEntry.lastModified() >= srcEntry.lastModified()) {
-						entries.add(binEntry);
-					} else {
-						entries.add(srcEntry);
-					}
+					entries.add(new Entry(mid, file, binEntry));					
 				}				
 			}	
 			cache.put(pkg, entries);

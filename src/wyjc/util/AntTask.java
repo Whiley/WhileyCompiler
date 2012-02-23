@@ -149,7 +149,7 @@ public class AntTask extends MatchingTask {
     protected boolean compile(ArrayList<File> srcfiles) {
     	try {
     		// first, initialise sourcepath and whileypath
-    		List<Path.Root> sourcepath = initialiseSourcePath();
+    		List<SourceDirectoryRoot> sourcepath = initialiseSourcePath();
     		List<Path.Root> whileypath = initialiseWhileyPath();
 
     		// second, construct the module loader    		
@@ -172,6 +172,18 @@ public class AntTask extends MatchingTask {
     		
     		// fourth initialise the builder
     		project.setBuilder(new Builder(project,stages));
+    		
+			// Now, touch all source files which have modification date after
+			// their corresponding binary.			
+			for (SourceDirectoryRoot src : sourcepath) {
+				for (Path.SourceEntry e : src.list()) {
+					Path.Entry binary = e.binary();
+					if (binary == null
+							|| binary.lastModified() < e.lastModified()) {
+						e.touch();
+					}
+				}
+			}
     		
     		// finally, compile away!
     		project.build();
@@ -198,8 +210,8 @@ public class AntTask extends MatchingTask {
     	}
     }
     
-    protected List<Path.Root> initialiseSourcePath() throws IOException {
-    	ArrayList<Path.Root> sourcepath = new ArrayList<Path.Root>();
+    protected List<SourceDirectoryRoot> initialiseSourcePath() throws IOException {
+    	ArrayList<SourceDirectoryRoot> sourcepath = new ArrayList<SourceDirectoryRoot>();
     	BinaryDirectoryRoot bindir = null;
     	if(destdir != null) {
     		bindir = new BinaryDirectoryRoot(destdir);

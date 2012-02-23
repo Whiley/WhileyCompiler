@@ -119,4 +119,16 @@ public class Path {
 		 */
 		public InputStream contents() throws Exception;
 	}
+	
+	/**
+	 * A source entry represents a source file of some description.
+	 */
+	public interface SourceEntry extends Entry {
+		/**
+		 * Returns the binary entry associated with this source file.
+		 * 
+		 * @return
+		 */
+		public Path.Entry binary();
+	}
 }
