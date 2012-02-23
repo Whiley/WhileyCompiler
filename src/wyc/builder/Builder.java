@@ -87,7 +87,7 @@ public final class Builder {
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	private HashMap<ModuleID,SourceFile> srcFiles;
+	private HashMap<ModuleID,SourceFile> srcFiles = new HashMap<ModuleID,SourceFile>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -108,6 +108,7 @@ public final class Builder {
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 				
+		srcFiles.clear();
 		ArrayList<SourceFile> wyfiles = new ArrayList<SourceFile>();
 		for (Path.Entry f : delta) {
 			SourceFile wf = parse(f);
@@ -243,7 +244,7 @@ public final class Builder {
 
 		WhileyParser wfr = new WhileyParser(file.id().toString() + ".whiley",
 				tokens);
-		project.logTimedMessage("[" + file + "] Parsing complete",
+		project.logTimedMessage("[" + file.location() + "] Parsing complete",
 				System.currentTimeMillis() - start,
 				memory - runtime.freeMemory());
 
