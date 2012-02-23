@@ -1252,8 +1252,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
 			List<Nominal> parameters, Context context) throws ResolveError {
 
-		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 
-
+		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 		
 		// first, try to find the matching message
 		for (SourceFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {				
@@ -1359,9 +1358,8 @@ public abstract class LocalResolver extends AbstractResolver {
 		}
 
 		NameID candidateID = null;
-		Nominal.FunctionOrMethod candidateType = null;			
-
-		for (Pair<NameID,Nominal.FunctionOrMethod> p : candidates) {
+		Nominal.FunctionOrMethod candidateType = null;					
+		for (Pair<NameID,Nominal.FunctionOrMethod> p : candidates) {			
 			Nominal.FunctionOrMethod nft = p.second();
 			Type.FunctionOrMethod ft = nft.raw();			
 			if (parameters == null || paramSubtypes(ft, target)) {

@@ -112,41 +112,14 @@ public class AntTask extends MatchingTask {
         log("dir = " + srcdir, Project.MSG_DEBUG);
 
        
-        ArrayList<File> srcfiles = findSourceFiles();
-        if(!srcfiles.isEmpty()) {
-        	log("Compiling " + srcfiles.size() + " source file(s)"); 	
-	                	        	
-        	if(!compile(srcfiles)) {
-        		throw new BuildException("compilation errors");
-        	}        	
-        }
-        
+        if(!compile()) {
+        	throw new BuildException("compilation errors");
+        }        	
+                
         srcdir = null; // release file
     }
-    
-	protected ArrayList<File> findSourceFiles() {
-		DirectoryScanner ds = getDirectoryScanner(srcdir);
-		ArrayList<File> srcfiles = new ArrayList<File>();
-		
-		for (String f : ds.getIncludedFiles()) {			
-			File srcfile = new File(srcdir.getPath() + File.separatorChar + f);
-			File bindir;
-			if (destdir != null) {
-				bindir = destdir;
-			} else {
-				bindir = srcdir;
-			}
-			File binfile = new File(bindir.getPath() + File.separatorChar
-					+ f.replace(".whiley", ".class"));
-			if (srcfile.lastModified() > binfile.lastModified()) {
-				srcfiles.add(srcfile);
-			}
-		}
-
-		return srcfiles;
-	}
-    
-    protected boolean compile(ArrayList<File> srcfiles) {
+    	
+    protected boolean compile() {
     	try {
     		// first, initialise sourcepath and whileypath
     		List<SourceDirectoryRoot> sourcepath = initialiseSourcePath();
@@ -174,17 +147,21 @@ public class AntTask extends MatchingTask {
     		project.setBuilder(new Builder(project,stages));
     		
 			// Now, touch all source files which have modification date after
-			// their corresponding binary.			
+			// their corresponding binary.	
+    		int count = 0;
 			for (SourceDirectoryRoot src : sourcepath) {
 				for (Path.SourceEntry e : src.list()) {
-					Path.Entry binary = e.binary();
+					Path.Entry binary = e.binary();					
 					if (binary == null
 							|| binary.lastModified() < e.lastModified()) {
+						count++;
 						e.touch();
 					}
 				}
 			}
     		
+			log("Compiling " + count + " source file(s)");
+			
     		// finally, compile away!
     		project.build();
     		
@@ -208,6 +185,8 @@ public class AntTask extends MatchingTask {
     		}
     		return false;
     	}
+    	
+    	
     }
     
     protected List<SourceDirectoryRoot> initialiseSourcePath() throws IOException {

@@ -61,9 +61,7 @@ public final class WhileyParser {
 		ArrayList<String> pkg = parsePackage();
 
 		// Now, figure out module name from filename
-		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 7);
-
+		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-7);		
 		SourceFile wf = new SourceFile(new ModuleID(pkg,name),filename);
 		
 		while(index < tokens.size()) {			

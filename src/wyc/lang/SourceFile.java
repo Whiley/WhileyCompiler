@@ -146,8 +146,7 @@ public final class SourceFile {
 				} else if(d instanceof Import) {
 					imports.add((Import)d);
 				}
-			}
-			
+			}			
 			imports.add(new SourceFile.Import(module.pkg(), module.module(), "*")); 
 
 			Collections.reverse(imports);	

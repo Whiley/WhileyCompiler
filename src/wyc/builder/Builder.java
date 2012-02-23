@@ -110,7 +110,7 @@ public final class Builder {
 				
 		srcFiles.clear();
 		ArrayList<SourceFile> wyfiles = new ArrayList<SourceFile>();
-		for (Path.Entry f : delta) {
+		for (Path.Entry f : delta) {			
 			SourceFile wf = parse(f);
 			wyfiles.add(wf);
 			srcFiles.put(wf.module, wf);
@@ -242,7 +242,7 @@ public final class Builder {
 		List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer
 				.scan());
 
-		WhileyParser wfr = new WhileyParser(file.id().toString() + ".whiley",
+		WhileyParser wfr = new WhileyParser(file.location().toString(),
 				tokens);
 		project.logTimedMessage("[" + file.location() + "] Parsing complete",
 				System.currentTimeMillis() - start,

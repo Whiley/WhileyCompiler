@@ -160,6 +160,7 @@ public class SourceDirectoryRoot implements Path.Root {
 	private void traverse(File location, PkgID pkg) throws IOException {
 		if (location.exists() && location.isDirectory()) {			
 			ArrayList<Entry> entries = new ArrayList<Entry>();
+			String path = location.getPath();
 			for (File file : location.listFiles()) {						
 				if(file.isDirectory()) {
 					traverse(file,pkg.append(file.getName()));
@@ -176,7 +177,7 @@ public class SourceDirectoryRoot implements Path.Root {
 					if (outputDirectory != null) {
 						binEntry = outputDirectory.lookup(mid);					
 					} else {
-						File binFile = new File(name + ".class");
+						File binFile = new File(path + File.separatorChar + name + ".class");
 						if(binFile.exists()) {
 							binEntry = new BinaryDirectoryRoot.Entry(mid,binFile);
 						}
