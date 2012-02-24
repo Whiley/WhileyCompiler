@@ -25,10 +25,13 @@
 
 package wyc.util.path;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.*;
 
+import wyc.util.path.DirectoryRoot.Entry;
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
@@ -123,7 +126,7 @@ public interface Path {
 		 * Read contents of file
 		 */
 		public T read() throws Exception;
-		
+			
 		/**
 		 * Write contents of file.
 		 * 
@@ -131,4 +134,121 @@ public interface Path {
 		 */
 		public void write(T contents) throws Exception;
 	}	
+	
+	public static abstract class AbstractEntry<T> implements Entry<T> {
+		private final ModuleID mid;		
+		private final ContentType<T> contentType;
+		private T contents = null;
+		private boolean modified = false;
+		
+		public AbstractEntry(ModuleID mid, ContentType<T> contentType) {
+			this.mid = mid;
+			this.contentType = contentType;
+		}
+		
+		public ModuleID id() {
+			return mid;
+		}
+		
+		public void touch() {
+			this.modified = true;
+		}
+		
+		public boolean isModified() {
+			return modified;
+		}
+		
+		public ContentType<T> contentType() {
+			return contentType;
+		}
+		
+		public T read() throws Exception {
+			if (contents == null) {
+				contents = contentType.read(inputStream());
+			}
+			return contents;
+		}		
+				
+		public void write(T contents) throws Exception {
+			this.contents = contents; 
+		}
+		
+		/**
+		 * Open a generic input stream to the entry.
+		 * 
+		 * @return
+		 * @throws Exception
+		 */
+		public abstract InputStream inputStream() throws Exception;
+		
+		/**
+		 * Open a generic output stream to the entry.
+		 * 
+		 * @return
+		 * @throws Exception
+		 */
+		public abstract OutputStream outputStream() throws Exception;
+	}
+	
+	public static abstract class AbstractRoot implements Root {
+		protected final ContentType.Registry contentTypes;
+		private Path.Entry[] contents = null;
+		
+		public AbstractRoot(ContentType.Registry contentTypes) {
+			this.contentTypes = contentTypes;
+		}
+		
+		public boolean exists(PkgID pkg) throws Exception {
+			if(contents == null) {
+				contents = contents();
+			}
+			for(Path.Entry e : contents) {
+				if(e.id().pkg().equals(pkg)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		public List<Entry> list() throws Exception {
+			if(contents == null) {
+				contents = contents();
+			}	
+			ArrayList<Entry> entries = new ArrayList<Entry>();			
+			for(Path.Entry e : contents) {
+				entries.add(e);
+			}
+			return entries;
+		}
+		
+		public List<Entry> list(PkgID pkg) throws Exception {
+			if(contents == null) {
+				contents = contents();
+			}	
+			ArrayList<Entry> entries = new ArrayList<Entry>();			
+			for(Path.Entry e : contents) {
+				if(e.id().pkg().equals(pkg)) {
+					entries.add(e);
+				}
+			}
+			return entries;			
+		}
+		
+		public <T> Path.Entry<T> get(ModuleID mid, ContentType<T> ct) throws Exception {
+			if(contents == null) {
+				contents = contents();
+			}
+			for(Path.Entry e : contents) {
+				if (e.id().equals(mid) && ct.matches(e.suffix())) {
+					return e;
+				}				
+			}
+			return null;
+		}
+		
+		/**
+		 * Extract all entries from the given type.
+		 */
+		protected abstract Path.Entry[] contents() throws Exception;
+	}
 }

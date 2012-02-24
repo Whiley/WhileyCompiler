@@ -25,17 +25,13 @@
 
 package wyc.util.path;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 
-public class DirectoryRoot implements Path.Root {
+public final class DirectoryRoot extends Path.AbstractRoot {
 	
 	public final static FileFilter NULL_FILTER = new FileFilter() {
 		public boolean accept(File file) {
@@ -43,10 +39,8 @@ public class DirectoryRoot implements Path.Root {
 		}
 	};
 	
-	private final FileFilter filter;	
-	private final ContentType.Factory contentTypes;
-	private final java.io.File srcDirectory;	
-	private HashMap<PkgID,ArrayList<Entry>> cache = null;
+	private final FileFilter filter;		
+	private final java.io.File srcDirectory;		
 	
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
@@ -58,10 +52,10 @@ public class DirectoryRoot implements Path.Root {
 	 *            path (i.e. separated using File.separatorChar, etc)
 	 * @throws IOException
 	 */
-	public DirectoryRoot(String path, ContentType.Factory contentTypes) throws IOException {
+	public DirectoryRoot(String path, ContentType.Registry contentTypes) throws IOException {
+		super(contentTypes);
 		this.srcDirectory = new File(path);				
-		this.filter = NULL_FILTER;
-		this.contentTypes = contentTypes;
+		this.filter = NULL_FILTER;		
 	}
 	
 	/**
@@ -76,10 +70,10 @@ public class DirectoryRoot implements Path.Root {
 	 *            --- filter on which files are included.
 	 * @throws IOException
 	 */
-	public DirectoryRoot(String path, FileFilter filter, ContentType.Factory contentTypes) throws IOException {
+	public DirectoryRoot(String path, FileFilter filter, ContentType.Registry contentTypes) throws IOException {
+		super(contentTypes);
 		this.srcDirectory = new File(path);				
-		this.filter = filter;
-		this.contentTypes = contentTypes;
+		this.filter = filter;		
 	}
 
 	/**
@@ -92,10 +86,10 @@ public class DirectoryRoot implements Path.Root {
 	 *            path (i.e. separated using File.separatorChar, etc)
 	 * @throws IOException
 	 */
-	public DirectoryRoot(File dir, ContentType.Factory contentTypes) throws IOException {
+	public DirectoryRoot(File dir, ContentType.Registry contentTypes) throws IOException {
+		super(contentTypes);
 		this.srcDirectory = dir;			
-		this.filter = NULL_FILTER;
-		this.contentTypes = contentTypes;
+		this.filter = NULL_FILTER;		
 	}
 	
 	/**
@@ -110,62 +104,24 @@ public class DirectoryRoot implements Path.Root {
 	 *            --- filter on which files are included.
 	 * @throws IOException
 	 */
-	public DirectoryRoot(File dir, FileFilter filter, ContentType.Factory contentTypes) throws IOException {
+	public DirectoryRoot(File dir, FileFilter filter, ContentType.Registry contentTypes) throws IOException {
+		super(contentTypes);
 		this.srcDirectory = dir;			
-		this.filter = filter;
-		this.contentTypes = contentTypes;
+		this.filter = filter;		
 	}
 	
 	public File location() {
 		return srcDirectory;
 	}
-	
-	public boolean exists(PkgID pkg) throws IOException {
-		if(cache == null) {
-			cache = new HashMap<PkgID,ArrayList<Entry>>();
-			traverse(srcDirectory,PkgID.ROOT);
-		}
-		return cache.containsKey(pkg);
-	}
-	
-	public List<Entry> list() throws IOException {
-		if(cache == null) {
-			cache = new HashMap<PkgID,ArrayList<Entry>>();
-			traverse(srcDirectory,PkgID.ROOT);
-		}	
-		ArrayList<Entry> entries = new ArrayList<Entry>();
-		for(PkgID pid : cache.keySet()) {
-			entries.addAll(cache.get(pid));
-		}
-		return entries;
-	}
-	
-	public List<Entry> list(PkgID pkg) throws IOException {
-		if(cache == null) {
-			cache = new HashMap<PkgID,ArrayList<Entry>>();
-			traverse(srcDirectory,PkgID.ROOT);
-		}	
-		return cache.get(pkg);
-	}
-		
-	public <T> Path.Entry<T> get(ModuleID mid, ContentType<T> ct) throws IOException {
-		if(cache == null) {
-			cache = new HashMap<PkgID,ArrayList<Entry>>();
-			traverse(srcDirectory,PkgID.ROOT);
-		}
-		ArrayList<Entry> contents = cache.get(mid.pkg());
-		if(contents != null) {			
-			for(Entry e : contents) {				
-				if (e.id().equals(mid) && ct.matches(e.suffix())) {
-					return e;
-				}
-			}			
-		}
-		return null;
-	}
 
 	public String toString() {
 		return srcDirectory.getPath();
+	}
+
+	protected Path.Entry[] contents() throws IOException {
+		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>();
+		traverse(srcDirectory,PkgID.ROOT,contents);
+		return contents.toArray(new Path.Entry[contents.size()]);
 	}
 	
 	/**
@@ -176,33 +132,16 @@ public class DirectoryRoot implements Path.Root {
 	 * @author djp
 	 * 
 	 */
-	public static class Entry<T> implements Path.Entry<T> {
-		private final ModuleID mid;
+	public static class Entry<T> extends Path.AbstractEntry<T> implements Path.Entry<T> {		
 		private final java.io.File file;
-		private final ContentType<T> contentType;
-		private T contents;
-		private boolean modified = false;
 		
 		public Entry(ModuleID mid, java.io.File file, ContentType<T> contentType) {
-			this.mid = mid;
-			this.file = file;
-			this.contentType = contentType;
-		}
-		
-		public ModuleID id() {
-			return mid;
+			super(mid,contentType);			
+			this.file = file;			
 		}
 		
 		public String location() {
 			return file.getPath();
-		}
-		
-		public void touch() {
-			this.modified = true;
-		}
-		
-		public boolean isModified() {
-			return modified;
 		}
 		
 		public long lastModified() {
@@ -219,19 +158,12 @@ public class DirectoryRoot implements Path.Root {
 			return suffix;
 		}
 		
-		public ContentType<T> contentType() {
-			return contentType;
+		public InputStream inputStream() throws Exception {
+			return new FileInputStream(file);
 		}
 		
-		public T read() throws IOException {
-			if (contents == null) {
-				contents = contentType.read(new FileInputStream(file));
-			}
-			return contents;
-		}		
-		
-		public void write(T contents) throws IOException {
-			this.contents = contents; 
+		public OutputStream outputStream() throws Exception {
+			return new FileOutputStream(file);
 		}
 	}
 	
@@ -245,23 +177,21 @@ public class DirectoryRoot implements Path.Root {
 	 * @param entries
 	 *            --- list of entries being accumulated into.
 	 */
-	private void traverse(File location, PkgID pkg) throws IOException {
-		if (location.exists() && location.isDirectory()) {			
-			ArrayList<Entry> entries = new ArrayList<Entry>();
+	private void traverse(File location, PkgID pkg, ArrayList<Path.Entry> contents) throws IOException {
+		if (location.exists() && location.isDirectory()) {						
 			String path = location.getPath();
 			for (File file : location.listFiles()) {						
 				if(file.isDirectory()) {
-					traverse(file,pkg.append(file.getName()));
+					traverse(file,pkg.append(file.getName()),contents);
 				} else if(filter.accept(file)) {					
 					String filename = file.getName();	
 					int i = filename.lastIndexOf('.');
 					String name = filename.substring(0, i);
 					String suffix = filename.substring(i+1);
 					ModuleID mid = new ModuleID(pkg, name);										
-					entries.add(new Entry(mid, file, contentTypes.get(suffix)));					
+					contents.add(new Entry(mid, file, contentTypes.get(suffix)));					
 				}				
-			}	
-			cache.put(pkg, entries);
+			}				
 		}
 	}
 }

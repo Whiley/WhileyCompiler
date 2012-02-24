@@ -28,6 +28,7 @@ package wyc.util.path;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.jar.*;
 
@@ -40,93 +41,50 @@ import wyil.lang.PkgID;
  * @author djp
  *
  */
-public final class JarFileRoot implements Path.Root {
-	private final JarFile jf;	
+public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {	
+	private final JarFile jf;
 	
-	public JarFileRoot(String dir) throws IOException {
+	public JarFileRoot(String dir, ContentType.Registry contentTypes) throws IOException {
+		super(contentTypes);
 		this.jf = new JarFile(dir);		
 	}
 	
-	public JarFileRoot(JarFile dir) {
-		this.jf = dir;				
+	public JarFileRoot(JarFile dir, ContentType.Registry contentTypes) {
+		super(contentTypes);
+		this.jf = dir;		
 	}
 
-	public boolean exists(PkgID pkg) throws IOException {			
-		String pkgname = pkg.toString().replace('.', '/');
-		return jf.getEntry(pkgname) != null;		
-	}
-	
-	public List<Path.Entry> list(PkgID pkg) throws IOException {		
-		String pkgname = pkg.toString().replace('.', '/');
-		Enumeration<JarEntry> entries = jf.entries();
-		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>();
+	public Path.Entry[] contents() throws IOException {		
+		Enumeration<JarEntry> entries = jf.entries();		
+		Path.Entry[] contents = new Path.Entry[jf.size()];
+		int i = 0;
 		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();
-			String filename = e.getName();
-			if(filename.endsWith(".class")) {				
-				int pos = filename.lastIndexOf('/');
-				String tmp = filename.substring(0, pos);
-				if (tmp.equals(pkgname)) {
-					// strip suffix
-					filename = filename.substring(pos + 1,
-							filename.length() - 6);
-					ModuleID mid = new ModuleID(pkg, filename);
-					contents.add(new Entry(mid, jf, e));
-				}
-			}
+			String filename = e.getName();			
+			int lastSlash = filename.lastIndexOf('/');
+			int lastDot = filename.lastIndexOf('.');
+			PkgID pkg = PkgID.fromString(filename.substring(0, lastSlash));
+			filename = filename.substring(lastSlash + 1, lastDot);
+			String suffix = filename.substring(lastDot + 1);
+			ModuleID mid = new ModuleID(pkg, filename);
+			contents[i++] = new Entry(mid, contentTypes.get(suffix), jf, e);							
 		}		
+		
 		return contents;
-	}
-	
-	public List<Path.Entry> list() throws IOException {				
-		Enumeration<JarEntry> entries = jf.entries();
-		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>();
-		while (entries.hasMoreElements()) {
-			JarEntry e = entries.nextElement();
-			String filename = e.getName();
-			if(filename.endsWith(".class")) {				
-				int pos = filename.lastIndexOf('/');
-				PkgID pkg = PkgID.fromString(filename.substring(0, pos));
-				// strip suffix
-				filename = filename.substring(pos + 1,
-						filename.length() - 6);
-				ModuleID mid = new ModuleID(pkg, filename);
-				contents.add(new Entry(mid, jf, e));				
-			}
-		}		
-		return contents;
-	}
-	
-	public <T extends Path.Entry> T get(ModuleID mid, ContentType<T> ct) throws IOException {
-		String filename = mid.toString().replace('.', '/') + ".class";
-		JarEntry entry = jf.getJarEntry(filename);
-		if(entry != null) {
-			Entry e = new Entry(mid,jf,entry);
-			T t = ct.accept(e);
-			if(t != null) {
-				return t;
-			}
-		} 
-		return null;		
 	}
 	
 	public String toString() {
 		return jf.getName();
 	}
 	
-	public static class Entry implements Path.Entry {
-		private final ModuleID mid;
+	public static class Entry<T> extends Path.AbstractEntry<T> implements Path.Entry<T> {		
 		private final JarFile parent;
 		private final JarEntry entry;
 
-		public Entry(ModuleID mid, JarFile parent, JarEntry entry) {
-			this.mid = mid;
+		public Entry(ModuleID mid, ContentType<T> contentType, JarFile parent, JarEntry entry) {
+			super(mid,contentType);
 			this.parent = parent;
 			this.entry = entry;
-		}
-
-		public ModuleID id() {
-			return mid;
 		}
 
 		public String location() {
@@ -156,16 +114,16 @@ public final class JarFileRoot implements Path.Root {
 			return suffix;
 		}
 		
-		public InputStream contents() throws IOException {
+		public InputStream inputStream() throws IOException {
 			return parent.getInputStream(entry);
 		}
 
-		public void close() throws IOException {
-
+		public OutputStream outputStream() throws IOException {
+			throw new UnsupportedOperationException();
 		}
 
-		public void refresh() throws IOException {
-
-		}
+		public void write(T contents) {
+			throw new UnsupportedOperationException();
+		}		
 	}
 }

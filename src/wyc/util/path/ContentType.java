@@ -1,6 +1,7 @@
 package wyc.util.path;
 
 import java.io.*;
+import java.util.HashMap;
 
 /**
  * A content type provides an abstract mechanism for reading and writing file in
@@ -43,7 +44,7 @@ public interface ContentType<T> {
 	 */
 	public void write(OutputStream output, T value);
 	
-	public interface Factory {
+	public interface Registry {
 		/**
 		 * Get the content type associated with a given suffix.
 		 * 
@@ -52,4 +53,16 @@ public interface ContentType<T> {
 		 */
 		public ContentType<?> get(String suffix);
 	}
+	
+	public static class RegistryImpl implements Registry {
+		private final HashMap<String,ContentType> types = new HashMap<String,ContentType>();
+				
+		public void register(String suffix, ContentType<?> contentType) {
+			types.put(suffix,contentType);
+		}
+		
+		public ContentType<?> get(String suffix) {
+			return types.get(suffix);
+		}
+	}		
 }
