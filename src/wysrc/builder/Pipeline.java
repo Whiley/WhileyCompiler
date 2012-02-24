@@ -30,10 +30,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import wyc.lang.Project;
 import wyil.*;
 import wyil.io.WyilFileWriter;
 import wyil.transforms.*;
-import wysrc.lang.Project;
 import wysrc.stages.FlowTyping;
 
 /**

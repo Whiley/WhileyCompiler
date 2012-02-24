@@ -71,7 +71,7 @@ public class AntTask extends MatchingTask {
 	 */
 	public static final ContentType.RegistryImpl registry = new ContentType.RegistryImpl() {{
 		register("whiley",SourceFile.ContentType);
-		register("class",wysrc.lang.Project.ModuleContentType);		
+		register("class",wyc.lang.Project.ModuleContentType);		
 	}};
 	
 	public static final FileFilter srcFilter = new FileFilter() {
@@ -158,7 +158,7 @@ public class AntTask extends MatchingTask {
         	externalRoots.addAll(bootpath);
     		        	
     		// second, construct the module loader    		
-    		wysrc.lang.Project project = new wysrc.lang.Project(sourceRoots,binaryRoots,externalRoots);    		
+    		wyc.lang.Project project = new wyc.lang.Project(sourceRoots,binaryRoots,externalRoots);    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));
