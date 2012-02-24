@@ -141,14 +141,14 @@ public final class Builder {
 	 * @param nid --- Name ID to check
 	 * @return
 	 */
-	public boolean isName(NameID nid) throws ResolveError {
+	public boolean isName(NameID nid) throws ResolveError {		
 		ModuleID mid = nid.module();
 		SourceFile wf = srcFiles.get(mid);
 		if(wf != null) {
-			// FIXME: check for the right kind of name
+			// FIXME: check for the right kind of name			
 			return wf.hasName(nid.name());
 		} else {
-			try {
+			try {				
 				Module m = project.get(mid);
 				// FIXME: check for the right kind of name
 				return m.hasName(nid.name());
@@ -165,7 +165,7 @@ public final class Builder {
 	 * @param imp
 	 * @return
 	 */
-	public List<ModuleID> imports(SourceFile.Import imp) throws ResolveError {
+	public List<ModuleID> imports(SourceFile.Import imp) throws ResolveError {		
 		Triple<PkgID, String, String> key = new Triple<PkgID, String, String>(
 				imp.pkg, imp.module, imp.name);
 		try {
@@ -175,9 +175,9 @@ public final class Builder {
 				return matches;
 			} else {
 				// cache miss
-				matches = new ArrayList<ModuleID>();
-				if(project.isPackage(imp.pkg)) {						
-					for (ModuleID mid : project.get(imp.pkg)) {
+				matches = new ArrayList<ModuleID>();				
+				if(project.isPackage(imp.pkg)) {					
+					for (ModuleID mid : project.get(imp.pkg)) {						
 						if (imp.matchModule(mid.module())) {
 							matches.add(mid);
 						}

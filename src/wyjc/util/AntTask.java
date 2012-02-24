@@ -169,7 +169,7 @@ public class AntTask extends MatchingTask {
 			for (Path.Root src : sourceRoots) {
 				for (Path.Entry e : src.list()) {
 					if(e.contentType() == SourceFile.ContentType) {
-						Path.Entry binary = destRoot.get(e.id(), wyc.lang.Project.ModuleContentType);						
+						Path.Entry binary = destRoot.get(e.id(), project.ModuleContentType);						
 						if (binary == null
 								|| binary.lastModified() < e.lastModified()) {
 							count++;

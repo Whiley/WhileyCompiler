@@ -56,7 +56,7 @@ public final class PkgID implements Iterable<String> {
 	public static PkgID fromString(String pkg) {
 		String[] split = pkg.split("\\.");
 		ArrayList<String> pkgs = new ArrayList<String>();
-		for(int i=0;i!=split.length-1;++i) {
+		for(int i=0;i!=split.length;++i) {
 			pkgs.add(split[i]);
 		}
 		return new PkgID(pkgs);				

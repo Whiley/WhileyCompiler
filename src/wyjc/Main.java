@@ -71,7 +71,19 @@ public class Main {
 		register("whiley",SourceFile.ContentType);
 		register("class",Project.ModuleContentType);		
 	}};
-		
+	
+	public static final FileFilter srcFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".whiley");
+		}
+	};
+	
+	public static final FileFilter binFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".class");
+		}
+	};
+	
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -193,11 +205,11 @@ public class Main {
 			List<String> sourcepath, boolean verbose) throws IOException {
 		ArrayList<DirectoryRoot> nitems = new ArrayList<DirectoryRoot>();
 		if (sourcepath.isEmpty()) {
-			nitems.add(new DirectoryRoot(".", registry));
+			nitems.add(new DirectoryRoot(".", srcFilter,registry));
 		} else {			
 			for (String root : sourcepath) {
 				try {
-					nitems.add(new DirectoryRoot(root,registry));					
+					nitems.add(new DirectoryRoot(root,srcFilter,registry));					
 				} catch (IOException e) {
 					if (verbose) {
 						System.err.println("Warning: " + root
@@ -224,7 +236,7 @@ public class Main {
 				if (root.endsWith(".jar")) {
 					nitems.add(new JarFileRoot(root,registry));
 				} else {
-					nitems.add(new DirectoryRoot(root,registry));
+					nitems.add(new DirectoryRoot(root,binFilter,registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {

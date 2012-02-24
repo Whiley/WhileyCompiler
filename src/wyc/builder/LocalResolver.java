@@ -1273,9 +1273,9 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		// first, try to find the matching message
 		for (SourceFile.Import imp : context.imports()) {
-			if (imp.matchName(name)) {
-				for (ModuleID mid : builder.imports(imp)) {					
-					NameID nid = new NameID(mid,name);				
+			if (imp.matchName(name)) {				
+				for (ModuleID mid : builder.imports(imp)) {										
+					NameID nid = new NameID(mid,name);					
 					addCandidateMessages(nid,parameters,candidates);					
 				}
 			}
@@ -1508,8 +1508,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			throws ResolveError {
 		ModuleID mid = nid.module();
 
-		int nparams = parameters != null ? parameters.size() : -1;
-
+		int nparams = parameters != null ? parameters.size() : -1;		
 		SourceFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
 			for (SourceFile.Message m : wf.declarations(
@@ -1520,10 +1519,10 @@ public abstract class LocalResolver extends AbstractResolver {
 					candidates.add(new Pair<NameID, Nominal.Message>(nid, ft));
 				}
 			}
-		} else {
-			try {
+		} else {			
+			try {				
 				Module m = builder.getModule(mid);
-				for (Module.Method mm : m.methods()) {
+				for (Module.Method mm : m.methods()) {				
 					if (mm.isMessage()
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {

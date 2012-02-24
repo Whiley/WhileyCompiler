@@ -6,12 +6,10 @@ import java.util.*;
 import wyc.builder.Builder;
 import wyc.util.path.ContentType;
 import wyc.util.path.Path;
-import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.ModuleLoader;
 import wyil.util.Logger;
 import wyil.util.ResolveError;
-import wyil.util.Triple;
 import wyjc.io.ClassFileLoader;
 
 /**
@@ -27,20 +25,23 @@ public final class Project implements Logger,ModuleLoader {
 	
 	
 	// Hack for now
-	public static final ContentType<Module> ModuleContentType = new ContentType<Module>() {
+	public final static ContentType<Module> ModuleContentType = new ContentType<Module>() {
 
 		public boolean matches(String suffix) {
 			return suffix.equals("class");
 		}
 		
 		public Module read(Path.Entry entry) throws Exception {
+			
 			Runtime runtime = Runtime.getRuntime();
 			long time = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
 			ClassFileLoader loader = new ClassFileLoader();
 			ModuleID mid = entry.id();		
 			Module mi = loader.read(mid, entry.inputStream());
-					
+
+			System.err.println("Loaded " + entry.location() + ":" + mid);
+			
 //			if(mi != null) {
 //				logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
 //						System.currentTimeMillis() - time, memory - runtime.freeMemory());
@@ -50,7 +51,7 @@ public final class Project implements Logger,ModuleLoader {
 //				logger.logTimedMessage("Ignored " + entry.location() + ":" + mid,
 //						System.currentTimeMillis() - time, memory - runtime.freeMemory());
 //			}
-//			
+			
 			return mi;			
 		}
 		
@@ -170,14 +171,14 @@ public final class Project implements Logger,ModuleLoader {
 	 * @return
 	 */
 	public boolean isPackage(PkgID pid) {
-		try {
+		try {			
 			for(Path.Root root : sourceRoots) {
-				if(root.exists(pid)) {
+				if(root.exists(pid)) {					
 					return true;
 				}
 			}
-			for(Path.Root root : binaryRoots) {
-				if(root.exists(pid)) {
+			for(Path.Root root : binaryRoots) {				
+				if(root.exists(pid)) {					
 					return true;
 				}
 			}
@@ -217,38 +218,39 @@ public final class Project implements Logger,ModuleLoader {
 	 * on the WHILEYPATH. A resolve error is thrown if the module cannot be
 	 * found or otherwise loaded.
 	 * 
-	 * @param module
+	 * @param mid
 	 *            The module to load
 	 * @return the loaded module
 	 */
-	public Module get(ModuleID module) throws ResolveError {		
-		Module m = moduleCache.get(module);
+	public Module get(ModuleID mid) throws ResolveError {
+		Module module = moduleCache.get(mid);
 						
-		if (m != null) {
-			return m; // module was previously loaded and cached
+		if (module != null) {			
+			return module; // module was previously loaded and cached
 		} 
 		
 		try {
 			// ok, now look for module inside package roots.
 			Path.Entry<Module> entry = null;			
 			for(Path.Root root : binaryRoots) {
-				entry = root.get(module,ModuleContentType);
+				entry = root.get(mid,ModuleContentType);
 				if(entry != null) {
 					break;
 				}
-			}
-			if(entry == null) {
-				throw new ResolveError("Unable to find module: " + module);
 			}			
-			m = entry.read();
-			if(m == null) {
-				throw new ResolveError("Unable to find module: " + module);
+			if(entry == null) {				
+				throw new ResolveError("Unable to find module: " + mid);
+			}			
+			module = entry.read();
+			if(module == null) {				
+				throw new ResolveError("Unable to find module: " + mid);
 			}
-			return m;						
+			moduleCache.put(mid,module);
+			return module;						
 		} catch(RuntimeException e) {
 			throw e;
 		} catch(Exception e) {				
-			throw new ResolveError("Unable to find module: " + module,e);
+			throw new ResolveError("Unable to find module: " + mid,e);
 		}	
 	}	
 	
@@ -277,7 +279,7 @@ public final class Project implements Logger,ModuleLoader {
 				}
 			}
 		}
-
+		
 		return contents;
 	}	
 }
