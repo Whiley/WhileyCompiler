@@ -3,8 +3,8 @@ package wysrc.lang;
 import java.io.*;
 import java.util.*;
 
-import wyctrl.io.ContentType;
-import wyctrl.io.Path;
+import wyc.io.ContentType;
+import wyc.io.Path;
 import wyil.lang.*;
 import wyil.ModuleLoader;
 import wyil.util.Logger;

@@ -28,10 +28,10 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyctrl.io.ContentType;
-import wyctrl.io.DirectoryRoot;
-import wyctrl.io.JarFileRoot;
-import wyctrl.io.Path;
+import wyc.io.ContentType;
+import wyc.io.DirectoryRoot;
+import wyc.io.JarFileRoot;
+import wyc.io.Path;
 import wyil.Transform;
 import wyil.util.Logger;
 import wyil.util.SyntaxError;

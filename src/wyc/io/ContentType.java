@@ -1,4 +1,4 @@
-package wyctrl.io;
+package wyc.io;
 
 import java.io.*;
 import java.util.HashMap;

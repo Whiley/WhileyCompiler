@@ -34,7 +34,7 @@ import wyil.lang.*;
 import wyil.util.*;
 import wysrc.lang.*;
 import wysrc.stages.*;
-import wyctrl.io.Path;
+import wyc.io.Path;
 
 /**
  * Responsible for managing the process of turning source files into binary code

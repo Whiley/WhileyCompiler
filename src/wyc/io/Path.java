@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyctrl.io;
+package wyc.io;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
-import wyctrl.io.DirectoryRoot.Entry;
+import wyc.io.DirectoryRoot.Entry;
 import wyil.lang.ModuleID;
 import wyil.lang.PkgID;
 

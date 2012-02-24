@@ -29,13 +29,12 @@ import java.util.*;
 
 import static wyil.util.ErrorMessages.*;
 import static wysrc.lang.SourceFile.*;
-import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wysrc.builder.*;
 import wysrc.lang.*;
 import wysrc.lang.Stmt.*;
-import wyc.lang.SourceFile.*;
+import wysrc.lang.SourceFile.*;
 
 /**
  * <p>
