@@ -186,10 +186,12 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 				} else if(filter.accept(file)) {					
 					String filename = file.getName();	
 					int i = filename.lastIndexOf('.');
-					String name = filename.substring(0, i);
-					String suffix = filename.substring(i+1);
-					ModuleID mid = new ModuleID(pkg, name);										
-					contents.add(new Entry(mid, file, contentTypes.get(suffix)));					
+					if(i > 0) {
+						String name = filename.substring(0, i);
+						String suffix = filename.substring(i+1);
+						ModuleID mid = new ModuleID(pkg, name);										
+						contents.add(new Entry(mid, file, contentTypes.get(suffix)));
+					}
 				}				
 			}				
 		}

@@ -63,11 +63,11 @@ public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {
 			String filename = e.getName();			
 			int lastSlash = filename.lastIndexOf('/');
 			int lastDot = filename.lastIndexOf('.');
-			PkgID pkg = PkgID.fromString(filename.substring(0, lastSlash));
-			filename = filename.substring(lastSlash + 1, lastDot);
-			String suffix = filename.substring(lastDot + 1);
-			ModuleID mid = new ModuleID(pkg, filename);
-			contents[i++] = new Entry(mid, contentTypes.get(suffix), jf, e);							
+			PkgID pkg = PkgID.fromString(filename.substring(0, lastSlash));			
+			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
+			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;							
+			ModuleID mid = new ModuleID(pkg, name);
+			contents[i++] = new Entry(mid, contentTypes.get(suffix), jf, e);
 		}		
 		
 		return contents;
