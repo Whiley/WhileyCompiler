@@ -39,8 +39,6 @@ public final class Project implements Logger,ModuleLoader {
 			ClassFileLoader loader = new ClassFileLoader();
 			ModuleID mid = entry.id();		
 			Module mi = loader.read(mid, entry.inputStream());
-
-			System.err.println("Loaded " + entry.location() + ":" + mid);
 			
 //			if(mi != null) {
 //				logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,

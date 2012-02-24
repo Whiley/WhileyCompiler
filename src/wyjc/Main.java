@@ -74,13 +74,13 @@ public class Main {
 	
 	public static final FileFilter srcFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".whiley");
+			return f.getName().endsWith(".whiley") || f.isDirectory();
 		}
 	};
 	
 	public static final FileFilter binFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".class");
+			return f.getName().endsWith(".class") || f.isDirectory();
 		}
 	};
 	

@@ -74,6 +74,17 @@ public class AntTask extends MatchingTask {
 		register("class",wyc.lang.Project.ModuleContentType);		
 	}};
 	
+	public static final FileFilter srcFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".whiley") || f.isDirectory();
+		}
+	};
+	
+	public static final FileFilter binFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".class") || f.isDirectory();
+		}
+	};	
 	
 	ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
 	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
@@ -133,12 +144,13 @@ public class AntTask extends MatchingTask {
     	try {
     		// first, initialise source and binary roots
     		ArrayList<Path.Root> sourceRoots = new ArrayList<Path.Root>();
-        	Path.Root sourceRoot = new DirectoryRoot(srcdir,registry); 
+        	Path.Root sourceRoot = new DirectoryRoot(srcdir,srcFilter,registry); 
     		sourceRoots.add(sourceRoot);    
     
         	ArrayList<Path.Root> binaryRoots = new ArrayList<Path.Root>();
         	wyjc.Main.initialiseBootPath(bootpath);
-        	Path.Root destRoot = destdir != null ? new DirectoryRoot(destdir,registry) : sourceRoot;        	
+        	if(destdir == null) { destdir = srcdir; }
+        	Path.Root destRoot = new DirectoryRoot(destdir,binFilter,registry);        	
         	binaryRoots.add(destRoot);        	
         	binaryRoots.addAll(whileypath);
         	binaryRoots.addAll(bootpath);

@@ -178,15 +178,14 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	 *            --- list of entries being accumulated into.
 	 */
 	private void traverse(File location, PkgID pkg, ArrayList<Path.Entry> contents) throws IOException {
-		if (location.exists() && location.isDirectory()) {						
-			String path = location.getPath();
-			for (File file : location.listFiles()) {						
+		if (location.exists() && location.isDirectory()) {									
+			for (File file : location.listFiles(filter)) {						
 				if(file.isDirectory()) {
 					traverse(file,pkg.append(file.getName()),contents);
-				} else if(filter.accept(file)) {					
+				} else {					
 					String filename = file.getName();	
 					int i = filename.lastIndexOf('.');
-					if(i > 0) {
+					if(i > 0) {						
 						String name = filename.substring(0, i);
 						String suffix = filename.substring(i+1);
 						ModuleID mid = new ModuleID(pkg, name);										
