@@ -3,7 +3,7 @@ package wyc.lang;
 import java.util.*;
 import wyc.io.Path;
 
-public class Rule {
+public class Rule<S,T> {
 	/**
 	 * Maps every source root to a target root. 
 	 */
@@ -12,7 +12,7 @@ public class Rule {
 	/**
 	 * Builder responsible for implementing this rule.
 	 */
-	private final Builder builder;
+	private final Builder<S,T> builder;
 	
 	public Rule(Builder builder) {
 		this.builder = builder;
