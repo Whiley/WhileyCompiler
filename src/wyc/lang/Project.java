@@ -4,8 +4,8 @@ import java.io.*;
 import java.util.*;
 
 import wyc.builder.Builder;
-import wyc.util.path.ContentType;
-import wyc.util.path.Path;
+import wyctrl.io.ContentType;
+import wyctrl.io.Path;
 import wyil.lang.*;
 import wyil.ModuleLoader;
 import wyil.util.Logger;
@@ -22,8 +22,7 @@ import wyjc.io.ClassFileLoader;
  * @author David J. Pearce
  */
 public final class Project implements Logger,ModuleLoader {	
-	
-	
+		
 	/**
 	 * The ModuleContentType should go into the class wyil.lang.Module.
 	 */
