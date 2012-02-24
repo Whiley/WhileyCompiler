@@ -1,9 +1,8 @@
-package wyc.lang;
+package wysrc.lang;
 
 import java.io.*;
 import java.util.*;
 
-import wyc.builder.Builder;
 import wyctrl.io.ContentType;
 import wyctrl.io.Path;
 import wyil.lang.*;
@@ -11,6 +10,7 @@ import wyil.ModuleLoader;
 import wyil.util.Logger;
 import wyil.util.ResolveError;
 import wyjc.io.ClassFileLoader;
+import wysrc.builder.Builder;
 
 /**
  * A Whiley project represents the contextual information underpinning a given

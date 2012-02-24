@@ -23,20 +23,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.stages;
+package wysrc.stages;
 
 import java.util.*;
 
-import static wyc.lang.SourceFile.*;
 import static wyil.util.ErrorMessages.*;
+import static wysrc.lang.SourceFile.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
-import wyc.builder.*;
-import wyc.lang.*;
+import wysrc.builder.*;
+import wysrc.lang.*;
+import wysrc.lang.Stmt.*;
 import wyc.lang.SourceFile.*;
-import wyc.lang.Stmt;
-import wyc.lang.Stmt.*;
 
 /**
  * <p>

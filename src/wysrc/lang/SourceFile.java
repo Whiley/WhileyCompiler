@@ -23,21 +23,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.lang;
+package wysrc.lang;
 
 import java.io.*;
 import java.util.*;
 
-import wyc.builder.Nominal;
-import wyc.stages.WhileyFilter;
-import wyc.stages.WhileyLexer;
-import wyc.stages.WhileyParser;
 import wyctrl.io.ContentType;
 import wyctrl.io.Path;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
+import wysrc.builder.Nominal;
+import wysrc.stages.WhileyFilter;
+import wysrc.stages.WhileyLexer;
+import wysrc.stages.WhileyParser;
 
 /**
  * Provides classes representing the various kinds of declaration found in a

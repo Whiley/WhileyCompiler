@@ -1,14 +1,14 @@
-package wyc.builder;
+package wysrc.builder;
 
 import java.util.*;
 
-import wyc.lang.UnresolvedType;
-import wyc.lang.SourceFile;
-import static wyc.lang.SourceFile.*;
+import static wysrc.lang.SourceFile.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
+import wysrc.lang.SourceFile;
+import wysrc.lang.UnresolvedType;
 /**
  * <p>
  * The global generator is responsible for generating wyil bytecode for "global"

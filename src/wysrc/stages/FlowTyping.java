@@ -23,16 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.stages;
+package wysrc.stages;
 
 import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.builder.*;
-import wyc.lang.*;
-import wyc.lang.SourceFile.*;
 import wyil.ModuleLoader;
 import wyil.lang.Attribute;
 import wyil.lang.ModuleID;
@@ -44,6 +41,9 @@ import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
+import wysrc.builder.*;
+import wysrc.lang.*;
+import wysrc.lang.SourceFile.*;
 
 /**
  * Propagates type information in a flow-sensitive fashion from declared

@@ -1,24 +1,24 @@
-package wyc.builder;
+package wysrc.builder;
 
-import static wyc.lang.SourceFile.*;
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
 import static wyil.util.ErrorMessages.errorMessage;
+import static wysrc.lang.SourceFile.*;
 
 import java.util.*;
 
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
-import wyc.lang.Expr;
-import wyc.builder.Builder;
-import wyc.lang.UnresolvedType;
-import wyc.lang.SourceFile;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
+import wysrc.builder.Builder;
+import wysrc.lang.Expr;
+import wysrc.lang.SourceFile;
+import wysrc.lang.UnresolvedType;
 
 /**
  * <p>

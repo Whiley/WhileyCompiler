@@ -28,9 +28,6 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.builder.Builder;
-import wyc.builder.Pipeline;
-import wyc.lang.SourceFile;
 import wyctrl.io.ContentType;
 import wyctrl.io.DirectoryRoot;
 import wyctrl.io.JarFileRoot;
@@ -41,6 +38,9 @@ import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
+import wysrc.builder.Builder;
+import wysrc.builder.Pipeline;
+import wysrc.lang.SourceFile;
 
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -71,7 +71,7 @@ public class AntTask extends MatchingTask {
 	 */
 	public static final ContentType.RegistryImpl registry = new ContentType.RegistryImpl() {{
 		register("whiley",SourceFile.ContentType);
-		register("class",wyc.lang.Project.ModuleContentType);		
+		register("class",wysrc.lang.Project.ModuleContentType);		
 	}};
 	
 	public static final FileFilter srcFilter = new FileFilter() {
@@ -158,7 +158,7 @@ public class AntTask extends MatchingTask {
         	externalRoots.addAll(bootpath);
     		        	
     		// second, construct the module loader    		
-    		wyc.lang.Project project = new wyc.lang.Project(sourceRoots,binaryRoots,externalRoots);    		
+    		wysrc.lang.Project project = new wysrc.lang.Project(sourceRoots,binaryRoots,externalRoots);    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));

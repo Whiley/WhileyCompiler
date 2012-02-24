@@ -23,14 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.util;
+package wysrc.util;
 
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
 
-import wyc.builder.Pipeline;
-import static wyc.builder.Pipeline.*;
+import wysrc.builder.Pipeline;
+import static wysrc.builder.Pipeline.*;
 
 /**
  * OptArg is a small utility for parsing command-line options. It helps to take

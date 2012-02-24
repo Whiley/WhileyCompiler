@@ -1,7 +1,7 @@
-package wyc.builder;
+package wysrc.builder;
 
 import static wyil.util.ErrorMessages.*;
-import static wyc.lang.SourceFile.*;
+import static wysrc.lang.SourceFile.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import wyc.lang.*;
-import wyc.lang.SourceFile.Context;
 import wyil.ModuleLoader;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
@@ -22,6 +20,8 @@ import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
+import wysrc.lang.*;
+import wysrc.lang.SourceFile.Context;
 
 /**
  * <p>

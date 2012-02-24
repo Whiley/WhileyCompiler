@@ -1,4 +1,4 @@
-package wyc.builder;
+package wysrc.builder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,9 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import static wyc.lang.SourceFile.*;
-import wyc.lang.*;
-import wyc.lang.SourceFile.Context;
+import static wysrc.lang.SourceFile.*;
 import wyil.ModuleLoader;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
@@ -20,6 +18,8 @@ import wyil.lang.Value;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.Triple;
+import wysrc.lang.*;
+import wysrc.lang.SourceFile.Context;
 
 
 public abstract class AbstractResolver {	

@@ -30,12 +30,6 @@ import java.net.URI;
 import java.util.*;
 import java.util.jar.JarFile;
 
-import wyc.builder.Builder;
-import wyc.builder.Pipeline;
-import wyc.lang.Project;
-import wyc.lang.SourceFile;
-import wyc.util.*;
-import wyc.util.path.*;
 import wyctrl.io.ContentType;
 import wyctrl.io.DirectoryRoot;
 import wyctrl.io.JarFileRoot;
@@ -44,9 +38,15 @@ import wyil.*;
 import wyil.lang.ModuleID;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
-import static wyc.util.OptArg.*;
+import static wysrc.util.OptArg.*;
 import wyjc.io.*;
 import wyjc.transforms.*;
+import wysrc.builder.Builder;
+import wysrc.builder.Pipeline;
+import wysrc.lang.Project;
+import wysrc.lang.SourceFile;
+import wysrc.util.*;
+import wysrc.util.path.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line

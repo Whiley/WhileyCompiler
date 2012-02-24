@@ -23,18 +23,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.builder;
+package wysrc.builder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import wyc.lang.Project;
-import wyc.stages.FlowTyping;
 import wyil.*;
 import wyil.io.WyilFileWriter;
 import wyil.transforms.*;
+import wysrc.lang.Project;
+import wysrc.stages.FlowTyping;
 
 /**
  * A Pipeline consists of a number of stages which are applied to the
