@@ -33,6 +33,7 @@ import java.util.jar.JarFile;
 import wyc.builder.Builder;
 import wyc.builder.Pipeline;
 import wyc.lang.Project;
+import wyc.lang.SourceFile;
 import wyc.util.*;
 import wyc.util.path.*;
 import wyil.*;
@@ -62,7 +63,15 @@ public class Main {
 	public static final int SUCCESS=0;
 	public static final int SYNTAX_ERROR=1;
 	public static final int INTERNAL_FAILURE=2;
-	
+
+	/**
+	 * The master project content type registry.
+	 */
+	public static final ContentType.RegistryImpl registry = new ContentType.RegistryImpl() {{
+		register("whiley",SourceFile.ContentType);
+		register("class",Project.ModuleContentType);		
+	}};
+		
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -162,7 +171,7 @@ public class Main {
 						// "."
 						jarfile += "stdlib";
 					}
-					bootpath.add(new JarFileRoot(jarfile));
+					bootpath.add(new JarFileRoot(jarfile,registry));
 				}				
 			} catch(Exception e) {
 				// just ignore.
@@ -181,15 +190,14 @@ public class Main {
 	 * @throws IOException
 	 */
 	public static ArrayList<DirectoryRoot> initialiseSourceRoots(
-			List<String> sourcepath, BinaryDirectoryRoot outputDirectory,
-			boolean verbose) throws IOException {
+			List<String> sourcepath, boolean verbose) throws IOException {
 		ArrayList<DirectoryRoot> nitems = new ArrayList<DirectoryRoot>();
 		if (sourcepath.isEmpty()) {
-			nitems.add(new DirectoryRoot(".", outputDirectory));
+			nitems.add(new DirectoryRoot(".", registry));
 		} else {			
 			for (String root : sourcepath) {
 				try {
-					nitems.add(new DirectoryRoot(root,outputDirectory));					
+					nitems.add(new DirectoryRoot(root,registry));					
 				} catch (IOException e) {
 					if (verbose) {
 						System.err.println("Warning: " + root
@@ -214,9 +222,9 @@ public class Main {
 		for (String root : roots) {
 			try {
 				if (root.endsWith(".jar")) {
-					nitems.add(new JarFileRoot(root));
+					nitems.add(new JarFileRoot(root,registry));
 				} else {
-					nitems.add(new BinaryDirectoryRoot(root));
+					nitems.add(new DirectoryRoot(root,registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -278,19 +286,18 @@ public class Main {
 			List<Path.Root> whileypath = initialiseBinaryRoots((ArrayList) values.get("whileypath"),verbose);	
 			
 			// initialise the source path appropriately
-			BinaryDirectoryRoot bindir = null;
+			DirectoryRoot bindir = null;
 			if (outputdir != null) {
-				bindir = new BinaryDirectoryRoot(outputdir);
+				bindir = new DirectoryRoot(outputdir,registry);
 			}
 			List<DirectoryRoot> sourcepath = initialiseSourceRoots(
-					(ArrayList) values.get("sourcepath"), bindir, verbose);
+					(ArrayList) values.get("sourcepath"), verbose);
 			
 			// now initialise the whiley path			
 			whileypath.addAll(bootpath);
 
 			// finally, construct the project		
-			Project project = new Project(sourcepath,whileypath);
-			project.setModuleReader("class",  new ClassFileLoader());
+			Project project = new Project(sourcepath,whileypath);			
 
 			if(verbose) {			
 				project.setLogger(new Logger.Default(System.err));
@@ -328,7 +335,7 @@ public class Main {
 						String module = filePath.substring(end).replace(File.separatorChar, '.');
 						module = module.substring(0,module.length()-7);						
 						ModuleID mid = ModuleID.fromString(module);			
-						Path.Entry entry = src.get(mid);
+						Path.Entry entry = src.get(mid,SourceFile.ContentType);
 						if(entry == null) {
 							throw new FileNotFoundException(_file);
 						} else {

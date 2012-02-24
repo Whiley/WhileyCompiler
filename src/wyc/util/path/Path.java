@@ -45,6 +45,11 @@ public interface Path {
 		public boolean exists(PkgID pid) throws Exception;
 		
 		/**
+		 * Check whether or not a given package is contained.
+		 */
+		public <T> boolean exists(ModuleID pid, ContentType<T> ct) throws Exception;		
+		
+		/**
 		 * Lookup a given module.
 		 * 
 		 * @param mid
@@ -133,6 +138,23 @@ public interface Path {
 		 * @param contents
 		 */
 		public void write(T contents) throws Exception;
+		
+
+		/**
+		 * Open a generic input stream to the entry.
+		 * 
+		 * @return
+		 * @throws Exception
+		 */
+		public InputStream inputStream() throws Exception;
+		
+		/**
+		 * Open a generic output stream to the entry.
+		 * 
+		 * @return
+		 * @throws Exception
+		 */
+		public OutputStream outputStream() throws Exception;
 	}	
 	
 	public static abstract class AbstractEntry<T> implements Entry<T> {
@@ -164,7 +186,7 @@ public interface Path {
 		
 		public T read() throws Exception {
 			if (contents == null) {
-				contents = contentType.read(inputStream());
+				contents = contentType.read(this);
 			}
 			return contents;
 		}		
@@ -172,22 +194,6 @@ public interface Path {
 		public void write(T contents) throws Exception {
 			this.contents = contents; 
 		}
-		
-		/**
-		 * Open a generic input stream to the entry.
-		 * 
-		 * @return
-		 * @throws Exception
-		 */
-		public abstract InputStream inputStream() throws Exception;
-		
-		/**
-		 * Open a generic output stream to the entry.
-		 * 
-		 * @return
-		 * @throws Exception
-		 */
-		public abstract OutputStream outputStream() throws Exception;
 	}
 	
 	public static abstract class AbstractRoot implements Root {
@@ -204,6 +210,18 @@ public interface Path {
 			}
 			for(Path.Entry e : contents) {
 				if(e.id().pkg().equals(pkg)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		public <T> boolean exists(ModuleID mid, ContentType<T> ct) throws Exception {
+			if(contents == null) {
+				contents = contents();
+			}
+			for(Path.Entry e : contents) {
+				if (e.id().equals(mid) && e.contentType() == ct) {
 					return true;
 				}
 			}

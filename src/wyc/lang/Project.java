@@ -1,8 +1,10 @@
 package wyc.lang;
 
+import java.io.*;
 import java.util.*;
 
 import wyc.builder.Builder;
+import wyc.util.path.ContentType;
 import wyc.util.path.Path;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
@@ -10,6 +12,7 @@ import wyil.ModuleLoader;
 import wyil.util.Logger;
 import wyil.util.ResolveError;
 import wyil.util.Triple;
+import wyjc.io.ClassFileLoader;
 
 /**
  * A Whiley project represents the contextual information underpinning a given
@@ -21,18 +24,55 @@ import wyil.util.Triple;
  * @author David J. Pearce
  */
 public final class Project implements Logger,ModuleLoader {	
+	
+	
+	// Hack for now
+	public static final ContentType<Module> ModuleContentType = new ContentType<Module>() {
+
+		public boolean matches(String suffix) {
+			return suffix.equals("class");
+		}
+		
+		public Module read(Path.Entry entry) throws Exception {
+			Runtime runtime = Runtime.getRuntime();
+			long time = System.currentTimeMillis();
+			long memory = runtime.freeMemory();
+			ClassFileLoader loader = new ClassFileLoader();
+			ModuleID mid = entry.id();		
+			Module mi = loader.read(mid, entry.inputStream());
+					
+//			if(mi != null) {
+//				logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
+//						System.currentTimeMillis() - time, memory - runtime.freeMemory());
+//				moduleCache.put(mi.id(), mi);
+//			} else {
+//				
+//				logger.logTimedMessage("Ignored " + entry.location() + ":" + mid,
+//						System.currentTimeMillis() - time, memory - runtime.freeMemory());
+//			}
+//			
+			return mi;			
+		}
+		
+		public void write(Path.Entry entry, Module contents) {
+			throw new UnsupportedOperationException();
+		}
+	};
+	
 	/**
 	 * The source roots are locations which may contain the root of a package
 	 * structure containing source files.
 	 */
-	private ArrayList<Path.Root> srcRoots;
+	private ArrayList<Path.Root> sourceRoots;
 	
 	/**
-	 * The external roots represent external libraries required for compiling
-	 * this project. They may exist in several forms, including as jar files or
-	 * directory roots (for binary files).
+	 * The binary roots represent the root of all binary module files. This
+	 * includes external libraries required for compiling this project, as well
+	 * as the binary folders correspond to source folders. They may exist in
+	 * several forms, including as jar files or directory roots (for binary
+	 * files).
 	 */
-	private ArrayList<Path.Root> externalRoots;	
+	private ArrayList<Path.Root> binaryRoots;	
 	
 	/**
 	 * The builder used for compiling source files into modules.
@@ -45,20 +85,15 @@ public final class Project implements Logger,ModuleLoader {
 	 * entered into the moduleCache, it will not be loaded again.
 	 */
 	private HashMap<ModuleID, Module> moduleCache = new HashMap<ModuleID, Module>();	
-	
-	/**
-	 * The suffix map maps suffixes to module readers for those suffixes.
-	 */
-	private final HashMap<String,ModuleReader> suffixMap = new HashMap<String,ModuleReader>();
-	
+		
 	/**
 	 * The logger is used to log messages for the project.
 	 */
 	private Logger logger = Logger.NULL;
 	
 	public Project(Collection<? extends Path.Root> srcRoots, Collection<? extends Path.Root> libRoots) {
-		this.srcRoots = new ArrayList<Path.Root>(srcRoots);
-		this.externalRoots = new ArrayList<Path.Root>(libRoots);
+		this.sourceRoots = new ArrayList<Path.Root>(srcRoots);
+		this.binaryRoots = new ArrayList<Path.Root>(libRoots);
 	}
 	
 	// ======================================================================
@@ -83,17 +118,6 @@ public final class Project implements Logger,ModuleLoader {
 		this.builder = builder;
 	}
 	
-	/**
-	 * Associate a given module reader with a given suffix.
-	 * 
-	 * @param suffix
-	 *            --- filename extension of reader to associate with.
-	 * @param reader
-	 */
-	public void setModuleReader(String suffix, ModuleReader reader) {
-		suffixMap.put(suffix, reader);
-	}
-	
 	// FIXME: to be deprecated
 	public void update(Module m) {
 		moduleCache.put(m.id(), m);
@@ -109,11 +133,11 @@ public final class Project implements Logger,ModuleLoader {
 	public void build() throws Exception {
 		
 		// first, determine what has changed.
-		ArrayList<Path.Entry> delta = new ArrayList<Path.Entry>(); 
-		for(Path.Root root : srcRoots) {
+		ArrayList<Path.Entry<SourceFile>> delta = new ArrayList<Path.Entry<SourceFile>>(); 
+		for(Path.Root root : sourceRoots) {
 			for(Path.Entry e : root.list()) {
 				// FIXME: surely there must be a better way!
-				if(e.suffix().equals("whiley") && e.isModified()) {
+				if(e.contentType() == SourceFile.ContentType && e.isModified()) {
 					delta.add(e);
 				}
 			}
@@ -147,12 +171,12 @@ public final class Project implements Logger,ModuleLoader {
 	 */
 	public boolean isPackage(PkgID pid) {
 		try {
-			for(Path.Root root : srcRoots) {
+			for(Path.Root root : sourceRoots) {
 				if(root.exists(pid)) {
 					return true;
 				}
 			}
-			for(Path.Root root : externalRoots) {
+			for(Path.Root root : binaryRoots) {
 				if(root.exists(pid)) {
 					return true;
 				}
@@ -172,13 +196,13 @@ public final class Project implements Logger,ModuleLoader {
 	 */
 	public boolean isModule(ModuleID mid) {
 		try {
-			for(Path.Root root : srcRoots) {
-				if(root.get(mid) != null) {
+			for(Path.Root root : sourceRoots) {
+				if(root.exists(mid,SourceFile.ContentType)) {
 					return true;
 				}
 			}
-			for(Path.Root root : externalRoots) {
-				if(root.get(mid) != null) {
+			for(Path.Root root : binaryRoots) {
+				if(root.get(mid,ModuleContentType) != null) {
 					return true;
 				}
 			}
@@ -206,20 +230,9 @@ public final class Project implements Logger,ModuleLoader {
 		
 		try {
 			// ok, now look for module inside package roots.
-			Path.Entry entry = null;
-			for(Path.Root root : srcRoots) {
-				entry = root.get(module);
-				// FIXME: this seems like something of a hack.
-				if(entry instanceof Path.SourceEntry) {
-					Path.SourceEntry se = (Path.SourceEntry) entry;					
-					entry = se.binary();
-					if(entry != null) {
-						break;
-					}
-				}
-			}
-			for(Path.Root root : externalRoots) {
-				entry = root.get(module);
+			Path.Entry<Module> entry = null;			
+			for(Path.Root root : binaryRoots) {
+				entry = root.get(module,ModuleContentType);
 				if(entry != null) {
 					break;
 				}
@@ -227,7 +240,7 @@ public final class Project implements Logger,ModuleLoader {
 			if(entry == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}			
-			m = readModuleInfo(entry);
+			m = entry.read();
 			if(m == null) {
 				throw new ResolveError("Unable to find module: " + module);
 			}
@@ -250,14 +263,14 @@ public final class Project implements Logger,ModuleLoader {
 	public Set<ModuleID> get(PkgID pid) throws Exception {
 		HashSet<ModuleID> contents = new HashSet<ModuleID>();		
 		
-		for(Path.Root root : srcRoots) {			
+		for(Path.Root root : sourceRoots) {			
 			if(root.exists(pid)) {
 				for (Path.Entry e : root.list(pid)) {
 					contents.add(e.id());
 				}
 			}
 		}
-		for(Path.Root root : externalRoots) {
+		for(Path.Root root : binaryRoots) {
 			if(root.exists(pid)) {
 				for (Path.Entry e : root.list(pid)) {
 					contents.add(e.id());
@@ -267,29 +280,4 @@ public final class Project implements Logger,ModuleLoader {
 
 		return contents;
 	}	
-			
-	// ======================================================================
-	// Private Implementation
-	// ======================================================================		
-	
-	private Module readModuleInfo(Path.Entry entry) throws Exception {
-		Runtime runtime = Runtime.getRuntime();
-		long time = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
-		ModuleReader reader = suffixMap.get(entry.suffix());
-		ModuleID mid = entry.id();		
-		Module mi = reader.read(mid, entry.contents());
-				
-		if(mi != null) {
-			logger.logTimedMessage("Loaded " + entry.location() + ":" + mid,
-					System.currentTimeMillis() - time, memory - runtime.freeMemory());
-			moduleCache.put(mi.id(), mi);
-		} else {
-			
-			logger.logTimedMessage("Ignored " + entry.location() + ":" + mid,
-					System.currentTimeMillis() - time, memory - runtime.freeMemory());
-		}
-		
-		return mi;
-	}
 }

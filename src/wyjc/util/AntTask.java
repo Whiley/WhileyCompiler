@@ -30,7 +30,8 @@ import java.util.*;
 
 import wyc.builder.Builder;
 import wyc.builder.Pipeline;
-import wyc.util.path.BinaryDirectoryRoot;
+import wyc.lang.SourceFile;
+import wyc.util.path.ContentType;
 import wyc.util.path.JarFileRoot;
 import wyc.util.path.Path;
 import wyc.util.path.DirectoryRoot;
@@ -65,6 +66,15 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * 
  */
 public class AntTask extends MatchingTask {
+	/**
+	 * The master project content type registry.
+	 */
+	public static final ContentType.RegistryImpl registry = new ContentType.RegistryImpl() {{
+		register("whiley",SourceFile.ContentType);
+		register("class",wyc.lang.Project.ModuleContentType);		
+	}};
+	
+	
 	ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
 	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
 	private File srcdir;
@@ -83,9 +93,9 @@ public class AntTask extends MatchingTask {
     	whileypath.clear(); // just to be sure
     	for(String file : path.list()) {
     		if(file.endsWith(".jar")) {
-    			whileypath.add(new JarFileRoot(file));
+    			whileypath.add(new JarFileRoot(file,registry));
     		} else {
-    			whileypath.add(new BinaryDirectoryRoot(file));
+    			whileypath.add(new DirectoryRoot(file,registry));
     		}
     	}
     }
@@ -94,9 +104,9 @@ public class AntTask extends MatchingTask {
     	bootpath.clear(); // just to be sure
     	for(String file : path.list()) {
     		if(file.endsWith(".jar")) {
-    			bootpath.add(new JarFileRoot(file));
+    			bootpath.add(new JarFileRoot(file,registry));
     		} else {
-    			bootpath.add(new BinaryDirectoryRoot(file));
+    			bootpath.add(new DirectoryRoot(file,registry));
     		}
     	}
     }
@@ -121,13 +131,20 @@ public class AntTask extends MatchingTask {
     	
     protected boolean compile() {
     	try {
-    		// first, initialise sourcepath and whileypath
-    		List<DirectoryRoot> sourcepath = initialiseSourcePath();
-    		List<Path.Root> whileypath = initialiseWhileyPath();
-
+    		// first, initialise source and binary roots
+    		ArrayList<Path.Root> sourceRoots = new ArrayList<Path.Root>();
+        	Path.Root sourceRoot = new DirectoryRoot(srcdir,registry); 
+    		sourceRoots.add(sourceRoot);    
+    
+        	ArrayList<Path.Root> binaryRoots = new ArrayList<Path.Root>();
+        	wyjc.Main.initialiseBootPath(bootpath);
+        	Path.Root destRoot = destdir != null ? new DirectoryRoot(destdir,registry) : sourceRoot;        	
+        	binaryRoots.add(destRoot);        	
+        	binaryRoots.addAll(whileypath);
+        	binaryRoots.addAll(bootpath);
+    		
     		// second, construct the module loader    		
-    		wyc.lang.Project project = new wyc.lang.Project(sourcepath,whileypath);
-    		project.setModuleReader("class",  new ClassFileLoader());
+    		wyc.lang.Project project = new wyc.lang.Project(sourceRoots,binaryRoots);    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));
@@ -149,13 +166,15 @@ public class AntTask extends MatchingTask {
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
     		int count = 0;
-			for (DirectoryRoot src : sourcepath) {
-				for (Path.SourceEntry e : src.list()) {
-					Path.Entry binary = e.binary();					
-					if (binary == null
-							|| binary.lastModified() < e.lastModified()) {
-						count++;
-						e.touch();
+			for (Path.Root src : sourceRoots) {
+				for (Path.Entry e : src.list()) {
+					if(e.contentType() == SourceFile.ContentType) {
+						Path.Entry binary = destRoot.get(e.id(), wyc.lang.Project.ModuleContentType);						
+						if (binary == null
+								|| binary.lastModified() < e.lastModified()) {
+							count++;
+							e.touch();
+						}
 					}
 				}
 			}
@@ -189,19 +208,4 @@ public class AntTask extends MatchingTask {
     	
     }
     
-    protected List<DirectoryRoot> initialiseSourcePath() throws IOException {
-    	ArrayList<DirectoryRoot> sourcepath = new ArrayList<DirectoryRoot>();
-    	BinaryDirectoryRoot bindir = null;
-    	if(destdir != null) {
-    		bindir = new BinaryDirectoryRoot(destdir);
-    	}
-    	sourcepath.add(new DirectoryRoot(srcdir,bindir));    	
-    	return sourcepath;
-    }
-    
-    protected List<Path.Root> initialiseWhileyPath() {    	
-    	wyjc.Main.initialiseBootPath(bootpath);
-    	whileypath.addAll(bootpath);
-    	return whileypath;
-    }
 }

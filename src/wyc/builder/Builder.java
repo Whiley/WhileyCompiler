@@ -103,15 +103,15 @@ public final class Builder {
 		this.project = project;
 	}
 	
-	public void build(List<Path.Entry> delta) throws Exception {
+	public void build(List<Path.Entry<SourceFile>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();
 				
 		srcFiles.clear();
 		ArrayList<SourceFile> wyfiles = new ArrayList<SourceFile>();
-		for (Path.Entry f : delta) {			
-			SourceFile wf = parse(f);
+		for (Path.Entry<SourceFile> f : delta) {			
+			SourceFile wf = f.read();
 			wyfiles.add(wf);
 			srcFiles.put(wf.module, wf);
 		}
@@ -222,36 +222,6 @@ public final class Builder {
 	// Private Implementation
 	// ======================================================================
 
-	/**
-	 * This method simply parses a whiley file into an abstract syntax tree. It
-	 * makes little effort to check whether or not the file is syntactically
-	 * correct. In particular, it does not determine the correct type of all
-	 * declarations, expressions, etc.
-	 * 
-	 * @param file
-	 * @return
-	 * @throws IOException
-	 */
-	private SourceFile parse(Path.Entry file) throws Exception {
-		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
-
-		WhileyLexer wlexer = new WhileyLexer(file.contents());
-
-		List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer
-				.scan());
-
-		WhileyParser wfr = new WhileyParser(file.location().toString(),
-				tokens);
-		project.logTimedMessage("[" + file.location() + "] Parsing complete",
-				System.currentTimeMillis() - start,
-				memory - runtime.freeMemory());
-
-		SourceFile wf = wfr.read();
-		return wf;
-	}		
-	
 	/**
 	 * This method puts the given module through the second half of the
 	 * compilation pipeline. In particular, it propagates and generates types

@@ -31,7 +31,7 @@ public interface ContentType<T> {
 	 *            content type.
 	 * @return
 	 */
-	public T read(InputStream input);
+	public T read(Path.Entry entry) throws Exception;
 	
 	/**
 	 * Convert a given value into an appropriate byte stream and write it to a
@@ -42,7 +42,7 @@ public interface ContentType<T> {
 	 * @param value
 	 *            --- value to be converted into bytes.
 	 */
-	public void write(OutputStream output, T value);
+	public void write(Path.Entry entry, T value) throws Exception;
 	
 	public interface Registry {
 		/**

@@ -25,9 +25,13 @@
 
 package wyc.lang;
 
+import java.io.*;
 import java.util.*;
 
 import wyc.builder.Nominal;
+import wyc.stages.WhileyFilter;
+import wyc.stages.WhileyLexer;
+import wyc.stages.WhileyParser;
 import wyc.util.path.ContentType;
 import wyc.util.path.Path;
 import wyil.ModuleLoader;
@@ -50,18 +54,51 @@ public final class SourceFile {
 	// Content Type
 	// =========================================================================
 	
-	public static final ContentType<SourceFile> WHILEY_FILE = new ContentType<SourceFile>() {
-		public Path.Entry<SourceFile> accept(Path.Entry<?> e) {
-			/*
+	public static final ContentType<SourceFile> ContentType = new ContentType<SourceFile>() {
+		public Path.Entry<SourceFile> accept(Path.Entry<?> e) {			
 			if (e.contentType() == this) {
 				return (Path.Entry<SourceFile>) e;
-			} 
-			*/
+			} 			
 			return null;
 		}
 
 		public boolean matches(String suffix) {
 			return suffix.equals("whiley");
+		}
+		
+		/**
+		 * This method simply parses a whiley file into an abstract syntax tree. It
+		 * makes little effort to check whether or not the file is syntactically
+		 * correct. In particular, it does not determine the correct type of all
+		 * declarations, expressions, etc.
+		 * 
+		 * @param file
+		 * @return
+		 * @throws IOException
+		 */		
+		public SourceFile read(Path.Entry e) throws Exception {		
+			Runtime runtime = Runtime.getRuntime();
+			long start = System.currentTimeMillis();
+			long memory = runtime.freeMemory();
+
+			WhileyLexer wlexer = new WhileyLexer(e.inputStream());
+
+			List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer
+					.scan());
+
+			WhileyParser wfr = new WhileyParser(e.location().toString(),
+					tokens);
+//			project.logTimedMessage("[" + e.location() + "] Parsing complete",
+//					System.currentTimeMillis() - start,
+//					memory - runtime.freeMemory());
+
+			SourceFile wf = wfr.read();
+			return wf;				
+		}
+		
+		public void write(Path.Entry entry, SourceFile contents) {
+			// for now
+			throw new UnsupportedOperationException();
 		}
 	};
 
