@@ -163,8 +163,7 @@ public class Main {
 	 * @param bootpath
 	 */
 	public static void initialiseBootPath(List<Path.Root> bootpath) {
-		if(bootpath.isEmpty()) {
-		
+		if(bootpath.isEmpty()) {		
 			//
 			try {
 				// String jarfile = Main.class.getPackage().getImplementationTitle();
@@ -228,7 +227,7 @@ public class Main {
 	 * @param items
 	 * @return
 	 */
-	private static List<Path.Root> initialiseBinaryRoots(List<String> roots,
+	private static List<Path.Root> initialiseExternalRoots(List<String> roots,
 			boolean verbose) {
 		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
 		for (String root : roots) {
@@ -290,26 +289,34 @@ public class Main {
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
 		try {	
-						// initialise the boot path appropriately
-			List<Path.Root> bootpath = initialiseBinaryRoots((ArrayList) values.get("bootpath"),verbose);
+			// initialise the boot path appropriately
+			List<Path.Root> bootpath = initialiseExternalRoots((ArrayList) values.get("bootpath"),verbose);
 			initialiseBootPath(bootpath);
 
-			// initialise the whiley path appropriately
-			List<Path.Root> whileypath = initialiseBinaryRoots((ArrayList) values.get("whileypath"),verbose);	
+			// initialise the external roots appropriately
+			List<Path.Root> externalRoots = initialiseExternalRoots((ArrayList) values.get("whileypath"),verbose);	
+			externalRoots.addAll(bootpath);
 			
-			// initialise the source path appropriately
-			DirectoryRoot bindir = null;
-			if (outputdir != null) {
-				bindir = new DirectoryRoot(outputdir,registry);
-			}
-			List<DirectoryRoot> sourcepath = initialiseSourceRoots(
+			// initialise the source roots appropriately
+			List<DirectoryRoot> sourceRoots = initialiseSourceRoots(
 					(ArrayList) values.get("sourcepath"), verbose);
 			
-			// now initialise the whiley path			
-			whileypath.addAll(bootpath);
-
+			// initialise binary roots appropriately
+			ArrayList<DirectoryRoot> binaryRoots = new ArrayList<DirectoryRoot>();
+			if (outputdir != null) {
+				// if an output directory is specified, everything is redirected
+				// to that.
+				binaryRoots.add(new DirectoryRoot(outputdir,binFilter,registry));
+			} else {
+				// otherwise, the binaries for each source folder are redirected
+				// to that folder.
+				for(DirectoryRoot srcRoot : sourceRoots) {
+					binaryRoots.add(new DirectoryRoot(srcRoot.location(),binFilter,registry));
+				}
+			}
+			
 			// finally, construct the project		
-			Project project = new Project(sourcepath,whileypath);			
+			Project project = new Project(sourceRoots,binaryRoots,externalRoots);			
 
 			if(verbose) {			
 				project.setLogger(new Logger.Default(System.err));
@@ -334,7 +341,7 @@ public class Main {
 			project.setBuilder(new Builder(project,stages));		
 
 			// Now, touch all files indicated on command-line			
-			for(DirectoryRoot src : sourcepath) {
+			for(DirectoryRoot src : sourceRoots) {
 				File loc = src.location();
 				String locPath = loc.getCanonicalPath();
 				for (String _file : args) {

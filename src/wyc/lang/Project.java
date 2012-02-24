@@ -24,7 +24,9 @@ import wyjc.io.ClassFileLoader;
 public final class Project implements Logger,ModuleLoader {	
 	
 	
-	// Hack for now
+	/**
+	 * The ModuleContentType should go into the class wyil.lang.Module.
+	 */
 	public final static ContentType<Module> ModuleContentType = new ContentType<Module>() {
 
 		public boolean matches(String suffix) {
@@ -62,16 +64,22 @@ public final class Project implements Logger,ModuleLoader {
 	 * The source roots are locations which may contain the root of a package
 	 * structure containing source files.
 	 */
-	private ArrayList<Path.Root> sourceRoots;
+	private final ArrayList<Path.Root> sourceRoots;
 	
 	/**
-	 * The binary roots represent the root of all binary module files. This
-	 * includes external libraries required for compiling this project, as well
-	 * as the binary folders correspond to source folders. They may exist in
-	 * several forms, including as jar files or directory roots (for binary
-	 * files).
+	 * The binary roots represent the root of all binary module files. That is,
+	 * the destinations for all source roots. They may exist in several forms,
+	 * including as jar files or directory roots (for binary files).
 	 */
-	private ArrayList<Path.Root> binaryRoots;	
+	private final ArrayList<Path.Root> binaryRoots;
+	
+	/**
+	 * The external roots represent the root of all external module files. This
+	 * includes external libraries required for compiling this project. They may
+	 * exist in several forms, including as jar files or directory roots (for
+	 * binary files).
+	 */
+	private final ArrayList<Path.Root> externalRoots;	
 	
 	/**
 	 * The builder used for compiling source files into modules.
@@ -89,10 +97,24 @@ public final class Project implements Logger,ModuleLoader {
 	 * The logger is used to log messages for the project.
 	 */
 	private Logger logger = Logger.NULL;
-	
-	public Project(Collection<? extends Path.Root> srcRoots, Collection<? extends Path.Root> libRoots) {
+
+	/**
+	 * Construct a given project.
+	 * 
+	 * @param srcRoots
+	 *            --- a list of source roots.
+	 * @param binRoots
+	 *            --- a list of binary roots. There must be one per source root,
+	 *            even if they are the same.
+	 * @param extRoots
+	 *            --- a list of external roots.
+	 */
+	public Project(Collection<? extends Path.Root> srcRoots,
+			Collection<? extends Path.Root> binRoots,
+			Collection<? extends Path.Root> extRoots) {
 		this.sourceRoots = new ArrayList<Path.Root>(srcRoots);
-		this.binaryRoots = new ArrayList<Path.Root>(libRoots);
+		this.binaryRoots = new ArrayList<Path.Root>(binRoots);
+		this.externalRoots = new ArrayList<Path.Root>(extRoots);
 	}
 	
 	// ======================================================================
@@ -132,15 +154,17 @@ public final class Project implements Logger,ModuleLoader {
 	public void build() throws Exception {
 		
 		// first, determine what has changed.
-		ArrayList<Path.Entry<SourceFile>> delta = new ArrayList<Path.Entry<SourceFile>>(); 
-		for(Path.Root root : sourceRoots) {
-			for(Path.Entry e : root.list()) {
-				// FIXME: surely there must be a better way!
-				if(e.contentType() == SourceFile.ContentType && e.isModified()) {
+		ArrayList<Path.Entry<SourceFile>> delta = new ArrayList<Path.Entry<SourceFile>>();
+		for (Path.Root root : sourceRoots) {
+			for (Path.Entry e : root.list()) {
+				if (e.contentType() == SourceFile.ContentType && e.isModified()) {
 					delta.add(e);
 				}
 			}
 		}
+		
+		// FIXME: this is where we sort out the dependency issue. that is, we
+		// must here include all files which depend on those to be compiled.
 		
 		builder.build(delta);
 	}
@@ -175,7 +199,7 @@ public final class Project implements Logger,ModuleLoader {
 					return true;
 				}
 			}
-			for(Path.Root root : binaryRoots) {				
+			for(Path.Root root : externalRoots) {				
 				if(root.exists(pid)) {					
 					return true;
 				}
@@ -200,7 +224,7 @@ public final class Project implements Logger,ModuleLoader {
 					return true;
 				}
 			}
-			for(Path.Root root : binaryRoots) {
+			for(Path.Root root : externalRoots) {
 				if(root.get(mid,ModuleContentType) != null) {
 					return true;
 				}
@@ -235,7 +259,15 @@ public final class Project implements Logger,ModuleLoader {
 				if(entry != null) {
 					break;
 				}
-			}			
+			}
+			if(entry == null) {
+				for(Path.Root root : externalRoots) {
+					entry = root.get(mid,ModuleContentType);
+					if(entry != null) {
+						break;
+					}
+				}			
+			}
 			if(entry == null) {				
 				throw new ResolveError("Unable to find module: " + mid);
 			}			
@@ -270,7 +302,7 @@ public final class Project implements Logger,ModuleLoader {
 				}
 			}
 		}
-		for(Path.Root root : binaryRoots) {
+		for(Path.Root root : externalRoots) {
 			if(root.exists(pid)) {
 				for (Path.Entry e : root.list(pid)) {
 					contents.add(e.id());

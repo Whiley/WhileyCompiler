@@ -147,16 +147,18 @@ public class AntTask extends MatchingTask {
         	Path.Root sourceRoot = new DirectoryRoot(srcdir,srcFilter,registry); 
     		sourceRoots.add(sourceRoot);    
     
-        	ArrayList<Path.Root> binaryRoots = new ArrayList<Path.Root>();
-        	wyjc.Main.initialiseBootPath(bootpath);
+    		ArrayList<Path.Root> binaryRoots = new ArrayList<Path.Root>();
         	if(destdir == null) { destdir = srcdir; }
         	Path.Root destRoot = new DirectoryRoot(destdir,binFilter,registry);        	
-        	binaryRoots.add(destRoot);        	
-        	binaryRoots.addAll(whileypath);
-        	binaryRoots.addAll(bootpath);
-    		
+        	binaryRoots.add(destRoot);
+        	    		
+        	ArrayList<Path.Root> externalRoots = new ArrayList<Path.Root>();
+        	wyjc.Main.initialiseBootPath(bootpath);        	;        	
+        	externalRoots.addAll(whileypath);
+        	externalRoots.addAll(bootpath);
+    		        	
     		// second, construct the module loader    		
-    		wyc.lang.Project project = new wyc.lang.Project(sourceRoots,binaryRoots);    		
+    		wyc.lang.Project project = new wyc.lang.Project(sourceRoots,binaryRoots,externalRoots);    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));
