@@ -28,8 +28,7 @@ package wyc.io;
 import java.io.*;
 import java.util.*;
 
-import wyil.lang.ModuleID;
-import wyil.lang.PkgID;
+import wyc.util.TreeID;
 
 public final class DirectoryRoot extends Path.AbstractRoot {
 	
@@ -52,7 +51,7 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	 *            path (i.e. separated using File.separatorChar, etc)
 	 * @throws IOException
 	 */
-	public DirectoryRoot(String path, ContentType.Registry contentTypes) throws IOException {
+	public DirectoryRoot(String path, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.srcDirectory = new File(path);				
 		this.filter = NULL_FILTER;		
@@ -70,7 +69,7 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	 *            --- filter on which files are included.
 	 * @throws IOException
 	 */
-	public DirectoryRoot(String path, FileFilter filter, ContentType.Registry contentTypes) throws IOException {
+	public DirectoryRoot(String path, FileFilter filter, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.srcDirectory = new File(path);				
 		this.filter = filter;		
@@ -86,7 +85,7 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	 *            path (i.e. separated using File.separatorChar, etc)
 	 * @throws IOException
 	 */
-	public DirectoryRoot(File dir, ContentType.Registry contentTypes) throws IOException {
+	public DirectoryRoot(File dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.srcDirectory = dir;			
 		this.filter = NULL_FILTER;		
@@ -104,7 +103,7 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	 *            --- filter on which files are included.
 	 * @throws IOException
 	 */
-	public DirectoryRoot(File dir, FileFilter filter, ContentType.Registry contentTypes) throws IOException {
+	public DirectoryRoot(File dir, FileFilter filter, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.srcDirectory = dir;			
 		this.filter = filter;		
@@ -118,9 +117,9 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 		return srcDirectory.getPath();
 	}
 
-	protected Path.Entry[] contents() throws IOException {
-		ArrayList<Path.Entry> contents = new ArrayList<Path.Entry>();
-		traverse(srcDirectory,PkgID.ROOT,contents);
+	protected Path.Entry<?>[] contents() throws IOException {
+		ArrayList<Path.Entry<?>> contents = new ArrayList<Path.Entry<?>>();
+		traverse(srcDirectory,TreeID.ROOT,contents);
 		return contents.toArray(new Path.Entry[contents.size()]);
 	}
 	
@@ -135,8 +134,8 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	public static class Entry<T> extends Path.AbstractEntry<T> implements Path.Entry<T> {		
 		private final java.io.File file;
 		
-		public Entry(ModuleID mid, java.io.File file, ContentType<T> contentType) {
-			super(mid,contentType);			
+		public Entry(Path.ID id, java.io.File file, Content.Type<T> contentType) {
+			super(id,contentType);			
 			this.file = file;			
 		}
 		
@@ -177,22 +176,24 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	 * @param entries
 	 *            --- list of entries being accumulated into.
 	 */
-	private void traverse(File location, PkgID pkg, ArrayList<Path.Entry> contents) throws IOException {
-		if (location.exists() && location.isDirectory()) {									
-			for (File file : location.listFiles(filter)) {						
-				if(file.isDirectory()) {
-					traverse(file,pkg.append(file.getName()),contents);
-				} else {					
-					String filename = file.getName();	
+	private void traverse(File location, TreeID id,
+			ArrayList<Path.Entry<?>> contents) throws IOException {
+		if (location.exists() && location.isDirectory()) {
+			for (File file : location.listFiles(filter)) {
+				if (file.isDirectory()) {
+					traverse(file, id.append(file.getName()), contents);
+				} else {
+					String filename = file.getName();
 					int i = filename.lastIndexOf('.');
-					if(i > 0) {						
+					if (i > 0) {
 						String name = filename.substring(0, i);
-						String suffix = filename.substring(i+1);
-						ModuleID mid = new ModuleID(pkg, name);										
-						contents.add(new Entry(mid, file, contentTypes.get(suffix)));
+						String suffix = filename.substring(i + 1);
+						Path.ID oid = id.append(name);
+						contents.add(new Entry(oid, file, contentTypes
+								.get(suffix)));
 					}
-				}				
-			}				
+				}
+			}
 		}
 	}
 }

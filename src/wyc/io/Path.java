@@ -25,56 +25,57 @@
 
 package wyc.io;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
-import wyc.io.DirectoryRoot.Entry;
-import wyil.lang.ModuleID;
-import wyil.lang.PkgID;
-
-public interface Path {
+public class Path {
 	
-	public interface Root {		
+	/**
+	 * A Path ID represents a sequence of zero or more names which describe a
+	 * path through the namespace for a given project.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public interface ID extends Iterable<String>, Comparable<ID> {
 		
 		/**
-		 * Check whether or not a given package is contained.
-		 */
-		public boolean exists(PkgID pid) throws Exception;
-		
-		/**
-		 * Check whether or not a given package is contained.
-		 */
-		public <T> boolean exists(ModuleID pid, ContentType<T> ct) throws Exception;		
-		
-		/**
-		 * Lookup a given module.
-		 * 
-		 * @param mid
-		 *            --- id of module to lookup.
+		 * Get the number of components that make up this ID.
 		 * @return
-		 * @throws IOException
 		 */
-		public <T> Path.Entry<T> get(ModuleID mid, ContentType<T> ct) throws Exception;
+		public int size();
 		
 		/**
-		 * List contents of a given package.
-		 * 
-		 * @param pid
+		 * Return the component at a given index.
+		 * @param index
 		 * @return
-		 * @throws IOException
 		 */
-		public Collection<? extends Entry> list(PkgID pid) throws Exception;
+		public String get(int index);
 		
 		/**
-		 * List contents of all packages.
+		 * A convenience function that gets the last component of this path.
 		 * 
 		 * @return
-		 * @throws IOException
 		 */
-		public Collection<? extends Entry> list() throws Exception;		
+		public String last();
+		
+		/**
+		 * Get the parent of this path.
+		 * 
+		 * @return
+		 */
+		public ID parent();
+		
+		/**
+		 * Append a component onto the end of this id.
+		 * 
+		 * @param component
+		 *            --- to be appended
+		 * @return
+		 */
+		public ID append(String component);
 	}
 	
 	/**
@@ -85,7 +86,13 @@ public interface Path {
 	 * 
 	 */
 	public interface Entry<T> {
-		public ModuleID id();
+		
+		/**
+		 * Return the identify of this entry.
+		 * 
+		 * @return
+		 */
+		public ID id();
 
 		/**
 		 * Return the suffix of the item in question. This is necessary to
@@ -96,7 +103,8 @@ public interface Path {
 		public String suffix();
 		
 		/**
-		 * Return a string indicating the location of this entry.  
+		 * Return a string indicating the true location of this entry.
+		 * 
 		 * @return
 		 */
 		public String location();
@@ -116,7 +124,7 @@ public interface Path {
 		public boolean isModified();
 		
 		/**
-		 * Mark this entry as being modified
+		 * Mark this entry as being modified.
 		 * 
 		 * @return
 		 */
@@ -125,7 +133,7 @@ public interface Path {
 		/**
 		 * Get the content type associated with this file.
 		 */
-		public ContentType<T> contentType();
+		public Content.Type<T> contentType();
 		
 		/**
 		 * Read contents of file
@@ -137,9 +145,8 @@ public interface Path {
 		 * 
 		 * @param contents
 		 */
-		public void write(ContentType<T> contentType, T contents) throws Exception;
+		public void write(Content.Type<T> contentType, T contents) throws Exception;
 		
-
 		/**
 		 * Open a generic input stream to the entry.
 		 * 
@@ -157,19 +164,51 @@ public interface Path {
 		public OutputStream outputStream() throws Exception;
 	}	
 	
+	/**
+	 * Represents the root of a hierarchy of named objects. 
+	 * 
+	 * @author djp
+	 *
+	 */
+	public interface Root {		
+		
+		/**
+		 * Check whether or not a given package is contained.
+		 */
+		public boolean exists(ID id, Content.Type<?> ct) throws Exception;
+		
+		/**
+		 * Lookup a given object.
+		 * 
+		 * @param mid
+		 *            --- id of module to lookup.
+		 * @return
+		 * @throws IOException
+		 */
+		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception;
+		
+		/**
+		 * List all objects of a given content type stored in this root.
+		 * 
+		 * @param ct
+		 * @return
+		 */
+		public <T> List<Path.Entry<T>> list(Content.Filter<T> ct) throws Exception;
+	}
+	
 	public static abstract class AbstractEntry<T> implements Entry<T> {
-		private final ModuleID mid;		
-		private ContentType<T> contentType;
+		private final ID id;		
+		private Content.Type<T> contentType;
 		private T contents = null;
 		private boolean modified = false;
 		
-		public AbstractEntry(ModuleID mid, ContentType<T> contentType) {
-			this.mid = mid;
+		public AbstractEntry(ID mid, Content.Type<T> contentType) {
+			this.id = mid;
 			this.contentType = contentType;
 		}
 		
-		public ModuleID id() {
-			return mid;
+		public ID id() {
+			return id;
 		}
 		
 		public void touch() {
@@ -180,7 +219,7 @@ public interface Path {
 			return modified;
 		}
 		
-		public ContentType<T> contentType() {
+		public Content.Type<T> contentType() {
 			return contentType;
 		}
 		
@@ -191,83 +230,62 @@ public interface Path {
 			return contents;
 		}		
 				
-		public void write(ContentType<T> contentType, T contents) throws Exception {
+		public void write(Content.Type<T> contentType, T contents) throws Exception {
 			this.contentType = contentType;
 			this.contents = contents; 
 		}
 	}
 	
 	public static abstract class AbstractRoot implements Root {
-		protected final ContentType.Registry contentTypes;
-		private Path.Entry[] contents = null;
+		protected final Content.Registry contentTypes;
+		private Path.Entry<?>[] contents = null;
 		
-		public AbstractRoot(ContentType.Registry contentTypes) {
+		public AbstractRoot(Content.Registry contentTypes) {
 			this.contentTypes = contentTypes;
 		}
 		
-		public boolean exists(PkgID pkg) throws Exception {
+		public boolean exists(ID id, Content.Type<?> ct) throws Exception {
 			if(contents == null) {
 				contents = contents();
 			}
 			for(Path.Entry e : contents) {
-				if(e.id().pkg().equals(pkg)) {
+				if (e.id().equals(id) && e.contentType() == ct) {
 					return true;
 				}
 			}
 			return false;
 		}
 		
-		public <T> boolean exists(ModuleID mid, ContentType<T> ct) throws Exception {
+		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {
 			if(contents == null) {
 				contents = contents();
 			}
-			for(Path.Entry e : contents) {
-				if (e.id().equals(mid) && e.contentType() == ct) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		public List<Entry> list() throws Exception {
-			if(contents == null) {
-				contents = contents();
-			}	
-			ArrayList<Entry> entries = new ArrayList<Entry>();			
-			for(Path.Entry e : contents) {
-				entries.add(e);
-			}
-			return entries;
-		}
-		
-		public List<Entry> list(PkgID pkg) throws Exception {
-			if(contents == null) {
-				contents = contents();
-			}	
-			ArrayList<Entry> entries = new ArrayList<Entry>();			
-			for(Path.Entry e : contents) {
-				if(e.id().pkg().equals(pkg)) {
-					entries.add(e);
-				}
-			}
-			return entries;			
-		}
-		
-		public <T> Path.Entry<T> get(ModuleID mid, ContentType<T> ct) throws Exception {
-			if(contents == null) {
-				contents = contents();
-			}
-			for(Path.Entry e : contents) {
-				if (e.id().equals(mid) && ct.matches(e.suffix())) {
+			for (Path.Entry e : contents) {
+				if (e.id().equals(id) && e.contentType() == ct) {
 					return e;
-				}				
+				}
 			}
 			return null;
 		}
 		
+		public <T> List<Entry<T>> list(Content.Filter<T> filter) throws Exception {
+			if(contents == null) {
+				contents = contents();
+			}	
+			ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
+			for(Path.Entry<?> e : contents) {
+				Path.Entry<T> r = filter.match(e);
+				if(r != null) {
+					entries.add(r);
+				}
+			}
+			return entries;
+		}
+		
+		
 		/**
 		 * Extract all entries from the given type.
 		 */
-		protected abstract Path.Entry[] contents() throws Exception;
+		protected abstract Path.Entry<?>[] contents() throws Exception;
 	}
 }
