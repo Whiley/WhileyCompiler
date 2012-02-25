@@ -3,12 +3,12 @@ package wysrc.builder;
 import java.util.*;
 
 import static wysrc.lang.SourceFile.*;
-import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wysrc.lang.SourceFile;
 import wysrc.lang.UnresolvedType;
+import wyc.lang.Path;
+
 /**
  * <p>
  * The global generator is responsible for generating wyil bytecode for "global"
@@ -71,7 +71,7 @@ public class GlobalGenerator {
 		
 		// check whether the item in question is in one of the source
 		// files being compiled.
-		ModuleID mid = nid.module();
+		Path.ID mid = nid.module();
 		SourceFile wf = builder.getSourceFile(mid);
 		if(wf != null) {
 			// FIXME: the following line is necessary to terminate infinite

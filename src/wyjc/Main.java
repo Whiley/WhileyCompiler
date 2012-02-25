@@ -35,7 +35,7 @@ import wyc.lang.Project;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
 import wyil.*;
-import wyil.lang.ModuleID;
+import wyil.lang.Path.ID;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
 import static wysrc.util.OptArg.*;
@@ -355,7 +355,7 @@ public class Main {
 						}
 						String module = filePath.substring(end).replace(File.separatorChar, '.');
 						module = module.substring(0,module.length()-7);						
-						ModuleID mid = ModuleID.fromString(module);			
+						Path.ID mid = Path.ID.fromString(module);			
 						Path.Entry entry = src.get(mid,SourceFile.ContentType);
 						if(entry == null) {
 							throw new FileNotFoundException(_file);

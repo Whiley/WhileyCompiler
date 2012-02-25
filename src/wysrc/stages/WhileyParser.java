@@ -29,6 +29,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.lang.Path;
+import wyc.util.TreeID;
 import wyil.lang.*;
 import wyil.util.*;
 import wyjc.runtime.BigRational;
@@ -58,11 +60,11 @@ public final class WhileyParser {
 		this.tokens = new ArrayList<Token>(tokens); 		
 	}
 	public SourceFile read() {		
-		ArrayList<String> pkg = parsePackage();
+		Path.ID pkg = parsePackage();
 
 		// Now, figure out module name from filename
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-7);		
-		SourceFile wf = new SourceFile(new ModuleID(pkg,name),filename);
+		SourceFile wf = new SourceFile(pkg.append(name),filename);
 		
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
@@ -91,28 +93,29 @@ public final class WhileyParser {
 		return wf;
 	}
 	
-	private ArrayList<String> parsePackage() {
+	private TreeID parsePackage() {
 		
 		while (index < tokens.size()
 				&& (tokens.get(index) instanceof LineComment || tokens.get(index) instanceof NewLine)) {			
 			parseSkip();
 		}
 		
+		TreeID pkg = TreeID.ROOT;
+		
 		if(index < tokens.size() && tokens.get(index).text.equals("package")) {			
 			matchKeyword("package");
-
-			ArrayList<String> pkg = new ArrayList<String>();
-			pkg.add(matchIdentifier().text);
+			
+			pkg = pkg.append(matchIdentifier().text);
 						
 			while (index < tokens.size() && tokens.get(index) instanceof Dot) {
 				match(Dot.class);
-				pkg.add(matchIdentifier().text);
+				pkg = pkg.append(matchIdentifier().text);
 			}
 
 			matchEndLine();
 			return pkg;
 		} else {
-			return new ArrayList<String>(); // no package
+			return pkg; // no package
 		}
 	}
 	
@@ -134,8 +137,8 @@ public final class WhileyParser {
 			matchIdentifier();
 		}
 				
-		ArrayList<String> pkg = new ArrayList<String>();
-		pkg.add(matchIdentifier().text);
+		TreeID pkg = TreeID.ROOT;
+		pkg = pkg.append(matchIdentifier().text);
 		
 		while (index < tokens.size() && tokens.get(index) instanceof Dot) {
 			match(Dot.class);
@@ -143,20 +146,20 @@ public final class WhileyParser {
 				Token t = tokens.get(index);
 				if(t.text.equals("*")) {
 					match(Star.class);
-					pkg.add("*");	
+					pkg = pkg.append("*");	
 				} else {
-					pkg.add(matchIdentifier().text);
+					pkg = pkg.append(matchIdentifier().text);
 				}
 			}
 		}
 		
-		String module = pkg.get(pkg.size()-1);
-		pkg.remove(pkg.size()-1);		
+		String module = pkg.last();
+		pkg = pkg.parent();		
 				
 		int end = index;
 		matchEndLine();
 		
-		wf.add(new Import(new PkgID(pkg), module, name, sourceAttr(start,
+		wf.add(new Import(pkg, module, name, sourceAttr(start,
 				end - 1)));
 	}
 	

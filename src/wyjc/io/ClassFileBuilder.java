@@ -31,6 +31,7 @@ import java.util.*;
 
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyVersion;
+import wyc.lang.Path;
 import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;
@@ -67,8 +68,8 @@ public class ClassFileBuilder {
 	}
 
 	public ClassFile build(Module module) {
-		owner = new JvmType.Clazz(module.id().pkg().toString(),
-				module.id().module().toString());
+		owner = new JvmType.Clazz(module.id().parent().toString().replace('.','/'),
+				module.id().last());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
@@ -1501,10 +1502,10 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Invoke c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		ModuleID mid = c.name.module();
+		Path.ID mid = c.name.module();
 		String mangled = nameMangle(c.name.name(), c.type);
-		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),
-				mid.module());
+		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString()
+				.replace('/', '.'), mid.last());
 		JvmType.Function type = convertFunType(c.type);
 		bytecodes
 				.add(new Bytecode.Invoke(owner, mangled, type, Bytecode.STATIC));

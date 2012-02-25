@@ -27,6 +27,7 @@ package wyil.io;
 
 import java.io.*;
 import wyil.lang.*;
+import wyc.lang.Path;
 
 /**
  * <p>
@@ -52,5 +53,5 @@ public interface ModuleReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public Module read(ModuleID module, InputStream input) throws IOException;
+	public Module read(Path.ID module, InputStream input) throws IOException;
 }

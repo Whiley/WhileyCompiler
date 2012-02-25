@@ -30,11 +30,7 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyil.ModuleLoader;
-import wyil.lang.Attribute;
-import wyil.lang.ModuleID;
 import wyil.lang.NameID;
-import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;

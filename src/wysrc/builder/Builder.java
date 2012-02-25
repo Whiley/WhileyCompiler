@@ -88,7 +88,7 @@ public final class Builder {
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	private HashMap<ModuleID,SourceFile> srcFiles = new HashMap<ModuleID,SourceFile>();
+	private HashMap<Path.ID,SourceFile> srcFiles = new HashMap<Path.ID,SourceFile>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -96,7 +96,7 @@ public final class Builder {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
+	private final HashMap<Triple<Path.ID,String,String>,ArrayList<Path.ID>> importCache = new HashMap();	
 	
 	
 	public Builder(Project project, List<Transform> stages) {
@@ -128,11 +128,11 @@ public final class Builder {
 	// Public Accessors
 	// ======================================================================
 	
-	public boolean isPackage(PkgID pid) {
+	public boolean isPackage(Path.ID pid) {
 		return project.isPackage(pid);
 	}
 	
-	public boolean isModule(ModuleID mid) {
+	public boolean isModule(Path.ID mid) {
 		return project.isModule(mid);
 	}
 	
@@ -143,7 +143,7 @@ public final class Builder {
 	 * @return
 	 */
 	public boolean isName(NameID nid) throws ResolveError {		
-		ModuleID mid = nid.module();
+		Path.ID mid = nid.module();
 		SourceFile wf = srcFiles.get(mid);
 		if(wf != null) {
 			// FIXME: check for the right kind of name			
@@ -166,19 +166,19 @@ public final class Builder {
 	 * @param imp
 	 * @return
 	 */
-	public List<ModuleID> imports(SourceFile.Import imp) throws ResolveError {		
-		Triple<PkgID, String, String> key = new Triple<PkgID, String, String>(
+	public List<Path.ID> imports(SourceFile.Import imp) throws ResolveError {		
+		Triple<Path.ID, String, String> key = new Triple<Path.ID, String, String>(
 				imp.pkg, imp.module, imp.name);
 		try {
-			ArrayList<ModuleID> matches = importCache.get(key);
+			ArrayList<Path.ID> matches = importCache.get(key);
 			if (matches != null) {
 				// cache hit
 				return matches;
 			} else {
 				// cache miss
-				matches = new ArrayList<ModuleID>();				
+				matches = new ArrayList<Path.ID>();				
 				if(project.isPackage(imp.pkg)) {					
-					for (ModuleID mid : project.get(imp.pkg)) {						
+					for (Path.ID mid : project.get(imp.pkg)) {						
 						if (imp.matchModule(mid.module())) {
 							matches.add(mid);
 						}
@@ -203,7 +203,7 @@ public final class Builder {
 	 * @return
 	 * @throws Exception
 	 */
-	public SourceFile getSourceFile(ModuleID mid) {
+	public SourceFile getSourceFile(Path.ID mid) {
 		return srcFiles.get(mid);
 	}
 	
@@ -215,7 +215,7 @@ public final class Builder {
 	 * @return
 	 * @throws Exception
 	 */
-	public Module getModule(ModuleID mid) throws ResolveError {
+	public Module getModule(Path.ID mid) throws ResolveError {
 		return project.get(mid);
 	}
 	

@@ -27,6 +27,7 @@ package wysrc.lang;
 
 import java.util.*;
 
+import wyc.lang.Path;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;
@@ -521,14 +522,14 @@ public interface Expr extends SyntacticElement {
 	}		
 	
 	public static class ModuleAccess extends AbstractDotAccess {
-		public final ModuleID mid;
+		public final Path.ID mid;
 
-		public ModuleAccess(PackageAccess src, String name, ModuleID mid, Attribute... attributes) {
+		public ModuleAccess(PackageAccess src, String name, Path.ID mid, Attribute... attributes) {
 			super(src, name, attributes);
 			this.mid = mid;
 		}
 		
-		public ModuleAccess(PackageAccess src, String name, ModuleID mid, Collection<Attribute> attributes) {
+		public ModuleAccess(PackageAccess src, String name, Path.ID mid, Collection<Attribute> attributes) {
 			super(src, name, attributes);
 			this.mid = mid;
 		}
@@ -548,14 +549,14 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class PackageAccess extends AbstractDotAccess {
-		public PkgID pid;
+		public Path.ID pid;
 
-		public PackageAccess(PackageAccess src, String name, PkgID pid, Attribute... attributes) {
+		public PackageAccess(PackageAccess src, String name, Path.ID pid, Attribute... attributes) {
 			super(src, name, attributes);
 			this.pid = pid;
 		}
 		
-		public PackageAccess(PackageAccess src, String name, PkgID pid, Collection<Attribute> attributes) {
+		public PackageAccess(PackageAccess src, String name, Path.ID pid, Collection<Attribute> attributes) {
 			super(src, name, attributes);
 			this.pid = pid;
 		}			

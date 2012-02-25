@@ -50,5 +50,5 @@ public interface ModuleLoader {
 	 * @param mid
 	 * @return
 	 */
-	public Module get(ModuleID mid) throws ResolveError;
+	public Module get(Path.ID mid) throws ResolveError;
 }

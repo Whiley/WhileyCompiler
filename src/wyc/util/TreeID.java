@@ -144,16 +144,7 @@ public final class TreeID implements Path.ID {
 	}
 	
 	public boolean equals(final Object o) {
-		if(o instanceof TreeID) {
-			TreeID tid = (TreeID) o;
-			if(depth != tid.depth || !component.equals(component)) {
-				return false;
-			} else {
-				return depth == 0 || parent.equals(tid.parent);
-			}
-		}
-		
-		return false;
+		return this == o;
 	}
 	
 	public TreeID append(final String component) {

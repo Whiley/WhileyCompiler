@@ -54,8 +54,7 @@ public final class Module {
 			// FIXME: this shouldn't be using a class file loader :)
 			
 			ClassFileLoader loader = new ClassFileLoader();
-			ModuleID mid = entry.id();		
-			Module mi = loader.read(mid, entry.inputStream());
+			Module mi = loader.read(entry.id(), entry.inputStream());
 			return mi;				
 		}
 		
@@ -69,7 +68,7 @@ public final class Module {
 	// State
 	// =========================================================================
 		
-	private final ModuleID mid;
+	private final Path.ID mid;
 	private final String filename;
 	private HashMap<Pair<String,Type.FunctionOrMethodOrMessage>,Method> methods;
 	private HashMap<String,TypeDef> types;
@@ -79,7 +78,7 @@ public final class Module {
 	// Constructors
 	// =========================================================================
 
-	public Module(ModuleID mid,
+	public Module(Path.ID mid,
 			String filename,
 			Collection<Method> methods,
 			Collection<TypeDef> types,
@@ -126,7 +125,7 @@ public final class Module {
 	// Accessors
 	// =========================================================================
 	
-	public ModuleID id() {
+	public Path.ID id() {
 		return mid;
 	}
 	

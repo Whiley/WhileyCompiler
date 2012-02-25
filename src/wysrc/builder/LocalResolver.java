@@ -11,9 +11,9 @@ import java.util.List;
 
 import wyil.ModuleLoader;
 import wyil.lang.Module;
-import wyil.lang.ModuleID;
+import wyc.lang.Path;
+import wyc.util.TreeID;
 import wyil.lang.NameID;
-import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
@@ -914,12 +914,12 @@ public abstract class LocalResolver extends AbstractResolver {
 			// In this case, we may still be OK if this corresponds to an
 			// explicit module or package access.
 			try {
-				ModuleID mid = resolveAsModule(expr.var, context);
+				Path.ID mid = resolveAsModule(expr.var, context);
 				return new Expr.ModuleAccess(null, expr.var, mid,
 						expr.attributes());
 			} catch (ResolveError err) {
 			}
-			PkgID pid = new PkgID(expr.var);
+			Path.ID pid = TreeID.ROOT.append(expr.var);
 			if (builder.isPackage(pid)) {
 				return new Expr.PackageAccess(null, expr.var, pid,
 						expr.attributes());
@@ -1083,12 +1083,12 @@ public abstract class LocalResolver extends AbstractResolver {
 			// either a package access, module access or constant access
 			// This variable access may correspond to an external access.			
 			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
-			PkgID pid = pa.pid.append(expr.name);
+			Path.ID pid = pa.pid.append(expr.name);
 			if (builder.isPackage(pid)) {
 				return new Expr.PackageAccess(pa, expr.name, pid,
 						expr.attributes());
 			}			
-			ModuleID mid = new ModuleID(pa.pid,expr.name);
+			Path.ID mid = pa.pid.append(expr.name);
 			if (builder.isModule(mid)) {
 				return new Expr.ModuleAccess(pa, expr.name, mid,
 						expr.attributes());
@@ -1256,7 +1256,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		// first, try to find the matching message
 		for (SourceFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {				
-				for (ModuleID mid : builder.imports(imp)) {					
+				for (Path.ID mid : builder.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
 					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
 				}
@@ -1274,7 +1274,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		// first, try to find the matching message
 		for (SourceFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {				
-				for (ModuleID mid : builder.imports(imp)) {										
+				for (Path.ID mid : builder.imports(imp)) {										
 					NameID nid = new NameID(mid,name);					
 					addCandidateMessages(nid,parameters,candidates);					
 				}
@@ -1459,7 +1459,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			List<?> parameters,
 			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
 					throws ResolveError {
-		ModuleID mid = nid.module();
+		Path.ID mid = nid.module();
 
 		int nparams = parameters != null ? parameters.size() : -1;				
 
@@ -1506,7 +1506,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	private void addCandidateMessages(NameID nid, List<?> parameters,
 			Collection<Pair<NameID, Nominal.Message>> candidates)
 			throws ResolveError {
-		ModuleID mid = nid.module();
+		Path.ID mid = nid.module();
 
 		int nparams = parameters != null ? parameters.size() : -1;		
 		SourceFile wf = builder.getSourceFile(mid);

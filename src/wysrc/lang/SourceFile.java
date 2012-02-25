@@ -30,6 +30,7 @@ import java.util.*;
 
 import wyc.lang.Content;
 import wyc.lang.Path;
+import wyc.util.TreeID;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
@@ -101,7 +102,7 @@ public final class SourceFile {
 	// State
 	// =========================================================================
 	
-	public final ModuleID module;
+	public final Path.ID module;
 	public final String filename;
 	public final ArrayList<Declaration> declarations;
 
@@ -109,7 +110,7 @@ public final class SourceFile {
 	// Constructors
 	// =========================================================================
 	
-	public SourceFile(ModuleID module, String filename) {
+	public SourceFile(Path.ID module, String filename) {
 		this.module = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
@@ -211,8 +212,8 @@ public final class SourceFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new SourceFile.Import(new PkgID("whiley","lang"), "*", null)); 	
-			imports.add(new SourceFile.Import(module.pkg(), "*", null)); 
+			imports.add(new SourceFile.Import(TreeID.fromString("whiley/lang"), "*", null)); 	
+			imports.add(new SourceFile.Import(module.parent(), "*", null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -221,7 +222,7 @@ public final class SourceFile {
 					imports.add((Import)d);
 				}
 			}			
-			imports.add(new SourceFile.Import(module.pkg(), module.module(), "*")); 
+			imports.add(new SourceFile.Import(module.parent(), module.last(), "*")); 
 
 			Collections.reverse(imports);	
 			
@@ -243,11 +244,11 @@ public final class SourceFile {
 	 * 
 	 */
 	public static class Import extends SyntacticElement.Impl implements Declaration {
-		public PkgID pkg;
+		public Path.ID pkg;
 		public String module;
 		public String name;
 		
-		public Import(PkgID pkg, String module, String name, Attribute... attributes) {
+		public Import(Path.ID pkg, String module, String name, Attribute... attributes) {
 			super(attributes);
 			this.pkg = pkg;
 			this.module = module;

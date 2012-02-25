@@ -33,10 +33,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import wyautl.io.BinaryAutomataReader;
+import wyc.lang.Path;
 import wyil.io.ModuleReader;
 import wyil.lang.Attribute;
 import wyil.lang.Module;
-import wyil.lang.ModuleID;
 import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjc.attributes.WhileyDefine;
@@ -70,7 +70,7 @@ public class ClassFileLoader implements ModuleReader {
 		// probably want to add more readers here.  E.g. for pre and post-conditions.
 	}
 		
-	public Module read(ModuleID module, InputStream input)
+	public Module read(Path.ID module, InputStream input)
 			throws IOException {
 		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
 				this.readers);
@@ -79,7 +79,7 @@ public class ClassFileLoader implements ModuleReader {
 		return createModule(module, r.readClass());
 	}
 	
-	protected Module createModule(ModuleID mid, ClassFile cf) {
+	protected Module createModule(Path.ID mid, ClassFile cf) {
 		if(cf.attribute("WhileyVersion") == null) {
 			// This indicates the class is not a WhileyFile. This means it was
 			// generate from some other source (e.g. it was a .java file
@@ -146,7 +146,7 @@ public class ClassFileLoader implements ModuleReader {
 		return new Module(mid, cf.name(), methods.values(), types, constants);
 	}
 	
-	protected Module.Method createMethodInfo(ModuleID mid, ClassFile.Method cm) {
+	protected Module.Method createMethodInfo(Path.ID mid, ClassFile.Method cm) {
 		// string any mangling off.
 		try {			
 			int split = cm.name().indexOf('$');

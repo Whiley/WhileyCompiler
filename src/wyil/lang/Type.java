@@ -27,6 +27,8 @@ import wyautl.lang.Automaton.State;
 import wyil.util.Pair;
 import wyil.util.type.*;
 import wyjvm.io.*;
+import wyc.lang.Path;
+import wyc.util.TreeID;
 
 /**
  * A structural type. See
@@ -488,7 +490,7 @@ public abstract class Type {
 			if (state.kind == Type.K_NOMINAL) {				
 				String module = readString();
 				String name = readString();
-				state.data = new NameID(ModuleID.fromString(module), name);
+				state.data = new NameID(TreeID.fromString(module), name);
 			} else if(state.kind == Type.K_RECORD) { 
 				boolean isOpen = reader.read_bit();
 				int nfields = reader.read_uv();
@@ -2499,13 +2501,13 @@ public abstract class Type {
 	}
 		
 	public static Type linkedList(int n) {
-		NameID label = new NameID(ModuleID.fromString(""),"X");
+		NameID label = new NameID(TreeID.fromString(""),"X");
 		return Recursive(label,innerLinkedList(n));
 	}
 	
 	public static Type innerLinkedList(int n) {
 		if(n == 0) {
-			return Nominal(new NameID(ModuleID.fromString(""),"X"));			
+			return Nominal(new NameID(TreeID.fromString(""),"X"));			
 		} else {
 			Type leaf = Reference(innerLinkedList(n-1)); 
 			HashMap<String,Type> fields = new HashMap<String,Type>();

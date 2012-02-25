@@ -1,21 +1,12 @@
 package wysrc.builder;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
-import static wysrc.lang.SourceFile.*;
-import wyil.ModuleLoader;
 import wyil.lang.Module;
-import wyil.lang.ModuleID;
+import wyc.lang.Path;
 import wyil.lang.NameID;
-import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Value;
-import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.Triple;
 import wysrc.lang.*;
@@ -30,7 +21,7 @@ public abstract class AbstractResolver {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Triple<PkgID,String,String>,ArrayList<ModuleID>> importCache = new HashMap();	
+	private final HashMap<Triple<Path.ID,String,String>,ArrayList<Path.ID>> importCache = new HashMap();	
 	
 	public AbstractResolver(Builder project) {				
 		this.builder = project;
@@ -46,7 +37,7 @@ public abstract class AbstractResolver {
 	
 	public abstract NameID resolveAsName(String name, Context context) throws ResolveError;
 	
-	public abstract ModuleID resolveAsModule(String name, Context context) throws ResolveError;
+	public abstract Path.ID resolveAsModule(String name, Context context) throws ResolveError;
 	
 	public abstract Value resolveAsConstant(NameID nid) throws ResolveError;
 	
@@ -197,7 +188,7 @@ public abstract class AbstractResolver {
 		if(type instanceof Type.Nominal){
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();			
-			ModuleID mid = nid.module();
+			Path.ID mid = nid.module();
 
 			SourceFile wf = builder.getSourceFile(mid);
 			Type r = null;

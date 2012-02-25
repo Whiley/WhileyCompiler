@@ -28,6 +28,8 @@ package wyil.transforms;
 import static wyil.util.SyntaxError.*;
 import java.util.*;
 
+import wyc.lang.Path;
+import wyc.util.TreeID;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
@@ -796,17 +798,17 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		if (type == Type.T_BYTE) {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_BYTE);
-			name = new NameID(ModuleID.fromString("whiley.lang.Byte"),
+			name = new NameID(TreeID.fromString("whiley/lang/Byte"),
 					"toString");
 		} else if (type == Type.T_CHAR) {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_CHAR);
-			name = new NameID(ModuleID.fromString("whiley.lang.Char"),
+			name = new NameID(TreeID.fromString("whiley/lang/Char"),
 					"toString");
 		} else {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_ANY);
-			name = new NameID(ModuleID.fromString("whiley.lang.Any"),
+			name = new NameID(TreeID.fromString("whiley/lang/Any"),
 					"toString");
 		}
 		

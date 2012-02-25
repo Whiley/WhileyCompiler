@@ -19,6 +19,8 @@ import wysrc.builder.Builder;
 import wysrc.lang.Expr;
 import wysrc.lang.SourceFile;
 import wysrc.lang.UnresolvedType;
+import wyc.lang.Path;
+import wyc.util.TreeID;
 
 /**
  * <p>
@@ -69,7 +71,7 @@ public class GlobalResolver extends LocalResolver {
 			throws ResolveError {		
 		for (SourceFile.Import imp : context.imports()) {			
 			if (imp.matchName(name)) {
-				for (ModuleID mid : builder.imports(imp)) {					
+				for (Path.ID mid : builder.imports(imp)) {					
 					NameID nid = new NameID(mid, name); 					
 					if (builder.isName(nid)) {
 						return nid;
@@ -103,7 +105,7 @@ public class GlobalResolver extends LocalResolver {
 			return resolveAsName(names.get(0),context);
 		} else if(names.size() == 2) {
 			String name = names.get(1);
-			ModuleID mid = resolveAsModule(names.get(0),context);		
+			Path.ID mid = resolveAsModule(names.get(0),context);		
 			NameID nid = new NameID(mid, name); 
 			if (builder.isName(nid)) {
 				return nid;
@@ -111,8 +113,11 @@ public class GlobalResolver extends LocalResolver {
 		} else {
 			String name = names.get(names.size()-1);
 			String module = names.get(names.size()-2);
-			PkgID pkg = new PkgID(names.subList(0,names.size()-2));
-			ModuleID mid = new ModuleID(pkg,module);
+			Path.ID pkg = TreeID.ROOT;
+			for(int i=0;i!=names.size()-2;++i) {
+				pkg = pkg.append(names.get(i));
+			}
+			Path.ID mid = pkg.append(module);
 			NameID nid = new NameID(mid, name); 
 			if (builder.isName(nid)) {
 				return nid;
@@ -141,12 +146,12 @@ public class GlobalResolver extends LocalResolver {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public ModuleID resolveAsModule(String name, Context context)
+	public Path.ID resolveAsModule(String name, Context context)
 			throws ResolveError {
 		
 		for (SourceFile.Import imp : context.imports()) {			
-			for(ModuleID mid : builder.imports(imp)) {				
-				if(mid.module().equals(name)) {
+			for(Path.ID mid : builder.imports(imp)) {				
+				if(mid.last().equals(name)) {
 					return mid;
 				}
 			}
