@@ -12,12 +12,12 @@ import java.util.List;
 import wyil.ModuleLoader;
 import wyil.lang.WyilFile;
 import wyc.lang.Path;
+import wyc.util.ResolveError;
 import wyc.util.TreeID;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
-import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 import wysrc.lang.*;
@@ -391,7 +391,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.BinOp expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		
 		// TODO: split binop into arithmetic and conditional operators. This
 		// would avoid the following case analysis since conditional binary
@@ -570,7 +570,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.UnOp expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		
 		if(expr.op == Expr.UOp.NOT) {
 			// hand off to special method for conditions
@@ -600,7 +600,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.Comprehension expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		
 		ArrayList<Pair<String,Expr>> sources = expr.sources;
 		Environment local = environment.clone();
@@ -643,7 +643,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 
 	private Expr resolve(Expr.Convert c,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		c.expr = resolve(c.expr,environment,context);		
 		c.type = resolveAsType(c.unresolvedType, context);
 		Type from = c.expr.result().raw();		
@@ -655,7 +655,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.AbstractFunctionOrMethodOrMessage expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		
 		if(expr instanceof Expr.FunctionOrMethodOrMessage) {
 			return expr;
@@ -680,7 +680,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.AbstractInvoke expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		
 		// first, resolve through receiver and parameters.
 		
@@ -842,7 +842,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}			
 	
 	private Expr resolve(Expr.IndexOf expr,
-			Environment environment, Context context) throws ResolveError {			
+			Environment environment, Context context) throws Exception {			
 		expr.src = resolve(expr.src,environment,context);
 		expr.index = resolve(expr.index,environment,context);		
 		Nominal.EffectiveMap srcType = expandAsEffectiveMap(expr.src.result());
@@ -859,7 +859,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.LengthOf expr, Environment environment,
-			Context context) throws ResolveError {			
+			Context context) throws Exception {			
 		expr.src = resolve(expr.src,environment, context);			
 		Nominal srcType = expr.src.result();
 		Type rawSrcType = srcType.raw();				
@@ -885,7 +885,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.AbstractVariable expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 
 		Nominal type = environment.get(expr.var);
 
@@ -1026,7 +1026,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.SubList expr,
-			Environment environment, Context context) throws ResolveError {	
+			Environment environment, Context context) throws Exception {	
 		
 		expr.src = resolve(expr.src,environment,context);
 		expr.start = resolve(expr.start,environment,context);
@@ -1046,7 +1046,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.SubString expr,
-			Environment environment, Context context) throws ResolveError {	
+			Environment environment, Context context) throws Exception {	
 		
 		expr.src = resolve(expr.src,environment,context);
 		expr.start = resolve(expr.start,environment,context);
@@ -1060,7 +1060,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.AbstractDotAccess expr,
-			Environment environment, Context context) throws ResolveError {	
+			Environment environment, Context context) throws Exception {	
 				
 		if (expr instanceof Expr.PackageAccess
 				|| expr instanceof Expr.ModuleAccess) {			
@@ -1116,7 +1116,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 		
 	private Expr resolve(Expr.RecordAccess ra,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
 		if(recType == null) {
@@ -1131,14 +1131,14 @@ public abstract class LocalResolver extends AbstractResolver {
 	}	
 	
 	private Expr resolve(Expr.ConstantAccess expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		// we don't need to do anything here, since the value is already
 		// resolved by case for AbstractDotAccess.
 		return expr;
 	}			
 
 	private Expr resolve(Expr.Dereference expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		Expr src = resolve(expr.src,environment,context);
 		expr.src = src;
 		Nominal.Reference srcType = expandAsReference(src.result());
@@ -1157,7 +1157,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	private Expr resolve(Expr.TypeVal expr,
-			Environment environment, Context context) throws ResolveError {
+			Environment environment, Context context) throws Exception {
 		expr.type = resolveAsType(expr.unresolvedType, context); 
 		return expr;
 	}
@@ -1171,10 +1171,10 @@ public abstract class LocalResolver extends AbstractResolver {
 	 * @param nid
 	 * @param parameters
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	private Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid, 
-			List<Nominal> parameters) throws ResolveError {
+			List<Nominal> parameters) throws Exception {
 		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
 
 		addCandidateFunctionsAndMethods(nid, parameters, candidates);
@@ -1185,7 +1185,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 	private Nominal.Message resolveAsMessage(NameID nid,
 			Type.Reference receiver, List<Nominal> parameters)
-			throws ResolveError {
+			throws Exception {
 		HashSet<Pair<NameID, Nominal.Message>> candidates = new HashSet<Pair<NameID, Nominal.Message>>();
 
 		addCandidateMessages(nid, parameters, candidates);
@@ -1206,10 +1206,10 @@ public abstract class LocalResolver extends AbstractResolver {
 	 * @param context
 	 *            --- context in which to resolve this name.
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
-			Context context) throws ResolveError {
+			Context context) throws Exception {
 		return resolveAsFunctionOrMethod(name,null,context);
 	}
 
@@ -1224,10 +1224,10 @@ public abstract class LocalResolver extends AbstractResolver {
 	 * @param context
 	 *            --- context in which to resolve this name.
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	public Pair<NameID, Nominal.FunctionOrMethodOrMessage> resolveAsFunctionOrMethodOrMessage(
-			String name, Context context) throws ResolveError {
+			String name, Context context) throws Exception {
 		try {
 			return (Pair) resolveAsFunctionOrMethod(name, null, context);
 		} catch (ResolveError e) {
@@ -1247,10 +1247,10 @@ public abstract class LocalResolver extends AbstractResolver {
 	 * @param context
 	 *            --- context in which to resolve this name.
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
-			List<Nominal> parameters, Context context) throws ResolveError {
+			List<Nominal> parameters, Context context) throws Exception {
 
 		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 		
 		// first, try to find the matching message
@@ -1267,7 +1267,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
-			List<Nominal> parameters, Context context) throws ResolveError {
+			List<Nominal> parameters, Context context) throws Exception {
 
 		HashSet<Pair<NameID,Nominal.Message>> candidates = new HashSet<Pair<NameID,Nominal.Message>>(); 
 
@@ -1343,7 +1343,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	private Pair<NameID,Nominal.FunctionOrMethod> selectCandidateFunctionOrMethod(String name,
 			List<Nominal> parameters,
 			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
-					throws ResolveError {
+					throws Exception {
 
 		List<Type> rawParameters; 
 		Type.Function target;
@@ -1396,7 +1396,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			Type.Reference receiver,
 			List<Nominal> parameters,
 			Collection<Pair<NameID, Nominal.Message>> candidates)
-					throws ResolveError {
+					throws Exception {
 
 		List<Type> rawParameters; 
 		Type.Function target;

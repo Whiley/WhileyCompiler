@@ -58,12 +58,13 @@ public abstract class AbstractRoot implements Root {
 		if(contents == null) {
 			contents = contents();
 		}
-		for (Path.Entry e : contents) {
+		for (Path.Entry<?> e : contents) {
 			if (e.id().equals(id) && e.contentType() == ct) {
-				return e;
+				return (Path.Entry<T>) e;
 			}
 		}
-		return null;
+		// this is what we're supposed to do!
+		throw new ResolveError("unable to locate " + id);
 	}
 	
 	public <T> List<Entry<T>> list(Content.Filter<T> filter) throws Exception {

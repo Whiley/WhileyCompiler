@@ -14,13 +14,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import wyc.util.ResolveError;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
-import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 import wyil.util.Triple;
@@ -161,7 +161,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 		
-	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
 		
 		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
@@ -213,7 +213,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generateTypeCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) {
+	private Block generateTypeCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
 		Block blk;
 		int slot;
 		
@@ -627,7 +627,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.BinOp v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
 
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT

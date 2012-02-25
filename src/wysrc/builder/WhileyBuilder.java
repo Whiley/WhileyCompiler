@@ -35,6 +35,7 @@ import wyil.util.*;
 import wysrc.lang.*;
 import wysrc.stages.*;
 import wyc.lang.*;
+import wyc.util.ResolveError;
 
 /**
  * Responsible for managing the process of turning source files into binary code

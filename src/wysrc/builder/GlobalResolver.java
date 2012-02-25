@@ -20,6 +20,7 @@ import wysrc.lang.Expr;
 import wysrc.lang.WhileyFile;
 import wysrc.lang.UnresolvedType;
 import wyc.lang.Path;
+import wyc.util.ResolveError;
 import wyc.util.TreeID;
 
 /**
@@ -64,11 +65,11 @@ public class GlobalResolver extends LocalResolver {
 	 * @param context
 	 *            --- context in which to resolve.
 	 * @return The resolved name.
-	 * @throws ResolveError
+	 * @throws Exception
 	 *             if it couldn't resolve the name
 	 */
 	public NameID resolveAsName(String name, Context context)
-			throws ResolveError {		
+			throws Exception {		
 		for (WhileyFile.Import imp : context.imports()) {			
 			if (imp.matchName(name)) {
 				for (Path.ID mid : builder.imports(imp)) {					
@@ -97,10 +98,10 @@ public class GlobalResolver extends LocalResolver {
 	 * @param context
 	 *            --- context in which to resolve *
 	 * @return The resolved name.
-	 * @throws ResolveError
+	 * @throws Exception
 	 *             if it couldn't resolve the name
 	 */
-	public NameID resolveAsName(List<String> names, Context context) throws ResolveError {		
+	public NameID resolveAsName(List<String> names, Context context) throws Exception {		
 		if(names.size() == 1) {
 			return resolveAsName(names.get(0),context);
 		} else if(names.size() == 2) {
@@ -144,10 +145,10 @@ public class GlobalResolver extends LocalResolver {
 	 * @param context
 	 *            --- context in which to resolve
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	public Path.ID resolveAsModule(String name, Context context)
-			throws ResolveError {
+			throws Exception {
 		
 		for (WhileyFile.Import imp : context.imports()) {			
 			for(Path.ID mid : builder.imports(imp)) {				
@@ -188,7 +189,7 @@ public class GlobalResolver extends LocalResolver {
 	 * @param context
 	 *            --- context in which to resolve the type.
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	public Nominal resolveAsType(UnresolvedType type, Context context) {
 		Type nominalType = resolveAsType(type, context, true, false);
@@ -207,7 +208,7 @@ public class GlobalResolver extends LocalResolver {
 	 * @param context
 	 *            --- context in which to resolve the type.
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	public Nominal resolveAsUnconstrainedType(UnresolvedType type, Context context) {
 		Type nominalType = resolveAsType(type, context, true, true);
@@ -257,7 +258,7 @@ public class GlobalResolver extends LocalResolver {
 	 * @param context
 	 *            --- context in which to resolve the type
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
 	private int resolveAsType(UnresolvedType type, Context context,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
@@ -405,7 +406,7 @@ public class GlobalResolver extends LocalResolver {
 	}
 	
 	private int resolveAsType(NameID key, ArrayList<Automaton.State> states,
-			HashMap<NameID, Integer> roots, boolean unconstrained) throws ResolveError {
+			HashMap<NameID, Integer> roots, boolean unconstrained) throws Exception {
 		
 		// First, check the various caches we have
 		Integer root = roots.get(key);			
@@ -521,7 +522,7 @@ public class GlobalResolver extends LocalResolver {
 	// ResolveAsConstant
 	// =========================================================================
 	
-	public Value resolveAsConstant(NameID nid) throws ResolveError {				
+	public Value resolveAsConstant(NameID nid) throws Exception {				
 		return resolveAsConstant(nid,new HashSet<NameID>());		
 	}
 
@@ -544,9 +545,9 @@ public class GlobalResolver extends LocalResolver {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 * @return
-	 * @throws ResolveError
+	 * @throws Exception
 	 */
-	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws ResolveError {				
+	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws Exception {				
 		Value result = constantCache.get(key);
 		if(result != null) {
 			return result;

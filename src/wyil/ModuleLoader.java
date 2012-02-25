@@ -32,6 +32,7 @@ import java.util.jar.JarFile;
 
 import wyjc.io.ClassFileLoader; // to be deprecated
 import wyc.lang.Path;
+import wyc.util.ResolveError;
 import wyil.io.*;
 import wyil.lang.*;
 import wyil.util.*;

@@ -4,10 +4,10 @@ import java.util.*;
 
 import static wysrc.lang.WhileyFile.*;
 import wyil.lang.*;
-import wyil.util.ResolveError;
 import wysrc.lang.WhileyFile;
 import wysrc.lang.UnresolvedType;
 import wyc.lang.Path;
+import wyc.util.ResolveError;
 
 /**
  * <p>

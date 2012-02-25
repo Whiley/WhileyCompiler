@@ -4,16 +4,16 @@ import java.util.*;
 
 import wyil.lang.WyilFile;
 import wyc.lang.Path;
+import wyc.util.ResolveError;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
-import wyil.util.ResolveError;
 import wyil.util.Triple;
 import wysrc.lang.*;
 import wysrc.lang.WhileyFile.Context;
 
 
-public abstract class AbstractResolver {	
+public abstract class AbstractResolver<T extends Exception> {	
 	protected final WhileyBuilder builder;
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -35,11 +35,11 @@ public abstract class AbstractResolver {
 	
 	public abstract Nominal resolveAsUnconstrainedType(UnresolvedType type, Context context);
 	
-	public abstract NameID resolveAsName(String name, Context context) throws ResolveError;
+	public abstract NameID resolveAsName(String name, Context context) throws ResolveError,T;
 	
-	public abstract Path.ID resolveAsModule(String name, Context context) throws ResolveError;
+	public abstract Path.ID resolveAsModule(String name, Context context) throws Exception;
 	
-	public abstract Value resolveAsConstant(NameID nid) throws ResolveError;
+	public abstract Value resolveAsConstant(NameID nid) throws Exception;
 	
 	public abstract Value resolveAsConstant(Expr e, Context context) ;
 	
@@ -47,7 +47,7 @@ public abstract class AbstractResolver {
 	// expandAsType
 	// =========================================================================	
 
-	public Nominal.EffectiveSet expandAsEffectiveSet(Nominal lhs) throws ResolveError {
+	public Nominal.EffectiveSet expandAsEffectiveSet(Nominal lhs) throws Exception {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveSet) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -60,7 +60,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.EffectiveList expandAsEffectiveList(Nominal lhs) throws ResolveError {
+	public Nominal.EffectiveList expandAsEffectiveList(Nominal lhs) throws Exception {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveList) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -73,7 +73,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.EffectiveCollection expandAsEffectiveCollection(Nominal lhs) throws ResolveError {
+	public Nominal.EffectiveCollection expandAsEffectiveCollection(Nominal lhs) throws Exception {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveCollection) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -86,7 +86,7 @@ public abstract class AbstractResolver {
 		}
 	}
 	
-	public Nominal.EffectiveMap expandAsEffectiveMap(Nominal lhs) throws ResolveError {
+	public Nominal.EffectiveMap expandAsEffectiveMap(Nominal lhs) throws Exception {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveMap) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -99,7 +99,7 @@ public abstract class AbstractResolver {
 		}
 	}
 	
-	public Nominal.EffectiveDictionary expandAsEffectiveDictionary(Nominal lhs) throws ResolveError {
+	public Nominal.EffectiveDictionary expandAsEffectiveDictionary(Nominal lhs) throws Exception {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveDictionary) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -112,7 +112,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.EffectiveRecord expandAsEffectiveRecord(Nominal lhs) throws ResolveError {		
+	public Nominal.EffectiveRecord expandAsEffectiveRecord(Nominal lhs) throws Exception {		
 		Type raw = lhs.raw();
 
 		if(raw instanceof Type.Record) {
@@ -132,7 +132,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.EffectiveTuple expandAsEffectiveTuple(Nominal lhs) throws ResolveError {
+	public Nominal.EffectiveTuple expandAsEffectiveTuple(Nominal lhs) throws Exception {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveTuple) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -145,7 +145,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.Reference expandAsReference(Nominal lhs) throws ResolveError {
+	public Nominal.Reference expandAsReference(Nominal lhs) throws Exception {
 		Type.Reference raw = Type.effectiveReference(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -158,7 +158,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.FunctionOrMethod expandAsFunctionOrMethod(Nominal lhs) throws ResolveError {
+	public Nominal.FunctionOrMethod expandAsFunctionOrMethod(Nominal lhs) throws Exception {
 		Type.FunctionOrMethod raw = Type.effectiveFunctionOrMethod(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -171,7 +171,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	public Nominal.Message expandAsMessage(Nominal lhs) throws ResolveError {
+	public Nominal.Message expandAsMessage(Nominal lhs) throws Exception {
 		Type.Message raw = Type.effectiveMessage(lhs.raw());
 		if(raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -184,7 +184,7 @@ public abstract class AbstractResolver {
 		}
 	}
 
-	private Type expandOneLevel(Type type) throws ResolveError {
+	private Type expandOneLevel(Type type) throws Exception {
 		if(type instanceof Type.Nominal){
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();			

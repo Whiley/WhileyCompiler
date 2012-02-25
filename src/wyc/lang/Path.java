@@ -174,21 +174,30 @@ public class Path {
 		
 		/**
 		 * Check whether or not a given package is contained.
+		 * 
+		 * @throws Exception
+		 *             --- in case of some failure (e.g. IOException).
 		 */
 		public boolean exists(ID id, Content.Type<?> ct) throws Exception;
 		
 		/**
 		 * Lookup a given object.
 		 * 
-		 * @param mid
+		 * @param id
 		 *            --- id of module to lookup.
 		 * @return
-		 * @throws IOException
+		 * @throws ResolveError
+		 *             if id is not found.
+		 * @throws Exception
+		 *             --- in case of some failure (e.g. IOException).
 		 */
 		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception;
 		
 		/**
 		 * List all objects of a given content type stored in this root.
+		 * 
+		 * @throws Exception
+		 *             --- in case of some failure (e.g. IOException).
 		 * 
 		 * @param ct
 		 * @return

@@ -28,10 +28,10 @@ package wyil.transforms;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.Pair;
-import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import static wyil.util.SyntaxError.*;
 import wyjc.runtime.BigRational;

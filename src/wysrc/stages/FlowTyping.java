@@ -30,11 +30,11 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
+import wyc.util.ResolveError;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
-import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 import wysrc.builder.*;
