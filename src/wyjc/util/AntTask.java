@@ -33,6 +33,7 @@ import wyc.lang.Path;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
 import wyil.Transform;
+import wyil.lang.Module;
 import wyil.util.Logger;
 import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;

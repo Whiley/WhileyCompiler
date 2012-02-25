@@ -25,17 +25,60 @@
 
 package wyil.lang;
 
+import java.io.IOException;
 import java.util.*;
+
+import wyc.lang.Content;
+import wyc.lang.Path;
 import wyil.ModuleLoader;
 import wyil.util.*;
+import wyjc.io.ClassFileLoader;
 
 public final class Module {
+	
+
+	// =========================================================================
+	// Content Type
+	// =========================================================================
+	
+	public static final Content.Type<Module> ContentType = new Content.Type<Module>() {
+		public Path.Entry<Module> accept(Path.Entry<?> e) {			
+			if (e.contentType() == this) {
+				return (Path.Entry<Module>) e;
+			} 			
+			return null;
+		}
+
+		public Module read(Path.Entry entry) throws Exception {		
+			
+			// FIXME: this shouldn't be using a class file loader :)
+			
+			ClassFileLoader loader = new ClassFileLoader();
+			ModuleID mid = entry.id();		
+			Module mi = loader.read(mid, entry.inputStream());
+			return mi;				
+		}
+		
+		public void write(Path.Entry entry, Module contents) {
+			// for now
+			throw new UnsupportedOperationException();
+		}
+	};
+	
+	// =========================================================================
+	// State
+	// =========================================================================
+		
 	private final ModuleID mid;
 	private final String filename;
 	private HashMap<Pair<String,Type.FunctionOrMethodOrMessage>,Method> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
 	
+	// =========================================================================
+	// Constructors
+	// =========================================================================
+
 	public Module(ModuleID mid,
 			String filename,
 			Collection<Method> methods,
@@ -79,6 +122,10 @@ public final class Module {
 		}
 	}
 	
+	// =========================================================================
+	// Accessors
+	// =========================================================================
+	
 	public ModuleID id() {
 		return mid;
 	}
@@ -121,6 +168,10 @@ public final class Module {
 		return methods.values();
 	}
 	
+	// =========================================================================
+	// Mutators
+	// =========================================================================
+	
 	public void add(Module.Method m) {
 		Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
 		this.methods.put(p,m);
@@ -138,6 +189,10 @@ public final class Module {
 		return types.get(name) != null || constants.get(name) != null
 				|| method(name).size() > 0;
 	}
+	
+	// =========================================================================
+	// Types
+	// =========================================================================		
 	
 	public static final class TypeDef extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;

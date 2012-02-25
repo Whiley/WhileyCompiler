@@ -60,10 +60,6 @@ public final class SourceFile {
 			} 			
 			return null;
 		}
-
-		public boolean matches(String suffix) {
-			return suffix.equals("whiley");
-		}
 		
 		/**
 		 * This method simply parses a whiley file into an abstract syntax tree. It
