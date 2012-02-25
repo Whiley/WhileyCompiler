@@ -187,6 +187,21 @@ public final class TreeID implements Path.ID {
 		}
 	}
 	
+	/**
+	 * Construct a TreeID from a string, where '/' is the separator.
+	 * s
+	 * @param str
+	 * @return
+	 */
+	public static TreeID fromString(String str) {
+		String[] components = str.split("/");
+		TreeID r = ROOT;
+		for(int i=0;i!=components.length;++i) {
+			r = r.append(components[i]);
+		}
+		return r;
+	}
+	
 	private static final int binarySearch(final TreeID[] children, final int nchildren, final String key) {
 		int low = 0;
         int high = nchildren-1;

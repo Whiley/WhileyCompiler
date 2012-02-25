@@ -45,7 +45,7 @@ import wyc.lang.Path.Root;
  * @author djp
  *
  */
-public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {	
+public final class JarFileRoot extends AbstractRoot implements Path.Root {	
 	private final JarFile jf;
 	
 	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
@@ -67,7 +67,7 @@ public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {
 			String filename = e.getName();					
 			int lastSlash = filename.lastIndexOf('/');
 			int lastDot = filename.lastIndexOf('.');			
-			TreeID pkg = TreeID.fromString(filename.substring(0, lastSlash).replace('/', '.'));			
+			TreeID pkg = TreeID.fromString(filename.substring(0, lastSlash));			
 			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
 			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
 			TreeID id = pkg.append(name);
@@ -81,7 +81,7 @@ public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {
 		return jf.getName();
 	}
 	
-	public static class Entry<T> extends Path.AbstractEntry<T> implements Path.Entry<T> {		
+	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
 		private final JarFile parent;
 		private final JarEntry entry;
 

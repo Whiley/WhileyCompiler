@@ -35,7 +35,7 @@ import wyc.lang.Content.Type;
 import wyc.lang.Path.Entry;
 import wyc.lang.Path.ID;
 
-public final class DirectoryRoot extends Path.AbstractRoot {
+public final class DirectoryRoot extends AbstractRoot {
 	
 	public final static FileFilter NULL_FILTER = new FileFilter() {
 		public boolean accept(File file) {
@@ -136,7 +136,7 @@ public final class DirectoryRoot extends Path.AbstractRoot {
 	 * @author djp
 	 * 
 	 */
-	public static class Entry<T> extends Path.AbstractEntry<T> implements Path.Entry<T> {		
+	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
 		private final java.io.File file;
 		
 		public Entry(Path.ID id, java.io.File file, Content.Type<T> contentType) {
