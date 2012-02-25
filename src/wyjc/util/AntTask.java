@@ -29,9 +29,9 @@ import java.io.*;
 import java.util.*;
 
 import wyc.io.ContentType;
-import wyc.io.DirectoryRoot;
-import wyc.io.JarFileRoot;
-import wyc.io.Path;
+import wyc.lang.Path;
+import wyc.util.DirectoryRoot;
+import wyc.util.JarFileRoot;
 import wyil.Transform;
 import wyil.util.Logger;
 import wyil.util.SyntaxError;

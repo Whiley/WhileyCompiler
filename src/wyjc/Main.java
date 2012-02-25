@@ -30,10 +30,10 @@ import java.net.URI;
 import java.util.*;
 
 import wyc.io.ContentType;
-import wyc.io.DirectoryRoot;
-import wyc.io.JarFileRoot;
-import wyc.io.Path;
+import wyc.lang.Path;
 import wyc.lang.Project;
+import wyc.util.DirectoryRoot;
+import wyc.util.JarFileRoot;
 import wyil.*;
 import wyil.lang.ModuleID;
 import wyil.util.*;

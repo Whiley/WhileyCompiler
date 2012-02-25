@@ -23,47 +23,49 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.lang;
+package wyc.util;
 
-import java.util.*;
+import wyc.lang.Content;
+import wyc.lang.Path.Entry;
+import wyc.lang.Path.ID;
 
-import wyil.util.Pair;
-
-/**
- * <p>
- * A builder is responsible for transforming files from one content type to
- * another. Typically this revolves around compiling the source file into some
- * kind of binary, although other kinds of transformations are possible.
- * </p>
- * 
- * <p>
- * A given builder may support multiple transformations and the builder must
- * declare each of these.
- * </p>
- * 
- * @author David J. Pearce
- * 
- */
-public interface Builder {
+public abstract class AbstractEntry<T> implements Entry<T> {
+	private final ID id;		
+	private Content.Type<T> contentType;
+	private T contents = null;
+	private boolean modified = false;
 	
-	/**
-	 * <p>Return the list of support transformations. Most builders will probably
-	 * only support a single transformation (e.g. whiley => wyil). However, in
-	 * some special cases, multiple transformations may be desired.</p>
-	 * 
-	 * @return
-	 */
-	public Set<Pair<Content.Type,Content.Type>> transforms();
+	public AbstractEntry(ID mid, Content.Type<T> contentType) {
+		this.id = mid;
+		this.contentType = contentType;
+	}
 	
-	/**
-	 * Build a given set of source files to produce a given set of target files.
-	 * The location of the target files is determined by the build map. Note
-	 * that the given target files should be created by the builder.
-	 * 
-	 * @param map
-	 *            --- a mapping from source files to target files.
-	 * @param delta
-	 *            --- the set of files to be built.
-	 */
-	public void build(Map<Path.ID,Path.ID> map, List<Path.Entry<?>> delta);
+	public ID id() {
+		return id;
+	}
+	
+	public void touch() {
+		this.modified = true;
+	}
+	
+	public boolean isModified() {
+		return modified;
+	}
+	
+	public Content.Type<T> contentType() {
+		return contentType;
+	}
+	
+	public T read() throws Exception {
+		if (contents == null) {
+			contents = contentType.read(this);
+		}
+		return contents;
+	}		
+			
+	public void write(Content.Type<T> contentType, T contents) throws Exception {
+		this.contentType = contentType;
+		this.contents = contents; 
+	}
 }
+

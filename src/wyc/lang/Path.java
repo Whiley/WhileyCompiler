@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.io;
+package wyc.lang;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -196,96 +196,4 @@ public class Path {
 		public <T> List<Path.Entry<T>> list(Content.Filter<T> ct) throws Exception;
 	}
 	
-	public static abstract class AbstractEntry<T> implements Entry<T> {
-		private final ID id;		
-		private Content.Type<T> contentType;
-		private T contents = null;
-		private boolean modified = false;
-		
-		public AbstractEntry(ID mid, Content.Type<T> contentType) {
-			this.id = mid;
-			this.contentType = contentType;
-		}
-		
-		public ID id() {
-			return id;
-		}
-		
-		public void touch() {
-			this.modified = true;
-		}
-		
-		public boolean isModified() {
-			return modified;
-		}
-		
-		public Content.Type<T> contentType() {
-			return contentType;
-		}
-		
-		public T read() throws Exception {
-			if (contents == null) {
-				contents = contentType.read(this);
-			}
-			return contents;
-		}		
-				
-		public void write(Content.Type<T> contentType, T contents) throws Exception {
-			this.contentType = contentType;
-			this.contents = contents; 
-		}
-	}
-	
-	public static abstract class AbstractRoot implements Root {
-		protected final Content.Registry contentTypes;
-		private Path.Entry<?>[] contents = null;
-		
-		public AbstractRoot(Content.Registry contentTypes) {
-			this.contentTypes = contentTypes;
-		}
-		
-		public boolean exists(ID id, Content.Type<?> ct) throws Exception {
-			if(contents == null) {
-				contents = contents();
-			}
-			for(Path.Entry e : contents) {
-				if (e.id().equals(id) && e.contentType() == ct) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {
-			if(contents == null) {
-				contents = contents();
-			}
-			for (Path.Entry e : contents) {
-				if (e.id().equals(id) && e.contentType() == ct) {
-					return e;
-				}
-			}
-			return null;
-		}
-		
-		public <T> List<Entry<T>> list(Content.Filter<T> filter) throws Exception {
-			if(contents == null) {
-				contents = contents();
-			}	
-			ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
-			for(Path.Entry<?> e : contents) {
-				Path.Entry<T> r = filter.match(e);
-				if(r != null) {
-					entries.add(r);
-				}
-			}
-			return entries;
-		}
-		
-		
-		/**
-		 * Extract all entries from the given type.
-		 */
-		protected abstract Path.Entry<?>[] contents() throws Exception;
-	}
 }

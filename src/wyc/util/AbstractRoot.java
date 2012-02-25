@@ -23,47 +23,66 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.lang;
+package wyc.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import wyil.util.Pair;
+import wyc.lang.Content;
+import wyc.lang.Path;
+import wyc.lang.Path.Entry;
+import wyc.lang.Path.ID;
+import wyc.lang.Path.Root;
 
-/**
- * <p>
- * A builder is responsible for transforming files from one content type to
- * another. Typically this revolves around compiling the source file into some
- * kind of binary, although other kinds of transformations are possible.
- * </p>
- * 
- * <p>
- * A given builder may support multiple transformations and the builder must
- * declare each of these.
- * </p>
- * 
- * @author David J. Pearce
- * 
- */
-public interface Builder {
+public abstract class AbstractRoot implements Root {
+	protected final Content.Registry contentTypes;
+	private Path.Entry<?>[] contents = null;
+	
+	public AbstractRoot(Content.Registry contentTypes) {
+		this.contentTypes = contentTypes;
+	}
+	
+	public boolean exists(ID id, Content.Type<?> ct) throws Exception {
+		if(contents == null) {
+			contents = contents();
+		}
+		for(Path.Entry e : contents) {
+			if (e.id().equals(id) && e.contentType() == ct) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {
+		if(contents == null) {
+			contents = contents();
+		}
+		for (Path.Entry e : contents) {
+			if (e.id().equals(id) && e.contentType() == ct) {
+				return e;
+			}
+		}
+		return null;
+	}
+	
+	public <T> List<Entry<T>> list(Content.Filter<T> filter) throws Exception {
+		if(contents == null) {
+			contents = contents();
+		}	
+		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
+		for(Path.Entry<?> e : contents) {
+			Path.Entry<T> r = filter.match(e);
+			if(r != null) {
+				entries.add(r);
+			}
+		}
+		return entries;
+	}
+	
 	
 	/**
-	 * <p>Return the list of support transformations. Most builders will probably
-	 * only support a single transformation (e.g. whiley => wyil). However, in
-	 * some special cases, multiple transformations may be desired.</p>
-	 * 
-	 * @return
+	 * Extract all entries from the given type.
 	 */
-	public Set<Pair<Content.Type,Content.Type>> transforms();
-	
-	/**
-	 * Build a given set of source files to produce a given set of target files.
-	 * The location of the target files is determined by the build map. Note
-	 * that the given target files should be created by the builder.
-	 * 
-	 * @param map
-	 *            --- a mapping from source files to target files.
-	 * @param delta
-	 *            --- the set of files to be built.
-	 */
-	public void build(Map<Path.ID,Path.ID> map, List<Path.Entry<?>> delta);
+	protected abstract Path.Entry<?>[] contents() throws Exception;
 }

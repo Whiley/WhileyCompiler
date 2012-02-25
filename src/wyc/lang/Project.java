@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.*;
 
 import wyc.io.ContentType;
-import wyc.io.Path;
 import wyil.lang.*;
 import wyil.ModuleLoader;
 import wyil.util.Logger;

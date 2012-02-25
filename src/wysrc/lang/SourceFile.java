@@ -29,7 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wyc.io.ContentType;
-import wyc.io.Path;
+import wyc.lang.Path;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;

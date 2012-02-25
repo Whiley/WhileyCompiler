@@ -23,12 +23,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.io;
+package wyc.util;
 
 import java.io.*;
 import java.util.*;
 
-import wyc.util.TreeID;
+import wyc.lang.Content;
+import wyc.lang.Path;
+import wyc.lang.Content.Registry;
+import wyc.lang.Content.Type;
+import wyc.lang.Path.Entry;
+import wyc.lang.Path.ID;
 
 public final class DirectoryRoot extends Path.AbstractRoot {
 	

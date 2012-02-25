@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.io;
+package wyc.util;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -32,8 +32,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.jar.*;
 
-import wyil.lang.ModuleID;
-import wyil.lang.PkgID;
+import wyc.lang.Content;
+import wyc.lang.Path;
+import wyc.lang.Content.Registry;
+import wyc.lang.Content.Type;
+import wyc.lang.Path.Entry;
+import wyc.lang.Path.Root;
 
 /**
  * Represents a Jar file on the file system.
@@ -44,12 +48,12 @@ import wyil.lang.PkgID;
 public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {	
 	private final JarFile jf;
 	
-	public JarFileRoot(String dir, ContentType.Registry contentTypes) throws IOException {
+	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.jf = new JarFile(dir);		
 	}
 	
-	public JarFileRoot(JarFile dir, ContentType.Registry contentTypes) {
+	public JarFileRoot(JarFile dir, Content.Registry contentTypes) {
 		super(contentTypes);
 		this.jf = dir;		
 	}
@@ -63,11 +67,11 @@ public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {
 			String filename = e.getName();					
 			int lastSlash = filename.lastIndexOf('/');
 			int lastDot = filename.lastIndexOf('.');			
-			PkgID pkg = PkgID.fromString(filename.substring(0, lastSlash).replace('/', '.'));			
+			TreeID pkg = TreeID.fromString(filename.substring(0, lastSlash).replace('/', '.'));			
 			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
 			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
-			ModuleID mid = new ModuleID(pkg, name);
-			contents[i++] = new Entry(mid, contentTypes.get(suffix), jf, e);
+			TreeID id = pkg.append(name);
+			contents[i++] = new Entry(id, contentTypes.get(suffix), jf, e);
 		}		
 		
 		return contents;
@@ -81,7 +85,7 @@ public final class JarFileRoot extends Path.AbstractRoot implements Path.Root {
 		private final JarFile parent;
 		private final JarEntry entry;
 
-		public Entry(ModuleID mid, ContentType<T> contentType, JarFile parent, JarEntry entry) {
+		public Entry(TreeID mid, Content.Type<T> contentType, JarFile parent, JarEntry entry) {
 			super(mid,contentType);
 			this.parent = parent;
 			this.entry = entry;

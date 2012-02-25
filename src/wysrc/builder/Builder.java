@@ -34,7 +34,7 @@ import wyil.lang.*;
 import wyil.util.*;
 import wysrc.lang.*;
 import wysrc.stages.*;
-import wyc.io.Path;
+import wyc.lang.Path;
 import wyc.lang.Project;
 
 /**
