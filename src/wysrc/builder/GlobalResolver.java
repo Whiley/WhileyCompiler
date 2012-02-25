@@ -6,7 +6,7 @@ import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
 import static wyil.util.ErrorMessages.errorMessage;
-import static wysrc.lang.SourceFile.*;
+import static wysrc.lang.WhileyFile.*;
 
 import java.util.*;
 
@@ -15,9 +15,9 @@ import wyautl.lang.Automaton;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
-import wysrc.builder.SourceBuilder;
+import wysrc.builder.WhileyBuilder;
 import wysrc.lang.Expr;
-import wysrc.lang.SourceFile;
+import wysrc.lang.WhileyFile;
 import wysrc.lang.UnresolvedType;
 import wyc.lang.Path;
 import wyc.util.TreeID;
@@ -41,11 +41,11 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(SourceBuilder project) {
+	public GlobalResolver(WhileyBuilder project) {
 		super(project);
 	}
 	
-	public SourceBuilder loader() {
+	public WhileyBuilder loader() {
 		return builder;		
 	}
 	
@@ -69,7 +69,7 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	public NameID resolveAsName(String name, Context context)
 			throws ResolveError {		
-		for (SourceFile.Import imp : context.imports()) {			
+		for (WhileyFile.Import imp : context.imports()) {			
 			if (imp.matchName(name)) {
 				for (Path.ID mid : builder.imports(imp)) {					
 					NameID nid = new NameID(mid, name); 					
@@ -149,7 +149,7 @@ public class GlobalResolver extends LocalResolver {
 	public Path.ID resolveAsModule(String name, Context context)
 			throws ResolveError {
 		
-		for (SourceFile.Import imp : context.imports()) {			
+		for (WhileyFile.Import imp : context.imports()) {			
 			for(Path.ID mid : builder.imports(imp)) {				
 				if(mid.last().equals(name)) {
 					return mid;
@@ -412,18 +412,18 @@ public class GlobalResolver extends LocalResolver {
 		if (root != null) { return root; } 		
 		
 		// check whether this type is external or not
-		SourceFile wf = builder.getSourceFile(key.module());
+		WhileyFile wf = builder.getSourceFile(key.module());
 		if (wf == null) {						
 			// indicates a non-local key which we can resolve immediately	
 			
 			// FIXME: need to properly support unconstrained types here
 			
-			Module mi = builder.getModule(key.module());
-			Module.TypeDef td = mi.type(key.name());	
+			WyilFile mi = builder.getModule(key.module());
+			WyilFile.TypeDef td = mi.type(key.name());	
 			return append(td.type(),states);			
 		} 
 		
-		SourceFile.TypeDef td = wf.typeDecl(key.name());
+		WhileyFile.TypeDef td = wf.typeDecl(key.name());
 		if(td == null) {
 			Type t = resolveAsConstant(key).type();			
 			if(t instanceof Type.Set) {
@@ -556,12 +556,12 @@ public class GlobalResolver extends LocalResolver {
 			visited.add(key);
 		}
 
-		SourceFile wf = builder.getSourceFile(key.module());
+		WhileyFile wf = builder.getSourceFile(key.module());
 
 		if (wf != null) {			
-			SourceFile.Declaration decl = wf.declaration(key.name());
-			if(decl instanceof SourceFile.Constant) {
-				SourceFile.Constant cd = (SourceFile.Constant) decl; 				
+			WhileyFile.Declaration decl = wf.declaration(key.name());
+			if(decl instanceof WhileyFile.Constant) {
+				WhileyFile.Constant cd = (WhileyFile.Constant) decl; 				
 				if (cd.resolvedValue == null) {			
 					cd.constant = resolve(cd.constant, new Environment(), cd);
 					cd.resolvedValue = resolveAsConstant(cd.constant,
@@ -572,8 +572,8 @@ public class GlobalResolver extends LocalResolver {
 				throw new ResolveError("unable to find constant " + key);
 			}
 		} else {		
-			Module module = builder.getModule(key.module());
-			Module.ConstDef cd = module.constant(key.name());
+			WyilFile module = builder.getModule(key.module());
+			WyilFile.ConstDef cd = module.constant(key.name());
 			if(cd != null) {
 				result = cd.constant();
 			} else {

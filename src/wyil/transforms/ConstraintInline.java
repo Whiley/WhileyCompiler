@@ -59,18 +59,18 @@ public class ConstraintInline implements Transform {
 		this.loader = loader;
 	}
 	
-	public void apply(Module module) {
+	public void apply(WyilFile module) {
 		this.filename = module.filename();
 		
-		for(Module.TypeDef type : module.types()) {
+		for(WyilFile.TypeDef type : module.types()) {
 			module.add(transform(type));
 		}		
-		for(Module.Method method : module.methods()) {
+		for(WyilFile.Method method : module.methods()) {
 			module.add(transform(method));
 		}
 	}
 	
-	public Module.TypeDef transform(Module.TypeDef type) {
+	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
 		Block constraint = type.constraint();
 		
 		if (constraint != null) {
@@ -87,19 +87,19 @@ public class ConstraintInline implements Transform {
 			constraint = nconstraint;
 		}
 		
-		return new Module.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
+		return new WyilFile.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
 				type.attributes());
 	}
 	
-	public Module.Method transform(Module.Method method) {
-		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
-		for(Module.Case c : method.cases()) {
+	public WyilFile.Method transform(WyilFile.Method method) {
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		for(WyilFile.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	public Module.Case transform(Module.Case mcase, Module.Method method) {	
+	public WyilFile.Case transform(WyilFile.Case mcase, WyilFile.Method method) {	
 		Block body = mcase.body();				
 		Block nbody = new Block(body.numInputs());		
 		int freeSlot = buildShadows(nbody,mcase,method);		
@@ -113,7 +113,7 @@ public class ConstraintInline implements Transform {
 			nbody.append(entry);
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
 	
@@ -140,8 +140,8 @@ public class ConstraintInline implements Transform {
 	 * @param method
 	 * @return
 	 */
-	public int buildShadows(Block body, Module.Case mcase,
-			Module.Method method) {
+	public int buildShadows(Block body, WyilFile.Case mcase,
+			WyilFile.Method method) {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
@@ -157,7 +157,7 @@ public class ConstraintInline implements Transform {
 	}
 	
 	public Block transform(Block.Entry entry, int freeSlot,
-			Module.Case methodCase, Module.Method method) {
+			WyilFile.Case methodCase, WyilFile.Method method) {
 		Code code = entry.code;
 		
 		try {
@@ -239,7 +239,7 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
-			Module.Case methodCase, Module.Method method) {
+			WyilFile.Case methodCase, WyilFile.Method method) {
 		
 		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
@@ -347,10 +347,10 @@ public class ConstraintInline implements Transform {
 	}
 	
 	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws ResolveError {
-		Module m = loader.get(name.module());				
-		Module.Method method = m.method(name.name(),fun);
+		WyilFile m = loader.get(name.module());				
+		WyilFile.Method method = m.method(name.name(),fun);
 	
-		for(Module.Case c : method.cases()) {
+		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
 			return c.precondition();
 		}

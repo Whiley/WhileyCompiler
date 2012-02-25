@@ -34,31 +34,31 @@ import wyil.ModuleLoader;
 import wyil.util.*;
 import wyjc.io.ClassFileLoader;
 
-public final class Module {
+public final class WyilFile {
 	
 
 	// =========================================================================
 	// Content Type
 	// =========================================================================
 	
-	public static final Content.Type<Module> ContentType = new Content.Type<Module>() {
-		public Path.Entry<Module> accept(Path.Entry<?> e) {			
+	public static final Content.Type<WyilFile> ContentType = new Content.Type<WyilFile>() {
+		public Path.Entry<WyilFile> accept(Path.Entry<?> e) {			
 			if (e.contentType() == this) {
-				return (Path.Entry<Module>) e;
+				return (Path.Entry<WyilFile>) e;
 			} 			
 			return null;
 		}
 
-		public Module read(Path.Entry entry) throws Exception {		
+		public WyilFile read(Path.Entry entry) throws Exception {		
 			
 			// FIXME: this shouldn't be using a class file loader :)
 			
 			ClassFileLoader loader = new ClassFileLoader();
-			Module mi = loader.read(entry.id(), entry.inputStream());
+			WyilFile mi = loader.read(entry.id(), entry.inputStream());
 			return mi;				
 		}
 		
-		public void write(Path.Entry entry, Module contents) {
+		public void write(Path.Entry entry, WyilFile contents) {
 			// for now
 			throw new UnsupportedOperationException();
 		}
@@ -78,7 +78,7 @@ public final class Module {
 	// Constructors
 	// =========================================================================
 
-	public Module(Path.ID mid,
+	public WyilFile(Path.ID mid,
 			String filename,
 			Collection<Method> methods,
 			Collection<TypeDef> types,
@@ -137,7 +137,7 @@ public final class Module {
 		return types.get(name);
 	}
 	
-	public Collection<Module.TypeDef> types() {
+	public Collection<WyilFile.TypeDef> types() {
 		return types.values();
 	}
 	
@@ -145,7 +145,7 @@ public final class Module {
 		return constants.get(name);
 	}
 	
-	public Collection<Module.ConstDef> constants() {
+	public Collection<WyilFile.ConstDef> constants() {
 		return constants.values();
 	}
 	
@@ -163,7 +163,7 @@ public final class Module {
 		return methods.get(new Pair<String, Type.FunctionOrMethod>(name, ft));
 	}
 	
-	public Collection<Module.Method> methods() {
+	public Collection<WyilFile.Method> methods() {
 		return methods.values();
 	}
 	
@@ -171,16 +171,16 @@ public final class Module {
 	// Mutators
 	// =========================================================================
 	
-	public void add(Module.Method m) {
+	public void add(WyilFile.Method m) {
 		Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
 		this.methods.put(p,m);
 	}
 	
-	public void add(Module.TypeDef t) {
+	public void add(WyilFile.TypeDef t) {
 		this.types.put(t.name(), t);
 	}
 	
-	public void add(Module.ConstDef c) {
+	public void add(WyilFile.ConstDef c) {
 		this.constants.put(c.name(), c);
 	}
 	

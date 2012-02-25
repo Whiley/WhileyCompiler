@@ -39,7 +39,7 @@ import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 import wysrc.builder.*;
 import wysrc.lang.*;
-import wysrc.lang.SourceFile.*;
+import wysrc.lang.WhileyFile.*;
 
 /**
  * Propagates type information in a flow-sensitive fashion from declared
@@ -93,16 +93,16 @@ public final class FlowTyping {
 	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
-	private SourceFile.FunctionOrMethodOrMessage current;
+	private WhileyFile.FunctionOrMethodOrMessage current;
 	
 	public FlowTyping(GlobalResolver resolver) {		
 		this.resolver = resolver;
 	}
 	
-	public void propagate(SourceFile wf) {
+	public void propagate(WhileyFile wf) {
 		this.filename = wf.filename;
 		
-		for(SourceFile.Declaration decl : wf.declarations) {
+		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
 				if(decl instanceof FunctionOrMethodOrMessage) {
 					propagate((FunctionOrMethodOrMessage)decl);
@@ -144,7 +144,7 @@ public final class FlowTyping {
 		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
-		for (SourceFile.Parameter p : d.parameters) {							
+		for (WhileyFile.Parameter p : d.parameters) {							
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,d));
 		}
 		

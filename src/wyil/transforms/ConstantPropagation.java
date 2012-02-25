@@ -46,7 +46,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		super(loader);
 	}
 		
-	public Module.TypeDef transform(Module.TypeDef type) {
+	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
 		// TODO: propagate constants through type constraints
 		return type;		
 	}
@@ -62,7 +62,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return environment;				
 	}
 	
-	public Module.Case propagate(Module.Case mcase) {		
+	public WyilFile.Case propagate(WyilFile.Case mcase) {		
 		methodCase = mcase;
 		block = mcase.body();
 		stores = new HashMap<String,Env>();		
@@ -88,7 +88,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 	

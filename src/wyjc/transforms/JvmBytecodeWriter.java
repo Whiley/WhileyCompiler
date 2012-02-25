@@ -28,7 +28,7 @@ package wyjc.transforms;
 import java.io.*;
 
 import wyil.*;
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 import wyjc.io.ClassFileBuilder;
 import wyjvm.io.*;
 import wyjvm.lang.ClassFile;
@@ -45,7 +45,7 @@ public class JvmBytecodeWriter implements Transform {
 				wyjc.Main.MINOR_VERSION);
 	}
 	
-	public void apply(Module m) throws IOException {	
+	public void apply(WyilFile m) throws IOException {	
 		ClassFile file = classBuilder.build(m);				
 		
 		if(validate) {

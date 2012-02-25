@@ -2,7 +2,7 @@ package wysrc.builder;
 
 import java.util.*;
 
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 import wyc.lang.Path;
 import wyil.lang.NameID;
 import wyil.lang.Type;
@@ -10,11 +10,11 @@ import wyil.lang.Value;
 import wyil.util.ResolveError;
 import wyil.util.Triple;
 import wysrc.lang.*;
-import wysrc.lang.SourceFile.Context;
+import wysrc.lang.WhileyFile.Context;
 
 
 public abstract class AbstractResolver {	
-	protected final SourceBuilder builder;
+	protected final WhileyBuilder builder;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -23,7 +23,7 @@ public abstract class AbstractResolver {
 	 */
 	private final HashMap<Triple<Path.ID,String,String>,ArrayList<Path.ID>> importCache = new HashMap();	
 	
-	public AbstractResolver(SourceBuilder project) {				
+	public AbstractResolver(WhileyBuilder project) {				
 		this.builder = project;
 	}
 	
@@ -190,19 +190,19 @@ public abstract class AbstractResolver {
 			NameID nid = nt.name();			
 			Path.ID mid = nid.module();
 
-			SourceFile wf = builder.getSourceFile(mid);
+			WhileyFile wf = builder.getSourceFile(mid);
 			Type r = null;
 
 			if (wf != null) {			
-				SourceFile.Declaration decl = wf.declaration(nid.name());
-				if(decl instanceof SourceFile.TypeDef) {
-					SourceFile.TypeDef td = (SourceFile.TypeDef) decl;
+				WhileyFile.Declaration decl = wf.declaration(nid.name());
+				if(decl instanceof WhileyFile.TypeDef) {
+					WhileyFile.TypeDef td = (WhileyFile.TypeDef) decl;
 					r = resolveAsType(td.unresolvedType, td)
 							.nominal();
 				} 
 			} else {
-				Module m = builder.getModule(mid);
-				Module.TypeDef td = m.type(nid.name());
+				WyilFile m = builder.getModule(mid);
+				WyilFile.TypeDef td = m.type(nid.name());
 				if(td != null) {
 					r = td.type();
 				}

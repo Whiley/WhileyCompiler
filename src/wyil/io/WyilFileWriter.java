@@ -29,7 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wyil.lang.*;
-import wyil.lang.Module.*;
+import wyil.lang.WyilFile.*;
 import wyil.ModuleLoader;
 import wyil.Transform;
 
@@ -65,7 +65,7 @@ public final class WyilFileWriter implements Transform {
 		writeSlots = flag;
 	}
 	
-	public void apply(Module module) throws IOException {
+	public void apply(WyilFile module) throws IOException {
 		String filename = module.filename().replace(".whiley", ".wyil");
 		out = new PrintWriter(new FileOutputStream(filename));
 		

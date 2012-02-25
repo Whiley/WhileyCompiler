@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.*;
 
 import wyil.ModuleLoader;
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 import wyil.util.Logger;
 import wyil.*;
 import wyjc.io.ClassFileBuilder;
@@ -72,7 +72,7 @@ public class ClassWriter implements Transform {
 		}
 	}
 	
-	public void apply(Module m) throws IOException {		
+	public void apply(WyilFile m) throws IOException {		
 		ClassFile file = classBuilder.build(m);		
 		
 		if(validate) {			

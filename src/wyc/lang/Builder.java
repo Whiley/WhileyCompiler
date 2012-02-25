@@ -65,5 +65,5 @@ public interface Builder {
 	 * @param delta
 	 *            --- the set of files to be built.
 	 */
-	public void build(Map<Path.ID,Path.ID> map, List<Path.Entry<?>> delta);
+	public void build(Map<Path.ID,Path.ID> map, List<Path.Entry<?>> delta) throws Exception;
 }

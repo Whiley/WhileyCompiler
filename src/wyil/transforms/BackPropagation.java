@@ -94,7 +94,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	}
 	
 	@Override
-	protected Module.TypeDef propagate(Module.TypeDef type) {		
+	protected WyilFile.TypeDef propagate(WyilFile.TypeDef type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}
@@ -111,7 +111,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	}
 	
 	@Override
-	protected Module.Case propagate(Module.Case mcase) {		
+	protected WyilFile.Case propagate(WyilFile.Case mcase) {		
 
 		// TODO: back propagate through pre- and post-conditions
 		
@@ -139,7 +139,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			} 							
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 

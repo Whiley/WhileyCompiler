@@ -6,7 +6,7 @@ import static wyil.util.ErrorMessages.INVALID_SET_OR_LIST_EXPRESSION;
 import static wyil.util.ErrorMessages.UNKNOWN_VARIABLE;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyil.util.ErrorMessages.errorMessage;
-import static wysrc.lang.SourceFile.*;
+import static wysrc.lang.WhileyFile.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,7 +26,7 @@ import wyil.util.SyntaxError;
 import wyil.util.Triple;
 import wysrc.lang.Expr;
 import wysrc.lang.UnresolvedType;
-import wysrc.lang.SourceFile.Context;
+import wysrc.lang.WhileyFile.Context;
 
 /**
  * <p>

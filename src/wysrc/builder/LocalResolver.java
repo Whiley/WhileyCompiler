@@ -1,7 +1,7 @@
 package wysrc.builder;
 
 import static wyil.util.ErrorMessages.*;
-import static wysrc.lang.SourceFile.*;
+import static wysrc.lang.WhileyFile.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import wyil.ModuleLoader;
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 import wyc.lang.Path;
 import wyc.util.TreeID;
 import wyil.lang.NameID;
@@ -21,7 +21,7 @@ import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 import wysrc.lang.*;
-import wysrc.lang.SourceFile.Context;
+import wysrc.lang.WhileyFile.Context;
 
 /**
  * <p>
@@ -71,7 +71,7 @@ import wysrc.lang.SourceFile.Context;
  */
 public abstract class LocalResolver extends AbstractResolver {
 	
-	public LocalResolver(SourceBuilder builder) {
+	public LocalResolver(WhileyBuilder builder) {
 		super(builder);
 	}			
 	
@@ -1254,7 +1254,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 		
 		// first, try to find the matching message
-		for (SourceFile.Import imp : context.imports()) {
+		for (WhileyFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {				
 				for (Path.ID mid : builder.imports(imp)) {					
 					NameID nid = new NameID(mid,name);				
@@ -1272,7 +1272,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		HashSet<Pair<NameID,Nominal.Message>> candidates = new HashSet<Pair<NameID,Nominal.Message>>(); 
 
 		// first, try to find the matching message
-		for (SourceFile.Import imp : context.imports()) {
+		for (WhileyFile.Import imp : context.imports()) {
 			if (imp.matchName(name)) {				
 				for (Path.ID mid : builder.imports(imp)) {										
 					NameID nid = new NameID(mid,name);					
@@ -1463,10 +1463,10 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		int nparams = parameters != null ? parameters.size() : -1;				
 
-		SourceFile wf = builder.getSourceFile(mid);
+		WhileyFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
-			for (SourceFile.FunctionOrMethod f : wf.declarations(
-					SourceFile.FunctionOrMethod.class, nid.name())) {
+			for (WhileyFile.FunctionOrMethod f : wf.declarations(
+					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
 					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(
 							f.unresolvedType(), f);
@@ -1476,8 +1476,8 @@ public abstract class LocalResolver extends AbstractResolver {
 			}
 		} else {
 			try {
-				Module m = builder.getModule(mid);
-				for (Module.Method mm : m.methods()) {
+				WyilFile m = builder.getModule(mid);
+				for (WyilFile.Method mm : m.methods()) {
 					if ((mm.isFunction() || mm.isMethod())
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {
@@ -1509,10 +1509,10 @@ public abstract class LocalResolver extends AbstractResolver {
 		Path.ID mid = nid.module();
 
 		int nparams = parameters != null ? parameters.size() : -1;		
-		SourceFile wf = builder.getSourceFile(mid);
+		WhileyFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
-			for (SourceFile.Message m : wf.declarations(
-					SourceFile.Message.class, nid.name())) {
+			for (WhileyFile.Message m : wf.declarations(
+					WhileyFile.Message.class, nid.name())) {
 				if (nparams == -1 || m.parameters.size() == nparams) {
 					Nominal.Message ft = (Nominal.Message) resolveAsType(
 							m.unresolvedType(), m);
@@ -1521,8 +1521,8 @@ public abstract class LocalResolver extends AbstractResolver {
 			}
 		} else {			
 			try {				
-				Module m = builder.getModule(mid);
-				for (Module.Method mm : m.methods()) {				
+				WyilFile m = builder.getModule(mid);
+				for (WyilFile.Method mm : m.methods()) {				
 					if (mm.isMessage()
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {

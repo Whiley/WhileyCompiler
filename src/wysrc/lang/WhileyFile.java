@@ -48,16 +48,16 @@ import wysrc.stages.WhileyParser;
  * @author djp
  * 
  */
-public final class SourceFile {
+public final class WhileyFile {
 	
 	// =========================================================================
 	// Content Type
 	// =========================================================================
 	
-	public static final Content.Type<SourceFile> ContentType = new Content.Type<SourceFile>() {
-		public Path.Entry<SourceFile> accept(Path.Entry<?> e) {			
+	public static final Content.Type<WhileyFile> ContentType = new Content.Type<WhileyFile>() {
+		public Path.Entry<WhileyFile> accept(Path.Entry<?> e) {			
 			if (e.contentType() == this) {
-				return (Path.Entry<SourceFile>) e;
+				return (Path.Entry<WhileyFile>) e;
 			} 			
 			return null;
 		}
@@ -72,7 +72,7 @@ public final class SourceFile {
 		 * @return
 		 * @throws IOException
 		 */		
-		public SourceFile read(Path.Entry e) throws Exception {		
+		public WhileyFile read(Path.Entry e) throws Exception {		
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
@@ -88,24 +88,24 @@ public final class SourceFile {
 //					System.currentTimeMillis() - start,
 //					memory - runtime.freeMemory());
 
-			SourceFile wf = wfr.read();
+			WhileyFile wf = wfr.read();
 			return wf;				
 		}
 		
-		public void write(Path.Entry entry, SourceFile contents) {
+		public void write(Path.Entry entry, WhileyFile contents) {
 			// for now
 			throw new UnsupportedOperationException();
 		}
 	};
 
-	public static final Content.Filter<SourceFile> ContentFilter = new Content.Filter<SourceFile>() {
-		public Path.Entry<SourceFile> match(Path.Entry<?> entry) {
+	public static final Content.Filter<WhileyFile> ContentFilter = new Content.Filter<WhileyFile>() {
+		public Path.Entry<WhileyFile> match(Path.Entry<?> entry) {
 			if(entry.contentType() == ContentType) {
-				return (Path.Entry<SourceFile>) entry;
+				return (Path.Entry<WhileyFile>) entry;
 			}
 			return null;
 		}		
-		public Content.Type<SourceFile> contentType() {
+		public Content.Type<WhileyFile> contentType() {
 			return ContentType;
 		}
 	};
@@ -122,7 +122,7 @@ public final class SourceFile {
 	// Constructors
 	// =========================================================================
 	
-	public SourceFile(Path.ID module, String filename) {
+	public WhileyFile(Path.ID module, String filename) {
 		this.module = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
@@ -191,7 +191,7 @@ public final class SourceFile {
 	}
 
 	public interface Context extends SyntacticElement {
-		public SourceFile file();
+		public WhileyFile file();
 		public List<Import> imports();
 	}
 	
@@ -205,8 +205,8 @@ public final class SourceFile {
 			super(attributes);
 		}
 		
-		public SourceFile file() {
-			return SourceFile.this;
+		public WhileyFile file() {
+			return WhileyFile.this;
 		}
 		
 		/**
@@ -224,8 +224,8 @@ public final class SourceFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new SourceFile.Import(TreeID.fromString("whiley/lang"), "*", null)); 	
-			imports.add(new SourceFile.Import(module.parent(), "*", null)); 
+			imports.add(new WhileyFile.Import(TreeID.fromString("whiley/lang"), "*", null)); 	
+			imports.add(new WhileyFile.Import(module.parent(), "*", null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -234,7 +234,7 @@ public final class SourceFile {
 					imports.add((Import)d);
 				}
 			}			
-			imports.add(new SourceFile.Import(module.parent(), module.last(), "*")); 
+			imports.add(new WhileyFile.Import(module.parent(), module.last(), "*")); 
 
 			Collections.reverse(imports);	
 			

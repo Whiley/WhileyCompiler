@@ -4,7 +4,7 @@ import java.util.*;
 
 import wyc.util.*;
 import wyil.util.Logger;
-import wysrc.lang.SourceFile;
+import wysrc.lang.WhileyFile;
 
 /**
  * A Whiley project represents the contextual information underpinning a given

@@ -2,10 +2,10 @@ package wysrc.builder;
 
 import java.util.*;
 
-import static wysrc.lang.SourceFile.*;
+import static wysrc.lang.WhileyFile.*;
 import wyil.lang.*;
 import wyil.util.ResolveError;
-import wysrc.lang.SourceFile;
+import wysrc.lang.WhileyFile;
 import wysrc.lang.UnresolvedType;
 import wyc.lang.Path;
 
@@ -52,11 +52,11 @@ import wyc.lang.Path;
  * 
  */
 public class GlobalGenerator {
-	private final SourceBuilder builder;
+	private final WhileyBuilder builder;
 	private final GlobalResolver resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(SourceBuilder builder, GlobalResolver resolver) {		
+	public GlobalGenerator(WhileyBuilder builder, GlobalResolver resolver) {		
 		this.builder = builder;
 		this.resolver = resolver;
 	}
@@ -72,13 +72,13 @@ public class GlobalGenerator {
 		// check whether the item in question is in one of the source
 		// files being compiled.
 		Path.ID mid = nid.module();
-		SourceFile wf = builder.getSourceFile(mid);
+		WhileyFile wf = builder.getSourceFile(mid);
 		if(wf != null) {
 			// FIXME: the following line is necessary to terminate infinite
 			// recursion. However, we really need to do better in the
 			// context of recurisve types with constraints.
 	
-			SourceFile.TypeDef td = wf.typeDecl(nid.name());
+			WhileyFile.TypeDef td = wf.typeDecl(nid.name());
 			if(td != null) {
 				cache.put(nid, EMPTY_BLOCK);
 				blk = generate(td.unresolvedType,td);
@@ -117,8 +117,8 @@ public class GlobalGenerator {
 		} else {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.
-			Module m = builder.getModule(mid);
-			Module.TypeDef td = m.type(nid.name());
+			WyilFile m = builder.getModule(mid);
+			WyilFile.TypeDef td = m.type(nid.name());
 			if(td != null) {
 				// should I cache this?
 				return td.constraint();

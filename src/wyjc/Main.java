@@ -36,14 +36,14 @@ import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
 import wyc.util.TreeID;
 import wyil.*;
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
 import static wysrc.util.OptArg.*;
 import wyjc.transforms.*;
-import wysrc.builder.SourceBuilder;
+import wysrc.builder.WhileyBuilder;
 import wysrc.builder.Pipeline;
-import wysrc.lang.SourceFile;
+import wysrc.lang.WhileyFile;
 import wysrc.util.*;
 
 /**
@@ -70,8 +70,8 @@ public class Main {
 	 * The master project content type registry.
 	 */
 	public static final Content.RegistryImpl registry = new Content.RegistryImpl() {{
-		register("whiley",SourceFile.ContentType);
-		register("class",Module.ContentType);		
+		register("whiley",WhileyFile.ContentType);
+		register("class",WyilFile.ContentType);		
 	}};
 	
 	public static final FileFilter srcFilter = new FileFilter() {
@@ -337,7 +337,7 @@ public class Main {
 			}
 
 			List<Transform> stages = pipeline.instantiate();		
-			SourceBuilder builder = new SourceBuilder(project,stages);
+			WhileyBuilder builder = new WhileyBuilder(project,stages);
 			project.add(builder);
 			
 			// Now, touch all files indicated on command-line			
@@ -354,7 +354,7 @@ public class Main {
 						String module = filePath.substring(end).replace(File.separatorChar, '.');
 						module = module.substring(0,module.length()-7);						
 						Path.ID mid = TreeID.fromString(module);			
-						Path.Entry<SourceFile> entry = src.get(mid,SourceFile.ContentType);
+						Path.Entry<WhileyFile> entry = src.get(mid,WhileyFile.ContentType);
 						if(entry == null) {
 							throw new FileNotFoundException(_file);
 						} else {

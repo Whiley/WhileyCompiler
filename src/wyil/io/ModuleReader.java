@@ -53,5 +53,5 @@ public interface ModuleReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public Module read(Path.ID module, InputStream input) throws IOException;
+	public WyilFile read(Path.ID module, InputStream input) throws IOException;
 }

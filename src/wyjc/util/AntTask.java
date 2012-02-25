@@ -33,15 +33,15 @@ import wyc.lang.Path;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
 import wyil.Transform;
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 import wyil.util.Logger;
 import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
-import wysrc.builder.SourceBuilder;
+import wysrc.builder.WhileyBuilder;
 import wysrc.builder.Pipeline;
-import wysrc.lang.SourceFile;
+import wysrc.lang.WhileyFile;
 
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -71,8 +71,8 @@ public class AntTask extends MatchingTask {
 	 * The master project content type registry.
 	 */
 	public static final Content.RegistryImpl registry = new Content.RegistryImpl() {{
-		register("whiley",SourceFile.ContentType);
-		register("class",Module.ContentType);		
+		register("whiley",WhileyFile.ContentType);
+		register("class",WyilFile.ContentType);		
 	}};
 	
 	public static final FileFilter srcFilter = new FileFilter() {
@@ -174,15 +174,15 @@ public class AntTask extends MatchingTask {
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the builder
-    		project.add(new SourceBuilder(project,stages));
+    		project.add(new WhileyBuilder(project,stages));
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
     		int count = 0;
 			for (Path.Root src : roots) {
-				for (Path.Entry<SourceFile> e : src.list(SourceFile.ContentFilter)) {
-					Path.Entry<Module> binary = destRoot.get(e.id(),
-							Module.ContentType);
+				for (Path.Entry<WhileyFile> e : src.list(WhileyFile.ContentFilter)) {
+					Path.Entry<WyilFile> binary = destRoot.get(e.id(),
+							WyilFile.ContentType);
 					if (binary == null
 							|| binary.lastModified() < e.lastModified()) {
 						count++;

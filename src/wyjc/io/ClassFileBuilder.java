@@ -67,7 +67,7 @@ public class ClassFileBuilder {
 		this.WHILEY_MAJOR_VERSION = whileyMajorVersion;
 	}
 
-	public ClassFile build(Module module) {
+	public ClassFile build(WyilFile module) {
 		owner = new JvmType.Clazz(module.id().parent().toString().replace('.','/'),
 				module.id().last());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
@@ -84,7 +84,7 @@ public class ClassFileBuilder {
 		
 		boolean addMainLauncher = false;		
 				
-		for(Module.ConstDef cd : module.constants()) {	
+		for(WyilFile.ConstDef cd : module.constants()) {	
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : cd.attributes()) {
@@ -96,7 +96,7 @@ public class ClassFileBuilder {
 			cf.attributes().add(wd);
 		}
 		
-		for(Module.TypeDef td : module.types()) {
+		for(WyilFile.TypeDef td : module.types()) {
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : td.attributes()) {
@@ -110,7 +110,7 @@ public class ClassFileBuilder {
 		}
 		
 		HashMap<Constant,Integer> constants = new HashMap<Constant,Integer>();
-		for(Module.Method method : module.methods()) {				
+		for(WyilFile.Method method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			
@@ -232,11 +232,11 @@ public class ClassFileBuilder {
 		return cm;	
 	}
 	
-	public List<ClassFile.Method> build(Module.Method method,
+	public List<ClassFile.Method> build(WyilFile.Method method,
 			HashMap<Constant, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
-		for(Module.Case c : method.cases()) {
+		for(WyilFile.Case c : method.cases()) {
 			if(method.isNative()) {
 				methods.add(buildNativeOrExport(c,method,constants));
 			} else {
@@ -249,8 +249,8 @@ public class ClassFileBuilder {
 		return methods;
 	}
 	
-	public ClassFile.Method build(int caseNum, Module.Case mcase,
-			Module.Method method, HashMap<Constant,Integer> constants) {		
+	public ClassFile.Method build(int caseNum, WyilFile.Case mcase,
+			WyilFile.Method method, HashMap<Constant,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -288,8 +288,8 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ClassFile.Method buildNativeOrExport(Module.Case mcase,
-			Module.Method method, HashMap<Constant,Integer> constants) {
+	public ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
+			WyilFile.Method method, HashMap<Constant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
@@ -320,7 +320,7 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translateNativeOrExport(Module.Method method) {
+	public ArrayList<Bytecode> translateNativeOrExport(WyilFile.Method method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.FunctionOrMethodOrMessage ft = method.type();
@@ -360,7 +360,7 @@ public class ClassFileBuilder {
 		return bytecodes;
 	}
 	
-	public ArrayList<Bytecode> translate(Module.Case mcase,
+	public ArrayList<Bytecode> translate(WyilFile.Case mcase,
 			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();

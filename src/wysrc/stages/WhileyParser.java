@@ -36,7 +36,7 @@ import wyil.util.*;
 import wyjc.runtime.BigRational;
 import wyjvm.lang.Bytecode;
 import wysrc.lang.*;
-import wysrc.lang.SourceFile.*;
+import wysrc.lang.WhileyFile.*;
 import wysrc.util.*;
 
 import static wysrc.stages.WhileyLexer.*;
@@ -59,12 +59,12 @@ public final class WhileyParser {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens); 		
 	}
-	public SourceFile read() {		
+	public WhileyFile read() {		
 		Path.ID pkg = parsePackage();
 
 		// Now, figure out module name from filename
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-7);		
-		SourceFile wf = new SourceFile(pkg.append(name),filename);
+		WhileyFile wf = new WhileyFile(pkg.append(name),filename);
 		
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
@@ -119,7 +119,7 @@ public final class WhileyParser {
 		}
 	}
 	
-	private void parseImport(SourceFile wf) {
+	private void parseImport(WhileyFile wf) {
 		int start = index;
 		matchKeyword("import");
 		
@@ -163,7 +163,7 @@ public final class WhileyParser {
 				end - 1)));
 	}
 	
-	private void parseFunctionOrMethodOrMessage(List<Modifier> modifiers, SourceFile wf) {			
+	private void parseFunctionOrMethodOrMessage(List<Modifier> modifiers, WhileyFile wf) {			
 		int start = index;		
 		UnresolvedType ret = parseType();				
 		// FIXME: potential bug here at end of file		
@@ -234,7 +234,7 @@ public final class WhileyParser {
 		wf.add(declaration);
 	}
 	
-	private void parseDefType(List<Modifier> modifiers, SourceFile wf) {		
+	private void parseDefType(List<Modifier> modifiers, WhileyFile wf) {		
 		int start = index; 
 		matchKeyword("define");
 		
