@@ -148,7 +148,7 @@ public final class CodeGeneration {
 		return new WyilFile.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private WyilFile.TypeDef generate(TypeDef td) throws ResolveError {		
+	private WyilFile.TypeDef generate(TypeDef td) throws Exception {		
 		Block constraint = null;
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
@@ -159,7 +159,7 @@ public final class CodeGeneration {
 		return new WyilFile.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private WyilFile.Method generate(FunctionOrMethodOrMessage fd) {		
+	private WyilFile.Method generate(FunctionOrMethodOrMessage fd) throws Exception {		
 		localGenerator = new LocalGenerator(globalGenerator,fd);	
 		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -492,7 +492,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Switch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Switch s, HashMap<String,Integer> environment) throws Exception {
 		String exitLab = Block.freshLabel();		
 		Block blk = localGenerator.generate(s.expr, environment);				
 		Block cblk = new Block(environment.size());
@@ -540,7 +540,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws Exception {
 		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {

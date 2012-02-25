@@ -121,12 +121,12 @@ public final class FlowTyping {
 		}
 	}
 	
-	public void propagate(Constant cd) throws ResolveError {
+	public void propagate(Constant cd) throws Exception {
 		NameID nid = new NameID(cd.file().module, cd.name);
 		cd.resolvedValue = resolver.resolveAsConstant(nid);
 	}
 	
-	public void propagate(TypeDef td) throws ResolveError {		
+	public void propagate(TypeDef td) throws Exception {		
 		// first, resolve the declared type
 		td.resolvedType = resolver.resolveAsType(td.unresolvedType, td);
 		
@@ -140,7 +140,7 @@ public final class FlowTyping {
 		}
 	}
 
-	public void propagate(FunctionOrMethodOrMessage d) throws ResolveError {		
+	public void propagate(FunctionOrMethodOrMessage d) throws Exception {		
 		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
@@ -249,7 +249,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.Assign stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = resolver.resolve(stmt.rhs,environment,current);
@@ -410,7 +410,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.ForAll stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 		stmt.source = resolver.resolve(stmt.source,environment,current);
 		Nominal.EffectiveCollection srcType = resolver.expandAsEffectiveCollection(stmt.source.result()); 		
@@ -502,7 +502,7 @@ public final class FlowTyping {
 	
 	private Environment propagate(
 			Stmt.Return stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 		if (stmt.expr != null) {
 			stmt.expr = resolver.resolve(stmt.expr, environment,current);
@@ -520,7 +520,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.Switch stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 		stmt.expr = resolver.resolve(stmt.expr,environment,current);		
 		
@@ -574,7 +574,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.TryCatch stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 
 		for(Stmt.Catch handler : stmt.catches) {

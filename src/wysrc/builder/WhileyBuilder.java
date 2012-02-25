@@ -145,14 +145,15 @@ public final class WhileyBuilder implements Builder {
 	
 	public boolean exists(Path.ID id) {
 		try {
-			return project.exists(id, WyilFile.ContentType);
+			return project.exists(id, WhileyFile.ContentType)
+					|| project.exists(id, WyilFile.ContentType);
 		} catch(Exception e) {
 			return false;
 		}
 	}
 	
 	public Set<Path.ID> list(Path.ID id) {
-		return project.list(id,WyilFile.ContentType);
+		return project.list(Content.pathFilter(id, WyilFile.ContentFilter));
 	}
 	
 	/**

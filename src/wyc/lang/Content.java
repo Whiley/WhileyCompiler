@@ -27,7 +27,7 @@ package wyc.lang;
 
 import java.util.HashMap;
 
-public interface Content {
+public class Content {
 
 	public interface Filter<T> {
 
@@ -45,6 +45,28 @@ public interface Content {
 		 * @return
 		 */
 		public Type<?> contentType();
+	}
+	
+	/**
+	 * Construct a filter which matches all items with a given parent path, and
+	 * with a given content type.
+	 * 
+	 * @param id
+	 * @param ct
+	 * @return
+	 */
+	public static <T> Filter<T> pathFilter(final Path.ID id, final Content.Filter<T> ct) {
+		return new Filter<T>() {
+			public Path.Entry<T> match(Path.Entry<?> e) {
+				if(e.id().parent().equals(id)) {
+					return ct.match(e);
+				}
+				return null;
+			}
+			public Content.Type<?> contentType() {
+				return ct.contentType();
+			}
+		};
 	}
 	
 	/**
@@ -79,7 +101,6 @@ public interface Content {
 		 */
 		public void write(Path.Entry entry, T value) throws Exception;		
 	}
-
 
 	public interface Registry {
 		/**
