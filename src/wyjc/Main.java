@@ -29,7 +29,7 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 
-import wyc.io.ContentType;
+import wyc.lang.Content;
 import wyc.lang.Path;
 import wyc.lang.Project;
 import wyc.util.DirectoryRoot;
@@ -69,7 +69,7 @@ public class Main {
 	/**
 	 * The master project content type registry.
 	 */
-	public static final ContentType.RegistryImpl registry = new ContentType.RegistryImpl() {{
+	public static final Content.RegistryImpl registry = new Content.RegistryImpl() {{
 		register("whiley",SourceFile.ContentType);
 		register("class",Project.ModuleContentType);		
 	}};

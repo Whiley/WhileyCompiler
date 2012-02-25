@@ -28,7 +28,7 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.io.ContentType;
+import wyc.lang.Content;
 import wyc.lang.Path;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
@@ -69,9 +69,9 @@ public class AntTask extends MatchingTask {
 	/**
 	 * The master project content type registry.
 	 */
-	public static final ContentType.RegistryImpl registry = new ContentType.RegistryImpl() {{
+	public static final Content.RegistryImpl registry = new Content.RegistryImpl() {{
 		register("whiley",SourceFile.ContentType);
-		register("class",wyc.lang.Project.ModuleContentType);		
+		register("class",Module.ContentType);		
 	}};
 	
 	public static final FileFilter srcFilter = new FileFilter() {

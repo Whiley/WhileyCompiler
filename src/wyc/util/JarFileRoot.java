@@ -26,18 +26,11 @@
 package wyc.util;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.jar.*;
 
 import wyc.lang.Content;
 import wyc.lang.Path;
-import wyc.lang.Content.Registry;
-import wyc.lang.Content.Type;
-import wyc.lang.Path.Entry;
-import wyc.lang.Path.Root;
 
 /**
  * Represents a Jar file on the file system.

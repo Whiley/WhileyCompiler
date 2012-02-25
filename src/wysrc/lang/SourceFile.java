@@ -28,9 +28,8 @@ package wysrc.lang;
 import java.io.*;
 import java.util.*;
 
-import wyc.io.ContentType;
+import wyc.lang.Content;
 import wyc.lang.Path;
-import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
@@ -54,7 +53,7 @@ public final class SourceFile {
 	// Content Type
 	// =========================================================================
 	
-	public static final ContentType<SourceFile> ContentType = new ContentType<SourceFile>() {
+	public static final Content.Type<SourceFile> ContentType = new Content.Type<SourceFile>() {
 		public Path.Entry<SourceFile> accept(Path.Entry<?> e) {			
 			if (e.contentType() == this) {
 				return (Path.Entry<SourceFile>) e;
