@@ -133,11 +133,11 @@ public interface Path {
 		public T read() throws Exception;
 			
 		/**
-		 * Write contents of file.
+		 * Write some data (the new content) in a given content type to this file.
 		 * 
 		 * @param contents
 		 */
-		public void write(T contents) throws Exception;
+		public void write(ContentType<T> contentType, T contents) throws Exception;
 		
 
 		/**
@@ -159,7 +159,7 @@ public interface Path {
 	
 	public static abstract class AbstractEntry<T> implements Entry<T> {
 		private final ModuleID mid;		
-		private final ContentType<T> contentType;
+		private ContentType<T> contentType;
 		private T contents = null;
 		private boolean modified = false;
 		
@@ -191,7 +191,8 @@ public interface Path {
 			return contents;
 		}		
 				
-		public void write(T contents) throws Exception {
+		public void write(ContentType<T> contentType, T contents) throws Exception {
+			this.contentType = contentType;
 			this.contents = contents; 
 		}
 	}

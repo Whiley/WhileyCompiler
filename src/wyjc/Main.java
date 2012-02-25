@@ -28,7 +28,6 @@ package wyjc;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
-import java.util.jar.JarFile;
 
 import wyc.io.ContentType;
 import wyc.io.DirectoryRoot;
@@ -40,13 +39,12 @@ import wyil.lang.ModuleID;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
 import static wysrc.util.OptArg.*;
-import wyjc.io.*;
 import wyjc.transforms.*;
 import wysrc.builder.Builder;
 import wysrc.builder.Pipeline;
 import wysrc.lang.SourceFile;
 import wysrc.util.*;
-import wysrc.util.path.*;
+import wyc.io.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line
