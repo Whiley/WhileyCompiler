@@ -14,7 +14,7 @@ import wysrc.lang.SourceFile.Context;
 
 
 public abstract class AbstractResolver {	
-	protected final Builder builder;
+	protected final SourceBuilder builder;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -23,7 +23,7 @@ public abstract class AbstractResolver {
 	 */
 	private final HashMap<Triple<Path.ID,String,String>,ArrayList<Path.ID>> importCache = new HashMap();	
 	
-	public AbstractResolver(Builder project) {				
+	public AbstractResolver(SourceBuilder project) {				
 		this.builder = project;
 	}
 	

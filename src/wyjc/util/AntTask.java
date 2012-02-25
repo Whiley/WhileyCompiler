@@ -39,7 +39,7 @@ import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
-import wysrc.builder.Builder;
+import wysrc.builder.SourceBuilder;
 import wysrc.builder.Pipeline;
 import wysrc.lang.SourceFile;
 
@@ -144,22 +144,20 @@ public class AntTask extends MatchingTask {
     protected boolean compile() {
     	try {
     		// first, initialise source and binary roots
-    		ArrayList<Path.Root> sourceRoots = new ArrayList<Path.Root>();
-        	Path.Root sourceRoot = new DirectoryRoot(srcdir,srcFilter,registry); 
-    		sourceRoots.add(sourceRoot);    
-    
-    		ArrayList<Path.Root> binaryRoots = new ArrayList<Path.Root>();
+    		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+        	DirectoryRoot sourceRoot = new DirectoryRoot(srcdir,srcFilter,registry); 
+    		roots.add(sourceRoot);    
+        		
         	if(destdir == null) { destdir = srcdir; }
         	Path.Root destRoot = new DirectoryRoot(destdir,binFilter,registry);        	
-        	binaryRoots.add(destRoot);
-        	    		
-        	ArrayList<Path.Root> externalRoots = new ArrayList<Path.Root>();
+        	roots.add(destRoot);
+        	    	       	
         	wyjc.Main.initialiseBootPath(bootpath);        	;        	
-        	externalRoots.addAll(whileypath);
-        	externalRoots.addAll(bootpath);
+        	roots.addAll(whileypath);
+        	roots.addAll(bootpath);
     		        	
     		// second, construct the module loader    		
-    		wyc.lang.Project project = new wyc.lang.Project(sourceRoots,binaryRoots,externalRoots);    		
+    		wyc.lang.Project project = new wyc.lang.Project(roots,null);    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));
@@ -176,20 +174,19 @@ public class AntTask extends MatchingTask {
     		List<Transform> stages = pipeline.instantiate();
     		
     		// fourth initialise the builder
-    		project.setBuilder(new Builder(project,stages));
+    		project.add(new SourceBuilder(project,stages));
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
     		int count = 0;
-			for (Path.Root src : sourceRoots) {
-				for (Path.Entry e : src.list()) {
-					if(e.contentType() == SourceFile.ContentType) {
-						Path.Entry binary = destRoot.get(e.id(), project.ModuleContentType);						
-						if (binary == null
-								|| binary.lastModified() < e.lastModified()) {
-							count++;
-							e.touch();
-						}
+			for (Path.Root src : roots) {
+				for (Path.Entry<SourceFile> e : src.list(SourceFile.ContentFilter)) {
+					Path.Entry<Module> binary = destRoot.get(e.id(),
+							Module.ContentType);
+					if (binary == null
+							|| binary.lastModified() < e.lastModified()) {
+						count++;
+						e.touch();
 					}
 				}
 			}

@@ -98,6 +98,18 @@ public final class SourceFile {
 		}
 	};
 
+	public static final Content.Filter<SourceFile> ContentFilter = new Content.Filter<SourceFile>() {
+		public Path.Entry<SourceFile> match(Path.Entry<?> entry) {
+			if(entry.contentType() == ContentType) {
+				return (Path.Entry<SourceFile>) entry;
+			}
+			return null;
+		}		
+		public Content.Type<SourceFile> contentType() {
+			return ContentType;
+		}
+	};
+	
 	// =========================================================================
 	// State
 	// =========================================================================

@@ -52,11 +52,11 @@ import wyc.lang.Path;
  * 
  */
 public class GlobalGenerator {
-	private final Builder builder;
+	private final SourceBuilder builder;
 	private final GlobalResolver resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(Builder builder, GlobalResolver resolver) {		
+	public GlobalGenerator(SourceBuilder builder, GlobalResolver resolver) {		
 		this.builder = builder;
 		this.resolver = resolver;
 	}

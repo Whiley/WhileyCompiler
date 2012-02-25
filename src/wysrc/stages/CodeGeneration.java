@@ -76,7 +76,7 @@ import wysrc.lang.SourceFile.*;
  * 
  */
 public final class CodeGeneration {
-	private final Builder builder;	
+	private final SourceBuilder builder;	
 	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
@@ -91,7 +91,7 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(Builder builder, GlobalResolver resolver) {
+	public CodeGeneration(SourceBuilder builder, GlobalResolver resolver) {
 		this.builder = builder;		
 		this.resolver = resolver;
 	}

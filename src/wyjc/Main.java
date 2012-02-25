@@ -34,17 +34,17 @@ import wyc.lang.Path;
 import wyc.lang.Project;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
+import wyc.util.TreeID;
 import wyil.*;
-import wyil.lang.Path.ID;
+import wyil.lang.Module;
 import wyil.util.*;
 import static wyil.util.SyntaxError.*;
 import static wysrc.util.OptArg.*;
 import wyjc.transforms.*;
-import wysrc.builder.Builder;
+import wysrc.builder.SourceBuilder;
 import wysrc.builder.Pipeline;
 import wysrc.lang.SourceFile;
 import wysrc.util.*;
-import wyc.io.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line
@@ -71,7 +71,7 @@ public class Main {
 	 */
 	public static final Content.RegistryImpl registry = new Content.RegistryImpl() {{
 		register("whiley",SourceFile.ContentType);
-		register("class",Project.ModuleContentType);		
+		register("class",Module.ContentType);		
 	}};
 	
 	public static final FileFilter srcFilter = new FileFilter() {
@@ -291,34 +291,31 @@ public class Main {
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
 		try {	
-			// initialise the boot path appropriately
-			List<Path.Root> bootpath = initialiseExternalRoots((ArrayList) values.get("bootpath"),verbose);
-			initialiseBootPath(bootpath);
-
-			// initialise the external roots appropriately
-			List<Path.Root> externalRoots = initialiseExternalRoots((ArrayList) values.get("whileypath"),verbose);	
-			externalRoots.addAll(bootpath);
+			
+			// initialise binary roots appropriately
+			ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+			if (outputdir != null) {
+				// if an output directory is specified, everything is redirected
+				// to that.
+				roots.add(new DirectoryRoot(outputdir,binFilter,registry));
+			} 
 			
 			// initialise the source roots appropriately
 			List<DirectoryRoot> sourceRoots = initialiseSourceRoots(
 					(ArrayList) values.get("sourcepath"), verbose);
+			roots.addAll(sourceRoots);
 			
-			// initialise binary roots appropriately
-			ArrayList<DirectoryRoot> binaryRoots = new ArrayList<DirectoryRoot>();
-			if (outputdir != null) {
-				// if an output directory is specified, everything is redirected
-				// to that.
-				binaryRoots.add(new DirectoryRoot(outputdir,binFilter,registry));
-			} else {
-				// otherwise, the binaries for each source folder are redirected
-				// to that folder.
-				for(DirectoryRoot srcRoot : sourceRoots) {
-					binaryRoots.add(new DirectoryRoot(srcRoot.location(),binFilter,registry));
-				}
-			}
+			// initialise the external roots appropriately
+			List<Path.Root> externalRoots = initialiseExternalRoots((ArrayList) values.get("whileypath"),verbose);	
+			roots.addAll(externalRoots);
 			
-			// finally, construct the project		
-			Project project = new Project(sourceRoots,binaryRoots,externalRoots);			
+			// initialise the boot path appropriately
+			List<Path.Root> bootpath = initialiseExternalRoots((ArrayList) values.get("bootpath"),verbose);
+			initialiseBootPath(bootpath);
+			roots.addAll(bootpath);
+			
+			// finally, construct the project			
+			Project project = new Project(roots,null);			
 
 			if(verbose) {			
 				project.setLogger(new Logger.Default(System.err));
@@ -339,9 +336,10 @@ public class Main {
 						outputdir);
 			}
 
-			List<Transform> stages = pipeline.instantiate();
-			project.setBuilder(new Builder(project,stages));		
-
+			List<Transform> stages = pipeline.instantiate();		
+			SourceBuilder builder = new SourceBuilder(project,stages);
+			project.add(builder);
+			
 			// Now, touch all files indicated on command-line			
 			for(DirectoryRoot src : sourceRoots) {
 				File loc = src.location();
@@ -355,8 +353,8 @@ public class Main {
 						}
 						String module = filePath.substring(end).replace(File.separatorChar, '.');
 						module = module.substring(0,module.length()-7);						
-						Path.ID mid = Path.ID.fromString(module);			
-						Path.Entry entry = src.get(mid,SourceFile.ContentType);
+						Path.ID mid = TreeID.fromString(module);			
+						Path.Entry<SourceFile> entry = src.get(mid,SourceFile.ContentType);
 						if(entry == null) {
 							throw new FileNotFoundException(_file);
 						} else {

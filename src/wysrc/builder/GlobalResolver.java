@@ -15,7 +15,7 @@ import wyautl.lang.Automaton;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
-import wysrc.builder.Builder;
+import wysrc.builder.SourceBuilder;
 import wysrc.lang.Expr;
 import wysrc.lang.SourceFile;
 import wysrc.lang.UnresolvedType;
@@ -41,11 +41,11 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(Builder project) {
+	public GlobalResolver(SourceBuilder project) {
 		super(project);
 	}
 	
-	public Builder loader() {
+	public SourceBuilder loader() {
 		return builder;		
 	}
 	

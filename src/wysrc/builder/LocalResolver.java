@@ -71,7 +71,7 @@ import wysrc.lang.SourceFile.Context;
  */
 public abstract class LocalResolver extends AbstractResolver {
 	
-	public LocalResolver(Builder builder) {
+	public LocalResolver(SourceBuilder builder) {
 		super(builder);
 	}			
 	

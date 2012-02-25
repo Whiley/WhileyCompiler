@@ -94,9 +94,10 @@ public class ClassWriter implements Transform {
 			// when no output directory is set, simply write back to the same
 			// place the source file was in.
 			filename = m.filename().replace(".whiley", ".class");
-		} else {			
-			filename = m.id().fileName().replace('.', File.separatorChar) + ".class";
-			filename = outputDirectory + File.separator + filename;			
+		} else {
+			throw new RuntimeException("Output directories not supported in ClassWriter");
+			// filename = m.id().fileName().replace('.', File.separatorChar) + ".class";
+			// filename = outputDirectory + File.separator + filename;			
 		}
 		FileOutputStream out = new FileOutputStream(filename);		
 		ClassFileWriter writer = new ClassFileWriter(out,null);			

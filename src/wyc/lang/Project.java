@@ -34,10 +34,10 @@ public class Project extends MasterRoot {
 	 */
 	private Logger logger = Logger.NULL;
 	
-	public Project(Collection<Path.Root> roots, List<Builder> builders,
+	public Project(Collection<Path.Root> roots,
 			Map<Path.ID, Path.ID> mapping) {
 		super(roots);
-		this.builders = new ArrayList<Builder>(builders);
+		this.builders = new ArrayList<Builder>();
 		this.mapping = mapping;
 	}
 	
@@ -54,6 +54,14 @@ public class Project extends MasterRoot {
 		this.logger = logger;
 	}
 	
+	/**
+	 * Add a new builder to this project.
+	 * 
+	 * @param builder
+	 */
+	public void add(Builder builder) {
+		builders.add(builder);
+	}
 	
 	// ======================================================================
 	// Public Mutator Interface
