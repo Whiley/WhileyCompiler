@@ -61,7 +61,7 @@ public class GlobalGenerator {
 		this.resolver = resolver;
 	}
 		
-	public Block generate(NameID nid) throws ResolveError {
+	public Block generate(NameID nid) throws Exception {
 		Block blk = cache.get(nid);
 		if(blk == EMPTY_BLOCK) {
 			return null;
@@ -131,7 +131,7 @@ public class GlobalGenerator {
 		throw new ResolveError("name not found: " + nid);
 	}
 	
-	public Block generate(UnresolvedType t, Context context) {
+	public Block generate(UnresolvedType t, Context context) throws Exception {
 		Nominal nt = resolver.resolveAsType(t, context);
 		Type raw = nt.raw();
 		if (t instanceof UnresolvedType.List) {

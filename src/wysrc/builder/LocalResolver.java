@@ -1458,7 +1458,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	private void addCandidateFunctionsAndMethods(NameID nid,
 			List<?> parameters,
 			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
-					throws ResolveError {
+					throws Exception {
 		Path.ID mid = nid.module();
 
 		int nparams = parameters != null ? parameters.size() : -1;				
@@ -1505,7 +1505,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 	private void addCandidateMessages(NameID nid, List<?> parameters,
 			Collection<Pair<NameID, Nominal.Message>> candidates)
-			throws ResolveError {
+			throws Exception {
 		Path.ID mid = nid.module();
 
 		int nparams = parameters != null ? parameters.size() : -1;		
