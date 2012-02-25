@@ -41,7 +41,7 @@ public final class TreeID implements Path.ID {
 	// =========================================================
 
 	
-	TreeID(TreeID parent, String component) {
+	TreeID(final TreeID parent, final String component) {
 		this.parent = parent;
 		this.component = component;
 		if(parent != null) {
@@ -54,10 +54,10 @@ public final class TreeID implements Path.ID {
 	}
 	
 	public int size() {
-		return depth;
+		return depth + 1;
 	}
 	
-	public String get(int index) {
+	public String get(final int index) {
 		if(index == depth) {
 			return component;
 		} else if(index > depth) {
@@ -76,10 +76,10 @@ public final class TreeID implements Path.ID {
 	}
 	
 	public Iterator<String> iterator() {
-		return null;
+		return new InternalIterator(this);
 	}
 	
-	public int compareTo(Path.ID o) {
+	public int compareTo(final Path.ID o) {
 		if(o instanceof TreeID) {
 			// We can be efficient here
 			TreeID t1 = this;
@@ -118,7 +118,7 @@ public final class TreeID implements Path.ID {
 		return hc;
 	}
 	
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 		if(o instanceof TreeID) {
 			TreeID tid = (TreeID) o;
 			if(depth != tid.depth || !component.equals(component)) {
@@ -131,7 +131,7 @@ public final class TreeID implements Path.ID {
 		return false;
 	}
 	
-	public TreeID append(String component) {
+	public TreeID append(final String component) {
 		int index = binarySearch(children, nchildren, component);
 		if(index >= 0) {
 			return children[index];
@@ -181,6 +181,28 @@ public final class TreeID implements Path.ID {
         return -(low + 1);
 	}
 	
+	private static final class InternalIterator implements Iterator<String> {
+		private final TreeID id;
+		private int index;
+		
+		public InternalIterator(TreeID id) {
+			this.id = id;
+			this.index = 0;
+		}
+		
+		public boolean hasNext() {
+			return index <= id.depth;
+		}
+		
+		public String next() {
+			return id.get(index++);
+		}
+		
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+	}
+	
 	public static void main(String[] args) {
 		TreeID t1 = ROOT.append("Hello");
 		TreeID t2 = t1.append("World");
@@ -192,6 +214,10 @@ public final class TreeID implements Path.ID {
 		Arrays.sort(ids);
 		for(TreeID id : ids) {
 			System.out.println(id);
+		}
+		
+		for(String c : t3) {
+			System.out.println(c);
 		}
 	}
 }
