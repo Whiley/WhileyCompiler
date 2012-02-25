@@ -920,7 +920,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			} catch (ResolveError err) {
 			}
 			Path.ID pid = TreeID.ROOT.append(expr.var);
-			if (builder.isPackage(pid)) {
+			if (builder.exists(pid)) {
 				return new Expr.PackageAccess(null, expr.var, pid,
 						expr.attributes());
 			}
@@ -1084,12 +1084,12 @@ public abstract class LocalResolver extends AbstractResolver {
 			// This variable access may correspond to an external access.			
 			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
 			Path.ID pid = pa.pid.append(expr.name);
-			if (builder.isPackage(pid)) {
+			if (builder.exists(pid)) {
 				return new Expr.PackageAccess(pa, expr.name, pid,
 						expr.attributes());
 			}			
 			Path.ID mid = pa.pid.append(expr.name);
-			if (builder.isModule(mid)) {
+			if (builder.exists(mid)) {
 				return new Expr.ModuleAccess(pa, expr.name, mid,
 						expr.attributes());
 			} else {
