@@ -31,6 +31,7 @@ import java.util.*;
 import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
+import wyc.lang.Builder;
 import wyc.lang.Path;
 import wyil.lang.Block;
 import wyil.lang.Code;
@@ -71,8 +72,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	private static final HashSet<Integer> deadcode = new HashSet<Integer>();
 	
-	public LiveVariablesAnalysis(Path.Root loader) {
-		super();
+	public LiveVariablesAnalysis(Builder builder) {
+		
 	}	
 	
 	@Override

@@ -27,6 +27,7 @@ package wyil.transforms;
 
 import java.util.*;
 
+import wyc.lang.Builder;
 import wyc.lang.Path;
 import wyil.Transform;
 import wyil.util.*;
@@ -59,8 +60,8 @@ import static wyil.util.ErrorMessages.*;
 public class DefiniteAssignment extends
 		ForwardFlowAnalysis<HashSet<Integer>> implements Transform {
 	
-	public DefiniteAssignment(Path.Root loader) {
-		super();
+	public DefiniteAssignment(Builder builder) {
+		
 	}
 	
 	public HashSet<Integer> initialStore() {

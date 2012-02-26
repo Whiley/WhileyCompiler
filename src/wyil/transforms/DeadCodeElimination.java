@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.io.IOException;
 import java.util.*;
 
+import wyc.lang.Builder;
 import wyc.lang.Path;
 import wyil.*;
 import wyil.lang.*;
@@ -44,7 +45,7 @@ import wyil.util.Pair;
  */
 public class DeadCodeElimination implements Transform {
 
-	public DeadCodeElimination(Path.Root loader) {
+	public DeadCodeElimination(Builder builder) {
 		
 	}
 	

@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
+import wyc.lang.Builder;
 import wyc.lang.Path;
 import wyil.lang.WyilFile;
 import wyil.util.Logger;
@@ -50,7 +51,7 @@ public class ClassWriter implements Transform {
 	// properly. 
 	private boolean deadCode = false;
 	
-	public ClassWriter(Path.Root loader) {
+	public ClassWriter(Builder builder) {
 		classBuilder = new ClassFileBuilder(wyjc.Main.MAJOR_VERSION,
 				wyjc.Main.MINOR_VERSION);
 	}	

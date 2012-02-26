@@ -47,6 +47,12 @@ import wyil.util.Pair;
 public interface Builder {
 	
 	/**
+	 * Get the namespace this builder is operating on.
+	 * @return
+	 */
+	public NameSpace namespace();
+	
+	/**
 	 * <p>Return the list of support transformations. Most builders will probably
 	 * only support a single transformation (e.g. whiley => wyil). However, in
 	 * some special cases, multiple transformations may be desired.</p>

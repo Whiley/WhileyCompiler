@@ -28,6 +28,7 @@ package wyil.transforms;
 import static wyil.util.SyntaxError.*;
 import java.util.*;
 
+import wyc.lang.Builder;
 import wyc.lang.Path;
 import wyc.util.TreeID;
 import wyil.lang.*;
@@ -88,7 +89,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
-	public BackPropagation(Path.Root project) {
+	public BackPropagation(Builder builder) {
 		super();
 	}
 	

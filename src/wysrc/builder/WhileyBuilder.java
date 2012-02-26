@@ -114,6 +114,10 @@ public final class WhileyBuilder implements Builder {
 		}
 	};
 	
+	public NameSpace namespace() {
+		return namespace;
+	}
+	
 	public Set<Pair<Content.Type,Content.Type>> transforms() {
 		return transforms;
 	}

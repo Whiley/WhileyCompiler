@@ -30,6 +30,7 @@ import static wyil.util.SyntaxError.internalFailure;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.lang.Builder;
 import wyc.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
@@ -42,8 +43,8 @@ import wyjc.runtime.BigRational;
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
-	public ConstantPropagation(Path.Root loader) {
-		super();
+	public ConstantPropagation(Builder builder) {
+		
 	}
 		
 	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
