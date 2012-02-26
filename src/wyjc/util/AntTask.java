@@ -28,10 +28,8 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.lang.Content;
-import wyc.lang.Path;
-import wyc.util.DirectoryRoot;
-import wyc.util.JarFileRoot;
+import wyc.lang.*;
+import wyc.util.*;
 import wyil.Pipeline;
 import wyil.Transform;
 import wyil.lang.WyilFile;
@@ -131,7 +129,7 @@ public class AntTask extends MatchingTask {
         if (srcdir == null) {
             throw new BuildException("srcdir must be specified");
         }
-        log("dir = " + srcdir, Project.MSG_DEBUG);
+        log("dir = " + srcdir, org.apache.tools.ant.Project.MSG_DEBUG);
 
        
         if(!compile()) {
@@ -149,15 +147,23 @@ public class AntTask extends MatchingTask {
     		roots.add(sourceRoot);    
         		
         	if(destdir == null) { destdir = srcdir; }
-        	Path.Root destRoot = new DirectoryRoot(destdir,binFilter,registry);        	
-        	roots.add(destRoot);
+        	final DirectoryRoot outputRoot = new DirectoryRoot(destdir,binFilter,registry);        	
+        	roots.add(outputRoot);
         	    	       	
         	wyjc.Main.initialiseBootPath(bootpath);        	;        	
         	roots.addAll(whileypath);
         	roots.addAll(bootpath);
     		        	
     		// second, construct the module loader    		
-    		wyc.lang.Project project = new wyc.lang.Project(roots,null);    		
+        	NameSpace namespace = new AbstractNameSpace(roots) {
+        		public <T> Path.Entry create(Path.ID id, Content.Type<T> ct) throws Exception {
+        			return outputRoot.create(id, ct);
+        		}
+        		public Path.ID id(String s) {
+        			return TreeID.fromString(s);
+        		}
+        	};
+    		wyc.lang.Project project = new wyc.lang.Project(namespace);    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));
@@ -179,7 +185,7 @@ public class AntTask extends MatchingTask {
     		int count = 0;
 			for (Path.Root src : roots) {
 				for (Path.Entry<WhileyFile> e : src.get(WhileyFile.ContentFilter)) {
-					Path.Entry<WyilFile> binary = destRoot.get(e.id(),
+					Path.Entry<WyilFile> binary = outputRoot.get(e.id(),
 							WyilFile.ContentType);
 					if (binary == null
 							|| binary.lastModified() < e.lastModified()) {

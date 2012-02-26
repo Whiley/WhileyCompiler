@@ -30,8 +30,10 @@ import java.net.URI;
 import java.util.*;
 
 import wyc.lang.Content;
+import wyc.lang.NameSpace;
 import wyc.lang.Path;
 import wyc.lang.Project;
+import wyc.util.AbstractNameSpace;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
 import wyc.util.TreeID;
@@ -292,12 +294,17 @@ public class Main {
 		try {	
 			
 			// initialise binary roots appropriately
+			final DirectoryRoot outputRoot;
+			
 			ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 			if (outputdir != null) {
 				// if an output directory is specified, everything is redirected
 				// to that.
-				roots.add(new DirectoryRoot(outputdir,binFilter,registry));
-			} 
+				outputRoot = new DirectoryRoot(outputdir,binFilter,registry); 
+				roots.add(outputRoot);
+			} else {
+				outputRoot = null;
+			}
 			
 			// initialise the source roots appropriately
 			List<DirectoryRoot> sourceRoots = initialiseSourceRoots(
@@ -313,8 +320,20 @@ public class Main {
 			initialiseBootPath(bootpath);
 			roots.addAll(bootpath);
 			
-			// finally, construct the project			
-			Project project = new Project(roots,null);			
+			// finally, construct the project	
+			NameSpace namespace = new AbstractNameSpace(roots) {
+        		public <T> Path.Entry create(Path.ID id, Content.Type<T> ct) throws Exception {
+        			if(outputRoot != null) {
+        				return outputRoot.create(id, ct);
+        			} else {
+        				return null;
+        			}
+        		}
+        		public Path.ID id(String s) {
+        			return TreeID.fromString(s);
+        		}
+        	};
+			Project project = new Project(namespace);			
 
 			if(verbose) {			
 				project.setLogger(new Logger.Default(System.err));

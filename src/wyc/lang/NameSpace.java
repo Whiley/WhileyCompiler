@@ -58,15 +58,6 @@ import wyc.lang.Path.ID;
 public interface NameSpace extends Path.Root {
 	
 	/**
-	 * Determine the physical location for an item with a given content type at
-	 * a given path.
-	 * 
-	 * @param id
-	 * @return
-	 */
-	public Path.Root locate(Path.ID id, Content.Type<?> ct);
-	
-	/**
 	 * Create an entry of a given content type at a given path. The physical
 	 * location of the entry is first determined using the locate function. If
 	 * the entry already exists, then it is just returned.
@@ -84,14 +75,14 @@ public interface NameSpace extends Path.Root {
 	 * only be stored in memory. We must flush them to disk in order to preserve
 	 * any changes that were made.
 	 */
-	public void flush();
+	public void flush() throws Exception;
 	
 	/**
 	 * Force all roots to refresh their items from permanent storage (where
 	 * appropriate). For items which has been modified, this operation will have
 	 * no effect (i.e. the new contents are retained).
 	 */
-	public void refresh();
+	public void refresh() throws Exception;
 	
 	/**
 	 * Create a Path ID from a string, where '/' separates path components.

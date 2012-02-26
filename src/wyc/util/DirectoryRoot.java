@@ -122,11 +122,24 @@ public final class DirectoryRoot extends AbstractRoot {
 		return srcDirectory.getPath();
 	}
 
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws Exception {
+		Path.Entry<T> e = super.get(id,ct);
+		if(e == null) {
+			// need to do something here
+		}
+		return e;
+	}
+	
+	public void flush() {
+		// TODO
+	}
+	
 	protected Path.Entry<?>[] contents() throws IOException {
 		ArrayList<Path.Entry<?>> contents = new ArrayList<Path.Entry<?>>();
 		traverse(srcDirectory,TreeID.ROOT,contents);
 		return contents.toArray(new Path.Entry[contents.size()]);
 	}
+	
 	
 	/**
 	 * A WFile is a file on the file system which represents a Whiley module. The

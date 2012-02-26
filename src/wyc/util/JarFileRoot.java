@@ -51,7 +51,19 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		this.jf = dir;		
 	}
 
-	public Path.Entry[] contents() throws IOException {		
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws Exception {
+		throw new UnsupportedOperationException();
+	}
+	
+	public void flush() {
+		// no=op
+	}
+	
+	public void refresh() {
+		
+	}
+	
+	protected Path.Entry[] contents() throws IOException {		
 		Enumeration<JarEntry> entries = jf.entries();		
 		Path.Entry[] contents = new Path.Entry[jf.size()];
 		int i = 0;

@@ -231,13 +231,13 @@ public class Path {
 		 * stored in memory. We must flush them to disk in order to preserve any
 		 * changes that were made.
 		 */
-		public void flush();
+		public void flush() throws Exception;
 		
 		/**
 		 * Force root to refresh entries from permanent storage (where
 		 * appropriate). For items which has been modified, this operation has
 		 * no effect (i.e. the new contents are retained).
 		 */
-		public void refresh();
+		public void refresh() throws Exception;
 	}
 }

@@ -97,6 +97,10 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}
 	
+	public void refresh() throws Exception {
+		contents = contents();
+	}
+	
 	/**
 	 * Extract all entries from the given type.
 	 */

@@ -24,14 +24,23 @@ public abstract class AbstractNameSpace implements NameSpace {
 	// Accessors
 	// ======================================================================		
 	
-	public abstract Path.Root locate(Path.ID id, Content.Type<?> ct);
-	
 	public boolean exists(Path.ID id, Content.Type<?> ct) throws Exception {
-		return locate(id,ct).exists(id, ct);
+		for(int i=0;i!=roots.size();++i) {
+			if(roots.get(i).exists(id, ct)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public <T> Path.Entry<T> get(Path.ID id, Content.Type<T> ct) throws Exception {
-		return locate(id,ct).get(id, ct);
+		for(int i=0;i!=roots.size();++i) {
+			Path.Entry<T> e = roots.get(i).get(id, ct);
+			if(e != null) {
+				return e;
+			}			
+		}
+		throw new ResolveError("unable to locate " + id);
 	}
 	
 	public <T> ArrayList<Path.Entry<T>> get(Content.Filter<T> filter) throws Exception {
@@ -54,13 +63,15 @@ public abstract class AbstractNameSpace implements NameSpace {
 	// Mutators
 	// ======================================================================		
 
-	public void flush() {
+	public abstract <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws Exception;
+	
+	public void flush() throws Exception {
 		for(int i=0;i!=roots.size();++i) {
 			roots.get(i).flush();
 		}
 	}
 	
-	public void refresh() {
+	public void refresh() throws Exception {
 		for(int i=0;i!=roots.size();++i) {
 			roots.get(i).refresh();
 		}
