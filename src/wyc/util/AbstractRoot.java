@@ -26,7 +26,9 @@
 package wyc.util;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import wyc.lang.Content;
 import wyc.lang.Path;
@@ -67,7 +69,7 @@ public abstract class AbstractRoot implements Root {
 		throw new ResolveError("unable to locate " + id);
 	}
 	
-	public <T> List<Entry<T>> list(Content.Filter<T> filter) throws Exception {
+	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws Exception {
 		if(contents == null) {
 			contents = contents();
 		}	
@@ -81,6 +83,19 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}
 	
+	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception {
+		if(contents == null) {
+			contents = contents();
+		}	
+		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
+		for(Path.Entry<?> e : contents) {
+			Path.Entry<T> r = filter.match(e);
+			if(r != null) {
+				entries.add(r.id());
+			}
+		}
+		return entries;
+	}
 	
 	/**
 	 * Extract all entries from the given type.

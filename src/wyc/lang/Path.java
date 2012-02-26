@@ -25,7 +25,6 @@
 
 package wyc.lang;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
@@ -194,7 +193,7 @@ public class Path {
 		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception;
 		
 		/**
-		 * List all objects of a given content type stored in this root.
+		 * Get all objects matching a given content filter stored in this root.
 		 * 
 		 * @throws Exception
 		 *             --- in case of some failure (e.g. IOException).
@@ -202,7 +201,18 @@ public class Path {
 		 * @param ct
 		 * @return
 		 */
-		public <T> List<Path.Entry<T>> list(Content.Filter<T> ct) throws Exception;
+		public <T> List<Path.Entry<T>> get(Content.Filter<T> ct) throws Exception;
+		
+		/**
+		 * Identify all objects matching a given content filter stored in this root.
+		 * 
+		 * @throws Exception
+		 *             --- in case of some failure (e.g. IOException).
+		 * 
+		 * @param ct
+		 * @return
+		 */
+		public <T> Set<Path.ID> match(Content.Filter<T> ct) throws Exception;
 	}
 	
 }

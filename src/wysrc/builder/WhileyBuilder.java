@@ -152,8 +152,8 @@ public final class WhileyBuilder implements Builder {
 		}
 	}
 	
-	public Set<Path.ID> list(Path.ID id) {
-		return project.list(Content.pathFilter(id, WyilFile.ContentFilter));
+	public Set<Path.ID> list(Path.ID id) throws Exception {
+		return project.match(Content.pathFilter(id, WyilFile.ContentFilter));
 	}
 	
 	/**
