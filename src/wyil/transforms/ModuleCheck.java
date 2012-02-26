@@ -27,7 +27,7 @@ package wyil.transforms;
 
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wyc.lang.Path;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
@@ -56,11 +56,10 @@ import static wyil.util.ErrorMessages.*;
  * 
  */
 public class ModuleCheck implements Transform {
-	private final ModuleLoader loader;
 	private String filename;
 
-	public ModuleCheck(ModuleLoader loader) {
-		this.loader = loader;
+	public ModuleCheck(Path.Root loader) {
+
 	}
 	
 	public void apply(WyilFile module) {

@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import wyc.lang.Path;
 import wyc.lang.Project;
 import wyil.*;
 import wyil.io.WyilFileWriter;
@@ -208,7 +209,7 @@ public class Pipeline {
 			// first, instantiate the transform
 			try {				
 				Constructor<? extends Transform> c = clazz.getConstructor(
-						ModuleLoader.class);
+						Path.Root.class);
 				stage = (Transform) c.newInstance(project);
 										
 			} catch (NoSuchMethodException e) {

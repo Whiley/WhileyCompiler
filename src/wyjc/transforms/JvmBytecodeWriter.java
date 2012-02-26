@@ -27,6 +27,7 @@ package wyjc.transforms;
 
 import java.io.*;
 
+import wyc.lang.Path;
 import wyil.*;
 import wyil.lang.WyilFile;
 import wyjc.io.ClassFileBuilder;
@@ -40,8 +41,8 @@ public class JvmBytecodeWriter implements Transform {
 	private final boolean validate = true;
 	private final boolean deadCode = true;
 	
-	public JvmBytecodeWriter(ModuleLoader loader) {
-		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
+	public JvmBytecodeWriter(Path.Root loader) {
+		classBuilder = new ClassFileBuilder(wyjc.Main.MAJOR_VERSION,
 				wyjc.Main.MINOR_VERSION);
 	}
 	

@@ -33,23 +33,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.util.*;
 import static wyil.lang.Block.*;
 
 public abstract class ForwardFlowAnalysis<T> implements Transform {
-	protected ModuleLoader loader;
 	protected String filename;
 	protected WyilFile.Method method;
 	protected WyilFile.Case methodCase;
 	protected Block block;
 	protected HashMap<String,T> stores;
-	
-	public ForwardFlowAnalysis(ModuleLoader loader) {
-		this.loader = loader;
-	}
 	
 	public void apply(WyilFile module) {			
 		filename = module.filename();

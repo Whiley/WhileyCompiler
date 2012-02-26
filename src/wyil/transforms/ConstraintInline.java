@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.lang.Path;
 import wyc.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
@@ -52,10 +53,10 @@ import wyjc.runtime.BigRational;
  * 
  */
 public class ConstraintInline implements Transform {
-	private final ModuleLoader loader;	
+	private final Path.Root loader;	
 	private String filename;
 	
-	public ConstraintInline(ModuleLoader loader) {
+	public ConstraintInline(Path.Root loader) {
 		this.loader = loader;
 	}
 	
@@ -192,7 +193,7 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {		
+	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws Exception {		
 		Block precondition = findPrecondition(code.name,code.type);		
 		if(precondition != null) {			
 			Block blk = new Block(0);
@@ -346,8 +347,8 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws ResolveError {
-		WyilFile m = loader.get(name.module());				
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws Exception {
+		WyilFile m = loader.get(name.module(),WyilFile.ContentType).read();				
 		WyilFile.Method method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {

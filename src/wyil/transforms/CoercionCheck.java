@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.util.*;
 import static wyil.util.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.*;
+import wyc.lang.Path;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
@@ -70,11 +71,10 @@ import wyil.util.*;
  * @author David J. Pearce
  */
 public class CoercionCheck implements Transform {
-	private final ModuleLoader loader;
 	private String filename;
 
-	public CoercionCheck(ModuleLoader loader) {
-		this.loader = loader;
+	public CoercionCheck(Path.Root project) {
+
 	}
 	
 	public void apply(WyilFile module) {

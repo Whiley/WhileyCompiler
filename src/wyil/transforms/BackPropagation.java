@@ -30,7 +30,6 @@ import java.util.*;
 
 import wyc.lang.Path;
 import wyc.util.TreeID;
-import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
@@ -89,8 +88,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
-	public BackPropagation(ModuleLoader loader) {
-		super(loader);
+	public BackPropagation(Path.Root project) {
+		super();
 	}
 	
 	@Override

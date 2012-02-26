@@ -12,7 +12,6 @@ import java.util.*;
 
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
-import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
 import wysrc.builder.WhileyBuilder;

@@ -180,7 +180,7 @@ public class AntTask extends MatchingTask {
 			// their corresponding binary.	
     		int count = 0;
 			for (Path.Root src : roots) {
-				for (Path.Entry<WhileyFile> e : src.list(WhileyFile.ContentFilter)) {
+				for (Path.Entry<WhileyFile> e : src.get(WhileyFile.ContentFilter)) {
 					Path.Entry<WyilFile> binary = destRoot.get(e.id(),
 							WyilFile.ContentType);
 					if (binary == null

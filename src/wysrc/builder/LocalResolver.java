@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import wyil.ModuleLoader;
 import wyil.lang.WyilFile;
 import wyc.lang.Path;
 import wyc.util.ResolveError;
