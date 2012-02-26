@@ -32,6 +32,7 @@ import wyc.lang.Content;
 import wyc.lang.Path;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
+import wyil.Pipeline;
 import wyil.Transform;
 import wyil.lang.WyilFile;
 import wyil.util.Logger;
@@ -40,7 +41,6 @@ import wyil.util.SyntaxError.InternalFailure;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
 import wysrc.builder.WhileyBuilder;
-import wysrc.builder.Pipeline;
 import wysrc.lang.WhileyFile;
 
 import org.apache.tools.ant.*;

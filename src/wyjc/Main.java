@@ -42,7 +42,6 @@ import static wyil.util.SyntaxError.*;
 import static wysrc.util.OptArg.*;
 import wyjc.transforms.*;
 import wysrc.builder.WhileyBuilder;
-import wysrc.builder.Pipeline;
 import wysrc.lang.WhileyFile;
 import wysrc.util.*;
 
