@@ -15,7 +15,7 @@ import wysrc.lang.WhileyFile;
  * 
  * @author David J. Pearce
  */
-public class Project extends MasterRoot {
+public class Project extends AbstractNameSpace {
 
 	/**
 	 * The builders associated with this project for transforming content. It is

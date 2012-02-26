@@ -214,5 +214,4 @@ public class Path {
 		 */
 		public <T> Set<Path.ID> match(Content.Filter<T> ct) throws Exception;
 	}
-	
 }

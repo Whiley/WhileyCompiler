@@ -9,14 +9,14 @@ import wyc.lang.*;
  * @author David J. Pearce
  * 
  */
-public class MasterRoot implements Path.Root {
+public class AbstractNameSpace implements Path.Root {
 	
 	/**
 	 * The roots of named objects in the namespace described by this root. 
 	 */	
 	private final Path.Root[] roots;
 	
-	public MasterRoot(Collection<Path.Root> roots) {
+	public AbstractNameSpace(Collection<Path.Root> roots) {
 		this.roots = new Path.Root[roots.size()];
 		int i = 0;
 		for(Path.Root r : roots) {
