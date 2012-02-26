@@ -8,15 +8,20 @@ import wysrc.lang.WhileyFile;
 
 /**
  * A Whiley project represents the contextual information underpinning a given
- * compilation. This includes the WHILEYPATH, the package roots for all source
- * files and the binary destination folders as well. Bringing all of this
- * information together helps manage it, and enables a certain amount of global
- * analysis. For example, we can analyse dependencies between source files.
+ * compilation. Bringing all of this information together helps manage it, and
+ * enables a certain amount of global analysis. For example, we can analyse
+ * dependencies between source files.
  * 
  * @author David J. Pearce
  */
-public class Project extends AbstractNameSpace {
+public class Project {
 
+	/**
+	 * The namespace is responsible for storing and retrieving all named items
+	 * used within the project.
+	 */
+	private final NameSpace namespace;
+	
 	/**
 	 * The builders associated with this project for transforming content. It is
 	 * assumed that for any given transformation there is only one possible
@@ -25,24 +30,17 @@ public class Project extends AbstractNameSpace {
 	private final ArrayList<Builder> builders;
 	
 	/**
-	 * The map from 
-	 */
-	private final Map<Path.ID,Path.ID> mapping;
-	
-	/**
 	 * The logger is used to log messages for the project.
 	 */
 	private Logger logger = Logger.NULL;
 	
-	public Project(Collection<Path.Root> roots,
-			Map<Path.ID, Path.ID> mapping) {
-		super(roots);
+	public Project(NameSpace namespace) {
 		this.builders = new ArrayList<Builder>();
-		this.mapping = mapping;
+		this.namespace = namespace;
 	}
 	
 	// ======================================================================
-	// Public Configuration Interface
+	// Configuration Interface
 	// ======================================================================		
 		
 	/**
@@ -64,7 +62,15 @@ public class Project extends AbstractNameSpace {
 	}
 	
 	// ======================================================================
-	// Public Mutator Interface
+	// Accessors	
+	// ======================================================================		
+
+	public NameSpace namespace() {
+		return namespace;
+	}
+	
+	// ======================================================================
+	// Mutators
 	// ======================================================================		
 
 	/**

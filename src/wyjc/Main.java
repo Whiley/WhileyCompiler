@@ -324,7 +324,7 @@ public class Main {
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
 
-			Pipeline pipeline = new Pipeline(templates, project);
+			Pipeline pipeline = new Pipeline(templates);
 
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
@@ -334,9 +334,8 @@ public class Main {
 				pipeline.setOption(ClassWriter.class, "outputDirectory",
 						outputdir);
 			}
-
-			List<Transform> stages = pipeline.instantiate();		
-			WhileyBuilder builder = new WhileyBuilder(project,stages);
+	
+			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
 			project.add(builder);
 			
 			// Now, touch all files indicated on command-line			

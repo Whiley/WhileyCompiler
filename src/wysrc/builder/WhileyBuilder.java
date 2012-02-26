@@ -81,9 +81,10 @@ import wyc.util.ResolveError;
  * @author David J. Pearce
  * 
  */
-public final class WhileyBuilder implements Builder {		
-	private final Project project;		
-	private final ArrayList<Transform> stages;
+public final class WhileyBuilder implements Builder {
+	private final Project project;
+	private final NameSpace namespace;		
+	private final List<Transform> stages;
 	
 	/**
 	 * A map of the source files currently being compiled.
@@ -99,9 +100,10 @@ public final class WhileyBuilder implements Builder {
 	private final HashMap<Triple<Path.ID,String,String>,ArrayList<Path.ID>> importCache = new HashMap();	
 	
 	
-	public WhileyBuilder(Project project, List<Transform> stages) {
-		this.stages = new ArrayList<Transform>(stages);
+	public WhileyBuilder(Project project, Pipeline pipeline) {
+		this.stages = pipeline.instantiate(this);
 		this.project = project;
+		this.namespace = project.namespace();
 	}
 	
 	private static final HashSet<Pair<Content.Type, Content.Type>> transforms = new HashSet<Pair<Content.Type, Content.Type>>() {
@@ -145,15 +147,15 @@ public final class WhileyBuilder implements Builder {
 	
 	public boolean exists(Path.ID id) {
 		try {
-			return project.exists(id, WhileyFile.ContentType)
-					|| project.exists(id, WyilFile.ContentType);
+			return namespace.exists(id, WhileyFile.ContentType)
+					|| namespace.exists(id, WyilFile.ContentType);
 		} catch(Exception e) {
 			return false;
 		}
 	}
 	
 	public Set<Path.ID> list(Path.ID id) throws Exception {
-		return project.match(Content.pathFilter(id, WyilFile.ContentFilter));
+		return namespace.match(Content.pathFilter(id, WyilFile.ContentFilter));
 	}
 	
 	/**
@@ -170,7 +172,7 @@ public final class WhileyBuilder implements Builder {
 			return wf.hasName(nid.name());
 		} else {
 			try {				
-				Path.Entry<WyilFile> m = project.get(mid,WyilFile.ContentType);
+				Path.Entry<WyilFile> m = namespace.get(mid,WyilFile.ContentType);
 				// FIXME: check for the right kind of name
 				return m.read().hasName(nid.name());
 			} catch(Exception e) {
@@ -234,7 +236,7 @@ public final class WhileyBuilder implements Builder {
 	 * @throws Exception
 	 */
 	public WyilFile getModule(Path.ID mid) throws Exception {
-		return project.get(mid, WyilFile.ContentType).read();
+		return namespace.get(mid, WyilFile.ContentType).read();
 	}
 	
 	// ======================================================================

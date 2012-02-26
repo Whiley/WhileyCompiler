@@ -30,8 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import wyc.lang.Path;
-import wyc.lang.Project;
+import wyc.lang.Builder;
 import wyil.io.WyilFileWriter;
 import wyil.transforms.*;
 
@@ -51,13 +50,6 @@ public class Pipeline {
 	 */
 	private static final ArrayList<Class<? extends Transform>> transforms = new ArrayList();
 
-	/**
-	 * The whiley project is passed to a given transform when it is
-	 * instantiated. In some special cases, a transform will want access to
-	 * files in the project. For example, to check that a particular method
-	 * exists, etc.
-	 */
-	private final Project project;
 
 	/**
 	 * The list of stage templates which make up this pipeline. When the
@@ -65,10 +57,8 @@ public class Pipeline {
 	 */
 	private final ArrayList<Template> stages;
 	
-	public Pipeline(List<Template> stages,
-			Project project) {		
+	public Pipeline(List<Template> stages) {		
 		this.stages = new ArrayList<Template>(stages);
-		this.project = project;
 	}
 
 	public static final List<Template> defaultPipeline = Collections
@@ -163,16 +153,20 @@ public class Pipeline {
 	}
 	
 	/**
-	 * The following instantiates a compiler pipeline starting from the default
-	 * pipeline and applying those modifiers requested
+	 * <p>The following instantiates a compiler pipeline starting from the default
+	 * pipeline and applying those modifiers requested.</p>
+	 * <p>The enclosing builder is passed to a given transform when it is
+	 * instantiated. In some special cases, a transform will want access to
+	 * files in the namespace. For example, to check that a particular method
+	 * exists, etc.</p>
 	 * 
-	 * @param modifiers
+	 * @param builder --- enclosing builder
 	 * @return
 	 */
-	public List<Transform> instantiate() {
+	public List<Transform> instantiate(Builder builder) {
 		ArrayList<Transform> pipeline = new ArrayList<Transform>();
 		for (Template s : stages) {
-			pipeline.add(s.instantiate(project));
+			pipeline.add(s.instantiate(builder));
 		}
 		return pipeline;
 	}
@@ -201,14 +195,14 @@ public class Pipeline {
 		 * 
 		 * @return
 		 */
-		public Transform instantiate(Project project) {			
+		public Transform instantiate(Builder builder) {			
 			Transform stage;
 			
 			// first, instantiate the transform
 			try {				
 				Constructor<? extends Transform> c = clazz.getConstructor(
-						Path.Root.class);
-				stage = (Transform) c.newInstance(project);
+						Builder.class);
+				stage = (Transform) c.newInstance(builder);
 										
 			} catch (NoSuchMethodException e) {
 				throw new IllegalArgumentException(

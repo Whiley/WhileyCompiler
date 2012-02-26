@@ -166,15 +166,13 @@ public class AntTask extends MatchingTask {
     		// third, initialise the pipeline
     		ArrayList<Pipeline.Template> templates = new ArrayList<Pipeline.Template>(Pipeline.defaultPipeline);
     		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-    		Pipeline pipeline = new Pipeline(templates, project);
+    		Pipeline pipeline = new Pipeline(templates);
     		if(destdir != null) {
     			pipeline.setOption(ClassWriter.class, "outputDirectory",
 					destdir.getPath());
     		}
-    		List<Transform> stages = pipeline.instantiate();
-    		
     		// fourth initialise the builder
-    		project.add(new WhileyBuilder(project,stages));
+    		project.add(new WhileyBuilder(project,pipeline));
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
