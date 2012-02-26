@@ -213,5 +213,31 @@ public class Path {
 		 * @return
 		 */
 		public <T> Set<Path.ID> match(Content.Filter<T> ct) throws Exception;
+		
+		/**
+		 * Create an entry of a given content type at a given path. If the entry
+		 * already exists, then it is just returned.
+		 * 
+		 * @param id
+		 * @param ct
+		 * @return
+		 * @throws Exception
+		 */
+		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct) throws Exception;
+		
+		/**
+		 * Force root to flush entries to permanent storage (where appropriate).
+		 * This is essential as, at any given moment, path entries may only be
+		 * stored in memory. We must flush them to disk in order to preserve any
+		 * changes that were made.
+		 */
+		public void flush();
+		
+		/**
+		 * Force root to refresh entries from permanent storage (where
+		 * appropriate). For items which has been modified, this operation has
+		 * no effect (i.e. the new contents are retained).
+		 */
+		public void refresh();
 	}
 }

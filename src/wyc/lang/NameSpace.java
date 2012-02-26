@@ -25,7 +25,7 @@
 
 package wyc.lang;
 
-import java.util.List;
+import wyc.lang.Path.ID;
 
 /**
  * <p>
@@ -41,7 +41,15 @@ import java.util.List;
  * <p>
  * One of the key responsibilities for a NameSpace is to map path items to
  * physical locations. There is an implicit assumption here that every path item
- * corresponds to at most one physical location.  
+ * corresponds to at most one physical location.
+ * </p>
+ * 
+ * <p>
+ * Another important responsibility is to control the creation of Path ID's.
+ * Every Path ID used within a given NameSpace instance should have been
+ * constructed via that NameSpace's <code>id()</code> function. This helps
+ * integrate into systems (e.g. Eclipse) which have their own notion of a path
+ * identified (e.g. IPath).
  * </p>
  * 
  * @author David J. Pearce
@@ -50,19 +58,25 @@ import java.util.List;
 public interface NameSpace extends Path.Root {
 	
 	/**
-	 * Identify the contained for a given Path.ID.
+	 * Determine the physical location for an item with a given content type at
+	 * a given path.
 	 * 
 	 * @param id
 	 * @return
 	 */
-	public Path.Root locate(Path.ID id);
+	public Path.Root locate(Path.ID id, Content.Type<?> ct);
 	
 	/**
-	 * Get the list of roots making up this namespace.
+	 * Create an entry of a given content type at a given path. The physical
+	 * location of the entry is first determined using the locate function. If
+	 * the entry already exists, then it is just returned.
 	 * 
+	 * @param id
+	 * @param ct
 	 * @return
+	 * @throws Exception
 	 */
-	public List<Path.Root> roots();
+	public <T> Path.Entry<T> create(ID id, Content.Type<T> ct) throws Exception;
 	
 	/**
 	 * Force all roots to flush their items to permanent storage (where
@@ -78,4 +92,12 @@ public interface NameSpace extends Path.Root {
 	 * no effect (i.e. the new contents are retained).
 	 */
 	public void refresh();
+	
+	/**
+	 * Create a Path ID from a string, where '/' separates path components.
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public Path.ID id(String s);
 }

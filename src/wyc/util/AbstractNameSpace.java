@@ -9,53 +9,72 @@ import wyc.lang.*;
  * @author David J. Pearce
  * 
  */
-public class AbstractNameSpace implements Path.Root {
+public abstract class AbstractNameSpace implements NameSpace {
 	
 	/**
 	 * The roots of named objects in the namespace described by this root. 
 	 */	
-	private final Path.Root[] roots;
+	protected final ArrayList<Path.Root> roots;
 	
 	public AbstractNameSpace(Collection<Path.Root> roots) {
-		this.roots = new Path.Root[roots.size()];
-		int i = 0;
-		for(Path.Root r : roots) {
-			this.roots[i++] = r;
-		}
+		this.roots = new ArrayList<Path.Root>(roots);
 	}
 	
+	// ======================================================================
+	// Accessors
+	// ======================================================================		
+	
+	public abstract Path.Root locate(Path.ID id, Content.Type<?> ct);
+	
 	public boolean exists(Path.ID id, Content.Type<?> ct) throws Exception {
-		for(int i=0;i!=roots.length;++i) {
-			if(roots[i].exists(id,ct)) {
-				return true;
-			}
-		}
-		return false;
+		return locate(id,ct).exists(id, ct);
 	}
 	
 	public <T> Path.Entry<T> get(Path.ID id, Content.Type<T> ct) throws Exception {
-		for(int i=0;i!=roots.length;++i) {
-			Path.Entry<T> e = roots[i].get(id,ct);
-			if(e != null) {
-				return e;
-			}
-		}
-		return null;
+		return locate(id,ct).get(id, ct);
 	}
 	
 	public <T> ArrayList<Path.Entry<T>> get(Content.Filter<T> filter) throws Exception {
 		ArrayList<Path.Entry<T>> r = new ArrayList<Path.Entry<T>>();
-		for(int i=0;i!=roots.length;++i) {
-			r.addAll(roots[i].get(filter));
+		for(int i=0;i!=roots.size();++i) {
+			r.addAll(roots.get(i).get(filter));
 		}
 		return r;
 	}
 	
 	public <T> HashSet<Path.ID> match(Content.Filter<T> filter) throws Exception {
 		HashSet<Path.ID> r = new HashSet<Path.ID>();
-		for(int i=0;i!=roots.length;++i) {
-			r.addAll(roots[i].match(filter));
+		for(int i=0;i!=roots.size();++i) {
+			r.addAll(roots.get(i).match(filter));
 		}
 		return r;
 	}
+	
+	// ======================================================================
+	// Mutators
+	// ======================================================================		
+
+	public void flush() {
+		for(int i=0;i!=roots.size();++i) {
+			roots.get(i).flush();
+		}
+	}
+	
+	public void refresh() {
+		for(int i=0;i!=roots.size();++i) {
+			roots.get(i).refresh();
+		}
+	}
+	
+	// ======================================================================
+	// Other
+	// ======================================================================		
+
+	/**
+	 * Create a Path ID from a string, where '/' separates path components.
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public abstract Path.ID id(String s);
 }
