@@ -70,6 +70,14 @@ public interface NameSpace extends Path.Root {
 	public <T> Path.Entry<T> create(ID id, Content.Type<T> ct) throws Exception;
 	
 	/**
+	 * Create a Path ID from a string, where '/' separates path components.
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public Path.ID create(String s);
+	
+	/**
 	 * Force all roots to flush their items to permanent storage (where
 	 * appropriate). This is essential as, at any given moment, path items may
 	 * only be stored in memory. We must flush them to disk in order to preserve
@@ -82,13 +90,5 @@ public interface NameSpace extends Path.Root {
 	 * appropriate). For items which has been modified, this operation will have
 	 * no effect (i.e. the new contents are retained).
 	 */
-	public void refresh() throws Exception;
-	
-	/**
-	 * Create a Path ID from a string, where '/' separates path components.
-	 * 
-	 * @param s
-	 * @return
-	 */
-	public Path.ID id(String s);
+	public void refresh() throws Exception;	
 }

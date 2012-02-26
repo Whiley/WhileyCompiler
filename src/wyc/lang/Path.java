@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
+import wyc.lang.Content.Type;
+
 public class Path {
 	
 	/**
@@ -201,7 +203,7 @@ public class Path {
 		 * @param ct
 		 * @return
 		 */
-		public <T> List<Path.Entry<T>> get(Content.Filter<T> ct) throws Exception;
+		public <T> List<Path.Entry<T>> get(Filter<T> ct) throws Exception;
 		
 		/**
 		 * Identify all objects matching a given content filter stored in this root.
@@ -212,7 +214,7 @@ public class Path {
 		 * @param ct
 		 * @return
 		 */
-		public <T> Set<Path.ID> match(Content.Filter<T> ct) throws Exception;
+		public <T> Set<Path.ID> match(Filter<T> ct) throws Exception;
 		
 		/**
 		 * Create an entry of a given content type at a given path. If the entry
@@ -239,5 +241,46 @@ public class Path {
 		 * no effect (i.e. the new contents are retained).
 		 */
 		public void refresh() throws Exception;
+	}
+	
+	public interface Filter<T> {
+
+		/**
+		 * Check whether a given entry is matched by this filter.
+		 * 
+		 * @param entry
+		 *            --- entry to test.
+		 * @return --- entry (retyped) if it matches, otherwise null.
+		 */
+		public Path.Entry<T> match(Path.Entry<?> entry);
+		
+		/**
+		 * Get the content type that this filter matches.
+		 * @return
+		 */
+		public Type<?> contentType();
+	}
+	
+	/**
+	 * Construct a filter which matches all items with a given parent path, and
+	 * with a given content type.
+	 * 
+	 * @param id
+	 * @param ct
+	 * @return
+	 */
+	public static <T> Filter<T> pathFilter(final Path.ID id,
+			final Content.Type<T> ct) {
+		return new Filter<T>() {
+			public Path.Entry<T> match(Path.Entry<?> e) {
+				if (e.id().parent().equals(id) && e.contentType() == ct) {
+					return (Path.Entry<T>) e;
+				}
+				return null;
+			}
+			public Content.Type<?> contentType() {
+				return ct;
+			}
+		};
 	}
 }

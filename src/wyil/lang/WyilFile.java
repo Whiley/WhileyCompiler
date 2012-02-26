@@ -59,19 +59,7 @@ public final class WyilFile {
 			// for now
 			throw new UnsupportedOperationException();
 		}
-	};
-	
-	public static final Content.Filter<WyilFile> ContentFilter = new Content.Filter<WyilFile>() {
-		public Path.Entry<WyilFile> match(Path.Entry<?> entry) {
-			if(entry.contentType() == ContentType) {
-				return (Path.Entry<WyilFile>) entry;
-			}
-			return null;
-		}		
-		public Content.Type<WyilFile> contentType() {
-			return ContentType;
-		}
-	};
+	};	
 
 	// =========================================================================
 	// State

@@ -329,7 +329,7 @@ public class Main {
         				return null;
         			}
         		}
-        		public Path.ID id(String s) {
+        		public Path.ID create(String s) {
         			return TreeID.fromString(s);
         		}
         	};
@@ -355,7 +355,9 @@ public class Main {
 			}
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-			project.add(builder);
+			Path.Filter<WhileyFile> srcFilter = Path.pathFilter(?, WhileyFile.ContentType);
+			Project.Rule rule = new Project.Rule(builder,srcFilter);
+			project.add(rule);
 			
 			// Now, touch all files indicated on command-line			
 			for(DirectoryRoot src : sourceRoots) {

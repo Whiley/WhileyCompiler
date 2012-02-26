@@ -53,15 +53,6 @@ public interface Builder {
 	public NameSpace namespace();
 	
 	/**
-	 * <p>Return the list of support transformations. Most builders will probably
-	 * only support a single transformation (e.g. whiley => wyil). However, in
-	 * some special cases, multiple transformations may be desired.</p>
-	 * 
-	 * @return
-	 */
-	public Set<Pair<Content.Type,Content.Type>> transforms();
-	
-	/**
 	 * Build a given set of source files to produce a given set of target files.
 	 * The location of the target files is determined by the build map. Note
 	 * that the given target files should be created by the builder.
@@ -71,5 +62,5 @@ public interface Builder {
 	 * @param delta
 	 *            --- the set of files to be built.
 	 */
-	public void build(Map<Path.ID,Path.ID> map, List<Path.Entry<?>> delta) throws Exception;
+	public void build(List<Path.Entry<?>> delta) throws Exception;
 }

@@ -105,44 +105,33 @@ public final class WhileyBuilder implements Builder {
 		this.project = project;
 		this.namespace = project.namespace();
 	}
-	
-	private static final HashSet<Pair<Content.Type, Content.Type>> transforms = new HashSet<Pair<Content.Type, Content.Type>>() {
-		{
-			// this builder can transform a Whiley File into a ModuleFile.
-			add(new Pair<Content.Type, Content.Type>(WhileyFile.ContentType,
-					WyilFile.ContentType));
-		}
-	};
-	
+
 	public NameSpace namespace() {
 		return namespace;
 	}
 	
-	public Set<Pair<Content.Type,Content.Type>> transforms() {
-		return transforms;
-	}
-	
-	public void build(Map<Path.ID,Path.ID> mapping, List<Path.Entry<?>> delta) throws Exception {
+	public void build(List<Path.Entry<?>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();		
+		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-				
+
 		srcFiles.clear();
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
-		for (Path.Entry<?> f : delta) {		
-			if(f.contentType() == WhileyFile.ContentType) { 
+		for (Path.Entry<?> f : delta) {
+			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
 				WhileyFile wf = sf.read();
 				wyfiles.add(wf);
 				srcFiles.put(wf.module, wf);
 			}
 		}
-				
+
 		List<WyilFile> modules = buildModules(wyfiles);
-		finishCompilation(modules);		
-		
+		finishCompilation(modules);
+
 		long endTime = System.currentTimeMillis();
-		project.logTimedMessage("Compiled " + delta.size() + " file(s)",endTime-start, memory - runtime.freeMemory());		
+		project.logTimedMessage("Compiled " + delta.size() + " file(s)",
+				endTime - start, memory - runtime.freeMemory());
 	}
 	
 	// ======================================================================
@@ -159,7 +148,7 @@ public final class WhileyBuilder implements Builder {
 	}
 	
 	public Set<Path.ID> list(Path.ID id) throws Exception {
-		return namespace.match(Content.pathFilter(id, WyilFile.ContentFilter));
+		return namespace.match(Path.pathFilter(id, WyilFile.ContentType));
 	}
 	
 	/**

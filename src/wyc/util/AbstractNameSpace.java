@@ -43,7 +43,7 @@ public abstract class AbstractNameSpace implements NameSpace {
 		throw new ResolveError("unable to locate " + id);
 	}
 	
-	public <T> ArrayList<Path.Entry<T>> get(Content.Filter<T> filter) throws Exception {
+	public <T> ArrayList<Path.Entry<T>> get(Path.Filter<T> filter) throws Exception {
 		ArrayList<Path.Entry<T>> r = new ArrayList<Path.Entry<T>>();
 		for(int i=0;i!=roots.size();++i) {
 			r.addAll(roots.get(i).get(filter));
@@ -51,7 +51,7 @@ public abstract class AbstractNameSpace implements NameSpace {
 		return r;
 	}
 	
-	public <T> HashSet<Path.ID> match(Content.Filter<T> filter) throws Exception {
+	public <T> HashSet<Path.ID> match(Path.Filter<T> filter) throws Exception {
 		HashSet<Path.ID> r = new HashSet<Path.ID>();
 		for(int i=0;i!=roots.size();++i) {
 			r.addAll(roots.get(i).match(filter));
@@ -87,5 +87,5 @@ public abstract class AbstractNameSpace implements NameSpace {
 	 * @param s
 	 * @return
 	 */
-	public abstract Path.ID id(String s);
+	public abstract Path.ID create(String s);
 }

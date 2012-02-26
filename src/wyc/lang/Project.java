@@ -4,13 +4,14 @@ import java.util.*;
 
 import wyc.util.*;
 import wyil.util.Logger;
+import wyil.util.Pair;
 import wysrc.lang.WhileyFile;
 
 /**
- * A Whiley project represents the contextual information underpinning a given
- * compilation. Bringing all of this information together helps manage it, and
- * enables a certain amount of global analysis. For example, we can analyse
- * dependencies between source files.
+ * Represents the contextual information underpinning a given compilation.
+ * Bringing all of this information together helps manage it, and enables a
+ * certain amount of global analysis. For example, we can analyse dependencies
+ * between source files.
  * 
  * @author David J. Pearce
  */
@@ -23,11 +24,11 @@ public class Project {
 	private final NameSpace namespace;
 	
 	/**
-	 * The builders associated with this project for transforming content. It is
+	 * The rules associated with this project for transforming content. It is
 	 * assumed that for any given transformation there is only one possible
-	 * pathway described by the builders.
+	 * pathway described.
 	 */
-	private final ArrayList<Builder> builders;
+	private final ArrayList<Rule> rules;
 	
 	/**
 	 * The logger is used to log messages for the project.
@@ -35,7 +36,7 @@ public class Project {
 	private Logger logger = Logger.NULL;
 	
 	public Project(NameSpace namespace) {
-		this.builders = new ArrayList<Builder>();
+		this.rules = new ArrayList<Rule>();
 		this.namespace = namespace;
 	}
 	
@@ -57,8 +58,8 @@ public class Project {
 	 * 
 	 * @param builder
 	 */
-	public void add(Builder builder) {
-		builders.add(builder);
+	public void add(Rule rule) {
+		rules.add(rule);
 	}
 	
 	// ======================================================================
@@ -77,7 +78,13 @@ public class Project {
 	 * Build the project using the given project builder(s).
 	 */
 	public void build() throws Exception {
-		
+		boolean allDone = false;
+		while (!allDone) {
+			allDone = true;
+			for (Rule r : rules) {
+				allDone &= r.apply(this);
+			}
+		}
 	}
 	
 	/**
@@ -91,5 +98,63 @@ public class Project {
 	 */
 	public void logTimedMessage(String msg, long time, long memory) {
 		logger.logTimedMessage(msg, time, memory);
+	}
+	
+	// ======================================================================
+	// Types
+	// ======================================================================		
+			
+	public static class Rule {
+		private final Builder builder;
+		private ArrayList<Path.Filter> matches;
+
+		public Rule(Builder builder, Collection<Path.Filter> rules) {
+			this.builder = builder;
+			this.matches = new ArrayList(rules);		
+		}
+		
+		public Rule(Builder builder, Path.Filter... filters) {
+			this.builder = builder;
+			this.matches = new ArrayList();
+			for(Path.Filter r : filters) {
+				this.matches.add(r);
+			}
+		}
+		
+		/**
+		 * Apply the given rule by examining items it matches, and checking
+		 * whether any are modified. If so, the builder it called upon to build
+		 * them. A rule can fail if one or more modified items depends on some
+		 * modified item outside the scope of this builder (i.e. described in
+		 * another rule).
+		 * 
+		 * @param project
+		 *            --- project on which this rule is applied.
+		 * @return --- true if the rule succeeded, false if it is was blocked by
+		 *         a dependency.
+		 * @throws Exception
+		 */
+		public boolean apply(Project project) throws Exception {
+			NameSpace namespace = project.namespace;
+			ArrayList<Path.Entry<?>> delta = null;
+			
+			for (Path.Filter<?> filter : matches) {				
+				for (Path.Entry<?> e : namespace.get(filter)) {
+					if (e.isModified()) {
+						if (delta == null) {
+							delta = new ArrayList<Path.Entry<?>>(delta);
+						}
+						delta.add(e);
+					}
+				}
+			}
+			
+			if (delta != null) {
+				// ok, there is something to build ... so do it!
+				builder.build(delta);
+			}
+			
+			return true;
+		}
 	}
 }

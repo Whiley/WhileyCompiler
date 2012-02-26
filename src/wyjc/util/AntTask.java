@@ -41,7 +41,7 @@ import wyjc.transforms.ClassWriter;
 import wysrc.builder.WhileyBuilder;
 import wysrc.lang.WhileyFile;
 
-import org.apache.tools.ant.*;
+import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
 /**
@@ -159,11 +159,11 @@ public class AntTask extends MatchingTask {
         		public <T> Path.Entry create(Path.ID id, Content.Type<T> ct) throws Exception {
         			return outputRoot.create(id, ct);
         		}
-        		public Path.ID id(String s) {
+        		public Path.ID create(String s) {
         			return TreeID.fromString(s);
         		}
         	};
-    		wyc.lang.Project project = new wyc.lang.Project(namespace);    		
+    		Project project = new Project(namespace);    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));
@@ -178,13 +178,16 @@ public class AntTask extends MatchingTask {
 					destdir.getPath());
     		}
     		// fourth initialise the builder
-    		project.add(new WhileyBuilder(project,pipeline));
+    		Path.Filter srcFilter = Path.pathFilter(?, WhileyFile.ContentType);
+    		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
+    		Project.Rule rule = new Project.Rule(builder,srcFilter);
+    		project.add(rule);
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
-    		int count = 0;
+    		int count = 0;    		
 			for (Path.Root src : roots) {
-				for (Path.Entry<WhileyFile> e : src.get(WhileyFile.ContentFilter)) {
+				for (Path.Entry<WhileyFile> e : src.get(srcFilter)) {
 					Path.Entry<WyilFile> binary = outputRoot.get(e.id(),
 							WyilFile.ContentType);
 					if (binary == null

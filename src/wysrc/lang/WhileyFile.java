@@ -97,18 +97,6 @@ public final class WhileyFile {
 			throw new UnsupportedOperationException();
 		}
 	};
-
-	public static final Content.Filter<WhileyFile> ContentFilter = new Content.Filter<WhileyFile>() {
-		public Path.Entry<WhileyFile> match(Path.Entry<?> entry) {
-			if(entry.contentType() == ContentType) {
-				return (Path.Entry<WhileyFile>) entry;
-			}
-			return null;
-		}		
-		public Content.Type<WhileyFile> contentType() {
-			return ContentType;
-		}
-	};
 	
 	// =========================================================================
 	// State

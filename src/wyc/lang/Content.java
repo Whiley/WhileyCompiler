@@ -29,46 +29,6 @@ import java.util.HashMap;
 
 public class Content {
 
-	public interface Filter<T> {
-
-		/**
-		 * Check whether a given entry is matched by this filter.
-		 * 
-		 * @param entry
-		 *            --- entry to test.
-		 * @return --- entry (retyped) if it matches, otherwise null.
-		 */
-		public Path.Entry<T> match(Path.Entry<?> entry);
-		
-		/**
-		 * Get the content type that this filter matches.
-		 * @return
-		 */
-		public Type<?> contentType();
-	}
-	
-	/**
-	 * Construct a filter which matches all items with a given parent path, and
-	 * with a given content type.
-	 * 
-	 * @param id
-	 * @param ct
-	 * @return
-	 */
-	public static <T> Filter<T> pathFilter(final Path.ID id, final Content.Filter<T> ct) {
-		return new Filter<T>() {
-			public Path.Entry<T> match(Path.Entry<?> e) {
-				if(e.id().parent().equals(id)) {
-					return ct.match(e);
-				}
-				return null;
-			}
-			public Content.Type<?> contentType() {
-				return ct.contentType();
-			}
-		};
-	}
-	
 	/**
 	 * A content type provides an abstract mechanism for reading and writing file in
 	 * a given format. Whiley source files (*.whiley) are one example, whilst JVM

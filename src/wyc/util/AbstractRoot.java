@@ -69,7 +69,7 @@ public abstract class AbstractRoot implements Root {
 		throw new ResolveError("unable to locate " + id);
 	}
 	
-	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws Exception {
+	public <T> List<Entry<T>> get(Path.Filter<T> filter) throws Exception {
 		if(contents == null) {
 			contents = contents();
 		}	
@@ -83,7 +83,7 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}
 	
-	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception {
+	public <T> Set<Path.ID> match(Path.Filter<T> filter) throws Exception {
 		if(contents == null) {
 			contents = contents();
 		}	
