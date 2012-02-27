@@ -61,7 +61,7 @@ public class Content {
 		 */
 		public void write(Path.Entry entry, T value) throws Exception;		
 	}
-
+	
 	public interface Registry {
 		/**
 		 * Get the content type associated with a given suffix.
@@ -71,7 +71,6 @@ public class Content {
 		 */
 		public Content.Type<?> get(String suffix);
 	}
-	
 	public static class RegistryImpl implements Registry {
 		private final HashMap<String,Content.Type> types = new HashMap<String,Content.Type>();
 				

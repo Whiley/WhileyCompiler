@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyc.lang.Path;
+import wyc.util.RegexFilter;
 import wyc.util.TreeID;
 import wyil.lang.*;
 import wyil.util.*;
@@ -137,8 +138,8 @@ public final class WhileyParser {
 			matchIdentifier();
 		}
 				
-		TreeID pkg = TreeID.ROOT;
-		pkg = pkg.append(matchIdentifier().text);
+		ArrayList<String> components = new ArrayList<String>();
+		components.add(matchIdentifier().text);
 		
 		while (index < tokens.size() && tokens.get(index) instanceof Dot) {
 			match(Dot.class);
@@ -146,20 +147,21 @@ public final class WhileyParser {
 				Token t = tokens.get(index);
 				if(t.text.equals("*")) {
 					match(Star.class);
-					pkg = pkg.append("*");	
+					components.add("*");	
+				} else if(t instanceof Dot) {
+					match(Dot.class);
+					components.add("**");	
 				} else {
-					pkg = pkg.append(matchIdentifier().text);
+					components.add(matchIdentifier().text);
 				}
 			}
 		}
-		
-		String module = pkg.last();
-		pkg = pkg.parent();		
-				
+					
+		RegexFilter filter = RegexFilter.create(components);
 		int end = index;
 		matchEndLine();
 		
-		wf.add(new Import(pkg, module, name, sourceAttr(start,
+		wf.add(new Import(filter, name, sourceAttr(start,
 				end - 1)));
 	}
 	

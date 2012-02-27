@@ -36,6 +36,7 @@ import wyc.lang.Project;
 import wyc.util.AbstractNameSpace;
 import wyc.util.DirectoryRoot;
 import wyc.util.JarFileRoot;
+import wyc.util.RegexFilter;
 import wyc.util.TreeID;
 import wyil.*;
 import wyil.lang.WyilFile;
@@ -355,7 +356,7 @@ public class Main {
 			}
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-			Path.Filter<WhileyFile> srcFilter = Path.filter(WhileyFile.ContentType,"**");
+			Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");
 			Project.Rule rule = new Project.Rule(builder,srcFilter);
 			project.add(rule);
 			

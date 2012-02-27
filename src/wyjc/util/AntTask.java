@@ -178,7 +178,7 @@ public class AntTask extends MatchingTask {
 					destdir.getPath());
     		}
     		// fourth initialise the builder
-    		Path.Filter<WhileyFile> srcFilter = Path.filter(WhileyFile.ContentType,"**");
+    		Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");
     		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
     		Project.Rule rule = new Project.Rule(builder,srcFilter);
     		project.add(rule);

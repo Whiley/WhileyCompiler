@@ -30,6 +30,7 @@ import java.util.*;
 
 import wyc.lang.Content;
 import wyc.lang.Path;
+import wyc.util.RegexFilter;
 import wyc.util.TreeID;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
@@ -212,8 +213,8 @@ public final class WhileyFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(TreeID.fromString("whiley/lang"), "*", null)); 	
-			imports.add(new WhileyFile.Import(module.parent(), "*", null)); 
+			imports.add(new WhileyFile.Import(RegexFilter.create("whiley","lang", "*"), null)); 	
+			imports.add(new WhileyFile.Import(RegexFilter.create(module.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -222,7 +223,7 @@ public final class WhileyFile {
 					imports.add((Import)d);
 				}
 			}			
-			imports.add(new WhileyFile.Import(module.parent(), module.last(), "*")); 
+			imports.add(new WhileyFile.Import(RegexFilter.create(module), "*")); 
 
 			Collections.reverse(imports);	
 			
@@ -243,15 +244,13 @@ public final class WhileyFile {
 	 * @author djp
 	 * 
 	 */
-	public static class Import extends SyntacticElement.Impl implements Declaration {
-		public Path.ID pkg;
-		public String module;
-		public String name;
+	public static class Import extends SyntacticElement.Impl implements Declaration {		
+		public final RegexFilter<?> filter;
+		public final String name;
 		
-		public Import(Path.ID pkg, String module, String name, Attribute... attributes) {
+		public Import(RegexFilter<?> filter, String name, Attribute... attributes) {
 			super(attributes);
-			this.pkg = pkg;
-			this.module = module;
+			this.filter = filter;			
 			this.name = name;
 		}
 	
@@ -260,14 +259,15 @@ public final class WhileyFile {
 			if(this.name != null) {
 				return (this.name.equals(name) || this.name.equals("*"));	
 			} else {
-				return this.module.equals(name); // || this.module.equals("*");
+				String last = filter.last();
+				return last.equals(name) || last.equals("*")  || last.equals("*");
 			}					
 		}
 		
-		public boolean matchModule(String module) {
-			return this.module != null && (this.module.equals(module) || this.module.equals("*"));
-		}
-		
+//		public boolean matchModule(String module) {
+//			return this.module != null && (this.module.equals(module) || this.module.equals("*"));
+//		}
+//		
 		public String name() {
 			return "";
 		}		

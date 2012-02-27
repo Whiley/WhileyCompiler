@@ -171,7 +171,7 @@ public final class TreeID implements Path.ID {
 	}
 	
 	public String toString() {
-		if(parent == null) {
+		if(parent == null || parent == ROOT) {
 			return component;
 		} else {
 			return parent.toString() + "/" + component;

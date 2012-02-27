@@ -35,6 +35,7 @@ import wyil.util.*;
 import wysrc.lang.*;
 import wysrc.stages.*;
 import wyc.lang.*;
+import wyc.util.RegexFilter;
 import wyc.util.ResolveError;
 
 /**
@@ -89,7 +90,7 @@ public final class WhileyBuilder implements Builder {
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	private HashMap<Path.ID,WhileyFile> srcFiles = new HashMap<Path.ID,WhileyFile>();
+	private HashMap<Path.ID,Path.Entry<WhileyFile>> srcFiles = new HashMap<Path.ID,Path.Entry<WhileyFile>>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -97,7 +98,7 @@ public final class WhileyBuilder implements Builder {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Triple<Path.ID,String,String>,ArrayList<Path.ID>> importCache = new HashMap();	
+	private final HashMap<Pair<RegexFilter, String>,ArrayList<Path.ID>> importCache = new HashMap();	
 	
 	
 	public WhileyBuilder(Project project, Pipeline pipeline) {
@@ -122,7 +123,7 @@ public final class WhileyBuilder implements Builder {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
 				WhileyFile wf = sf.read();
 				wyfiles.add(wf);
-				srcFiles.put(wf.module, wf);
+				srcFiles.put(wf.module, sf);
 			}
 		}
 
@@ -153,20 +154,16 @@ public final class WhileyBuilder implements Builder {
 	 * @param nid --- Name ID to check
 	 * @return
 	 */
-	public boolean isName(NameID nid) {		
+	public boolean isName(NameID nid) throws Exception {		
 		Path.ID mid = nid.module();
-		WhileyFile wf = srcFiles.get(mid);
+		Path.Entry<WhileyFile> wf = srcFiles.get(mid);
 		if(wf != null) {
 			// FIXME: check for the right kind of name			
-			return wf.hasName(nid.name());
-		} else {
-			try {				
-				Path.Entry<WyilFile> m = namespace.get(mid,WyilFile.ContentType);
-				// FIXME: check for the right kind of name
-				return m.read().hasName(nid.name());
-			} catch(Exception e) {
-				return false;
-			}
+			return wf.read().hasName(nid.name());
+		} else {			
+			Path.Entry<WyilFile> m = namespace.get(mid,WyilFile.ContentType);
+			// FIXME: check for the right kind of name
+			return m.read().hasName(nid.name());			
 		}
 	}	
 	
@@ -178,8 +175,8 @@ public final class WhileyBuilder implements Builder {
 	 * @return
 	 */
 	public List<Path.ID> imports(WhileyFile.Import imp) throws ResolveError {		
-		Triple<Path.ID, String, String> key = new Triple<Path.ID, String, String>(
-				imp.pkg, imp.module, imp.name);
+		Pair<RegexFilter, String> key = new Pair<RegexFilter, String>(
+				imp.filter, imp.name);
 		try {
 			ArrayList<Path.ID> matches = importCache.get(key);
 			if (matches != null) {
@@ -187,14 +184,22 @@ public final class WhileyBuilder implements Builder {
 				return matches;
 			} else {
 				// cache miss
-				matches = new ArrayList<Path.ID>();				
-				if(exists(imp.pkg)) {					
-					for (Path.ID mid : namespace.match(imp.pkg)) {						
-						if (imp.matchModule(mid.last())) {
-							matches.add(mid);
-						}
-					}				
+				matches = new ArrayList<Path.ID>();	
+
+				// FIXME: need to include source filter here as well.
+				for(Path.Entry<WhileyFile> sf : srcFiles.values()) {
+					sf = (Path.Entry<WhileyFile>) imp.filter.match(sf); 
+					if(sf != null) {
+						matches.add(sf.id());
+					}
 				}
+				
+				Path.Filter<?> binFilter = Path.chain(imp.filter,
+						WyilFile.ContentType);
+				for (Path.ID mid : namespace.match(binFilter)) {
+					matches.add(mid);
+				}			
+				
 				importCache.put(key, matches);
 			}
 			
@@ -212,8 +217,8 @@ public final class WhileyBuilder implements Builder {
 	 * @return
 	 * @throws Exception
 	 */
-	public WhileyFile getSourceFile(Path.ID mid) {
-		return srcFiles.get(mid);
+	public WhileyFile getSourceFile(Path.ID mid) throws Exception {
+		return srcFiles.get(mid).read();
 	}
 	
 	/**

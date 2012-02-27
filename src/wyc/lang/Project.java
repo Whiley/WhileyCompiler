@@ -138,11 +138,11 @@ public class Project {
 			NameSpace namespace = project.namespace;
 			ArrayList<Path.Entry<?>> delta = null;
 			
-			for (Path.Filter<?> filter : matches) {				
+			for (Path.Filter<?> filter : matches) {	
 				for (Path.Entry<?> e : namespace.get(filter)) {
 					if (e.isModified()) {
 						if (delta == null) {
-							delta = new ArrayList<Path.Entry<?>>(delta);
+							delta = new ArrayList<Path.Entry<?>>();
 						}
 						delta.add(e);
 					}
@@ -150,9 +150,9 @@ public class Project {
 			}
 			
 			if (delta != null) {
-				// ok, there is something to build ... so do it!
+				// ok, there is something to build ... so do it!				
 				builder.build(delta);
-			}
+			} 
 			
 			return true;
 		}
