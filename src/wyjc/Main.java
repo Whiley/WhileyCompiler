@@ -355,7 +355,7 @@ public class Main {
 			}
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-			Path.Filter<WhileyFile> srcFilter = Path.pathFilter(?, WhileyFile.ContentType);
+			Path.Filter<WhileyFile> srcFilter = Path.filter(WhileyFile.ContentType,"**");
 			Project.Rule rule = new Project.Rule(builder,srcFilter);
 			project.add(rule);
 			

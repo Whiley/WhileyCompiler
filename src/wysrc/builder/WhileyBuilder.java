@@ -147,10 +147,6 @@ public final class WhileyBuilder implements Builder {
 		}
 	}
 	
-	public Set<Path.ID> list(Path.ID id) throws Exception {
-		return namespace.match(Path.pathFilter(id, WyilFile.ContentType));
-	}
-	
 	/**
 	 * Determine whether a given name exists or not.
 	 * 
@@ -193,7 +189,7 @@ public final class WhileyBuilder implements Builder {
 				// cache miss
 				matches = new ArrayList<Path.ID>();				
 				if(exists(imp.pkg)) {					
-					for (Path.ID mid : list(imp.pkg)) {						
+					for (Path.ID mid : namespace.match(imp.pkg)) {						
 						if (imp.matchModule(mid.last())) {
 							matches.add(mid);
 						}

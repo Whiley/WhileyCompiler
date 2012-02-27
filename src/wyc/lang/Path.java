@@ -262,25 +262,58 @@ public class Path {
 	}
 	
 	/**
-	 * Construct a filter which matches all items with a given parent path, and
-	 * with a given content type.
+	 * Construct a filter from a sequence of path components, where "*" means
+	 * match all items in that path and "**" means match all items include
+	 * subpaths.
 	 * 
 	 * @param id
 	 * @param ct
 	 * @return
 	 */
-	public static <T> Filter<T> pathFilter(final Path.ID id,
-			final Content.Type<T> ct) {
-		return new Filter<T>() {
-			public Path.Entry<T> match(Path.Entry<?> e) {
-				if (e.id().parent().equals(id) && e.contentType() == ct) {
-					return (Path.Entry<T>) e;
+	public static <T> Filter<T> filter(final Content.Type<T> ct, final String... components) {
+		return new RegexFilter<T>(ct,components);
+	}
+	
+	private static final class RegexFilter<T> implements Filter<T> {
+		private final String[] components;
+		private final Content.Type<T> contentType;
+		
+		public RegexFilter(Content.Type<T> contentType, String[] components) {
+			this.components = components;
+			this.contentType = contentType;
+		}
+		
+		public Content.Type<T> contentType() {
+			return contentType;
+		}
+		
+		public Path.Entry<T> match(Path.Entry<?> e) {
+			if(match(e.id(),0,0)) {
+				return (Path.Entry<T>) e;
+			}
+			return null;
+		}
+		
+		private boolean match(Path.ID id, int idIndex, int myIndex) {
+			if(myIndex == components.length && idIndex == id.size()) {
+				return true;
+			} else if(myIndex == components.length || idIndex == id.size()) {
+				return false;
+			}
+			String myComponent = components[myIndex];
+			if(myComponent.equals("*")) {
+				return match(id,idIndex+1,myIndex+1);
+			} else if(myComponent.equals("**")) {
+				myIndex++;
+				for(int i=idIndex;i<id.size();++i) {
+					if(match(id,i,myIndex)) {
+						return true;
+					}
 				}
-				return null;
-			}
-			public Content.Type<?> contentType() {
-				return ct;
-			}
-		};
+				return false;
+			} else {
+				return myComponent.equals(id.get(idIndex)) && match(id,idIndex+1,myIndex+1);
+			}				
+		}		
 	}
 }
