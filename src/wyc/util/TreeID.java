@@ -72,7 +72,7 @@ public final class TreeID implements Path.ID {
 		if(parent != null) {
 			this.depth = parent.depth + 1;
 		} else {
-			this.depth = 0;
+			this.depth = -1;
 		}
 		this.children = ONE_CHILD;
 		this.nchildren = 0;

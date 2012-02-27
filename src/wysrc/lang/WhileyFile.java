@@ -97,6 +97,10 @@ public final class WhileyFile {
 			// for now
 			throw new UnsupportedOperationException();
 		}
+		
+		public String toString() {
+			return "Content-Type: whiley";
+		}
 	};
 	
 	// =========================================================================

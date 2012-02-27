@@ -99,8 +99,7 @@ public final class WhileyBuilder implements Builder {
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
 	private final HashMap<Pair<RegexFilter, String>,ArrayList<Path.ID>> importCache = new HashMap();	
-	
-	
+		
 	public WhileyBuilder(Project project, Pipeline pipeline) {
 		this.stages = pipeline.instantiate(this);
 		this.project = project;
@@ -185,21 +184,21 @@ public final class WhileyBuilder implements Builder {
 			} else {
 				// cache miss
 				matches = new ArrayList<Path.ID>();	
-
+				
 				// FIXME: need to include source filter here as well.
 				for(Path.Entry<WhileyFile> sf : srcFiles.values()) {
 					sf = (Path.Entry<WhileyFile>) imp.filter.match(sf); 
-					if(sf != null) {
+					if(sf != null) {						
 						matches.add(sf.id());
 					}
 				}
 				
-				Path.Filter<?> binFilter = Path.chain(imp.filter,
+				Path.Filter<?> binFilter = Path.attach(imp.filter,
 						WyilFile.ContentType);
-				for (Path.ID mid : namespace.match(binFilter)) {
+				for (Path.ID mid : namespace.match(binFilter)) {					
 					matches.add(mid);
 				}			
-				
+												
 				importCache.put(key, matches);
 			}
 			
@@ -218,7 +217,12 @@ public final class WhileyBuilder implements Builder {
 	 * @throws Exception
 	 */
 	public WhileyFile getSourceFile(Path.ID mid) throws Exception {
-		return srcFiles.get(mid).read();
+		Path.Entry<WhileyFile> e = srcFiles.get(mid);
+		if(e != null) {
+			return e.read();
+		} else {
+			return null;
+		}
 	}
 	
 	/**

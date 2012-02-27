@@ -132,17 +132,24 @@ public class Path {
 		public void touch();
 		
 		/**
-		 * Get the content type associated with this file.
+		 * Get the content type associated with this file. This provides a
+		 * generic mechanism for describing the information contained within the
+		 * file.
 		 */
 		public Content.Type<T> contentType();
 		
 		/**
-		 * Read contents of file
+		 * Read contents of file. Note, however, that this does not mean the
+		 * contents are re-read from permanent storage. If the contents are
+		 * already available in memory, then they will returned without
+		 * accessing permanent storage.
 		 */
 		public T read() throws Exception;
 			
 		/**
-		 * Write some data (the new content) in a given content type to this file.
+		 * Write some data (the new content) in a given content type to this
+		 * file. Note, however, that this does not mean the contents are written
+		 * to permanent storage.
 		 * 
 		 * @param contents
 		 */
@@ -174,7 +181,7 @@ public class Path {
 	public interface Root {		
 		
 		/**
-		 * Check whether or not a given package is contained.
+		 * Check whether or not a given package is contained in this root.
 		 * 
 		 * @throws Exception
 		 *             --- in case of some failure (e.g. IOException).
@@ -255,7 +262,14 @@ public class Path {
 		public Path.Entry<T> match(Path.Entry<?> entry);		
 	}
 
-	public static <T> Filter<T> chain(final Filter<?> filter, final Content.Type<T> contentType) {
+	/**
+	 * Attach a content type to a filter.
+	 * 
+	 * @param filter
+	 * @param contentType
+	 * @return
+	 */
+	public static <T> Filter<T> attach(final Filter<?> filter, final Content.Type<T> contentType) {
 		return new Filter<T>() {
 			public Path.Entry<T> match(Path.Entry<?> entry) {
 				if(entry.contentType() == contentType) {
@@ -263,6 +277,9 @@ public class Path {
 				}
 				return null;
 			}
+			public String toString() {
+				return filter.toString();
+			}
 		};
-	}
+	}	
 }

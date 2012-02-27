@@ -59,6 +59,10 @@ public final class WyilFile {
 			// for now
 			throw new UnsupportedOperationException();
 		}
+		
+		public String toString() {
+			return "Content-Type: wyil";
+		}
 	};	
 
 	// =========================================================================

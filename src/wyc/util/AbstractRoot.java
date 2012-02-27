@@ -65,8 +65,7 @@ public abstract class AbstractRoot implements Root {
 				return (Path.Entry<T>) e;
 			}
 		}
-		// this is what we're supposed to do!
-		throw new ResolveError("unable to locate " + id);
+		return null;
 	}
 	
 	public <T> List<Entry<T>> get(Path.Filter<T> filter) throws Exception {
@@ -86,11 +85,11 @@ public abstract class AbstractRoot implements Root {
 	public <T> Set<Path.ID> match(Path.Filter<T> filter) throws Exception {
 		if(contents == null) {
 			contents = contents();
-		}	
+		}			
 		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
 		for(Path.Entry<?> e : contents) {
-			Path.Entry<T> r = filter.match(e);
-			if(r != null) {
+			Path.Entry<T> r = filter.match(e);			
+			if(r != null) {				
 				entries.add(r.id());
 			}
 		}

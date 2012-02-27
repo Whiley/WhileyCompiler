@@ -64,10 +64,10 @@ public final class RegexFilter<T> implements Filter<T> {
 		return null;
 	}
 	
-	private boolean match(Path.ID id, int idIndex, int myIndex) {
-		if(myIndex == components.length && idIndex == id.size()) {
+	private boolean match(Path.ID id, int idIndex, int myIndex) {		
+		if(myIndex == components.length && idIndex == id.size()) {			
 			return true;
-		} else if(myIndex == components.length || idIndex == id.size()) {
+		} else if(myIndex == components.length || idIndex == id.size()) {			
 			return false;
 		}
 		String myComponent = components[myIndex];
