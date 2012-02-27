@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wycore.lang;
 
 import java.util.*;
@@ -27,7 +52,7 @@ public class Project {
 	 * assumed that for any given transformation there is only one possible
 	 * pathway described.
 	 */
-	private final ArrayList<Rule> rules;
+	private final ArrayList<BuildRule> rules;
 	
 	/**
 	 * The logger is used to log messages for the project.
@@ -35,7 +60,7 @@ public class Project {
 	private Logger logger = Logger.NULL;
 	
 	public Project(NameSpace namespace) {
-		this.rules = new ArrayList<Rule>();
+		this.rules = new ArrayList<BuildRule>();
 		this.namespace = namespace;
 	}
 	
@@ -55,9 +80,9 @@ public class Project {
 	/**
 	 * Add a new builder to this project.
 	 * 
-	 * @param builder
+	 * @param data.builder
 	 */
-	public void add(Rule rule) {
+	public void add(BuildRule rule) {
 		rules.add(rule);
 	}
 	
@@ -77,13 +102,7 @@ public class Project {
 	 * Build the project using the given project builder(s).
 	 */
 	public void build() throws Exception {
-		boolean allDone = false;
-		while (!allDone) {
-			allDone = true;
-			for (Rule r : rules) {
-				allDone &= r.apply(this);
-			}
-		}
+		
 	}
 	
 	/**
@@ -101,59 +120,5 @@ public class Project {
 	
 	// ======================================================================
 	// Types
-	// ======================================================================		
-			
-	public static class Rule {
-		private final Builder builder;
-		private ArrayList<Path.Filter> matches;
-
-		public Rule(Builder builder, Collection<Path.Filter> rules) {
-			this.builder = builder;
-			this.matches = new ArrayList(rules);		
-		}
-		
-		public Rule(Builder builder, Path.Filter... filters) {
-			this.builder = builder;
-			this.matches = new ArrayList();
-			for(Path.Filter r : filters) {
-				this.matches.add(r);
-			}
-		}
-		
-		/**
-		 * Apply the given rule by examining items it matches, and checking
-		 * whether any are modified. If so, the builder it called upon to build
-		 * them. A rule can fail if one or more modified items depends on some
-		 * modified item outside the scope of this builder (i.e. described in
-		 * another rule).
-		 * 
-		 * @param project
-		 *            --- project on which this rule is applied.
-		 * @return --- true if the rule succeeded, false if it is was blocked by
-		 *         a dependency.
-		 * @throws Exception
-		 */
-		public boolean apply(Project project) throws Exception {
-			NameSpace namespace = project.namespace;
-			ArrayList<Path.Entry<?>> delta = null;
-			
-			for (Path.Filter<?> filter : matches) {	
-				for (Path.Entry<?> e : namespace.get(filter)) {
-					if (e.isModified()) {
-						if (delta == null) {
-							delta = new ArrayList<Path.Entry<?>>();
-						}
-						delta.add(e);
-					}
-				}
-			}
-			
-			if (delta != null) {
-				// ok, there is something to build ... so do it!				
-				builder.build(delta);
-			} 
-			
-			return true;
-		}
-	}
+	// ======================================================================			
 }

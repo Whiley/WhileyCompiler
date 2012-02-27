@@ -26,66 +26,32 @@
 package wycore.lang;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import wyil.lang.Attribute;
 
 /**
- * A Syntactic Element represents any part of a source file which is relevant to
- * the syntactic structure of the file, and in particular parts we may wish to
- * add information too (e.g. line numbers, types, etc).
+ * The fundamental building block for a project. A BuildRule identifies a set of
+ * target entries and their corresponding dependents.
  * 
  * @author David J. Pearce
  * 
  */
-public interface SyntacticElement {
+public interface BuildRule {
+
 	/**
-     * Get the list of attributes associated with this syntactice element.
-     * 
-     * @return
-     */
-	public List<Attribute> attributes();
-	
+	 * Calculate the dependents for this rule. That is, the set of entries which
+	 * must be up-to-date before applying this rule. In some cases, entries may
+	 * be missing, in which case they must be created (by this rule).
+	 * 
+	 * @return
+	 */
+	public List<Path.Entry> dependents() throws Exception;
+
 	/**
-     * Get the first attribute of the given class type. This is useful
-     * short-hand.
-     * 
-     * @param c
-     * @return
-     */
-	public <T extends Attribute> T attribute(Class<T> c);
-	
-	public class Impl  implements SyntacticElement {
-		private List<Attribute> attributes;
-		
-		public Impl() {
-			// I use copy on write here, since for the most part I don't expect
-			// attributes to change, and hence can be safely aliased. But, when they
-			// do change I need fresh copies.
-			attributes = new CopyOnWriteArrayList<Attribute>();
-		}
-		
-		public Impl(Attribute x) {
-			attributes = new ArrayList<Attribute>();
-			attributes.add(x);
-		}
-		
-		public Impl(Collection<Attribute> attributes) {
-			this.attributes = new ArrayList<Attribute>(attributes);			
-		}
-		
-		public Impl(Attribute[] attributes) {
-			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));			
-		}
-		
-		public List<Attribute> attributes() { return attributes; }
-		
-		public <T extends Attribute> T attribute(Class<T> c) {
-			for(Attribute a : attributes) {
-				if(c.isInstance(a)) {
-					return (T) a;
-				}
-			}
-			return null;
-		}		
-	}
+	 * Apply the given rule by examining the dependents of this rule and
+	 * identifying which (if any) have a modification date after their
+	 * corresponding target (as defined by this rule). If at least such one
+	 * dependent, then it must be recompiled to produce an updated target.
+	 * 
+	 * @throws Exception
+	 */
+	public void apply() throws Exception;
 }
