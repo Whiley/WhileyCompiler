@@ -26,10 +26,12 @@
 package wyil.transforms;
 
 import java.util.*;
-import static wyil.util.SyntaxError.syntaxError;
+
+import static wycore.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.*;
 import wycore.lang.Builder;
 import wycore.lang.Path;
+import wycore.lang.SyntacticElement;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;

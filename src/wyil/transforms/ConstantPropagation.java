@@ -25,7 +25,7 @@
 
 package wyil.transforms;
 
-import static wyil.util.SyntaxError.internalFailure;
+import static wycore.lang.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;

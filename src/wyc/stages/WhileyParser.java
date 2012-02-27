@@ -33,6 +33,7 @@ import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.*;
 import wycore.lang.Path;
+import wycore.lang.SyntaxError;
 import wycore.util.RegexFilter;
 import wycore.util.TreeID;
 import wyil.lang.*;

@@ -4,7 +4,6 @@ import java.util.*;
 
 import wyc.lang.WhileyFile;
 import wycore.util.*;
-import wyil.util.Logger;
 import wyil.util.Pair;
 
 /**

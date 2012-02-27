@@ -31,13 +31,11 @@ import java.util.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wycore.lang.*;
+import wycore.lang.SyntaxError.InternalFailure;
 import wycore.util.*;
 import wyil.Pipeline;
 import wyil.Transform;
 import wyil.lang.WyilFile;
-import wyil.util.Logger;
-import wyil.util.SyntaxError;
-import wyil.util.SyntaxError.InternalFailure;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
 

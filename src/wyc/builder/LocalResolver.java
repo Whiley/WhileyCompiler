@@ -13,14 +13,14 @@ import wyil.lang.WyilFile;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
 import wycore.lang.Path;
+import wycore.lang.SyntacticElement;
+import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
 import wycore.util.TreeID;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
 
 /**
  * <p>

@@ -33,8 +33,8 @@ import wyil.Transform;
 import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
+import static wycore.lang.SyntaxError.*;
 import static wyil.lang.Block.*;
-import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 /**

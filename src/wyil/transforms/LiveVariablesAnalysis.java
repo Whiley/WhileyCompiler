@@ -28,7 +28,7 @@ package wyil.transforms;
 import java.util.*;
 
 
-import static wyil.util.SyntaxError.*;
+import static wycore.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 import wycore.lang.Builder;

@@ -31,13 +31,13 @@ import java.util.*;
 import wycore.lang.Builder;
 import wycore.lang.NameSpace;
 import wycore.lang.Path;
+import wycore.lang.SyntacticElement;
+import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
-import static wyil.util.SyntaxError.*;
+import static wycore.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 import wyjc.runtime.BigRational;
 

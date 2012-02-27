@@ -32,10 +32,12 @@ import static wyil.util.ErrorMessages.*;
 import wyc.builder.*;
 import wyc.lang.*;
 import wyc.lang.Stmt.*;
+import wycore.lang.SyntacticElement;
+import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
 import wyil.util.*;
 import wyil.lang.*;
-import wysrc.lang.WhileyFile.*;
+import wyc.lang.WhileyFile.*;
 
 /**
  * <p>

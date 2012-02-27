@@ -34,11 +34,11 @@ import wyc.stages.WhileyLexer;
 import wyc.stages.WhileyParser;
 import wycore.lang.Content;
 import wycore.lang.Path;
+import wycore.lang.SyntacticElement;
+import wycore.lang.SyntaxError;
 import wycore.util.RegexFilter;
 import wycore.util.TreeID;
 import wyil.lang.*;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
 
 /**
  * Provides classes representing the various kinds of declaration found in a

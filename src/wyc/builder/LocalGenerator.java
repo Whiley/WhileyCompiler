@@ -17,6 +17,8 @@ import java.util.Map;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile.Context;
+import wycore.lang.SyntacticElement;
+import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
@@ -24,8 +26,6 @@ import wyil.lang.Code;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
 import wyil.util.Triple;
 
 /**

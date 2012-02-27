@@ -19,6 +19,7 @@ import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wycore.lang.Path;
+import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
 import wycore.util.TreeID;
 

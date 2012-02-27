@@ -25,7 +25,7 @@
 
 package wyc.stages;
 
-import static wyil.util.SyntaxError.*;
+import static wycore.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
@@ -33,13 +33,13 @@ import java.util.*;
 import wyc.builder.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
+import wycore.lang.SyntacticElement;
+import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
 
 /**
  * Propagates type information in a flow-sensitive fashion from declared

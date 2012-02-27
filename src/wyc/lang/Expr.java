@@ -29,9 +29,9 @@ import java.util.*;
 
 import wyc.builder.Nominal;
 import wycore.lang.Path;
+import wycore.lang.SyntacticElement;
 import wyil.lang.*;
 import wyil.util.Pair;
-import wyil.util.SyntacticElement;
 
 /**
  * Provides classes for representing expressions in Whiley's source language.

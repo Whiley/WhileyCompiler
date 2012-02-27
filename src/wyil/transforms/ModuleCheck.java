@@ -29,12 +29,12 @@ import java.util.*;
 
 import wycore.lang.Builder;
 import wycore.lang.Path;
+import wycore.lang.SyntaxError;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.util.Pair;
-import wyil.util.SyntaxError;
-import static wyil.util.SyntaxError.*;
+import static wycore.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 /**

@@ -31,9 +31,9 @@ import java.io.IOException;
 import java.util.*;
 
 import wycore.lang.Builder;
+import wycore.lang.Logger;
 import wycore.lang.Path;
 import wyil.lang.WyilFile;
-import wyil.util.Logger;
 import wyil.*;
 import wyjc.io.ClassFileBuilder;
 import wyjvm.io.ClassFileWriter;

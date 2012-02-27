@@ -29,6 +29,7 @@ import java.util.*;
 
 import wycore.lang.Content;
 import wycore.lang.Path;
+import wycore.lang.SyntacticElement;
 import wyil.util.*;
 import wyjc.io.ClassFileLoader;
 

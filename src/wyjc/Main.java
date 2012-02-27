@@ -38,7 +38,7 @@ import wyil.*;
 import wyil.lang.WyilFile;
 import wyil.util.*;
 import static wyc.util.OptArg.*;
-import static wyil.util.SyntaxError.*;
+import static wycore.lang.SyntaxError.*;
 import wyjc.transforms.*;
 
 /**

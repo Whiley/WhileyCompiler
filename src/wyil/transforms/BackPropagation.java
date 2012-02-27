@@ -25,11 +25,13 @@
 
 package wyil.transforms;
 
-import static wyil.util.SyntaxError.*;
+import static wycore.lang.SyntaxError.*;
+
 import java.util.*;
 
 import wycore.lang.Builder;
 import wycore.lang.Path;
+import wycore.lang.SyntacticElement;
 import wycore.util.TreeID;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
