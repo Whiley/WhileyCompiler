@@ -162,12 +162,7 @@ public class AntTask extends MatchingTask {
         	roots.addAll(bootpath);
     		        	
     		// second, construct the module loader    		
-        	NameSpace namespace = new AbstractNameSpace(roots) {        		
-        		public Path.ID create(String s) {
-        			return TreeID.fromString(s);
-        		}
-        	};
-    		Project project = new Project(namespace);    		
+    		Project project = new Project(new StandardNameSpace(roots));    		
 
     		if(verbose) {			
     			project.setLogger(new Logger.Default(System.err));

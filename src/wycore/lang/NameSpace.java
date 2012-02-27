@@ -25,6 +25,10 @@
 
 package wycore.lang;
 
+import java.util.List;
+import java.util.Set;
+
+import wycore.lang.Path.Filter;
 import wycore.lang.Path.ID;
 
 /**
@@ -32,10 +36,7 @@ import wycore.lang.Path.ID;
  * A NameSpace is on the core features underlying the design of the Whiley
  * compiler system. In any given build system, the challenge is always to map
  * named objects identified in source files to actual files on the file system.
- * The NameSpace is responsible for exactly that. It encompasses one or more
- * "path roots" which are locations on the file system where named items may be
- * found. Such locations may be, for example, directories. However, they may
- * also be jar files, or even potentially network locations.
+ * The NameSpace is responsible for exactly that. 
  * </p>
  * 
  * <p>
@@ -43,39 +44,59 @@ import wycore.lang.Path.ID;
  * physical locations. There is an implicit assumption here that every path item
  * corresponds to at most one physical location.
  * </p>
- * 
- * <p>
- * Another important responsibility is to control the creation of Path ID's.
- * Every Path ID used within a given NameSpace instance should have been
- * constructed via that NameSpace's <code>id()</code> function. This helps
- * integrate into systems (e.g. Eclipse) which have their own notion of a path
- * identified (e.g. IPath).
- * </p>
+ *  
  * 
  * @author David J. Pearce
  * 
  */
-public interface NameSpace extends Path.Root {
+public interface NameSpace {
+		
+	/**
+	 * Check whether or not a given entry and content-type is contained in this root.
+	 * 
+	 * @throws Exception
+	 *             --- in case of some failure (e.g. IOException).
+	 */
+	public boolean exists(ID id, Content.Type<?> ct) throws Exception;
 	
 	/**
-	 * Create an entry of a given content type at a given path. The physical
-	 * location of the entry is first determined using the locate function. If
-	 * the entry already exists, then it is just returned.
+	 * Get the entry corresponding to a given ID and content type. If no
+	 * such entry exists, return null.
 	 * 
 	 * @param id
-	 * @param ct
+	 *            --- id of module to lookup.
 	 * @return
+	 * @throws ResolveError
+	 *             if id is not found.
 	 * @throws Exception
+	 *             --- in case of some failure (e.g. IOException).
 	 */
-	public <T> Path.Entry<T> create(ID id, Content.Type<T> ct) throws Exception;
+	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception;
 	
 	/**
-	 * Create a Path ID from a string, where '/' separates path components.
+	 * Get all objects matching a given content filter stored in this root.
+	 * In the case of no matches, an empty list is returned.
 	 * 
-	 * @param s
+	 * @throws Exception
+	 *             --- in case of some failure (e.g. IOException).
+	 * 
+	 * @param ct
 	 * @return
 	 */
-	public Path.ID create(String s);
+	public <T> List<Path.Entry<T>> get(Filter<T> ct) throws Exception;
+	
+	/**
+	 * Identify all entries matching a given content filter stored in this
+	 * root. In the case of no matches, an empty set is returned.
+	 * 
+	 * @throws Exception
+	 *             --- in case of some failure (e.g. IOException).
+	 * 
+	 * @param filter
+	 *            --- filter to match entries with.
+	 * @return
+	 */
+	public <T> Set<Path.ID> match(Filter<T> filter) throws Exception;
 	
 	/**
 	 * Force all roots to flush their items to permanent storage (where

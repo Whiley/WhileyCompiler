@@ -322,7 +322,7 @@ public class Main {
 			roots.addAll(bootpath);
 			
 			// finally, construct the project	
-			NameSpace namespace = new AbstractNameSpace(roots) {        		
+			NameSpace namespace = new StandardNameSpace(roots) {        		
         		public Path.ID create(String s) {
         			return TreeID.fromString(s);
         		}
