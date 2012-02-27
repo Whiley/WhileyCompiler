@@ -34,10 +34,7 @@ import wycore.lang.*;
 import wycore.lang.SyntaxError.InternalFailure;
 import wycore.util.*;
 import wyil.Pipeline;
-import wyil.Transform;
 import wyil.lang.WyilFile;
-import wyjc.io.ClassFileLoader;
-import wyjc.transforms.ClassWriter;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -182,14 +179,9 @@ public class AntTask extends MatchingTask {
     			project.setLogger(new Logger.Default(System.err));
     		}
     		
-    		// third, initialise the pipeline
-    		ArrayList<Pipeline.Template> templates = new ArrayList<Pipeline.Template>(Pipeline.defaultPipeline);
-    		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-    		Pipeline pipeline = new Pipeline(templates);
-    		if(destdir != null) {
-    			pipeline.setOption(ClassWriter.class, "outputDirectory",
-					destdir.getPath());
-    		}
+    		// third, initialise the pipeline    		    	
+    		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
+    		
     		// fourth initialise the builder
     		Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");
     		WhileyBuilder builder = new WhileyBuilder(project,pipeline);

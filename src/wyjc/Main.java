@@ -39,7 +39,6 @@ import wyil.lang.WyilFile;
 import wyil.util.*;
 import static wyc.util.OptArg.*;
 import static wycore.lang.SyntaxError.*;
-import wyjc.transforms.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line
@@ -127,11 +126,7 @@ public class Main {
 			MINOR_VERSION = 0;
 			MINOR_REVISION = 0;
 			BUILD_NUMBER = 0;
-		}
-		
-		// register additional pipeline transforms used by this compiler.
-		Pipeline.register(ClassWriter.class);
-		Pipeline.register(JvmBytecodeWriter.class);
+		}		
 	}
 
 	/**
@@ -349,18 +344,10 @@ public class Main {
 			}		
 			
 			// now, initialise builder appropriately
-			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
-
-			Pipeline pipeline = new Pipeline(templates);
+			Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
 
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
-			}
-
-			if (outputdir != null) {
-				pipeline.setOption(ClassWriter.class, "outputDirectory",
-						outputdir);
 			}
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);

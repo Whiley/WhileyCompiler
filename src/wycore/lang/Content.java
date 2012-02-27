@@ -39,18 +39,20 @@ public class Content {
 	public interface Type<T> {
 		
 		/**
-		 * Read the contents of source matching this content type.
+		 * Physically read the raw bytes from a given entry's input stream and
+		 * convert into the format described by this content type.
 		 * 
 		 * @param input
-		 *            --- input stream representing in the format described by this
-		 *            content type.
+		 *            --- input stream representing in the format described by
+		 *            this content type.
 		 * @return
 		 */
 		public T read(Path.Entry<T> entry) throws Exception;
 		
 		/**
-		 * Convert a given value into an appropriate byte stream and write it to a
-		 * given output.
+		 * Convert an object in the format described by this content type into
+		 * an appropriate byte stream and physically write it to the given
+		 * entry.
 		 * 
 		 * @param output
 		 *            --- stream which this value is to be written to.
