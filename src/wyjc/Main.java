@@ -76,8 +76,7 @@ public class Main {
 				try { 
 					WyilFile c = WyilFile.ContentType.read(e);
 					if(c != null) {
-						e.associate(WyilFile.ContentType);
-						e.setContents(c);
+						e.associate(WyilFile.ContentType,c);
 					}
 				} catch(Exception ex) {
 					throw new RuntimeException(ex); /// hmmm

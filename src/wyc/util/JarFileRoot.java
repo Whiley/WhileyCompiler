@@ -132,5 +132,9 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		public OutputStream outputStream() throws IOException {
 			throw new UnsupportedOperationException();
 		}
+
+		public void write(T contents) {
+			throw new UnsupportedOperationException();
+		}		
 	}
 }

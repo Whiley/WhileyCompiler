@@ -55,22 +55,23 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 		return contentType;
 	}
 	
-	public T contents() throws Exception {
+	public T read() throws Exception {
 		if (contents == null) {
 			contents = contentType.read(this);
 		}
 		return contents;
 	}		
 			
-	public void setContents(T contents) throws Exception {
+	public void write(T contents) throws Exception {
 		this.contents = contents; 
 	}
 	
-	public void associate(Content.Type<T> contentType) {
+	public void associate(Content.Type<T> contentType, T contents) {
 		if(this.contentType != null) {
 			throw new IllegalArgumentException("content type already associated with this entry");
 		}
 		this.contentType = contentType;
+		this.contents = contents;
 	}
 }
 

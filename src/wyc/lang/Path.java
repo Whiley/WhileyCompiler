@@ -139,10 +139,17 @@ public class Path {
 		public Content.Type<T> contentType();
 		
 		/**
-		 * Associate this entry with a content type.
+		 * Associate this entry with a content type, and optionally provide the
+		 * contents. The ability to provide the contents is a convenience
+		 * function for cases where determining the content type requires
+		 * actually reading the contents!
+		 * 
 		 * @param contentType
+		 *            --- content type to associate
+		 * @param contents
+		 *            --- contents to associate, or null if none.
 		 */
-		public void associate(Content.Type<T> contentType);
+		public void associate(Content.Type<T> contentType, T contents);
 		
 		/**
 		 * Read contents of file. Note, however, that this does not mean the
@@ -150,18 +157,17 @@ public class Path {
 		 * already available in memory, then they will returned without
 		 * accessing permanent storage.
 		 */
-		public T contents() throws Exception;
+		public T read() throws Exception;
 			
 		/**
-		 * Set the contents of this entry. It is assumed that the contents
-		 * matches the content-type given for this entry. Also, this doesn't
-		 * affect the modification date of this entry --- you need to explicitly
-		 * touch to do that. Finally, note also that this does not mean the
-		 * contents are written to permanent storage.
+		 * Write the contents of this entry. It is assumed that the contents
+		 * matches the content-type given for this entry. Finally, note also
+		 * that this does not mean the contents are written to permanent
+		 * storage.
 		 * 
 		 * @param contents
 		 */
-		public void setContents(T contents) throws Exception;
+		public void write(T contents) throws Exception;
 		
 		/**
 		 * Open a generic input stream to the entry.

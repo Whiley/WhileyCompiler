@@ -46,10 +46,7 @@ public final class WyilFile {
 			return null;
 		}
 
-		public WyilFile read(Path.Entry entry) throws Exception {		
-			
-			System.out.println("READING: " + entry.id());
-			
+		public WyilFile read(Path.Entry entry) throws Exception {			
 			// FIXME: this shouldn't be using a class file loader :)
 			
 			ClassFileLoader loader = new ClassFileLoader();
