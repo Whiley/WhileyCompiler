@@ -24,8 +24,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * Provides core classes for the Abstract Syntax Tree (AST) used to represent Whiley source files.  
+ * Provides the various stages of compilation that make up the front-end of the compiler.  This is essentially everything upto and include the generation of WYIL code.
  * 
  * @author David J. Pearce
  */
-package wysrc.lang;
+package wyc.stages;

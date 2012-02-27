@@ -24,12 +24,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * <b>The Whiley Compiler Front End</b>.  This provides the front-end of any Whiley Compiler, 
- * and is responsible for tasks such as lexing, parsing, type checking and WYIL generation. 
- * The compiler front-end also includes a notion of <i>pipeline</i> for linking different 
- * stages of the compiler together.  A standard interface for manipulating the pipeline 
- * and registering new pipeline stages is given.
+ * Provides core classes for the Abstract Syntax Tree (AST) used to represent Whiley source files.  
  * 
  * @author David J. Pearce
  */
-package wysrc;
+package wyc.lang;

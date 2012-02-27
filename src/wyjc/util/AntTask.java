@@ -28,6 +28,8 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
+import wyc.builder.WhileyBuilder;
+import wyc.lang.WhileyFile;
 import wycore.lang.*;
 import wycore.util.*;
 import wyil.Pipeline;
@@ -38,8 +40,6 @@ import wyil.util.SyntaxError;
 import wyil.util.SyntaxError.InternalFailure;
 import wyjc.io.ClassFileLoader;
 import wyjc.transforms.ClassWriter;
-import wysrc.builder.WhileyBuilder;
-import wysrc.lang.WhileyFile;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;

@@ -1,7 +1,7 @@
-package wysrc.builder;
+package wyc.builder;
 
+import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
-import static wysrc.lang.WhileyFile.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import wyil.lang.WyilFile;
+import wyc.lang.*;
+import wyc.lang.WhileyFile.Context;
 import wycore.lang.Path;
 import wycore.util.ResolveError;
 import wycore.util.TreeID;
@@ -19,8 +21,6 @@ import wyil.lang.Value;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
-import wysrc.lang.*;
-import wysrc.lang.WhileyFile.Context;
 
 /**
  * <p>

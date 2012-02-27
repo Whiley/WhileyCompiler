@@ -1,12 +1,12 @@
-package wysrc.builder;
+package wyc.builder;
 
+import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
 import static wyil.util.ErrorMessages.errorMessage;
-import static wysrc.lang.WhileyFile.*;
 
 import java.util.*;
 
@@ -14,10 +14,10 @@ import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
 import wyil.lang.*;
 import wyil.util.*;
-import wysrc.builder.WhileyBuilder;
-import wysrc.lang.Expr;
-import wysrc.lang.WhileyFile;
-import wysrc.lang.UnresolvedType;
+import wyc.builder.WhileyBuilder;
+import wyc.lang.Expr;
+import wyc.lang.UnresolvedType;
+import wyc.lang.WhileyFile;
 import wycore.lang.Path;
 import wycore.util.ResolveError;
 import wycore.util.TreeID;

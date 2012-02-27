@@ -23,12 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wysrc.stages;
+package wyc.stages;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.lang.*;
+import wyc.lang.WhileyFile.*;
+import wyc.util.*;
 import wycore.lang.Path;
 import wycore.util.RegexFilter;
 import wycore.util.TreeID;
@@ -36,11 +39,8 @@ import wyil.lang.*;
 import wyil.util.*;
 import wyjc.runtime.BigRational;
 import wyjvm.lang.Bytecode;
-import wysrc.lang.*;
-import wysrc.lang.WhileyFile.*;
-import wysrc.util.*;
 
-import static wysrc.stages.WhileyLexer.*;
+import static wyc.stages.WhileyLexer.*;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the

@@ -29,17 +29,17 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 
+import wyc.builder.WhileyBuilder;
+import wyc.lang.WhileyFile;
+import wyc.util.*;
 import wycore.lang.*;
 import wycore.util.*;
 import wyil.*;
 import wyil.lang.WyilFile;
 import wyil.util.*;
+import static wyc.util.OptArg.*;
 import static wyil.util.SyntaxError.*;
-import static wysrc.util.OptArg.*;
 import wyjc.transforms.*;
-import wysrc.builder.WhileyBuilder;
-import wysrc.lang.WhileyFile;
-import wysrc.util.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line

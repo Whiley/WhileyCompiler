@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wysrc.builder;
+package wyc.builder;
 
 import java.io.*;
 import java.util.*;
@@ -32,8 +32,8 @@ import wyil.*;
 import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
-import wysrc.lang.*;
-import wysrc.stages.*;
+import wyc.lang.*;
+import wyc.stages.*;
 import wycore.lang.*;
 import wycore.util.RegexFilter;
 import wycore.util.ResolveError;

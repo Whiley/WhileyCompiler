@@ -1,11 +1,11 @@
-package wysrc.builder;
+package wyc.builder;
 
 import java.util.*;
 
-import static wysrc.lang.WhileyFile.*;
+import static wyc.lang.WhileyFile.*;
 import wyil.lang.*;
-import wysrc.lang.WhileyFile;
-import wysrc.lang.UnresolvedType;
+import wyc.lang.UnresolvedType;
+import wyc.lang.WhileyFile;
 import wycore.lang.Path;
 import wycore.util.ResolveError;
 

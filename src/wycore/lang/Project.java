@@ -2,10 +2,10 @@ package wycore.lang;
 
 import java.util.*;
 
+import wyc.lang.WhileyFile;
 import wycore.util.*;
 import wyil.util.Logger;
 import wyil.util.Pair;
-import wysrc.lang.WhileyFile;
 
 /**
  * Represents the contextual information underpinning a given compilation.

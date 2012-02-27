@@ -23,15 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wysrc.lang;
+package wyc.lang;
 
 import java.util.*;
 
+import wyc.builder.Nominal;
 import wycore.lang.Path;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;
-import wysrc.builder.Nominal;
 
 /**
  * Provides classes for representing expressions in Whiley's source language.

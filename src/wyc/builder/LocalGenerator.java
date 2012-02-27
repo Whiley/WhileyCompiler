@@ -1,12 +1,12 @@
-package wysrc.builder;
+package wyc.builder;
 
+import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
 import static wyil.util.ErrorMessages.INVALID_SET_OR_LIST_EXPRESSION;
 import static wyil.util.ErrorMessages.UNKNOWN_VARIABLE;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyil.util.ErrorMessages.errorMessage;
-import static wysrc.lang.WhileyFile.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +14,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import wyc.lang.Expr;
+import wyc.lang.UnresolvedType;
+import wyc.lang.WhileyFile.Context;
 import wycore.util.ResolveError;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
@@ -24,9 +27,6 @@ import wyil.util.Pair;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 import wyil.util.Triple;
-import wysrc.lang.Expr;
-import wysrc.lang.UnresolvedType;
-import wysrc.lang.WhileyFile.Context;
 
 /**
  * <p>

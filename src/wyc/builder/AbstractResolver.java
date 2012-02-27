@@ -1,16 +1,16 @@
-package wysrc.builder;
+package wyc.builder;
 
 import java.util.*;
 
 import wyil.lang.WyilFile;
+import wyc.lang.*;
+import wyc.lang.WhileyFile.Context;
 import wycore.lang.Path;
 import wycore.util.ResolveError;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Triple;
-import wysrc.lang.*;
-import wysrc.lang.WhileyFile.Context;
 
 
 public abstract class AbstractResolver<T extends Exception> {	
