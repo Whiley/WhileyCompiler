@@ -71,13 +71,13 @@ public class Main {
 			} else if(e.suffix().equals("class")) {
 				// this could be either a normal JVM class, or a Wyil class. We
 				// need to determine which.
-				try { 
+				try { 					
 					WyilFile c = WyilFile.ContentType.read(e);
 					if(c != null) {
 						e.associate(WyilFile.ContentType,c);
-					}
+					}					
 				} catch(Exception ex) {
-					throw new RuntimeException(ex); /// hmmm
+					// hmmm, not ideal
 				}
 			} 
 		}
@@ -353,7 +353,7 @@ public class Main {
 			project.add(rule);
 			
 			// Now, touch all files indicated on command-line			
-			for(DirectoryRoot src : sourceRoots) {
+			for(DirectoryRoot src : sourceRoots) {				
 				File loc = src.location();
 				String locPath = loc.getCanonicalPath();
 				for (String _file : args) {

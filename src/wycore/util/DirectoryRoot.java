@@ -149,7 +149,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	 * @author djp
 	 * 
 	 */
-	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
+	public static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
 		private final java.io.File file;
 		
 		public Entry(Path.ID id, java.io.File file) {
@@ -163,6 +163,10 @@ public final class DirectoryRoot extends AbstractRoot {
 		
 		public long lastModified() {
 			return file.lastModified();
+		}
+		
+		public File file() {
+			return file;
 		}
 		
 		public String suffix() {
