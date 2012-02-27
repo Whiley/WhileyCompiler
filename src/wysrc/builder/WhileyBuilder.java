@@ -120,7 +120,7 @@ public final class WhileyBuilder implements Builder {
 		for (Path.Entry<?> f : delta) {
 			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
-				WhileyFile wf = sf.read();
+				WhileyFile wf = sf.contents();
 				wyfiles.add(wf);
 				srcFiles.put(wf.module, sf);
 			}
@@ -158,11 +158,11 @@ public final class WhileyBuilder implements Builder {
 		Path.Entry<WhileyFile> wf = srcFiles.get(mid);
 		if(wf != null) {
 			// FIXME: check for the right kind of name			
-			return wf.read().hasName(nid.name());
+			return wf.contents().hasName(nid.name());
 		} else {			
 			Path.Entry<WyilFile> m = namespace.get(mid,WyilFile.ContentType);
 			// FIXME: check for the right kind of name
-			return m.read().hasName(nid.name());			
+			return m.contents().hasName(nid.name());			
 		}
 	}	
 	
@@ -219,7 +219,7 @@ public final class WhileyBuilder implements Builder {
 	public WhileyFile getSourceFile(Path.ID mid) throws Exception {
 		Path.Entry<WhileyFile> e = srcFiles.get(mid);
 		if(e != null) {
-			return e.read();
+			return e.contents();
 		} else {
 			return null;
 		}
@@ -234,7 +234,7 @@ public final class WhileyBuilder implements Builder {
 	 * @throws Exception
 	 */
 	public WyilFile getModule(Path.ID mid) throws Exception {
-		return namespace.get(mid, WyilFile.ContentType).read();
+		return namespace.get(mid, WyilFile.ContentType).contents();
 	}
 	
 	// ======================================================================

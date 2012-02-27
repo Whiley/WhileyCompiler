@@ -76,7 +76,9 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
 			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
 			TreeID id = pkg.append(name);
-			contents[i++] = new Entry(id, contentTypes.get(suffix), jf, e);
+			Entry pe = new Entry(id, jf, e);
+			contentTypes.associate(pe);
+			contents[i++] = pe;
 		}		
 		
 		return contents;
@@ -90,8 +92,8 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		private final JarFile parent;
 		private final JarEntry entry;
 
-		public Entry(TreeID mid, Content.Type<T> contentType, JarFile parent, JarEntry entry) {
-			super(mid,contentType);
+		public Entry(TreeID mid, JarFile parent, JarEntry entry) {
+			super(mid);
 			this.parent = parent;
 			this.entry = entry;
 		}
@@ -130,9 +132,5 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		public OutputStream outputStream() throws IOException {
 			throw new UnsupportedOperationException();
 		}
-
-		public void write(T contents) {
-			throw new UnsupportedOperationException();
-		}		
 	}
 }

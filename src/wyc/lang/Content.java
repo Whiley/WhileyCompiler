@@ -25,8 +25,6 @@
 
 package wyc.lang;
 
-import java.util.HashMap;
-
 public class Content {
 
 	/**
@@ -48,7 +46,7 @@ public class Content {
 		 *            content type.
 		 * @return
 		 */
-		public T read(Path.Entry entry) throws Exception;
+		public T read(Path.Entry<T> entry) throws Exception;
 		
 		/**
 		 * Convert a given value into an appropriate byte stream and write it to a
@@ -59,27 +57,36 @@ public class Content {
 		 * @param value
 		 *            --- value to be converted into bytes.
 		 */
-		public void write(Path.Entry entry, T value) throws Exception;		
+		public void write(Path.Entry<T> entry, T value) throws Exception;		
 	}
 	
+	/**
+	 * <p>
+	 * A content registry is responsible for associating content types to path
+	 * entries. The simplest way to do this is to base the decision purely on
+	 * the suffix of the entry in question. A standard implementation
+	 * (wyc.util.SuffixRegistry) is provided for this common case.
+	 * </p>
+	 * 
+	 * <p>
+	 * In some situations, it does occur on occasion that suffix alone is not
+	 * enough. For example, a JVM class file may correspond to multiple content
+	 * types if it may come from different source languages. In such cases, a
+	 * probe of the content may be required to fully determine the content type.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public interface Registry {
+		
 		/**
-		 * Get the content type associated with a given suffix.
+		 * Attempt to associate a content type with this entry.
 		 * 
-		 * @param suffix
+		 * @param e
+		 *            --- entry to associate with a content type.
 		 * @return
 		 */
-		public Content.Type<?> get(String suffix);
-	}
-	public static class RegistryImpl implements Registry {
-		private final HashMap<String,Content.Type> types = new HashMap<String,Content.Type>();
-				
-		public void register(String suffix, Content.Type<?> contentType) {
-			types.put(suffix,contentType);
-		}
-		
-		public Content.Type<?> get(String suffix) {
-			return types.get(suffix);
-		}
+		public void associate(Path.Entry<?> e);
 	}
 }

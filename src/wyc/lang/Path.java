@@ -139,21 +139,29 @@ public class Path {
 		public Content.Type<T> contentType();
 		
 		/**
+		 * Associate this entry with a content type.
+		 * @param contentType
+		 */
+		public void associate(Content.Type<T> contentType);
+		
+		/**
 		 * Read contents of file. Note, however, that this does not mean the
 		 * contents are re-read from permanent storage. If the contents are
 		 * already available in memory, then they will returned without
 		 * accessing permanent storage.
 		 */
-		public T read() throws Exception;
+		public T contents() throws Exception;
 			
 		/**
-		 * Write some data (the new content) in a given content type to this
-		 * file. Note, however, that this does not mean the contents are written
-		 * to permanent storage.
+		 * Set the contents of this entry. It is assumed that the contents
+		 * matches the content-type given for this entry. Also, this doesn't
+		 * affect the modification date of this entry --- you need to explicitly
+		 * touch to do that. Finally, note also that this does not mean the
+		 * contents are written to permanent storage.
 		 * 
 		 * @param contents
 		 */
-		public void write(Content.Type<T> contentType, T contents) throws Exception;
+		public void setContents(T contents) throws Exception;
 		
 		/**
 		 * Open a generic input stream to the entry.

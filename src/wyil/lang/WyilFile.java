@@ -48,6 +48,8 @@ public final class WyilFile {
 
 		public WyilFile read(Path.Entry entry) throws Exception {		
 			
+			System.out.println("READING: " + entry.id());
+			
 			// FIXME: this shouldn't be using a class file loader :)
 			
 			ClassFileLoader loader = new ClassFileLoader();

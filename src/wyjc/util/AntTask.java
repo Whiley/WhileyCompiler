@@ -68,10 +68,29 @@ public class AntTask extends MatchingTask {
 	/**
 	 * The master project content type registry.
 	 */
-	public static final Content.RegistryImpl registry = new Content.RegistryImpl() {{
+	public static final Content.Registry registry = new SuffixRegistry() {{
 		register("whiley",WhileyFile.ContentType);
 		register("class",WyilFile.ContentType);		
-	}};
+	}
+	
+	public void associate(Path.Entry e) {
+		if(e.suffix().equals("class")) {
+			// this could be either a normal JVM class, or a Wyil class. We
+			// need to determine which.
+			try { 
+				WyilFile c = WyilFile.ContentType.read(e);
+				if(c != null) {
+					e.associate(WyilFile.ContentType);
+					e.setContents(c);
+				}
+			} catch(Exception ex) {
+				throw new RuntimeException(ex); /// hmmm
+			}
+		} else {
+			super.associate(e);
+		}
+	}
+	};
 	
 	public static final FileFilter srcFilter = new FileFilter() {
 		public boolean accept(File f) {

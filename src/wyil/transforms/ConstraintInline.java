@@ -350,7 +350,7 @@ public class ConstraintInline implements Transform {
 	}
 	
 	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws Exception {
-		WyilFile m = namespace.get(name.module(),WyilFile.ContentType).read();				
+		WyilFile m = namespace.get(name.module(),WyilFile.ContentType).contents();				
 		WyilFile.Method method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {

@@ -35,9 +35,8 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 	private T contents = null;
 	private boolean modified = false;
 	
-	public AbstractEntry(ID mid, Content.Type<T> contentType) {
+	public AbstractEntry(ID mid) {
 		this.id = mid;
-		this.contentType = contentType;
 	}
 	
 	public ID id() {
@@ -56,16 +55,22 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 		return contentType;
 	}
 	
-	public T read() throws Exception {
+	public T contents() throws Exception {
 		if (contents == null) {
 			contents = contentType.read(this);
 		}
 		return contents;
 	}		
 			
-	public void write(Content.Type<T> contentType, T contents) throws Exception {
-		this.contentType = contentType;
+	public void setContents(T contents) throws Exception {
 		this.contents = contents; 
+	}
+	
+	public void associate(Content.Type<T> contentType) {
+		if(this.contentType != null) {
+			throw new IllegalArgumentException("content type already associated with this entry");
+		}
+		this.contentType = contentType;
 	}
 }
 

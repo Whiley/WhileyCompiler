@@ -152,8 +152,8 @@ public final class DirectoryRoot extends AbstractRoot {
 	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
 		private final java.io.File file;
 		
-		public Entry(Path.ID id, java.io.File file, Content.Type<T> contentType) {
-			super(id,contentType);			
+		public Entry(Path.ID id, java.io.File file) {
+			super(id);
 			this.file = file;			
 		}
 		
@@ -207,8 +207,9 @@ public final class DirectoryRoot extends AbstractRoot {
 						String name = filename.substring(0, i);
 						String suffix = filename.substring(i + 1);
 						Path.ID oid = id.append(name);
-						contents.add(new Entry(oid, file, contentTypes
-								.get(suffix)));
+						Entry e = new Entry(oid, file);
+						contentTypes.associate(e);
+						contents.add(e);
 					}
 				}
 			}
