@@ -30,8 +30,8 @@ import static wyil.util.SyntaxError.internalFailure;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyc.lang.Builder;
-import wyc.lang.Path;
+import wycore.lang.Builder;
+import wycore.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;

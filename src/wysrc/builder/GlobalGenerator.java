@@ -6,8 +6,8 @@ import static wysrc.lang.WhileyFile.*;
 import wyil.lang.*;
 import wysrc.lang.WhileyFile;
 import wysrc.lang.UnresolvedType;
-import wyc.lang.Path;
-import wyc.util.ResolveError;
+import wycore.lang.Path;
+import wycore.util.ResolveError;
 
 /**
  * <p>

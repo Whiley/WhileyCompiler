@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import wyc.lang.Path;
-import wyc.util.TreeID;
+import wycore.lang.Path;
+import wycore.util.TreeID;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import static wyil.lang.Type.*;

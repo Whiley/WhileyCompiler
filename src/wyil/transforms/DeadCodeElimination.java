@@ -28,8 +28,8 @@ package wyil.transforms;
 import java.io.IOException;
 import java.util.*;
 
-import wyc.lang.Builder;
-import wyc.lang.Path;
+import wycore.lang.Builder;
+import wycore.lang.Path;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.Pair;

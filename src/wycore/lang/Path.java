@@ -23,13 +23,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.lang;
+package wycore.lang;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
-
-import wyc.lang.Content.Type;
 
 public class Path {
 	
@@ -195,7 +193,7 @@ public class Path {
 	public interface Root {		
 		
 		/**
-		 * Check whether or not a given package is contained in this root.
+		 * Check whether or not a given entry and content-type is contained in this root.
 		 * 
 		 * @throws Exception
 		 *             --- in case of some failure (e.g. IOException).
@@ -203,7 +201,8 @@ public class Path {
 		public boolean exists(ID id, Content.Type<?> ct) throws Exception;
 		
 		/**
-		 * Lookup a given object.
+		 * Get the entry corresponding to a given ID and content type. If no
+		 * such entry exists, return null.
 		 * 
 		 * @param id
 		 *            --- id of module to lookup.
@@ -217,6 +216,7 @@ public class Path {
 		
 		/**
 		 * Get all objects matching a given content filter stored in this root.
+		 * In the case of no matches, an empty list is returned.
 		 * 
 		 * @throws Exception
 		 *             --- in case of some failure (e.g. IOException).
@@ -227,22 +227,26 @@ public class Path {
 		public <T> List<Path.Entry<T>> get(Filter<T> ct) throws Exception;
 		
 		/**
-		 * Identify all objects matching a given content filter stored in this root.
+		 * Identify all entries matching a given content filter stored in this
+		 * root. In the case of no matches, an empty set is returned.
 		 * 
 		 * @throws Exception
 		 *             --- in case of some failure (e.g. IOException).
 		 * 
-		 * @param ct
+		 * @param filter
+		 *            --- filter to match entries with.
 		 * @return
 		 */
-		public <T> Set<Path.ID> match(Filter<T> ct) throws Exception;
+		public <T> Set<Path.ID> match(Filter<T> filter) throws Exception;
 		
 		/**
 		 * Create an entry of a given content type at a given path. If the entry
 		 * already exists, then it is just returned.
 		 * 
 		 * @param id
+		 *            --- Path.ID for the new entry
 		 * @param ct
+		 *            --- content type of the new entry
 		 * @return
 		 * @throws Exception
 		 */

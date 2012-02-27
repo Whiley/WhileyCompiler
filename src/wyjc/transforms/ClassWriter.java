@@ -30,8 +30,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-import wyc.lang.Builder;
-import wyc.lang.Path;
+import wycore.lang.Builder;
+import wycore.lang.Path;
 import wyil.lang.WyilFile;
 import wyil.util.Logger;
 import wyil.*;

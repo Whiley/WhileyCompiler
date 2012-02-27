@@ -23,14 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.util;
+package wycore.util;
 
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;
 
-import wyc.lang.Content;
-import wyc.lang.Path;
+import wycore.lang.Content;
+import wycore.lang.Path;
 
 /**
  * Represents a Jar file on the file system.

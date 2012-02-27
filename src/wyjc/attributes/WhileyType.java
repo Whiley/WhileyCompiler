@@ -31,7 +31,7 @@ import java.util.*;
 
 import wyautl.io.*;
 import wyautl.lang.*;
-import wyc.util.TreeID;
+import wycore.util.TreeID;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyjvm.io.*;

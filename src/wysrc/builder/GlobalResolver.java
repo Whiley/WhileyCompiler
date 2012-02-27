@@ -18,9 +18,9 @@ import wysrc.builder.WhileyBuilder;
 import wysrc.lang.Expr;
 import wysrc.lang.WhileyFile;
 import wysrc.lang.UnresolvedType;
-import wyc.lang.Path;
-import wyc.util.ResolveError;
-import wyc.util.TreeID;
+import wycore.lang.Path;
+import wycore.util.ResolveError;
+import wycore.util.TreeID;
 
 /**
  * <p>

@@ -23,14 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.util;
+package wycore.util;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-import wyc.lang.Content;
-import wyc.lang.Path;
-import wyc.lang.Path.Filter;
+import wycore.lang.Content;
+import wycore.lang.Path;
+import wycore.lang.Path.Filter;
 
 public final class RegexFilter<T> implements Filter<T> {
 	private final Content.Type<T> contentType;		

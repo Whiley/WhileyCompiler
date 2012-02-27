@@ -28,15 +28,17 @@ package wyil.transforms;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyc.lang.Builder;
-import wyc.lang.NameSpace;
-import wyc.lang.Path;
-import wyc.util.ResolveError;
+import wycore.lang.Builder;
+import wycore.lang.NameSpace;
+import wycore.lang.Path;
+import wycore.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
-import wyil.util.Pair;
+import wyil.util.ErrorMessages;
 import wyil.util.SyntacticElement;
+import wyil.util.SyntaxError;
 import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 import wyjc.runtime.BigRational;
 
 /**
@@ -55,11 +57,11 @@ import wyjc.runtime.BigRational;
  * 
  */
 public class ConstraintInline implements Transform {
-	private final NameSpace namespace;	
+	private final Builder builder;	
 	private String filename;
 	
 	public ConstraintInline(Builder builder) {
-		this.namespace = builder.namespace();
+		this.builder = builder;
 	}
 	
 	public void apply(WyilFile module) {
@@ -178,6 +180,8 @@ public class ConstraintInline implements Transform {
 			} else if(code instanceof Code.Return) {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
+		} catch(SyntaxError e) {
+			throw e;
 		} catch(ResolveError e) {
 			syntaxError(e.getMessage(),filename,entry,e);
 		} catch(Throwable e) {
@@ -196,7 +200,7 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws Exception {		
-		Block precondition = findPrecondition(code.name,code.type);		
+		Block precondition = findPrecondition(code.name,code.type,elem);		
 		if(precondition != null) {			
 			Block blk = new Block(0);
 			List<Type> paramTypes = code.type.params();
@@ -349,8 +353,14 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws Exception {
-		WyilFile m = namespace.get(name.module(),WyilFile.ContentType).read();				
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,SyntacticElement elem) throws Exception {		
+		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),WyilFile.ContentType);
+		if(e == null) {
+			syntaxError(
+					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
+							.toString()), filename, elem);
+		}
+		WyilFile m = e.read();
 		WyilFile.Method method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {

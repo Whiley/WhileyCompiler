@@ -27,8 +27,8 @@ import wyautl.lang.Automaton.State;
 import wyil.util.Pair;
 import wyil.util.type.*;
 import wyjvm.io.*;
-import wyc.lang.Path;
-import wyc.util.TreeID;
+import wycore.lang.Path;
+import wycore.util.TreeID;
 
 /**
  * A structural type. See

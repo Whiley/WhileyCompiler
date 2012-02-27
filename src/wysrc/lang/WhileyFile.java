@@ -28,10 +28,10 @@ package wysrc.lang;
 import java.io.*;
 import java.util.*;
 
-import wyc.lang.Content;
-import wyc.lang.Path;
-import wyc.util.RegexFilter;
-import wyc.util.TreeID;
+import wycore.lang.Content;
+import wycore.lang.Path;
+import wycore.util.RegexFilter;
+import wycore.util.TreeID;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;

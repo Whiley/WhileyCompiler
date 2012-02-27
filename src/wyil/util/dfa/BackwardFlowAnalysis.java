@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wyc.lang.Path;
+import wycore.lang.Path;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;

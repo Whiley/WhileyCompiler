@@ -27,7 +27,7 @@ package wyil.io;
 
 import java.io.*;
 import wyil.lang.*;
-import wyc.lang.Path;
+import wycore.lang.Path;
 
 /**
  * <p>

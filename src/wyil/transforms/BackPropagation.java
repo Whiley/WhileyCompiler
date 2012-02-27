@@ -28,9 +28,9 @@ package wyil.transforms;
 import static wyil.util.SyntaxError.*;
 import java.util.*;
 
-import wyc.lang.Builder;
-import wyc.lang.Path;
-import wyc.util.TreeID;
+import wycore.lang.Builder;
+import wycore.lang.Path;
+import wycore.util.TreeID;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;

@@ -27,7 +27,7 @@ package wysrc.lang;
 
 import java.util.*;
 
-import wyc.lang.Path;
+import wycore.lang.Path;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;

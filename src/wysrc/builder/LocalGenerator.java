@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import wyc.util.ResolveError;
+import wycore.util.ResolveError;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;

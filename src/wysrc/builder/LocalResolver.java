@@ -10,9 +10,9 @@ import java.util.HashSet;
 import java.util.List;
 
 import wyil.lang.WyilFile;
-import wyc.lang.Path;
-import wyc.util.ResolveError;
-import wyc.util.TreeID;
+import wycore.lang.Path;
+import wycore.util.ResolveError;
+import wycore.util.TreeID;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;

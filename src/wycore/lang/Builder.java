@@ -23,55 +23,44 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.util;
+package wycore.lang;
 
-import wyc.lang.Content;
-import wyc.lang.Path.Entry;
-import wyc.lang.Path.ID;
+import java.util.*;
 
-public abstract class AbstractEntry<T> implements Entry<T> {
-	private final ID id;		
-	private Content.Type<T> contentType;
-	private T contents = null;
-	private boolean modified = false;
+import wyil.util.Pair;
+
+/**
+ * <p>
+ * A builder is responsible for transforming files from one content type to
+ * another. Typically this revolves around compiling the source file into some
+ * kind of binary, although other kinds of transformations are possible.
+ * </p>
+ * 
+ * <p>
+ * A given builder may support multiple transformations and the builder must
+ * declare each of these.
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public interface Builder {
 	
-	public AbstractEntry(ID mid) {
-		this.id = mid;
-	}
+	/**
+	 * Get the namespace this builder is operating on.
+	 * @return
+	 */
+	public NameSpace namespace();
 	
-	public ID id() {
-		return id;
-	}
-	
-	public void touch() {
-		this.modified = true;
-	}
-	
-	public boolean isModified() {
-		return modified;
-	}
-	
-	public Content.Type<T> contentType() {
-		return contentType;
-	}
-	
-	public T read() throws Exception {
-		if (contents == null) {
-			contents = contentType.read(this);
-		}
-		return contents;
-	}		
-			
-	public void write(T contents) throws Exception {
-		this.contents = contents; 
-	}
-	
-	public void associate(Content.Type<T> contentType, T contents) {
-		if(this.contentType != null) {
-			throw new IllegalArgumentException("content type already associated with this entry");
-		}
-		this.contentType = contentType;
-		this.contents = contents;
-	}
+	/**
+	 * Build a given set of source files to produce a given set of target files.
+	 * The location of the target files is determined by the build map. Note
+	 * that the given target files should be created by the builder.
+	 * 
+	 * @param map
+	 *            --- a mapping from source files to target files.
+	 * @param delta
+	 *            --- the set of files to be built.
+	 */
+	public void build(List<Path.Entry<?>> delta) throws Exception;
 }
-

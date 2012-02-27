@@ -31,8 +31,8 @@ import java.util.*;
 import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
-import wyc.lang.Builder;
-import wyc.lang.Path;
+import wycore.lang.Builder;
+import wycore.lang.Path;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.WyilFile;

@@ -30,7 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import wyc.lang.Builder;
+import wycore.lang.Builder;
 import wyil.io.WyilFileWriter;
 import wyil.transforms.*;
 

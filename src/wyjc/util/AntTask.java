@@ -28,8 +28,8 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.lang.*;
-import wyc.util.*;
+import wycore.lang.*;
+import wycore.util.*;
 import wyil.Pipeline;
 import wyil.Transform;
 import wyil.lang.WyilFile;
@@ -68,27 +68,24 @@ public class AntTask extends MatchingTask {
 	/**
 	 * The master project content type registry.
 	 */
-	public static final Content.Registry registry = new SuffixRegistry() {{
-		register("whiley",WhileyFile.ContentType);
-		register("class",WyilFile.ContentType);		
-	}
+	public static final Content.Registry registry = new Content.Registry() {
 	
-	public void associate(Path.Entry e) {
-		if(e.suffix().equals("class")) {
-			// this could be either a normal JVM class, or a Wyil class. We
-			// need to determine which.
-			try { 
-				WyilFile c = WyilFile.ContentType.read(e);
-				if(c != null) {
-					e.associate(WyilFile.ContentType,c);
+		public void associate(Path.Entry e) {
+			if(e.suffix().equals("whiley")) {
+				e.associate(WhileyFile.ContentType, null);
+			} else if(e.suffix().equals("class")) {
+				// this could be either a normal JVM class, or a Wyil class. We
+				// need to determine which.
+				try { 
+					WyilFile c = WyilFile.ContentType.read(e);
+					if(c != null) {
+						e.associate(WyilFile.ContentType,c);
+					}
+				} catch(Exception ex) {
+					throw new RuntimeException(ex); /// hmmm
 				}
-			} catch(Exception ex) {
-				throw new RuntimeException(ex); /// hmmm
-			}
-		} else {
-			super.associate(e);
+			} 
 		}
-	}
 	};
 	
 	public static final FileFilter srcFilter = new FileFilter() {

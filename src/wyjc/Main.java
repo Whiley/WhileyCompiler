@@ -29,8 +29,8 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 
-import wyc.lang.*;
-import wyc.util.*;
+import wycore.lang.*;
+import wycore.util.*;
 import wyil.*;
 import wyil.lang.WyilFile;
 import wyil.util.*;
@@ -64,13 +64,12 @@ public class Main {
 	/**
 	 * The master project content type registry.
 	 */
-	public static final Content.Registry registry = new SuffixRegistry() {{
-			register("whiley",WhileyFile.ContentType);
-			register("class",WyilFile.ContentType);		
-		}
+	public static final Content.Registry registry = new Content.Registry() {
 	
 		public void associate(Path.Entry e) {
-			if(e.suffix().equals("class")) {
+			if(e.suffix().equals("whiley")) {
+				e.associate(WhileyFile.ContentType, null);
+			} else if(e.suffix().equals("class")) {
 				// this could be either a normal JVM class, or a Wyil class. We
 				// need to determine which.
 				try { 
@@ -81,9 +80,7 @@ public class Main {
 				} catch(Exception ex) {
 					throw new RuntimeException(ex); /// hmmm
 				}
-			} else {
-				super.associate(e);
-			}
+			} 
 		}
 	};
 	

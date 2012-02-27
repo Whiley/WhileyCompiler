@@ -1,8 +1,8 @@
-package wyc.lang;
+package wycore.lang;
 
 import java.util.*;
 
-import wyc.util.*;
+import wycore.util.*;
 import wyil.util.Logger;
 import wyil.util.Pair;
 import wysrc.lang.WhileyFile;

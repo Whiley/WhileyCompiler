@@ -31,7 +31,7 @@ import java.util.*;
 
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyVersion;
-import wyc.lang.Path;
+import wycore.lang.Path;
 import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;

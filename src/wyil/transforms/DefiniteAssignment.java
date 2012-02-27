@@ -27,8 +27,8 @@ package wyil.transforms;
 
 import java.util.*;
 
-import wyc.lang.Builder;
-import wyc.lang.Path;
+import wycore.lang.Builder;
+import wycore.lang.Path;
 import wyil.Transform;
 import wyil.util.*;
 import wyil.util.dfa.*;

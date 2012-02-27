@@ -27,8 +27,8 @@ package wyil.lang;
 
 import java.util.*;
 
-import wyc.lang.Content;
-import wyc.lang.Path;
+import wycore.lang.Content;
+import wycore.lang.Path;
 import wyil.util.*;
 import wyjc.io.ClassFileLoader;
 

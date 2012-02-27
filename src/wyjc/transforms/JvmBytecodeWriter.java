@@ -27,8 +27,8 @@ package wyjc.transforms;
 
 import java.io.*;
 
-import wyc.lang.Builder;
-import wyc.lang.Path;
+import wycore.lang.Builder;
+import wycore.lang.Path;
 import wyil.*;
 import wyil.lang.WyilFile;
 import wyjc.io.ClassFileBuilder;

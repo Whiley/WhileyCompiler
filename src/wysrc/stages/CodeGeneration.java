@@ -29,7 +29,7 @@ import java.util.*;
 
 import static wyil.util.ErrorMessages.*;
 import static wysrc.lang.WhileyFile.*;
-import wyc.util.ResolveError;
+import wycore.util.ResolveError;
 import wyil.util.*;
 import wyil.lang.*;
 import wysrc.builder.*;

@@ -1,7 +1,8 @@
-package wyc.util;
+package wycore.util;
 
 import java.util.*;
-import wyc.lang.*;
+
+import wycore.lang.*;
 
 /**
  * The master root provides a way to combine multiple roots together.
@@ -40,7 +41,7 @@ public abstract class AbstractNameSpace implements NameSpace {
 				return e;
 			}			
 		}
-		throw new ResolveError("unable to locate " + id);
+		return null;
 	}
 	
 	public <T> ArrayList<Path.Entry<T>> get(Path.Filter<T> filter) throws Exception {

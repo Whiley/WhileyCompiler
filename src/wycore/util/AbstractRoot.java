@@ -23,18 +23,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.util;
+package wycore.util;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import wyc.lang.Content;
-import wyc.lang.Path;
-import wyc.lang.Path.Entry;
-import wyc.lang.Path.ID;
-import wyc.lang.Path.Root;
+import wycore.lang.Content;
+import wycore.lang.Path;
+import wycore.lang.Path.Entry;
+import wycore.lang.Path.ID;
+import wycore.lang.Path.Root;
 
 public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;

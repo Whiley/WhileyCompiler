@@ -34,9 +34,9 @@ import wyil.lang.*;
 import wyil.util.*;
 import wysrc.lang.*;
 import wysrc.stages.*;
-import wyc.lang.*;
-import wyc.util.RegexFilter;
-import wyc.util.ResolveError;
+import wycore.lang.*;
+import wycore.util.RegexFilter;
+import wycore.util.ResolveError;
 
 /**
  * Responsible for managing the process of turning source files into binary code
