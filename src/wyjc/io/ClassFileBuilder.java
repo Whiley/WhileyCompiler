@@ -1586,7 +1586,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
 				JAVA_LANG_STRING, JAVA_LANG_STRING);
 		
-		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString()));		
+		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString().replace('/','.')));		
 		bytecodes
 				.add(new Bytecode.LoadConst(nameMangle(c.name.name(), c.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
@@ -1967,7 +1967,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		
-		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()));
+		bytecodes.add(new Bytecode.LoadConst(nid.module().toString().replace('/','.')));
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,Bytecode.STATIC));
 	}
