@@ -84,17 +84,11 @@ public class AntTask extends MatchingTask {
 		}
 	};
 	
-	public static final FileFilter srcFilter = new FileFilter() {
+	public static final FileFilter fileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".whiley") || f.isDirectory();
+			return f.getName().endsWith(".whiley") || f.getName().endsWith(".class") || f.isDirectory();
 		}
 	};
-	
-	public static final FileFilter binFilter = new FileFilter() {
-		public boolean accept(File f) {
-			return f.getName().endsWith(".class") || f.isDirectory();
-		}
-	};	
 	
 	ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
 	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
@@ -152,24 +146,23 @@ public class AntTask extends MatchingTask {
     	
     protected boolean compile() {
     	try {
-    		// first, initialise source and binary roots
+    		// first, initialise source and target roots
     		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-        	DirectoryRoot sourceRoot = new DirectoryRoot(srcdir,srcFilter,registry); 
-    		roots.add(sourceRoot);    
-        		
-        	if(destdir == null) { destdir = srcdir; }
-        	final DirectoryRoot outputRoot = new DirectoryRoot(destdir,binFilter,registry);        	
-        	roots.add(outputRoot);
+        	DirectoryRoot source = new DirectoryRoot(srcdir,fileFilter,registry); 
+    		roots.add(source);    
+        		        	
+        	DirectoryRoot target = null;
+        	if(destdir != null) {
+        		target = new DirectoryRoot(destdir,fileFilter,registry);        	
+        		roots.add(target);
+        	}
         	    	       	
         	wyjc.Main.initialiseBootPath(bootpath);        	;        	
         	roots.addAll(whileypath);
         	roots.addAll(bootpath);
     		        	
     		// second, construct the module loader    		
-        	NameSpace namespace = new AbstractNameSpace(roots) {
-        		public <T> Path.Entry create(Path.ID id, Content.Type<T> ct) throws Exception {
-        			return outputRoot.create(id, ct);
-        		}
+        	NameSpace namespace = new AbstractNameSpace(roots) {        		
         		public Path.ID create(String s) {
         			return TreeID.fromString(s);
         		}
@@ -184,25 +177,27 @@ public class AntTask extends MatchingTask {
     		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
     		
     		// fourth initialise the builder
-    		Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");
     		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-    		Project.Rule rule = new Project.Rule(builder,srcFilter);
-    		project.add(rule);
+    		Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");    		
+			StandardBuildRule rule = new StandardBuildRule(builder);			
+			if(target != null) {
+				rule.add(source, target, srcFilter);
+			} else {
+				rule.add(source, source, srcFilter);
+			}			
+			project.add(rule);
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
-    		int count = 0;    		
-			for (Path.Root src : roots) {
-				for (Path.Entry<WhileyFile> e : src.get(srcFilter)) {
-					Path.Entry<WyilFile> binary = outputRoot.get(e.id(),
-							WyilFile.ContentType);
-					if (binary == null
-							|| binary.lastModified() < e.lastModified()) {
-						count++;
-						e.touch();
-					}
+    		int count = 0;    					
+			for (Path.Entry<WhileyFile> e : source.get(srcFilter)) {
+				Path.Entry<WyilFile> binary = target.get(e.id(),
+						WyilFile.ContentType);
+				if (binary == null || binary.lastModified() < e.lastModified()) {
+					count++;
+					e.touch();
 				}
-			}
+			}		
     		
 			log("Compiling " + count + " source file(s)");
 			

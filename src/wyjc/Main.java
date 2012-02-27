@@ -83,15 +83,15 @@ public class Main {
 		}
 	};
 	
-	public static final FileFilter srcFilter = new FileFilter() {
+	/**
+	 * The purpose of the file filter is simply to prevent loading all different
+	 * kinds of files in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter fileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".whiley") || f.isDirectory();
-		}
-	};
-	
-	public static final FileFilter binFilter = new FileFilter() {
-		public boolean accept(File f) {
-			return f.getName().endsWith(".class") || f.isDirectory();
+			return f.getName().endsWith(".whiley") || f.getName().endsWith(".class") || f.isDirectory();
 		}
 	};
 	
@@ -211,11 +211,11 @@ public class Main {
 			List<String> sourcepath, boolean verbose) throws IOException {
 		ArrayList<DirectoryRoot> nitems = new ArrayList<DirectoryRoot>();
 		if (sourcepath.isEmpty()) {
-			nitems.add(new DirectoryRoot(".", srcFilter,registry));
+			nitems.add(new DirectoryRoot(".", fileFilter,registry));
 		} else {			
 			for (String root : sourcepath) {
 				try {
-					nitems.add(new DirectoryRoot(root,srcFilter,registry));					
+					nitems.add(new DirectoryRoot(root,fileFilter,registry));					
 				} catch (IOException e) {
 					if (verbose) {
 						System.err.println("Warning: " + root
@@ -242,7 +242,7 @@ public class Main {
 				if (root.endsWith(".jar")) {
 					nitems.add(new JarFileRoot(root,registry));
 				} else {
-					nitems.add(new DirectoryRoot(root,binFilter,registry));
+					nitems.add(new DirectoryRoot(root,fileFilter,registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -295,20 +295,17 @@ public class Main {
 						
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
-		try {	
-			
-			// initialise binary roots appropriately
-			final DirectoryRoot outputRoot;
+		try {				
+			// initialise target root appropriately (if one is provided)
+			DirectoryRoot target = null;
 			
 			ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 			if (outputdir != null) {
 				// if an output directory is specified, everything is redirected
 				// to that.
-				outputRoot = new DirectoryRoot(outputdir,binFilter,registry); 
-				roots.add(outputRoot);
-			} else {
-				outputRoot = null;
-			}
+				target = new DirectoryRoot(outputdir,fileFilter,registry); 
+				roots.add(target);
+			} 
 			
 			// initialise the source roots appropriately
 			List<DirectoryRoot> sourceRoots = initialiseSourceRoots(
@@ -325,14 +322,7 @@ public class Main {
 			roots.addAll(bootpath);
 			
 			// finally, construct the project	
-			NameSpace namespace = new AbstractNameSpace(roots) {
-        		public <T> Path.Entry create(Path.ID id, Content.Type<T> ct) throws Exception {
-        			if(outputRoot != null) {
-        				return outputRoot.create(id, ct);
-        			} else {
-        				return null;
-        			}
-        		}
+			NameSpace namespace = new AbstractNameSpace(roots) {        		
         		public Path.ID create(String s) {
         			return TreeID.fromString(s);
         		}
@@ -352,7 +342,14 @@ public class Main {
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
 			Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");
-			Project.Rule rule = new Project.Rule(builder,srcFilter);
+			StandardBuildRule rule = new StandardBuildRule(builder);
+			for(DirectoryRoot source : sourceRoots) {
+				if(target != null) {
+					rule.add(source, target, srcFilter);
+				} else {
+					rule.add(source, source, srcFilter);
+				}
+			}
 			project.add(rule);
 			
 			// Now, touch all files indicated on command-line			
