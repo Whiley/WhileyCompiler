@@ -57,71 +57,16 @@ public class StandardBuildRule implements BuildRule {
 		this.items = new ArrayList<Item>();
 	}
 	
-	public void add(Path.Root source, Content.Type<?> from, Path.Root target, Content.Type<?> to, Path.Filter includes, Path.Filter excludes) {
+	public void add(Path.Root source, Content.Type<?> from, Path.Root target,
+			Content.Type<?> to, Path.Filter includes, Path.Filter excludes) {
 		this.items.add(new Item(source, from, target, to, includes, excludes));
 	}
-	
-	public void add(Path.Root source, Content.Type<?> from, Path.Root target, Content.Type<?> to, Path.Filter includes) {
+
+	public void add(Path.Root source, Content.Type<?> from, Path.Root target,
+			Content.Type<?> to, Path.Filter includes) {
 		this.items.add(new Item(source, from, target, to, includes, null));
 	}
-	
-	public boolean isTarget(Path.Entry<?> entry) {
-		for (int i = 0; i != items.size(); ++i) {
-			final Item item = items.get(i);
-			final Path.Root target = item.target;
-			final Path.Filter includes = item.includes;
-			final Path.Filter excludes = item.excludes;
-			final Content.Type<?> to = item.to;
-		
-			if(target.contains(entry) && to == entry.contentType()
-				&& includes.matches(entry.id()) 
-				&& (excludes == null || excludes.matches(entry.id()))) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	public Set<Path.Entry<?>> dependenciesOf(Path.Entry<?> entry) throws Exception {
-		for (int i = 0; i != items.size(); ++i) {
-			final Item item = items.get(i);
-			final Path.Root target = item.target;
-			final Path.Root source = item.source;
-			final Path.Filter includes = item.includes;
-			final Path.Filter excludes = item.excludes;
-			final Content.Type<?> to = item.to;
-			final Content.Type<?> from = item.from;
 
-			if(target.contains(entry) && to == entry.contentType()
-					&& includes.matches(entry.id()) 
-					&& (excludes == null || excludes.matches(entry.id()))) {
-				Set<Path.Entry<?>> result = new HashSet<Path.Entry<?>>();
-				result.add(source.create(entry.id(), from));
-				return result;
-			}
-		}
-		return Collections.EMPTY_SET;
-	}
-	
-	public boolean isSource(Path.Entry<?> entry) {
-		for (int i = 0; i != items.size(); ++i) {
-			final Item item = items.get(i);
-			final Path.Root source = item.source;
-			final Path.Filter includes = item.includes;
-			final Path.Filter excludes = item.excludes;
-			final Content.Type<?> from = item.from;
-
-			if (source.contains(entry) && from == entry.contentType()
-					&& includes.matches(entry.id())
-					&& (excludes == null || excludes.matches(entry.id()))) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-	
 	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> entry) throws Exception {
 		for (int i = 0; i != items.size(); ++i) {
 			final Item item = items.get(i);
@@ -146,7 +91,7 @@ public class StandardBuildRule implements BuildRule {
 	public void apply(Set<Path.Entry<?>> targets) throws Exception {
 		ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
 		
-		for (Path.Entry<?> t : targets) {
+		for (Path.Entry<?> te : targets) {
 			for (int i = 0; i != items.size(); ++i) {
 				final Item item = items.get(i);
 				final Path.Root source = item.source;
@@ -156,16 +101,17 @@ public class StandardBuildRule implements BuildRule {
 				final Content.Type<?> from = item.from;
 				final Content.Type<?> to = item.to;
 				
-				if (target.contains(t) && to == t.contentType()
-						&& includes.matches(t.id()) 
-						&& (excludes == null || excludes.matches(t.id()))) {
-					Path.Entry<?> se = source.get(t.id(), from);
+				if (target.contains(te) && to == te.contentType()
+						&& includes.matches(te.id()) 
+						&& (excludes == null || excludes.matches(te.id()))) {
+					Path.Entry<?> se = source.get(te.id(), from);
 					if(targets.contains(se)) {
-						// this indicates a dependent that has not yet been
-						// resolved, so we need to wait until it is
+						// this indicates a dependency that has not yet been
+						// resolved, so we need to wait until it is (by some
+						// other rule).
 						return;
 					}
-					delta.add(new Pair<Path.Entry<?>,Path.Entry<?>>(se,t));
+					delta.add(new Pair<Path.Entry<?>,Path.Entry<?>>(se,te));
 				}
 			}
 		}

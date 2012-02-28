@@ -37,35 +37,12 @@ import java.util.*;
 public interface BuildRule {
 
 	/**
-	 * Test whether a given entry is a target of this rule. That is, this rule
-	 * specifically describes how to build the given entry.
+	 * Determine the target entries that are dependent on a given source, as
+	 * determined by this rule. If the given source is not matched by this rule
+	 * then it just returns the empty set (i.e. no dependents).
 	 * 
-	 * @param entry
-	 * @return
-	 */
-	public boolean isTarget(Path.Entry<?> entry);
-	
-	/**
-	 * Determine the entries that a given target depends upon.
-	 * 
-	 * @param target
-	 * @return
-	 */
-	public Set<Path.Entry<?>> dependenciesOf(Path.Entry<?> target) throws Exception;
-	
-	/**
-	 * Test whether a given entry is a source of this rule. That is, this rule
-	 * specifically requires the given entry.
-	 * 
-	 * @param entry
-	 * @return
-	 */
-	public boolean isSource(Path.Entry<?> entry);
-	
-	/**
-	 * Determine the entries that are dependent on a given source.
-	 * 
-	 * @param target
+	 * @param source
+	 *            --- entry to determine dependents of.
 	 * @return
 	 */
 	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> source) throws Exception;
