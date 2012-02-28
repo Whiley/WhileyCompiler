@@ -110,14 +110,15 @@ public final class WhileyBuilder implements Builder {
 		return namespace;
 	}
 	
-	public void build(List<Path.Entry<?>> delta) throws Exception {
+	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 
 		srcFiles.clear();
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
-		for (Path.Entry<?> f : delta) {
+		for (Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.first();
 			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
 				WhileyFile wf = sf.read();

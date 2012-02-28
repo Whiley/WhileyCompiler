@@ -102,7 +102,9 @@ public class Project {
 	 * Build the project using the given project builder(s).
 	 */
 	public void build() throws Exception {
-		
+		for(BuildRule r : rules) {
+			r.apply();
+		}
 	}
 	
 	/**

@@ -44,7 +44,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	};
 	
 	private final FileFilter filter;		
-	private final java.io.File srcDirectory;		
+	private final java.io.File dir;		
 	
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
@@ -58,7 +58,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	 */
 	public DirectoryRoot(String path, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.srcDirectory = new File(path);				
+		this.dir = new File(path);				
 		this.filter = NULL_FILTER;		
 	}
 	
@@ -76,7 +76,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	 */
 	public DirectoryRoot(String path, FileFilter filter, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.srcDirectory = new File(path);				
+		this.dir = new File(path);				
 		this.filter = filter;		
 	}
 
@@ -92,7 +92,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	 */
 	public DirectoryRoot(File dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.srcDirectory = dir;			
+		this.dir = dir;			
 		this.filter = NULL_FILTER;		
 	}
 	
@@ -110,33 +110,46 @@ public final class DirectoryRoot extends AbstractRoot {
 	 */
 	public DirectoryRoot(File dir, FileFilter filter, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.srcDirectory = dir;			
+		this.dir = dir;			
 		this.filter = filter;		
 	}
 	
 	public File location() {
-		return srcDirectory;
+		return dir;
 	}
 
 	public String toString() {
-		return srcDirectory.getPath();
+		return dir.getPath();
 	}
 
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws Exception {
 		Path.Entry<T> e = super.get(id,ct);
-		if(e == null) {
-			// need to do something here
+		if(e == null) {			
+			String physID = id.toString();
+			if(File.separatorChar != '/') {
+				physID = physID.replace('/',File.separatorChar);
+			}
+			physID = physID + "." + contentTypes.suffix(ct);
+			File nfile = new File(dir.getAbsolutePath() + File.separatorChar + physID);			
+			e = new Entry(id,nfile);
+			e.associate(ct, null);
+			super.insert(e);
 		}
 		return e;
 	}
 	
-	public void flush() {
-		// TODO
+	public void flush() throws Exception {
+		for(int i=0;i!=size();++i) {
+			Path.Entry e = get(i);
+			if(e.isModified()) {				
+				e.contentType().write(e);
+			}			
+		}
 	}
 	
 	protected Path.Entry<?>[] contents() throws IOException {
 		ArrayList<Path.Entry<?>> contents = new ArrayList<Path.Entry<?>>();
-		traverse(srcDirectory,TreeID.ROOT,contents);
+		traverse(dir,TreeID.ROOT,contents);
 		return contents.toArray(new Path.Entry[contents.size()]);
 	}
 	

@@ -26,6 +26,8 @@
 package wycore.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,40 +40,56 @@ import wycore.lang.Path.Root;
 
 public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;
-	private Path.Entry<?>[] contents = null;
+	protected Path.Entry<?>[] contents = null;
+	protected int nchildren = 0;
 	
 	public AbstractRoot(Content.Registry contentTypes) {
 		this.contentTypes = contentTypes;
 	}
 	
-	public boolean exists(ID id, Content.Type<?> ct) throws Exception {
-		if(contents == null) {
-			contents = contents();
-		}
-		for(Path.Entry e : contents) {
-			if (e.id().equals(id) && e.contentType() == ct) {
-				return true;
-			}
+	public int size() {
+		return nchildren;
+	}
+	
+	public Path.Entry<?> get(int index) {
+		return contents[index];
+	}
+	
+	public boolean exists(ID id, Content.Type<?> ct) throws Exception {		
+		updateCache();
+		
+		int idx = binarySearch(contents,nchildren,id);
+		if(idx >= 0) {
+			Path.Entry<?> entry = contents[idx];
+			do {
+				if (entry.contentType() == ct) {
+					return true;
+				}
+			} while (++idx < contents.length
+					&& (entry = contents[idx]).id().equals(id));
 		}
 		return false;
 	}
 	
-	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {
-		if(contents == null) {
-			contents = contents();
-		}
-		for (Path.Entry<?> e : contents) {
-			if (e.id().equals(id) && e.contentType() == ct) {
-				return (Path.Entry<T>) e;
-			}
+	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {		
+		updateCache();			
+		
+		int idx = binarySearch(contents,nchildren,id);
+		if(idx >= 0) {
+			Path.Entry entry = contents[idx];
+			do {
+				if (entry.contentType() == ct) {
+					return entry;
+				}
+			} while (++idx < contents.length
+					&& (entry = contents[idx]).id().equals(id));
 		}
 		return null;
 	}
 	
-	public <T> List<Entry<T>> get(Path.Filter<T> filter) throws Exception {
-		if(contents == null) {
-			contents = contents();
-		}	
+	public <T> List<Entry<T>> get(Path.Filter<T> filter) throws Exception {		
+		updateCache();
+			
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
 		for(Path.Entry<?> e : contents) {
 			Path.Entry<T> r = filter.match(e);
@@ -82,10 +100,9 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}
 	
-	public <T> Set<Path.ID> match(Path.Filter<T> filter) throws Exception {
-		if(contents == null) {
-			contents = contents();
-		}			
+	public <T> Set<Path.ID> match(Path.Filter<T> filter) throws Exception {		
+		updateCache();
+					
 		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
 		for(Path.Entry<?> e : contents) {
 			Path.Entry<T> r = filter.match(e);			
@@ -94,14 +111,81 @@ public abstract class AbstractRoot implements Root {
 			}
 		}
 		return entries;
-	}
+	}	
 	
 	public void refresh() throws Exception {
-		contents = contents();
+		updateCache();
+	}
+	
+	/**
+	 * Add a newly created entry to this path.
+	 * 
+	 * @param entry
+	 */
+	protected void insert(Path.Entry<?> entry) {
+		Path.ID id = entry.id();
+		int index = binarySearch(contents,nchildren,id);
+		
+		if(index < 0) {
+			index = -index - 1; // calculate insertion point
+		} else {
+			// indicates already an entry with a different content type
+		}
+
+		if ((nchildren + 1) < contents.length) {
+			System.arraycopy(contents, index, contents, index + 1, nchildren
+					- index);			
+		} else {			
+			Path.Entry[] tmp = new Path.Entry[(nchildren+1) * 2];
+			System.arraycopy(contents, 0, tmp, 0, index);
+			System.arraycopy(contents, index, tmp, index + 1, nchildren - index);
+			contents = tmp;			
+		}
+		
+		contents[index] = entry;
+		nchildren++;
+	}
+	
+	private final void updateCache() throws Exception {
+		if(contents == null) {
+			contents = contents();			
+			nchildren = contents.length;
+			Arrays.sort(contents,entryComparator);
+		}
 	}
 	
 	/**
 	 * Extract all entries from the given type.
 	 */
 	protected abstract Path.Entry<?>[] contents() throws Exception;
+	
+	private static final int binarySearch(final Path.Entry<?>[] children, int nchildren, final Path.ID key) {
+		int low = 0;
+        int high = nchildren-1;
+            
+        while (low <= high) {
+            int mid = (low + high) >> 1;
+            int c = children[mid].id().compareTo(key);
+                
+            if (c < 0) {
+                low = mid + 1; 
+            } else if (c > 0) {
+                high = mid - 1;
+            } else {
+            	// found a batch, locate start point
+            	mid = mid - 1;
+				while (mid >= 0 && children[mid].id().compareTo(key) == 0) {
+					mid = mid - 1;
+				}
+                return mid + 1;
+            }
+        }
+        return -(low + 1);
+	}
+	
+	private static final Comparator<Path.Entry> entryComparator = new Comparator<Path.Entry>() {
+		public int compare(Path.Entry e1, Path.Entry e2) {
+			return e1.id().compareTo(e2.id());
+		}
+	};
 }

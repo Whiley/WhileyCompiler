@@ -81,6 +81,16 @@ public class Main {
 				}
 			} 
 		}
+		
+		public String suffix(Content.Type<?> t) {
+			if(t == WhileyFile.ContentType) {
+				return "whiley";
+			} else if(t == WyilFile.ContentType) {
+				return "wyil";
+			} else {
+				return ".dat";
+			}
+		}
 	};
 	
 	/**

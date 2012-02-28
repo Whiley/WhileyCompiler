@@ -25,6 +25,7 @@
 
 package wycore.util;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -175,6 +176,14 @@ public final class TreeID implements Path.ID {
 			return component;
 		} else {
 			return parent.toString() + "/" + component;
+		}
+	}
+	
+	public String toNativeString() {
+		if(parent == null || parent == ROOT) {
+			return component;
+		} else {
+			return parent.toString() + File.separatorChar + component;
 		}
 	}
 	

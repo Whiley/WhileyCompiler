@@ -87,9 +87,10 @@ public class StandardBuildRule implements BuildRule {
 			
 			for (Path.Entry<?> se : source.get(includes)) {
 				if (excludes == null || excludes.match(se) == null) {
+					System.out.println("HIT: " + se.location());
 					Path.Entry<?> te = target.create(se.id(), null);
 					if(se.lastModified() > te.lastModified()) {
-						// hit
+						// hit						
 						delta.add(new Pair(se, te));
 					}
 				}

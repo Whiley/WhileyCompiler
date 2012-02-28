@@ -93,7 +93,7 @@ public final class WhileyFile {
 			return wf;				
 		}
 		
-		public void write(Path.Entry entry, WhileyFile contents) {
+		public void write(Path.Entry entry) {
 			// for now
 			throw new UnsupportedOperationException();
 		}

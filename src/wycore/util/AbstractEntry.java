@@ -72,6 +72,6 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 		}
 		this.contentType = contentType;
 		this.contents = contents;
-	}
+	}	
 }
 

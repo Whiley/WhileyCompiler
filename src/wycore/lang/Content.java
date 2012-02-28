@@ -59,7 +59,7 @@ public class Content {
 		 * @param value
 		 *            --- value to be converted into bytes.
 		 */
-		public void write(Path.Entry<T> entry, T value) throws Exception;		
+		public void write(Path.Entry<T> entry) throws Exception;		
 	}
 	
 	/**
@@ -90,5 +90,13 @@ public class Content {
 		 * @return
 		 */
 		public void associate(Path.Entry<?> e);
+		
+		/**
+		 * Determine an appropriate suffix for a given content type.
+		 * 
+		 * @param t
+		 * @return
+		 */
+		public String suffix(Type<?> t);
 	}
 }
