@@ -103,20 +103,44 @@ public class Project {
 	 */
 	public void build(Collection<Path.Entry<?>> targets) throws Exception {
 		
-		// First, determine full list of targets to rebuild
-		
+		// First, determine full list of targets to rebuild		
 		HashSet<Path.Entry<?>> allTargets = new HashSet(targets);
 		int oldSize;
 		do {
 			oldSize = allTargets.size();
-			for(BuildRule r : rules) {
-				r.addDependencies(allTargets);
+			for (BuildRule r : rules) {
+				for (Path.Entry<?> target : allTargets) {
+					allTargets.addAll(r.dependenciesOf(target));
+				}
 			}
-		} while(allTargets.size() != oldSize);
+		} while (allTargets.size() != oldSize);
 		
-		// Second, rebuild them all!!
-		for(Path.Entry<?> e : allTargets) {
-			System.out.println("SCHEDULED: " + e.location());
+		// Second, eliminate targets that are not the destination of some rule.
+		Iterator<Path.Entry<?>> iter = allTargets.iterator();
+		while(iter.hasNext()) {
+			Path.Entry<?> e = iter.next();
+			boolean root = false;
+			for(BuildRule r : rules) {
+				if(r.isTarget(e)) {
+					root = true;
+				}
+			}
+			if(!root) {
+				iter.remove();
+				System.out.println("Need to check for presence of " + e.location());
+			}
+		}
+		
+		// Finally, build!
+		do {
+			oldSize = allTargets.size();
+			for(BuildRule r : rules) {
+				r.apply(allTargets);
+			}
+		} while(allTargets.size() < oldSize);
+		
+		if(!allTargets.isEmpty()) {
+			System.out.println("Cyclic dependency!");
 		}
 	}
 	

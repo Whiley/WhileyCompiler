@@ -25,6 +25,8 @@
 package wycore.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -36,8 +38,11 @@ import wyil.util.Pair;
  * Provides a straightforward, yet flexible implementation of BuildRule. This
  * build rule supports both include and exclude filters, multiple source roots
  * and permits each source root to be associated with a different target root.
+ * </p>
+ * <p>
  * It is expected that this rule is sufficiently flexible for the majority of
- * situations encountered.
+ * situations encountered. However, the major limitation is an assumption that
+ * every target file corresponds to exactly one source file.
  * </p>
  * 
  * @author David J. Pearce
@@ -60,6 +65,85 @@ public class StandardBuildRule implements BuildRule {
 		this.items.add(new Item(source, from, target, to, includes, null));
 	}
 	
+	public boolean isTarget(Path.Entry<?> entry) {
+		for (int i = 0; i != items.size(); ++i) {
+			final Item item = items.get(i);
+			final Path.Root target = item.target;
+			final Path.Filter includes = item.includes;
+			final Path.Filter excludes = item.excludes;
+			final Content.Type<?> to = item.to;
+		
+			if(target.contains(entry) && to == entry.contentType()
+				&& includes.matches(entry.id()) 
+				&& (excludes == null || excludes.matches(entry.id()))) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public Set<Path.Entry<?>> dependenciesOf(Path.Entry<?> entry) throws Exception {
+		for (int i = 0; i != items.size(); ++i) {
+			final Item item = items.get(i);
+			final Path.Root target = item.target;
+			final Path.Root source = item.source;
+			final Path.Filter includes = item.includes;
+			final Path.Filter excludes = item.excludes;
+			final Content.Type<?> to = item.to;
+			final Content.Type<?> from = item.from;
+
+			if(target.contains(entry) && to == entry.contentType()
+					&& includes.matches(entry.id()) 
+					&& (excludes == null || excludes.matches(entry.id()))) {
+				Set<Path.Entry<?>> result = new HashSet<Path.Entry<?>>();
+				result.add(source.create(entry.id(), from));
+				return result;
+			}
+		}
+		return Collections.EMPTY_SET;
+	}
+	
+	public boolean isSource(Path.Entry<?> entry) {
+		for (int i = 0; i != items.size(); ++i) {
+			final Item item = items.get(i);
+			final Path.Root source = item.source;
+			final Path.Filter includes = item.includes;
+			final Path.Filter excludes = item.excludes;
+			final Content.Type<?> from = item.from;
+
+			if (source.contains(entry) && from == entry.contentType()
+					&& includes.matches(entry.id())
+					&& (excludes == null || excludes.matches(entry.id()))) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> entry) throws Exception {
+		for (int i = 0; i != items.size(); ++i) {
+			final Item item = items.get(i);
+			final Path.Root target = item.target;
+			final Path.Root source = item.source;
+			final Path.Filter includes = item.includes;
+			final Path.Filter excludes = item.excludes;
+			final Content.Type<?> to = item.to;
+			final Content.Type<?> from = item.from;
+
+			if(source.contains(entry) && from == entry.contentType()
+					&& includes.matches(entry.id()) 
+					&& (excludes == null || excludes.matches(entry.id()))) {
+				Set<Path.Entry<?>> result = new HashSet<Path.Entry<?>>();
+				result.add(target.create(entry.id(), to));
+				return result;
+			}
+		}
+		return Collections.EMPTY_SET;
+	}	
+
+	
 	public void addDependencies(Set<Path.Entry<?>> targets) throws Exception {		
 		for (Path.Entry<?> t : targets) {
 			for (int i = 0; i != items.size(); ++i) {
@@ -81,8 +165,39 @@ public class StandardBuildRule implements BuildRule {
 		}
 	}
 	
-	public void apply(List<Path.Entry<?>> targets) throws Exception {
-		// not sure what to do here/
+	public void apply(Set<Path.Entry<?>> targets) throws Exception {
+		ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
+		
+		for (Path.Entry<?> t : targets) {
+			for (int i = 0; i != items.size(); ++i) {
+				final Item item = items.get(i);
+				final Path.Root source = item.source;
+				final Path.Root target = item.target;
+				final Path.Filter includes = item.includes;
+				final Path.Filter excludes = item.excludes;
+				final Content.Type<?> from = item.from;
+				final Content.Type<?> to = item.to;
+				
+				if (target.contains(t) && to == t.contentType()
+						&& includes.matches(t.id()) 
+						&& (excludes == null || excludes.matches(t.id()))) {
+					Path.Entry<?> se = source.get(t.id(), from);
+					if(targets.contains(se)) {
+						// this indicates a dependent that has not yet been
+						// resolved, so we need to wait until it is
+						return;
+					}
+					delta.add(new Pair<Path.Entry<?>,Path.Entry<?>>(se,t));
+				}
+			}
+		}
+		
+		if(!delta.isEmpty()) {
+			builder.build(delta);
+			for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+				targets.remove(p.second());
+			}
+		}
 	}
 	
 	private final static class Item {
@@ -92,14 +207,16 @@ public class StandardBuildRule implements BuildRule {
 		final Content.Type<?> to;
 		final Path.Filter includes;
 		final Path.Filter excludes;
-		
-		public Item(Path.Root srcRoot, Content.Type<?> from, Path.Root targetRoot, Content.Type<?> to, Path.Filter includes, Path.Filter excludes) {
+
+		public Item(Path.Root srcRoot, Content.Type<?> from,
+				Path.Root targetRoot, Content.Type<?> to, Path.Filter includes,
+				Path.Filter excludes) {
 			this.source = srcRoot;
 			this.target = targetRoot;
 			this.from = from;
 			this.to = to;
 			this.includes = includes;
 			this.excludes = excludes;
-		}		
+		}
 	}
 }

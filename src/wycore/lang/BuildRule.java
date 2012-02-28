@@ -37,14 +37,38 @@ import java.util.*;
 public interface BuildRule {
 
 	/**
-	 * Calculate the dependents for this rule with respect to a specific set of
-	 * targets. That is, the set of entries which must be up-to-date before
-	 * applying this rule. In some cases, entries may be missing, in which case
-	 * they must be created (by this rule).
+	 * Test whether a given entry is a target of this rule. That is, this rule
+	 * specifically describes how to build the given entry.
 	 * 
+	 * @param entry
 	 * @return
 	 */
-	public void addDependencies(Set<Path.Entry<?>> targets) throws Exception;
+	public boolean isTarget(Path.Entry<?> entry);
+	
+	/**
+	 * Determine the entries that a given target depends upon.
+	 * 
+	 * @param target
+	 * @return
+	 */
+	public Set<Path.Entry<?>> dependenciesOf(Path.Entry<?> target) throws Exception;
+	
+	/**
+	 * Test whether a given entry is a source of this rule. That is, this rule
+	 * specifically requires the given entry.
+	 * 
+	 * @param entry
+	 * @return
+	 */
+	public boolean isSource(Path.Entry<?> entry);
+	
+	/**
+	 * Determine the entries that are dependent on a given source.
+	 * 
+	 * @param target
+	 * @return
+	 */
+	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> source) throws Exception;
 	
 	/**
 	 * <p>
@@ -62,16 +86,11 @@ public interface BuildRule {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> this rule must remove from the
-	 * 
-	 * <pre>
-	 * targets
-	 * </pre>
-	 * 
-	 * list those it has rebuilt.
+	 * <b>NOTE:</b> this rule must remove any entries from the
+	 * <code>targets</code> list that it has rebuilt.
 	 * </p>
 	 * 
 	 * @throws Exception
 	 */
-	public void apply(List<Path.Entry<?>> targets) throws Exception;
+	public void apply(Set<Path.Entry<?>> targets) throws Exception;
 }
