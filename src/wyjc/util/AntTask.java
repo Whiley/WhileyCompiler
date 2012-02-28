@@ -78,7 +78,7 @@ public class AntTask extends MatchingTask {
 						e.associate(WyilFile.ContentType,c);
 					}
 				} catch(Exception ex) {
-					// hmmm, not ideal
+					// hmmm, not exactly ideal
 				}
 			} 
 		}

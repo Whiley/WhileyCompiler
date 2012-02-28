@@ -53,14 +53,13 @@ public interface Builder {
 	public NameSpace namespace();
 	
 	/**
-	 * Build a given set of source files to produce a given set of target files.
-	 * The location of the target files is determined by the build map. Note
-	 * that the given target files should be created by the builder.
+	 * Build a given set of source files to produce a given set of target files.  	 
+	 * A delta represents a list of pairs (s,t), where s is a source file and t
+	 * is its corresponding target entry. That is, the source entry is
+	 * transformed into the target entry by the builder.
 	 * 
-	 * @param map
-	 *            --- a mapping from source files to target files.
 	 * @param delta
 	 *            --- the set of files to be built.
 	 */
-	public void build(List<Path.Entry<?>> delta) throws Exception;
+	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception;	
 }

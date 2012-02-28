@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wycore.lang.*;
+import wyil.util.Pair;
 
 /**
  * <p>
@@ -43,36 +44,53 @@ import wycore.lang.*;
  */
 public class StandardBuildRule implements BuildRule {	
 	private final Builder builder;
-	private final ArrayList<Entry> entries;
+	private final ArrayList<Item> items;
 
 	public StandardBuildRule(Builder builder) {
 		this.builder = builder;
-		this.entries = new ArrayList<Entry>();
+		this.items = new ArrayList<Item>();
 	}
 	
-	public void add(Path.Root source, Path.Root target, Path.Filter includes, Path.Filter excludes) {
-		this.entries.add(new Entry(source, target, includes, excludes));
+	public void add(Path.Root source, Path.Root target, Path.Filter<?> includes, Path.Filter<?> excludes) {
+		this.items.add(new Item(source, target, includes, excludes));
 	}
 	
-	public void add(Path.Root source, Path.Root target, Path.Filter includes) {
-		this.entries.add(new Entry(source, target, includes, null));
+	public void add(Path.Root source, Path.Root target, Path.Filter<?> includes) {
+		this.items.add(new Item(source, target, includes, null));
 	}
 	
-	public List<Path.Entry> dependents() throws Exception {
+	public List<Path.Entry<?>> dependents() throws Exception {
 		return null;
 	}
 	
 	public void apply() throws Exception {
-				
+		ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
+		for(Item r : items) {
+			final Path.Root source = r.source;
+			final Path.Root target = r.target;
+			final Path.Filter<?> includes = r.includes;
+			final Path.Filter<?> excludes = r.excludes;
+			
+			for(Path.Entry<?> se : source.get(includes)) {
+				if(excludes == null || excludes.match(se) == null) {
+					Path.Entry<?> te = target.create(se.id(), null); 
+					delta.add(new Pair(se,te));
+				}
+			}
+		}
+		
+		if(!delta.isEmpty()) {
+			builder.build(delta);
+		}
 	}
 	
-	private final static class Entry {
+	private final static class Item {
 		final Path.Root source;
 		final Path.Root target;
-		final Path.Filter includes;
-		final Path.Filter excludes;
+		final Path.Filter<?> includes;
+		final Path.Filter<?> excludes;
 		
-		public Entry(Path.Root srcRoot, Path.Root targetRoot, Path.Filter includes, Path.Filter excludes) {
+		public Item(Path.Root srcRoot, Path.Root targetRoot, Path.Filter includes, Path.Filter excludes) {
 			this.source = srcRoot;
 			this.target = targetRoot;
 			this.includes = includes;

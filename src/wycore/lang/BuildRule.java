@@ -43,7 +43,7 @@ public interface BuildRule {
 	 * 
 	 * @return
 	 */
-	public List<Path.Entry> dependents() throws Exception;
+	public List<Path.Entry<?>> dependents() throws Exception;
 
 	/**
 	 * Apply the given rule by examining the dependents of this rule and
