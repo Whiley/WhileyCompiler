@@ -41,14 +41,14 @@ import wycore.lang.Path.Root;
 public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;
 	protected Path.Entry<?>[] contents = null;
-	protected int nchildren = 0;
+	protected int nentries = 0;
 	
 	public AbstractRoot(Content.Registry contentTypes) {
 		this.contentTypes = contentTypes;
 	}
 	
 	public int size() {
-		return nchildren;
+		return nentries;
 	}
 			
 	public Path.Entry<?> get(int index) {
@@ -57,7 +57,7 @@ public abstract class AbstractRoot implements Root {
 	
 	public boolean contains(Path.Entry<?> e) {
 		Path.ID id = e.id();
-		int idx = binarySearch(contents,nchildren,id);
+		int idx = binarySearch(contents,nentries,id);
 		if(idx >= 0) {
 			Path.Entry<?> entry = contents[idx];
 			do {
@@ -73,7 +73,7 @@ public abstract class AbstractRoot implements Root {
 	public boolean exists(ID id, Content.Type<?> ct) throws Exception {		
 		updateCache();
 		
-		int idx = binarySearch(contents,nchildren,id);
+		int idx = binarySearch(contents,nentries,id);
 		if(idx >= 0) {
 			Path.Entry<?> entry = contents[idx];
 			do {
@@ -89,7 +89,7 @@ public abstract class AbstractRoot implements Root {
 	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {		
 		updateCache();			
 	
-		int idx = binarySearch(contents,nchildren,id);
+		int idx = binarySearch(contents,nentries,id);
 		if(idx >= 0) {
 			Path.Entry entry = contents[idx];
 			do {
@@ -106,7 +106,8 @@ public abstract class AbstractRoot implements Root {
 		updateCache();
 			
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
-		for(Path.Entry e : contents) {
+		for(int i=0;i!=nentries;++i) {
+			Path.Entry e = contents[i];
 			if(filter.matches(e.id(),e.contentType())) {
 				entries.add(e);
 			}
@@ -118,7 +119,8 @@ public abstract class AbstractRoot implements Root {
 		updateCache();
 					
 		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
-		for(Path.Entry e : contents) {
+		for(int i=0;i!=nentries;++i) {
+			Path.Entry e = contents[i];
 			if(filter.matches(e.id(),e.contentType())) {
 				entries.add(e.id());
 			}
@@ -140,7 +142,7 @@ public abstract class AbstractRoot implements Root {
 		updateCache();
 		
 		Path.ID id = entry.id();
-		int index = binarySearch(contents,nchildren,id);
+		int index = binarySearch(contents,nentries,id);
 		
 		if(index < 0) {
 			index = -index - 1; // calculate insertion point
@@ -148,24 +150,24 @@ public abstract class AbstractRoot implements Root {
 			// indicates already an entry with a different content type
 		}
 
-		if ((nchildren + 1) < contents.length) {
-			System.arraycopy(contents, index, contents, index + 1, nchildren
+		if ((nentries + 1) < contents.length) {
+			System.arraycopy(contents, index, contents, index + 1, nentries
 					- index);			
 		} else {			
-			Path.Entry[] tmp = new Path.Entry[(nchildren+1) * 2];
+			Path.Entry[] tmp = new Path.Entry[(nentries+1) * 2];
 			System.arraycopy(contents, 0, tmp, 0, index);
-			System.arraycopy(contents, index, tmp, index + 1, nchildren - index);
+			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
 			contents = tmp;			
 		}
 		
 		contents[index] = entry;
-		nchildren++;
+		nentries++;
 	}
 	
 	private final void updateCache() throws Exception {
 		if(contents == null) {
 			contents = contents();			
-			nchildren = contents.length;
+			nentries = contents.length;
 			Arrays.sort(contents,entryComparator);
 		}
 	}
