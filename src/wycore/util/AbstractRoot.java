@@ -50,9 +50,24 @@ public abstract class AbstractRoot implements Root {
 	public int size() {
 		return nchildren;
 	}
-	
+			
 	public Path.Entry<?> get(int index) {
 		return contents[index];
+	}		
+	
+	public boolean contains(Path.Entry<?> e) {
+		Path.ID id = e.id();
+		int idx = binarySearch(contents,nchildren,id);
+		if(idx >= 0) {
+			Path.Entry<?> entry = contents[idx];
+			do {
+				if (entry == e) {
+					return true;
+				}
+			} while (++idx < contents.length
+					&& (entry = contents[idx]).id().equals(id));
+		}
+		return false;
 	}
 	
 	public boolean exists(ID id, Content.Type<?> ct) throws Exception {		

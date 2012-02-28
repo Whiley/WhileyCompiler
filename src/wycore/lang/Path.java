@@ -193,6 +193,13 @@ public class Path {
 	public interface Root {		
 		
 		/**
+		 * Check whether or not a given entry is contained in this root;
+		 * @param entry
+		 * @return
+		 */
+		public boolean contains(Path.Entry<?> entry);
+		
+		/**
 		 * Check whether or not a given entry and content-type is contained in this root.
 		 * 
 		 * @throws Exception

@@ -97,13 +97,26 @@ public class Project {
 	// ======================================================================
 	// Mutators
 	// ======================================================================		
-
+	
 	/**
-	 * Build the project using the given project builder(s).
+	 * Build the specified targets using the given project builder(s).
 	 */
-	public void build() throws Exception {
-		for(BuildRule r : rules) {
-			r.apply();
+	public void build(Collection<Path.Entry<?>> targets) throws Exception {
+		
+		// First, determine full list of targets to rebuild
+		
+		HashSet<Path.Entry<?>> allTargets = new HashSet(targets);
+		int oldSize;
+		do {
+			oldSize = allTargets.size();
+			for(BuildRule r : rules) {
+				r.addDependencies(allTargets);
+			}
+		} while(allTargets.size() != oldSize);
+		
+		// Second, rebuild them all!!
+		for(Path.Entry<?> e : allTargets) {
+			System.out.println("SCHEDULED: " + e.location());
 		}
 	}
 	

@@ -86,9 +86,9 @@ public class Main {
 			if(t == WhileyFile.ContentType) {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
-				return "wyil";
+				return "class";
 			} else {
-				return ".dat";
+				return "dat";
 			}
 		}
 	};
@@ -362,9 +362,11 @@ public class Main {
 			}
 			project.add(rule);
 			
-			// Now, touch all files indicated on command-line			
-			for(DirectoryRoot src : sourceRoots) {				
-				File loc = src.location();
+			// Now, touch all files indicated on command-line	
+			ArrayList<Path.Entry<?>> targets = new ArrayList<Path.Entry<?>>();
+			
+			for(DirectoryRoot source : sourceRoots) {				
+				File loc = source.location();
 				String locPath = loc.getCanonicalPath();
 				for (String _file : args) {
 					String filePath = new File(_file).getCanonicalPath();
@@ -375,19 +377,26 @@ public class Main {
 						}
 						String module = filePath.substring(end).replace(File.separatorChar, '.');
 						module = module.substring(0,module.length()-7);						
-						Path.ID mid = TreeID.fromString(module);			
-						Path.Entry<WhileyFile> entry = src.get(mid,WhileyFile.ContentType);
-						if(entry == null) {
-							throw new FileNotFoundException(_file);
-						} else {
-							entry.touch();
+						Path.ID mid = TreeID.fromString(module);						
+						Path.Entry<WhileyFile> e = source.get(mid,WhileyFile.ContentType);
+						if (e != null) {
+							Path.Entry<WyilFile> binary;
+							if (target != null) {
+								binary = target.create(e.id(),
+										WyilFile.ContentType);
+							} else {
+								binary = source.create(e.id(),
+										WyilFile.ContentType);
+							}
+							targets.add(binary);
 						}
 					}
 				}
 			}
 		
 			// finally, let's compile some files!!!		
-			project.build();
+			project.build(targets);
+			project.namespace().flush(); // flush all built components to disk
 		} catch (InternalFailure e) {
 			e.outputSourceError(errout);
 			if (verbose) {

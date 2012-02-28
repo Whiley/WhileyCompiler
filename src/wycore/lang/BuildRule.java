@@ -37,21 +37,41 @@ import java.util.*;
 public interface BuildRule {
 
 	/**
-	 * Calculate the dependents for this rule. That is, the set of entries which
-	 * must be up-to-date before applying this rule. In some cases, entries may
-	 * be missing, in which case they must be created (by this rule).
+	 * Calculate the dependents for this rule with respect to a specific set of
+	 * targets. That is, the set of entries which must be up-to-date before
+	 * applying this rule. In some cases, entries may be missing, in which case
+	 * they must be created (by this rule).
 	 * 
 	 * @return
 	 */
-	public List<Path.Entry<?>> dependents() throws Exception;
-
+	public void addDependencies(Set<Path.Entry<?>> targets) throws Exception;
+	
 	/**
-	 * Apply the given rule by examining the dependents of this rule and
-	 * identifying which (if any) have a modification date after their
-	 * corresponding target (as defined by this rule). If at least such one
-	 * dependent, then it must be recompiled to produce an updated target.
+	 * <p>
+	 * Given a complete list of targets scheduled for recompilation, apply this
+	 * rule. This will compile all targets in the list which are matched by this
+	 * rule, and which do not depend on other schedule targets not not matched
+	 * by this rule.
+	 * </p>
+	 * 
+	 * <p>
+	 * An entry should only be rebuilt if one or more of its dependents have a
+	 * modification date after their corresponding target (as defined by this
+	 * rule). If at least such one dependent, then it must be recompiled to
+	 * produce an updated target.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> this rule must remove from the
+	 * 
+	 * <pre>
+	 * targets
+	 * </pre>
+	 * 
+	 * list those it has rebuilt.
+	 * </p>
 	 * 
 	 * @throws Exception
 	 */
-	public void apply() throws Exception;
+	public void apply(List<Path.Entry<?>> targets) throws Exception;
 }

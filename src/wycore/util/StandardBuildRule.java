@@ -26,6 +26,7 @@ package wycore.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import wycore.lang.*;
 import wyil.util.Pair;
@@ -59,47 +60,29 @@ public class StandardBuildRule implements BuildRule {
 		this.items.add(new Item(source, target, includes, null));
 	}
 	
-	public ArrayList<Path.Entry<?>> dependents() throws Exception {
-		ArrayList<Path.Entry<?>> dependents = new ArrayList();
-		for (int i=0;i!=items.size();++i) {
-			final Item item = items.get(i);
-			final Path.Root source = item.source;		
-			final Path.Filter<?> includes = item.includes;
-			final Path.Filter<?> excludes = item.excludes;
+	public void addDependencies(Set<Path.Entry<?>> targets) throws Exception {		
+		for (Path.Entry<?> t : targets) {
+			for (int i = 0; i != items.size(); ++i) {
+				final Item item = items.get(i);
+				final Path.Root source = item.source;
+				final Path.Root target = item.target;
+				final Path.Filter<?> includes = item.includes;
+				final Path.Filter<?> excludes = item.excludes;
 
-			for (Path.Entry<?> se : source.get(includes)) {
-				if (excludes == null || excludes.match(se) == null) {
-					dependents.add(se);
+				System.out.println("LOOKING AT: " + t.location() + " (" + target.contains(t) + ")" + includes.match(t));
+				
+				if (target.contains(t) && includes.match(t) != null
+						&& (excludes == null || excludes.match(t) == null)) {
+					System.out.println("MATCHED: " + t.location());
+					Path.Entry<?> se = source.create(t.id(), null);
+					targets.add(se);
 				}
 			}
 		}
-		return dependents;
 	}
 	
-	public void apply() throws Exception {
-		ArrayList<Pair<Path.Entry<?>, Path.Entry<?>>> delta = new ArrayList();
-		for (int i = 0; i != items.size(); ++i) {
-			final Item item = items.get(i);
-			final Path.Root source = item.source;
-			final Path.Root target = item.target;
-			final Path.Filter<?> includes = item.includes;
-			final Path.Filter<?> excludes = item.excludes;
-			
-			for (Path.Entry<?> se : source.get(includes)) {
-				if (excludes == null || excludes.match(se) == null) {
-					System.out.println("HIT: " + se.location());
-					Path.Entry<?> te = target.create(se.id(), null);
-					if(se.lastModified() > te.lastModified()) {
-						// hit						
-						delta.add(new Pair(se, te));
-					}
-				}
-			}
-		}
-		
-		if(!delta.isEmpty()) {
-			builder.build(delta);
-		}
+	public void apply(List<Path.Entry<?>> targets) throws Exception {
+		// not sure what to do here/
 	}
 	
 	private final static class Item {

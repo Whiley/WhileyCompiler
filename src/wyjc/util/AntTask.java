@@ -87,9 +87,9 @@ public class AntTask extends MatchingTask {
 			if(t == WhileyFile.ContentType) {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
-				return "wyil";
+				return "class";
 			} else {
-				return ".dat";
+				return "dat";
 			}
 		}
 	};
@@ -194,20 +194,24 @@ public class AntTask extends MatchingTask {
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
-    		int count = 0;    					
+			ArrayList<Path.Entry<?>> targets = new ArrayList<Path.Entry<?>>();
+    		
 			for (Path.Entry<WhileyFile> e : source.get(srcFilter)) {
 				Path.Entry<WyilFile> binary = target.get(e.id(),
 						WyilFile.ContentType);
-				if (binary == null || binary.lastModified() < e.lastModified()) {
-					count++;
-					e.touch();
+				if(binary == null) {
+					binary = target.create(e.id(), WyilFile.ContentType);
+					targets.add(binary);
+				} else if (binary.lastModified() < e.lastModified()) {
+					targets.add(binary);
 				}
-			}		
+			}
     		
-			log("Compiling " + count + " source file(s)");
+			log("Compiling " + targets.size() + " source file(s)");
 			
     		// finally, compile away!
-    		project.build();
+    		project.build(targets);
+    		project.namespace().flush(); // force all built components to disk
     		
     		return true;
     	} catch (InternalFailure e) {
