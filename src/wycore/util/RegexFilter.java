@@ -30,9 +30,8 @@ import java.util.Collection;
 
 import wycore.lang.Content;
 import wycore.lang.Path;
-import wycore.lang.Path.Filter;
 
-public final class RegexFilter<T> implements Filter<T> {
+public final class RegexFilter<T> implements Content.Filter<T> {
 	private final Content.Type<T> contentType;		
 	private final String[] components;		
 
@@ -56,12 +55,12 @@ public final class RegexFilter<T> implements Filter<T> {
 		return components[components.length-1];
 	}
 	
-	public Path.Entry<T> match(Path.Entry<?> e) {
-		if ((contentType == null || e.contentType() == contentType)
-				&& match(e.id(), 0, 0)) {
-			return (Path.Entry<T>) e;
-		}
-		return null;
+	public boolean matches(Path.ID id) {
+		return match(id, 0, 0);
+	}
+	
+	public boolean matches(Path.ID id, Content.Type<T> ct) {
+		return (contentType == null || ct == contentType) && match(id, 0, 0);
 	}
 	
 	private boolean match(Path.ID id, int idIndex, int myIndex) {		

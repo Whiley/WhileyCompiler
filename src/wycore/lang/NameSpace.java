@@ -83,7 +83,7 @@ public interface NameSpace {
 	 * @param ct
 	 * @return
 	 */
-	public <T> List<Path.Entry<T>> get(Filter<T> ct) throws Exception;
+	public <T> List<Path.Entry<T>> get(Content.Filter<T> ct) throws Exception;
 	
 	/**
 	 * Identify all entries matching a given content filter stored in this
@@ -96,7 +96,7 @@ public interface NameSpace {
 	 *            --- filter to match entries with.
 	 * @return
 	 */
-	public <T> Set<Path.ID> match(Filter<T> filter) throws Exception;
+	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception;
 	
 	/**
 	 * Force all roots to flush their items to permanent storage (where

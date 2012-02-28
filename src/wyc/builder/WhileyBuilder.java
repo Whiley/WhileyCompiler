@@ -186,15 +186,14 @@ public final class WhileyBuilder implements Builder {
 				// cache miss
 				matches = new ArrayList<Path.ID>();	
 				
-				// FIXME: need to include source filter here as well.
+
 				for(Path.Entry<WhileyFile> sf : srcFiles.values()) {
-					sf = (Path.Entry<WhileyFile>) imp.filter.match(sf); 
-					if(sf != null) {						
+					if(imp.filter.matches(sf.id())) {						
 						matches.add(sf.id());
 					}
 				}
 				
-				Path.Filter<?> binFilter = Path.attach(imp.filter,
+				Content.Filter<?> binFilter = Content.filter(imp.filter,
 						WyilFile.ContentType);
 				for (Path.ID mid : namespace.match(binFilter)) {					
 					matches.add(mid);

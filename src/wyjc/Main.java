@@ -351,13 +351,13 @@ public class Main {
 			}
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-			Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");
+			Path.Filter includes = RegexFilter.create("**");
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			for(DirectoryRoot source : sourceRoots) {
 				if(target != null) {
-					rule.add(source, target, srcFilter);
+					rule.add(source, WhileyFile.ContentType, target, WyilFile.ContentType,  includes);
 				} else {
-					rule.add(source, source, srcFilter);
+					rule.add(source, WhileyFile.ContentType, source, WyilFile.ContentType,  includes);
 				}
 			}
 			project.add(rule);
@@ -395,6 +395,7 @@ public class Main {
 			}
 		
 			// finally, let's compile some files!!!		
+			System.out.println("Building " + targets.size() + " target(s).");
 			project.build(targets);
 			project.namespace().flush(); // flush all built components to disk
 		} catch (InternalFailure e) {

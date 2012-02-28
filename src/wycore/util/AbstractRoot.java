@@ -88,7 +88,7 @@ public abstract class AbstractRoot implements Root {
 	
 	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {		
 		updateCache();			
-		
+	
 		int idx = binarySearch(contents,nchildren,id);
 		if(idx >= 0) {
 			Path.Entry entry = contents[idx];
@@ -102,29 +102,28 @@ public abstract class AbstractRoot implements Root {
 		return null;
 	}
 	
-	public <T> List<Entry<T>> get(Path.Filter<T> filter) throws Exception {		
+	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws Exception {		
 		updateCache();
 			
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
-		for(Path.Entry<?> e : contents) {
-			Path.Entry<T> r = filter.match(e);
-			if(r != null) {
-				entries.add(r);
+		for(Path.Entry e : contents) {
+			if(filter.matches(e.id(),e.contentType())) {
+				entries.add(e);
 			}
 		}
 		return entries;
 	}
 	
-	public <T> Set<Path.ID> match(Path.Filter<T> filter) throws Exception {		
+	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception {		
 		updateCache();
 					
 		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
-		for(Path.Entry<?> e : contents) {
-			Path.Entry<T> r = filter.match(e);			
-			if(r != null) {				
-				entries.add(r.id());
+		for(Path.Entry e : contents) {
+			if(filter.matches(e.id(),e.contentType())) {
+				entries.add(e.id());
 			}
 		}
+		
 		return entries;
 	}	
 	
@@ -137,7 +136,9 @@ public abstract class AbstractRoot implements Root {
 	 * 
 	 * @param entry
 	 */
-	protected void insert(Path.Entry<?> entry) {
+	protected void insert(Path.Entry<?> entry) throws Exception {
+		updateCache();
+		
 		Path.ID id = entry.id();
 		int index = binarySearch(contents,nchildren,id);
 		

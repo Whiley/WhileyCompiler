@@ -231,7 +231,7 @@ public class Path {
 		 * @param ct
 		 * @return
 		 */
-		public <T> List<Path.Entry<T>> get(Filter<T> ct) throws Exception;
+		public <T> List<Path.Entry<T>> get(Content.Filter<T> ct) throws Exception;
 		
 		/**
 		 * Identify all entries matching a given content filter stored in this
@@ -244,7 +244,7 @@ public class Path {
 		 *            --- filter to match entries with.
 		 * @return
 		 */
-		public <T> Set<Path.ID> match(Filter<T> filter) throws Exception;
+		public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception;
 		
 		/**
 		 * Create an entry of a given content type at a given path. If the entry
@@ -275,36 +275,17 @@ public class Path {
 		public void refresh() throws Exception;
 	}
 	
-	public interface Filter<T> {
+	public interface Filter {
 
 		/**
 		 * Check whether a given entry is matched by this filter.
 		 * 
-		 * @param entry
-		 *            --- entry to test.
-		 * @return --- entry (retyped) if it matches, otherwise null.
+		 * @param id
+		 *            --- id to test.
+		 * @return --- true if it matches, otherwise false.
 		 */
-		public Path.Entry<T> match(Path.Entry<?> entry);		
+		public boolean matches(Path.ID id);		
 	}
 
-	/**
-	 * Attach a content type to a filter.
-	 * 
-	 * @param filter
-	 * @param contentType
-	 * @return
-	 */
-	public static <T> Filter<T> attach(final Filter<?> filter, final Content.Type<T> contentType) {
-		return new Filter<T>() {
-			public Path.Entry<T> match(Path.Entry<?> entry) {
-				if(entry.contentType() == contentType) {
-					return (Path.Entry<T>) filter.match(entry);
-				}
-				return null;
-			}
-			public String toString() {
-				return filter.toString();
-			}
-		};
-	}	
+	
 }

@@ -52,12 +52,12 @@ public class StandardBuildRule implements BuildRule {
 		this.items = new ArrayList<Item>();
 	}
 	
-	public void add(Path.Root source, Path.Root target, Path.Filter<?> includes, Path.Filter<?> excludes) {
-		this.items.add(new Item(source, target, includes, excludes));
+	public void add(Path.Root source, Content.Type<?> from, Path.Root target, Content.Type<?> to, Path.Filter includes, Path.Filter excludes) {
+		this.items.add(new Item(source, from, target, to, includes, excludes));
 	}
 	
-	public void add(Path.Root source, Path.Root target, Path.Filter<?> includes) {
-		this.items.add(new Item(source, target, includes, null));
+	public void add(Path.Root source, Content.Type<?> from, Path.Root target, Content.Type<?> to, Path.Filter includes) {
+		this.items.add(new Item(source, from, target, to, includes, null));
 	}
 	
 	public void addDependencies(Set<Path.Entry<?>> targets) throws Exception {		
@@ -66,15 +66,15 @@ public class StandardBuildRule implements BuildRule {
 				final Item item = items.get(i);
 				final Path.Root source = item.source;
 				final Path.Root target = item.target;
-				final Path.Filter<?> includes = item.includes;
-				final Path.Filter<?> excludes = item.excludes;
-
-				System.out.println("LOOKING AT: " + t.location() + " (" + target.contains(t) + ")" + includes.match(t));
+				final Path.Filter includes = item.includes;
+				final Path.Filter excludes = item.excludes;
+				final Content.Type<?> from = item.from;
+				final Content.Type<?> to = item.to;
 				
-				if (target.contains(t) && includes.match(t) != null
-						&& (excludes == null || excludes.match(t) == null)) {
-					System.out.println("MATCHED: " + t.location());
-					Path.Entry<?> se = source.create(t.id(), null);
+				if (target.contains(t) && to == t.contentType()
+						&& includes.matches(t.id()) 
+						&& (excludes == null || excludes.matches(t.id()))) {
+					Path.Entry<?> se = source.create(t.id(), from);
 					targets.add(se);
 				}
 			}
@@ -88,12 +88,16 @@ public class StandardBuildRule implements BuildRule {
 	private final static class Item {
 		final Path.Root source;
 		final Path.Root target;
-		final Path.Filter<?> includes;
-		final Path.Filter<?> excludes;
+		final Content.Type<?> from;
+		final Content.Type<?> to;
+		final Path.Filter includes;
+		final Path.Filter excludes;
 		
-		public Item(Path.Root srcRoot, Path.Root targetRoot, Path.Filter includes, Path.Filter excludes) {
+		public Item(Path.Root srcRoot, Content.Type<?> from, Path.Root targetRoot, Content.Type<?> to, Path.Filter includes, Path.Filter excludes) {
 			this.source = srcRoot;
 			this.target = targetRoot;
+			this.from = from;
+			this.to = to;
 			this.includes = includes;
 			this.excludes = excludes;
 		}		

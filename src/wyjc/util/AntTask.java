@@ -183,19 +183,19 @@ public class AntTask extends MatchingTask {
     		
     		// fourth initialise the builder
     		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-    		Path.Filter<WhileyFile> srcFilter = RegexFilter.create(WhileyFile.ContentType,"**");    		
+    		RegexFilter filter = RegexFilter.create("**");    		
 			StandardBuildRule rule = new StandardBuildRule(builder);			
 			if(target != null) {
-				rule.add(source, target, srcFilter);
+				rule.add(source, WhileyFile.ContentType, target, WyilFile.ContentType,  filter);
 			} else {
-				rule.add(source, source, srcFilter);
+				rule.add(source, WhileyFile.ContentType, source, WyilFile.ContentType,  filter);
 			}			
 			project.add(rule);
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
 			ArrayList<Path.Entry<?>> targets = new ArrayList<Path.Entry<?>>();
-    		
+    		Content.Filter<WhileyFile> srcFilter = Content.filter(filter, WhileyFile.ContentType);
 			for (Path.Entry<WhileyFile> e : source.get(srcFilter)) {
 				Path.Entry<WyilFile> binary = target.get(e.id(),
 						WyilFile.ContentType);

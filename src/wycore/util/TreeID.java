@@ -116,7 +116,7 @@ public final class TreeID implements Path.ID {
 			while(t2.depth > t1.depth) {
 				t2 = t2.parent;
 			}
-			while(t1 != t2) {
+			while(t1.parent != t2.parent) {
 				t1 = t1.parent;
 				t2 = t2.parent;
 			}

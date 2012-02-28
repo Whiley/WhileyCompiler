@@ -25,6 +25,8 @@
 
 package wycore.lang;
 
+import wycore.lang.Path.Filter;
+
 public class Content {
 
 	/**
@@ -61,6 +63,39 @@ public class Content {
 		 */
 		public void write(Path.Entry<T> entry) throws Exception;		
 	}
+	
+	public interface Filter<T> extends Path.Filter{
+
+		/**
+		 * Check whether a given entry is matched by this filter.
+		 * 
+		 * @param entry
+		 *            --- entry to test.
+		 * @return --- entry (retyped) if it matches, otherwise null.
+		 */
+		public boolean matches(Path.ID id, Content.Type<T> ct);		
+	}
+	
+	/**
+	 * Construct a content filter from a path filter and a content type.
+	 * 
+	 * @param filter --- path filter
+	 * @param contentType
+	 * @return
+	 */
+	public static <T> Filter<T> filter(final Path.Filter filter, final Content.Type<T> contentType) {
+		return new Filter<T>() {
+			public boolean matches(Path.ID id) {
+				return filter.matches(id);
+			}
+			public boolean matches(Path.ID id, Content.Type<T> ct) {
+				return ct == contentType && filter.matches(id);
+			}
+			public String toString() {
+				return filter.toString();
+			}
+		};
+	}	
 	
 	/**
 	 * <p>
