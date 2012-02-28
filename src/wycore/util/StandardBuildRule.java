@@ -59,22 +59,39 @@ public class StandardBuildRule implements BuildRule {
 		this.items.add(new Item(source, target, includes, null));
 	}
 	
-	public List<Path.Entry<?>> dependents() throws Exception {
-		return null;
+	public ArrayList<Path.Entry<?>> dependents() throws Exception {
+		ArrayList<Path.Entry<?>> dependents = new ArrayList();
+		for (int i=0;i!=items.size();++i) {
+			final Item item = items.get(i);
+			final Path.Root source = item.source;		
+			final Path.Filter<?> includes = item.includes;
+			final Path.Filter<?> excludes = item.excludes;
+
+			for (Path.Entry<?> se : source.get(includes)) {
+				if (excludes == null || excludes.match(se) == null) {
+					dependents.add(se);
+				}
+			}
+		}
+		return dependents;
 	}
 	
 	public void apply() throws Exception {
-		ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
-		for(Item r : items) {
-			final Path.Root source = r.source;
-			final Path.Root target = r.target;
-			final Path.Filter<?> includes = r.includes;
-			final Path.Filter<?> excludes = r.excludes;
+		ArrayList<Pair<Path.Entry<?>, Path.Entry<?>>> delta = new ArrayList();
+		for (int i = 0; i != items.size(); ++i) {
+			final Item item = items.get(i);
+			final Path.Root source = item.source;
+			final Path.Root target = item.target;
+			final Path.Filter<?> includes = item.includes;
+			final Path.Filter<?> excludes = item.excludes;
 			
-			for(Path.Entry<?> se : source.get(includes)) {
-				if(excludes == null || excludes.match(se) == null) {
-					Path.Entry<?> te = target.create(se.id(), null); 
-					delta.add(new Pair(se,te));
+			for (Path.Entry<?> se : source.get(includes)) {
+				if (excludes == null || excludes.match(se) == null) {
+					Path.Entry<?> te = target.create(se.id(), null);
+					if(se.lastModified() > te.lastModified()) {
+						// hit
+						delta.add(new Pair(se, te));
+					}
 				}
 			}
 		}
