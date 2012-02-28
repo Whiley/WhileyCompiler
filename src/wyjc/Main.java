@@ -363,7 +363,7 @@ public class Main {
 			project.add(rule);
 			
 			// Now, touch all files indicated on command-line	
-			ArrayList<Path.Entry<?>> targets = new ArrayList<Path.Entry<?>>();
+			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
 			
 			for(DirectoryRoot source : sourceRoots) {				
 				File loc = source.location();
@@ -379,24 +379,16 @@ public class Main {
 						module = module.substring(0,module.length()-7);						
 						Path.ID mid = TreeID.fromString(module);						
 						Path.Entry<WhileyFile> e = source.get(mid,WhileyFile.ContentType);
-						if (e != null) {
-							Path.Entry<WyilFile> binary;
-							if (target != null) {
-								binary = target.create(e.id(),
-										WyilFile.ContentType);
-							} else {
-								binary = source.create(e.id(),
-										WyilFile.ContentType);
-							}
-							targets.add(binary);
+						if (e != null) {							
+							sources.add(e);
 						}
 					}
 				}
 			}
 		
 			// finally, let's compile some files!!!		
-			System.out.println("Building " + targets.size() + " target(s).");
-			project.build(targets);
+			System.out.println("Building " + sources.size() + " source file(s).");
+			project.build(sources);
 			project.namespace().flush(); // flush all built components to disk
 		} catch (InternalFailure e) {
 			e.outputSourceError(errout);

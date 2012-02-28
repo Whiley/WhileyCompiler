@@ -98,11 +98,50 @@ public class Project {
 	// Mutators
 	// ======================================================================		
 	
-	/**
-	 * Build the specified targets using the given project builder(s).
-	 */
-	public void build(Collection<Path.Entry<?>> targets) throws Exception {
+	public void build(Collection<Path.Entry<?>> sources) throws Exception {
+		HashSet<Path.Entry<?>> allTargets = new HashSet();
 		
+		// Firstly, initialise list of targets to rebuild.		
+		for (BuildRule r : rules) {
+			for (Path.Entry<?> source : sources) {
+				allTargets.addAll(r.dependentsOf(source));
+			}
+		}
+		
+		// Secondly, add all dependents on those being rebuilt.
+		int oldSize;
+		do {
+			oldSize = allTargets.size();
+			for (BuildRule r : rules) {
+				for (Path.Entry<?> target : allTargets) {
+					allTargets.addAll(r.dependentsOf(target));
+				}
+			}
+		} while (allTargets.size() != oldSize);
+		
+		// Finally, build all identified targets!
+		do {
+			oldSize = allTargets.size();
+			for(BuildRule r : rules) {
+				r.apply(allTargets);
+			}
+		} while(allTargets.size() < oldSize);
+		
+		// If we didn't manage to build all the targets, then this indicates
+		// that some kind of cyclic dependency situation is present.
+		if(!allTargets.isEmpty()) {
+			System.out.println("Cyclic dependency!");
+		}
+	}
+	
+	/**
+	 * <p>
+	 * Rebuild a given set of targets by first tracing backwards through the
+	 * dependency graph to determine all dependencies. Then, those dependencies
+	 * which have changed are rebuilt.
+	 * </p>	 
+	 */
+	public void rebuild(Collection<Path.Entry<?>> targets) throws Exception {		
 		// First, determine full list of targets to rebuild		
 		HashSet<Path.Entry<?>> allTargets = new HashSet(targets);
 		int oldSize;
@@ -117,21 +156,22 @@ public class Project {
 		
 		// Second, eliminate targets that are not the destination of some rule.
 		Iterator<Path.Entry<?>> iter = allTargets.iterator();
-		while(iter.hasNext()) {
+		while (iter.hasNext()) {
 			Path.Entry<?> e = iter.next();
 			boolean root = false;
-			for(BuildRule r : rules) {
-				if(r.isTarget(e)) {
+			for (BuildRule r : rules) {
+				if (r.isTarget(e)) {
 					root = true;
 				}
 			}
-			if(!root) {
+			if (!root) {
 				iter.remove();
-				System.out.println("Need to check for presence of " + e.location());
+				System.out.println("Need to check for presence of "
+						+ e.location());
 			}
 		}
 		
-		// Finally, build!
+		// Finally, build all identified targets!
 		do {
 			oldSize = allTargets.size();
 			for(BuildRule r : rules) {
@@ -139,6 +179,8 @@ public class Project {
 			}
 		} while(allTargets.size() < oldSize);
 		
+		// If we didn't manage to build all the targets, then this indicates
+		// that some kind of cyclic dependency situation is present.
 		if(!allTargets.isEmpty()) {
 			System.out.println("Cyclic dependency!");
 		}

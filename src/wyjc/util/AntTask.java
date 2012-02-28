@@ -194,23 +194,20 @@ public class AntTask extends MatchingTask {
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
-			ArrayList<Path.Entry<?>> targets = new ArrayList<Path.Entry<?>>();
+			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
     		Content.Filter<WhileyFile> srcFilter = Content.filter(filter, WhileyFile.ContentType);
 			for (Path.Entry<WhileyFile> e : source.get(srcFilter)) {
 				Path.Entry<WyilFile> binary = target.get(e.id(),
 						WyilFile.ContentType);
-				if(binary == null) {
-					binary = target.create(e.id(), WyilFile.ContentType);
-					targets.add(binary);
-				} else if (binary.lastModified() < e.lastModified()) {
-					targets.add(binary);
+				if (binary == null || binary.lastModified() < e.lastModified()) {
+					sources.add(e);
 				}
 			}
     		
-			log("Compiling " + targets.size() + " source file(s)");
+			log("Compiling " + sources.size() + " source file(s)");
 			
     		// finally, compile away!
-    		project.build(targets);
+    		project.build(sources);
     		project.namespace().flush(); // force all built components to disk
     		
     		return true;

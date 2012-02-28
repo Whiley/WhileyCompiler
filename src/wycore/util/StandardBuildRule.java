@@ -143,28 +143,6 @@ public class StandardBuildRule implements BuildRule {
 		return Collections.EMPTY_SET;
 	}	
 
-	
-	public void addDependencies(Set<Path.Entry<?>> targets) throws Exception {		
-		for (Path.Entry<?> t : targets) {
-			for (int i = 0; i != items.size(); ++i) {
-				final Item item = items.get(i);
-				final Path.Root source = item.source;
-				final Path.Root target = item.target;
-				final Path.Filter includes = item.includes;
-				final Path.Filter excludes = item.excludes;
-				final Content.Type<?> from = item.from;
-				final Content.Type<?> to = item.to;
-				
-				if (target.contains(t) && to == t.contentType()
-						&& includes.matches(t.id()) 
-						&& (excludes == null || excludes.matches(t.id()))) {
-					Path.Entry<?> se = source.create(t.id(), from);
-					targets.add(se);
-				}
-			}
-		}
-	}
-	
 	public void apply(Set<Path.Entry<?>> targets) throws Exception {
 		ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
 		
