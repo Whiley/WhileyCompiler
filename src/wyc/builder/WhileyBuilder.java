@@ -115,21 +115,90 @@ public final class WhileyBuilder implements Builder {
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 
+		// ========================================================================
+		// Parse and register source files
+		// ========================================================================
+		
 		srcFiles.clear();
-		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
+		int count=0;
 		for (Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
 				WhileyFile wf = sf.read();
-				wyfiles.add(wf);
+				count++;				
 				srcFiles.put(wf.module, sf);
 			}
 		}
 
-		List<WyilFile> modules = buildModules(wyfiles);
-		finishCompilation(modules);
+		project.logTimedMessage("Parsed " + count + " source file(s).",
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 
+		// ========================================================================
+		// Flow Type source files
+		// ========================================================================
+		
+		GlobalResolver resolver = new GlobalResolver(this);
+		
+		runtime = Runtime.getRuntime();
+		start = System.currentTimeMillis();		
+		memory = runtime.freeMemory();
+		
+		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.first();
+			if (f.contentType() == WhileyFile.ContentType) {
+				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;			
+				WhileyFile wf = sf.read();								
+				new FlowTyping(resolver).propagate(wf);						
+			}
+		}		
+		
+		project.logTimedMessage("Typed " + count + " source file(s).",
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+		
+		// ========================================================================
+		// Code Generation
+		// ========================================================================
+		
+		runtime = Runtime.getRuntime();
+		start = System.currentTimeMillis();		
+		memory = runtime.freeMemory();	
+
+		GlobalGenerator globalGen = new GlobalGenerator(this,resolver);
+		CodeGeneration generator = new CodeGeneration(this,globalGen,resolver);
+		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.first();
+			Path.Entry<?> s = (Path.Entry<?>) p.second();
+			if (f.contentType() == WhileyFile.ContentType && s.contentType() == WyilFile.ContentType) {
+				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) f;
+				Path.Entry<WyilFile> target = (Path.Entry<WyilFile>) s;				
+				WhileyFile wf = source.read();								
+				WyilFile wyil = generator.generate(wf);
+				target.write(wyil);
+			}
+		}
+		
+		project.logTimedMessage("Generated code for " + count + " source file(s).",
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+		
+		// ========================================================================
+		// Pipeline Stages
+		// ========================================================================
+				
+		for(Transform stage : stages) {
+			for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+				Path.Entry<?> f = p.second();
+				if (f.contentType() == WyilFile.ContentType) {			
+					Path.Entry<WyilFile> wf = (Path.Entry<WyilFile>) f;
+					process(wf.read(),stage);
+				}				
+			}
+		}	
+	
+		// ========================================================================
+		// Done.
+		// ========================================================================
+		
 		long endTime = System.currentTimeMillis();
 		project.logTimedMessage("Compiled " + delta.size() + " file(s)",
 				endTime - start, memory - runtime.freeMemory());
@@ -241,22 +310,6 @@ public final class WhileyBuilder implements Builder {
 	// Private Implementation
 	// ======================================================================
 
-	/**
-	 * This method puts the given module through the second half of the
-	 * compilation pipeline. In particular, it propagates and generates types
-	 * for all expressions used within the module, as well as checking for
-	 * definite assignment and performing verification checking.
-	 * 
-	 * @param wf
-	 */
-	private void finishCompilation(List<WyilFile> modules) throws Exception {	
-		for(Transform stage : stages) {
-			for(WyilFile module : modules) {
-				process(module,stage);
-			}
-		}		
-	}
-	
 	private void process(WyilFile module, Transform stage) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
@@ -293,27 +346,5 @@ public final class WhileyBuilder implements Builder {
 			r += Character.toLowerCase(c);;
 		}
 		return r;
-	}	
-	
-	private List<WyilFile> buildModules(List<WhileyFile> delta) {
-		GlobalResolver resolver = new GlobalResolver(this);
-		
-		for(WhileyFile wf : delta) {
-			Runtime runtime = Runtime.getRuntime();
-			long start = System.currentTimeMillis();		
-			long memory = runtime.freeMemory();					
-			new FlowTyping(resolver).propagate(wf);
-			project.logTimedMessage("[" + wf.filename + "] flow typing",
-					System.currentTimeMillis() - start, memory - runtime.freeMemory());			
-		}		
-		
-		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();		
-		long memory = runtime.freeMemory();	
-		// FIXME: this is knackered!
-		List<WyilFile> modules = new CodeGeneration(this,resolver).generate(delta);			
-		project.logTimedMessage("code generation",
-					System.currentTimeMillis() - start, memory - runtime.freeMemory());		
-		return modules;
-	}		
+	}			
 }

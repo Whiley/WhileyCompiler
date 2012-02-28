@@ -63,6 +63,7 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 	}		
 			
 	public void write(T contents) throws Exception {
+		this.modified = true;
 		this.contents = contents; 
 	}
 	

@@ -94,22 +94,13 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(WhileyBuilder builder, GlobalResolver resolver) {
+	public CodeGeneration(WhileyBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
 		this.builder = builder;		
 		this.resolver = resolver;
+		this.globalGenerator = generator;
 	}
 
-	public List<WyilFile> generate(List<WhileyFile> files) {
-		globalGenerator = new GlobalGenerator(builder,resolver);
-		
-		ArrayList<WyilFile> modules = new ArrayList<WyilFile>();
-		for(WhileyFile wf : files) {			
-			modules.add(generate(wf));			
-		}
-		return modules;
-	}
-	
-	private WyilFile generate(WhileyFile wf) {
+	public WyilFile generate(WhileyFile wf) {
 		HashMap<Pair<Type.Function, String>, WyilFile.Method> methods = new HashMap();
 		ArrayList<WyilFile.TypeDef> types = new ArrayList<WyilFile.TypeDef>();
 		ArrayList<WyilFile.ConstDef> constants = new ArrayList<WyilFile.ConstDef>();
