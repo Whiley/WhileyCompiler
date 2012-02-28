@@ -71,12 +71,15 @@ public class GlobalResolver extends LocalResolver {
 	public NameID resolveAsName(String name, Context context)
 			throws Exception {		
 		for (WhileyFile.Import imp : context.imports()) {			
-			if (imp.matchName(name)) {
-				for (Path.ID mid : builder.imports(imp)) {					
-					NameID nid = new NameID(mid, name); 					
-					if (builder.isName(nid)) {
-						return nid;
-					}					
+			if (imp.name == null || imp.name.equals(name)
+					|| imp.name.equals("*")) {
+				for (Path.ID mid : builder.imports(imp)) {
+					if(imp.name != null || mid.last().equals(name)) {
+						NameID nid = new NameID(mid, name);
+						if (builder.isName(nid)) {
+							return nid;
+						}
+					}
 				}
 			}
 		}

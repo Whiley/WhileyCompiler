@@ -1254,12 +1254,14 @@ public abstract class LocalResolver extends AbstractResolver {
 		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
-			if (imp.matchName(name)) {				
-				for (Path.ID mid : builder.imports(imp)) {					
-					NameID nid = new NameID(mid,name);				
-					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
+			if (imp.name == null || imp.name.equals(name) || imp.name.equals("*")) {								
+				for (Path.ID mid : builder.imports(imp)) {
+					if(imp.name != null || mid.last().equals(name)) {
+						NameID nid = new NameID(mid,name);				
+						addCandidateFunctionsAndMethods(nid,parameters,candidates);
+					}
 				}
-			}
+			} 
 		}
 
 		return selectCandidateFunctionOrMethod(name,parameters,candidates);
@@ -1272,10 +1274,13 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
-			if (imp.matchName(name)) {				
-				for (Path.ID mid : builder.imports(imp)) {										
-					NameID nid = new NameID(mid,name);					
-					addCandidateMessages(nid,parameters,candidates);					
+			if (imp.name == null || imp.name.equals(name)
+					|| imp.name.equals("*")) {
+				for (Path.ID mid : builder.imports(imp)) {
+					if (imp.name != null || mid.last().equals(name)) {
+						NameID nid = new NameID(mid, name);
+						addCandidateMessages(nid, parameters, candidates);
+					}
 				}
 			}
 		}

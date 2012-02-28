@@ -258,6 +258,7 @@ public final class WhileyFile {
 			this.name = name;
 		}
 	
+		/*
 		public boolean matchName(String name) {
 			
 			if(this.name != null) {
@@ -267,7 +268,7 @@ public final class WhileyFile {
 				return last.equals(name) || last.equals("*")  || last.equals("*");
 			}					
 		}
-		
+		*/
 //		public boolean matchModule(String module) {
 //			return this.module != null && (this.module.equals(module) || this.module.equals("*"));
 //		}
