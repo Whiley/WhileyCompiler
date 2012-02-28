@@ -386,8 +386,7 @@ public class Main {
 				}
 			}
 		
-			// finally, let's compile some files!!!		
-			System.out.println("Building " + sources.size() + " source file(s).");
+			// finally, let's compile some files!!!					
 			project.build(sources);
 			project.namespace().flush(); // flush all built components to disk
 		} catch (InternalFailure e) {
