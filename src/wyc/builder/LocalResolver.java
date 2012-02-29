@@ -1254,12 +1254,18 @@ public abstract class LocalResolver extends AbstractResolver {
 		HashSet<Pair<NameID,Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>(); 		
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
-			if (imp.name == null || imp.name.equals(name) || imp.name.equals("*")) {								
-				for (Path.ID mid : builder.imports(imp)) {
-					if(imp.name != null || mid.last().equals(name)) {
-						NameID nid = new NameID(mid,name);				
-						addCandidateFunctionsAndMethods(nid,parameters,candidates);
-					}
+			String impName = imp.name;
+			if (impName == null || impName.equals(name) || impName.equals("*")) {
+				Trie filter = imp.filter;
+				if(impName == null) {
+					// import name is null, but it's possible that a module of
+					// the given name exists, in which case any matching names
+					// are automatically imported. 
+					filter = filter.parent().append(name);
+				}
+				for (Path.ID mid : builder.imports(filter)) {					
+					NameID nid = new NameID(mid,name);				
+					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
 				}
 			} 
 		}
@@ -1274,13 +1280,18 @@ public abstract class LocalResolver extends AbstractResolver {
 
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
-			if (imp.name == null || imp.name.equals(name)
-					|| imp.name.equals("*")) {
-				for (Path.ID mid : builder.imports(imp)) {
-					if (imp.name != null || mid.last().equals(name)) {
-						NameID nid = new NameID(mid, name);
-						addCandidateMessages(nid, parameters, candidates);
-					}
+			String impName = imp.name;
+			if (impName == null || impName.equals(name) || impName.equals("*")) {
+				Trie filter = imp.filter;
+				if(impName == null) {
+					// import name is null, but it's possible that a module of
+					// the given name exists, in which case any matching names
+					// are automatically imported. 
+					filter = filter.parent().append(name);
+				}
+				for (Path.ID mid : builder.imports(filter)) {				
+					NameID nid = new NameID(mid, name);
+					addCandidateMessages(nid, parameters, candidates);					
 				}
 			}
 		}

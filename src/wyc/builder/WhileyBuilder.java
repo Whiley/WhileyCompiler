@@ -97,7 +97,7 @@ public final class WhileyBuilder implements Builder {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Pair<Trie, String>,ArrayList<Path.ID>> importCache = new HashMap();	
+	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
 		
 	public WhileyBuilder(Project project, Pipeline pipeline) {
 		this.stages = pipeline.instantiate(this);
@@ -242,9 +242,7 @@ public final class WhileyBuilder implements Builder {
 	 * @param imp
 	 * @return
 	 */
-	public List<Path.ID> imports(WhileyFile.Import imp) throws ResolveError {		
-		Pair<Trie, String> key = new Pair<Trie, String>(
-				imp.filter, imp.name);
+	public List<Path.ID> imports(Trie key) throws ResolveError {		
 		try {
 			ArrayList<Path.ID> matches = importCache.get(key);
 			if (matches != null) {
@@ -254,14 +252,13 @@ public final class WhileyBuilder implements Builder {
 				// cache miss
 				matches = new ArrayList<Path.ID>();	
 				
-
 				for(Path.Entry<WhileyFile> sf : srcFiles.values()) {
-					if(imp.filter.matches(sf.id())) {						
+					if(key.matches(sf.id())) {						
 						matches.add(sf.id());
 					}
 				}
 				
-				Content.Filter<?> binFilter = Content.filter(imp.filter,
+				Content.Filter<?> binFilter = Content.filter(key,
 						WyilFile.ContentType);
 				for (Path.ID mid : namespace.match(binFilter)) {					
 					matches.add(mid);

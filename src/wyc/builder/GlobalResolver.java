@@ -70,15 +70,20 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	public NameID resolveAsName(String name, Context context)
 			throws Exception {		
-		for (WhileyFile.Import imp : context.imports()) {			
-			if (imp.name == null || imp.name.equals(name)
-					|| imp.name.equals("*")) {
-				for (Path.ID mid : builder.imports(imp)) {
-					if(imp.name != null || mid.last().equals(name)) {
-						NameID nid = new NameID(mid, name);
-						if (builder.isName(nid)) {
-							return nid;
-						}
+		for (WhileyFile.Import imp : context.imports()) {
+			String impName = imp.name;
+			if (impName == null || impName.equals(name) || impName.equals("*")) {
+				Trie filter = imp.filter;
+				if (impName == null) {
+					// import name is null, but it's possible that a module of
+					// the given name exists, in which case any matching names
+					// are automatically imported.
+					filter = filter.parent().append(name);
+				}
+				for (Path.ID mid : builder.imports(filter)) {
+					NameID nid = new NameID(mid, name);
+					if (builder.isName(nid)) {
+						return nid;
 					}
 				}
 			}
@@ -153,11 +158,18 @@ public class GlobalResolver extends LocalResolver {
 	public Path.ID resolveAsModule(String name, Context context)
 			throws Exception {
 		
-		for (WhileyFile.Import imp : context.imports()) {			
-			for(Path.ID mid : builder.imports(imp)) {				
-				if(mid.last().equals(name)) {
-					return mid;
-				}
+		for (WhileyFile.Import imp : context.imports()) {
+			Trie filter = imp.filter;
+			String last = filter.last();			
+			if (last.equals("*")) {
+				// this is generic import, so narrow the filter.
+				filter = filter.parent().append(name);
+			} else if(!last.equals(name)) {
+				continue; // skip as not relevant
+			}
+			
+			for(Path.ID mid : builder.imports(filter)) {								
+				return mid;				
 			}
 		}
 				
