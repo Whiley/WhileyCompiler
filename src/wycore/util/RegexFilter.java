@@ -53,12 +53,7 @@ public final class RegexFilter implements Path.Filter {
 	}
 	
 	public boolean matches(Path.ID id) {
-		
-		boolean r = match(id, 0, 0);
-		if(!r) {
-			System.err.println("FAILED MATCHING: " + id + " AND " + this);	
-		}
-		return r;
+		return match(id, 0, 0);		
 	}
 	
 	private boolean match(Path.ID id, int idIndex, int myIndex) {		

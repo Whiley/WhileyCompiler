@@ -118,8 +118,7 @@ public class AntTask extends MatchingTask {
     
     public void setIncludes(String includes) {
     	if(includes.endsWith(".whiley")) {
-    		this.includes = includes.substring(0,includes.length()-7);
-    		System.out.println("INCLUDES: " + this.includes);
+    		this.includes = includes.substring(0,includes.length()-7);    		
     	}
     }
     
