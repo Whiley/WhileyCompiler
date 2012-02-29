@@ -64,7 +64,7 @@ public abstract class AbstractRoot implements Root {
 				if (entry == e) {
 					return true;
 				}
-			} while (++idx < contents.length
+			} while (++idx < nentries
 					&& (entry = contents[idx]).id().equals(id));
 		}
 		return false;
@@ -80,7 +80,7 @@ public abstract class AbstractRoot implements Root {
 				if (entry.contentType() == ct) {
 					return true;
 				}
-			} while (++idx < contents.length
+			} while (++idx < nentries
 					&& (entry = contents[idx]).id().equals(id));
 		}
 		return false;
@@ -96,7 +96,7 @@ public abstract class AbstractRoot implements Root {
 				if (entry.contentType() == ct) {
 					return entry;
 				}
-			} while (++idx < contents.length
+			} while (++idx < nentries
 					&& (entry = contents[idx]).id().equals(id));
 		}
 		return null;

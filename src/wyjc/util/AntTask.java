@@ -196,9 +196,15 @@ public class AntTask extends MatchingTask {
 			// their corresponding binary.	
 			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
     		Content.Filter<WhileyFile> srcFilter = Content.filter(filter, WhileyFile.ContentType);
-			for (Path.Entry<WhileyFile> e : source.get(srcFilter)) {
-				Path.Entry<WyilFile> binary = target.get(e.id(),
-						WyilFile.ContentType);
+			for (Path.Entry<WhileyFile> e : source.get(srcFilter)) {				
+				Path.Entry<WyilFile> binary;
+				
+				if (target != null) {
+					binary = target.get(e.id(), WyilFile.ContentType);
+				} else {
+					binary = source.get(e.id(), WyilFile.ContentType);
+				}
+				
 				if (binary == null || binary.lastModified() < e.lastModified()) {
 					sources.add(e);
 				}
