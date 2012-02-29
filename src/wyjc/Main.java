@@ -351,13 +351,13 @@ public class Main {
 			}
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-			Path.Filter includes = RegexFilter.create("**");
+			Content.Filter includes = Content.filter(RegexFilter.create("**"),WhileyFile.ContentType);
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			for(DirectoryRoot source : sourceRoots) {
 				if(target != null) {
-					rule.add(source, WhileyFile.ContentType, target, WyilFile.ContentType,  includes);
+					rule.add(source, includes, target, WyilFile.ContentType);
 				} else {
-					rule.add(source, WhileyFile.ContentType, source, WyilFile.ContentType,  includes);
+					rule.add(source, includes, source, WyilFile.ContentType);
 				}
 			}
 			project.add(rule);

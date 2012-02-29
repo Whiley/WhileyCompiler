@@ -57,14 +57,14 @@ public class StandardBuildRule implements BuildRule {
 		this.items = new ArrayList<Item>();
 	}
 	
-	public void add(Path.Root source, Content.Type<?> from, Path.Root target,
-			Content.Type<?> to, Path.Filter includes, Path.Filter excludes) {
-		this.items.add(new Item(source, from, target, to, includes, excludes));
+	public void add(Path.Root source, Content.Filter includes,
+			Content.Filter excludes, Path.Root target, Content.Type<?> to) {
+		this.items.add(new Item(source, includes, excludes, target, to));
 	}
 
-	public void add(Path.Root source, Content.Type<?> from, Path.Root target,
-			Content.Type<?> to, Path.Filter includes) {
-		this.items.add(new Item(source, from, target, to, includes, null));
+	public void add(Path.Root source, Content.Filter includes, Path.Root target,
+			Content.Type<?> to) {
+		this.items.add(new Item(source, includes, null, target, to));
 	}
 
 	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> entry) throws Exception {
@@ -72,14 +72,14 @@ public class StandardBuildRule implements BuildRule {
 			final Item item = items.get(i);
 			final Path.Root target = item.target;
 			final Path.Root source = item.source;
-			final Path.Filter includes = item.includes;
-			final Path.Filter excludes = item.excludes;
-			final Content.Type<?> to = item.to;
-			final Content.Type<?> from = item.from;
+			final Content.Filter includes = item.includes;
+			final Content.Filter excludes = item.excludes;
+			final Content.Type<?> to = item.to;			
 
-			if(source.contains(entry) && from == entry.contentType()
-					&& includes.matches(entry.id()) 
-					&& (excludes == null || excludes.matches(entry.id()))) {
+			if (source.contains(entry)
+					&& includes.matches(entry.id(), entry.contentType())
+					&& (excludes == null || !excludes.matches(entry.id(),
+							entry.contentType()))) {
 				Set<Path.Entry<?>> result = new HashSet<Path.Entry<?>>();
 				result.add(target.create(entry.id(), to));
 				return result;
@@ -90,28 +90,28 @@ public class StandardBuildRule implements BuildRule {
 
 	public void apply(Set<Path.Entry<?>> targets) throws Exception {
 		ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
-		
-		for (Path.Entry<?> te : targets) {
-			for (int i = 0; i != items.size(); ++i) {
-				final Item item = items.get(i);
-				final Path.Root source = item.source;
-				final Path.Root target = item.target;
-				final Path.Filter includes = item.includes;
-				final Path.Filter excludes = item.excludes;
-				final Content.Type<?> from = item.from;
-				final Content.Type<?> to = item.to;
 				
-				if (target.contains(te) && to == te.contentType()
-						&& includes.matches(te.id()) 
-						&& (excludes == null || excludes.matches(te.id()))) {
-					Path.Entry<?> se = source.get(te.id(), from);
-					if(targets.contains(se)) {
+		for (int i = 0; i != items.size(); ++i) {
+			final Item item = items.get(i);
+			final Path.Root source = item.source;
+			final Path.Root target = item.target;
+			final Content.Filter<?> includes = item.includes;
+			final Content.Filter<?> excludes = item.excludes;
+			final Content.Type<?> to = item.to;
+
+			for (Path.Entry se : source.get(includes)) {
+				if (excludes == null
+						|| !excludes.matches(se.id(), se.contentType())) {
+					if (targets.contains(se)) {
 						// this indicates a dependency that has not yet been
 						// resolved, so we need to wait until it is (by some
 						// other rule).
 						return;
 					}
-					delta.add(new Pair<Path.Entry<?>,Path.Entry<?>>(se,te));
+					Path.Entry<?> te = target.get(se.id(), to);
+					if (targets.contains(te)) {
+						delta.add(new Pair<Path.Entry<?>, Path.Entry<?>>(se, te));
+					}
 				}
 			}
 		}
@@ -127,17 +127,15 @@ public class StandardBuildRule implements BuildRule {
 	private final static class Item {
 		final Path.Root source;
 		final Path.Root target;
-		final Content.Type<?> from;
 		final Content.Type<?> to;
-		final Path.Filter includes;
-		final Path.Filter excludes;
+		final Content.Filter includes;
+		final Content.Filter excludes;
 
-		public Item(Path.Root srcRoot, Content.Type<?> from,
-				Path.Root targetRoot, Content.Type<?> to, Path.Filter includes,
-				Path.Filter excludes) {
+		public Item(Path.Root srcRoot, Content.Filter includes,
+				Content.Filter excludes, Path.Root targetRoot,
+				Content.Type<?> to) {
 			this.source = srcRoot;
-			this.target = targetRoot;
-			this.from = from;
+			this.target = targetRoot;			
 			this.to = to;
 			this.includes = includes;
 			this.excludes = excludes;

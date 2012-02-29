@@ -31,17 +31,14 @@ import java.util.Collection;
 import wycore.lang.Content;
 import wycore.lang.Path;
 
-public final class RegexFilter<T> implements Content.Filter<T> {
-	private final Content.Type<T> contentType;		
+public final class RegexFilter implements Path.Filter {		
 	private final String[] components;		
 
-	private RegexFilter(Content.Type<T> ct, String[] components) {
-		this.components = components;
-		this.contentType = ct;
+	private RegexFilter(String[] components) {
+		this.components = components;		
 	}
 	
-	private RegexFilter(Content.Type<T> ct, Path.ID prefix, String[] components) {
-		this.contentType = ct;
+	private RegexFilter(Path.ID prefix, String[] components) {		
 		int prefixSize = prefix.size();
 		this.components = new String[prefixSize + components.length];
 		for (int i = 0; i != prefixSize; ++i) {
@@ -56,11 +53,12 @@ public final class RegexFilter<T> implements Content.Filter<T> {
 	}
 	
 	public boolean matches(Path.ID id) {
-		return match(id, 0, 0);
-	}
-	
-	public boolean matches(Path.ID id, Content.Type<T> ct) {
-		return (contentType == null || ct == contentType) && match(id, 0, 0);
+		
+		boolean r = match(id, 0, 0);
+		if(!r) {
+			System.err.println("FAILED MATCHING: " + id + " AND " + this);	
+		}
+		return r;
 	}
 	
 	private boolean match(Path.ID id, int idIndex, int myIndex) {		
@@ -96,8 +94,7 @@ public final class RegexFilter<T> implements Content.Filter<T> {
 	public boolean equals(Object o) {
 		if (o instanceof RegexFilter) {
 			RegexFilter r = (RegexFilter) o;
-			return contentType == r.contentType
-					&& Arrays.equals(components, r.components);
+			return Arrays.equals(components, r.components);
 		}
 		return false;
 	}
@@ -115,29 +112,27 @@ public final class RegexFilter<T> implements Content.Filter<T> {
 		return r;
 	}
 	
-	public static RegexFilter<?> create(String... components) {	
-		return new RegexFilter(null,components);
-	}
-	
-	public static RegexFilter<?> create(Collection<String> components) {		
-		String[] cs = components.toArray(new String[components.size()]);
-		return new RegexFilter(null,cs);
-	}
-	
-	public static RegexFilter<?> create(Path.ID prefix, String... components) {	
-		return new RegexFilter(null,prefix,components);
-	}
-	
 	/**
-	 * Create a Regex filter that matches all entries of a given content type
-	 * and path regex.
+	 * Construct a filter from a string where '/' is used as a separator.
 	 * 
-	 * @param contentType
-	 * @param components
-	 *            --- components of the path regex
+	 * @param filter
 	 * @return
 	 */
-	public static <T> RegexFilter<T> create(Content.Type<T> contentType, String... components) {	
-		return new RegexFilter<T>(contentType,components);
-	}	
+	public static RegexFilter create(String filter) {	
+		return new RegexFilter(filter.split("/"));
+	}
+	
+	public static RegexFilter create(String[] components) {	
+		return new RegexFilter(components);
+	}
+	
+	public static RegexFilter create(Collection<String> components) {		
+		String[] cs = components.toArray(new String[components.size()]);
+		return new RegexFilter(cs);
+	}
+	
+	public static RegexFilter create(Path.ID prefix, String... components) {	
+		return new RegexFilter(prefix,components);
+	}
+	
 }

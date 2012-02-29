@@ -217,7 +217,7 @@ public final class WhileyFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(RegexFilter.create("whiley","lang", "*"), null)); 	
+			imports.add(new WhileyFile.Import(RegexFilter.create("whiley/lang/*"), null)); 	
 			imports.add(new WhileyFile.Import(RegexFilter.create(module.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {
@@ -249,10 +249,10 @@ public final class WhileyFile {
 	 * 
 	 */
 	public static class Import extends SyntacticElement.Impl implements Declaration {		
-		public final RegexFilter<?> filter;
+		public final RegexFilter filter;
 		public final String name;
 		
-		public Import(RegexFilter<?> filter, String name, Attribute... attributes) {
+		public Import(RegexFilter filter, String name, Attribute... attributes) {
 			super(attributes);
 			this.filter = filter;			
 			this.name = name;

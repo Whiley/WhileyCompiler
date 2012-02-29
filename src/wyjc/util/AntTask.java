@@ -104,6 +104,8 @@ public class AntTask extends MatchingTask {
 	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
 	private File srcdir;
 	private File destdir;
+	private String includes = "**";
+	private String excludes;
 	private boolean verbose = false;
 		
     public void setSrcdir (File srcdir) {
@@ -112,6 +114,19 @@ public class AntTask extends MatchingTask {
 
     public void setDestdir (File destdir) {
         this.destdir = destdir;
+    }
+    
+    public void setIncludes(String includes) {
+    	if(includes.endsWith(".whiley")) {
+    		this.includes = includes.substring(0,includes.length()-7);
+    		System.out.println("INCLUDES: " + this.includes);
+    	}
+    }
+    
+    public void setExcludes(String excludes) {
+    	if(excludes.endsWith(".whiley")) {
+    		this.excludes = excludes.substring(0,excludes.length()-7);
+    	}
     }
     
     public void setWhileyPath (org.apache.tools.ant.types.Path path) throws IOException {
@@ -182,21 +197,21 @@ public class AntTask extends MatchingTask {
     		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
     		
     		// fourth initialise the builder
-    		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-    		RegexFilter filter = RegexFilter.create("**");    		
+    		WhileyBuilder builder = new WhileyBuilder(project,pipeline);    		
+    		Content.Filter<WhileyFile> includesFilter = Content.filter(RegexFilter.create(includes), WhileyFile.ContentType);
+    		Content.Filter<WhileyFile> excludesFilter = excludes == null ? null : Content.filter(RegexFilter.create(excludes), WhileyFile.ContentType);
 			StandardBuildRule rule = new StandardBuildRule(builder);			
 			if(target != null) {
-				rule.add(source, WhileyFile.ContentType, target, WyilFile.ContentType,  filter);
+				rule.add(source,  includesFilter, excludesFilter, target, WyilFile.ContentType);
 			} else {
-				rule.add(source, WhileyFile.ContentType, source, WyilFile.ContentType,  filter);
+				rule.add(source,  includesFilter, excludesFilter, source, WyilFile.ContentType);
 			}			
 			project.add(rule);
     		
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
-			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
-    		Content.Filter<WhileyFile> srcFilter = Content.filter(filter, WhileyFile.ContentType);
-			for (Path.Entry<WhileyFile> e : source.get(srcFilter)) {				
+			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();			
+			for (Path.Entry<WhileyFile> e : source.get(includesFilter)) {					
 				Path.Entry<WyilFile> binary;
 				
 				if (target != null) {

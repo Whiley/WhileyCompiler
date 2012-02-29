@@ -64,7 +64,7 @@ public class Content {
 		public void write(Path.Entry<T> entry) throws Exception;		
 	}
 	
-	public interface Filter<T> extends Path.Filter{
+	public interface Filter<T> {
 
 		/**
 		 * Check whether a given entry is matched by this filter.
