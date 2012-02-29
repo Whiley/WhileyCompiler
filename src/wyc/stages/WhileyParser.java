@@ -140,16 +140,22 @@ public final class WhileyParser {
 				
 		Trie filter = Trie.ROOT.append(matchIdentifier().text);
 		
-		while (index < tokens.size() && tokens.get(index) instanceof Dot) {
-			match(Dot.class);
+		while (index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+			if(lookahead instanceof Dot) {
+				match(Dot.class);							
+			} else if(lookahead instanceof DotDot) {
+				match(DotDot.class);
+				filter = filter.append("**");
+			} else {
+				break;
+			}
+			
 			if(index < tokens.size()) {
 				Token t = tokens.get(index);
 				if(t.text.equals("*")) {
 					match(Star.class);
 					filter = filter.append("*");	
-				} else if(t instanceof Dot) {
-					match(Dot.class);
-					filter = filter.append("**");	
 				} else {
 					filter = filter.append(matchIdentifier().text);
 				}
