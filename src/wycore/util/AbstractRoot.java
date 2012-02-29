@@ -47,11 +47,13 @@ public abstract class AbstractRoot implements Root {
 		this.contentTypes = contentTypes;
 	}
 	
-	public int size() {
+	public int size() throws Exception {
+		updateCache();
 		return nentries;
 	}
 			
-	public Path.Entry<?> get(int index) {
+	public Path.Entry<?> get(int index) throws Exception {
+		updateCache();
 		return contents[index];
 	}		
 	
