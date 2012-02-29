@@ -69,7 +69,7 @@ public final class WyilFileWriter implements Transform {
 		String filename = module.filename().replace(".whiley", ".wyil");
 		out = new PrintWriter(new FileOutputStream(filename));
 		
-		out.println("module: " + module.id());
+		//out.println("module: " + module.id());
 		out.println("source-file: " + module.filename());
 		out.println();
 		for(ConstDef cd : module.constants()) {

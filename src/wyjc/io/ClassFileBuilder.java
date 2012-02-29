@@ -66,7 +66,7 @@ public class ClassFileBuilder {
 		this.WHILEY_MAJOR_VERSION = whileyMajorVersion;
 	}
 
-	public ClassFile build(WyilFile module) {
+	public ClassFile build(WyilFile module) {		
 		owner = new JvmType.Clazz(module.id().parent().toString().replace('.','/'),
 				module.id().last());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();

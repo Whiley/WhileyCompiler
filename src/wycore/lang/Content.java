@@ -25,6 +25,10 @@
 
 package wycore.lang;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import wycore.lang.Path.Filter;
 
 public class Content {
@@ -41,27 +45,26 @@ public class Content {
 	public interface Type<T> {
 		
 		/**
-		 * Physically read the raw bytes from a given entry's input stream and
-		 * convert into the format described by this content type.
+		 * Physically read the raw bytes from a given input stream and convert
+		 * into the format described by this content type.
 		 * 
 		 * @param input
 		 *            --- input stream representing in the format described by
 		 *            this content type.
 		 * @return
 		 */
-		public T read(Path.Entry<T> entry) throws Exception;
+		public T read(Path.Entry<T> e, InputStream input) throws IOException;
 		
 		/**
 		 * Convert an object in the format described by this content type into
-		 * an appropriate byte stream and physically write it to the given
-		 * entry.
+		 * an appropriate byte stream and write it to an output stream
 		 * 
 		 * @param output
 		 *            --- stream which this value is to be written to.
 		 * @param value
 		 *            --- value to be converted into bytes.
 		 */
-		public void write(Path.Entry<T> entry) throws Exception;		
+		public void write(OutputStream output, T value) throws IOException;		
 	}
 	
 	public interface Filter<T> {

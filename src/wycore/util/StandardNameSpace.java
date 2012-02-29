@@ -49,6 +49,13 @@ public class StandardNameSpace implements NameSpace {
 		this.roots = new ArrayList<Path.Root>(roots);
 	}
 	
+	public StandardNameSpace(Collection<Path.Root>... roots) {
+		this.roots = new ArrayList<Path.Root>();
+		for(Collection<Path.Root> root : roots) {
+			this.roots.addAll(root);
+		}
+	}
+	
 	// ======================================================================
 	// Accessors
 	// ======================================================================		

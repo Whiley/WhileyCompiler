@@ -72,12 +72,12 @@ public final class WhileyFile {
 		 * @return
 		 * @throws IOException
 		 */		
-		public WhileyFile read(Path.Entry e) throws Exception {		
+		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream inputstream) throws IOException {		
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
 
-			WhileyLexer wlexer = new WhileyLexer(e.inputStream());
+			WhileyLexer wlexer = new WhileyLexer(inputstream);
 
 			List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer
 					.scan());
@@ -92,7 +92,7 @@ public final class WhileyFile {
 			return wf;				
 		}
 		
-		public void write(Path.Entry entry) {
+		public void write(OutputStream output, WhileyFile value) {
 			// for now
 			throw new UnsupportedOperationException();
 		}

@@ -57,7 +57,7 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 	
 	public T read() throws Exception {
 		if (contents == null) {
-			contents = contentType.read(this);
+			contents = contentType.read(this,inputStream());
 		}
 		return contents;
 	}		

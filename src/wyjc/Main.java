@@ -72,7 +72,7 @@ public class Main {
 				// this could be either a normal JVM class, or a Wyil class. We
 				// need to determine which.
 				try { 					
-					WyilFile c = WyilFile.ContentType.read(e);
+					WyilFile c = WyilFile.ContentType.read(e, e.inputStream());
 					if(c != null) {
 						e.associate(WyilFile.ContentType,c);
 					}					

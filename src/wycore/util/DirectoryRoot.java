@@ -142,7 +142,7 @@ public final class DirectoryRoot extends AbstractRoot {
 		for(int i=0;i!=size();++i) {
 			Path.Entry e = get(i);
 			if(e.isModified()) {				
-				e.contentType().write(e);
+				e.contentType().write(e.outputStream(),e.read());
 			}			
 		}
 	}
