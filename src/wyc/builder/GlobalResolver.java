@@ -21,7 +21,7 @@ import wyc.lang.WhileyFile;
 import wycore.lang.Path;
 import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
-import wycore.util.TreeID;
+import wycore.util.Trie;
 
 /**
  * <p>
@@ -117,7 +117,7 @@ public class GlobalResolver extends LocalResolver {
 		} else {
 			String name = names.get(names.size()-1);
 			String module = names.get(names.size()-2);
-			Path.ID pkg = TreeID.ROOT;
+			Path.ID pkg = Trie.ROOT;
 			for(int i=0;i!=names.size()-2;++i) {
 				pkg = pkg.append(names.get(i));
 			}

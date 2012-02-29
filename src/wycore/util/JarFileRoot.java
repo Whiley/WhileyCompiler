@@ -72,10 +72,10 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 			String filename = e.getName();					
 			int lastSlash = filename.lastIndexOf('/');
 			int lastDot = filename.lastIndexOf('.');			
-			TreeID pkg = TreeID.fromString(filename.substring(0, lastSlash));			
+			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));			
 			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
 			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
-			TreeID id = pkg.append(name);
+			Trie id = pkg.append(name);
 			Entry pe = new Entry(id, jf, e);
 			contentTypes.associate(pe);
 			contents[i++] = pe;
@@ -92,7 +92,7 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		private final JarFile parent;
 		private final JarEntry entry;
 
-		public Entry(TreeID mid, JarFile parent, JarEntry entry) {
+		public Entry(Trie mid, JarFile parent, JarEntry entry) {
 			super(mid);
 			this.parent = parent;
 			this.entry = entry;

@@ -33,33 +33,33 @@ import wycore.lang.Path;
 
 /**
  * <p>
- * An TreeID provides a standard implementation of the Path.ID interface. It
+ * Provides a standard implementation of the Path.ID and Path.Filter interfaces. It
  * employs the <i>flyweight pattern</i> to ensure every ID can only ever
- * correspond to a single instanceof of TreeID. That, it ensures that any two
+ * correspond to a single instanceof of Trie. That, it ensures that any two
  * instances which represent the same Path.ID are, in fact, the same instance.
  * </p>
  * 
  * @author David J. Pearce
  * 
  */
-public final class TreeID implements Path.ID {
+public final class Trie implements Path.ID, Path.Filter {
 
-	private static final TreeID[] ONE_CHILD = new TreeID[1];
+	private static final Trie[] ONE_CHILD = new Trie[1];
 	
 	// =========================================================
 	// Public Constants
 	// =========================================================
 
-	public static final TreeID ROOT = new TreeID(null,"");
+	public static final Trie ROOT = new Trie(null,"");
 		
 	// =========================================================
 	// Private State
 	// =========================================================
 
-	private final TreeID parent;
+	private final Trie parent;
 	private final String component;
 	private final int depth;
-	private TreeID[] children;
+	private Trie[] children;
 	private int nchildren;
 
 	// =========================================================
@@ -67,7 +67,7 @@ public final class TreeID implements Path.ID {
 	// =========================================================
 
 	
-	TreeID(final TreeID parent, final String component) {
+	Trie(final Trie parent, final String component) {
 		this.parent = parent;
 		this.component = component;
 		if(parent != null) {
@@ -93,11 +93,15 @@ public final class TreeID implements Path.ID {
 		}
 	}
 	
+	public boolean matches(Path.ID id) {
+		return match(id, 0, 0);		
+	}
+		
 	public String last() {
 		return component;
 	}
 	
-	public TreeID parent() {
+	public Trie parent() {
 		return parent;
 	}
 	
@@ -106,10 +110,10 @@ public final class TreeID implements Path.ID {
 	}
 	
 	public int compareTo(final Path.ID o) {
-		if(o instanceof TreeID) {
+		if(o instanceof Trie) {
 			// We can be efficient here
-			TreeID t1 = this;
-			TreeID t2 = (TreeID) o;
+			Trie t1 = this;
+			Trie t2 = (Trie) o;
 			while(t1.depth > t2.depth) {
 				t1 = t1.parent;
 			}
@@ -132,7 +136,7 @@ public final class TreeID implements Path.ID {
 				return 0;
 			}
 		} else {
-			throw new IllegalArgumentException("Attempting to compare TreeID with some other Path.ID");
+			throw new IllegalArgumentException("Attempting to compare Trie with some other Path.ID");
 		}
 	}
 	
@@ -148,19 +152,19 @@ public final class TreeID implements Path.ID {
 		return this == o;
 	}
 	
-	public TreeID append(final String component) {
+	public Trie append(final String component) {
 		int index = binarySearch(children, nchildren, component);
 		if(index >= 0) {
 			return children[index];
 		} 
 		
-		TreeID nt = new TreeID(this,component);
+		Trie nt = new Trie(this,component);
 		index = -index - 1; // calculate insertion point
 
 		if((nchildren+1) < children.length) {
 			System.arraycopy(children, index, children, index+1, nchildren - index);
 		} else {
-			TreeID[] tmp = new TreeID[children.length * 2];
+			Trie[] tmp = new Trie[children.length * 2];
 			System.arraycopy(children, 0, tmp, 0, index);
 			System.arraycopy(children, index, tmp, index+1, nchildren - index);	
 			children = tmp;
@@ -188,21 +192,83 @@ public final class TreeID implements Path.ID {
 	}
 	
 	/**
-	 * Construct a TreeID from a string, where '/' is the separator.
+	 * Construct a Trie from a string, where '/' is the separator.
 	 * s
 	 * @param str
 	 * @return
 	 */
-	public static TreeID fromString(String str) {
+	public static Trie fromString(String str) {
 		String[] components = str.split("/");
-		TreeID r = ROOT;
+		Trie r = ROOT;
 		for(int i=0;i!=components.length;++i) {
 			r = r.append(components[i]);
 		}
 		return r;
 	}
 	
-	private static final int binarySearch(final TreeID[] children, final int nchildren, final String key) {
+	/**
+	 * Construct a Trie from a Path ID.
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static Trie fromString(Path.ID id) {	
+		if(id instanceof Trie) {
+			return ((Trie)id);
+		}
+		Trie r = ROOT;
+		for(int i=0;i!=id.size();++i) {
+			r = r.append(id.get(i));
+		}		
+		return r;
+	}
+	/**
+	 * Construct a Trie by appending a string onto a Path ID.
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static Trie fromString(Path.ID id, String str) {	
+		if(id instanceof Trie) {
+			return ((Trie)id).append(str);
+		}
+		Trie r = ROOT;
+		for(int i=0;i!=id.size();++i) {
+			r = r.append(id.get(i));
+		}
+		r = r.append(str);
+		return r;
+	}
+	
+	// =========================================================
+	// Private Methods
+	// =========================================================
+	
+	private boolean match(Path.ID id, int idIndex, int myIndex) {
+		int mySize = depth+1;
+		if (myIndex == mySize && idIndex == id.size()) {
+			return true;
+		} else if (myIndex == mySize || idIndex == id.size()) {
+			return false;
+		}
+		String myComponent = get(myIndex);
+		if (myComponent.equals("*")) {
+			return match(id, idIndex + 1, myIndex + 1);
+		} else if (myComponent.equals("**")) {
+			myIndex++;
+			for (int i = idIndex; i <= id.size(); ++i) {
+				if (match(id, i, myIndex)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			return myComponent.equals(id.get(idIndex))
+					&& match(id, idIndex + 1, myIndex + 1);
+		}
+	}
+	
+	private static final int binarySearch(final Trie[] children, final int nchildren, final String key) {
 		int low = 0;
         int high = nchildren-1;
             
@@ -222,10 +288,10 @@ public final class TreeID implements Path.ID {
 	}
 	
 	private static final class InternalIterator implements Iterator<String> {
-		private final TreeID id;
+		private final Trie id;
 		private int index;
 		
-		public InternalIterator(TreeID id) {
+		public InternalIterator(Trie id) {
 			this.id = id;
 			this.index = 0;
 		}
@@ -244,15 +310,15 @@ public final class TreeID implements Path.ID {
 	}
 	
 	public static void main(String[] args) {
-		TreeID t1 = ROOT.append("Hello");
-		TreeID t2 = t1.append("World");
-		TreeID t3 = t1.append("Blah");
-		TreeID[] ids = {ROOT,t2,t3,t1};
-		for(TreeID id : ids) {
+		Trie t1 = ROOT.append("Hello");
+		Trie t2 = t1.append("World");
+		Trie t3 = t1.append("Blah");
+		Trie[] ids = {ROOT,t2,t3,t1};
+		for(Trie id : ids) {
 			System.out.println(id + "(" + id.size() + ")");
 		}
 		Arrays.sort(ids);
-		for(TreeID id : ids) {
+		for(Trie id : ids) {
 			System.out.println(id);
 		}
 		

@@ -34,8 +34,7 @@ import wyc.lang.WhileyFile.*;
 import wyc.util.*;
 import wycore.lang.Path;
 import wycore.lang.SyntaxError;
-import wycore.util.RegexFilter;
-import wycore.util.TreeID;
+import wycore.util.Trie;
 import wyil.lang.*;
 import wyil.util.*;
 import wyjc.runtime.BigRational;
@@ -95,14 +94,14 @@ public final class WhileyParser {
 		return wf;
 	}
 	
-	private TreeID parsePackage() {
+	private Trie parsePackage() {
 		
 		while (index < tokens.size()
 				&& (tokens.get(index) instanceof LineComment || tokens.get(index) instanceof NewLine)) {			
 			parseSkip();
 		}
 		
-		TreeID pkg = TreeID.ROOT;
+		Trie pkg = Trie.ROOT;
 		
 		if(index < tokens.size() && tokens.get(index).text.equals("package")) {			
 			matchKeyword("package");
@@ -139,8 +138,7 @@ public final class WhileyParser {
 			matchIdentifier();
 		}
 				
-		ArrayList<String> components = new ArrayList<String>();
-		components.add(matchIdentifier().text);
+		Trie filter = Trie.ROOT.append(matchIdentifier().text);
 		
 		while (index < tokens.size() && tokens.get(index) instanceof Dot) {
 			match(Dot.class);
@@ -148,17 +146,16 @@ public final class WhileyParser {
 				Token t = tokens.get(index);
 				if(t.text.equals("*")) {
 					match(Star.class);
-					components.add("*");	
+					filter = filter.append("*");	
 				} else if(t instanceof Dot) {
 					match(Dot.class);
-					components.add("**");	
+					filter = filter.append("**");	
 				} else {
-					components.add(matchIdentifier().text);
+					filter = filter.append(matchIdentifier().text);
 				}
 			}
 		}
-					
-		RegexFilter filter = RegexFilter.create(components);
+							
 		int end = index;
 		matchEndLine();
 		

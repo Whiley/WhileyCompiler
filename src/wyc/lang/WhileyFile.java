@@ -36,8 +36,7 @@ import wycore.lang.Content;
 import wycore.lang.Path;
 import wycore.lang.SyntacticElement;
 import wycore.lang.SyntaxError;
-import wycore.util.RegexFilter;
-import wycore.util.TreeID;
+import wycore.util.Trie;
 import wyil.lang.*;
 
 /**
@@ -217,8 +216,8 @@ public final class WhileyFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(RegexFilter.create("whiley/lang/*"), null)); 	
-			imports.add(new WhileyFile.Import(RegexFilter.create(module.parent(), "*"), null)); 
+			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"), null)); 	
+			imports.add(new WhileyFile.Import(Trie.fromString(module.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -227,7 +226,7 @@ public final class WhileyFile {
 					imports.add((Import)d);
 				}
 			}			
-			imports.add(new WhileyFile.Import(RegexFilter.create(module), "*")); 
+			imports.add(new WhileyFile.Import(Trie.fromString(module), "*")); 
 
 			Collections.reverse(imports);	
 			
@@ -249,10 +248,10 @@ public final class WhileyFile {
 	 * 
 	 */
 	public static class Import extends SyntacticElement.Impl implements Declaration {		
-		public final RegexFilter filter;
+		public final Trie filter;
 		public final String name;
 		
-		public Import(RegexFilter filter, String name, Attribute... attributes) {
+		public Import(Trie filter, String name, Attribute... attributes) {
 			super(attributes);
 			this.filter = filter;			
 			this.name = name;

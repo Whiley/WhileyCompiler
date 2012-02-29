@@ -35,8 +35,7 @@ import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
 import wycore.lang.*;
-import wycore.util.RegexFilter;
-import wycore.util.ResolveError;
+import wycore.util.*;
 
 /**
  * Responsible for managing the process of turning source files into binary code
@@ -98,7 +97,7 @@ public final class WhileyBuilder implements Builder {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Pair<RegexFilter, String>,ArrayList<Path.ID>> importCache = new HashMap();	
+	private final HashMap<Pair<Trie, String>,ArrayList<Path.ID>> importCache = new HashMap();	
 		
 	public WhileyBuilder(Project project, Pipeline pipeline) {
 		this.stages = pipeline.instantiate(this);
@@ -244,7 +243,7 @@ public final class WhileyBuilder implements Builder {
 	 * @return
 	 */
 	public List<Path.ID> imports(WhileyFile.Import imp) throws ResolveError {		
-		Pair<RegexFilter, String> key = new Pair<RegexFilter, String>(
+		Pair<Trie, String> key = new Pair<Trie, String>(
 				imp.filter, imp.name);
 		try {
 			ArrayList<Path.ID> matches = importCache.get(key);

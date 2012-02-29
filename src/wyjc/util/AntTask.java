@@ -197,8 +197,8 @@ public class AntTask extends MatchingTask {
     		
     		// fourth initialise the builder
     		WhileyBuilder builder = new WhileyBuilder(project,pipeline);    		
-    		Content.Filter<WhileyFile> includesFilter = Content.filter(RegexFilter.create(includes), WhileyFile.ContentType);
-    		Content.Filter<WhileyFile> excludesFilter = excludes == null ? null : Content.filter(RegexFilter.create(excludes), WhileyFile.ContentType);
+    		Content.Filter<WhileyFile> includesFilter = Content.filter(Trie.fromString(includes), WhileyFile.ContentType);
+    		Content.Filter<WhileyFile> excludesFilter = excludes == null ? null : Content.filter(Trie.fromString(excludes), WhileyFile.ContentType);
 			StandardBuildRule rule = new StandardBuildRule(builder);			
 			if(target != null) {
 				rule.add(source,  includesFilter, excludesFilter, target, WyilFile.ContentType);

@@ -149,7 +149,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	
 	protected Path.Entry<?>[] contents() throws IOException {
 		ArrayList<Path.Entry<?>> contents = new ArrayList<Path.Entry<?>>();
-		traverse(dir,TreeID.ROOT,contents);
+		traverse(dir,Trie.ROOT,contents);
 		return contents.toArray(new Path.Entry[contents.size()]);
 	}
 	
@@ -211,7 +211,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	 * @param entries
 	 *            --- list of entries being accumulated into.
 	 */
-	private void traverse(File location, TreeID id,
+	private void traverse(File location, Trie id,
 			ArrayList<Path.Entry<?>> contents) throws IOException {
 		if (location.exists() && location.isDirectory()) {
 			for (File file : location.listFiles(filter)) {

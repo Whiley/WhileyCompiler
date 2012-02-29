@@ -31,7 +31,7 @@ import java.util.*;
 
 import wyautl.io.*;
 import wyautl.lang.*;
-import wycore.util.TreeID;
+import wycore.util.Trie;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyjvm.io.*;
@@ -141,7 +141,7 @@ public class WhileyType implements BytecodeAttribute {
 			if (state.kind == Type.K_NOMINAL) {
 				String modstr = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
-				TreeID mid = TreeID.fromString(modstr);
+				Trie mid = Trie.fromString(modstr);
 				String name = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
 				NameID data = new NameID(mid, name);

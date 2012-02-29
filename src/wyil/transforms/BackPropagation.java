@@ -32,7 +32,7 @@ import java.util.*;
 import wycore.lang.Builder;
 import wycore.lang.Path;
 import wycore.lang.SyntacticElement;
-import wycore.util.TreeID;
+import wycore.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
@@ -800,17 +800,17 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		if (type == Type.T_BYTE) {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_BYTE);
-			name = new NameID(TreeID.fromString("whiley/lang/Byte"),
+			name = new NameID(Trie.fromString("whiley/lang/Byte"),
 					"toString");
 		} else if (type == Type.T_CHAR) {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_CHAR);
-			name = new NameID(TreeID.fromString("whiley/lang/Char"),
+			name = new NameID(Trie.fromString("whiley/lang/Char"),
 					"toString");
 		} else {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_ANY);
-			name = new NameID(TreeID.fromString("whiley/lang/Any"),
+			name = new NameID(Trie.fromString("whiley/lang/Any"),
 					"toString");
 		}
 		

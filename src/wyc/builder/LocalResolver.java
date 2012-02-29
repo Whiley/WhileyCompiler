@@ -16,7 +16,7 @@ import wycore.lang.Path;
 import wycore.lang.SyntacticElement;
 import wycore.lang.SyntaxError;
 import wycore.util.ResolveError;
-import wycore.util.TreeID;
+import wycore.util.Trie;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
@@ -918,7 +918,7 @@ public abstract class LocalResolver extends AbstractResolver {
 						expr.attributes());
 			} catch (ResolveError err) {
 			}
-			Path.ID pid = TreeID.ROOT.append(expr.var);
+			Path.ID pid = Trie.ROOT.append(expr.var);
 			if (builder.exists(pid)) {
 				return new Expr.PackageAccess(null, expr.var, pid,
 						expr.attributes());

@@ -334,7 +334,7 @@ public class Main {
 			// finally, construct the project	
 			NameSpace namespace = new StandardNameSpace(roots) {        		
         		public Path.ID create(String s) {
-        			return TreeID.fromString(s);
+        			return Trie.fromString(s);
         		}
         	};
 			Project project = new Project(namespace);			
@@ -351,7 +351,7 @@ public class Main {
 			}
 	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
-			Content.Filter includes = Content.filter(RegexFilter.create("**"),WhileyFile.ContentType);
+			Content.Filter includes = Content.filter(Trie.fromString("**"),WhileyFile.ContentType);
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			for(DirectoryRoot source : sourceRoots) {
 				if(target != null) {
@@ -377,7 +377,7 @@ public class Main {
 						}
 						String module = filePath.substring(end).replace(File.separatorChar, '.');
 						module = module.substring(0,module.length()-7);						
-						Path.ID mid = TreeID.fromString(module);						
+						Path.ID mid = Trie.fromString(module);						
 						Path.Entry<WhileyFile> e = source.get(mid,WhileyFile.ContentType);
 						if (e != null) {							
 							sources.add(e);
