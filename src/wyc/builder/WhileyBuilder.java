@@ -29,7 +29,6 @@ import java.io.*;
 import java.util.*;
 
 import wyil.*;
-import wyil.io.ModuleReader;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.lang.*;
