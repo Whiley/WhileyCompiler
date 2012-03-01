@@ -54,11 +54,6 @@ public class Project {
 	 */
 	private final ArrayList<BuildRule> rules;
 	
-	/**
-	 * The logger is used to log messages for the project.
-	 */
-	private Logger logger = Logger.NULL;
-	
 	public Project(NameSpace namespace) {
 		this.rules = new ArrayList<BuildRule>();
 		this.namespace = namespace;
@@ -68,15 +63,6 @@ public class Project {
 	// Configuration Interface
 	// ======================================================================		
 		
-	/**
-	 * Set the logger for this module loader.
-	 * 
-	 * @param logger
-	 */
-	public void setLogger(Logger logger) {
-		this.logger = logger;
-	}
-	
 	/**
 	 * Add a new builder to this project.
 	 * 
@@ -133,21 +119,4 @@ public class Project {
 			System.out.println("Cyclic dependency!");
 		}
 	}
-	
-	/**
-	 * Log a message, along with a time. The time is used to indicate how long
-	 * it took for the action being reported. This is used primarily to signal
-	 * that a given stage has been completed in a certain amount of time.
-	 * 
-	 * @param msg
-	 * @param time --- total time taken for stage
-     * @param memory --- difference in available free memory
-	 */
-	public void logTimedMessage(String msg, long time, long memory) {
-		logger.logTimedMessage(msg, time, memory);
-	}
-	
-	// ======================================================================
-	// Types
-	// ======================================================================			
 }

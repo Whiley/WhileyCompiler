@@ -188,15 +188,17 @@ public class AntTask extends MatchingTask {
     		// second, construct the module loader    		
     		Project project = new Project(new StandardNameSpace(roots));    		
 
-    		if(verbose) {			
-    			project.setLogger(new Logger.Default(System.err));
-    		}
     		
     		// third, initialise the pipeline    		    	
     		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
     		
     		// fourth initialise the builder
-    		WhileyBuilder builder = new WhileyBuilder(project,pipeline);    		
+    		WhileyBuilder builder = new WhileyBuilder(project.namespace(),pipeline);
+    		
+    		if(verbose) {			
+    			builder.setLogger(new Logger.Default(System.err));
+    		}
+    		
     		Content.Filter<WhileyFile> includesFilter = Content.filter(Trie.fromString(includes), WhileyFile.ContentType);
     		Content.Filter<WhileyFile> excludesFilter = excludes == null ? null : Content.filter(Trie.fromString(excludes), WhileyFile.ContentType);
 			StandardBuildRule rule = new StandardBuildRule(builder);			

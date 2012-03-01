@@ -339,10 +339,6 @@ public class Main {
         	};
 			Project project = new Project(namespace);			
 
-			if(verbose) {			
-				project.setLogger(new Logger.Default(System.err));
-			}		
-			
 			// now, initialise builder appropriately
 			Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
 
@@ -350,7 +346,12 @@ public class Main {
 				pipeline.apply(pipelineModifiers);
 			}
 	
-			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
+			WhileyBuilder builder = new WhileyBuilder(project.namespace(),pipeline);	
+			
+			if(verbose) {			
+				builder.setLogger(new Logger.Default(System.err));
+			}		
+			
 			Content.Filter includes = Content.filter(Trie.fromString("**"),WhileyFile.ContentType);
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			for(DirectoryRoot source : sourceRoots) {

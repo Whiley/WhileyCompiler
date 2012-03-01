@@ -80,15 +80,26 @@ import wycore.util.*;
  * @author David J. Pearce
  * 
  */
-public final class WhileyBuilder implements Builder {
-	private final Project project;
+public final class WhileyBuilder implements Builder {	
+	
+	/**
+	 * The master namespace for identifying all resources available to the
+	 * builder. This includes all modules declared in the project being compiled
+	 * and/or defined in external resources (e.g. jar files).
+	 */
 	private final NameSpace namespace;		
+	
+	/**
+	 * The list of stages which must be applied to a Wyil file.
+	 */
 	private final List<Transform> stages;
+	
+	private Logger logger;
 	
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	private HashMap<Path.ID,Path.Entry<WhileyFile>> srcFiles = new HashMap<Path.ID,Path.Entry<WhileyFile>>();
+	private final HashMap<Path.ID, Path.Entry<WhileyFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WhileyFile>>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -98,14 +109,18 @@ public final class WhileyBuilder implements Builder {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
 		
-	public WhileyBuilder(Project project, Pipeline pipeline) {
+	public WhileyBuilder(NameSpace namespace, Pipeline pipeline) {
 		this.stages = pipeline.instantiate(this);
-		this.project = project;
-		this.namespace = project.namespace();
+		this.logger = Logger.NULL;
+		this.namespace = namespace;
 	}
 
 	public NameSpace namespace() {
 		return namespace;
+	}
+	
+	public void setLogger(Logger logger) {
+		this.logger = logger;
 	}
 	
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
@@ -129,7 +144,7 @@ public final class WhileyBuilder implements Builder {
 			}
 		}
 
-		project.logTimedMessage("Parsed " + count + " source file(s).",
+		logger.logTimedMessage("Parsed " + count + " source file(s).",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 
 		// ========================================================================
@@ -151,7 +166,7 @@ public final class WhileyBuilder implements Builder {
 			}
 		}		
 		
-		project.logTimedMessage("Typed " + count + " source file(s).",
+		logger.logTimedMessage("Typed " + count + " source file(s).",
 				System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		
 		// ========================================================================
@@ -176,7 +191,7 @@ public final class WhileyBuilder implements Builder {
 			}
 		}
 		
-		project.logTimedMessage("Generated code for " + count + " source file(s).",
+		logger.logTimedMessage("Generated code for " + count + " source file(s).",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 		
 		// ========================================================================
@@ -198,7 +213,7 @@ public final class WhileyBuilder implements Builder {
 		// ========================================================================
 		
 		long endTime = System.currentTimeMillis();
-		project.logTimedMessage("Compiled " + delta.size() + " file(s)",
+		logger.logTimedMessage("Compiled " + delta.size() + " file(s)",
 				endTime - start, memory - runtime.freeMemory());
 	}
 	
@@ -313,16 +328,16 @@ public final class WhileyBuilder implements Builder {
 		
 		try {						
 			stage.apply(module);			
-			project.logTimedMessage("[" + module.filename() + "] applied "
+			logger.logTimedMessage("[" + module.filename() + "] applied "
 					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			System.gc();
 		} catch (RuntimeException ex) {
-			project.logTimedMessage("[" + module.filename() + "] failed on "
+			logger.logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		} catch (IOException ex) {
-			project.logTimedMessage("[" + module.filename() + "] failed on "
+			logger.logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
