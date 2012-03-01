@@ -72,6 +72,7 @@ public class ClassFileLoader implements ModuleReader {
 		
 	public WyilFile read(Path.ID module, InputStream input)
 			throws IOException {
+		
 		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
 				this.readers);
 
