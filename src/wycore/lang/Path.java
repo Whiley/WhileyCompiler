@@ -157,6 +157,13 @@ public class Path {
 		public void refresh() throws Exception;
 		
 		/**
+		 * Force entry to write contents to permanent storage (where
+		 * appropriate). For items which have not been modified, this operation
+		 * has no effect (i.e. the old contents are retained).
+		 */
+		public void flush() throws Exception;
+		
+		/**
 		 * Read contents of file. Note, however, that this does not mean the
 		 * contents are re-read from permanent storage. If the contents are
 		 * already available in memory, then they will returned without

@@ -135,6 +135,12 @@ public abstract class AbstractRoot implements Root {
 		updateCache();
 	}
 	
+	public void flush() throws Exception {
+		for(int i=0;i!=nentries;++i) {
+			contents[i].flush();			
+		}
+	}
+	
 	/**
 	 * Add a newly created entry to this path.
 	 * 

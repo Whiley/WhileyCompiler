@@ -85,7 +85,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		this.methodCase = mcase;		
 		this.stores = new HashMap<String,T>();
 		this.block = mcase.body();
-		T init = initialStore();
+		T init = initialStore();		
 		propagate(0, mcase.body().size(), init, Collections.EMPTY_LIST);		
 		return mcase;
 	}		

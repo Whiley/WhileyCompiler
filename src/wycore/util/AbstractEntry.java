@@ -55,12 +55,19 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 		return contentType;
 	}
 	
-	public void refresh() {
+	public void refresh() throws Exception {
 		if(!modified) {
 			contents = null; // reset contents
 		}
 	}
-		
+	
+	public void flush() throws Exception {
+		if(modified && contents != null) {
+			contentType.write(outputStream(), contents);
+			this.modified = false;
+		}
+	}
+	
 	public T read() throws Exception {
 		if (contents == null) {
 			contents = contentType.read(this,inputStream());

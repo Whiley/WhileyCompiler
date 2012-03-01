@@ -138,15 +138,6 @@ public final class DirectoryRoot extends AbstractRoot {
 		return e;
 	}
 	
-	public void flush() throws Exception {
-		for(int i=0;i!=size();++i) {
-			Path.Entry e = get(i);
-			if(e.isModified()) {				
-				e.contentType().write(e.outputStream(),e.read());
-			}			
-		}
-	}
-	
 	protected Path.Entry<?>[] contents() throws IOException {
 		ArrayList<Path.Entry<?>> contents = new ArrayList<Path.Entry<?>>();
 		traverse(dir,Trie.ROOT,contents);
