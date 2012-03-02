@@ -23,13 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.lang;
+package wybs.lang;
 
 import java.util.List;
 import java.util.Set;
 
-import wycore.lang.Path.Filter;
-import wycore.lang.Path.ID;
+import wybs.lang.Path.Filter;
+import wybs.lang.Path.ID;
 
 /**
  * <p>

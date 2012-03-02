@@ -23,17 +23,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.util;
+package wybs.util;
 
 import java.io.*;
 import java.util.*;
 
-import wycore.lang.Content;
-import wycore.lang.Path;
-import wycore.lang.Content.Registry;
-import wycore.lang.Content.Type;
-import wycore.lang.Path.Entry;
-import wycore.lang.Path.ID;
+import wybs.lang.Content;
+import wybs.lang.Path;
+import wybs.lang.Content.Registry;
+import wybs.lang.Content.Type;
+import wybs.lang.Path.Entry;
+import wybs.lang.Path.ID;
 
 public final class DirectoryRoot extends AbstractRoot {
 	

@@ -23,14 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.util;
+package wybs.util;
 
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;
 
-import wycore.lang.Content;
-import wycore.lang.Path;
+import wybs.lang.Content;
+import wybs.lang.Path;
 
 /**
  * Represents a Jar file on the file system.

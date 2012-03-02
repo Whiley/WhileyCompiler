@@ -24,11 +24,11 @@ import java.util.*;
 import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.Automaton.State;
+import wybs.lang.Path;
+import wybs.util.Trie;
 import wyil.util.Pair;
 import wyil.util.type.*;
 import wyjvm.io.*;
-import wycore.lang.Path;
-import wycore.util.Trie;
 
 /**
  * A structural type. See

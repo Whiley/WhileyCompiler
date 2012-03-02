@@ -14,12 +14,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile.Context;
-import wycore.lang.SyntacticElement;
-import wycore.lang.SyntaxError;
-import wycore.util.ResolveError;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;

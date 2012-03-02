@@ -23,14 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.lang;
+package wybs.lang;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import wycore.lang.Path.Filter;
-import wycore.util.Trie;
+import wybs.lang.Path.Filter;
+import wybs.util.Trie;
 
 public class Content {
 

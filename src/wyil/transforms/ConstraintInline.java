@@ -28,16 +28,16 @@ package wyil.transforms;
 import java.math.BigInteger;
 import java.util.*;
 
-import wycore.lang.Builder;
-import wycore.lang.NameSpace;
-import wycore.lang.Path;
-import wycore.lang.SyntacticElement;
-import wycore.lang.SyntaxError;
-import wycore.util.ResolveError;
+import wybs.lang.Builder;
+import wybs.lang.NameSpace;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import static wycore.lang.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 import wyjc.runtime.BigRational;
 

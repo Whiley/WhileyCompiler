@@ -31,10 +31,10 @@ import java.util.*;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
+import wybs.lang.*;
+import wybs.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
-import wycore.lang.*;
-import wycore.util.*;
 
 /**
  * Responsible for managing the process of turning source files into binary code

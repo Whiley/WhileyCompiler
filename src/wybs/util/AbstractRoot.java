@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.util;
+package wybs.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,11 +32,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import wycore.lang.Content;
-import wycore.lang.Path;
-import wycore.lang.Path.Entry;
-import wycore.lang.Path.ID;
-import wycore.lang.Path.Root;
+import wybs.lang.Content;
+import wybs.lang.Path;
+import wybs.lang.Path.Entry;
+import wybs.lang.Path.ID;
+import wybs.lang.Path.Root;
 
 public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;

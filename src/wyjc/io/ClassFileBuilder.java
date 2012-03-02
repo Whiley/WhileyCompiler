@@ -31,10 +31,10 @@ import java.util.*;
 
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyVersion;
-import wycore.lang.Path;
-import wycore.lang.SyntaxError;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
 import wyil.*;
-import static wycore.lang.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Code.*;

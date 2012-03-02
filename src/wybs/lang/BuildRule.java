@@ -23,69 +23,51 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.lang;
+package wybs.lang;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import wyil.lang.Attribute;
 
 /**
- * A Syntactic Element represents any part of a source file which is relevant to
- * the syntactic structure of the file, and in particular parts we may wish to
- * add information too (e.g. line numbers, types, etc).
+ * The fundamental building block of the build system. A BuildRule identifies a set of
+ * target entries and their corresponding dependents.
  * 
  * @author David J. Pearce
  * 
  */
-public interface SyntacticElement {
+public interface BuildRule {
+
 	/**
-     * Get the list of attributes associated with this syntactice element.
-     * 
-     * @return
-     */
-	public List<Attribute> attributes();
+	 * Determine the target entries that are dependent on a given source, as
+	 * determined by this rule. If the given source is not matched by this rule
+	 * then it just returns the empty set (i.e. no dependents).
+	 * 
+	 * @param source
+	 *            --- entry to determine dependents of.
+	 * @return
+	 */
+	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> source) throws Exception;
 	
 	/**
-     * Get the first attribute of the given class type. This is useful
-     * short-hand.
-     * 
-     * @param c
-     * @return
-     */
-	public <T extends Attribute> T attribute(Class<T> c);
-	
-	public class Impl  implements SyntacticElement {
-		private List<Attribute> attributes;
-		
-		public Impl() {
-			// I use copy on write here, since for the most part I don't expect
-			// attributes to change, and hence can be safely aliased. But, when they
-			// do change I need fresh copies.
-			attributes = new CopyOnWriteArrayList<Attribute>();
-		}
-		
-		public Impl(Attribute x) {
-			attributes = new ArrayList<Attribute>();
-			attributes.add(x);
-		}
-		
-		public Impl(Collection<Attribute> attributes) {
-			this.attributes = new ArrayList<Attribute>(attributes);			
-		}
-		
-		public Impl(Attribute[] attributes) {
-			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));			
-		}
-		
-		public List<Attribute> attributes() { return attributes; }
-		
-		public <T extends Attribute> T attribute(Class<T> c) {
-			for(Attribute a : attributes) {
-				if(c.isInstance(a)) {
-					return (T) a;
-				}
-			}
-			return null;
-		}		
-	}
+	 * <p>
+	 * Given a complete list of targets scheduled for recompilation, apply this
+	 * rule. This will compile all targets in the list which are matched by this
+	 * rule, and which do not depend on other schedule targets not not matched
+	 * by this rule.
+	 * </p>
+	 * 
+	 * <p>
+	 * An entry should only be rebuilt if one or more of its dependents have a
+	 * modification date after their corresponding target (as defined by this
+	 * rule). If at least such one dependent, then it must be recompiled to
+	 * produce an updated target.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> this rule must remove any entries from the
+	 * <code>targets</code> list that it has rebuilt.
+	 * </p>
+	 * 
+	 * @throws Exception
+	 */
+	public void apply(Set<Path.Entry<?>> targets) throws Exception;
 }

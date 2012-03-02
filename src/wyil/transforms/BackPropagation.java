@@ -25,14 +25,14 @@
 
 package wyil.transforms;
 
-import static wycore.lang.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 
 import java.util.*;
 
-import wycore.lang.Builder;
-import wycore.lang.Path;
-import wycore.lang.SyntacticElement;
-import wycore.util.Trie;
+import wybs.lang.Builder;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
+import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;

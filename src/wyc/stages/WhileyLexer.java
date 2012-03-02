@@ -29,7 +29,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wycore.lang.SyntaxError;
+import wybs.lang.SyntaxError;
 import wyjc.runtime.BigRational;
 
 /**

@@ -28,11 +28,11 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
+import wybs.lang.*;
+import wybs.lang.SyntaxError.InternalFailure;
+import wybs.util.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
-import wycore.lang.*;
-import wycore.lang.SyntaxError.InternalFailure;
-import wycore.util.*;
 import wyil.Pipeline;
 import wyil.lang.WyilFile;
 

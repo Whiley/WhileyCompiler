@@ -23,69 +23,41 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.util;
+package wybs.lang;
 
-import wycore.lang.Content;
-import wycore.lang.Path.Entry;
-import wycore.lang.Path.ID;
+import java.util.Set;
 
-public abstract class AbstractEntry<T> implements Entry<T> {
-	protected final ID id;		
-	protected Content.Type<T> contentType;
-	protected T contents = null;
-	protected boolean modified = false;
+/**
+ * <p>
+ * An abstraction representing files which are the target of one or more
+ * compilation steps. The primary purpose of this abstraction is to provide a
+ * generic mechanism for extracting dependency information from such files.
+ * </p>
+ * 
+ * <p>
+ * For example, consider the following Whiley program:
+ * 
+ * <pre>
+ * int sum([real] vals):
+ *    sum = 0
+ *    for r in vals:
+ *        sum = sum + Math.round(r)
+ *    return sum
+ * </pre>
+ * 
+ * This file will generate a wyil file which, as a result of the call to
+ * <code>Math.round()</code> depends upon the wyil module
+ * <code>whiley.lang.Math</code>.
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public interface CompilationTarget {
 	
-	public AbstractEntry(ID mid) {
-		this.id = mid;
-	}
-	
-	public ID id() {
-		return id;
-	}
-	
-	public void touch() {
-		this.modified = true;
-	}
-	
-	public boolean isModified() {
-		return modified;
-	}
-	
-	public Content.Type<T> contentType() {
-		return contentType;
-	}
-	
-	public void refresh() throws Exception {
-		if(!modified) {
-			contents = null; // reset contents
-		}
-	}
-	
-	public void flush() throws Exception {
-		if(modified && contents != null) {
-			contentType.write(outputStream(), contents);
-			this.modified = false;
-		}
-	}
-	
-	public T read() throws Exception {
-		if (contents == null) {
-			contents = contentType.read(this,inputStream());
-		}
-		return contents;
-	}		
-			
-	public void write(T contents) throws Exception {
-		this.modified = true;
-		this.contents = contents; 
-	}
-	
-	public void associate(Content.Type<T> contentType, T contents) {
-		if(this.contentType != null) {
-			throw new IllegalArgumentException("content type already associated with this entry");
-		}
-		this.contentType = contentType;
-		this.contents = contents;
-	}	
+	/**
+	 * Return the set of entries on which this compilation target depends.
+	 * @return
+	 */
+	public Set<Path.Entry<?>> dependencies();
 }
-

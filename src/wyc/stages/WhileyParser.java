@@ -29,12 +29,12 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
+import wybs.util.Trie;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.*;
-import wycore.lang.Path;
-import wycore.lang.SyntaxError;
-import wycore.util.Trie;
 import wyil.lang.*;
 import wyil.util.*;
 import wyjc.runtime.BigRational;

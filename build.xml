@@ -84,7 +84,7 @@
 
   <target name="doc">
     <javadoc
-       packagenames="wyc.*,wycore.*,wyil.*,,wyone.*,wyjc.*,wyjvm.*,wyautl.*"
+       packagenames="wyc.*,wybs.*,wyil.*,,wyone.*,wyjc.*,wyjvm.*,wyautl.*"
        excludepackagenames="wyjc.testing.*,wyil.testing.*"
        sourcepath="src/"
        destdir="docs/api"

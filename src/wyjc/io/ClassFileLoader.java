@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import wyautl.io.BinaryAutomataReader;
-import wycore.lang.Path;
+import wybs.lang.Path;
 import wyil.io.ModuleReader;
 import wyil.lang.Attribute;
 import wyil.lang.WyilFile;

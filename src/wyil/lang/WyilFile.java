@@ -30,9 +30,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
-import wycore.lang.Content;
-import wycore.lang.Path;
-import wycore.lang.SyntacticElement;
+import wybs.lang.Content;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
 import wyil.util.*;
 import wyjc.io.ClassFileBuilder;
 import wyjc.io.ClassFileLoader;

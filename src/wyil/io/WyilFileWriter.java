@@ -28,7 +28,7 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
-import wycore.lang.Path;
+import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.WyilFile.*;
 import wyil.Transform;

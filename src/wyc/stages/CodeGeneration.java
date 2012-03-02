@@ -29,12 +29,12 @@ import java.util.*;
 
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
 import wyc.builder.*;
 import wyc.lang.*;
 import wyc.lang.Stmt.*;
-import wycore.lang.SyntacticElement;
-import wycore.lang.SyntaxError;
-import wycore.util.ResolveError;
 import wyil.util.*;
 import wyil.lang.*;
 import wyc.lang.WhileyFile.*;

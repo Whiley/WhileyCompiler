@@ -27,14 +27,14 @@ package wyil.transforms;
 
 import java.util.*;
 
-import wycore.lang.Builder;
-import wycore.lang.Path;
-import wycore.lang.SyntaxError;
+import wybs.lang.Builder;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.util.Pair;
-import static wycore.lang.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 /**

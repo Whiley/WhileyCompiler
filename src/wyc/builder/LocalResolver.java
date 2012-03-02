@@ -10,13 +10,13 @@ import java.util.HashSet;
 import java.util.List;
 
 import wyil.lang.WyilFile;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
+import wybs.util.Trie;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
-import wycore.lang.Path;
-import wycore.lang.SyntacticElement;
-import wycore.lang.SyntaxError;
-import wycore.util.ResolveError;
-import wycore.util.Trie;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;

@@ -25,17 +25,17 @@
 
 package wyc.stages;
 
-import static wycore.lang.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
 import wyc.builder.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
-import wycore.lang.SyntacticElement;
-import wycore.lang.SyntaxError;
-import wycore.util.ResolveError;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;

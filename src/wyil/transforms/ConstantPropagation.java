@@ -25,13 +25,13 @@
 
 package wyil.transforms;
 
-import static wycore.lang.SyntaxError.internalFailure;
+import static wybs.lang.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;
 
-import wycore.lang.Builder;
-import wycore.lang.Path;
+import wybs.lang.Builder;
+import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;

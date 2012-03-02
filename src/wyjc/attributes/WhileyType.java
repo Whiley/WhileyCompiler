@@ -31,7 +31,7 @@ import java.util.*;
 
 import wyautl.io.*;
 import wyautl.lang.*;
-import wycore.util.Trie;
+import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyjvm.io.*;

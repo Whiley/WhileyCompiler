@@ -12,16 +12,16 @@ import java.util.*;
 
 import wyautl.lang.Automata;
 import wyautl.lang.Automaton;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
+import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
-import wycore.lang.Path;
-import wycore.lang.SyntaxError;
-import wycore.util.ResolveError;
-import wycore.util.Trie;
 
 /**
  * <p>

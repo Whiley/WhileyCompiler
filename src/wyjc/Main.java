@@ -29,16 +29,16 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 
+import wybs.lang.*;
+import wybs.util.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
-import wycore.lang.*;
-import wycore.util.*;
 import wyil.*;
 import wyil.lang.WyilFile;
 import wyil.util.*;
+import static wybs.lang.SyntaxError.*;
 import static wyc.util.OptArg.*;
-import static wycore.lang.SyntaxError.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line

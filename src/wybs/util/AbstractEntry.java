@@ -23,12 +23,69 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/**
- * <b>The Whiley Build System</b>. This provides a generic and flexible build
- * system which underpins the Whiley compiler. The need for such a build system
- * stems from a requirement to integrate the Whiley compiler with different
- * tools (e.g. Ant, Eclipse, etc).
- * 
- * @author David J. Pearce
- */
-package wycore;
+package wybs.util;
+
+import wybs.lang.Content;
+import wybs.lang.Path.Entry;
+import wybs.lang.Path.ID;
+
+public abstract class AbstractEntry<T> implements Entry<T> {
+	protected final ID id;		
+	protected Content.Type<T> contentType;
+	protected T contents = null;
+	protected boolean modified = false;
+	
+	public AbstractEntry(ID mid) {
+		this.id = mid;
+	}
+	
+	public ID id() {
+		return id;
+	}
+	
+	public void touch() {
+		this.modified = true;
+	}
+	
+	public boolean isModified() {
+		return modified;
+	}
+	
+	public Content.Type<T> contentType() {
+		return contentType;
+	}
+	
+	public void refresh() throws Exception {
+		if(!modified) {
+			contents = null; // reset contents
+		}
+	}
+	
+	public void flush() throws Exception {
+		if(modified && contents != null) {
+			contentType.write(outputStream(), contents);
+			this.modified = false;
+		}
+	}
+	
+	public T read() throws Exception {
+		if (contents == null) {
+			contents = contentType.read(this,inputStream());
+		}
+		return contents;
+	}		
+			
+	public void write(T contents) throws Exception {
+		this.modified = true;
+		this.contents = contents; 
+	}
+	
+	public void associate(Content.Type<T> contentType, T contents) {
+		if(this.contentType != null) {
+			throw new IllegalArgumentException("content type already associated with this entry");
+		}
+		this.contentType = contentType;
+		this.contents = contents;
+	}	
+}
+

@@ -25,7 +25,7 @@
 
 package wyil.util.dfa;
 
-import static wycore.lang.SyntaxError.internalFailure;
+import static wybs.lang.SyntaxError.internalFailure;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,8 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wycore.lang.Path;
-import wycore.lang.SyntaxError;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;

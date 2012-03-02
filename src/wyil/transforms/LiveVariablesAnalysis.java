@@ -28,11 +28,11 @@ package wyil.transforms;
 import java.util.*;
 
 
-import static wycore.lang.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
-import wycore.lang.Builder;
-import wycore.lang.Path;
+import wybs.lang.Builder;
+import wybs.lang.Path;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.WyilFile;

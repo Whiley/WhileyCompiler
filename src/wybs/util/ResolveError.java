@@ -23,51 +23,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.lang;
-
-import java.util.*;
+package wybs.util;
 
 /**
- * The fundamental building block for a project. A BuildRule identifies a set of
- * target entries and their corresponding dependents.
+ * A resolve error is thrown by the ModuleLoader, when it was unable to resolve
+ * a given class or package. This generally indicates some kind of compile time
+ * error (e.g. trying to import from module that doesn't exist). However, it
+ * could also indicate that the WHILEYPATH is not configured correctly.
  * 
  * @author David J. Pearce
  * 
  */
-public interface BuildRule {
-
-	/**
-	 * Determine the target entries that are dependent on a given source, as
-	 * determined by this rule. If the given source is not matched by this rule
-	 * then it just returns the empty set (i.e. no dependents).
-	 * 
-	 * @param source
-	 *            --- entry to determine dependents of.
-	 * @return
-	 */
-	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> source) throws Exception;
-	
-	/**
-	 * <p>
-	 * Given a complete list of targets scheduled for recompilation, apply this
-	 * rule. This will compile all targets in the list which are matched by this
-	 * rule, and which do not depend on other schedule targets not not matched
-	 * by this rule.
-	 * </p>
-	 * 
-	 * <p>
-	 * An entry should only be rebuilt if one or more of its dependents have a
-	 * modification date after their corresponding target (as defined by this
-	 * rule). If at least such one dependent, then it must be recompiled to
-	 * produce an updated target.
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>NOTE:</b> this rule must remove any entries from the
-	 * <code>targets</code> list that it has rebuilt.
-	 * </p>
-	 * 
-	 * @throws Exception
-	 */
-	public void apply(Set<Path.Entry<?>> targets) throws Exception;
+public class ResolveError extends Exception {
+	public ResolveError(String msg) {
+		super(msg);
+	}
+	public ResolveError(String msg, Throwable ex) {
+		super(msg,ex);
+	}
 }

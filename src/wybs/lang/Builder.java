@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycore.lang;
+package wybs.lang;
 
 import java.util.*;
 
@@ -31,9 +31,9 @@ import wyil.util.Pair;
 
 /**
  * <p>
- * A builder is responsible for transforming files from one content type to
- * another. Typically this revolves around compiling the source file into some
- * kind of binary, although other kinds of transformations are possible.
+ * Responsible for transforming files from one content type to another.
+ * Typically this revolves around compiling the source file into some kind of
+ * binary, although other kinds of transformations are possible.
  * </p>
  * 
  * <p>

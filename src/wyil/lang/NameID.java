@@ -25,7 +25,7 @@
 
 package wyil.lang;
 
-import wycore.lang.Path;
+import wybs.lang.Path;
 
 /**
  * A Name Identifier consists of a module, and a name within that module. The

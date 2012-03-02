@@ -3,10 +3,10 @@ package wyc.builder;
 import java.util.*;
 
 import wyil.lang.WyilFile;
+import wybs.lang.Path;
+import wybs.util.ResolveError;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
-import wycore.lang.Path;
-import wycore.util.ResolveError;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Value;
