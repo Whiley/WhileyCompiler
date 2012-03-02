@@ -332,12 +332,11 @@ public class Main {
 			roots.addAll(bootpath);
 			
 			// finally, construct the project	
-			NameSpace namespace = new StandardNameSpace(roots) {        		
+			SimpleProject project = new SimpleProject(roots) {        		
         		public Path.ID create(String s) {
         			return Trie.fromString(s);
         		}
-        	};
-			Project project = new Project(namespace);			
+        	};		
 
 			// now, initialise builder appropriately
 			Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
@@ -346,7 +345,7 @@ public class Main {
 				pipeline.apply(pipelineModifiers);
 			}
 	
-			WhileyBuilder builder = new WhileyBuilder(project.namespace(),pipeline);	
+			WhileyBuilder builder = new WhileyBuilder(project,pipeline);	
 			
 			if(verbose) {			
 				builder.setLogger(new Logger.Default(System.err));
@@ -389,7 +388,7 @@ public class Main {
 		
 			// finally, let's compile some files!!!					
 			project.build(sources);
-			project.namespace().flush(); // flush all built components to disk
+			project.flush(); // flush all built components to disk
 		} catch (InternalFailure e) {
 			e.outputSourceError(errout);
 			if (verbose) {

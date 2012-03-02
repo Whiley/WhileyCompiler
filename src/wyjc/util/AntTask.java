@@ -186,14 +186,13 @@ public class AntTask extends MatchingTask {
         	roots.addAll(bootpath);
     		        	
     		// second, construct the module loader    		
-    		Project project = new Project(new StandardNameSpace(roots));    		
-
+    		SimpleProject project = new SimpleProject(roots);    		
     		
     		// third, initialise the pipeline    		    	
     		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
     		
     		// fourth initialise the builder
-    		WhileyBuilder builder = new WhileyBuilder(project.namespace(),pipeline);
+    		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
     		
     		if(verbose) {			
     			builder.setLogger(new Logger.Default(System.err));
@@ -230,7 +229,7 @@ public class AntTask extends MatchingTask {
 			
     		// finally, compile away!
     		project.build(sources);
-    		project.namespace().flush(); // force all built components to disk
+    		project.flush(); // force all built components to disk
     		
     		return true;
     	} catch (InternalFailure e) {
