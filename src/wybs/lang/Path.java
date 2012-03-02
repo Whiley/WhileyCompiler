@@ -79,17 +79,16 @@ public class Path {
 	}
 	
 	/**
-	 * Represents a physical item of some sort which is reachable from root on
-	 * the WHILEYPATH which corresponds to a Whiley Module. Valid instances of
-	 * <code>Entry</code> may correspond to files on the file system, entries in
-	 * a Jar file, or abstractions from other tools (e.g. eclipse's
-	 * <code>IFile</code>).
+	 * Represents a physical item of some sort which is reachable from a
+	 * <code>Root</code>. Valid instances of <code>Entry</code> may correspond
+	 * to files on the file system, entries in a Jar file, or abstractions from
+	 * other tools (e.g. eclipse's <code>IFile</code>).
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	public interface Entry<T> {
-		
+
 		/**
 		 * Return the identify of this entry.
 		 * 
@@ -104,42 +103,42 @@ public class Path {
 		 * @return
 		 */
 		public String suffix();
-		
+
 		/**
 		 * Return a string indicating the true location of this entry.
 		 * 
 		 * @return
 		 */
 		public String location();
-		
+
 		/**
 		 * Get the last modification time for this file.
 		 * 
 		 * @return
 		 */
 		public long lastModified();
-		
+
 		/**
 		 * Check whether this file has been modified or not.
 		 * 
 		 * @return
 		 */
 		public boolean isModified();
-		
+
 		/**
 		 * Mark this entry as being modified.
 		 * 
 		 * @return
 		 */
 		public void touch();
-		
+
 		/**
 		 * Get the content type associated with this file. This provides a
 		 * generic mechanism for describing the information contained within the
 		 * file.
 		 */
 		public Content.Type<T> contentType();
-		
+
 		/**
 		 * Associate this entry with a content type, and optionally provide the
 		 * contents. The ability to provide the contents is a convenience
@@ -152,21 +151,21 @@ public class Path {
 		 *            --- contents to associate, or null if none.
 		 */
 		public void associate(Content.Type<T> contentType, T contents);
-		
+
 		/**
 		 * Force entry to refresh contents from permanent storage (where
 		 * appropriate). For items which has been modified, this operation has
 		 * no effect (i.e. the new contents are retained).
 		 */
 		public void refresh() throws Exception;
-		
+
 		/**
 		 * Force entry to write contents to permanent storage (where
 		 * appropriate). For items which have not been modified, this operation
 		 * has no effect (i.e. the old contents are retained).
 		 */
 		public void flush() throws Exception;
-		
+
 		/**
 		 * Read contents of file. Note, however, that this does not mean the
 		 * contents are re-read from permanent storage. If the contents are
@@ -174,7 +173,7 @@ public class Path {
 		 * accessing permanent storage.
 		 */
 		public T read() throws Exception;
-			
+
 		/**
 		 * Write the contents of this entry. It is assumed that the contents
 		 * matches the content-type given for this entry. Finally, note also
@@ -184,7 +183,7 @@ public class Path {
 		 * @param contents
 		 */
 		public void write(T contents) throws Exception;
-		
+
 		/**
 		 * Open a generic input stream to the entry.
 		 * 
@@ -192,7 +191,7 @@ public class Path {
 		 * @throws Exception
 		 */
 		public InputStream inputStream() throws Exception;
-		
+
 		/**
 		 * Open a generic output stream to the entry.
 		 * 
@@ -200,8 +199,8 @@ public class Path {
 		 * @throws Exception
 		 */
 		public OutputStream outputStream() throws Exception;
-	}	
-	
+	}
+
 	/**
 	 * Represents the root of a hierarchy of named entries. A instance of root
 	 * may correspond to a file system directory, a Jar file, or some other
@@ -211,23 +210,25 @@ public class Path {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public interface Root {		
-		
+	public interface Root {
+
 		/**
 		 * Check whether or not a given entry is contained in this root;
+		 * 
 		 * @param entry
 		 * @return
 		 */
 		public boolean contains(Path.Entry<?> entry);
-		
+
 		/**
-		 * Check whether or not a given entry and content-type is contained in this root.
+		 * Check whether or not a given entry and content-type is contained in
+		 * this root.
 		 * 
 		 * @throws Exception
 		 *             --- in case of some failure (e.g. IOException).
 		 */
 		public boolean exists(ID id, Content.Type<?> ct) throws Exception;
-		
+
 		/**
 		 * Get the entry corresponding to a given ID and content type. If no
 		 * such entry exists, return null.
@@ -240,8 +241,9 @@ public class Path {
 		 * @throws Exception
 		 *             --- in case of some failure (e.g. IOException).
 		 */
-		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception;
-		
+		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct)
+				throws Exception;
+
 		/**
 		 * Get all objects matching a given content filter stored in this root.
 		 * In the case of no matches, an empty list is returned.
@@ -252,8 +254,9 @@ public class Path {
 		 * @param ct
 		 * @return
 		 */
-		public <T> List<Path.Entry<T>> get(Content.Filter<T> ct) throws Exception;
-		
+		public <T> List<Path.Entry<T>> get(Content.Filter<T> ct)
+				throws Exception;
+
 		/**
 		 * Identify all entries matching a given content filter stored in this
 		 * root. In the case of no matches, an empty set is returned.
@@ -265,8 +268,9 @@ public class Path {
 		 *            --- filter to match entries with.
 		 * @return
 		 */
-		public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception;
-		
+		public <T> Set<Path.ID> match(Content.Filter<T> filter)
+				throws Exception;
+
 		/**
 		 * Create an entry of a given content type at a given path. If the entry
 		 * already exists, then it is just returned.
@@ -278,8 +282,9 @@ public class Path {
 		 * @return
 		 * @throws Exception
 		 */
-		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct) throws Exception;
-		
+		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct)
+				throws Exception;
+
 		/**
 		 * Force root to flush entries to permanent storage (where appropriate).
 		 * This is essential as, at any given moment, path entries may only be
@@ -287,7 +292,7 @@ public class Path {
 		 * changes that were made.
 		 */
 		public void flush() throws Exception;
-		
+
 		/**
 		 * Force root to refresh entries from permanent storage (where
 		 * appropriate). For items which has been modified, this operation has
@@ -295,12 +300,12 @@ public class Path {
 		 */
 		public void refresh() throws Exception;
 	}
-	
+
 	/**
-	 * A path filter is a generic mechanism for selecting one or more paths. For
-	 * example, one might specify an includes="whiley/**\/*.whiley" filter on a
-	 * given root to identify which source files should be compiled. This would
-	 * be implemented using either a content or path filter.
+	 * A generic mechanism for selecting one or more paths. For example, one
+	 * might specify an includes="whiley/**\/*.whiley" filter on a given root to
+	 * identify which source files should be compiled. This would be implemented
+	 * using either a content or path filter.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -314,8 +319,7 @@ public class Path {
 		 *            --- id to test.
 		 * @return --- true if it matches, otherwise false.
 		 */
-		public boolean matches(Path.ID id);		
+		public boolean matches(Path.ID id);
 	}
 
-	
 }
