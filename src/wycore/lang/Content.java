@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import wycore.lang.Path.Filter;
+import wycore.util.Trie;
 
 public class Content {
 
@@ -88,9 +89,6 @@ public class Content {
 	 */
 	public static <T> Filter<T> filter(final Path.Filter filter, final Content.Type<T> contentType) {
 		return new Filter<T>() {
-			public boolean matches(Path.ID id) {
-				return filter.matches(id);
-			}
 			public boolean matches(Path.ID id, Content.Type<T> ct) {
 				return ct == contentType && filter.matches(id);
 			}
@@ -100,6 +98,61 @@ public class Content {
 		};
 	}	
 	
+	/**
+	 * Construct a content filter from a string representing a path filter and a content type.
+	 * 
+	 * @param filter --- path filter
+	 * @param contentType
+	 * @return
+	 */
+	public static <T> Filter<T> filter(final String pathFilter, final Content.Type<T> contentType) {
+		final Path.Filter filter = Trie.fromString(pathFilter);
+		return new Filter<T>() {
+			public boolean matches(Path.ID id, Content.Type<T> ct) {
+				return ct == contentType && filter.matches(id);
+			}
+			public String toString() {
+				return filter.toString();
+			}
+		};
+	}	
+	/**
+	 * Combine two filters together produce one filter whose items must be
+	 * matched by at least one of the original filters.
+	 * 
+	 * @param f1
+	 * @param f2
+	 * @return
+	 */
+	public static <T> Filter<T> or(final Filter<T> f1, final Filter<T> f2) {
+		return new Filter<T>() {
+			public boolean matches(Path.ID id, Content.Type<T> ct) {
+				return f1.matches(id, ct) || f2.matches(id, ct);
+			}
+			public String toString() {
+				return f1.toString() + "|" + f2.toString();
+			}
+		};
+	}
+	
+	/**
+	 * Combine two filters together produce one filter whose items must be
+	 * matched by both of the original filters.
+	 * 
+	 * @param f1
+	 * @param f2
+	 * @return
+	 */
+	public static <T> Filter<T> and(final Filter<T> f1, final Filter<T> f2) {
+		return new Filter<T>() {
+			public boolean matches(Path.ID id, Content.Type<T> ct) {
+				return f1.matches(id, ct) && f2.matches(id, ct);
+			}
+			public String toString() {
+				return f1.toString() + "&" + f2.toString();
+			}
+		};
+	}
 	/**
 	 * <p>
 	 * A content registry is responsible for associating content types to path
