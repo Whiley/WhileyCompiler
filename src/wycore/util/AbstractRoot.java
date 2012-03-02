@@ -47,12 +47,12 @@ public abstract class AbstractRoot implements Root {
 		this.contentTypes = contentTypes;
 	}
 	
-	public int size() throws Exception {
+	public int size() throws Exception{
 		updateCache();
 		return nentries;
 	}
 			
-	public Path.Entry<?> get(int index) throws Exception {
+	public Path.Entry<?> get(int index) throws Exception{
 		updateCache();
 		return contents[index];
 	}		
@@ -72,7 +72,7 @@ public abstract class AbstractRoot implements Root {
 		return false;
 	}
 	
-	public boolean exists(ID id, Content.Type<?> ct) throws Exception {		
+	public boolean exists(ID id, Content.Type<?> ct) throws Exception{		
 		updateCache();
 		
 		int idx = binarySearch(contents,nentries,id);
@@ -88,7 +88,7 @@ public abstract class AbstractRoot implements Root {
 		return false;
 	}
 	
-	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception {		
+	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception{		
 		updateCache();			
 	
 		int idx = binarySearch(contents,nentries,id);
@@ -104,7 +104,7 @@ public abstract class AbstractRoot implements Root {
 		return null;
 	}
 	
-	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws Exception {		
+	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws Exception{		
 		updateCache();
 			
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
@@ -117,7 +117,7 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}
 	
-	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception {		
+	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception{		
 		updateCache();
 					
 		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
@@ -131,11 +131,11 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}	
 	
-	public void refresh() throws Exception {
+	public void refresh() throws Exception{
 		updateCache();
 	}
 	
-	public void flush() throws Exception {
+	public void flush() throws Exception{
 		for(int i=0;i!=nentries;++i) {
 			contents[i].flush();			
 		}
@@ -146,7 +146,7 @@ public abstract class AbstractRoot implements Root {
 	 * 
 	 * @param entry
 	 */
-	protected void insert(Path.Entry<?> entry) throws Exception {
+	protected void insert(Path.Entry<?> entry) throws Exception{
 		updateCache();
 		
 		Path.ID id = entry.id();
@@ -172,7 +172,7 @@ public abstract class AbstractRoot implements Root {
 		nentries++;
 	}
 	
-	private final void updateCache() throws Exception {
+	private final void updateCache() throws Exception{
 		if(contents == null) {
 			contents = contents();			
 			nentries = contents.length;

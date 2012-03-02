@@ -30,10 +30,10 @@ import wycore.lang.Path.Entry;
 import wycore.lang.Path.ID;
 
 public abstract class AbstractEntry<T> implements Entry<T> {
-	private final ID id;		
-	private Content.Type<T> contentType;
-	private T contents = null;
-	private boolean modified = false;
+	protected final ID id;		
+	protected Content.Type<T> contentType;
+	protected T contents = null;
+	protected boolean modified = false;
 	
 	public AbstractEntry(ID mid) {
 		this.id = mid;
