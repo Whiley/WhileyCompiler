@@ -198,14 +198,19 @@ public class AntTask extends MatchingTask {
     			builder.setLogger(new Logger.Default(System.err));
     		}
     		
-    		Content.Filter<WhileyFile> includesFilter = Content.filter(Trie.fromString(includes), WhileyFile.ContentType);
-    		Content.Filter<WhileyFile> excludesFilter = excludes == null ? null : Content.filter(Trie.fromString(excludes), WhileyFile.ContentType);
-			StandardBuildRule rule = new StandardBuildRule(builder);			
-			if(target != null) {
-				rule.add(source,  includesFilter, excludesFilter, target, WyilFile.ContentType);
+			Content.Filter<WhileyFile> includesFilter = Content.filter(
+					Trie.fromString(includes), WhileyFile.ContentType);
+			Content.Filter<WhileyFile> excludesFilter = excludes == null ? null
+					: Content.filter(Trie.fromString(excludes),
+							WhileyFile.ContentType);
+			StandardBuildRule rule = new StandardBuildRule(builder);
+			if (target != null) {
+				rule.add(source, includesFilter, excludesFilter, target,
+						WyilFile.ContentType);
 			} else {
-				rule.add(source,  includesFilter, excludesFilter, source, WyilFile.ContentType);
-			}			
+				rule.add(source, includesFilter, excludesFilter, source,
+						WyilFile.ContentType);
+			}
 			project.add(rule);
     		
 			// Now, touch all source files which have modification date after
@@ -250,9 +255,6 @@ public class AntTask extends MatchingTask {
     			e.printStackTrace(System.err);
     		}
     		return false;
-    	}
-    	
-    	
+    	}    	
     }
-    
 }
