@@ -32,8 +32,9 @@ import java.util.*;
 public class Path {
 	
 	/**
-	 * A Path ID represents a sequence of zero or more names which describe a
-	 * path through the namespace for a given project.
+	 * Represents a sequence of zero or more names which describe a path through
+	 * the namespace for a given project. For example, "whiley/lang/Math" is a
+	 * valid ID with three components: "whiley","lang","Math".
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -78,8 +79,11 @@ public class Path {
 	}
 	
 	/**
-	 * A path entry represents an item reachable from root on the WHILEYPATH
-	 * which corresponds to a Whiley Module.
+	 * Represents a physical item of some sort which is reachable from root on
+	 * the WHILEYPATH which corresponds to a Whiley Module. Valid instances of
+	 * <code>Entry</code> may correspond to files on the file system, entries in
+	 * a Jar file, or abstractions from other tools (e.g. eclipse's
+	 * <code>IFile</code>).
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -199,10 +203,13 @@ public class Path {
 	}	
 	
 	/**
-	 * Represents the root of a hierarchy of named objects. 
+	 * Represents the root of a hierarchy of named entries. A instance of root
+	 * may correspond to a file system directory, a Jar file, or some other
+	 * abstraction representings a collection of files (e.g. eclipse's
+	 * <code>IContainer</code>).
 	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
 	public interface Root {		
 		
