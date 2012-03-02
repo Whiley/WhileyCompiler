@@ -35,7 +35,7 @@ import wybs.util.Trie;
 public class Content {
 
 	/**
-	 * A content type provides an abstract mechanism for reading and writing file in
+	 * Provides an abstract mechanism for reading and writing file in
 	 * a given format. Whiley source files (*.whiley) are one example, whilst JVM
 	 * class files (*.class) are another.
 	 * 
@@ -67,10 +67,13 @@ public class Content {
 		 */
 		public void write(OutputStream output, T value) throws IOException;		
 	}
-	
+
 	/**
-	 * A content filter is a generic mechanism for selecting a subset of content
-	 * based on a path filter and a content type.
+	 * A generic mechanism for selecting a subset of content based on a path
+	 * filter and a content type. For example, one might specify an
+	 * includes="whiley/**\/*.whiley" filter on a given root to identify which
+	 * source files should be compiled. This would be implemented using either a
+	 * content or path filter.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -161,12 +164,13 @@ public class Content {
 			}
 		};
 	}
+	
 	/**
 	 * <p>
-	 * A content registry is responsible for associating content types to path
-	 * entries. The simplest way to do this is to base the decision purely on
-	 * the suffix of the entry in question. A standard implementation
-	 * (wyc.util.SuffixRegistry) is provided for this common case.
+	 * Responsible for associating content types to path entries. The simplest
+	 * way to do this is to base the decision purely on the suffix of the entry
+	 * in question. A standard implementation (wyc.util.SuffixRegistry) is
+	 * provided for this common case.
 	 * </p>
 	 * 
 	 * <p>
