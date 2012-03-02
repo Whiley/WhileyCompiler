@@ -81,7 +81,7 @@ public class Path {
 	 * A path entry represents an item reachable from root on the WHILEYPATH
 	 * which corresponds to a Whiley Module.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public interface Entry<T> {
@@ -201,7 +201,7 @@ public class Path {
 	/**
 	 * Represents the root of a hierarchy of named objects. 
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public interface Root {		

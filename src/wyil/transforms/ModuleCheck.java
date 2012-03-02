@@ -53,7 +53,7 @@ import static wyil.util.ErrorMessages.*;
  * </li>
  * </ul>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ModuleCheck implements Transform {

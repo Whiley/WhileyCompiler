@@ -44,7 +44,7 @@ import wyil.lang.Type;
  * would be nice to do a better job!
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ErrorMessages {

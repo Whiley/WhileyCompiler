@@ -63,7 +63,7 @@ public interface Expr extends SyntacticElement {
 	 * An LVal is a special form of expression which may appear on the left-hand
 	 * side of an assignment.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public interface LVal extends Expr {}

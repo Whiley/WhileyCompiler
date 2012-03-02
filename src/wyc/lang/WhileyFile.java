@@ -45,7 +45,7 @@ import wyil.lang.*;
  * declarations</i>, <i>constant declarations</i>, etc. In essence, a
  * <code>WhileyFile</code> forms the root of the Abstract Syntax Tree.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class WhileyFile {
@@ -244,7 +244,7 @@ public final class WhileyFile {
 	 * Here, the package is <code>whiley.lang</code>, the module is
 	 * <code>System</code> and the name is <code>Console</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Import extends SyntacticElement.Impl implements Declaration {		
@@ -287,7 +287,7 @@ public final class WhileyFile {
 	 * Constant declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public class Constant extends
@@ -335,7 +335,7 @@ public final class WhileyFile {
 	 * non-negative integers. Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */	
 	public class TypeDef extends AbstractContext implements Declaration {
@@ -470,7 +470,7 @@ public final class WhileyFile {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Function extends FunctionOrMethod {
@@ -518,7 +518,7 @@ public final class WhileyFile {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Method extends FunctionOrMethod {
@@ -569,7 +569,7 @@ public final class WhileyFile {
 	 * and <code>private</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Message extends FunctionOrMethodOrMessage {
@@ -605,7 +605,7 @@ public final class WhileyFile {
 	 * location of the parameter in case any syntax error needs to be reported
 	 * on it.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Parameter extends AbstractContext implements Declaration {

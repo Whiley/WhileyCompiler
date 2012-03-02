@@ -157,7 +157,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	 * file may be encoded in a range of different formats. For example, it may be a
 	 * source file and/or a binary wyil file.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		

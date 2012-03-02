@@ -40,7 +40,7 @@ import wyil.util.Pair;
  * bytecodes sequentially, and traversing along all branches and exceptional
  * edges as appropriate.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class DeadCodeElimination implements Transform {

@@ -216,7 +216,7 @@ public class SyntaxError extends RuntimeException {
 	 * words, is an internal error in the compiler, rather than a mistake in the
 	 * input program.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class InternalFailure extends SyntaxError {
