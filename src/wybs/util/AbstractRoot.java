@@ -38,6 +38,13 @@ import wybs.lang.Path.Entry;
 import wybs.lang.Path.ID;
 import wybs.lang.Path.Root;
 
+/**
+ * Provides a simple implementation of <code>Path.Root</code>. This maintains a
+ * cache all entries contained in the root.
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;
 	protected Path.Entry<?>[] contents = null;

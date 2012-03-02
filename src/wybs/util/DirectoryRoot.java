@@ -35,6 +35,13 @@ import wybs.lang.Content.Type;
 import wybs.lang.Path.Entry;
 import wybs.lang.Path.ID;
 
+/**
+ * Provides an implementation of <code>Path.Root</code> for representing a file
+ * system directory.
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public final class DirectoryRoot extends AbstractRoot {
 	
 	public final static FileFilter NULL_FILTER = new FileFilter() {

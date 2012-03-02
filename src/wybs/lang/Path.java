@@ -289,6 +289,15 @@ public class Path {
 		public void refresh() throws Exception;
 	}
 	
+	/**
+	 * A path filter is a generic mechanism for selecting one or more paths. For
+	 * example, one might specify an includes="whiley/**\/*.whiley" filter on a
+	 * given root to identify which source files should be compiled. This would
+	 * be implemented using either a content or path filter.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public interface Filter {
 
 		/**

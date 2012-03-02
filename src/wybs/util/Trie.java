@@ -33,10 +33,20 @@ import wybs.lang.Path;
 
 /**
  * <p>
- * Provides a standard implementation of the Path.ID and Path.Filter interfaces. It
- * employs the <i>flyweight pattern</i> to ensure every ID can only ever
+ * Provides a standard implementation of the Path.ID and Path.Filter interfaces.
+ * It employs the <i>flyweight pattern</i> to ensure every ID can only ever
  * correspond to a single instanceof of Trie. That, it ensures that any two
  * instances which represent the same Path.ID are, in fact, the same instance.
+ * </p>
+ * <p>
+ * As the name suggests, the implementation is based around a n-ary tree where
+ * each node stores a component of a path. There is a single master root of all
+ * possible paths and all possible instances of <code>Trie</code> extend this.
+ * </p>
+ * <p>
+ * <b>NOTE:</b> the implementation does not currently attempt to garbage collect
+ * tries. Therefore, the memory consumed is proportional to the total number of
+ * distinct tries created throughout the program's life
  * </p>
  * 
  * @author David J. Pearce

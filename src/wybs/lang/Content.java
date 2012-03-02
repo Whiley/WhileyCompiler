@@ -68,6 +68,14 @@ public class Content {
 		public void write(OutputStream output, T value) throws IOException;		
 	}
 	
+	/**
+	 * A content filter is a generic mechanism for selecting a subset of content
+	 * based on a path filter and a content type.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 */
 	public interface Filter<T> {
 
 		/**

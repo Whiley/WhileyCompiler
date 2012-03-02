@@ -33,10 +33,11 @@ import wybs.lang.Content;
 import wybs.lang.Path;
 
 /**
- * Represents a Jar file on the file system.
+ * Provides an implementation of <code>Path.Root</code> for representing the
+ * contents of a jar file.
  * 
- * @author djp
- *
+ * @author David J. Pearce
+ * 
  */
 public final class JarFileRoot extends AbstractRoot implements Path.Root {	
 	private final JarFile jf;

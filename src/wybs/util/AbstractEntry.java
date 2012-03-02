@@ -29,6 +29,15 @@ import wybs.lang.Content;
 import wybs.lang.Path.Entry;
 import wybs.lang.Path.ID;
 
+/**
+ * Provides a simple implementation of <code>Path.Entry</code>. This caches
+ * content in a field and employs a <code>modifies</code> bit to determine if
+ * that content needs to be written to permanent storage.
+ * 
+ * @author David J. Pearce
+ * 
+ * @param <T>
+ */
 public abstract class AbstractEntry<T> implements Entry<T> {
 	protected final ID id;		
 	protected Content.Type<T> contentType;
