@@ -25,9 +25,10 @@
 
 package wybs.util;
 
+import java.util.*;
+import wybs.lang.Path;
+
 import wybs.lang.Content;
-import wybs.lang.Path.Entry;
-import wybs.lang.Path.ID;
 
 /**
  * Provides a simple implementation of <code>Path.Entry</code>. This caches
@@ -38,17 +39,17 @@ import wybs.lang.Path.ID;
  * 
  * @param <T>
  */
-public abstract class AbstractEntry<T> implements Entry<T> {
-	protected final ID id;		
+public abstract class AbstractEntry<T> implements Path.Entry<T> {
+	protected final Path.ID id;		
 	protected Content.Type<T> contentType;
 	protected T contents = null;
 	protected boolean modified = false;
 	
-	public AbstractEntry(ID mid) {
+	public AbstractEntry(Path.ID mid) {
 		this.id = mid;
 	}
 	
-	public ID id() {
+	public Path.ID id() {
 		return id;
 	}
 	
@@ -96,5 +97,11 @@ public abstract class AbstractEntry<T> implements Entry<T> {
 		this.contentType = contentType;
 		this.contents = contents;
 	}	
+	
+	public Set<Path.Entry<?>> dependents() {
+		return Collections.EMPTY_SET;
+	}
+	public Set<Path.Entry<?>> dependencies() {
+		return Collections.EMPTY_SET;
+	}
 }
-

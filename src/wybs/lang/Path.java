@@ -153,6 +153,23 @@ public class Path {
 		public void associate(Content.Type<T> contentType, T contents);
 
 		/**
+		 * Return those entries (if any) which depend upon this entry. That is, if
+		 * this entry is modified, then those entries should be rebuilt.
+		 * 
+		 * @return
+		 */
+		public Set<Path.Entry<?>> dependents();
+		
+		/**
+		 * Return those entries (if any) upon which this entry depends. That is,
+		 * if any of those entries are modified, then this entry should also be
+		 * rebuilt.
+		 * 
+		 * @return
+		 */
+		public Set<Path.Entry<?>> dependencies();
+		
+		/**
 		 * Force entry to refresh contents from permanent storage (where
 		 * appropriate). For items which has been modified, this operation has
 		 * no effect (i.e. the new contents are retained).
