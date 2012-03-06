@@ -52,7 +52,7 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		this.jf = dir;		
 	}
 
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws Exception {
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,Path.Entry<?>... sources) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 	

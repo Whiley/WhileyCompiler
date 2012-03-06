@@ -162,7 +162,7 @@ public class Path {
 		
 		/**
 		 * Return those entries (if any) upon which this entry depends. That is,
-		 * if any of those entries are modified, then this entry should also be
+		 * if any of those entries are modified, then this entry should be
 		 * rebuilt.
 		 * 
 		 * @return
@@ -289,19 +289,23 @@ public class Path {
 				throws Exception;
 
 		/**
-		 * Create an entry of a given content type at a given path. If the entry
-		 * already exists, then it is just returned.
+		 * Create an entry of a given content type at a given path, derived from
+		 * zero or more entries. If the entry already exists, then it is just
+		 * returned. An entry is derived from another entry if it is, in some
+		 * way, generated from that entry (e.g. it is compiled from that file).
 		 * 
 		 * @param id
 		 *            --- Path.ID for the new entry
 		 * @param ct
 		 *            --- content type of the new entry
+		 * @param sources
+		 *            --- entries from which this entry is derived.
 		 * @return
 		 * @throws Exception
 		 */
-		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct)
+		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct, Path.Entry<?> ...sources)
 				throws Exception;
-
+		
 		/**
 		 * Force root to flush entries to permanent storage (where appropriate).
 		 * This is essential as, at any given moment, path entries may only be

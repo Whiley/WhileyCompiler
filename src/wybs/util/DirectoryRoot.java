@@ -129,7 +129,8 @@ public final class DirectoryRoot extends AbstractRoot {
 		return dir.getPath();
 	}
 
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws Exception {
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
+			Path.Entry<?>... sources) throws Exception {
 		Path.Entry<T> e = super.get(id,ct);
 		if(e == null) {			
 			String physID = id.toString();
