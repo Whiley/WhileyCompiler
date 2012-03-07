@@ -102,8 +102,8 @@ public final class CodeGeneration {
 		globalGenerator = new GlobalGenerator(loader,resolver,files);
 		
 		ArrayList<Module> modules = new ArrayList<Module>();
-		for(WhileyFile wf : files) {
-			modules.add(generate(wf));
+		for(WhileyFile wf : files) {			
+			modules.add(generate(wf));			
 		}
 		return modules;
 	}
@@ -534,6 +534,7 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNREACHABLE_CODE), localGenerator.context(), c);
 			}
 		}		
+		
 		blk.append(Code.Switch(s.expr.result().raw(),defaultTarget,cases),attributes(s));
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));		
@@ -673,6 +674,7 @@ public final class CodeGeneration {
 			
 			// FIXME: loss of nominal information
 			Type.EffectiveCollection rawSrcType = s.srcType.raw();
+			
 			// FIXME: support destructuring of lists and sets			
 			if(!(rawSrcType instanceof Type.EffectiveDictionary)) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),localGenerator.context(),s.source);

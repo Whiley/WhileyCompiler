@@ -909,7 +909,7 @@ public final class WhileyParser {
 			match(token.getClass());
 			ops.add(bitwiseOp(token));
 			exprs.add(parseShiftExpression());	
-			ends.add(index);
+			ends.add(index-1);
 		}
 		
 		Expr result = exprs.get(0);

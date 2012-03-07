@@ -686,9 +686,9 @@ public class GlobalResolver extends LocalResolver {
 			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2, context);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
 			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2, context);
-		} else if(Type.isSubtype(Type.List(Type.T_ANY, false), lub)) {
+		} else if(Type.isSubtype(Type.T_LIST_ANY, lub)) {
 			return evaluate(bop,(Value.List)v1,(Value.List)v2, context);
-		} else if(Type.isSubtype(Type.Set(Type.T_ANY, false), lub)) {
+		} else if(Type.isSubtype(Type.T_SET_ANY, lub)) {
 			return evaluate(bop,(Value.Set) v1, (Value.Set) v2, context);
 		} 
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),context,bop);
