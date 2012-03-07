@@ -27,4 +27,5 @@ package whiley.lang
 
 define Time as ref {int dummy}
 
-public native int Time::currentTime():
+// Return the current time in seconds
+public native real ::current():

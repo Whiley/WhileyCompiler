@@ -28,12 +28,13 @@ package wyc.util;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
-import wyc.Pipeline;
-import static wyc.Pipeline.*;
+
+import wyil.Pipeline;
+import static wyil.Pipeline.*;
 
 /**
- * OptArg is a small utility for parsing command-line options. It helps to take
- * some of the hassle out of building the front-end of a Whiley compiler.
+ * A small utility for parsing command-line options. It helps to take some of
+ * the hassle out of building the front-end of a Whiley compiler.
  * 
  * @author David J. Pearce
  * 

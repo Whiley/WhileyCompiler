@@ -80,6 +80,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Complex_Valid_1_RuntimeTest() { runTest("Complex_Valid_1"); }
  @Test public void Complex_Valid_2_RuntimeTest() { runTest("Complex_Valid_2"); }
  @Ignore("Known Issue") @Test public void Constant_Valid_1_RuntimeTest() { runTest("Constant_Valid_1"); }
+ @Test public void Constant_Valid_2_RuntimeTest() { runTest("Constant_Valid_2"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_2_RuntimeTest() { runTest("ConstrainedInt_Valid_2"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { runTest("ConstrainedInt_Valid_3"); }
@@ -174,6 +175,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Import_Valid_4_RuntimeTest() { runTest("Import_Valid_4"); }
  @Test public void Import_Valid_5_RuntimeTest() { runTest("Import_Valid_5"); }
  @Test public void Import_Valid_6_RuntimeTest() { runTest("Import_Valid_6"); }
+ @Test public void Import_Valid_7_RuntimeTest() { runTest("Import_Valid_7"); }
  @Ignore("Future Work") @Test public void Interface_Valid_1_RuntimeTest() { runTest("Interface_Valid_1"); }
  @Ignore("Future Work") @Test public void Intersection_Valid_1_RuntimeTest() { runTest("Intersection_Valid_1"); }
  @Ignore("Future Work") @Test public void Intersection_Valid_2_RuntimeTest() { runTest("Intersection_Valid_2"); }
@@ -193,6 +195,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAccess_Valid_1_RuntimeTest() { runTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { runTest("ListAccess_Valid_2"); }
  @Test public void ListAccess_Valid_3_RuntimeTest() { runTest("ListAccess_Valid_3"); }
+ @Test public void ListAccess_Valid_4_RuntimeTest() { runTest("ListAccess_Valid_4"); }
+ @Test public void ListAccess_Valid_5_RuntimeTest() { runTest("ListAccess_Valid_5"); }
+ @Test public void ListAccess_Valid_6_RuntimeTest() { runTest("ListAccess_Valid_6"); }
  @Test public void ListAppend_Valid_1_RuntimeTest() { runTest("ListAppend_Valid_1"); }
  @Test public void ListAppend_Valid_2_RuntimeTest() { runTest("ListAppend_Valid_2"); }
  @Test public void ListAppend_Valid_3_RuntimeTest() { runTest("ListAppend_Valid_3"); }
@@ -256,6 +261,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void OpenRecord_Valid_7_RuntimeTest() { runTest("OpenRecord_Valid_7"); }
  @Test public void OpenRecord_Valid_8_RuntimeTest() { runTest("OpenRecord_Valid_8"); }
  @Test public void OpenRecord_Valid_9_RuntimeTest() { runTest("OpenRecord_Valid_9"); }
+ @Test public void OpenRecord_Valid_10_RuntimeTest() { runTest("OpenRecord_Valid_10"); }
  @Test public void Print_Valid_1_RuntimeTest() { runTest("Print_Valid_1"); }
  @Test public void ProcessAccess_Valid_1_RuntimeTest() { runTest("ProcessAccess_Valid_1"); }
  @Test public void ProcessAccess_Valid_2_RuntimeTest() { runTest("ProcessAccess_Valid_2"); }
@@ -378,6 +384,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Switch_Valid_6_RuntimeTest() { runTest("Switch_Valid_6"); }
  @Test public void Switch_Valid_7_RuntimeTest() { runTest("Switch_Valid_7"); }
  @Test public void Switch_Valid_8_RuntimeTest() { runTest("Switch_Valid_8"); }
+ @Test public void Switch_Valid_9_RuntimeTest() { runTest("Switch_Valid_9"); }
  @Test public void TryCatch_Valid_1_RuntimeTest() { runTest("TryCatch_Valid_1"); }
  @Test public void TryCatch_Valid_2_RuntimeTest() { runTest("TryCatch_Valid_2"); }
  @Test public void TryCatch_Valid_3_RuntimeTest() { runTest("TryCatch_Valid_3"); }
@@ -389,6 +396,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TupleType_Valid_5_RuntimeTest() { runTest("TupleType_Valid_5"); }
  @Test public void TupleType_Valid_6_RuntimeTest() { runTest("TupleType_Valid_6"); }
  @Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); }
+ @Test public void TupleType_Valid_8_RuntimeTest() { runTest("TupleType_Valid_8"); }
  @Test public void TypeEquals_Valid_1_RuntimeTest() { runTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_RuntimeTest() { runTest("TypeEquals_Valid_2"); }
  @Test public void TypeEquals_Valid_3_RuntimeTest() { runTest("TypeEquals_Valid_3"); }

@@ -28,20 +28,15 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.Compiler;
-import wyc.Pipeline;
-import wyil.ModuleLoader;
-import wyil.Transform;
-import wyil.util.SyntaxError;
-import wyil.util.SyntaxError.InternalFailure;
-import wyil.util.path.BinaryDirectoryRoot;
-import wyil.util.path.Path;
-import wyil.util.path.SourceDirectoryRoot;
-import wyjc.Main;
-import wyjc.io.ClassFileLoader;
-import wyjc.transforms.ClassWriter;
+import wybs.lang.*;
+import wybs.lang.SyntaxError.InternalFailure;
+import wybs.util.*;
+import wyc.builder.WhileyBuilder;
+import wyc.lang.WhileyFile;
+import wyil.Pipeline;
+import wyil.lang.WyilFile;
 
-import org.apache.tools.ant.*;
+import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
 /**
@@ -65,8 +60,52 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * 
  */
 public class AntTask extends MatchingTask {
+	
+	/**
+	 * The master project content type registry.
+	 */
+	public static final Content.Registry registry = new Content.Registry() {
+	
+		public void associate(Path.Entry e) {
+			if(e.suffix().equals("whiley")) {
+				e.associate(WhileyFile.ContentType, null);
+			} else if(e.suffix().equals("class")) {
+				// this could be either a normal JVM class, or a Wyil class. We
+				// need to determine which.
+				try { 
+					WyilFile c = WyilFile.ContentType.read(e, e.inputStream());
+					if(c != null) {
+						e.associate(WyilFile.ContentType,c);
+					}
+				} catch(Exception ex) {
+					// hmmm, not exactly ideal
+				}
+			} 
+		}
+		
+		public String suffix(Content.Type<?> t) {
+			if(t == WhileyFile.ContentType) {
+				return "whiley";
+			} else if(t == WyilFile.ContentType) {
+				return "class";
+			} else {
+				return "dat";
+			}
+		}
+	};
+	
+	public static final FileFilter fileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".whiley") || f.getName().endsWith(".class") || f.isDirectory();
+		}
+	};
+	
+	ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
+	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
 	private File srcdir;
 	private File destdir;
+	private Content.Filter<WhileyFile> includes = Content.filter("**", WhileyFile.ContentType);
+	private Content.Filter<WhileyFile> excludes = null;
 	private boolean verbose = false;
 		
     public void setSrcdir (File srcdir) {
@@ -77,6 +116,71 @@ public class AntTask extends MatchingTask {
         this.destdir = destdir;
     }
     
+    public void setIncludes(String includes) {
+    	String[] split = includes.split(",");
+    	Content.Filter<WhileyFile> filter = null;
+    	for(String s : split) {
+    		if(s.endsWith(".whiley")) {
+    			Content.Filter<WhileyFile> f = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
+    			if(filter == null) {
+    				filter = f;
+    			} else {
+    				filter = Content.or(f, filter);
+    			}
+    		}
+    	}
+    	
+		// FIXME: it's slightly annoying that the filter could be null here. I
+		// think this indicates a limitation with the content type system I've
+		// designed.
+    	
+    	this.includes = filter;
+    }
+    
+    public void setExcludes(String excludes) {
+    	String[] split = excludes.split(",");
+    	Content.Filter<WhileyFile> filter = null;
+    	
+    	for(String s : split) {
+    		if(s.endsWith(".whiley")) {
+    			Content.Filter<WhileyFile> f = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
+    			if(filter == null) {
+    				filter = f;
+    			} else {
+    				filter = Content.or(f, filter);
+    			}
+    		}
+    	}
+    	
+		// FIXME: it's slightly annoying that the filter could be null here. I
+		// think this indicates a limitation with the content type system I've
+		// designed.
+    	
+    	this.excludes = filter;
+    }
+    
+    public void setWhileyPath (org.apache.tools.ant.types.Path path) throws IOException {
+    	whileypath.clear(); // just to be sure
+    	for(String file : path.list()) {
+    		if(file.endsWith(".jar")) {
+    			whileypath.add(new JarFileRoot(file,registry));
+    		} else {
+    			whileypath.add(new DirectoryRoot(file,registry));
+    		}
+    	}
+    }
+    
+    public void setBootPath (org.apache.tools.ant.types.Path path) throws IOException {
+    	bootpath.clear(); // just to be sure
+    	for(String file : path.list()) {
+    		if(file.endsWith(".jar")) {
+    			bootpath.add(new JarFileRoot(file,registry));
+    		} else {
+    			bootpath.add(new DirectoryRoot(file,registry));
+    		}
+    	}
+    }
+    
     public void setVerbose(boolean b) {
     	verbose=b;
     }
@@ -85,73 +189,78 @@ public class AntTask extends MatchingTask {
         if (srcdir == null) {
             throw new BuildException("srcdir must be specified");
         }
-        log("dir = " + srcdir, Project.MSG_DEBUG);
+        log("dir = " + srcdir, org.apache.tools.ant.Project.MSG_DEBUG);
 
        
-        ArrayList<File> srcfiles = findSourceFiles();
-        if(!srcfiles.isEmpty()) {
-        	log("Compiling " + srcfiles.size() + " source file(s)"); 	
-	                	        	
-        	if(!compile(srcfiles)) {
-        		throw new BuildException("compilation errors");
-        	}        	
-        }
-        
+        if(!compile()) {
+        	throw new BuildException("compilation errors");
+        }        	
+                
         srcdir = null; // release file
     }
-    
-	protected ArrayList<File> findSourceFiles() {
-		DirectoryScanner ds = getDirectoryScanner(srcdir);
-		ArrayList<File> srcfiles = new ArrayList<File>();
-		
-		for (String f : ds.getIncludedFiles()) {			
-			File srcfile = new File(srcdir.getPath() + File.separatorChar + f);
-			File bindir;
-			if (destdir != null) {
-				bindir = destdir;
-			} else {
-				bindir = srcdir;
-			}
-			File binfile = new File(bindir.getPath() + File.separatorChar
-					+ f.replace(".whiley", ".class"));
-			if (srcfile.lastModified() > binfile.lastModified()) {
-				srcfiles.add(srcfile);
-			}
-		}
-
-		return srcfiles;
-	}
-    
-    protected boolean compile(ArrayList<File> srcfiles) {
+    	
+    protected boolean compile() {
     	try {
-    		// first, initialise sourcepath and whileypath
-    		List<Path.Root> sourcepath = initialiseSourcePath();
-    		List<Path.Root> whileypath = initialiseWhileyPath();
-
-    		// second, construct the module loader
-    		ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
-    		loader.setModuleReader("class",  new ClassFileLoader());
+    		// first, initialise source and target roots
+    		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+        	DirectoryRoot source = new DirectoryRoot(srcdir,fileFilter,registry); 
+    		roots.add(source);    
+        		        	
+        	DirectoryRoot target = null;
+        	if(destdir != null) {
+        		target = new DirectoryRoot(destdir,fileFilter,registry);        	
+        		roots.add(target);
+        	}
+        	    	       	
+        	wyjc.Main.initialiseBootPath(bootpath);        	;        	
+        	roots.addAll(whileypath);
+        	roots.addAll(bootpath);
+    		        	
+    		// second, construct the module loader    		
+    		SimpleProject project = new SimpleProject(roots);    		
     		
-    		// third, initialise the pipeline
-    		ArrayList<Pipeline.Template> templates = new ArrayList<Pipeline.Template>(Pipeline.defaultPipeline);
-    		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-    		Pipeline pipeline = new Pipeline(templates, loader);
-    		if(destdir != null) {
-    			pipeline.setOption(ClassWriter.class, "outputDirectory",
-					destdir.getPath());
-    		}
-    		List<Transform> stages = pipeline.instantiate();
+    		// third, initialise the pipeline    		    	
+    		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
     		
-    		// fourth initialise the compiler
-    		Compiler compiler = new Compiler(loader,stages);		
-    		loader.setLogger(compiler);		
-
+    		// fourth initialise the builder
+    		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
+    		
     		if(verbose) {			
-    			compiler.setLogOut(System.err);
+    			builder.setLogger(new Logger.Default(System.err));
     		}
-
+    		
+			StandardBuildRule rule = new StandardBuildRule(builder);
+			if (target != null) {
+				rule.add(source, includes, excludes, target,
+						WyilFile.ContentType);
+			} else {
+				rule.add(source, includes, excludes, source,
+						WyilFile.ContentType);
+			}
+			project.add(rule);
+    		
+			// Now, touch all source files which have modification date after
+			// their corresponding binary.	
+			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();			
+			for (Path.Entry<WhileyFile> e : source.get(includes)) {					
+				Path.Entry<WyilFile> binary;
+				
+				if (target != null) {
+					binary = target.get(e.id(), WyilFile.ContentType);
+				} else {
+					binary = source.get(e.id(), WyilFile.ContentType);
+				}
+				
+				if (binary == null || binary.lastModified() < e.lastModified()) {
+					sources.add(e);
+				}
+			}
+    		
+			log("Compiling " + sources.size() + " source file(s)");
+			
     		// finally, compile away!
-    		compiler.compile(srcfiles);
+    		project.build(sources);
+    		project.flush(); // force all built components to disk
     		
     		return true;
     	} catch (InternalFailure e) {
@@ -172,23 +281,6 @@ public class AntTask extends MatchingTask {
     			e.printStackTrace(System.err);
     		}
     		return false;
-    	}
-    }
-    
-    protected List<Path.Root> initialiseSourcePath() throws IOException {
-    	ArrayList<Path.Root> sourcepath = new ArrayList<Path.Root>();
-    	BinaryDirectoryRoot bindir = null;
-    	if(destdir != null) {
-    		bindir = new BinaryDirectoryRoot(destdir);
-    	}
-    	sourcepath.add(new SourceDirectoryRoot(srcdir,bindir));    	
-    	return sourcepath;
-    }
-    
-    protected List<Path.Root> initialiseWhileyPath() {
-    	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
-    	// FIXME: what's the best way to do this?
-    	wyjc.Main.initialiseBootPath(whileypath);
-    	return whileypath;
+    	}    	
     }
 }
