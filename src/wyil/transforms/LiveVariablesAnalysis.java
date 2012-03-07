@@ -28,13 +28,14 @@ package wyil.transforms;
 import java.util.*;
 
 
-import static wyil.util.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
-import wyil.ModuleLoader;
+import wybs.lang.Builder;
+import wybs.lang.Path;
 import wyil.lang.Block;
 import wyil.lang.Code;
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 import wyil.lang.Type;
 import wyil.lang.Block.Entry;
 import wyil.util.Pair;
@@ -71,12 +72,12 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	private static final HashSet<Integer> deadcode = new HashSet<Integer>();
 	
-	public LiveVariablesAnalysis(ModuleLoader loader) {
-		super(loader);
+	public LiveVariablesAnalysis(Builder builder) {
+		
 	}	
 	
 	@Override
-	public Module.TypeDef propagate(Module.TypeDef type) {		
+	public WyilFile.TypeDef propagate(WyilFile.TypeDef type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}
@@ -91,7 +92,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env lastStore() { return EMPTY_ENV; }
 	
 	@Override
-	public Module.Case propagate(Module.Case mcase) {		
+	public WyilFile.Case propagate(WyilFile.Case mcase) {		
 
 		// TODO: back propagate through pre- and post-conditions		
 		methodCase = mcase;
@@ -124,7 +125,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			} 							
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 	

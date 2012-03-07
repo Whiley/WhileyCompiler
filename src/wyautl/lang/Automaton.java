@@ -29,7 +29,7 @@ import java.util.*;
 
 /**
  * <p>
- * An Automaton represents a finite-state automaton. This is a machine for
+ * A finite-state automaton for representing Whiley types. This is a machine for
  * accepting matching inputs of a given language. An automaton is a directed
  * graph whose nodes and edges are referred to as <i>states</i> and
  * <i>transitions</i>. Each state has a "kind" which determines how the state

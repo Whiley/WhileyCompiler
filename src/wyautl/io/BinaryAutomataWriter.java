@@ -32,16 +32,15 @@ import wyjvm.io.BinaryOutputStream;
 
 /**
  * <p>
- * The binary automata writer is responsible for writing an automaton in a binary
- * format to an output stream. Obviously, it cannot know how to handle the
- * supplementary data that can be provided as part of a state. Therefore, if the
- * automaton contains states which have supplementary data, the client is expected
- * to deal with this.
+ * Responsible for writing an automaton in a binary format to an output stream.
+ * Obviously, it cannot know how to handle the supplementary data that can be
+ * provided as part of a state. Therefore, if the automaton contains states
+ * which have supplementary data, the client is expected to deal with this.
  * </p>
  * <p>
- * <b>NOTE:</b> By default, this class completely ignores any supplementary data.
- * To allow writing this data, the client should extend this class and overwrite
- * the method <code>write(Automata.State)</code>. In such case, it is
+ * <b>NOTE:</b> By default, this class completely ignores any supplementary
+ * data. To allow writing this data, the client should extend this class and
+ * overwrite the method <code>write(Automata.State)</code>. In such case, it is
  * recommended that <code>super.write(state)</code> is called before writing the
  * supplementary data. In other words, the standard information (i.e. kind and
  * children) for a state comes first, and the supplementary data is placed after

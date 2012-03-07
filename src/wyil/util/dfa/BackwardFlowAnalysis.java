@@ -25,7 +25,7 @@
 
 package wyil.util.dfa;
 
-import static wyil.util.SyntaxError.internalFailure;
+import static wybs.lang.SyntaxError.internalFailure;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,55 +33,50 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wyil.ModuleLoader;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.util.*;
-import static wyil.lang.Block.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
-	protected ModuleLoader loader;
 	protected String filename;
-	protected Module.Method method;
-	protected Module.Case methodCase;
+	protected WyilFile.Method method;
+	protected WyilFile.Case methodCase;
 	protected HashMap<String,T> stores;
 	
-	public BackwardFlowAnalysis(ModuleLoader loader) {
-		this.loader = loader;
-	}
-	
-	public void apply(Module module) {	
+	public void apply(WyilFile module) {	
 		filename = module.filename();
 		
-		for(Module.ConstDef type : module.constants()) {
+		for(WyilFile.ConstDef type : module.constants()) {
 			module.add(propagate(type));
 		}
-		for(Module.TypeDef type : module.types()) {
+		for(WyilFile.TypeDef type : module.types()) {
 			module.add(propagate(type));
 		}		
-		for(Module.Method method : module.methods()) {
+		for(WyilFile.Method method : module.methods()) {
 			module.add(propagate(method));
 		}		
 	}
 	
-	protected Module.ConstDef propagate(Module.ConstDef constant) {
+	protected WyilFile.ConstDef propagate(WyilFile.ConstDef constant) {
 		return constant;
 	}
-	protected Module.TypeDef propagate(Module.TypeDef type) {
+	protected WyilFile.TypeDef propagate(WyilFile.TypeDef type) {
 		return type;
 	}
 	
-	protected Module.Method propagate(Module.Method method) {
+	protected WyilFile.Method propagate(WyilFile.Method method) {
 		this.method = method;
-		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
-		for (Module.Case c : method.cases()) {
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	protected Module.Case propagate(Module.Case mcase) {
+	protected WyilFile.Case propagate(WyilFile.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
 		T last = lastStore();						

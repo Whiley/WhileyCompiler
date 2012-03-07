@@ -27,13 +27,14 @@ package wyil.transforms;
 
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wybs.lang.Builder;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.util.Pair;
-import wyil.util.SyntaxError;
-import static wyil.util.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -52,27 +53,26 @@ import static wyil.util.ErrorMessages.*;
  * </li>
  * </ul>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ModuleCheck implements Transform {
-	private final ModuleLoader loader;
 	private String filename;
 
-	public ModuleCheck(ModuleLoader loader) {
-		this.loader = loader;
+	public ModuleCheck(Builder builder) {
+
 	}
 	
-	public void apply(Module module) {
+	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(Module.Method method : module.methods()) {
+		for(WyilFile.Method method : module.methods()) {
 			check(method);
 		}
 	}
 		
-	public void check(Module.Method method) {		
-		for (Module.Case c : method.cases()) {
+	public void check(WyilFile.Method method) {		
+		for (WyilFile.Case c : method.cases()) {
 			checkTryCatchBlocks(c, method);
 			if(method.isFunction()) {
 				checkFunctionPure(c);
@@ -80,7 +80,7 @@ public class ModuleCheck implements Transform {
 		}		
 	}
 	
-	protected void checkTryCatchBlocks(Module.Case c, Module.Method m) {
+	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.Method m) {
 		HashMap<String,Block.Entry> labelMap = new HashMap<String,Block.Entry>();
 		for (Block.Entry b : c.body()) {
 			if(b.code instanceof Code.Label) {
@@ -92,7 +92,7 @@ public class ModuleCheck implements Transform {
 		checkTryCatchBlocks(0,c.body().size(),c,rootHandler,labelMap);
 	}
 	
-	protected void checkTryCatchBlocks(int start, int end, Module.Case c,
+	protected void checkTryCatchBlocks(int start, int end, WyilFile.Case c,
 			Handler handler, HashMap<String,Block.Entry> labelMap) {		
 		Block block = c.body();
 		for (int i = start; i < end; ++i) {
@@ -208,7 +208,7 @@ public class ModuleCheck implements Transform {
 		}
 	}
 	
-	protected void checkFunctionPure(Module.Case c) {
+	protected void checkFunctionPure(WyilFile.Case c) {
 		Block block = c.body();
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
