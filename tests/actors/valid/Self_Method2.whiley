@@ -1,8 +1,11 @@
-import toString from whiley.lang.Any
-import * from whiley.lang.System
+import * from whiley.lang.*
 
-void ::main(System sys, [string] args):
-    sys.out!println(sys.self())
+void ::main(Console sys):
+    sys.method()
 
-string System::self():
-    return toString(1)
+// Tests that calling an internal method as an expression correctly yields.
+void Console::method():
+    this.out!println(this.self())
+
+int Console::one():
+    return 1

@@ -28,7 +28,6 @@ package wyjc.runtime.concurrency;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A task scheduler for the actor system that distributes the processes amongst

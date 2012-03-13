@@ -1034,8 +1034,7 @@ public class Util {
 		Record data = new Record();
 		data.put("out", sysout);		
 		data.put("args",fromStringList(args));
-		Record console = new Record(data);
-		sysout.start();		
+		Record console = new Record(data);		
 		return console;
 	}
 	

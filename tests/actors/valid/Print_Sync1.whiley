@@ -1,5 +1,5 @@
-import toString from whiley.lang.Any
-import * from whiley.lang.System
+import * from whiley.lang.*
 
-void ::main(System sys, [string] args):
-    sys.out.println(toString(5))
+// Tests that a synchronous message send causes the method to be called.
+void ::main(Console sys):
+    sys.out.println(5)
