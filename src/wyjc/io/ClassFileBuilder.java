@@ -217,8 +217,12 @@ public class ClassFileBuilder {
 	
 		// Create the scheduler that will handle concurrency.
 		codes.add(new Bytecode.New(WHILEYSCHEDULER));
-		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
 		
+		// Store the scheduler for later.
+		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
+		codes.add(new Bytecode.Load(1, WHILEYSCHEDULER));
+		
+		// Use the special constructor if a fixed number of threads is called for.
 		JvmType.Function ctype;
 		if (Main.threadCount > -1) {
 			codes.add(new Bytecode.LoadConst(Main.threadCount));
@@ -226,67 +230,68 @@ public class ClassFileBuilder {
 		} else {
 			ctype = new JvmType.Function(T_VOID);
 		}
-		
 		codes.add(new Bytecode.Invoke(WHILEYSCHEDULER, "<init>", ctype,
 				Bytecode.SPECIAL));
 		
-		// Create the System actor and the appropriate number of copies.
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess",
-				new JvmType.Function(WHILEYPROCESS, WHILEYSCHEDULER),
-
-				Bytecode.STATIC));
-		// For the sender of the sendAsync method.
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		// For the call to wait.
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		// For the monitor enter and exit.
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		// Create the starting strand.
+		codes.add(new Bytecode.New(WHILEYSTRAND));
 		
-		// Synchronise on the new system process.
+		// Create the right number of duplicates of the strand.
+		// For the sender of the sendAsync method.
+		codes.add(new Bytecode.Dup(WHILEYSTRAND));
+		// For the call to wait.
+		codes.add(new Bytecode.Dup(WHILEYSTRAND));
+		// For the monitor enter and exit.
+		codes.add(new Bytecode.Dup(WHILEYSTRAND));
+		codes.add(new Bytecode.Dup(WHILEYSTRAND));
+		
+		// Call the strand's constructor.
+		codes.add(new Bytecode.Load(1, WHILEYSCHEDULER));
+		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "<init>",
+				new JvmType.Function(T_VOID, WHILEYSCHEDULER), Bytecode.SPECIAL));
+		
+		// Synchronise on the strand.
 		codes.add(new Bytecode.MonitorEnter());
 		
-		// Get the System::main method out.
-		Type.Method wyft = (Type.Method) Type.Method(null,Type.T_VOID,
-				Type.T_VOID, WHILEY_SYSTEM_T,	Type.List(Type.T_STRING,false));
-		JvmType.Function ftype =
-		    new JvmType.Function(JAVA_LANG_REFLECT_METHOD, JAVA_LANG_STRING,
-		        JAVA_LANG_STRING);
-		codes.add(new Bytecode.LoadConst(owner.toString()));
-	  codes.add(new Bytecode.LoadConst(nameMangle("main", wyft)));
-		codes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
-		    Bytecode.STATIC));
+		// Get the ::main method out.
+		Type.Method wyft = Type.Method(Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
+				JAVA_LANG_STRING, JAVA_LANG_STRING);
 		
-		// Create the System::main arguments list.
-		codes.add(new Bytecode.LoadConst(2));
+		codes.add(new Bytecode.LoadConst(owner.toString()));
+		codes.add(new Bytecode.LoadConst(nameMangle("main", wyft)));
+		codes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
+				Bytecode.STATIC));
+		
+		// Create the ::main arguments list.
+		codes.add(new Bytecode.LoadConst(1));
 		codes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 		codes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+		codes.add(new Bytecode.LoadConst(0));
 		
-		// Save the command line arguments into an ArrayList.
-		codes.add(new Bytecode.LoadConst(1));
+		// Create the console record.
 		codes.add(new Bytecode.Load(0, strArr));
-		JvmType.Function ft2 =
-		    new JvmType.Function(WHILEYLIST, new JvmType.Array(JAVA_LANG_STRING));
-		codes.add(new Bytecode.Invoke(WHILEYUTIL, "fromStringList", ft2,
-		    Bytecode.STATIC));
+		codes.add(new Bytecode.Load(1, WHILEYSCHEDULER));
+		codes.add(new Bytecode.Invoke(WHILEYUTIL, "newSystemConsole",
+				new JvmType.Function(WHILEYRECORD, new JvmType.Array(JAVA_LANG_STRING),
+						WHILEYSCHEDULER), Bytecode.STATIC));
 		
-		// Save the ArrayList into the arguments list.
+		// Add the console to the arguments list.
 		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		
-	// Call the send method.
-		ftype = new JvmType.Function(T_VOID, WHILEYMESSAGER,
-				JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-		codes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync", ftype,
-		    Bytecode.VIRTUAL));
+		// Call the send method.
+		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "sendAsync",
+				new JvmType.Function(T_VOID, WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD,
+						JAVA_LANG_OBJECT_ARRAY), Bytecode.VIRTUAL));
 		
 		// Wait for the system to idle.
-		ftype = new JvmType.Function(T_VOID);
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "wait", ftype,
-				Bytecode.VIRTUAL));
+		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "wait",
+				new JvmType.Function(T_VOID), Bytecode.VIRTUAL));
 		
+		// Unsynchronise on the strand.
 		codes.add(new Bytecode.MonitorExit());
 		
-		// Add return.
+		// And return.
 		codes.add(new Bytecode.Return(null));
 
 		wyjvm.attributes.Code code =

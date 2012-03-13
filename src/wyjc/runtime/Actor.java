@@ -80,20 +80,4 @@ public final class Actor extends Strand {
 		return state + "@" + System.identityHashCode(this);
 	}
 
-	/**
-	 * Creates and returns a new <code>System</code> process from the standard
-	 * library, for entry into the actor system. Asynchronously passing the
-	 * <code>main</code> message to the resulting system is the typical entry
-	 * point for the runtime.
-	 * 
-	 * @return A new Whiley <code>System</code> process.
-	 */
-	public static Actor newSystemProcess(Scheduler scheduler) {
-		Actor sysout = new Actor(null, scheduler);
-		Record data = new Record();
-		data.put("out", sysout);
-		Actor system = new Actor(data, scheduler);
-		return system;
-	}
-
 }
