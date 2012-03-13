@@ -44,7 +44,6 @@ public class File$native {
 			r.put("fileName", filename);
 			r.put("$fin", fin);
 			Actor p = new Actor(r);
-			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());			
@@ -59,7 +58,6 @@ public class File$native {
 			r.put("fileName", filename);
 			r.put("$fout", fout);			
 			Actor p = new Actor(r);
-			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());	
@@ -68,13 +66,14 @@ public class File$native {
 	}
 	
 	public static void close(Actor p) {
-		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
+		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
+
 				.get("$fin");		
 		try {
 			if(fin != null) {
 				fin.close();
 			} else {
-				FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
+				FileOutputStream fout = (FileOutputStream) ((HashMap) p.getState())
 				.get("$fout");		
 				fout.close();
 			}
@@ -84,7 +83,7 @@ public class File$native {
 	}
 	
 	public static List read(Actor p, BigInteger max) {		
-		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
+		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");
 		
 		List r = new List();
@@ -103,7 +102,7 @@ public class File$native {
 	
 	private static final int CHUNK_SIZE = 1024;
 	public static List read(Actor p) {		
-		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
+		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");
 		
 		List r = new List();				
@@ -124,7 +123,7 @@ public class File$native {
 	}
 	
 	public static void write(Actor p, List bytes) {
-		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
+		FileOutputStream fout = (FileOutputStream) ((HashMap) p.getState())
 				.get("$fout");
 				
 		try {			

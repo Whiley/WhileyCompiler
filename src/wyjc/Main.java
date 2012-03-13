@@ -56,6 +56,8 @@ public class Main {
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
 	public static final int BUILD_NUMBER;
+	
+	public static int threadCount;
 
 	public static final int SUCCESS=0;
 	public static final int SYNTAX_ERROR=1;
@@ -103,7 +105,7 @@ public class Main {
 	 * The command-line options accepted by the main method.
 	 */
 	public static final OptArg[] options = new OptArg[] {
-			new OptArg("version", "Print version information"),
+			new OptArg("version", "Print version information"),			
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("whileypath", "wp", PATHLIST,
@@ -112,6 +114,8 @@ public class Main {
 			new OptArg("bootpath", "bp", PATHLIST,
 					"Specify where to find whiley standard library files",					
 					new ArrayList<String>()),
+			new OptArg("thread-count", "tc", INT,
+					"Specify the number of threads to use when run", (Object) (-1)),
 			new OptArg("sourcepath", "sp", PATHLIST,
 					"Specify where to find whiley (source) files",
 					new ArrayList<String>()),
@@ -121,7 +125,11 @@ public class Main {
 			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("C", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
-			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage") };
+			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage"),
+			new OptArg(
+					"pause",
+					"Do not start compiling until character read from input stream (this is to allow time for visualvm to connect)"),	
+		};
 
 	/**
 	 * In the case that no explicit bootpath has been specified on the
@@ -247,9 +255,20 @@ public class Main {
 			OptArg.usage(System.out, options);
 			System.exit(1);
 		}
+		
+		if(values.containsKey("pause")) {
+			System.out.println("Press any key to begin...");
+			try {
+				System.in.read();
+			} catch(IOException e) {
 				
+			}
+		}
+		
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
+
+		threadCount = (Integer) values.get("thread-count");
 		String outputdir = (String) values.get("outputdir");
 						
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
