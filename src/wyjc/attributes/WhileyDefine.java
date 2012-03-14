@@ -204,6 +204,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Dictionary) val, writer, constantPool);
 		} else if(val instanceof Value.Record) {
 			write((Value.Record) val, writer, constantPool);
+		} else if(val instanceof Value.Tuple) {
+			write((Value.Tuple) val, writer, constantPool);
 		} else if(val instanceof Value.FunctionOrMethodOrMessage) {
 			write((Value.FunctionOrMethodOrMessage) val, writer, constantPool);
 		} else {
@@ -312,6 +314,15 @@ public class WhileyDefine implements BytecodeAttribute {
 		for(Map.Entry<String,Value> v : expr.values.entrySet()) {
 			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
 			write(v.getValue(), writer, constantPool);
+		}
+	}
+	
+	public static void write(Value.Tuple expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(LISTVAL); // FIXME: should be TUPLE!!!
+		writer.write_u2(expr.values.size());
+		for(Value v : expr.values) {
+			write(v,writer,constantPool);
 		}
 	}
 	
