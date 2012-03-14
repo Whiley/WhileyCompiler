@@ -395,8 +395,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TupleType_Valid_4_RuntimeTest() { runTest("TupleType_Valid_4"); }
  @Test public void TupleType_Valid_5_RuntimeTest() { runTest("TupleType_Valid_5"); }
  @Test public void TupleType_Valid_6_RuntimeTest() { runTest("TupleType_Valid_6"); }
- @Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); }
- @Test public void TupleType_Valid_8_RuntimeTest() { runTest("TupleType_Valid_8"); }
+ @Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); } 
  @Test public void TypeEquals_Valid_1_RuntimeTest() { runTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_RuntimeTest() { runTest("TypeEquals_Valid_2"); }
  @Test public void TypeEquals_Valid_3_RuntimeTest() { runTest("TypeEquals_Valid_3"); }

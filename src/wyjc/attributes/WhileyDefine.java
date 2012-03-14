@@ -319,7 +319,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	public static void write(Value.Tuple expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(LISTVAL); // FIXME: should be TUPLE!!!
+		writer.write_u1(TUPLEVAL); // FIXME: should be TUPLE!!!
 		writer.write_u2(expr.values.size());
 		for(Value v : expr.values) {
 			write(v,writer,constantPool);
@@ -465,6 +465,15 @@ public class WhileyDefine implements BytecodeAttribute {
 				}
 				return Value.V_SET(values);
 			}
+			case TUPLEVAL:
+			{
+				int len = reader.read_u2();
+				ArrayList<Value> values = new ArrayList<Value>();
+				for(int i=0;i!=len;++i) {
+					values.add((Value) readValue(reader,constantPool));
+				}
+				return Value.V_TUPLE(values);
+			}
 			case RECORDVAL:
 			{
 				int len = reader.read_u2();
@@ -495,6 +504,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	public final static int SETVAL = 6;
 	public final static int LISTVAL = 7;	
 	public final static int RECORDVAL = 8;
+	public final static int TUPLEVAL = 9;
 	public final static int BYTEVAL = 10;
 	public final static int STRINGVAL = 11;
 	public final static int DICTIONARYVAL = 12;
