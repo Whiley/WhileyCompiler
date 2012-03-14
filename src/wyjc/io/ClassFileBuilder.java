@@ -220,7 +220,7 @@ public class ClassFileBuilder {
 		
 		// Store the scheduler for later.
 		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
-		codes.add(new Bytecode.Load(1, WHILEYSCHEDULER));
+		codes.add(new Bytecode.Store(1, WHILEYSCHEDULER));
 		
 		// Use the special constructor if a fixed number of threads is called for.
 		JvmType.Function ctype;
@@ -237,7 +237,8 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.New(WHILEYSTRAND));
 		
 		// Create the right number of duplicates of the strand.
-		// For the sender of the sendAsync method.
+		// For the sender and receiver of the sendAsync method.
+		codes.add(new Bytecode.Dup(WHILEYSTRAND));
 		codes.add(new Bytecode.Dup(WHILEYSTRAND));
 		// For the call to wait.
 		codes.add(new Bytecode.Dup(WHILEYSTRAND));
@@ -326,9 +327,9 @@ public class ClassFileBuilder {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);					
-		JvmType.Function ft = convertFunType(method.type());		
+		JvmType.Function ft = convertFunType(method.type());
 		
-		String name = nameMangle(method.name(),method.type());		
+		String name = nameMangle(method.name(),method.type());
 		
 		/* need to put this back somehow?
 		if(method.cases().size() > 1) {
