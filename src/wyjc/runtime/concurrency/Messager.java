@@ -300,8 +300,6 @@ public abstract class Messager extends Yielder {
 		private final Object[] arguments;
 		
 		public Message(Method method, Object[] arguments) {
-			arguments[0] = Messager.this;
-			
 			this.method = method;
 			this.arguments = arguments;
 		}
