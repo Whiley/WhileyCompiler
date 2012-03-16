@@ -10,17 +10,34 @@ import java.lang.reflect.InvocationTargetException;
  * If <code>Strand</code> is instantiated, it will perform exactly like an
  * actor, except it has no internal state.
  * 
+ * Strands are also usable outside of the ordinary Whiley runtime. The
+ * <code>sendAsync</code> method will work as expected, and the
+ * <code>sendSync</code> method will cause the calling thread to block until
+ * the responding method exits. Calling <code>wait</code> on a strand will
+ * block until the strand idles.
+ * 
  * @author Timothy Jones
  */
 public class Strand extends Messager {
 
+	private final Scheduler scheduler;
+	
 	private long wakeAt = -1;
 	
 	/**
 	 * @param scheduler The scheduler to use for concurrency
 	 */
-	protected Strand(Scheduler scheduler) {
+	public Strand(Scheduler scheduler) {
 		super(scheduler);
+		
+		this.scheduler = scheduler;
+	}
+	
+	@Override
+	protected void scheduleResume() {
+		super.scheduleResume();
+		
+		scheduler.scheduleResume(this);
 	}
 	
 	/**
@@ -33,7 +50,6 @@ public class Strand extends Messager {
 		wakeAt = System.currentTimeMillis() + milliseconds;
 	}
 
-	@Override
 	public void resume() {
 		if (wakeAt != -1) {
 			if (System.currentTimeMillis() < wakeAt) {

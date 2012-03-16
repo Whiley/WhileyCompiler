@@ -64,40 +64,29 @@ public final class Scheduler {
 	}
 
 	/**
-	 * Any object which wants to be distributed as a task needs to be resumable,
-	 * and so must implement this interface.
-	 * 
-	 * @author Timothy Jones
-	 */
-	public static interface Resumable {
-
-		/**
-		 * This is the method that will be invoked when the task is ran on an
-		 * available thread.
-		 */
-		public void resume();
-
-	}
-
-	/**
 	 * Schedules the given object to resume as soon as a thread is available.
 	 * 
 	 * @param resumable The object to schedule a resume for.
 	 */
-	public void scheduleResume(final Resumable resumable) {
+	public void scheduleResume(final Strand resumable) {
 		synchronized (this) {
 			scheduledCount += 1;
 		}
 
 		pool.execute(new Runnable() {
 			
-			@Override
+      @Override
 			public void run() {
+        SchedulerThread thread = (SchedulerThread) Thread.currentThread();
+				
 				try {
+					thread.currentStrand = resumable;
 					resumable.resume();
 				} catch (Throwable th) {
 					System.err.println("Warning - actor resumption threw an exception.");
 					th.printStackTrace();
+				} finally {
+					thread.currentStrand = resumable;
 				}
 
 				synchronized (Scheduler.this) {
@@ -112,15 +101,49 @@ public final class Scheduler {
 		});
 	}
 	
+	/**
+	 * Retrieves the strand controlling the current thread if the current thread
+	 * is in this scheduler's thread pool.
+	 * 
+	 * Messages will mostly arrive from elsewhere in the scheduler, so it is
+	 * possible to access the strand that sent them.
+	 * 
+	 * Note, however, that it is possible for a thread outside of the scheduler
+	 * to send a message. When a Whiley program first boots, the main method sets
+	 * up a new scheduler, an initial strand, and then sends it an asynchronous
+	 * message. Inter-scheduler message sends will also be unable to retrieve a
+	 * sender, otherwise the sender would be pulled over into this scheduler.
+	 * 
+	 * If this method is invoked from outside of this scheduler's thread pool,
+	 * then the result will be null.
+	 * 
+	 * @return The strand controlling the current thread, or null.
+	 */
+	public Strand getCurrentStrand() {
+		Thread currentThread = Thread.currentThread();
+		
+		if (currentThread instanceof SchedulerThread) {
+			SchedulerThread thread = (SchedulerThread) currentThread;
+			
+			if (thread.getScheduler() == this) {
+				return thread.getCurrentStrand();
+			}
+		}
+		
+		return null;
+	}
+	
 	
 	/**
-	 * A thread that can expose this scheduler so new tasks can be spawned more
-	 * easily by those already using it.
+	 * A thread that can expose this scheduler and the currently controlling
+	 * strand so new tasks can be spawned more easily by those already using it.
 	 * 
 	 * @author Timothy Jones
 	 */
 	public class SchedulerThread extends Thread {
 
+		private Strand currentStrand;
+		
 		private SchedulerThread(Runnable task) {
 			super(task);
 		}
@@ -130,6 +153,10 @@ public final class Scheduler {
 		 */
 		public Scheduler getScheduler() {
 			return Scheduler.this;
+		}
+		
+		public Strand getCurrentStrand() {
+			return currentStrand;
 		}
 
 	}

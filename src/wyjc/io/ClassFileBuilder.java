@@ -236,23 +236,13 @@ public class ClassFileBuilder {
 		// Create the starting strand.
 		codes.add(new Bytecode.New(WHILEYSTRAND));
 		
-		// Create the right number of duplicates of the strand.
-		// For the sender and receiver of the sendAsync method.
-		codes.add(new Bytecode.Dup(WHILEYSTRAND));
-		codes.add(new Bytecode.Dup(WHILEYSTRAND));
-		// For the call to wait.
-		codes.add(new Bytecode.Dup(WHILEYSTRAND));
-		// For the monitor enter and exit.
-		codes.add(new Bytecode.Dup(WHILEYSTRAND));
+		// Create a copy for the call to sendSync.
 		codes.add(new Bytecode.Dup(WHILEYSTRAND));
 		
 		// Call the strand's constructor.
 		codes.add(new Bytecode.Load(1, WHILEYSCHEDULER));
 		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "<init>",
 				new JvmType.Function(T_VOID, WHILEYSCHEDULER), Bytecode.SPECIAL));
-		
-		// Synchronise on the strand.
-		codes.add(new Bytecode.MonitorEnter());
 		
 		// Get the ::main method out.
 		Type.Method wyft = Type.Method(Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
@@ -280,17 +270,10 @@ public class ClassFileBuilder {
 		// Add the console to the arguments list.
 		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		
-		// Call the send method.
-		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "sendAsync",
-				new JvmType.Function(T_VOID, WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD,
+		// Call the send method (this blocks).
+		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "sendSync",
+				new JvmType.Function(WHILEYFUTURE, JAVA_LANG_REFLECT_METHOD,
 						JAVA_LANG_OBJECT_ARRAY), Bytecode.VIRTUAL));
-		
-		// Wait for the system to idle.
-		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "wait",
-				new JvmType.Function(T_VOID), Bytecode.VIRTUAL));
-		
-		// Unsynchronise on the strand.
-		codes.add(new Bytecode.MonitorExit());
 		
 		// And return.
 		codes.add(new Bytecode.Return(null));
@@ -1651,8 +1634,6 @@ public class ClassFileBuilder {
 		}
 		
 		// finally, setup the stack for the send
-		bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
 				JAVA_LANG_STRING, JAVA_LANG_STRING);
 		
@@ -1662,28 +1643,22 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
 				Bytecode.STATIC));
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
-							
+		
+		ftype = new JvmType.Function(c.synchronous ? WHILEYFUTURE : T_VOID,
+				JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+		
+		bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, c.synchronous ?
+				"sendSync" : "sendAsync", ftype, Bytecode.VIRTUAL));
+		
 		if (c.synchronous) {
-			ftype = new JvmType.Function(WHILEYFUTURE, WHILEYMESSAGER,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
-					Bytecode.VIRTUAL));
-			
-			// Response to failure will be added by Continuations.
-			
-			if (c.retval) {
+			if (c.retval) { 
 				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
 						new JvmType.Function(JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
 				addReadConversion(c.type.ret(), bytecodes);
 			} else {
 				bytecodes.add(new Bytecode.Pop(WHILEYFUTURE));
 			}
-		} else {
-			ftype = new JvmType.Function(T_VOID,
-					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync",
-					ftype, Bytecode.VIRTUAL));
-		} 
+		}
 	}
 	
 	public void translate(Code.IndirectSend c, int freeSlot,
@@ -1715,16 +1690,14 @@ public class ClassFileBuilder {
 		}
 		bytecodes.add(new Bytecode.Swap());
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
-							
-		if (c.synchronous) {			
-			JvmType.Function ftype = new JvmType.Function(WHILEYFUTURE,
-					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
-					Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-			
-			// Response to failure will be added by Continuations.
-			
+		
+		JvmType.Function ftype = new JvmType.Function(c.synchronous ? WHILEYFUTURE
+				: T_VOID, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+		
+		bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, c.synchronous ?
+				"sendSync" : "sendAsync", ftype, Bytecode.VIRTUAL));
+		
+		if (c.synchronous) {
 			if (c.retval) {
 				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
 						new JvmType.Function(JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
@@ -1732,13 +1705,7 @@ public class ClassFileBuilder {
 			} else {
 				bytecodes.add(new Bytecode.Pop(WHILEYFUTURE));
 			}
-		} else {
-			JvmType.Function ftype = new JvmType.Function(T_VOID,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync",
-					ftype, Bytecode.VIRTUAL));
-		} 
-
+		}
 	}
 		
 	public void translate(Value v, int freeSlot,
