@@ -394,9 +394,30 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		}
 	}
 	
+
+	public static BigRational valueOf(double d) {
+		long l = Double.doubleToRawLongBits(d);
+		// Pull out IEEE754 info
+		boolean sign = (l&0x8000000000000000L) != 0;
+		int exponent = (int) ((l & 0x7FF0000000000000L) >> 52);		
+		long numerator = l & 0xFFFFFFFFFFFFFL;	
+		final long denominator = 0x10000000000000L;
+		exponent = exponent - 1023; // remove bias
+
+		BigRational base = valueOf(numerator, denominator).add(BigInteger.ONE);
+		if (sign) {
+			base = base.negate();
+		}
+		if (exponent > 0 && exponent < 63) {
+			return base.multiply(1L << exponent);
+		} else {
+			BigInteger exp = BigInteger.ONE.shiftLeft(exponent);
+			return base.multiply(exp);
+		}
+	}
+	
 	public static void main(String[] args) {
-		BigRational r = new BigRational(10,5);
+		BigRational r = valueOf(-1.0d);
 		System.out.println("GOT: " + r);
-		System.out.println("NOW: " + r.negate());
 	}
 }

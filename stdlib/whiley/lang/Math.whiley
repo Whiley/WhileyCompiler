@@ -102,6 +102,8 @@ int round(real x):
 // approximation, it should be sufficient for most purposes.
 define PI as 3.14159265358979323846 
 
+public native real sqrt(int x) requires x >= 0, ensures $ >= 0:
+
 // Based on an excellent article entitled "Integer Square Roots" 
 // by Jack W. Crenshaw, published in the eetimes, 1998.
 int isqrt(int x) requires x >= 0, ensures $ >= 0:
@@ -115,14 +117,8 @@ int isqrt(int x) requires x >= 0, ensures $ >= 0:
 // The following is a first approximation at this.  It computes the
 // square root of a number to within a given error threshold.
 public real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
-    error = -error
-    root = isqrt(x) + 1
-    rem = 0.0
-    do:
-        rem = (real) x - (root*root)       
-        root = root + (rem / (root+root))
-    while rem < error
-    return root
+    // FIXME!!
+    return sqrt(x)
 
 public real sqrt(real x, real error) requires x >= 0.0, ensures $ >= 0.0:
     numerator,denominator = x
