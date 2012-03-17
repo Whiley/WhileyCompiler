@@ -4,7 +4,14 @@ import java.math.BigInteger;
 import wyjc.runtime.BigRational;
 
 public class Math$native {
-	public static BigRational sqrt(BigInteger i) {
+	/**
+	 * Compute the sqrt of an integer to within a given error threshold
+	 * 
+	 * @param i
+	 * @param err
+	 * @return
+	 */
+	public static BigRational sqrt(BigInteger i, BigRational err) {
 		int nbits = i.bitLength();
 		if(nbits < 63) {
 			long v = i.longValue();
