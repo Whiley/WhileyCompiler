@@ -396,7 +396,13 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	
 
 	public static BigRational valueOf(double d) {
-		long l = Double.doubleToRawLongBits(d);
+		long l = Double.doubleToLongBits(d);
+		// Check against infinities and NAN
+		if (l == 0x7ff0000000000000L || l == 0xfff0000000000000L
+				|| l == 0x7ff8000000000000L) {
+			throw new IllegalArgumentException(
+					"BigInteger.valueOf() --- parameter cannot be infinity or NAN");
+		}
 		// Pull out IEEE754 info
 		boolean sign = (l&0x8000000000000000L) != 0;
 		int exponent = (int) ((l & 0x7FF0000000000000L) >> 52);		
