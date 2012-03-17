@@ -429,5 +429,4 @@ public final class BigRational extends Number implements Comparable<BigRational>
 			return base.divide(exp);
 		}
 	}
-	
 }

@@ -13,7 +13,10 @@ import wyjc.runtime.BigRational;
  */
 public class Rational {
 	
-	@Test public void doubleConversion(String[] args) {
+	/**
+	 * Test the process of converting to/from a double.
+	 */
+	@Test public void doubleConversion() {
 		for(double v : inputs) {
 			double w = BigRational.valueOf(v).doubleValue(); 
 			if(w != v) {
@@ -22,7 +25,7 @@ public class Rational {
 		}
 	}
 
-	private static double[] inputs = {
+	private static final double[] inputs = {
 		-49344248.0d,
 		936756104.0d,
 		-193625293.0d,
