@@ -13,8 +13,10 @@ public class Math$native {
 	 */
 	public static BigRational sqrt(BigInteger i, BigRational err) {
 		int nbits = i.bitLength();
-		if(nbits < 63) {
-			long v = i.longValue();
+		if(nbits < 32) {
+			// Note, need to restrict to ints, since long=>double conversion is
+			// lossy in Java. 
+			int v = i.intValue();
 			double r = Math.sqrt(v);
 			return BigRational.valueOf(r);
 		} else {
