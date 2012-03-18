@@ -25,25 +25,21 @@
 
 package wyc.stages;
 
-import static wyil.util.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
-import wyc.core.*;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
+import wyc.builder.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
-import wyil.ModuleLoader;
-import wyil.lang.Attribute;
-import wyil.lang.ModuleID;
 import wyil.lang.NameID;
-import wyil.lang.PkgID;
 import wyil.lang.Type;
 import wyil.lang.Value;
 import wyil.util.Pair;
-import wyil.util.ResolveError;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
 
 /**
  * Propagates type information in a flow-sensitive fashion from declared
@@ -93,15 +89,13 @@ import wyil.util.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public final class FlowTyping {
-	private final ModuleLoader loader;
+public final class FlowTyping {	
 	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethodOrMessage current;
 	
-	public FlowTyping(ModuleLoader loader, GlobalResolver resolver) {
-		this.loader = loader;
+	public FlowTyping(GlobalResolver resolver) {		
 		this.resolver = resolver;
 	}
 	
@@ -127,12 +121,12 @@ public final class FlowTyping {
 		}
 	}
 	
-	public void propagate(Constant cd) throws ResolveError {
+	public void propagate(Constant cd) throws Exception {
 		NameID nid = new NameID(cd.file().module, cd.name);
 		cd.resolvedValue = resolver.resolveAsConstant(nid);
 	}
 	
-	public void propagate(TypeDef td) throws ResolveError {		
+	public void propagate(TypeDef td) throws Exception {		
 		// first, resolve the declared type
 		td.resolvedType = resolver.resolveAsType(td.unresolvedType, td);
 		
@@ -146,7 +140,7 @@ public final class FlowTyping {
 		}
 	}
 
-	public void propagate(FunctionOrMethodOrMessage d) throws ResolveError {		
+	public void propagate(FunctionOrMethodOrMessage d) throws Exception {		
 		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
@@ -255,7 +249,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.Assign stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = resolver.resolve(stmt.rhs,environment,current);
@@ -416,7 +410,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.ForAll stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 		stmt.source = resolver.resolve(stmt.source,environment,current);
 		Nominal.EffectiveCollection srcType = resolver.expandAsEffectiveCollection(stmt.source.result()); 		
@@ -508,7 +502,7 @@ public final class FlowTyping {
 	
 	private Environment propagate(
 			Stmt.Return stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 		if (stmt.expr != null) {
 			stmt.expr = resolver.resolve(stmt.expr, environment,current);
@@ -526,7 +520,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.Switch stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 		stmt.expr = resolver.resolve(stmt.expr,environment,current);		
 		
@@ -580,7 +574,7 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.TryCatch stmt,
-			Environment environment) throws ResolveError {
+			Environment environment) throws Exception {
 		
 
 		for(Stmt.Catch handler : stmt.catches) {
@@ -673,7 +667,7 @@ public final class FlowTyping {
 				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
 				} else if(srcType.field(ra.name) == null) {
-					syntaxError(errorMessage(RECORD_MISSING_FIELD),filename,lval);
+					syntaxError(errorMessage(RECORD_MISSING_FIELD,ra.name),filename,lval);
 				}
 				ra.srcType = srcType;
 				return ra;
@@ -686,18 +680,7 @@ public final class FlowTyping {
 		}		
 		internalFailure("unknown lval: " + lval.getClass().getName(),filename,lval);
 		return null; // dead code
-	}		
-	
-	private <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem) {
-		if (clazz.isInstance(t)) {
-			return (T) t;
-		} else {
-			syntaxError(errorMessage(SUBTYPE_ERROR, clazz.getName().replace('$', '.'), t),
-					filename, elem);
-			return null;
-		}
-	}
+	}			
 	
 	// Check t1 :> t2
 	private void checkIsSubtype(Nominal t1, Nominal t2,

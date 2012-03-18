@@ -32,8 +32,10 @@ import java.util.*;
 import wyjc.Main;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyVersion;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
 import wyil.*;
-import static wyil.util.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Code.*;
@@ -57,19 +59,17 @@ public class ClassFileBuilder {
 	protected int CLASS_VERSION = 49;
 	protected int WHILEY_MINOR_VERSION;
 	protected int WHILEY_MAJOR_VERSION;
-	protected ModuleLoader loader;	
 	protected String filename;
 	protected JvmType.Clazz owner;
 	
-	public ClassFileBuilder(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
-		this.loader = loader;
+	public ClassFileBuilder(int whileyMajorVersion, int whileyMinorVersion) {
 		this.WHILEY_MINOR_VERSION = whileyMinorVersion;
 		this.WHILEY_MAJOR_VERSION = whileyMajorVersion;
 	}
 
-	public ClassFile build(Module module) {
-		owner = new JvmType.Clazz(module.id().pkg().toString(),
-				module.id().module().toString());
+	public ClassFile build(WyilFile module) {		
+		owner = new JvmType.Clazz(module.id().parent().toString().replace('.','/'),
+				module.id().last());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
@@ -84,7 +84,7 @@ public class ClassFileBuilder {
 		
 		boolean addMainLauncher = false;		
 				
-		for(Module.ConstDef cd : module.constants()) {	
+		for(WyilFile.ConstDef cd : module.constants()) {	
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : cd.attributes()) {
@@ -96,7 +96,7 @@ public class ClassFileBuilder {
 			cf.attributes().add(wd);
 		}
 		
-		for(Module.TypeDef td : module.types()) {
+		for(WyilFile.TypeDef td : module.types()) {
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : td.attributes()) {
@@ -110,7 +110,7 @@ public class ClassFileBuilder {
 		}
 		
 		HashMap<Constant,Integer> constants = new HashMap<Constant,Integer>();
-		for(Module.Method method : module.methods()) {				
+		for(WyilFile.Method method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			
@@ -285,11 +285,11 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public List<ClassFile.Method> build(Module.Method method,
+	public List<ClassFile.Method> build(WyilFile.Method method,
 			HashMap<Constant, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
-		for(Module.Case c : method.cases()) {
+		for(WyilFile.Case c : method.cases()) {
 			if(method.isNative()) {
 				methods.add(buildNativeOrExport(c,method,constants));
 			} else {
@@ -302,8 +302,8 @@ public class ClassFileBuilder {
 		return methods;
 	}
 	
-	public ClassFile.Method build(int caseNum, Module.Case mcase,
-			Module.Method method, HashMap<Constant,Integer> constants) {		
+	public ClassFile.Method build(int caseNum, WyilFile.Case mcase,
+			WyilFile.Method method, HashMap<Constant,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -341,8 +341,8 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ClassFile.Method buildNativeOrExport(Module.Case mcase,
-			Module.Method method, HashMap<Constant,Integer> constants) {
+	public ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
+			WyilFile.Method method, HashMap<Constant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
@@ -373,7 +373,7 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translateNativeOrExport(Module.Method method) {
+	public ArrayList<Bytecode> translateNativeOrExport(WyilFile.Method method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.FunctionOrMethodOrMessage ft = method.type();
@@ -413,7 +413,7 @@ public class ClassFileBuilder {
 		return bytecodes;
 	}
 	
-	public ArrayList<Bytecode> translate(Module.Case mcase,
+	public ArrayList<Bytecode> translate(WyilFile.Case mcase,
 			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
@@ -1551,10 +1551,10 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Invoke c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		ModuleID mid = c.name.module();
+		Path.ID mid = c.name.module();
 		String mangled = nameMangle(c.name.name(), c.type);
-		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),
-				mid.module());
+		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString()
+				.replace('/', '.'), mid.last());
 		JvmType.Function type = convertFunType(c.type);
 		bytecodes
 				.add(new Bytecode.Invoke(owner, mangled, type, Bytecode.STATIC));
@@ -1637,7 +1637,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
 				JAVA_LANG_STRING, JAVA_LANG_STRING);
 		
-		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString()));		
+		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString().replace('/','.')));		
 		bytecodes
 				.add(new Bytecode.LoadConst(nameMangle(c.name.name(), c.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
@@ -2013,7 +2013,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		
-		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()));
+		bytecodes.add(new Bytecode.LoadConst(nid.module().toString().replace('/','.')));
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,Bytecode.STATIC));
 	}

@@ -27,13 +27,14 @@ package wyil.transforms;
 
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wybs.lang.Builder;
+import wybs.lang.Path;
 import wyil.Transform;
 import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Block.*;
-import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -59,8 +60,8 @@ import static wyil.util.ErrorMessages.*;
 public class DefiniteAssignment extends
 		ForwardFlowAnalysis<HashSet<Integer>> implements Transform {
 	
-	public DefiniteAssignment(ModuleLoader loader) {
-		super(loader);
+	public DefiniteAssignment(Builder builder) {
+		
 	}
 	
 	public HashSet<Integer> initialStore() {

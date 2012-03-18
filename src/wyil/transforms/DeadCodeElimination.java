@@ -28,6 +28,8 @@ package wyil.transforms;
 import java.io.IOException;
 import java.util.*;
 
+import wybs.lang.Builder;
+import wybs.lang.Path;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.Pair;
@@ -38,25 +40,25 @@ import wyil.util.Pair;
  * bytecodes sequentially, and traversing along all branches and exceptional
  * edges as appropriate.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class DeadCodeElimination implements Transform {
 
-	public DeadCodeElimination(ModuleLoader loader) {
+	public DeadCodeElimination(Builder builder) {
 		
 	}
 	
-	public void apply(Module module) throws IOException {
-		for(Module.TypeDef type : module.types()) {
+	public void apply(WyilFile module) throws IOException {
+		for(WyilFile.TypeDef type : module.types()) {
 			transform(type);
 		}		
-		for(Module.Method method : module.methods()) {
+		for(WyilFile.Method method : module.methods()) {
 			transform(method);
 		}
 	}
 	
-	public void transform(Module.TypeDef type) {
+	public void transform(WyilFile.TypeDef type) {
 		Block constraint = type.constraint();
 		
 		if (constraint != null) {
@@ -64,13 +66,13 @@ public class DeadCodeElimination implements Transform {
 		}
 	}
 
-	public void transform(Module.Method method) {		
-		for(Module.Case c : method.cases()) {
+	public void transform(WyilFile.Method method) {		
+		for(WyilFile.Case c : method.cases()) {
 			transform(c,method);
 		}
 	}
 	
-	public void transform(Module.Case mcase, Module.Method method) {	
+	public void transform(WyilFile.Case mcase, WyilFile.Method method) {	
 		Block body = mcase.body();
 		transform(body);
 	}

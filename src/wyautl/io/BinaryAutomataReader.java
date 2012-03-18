@@ -32,11 +32,10 @@ import wyjvm.io.BinaryInputStream;
 
 /**
  * <p>
- * The binary automata reader is responsible for reading an automaton in a binary
- * format from an input stream. Obviously, it cannot know how to handle the
- * supplementary data that can be provided as part of a state. Therefore, if the
- * automaton may contain states which have supplementary data, the client is
- * expected to deal with this.
+ * Responsible for reading an automaton in a binary format from an input stream.
+ * Obviously, it cannot know how to handle the supplementary data that can be
+ * provided as part of a state. Therefore, if the automaton may contain states
+ * which have supplementary data, the client is expected to deal with this.
  * </p>
  * <p>
  * <b>NOTE:</b> To handle supplementary data, the client should extend this

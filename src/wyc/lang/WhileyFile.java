@@ -25,13 +25,19 @@
 
 package wyc.lang;
 
+import java.io.*;
 import java.util.*;
 
-import wyc.core.Nominal;
-import wyil.ModuleLoader;
+import wybs.lang.Content;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.Trie;
+import wyc.builder.Nominal;
+import wyc.stages.WhileyFilter;
+import wyc.stages.WhileyLexer;
+import wyc.stages.WhileyParser;
 import wyil.lang.*;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
 
 /**
  * Provides classes representing the various kinds of declaration found in a
@@ -39,28 +45,89 @@ import wyil.util.SyntaxError;
  * declarations</i>, <i>constant declarations</i>, etc. In essence, a
  * <code>WhileyFile</code> forms the root of the Abstract Syntax Tree.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class WhileyFile {
-	public final ModuleID module;
+	
+	// =========================================================================
+	// Content Type
+	// =========================================================================
+	
+	public static final Content.Type<WhileyFile> ContentType = new Content.Type<WhileyFile>() {
+		public Path.Entry<WhileyFile> accept(Path.Entry<?> e) {			
+			if (e.contentType() == this) {
+				return (Path.Entry<WhileyFile>) e;
+			} 			
+			return null;
+		}
+		
+		/**
+		 * This method simply parses a whiley file into an abstract syntax tree. It
+		 * makes little effort to check whether or not the file is syntactically
+		 * correct. In particular, it does not determine the correct type of all
+		 * declarations, expressions, etc.
+		 * 
+		 * @param file
+		 * @return
+		 * @throws IOException
+		 */		
+		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream inputstream) throws IOException {		
+			Runtime runtime = Runtime.getRuntime();
+			long start = System.currentTimeMillis();
+			long memory = runtime.freeMemory();
+
+			WhileyLexer wlexer = new WhileyLexer(inputstream);
+
+			List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer
+					.scan());
+
+			WhileyParser wfr = new WhileyParser(e.location().toString(),
+					tokens);
+//			project.logTimedMessage("[" + e.location() + "] Parsing complete",
+//					System.currentTimeMillis() - start,
+//					memory - runtime.freeMemory());
+
+			WhileyFile wf = wfr.read();
+			return wf;				
+		}
+		
+		public void write(OutputStream output, WhileyFile value) {
+			// for now
+			throw new UnsupportedOperationException();
+		}
+		
+		public String toString() {
+			return "Content-Type: whiley";
+		}
+	};
+	
+	// =========================================================================
+	// State
+	// =========================================================================
+	
+	public final Path.ID module;
 	public final String filename;
 	public final ArrayList<Declaration> declarations;
+
+	// =========================================================================
+	// Constructors
+	// =========================================================================
 	
-	public WhileyFile(ModuleID module, String filename) {
+	public WhileyFile(Path.ID module, String filename) {
 		this.module = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
 	}
+
+	// =========================================================================
+	// Accessors
+	// =========================================================================
 	
 	public boolean hasName(String name) {
 		return declaration(name) != null;
 	}			
 
-	public void add(Declaration declaration) {
-		declarations.add(declaration);
-	}
-	
 	public Declaration declaration(String name) {
 		for(Declaration d : declarations) {
 			if(d.name().equals(name)) {
@@ -99,6 +166,18 @@ public final class WhileyFile {
 		return null;
 	}
 		
+	// =========================================================================
+	// Mutators
+	// =========================================================================
+	
+	public void add(Declaration declaration) {
+		declarations.add(declaration);
+	}
+	
+	// =========================================================================
+	// Types
+	// =========================================================================		
+	
 	public interface Declaration extends SyntacticElement {
 		public String name();
 	}
@@ -137,8 +216,8 @@ public final class WhileyFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(new PkgID("whiley","lang"), "*", null)); 	
-			imports.add(new WhileyFile.Import(module.pkg(), "*", null)); 
+			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"), null)); 	
+			imports.add(new WhileyFile.Import(Trie.fromString(module.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -146,9 +225,8 @@ public final class WhileyFile {
 				} else if(d instanceof Import) {
 					imports.add((Import)d);
 				}
-			}
-			
-			imports.add(new WhileyFile.Import(module.pkg(), module.module(), "*")); 
+			}			
+			imports.add(new WhileyFile.Import(Trie.fromString(module), "*")); 
 
 			Collections.reverse(imports);	
 			
@@ -166,33 +244,34 @@ public final class WhileyFile {
 	 * Here, the package is <code>whiley.lang</code>, the module is
 	 * <code>System</code> and the name is <code>Console</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Import extends SyntacticElement.Impl implements Declaration {
-		public PkgID pkg;
-		public String module;
-		public String name;
+	public static class Import extends SyntacticElement.Impl implements Declaration {		
+		public final Trie filter;
+		public final String name;
 		
-		public Import(PkgID pkg, String module, String name, Attribute... attributes) {
+		public Import(Trie filter, String name, Attribute... attributes) {
 			super(attributes);
-			this.pkg = pkg;
-			this.module = module;
+			this.filter = filter;			
 			this.name = name;
 		}
 	
+		/*
 		public boolean matchName(String name) {
+			
 			if(this.name != null) {
 				return (this.name.equals(name) || this.name.equals("*"));	
 			} else {
-				return this.module.equals(name);
-			}			
+				String last = filter.last();
+				return last.equals(name) || last.equals("*")  || last.equals("*");
+			}					
 		}
-		
-		public boolean matchModule(String module) {
-			return this.module != null && (this.module.equals(module) || this.module.equals("*"));
-		}
-		
+		*/
+//		public boolean matchModule(String module) {
+//			return this.module != null && (this.module.equals(module) || this.module.equals("*"));
+//		}
+//		
 		public String name() {
 			return "";
 		}		
@@ -208,7 +287,7 @@ public final class WhileyFile {
 	 * Constant declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public class Constant extends
@@ -256,7 +335,7 @@ public final class WhileyFile {
 	 * non-negative integers. Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */	
 	public class TypeDef extends AbstractContext implements Declaration {
@@ -391,7 +470,7 @@ public final class WhileyFile {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Function extends FunctionOrMethod {
@@ -439,7 +518,7 @@ public final class WhileyFile {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Method extends FunctionOrMethod {
@@ -490,7 +569,7 @@ public final class WhileyFile {
 	 * and <code>private</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Message extends FunctionOrMethodOrMessage {
@@ -526,7 +605,7 @@ public final class WhileyFile {
 	 * location of the parameter in case any syntax error needs to be reported
 	 * on it.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Parameter extends AbstractContext implements Declaration {

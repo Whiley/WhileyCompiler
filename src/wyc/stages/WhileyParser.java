@@ -29,11 +29,14 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.lang.*;
-import wyil.util.*;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
+import wybs.util.Trie;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.util.*;
+import wyil.lang.*;
+import wyil.util.*;
 import wyjc.runtime.BigRational;
 import wyjvm.lang.Bytecode;
 
@@ -58,13 +61,11 @@ public final class WhileyParser {
 		this.tokens = new ArrayList<Token>(tokens); 		
 	}
 	public WhileyFile read() {		
-		ArrayList<String> pkg = parsePackage();
+		Path.ID pkg = parsePackage();
 
 		// Now, figure out module name from filename
-		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 7);
-
-		WhileyFile wf = new WhileyFile(new ModuleID(pkg,name),filename);
+		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-7);		
+		WhileyFile wf = new WhileyFile(pkg.append(name),filename);
 		
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
@@ -93,28 +94,29 @@ public final class WhileyParser {
 		return wf;
 	}
 	
-	private ArrayList<String> parsePackage() {
+	private Trie parsePackage() {
 		
 		while (index < tokens.size()
 				&& (tokens.get(index) instanceof LineComment || tokens.get(index) instanceof NewLine)) {			
 			parseSkip();
 		}
 		
+		Trie pkg = Trie.ROOT;
+		
 		if(index < tokens.size() && tokens.get(index).text.equals("package")) {			
 			matchKeyword("package");
-
-			ArrayList<String> pkg = new ArrayList<String>();
-			pkg.add(matchIdentifier().text);
+			
+			pkg = pkg.append(matchIdentifier().text);
 						
 			while (index < tokens.size() && tokens.get(index) instanceof Dot) {
 				match(Dot.class);
-				pkg.add(matchIdentifier().text);
+				pkg = pkg.append(matchIdentifier().text);
 			}
 
 			matchEndLine();
 			return pkg;
 		} else {
-			return new ArrayList<String>(); // no package
+			return pkg; // no package
 		}
 	}
 	
@@ -136,29 +138,34 @@ public final class WhileyParser {
 			matchIdentifier();
 		}
 				
-		ArrayList<String> pkg = new ArrayList<String>();
-		pkg.add(matchIdentifier().text);
+		Trie filter = Trie.ROOT.append(matchIdentifier().text);
 		
-		while (index < tokens.size() && tokens.get(index) instanceof Dot) {
-			match(Dot.class);
+		while (index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+			if(lookahead instanceof Dot) {
+				match(Dot.class);							
+			} else if(lookahead instanceof DotDot) {
+				match(DotDot.class);
+				filter = filter.append("**");
+			} else {
+				break;
+			}
+			
 			if(index < tokens.size()) {
 				Token t = tokens.get(index);
 				if(t.text.equals("*")) {
 					match(Star.class);
-					pkg.add("*");	
+					filter = filter.append("*");	
 				} else {
-					pkg.add(matchIdentifier().text);
+					filter = filter.append(matchIdentifier().text);
 				}
 			}
 		}
-		
-		String module = pkg.get(pkg.size()-1);
-		pkg.remove(pkg.size()-1);		
-				
+							
 		int end = index;
 		matchEndLine();
 		
-		wf.add(new Import(new PkgID(pkg), module, name, sourceAttr(start,
+		wf.add(new Import(filter, name, sourceAttr(start,
 				end - 1)));
 	}
 	
