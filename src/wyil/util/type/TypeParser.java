@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import wyil.lang.ModuleID;
+import wybs.lang.Path;
+import wybs.util.Trie;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import static wyil.lang.Type.*;
@@ -212,7 +213,7 @@ public class TypeParser {
 		{
 			String typeVariable = parseIdentifier();
 			if(typeVariables.contains(typeVariable)) {
-				return Nominal(new NameID(ModuleID.fromString("$"),
+				return Nominal(new NameID(Trie.fromString("$"),
 						typeVariable));				
 			} else {
 				typeVariables = new HashSet<String>(typeVariables);
@@ -220,7 +221,7 @@ public class TypeParser {
 				match("<");
 				Type t = parse(typeVariables);
 				match(">");
-				NameID label = new NameID(ModuleID.fromString("$"),
+				NameID label = new NameID(Trie.fromString("$"),
 						typeVariable);
 				return Recursive(label, t);
 			}

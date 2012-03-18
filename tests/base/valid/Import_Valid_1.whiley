@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-Type.nat f(int x):
+Int.nat f(int x):
     if x < 0:
         return 0
     else:

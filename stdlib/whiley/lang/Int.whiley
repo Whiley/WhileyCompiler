@@ -27,6 +27,19 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
+// The purpose of this module is to provide some standard types.
+define i8 as int where $ >=-128 && $ <= 127
+define i16 as int where $ >=-32768 && $ <= 32768
+define i32 as int where $ >=-2147483648 && $ <= 2147483647
+define i64 as int where $ >= -9223372036854775808 && $ <= 9223372036854775807
+
+define u8 as int where $ >=0 && $ <= 255
+define u16 as int where $ >= 0 && $ <= 65535
+define u32 as int where $ >= 0 && $ <= 4294967295
+define u64 as int where $ >= 0 && $ <= 18446744073709551615
+
+define nat as int where $ >= 0
+
 define digits as [
     '0','1','2','3','4','5','6','7','8','9',
     'a','b','c','d','e','f','g','h'
@@ -41,7 +54,7 @@ public string toHexString(int item):
     while item > 0:
         v = item / 16
         w = item % 16
-        r = r + digits[w]
+        r = digits[w] + r
         item = v
     return r
 

@@ -53,7 +53,7 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 	 * Represents a term which may be accepted by an automaton under the default
 	 * interpretation.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Term {

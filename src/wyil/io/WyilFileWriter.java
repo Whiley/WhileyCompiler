@@ -28,9 +28,9 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
+import wybs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.Module.*;
-import wyil.ModuleLoader;
+import wyil.lang.WyilFile.*;
 import wyil.Transform;
 
 /**
@@ -49,7 +49,7 @@ public final class WyilFileWriter implements Transform {
 	private boolean writeAttributes;
 	private boolean writeSlots;
 		
-	public WyilFileWriter(ModuleLoader loader) {
+	public WyilFileWriter(Path.Root project) {
 
 	}
 	
@@ -65,11 +65,11 @@ public final class WyilFileWriter implements Transform {
 		writeSlots = flag;
 	}
 	
-	public void apply(Module module) throws IOException {
+	public void apply(WyilFile module) throws IOException {
 		String filename = module.filename().replace(".whiley", ".wyil");
 		out = new PrintWriter(new FileOutputStream(filename));
 		
-		out.println("module: " + module.id());
+		//out.println("module: " + module.id());
 		out.println("source-file: " + module.filename());
 		out.println();
 		for(ConstDef cd : module.constants()) {

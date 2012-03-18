@@ -27,6 +27,8 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
+public define normalised as real where 0.0 <= $ && $ <= 1.0
+
 public string toString(real item):
     return Any.toString(item)
 
@@ -51,3 +53,28 @@ public real parse(string input) throws SyntaxError:
     else:
         return r
 
+// print real number to 10dp
+string toDecimal(real x):
+    return toDecimal(x,10)
+
+// the following is a convenience method.
+string toDecimal(real x, int ndigits):
+    if x < 0:
+        r = "-"
+        x = -x
+    else:  
+        r = ""    
+    n,d = x
+    digit = n/d
+    rem = x - digit
+    r = r + digit + "."
+    i = 1
+    while i < ndigits && rem != 0:
+        rem = rem * 10
+        n,d = rem
+        digit = n / d
+        rem = rem - digit
+        r = r + digit
+        i = i + 1
+    // need to support rounding!    
+    return r

@@ -31,6 +31,24 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
+#################################
+# PROCESS COMMAND LINE ARGUMENTS
+#################################
+
+while [ $1 ];
+  do case x"$1" in        
+        x-cp) shift
+	 CLASSPATH=$1
+	 shift ;;
+	x-classpath) shift
+	 CLASSPATH=$1
+	 shift ;;
+	x-*) echo "invalid option $1"
+	 exit 1;;
+	*) break;;
+  esac
+done
+
 ##################
 # RUN APPLICATION
 ##################
