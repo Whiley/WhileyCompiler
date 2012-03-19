@@ -38,6 +38,7 @@ import wyjc.io.ClassFileBuilder;
 import wyjc.io.ClassFileLoader;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
+import wyjvm.util.Continuations;
 import wyjvm.util.DeadCodeElimination;
 import wyjvm.util.Validation;
 
@@ -78,6 +79,9 @@ public final class WyilFile {
 				
 			// eliminate any dead code that was introduced.		
 			// new DeadCodeElimination().apply(file);			
+
+			// add in actor continuations
+			new Continuations().apply(file);
 			
 			ClassFileWriter writer = new ClassFileWriter(output,null);			
 			writer.write(file);	

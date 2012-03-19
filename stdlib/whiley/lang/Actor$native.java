@@ -28,14 +28,13 @@ package whiley.lang;
 import wyjc.runtime.concurrency.Scheduler;
 
 public class Actor$native {
-	public static void sleep(int millis) throws InterruptedException {
-		long m = (long) millis;
+	public static void sleep(long millis) throws InterruptedException {
 		Thread t = Thread.currentThread();
 		if (t instanceof Scheduler.SchedulerThread) {
 			Scheduler.SchedulerThread thread = (Scheduler.SchedulerThread) t;
-			thread.getCurrentStrand().sleep(m);
+			thread.getCurrentStrand().sleep(millis);
 		} else {
-			t.sleep(m);
+			t.sleep(millis);
 		}
 	}
 }

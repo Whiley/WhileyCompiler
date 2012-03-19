@@ -33,6 +33,15 @@ public class Strand extends Messager {
 		this.scheduler = scheduler;
 	}
 	
+	public static Strand getCurrentStrand() {
+		Thread thread = Thread.currentThread();
+		if (thread instanceof Scheduler.SchedulerThread) {
+			return ((Scheduler.SchedulerThread) thread).getCurrentStrand();
+		}
+		
+		return null;
+	}
+	
 	@Override
 	protected void scheduleResume() {
 		super.scheduleResume();
