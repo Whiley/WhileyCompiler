@@ -1,13 +1,14 @@
 import * from whiley.lang.*
 
+define Actor as ref { int state }
+
 // Tests that variables are maintained after synchronous message sends.
-void ::main(System sys, [string] args):
-    i = sys.var()
-    sys.out!println(sys.self())
+void ::main(Console sys):
+    actor = new { state: 6 }
+    i = actor.state()
+    actor->state = 5
+    sys.out!println(actor.state())
     sys.out!println(i)
 
-int Console::self():
-    return 1
-
-int Console::var():
-    return 2
+int Actor::state():
+    return this->state

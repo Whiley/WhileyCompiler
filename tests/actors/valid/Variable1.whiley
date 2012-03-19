@@ -1,10 +1,13 @@
 import * from whiley.lang.*
 
+define Actor as ref { int state }
+
 // Tests that an actor can correctly use the result of a synchronous message.
 void ::main(Console sys):
-    i = sys.var()
+    actor = new { state: 6 }
+    i = actor.state()
     sys.out!println(i)
     sys.out!println(i)
 
-int Console::var():
-    return 1
+int Actor::state():
+    return this->state
