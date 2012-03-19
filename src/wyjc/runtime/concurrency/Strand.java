@@ -52,11 +52,13 @@ public class Strand extends Messager {
 	/**
 	 * @param milliseconds The number of milliseconds to sleep for
 	 */
-	public void sleep(long milliseconds) {
-		shouldYield = true;
-		shouldResume = true;
-		
-		wakeAt = System.currentTimeMillis() + milliseconds;
+	public void sleep(long milliseconds) throws InterruptedException {
+		// TODO Reimplement this without blocking the thread.
+//		shouldYield = true;
+//		shouldResume = true;
+//		
+//		wakeAt = System.currentTimeMillis() + milliseconds;
+		Thread.sleep(milliseconds);
 	}
 
 	public void resume() {

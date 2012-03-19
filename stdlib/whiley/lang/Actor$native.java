@@ -25,16 +25,19 @@
 
 package whiley.lang;
 
+import java.math.BigInteger;
+
 import wyjc.runtime.concurrency.Scheduler;
 
 public class Actor$native {
-	public static void sleep(long millis) throws InterruptedException {
+	public static void sleep(BigInteger millis) throws InterruptedException {
+    long m = millis.longValue();
 		Thread t = Thread.currentThread();
 		if (t instanceof Scheduler.SchedulerThread) {
 			Scheduler.SchedulerThread thread = (Scheduler.SchedulerThread) t;
-			thread.getCurrentStrand().sleep(millis);
+			thread.getCurrentStrand().sleep(m);
 		} else {
-			t.sleep(millis);
+			t.sleep(m);
 		}
 	}
 }
