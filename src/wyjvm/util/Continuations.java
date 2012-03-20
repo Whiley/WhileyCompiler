@@ -80,20 +80,11 @@ public class Continuations {
 	}
 
 	public void apply(Method method) {
-		System.out.println(method.name());
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
-				try {
-					apply(method, (Code) attribute);
-				} catch (Exception ex) {
-					System.err.println("Failed to compile");
-				}
-				for (Bytecode code : ((Code) attribute).bytecodes()) {
-					System.out.println(code);
-				}
+				apply(method, (Code) attribute);
 			}
 		}
-		System.out.println();
 	}
 
 	public void apply(Method method, Code code) {
@@ -301,28 +292,26 @@ public class Continuations {
 		}
 
 		for (int var : types.keySet()) {
-			if (var != 0) {
-				JvmType type = types.get(var), methodType = type;
-				i = addStrand(bytecodes, i);
-				bytecodes.add(++i, new LoadConst(var));
+			JvmType type = types.get(var), methodType = type;
+			i = addStrand(bytecodes, i);
+			bytecodes.add(++i, new LoadConst(var));
 
-				String name;
-				if (type instanceof Reference) {
-					name = "getObject";
-					methodType = JAVA_LANG_OBJECT;
-				} else {
-					// This is a bit of a hack. Method names in Yielder MUST match the
-					// class names in JvmType.
-					name = "get" + type.getClass().getSimpleName();
-				}
-
-				bytecodes.add(++i, new Invoke(YIELDER, name, new Function(methodType,
-						T_INT), Bytecode.VIRTUAL));
-				if (type instanceof Reference) {
-					bytecodes.add(++i, new CheckCast(type));
-				}
-				bytecodes.add(++i, new Store(var, type));
+			String name;
+			if (type instanceof Reference) {
+				name = "getObject";
+				methodType = JAVA_LANG_OBJECT;
+			} else {
+				// This is a bit of a hack. Method names in Yielder MUST match the
+				// class names in JvmType.
+				name = "get" + type.getClass().getSimpleName();
 			}
+
+			bytecodes.add(++i, new Invoke(YIELDER, name, new Function(methodType,
+					T_INT), Bytecode.VIRTUAL));
+			if (type instanceof Reference) {
+				bytecodes.add(++i, new CheckCast(type));
+			}
+			bytecodes.add(++i, new Store(var, type));
 		}
 
 		i = addStrand(bytecodes, i);

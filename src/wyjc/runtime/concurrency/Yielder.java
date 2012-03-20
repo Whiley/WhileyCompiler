@@ -103,11 +103,27 @@ public abstract class Yielder {
 	}
 
 	public void set(int index, boolean value) {
-		current.localMap.put(index, new Bool(value));
+		current.localMap.put(index, value);
+	}
+	
+	public void set(int index, char value) {
+		current.localMap.put(index, value);
+	}
+	
+	public void set(int index, double value) {
+		current.localMap.put(index, value);
 	}
 
 	public void set(int index, int value) {
-		current.localMap.put(index, new Int(value));
+		current.localMap.put(index, value);
+	}
+	
+	public void set(int index, float value) {
+		current.localMap.put(index, value);
+	}
+	
+	public void set(int index, long value) {
+		current.localMap.put(index, value);
 	}
 
 	public Object getObject(int index) {
@@ -115,11 +131,27 @@ public abstract class Yielder {
 	}
 
 	public boolean getBool(int index) {
-		return ((Bool) current.localMap.get(index)).value;
+		return (Boolean) current.localMap.get(index);
+	}
+	
+	public char getChar(int index) {
+		return (Character) current.localMap.get(index);
+	}
+	
+	public double getDouble(int index) {
+		return (Double) current.localMap.get(index);
 	}
 
 	public int getInt(int index) {
-		return ((Int) current.localMap.get(index)).value;
+		return (Integer) current.localMap.get(index);
+	}
+	
+	public float getFloat(int index) {
+		return (Float) current.localMap.get(index);
+	}
+	
+	public long getLong(int index) {
+		return (Long) current.localMap.get(index);
 	}
 
 	public void push(Object value) {
@@ -127,11 +159,27 @@ public abstract class Yielder {
 	}
 
 	public void push(boolean value) {
-		current.localStack.push(new Bool(value));
+		current.localStack.push(value);
+	}
+	
+	public void push(char value) {
+		current.localStack.push(value);
+	}
+	
+	public void push(double value) {
+		current.localStack.push(value);
 	}
 
 	public void push(int value) {
-		current.localStack.push(new Int(value));
+		current.localStack.push(value);
+	}
+	
+	public void push(float value) {
+		current.localStack.push(value);
+	}
+	
+	public void push(long value) {
+		current.localStack.push(value);
 	}
 
 	public Object popObject() {
@@ -139,11 +187,27 @@ public abstract class Yielder {
 	}
 
 	public boolean popBool() {
-		return ((Bool) current.localStack.pop()).value;
+		return (Boolean) current.localStack.pop();
+	}
+	
+	public char popChar() {
+		return (Character) current.localStack.pop();
+	}
+	
+	public double popDouble() {
+		return (Double) current.localStack.pop();
 	}
 
 	public int popInt() {
-		return ((Int) current.localStack.pop()).value;
+		return (Integer) current.localStack.pop();
+	}
+	
+	public float popFloat() {
+		return (Float) current.localStack.pop();
+	}
+	
+	public long popLong() {
+		return (Long) current.localStack.pop();
 	}
 
 	private static final class State {
@@ -158,27 +222,5 @@ public abstract class Yielder {
 		}
 
 	}
-
-	private static final class Bool {
-
-		public final boolean value;
-
-		public Bool(boolean value) {
-			this.value = value;
-		}
-
-	}
-
-	private static final class Int {
-
-		public final int value;
-
-		public Int(int value) {
-			this.value = value;
-		}
-
-	}
-
-	// TODO Finish primitive classes here.
 
 }
