@@ -1,7 +1,7 @@
 <project name="whiley" default="wyjc">  
-  <property name="version" value="0.3.13"/>
+  <property name="version" value="0.3.14"/>
   <target name="compile">
-    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"> 
+    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"> 
       <src path="src"/>
       <src path="stdlib"/>
     </javac>
@@ -27,7 +27,7 @@
       <attribute name="Implementation-Version" value="${version}-${build.number}"/>
     </manifest>
     <jar destfile="lib/wyjc.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src" includes="wyil/**/*.class,wyc/**/*,wyjc/**/*.class,wyone/**/*.class,wyjvm/**/*.class,wyautl/**/*.class"/>
+      <fileset dir="src" includes="*/**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -84,7 +84,7 @@
 
   <target name="doc">
     <javadoc
-       packagenames="wyc.*,wyil.*,,wyone.*,wyjc.*,wyjvm.*,wyautl.*"
+       packagenames="wyc.*,wybs.*,wyil.*,,wyone.*,wyjc.*,wyjvm.*,wyautl.*"
        excludepackagenames="wyjc.testing.*,wyil.testing.*"
        sourcepath="src/"
        destdir="docs/api"
@@ -93,7 +93,7 @@
        use="true"
        windowtitle="Whiley API">
       <doctitle><![CDATA[<h1>The Whiley Programming Language (v${version})</h1>]]></doctitle>
-      <bottom><![CDATA[<i>Copyright &#169; 2010 David J. Pearce. All Rights Reserved.</i>]]></bottom>
+      <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       </javadoc>
   </target>
 

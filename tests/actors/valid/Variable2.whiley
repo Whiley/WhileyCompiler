@@ -1,14 +1,14 @@
-import toString from whiley.lang.Any
-import * from whiley.lang.System
+import * from whiley.lang.*
 
-// Tests that an actor can correctly use the result of a synchronous message.
-void ::main(System sys, [string] args):
-    i = sys.var()
-    sys.out!println(sys.self())
+define Actor as ref { int state }
+
+// Tests that variables are maintained after synchronous message sends.
+void ::main(Console sys):
+    actor = new { state: 6 }
+    i = actor.state()
+    actor->state = 5
+    sys.out!println(actor.state())
     sys.out!println(i)
 
-string System::self():
-    return toString(1)
-
-string System::var():
-    return toString(2)
+int Actor::state():
+    return this->state

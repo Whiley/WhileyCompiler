@@ -32,8 +32,10 @@ import java.util.*;
 import wyjc.Main;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyVersion;
+import wybs.lang.Path;
+import wybs.lang.SyntaxError;
 import wyil.*;
-import static wyil.util.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Code.*;
@@ -57,19 +59,17 @@ public class ClassFileBuilder {
 	protected int CLASS_VERSION = 49;
 	protected int WHILEY_MINOR_VERSION;
 	protected int WHILEY_MAJOR_VERSION;
-	protected ModuleLoader loader;	
 	protected String filename;
 	protected JvmType.Clazz owner;
 	
-	public ClassFileBuilder(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
-		this.loader = loader;
+	public ClassFileBuilder(int whileyMajorVersion, int whileyMinorVersion) {
 		this.WHILEY_MINOR_VERSION = whileyMinorVersion;
 		this.WHILEY_MAJOR_VERSION = whileyMajorVersion;
 	}
 
-	public ClassFile build(Module module) {
-		owner = new JvmType.Clazz(module.id().pkg().toString(),
-				module.id().module().toString());
+	public ClassFile build(WyilFile module) {		
+		owner = new JvmType.Clazz(module.id().parent().toString().replace('.','/'),
+				module.id().last());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
@@ -84,7 +84,7 @@ public class ClassFileBuilder {
 		
 		boolean addMainLauncher = false;		
 				
-		for(Module.ConstDef cd : module.constants()) {	
+		for(WyilFile.ConstDef cd : module.constants()) {	
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : cd.attributes()) {
@@ -96,7 +96,7 @@ public class ClassFileBuilder {
 			cf.attributes().add(wd);
 		}
 		
-		for(Module.TypeDef td : module.types()) {
+		for(WyilFile.TypeDef td : module.types()) {
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : td.attributes()) {
@@ -110,7 +110,7 @@ public class ClassFileBuilder {
 		}
 		
 		HashMap<Constant,Integer> constants = new HashMap<Constant,Integer>();
-		for(Module.Method method : module.methods()) {				
+		for(WyilFile.Method method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			
@@ -217,8 +217,12 @@ public class ClassFileBuilder {
 	
 		// Create the scheduler that will handle concurrency.
 		codes.add(new Bytecode.New(WHILEYSCHEDULER));
-		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
 		
+		// Store the scheduler for later.
+		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
+		codes.add(new Bytecode.Store(1, WHILEYSCHEDULER));
+		
+		// Use the special constructor if a fixed number of threads is called for.
 		JvmType.Function ctype;
 		if (Main.threadCount > -1) {
 			codes.add(new Bytecode.LoadConst(Main.threadCount));
@@ -226,67 +230,52 @@ public class ClassFileBuilder {
 		} else {
 			ctype = new JvmType.Function(T_VOID);
 		}
-		
 		codes.add(new Bytecode.Invoke(WHILEYSCHEDULER, "<init>", ctype,
 				Bytecode.SPECIAL));
 		
-		// Create the System actor and the appropriate number of copies.
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess",
-				new JvmType.Function(WHILEYPROCESS, WHILEYSCHEDULER),
-
-				Bytecode.STATIC));
-		// For the sender of the sendAsync method.
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		// For the call to wait.
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		// For the monitor enter and exit.
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		// Create the starting strand.
+		codes.add(new Bytecode.New(WHILEYSTRAND));
 		
-		// Synchronise on the new system process.
-		codes.add(new Bytecode.MonitorEnter());
+		// Create a copy for the call to sendSync.
+		codes.add(new Bytecode.Dup(WHILEYSTRAND));
 		
-		// Get the System::main method out.
-		Type.Method wyft = (Type.Method) Type.Method(null,Type.T_VOID,
-				Type.T_VOID, WHILEY_SYSTEM_T,	Type.List(Type.T_STRING,false));
-		JvmType.Function ftype =
-		    new JvmType.Function(JAVA_LANG_REFLECT_METHOD, JAVA_LANG_STRING,
-		        JAVA_LANG_STRING);
+		// Call the strand's constructor.
+		codes.add(new Bytecode.Load(1, WHILEYSCHEDULER));
+		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "<init>",
+				new JvmType.Function(T_VOID, WHILEYSCHEDULER), Bytecode.SPECIAL));
+		
+		// Get the ::main method out.
+		Type.Method wyft = Type.Method(Type.T_VOID, Type.T_VOID, WHILEY_SYSTEM_T);
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
+				JAVA_LANG_STRING, JAVA_LANG_STRING);
+		
 		codes.add(new Bytecode.LoadConst(owner.toString()));
-	  codes.add(new Bytecode.LoadConst(nameMangle("main", wyft)));
+		codes.add(new Bytecode.LoadConst(nameMangle("main", wyft)));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
-		    Bytecode.STATIC));
+				Bytecode.STATIC));
 		
-		// Create the System::main arguments list.
-		codes.add(new Bytecode.LoadConst(2));
+		// Create the ::main arguments list.
+		codes.add(new Bytecode.LoadConst(1));
 		codes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 		codes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+		codes.add(new Bytecode.LoadConst(0));
 		
-		// Save the command line arguments into an ArrayList.
-		codes.add(new Bytecode.LoadConst(1));
+		// Create the console record.
 		codes.add(new Bytecode.Load(0, strArr));
-		JvmType.Function ft2 =
-		    new JvmType.Function(WHILEYLIST, new JvmType.Array(JAVA_LANG_STRING));
-		codes.add(new Bytecode.Invoke(WHILEYUTIL, "fromStringList", ft2,
-		    Bytecode.STATIC));
+		codes.add(new Bytecode.Load(1, WHILEYSCHEDULER));
+		codes.add(new Bytecode.Invoke(WHILEYUTIL, "newSystemConsole",
+				new JvmType.Function(WHILEYRECORD, new JvmType.Array(JAVA_LANG_STRING),
+						WHILEYSCHEDULER), Bytecode.STATIC));
 		
-		// Save the ArrayList into the arguments list.
+		// Add the console to the arguments list.
 		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		
-	// Call the send method.
-		ftype = new JvmType.Function(T_VOID, WHILEYMESSAGER,
-				JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-		codes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync", ftype,
-		    Bytecode.VIRTUAL));
+		// Call the send method (this does not block).
+		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "sendAsync",
+				new JvmType.Function(T_VOID, JAVA_LANG_REFLECT_METHOD,
+						JAVA_LANG_OBJECT_ARRAY), Bytecode.VIRTUAL));
 		
-		// Wait for the system to idle.
-		ftype = new JvmType.Function(T_VOID);
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "wait", ftype,
-				Bytecode.VIRTUAL));
-		
-		codes.add(new Bytecode.MonitorExit());
-		
-		// Add return.
+		// And return.
 		codes.add(new Bytecode.Return(null));
 
 		wyjvm.attributes.Code code =
@@ -296,11 +285,11 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public List<ClassFile.Method> build(Module.Method method,
+	public List<ClassFile.Method> build(WyilFile.Method method,
 			HashMap<Constant, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
-		for(Module.Case c : method.cases()) {
+		for(WyilFile.Case c : method.cases()) {
 			if(method.isNative()) {
 				methods.add(buildNativeOrExport(c,method,constants));
 			} else {
@@ -313,17 +302,17 @@ public class ClassFileBuilder {
 		return methods;
 	}
 	
-	public ClassFile.Method build(int caseNum, Module.Case mcase,
-			Module.Method method, HashMap<Constant,Integer> constants) {		
+	public ClassFile.Method build(int caseNum, WyilFile.Case mcase,
+			WyilFile.Method method, HashMap<Constant,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);					
-		JvmType.Function ft = convertFunType(method.type());		
+		JvmType.Function ft = convertFunType(method.type());
 		
-		String name = nameMangle(method.name(),method.type());		
+		String name = nameMangle(method.name(),method.type());
 		
 		/* need to put this back somehow?
 		if(method.cases().size() > 1) {
@@ -352,8 +341,8 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ClassFile.Method buildNativeOrExport(Module.Case mcase,
-			Module.Method method, HashMap<Constant,Integer> constants) {
+	public ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
+			WyilFile.Method method, HashMap<Constant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
@@ -384,7 +373,7 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translateNativeOrExport(Module.Method method) {
+	public ArrayList<Bytecode> translateNativeOrExport(WyilFile.Method method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.FunctionOrMethodOrMessage ft = method.type();
@@ -424,7 +413,7 @@ public class ClassFileBuilder {
 		return bytecodes;
 	}
 	
-	public ArrayList<Bytecode> translate(Module.Case mcase,
+	public ArrayList<Bytecode> translate(WyilFile.Case mcase,
 			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
@@ -1562,10 +1551,10 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Invoke c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		ModuleID mid = c.name.module();
+		Path.ID mid = c.name.module();
 		String mangled = nameMangle(c.name.name(), c.type);
-		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),
-				mid.module());
+		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString()
+				.replace('/', '.'), mid.last());
 		JvmType.Function type = convertFunType(c.type);
 		bytecodes
 				.add(new Bytecode.Invoke(owner, mangled, type, Bytecode.STATIC));
@@ -1645,39 +1634,31 @@ public class ClassFileBuilder {
 		}
 		
 		// finally, setup the stack for the send
-		bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
 				JAVA_LANG_STRING, JAVA_LANG_STRING);
 		
-		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString()));		
+		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString().replace('/','.')));		
 		bytecodes
 				.add(new Bytecode.LoadConst(nameMangle(c.name.name(), c.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
 				Bytecode.STATIC));
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
-							
+		
+		ftype = new JvmType.Function(c.synchronous ? WHILEYFUTURE : T_VOID,
+				JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+		
+		bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, c.synchronous ?
+				"sendSync" : "sendAsync", ftype, Bytecode.VIRTUAL));
+		
 		if (c.synchronous) {
-			ftype = new JvmType.Function(WHILEYFUTURE, WHILEYMESSAGER,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
-					Bytecode.VIRTUAL));
-			
-			// Response to failure will be added by Continuations.
-			
-			if (c.retval) {
+			if (c.retval) { 
 				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
 						new JvmType.Function(JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
 				addReadConversion(c.type.ret(), bytecodes);
 			} else {
 				bytecodes.add(new Bytecode.Pop(WHILEYFUTURE));
 			}
-		} else {
-			ftype = new JvmType.Function(T_VOID,
-					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync",
-					ftype, Bytecode.VIRTUAL));
-		} 
+		}
 	}
 	
 	public void translate(Code.IndirectSend c, int freeSlot,
@@ -1709,16 +1690,14 @@ public class ClassFileBuilder {
 		}
 		bytecodes.add(new Bytecode.Swap());
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
-							
-		if (c.synchronous) {			
-			JvmType.Function ftype = new JvmType.Function(WHILEYFUTURE,
-					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
-					Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-			
-			// Response to failure will be added by Continuations.
-			
+		
+		JvmType.Function ftype = new JvmType.Function(c.synchronous ? WHILEYFUTURE
+				: T_VOID, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+		
+		bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, c.synchronous ?
+				"sendSync" : "sendAsync", ftype, Bytecode.VIRTUAL));
+		
+		if (c.synchronous) {
 			if (c.retval) {
 				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
 						new JvmType.Function(JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
@@ -1726,13 +1705,7 @@ public class ClassFileBuilder {
 			} else {
 				bytecodes.add(new Bytecode.Pop(WHILEYFUTURE));
 			}
-		} else {
-			JvmType.Function ftype = new JvmType.Function(T_VOID,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync",
-					ftype, Bytecode.VIRTUAL));
-		} 
-
+		}
 	}
 		
 	public void translate(Value v, int freeSlot,
@@ -2040,7 +2013,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		
-		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()));
+		bytecodes.add(new Bytecode.LoadConst(nid.module().toString().replace('/','.')));
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,Bytecode.STATIC));
 	}

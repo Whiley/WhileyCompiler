@@ -12,7 +12,7 @@ public class ActorTests extends TestHarness {
 
 	@Test
 	public void Parameter() {
-		// runTest("Parameter");
+		 runTest("Parameter");
 	}
 
 	@Test
@@ -42,12 +42,12 @@ public class ActorTests extends TestHarness {
 
 	@Test
 	public void Self_Method2() {
-		// runTest("Self_Method2");
+		 runTest("Self_Method2");
 	}
 
 	@Test
 	public void Variable1() {
-		// runTest("Variable1");
+		 runTest("Variable1");
 	}
 
 	@Test

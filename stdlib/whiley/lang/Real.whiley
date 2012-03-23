@@ -27,6 +27,8 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
+public define normalised as real where 0.0 <= $ && $ <= 1.0
+
 public string toString(real item):
     return Any.toString(item)
 

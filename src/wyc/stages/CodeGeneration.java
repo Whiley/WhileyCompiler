@@ -29,14 +29,15 @@ import java.util.*;
 
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
-import wyil.ModuleLoader;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
+import wyc.builder.*;
+import wyc.lang.*;
+import wyc.lang.Stmt.*;
 import wyil.util.*;
 import wyil.lang.*;
-import wyc.core.*;
-import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
-import wyc.lang.Stmt;
-import wyc.lang.Stmt.*;
 
 /**
  * <p>
@@ -78,7 +79,7 @@ import wyc.lang.Stmt.*;
  * 
  */
 public final class CodeGeneration {
-	private final ModuleLoader loader;	
+	private final WhileyBuilder builder;	
 	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
@@ -93,25 +94,16 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(ModuleLoader loader, GlobalResolver resolver) {
-		this.loader = loader;		
+	public CodeGeneration(WhileyBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
+		this.builder = builder;		
 		this.resolver = resolver;
+		this.globalGenerator = generator;
 	}
 
-	public List<Module> generate(CompilationGroup files) {
-		globalGenerator = new GlobalGenerator(loader,resolver,files);
-		
-		ArrayList<Module> modules = new ArrayList<Module>();
-		for(WhileyFile wf : files) {			
-			modules.add(generate(wf));			
-		}
-		return modules;
-	}
-	
-	private Module generate(WhileyFile wf) {
-		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
-		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
+	public WyilFile generate(WhileyFile wf) {
+		HashMap<Pair<Type.Function, String>, WyilFile.Method> methods = new HashMap();
+		ArrayList<WyilFile.TypeDef> types = new ArrayList<WyilFile.TypeDef>();
+		ArrayList<WyilFile.ConstDef> constants = new ArrayList<WyilFile.ConstDef>();
 
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
@@ -120,15 +112,15 @@ public final class CodeGeneration {
 				} else if (d instanceof Constant) {
 					constants.add(generate((Constant) d));
 				} else if (d instanceof FunctionOrMethodOrMessage) {
-					Module.Method mi = generate((FunctionOrMethodOrMessage) d);
+					WyilFile.Method mi = generate((FunctionOrMethodOrMessage) d);
 					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
-					Module.Method method = methods.get(key);
+					WyilFile.Method method = methods.get(key);
 					if (method != null) {
 						// coalesce cases
-						ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
+						ArrayList<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>(
 								method.cases());
 						ncases.addAll(mi.cases());
-						mi = new Module.Method(method.modifiers(), mi.name(),
+						mi = new WyilFile.Method(method.modifiers(), mi.name(),
 								mi.type(), ncases);
 					}
 					methods.put(key, mi);
@@ -140,16 +132,16 @@ public final class CodeGeneration {
 			}
 		}
 		
-		return new Module(wf.module, wf.filename, methods.values(), types,
+		return new WyilFile(wf.module, wf.filename, methods.values(), types,
 				constants);				
 	}
 
-	private Module.ConstDef generate(Constant cd) {
+	private WyilFile.ConstDef generate(Constant cd) {
 		// TODO: this the point where were should an evaluator
-		return new Module.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
+		return new WyilFile.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private Module.TypeDef generate(TypeDef td) throws ResolveError {		
+	private WyilFile.TypeDef generate(TypeDef td) throws Exception {		
 		Block constraint = null;
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
@@ -157,10 +149,10 @@ public final class CodeGeneration {
 			constraint = globalGenerator.generate(nid);			
 		}
 		
-		return new Module.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
+		return new WyilFile.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private Module.Method generate(FunctionOrMethodOrMessage fd) {		
+	private WyilFile.Method generate(FunctionOrMethodOrMessage fd) throws Exception {		
 		localGenerator = new LocalGenerator(globalGenerator,fd);	
 		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -250,7 +242,7 @@ public final class CodeGeneration {
 		// removed as dead-code or remains and will cause an error.
 		body.append(Code.Return(Type.T_VOID),attributes(fd));		
 		
-		List<Module.Case> ncases = new ArrayList<Module.Case>();				
+		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
 		
 		for(int i=0;i!=environment.size();++i) {
@@ -261,17 +253,17 @@ public final class CodeGeneration {
 			locals.set(e.getValue(),e.getKey());
 		}	
 		
-		ncases.add(new Module.Case(body,precondition,postcondition,locals));
+		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
 				
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			return new Module.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
+			return new WyilFile.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
 		} else if(fd instanceof WhileyFile.Method) {
 			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		} else {
 			WhileyFile.Message md = (WhileyFile.Message) fd;					
-			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		}		
 	}
 
@@ -493,7 +485,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Switch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Switch s, HashMap<String,Integer> environment) throws Exception {
 		String exitLab = Block.freshLabel();		
 		Block blk = localGenerator.generate(s.expr, environment);				
 		Block cblk = new Block(environment.size());
@@ -541,7 +533,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws Exception {
 		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {

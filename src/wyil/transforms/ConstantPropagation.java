@@ -25,12 +25,13 @@
 
 package wyil.transforms;
 
-import static wyil.util.SyntaxError.internalFailure;
+import static wybs.lang.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wybs.lang.Builder;
+import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
@@ -42,11 +43,11 @@ import wyjc.runtime.BigRational;
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
-	public ConstantPropagation(ModuleLoader loader) {
-		super(loader);
+	public ConstantPropagation(Builder builder) {
+		
 	}
 		
-	public Module.TypeDef transform(Module.TypeDef type) {
+	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
 		// TODO: propagate constants through type constraints
 		return type;		
 	}
@@ -62,7 +63,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return environment;				
 	}
 	
-	public Module.Case propagate(Module.Case mcase) {		
+	public WyilFile.Case propagate(WyilFile.Case mcase) {		
 		methodCase = mcase;
 		block = mcase.body();
 		stores = new HashMap<String,Env>();		
@@ -88,7 +89,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 	

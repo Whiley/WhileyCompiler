@@ -54,7 +54,7 @@ public string toHexString(int item):
     while item > 0:
         v = item / 16
         w = item % 16
-        r = r + digits[w]
+        r = digits[w] + r
         item = v
     return r
 

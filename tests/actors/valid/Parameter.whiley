@@ -1,9 +1,12 @@
-import toString from whiley.lang.Any
-import * from whiley.lang.System
+import * from whiley.lang.*
 
-void ::main(System sys, [string] args):
-    sys.self(2)
+define Actor as ref { int state }
 
-void System::self(int i):
-    this.out!println(toString(1))
-    this.out!println(toString(i))
+void ::main(Console sys):
+    actor = new { state: 6 }
+    actor.method(sys, 5)
+
+// Tests that reading a parameter doesn't affect the actor invariants.
+void Actor::method(Console sys, int i):
+    sys.out.println(this->state)
+    sys.out.println(i)

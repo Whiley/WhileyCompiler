@@ -26,8 +26,12 @@
 package wyil.transforms;
 
 import java.util.*;
-import static wyil.util.SyntaxError.syntaxError;
+
+import static wybs.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.*;
+import wybs.lang.Builder;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
@@ -70,28 +74,27 @@ import wyil.util.*;
  * @author David J. Pearce
  */
 public class CoercionCheck implements Transform {
-	private final ModuleLoader loader;
 	private String filename;
 
-	public CoercionCheck(ModuleLoader loader) {
-		this.loader = loader;
+	public CoercionCheck(Builder builder) {
+
 	}
 	
-	public void apply(Module module) {
+	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(Module.Method method : module.methods()) {
+		for(WyilFile.Method method : module.methods()) {
 			check(method);
 		}
 	}
 		
-	public void check(Module.Method method) {				
-		for (Module.Case c : method.cases()) {
+	public void check(WyilFile.Method method) {				
+		for (WyilFile.Case c : method.cases()) {
 			check(c.body(), method);
 		}		
 	}
 	
-	protected void check(Block block,  Module.Method method) {		
+	protected void check(Block block,  WyilFile.Method method) {		
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
