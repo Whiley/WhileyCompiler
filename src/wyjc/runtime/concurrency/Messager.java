@@ -45,30 +45,6 @@ public abstract class Messager extends Yielder {
 	
 	private Message currentMessage = null;
 	
-	/**
-	 * Whether the messager is ready to resume. This is important if a message is
-	 * sent synchronously and the receiver attempts to resume this messager before
-	 * it has completed yielding, in which case the messager will enter an
-	 * inconsistent state. Obviously, all messagers are ready to begin with.
-	 * 
-	 * See the <code>scheduleResume</code> and <code>beReadyToResume</code>
-	 * methods for information on how its use is carried out.
-	 */
-	private boolean ready = true;
-	
-	/**
-	 * Whether the messager should resume immediately upon completing its yielding
-	 * process. This is used mainly to react to a premature resumption, when the
-	 * messager is asked to resume before being ready. In this case, shouldResume
-	 * will cause to immediately place itself back in the scheduler. Appropriate
-	 * values are assigned in <code>sendSync</code> and <code>sendAsync</code>, so
-	 * a default value is not necessary.
-	 * 
-	 * See the <code>scheduleResume</code> and <code>beReadyToResume</code>
-	 * methods for information on how its use is carried out.
-	 */
-	protected boolean shouldResume = false;
-	
 	public Messager(Scheduler scheduler) {
 		this.scheduler = scheduler;
 	}
@@ -102,15 +78,30 @@ public abstract class Messager extends Yielder {
 	    throws InterruptedException {
 		Messager sender = scheduler.getCurrentStrand();
 		
+		if (sender == this) {
+			// TODO Trace a full call loop.
+			throw new RuntimeException("Deadlock on " + this);
+		}
+		
 		SyncMessage message = new SyncMessage(method, args, sender);
 		
 		// The sender may be null if the message was sent outside of the scheduler.
 		if (sender != null) {
-			// This needs to happen before the message is sent, otherwise this actor
-			// might resume the sender before they've finished yielding.
-			sender.ready = false;
+			synchronized (this) {
+				// If this actor isn't busy, run the message on the current thread.
+				if (currentMessage == null) {
+					currentMessage = message;
+					resume();
+					
+					// If the message completed, just return its final value.
+					if (!isYielded()) {
+						sender.shouldYield = false;
+						return message.future;
+					}
+				}
+			}
+			
 			sender.shouldYield = true;
-			sender.shouldResume = false;
 		}
 		
 		addMessage(message);
@@ -139,18 +130,10 @@ public abstract class Messager extends Yielder {
 	 *          The entry arguments of the message
 	 */
 	public void sendAsync(Method method, Object[] args) {
-		Messager sender = scheduler.getCurrentStrand();
-		
-		// The sender may be null if the message was sent outside of the scheduler.
-		if (sender != null) {
-			// This needs to happen before the message is sent, otherwise the actor
-			// could start before these are set to the correct values.
-			sender.shouldYield = false;
-			sender.shouldResume = true;
-		}
-		
 		addMessage(new Message(method, args));
 	}
+	
+	protected abstract void resume();
 	
 	/**
 	 * Takes a message and either adds it to the queue orat sent this message, if
@@ -183,32 +166,7 @@ public abstract class Messager extends Yielder {
 	 * the messager is not ready to resume, this will cause it to immediately
 	 * resume once it reaches a ready state.
 	 */
-	protected void scheduleResume() {
-		synchronized (this) {
-			if (!ready) {
-				shouldResume = true;
-				return;
-			}
-			
-			shouldResume = false;
-		}
-	}
-	
-	/**
-	 * Sets the messager as ready to resume, and returns whether the messager
-	 * should schedule a resumption immediately.
-	 * 
-	 * The reason this dual functionality is composed into a single method is that
-	 * a race condition can occur in trying to separate them out into two,
-	 * otherwise a resumption can arrive during the change in the ready state.
-	 * 
-	 * @return Whether the messager should resume as a result of being ready
-	 */
-	protected synchronized boolean readyToResume() {
-		((Scheduler.SchedulerThread) Thread.currentThread()).getCurrentStrand();
-		ready = true;
-		return shouldResume;
-	}
+	protected abstract void scheduleResume();
 	
 	/**
 	 * Invokes the method passed by the current message with the arguments passed
@@ -300,6 +258,11 @@ public abstract class Messager extends Yielder {
 		private final Object[] arguments;
 		
 		public Message(Method method, Object[] arguments) {
+			// This is a hack for actor arguments. TODO Remove reflection entirely.
+			if (arguments[0] == null) {
+				arguments[0] = Messager.this;
+			}
+			
 			this.method = method;
 			this.arguments = arguments;
 		}

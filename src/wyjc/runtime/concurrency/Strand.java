@@ -22,6 +22,23 @@ public class Strand extends Messager {
 
 	private final Scheduler scheduler;
 	
+	/**
+	 * Whether the messager should resume immediately upon completing its
+	 * yielding process. This is used mainly to react to a premature resumption,
+	 * when the messager is asked to resume before being ready. In this case,
+	 * shouldResumeImmediately will cause this actor to immediately place itself
+	 * back in the scheduler.
+	 */
+	private boolean shouldResumeImmediately = false;
+	
+	/**
+	 * Whether the messager is ready to resume. This is important if a message is
+	 * sent synchronously and the receiver attempts to resume this messager
+	 * before it has completed yielding, in which case the messager will enter an
+	 * inconsistent state. Obviously, all messagers are ready to begin with.
+	 */
+	private boolean isReadyToResume = true;
+	
 	private long wakeAt = -1;
 	
 	/**
@@ -44,7 +61,14 @@ public class Strand extends Messager {
 	
 	@Override
 	protected void scheduleResume() {
-		super.scheduleResume();
+		synchronized (this) {
+			if (!isReadyToResume) {
+				shouldResumeImmediately = true;
+				return;
+			}
+			
+			isReadyToResume = shouldResumeImmediately = false;
+		}
 		
 		scheduler.scheduleResume(this);
 	}
@@ -75,11 +99,17 @@ public class Strand extends Messager {
 			Object result = invokeCurrentMethod();
 
 			if (!isYielded()) {
+				isReadyToResume = true;
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
-			} else if (readyToResume()) {
-				// Readies the actor for another resumption.
-				scheduleResume();
+			} else {
+				synchronized (this) {
+					isReadyToResume = true;
+					if (shouldResumeImmediately) {
+						// Readies the actor for another resumption.
+						scheduleResume();
+					}
+				}
 			}
 		} catch (IllegalArgumentException iax) {
 			// Not possible - caught by the language compiler.

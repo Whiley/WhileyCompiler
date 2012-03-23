@@ -7,7 +7,7 @@ void ::main(Console sys):
     actor = new { state: 6 }
     i = actor.state()
     sys.out!println(i)
-    sys.out!println(i)
+    sys.out.println(i)
 
 int Actor::state():
     return this->state

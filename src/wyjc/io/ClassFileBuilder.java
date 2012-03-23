@@ -270,9 +270,9 @@ public class ClassFileBuilder {
 		// Add the console to the arguments list.
 		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		
-		// Call the send method (this blocks).
-		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "sendSync",
-				new JvmType.Function(WHILEYFUTURE, JAVA_LANG_REFLECT_METHOD,
+		// Call the send method (this does not block).
+		codes.add(new Bytecode.Invoke(WHILEYSTRAND, "sendAsync",
+				new JvmType.Function(T_VOID, JAVA_LANG_REFLECT_METHOD,
 						JAVA_LANG_OBJECT_ARRAY), Bytecode.VIRTUAL));
 		
 		// And return.

@@ -8,5 +8,5 @@ void ::main(Console sys):
 
 // Tests that reading a parameter doesn't affect the actor invariants.
 void Actor::method(Console sys, int i):
-    sys.out!println(this->state)
-    sys.out!println(i)
+    sys.out.println(this->state)
+    sys.out.println(i)

@@ -95,6 +95,10 @@ public final class Scheduler {
 
 				if (scheduledCount == 0) {
 					pool.shutdown();
+					
+					synchronized (Scheduler.this) {
+						Scheduler.this.notifyAll();
+					}
 				}
 			}
 			

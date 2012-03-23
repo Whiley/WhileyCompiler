@@ -41,7 +41,6 @@ import wyjvm.attributes.Code;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.Bytecode.CheckCast;
 import wyjvm.lang.Bytecode.Dup;
-import wyjvm.lang.Bytecode.Goto;
 import wyjvm.lang.Bytecode.If;
 import wyjvm.lang.Bytecode.Invoke;
 import wyjvm.lang.Bytecode.Label;
@@ -56,6 +55,8 @@ import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyjvm.lang.ClassFile.Method;
 import wyjvm.lang.JvmType;
+import wyjvm.lang.JvmType.Bool;
+import wyjvm.lang.JvmType.Char;
 import wyjvm.lang.JvmType.Clazz;
 import wyjvm.lang.JvmType.Function;
 import wyjvm.lang.JvmType.Int;
@@ -65,7 +66,7 @@ import wyjvm.util.dfa.VariableAnalysis;
 
 public class Continuations {
 
-	private static final Clazz ACTOR = new Clazz("wyjc.runtime", "Actor"),
+	private static final Clazz
 			STRAND = new Clazz("wyjc.runtime.concurrency", "Strand"),
 			MESSAGER = new Clazz("wyjc.runtime.concurrency", "Messager"),
 			YIELDER = new Clazz("wyjc.runtime.concurrency", "Yielder"),
@@ -90,7 +91,6 @@ public class Continuations {
 	public void apply(Method method, Code code) {
 		List<Bytecode> bytecodes = code.bytecodes();
 
-		boolean mayFail = false;
 		int location = 0;
 
 		VariableAnalysis variableAnalysis = new VariableAnalysis(method);
@@ -103,8 +103,8 @@ public class Continuations {
 				Invoke invoke = (Invoke) bytecode;
 				String name = invoke.name;
 
-				if (invoke.owner.equals(MESSAGER) && name.startsWith("send")) {
-					// Message send.
+				if (invoke.owner.equals(MESSAGER) && name.equals("sendSync")) {
+					// Synchronous message send.
 
 					i = addStrand(bytecodes, i);
 					bytecodes.add(++i, new Invoke(YIELDER, "shouldYield", new Function(
@@ -122,71 +122,69 @@ public class Continuations {
 					bytecodes.add(++i, new Label("skip" + location));
 
 					if (name.startsWith("sendSync")) {
+						String success = "success" + location;
+						
 						bytecodes.add(++i, new Dup(FUTURE));
 						bytecodes.add(++i, new Invoke(FUTURE, "isFailed", new Function(
 								T_BOOL), Bytecode.VIRTUAL));
-						bytecodes.add(++i, new If(If.NE, "fail"));
-						mayFail = true;
+						bytecodes.add(++i, new If(If.EQ, success));
+
+						// If the method sends any synchronous messages, then it will check
+						// for failure and respond by not jumping to the success label.
+						bytecodes.add(++i, new Invoke(FUTURE, "getCause", new Function(
+								JAVA_LANG_THROWABLE), Bytecode.VIRTUAL));
+						bytecodes.add(++i, new Throw());
+						bytecodes.add(++i, new Label(success));
 					}
 
 					location += 1;
-				} else {
-					List<JvmType> pTypes = invoke.type.parameterTypes();
-					if (pTypes.size() > 0 && pTypes.get(0).equals(ACTOR)) {
-						// Internal method call.
-
-						Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
-						Stack<JvmType> stack = stackAnalysis.typesAt(i);
-
-						pTypes = invoke.type.parameterTypes();
-						int size = pTypes.size();
-
-						// Remove the values that invoking the method will remove for us.
-						for (int j = 0; j < size; ++j) {
-							stack.pop();
-						}
-
-						// If the method isn't resuming, it needs to skip over the resume.
-						bytecodes.add(i++, new Goto("invoke" + location));
-
-						i = addResume(bytecodes, i - 1, location, types, stack) + 1;
-
-						// The first argument of any internal method is the actor.
-						bytecodes.add(i++, new Load(0, ACTOR));
-
-						// Load in null values. The unyielding will put the real values
-						// in.
-						for (int j = 1; j < size; ++j) {
-							bytecodes.add(i++, addNullValue(pTypes.get(j)));
-						}
-
-						bytecodes.add(i++, new Label("invoke" + location));
-
-						// Now the method has been invoked, this method needs to check if
-						// it caused the actor to yield.
-						bytecodes.add(++i, new Load(0, ACTOR));
-						bytecodes.add(++i, new Invoke(YIELDER, "isYielded", new Function(
-								T_BOOL), Bytecode.VIRTUAL));
-						bytecodes.add(++i, new If(If.EQ, "skip" + location));
-
-						i = addYield(method, bytecodes, i, location, types, stack);
-
-						bytecodes.add(++i, new Label("skip" + location));
-
-						location += 1;
-					}
+//				} else {
+//					List<JvmType> pTypes = invoke.type.parameterTypes();
+//					if (pTypes.size() > 0 && pTypes.get(0).equals(ACTOR)) {
+//						// Internal method call.
+//
+//						Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
+//						Stack<JvmType> stack = stackAnalysis.typesAt(i);
+//
+//						pTypes = invoke.type.parameterTypes();
+//						int size = pTypes.size();
+//
+//						// Remove the values that invoking the method will remove for us.
+//						for (int j = 0; j < size; ++j) {
+//							stack.pop();
+//						}
+//
+//						// If the method isn't resuming, it needs to skip over the resume.
+//						bytecodes.add(i++, new Goto("invoke" + location));
+//
+//						i = addResume(bytecodes, i - 1, location, types, stack) + 1;
+//
+//						// The first argument of any internal method is the actor.
+//						bytecodes.add(i++, new Load(0, ACTOR));
+//
+//						// Load in null values. The unyielding will put the real values
+//						// in.
+//						for (int j = 1; j < size; ++j) {
+//							bytecodes.add(i++, addNullValue(pTypes.get(j)));
+//						}
+//
+//						bytecodes.add(i++, new Label("invoke" + location));
+//
+//						// Now the method has been invoked, this method needs to check if
+//						// it caused the actor to yield.
+//						bytecodes.add(++i, new Load(0, ACTOR));
+//						bytecodes.add(++i, new Invoke(YIELDER, "isYielded", new Function(
+//								T_BOOL), Bytecode.VIRTUAL));
+//						bytecodes.add(++i, new If(If.EQ, "skip" + location));
+//
+//						i = addYield(method, bytecodes, i, location, types, stack);
+//
+//						bytecodes.add(++i, new Label("skip" + location));
+//
+//						location += 1;
+//					}
 				}
 			}
-		}
-
-		// If the method sends any synchronous messages, then it will check for
-		// failure and respond by moving to the fail label. This is where the fail
-		// label is inserted.
-		if (mayFail) {
-			bytecodes.add(new Label("fail"));
-			bytecodes.add(new Invoke(FUTURE, "getCause", new Function(
-					JAVA_LANG_THROWABLE), Bytecode.VIRTUAL));
-			bytecodes.add(new Throw());
 		}
 
 		// If the method may resume at some point, then the start needs to be
@@ -326,8 +324,18 @@ public class Continuations {
 
 		if (type instanceof Reference) {
 			value = null;
+		} else if (type instanceof Bool) {
+			value = false;
+		} else if (type instanceof Char) {
+			value = '\u0000';
+		} else if (type instanceof JvmType.Double) {
+			value = (Double) 0.0;
 		} else if (type instanceof Int) {
-			value = 0;
+			value = (Integer) 0;
+		} else if (type instanceof JvmType.Float) {
+			value = (Float) 0f;
+		} else if (type instanceof JvmType.Long) {
+			value = (Long) 0l;
 		} else {
 			throw new UnsupportedOperationException(
 					"Non-reference types not yet supported.");

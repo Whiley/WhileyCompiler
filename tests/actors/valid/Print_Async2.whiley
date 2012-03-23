@@ -7,7 +7,7 @@ void ::main(Console sys):
     actor = new { state: 6 }
     sys.out!println(actor->state)
     actor!setState(actor->state)
-    sys.out!println(actor->state)
+    sys.out.println(actor->state)
 
 void Actor::setState(int state):
     sleep(1000)

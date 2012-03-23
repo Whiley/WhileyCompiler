@@ -42,7 +42,7 @@ public class ActorTests extends TestHarness {
 
 	@Test
 	public void Self_Method2() {
-		// runTest("Self_Method2");
+		 runTest("Self_Method2");
 	}
 
 	@Test
