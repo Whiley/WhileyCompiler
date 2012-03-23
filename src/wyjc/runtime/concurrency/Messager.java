@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Stack;
 
 /**
  * A helper class for the actor hierarchy that involves the passing of messages
@@ -78,12 +79,31 @@ public abstract class Messager extends Yielder {
 	    throws InterruptedException {
 		Messager sender = scheduler.getCurrentStrand();
 		
-		if (sender == this) {
-			// TODO Trace a full call loop.
-			throw new RuntimeException("Deadlock on " + this);
+		SyncMessage senderMessage = null;
+		if (sender != null && sender.currentMessage instanceof SyncMessage) {
+			senderMessage = (SyncMessage) sender.currentMessage;
 		}
 		
-		SyncMessage message = new SyncMessage(method, args, sender);
+		SyncMessage message = new SyncMessage(method, args, sender, senderMessage);
+		
+		// Cause a failure if a deadlock will occur.
+		SyncMessage check = message;
+		Stack<Messager> stack = new Stack<Messager>();
+		stack.push(this);
+		
+		while (check != null) {
+			stack.push(check.sender);
+			
+			if (check.sender == this) {
+				String out = "Deadlock: ";
+				while (stack.size() > 1) {
+					out += stack.pop() + " -> ";
+				}
+				throw new RuntimeException(out + stack.pop());
+			}
+			
+			check = check.senderMessage;
+		}
 		
 		// The sender may be null if the message was sent outside of the scheduler.
 		if (sender != null) {
@@ -91,13 +111,20 @@ public abstract class Messager extends Yielder {
 				// If this actor isn't busy, run the message on the current thread.
 				if (currentMessage == null) {
 					currentMessage = message;
+					message.directCall = true;
+					
+					controlThisThread();
 					resume();
+					
+					sender.controlThisThread();
 					
 					// If the message completed, just return its final value.
 					if (!isYielded()) {
 						sender.shouldYield = false;
 						return message.future;
 					}
+					
+					message.directCall = false;
 				}
 			}
 			
@@ -131,7 +158,28 @@ public abstract class Messager extends Yielder {
 		addMessage(new Message(method, args));
 	}
 	
+	/**
+	 * Evaluates whether the current message is a synchronous one. If not, it must
+	 * be an asynchronous message.
+	 * 
+	 * This method is not synchronized. Only use this within the actor's control,
+	 * or synchronize manually.
+	 * 
+	 * @return Whether the current message is synchronous
+	 */
+	protected boolean isCurrentMessageSynchronous() {
+		return currentMessage instanceof SyncMessage;
+	}
+	
+	/**
+	 * Resume the current message (The message may not have started yet).
+	 */
 	protected abstract void resume();
+	
+	/**
+	 * Force this messager to take control of the current thread.
+	 */
+	protected abstract void controlThisThread();
 	
 	/**
 	 * Takes a message and either adds it to the queue orat sent this message, if
@@ -225,7 +273,7 @@ public abstract class Messager extends Yielder {
 			// If the sender is null, then the sendSync method will cause the thread
 			// the method was invoked on to block. The message completion will have
 			// already called notifyAll and freed it, so this is irrelevant.
-			if (message.sender != null) {
+			if (message.sender != null && !message.directCall) {
 				message.sender.scheduleResume();
 			}
 		}
@@ -270,12 +318,17 @@ public abstract class Messager extends Yielder {
 	private class SyncMessage extends Message {
 		
 		private final Messager sender;
+		private final SyncMessage senderMessage;
+		
+		private boolean directCall = false;
 		
 		private final MessageFuture future;
 		
-		public SyncMessage(Method method, Object[] arguments, Messager sender) {
+		public SyncMessage(Method method, Object[] arguments, Messager sender,
+		    SyncMessage senderMessage) {
 			super(method, arguments);
 			this.sender = sender;
+			this.senderMessage = senderMessage;
 			this.future = new MessageFuture();
 		}
 		

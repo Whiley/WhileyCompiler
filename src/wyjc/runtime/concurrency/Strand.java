@@ -61,6 +61,11 @@ public class Strand extends Messager {
 	}
 	
 	@Override
+	protected void controlThisThread() {
+		scheduler.setCurrentStrand(this);
+	}
+	
+	@Override
 	protected void scheduleResume() {
 		synchronized (this) {
 			if (!isReadyToResume) {
@@ -88,14 +93,14 @@ public class Strand extends Messager {
 	}
 	
 	public void resume() {
-		if (wakeAt != -1) {
-			if (System.currentTimeMillis() < wakeAt) {
-				scheduleResume();
-				return;
-			} else {
-				wakeAt = -1;
-			}
-		}
+//		if (wakeAt != -1) {
+//			if (System.currentTimeMillis() < wakeAt) {
+//				scheduleResume();
+//				return;
+//			} else {
+//				wakeAt = -1;
+//			}
+//		}
 		
 		try {
 			Object result = invokeCurrentMethod();
@@ -120,11 +125,20 @@ public class Strand extends Messager {
 			// Not possible - all message invocations are on public methods.
 			System.err.println("Warning - illegal access in actor resumption.");
 		} catch (InvocationTargetException itx) {
-			// TODO Remove this once an entry method crashes correctly.
-			itx.getCause().printStackTrace();
+			// Asynchronous messages aren't caught, so errors bottom out here.
+			if (!isCurrentMessageSynchronous()) {
+				System.err.println(this + " failed:");
+				itx.getCause().printStackTrace();
+			}
+			
 			// Fails the message and moves on to the next one.
 			failCurrentMessage(itx.getCause());
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return "strand@" + System.identityHashCode(this);
 	}
 	
 }
