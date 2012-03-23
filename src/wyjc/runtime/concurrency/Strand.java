@@ -127,8 +127,7 @@ public class Strand extends Messager {
 		} catch (InvocationTargetException itx) {
 			// Asynchronous messages aren't caught, so errors bottom out here.
 			if (!isCurrentMessageSynchronous()) {
-				System.err.println(this + " failed:");
-				itx.getCause().printStackTrace();
+				System.err.println(this + " failed. " + itx.getCause().getMessage());
 			}
 			
 			// Fails the message and moves on to the next one.
