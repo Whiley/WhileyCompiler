@@ -72,7 +72,7 @@ public abstract class Messager extends Yielder {
 	 * 
 	 * @throws InterruptedException
 	 *           The thread block was interrupted (cannot occur for
-	 *           intra-scheduler message sends).
+	 *           intra-scheduler message sends)
 	 */
 	public MessageFuture sendSync(Method method, Object[] args)
 	    throws InterruptedException {
@@ -120,9 +120,7 @@ public abstract class Messager extends Yielder {
 	 * point in the future, once all other messages in the queue are processed.
 	 * 
 	 * The primary difference between this method and <code>sendSync</code> is how
-	 * it manages the sender. Here, the sender will be informed that it should
-	 * yield with an immediate resumption, but this can easily be modified in the
-	 * future to better react to the sending context.
+	 * it manages the sender. Here, the sender is completely ignored.
 	 * 
 	 * @param method
 	 *          The entry method of the message
@@ -176,7 +174,7 @@ public abstract class Messager extends Yielder {
 	 * message doesn't always exist, and so should only be called when it is
 	 * certain to exist.
 	 * 
-	 * @return The result of the invocation.
+	 * @return The result of the invocation
 	 */
 	protected Object invokeCurrentMethod() throws IllegalAccessException,
 	    IllegalArgumentException, InvocationTargetException {
