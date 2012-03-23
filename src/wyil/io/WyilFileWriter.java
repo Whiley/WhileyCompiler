@@ -28,6 +28,7 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
+import wybs.lang.Builder;
 import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.WyilFile.*;
@@ -49,7 +50,7 @@ public final class WyilFileWriter implements Transform {
 	private boolean writeAttributes;
 	private boolean writeSlots;
 		
-	public WyilFileWriter(Path.Root project) {
+	public WyilFileWriter(Builder builder) {
 
 	}
 	
