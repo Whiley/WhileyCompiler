@@ -27,7 +27,8 @@ package wyc.lang;
 
 import java.util.*;
 
-import wyc.core.Nominal;
+import wybs.lang.SyntacticElement;
+import wyc.builder.Nominal;
 import wyil.lang.Attribute;
 import wyil.lang.Type;
 import wyil.lang.Value;

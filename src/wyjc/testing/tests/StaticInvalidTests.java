@@ -50,6 +50,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void Coercion_CompileFail_1_StaticTest() { contextFailTest("Coercion_Invalid_1"); }
  @Test public void Coercion_CompileFail_2_StaticTest() { contextFailTest("Coercion_Invalid_2"); }
  @Test public void Constant_Invaid_1_StaticTest() { contextFailTest("Constant_Invalid_1"); }
+ @Test public void Constant_Invaid_2_StaticTest() { contextFailTest("Constant_Invalid_2"); }
  @Test public void Char_CompileFail_1_StaticTest() { contextFailTest("Char_Invalid_1"); }
  @Test public void DefiniteAssign_CompileFail_1_RuntimeFailTest() { contextFailTest("DefiniteAssign_CompileFail_1"); }
  @Test public void DefiniteAssign_CompileFail_2_RuntimeFailTest() { contextFailTest("DefiniteAssign_CompileFail_2"); }
@@ -166,11 +167,14 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void SetUnion_CompileFail_1_StaticTest() { contextFailTest("SetUnion_CompileFail_1"); }
  @Test public void SetUnion_CompileFail_2_StaticTest() { contextFailTest("SetUnion_CompileFail_2"); }
  @Test public void String_CompileFail_1_StaticTest() { contextFailTest("String_Invalid_1"); }
+ @Test public void String_CompileFail_2_StaticTest() { contextFailTest("String_Invalid_2"); }
  @Test public void Switch_CompileFail_1_StaticTest() { contextFailTest("Switch_CompileFail_1"); } 
  @Test public void Switch_CompileFail_2_StaticTest() { contextFailTest("Switch_CompileFail_2"); } 
  @Test public void Switch_CompileFail_3_StaticTest() { contextFailTest("Switch_CompileFail_3"); }
  @Test public void Switch_CompileFail_4_StaticTest() { contextFailTest("Switch_CompileFail_4"); }
  @Test public void Switch_CompileFail_5_StaticTest() { contextFailTest("Switch_CompileFail_5"); }
+ @Test public void Switch_CompileFail_6_StaticTest() { contextFailTest("Switch_Invalid_6"); }
+ @Test public void Switch_CompileFail_7_StaticTest() { contextFailTest("Switch_Invalid_7"); }
  @Test public void Throws_Invalid_1_StaticTest() { contextFailTest("Throws_Invalid_1"); }
  @Test public void Throws_Invalid_2_StaticTest() { contextFailTest("Throws_Invalid_2"); }
  @Test public void TryCatch_Invalid_1_StaticTest() { contextFailTest("TryCatch_Invalid_1"); }
@@ -179,6 +183,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void TryCatch_Invalid_4_StaticTest() { contextFailTest("TryCatch_Invalid_4"); }
  @Test public void TryCatch_Invalid_5_StaticTest() { contextFailTest("TryCatch_Invalid_5"); }
  @Test public void TupleDefine_CompileFail_1_StaticTest() { contextFailTest("TupleDefine_CompileFail_1"); }
+ @Test public void Tuple_Invalid_2_StaticTest() { contextFailTest("Tuple_Invalid_2"); }
  @Test public void TypeEquals_Invalid_1_StaticTest() { contextFailTest("TypeEquals_Invalid_1"); }
  @Test public void TypeEquals_Invalid_2_StaticTest() { contextFailTest("TypeEquals_Invalid_2"); }
  @Test public void TypeEquals_Invalid_3_StaticTest() { contextFailTest("TypeEquals_Invalid_3"); }

@@ -317,19 +317,19 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	public static void writeNameId(NameID name, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writeModuleId(name.module(),writer,constantPool);
+		writePath.ID(name.module(),writer,constantPool);
 		int idx = constantPool.get(new Constant.Utf8(name.name()));							
 		writer.write_u2(idx);		
 	}
 	
-	public static void writeModuleId(ModuleID name, BinaryOutputStream writer,
+	public static void writePath.ID(Path.ID name, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writePkgId(name.pkg(),writer,constantPool);
+		writePath.ID(name.pkg(),writer,constantPool);
 		int idx = constantPool.get(new Constant.Utf8(name.module()));							
 		writer.write_u2(idx);		
 	}
 	
-	public static void writePkgId(PkgID pkg, BinaryOutputStream writer,
+	public static void writePath.ID(Path.ID pkg, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
 		int idx = constantPool.get(new Constant.Utf8(pkg.toString()));							
 		writer.write_u2(idx);		
@@ -638,24 +638,24 @@ public class WhileyBlock implements BytecodeAttribute {
 			throw new RuntimeException("Unknown CExpr encountered in WhileyBlock: " + code);
 		}
 	
-		public static PkgID readPkgID(BinaryInputStream reader,
+		public static Path.ID readPath.ID(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			int idx = reader.read_u2();
 			Constant.Utf8 pkg = (Constant.Utf8) constantPool.get(idx);
-			return PkgID.fromString(pkg.str);
+			return Path.ID.fromString(pkg.str);
 		}
 		
-		public static ModuleID readModuleID(BinaryInputStream reader,
+		public static Path.ID readPath.ID(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
-			PkgID pkg = readPkgID(reader,constantPool);
+			Path.ID pkg = readPath.ID(reader,constantPool);
 			int idx = reader.read_u2();
 			Constant.Utf8 module = (Constant.Utf8) constantPool.get(idx);
-			return new ModuleID(pkg,module.str);
+			return new Path.ID(pkg,module.str);
 		}
 		
 		public static NameID readNameID(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
-			ModuleID mid = readModuleID(reader,constantPool);
+			Path.ID mid = readPath.ID(reader,constantPool);
 			int idx = reader.read_u2();
 			Constant.Utf8 name = (Constant.Utf8) constantPool.get(idx);			
 			return new NameID(mid,name.str);			

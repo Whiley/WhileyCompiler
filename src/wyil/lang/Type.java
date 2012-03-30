@@ -24,6 +24,8 @@ import java.util.*;
 import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.Automaton.State;
+import wybs.lang.Path;
+import wybs.util.Trie;
 import wyil.util.Pair;
 import wyil.util.type.*;
 import wyjvm.io.*;
@@ -82,6 +84,8 @@ public abstract class Type {
 	
 	// the following are strictly unnecessary, but since they occur very
 	// commonly it is helpful to provide them as constants.
+	
+	public static final Reference T_REF_ANY = Reference(T_ANY);
 	
 	/**
 	 * The type representing all possible set types.
@@ -486,7 +490,7 @@ public abstract class Type {
 			if (state.kind == Type.K_NOMINAL) {				
 				String module = readString();
 				String name = readString();
-				state.data = new NameID(ModuleID.fromString(module), name);
+				state.data = new NameID(Trie.fromString(module), name);
 			} else if(state.kind == Type.K_RECORD) { 
 				boolean isOpen = reader.read_bit();
 				int nfields = reader.read_uv();
@@ -2497,13 +2501,13 @@ public abstract class Type {
 	}
 		
 	public static Type linkedList(int n) {
-		NameID label = new NameID(ModuleID.fromString(""),"X");
+		NameID label = new NameID(Trie.fromString(""),"X");
 		return Recursive(label,innerLinkedList(n));
 	}
 	
 	public static Type innerLinkedList(int n) {
 		if(n == 0) {
-			return Nominal(new NameID(ModuleID.fromString(""),"X"));			
+			return Nominal(new NameID(Trie.fromString(""),"X"));			
 		} else {
 			Type leaf = Reference(innerLinkedList(n-1)); 
 			HashMap<String,Type> fields = new HashMap<String,Type>();
