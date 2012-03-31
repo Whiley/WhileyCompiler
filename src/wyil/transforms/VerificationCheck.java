@@ -78,9 +78,11 @@ public class VerificationCheck implements Transform {
 		int[] environment = new int[body.numSlots()];
 		ArrayList<Constructor> stack = new ArrayList<Constructor>();
 		
-		for (int i = 0; i != body.size(); ++i) {
+		for (int i = 0; i != body.size(); ++i) {			
 			constraint = transform(body.get(i), constraint, environment, stack);
 		}
+		
+		System.out.println("CONSTRAINT: " + constraint);
 	}
 	
 	/**
@@ -203,7 +205,7 @@ public class VerificationCheck implements Transform {
 
 	protected Formula transform(Code.Const code, Block.Entry blk,
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
-		// TODO: complete this transform
+		// TODO: complete this transform		
 		return constraint;
 	}
 
@@ -275,7 +277,8 @@ public class VerificationCheck implements Transform {
 
 	protected Formula transform(Code.Load code, Block.Entry blk,
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
-		// TODO: complete this transform
+		int slot = code.slot;
+		stack.add(new Constructor.Variable(slot + "$" + environment[slot]));
 		return constraint;
 	}
 
@@ -341,7 +344,11 @@ public class VerificationCheck implements Transform {
 
 	protected Formula transform(Code.Store code, Block.Entry blk,
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
-		// TODO: complete this transform
+		int slot = code.slot;		
+		environment[slot] = environment[slot] + 1;
+		Constructor lhs = new Constructor.Variable(slot + "$" + environment[slot]);
+		Constructor rhs = pop(stack);
+		constraint = Logic.and(constraint,Equality.equals(lhs, rhs));
 		return constraint;
 	}
 
@@ -391,5 +398,12 @@ public class VerificationCheck implements Transform {
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
 		// TODO: complete this transform
 		return constraint;
+	}
+	
+	private static Constructor pop(ArrayList<Constructor> stack) {
+		int last = stack.size()-1;
+		Constructor c = stack.get(last);
+		stack.remove(last);
+		return c;
 	}
 }
