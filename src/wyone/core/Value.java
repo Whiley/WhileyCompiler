@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import wyil.jvm.rt.BigRational;
+import wyjc.runtime.BigRational;
 
 /**
  * <p>
