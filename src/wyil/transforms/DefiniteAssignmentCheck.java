@@ -57,10 +57,10 @@ import static wyil.util.ErrorMessages.*;
  * @author David J. Pearce
  * 
  */
-public class DefiniteAssignment extends
+public class DefiniteAssignmentCheck extends
 		ForwardFlowAnalysis<HashSet<Integer>> implements Transform {
 	
-	public DefiniteAssignment(Builder builder) {
+	public DefiniteAssignmentCheck(Builder builder) {
 		
 	}
 	

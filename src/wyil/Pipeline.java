@@ -64,7 +64,7 @@ public class Pipeline {
 	public static final List<Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Template>() {
 				{														
-					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
+					add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
 					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
 					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));										
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
@@ -73,7 +73,7 @@ public class Pipeline {
 					//add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
-					add(new Template(Verification.class, Collections.EMPTY_MAP));
+					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
 					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					// add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 				}
@@ -86,7 +86,7 @@ public class Pipeline {
 	 */
 	static {
 		register(BackPropagation.class);
-		register(DefiniteAssignment.class);
+		register(DefiniteAssignmentCheck.class);
 		register(ConstantPropagation.class);
 		register(ModuleCheck.class);
 		register(ConstraintInline.class);
@@ -94,6 +94,7 @@ public class Pipeline {
 		register(WyilFileWriter.class);
 		register(DeadCodeElimination.class);
 		register(LiveVariablesAnalysis.class);
+		register(VerificationCheck.class);
 	}
 	
 	/**

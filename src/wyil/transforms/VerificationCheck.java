@@ -25,7 +25,7 @@
 
 package wyil.transforms;
 
-import wyc.builder.WhileyBuilder;
+import wybs.lang.Builder;
 import wyil.lang.*;
 import static wyil.lang.Code.*;
 import wyil.Transform;
@@ -38,8 +38,8 @@ import wyil.Transform;
  * @author David J. Pearce
  * 
  */
-public class Verification implements Transform {
-	public Verification(WhileyBuilder builder) {
+public class VerificationCheck implements Transform {
+	public VerificationCheck(Builder builder) {
 		
 	}
 	
