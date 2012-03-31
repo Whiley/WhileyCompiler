@@ -20,8 +20,7 @@ package wyone.theory.numeric;
 import java.math.*;
 import java.util.*;
 
-import wyil.jvm.rt.BigRational;
-import wyil.lang.Type;
+import wyjc.runtime.BigRational;
 import wyone.core.*;
 import wyone.util.*;
 

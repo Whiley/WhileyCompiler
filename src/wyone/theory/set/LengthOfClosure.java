@@ -17,14 +17,12 @@
 
 package wyone.theory.set;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 
 import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
-import wyone.theory.type.*;
 
 public class LengthOfClosure implements Solver.Rule {
 
