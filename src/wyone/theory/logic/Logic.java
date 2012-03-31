@@ -19,7 +19,7 @@ package wyone.theory.logic;
 
 import java.util.*;
 
-import wyone.core.Constraint;
+import wyone.core.Formula;
 import wyone.core.Value;
 
 public class Logic {
@@ -29,7 +29,7 @@ public class Logic {
 	 * @param formulas
 	 * @return
 	 */
-	public static Constraint and(Constraint... formulas) {				
+	public static Formula and(Formula... formulas) {				
 		return new Conjunct(Arrays.asList(formulas)).substitute(Collections.EMPTY_MAP);		
 	}
 	
@@ -38,19 +38,19 @@ public class Logic {
 	 * @param formulas
 	 * @return
 	 */
-	public static Constraint or(Constraint... formulas) {				
+	public static Formula or(Formula... formulas) {				
 		return new Disjunct(Arrays.asList(formulas)).substitute(Collections.EMPTY_MAP);		
 	}	
 		
-	public static Constraint implies(Constraint f1, Constraint f2) {
+	public static Formula implies(Formula f1, Formula f2) {
 		return or(f1.not(),f2).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static Constraint iff(Constraint f1, Constraint f2) {
+	public static Formula iff(Formula f1, Formula f2) {
 		return and(implies(f1,f2),implies(f2,f1)).substitute(Collections.EMPTY_MAP);
 	}		
 	
-	public static Constraint not(Constraint f) {
+	public static Formula not(Formula f) {
 		return f.not().substitute(Collections.EMPTY_MAP);
 	}
 
@@ -62,7 +62,7 @@ public class Logic {
 	 * @param f2
 	 * @return
 	 */
-	public static Constraint intersect(Constraint f1, Constraint f2) {
+	public static Formula intersect(Formula f1, Formula f2) {
 		if(f1.equals(f2)) {
 			return f1;
 		}
@@ -70,13 +70,13 @@ public class Logic {
 		if (f1 instanceof Conjunct && f2 instanceof Conjunct) {
 			Conjunct c1 = (Conjunct) f1;
 			Conjunct c2 = (Conjunct) f2;
-			HashSet<Constraint> common = new HashSet<Constraint>();
-			for (Constraint c : c1.subterms()) {
+			HashSet<Formula> common = new HashSet<Formula>();
+			for (Formula c : c1.subterms()) {
 				if (c2.subterms().contains(c)) {
 					common.add(c);
 				}
 			}
-			for (Constraint c : c2.subterms()) {
+			for (Formula c : c2.subterms()) {
 				if (c1.subterms().contains(c)) {
 					common.add(c);
 				}
@@ -104,7 +104,7 @@ public class Logic {
 	 * @param f2
 	 * @return
 	 */
-	public static Constraint factorOut(Constraint f1, Constraint f2) {
+	public static Formula factorOut(Formula f1, Formula f2) {
 		if(f1.equals(f2)) {
 			return Value.TRUE;
 		}
@@ -112,12 +112,12 @@ public class Logic {
 		if (f1 instanceof Conjunct && f2 instanceof Conjunct) {
 			Conjunct c1 = (Conjunct) f1;
 			Conjunct c2 = (Conjunct) f2;
-			HashSet<Constraint> difference = new HashSet<Constraint>(c1.subterms());
+			HashSet<Formula> difference = new HashSet<Formula>(c1.subterms());
 			difference.removeAll(c2.subterms());
 			return new Conjunct(difference).substitute(Collections.EMPTY_MAP);
 		} else if (f1 instanceof Conjunct) {
 			Conjunct c1 = (Conjunct) f1;
-			HashSet<Constraint> difference = new HashSet<Constraint>(c1.subterms());
+			HashSet<Formula> difference = new HashSet<Formula>(c1.subterms());
 			difference.remove(f2);
 			return new Conjunct(difference).substitute(Collections.EMPTY_MAP);
 		} else if (f2 instanceof Conjunct) {

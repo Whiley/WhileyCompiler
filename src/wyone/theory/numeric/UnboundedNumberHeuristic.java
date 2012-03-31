@@ -38,7 +38,7 @@ public class UnboundedNumberHeuristic implements Solver.Heuristic {
 	private List<Solver.State> splitOnFirstUnbounded(Solver.State state,
 			Solver solver) {		
 		HashSet<Variable> unbounded = new HashSet<Variable>();
-		for(Constraint f : state) {
+		for(Formula f : state) {
 			if(f instanceof Equality) {
 				Equality weq = (Equality) f;
 				if (weq.sign() && weq.lhs() instanceof Variable

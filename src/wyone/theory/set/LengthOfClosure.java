@@ -30,10 +30,10 @@ public class LengthOfClosure implements Solver.Rule {
 		return "LengthOfClosure";
 	}
 	
-	public void infer(Constraint nlit, Solver.State state, Solver solver) {
+	public void infer(Formula nlit, Solver.State state, Solver solver) {
 		for(LengthOf la : Helpers.match(LengthOf.class, nlit)) {
 			Constructor source = la.source();			
-			Constraint nf = Numerics.greaterThanEq(new LengthOf(source),Value.ZERO);
+			Formula nf = Numerics.greaterThanEq(new LengthOf(source),Value.ZERO);
 			if(!state.contains(nf)) {
 				state.infer(nf, solver);
 			}
@@ -83,7 +83,7 @@ public class LengthOfClosure implements Solver.Rule {
 			return;
 		}
 		
-		Constraint nf = Value.TRUE;		
+		Formula nf = Value.TRUE;		
 		HashSet vars = new HashSet<Constructor>();
 		for(int i=0;i!=size;++i) {
 			Variable var = Variable.freshVar(); 

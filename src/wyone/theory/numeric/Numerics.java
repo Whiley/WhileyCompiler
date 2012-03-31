@@ -137,27 +137,27 @@ public class Numerics {
 		} 	
 	}
 				
-	public static Constraint lessThan(Constructor lhs, Constructor rhs) {
+	public static Formula lessThan(Constructor lhs, Constructor rhs) {
 		return inequals(false,rhs,lhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static Constraint lessThanEq(Constructor lhs, Constructor rhs) {		
+	public static Formula lessThanEq(Constructor lhs, Constructor rhs) {		
 		return inequals(true,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static Constraint greaterThan(Constructor lhs, Constructor rhs) {
+	public static Formula greaterThan(Constructor lhs, Constructor rhs) {
 		return inequals(false,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static Constraint greaterThanEq(Constructor lhs, Constructor rhs) {
+	public static Formula greaterThanEq(Constructor lhs, Constructor rhs) {
 		return inequals(true,rhs,lhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	private static Constraint inequals(boolean sign, Constructor lhs, Constructor rhs) {
+	private static Formula inequals(boolean sign, Constructor lhs, Constructor rhs) {
 		return inequals(sign, rational(lhs),rational(rhs));
 	}
 		
-	private static Constraint inequals(boolean sign, Rational lhs, Rational rhs) {		
+	private static Formula inequals(boolean sign, Rational lhs, Rational rhs) {		
 		if(lhs.denominator().equals(Polynomial.ONE)) {		
 			return inequals(sign,lhs.numerator(),rhs);
 		} else if(rhs.denominator().equals(Polynomial.ONE)) {
@@ -184,15 +184,15 @@ public class Numerics {
 			}			
 		} else {
 			// Ok, can't break down any more ... so disjunction required			
-			Constraint gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
-			Constraint ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
+			Formula gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
+			Formula ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
 			gtz = Logic.and(gtz,new Inequality(false,subtract(Value.Number.ZERO,normalise(lhs.denominator()))));
 			ltz = Logic.and(ltz,new Inequality(false,subtract(normalise(lhs.denominator()),Value.Number.ZERO)));
 			return Logic.or(ltz,gtz);			
 		}
 	}	
 	
-	private static Constraint inequals(boolean sign, Polynomial lhs, Rational rhs) {				
+	private static Formula inequals(boolean sign, Polynomial lhs, Rational rhs) {				
 		if(rhs.denominator().isConstant()) {
 			BigInteger constant = rhs.denominator().constant();
 			int r = constant.compareTo(BigInteger.ZERO);
@@ -204,15 +204,15 @@ public class Numerics {
 				return Value.FALSE;
 			}			
 		} else {
-			Constraint gtz = new Inequality(sign,subtract(normalise(lhs.multiply(rhs.denominator())),normalise(rhs.numerator())));
-			Constraint ltz = new Inequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
+			Formula gtz = new Inequality(sign,subtract(normalise(lhs.multiply(rhs.denominator())),normalise(rhs.numerator())));
+			Formula ltz = new Inequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
 			gtz = Logic.and(gtz,new Inequality(false,subtract(Value.Number.ZERO,normalise(rhs.denominator()))));
 			ltz = Logic.and(ltz,new Inequality(false,subtract(normalise(rhs.denominator()),Value.Number.ZERO)));
 			return Logic.or(ltz,gtz);	
 		}
 	}
 	
-	private static Constraint inequals(boolean sign, Rational lhs, Polynomial rhs) {		
+	private static Formula inequals(boolean sign, Rational lhs, Polynomial rhs) {		
 		if(lhs.denominator().isConstant()) {			
 			BigInteger constant = lhs.denominator().constant();
 			int r = constant.compareTo(BigInteger.ZERO);
@@ -224,8 +224,8 @@ public class Numerics {
 				return Value.FALSE;
 			}
 		} else {
-			Constraint gtz = new Inequality(sign,subtract(normalise(rhs.multiply(lhs.denominator())),normalise(lhs.numerator())));
-			Constraint ltz = new Inequality(sign,subtract(normalise(lhs.numerator()),normalise(rhs.multiply(lhs.denominator()))));
+			Formula gtz = new Inequality(sign,subtract(normalise(rhs.multiply(lhs.denominator())),normalise(lhs.numerator())));
+			Formula ltz = new Inequality(sign,subtract(normalise(lhs.numerator()),normalise(rhs.multiply(lhs.denominator()))));
 			gtz = Logic.and(gtz,new Inequality(false,subtract(Value.Number.ZERO,normalise(lhs.denominator()))));
 			ltz = Logic.and(ltz,new Inequality(false,subtract(normalise(lhs.denominator()),Value.Number.ZERO)));
 			return Logic.or(ltz,gtz);		

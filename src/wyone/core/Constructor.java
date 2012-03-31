@@ -112,7 +112,7 @@ public interface Constructor extends Comparable<Constructor> {
 	 * @param c
 	 * @return
 	 */
-	public Constraint equate(Constructor c);
+	public Formula equate(Constructor c);
 	
 	/**
 	 * The following method returns the list of parameters to this expression
@@ -171,7 +171,7 @@ public interface Constructor extends Comparable<Constructor> {
 		public abstract Constructor substitute(
 				Map<Constructor, Constructor> binding);
 					
-		public Constraint equate(Constructor other) {
+		public Formula equate(Constructor other) {
 			if(other instanceof Variable) {			
 				return new Equality(true,other,this);				 				
 			} else {
@@ -319,7 +319,7 @@ public interface Constructor extends Comparable<Constructor> {
 			else return r;
 		}
 		
-		public Constraint equate(Constructor other) {
+		public Formula equate(Constructor other) {
 			if(other instanceof Variable) {			
 				if(this.equals(other)) {
 					return Value.TRUE;

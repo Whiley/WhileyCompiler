@@ -44,7 +44,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		return "Linear Arithmetic";
 	}
 	
-	public void infer(Constraint delta, Solver.State state, Solver solver) {								
+	public void infer(Formula delta, Solver.State state, Solver solver) {								
 		if (delta instanceof Inequality) {			
 			Inequality eq = (Inequality) delta;
 			internal_infer(eq, state, solver);			
@@ -81,7 +81,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 
 			if(lower != null) {				
 				// what happens to the divisor ??
-				for (Constraint f : state) {
+				for (Formula f : state) {
 					if (f instanceof Inequality
 							&& usesVariable(((Inequality) f).rhs(), v)) {
 						Inequality i = (Inequality) f;						
@@ -94,7 +94,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 					}
 				}
 			} else if(upper != null) {		
-				for (Constraint f : state) {					
+				for (Formula f : state) {					
 					if (f instanceof Inequality
 							&& usesVariable(((Inequality) f).rhs(), v)) {
 						Inequality i = (Inequality) f;				
@@ -231,7 +231,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			if(lb.equals(ub)) {				
 				state.infer(Equality.equals(lb,term),solver);
 			} else {
-				Constraint f;
+				Formula f;
 
 				if (belowSign || aboveSign) {		
 					f = lessThan(lb, ub);
@@ -246,7 +246,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 	
 	public static List<Rational> intConstraints(Constructor atom, Solver.State state) {
 		ArrayList<Rational> factors = new ArrayList<Rational>();
-		for(Constraint c : state) {
+		for(Formula c : state) {
 			if(c instanceof Subtype) {
 				Subtype st = (Subtype) c;
 				if(st.rhs().equals(atom)) {

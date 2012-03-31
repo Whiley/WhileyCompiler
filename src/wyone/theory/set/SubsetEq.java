@@ -23,7 +23,7 @@ import wyone.core.*;
 import wyone.core.Constructor.Base;
 import wyone.theory.logic.*;
 
-public class SubsetEq extends Base<Constructor> implements Constraint {
+public class SubsetEq extends Base<Constructor> implements Formula {
 	private boolean sign;
 
 	/**
@@ -56,7 +56,7 @@ public class SubsetEq extends Base<Constructor> implements Constraint {
 		return subterms.get(1);
 	}
 	
-	public Constraint substitute(Map<Constructor,Constructor> binding) {
+	public Formula substitute(Map<Constructor,Constructor> binding) {
 		Constructor lhs = lhs();
 		Constructor rhs = rhs();
 		Constructor nlhs = lhs.substitute(binding);
@@ -92,7 +92,7 @@ public class SubsetEq extends Base<Constructor> implements Constraint {
 			}
 		} 
 		
-		Constraint r;
+		Formula r;
 		
 		if(lhs != nlhs || rhs != nrhs) {
 			r = new SubsetEq(sign,nlhs,nrhs); 			
@@ -100,7 +100,7 @@ public class SubsetEq extends Base<Constructor> implements Constraint {
 			r = this;
 		}
 		
-		Constraint tmp = (Constraint) binding.get(r);
+		Formula tmp = (Formula) binding.get(r);
 		return tmp != null ? tmp : r;
 	}
 	

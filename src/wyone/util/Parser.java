@@ -56,32 +56,32 @@ public class Parser {
 		index = 0;		
 	}
 		
-	public Constraint parseInput() {
+	public Formula parseInput() {
 		return parseFormula();		
 	}	
 	
-	private Constraint parseFormula() {
+	private Formula parseFormula() {
 		return parseConjunctDisjunct();
 	}
 	
-	private Constraint parseConjunctDisjunct() {
-		Constraint c1 = parsePredicate();
+	private Formula parseConjunctDisjunct() {
+		Formula c1 = parsePredicate();
 		
 		parseWhiteSpace();				 
 		
 		if(index < input.length() && input.charAt(index) == '&') {
 			match("&&");
-			Constraint c2 = parseConjunctDisjunct();			
+			Formula c2 = parseConjunctDisjunct();			
 			return and(c1,c2);
 		} else if(index < input.length() && input.charAt(index) == '|') {
 			match("||");
-			Constraint c2 = parseConjunctDisjunct();			
+			Formula c2 = parseConjunctDisjunct();			
 			return or(c1,c2);
 		}
 		return c1;
 	}
 		
-	private Constraint parsePredicate() {
+	private Formula parsePredicate() {
 		parseWhiteSpace();
 		
 		int start = index;
@@ -90,7 +90,7 @@ public class Parser {
 		
 		if(lookahead.equals("(")) {
 			match("(");			
-			Constraint r = parseConjunctDisjunct();			
+			Formula r = parseConjunctDisjunct();			
 			match(")");
 			return r;
 		} else if(lookahead.equals("!")) {
@@ -118,7 +118,7 @@ public class Parser {
 				parseWhiteSpace();
 			}
 			match("|");
-			Constraint f = parseConjunctDisjunct();			
+			Formula f = parseConjunctDisjunct();			
 			match("]");
 			// FIXME: return new WBoundedForall(true,vars,f);
 			return null;
@@ -143,7 +143,7 @@ public class Parser {
 				parseWhiteSpace();
 			}
 			match("|");
-			Constraint f = parseConjunctDisjunct();			
+			Formula f = parseConjunctDisjunct();			
 			match("]");
 			// FIXME: return new WBoundedForall(false,vars,f);
 			return null;

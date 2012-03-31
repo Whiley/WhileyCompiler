@@ -6,15 +6,15 @@ import wyone.theory.logic.*;
 
 public class Sets {
 
-	public static Constraint subsetEq(Constructor lhs, Constructor rhs) {
+	public static Formula subsetEq(Constructor lhs, Constructor rhs) {
 		return new SubsetEq(true,lhs,rhs);
 	}
 
-	public static Constraint subset(Constructor lhs, Constructor rhs) {
+	public static Formula subset(Constructor lhs, Constructor rhs) {
 		
 		if(rhs instanceof SetConstructor || rhs instanceof Value.Set) {
 			// This is a useful optimisation case.
-			Constraint r = Value.FALSE;
+			Formula r = Value.FALSE;
 			for(Constructor e : rhs.subterms()) {
 				HashSet elems = new HashSet(rhs.subterms());
 				elems.remove(e);					
@@ -31,11 +31,11 @@ public class Sets {
 		return Logic.and(new SubsetEq(true, lhs, rhs), Equality.notEquals(lhs, rhs));
 	}
 	
-	public static Constraint supsetEq(Constructor lhs, Constructor rhs) {
+	public static Formula supsetEq(Constructor lhs, Constructor rhs) {
 		return new SubsetEq(true,rhs,lhs);
 	}
 	
-	public static Constraint elementOf(Constructor lhs, Constructor rhs) {		
+	public static Formula elementOf(Constructor lhs, Constructor rhs) {		
 		return new SubsetEq(true,new SetConstructor(lhs),rhs);
 	}	
 }

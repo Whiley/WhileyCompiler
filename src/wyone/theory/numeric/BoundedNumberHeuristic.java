@@ -122,7 +122,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 			Solver.State state, Solver solver) {
 		HashMap<Constructor,Pair<Bound,Bound>> bounds = new HashMap();
 		
-		for(Constraint f : state) {
+		for(Formula f : state) {
 			if(f instanceof Inequality) {				
 				Inequality wieq = (Inequality) f;
 				Constructor var = variable(wieq);									

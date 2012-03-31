@@ -24,7 +24,7 @@ import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.util.*;
 
-public final class Conjunct extends Base<Constraint> implements Constraint {	
+public final class Conjunct extends Base<Formula> implements Formula {	
 	
 	/**
 	 * <p>
@@ -33,7 +33,7 @@ public final class Conjunct extends Base<Constraint> implements Constraint {
 	 * 
 	 * @param clauses
 	 */
-	public Conjunct(Collection<Constraint> fs) {
+	public Conjunct(Collection<Formula> fs) {
 		super("&&",fs);
 	}			
 		
@@ -45,12 +45,12 @@ public final class Conjunct extends Base<Constraint> implements Constraint {
 	 * @param binding
 	 * @return
 	 */
-	public Constraint substitute(Map<Constructor,Constructor> binding) {	
-		ArrayList<Constraint> nparams = new ArrayList<Constraint>();		
+	public Formula substitute(Map<Constructor,Constructor> binding) {	
+		ArrayList<Formula> nparams = new ArrayList<Formula>();		
 		boolean pchanged = false;
 		boolean composite = true;
-		for(Constraint p : subterms) {						
-			Constraint np = p.substitute(binding);			
+		for(Formula p : subterms) {						
+			Formula np = p.substitute(binding);			
 			composite &= np instanceof Value;			
 			if(np instanceof Conjunct) {
 				Conjunct c = (Conjunct) np;
@@ -87,9 +87,9 @@ public final class Conjunct extends Base<Constraint> implements Constraint {
 	}	
 	
 	public Disjunct not() {
-		ArrayList<Constraint> nparams = new ArrayList<Constraint>();
-		for(Constraint p : subterms) {
-			Constraint np = p.not();																
+		ArrayList<Formula> nparams = new ArrayList<Formula>();
+		for(Formula p : subterms) {
+			Formula np = p.not();																
 			nparams.add(np);											
 		}				
 		return new Disjunct(nparams);		 
@@ -98,7 +98,7 @@ public final class Conjunct extends Base<Constraint> implements Constraint {
 	public String toString() {
 		boolean firstTime = true;
 		String r = "";
-		for(Constraint f : subterms) {
+		for(Formula f : subterms) {
 			if(!firstTime) {
 				r += " && ";
 			}

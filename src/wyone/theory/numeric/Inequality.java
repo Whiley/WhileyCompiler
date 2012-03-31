@@ -30,7 +30,7 @@ import wyone.util.*;
  * @author djp
  * 
  */
-public final class Inequality extends Base<Constructor> implements Constraint {		
+public final class Inequality extends Base<Constructor> implements Formula {		
 	private boolean sign;
 	/**
 	 * Construct an inequality from left and right rationals. So, this generates
@@ -60,7 +60,7 @@ public final class Inequality extends Base<Constructor> implements Constraint {
 		return new Inequality(!sign,rhs());
 	}
 	
-	public Constraint substitute(Map<Constructor, Constructor> binding) {
+	public Formula substitute(Map<Constructor, Constructor> binding) {
 		Constructor orhs = subterms.get(0);
 		Constructor rhs = orhs.substitute(binding);		
 		

@@ -11,8 +11,8 @@ import java.util.Map;
  * @author djp
  * 
  */
-public interface Constraint extends Constructor {
-	public Constraint substitute(Map<Constructor,Constructor> binding);
+public interface Formula extends Constructor {
+	public Formula substitute(Map<Constructor,Constructor> binding);
 
 	/**
 	 * Compute the inverse of a constraint. This is a fundamental operation that
@@ -22,5 +22,5 @@ public interface Constraint extends Constructor {
 	 * 
 	 * @return
 	 */
-	public Constraint not();
+	public Formula not();
 }

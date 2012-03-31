@@ -50,7 +50,7 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 	public abstract int hashCode();
 	public abstract int compareTo(Constructor c);
 	
-	public Constraint equate(Constructor other) {
+	public Formula equate(Constructor other) {
 
 		// Observe it should be impossible to get here with other being an
 		// instanceof Value. The method Equality.equals() will take care of
@@ -133,7 +133,7 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 	// IMPLEMENTATIONS
 	// ====================================================================
 		
-	public static final class Bool extends Value implements Constraint {
+	public static final class Bool extends Value implements Formula {
 		public final boolean value;
 		
 		Bool(boolean b) {

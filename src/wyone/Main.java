@@ -58,7 +58,7 @@ public class Main {
 
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);
-		Constraint program = parser.parseInput();		
+		Formula program = parser.parseInput();		
 		Proof r = Solver.checkUnsatisfiable(1000, program,
 				heuristic, theories);		
 		return r instanceof Proof.Unsat;
@@ -66,7 +66,7 @@ public class Main {
 	
 	public static boolean checkSat(String input) {		
 		Parser parser = new Parser(input);
-		Constraint program = parser.parseInput();
+		Formula program = parser.parseInput();
 		Proof r = Solver.checkUnsatisfiable(1000, program,
 				heuristic, theories);
 		return r instanceof Proof.Sat;
@@ -104,7 +104,7 @@ public class Main {
 				long start = System.currentTimeMillis();
 				
 				Parser parser = new Parser(new File(args[fileArgsBegin]));
-				Constraint program = parser.parseInput();								
+				Formula program = parser.parseInput();								
 				System.out.println("Parsed: " + program);				
 				Proof r = Solver.checkUnsatisfiable(timeout, program,
 						heuristic, theories);

@@ -134,7 +134,7 @@ public final class Rational implements Constructor {
 		}	
 	}		
 	
-	public Constraint equate(Constructor lhs) {
+	public Formula equate(Constructor lhs) {
 		// THIS METHOD IS SUCH A CLUDGE RIGHT NOW --- ARRRGGHHH		
 		Constructor r;
 		if(lhs instanceof Value.Number) {			

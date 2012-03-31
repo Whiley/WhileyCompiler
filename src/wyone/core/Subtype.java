@@ -4,7 +4,7 @@ import java.util.*;
 
 import static wyone.core.Constructor.*;
 
-public class Subtype extends Base<Constructor> implements Constraint {
+public class Subtype extends Base<Constructor> implements Formula {
 	private boolean sign;
 	protected final Type type;
 	
@@ -33,7 +33,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 	public Subtype not() {
 		return new Subtype(!sign,lhs(),rhs());
 	}
-	public Constraint substitute(Map<Constructor,Constructor> binding) {
+	public Formula substitute(Map<Constructor,Constructor> binding) {
 		Constructor rhs = rhs();		
 		Constructor nrhs = rhs.substitute(binding);
 		
@@ -55,7 +55,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			r = this;
 		}
 		
-		Constraint tmp = (Constraint) binding.get(r);
+		Formula tmp = (Formula) binding.get(r);
 		return tmp != null ? tmp : r;		
 	}	
 	
@@ -72,7 +72,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		// matching type declaration?
 		
 		// FIXME.  this is basically completely broken.
-		for(Constraint f : state) {
+		for(Formula f : state) {
 			if(f instanceof Subtype) {				
 				Subtype st = (Subtype) f;
 				if(st.rhs().equals(c)) {
@@ -109,7 +109,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			return "Type Closure";
 		}
 		
-		public void infer(Constraint nlit, Solver.State state, Solver solver) {							
+		public void infer(Formula nlit, Solver.State state, Solver solver) {							
 			if(nlit instanceof Subtype) {						
 				inferSubtype((Subtype) nlit,state,solver);				
 			}		
@@ -122,7 +122,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			
 			// FIXME: this loop can be further improved now that I have brought
 			// in the proper wyil Type
-			for(Constraint f : state) {			
+			for(Formula f : state) {			
 				if(f instanceof Subtype) {				
 					Subtype st = (Subtype) f;						
 					if(st.rhs().equals(ws.rhs())) {

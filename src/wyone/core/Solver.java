@@ -41,20 +41,20 @@ public final class Solver implements Callable<Proof> {
 	 * The assignment is a global mapping of formulas to integer numbers
 	 * which are, in effect, unique references for them.
 	 */
-	private final HashMap<Constraint,Integer> assignments = new HashMap<Constraint,Integer>();
+	private final HashMap<Formula,Integer> assignments = new HashMap<Formula,Integer>();
 
 	/**
 	 * The rassignments lists is the inverse map of the assignments list. Each
 	 * formula is located at a given index.
 	 */
-	private final ArrayList<Constraint> rassignments = new ArrayList<Constraint>();	
+	private final ArrayList<Formula> rassignments = new ArrayList<Formula>();	
 	
 	/**
 	 * The wyone constraint program being tested for satisfiability
 	 */
-	private final Constraint program;
+	private final Formula program;
 		
-	Solver(Constraint program, 
+	Solver(Formula program, 
 			Heuristic heuristic,Rule... theories) {		
 		this.program = program;
 		this.rules = new ArrayList<Rule>();
@@ -74,7 +74,7 @@ public final class Solver implements Callable<Proof> {
 	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
-	public static synchronized Proof checkUnsatisfiable(int timeout, Constraint program,
+	public static synchronized Proof checkUnsatisfiable(int timeout, Formula program,
 			Heuristic heuristic, Rule... theories) {				
  
 		// The following uses the java.util.concurrent library to enforce a
@@ -178,7 +178,7 @@ public final class Solver implements Callable<Proof> {
 		// found a model or not ?
 		HashMap<Variable,Value> model = new HashMap<Variable,Value>();
 		
-		for(Constraint f : state) {
+		for(Formula f : state) {
 			if (f instanceof Equality) {
 				Equality eq = (Equality) f;
 				if(eq.isAssignment()) {
@@ -186,7 +186,7 @@ public final class Solver implements Callable<Proof> {
 				}
 			}
 		}
-		Constraint f = program.substitute((Map) model);
+		Formula f = program.substitute((Map) model);
 		if(f != Value.TRUE) {
 			return Proof.UNKNOWN; 
 		}		
@@ -202,7 +202,7 @@ public final class Solver implements Callable<Proof> {
 	 * @author djp
 	 * 
 	 */
-	public final class State implements Iterable<Constraint> {
+	public final class State implements Iterable<Formula> {
 				
 		/**
 		 * The assertions bitset detemines which assigned facts are currently
@@ -237,12 +237,12 @@ public final class Solver implements Callable<Proof> {
 			this.eliminations = (BitSet) eliminations.clone();
 		}
 		
-		public boolean contains(Constraint f) {
+		public boolean contains(Formula f) {
 			Integer x = assignments.get(f);
 			return x != null ? assertions.get(x) : false;				
 		}
 		
-		public Iterator<Constraint> iterator() {
+		public Iterator<Formula> iterator() {
 			return new AssertionIterator(assertions,0);
 		}
 
@@ -254,7 +254,7 @@ public final class Solver implements Callable<Proof> {
 		 * @param f
 		 * @param solver
 		 */
-		public void add(Constraint f, Solver solver) {		
+		public void add(Formula f, Solver solver) {		
 			worklist.clear();
 			internal_add(f);			
 			infer(solver);					
@@ -268,7 +268,7 @@ public final class Solver implements Callable<Proof> {
 		 * @param f
 		 * @param solver
 		 */
-		public void infer(Constraint f, Solver solver) {			
+		public void infer(Formula f, Solver solver) {			
 			internal_add(f);					
 		}
 
@@ -279,7 +279,7 @@ public final class Solver implements Callable<Proof> {
 		 * 
 		 * @param f
 		 */
-		public void eliminate(Constraint oldf) {
+		public void eliminate(Formula oldf) {
 			/* following useful for debuging cause of an elimination
 			System.out.println("ELIMINATING: " + oldf);
 			for(StackTraceElement st : Thread.currentThread().getStackTrace()) {
@@ -301,7 +301,7 @@ public final class Solver implements Callable<Proof> {
 		private void infer(Solver solver) {		
 			for(int i=0;i!=worklist.size();++i) {
 				Integer x = worklist.get(i);			
-				Constraint f = rassignments.get(x);
+				Formula f = rassignments.get(x);
 				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 				for(Rule ir : solver.rules) {				
 					if(assertions.get(x)) {		
@@ -327,7 +327,7 @@ public final class Solver implements Callable<Proof> {
 		public String toString() {
 			String r = "[";
 			boolean firstTime=true;
-			for(Constraint f : this) {
+			for(Formula f : this) {
 				if(!firstTime) {
 					r += ", ";
 				}
@@ -338,7 +338,7 @@ public final class Solver implements Callable<Proof> {
 			return r;
 		}
 		
-		private void internal_add(Constraint f) {				
+		private void internal_add(Formula f) {				
 			if(f == Value.TRUE) {
 				return; // do nothing
 			}
@@ -346,7 +346,7 @@ public final class Solver implements Callable<Proof> {
 				// We never add a conjunct directly; rather, we always break it
 				// down into its constituent constraints.
 				Conjunct c = (Conjunct) f;
-				for(Constraint nc : c.subterms()) {
+				for(Formula nc : c.subterms()) {
 					internal_add(nc);
 				}
 			} else {
@@ -367,7 +367,7 @@ public final class Solver implements Callable<Proof> {
 		}				
 	}
 	
-	private final class AssertionIterator implements Iterator<Constraint> {
+	private final class AssertionIterator implements Iterator<Formula> {
 		private final BitSet assertions;
 		private int index;
 		
@@ -381,8 +381,8 @@ public final class Solver implements Callable<Proof> {
 			return index != -1;
 		}
 		
-		public Constraint next() {
-			Constraint f = rassignments.get(index); 
+		public Formula next() {
+			Formula f = rassignments.get(index); 
 			index = assertions.nextSetBit(index+1);
 			return f;
 		}
@@ -452,6 +452,6 @@ public final class Solver implements Callable<Proof> {
 		 * @param state
 		 *            --- The current solver instance
 		 */
-		public void infer(Constraint delta, Solver.State state, Solver solver);
+		public void infer(Formula delta, Solver.State state, Solver solver);
 	}
 }

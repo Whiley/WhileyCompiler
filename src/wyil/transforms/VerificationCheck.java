@@ -29,6 +29,9 @@ import wybs.lang.Builder;
 import wyil.lang.*;
 import static wyil.lang.Code.*;
 import wyil.Transform;
+import wyone.core.*;
+import wyone.core.Value;
+import wyone.theory.logic.Logic;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -39,11 +42,41 @@ import wyil.Transform;
  * 
  */
 public class VerificationCheck implements Transform {
+	private String filename;
+	
 	public VerificationCheck(Builder builder) {
 		
 	}
 	
-	public void apply(WyilFile file) {
+	public void apply(WyilFile module) {
+		this.filename = module.filename();
+		for(WyilFile.TypeDef type : module.types()) {
+			transform(type);
+		}		
+		for(WyilFile.Method method : module.methods()) {
+			transform(method);
+		}		
+	}
+	
+	protected void transform(WyilFile.TypeDef def) {
 		
+	}
+	
+	protected void transform(WyilFile.Method method) {
+		for(WyilFile.Case c : method.cases()) {
+			transform(c);
+		}
+	}
+	
+	protected void transform(WyilFile.Case methodCase) {
+		Block body = methodCase.body();
+		Formula constraint = Value.V_BOOL(true);
+		for(int i=0;i!=body.size();++i) {
+			constraint = transform(body.get(i),constraint);
+		}
+	}
+	
+	protected Formula transform(Block.Entry entry, Formula constraint) {
+		return constraint;
 	}
 }

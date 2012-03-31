@@ -27,7 +27,7 @@ import wyone.theory.logic.*;
 import wyone.util.*;
 
 // equalities and inequalities should always be normalised.
-public final class Equality extends Base<Constructor> implements Constraint {
+public final class Equality extends Base<Constructor> implements Formula {
 	private boolean sign;
 	/**
 	 * Construct an inequality from left and right rationals. So, this generates
@@ -71,7 +71,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 		return false;			
 	}	
 	
-	public Constraint substitute(Map<Constructor, Constructor> binding) {				
+	public Formula substitute(Map<Constructor, Constructor> binding) {				
 		Constructor olhs = subterms.get(0);
 		Constructor orhs = subterms.get(1);
 		Constructor lhs = olhs.substitute(binding);
@@ -91,7 +91,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 				return Value.FALSE;
 			}
 		} else {			
-			Constraint nf = lhs.equate(rhs);			
+			Formula nf = lhs.equate(rhs);			
 			nf = sign ? nf : nf.not();
 			// following is needed to meet requirements of Contract.substitute()
 			if(nf.equals(this)) {			
@@ -111,11 +111,11 @@ public final class Equality extends Base<Constructor> implements Constraint {
 		}
 	}
 	
-	public static Constraint equals(Constructor lhs, Constructor rhs) {
+	public static Formula equals(Constructor lhs, Constructor rhs) {
 		return new Equality(true,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static Constraint notEquals(Constructor lhs, Constructor rhs) {
+	public static Formula notEquals(Constructor lhs, Constructor rhs) {
 		return new Equality(false,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 
@@ -146,7 +146,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			return "Congruence Closure";
 		}
 		
-		public void infer(Constraint nlit, Solver.State state, Solver solver) {				
+		public void infer(Formula nlit, Solver.State state, Solver solver) {				
 			if(nlit instanceof Equality) {		
 				Equality eq = (Equality) nlit;			
 				if(eq.sign()) {				
@@ -157,10 +157,10 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			inferFormula(nlit,state,solver);				
 		}
 		
-		private void inferFormula(Constraint formula, Solver.State state, Solver solver) {
+		private void inferFormula(Formula formula, Solver.State state, Solver solver) {
 			HashMap<Constructor,Constructor> binding = new HashMap<Constructor,Constructor>();
 		
-			for(Constraint f : state) {
+			for(Formula f : state) {
 				if(f instanceof Equality) {
 					Equality eq = (Equality) f;
 					if(eq.sign()) {
@@ -172,7 +172,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 				}
 			}
 						
-			Constraint nf = formula.substitute(binding);
+			Formula nf = formula.substitute(binding);
 			if(nf != formula) {							
 				state.eliminate(formula);									
 				state.infer(nf,solver);				
@@ -222,9 +222,9 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			// Second, we iterate all existing literals and attempt to simplify
 			// them. Those which are simplified are subsumed, and their simplified
 			// forms are added into the literal set.
-			for(Constraint f : state) {
+			for(Formula f : state) {
 				if(f == eq) { continue; }							
-				Constraint nf = f.substitute(binding);									
+				Formula nf = f.substitute(binding);									
 				if(nf != f) {								
 					// f has been replaced!					
 					if (!(f instanceof Equality)

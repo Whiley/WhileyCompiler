@@ -28,7 +28,7 @@ public class SubsetClosure implements Solver.Rule {
 		return "Subset Closure";
 	}
 	
-	public void infer(Constraint nlit, Solver.State state, Solver solver) {
+	public void infer(Formula nlit, Solver.State state, Solver solver) {
 		if(nlit instanceof SubsetEq) {
 			SubsetEq seq = (SubsetEq) nlit;			
 			closeSubset(seq,state,solver);
@@ -91,9 +91,9 @@ public class SubsetClosure implements Solver.Rule {
 		
 		if(lhsElems != null && rhsElems != null) {
 			for(Constructor l : lhsElems) {
-				Constraint af = null;
+				Formula af = null;
 				for(Constructor r : rhsElems) {
-					Constraint nf = Equality.equals(l,r);
+					Formula nf = Equality.equals(l,r);
 					if(af == null) {
 						af = nf;
 					} else {
@@ -116,7 +116,7 @@ public class SubsetClosure implements Solver.Rule {
 			state.infer(Numerics.lessThanEq(new LengthOf(rhs), Value.V_NUM(lhsElems.size())),solver);
 			
 			if(min > 0) {
-				Constraint nf = Numerics.lessThanEq(Value.V_NUM(min),
+				Formula nf = Numerics.lessThanEq(Value.V_NUM(min),
 						new LengthOf(rhs));							
 				state.infer(nf, solver);				
 			}
@@ -131,7 +131,7 @@ public class SubsetClosure implements Solver.Rule {
 			state.infer(Numerics.lessThanEq(new LengthOf(lhs), Value.V_NUM(rhsElems.size())),solver);
 			
 			if(min > 0) {
-				Constraint nf = Numerics.lessThanEq(Value.V_NUM(min),
+				Formula nf = Numerics.lessThanEq(Value.V_NUM(min),
 						new LengthOf(lhs));							
 				state.infer(nf, solver);				
 			}
@@ -143,7 +143,7 @@ public class SubsetClosure implements Solver.Rule {
 		Constructor rhs = seq.rhs();
 		
 		// FIXME: the following is not needed in all cases
-		Constraint f = Numerics.lessThanEq(new LengthOf(seq.lhs()),new LengthOf(seq.rhs()));
+		Formula f = Numerics.lessThanEq(new LengthOf(seq.lhs()),new LengthOf(seq.rhs()));
 		if(!state.contains(f)) {			
 			state.infer(f,solver);
 		}
@@ -153,7 +153,7 @@ public class SubsetClosure implements Solver.Rule {
 			// Easy case.
 			
 			Value.Set v = (Value.Set) lhs;
-			Constraint nf = Numerics.lessThanEq(Value.V_NUM(v.subterms().size()),
+			Formula nf = Numerics.lessThanEq(Value.V_NUM(v.subterms().size()),
 					new LengthOf(rhs));
 			if(!state.contains(nf)) {				
 				state.infer(nf, solver);
@@ -170,7 +170,7 @@ public class SubsetClosure implements Solver.Rule {
 			}
 			
 			if(min > 0) {
-				Constraint nf = Numerics.lessThanEq(Value.V_NUM(min),
+				Formula nf = Numerics.lessThanEq(Value.V_NUM(min),
 						new LengthOf(rhs));
 
 				if(!state.contains(nf)) {					
@@ -184,7 +184,7 @@ public class SubsetClosure implements Solver.Rule {
 			// Easy case.
 
 			Value.Set v = (Value.Set) rhs;
-			Constraint nf = Numerics.lessThanEq(new LengthOf(lhs),
+			Formula nf = Numerics.lessThanEq(new LengthOf(lhs),
 					Value.V_NUM(v.subterms().size()));
 			if (!state.contains(nf)) {					
 				state.infer(nf, solver);
@@ -201,7 +201,7 @@ public class SubsetClosure implements Solver.Rule {
 			}
 
 			if (min > 0) {
-				Constraint nf = Numerics.lessThanEq(new LengthOf(lhs),
+				Formula nf = Numerics.lessThanEq(new LengthOf(lhs),
 						Value.V_NUM(min));
 
 				if (!state.contains(nf)) {					
@@ -215,7 +215,7 @@ public class SubsetClosure implements Solver.Rule {
 		Constructor seq_lhs = seq.lhs();
 		Constructor seq_rhs = seq.rhs();
 		
-		for(Constraint f : state) {
+		for(Formula f : state) {
 			if(f instanceof SubsetEq) {								
 				SubsetEq fseq = (SubsetEq) f;
 				Constructor fseq_lhs = fseq.lhs();
@@ -223,19 +223,19 @@ public class SubsetClosure implements Solver.Rule {
 				
 				if(seq.sign() && fseq_rhs.equals(seq_lhs)) {
 					if(fseq.sign() && seq_rhs.equals(fseq_lhs)) {						
-						Constraint nf = Equality.equals(seq_lhs,seq_rhs);						
+						Formula nf = Equality.equals(seq_lhs,seq_rhs);						
 						if(!state.contains(nf)) {							
 							state.infer(nf, solver);
 						}					
 					} else {
-						Constraint nf = Sets.subsetEq(fseq_lhs,seq_rhs);
+						Formula nf = Sets.subsetEq(fseq_lhs,seq_rhs);
 						if(!fseq.sign()) { nf = nf.not(); }
 						if(!state.contains(nf)) {							
 							state.infer(nf, solver);
 						}
 					}
 				} else if(fseq.sign()&& seq_rhs.equals(fseq_lhs)) {
-					Constraint nf = Sets.subsetEq(seq_lhs,fseq_rhs);					
+					Formula nf = Sets.subsetEq(seq_lhs,fseq_rhs);					
 					if(!seq.sign()) { nf = nf.not(); }
 					if(!state.contains(nf)) {						
 						state.infer(nf, solver);
@@ -260,7 +260,7 @@ public class SubsetClosure implements Solver.Rule {
 			seq_lhs_isval = true;
 		}
 		
-		for (Constraint f : state) {
+		for (Formula f : state) {
 			if (f instanceof SubsetEq) {
 				SubsetEq fseq = (SubsetEq) f;
 				Constructor fseq_lhs = fseq.lhs();
@@ -272,7 +272,7 @@ public class SubsetClosure implements Solver.Rule {
 						nterms.addAll(seq_lhs_terms);
 						nterms.addAll(c.subterms());
 						SetConstructor nc = new SetConstructor(nterms);
-						Constraint nf = Sets.subsetEq(nc, seq_rhs);
+						Formula nf = Sets.subsetEq(nc, seq_rhs);
 						if (!state.contains(nf)) {
 							state.eliminate(seq);
 							state.eliminate(f);										
@@ -290,7 +290,7 @@ public class SubsetClosure implements Solver.Rule {
 							nc = new SetConstructor(nterms);
 						}
 
-						Constraint nf = Sets.subsetEq(nc, seq_rhs);
+						Formula nf = Sets.subsetEq(nc, seq_rhs);
 						if (!state.contains(nf)) {
 							state.eliminate(seq);
 							state.eliminate(f);									
