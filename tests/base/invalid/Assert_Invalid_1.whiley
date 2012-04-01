@@ -1,9 +1,5 @@
-public boolean ::method(int x, int y):
-    return x < y
+import * from whiley.lang.*
 
-public void ::main(System.Console console):
-    // the following should fail because an assertion must be "pure".
-    // That is, since it is optional and may be eliminated at
-    // compile-time, it cannot have any side-effects.
-    assert method(10,20)
-
+int f(int z):
+    assert z
+    return 0
