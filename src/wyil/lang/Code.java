@@ -1038,6 +1038,30 @@ public abstract class Code {
 	};
 
 	/**
+	 * Determine the inverse comparator, or null if no inverse exists.
+	 * 
+	 * @param cop
+	 * @return
+	 */
+	public static Code.COp invert(Code.COp cop) {
+		switch(cop) {
+		case EQ:
+			return Code.COp.NEQ;
+		case NEQ:
+			return Code.COp.EQ;
+		case LT:
+			return Code.COp.GTEQ;
+		case LTEQ:
+			return Code.COp.GT;
+		case GT:
+			return Code.COp.LTEQ;
+		case GTEQ:
+			return Code.COp.LT;
+		}
+		return null;
+	}
+	
+	/**
 	 * <p>
 	 * Branches conditionally to the given label based on the result of a
 	 * runtime type test against a given value. More specifically, it checks

@@ -1065,7 +1065,7 @@ public final class LocalGenerator {
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;				
-				Code.COp iop = invert(a.op);
+				Code.COp iop = Code.invert(a.op);
 				if(iop != null) {
 					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
 				} else {
@@ -1081,24 +1081,6 @@ public final class LocalGenerator {
 			}
 		}
 		return nblock.relabel();
-	}
-	
-	private static Code.COp invert(Code.COp cop) {
-		switch(cop) {
-		case EQ:
-			return Code.COp.NEQ;
-		case NEQ:
-			return Code.COp.EQ;
-		case LT:
-			return Code.COp.GTEQ;
-		case LTEQ:
-			return Code.COp.GT;
-		case GT:
-			return Code.COp.LTEQ;
-		case GTEQ:
-			return Code.COp.LT;
-		}
-		return null;
 	}
 	
 	/**

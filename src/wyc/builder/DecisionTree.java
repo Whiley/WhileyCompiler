@@ -223,21 +223,29 @@ public final class DecisionTree {
 
 		int lastIndex = children.size()-1;
 		for(int i=0;i!=children.size();++i) {
-			if(i!=0) {
+			if(nextLabel != null) {
 				blk.append(Code.Label(nextLabel));
 			}
-			nextLabel = Block.freshLabel();
+			nextLabel = null;
 			Node child = children.get(i);
 			if (i != lastIndex) {
-				blk.append(Code.IfType(node.type, Code.THIS_SLOT,
-						Type.Negation(child.type), nextLabel));	
+				if(child.constraint == null) {
+					// in this case, we can perform a direct branch
+					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
+							child.type, target));
+					continue;
+				} else {
+					// normal case
+					nextLabel = Block.freshLabel();
+					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
+							Type.Negation(child.type), nextLabel));	
+				}
 			} 
 			flattern(child,blk,target);	
 		}		
 		
 		// what goes here!?
-		// FIXME
-		blk.append(Code.Assert(Type.T_ANY, Code.COp.EQ, "TO BE REMOVED"));
+		blk.append(Code.Skip);
 	}
 	
 	/**
@@ -255,7 +263,7 @@ public final class DecisionTree {
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;				
-				Code.COp iop = invert(a.op);
+				Code.COp iop = Code.invert(a.op);
 				if(iop != null) {
 					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
 				} else {
@@ -272,23 +280,4 @@ public final class DecisionTree {
 		}
 		return nblock.relabel();
 	}
-	
-	private static Code.COp invert(Code.COp cop) {
-		switch(cop) {
-		case EQ:
-			return Code.COp.NEQ;
-		case NEQ:
-			return Code.COp.EQ;
-		case LT:
-			return Code.COp.GTEQ;
-		case LTEQ:
-			return Code.COp.GT;
-		case GT:
-			return Code.COp.LTEQ;
-		case GTEQ:
-			return Code.COp.LT;
-		}
-		return null;
-	}
-	
 }
