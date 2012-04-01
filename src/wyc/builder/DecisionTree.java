@@ -7,7 +7,7 @@ import wyil.lang.Type;
 import wyil.lang.Block;
 
 /**
- * Decision tres are used for the constraints induced by union types. The key
+ * Decision trees are used for the constraints induced by union types. The key
  * problem arises when we have a union type of two or more constrained types
  * which have related base types. For example:
  * 
@@ -206,10 +206,15 @@ public final class DecisionTree {
 	
 	private void flattern(Node node, Block blk, String target) {
 		if(node.constraint != null) {
-			String nextLabel = Block.freshLabel();
-			blk.append(chainBlock(nextLabel, node.constraint));											
-			blk.append(Code.Goto(target));						
-			blk.append(Code.Label(nextLabel));
+			if(target != null) {
+				String nextLabel = Block.freshLabel();
+				blk.append(chainBlock(nextLabel, node.constraint));											
+				blk.append(Code.Goto(target));						
+				blk.append(Code.Label(nextLabel));
+			} else {
+				// in this case, no chaining is required.
+				blk.append(node.constraint);
+			}
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
 			// zero.
@@ -230,11 +235,11 @@ public final class DecisionTree {
 			if (i != lastIndex) {
 				blk.append(Code.IfType(node.type, Code.THIS_SLOT,
 						Type.Negation(child.type), nextLabel));
+				flattern(child,blk,target);	
+			} else {
+				flattern(child,blk,null);	
 			}
-			flattern(child,blk,target);				
-		}
-
-		blk.append(Code.Assert("constraint not satisified"));		
+		}		
 	}
 	
 	/**
@@ -251,7 +256,11 @@ public final class DecisionTree {
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
-				nblock.append(Code.Goto(target), e.attributes());
+				Code.Assert a = (Code.Assert) e.code;
+				String lab = Block.freshLabel();				
+				nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+				nblock.append(Code.Goto(target));
+				nblock.append(Code.Label(lab));
 			} else {
 				nblock.append(e.code, e.attributes());
 			}

@@ -74,6 +74,26 @@ public final class LocalGenerator {
 	}
 	
 	/**
+	 * Translate a source-level assertion into a wyil block, using a given
+	 * environment mapping named variables to slots. If the condition evaluates
+	 * to true, then control continues as normal. Otherwise, an assertion
+	 * failure is raised with the given message.
+	 * 
+	 * @param message
+	 *            --- message to report if condition is false.
+	 * @param condition
+	 *            --- source-level condition to be translated
+	 * @param environment
+	 *            --- mapping from variable names to to slot numbers.
+	 * @return
+	 */
+	public Block generateAssertion(String message, Expr condition,
+			 HashMap<String, Integer> environment) {
+		got here
+		return new Block(0);
+	}
+	
+	/**
 	 * Translate a source-level condition into a wyil block, using a given
 	 * environment mapping named variables to slots. If the condition evaluates
 	 * to true, then control is transferred to the given target. Otherwise,

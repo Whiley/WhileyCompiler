@@ -91,8 +91,9 @@ public class GlobalGenerator {
 					environment.put("$",0);
 					addExposedNames(td.resolvedType.raw(),environment,blk);
 					String lab = Block.freshLabel();
-					blk.append(new LocalGenerator(this,td).generateCondition(lab, td.constraint, environment));		
-					blk.append(Code.Assert("constraint not satisfied"), td.constraint.attributes());
+					blk.append(new LocalGenerator(this, td).generateAssertion(
+							"constraint not satisfied", td.constraint,
+							environment));
 					blk.append(Code.Label(lab));								
 				}
 				cache.put(nid, blk);
@@ -103,13 +104,9 @@ public class GlobalGenerator {
 					Value.Set vs = (Value.Set) v;
 					Type.Set type = vs.type();
 					blk = new Block(1);
-					String lab = Block.freshLabel();
 					blk.append(Code.Load(type.element(),0));
 					blk.append(Code.Const(v));	
-					blk.append(Code.IfGoto(vs.type(), Code.COp.ELEMOF, lab));
-					// FIXME: missing attributes here.
-					blk.append(Code.Assert("constraint not satisfied"));
-					blk.append(Code.Label(lab));
+					blk.append(Code.Assert(vs.type(), Code.COp.ELEMOF, "constraint not satisfied"));
 					cache.put(nid, blk);
 					return blk;
 				} 
