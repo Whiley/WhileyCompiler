@@ -164,7 +164,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		} else if(code instanceof Destructure) {
 			infer(index,(Destructure)code,entry,environment);
 		} else if(code instanceof Assert) {
-			// skip
+			infer(index,(Assert)code,entry,environment);
 		} else if(code instanceof FieldLoad) {
 			infer(index,(FieldLoad)code,entry,environment);			
 		} else if(code instanceof IndirectInvoke) {
@@ -231,6 +231,20 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
 		}	
+		
+		return environment;
+	}
+
+	protected Env infer(int index,
+			Code.Assert code, Block.Entry stmt, Env environment) {
+		if(code.op == Code.COp.ELEMOF) {
+			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
+			environment.push(src.element());
+			environment.push(code.type);
+		} else {		
+			environment.push(code.type);
+			environment.push(code.type);
+		}
 		
 		return environment;
 	}
@@ -657,20 +671,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		Env environment = join(trueEnv,falseEnv);
 		
 		if(igoto.op == Code.COp.ELEMOF) {
-			Type src = igoto.type;
-			Type element;
-			
-			// FIXME: this is soooo broken
-			
-			if(src instanceof Type.Set) {
-				Type.Set s = (Type.Set) src;
-				element = s.element();
-			} else {
-				Type.List s = (Type.List) src;
-				element = s.element();
-			}
-						
-			environment.push(element);
+			Type.EffectiveCollection src = (Type.EffectiveCollection) igoto.type;		
+			environment.push(src.element());
 			environment.push(igoto.type);
 		} else {		
 			environment.push(igoto.type);

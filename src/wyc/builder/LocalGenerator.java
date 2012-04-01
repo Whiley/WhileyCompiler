@@ -100,7 +100,7 @@ public final class LocalGenerator {
 					|| condition instanceof Expr.Comprehension) {
 				// fall through to default case
 			} else if (condition instanceof Expr.BinOp) {
-				//return generateAssertion(message, (Expr.BinOp) condition, environment);
+				return generateAssertion(message, (Expr.BinOp) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
@@ -109,11 +109,10 @@ public final class LocalGenerator {
 			// true. In some cases, we could do better. For example, !(x < 5)
 			// could be rewritten into x>=5. 
 			
-			//Block blk = generate(condition,environment);
-			//blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
-			//blk.append(Code.Assert(Type.T_BOOL, Code.COp.EQ, message),attributes(condition));
-			//return blk;
-			return new Block(0);
+			Block blk = generate(condition,environment);
+			blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
+			blk.append(Code.Assert(Type.T_BOOL, Code.COp.EQ, message),attributes(condition));
+			return blk;
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {			
@@ -122,6 +121,36 @@ public final class LocalGenerator {
 		return null;
 	}
 	
+	protected Block generateAssertion(String message, Expr.BinOp v,
+			HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		Expr.BOp bop = v.op;
+		
+		if (bop == Expr.BOp.OR) {
+			String lab = Block.freshLabel();
+			blk.append(generateCondition(lab, v.lhs, environment));
+			blk.append(generateAssertion(message, v.rhs, environment));
+			blk.append(Code.Label(lab));
+			return blk;
+		} else if (bop == Expr.BOp.AND) {
+			blk.append(generateAssertion(message, v.lhs, environment));
+			blk.append(generateAssertion(message, v.rhs, environment));
+			return blk;
+		} 
+		
+		// TODO: there are some cases which will break here. In particular,
+		// those involving type tests. If/When WYIL changes to be register based
+		// this should fall out in the wash.
+		
+		Code.COp cop = OP2COP(bop,v);
+		
+		blk.append(generate(v.lhs, environment));			
+		blk.append(generate(v.rhs, environment));					
+		blk.append(Code.Assert(v.srcType.raw(), cop, message), attributes(v));
+		
+		return blk;
+	}
+
 	/**
 	 * Translate a source-level condition into a wyil block, using a given
 	 * environment mapping named variables to slots. If the condition evaluates
@@ -165,24 +194,7 @@ public final class LocalGenerator {
 			blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
 			blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(condition));
 			return blk;
-//			
-//			 if (condition instanceof Expr.LocalVariable) {
-//				return generateCondition(target, (Expr.LocalVariable) condition, environment);
-//			} else if (condition instanceof Expr.ConstantAccess) {
-//				return generateCondition(target, (Expr.ConstantAccess) condition, environment);
-//			} else if (condition instanceof Expr.BinOp) {
-//				return generateCondition(target, (Expr.BinOp) condition, environment);
-//			} else if (condition instanceof Expr.UnOp) {
-//				return generateCondition(target, (Expr.UnOp) condition, environment);
-//			} else if (condition instanceof Expr.AbstractInvoke) {
-//				return generateCondition(target, (Expr.AbstractInvoke) condition, environment);
-//			} else if (condition instanceof Expr.RecordAccess) {
-//				return generateCondition(target, (Expr.RecordAccess) condition, environment);
-//			} else if (condition instanceof Expr.IndexOf) {
-//				return generateCondition(target, (Expr.IndexOf) condition, environment);
-//			} else {				
-//				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
-//			}
+			
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {			
@@ -202,21 +214,7 @@ public final class LocalGenerator {
 		}
 		return blk;
 	}
-
 	
-	private Block generateCondition(String target, Expr.ConstantAccess v, 
-			HashMap<String, Integer> environment) throws ResolveError {
-		
-		Block blk = new Block(environment.size());		
-		Value val = v.value;
-		
-		// Obviously, this will be evaluated one way or another.
-		blk.append(Code.Const(val));
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(v.result().raw(),Code.COp.EQ, target),attributes(v));			
-		return blk;
-	}
-		
 	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
 		
 		Expr.BOp bop = v.op;
@@ -329,28 +327,7 @@ public final class LocalGenerator {
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 		return null;
 	}
-
-	private Block generateCondition(String target, Expr.IndexOf v, HashMap<String,Integer> environment) {
-		Block blk = generate(v, environment);
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
-		return blk;
-	}
 	
-	private Block generateCondition(String target, Expr.RecordAccess v, HashMap<String,Integer> environment) {
-		Block blk = generate(v, environment);		
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));		
-		return blk;
-	}
-
-	private Block generateCondition(String target, Expr.AbstractInvoke v, HashMap<String,Integer> environment) throws ResolveError {
-		Block blk = generate((Expr) v, environment);	
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
-		return blk;
-	}
-
 	private Block generateCondition(String target, Expr.Comprehension e,  
 			HashMap<String,Integer> environment) {
 		
