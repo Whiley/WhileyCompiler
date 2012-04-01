@@ -89,8 +89,37 @@ public final class LocalGenerator {
 	 */
 	public Block generateAssertion(String message, Expr condition,
 			 HashMap<String, Integer> environment) {
-		got here
-		return new Block(0);
+		try {
+			if (condition instanceof Expr.Constant
+					|| condition instanceof Expr.ConstantAccess
+					|| condition instanceof Expr.LocalVariable
+					|| condition instanceof Expr.UnOp
+					|| condition instanceof Expr.AbstractInvoke
+					|| condition instanceof Expr.RecordAccess
+					|| condition instanceof Expr.IndexOf
+					|| condition instanceof Expr.Comprehension) {
+				// fall through to default case
+			} else if (condition instanceof Expr.BinOp) {
+				//return generateAssertion(message, (Expr.BinOp) condition, environment);
+			} else {				
+				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
+			}
+			
+			// The default case simply compares the computed value against
+			// true. In some cases, we could do better. For example, !(x < 5)
+			// could be rewritten into x>=5. 
+			
+			//Block blk = generate(condition,environment);
+			//blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
+			//blk.append(Code.Assert(Type.T_BOOL, Code.COp.EQ, message),attributes(condition));
+			//return blk;
+			return new Block(0);
+		} catch (SyntaxError se) {
+			throw se;
+		} catch (Exception ex) {			
+			internalFailure(ex.getMessage(), context, condition, ex);
+		}
+		return null;
 	}
 	
 	/**
@@ -112,25 +141,48 @@ public final class LocalGenerator {
 		try {
 			if (condition instanceof Expr.Constant) {
 				return generateCondition(target, (Expr.Constant) condition, environment);
-			} else if (condition instanceof Expr.LocalVariable) {
-				return generateCondition(target, (Expr.LocalVariable) condition, environment);
-			} else if (condition instanceof Expr.ConstantAccess) {
-				return generateCondition(target, (Expr.ConstantAccess) condition, environment);
-			} else if (condition instanceof Expr.BinOp) {
-				return generateCondition(target, (Expr.BinOp) condition, environment);
+			} else if (condition instanceof Expr.ConstantAccess
+					|| condition instanceof Expr.LocalVariable
+					|| condition instanceof Expr.AbstractInvoke
+					|| condition instanceof Expr.RecordAccess
+					|| condition instanceof Expr.IndexOf) {
+				// fall through to default case
 			} else if (condition instanceof Expr.UnOp) {
 				return generateCondition(target, (Expr.UnOp) condition, environment);
-			} else if (condition instanceof Expr.AbstractInvoke) {
-				return generateCondition(target, (Expr.AbstractInvoke) condition, environment);
-			} else if (condition instanceof Expr.RecordAccess) {
-				return generateCondition(target, (Expr.RecordAccess) condition, environment);
-			} else if (condition instanceof Expr.IndexOf) {
-				return generateCondition(target, (Expr.IndexOf) condition, environment);
+			} else if (condition instanceof Expr.BinOp) {
+				return generateCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
+			
+			// The default case simply compares the computed value against
+			// true. In some cases, we could do better. For example, !(x < 5)
+			// could be rewritten into x>=5. 
+			
+			Block blk = generate(condition,environment);
+			blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
+			blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(condition));
+			return blk;
+//			
+//			 if (condition instanceof Expr.LocalVariable) {
+//				return generateCondition(target, (Expr.LocalVariable) condition, environment);
+//			} else if (condition instanceof Expr.ConstantAccess) {
+//				return generateCondition(target, (Expr.ConstantAccess) condition, environment);
+//			} else if (condition instanceof Expr.BinOp) {
+//				return generateCondition(target, (Expr.BinOp) condition, environment);
+//			} else if (condition instanceof Expr.UnOp) {
+//				return generateCondition(target, (Expr.UnOp) condition, environment);
+//			} else if (condition instanceof Expr.AbstractInvoke) {
+//				return generateCondition(target, (Expr.AbstractInvoke) condition, environment);
+//			} else if (condition instanceof Expr.RecordAccess) {
+//				return generateCondition(target, (Expr.RecordAccess) condition, environment);
+//			} else if (condition instanceof Expr.IndexOf) {
+//				return generateCondition(target, (Expr.IndexOf) condition, environment);
+//			} else {				
+//				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
+//			}
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {			
@@ -151,16 +203,6 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generateCondition(String target, Expr.LocalVariable v, 
-			HashMap<String, Integer> environment) throws ResolveError {
-		
-		Block blk = new Block(environment.size());				
-		blk.append(Code.Load(Type.T_BOOL, environment.get(v.var)));
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL,Code.COp.EQ, target),attributes(v));			
-
-		return blk;
-	}
 	
 	private Block generateCondition(String target, Expr.ConstantAccess v, 
 			HashMap<String, Integer> environment) throws ResolveError {
