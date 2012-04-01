@@ -1,4 +1,4 @@
-public boolean ::method(int x, int y):
+public bool ::method(int x, int y):
     return x < y
 
 public void ::main(System.Console console):
