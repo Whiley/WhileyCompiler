@@ -260,10 +260,16 @@ public final class DecisionTree {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;
 				String lab = Block.freshLabel();
-				// FIXME: avoid the branch here
-				nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
-				nblock.append(Code.Goto(target));
-				nblock.append(Code.Label(lab));
+				Code.COp iop = invert(a.op);
+				if(iop != null) {
+					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
+				} else {
+					// FIXME: avoid the branch here. This can be done by
+					// ensuring that every Code.COp is invertible.
+					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+					nblock.append(Code.Goto(target));
+					nblock.append(Code.Label(lab));
+				}
 			} else {
 				nblock.append(e.code, e.attributes());
 			}
@@ -271,5 +277,22 @@ public final class DecisionTree {
 		return nblock.relabel();
 	}
 	
+	private static Code.COp invert(Code.COp cop) {
+		switch(cop) {
+		case EQ:
+			return Code.COp.NEQ;
+		case NEQ:
+			return Code.COp.EQ;
+		case LT:
+			return Code.COp.GTEQ;
+		case LTEQ:
+			return Code.COp.GT;
+		case GT:
+			return Code.COp.LTEQ;
+		case GTEQ:
+			return Code.COp.LT;
+		}
+		return null;
+	}
 	
 }

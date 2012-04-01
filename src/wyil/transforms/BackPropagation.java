@@ -406,6 +406,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	private void infer(int index, Code.Load code, Block.Entry entry,
 			Env environment) {		
+		System.out.println("GOT: " + code);
 		Type req = environment.pop();
 		coerceAfter(req,code.type,index,entry);
 		environment.set(code.slot,code.type);		

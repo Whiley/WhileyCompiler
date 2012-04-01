@@ -212,6 +212,7 @@ public class GlobalGenerator {
 			
 			boolean constraints = false;
 			DecisionTree tree = new DecisionTree(raw);
+			
 			for (UnresolvedType b : ut.bounds) {
 				Type type = resolver.resolveAsType(b, context).raw();
 				Block constraint = generate(b, context);
