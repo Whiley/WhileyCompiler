@@ -1050,11 +1050,32 @@ public final class LocalGenerator {
 		return nblock.relabel();
 	}
 	
+	/**
+	 * The chainBlock method takes a block and replaces every fail statement
+	 * with a goto to a given label. This is useful for handling constraints in
+	 * union types, since if the constraint is not met that doesn't mean its
+	 * game over.
+	 * 
+	 * @param target
+	 * @param blk
+	 * @return
+	 */
 	private static Block chainBlock(String target, Block blk) {	
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
-				nblock.append(Code.Goto(target), e.attributes());
+				Code.Assert a = (Code.Assert) e.code;				
+				Code.COp iop = invert(a.op);
+				if(iop != null) {
+					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
+				} else {
+					// FIXME: avoid the branch here. This can be done by
+					// ensuring that every Code.COp is invertible.
+					String lab = Block.freshLabel();
+					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+					nblock.append(Code.Goto(target));
+					nblock.append(Code.Label(lab));
+				}
 			} else {
 				nblock.append(e.code, e.attributes());
 			}
@@ -1062,6 +1083,23 @@ public final class LocalGenerator {
 		return nblock.relabel();
 	}
 	
+	private static Code.COp invert(Code.COp cop) {
+		switch(cop) {
+		case EQ:
+			return Code.COp.NEQ;
+		case NEQ:
+			return Code.COp.EQ;
+		case LT:
+			return Code.COp.GTEQ;
+		case LTEQ:
+			return Code.COp.GT;
+		case GT:
+			return Code.COp.LTEQ;
+		case GTEQ:
+			return Code.COp.LT;
+		}
+		return null;
+	}
 	
 	/**
 	 * The attributes method extracts those attributes of relevance to wyil, and

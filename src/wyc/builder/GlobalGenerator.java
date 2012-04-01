@@ -86,7 +86,6 @@ public class GlobalGenerator {
 					if(blk == null) {
 						blk = new Block(1);					
 					}
-
 					HashMap<String,Integer> environment = new HashMap<String,Integer>();
 					environment.put("$",0);
 					addExposedNames(td.resolvedType.raw(),environment,blk);
@@ -221,7 +220,8 @@ public class GlobalGenerator {
 			}
 			
 			if(constraints) {
-				return tree.flattern();
+				//return tree.flattern();
+				return null;
 			} else {
 				// no constraints, must not do anything!
 				return null;

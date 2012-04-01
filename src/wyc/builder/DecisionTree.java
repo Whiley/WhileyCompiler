@@ -200,23 +200,17 @@ public final class DecisionTree {
 	public Block flattern() {
 		Block blk = new Block(1);
 		String exitLabel = Block.freshLabel();
-		flattern(root,blk,exitLabel,false);
+		flattern(root,blk,exitLabel);
 		blk.append(Code.Label(exitLabel));
 		return blk;
 	}
 	
-	private void flattern(Node node, Block blk, String target, boolean last) {
-		if(node.constraint != null) {
-			if(last) {
-				// in this case, no chaining is required.
-				blk.append(node.constraint);
-				blk.append(Code.Goto(target));	
-			} else {
-				String nextLabel = Block.freshLabel();
-				blk.append(chainBlock(nextLabel, node.constraint));											
-				blk.append(Code.Goto(target));						
-				blk.append(Code.Label(nextLabel));
-			} 
+	private void flattern(Node node, Block blk, String target) {
+		if(node.constraint != null) {			
+			String nextLabel = Block.freshLabel();
+			blk.append(chainBlock(nextLabel, node.constraint));											
+			blk.append(Code.Goto(target));						
+			blk.append(Code.Label(nextLabel));
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
 			// zero.			
@@ -236,12 +230,14 @@ public final class DecisionTree {
 			Node child = children.get(i);
 			if (i != lastIndex) {
 				blk.append(Code.IfType(node.type, Code.THIS_SLOT,
-						Type.Negation(child.type), nextLabel));
-				flattern(child,blk,target,false);	
-			} else {
-				flattern(child,blk,target,true);	
-			}
+						Type.Negation(child.type), nextLabel));	
+			} 
+			flattern(child,blk,target);	
 		}		
+		
+		// what goes here!?
+		// FIXME
+		blk.append(Code.Assert(Type.T_ANY, Code.COp.EQ, "TO BE REMOVED"));
 	}
 	
 	/**
@@ -258,14 +254,14 @@ public final class DecisionTree {
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
-				Code.Assert a = (Code.Assert) e.code;
-				String lab = Block.freshLabel();
+				Code.Assert a = (Code.Assert) e.code;				
 				Code.COp iop = invert(a.op);
 				if(iop != null) {
 					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
+					String lab = Block.freshLabel();
 					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
 					nblock.append(Code.Goto(target));
 					nblock.append(Code.Label(lab));
