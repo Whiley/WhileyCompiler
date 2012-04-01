@@ -49,7 +49,7 @@ public final class WyilFileWriter implements Transform {
 	private boolean writeAttributes;
 	private boolean writeSlots;
 		
-	public WyilFileWriter(Path.Root project) {
+	public WyilFileWriter(wybs.lang.Builder builder) {
 
 	}
 	
