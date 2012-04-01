@@ -112,8 +112,6 @@ public final class LocalGenerator {
 				return generateCondition(target, (Expr.IndexOf) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
-			} else if (condition instanceof Expr.New) {
-				return generate((Expr.New) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
