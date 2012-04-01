@@ -434,8 +434,8 @@ public class ClassFileBuilder {
 				 translate((Destructure)code,freeSlot,bytecodes);
 			} else if(code instanceof LoopEnd) {
 				 translate((LoopEnd)code,freeSlot,bytecodes);
-			} else if(code instanceof Fail) {
-				 translate((Fail)code,freeSlot,bytecodes);
+			} else if(code instanceof Assert) {
+				 translate((Assert)code,freeSlot,bytecodes);
 			} else if(code instanceof FieldLoad) {
 				 translate((FieldLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof ForAll) {
@@ -1136,7 +1136,7 @@ public class ClassFileBuilder {
 		}		
 	}
 	
-	public void translate(Code.Fail c, int freeSlot,
+	public void translate(Code.Assert c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));

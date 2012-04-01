@@ -181,7 +181,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 				} else {
 					// This indicates a sequential statement was encountered.
 					store = propagate(i, entry, store);					
-					if (entry.code instanceof Code.Fail
+					if (entry.code instanceof Code.Assert
 							|| entry.code instanceof Code.Return
 							|| entry.code instanceof Code.Throw) {
 						store = null;

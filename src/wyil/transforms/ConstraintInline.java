@@ -299,7 +299,7 @@ public class ConstraintInline implements Transform {
 			blk.append(Code.LengthOf(code.type),attributes(elem));
 			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
 			blk.append(Code.Label(falseLabel),attributes(elem));
-			blk.append(Code.Fail("index out of bounds"),attributes(elem));
+			blk.append(Code.Assert("index out of bounds"),attributes(elem));
 			blk.append(Code.Label(exitLabel),attributes(elem));
 			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
 			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
@@ -343,7 +343,7 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),attributes(elem));
 			}
 			blk.append(Code.IfGoto(code.type, Code.COp.NEQ, label),attributes(elem));
-			blk.append(Code.Fail("division by zero"),attributes(elem));
+			blk.append(Code.Assert("division by zero"),attributes(elem));
 			blk.append(Code.Label(label),attributes(elem));
 			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 			return blk;

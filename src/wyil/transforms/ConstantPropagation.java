@@ -141,7 +141,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Debug)code,entry,environment);
 		}  else if(code instanceof Destructure) {
 			infer((Destructure)code,entry,environment);
-		} else if(code instanceof Fail) {
+		} else if(code instanceof Assert) {
 			// skip
 		} else if(code instanceof FieldLoad) {
 			infer(index,(FieldLoad)code,entry,environment);			

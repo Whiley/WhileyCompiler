@@ -201,7 +201,7 @@ public final class CodeGeneration {
 			String lab = Block.freshLabel();
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
 			precondition.append(localGenerator.generateCondition(lab, fd.precondition, preEnv));		
-			precondition.append(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
+			precondition.append(Code.Assert("precondition not satisfied"), attributes(fd.precondition));
 			precondition.append(Code.Label(lab));			
 		}
 		
@@ -220,7 +220,7 @@ public final class CodeGeneration {
 			postcondition = new Block(postEnv.size());
 			postcondition.append(localGenerator.generateCondition(lab, fd.postcondition,
 					postEnv));
-			postcondition.append(Code.Fail("postcondition not satisfied"),
+			postcondition.append(Code.Assert("postcondition not satisfied"),
 					attributes(fd.postcondition));
 			postcondition.append(Code.Label(lab));
 		}
@@ -408,7 +408,7 @@ public final class CodeGeneration {
 		String lab = Block.freshLabel();
 		Block blk = new Block(environment.size());
 		blk.append(localGenerator.generateCondition(lab, s.expr, environment));		
-		blk.append(Code.Fail("assertion failed"), attributes(s));
+		blk.append(Code.Assert("assertion failed"), attributes(s));
 		blk.append(Code.Label(lab));			
 		return blk;
 	}
@@ -578,7 +578,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Assert("loop invariant not satisfied on entry"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
@@ -596,7 +596,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Assert("loop invariant not restored"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
@@ -613,7 +613,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Assert("loop invariant not satisfied on entry"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
@@ -629,7 +629,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Assert("loop invariant not restored"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
@@ -649,7 +649,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
+			blk.append(Code.Assert("loop invariant not satisfied on entry"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		
@@ -692,7 +692,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
+			blk.append(Code.Assert("loop invariant not restored"), attributes(s));
 			blk.append(Code.Label(invariantLabel));			
 		}
 		blk.append(Code.End(label), attributes(s));		

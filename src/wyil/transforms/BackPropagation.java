@@ -163,7 +163,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Debug)code,entry,environment);
 		} else if(code instanceof Destructure) {
 			infer(index,(Destructure)code,entry,environment);
-		} else if(code instanceof Fail) {
+		} else if(code instanceof Assert) {
 			// skip
 		} else if(code instanceof FieldLoad) {
 			infer(index,(FieldLoad)code,entry,environment);			

@@ -115,8 +115,8 @@ public abstract class Code {
 	 *            --- end of block.
 	 * @return
 	 */
-	public static Fail Fail(String label) {
-		return get(new Fail(label));
+	public static Assert Assert(String label) {
+		return get(new Assert(label));
 	}
 	
 	/**
@@ -790,16 +790,16 @@ public abstract class Code {
 	}	
 
 	/**
-	 * Raises an assertion failure fault with the given message. Fail bytecodes
-	 * may only appear within assertion blocks.
+	 * Raises an assertion failure if the given condition is false with the
+	 * given message.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Fail extends Code {
+	public static final class Assert extends Code {
 		public final String msg;
 		
-		private Fail(String msg) {
+		private Assert(String msg) {
 			this.msg = msg;
 		}
 		
@@ -808,8 +808,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Fail) {
-				return msg.equals(((Fail)o).msg);
+			if(o instanceof Assert) {
+				return msg.equals(((Assert)o).msg);
 			}
 			return false;
 		}

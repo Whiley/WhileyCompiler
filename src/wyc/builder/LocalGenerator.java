@@ -1020,7 +1020,7 @@ public final class LocalGenerator {
 	private static Block chainBlock(String target, Block blk) {	
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
-			if (e.code instanceof Code.Fail) {
+			if (e.code instanceof Code.Assert) {
 				nblock.append(Code.Goto(target), e.attributes());
 			} else {
 				nblock.append(e.code, e.attributes());

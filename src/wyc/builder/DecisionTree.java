@@ -234,7 +234,7 @@ public final class DecisionTree {
 			flattern(child,blk,target);				
 		}
 
-		blk.append(Code.Fail("constraint not satisified"));		
+		blk.append(Code.Assert("constraint not satisified"));		
 	}
 	
 	/**
@@ -250,7 +250,7 @@ public final class DecisionTree {
 	private static Block chainBlock(String target, Block blk) {	
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
-			if (e.code instanceof Code.Fail) {
+			if (e.code instanceof Code.Assert) {
 				nblock.append(Code.Goto(target), e.attributes());
 			} else {
 				nblock.append(e.code, e.attributes());

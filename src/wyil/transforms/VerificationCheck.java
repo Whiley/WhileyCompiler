@@ -91,7 +91,7 @@ public class VerificationCheck implements Transform {
 			} else if(code instanceof Code.Return) {
 				// don't need to do anything for a return!
 				return;
-			} else if(code instanceof Code.Fail) {
+			} else if(code instanceof Code.Assert) {
 				// TODO: implement me!
 				return;
 			} else {

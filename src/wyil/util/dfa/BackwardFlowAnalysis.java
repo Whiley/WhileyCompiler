@@ -162,7 +162,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					store = stores.get(gto.target);					
 				} else {
 					// This indicates a sequential statement was encountered.
-					if (code instanceof Code.Fail
+					if (code instanceof Code.Assert
 							|| code instanceof Code.Return
 							|| code instanceof Code.Throw) {
 						store = lastStore();
