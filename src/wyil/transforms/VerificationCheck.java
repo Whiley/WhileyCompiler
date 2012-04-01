@@ -58,7 +58,7 @@ public class VerificationCheck implements Transform {
 			transform(type);
 		}		
 		for(WyilFile.Method method : module.methods()) {
-			transform(method);
+			//transform(method);
 		}		
 	}
 	
@@ -79,17 +79,32 @@ public class VerificationCheck implements Transform {
 		ArrayList<Constructor> stack = new ArrayList<Constructor>();
 		
 		for (int i = 0; i != body.size(); ++i) {			
-			constraint = transform(body.get(i), constraint, environment, stack);
+			Block.Entry entry = body.get(i);
+			Code code = entry.code;
+			
+			if(code instanceof Code.IfGoto) {
+				// TODO: implement me!
+			} else if(code instanceof Code.IfType) {
+				// TODO: implement me!
+			} else if(code instanceof Code.Loop) {
+				// TODO: implement me!
+			} else if(code instanceof Code.Return) {
+				// don't need to do anything for a return!
+				return;
+			} else if(code instanceof Code.Fail) {
+				// TODO: implement me!
+				return;
+			} else {
+				constraint = transform(body.get(i), constraint, environment, stack);
+			}
 		}
-		
-		System.out.println("CONSTRAINT: " + constraint);
 	}
 	
 	/**
 	 * Transform the given constraint according to the abstract semantics of the
-	 * given instruction (entry). The environment maps slots to their current
-	 * single assignment number. Likewise, the stack models the stack and
-	 * accumulates expressions.
+	 * given (simple) instruction (entry). The environment maps slots to their
+	 * current single assignment number. Likewise, the stack models the stack
+	 * and accumulates expressions.
 	 * 
 	 * @param entry
 	 * @param constraint
@@ -102,9 +117,7 @@ public class VerificationCheck implements Transform {
 			int[] environment, ArrayList<Constructor> stack) {
 		Code code = entry.code;		
 		
-		if(code instanceof Assert) {
-			constraint = transform((Assert)code,entry,constraint,environment,stack);
-		} else if(code instanceof BinOp) {
+		if(code instanceof BinOp) {
 			constraint = transform((BinOp)code,entry,constraint,environment,stack);
 		} else if(code instanceof Convert) {
 			constraint = transform((Convert)code,entry,constraint,environment,stack);
@@ -114,8 +127,6 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Debug)code,entry,constraint,environment,stack);
 		} else if(code instanceof Destructure) {
 			constraint = transform((Destructure)code,entry,constraint,environment,stack);
-		} else if(code instanceof Fail) {
-			// skip
 		} else if(code instanceof FieldLoad) {
 			constraint = transform((FieldLoad)code,entry,constraint,environment,stack);			
 		} else if(code instanceof IndirectInvoke) {
@@ -184,13 +195,7 @@ public class VerificationCheck implements Transform {
 		}
 		return constraint;
 	}
-
-	protected Formula transform(Code.Assert code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
-		// TODO: complete this transform
-		return constraint;
-	}
-
+	
 	protected Formula transform(Code.BinOp code, Block.Entry blk,
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
 		// TODO: complete this transform

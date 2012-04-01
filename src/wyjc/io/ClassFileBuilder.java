@@ -422,9 +422,7 @@ public class ClassFileBuilder {
 			ArrayList<UnresolvedHandler> handlers, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
-			if(code instanceof Assert) {
-				 // translate((Assert)code,freeSlot,bytecodes);
-			} else if(code instanceof BinOp) {
+			if(code instanceof BinOp) {
 				 translate((BinOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Convert) {
 				 translate((Convert)code,freeSlot,constants,bytecodes);

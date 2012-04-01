@@ -76,18 +76,6 @@ public abstract class Code {
 	// Bytecode Constructors
 	// ===============================================================
 	
-	/**
-	 * Construct an <code>assert</code> bytecode which identifies a sequence of
-	 * bytecodes which represent a runtime assertion.
-	 * 
-	 * @param label
-	 *            --- end of block.
-	 * @return
-	 */
-	public static Assert Assert(String label) {
-		return get(new Assert(label));
-	}
-	
 	public static BinOp BinOp(Type type, BOp op) {
 		return get(new BinOp(type,op));
 	}
@@ -522,45 +510,7 @@ public abstract class Code {
 	
 	// ===============================================================
 	// Bytecode Implementations
-	// ===============================================================
-
-	/**
-	 * Indicates the start of a code block representing an assertion. This
-	 * includes assertions arising from type invariants, as well as
-	 * method/function pre- and post-conditions. The target identifies the label
-	 * terminating this block.
-	 */
-	public static final class Assert extends Code {
-		public final String target;
-		
-		private  Assert(String target) {
-			this.target = target;
-		}
-	
-		public Assert relabel(Map<String,String> labels) {
-			String nlabel = labels.get(target);
-			if(nlabel == null) {
-				return this;
-			} else {
-				return Assert(nlabel);
-			}
-		}
-		
-		public int hashCode() {
-			return target.hashCode();
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Assert) {
-				return target.equals(((Assert)o).target);
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return "assert " + target;
-		}		
-	}
+	// ===============================================================	
 
 	/**
 	 * Represents a binary operator (e.g. '+','-',etc) that is provided to a

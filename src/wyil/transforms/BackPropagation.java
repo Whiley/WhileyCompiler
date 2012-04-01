@@ -153,9 +153,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		afterInserts.remove(index);		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Assert) {
-			infer(index,(Assert)code,entry,environment);
-		} else if(code instanceof BinOp) {
+		if(code instanceof BinOp) {
 			infer(index,(BinOp)code,entry,environment);
 		} else if(code instanceof Convert) {
 			infer(index,(Convert)code,entry,environment);
@@ -235,11 +233,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}	
 		
 		return environment;
-	}
-	
-	private void infer(int index, Code.Assert code, Block.Entry entry,
-			Env environment) {
-		
 	}
 	
 	private void infer(int index, Code.BinOp code, Block.Entry entry,
