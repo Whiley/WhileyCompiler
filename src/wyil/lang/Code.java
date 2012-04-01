@@ -76,6 +76,18 @@ public abstract class Code {
 	// Bytecode Constructors
 	// ===============================================================
 	
+	/**
+	 * Construct an <code>assert</code> bytecode which raises an assertion
+	 * failure with the given if the given condition evaluates to false.
+	 * 
+	 * @param message
+	 *            --- message to report upon failure.
+	 * @return
+	 */
+	public static Assert Assert(Type type, COp cop, String message) {
+		return get(new Assert(type,cop,message));
+	}
+	
 	public static BinOp BinOp(Type type, BOp op) {
 		return get(new BinOp(type,op));
 	}
@@ -107,18 +119,7 @@ public abstract class Code {
 	public static LoopEnd End(String label) {
 		return get(new LoopEnd(label));
 	}
-	
-	/**
-	 * Construct a <code>fail</code> bytecode which indicates a runtime failure.
-	 * 
-	 * @param label
-	 *            --- end of block.
-	 * @return
-	 */
-	public static Assert Assert(String label) {
-		return get(new Assert(label));
-	}
-	
+		
 	/**
 	 * Construct a <code>fieldload</code> bytecode which reads a given field
 	 * from a record of a given type.
@@ -797,26 +798,41 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Assert extends Code {
+		public final Type type;
+		public final COp op;
 		public final String msg;
 		
-		private Assert(String msg) {
+		private Assert(Type type, COp cop, String msg) {
+			if(cop == null) {
+				throw new IllegalArgumentException("Assert op argument cannot be null");
+			}			
+			this.type = type;
+			this.op = cop;
 			this.msg = msg;
 		}
 		
 		public int hashCode() {
-			return msg.hashCode();
+			if(type == null) {
+				return op.hashCode() + msg.hashCode();
+			} else {
+				return type.hashCode() + op.hashCode() + msg.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Assert) {
-				return msg.equals(((Assert)o).msg);
+			if (o instanceof Assert) {
+				Assert ig = (Assert) o;
+				return op == ig.op
+						&& msg.equals(ig.msg)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));
 			}
 			return false;
 		}
-		
+	
 		public String toString() {
-			return "fail \"" + msg + "\"";
-		}		
+			return toString("assert " + op + " \"" + msg + "\"",type);
+		}			
 	}
 
 	/**
