@@ -90,11 +90,9 @@ public class GlobalGenerator {
 					HashMap<String,Integer> environment = new HashMap<String,Integer>();
 					environment.put("$",0);
 					addExposedNames(td.resolvedType.raw(),environment,blk);
-					String lab = Block.freshLabel();
 					blk.append(new LocalGenerator(this, td).generateAssertion(
 							"constraint not satisfied", td.constraint,
-							environment));
-					blk.append(Code.Label(lab));								
+							environment));							
 				}
 				cache.put(nid, blk);
 				return blk;

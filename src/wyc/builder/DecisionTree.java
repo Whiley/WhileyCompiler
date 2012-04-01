@@ -193,7 +193,7 @@ public final class DecisionTree {
 	
 	/**
 	 * Flattern this tree into a sequential block. If the test passes then the
-	 * block exists, otherwise a fail statement is reached.
+	 * block exits, otherwise a fail statement is reached.
 	 * 
 	 * @return
 	 */
@@ -259,7 +259,8 @@ public final class DecisionTree {
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;
-				String lab = Block.freshLabel();				
+				String lab = Block.freshLabel();
+				// FIXME: avoid the branch here
 				nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
 				nblock.append(Code.Goto(target));
 				nblock.append(Code.Label(lab));
@@ -269,4 +270,6 @@ public final class DecisionTree {
 		}
 		return nblock.relabel();
 	}
+	
+	
 }
