@@ -200,17 +200,22 @@ public final class DecisionTree {
 	public Block flattern() {
 		Block blk = new Block(1);
 		String exitLabel = Block.freshLabel();
-		flattern(root,blk,exitLabel);
+		flattern(root,blk,exitLabel,false);
 		blk.append(Code.Label(exitLabel));
 		return blk;
 	}
 	
-	private void flattern(Node node, Block blk, String target) {
-		if(node.constraint != null) {			
-			String nextLabel = Block.freshLabel();
-			blk.append(chainBlock(nextLabel, node.constraint));											
-			blk.append(Code.Goto(target));						
-			blk.append(Code.Label(nextLabel));
+	private void flattern(Node node, Block blk, String target, boolean last) {
+		if(node.constraint != null) {	
+			if(last || node.children.isEmpty()) {
+				// no chaining is required in this case
+				blk.append(node.constraint);
+			} else {
+				String nextLabel = Block.freshLabel();
+				blk.append(chainBlock(nextLabel, node.constraint));											
+				blk.append(Code.Goto(target));						
+				blk.append(Code.Label(nextLabel));
+			}
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
 			// zero.			
@@ -230,7 +235,7 @@ public final class DecisionTree {
 			Node child = children.get(i);
 			if (i != lastIndex) {
 				if(child.constraint == null) {
-					// in this case, we can perform a direct branch
+					// in this case, we can perform a direct branch.
 					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
 							child.type, target));
 					continue;
@@ -238,14 +243,14 @@ public final class DecisionTree {
 					// normal case
 					nextLabel = Block.freshLabel();
 					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
-							Type.Negation(child.type), nextLabel));	
+							Type.Negation(child.type), nextLabel));
+					flattern(child,blk,target,false);	
 				}
-			} 
-			flattern(child,blk,target);	
-		}		
-		
-		// what goes here!?
-		blk.append(Code.Skip);
+			} else {
+				flattern(child,blk,target,true);	
+			}
+			
+		}				
 	}
 	
 	/**
