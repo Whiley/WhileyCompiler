@@ -5,6 +5,7 @@ import java.util.*;
 import wyil.lang.Code;
 import wyil.lang.Type;
 import wyil.lang.Block;
+import wyil.lang.Value;
 
 /**
  * Decision trees are used for the constraints induced by union types. The key
@@ -199,26 +200,27 @@ public final class DecisionTree {
 	public Block flattern() {
 		Block blk = new Block(1);
 		String exitLabel = Block.freshLabel();
-		flattern(root,blk,exitLabel); // ?
+		flattern(root,blk,exitLabel,false);
 		blk.append(Code.Label(exitLabel));
 		return blk;
 	}
 	
-	private void flattern(Node node, Block blk, String target) {
+	private void flattern(Node node, Block blk, String target, boolean last) {
 		if(node.constraint != null) {
-			if(target != null) {
+			if(last) {
+				// in this case, no chaining is required.
+				blk.append(node.constraint);
+				blk.append(Code.Goto(target));	
+			} else {
 				String nextLabel = Block.freshLabel();
 				blk.append(chainBlock(nextLabel, node.constraint));											
 				blk.append(Code.Goto(target));						
 				blk.append(Code.Label(nextLabel));
-			} else {
-				// in this case, no chaining is required.
-				blk.append(node.constraint);
-			}
+			} 
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
-			// zero.
-			blk.append(Code.Goto(target));
+			// zero.			
+			blk.append(Code.Goto(target));				
 			return;
 		}
 
@@ -235,9 +237,9 @@ public final class DecisionTree {
 			if (i != lastIndex) {
 				blk.append(Code.IfType(node.type, Code.THIS_SLOT,
 						Type.Negation(child.type), nextLabel));
-				flattern(child,blk,target);	
+				flattern(child,blk,target,false);	
 			} else {
-				flattern(child,blk,null);	
+				flattern(child,blk,target,true);	
 			}
 		}		
 	}
