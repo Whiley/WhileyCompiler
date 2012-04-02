@@ -27,10 +27,13 @@ package wyil.transforms;
 
 import java.util.*;
 
+import com.sun.org.apache.bcel.internal.generic.PUSH;
+
 import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wyil.lang.*;
 import wyil.lang.Code.*;
+import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Code.*;
 import wyil.Transform;
@@ -102,7 +105,8 @@ public class VerificationCheck implements Transform {
 				// don't need to do anything for a return!
 				return;
 			} else {
-				constraint = transform(body.get(i), constraint, environment, stack);
+				constraint = transform(body.get(i), constraint, environment,
+						stack, false);
 			}
 		}
 	}
@@ -114,18 +118,24 @@ public class VerificationCheck implements Transform {
 	 * and accumulates expressions.
 	 * 
 	 * @param entry
+	 *            --- contains bytecode in question to apply.
 	 * @param constraint
+	 *            --- strongest condition which holds before this bytecode.
 	 * @param environment
+	 *            --- map of variables to their current single assignment
+	 *            number.
 	 * @param stack
 	 *            --- current stack of intermediate expressions.
+	 * @param assume
+	 *            --- if true, indicates assumption mode.
 	 * @return
 	 */
 	protected WFormula transform(Block.Entry entry, WFormula constraint,
-			int[] environment, ArrayList<WExpr> stack) {
+			int[] environment, ArrayList<WExpr> stack, boolean assume) {
 		Code code = entry.code;		
 		
 		if(code instanceof Code.Assert) {
-			constraint = transform((Assert)code,entry,constraint,environment,stack);
+			constraint = transform((Assert)code,entry,constraint,environment,stack,assume);
 		} else if(code instanceof BinOp) {
 			constraint = transform((BinOp)code,entry,constraint,environment,stack);
 		} else if(code instanceof Convert) {
@@ -206,11 +216,10 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected WFormula transform(Code.Assert code, Block.Entry entry,
-			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack,
+			boolean assume) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
-		Code.Assert ca = (Code.Assert) code;
-		
 		WExpr rhs = pop(stack);
 		WExpr lhs = pop(stack);
 		
@@ -218,22 +227,22 @@ public class VerificationCheck implements Transform {
 		WFormula test;
 		
 		switch(code.op) {
-		case NEQ:
+		case EQ:
 			test = WExprs.equals(lhs, rhs);
 			break;
-		case EQ:
+		case NEQ:
 			test = WExprs.notEquals(lhs, rhs);
 			break;
-		case LT:
+		case GTEQ:
 			test = WNumerics.greaterThanEq(lhs, rhs);
 			break;
-		case LTEQ:
+		case GT:
 			test = WNumerics.greaterThan(lhs, rhs);
 			break;
-		case GT:
+		case LTEQ:
 			test = WNumerics.lessThanEq(lhs, rhs);
 			break;
-		case GTEQ:
+		case LT:
 			test = WNumerics.lessThan(lhs, rhs);
 			break;
 		default:
@@ -241,20 +250,49 @@ public class VerificationCheck implements Transform {
 			return null;
 		}
 		
-		// Pass constraint through the solver to check for unsatisfiability		
-		Proof tp = Solver.checkUnsatisfiable(timeout, WFormulas.and(test,constraint),
-				wyone.Main.heuristic, wyone.Main.theories);	
-		
-		// If constraint was satisfiable, then we have an error.
-		if (tp instanceof Proof.Sat) {
-			syntaxError(ca.msg,filename,entry);
+		if(assume) {
+			// in assumption mode we don't assert the test; rather, we assume it.
+			constraint = WFormulas.and(test,constraint);
+		} else {
+			// Pass constraint through the solver to check for unsatisfiability		
+			Proof tp = Solver.checkUnsatisfiable(timeout, WFormulas.and(test.not(),constraint),
+					wyone.Main.heuristic, wyone.Main.theories);	
+
+			// If constraint was satisfiable, then we have an error.
+			if (tp instanceof Proof.Sat) {
+				syntaxError(code.msg,filename,entry);
+			}
 		}
+		
 		return constraint;
 	}
 	
 	protected WFormula transform(Code.BinOp code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
+		WExpr result;
+		
+		switch(code.bop) {
+		case ADD:
+			result = WNumerics.add(lhs, rhs);
+			break;
+		case SUB:
+			result = WNumerics.subtract(lhs, rhs);
+			break;
+		case MUL:
+			result = WNumerics.multiply(lhs, rhs);
+			break;
+		case DIV:
+			result = WNumerics.divide(lhs, rhs);
+			break;	
+		default:
+			internalFailure("unknown binary operator",filename,entry);
+			return null;
+		}
+		
+		stack.add(result);
+		
 		return constraint;
 	}
 
