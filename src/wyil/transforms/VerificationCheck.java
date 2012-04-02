@@ -41,9 +41,11 @@ import wyjc.runtime.BigRational;
 import wyone.core.*;
 import wyone.theory.list.WLengthOf;
 import wyone.theory.list.WListAccess;
+import wyone.theory.list.WListConstructor;
 import wyone.theory.list.WListVal;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
+import wyone.theory.set.WSetConstructor;
 import wyone.theory.set.WSetVal;
 import wyone.theory.tuple.WTupleAccess;
 import wyone.theory.tuple.WTupleConstructor;
@@ -449,13 +451,22 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.NewList code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		for (int i=0;i!=code.nargs;++i) {			
+			args.add(pop(stack));			
+		}
+		Collections.reverse(args);
+		stack.add(new WListConstructor(args));
 		return constraint;
 	}
 
 	protected WFormula transform(Code.NewSet code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		HashSet<WExpr> args = new HashSet<WExpr>();
+		for (int i=0;i!=code.nargs;++i) {			
+			args.add(pop(stack));			
+		}
+		stack.add(new WSetConstructor(args));
 		return constraint;
 	}
 
