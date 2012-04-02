@@ -86,44 +86,98 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(WyilFile.Case methodCase) {
+		WFormula constraint = WBool.TRUE;					
 		Block pre = methodCase.precondition();				
 		Block body = methodCase.body();				
-		WFormula constraint = WBool.TRUE;	
-		int[] environment = new int[body.numSlots()];
+		ArrayList<Branch> branches = new ArrayList<Branch>();
 		ArrayList<WExpr> stack = new ArrayList<WExpr>();
+		int[] environment = new int[body.numSlots()];
 		
-		int end = body.size() + (pre != null ? pre.size() : 0);
-		for (int i = 0; i != end; ++i) {
-			boolean assume;
-			Block.Entry entry;
-			
-			if(pre != null && i < pre.size()) {
-				entry = pre.get(i);
-				assume = true;
-			} else if(pre == null) {
-				entry = body.get(i);
-				assume = false;
-			} else {
-				entry = body.get(i - pre.size());
-				assume = false;
-			}
-			
+		// this is a tad inefficient; but, it's the easiest way to do it.
+		Block blk = new Block(body.numSlots());
+		int assumes = 0;
+		if(pre != null) {
+			blk.append(pre);
+			assumes = pre.size();
+		} 
+		blk.append(body);
+		
+		// take initial branch
+		transform(0,constraint,environment,stack,branches,assumes,body);
+		
+		// continue any resulting branches
+		while (!branches.isEmpty()) {
+			int last = branches.size() - 1;
+			Branch branch = branches.get(last);
+			branches.remove(last);
+			transform(branch.pc, branch.constraint,branch.environment, branch.stack, branches,
+					assumes,body);
+		}
+	}
+	
+	/**
+	 * Represents a path through the control-flow graph which has not yet been
+	 * explored.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	private static class Branch {
+		public final int pc;
+		public final WFormula constraint;
+		public final int[] environment;
+		public final ArrayList<WExpr> stack;
+		public Branch(int pc, WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+			this.pc = pc;
+			this.constraint = constraint;
+			this.environment = Arrays.copyOf(environment,environment.length);
+			this.stack = new ArrayList<WExpr>(stack);
+		}
+	}
+	
+	protected void transform(int pc, WFormula constraint, int[] environment,
+			ArrayList<WExpr> stack, ArrayList<Branch> branches, int assumes, Block body) {
+				
+		int bodySize = body.size();		
+		for (int i = pc; i != bodySize; ++i) {
+			Block.Entry entry = body.get(i);			
 			Code code = entry.code;
 			
-			if(code instanceof Code.IfGoto) {
-				// TODO: implement me!
+			if(code instanceof Code.Goto) {
+				Code.Goto g = (Code.Goto) code;
+				i = findLabel(i,g.target,body);				
+			} else if(code instanceof Code.IfGoto) {
+				Code.IfGoto ifgoto = (Code.IfGoto) code;
+				WFormula test = buildTest(ifgoto.op,stack,entry);				
+				int targetpc = findLabel(i,ifgoto.target,body);
+				branches.add(new Branch(targetpc,WFormulas.and(constraint,test),environment,stack));
+				constraint = WFormulas.and(constraint,test.not());
 			} else if(code instanceof Code.IfType) {
 				// TODO: implement me!
 			} else if(code instanceof Code.Loop) {
 				// TODO: implement me!
 			} else if(code instanceof Code.Return) {
-				// don't need to do anything for a return!
+				// we don't need to do anything for a return!
 				return;
 			} else {
 				constraint = transform(entry, constraint, environment,
-						stack, assume);
+						stack, i < assumes);
 			}
 		}
+	}
+	
+	private static int findLabel(int i, String label, Block body) {
+		for(;i!=body.size();++i) {
+			Code code = body.get(i).code;
+			if(code instanceof Code.Label) {
+				Code.Label l = (Code.Label) code;
+				if(l.label.equals(label)) {
+					return i;
+				}
+			}
+		}
+		// technically, this is dead-code.
+		return i;
 	}
 	
 	/**
@@ -237,47 +291,21 @@ public class VerificationCheck implements Transform {
 			boolean assume) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
-		WExpr rhs = pop(stack);
-		WExpr lhs = pop(stack);
-		
-		// Generate test to be asserted
-		WFormula test;
-		
-		switch(code.op) {
-		case EQ:
-			test = WExprs.equals(lhs, rhs);
-			break;
-		case NEQ:
-			test = WExprs.notEquals(lhs, rhs);
-			break;
-		case GTEQ:
-			test = WNumerics.greaterThanEq(lhs, rhs);
-			break;
-		case GT:
-			test = WNumerics.greaterThan(lhs, rhs);
-			break;
-		case LTEQ:
-			test = WNumerics.lessThanEq(lhs, rhs);
-			break;
-		case LT:
-			test = WNumerics.lessThan(lhs, rhs);
-			break;
-		default:
-			internalFailure("unknown comparator",filename,entry);
-			return null;
-		}
-		
-		if(assume) {
-			// in assumption mode we don't assert the test; rather, we assume it.
-			constraint = WFormulas.and(test,constraint);
+		WFormula test = buildTest(code.op, stack, entry);
+
+		if (assume) {
+			// in assumption mode we don't assert the test; rather, we assume
+			// it.
+			constraint = WFormulas.and(test, constraint);
 		} else {
-			// Pass constraint through the solver to check for unsatisfiability		
-			Proof tp = Solver.checkUnsatisfiable(timeout, WFormulas.and(test.not(),constraint),
-					wyone.Main.heuristic, wyone.Main.theories);	
+			// Pass constraint through the solver to check for unsatisfiability
+			Proof tp = Solver.checkUnsatisfiable(timeout,
+					WFormulas.and(test.not(), constraint),
+					wyone.Main.heuristic, wyone.Main.theories);
 
 			// If constraint was satisfiable, then we have an error.
 			if (!(tp instanceof Proof.Unsat)) {
-				syntaxError(code.msg,filename,entry);
+				syntaxError(code.msg, filename, entry);
 			}
 		}
 		
@@ -592,6 +620,38 @@ public class VerificationCheck implements Transform {
 			return new WTupleVal(fields,values);
 		} else {
 			internalFailure("unknown value encountered (" + value + ")",filename,elem);
+			return null;
+		}
+	}
+	
+	/**
+	 * Generate a formula representing a condition from an Code.IfCode or
+	 * Code.Assert bytecodes.
+	 * 
+	 * @param op
+	 * @param stack
+	 * @param elem
+	 * @return
+	 */
+	private WFormula buildTest(Code.COp op, ArrayList<WExpr> stack, SyntacticElement elem) {
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
+		
+		switch(op) {
+		case EQ:
+			return WExprs.equals(lhs, rhs);
+		case NEQ:
+			return WExprs.notEquals(lhs, rhs);
+		case GTEQ:
+			return WNumerics.greaterThanEq(lhs, rhs);
+		case GT:
+			return WNumerics.greaterThan(lhs, rhs);
+		case LTEQ:
+			return WNumerics.lessThanEq(lhs, rhs);
+		case LT:
+			return WNumerics.lessThan(lhs, rhs);
+		default:
+			internalFailure("unknown comparator",filename,elem);
 			return null;
 		}
 	}
