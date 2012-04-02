@@ -28,6 +28,7 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
+import wybs.lang.Builder;
 import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.WyilFile.*;

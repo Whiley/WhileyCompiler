@@ -1,2 +1,3 @@
 set x 2
 print x*43
+print x-1

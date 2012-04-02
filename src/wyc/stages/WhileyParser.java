@@ -318,10 +318,9 @@ public final class WhileyParser {
 		tabs = getIndent();
 		
 		ArrayList<Stmt> stmts = new ArrayList<Stmt>();
-		while(tabs != null && tabs.ntabs == indent) {
-			index = index + 1;
-			stmts.add(parseStatement(indent));			
-			tabs = getIndent();			
+		while (tabs != null && tabs.ntabs == indent && ++index < tokens.size()) {
+			stmts.add(parseStatement(indent));
+			tabs = getIndent();
 		}
 		
 		return stmts;

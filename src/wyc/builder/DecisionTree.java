@@ -232,6 +232,9 @@ public final class DecisionTree {
 			Node child = children.get(i);
 			
 			if(node != root || children.size() != 1) {
+				// in the very special case that this node is actually the root,
+				// and it only has one child then this test is unnecessary since
+				// the type system will already have enforced it.
 				if(child.constraint == null) {
 					// in this case, we can perform a direct branch.
 					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
