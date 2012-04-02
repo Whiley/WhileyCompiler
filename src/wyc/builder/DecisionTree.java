@@ -227,30 +227,31 @@ public final class DecisionTree {
 		String nextLabel = null;
 
 		int lastIndex = children.size()-1;
-		for(int i=0;i!=children.size();++i) {
-			if(nextLabel != null) {
-				blk.append(Code.Label(nextLabel));
-			}
-			nextLabel = null;
+		for(int i=0;i!=children.size();++i) {			
+			nextLabel =  Block.freshLabel();
 			Node child = children.get(i);
-			if (i != lastIndex) {
+			
+			if(node != root || children.size() != 1) {
 				if(child.constraint == null) {
 					// in this case, we can perform a direct branch.
 					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
 							child.type, target));
-					continue;
+					// FIXME: there is a bug here, since we should fail at this
+					// point. To fix this we need to change the above iftype
+					// into an assert statement; however, no such statement
+					// exists.
 				} else {
 					// normal case
-					nextLabel = Block.freshLabel();
 					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
 							Type.Negation(child.type), nextLabel));
-					flattern(child,blk,target,false);	
+					flattern(child,blk,target,i == lastIndex);	
 				}
-			} else {
-				flattern(child,blk,target,true);	
 			}
-			
-		}				
+			// add label for next case (if appropriate)
+			if(nextLabel != null) {
+				blk.append(Code.Label(nextLabel));
+			}
+		}
 	}
 	
 	/**
