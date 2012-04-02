@@ -86,13 +86,28 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(WyilFile.Case methodCase) {
+		Block pre = methodCase.precondition();				
 		Block body = methodCase.body();				
 		WFormula constraint = WBool.TRUE;	
 		int[] environment = new int[body.numSlots()];
 		ArrayList<WExpr> stack = new ArrayList<WExpr>();
 		
-		for (int i = 0; i != body.size(); ++i) {			
-			Block.Entry entry = body.get(i);
+		int end = body.size() + (pre != null ? pre.size() : 0);
+		for (int i = 0; i != end; ++i) {
+			boolean assume;
+			Block.Entry entry;
+			
+			if(pre != null && i < pre.size()) {
+				entry = pre.get(i);
+				assume = true;
+			} else if(pre == null) {
+				entry = body.get(i);
+				assume = false;
+			} else {
+				entry = body.get(i - pre.size());
+				assume = false;
+			}
+			
 			Code code = entry.code;
 			
 			if(code instanceof Code.IfGoto) {
@@ -105,8 +120,8 @@ public class VerificationCheck implements Transform {
 				// don't need to do anything for a return!
 				return;
 			} else {
-				constraint = transform(body.get(i), constraint, environment,
-						stack, false);
+				constraint = transform(entry, constraint, environment,
+						stack, assume);
 			}
 		}
 	}
@@ -166,6 +181,8 @@ public class VerificationCheck implements Transform {
 			constraint = transform((SubList)code,entry,constraint,environment,stack);
 		} else if(code instanceof IndexOf) {
 			constraint = transform((IndexOf)code,entry,constraint,environment,stack);
+		} else if(code instanceof Move) {
+			constraint = transform((Move)code,entry,constraint,environment,stack);
 		} else if(code instanceof Load) {
 			constraint = transform((Load)code,entry,constraint,environment,stack);
 		} else if(code instanceof Update) {
@@ -374,6 +391,13 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
+	protected WFormula transform(Code.Move code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		int slot = code.slot;
+		stack.add(new WVariable(slot + "$" + environment[slot]));
+		return constraint;
+	}
+	
 	protected WFormula transform(Code.Load code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		int slot = code.slot;
