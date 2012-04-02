@@ -31,7 +31,7 @@ import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wyil.lang.*;
 import wyil.lang.Code.*;
-import static wybs.lang.SyntaxError.internalFailure;
+import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Code.*;
 import wyil.Transform;
 import wyjc.runtime.BigRational;
@@ -51,6 +51,11 @@ import wyone.theory.tuple.WTupleVal;
  * 
  */
 public class VerificationCheck implements Transform {
+	/**
+	 * Timeout in milliseconds when solving constraints.
+	 */
+	private int timeout = 100;
+	
 	private String filename;
 	
 	public VerificationCheck(Builder builder) {
@@ -96,13 +101,9 @@ public class VerificationCheck implements Transform {
 			} else if(code instanceof Code.Return) {
 				// don't need to do anything for a return!
 				return;
-			} else if(code instanceof Code.Assert) {
-				// TODO: implement me!
-				return;
 			} else {
 				constraint = transform(body.get(i), constraint, environment, stack);
 			}
-			System.out.println("CONSTRAINT: " + constraint);
 		}
 	}
 	
@@ -123,7 +124,9 @@ public class VerificationCheck implements Transform {
 			int[] environment, ArrayList<WExpr> stack) {
 		Code code = entry.code;		
 		
-		if(code instanceof BinOp) {
+		if(code instanceof Code.Assert) {
+			constraint = transform((Assert)code,entry,constraint,environment,stack);
+		} else if(code instanceof BinOp) {
 			constraint = transform((BinOp)code,entry,constraint,environment,stack);
 		} else if(code instanceof Convert) {
 			constraint = transform((Convert)code,entry,constraint,environment,stack);
@@ -198,6 +201,53 @@ public class VerificationCheck implements Transform {
 		} else {			
 			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
+		}
+		return constraint;
+	}
+	
+	protected WFormula transform(Code.Assert code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		// At this point, what we do is invert the condition being asserted and
+		// check that it is unsatisfiable.
+		Code.Assert ca = (Code.Assert) code;
+		
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
+		
+		// Generate test to be asserted
+		WFormula test;
+		
+		switch(code.op) {
+		case NEQ:
+			test = WExprs.equals(lhs, rhs);
+			break;
+		case EQ:
+			test = WExprs.notEquals(lhs, rhs);
+			break;
+		case LT:
+			test = WNumerics.greaterThanEq(lhs, rhs);
+			break;
+		case LTEQ:
+			test = WNumerics.greaterThan(lhs, rhs);
+			break;
+		case GT:
+			test = WNumerics.lessThanEq(lhs, rhs);
+			break;
+		case GTEQ:
+			test = WNumerics.lessThan(lhs, rhs);
+			break;
+		default:
+			internalFailure("unknown comparator",filename,entry);
+			return null;
+		}
+		
+		// Pass constraint through the solver to check for unsatisfiability		
+		Proof tp = Solver.checkUnsatisfiable(timeout, WFormulas.and(test,constraint),
+				wyone.Main.heuristic, wyone.Main.theories);	
+		
+		// If constraint was satisfiable, then we have an error.
+		if (tp instanceof Proof.Sat) {
+			syntaxError(ca.msg,filename,entry);
 		}
 		return constraint;
 	}
