@@ -34,9 +34,13 @@ import wyil.lang.Code.*;
 import static wybs.lang.SyntaxError.internalFailure;
 import static wyil.lang.Code.*;
 import wyil.Transform;
+import wyjc.runtime.BigRational;
 import wyone.core.*;
-import wyone.core.Value;
-import wyone.theory.logic.Logic;
+import wyone.theory.list.WListVal;
+import wyone.theory.logic.*;
+import wyone.theory.numeric.*;
+import wyone.theory.set.WSetVal;
+import wyone.theory.tuple.WTupleVal;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -59,7 +63,7 @@ public class VerificationCheck implements Transform {
 			transform(type);
 		}		
 		for(WyilFile.Method method : module.methods()) {
-			//transform(method);
+			transform(method);
 		}		
 	}
 	
@@ -75,9 +79,9 @@ public class VerificationCheck implements Transform {
 	
 	protected void transform(WyilFile.Case methodCase) {
 		Block body = methodCase.body();				
-		Formula constraint = Value.V_BOOL(true);		
+		WFormula constraint = WBool.TRUE;	
 		int[] environment = new int[body.numSlots()];
-		ArrayList<Constructor> stack = new ArrayList<Constructor>();
+		ArrayList<WExpr> stack = new ArrayList<WExpr>();
 		
 		for (int i = 0; i != body.size(); ++i) {			
 			Block.Entry entry = body.get(i);
@@ -98,6 +102,7 @@ public class VerificationCheck implements Transform {
 			} else {
 				constraint = transform(body.get(i), constraint, environment, stack);
 			}
+			System.out.println("CONSTRAINT: " + constraint);
 		}
 	}
 	
@@ -114,8 +119,8 @@ public class VerificationCheck implements Transform {
 	 *            --- current stack of intermediate expressions.
 	 * @return
 	 */
-	protected Formula transform(Block.Entry entry, Formula constraint,
-			int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Block.Entry entry, WFormula constraint,
+			int[] environment, ArrayList<WExpr> stack) {
 		Code code = entry.code;		
 		
 		if(code instanceof BinOp) {
@@ -197,211 +202,211 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 	
-	protected Formula transform(Code.BinOp code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.BinOp code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Convert code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Convert code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Const code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
-		stack.add(convert(code.constant));
+	protected WFormula transform(Code.Const code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		stack.add(convert(code.constant,entry));
 		return constraint;
 	}
 
-	protected Formula transform(Code.Debug code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Debug code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Destructure code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Destructure code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.FieldLoad code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.FieldLoad code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.IndirectInvoke code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.IndirectInvoke code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.IndirectSend code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.IndirectSend code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Invoke code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Invoke code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Invert code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Invert code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.ListAppend code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.ListAppend code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.LengthOf code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.LengthOf code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.SubList code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.SubList code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.IndexOf code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.IndexOf code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Load code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Load code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		int slot = code.slot;
-		stack.add(new Constructor.Variable(slot + "$" + environment[slot]));
+		stack.add(new WVariable(slot + "$" + environment[slot]));
 		return constraint;
 	}
 
-	protected Formula transform(Code.Update code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Update code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.NewDict code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.NewDict code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.NewList code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.NewList code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.NewSet code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.NewSet code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.NewRecord code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.NewRecord code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.NewTuple code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.NewTuple code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Negate code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Negate code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Dereference code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Dereference code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Return code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Return code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Send code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Send code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Store code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Store code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		int slot = code.slot;		
 		environment[slot] = environment[slot] + 1;
-		Constructor lhs = new Constructor.Variable(slot + "$" + environment[slot]);
-		Constructor rhs = pop(stack);
-		constraint = Logic.and(constraint,Equality.equals(lhs, rhs));
+		WExpr lhs = new WVariable(slot + "$" + environment[slot]);
+		WExpr rhs = pop(stack);
+		constraint = WFormulas.and(constraint,WExprs.equals(lhs, rhs));
 		return constraint;
 	}
 
-	protected Formula transform(Code.SetUnion code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.SetUnion code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.SetDifference code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.SetDifference code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.SetIntersect code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.SetIntersect code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.StringAppend code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.StringAppend code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.SubString code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.SubString code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.New code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.New code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.Throw code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.Throw code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected Formula transform(Code.TupleLoad code, Block.Entry blk,
-			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
+	protected WFormula transform(Code.TupleLoad code, Block.Entry entry,
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
 	}
@@ -414,48 +419,74 @@ public class VerificationCheck implements Transform {
 	 * @param value
 	 * @return
 	 */
-	private Value convert(wyil.lang.Value value, SyntacticElement elem) {
+	private WValue convert(wyil.lang.Value value, SyntacticElement elem) {
 		if(value instanceof wyil.lang.Value.Bool) {
 			wyil.lang.Value.Bool b = (wyil.lang.Value.Bool) value;
-			return Value.V_BOOL(b.value);
+			return b.value ? WBool.TRUE : WBool.FALSE;
 		} else if(value instanceof wyil.lang.Value.Byte) {
 			wyil.lang.Value.Byte v = (wyil.lang.Value.Byte) value;
-			return Value.V_NUM(v.value);
+			return new WNumber(v.value);
 		} else if(value instanceof wyil.lang.Value.Char) {
 			wyil.lang.Value.Char v = (wyil.lang.Value.Char) value;
 			// Simple, but mostly good translation
-			return Value.V_NUM(v.value);
+			return new WNumber(v.value);
 		} else if(value instanceof wyil.lang.Value.Dictionary) {
-			
+			return WBool.FALSE; // FIXME
 		} else if(value instanceof wyil.lang.Value.FunctionOrMethodOrMessage) {
-			return Value.FALSE; // FIXME
+			return WBool.FALSE; // FIXME
 		} else if(value instanceof wyil.lang.Value.Integer) {
 			wyil.lang.Value.Integer v = (wyil.lang.Value.Integer) value;
-			return Value.V_NUM(v.value);
+			return new WNumber(v.value);
 		} else if(value instanceof wyil.lang.Value.List) {
-			wyil.lang.Value.List v = (wyil.lang.Value.List) value;
-			
+			Value.List vl = (Value.List) value;
+			ArrayList<WValue> vals = new ArrayList<WValue>();
+			for(Value e : vl.values) {
+				vals.add(convert(e,elem));
+			}
+			return new WListVal(vals);
 		} else if(value instanceof wyil.lang.Value.Null) {
-			return Value.FALSE; // FIXME
+			return WBool.FALSE; // FIXME
 		} else if(value instanceof wyil.lang.Value.Rational) {
-			
+			wyil.lang.Value.Rational v = (wyil.lang.Value.Rational) value;
+			BigRational br = v.value;
+			return new WNumber(br.numerator(),br.denominator());
 		} else if(value instanceof wyil.lang.Value.Record) {
-			
+			Value.Record vt = (Value.Record) value;
+			ArrayList<String> fields = new ArrayList<String>(vt.values.keySet());
+			ArrayList<WValue> values = new ArrayList<WValue>();
+			Collections.sort(fields);
+			for(String f : fields) {			
+				values.add(convert(vt.values.get(f),elem));
+			}
+			return new WTupleVal(fields,values);
 		} else if(value instanceof wyil.lang.Value.Set) {
-			
+			Value.Set vs = (Value.Set) value;			
+			HashSet<WValue> vals = new HashSet<WValue>();
+			for(Value e : vs.values) {
+				vals.add(convert(e,elem));
+			}
+			return new WSetVal(vals);
 		} else if(value instanceof wyil.lang.Value.Strung) {
-			wyil.lang.Value.Strung v = (wyil.lang.Value.Strung) value;
-			return Value.V_STR(v.value);
+			return WBool.FALSE; // FIXME
 		} else if(value instanceof wyil.lang.Value.Tuple) {
-			
+			Value.Tuple vt = (Value.Tuple) value;
+			ArrayList<String> fields = new ArrayList<String>();
+			ArrayList<WValue> values = new ArrayList<WValue>();
+			int i = 0;
+			for(Value e : vt.values) {			
+				values.add(convert(e,elem));
+				fields.add(""+i++);
+			}
+			return new WTupleVal(fields,values);
 		} else {
 			internalFailure("unknown value encountered (" + value + ")",filename,elem);
+			return null;
 		}
 	}
 	
-	private static Constructor pop(ArrayList<Constructor> stack) {
+	private static WExpr pop(ArrayList<WExpr> stack) {
 		int last = stack.size()-1;
-		Constructor c = stack.get(last);
+		WExpr c = stack.get(last);
 		stack.remove(last);
 		return c;
 	}
