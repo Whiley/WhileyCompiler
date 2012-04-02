@@ -259,7 +259,7 @@ public class VerificationCheck implements Transform {
 					wyone.Main.heuristic, wyone.Main.theories);	
 
 			// If constraint was satisfiable, then we have an error.
-			if (tp instanceof Proof.Sat) {
+			if (!(tp instanceof Proof.Unsat)) {
 				syntaxError(code.msg,filename,entry);
 			}
 		}
