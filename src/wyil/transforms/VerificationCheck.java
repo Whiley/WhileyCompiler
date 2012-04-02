@@ -39,6 +39,8 @@ import static wyil.lang.Code.*;
 import wyil.Transform;
 import wyjc.runtime.BigRational;
 import wyone.core.*;
+import wyone.theory.list.WLengthOf;
+import wyone.theory.list.WListAccess;
 import wyone.theory.list.WListVal;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
@@ -403,7 +405,8 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.LengthOf code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		WExpr src = pop(stack);
+		stack.add(new WLengthOf(src));
 		return constraint;
 	}
 
@@ -415,7 +418,11 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.IndexOf code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		WExpr idx = pop(stack);
+		WExpr src = pop(stack);
+		
+		stack.add(new WListAccess(src, idx));
+		
 		return constraint;
 	}
 
