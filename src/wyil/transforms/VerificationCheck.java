@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wybs.lang.SyntacticElement;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wybs.lang.SyntaxError.internalFailure;
@@ -210,7 +211,7 @@ public class VerificationCheck implements Transform {
 
 	protected Formula transform(Code.Const code, Block.Entry blk,
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
-		stack.add(new Value());
+		stack.add(convert(code.constant));
 		return constraint;
 	}
 
@@ -403,6 +404,53 @@ public class VerificationCheck implements Transform {
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
 		// TODO: complete this transform
 		return constraint;
+	}
+	
+
+	/**
+	 * Convert between a WYIL value and a WYONE value. Basically, this is really
+	 * stupid and it would be good for them to be the same.
+	 * 
+	 * @param value
+	 * @return
+	 */
+	private Value convert(wyil.lang.Value value, SyntacticElement elem) {
+		if(value instanceof wyil.lang.Value.Bool) {
+			wyil.lang.Value.Bool b = (wyil.lang.Value.Bool) value;
+			return Value.V_BOOL(b.value);
+		} else if(value instanceof wyil.lang.Value.Byte) {
+			wyil.lang.Value.Byte v = (wyil.lang.Value.Byte) value;
+			return Value.V_NUM(v.value);
+		} else if(value instanceof wyil.lang.Value.Char) {
+			wyil.lang.Value.Char v = (wyil.lang.Value.Char) value;
+			// Simple, but mostly good translation
+			return Value.V_NUM(v.value);
+		} else if(value instanceof wyil.lang.Value.Dictionary) {
+			
+		} else if(value instanceof wyil.lang.Value.FunctionOrMethodOrMessage) {
+			return Value.FALSE; // FIXME
+		} else if(value instanceof wyil.lang.Value.Integer) {
+			wyil.lang.Value.Integer v = (wyil.lang.Value.Integer) value;
+			return Value.V_NUM(v.value);
+		} else if(value instanceof wyil.lang.Value.List) {
+			wyil.lang.Value.List v = (wyil.lang.Value.List) value;
+			
+		} else if(value instanceof wyil.lang.Value.Null) {
+			return Value.FALSE; // FIXME
+		} else if(value instanceof wyil.lang.Value.Rational) {
+			
+		} else if(value instanceof wyil.lang.Value.Record) {
+			
+		} else if(value instanceof wyil.lang.Value.Set) {
+			
+		} else if(value instanceof wyil.lang.Value.Strung) {
+			wyil.lang.Value.Strung v = (wyil.lang.Value.Strung) value;
+			return Value.V_STR(v.value);
+		} else if(value instanceof wyil.lang.Value.Tuple) {
+			
+		} else {
+			internalFailure("unknown value encountered (" + value + ")",filename,elem);
+		}
 	}
 	
 	private static Constructor pop(ArrayList<Constructor> stack) {
