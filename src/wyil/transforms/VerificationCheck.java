@@ -210,7 +210,7 @@ public class VerificationCheck implements Transform {
 
 	protected Formula transform(Code.Const code, Block.Entry blk,
 			Formula constraint, int[] environment, ArrayList<Constructor> stack) {
-		// TODO: complete this transform		
+		stack.add(new Value());
 		return constraint;
 	}
 
