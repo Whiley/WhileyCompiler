@@ -46,6 +46,7 @@ import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.set.WSetVal;
 import wyone.theory.tuple.WTupleAccess;
+import wyone.theory.tuple.WTupleConstructor;
 import wyone.theory.tuple.WTupleVal;
 
 /**
@@ -415,10 +416,8 @@ public class VerificationCheck implements Transform {
 	protected WFormula transform(Code.IndexOf code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		WExpr idx = pop(stack);
-		WExpr src = pop(stack);
-		
-		stack.add(new WListAccess(src, idx));
-		
+		WExpr src = pop(stack);		
+		stack.add(new WListAccess(src, idx));		
 		return constraint;
 	}
 
@@ -462,7 +461,15 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.NewRecord code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		Type.Record type = code.type;
+		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
+		ArrayList<WExpr> exprs = new ArrayList<WExpr>();
+		Collections.sort(fields);
+		for(int i=0;i!=fields.size();++i) {
+			exprs.add(pop(stack));
+		}
+		Collections.reverse(exprs);
+		stack.add(new WTupleConstructor(fields, exprs));
 		return constraint;
 	}
 
