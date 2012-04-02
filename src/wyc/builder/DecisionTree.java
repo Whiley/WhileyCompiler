@@ -220,20 +220,25 @@ public final class DecisionTree {
 		ArrayList<Node> children = node.children;
 		String nextLabel = null;
 
-		int lastIndex = children.size()-1;
 		for(int i=0;i!=children.size();++i) {
 			if(i!=0) {
 				blk.append(Code.Label(nextLabel));
 			}
 			nextLabel = Block.freshLabel();
 			Node child = children.get(i);
-			if (i != lastIndex) {
+			
+			if(node != root || children.size() != 1) {
+				// in the very special case that this node is actually the root,
+				// and it only has one child then this test is unnecessary since
+				// the type system will already have enforced it.
 				blk.append(Code.IfType(node.type, Code.THIS_SLOT,
 						Type.Negation(child.type), nextLabel));
 			}
 			flattern(child,blk,target);				
 		}
-
+		if(nextLabel != null) {
+			blk.append(Code.Label(nextLabel));
+		}
 		blk.append(Code.Fail("constraint not satisified"));		
 	}
 	
