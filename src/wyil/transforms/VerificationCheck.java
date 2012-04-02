@@ -45,6 +45,7 @@ import wyone.theory.list.WListVal;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.set.WSetVal;
+import wyone.theory.tuple.WTupleAccess;
 import wyone.theory.tuple.WTupleVal;
 
 /**
@@ -214,7 +215,7 @@ public class VerificationCheck implements Transform {
 		} else if(code instanceof Const) {
 			constraint = transform((Const)code,entry,constraint,environment,stack);
 		} else if(code instanceof Debug) {
-			constraint = transform((Debug)code,entry,constraint,environment,stack);
+			// skip
 		} else if(code instanceof Destructure) {
 			constraint = transform((Destructure)code,entry,constraint,environment,stack);
 		} else if(code instanceof FieldLoad) {
@@ -355,21 +356,16 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.Debug code, Block.Entry entry,
-			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
-		return constraint;
-	}
-
 	protected WFormula transform(Code.Destructure code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		// TODO: complete this transform		
 		return constraint;
 	}
 
 	protected WFormula transform(Code.FieldLoad code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		WExpr src = pop(stack);
+		stack.add(new WTupleAccess(src, code.field));
 		return constraint;
 	}
 
