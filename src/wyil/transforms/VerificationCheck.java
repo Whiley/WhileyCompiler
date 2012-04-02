@@ -471,8 +471,9 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.Negate code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
-		return constraint;
+		WExpr expr = pop(stack);
+		stack.add(WNumerics.negate(expr));
+		return constraint;		
 	}
 
 	protected WFormula transform(Code.Dereference code, Block.Entry entry,
