@@ -261,8 +261,6 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Negate)code,entry,constraint,environment,stack);
 		} else if(code instanceof Dereference) {
 			constraint = transform((Dereference)code,entry,constraint,environment,stack);
-		} else if(code instanceof Return) {
-			constraint = transform((Return)code,entry,constraint,environment,stack);
 		} else if(code instanceof Skip) {
 			// skip			
 		} else if(code instanceof Send) {
@@ -498,12 +496,6 @@ public class VerificationCheck implements Transform {
 	}
 
 	protected WFormula transform(Code.Dereference code, Block.Entry entry,
-			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
-		return constraint;
-	}
-
-	protected WFormula transform(Code.Return code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
