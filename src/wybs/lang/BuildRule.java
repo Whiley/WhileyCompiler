@@ -25,6 +25,7 @@
 
 package wybs.lang;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -45,7 +46,7 @@ public interface BuildRule {
 	 *            --- entry to determine dependents of.
 	 * @return
 	 */
-	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> source) throws Exception;
+	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> source) throws IOException;
 	
 	/**
 	 * <p>
@@ -67,7 +68,7 @@ public interface BuildRule {
 	 * <code>targets</code> list that it has rebuilt.
 	 * </p>
 	 * 
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	public void apply(Set<Path.Entry<?>> targets) throws Exception;
 }

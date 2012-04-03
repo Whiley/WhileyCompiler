@@ -367,9 +367,9 @@ public class Main {
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			for(DirectoryRoot source : sourceRoots) {
 				if(target != null) {
-					rule.add(source, includes, target, WyilFile.ContentType);
+					rule.add(source, includes, target, WhileyFile.ContentType, WyilFile.ContentType);
 				} else {
-					rule.add(source, includes, source, WyilFile.ContentType);
+					rule.add(source, includes, source, WhileyFile.ContentType, WyilFile.ContentType);
 				}
 			}
 			project.add(rule);

@@ -253,10 +253,10 @@ public class AntTask extends MatchingTask {
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			if (target != null) {
 				rule.add(source, includes, excludes, target,
-						WyilFile.ContentType);
+						WhileyFile.ContentType, WyilFile.ContentType);
 			} else {
 				rule.add(source, includes, excludes, source,
-						WyilFile.ContentType);
+						WhileyFile.ContentType, WyilFile.ContentType);
 			}
 			project.add(rule);
     		
