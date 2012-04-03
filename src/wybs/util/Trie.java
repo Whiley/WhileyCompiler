@@ -122,6 +122,14 @@ public final class Trie implements Path.ID, Path.Filter {
 		return parent;
 	}
 	
+	public Trie parent(int depth) {
+		if(this.depth < depth) {
+			return this;
+		} else {
+			return parent.parent(depth);
+		}
+	}
+	
 	public Iterator<String> iterator() {
 		return new InternalIterator(this);
 	}
@@ -330,9 +338,9 @@ public final class Trie implements Path.ID, Path.Filter {
 		Trie t1 = ROOT.append("Hello");
 		Trie t2 = t1.append("*");
 		Trie t3 = t2.append("Blah");
-		System.out.println("T1: " + t1.isConcrete());
-		System.out.println("T2: " + t2.isConcrete());
-		System.out.println("T3: " + t3.isConcrete());
+		System.out.println("T1: " + t3.parent(1));
+		System.out.println("T2: " + t3.parent(2));
+		System.out.println("T3: " + t3.parent(3));
 		Trie[] ids = {ROOT,t2,t3,t1};
 		for(Trie id : ids) {
 			System.out.println(id + "(" + id.size() + ")");

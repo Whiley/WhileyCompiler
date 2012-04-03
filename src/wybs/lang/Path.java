@@ -70,6 +70,15 @@ public class Path {
 		public ID parent();
 		
 		/**
+		 * Get the parent of this path at the given depth. That is, the returned
+		 * parent has at most depth components and is a parent of this ID.
+		 * 
+		 * @param depth
+		 * @return
+		 */
+		public ID parent(int depth);
+		
+		/**
 		 * Append a component onto the end of this id.
 		 * 
 		 * @param component
@@ -77,6 +86,36 @@ public class Path {
 		 * @return
 		 */
 		public ID append(String component);
+	}
+	
+	/**
+	 * Represents an abstract or physical item of some sort which is reachable
+	 * from a <code>Root</code>. Valid instances of <code>Item</code> include
+	 * those valid instances of <code>Entry</code> and <code>Folder</code>.
+	 */
+	public interface Item {
+		/**
+		 * Return the identify of this item.
+		 * 
+		 * @return
+		 */
+		public ID id();
+		
+		/**
+		 * Force item to refresh contents from permanent storage (where
+		 * appropriate). For items which have been modified, this operation has
+		 * no effect (i.e. the new contents are retained). For folders, this
+		 * forces sub-folders to be refreshed as well.
+		 */
+		public void refresh() throws IOException;
+
+		/**
+		 * Force item to write contents to permanent storage (where
+		 * appropriate). For items which have not been modified, this operation
+		 * has no effect (i.e. the old contents are retained). For folers, this
+		 * forces sub-folders to be flushed as well.
+		 */
+		public void flush() throws IOException;
 	}
 	
 	/**
@@ -88,14 +127,7 @@ public class Path {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public interface Entry<T> {
-
-		/**
-		 * Return the identify of this entry.
-		 * 
-		 * @return
-		 */
-		public ID id();
+	public interface Entry<T> extends Item {
 
 		/**
 		 * Return the suffix of the item in question. This is necessary to
@@ -170,19 +202,7 @@ public class Path {
 		 */
 		public Set<Path.Entry<?>> dependencies();
 		
-		/**
-		 * Force entry to refresh contents from permanent storage (where
-		 * appropriate). For items which has been modified, this operation has
-		 * no effect (i.e. the new contents are retained).
-		 */
-		public void refresh() throws IOException;
 
-		/**
-		 * Force entry to write contents to permanent storage (where
-		 * appropriate). For items which have not been modified, this operation
-		 * has no effect (i.e. the old contents are retained).
-		 */
-		public void flush() throws IOException;
 
 		/**
 		 * Read contents of file. Note, however, that this does not mean the
@@ -219,6 +239,78 @@ public class Path {
 		public OutputStream outputStream() throws IOException;
 	}
 
+	/**
+	 * An folder represents a special kind of entry which contains entries (and
+	 * other folders). As such, it cannot be considered a concrete entry which
+	 * can be read and written in the normal manner. Rather, it provides access
+	 * to entries. For example, in a physical file system, a folder would
+	 * correspond to a directory.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public interface Folder extends Item {
+		
+		/**
+		 * Check whether or not a given entry is contained in this folder;
+		 * 
+		 * @param entry
+		 * @return
+		 */
+		public boolean contains(Path.Entry<?> entry) throws IOException;
+
+		/**
+		 * Check whether or not a given entry and content-type is contained in
+		 * this folder.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 */
+		public boolean exists(ID id, Content.Type<?> ct) throws IOException;
+
+		/**
+		 * Get the entry corresponding to a given ID and content type. If no
+		 * such entry exists, return null.
+		 * 
+		 * @param id
+		 *            --- id of module to lookup.
+		 * @return
+		 * @throws ResolveError
+		 *             if id is not found.
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 */
+		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct)
+				throws IOException;
+
+		/**
+		 * Get all objects matching a given content filter stored in this folder.
+		 * In the case of no matches, an empty list is returned.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
+		 * @param ct
+		 * @return
+		 */
+		public <T> void addAll(Content.Filter<T> ct, List<Path.Entry<T>> entries)
+				throws IOException;
+
+		/**
+		 * Identify all entries matching a given content filter stored in this
+		 * folder. In the case of no matches, an empty set is returned.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
+		 * @param filter
+		 *            --- filter to match entries with.
+		 * @return
+		 */
+		public <T> void addAll(Content.Filter<T> filter, Set<Path.ID> entries)
+				throws IOException;
+	}
+	
 	/**
 	 * Represents the root of a hierarchy of named entries. A instance of root
 	 * may correspond to a file system directory, a Jar file, or some other

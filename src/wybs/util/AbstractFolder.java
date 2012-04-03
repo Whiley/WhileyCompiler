@@ -19,10 +19,9 @@ import wybs.lang.Path.ID;
  * @author David J. Pearce
  * 
  */
-public abstract class AbstractFolder {
+public abstract class AbstractFolder implements Path.Folder {
 	protected final Path.ID id;
-	protected AbstractFolder[] children;
-	protected Path.Entry[] contents;
+	protected Path.Item[] contents;
 	protected int nentries;
 	
 	public AbstractFolder(Path.ID id) {
@@ -34,106 +33,181 @@ public abstract class AbstractFolder {
 	}	
 	
 	public boolean contains(Path.Entry<?> e) throws IOException {		
-		updateContents();		
-		Path.ID id = e.id();
-		int idx = binarySearch(contents,nentries,id);
+		updateContents();	
+		Path.ID eid = e.id();
+		boolean contained;
+		
+		if(id == eid.parent()) {	
+			// The requested entry is contained in this folder. Therefore, we
+			// need to search for it. 
+			contained = true;
+		} else if(id == eid.parent(id.size())) {
+			// This folder is a parent of the requested entry. Therefore, we
+			// need to looking for a matching folder entry. If we find one, then
+			// we ask it for the requested entry.
+			eid = eid.parent(id.size()+1);
+			contained = false;
+		} else {
+			return false;
+		}
+		
+		int idx = binarySearch(contents,nentries,eid);			
 		if(idx >= 0) {
-			Path.Entry<?> entry = contents[idx];
+			// At this point, we've found a matching index for the given ID.
+			// However, there maybe multiple matching IDs (e.g. with different
+			// content types). Therefore, we need to check them all to see if
+			// they match the requested entry.
+			Path.Item item = contents[idx];
 			do {
-				if (entry == e) {
+				if (item == e) {
 					return true;
+				} else if(!contained && item instanceof Path.Folder) {
+					Path.Folder folder = (Path.Folder) item;
+					return folder.contains(e);
 				}
 			} while (++idx < nentries
-					&& (entry = contents[idx]).id().equals(id));
+					&& (item = contents[idx]).id().equals(eid));
 		}
+			 					
+		// no dice
 		return false;
 	}
 	
 	public boolean exists(ID id, Content.Type<?> ct) throws IOException{				
-		updateContents();
-		
-		int idx = binarySearch(contents,nentries,id);
-		if(idx >= 0) {
-			Path.Entry<?> entry = contents[idx];
-			do {
-				if (entry.contentType() == ct) {
-					return true;
-				}
-			} while (++idx < nentries
-					&& (entry = contents[idx]).id().equals(id));
-		}
-		
-		return false;
+		return get(id,ct) != null;
 	}
 	
-	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws IOException{				
-		updateContents();			
-	
-		int idx = binarySearch(contents,nentries,id);
+	public <T> Path.Entry<T> get(ID eid, Content.Type<T> ct) throws IOException{				
+		updateContents();				
+		boolean contained;
+		
+		ID tid;
+		if(id == eid.parent()) {	
+			// The requested entry is contained in this folder. Therefore, we
+			// need to search for it. 
+			contained = true;
+			tid = eid;
+		} else if(id == eid.parent(id.size())) {
+			// This folder is a parent of the requested entry. Therefore, we
+			// need to looking for a matching folder entry. If we find one, then
+			// we ask it for the requested entry.
+			tid = eid.parent(id.size()+1);
+			contained = false;
+		} else {
+			return null;
+		}
+		
+		int idx = binarySearch(contents,nentries,tid);
 		if(idx >= 0) {
-			Path.Entry entry = contents[idx];
+			// At this point, we've found a matching index for the given ID.
+			// However, there maybe multiple matching IDs with different
+			// content types. Therefore, we need to check them all to see if
+			// they match the requested entry.
+			Path.Item item = contents[idx];
 			do {
-				if (entry.contentType() == ct) {
-					return entry;
+				if(item instanceof Entry) {
+					Entry entry = (Entry) item;
+					if (entry.contentType() == ct) {
+						return entry;
+					}
+				} else if(!contained && item instanceof Path.Folder) {
+					Path.Folder folder = (Path.Folder) item;
+					return folder.get(eid,ct);
 				}
 			} while (++idx < nentries
-					&& (entry = contents[idx]).id().equals(id));
+					&& (item = contents[idx]).id().equals(eid));
 		}
+			
+		// no dice
 		return null;
 	}
 	
-	public <T> void addMatchingEntries(Content.Filter<T> filter, ArrayList<Entry<T>> entries) throws IOException{			
+	public <T> void addAll(Content.Filter<T> filter, ArrayList<Entry<T>> entries) throws IOException{			
 		updateContents();
-								
+		
+		// It would be nice to futher optimise this loop. The key issue is that,
+		// at some point, we might know the filter could never match. In which
+		// case, we want to stop the recursion early, rather than exploring a
+		// potentially largel subtree.
+		
 		for(int i=0;i!=nentries;++i) {
-			Path.Entry e = contents[i];
-			if(filter.matches(e.id(),e.contentType())) {
-				entries.add(e);
+			Path.Item item = contents[i];
+			if(item instanceof Entry) {
+				Entry entry = (Entry) item;
+				if(filter.matches(entry.id(),entry.contentType())) {
+					entries.add(entry);
+				}
+			} else if(item instanceof Path.Folder) {
+				Path.Folder folder = (Path.Folder) item;
+				folder.addAll(filter, entries);
 			}
 		}
 	}
 	
-	public <T> void addMatchingIDs(Content.Filter<T> filter, HashSet<Path.ID> entries) throws IOException{			
+	public <T> void addAll(Content.Filter<T> filter, HashSet<Path.ID> entries) throws IOException{			
 		updateContents();
-					
+		
+		// It would be nice to futher optimise this loop. The key issue is that,
+		// at some point, we might know the filter could never match. In which
+		// case, we want to stop the recursion early, rather than exploring a
+		// potentially largel subtree.
+		
 		for(int i=0;i!=nentries;++i) {
-			Path.Entry e = contents[i];
-			if(filter.matches(e.id(),e.contentType())) {
-				entries.add(e.id());
+			Path.Item item = contents[i];
+			if (item instanceof Entry) {
+				Entry entry = (Entry) item;
+				if (filter.matches(entry.id(), entry.contentType())) {
+					entries.add(entry.id());
+				}
+			} else if(item instanceof Path.Folder) {
+				Path.Folder folder = (Path.Folder) item;
+				folder.addAll(filter, entries);
 			}
 		}
 	}	
+	
+	public void refresh() {
+		contents = null;
+	}
+	
+	public void flush() throws IOException {
+		if(contents != null) {
+			for(Path.Item e : contents) {
+				e.flush();
+			}
+		}
+	}
 	
 	/**
 	 * Add a newly created entry to this folder.
 	 * 
 	 * @param entry
 	 */
-	protected void insert(Path.Entry<?> entry) throws IOException{
-		updateContents();
-		
-		Path.ID id = entry.id();
-		int index = binarySearch(contents,nentries,id);
-		
-		if(index < 0) {
-			index = -index - 1; // calculate insertion point
-		} else {
-			// indicates already an entry with a different content type
-		}
-
-		if ((nentries + 1) < contents.length) {
-			System.arraycopy(contents, index, contents, index + 1, nentries
-					- index);			
-		} else {			
-			Path.Entry[] tmp = new Path.Entry[(nentries+1) * 2];
-			System.arraycopy(contents, 0, tmp, 0, index);
-			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
-			contents = tmp;			
-		}
-		
-		contents[index] = entry;
-		nentries++;
-	}
+//	protected void insert(Path.Entry<?> entry) throws IOException{
+//		updateContents();
+//		
+//		Path.ID id = entry.id();
+//		int index = binarySearch(contents,nentries,id);
+//		
+//		if(index < 0) {
+//			index = -index - 1; // calculate insertion point
+//		} else {
+//			// indicates already an entry with a different content type
+//		}
+//
+//		if ((nentries + 1) < contents.length) {
+//			System.arraycopy(contents, index, contents, index + 1, nentries
+//					- index);			
+//		} else {			
+//			Path.Entry[] tmp = new Path.Entry[(nentries+1) * 2];
+//			System.arraycopy(contents, 0, tmp, 0, index);
+//			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
+//			contents = tmp;			
+//		}
+//		
+//		contents[index] = entry;
+//		nentries++;
+//	}
 	
 	private final void updateContents() throws IOException{
 		if(contents == null) {
@@ -148,7 +222,7 @@ public abstract class AbstractFolder {
 	 */
 	protected abstract Path.Entry<?>[] contents() throws IOException;
 	
-	private static final int binarySearch(final Path.Entry<?>[] children, int nchildren, final Path.ID key) {
+	private static final int binarySearch(final Path.Item[] children, int nchildren, final Path.ID key) {
 		int low = 0;
         int high = nchildren-1;
             
@@ -172,8 +246,8 @@ public abstract class AbstractFolder {
         return -(low + 1);
 	}
 	
-	private static final Comparator<Path.Entry> entryComparator = new Comparator<Path.Entry>() {
-		public int compare(Path.Entry e1, Path.Entry e2) {
+	private static final Comparator<Path.Item> entryComparator = new Comparator<Path.Item>() {
+		public int compare(Path.Item e1, Path.Item e2) {
 			return e1.id().compareTo(e2.id());
 		}
 	};
