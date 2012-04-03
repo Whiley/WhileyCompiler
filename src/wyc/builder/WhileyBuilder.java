@@ -271,12 +271,23 @@ public final class WhileyBuilder implements Builder {
 						matches.add(sf.id());
 					}
 				}
-				
-				Content.Filter<?> binFilter = Content.filter(key,
-						WyilFile.ContentType);
-				for (Path.ID mid : namespace.match(binFilter)) {					
-					matches.add(mid);
-				}			
+
+				if(key.isConcrete()) {
+					// A concrete key is one which does not contain a wildcard.
+					// Therefore, it corresponds to exactly one possible item.
+					// It is helpful, from a performance perspective, to use
+					// NameSpace.exists() in such case, as this conveys the fact
+					// that we're only interested in a single item.
+					if(namespace.exists(key,WyilFile.ContentType)) {
+						matches.add(key);
+					}
+				} else {
+					Content.Filter<?> binFilter = Content.filter(key,
+							WyilFile.ContentType);
+					for (Path.ID mid : namespace.match(binFilter)) {					
+						matches.add(mid);
+					}
+				}
 												
 				importCache.put(key, matches);
 			}

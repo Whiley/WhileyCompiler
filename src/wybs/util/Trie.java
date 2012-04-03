@@ -69,6 +69,7 @@ public final class Trie implements Path.ID, Path.Filter {
 	private final Trie parent;
 	private final String component;
 	private final int depth;
+	private final boolean isConcrete;
 	private Trie[] children;
 	private int nchildren;
 
@@ -87,10 +88,16 @@ public final class Trie implements Path.ID, Path.Filter {
 		}
 		this.children = ONE_CHILD;
 		this.nchildren = 0;
+		this.isConcrete = (parent == null || parent.isConcrete)
+				&& !component.contains("*");
 	}
 	
 	public int size() {
 		return depth + 1;
+	}
+	
+	public boolean isConcrete() {
+		return isConcrete;
 	}
 	
 	public String get(final int index) {
@@ -255,7 +262,7 @@ public final class Trie implements Path.ID, Path.Filter {
 	// =========================================================
 	
 	private boolean match(Path.ID id, int idIndex, int myIndex) {
-		int mySize = depth+1;
+		int mySize = depth + 1;
 		if (myIndex == mySize && idIndex == id.size()) {
 			return true;
 		} else if (myIndex == mySize || idIndex == id.size()) {
@@ -321,8 +328,11 @@ public final class Trie implements Path.ID, Path.Filter {
 	
 	public static void main(String[] args) {
 		Trie t1 = ROOT.append("Hello");
-		Trie t2 = t1.append("World");
-		Trie t3 = t1.append("Blah");
+		Trie t2 = t1.append("*");
+		Trie t3 = t2.append("Blah");
+		System.out.println("T1: " + t1.isConcrete());
+		System.out.println("T2: " + t2.isConcrete());
+		System.out.println("T3: " + t3.isConcrete());
 		Trie[] ids = {ROOT,t2,t3,t1};
 		for(Trie id : ids) {
 			System.out.println(id + "(" + id.size() + ")");
