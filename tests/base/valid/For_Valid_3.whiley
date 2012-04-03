@@ -1,4 +1,5 @@
 import println from whiley.lang.System
+import nat from whiley.lang.Int
 
 int sum({nat} xs):
     r = 0
