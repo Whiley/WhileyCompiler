@@ -228,6 +228,9 @@ public class AntTask extends MatchingTask {
         	if(destdir != null) {
         		target = new DirectoryRoot(destdir,binaryFileFilter,registry);        	
         		roots.add(target);
+        	} else {
+        		target = new DirectoryRoot(srcdir,binaryFileFilter,registry);        	
+        		roots.add(target);
         	}
         	    	       	
         	wyjc.Main.initialiseBootPath(bootpath);        	;        	
