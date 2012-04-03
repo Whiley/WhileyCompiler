@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 // this is a comment!
 define cr1nat as int where $ < 10

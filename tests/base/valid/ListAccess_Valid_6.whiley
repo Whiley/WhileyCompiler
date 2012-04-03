@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 public [int] method([byte] bytes):
 	pos = 0

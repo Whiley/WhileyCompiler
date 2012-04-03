@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED

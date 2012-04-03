@@ -115,6 +115,9 @@ public abstract class AbstractRoot implements Root {
 	}
 	
 	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{	
+		if(this instanceof DirectoryRoot) { 
+			System.out.println("GET CALLED: " + filter); 
+		}
 		updateCache();
 			
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			

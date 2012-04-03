@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define posintlist as [int] where no { x in $ | x < 0 }
 

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 bool test({real} xs, [int] ys):
     for x in (xs&ys):

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define Expr as real | Var | BinOp
 define BinOp as { Expr lhs, Expr rhs } 

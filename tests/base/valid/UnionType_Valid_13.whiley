@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 
 define immStoreCode as { 0,1,2 }

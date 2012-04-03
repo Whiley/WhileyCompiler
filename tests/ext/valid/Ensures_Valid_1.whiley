@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 int add(int x, int y) requires x>=0 && y>=0, ensures $>0:
     if(x == y):

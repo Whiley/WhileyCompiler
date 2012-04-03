@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define State as { string input, int pos }
 define Expr as real | { string id }

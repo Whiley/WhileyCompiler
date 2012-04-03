@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 {(int,real)} f({int=>real} x):
     return x

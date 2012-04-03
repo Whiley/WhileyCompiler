@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 void ::f(System.Console sys, int x):
     sys.out.println(Any.toString(x))

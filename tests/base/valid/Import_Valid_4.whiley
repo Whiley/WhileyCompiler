@@ -1,10 +1,10 @@
 import println from whiley.lang.System
-import toString from whiley.lang.Int
+import toString from whiley.lang.System
 
 string f(int x):
     return toString(x)
 
-import toString from whiley.lang.Real
+import toString from whiley.lang.System
 
 string g(real x):
     return toString(x)

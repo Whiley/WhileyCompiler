@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 [[int]] update([[int]] ls):
     ls[0][0] = 10

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define MyProc1 as ref { int data }
 define MyProc2 as ref { any data }

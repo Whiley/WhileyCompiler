@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 int g(int x):
     if(x <= 0 || x >= 125):

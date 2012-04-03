@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 int f([int] xs) requires no { x in xs | x < 0}:
     return |xs|

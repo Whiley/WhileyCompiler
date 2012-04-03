@@ -1,6 +1,6 @@
-import * from whiley.lang.*
-import * from whiley.io.File
-import SyntaxError from whiley.lang.Errors
+import println from whiley.lang.System
+import println from whiley.io.File
+import SyntaxError from whiley.lang.System
 
 // ====================================================
 // A simple calculator for expressions

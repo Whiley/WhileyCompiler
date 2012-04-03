@@ -1,5 +1,5 @@
-import * from whiley.lang.*
-import * from whiley.io.File
+import println from whiley.lang.System
+import println from whiley.io.File
 
 public void ::main(System.Console sys):
     l = {1=>2,2=>3}
