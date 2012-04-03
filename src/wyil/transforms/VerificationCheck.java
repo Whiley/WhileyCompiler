@@ -27,13 +27,10 @@ package wyil.transforms;
 
 import java.util.*;
 
-import com.sun.org.apache.bcel.internal.generic.PUSH;
-
 import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wyil.lang.*;
 import wyil.lang.Code.*;
-import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Code.*;
 import wyil.Transform;
