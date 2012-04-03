@@ -115,9 +115,9 @@ public abstract class AbstractRoot implements Root {
 	}
 	
 	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{	
-		if(this instanceof DirectoryRoot) { 
-			System.out.println("GET CALLED: " + filter); 
-		}
+//		if(this instanceof DirectoryRoot) { 
+//			System.out.println("GET CALLED: " + filter); 
+//		}
 		updateCache();
 			
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
@@ -131,9 +131,9 @@ public abstract class AbstractRoot implements Root {
 	}
 	
 	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{	
-		if(this instanceof DirectoryRoot) { 
-			System.out.println("MATCH CALLED: " + filter); 
-		}
+//		if(this instanceof DirectoryRoot) { 
+//			System.out.println("MATCH CALLED: " + filter); 
+//		}
 		updateCache();
 					
 		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
