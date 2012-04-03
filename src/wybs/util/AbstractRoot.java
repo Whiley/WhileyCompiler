@@ -25,6 +25,7 @@
 
 package wybs.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -54,17 +55,19 @@ public abstract class AbstractRoot implements Root {
 		this.contentTypes = contentTypes;
 	}
 	
-	public int size() throws Exception{
+	public int size() throws IOException{
 		updateCache();
 		return nentries;
 	}
 			
-	public Path.Entry<?> get(int index) throws Exception{
+	public Path.Entry<?> get(int index) throws IOException{
 		updateCache();
 		return contents[index];
 	}		
 	
-	public boolean contains(Path.Entry<?> e) {
+	public boolean contains(Path.Entry<?> e) throws IOException {
+		updateCache();
+		
 		Path.ID id = e.id();
 		int idx = binarySearch(contents,nentries,id);
 		if(idx >= 0) {
@@ -79,7 +82,7 @@ public abstract class AbstractRoot implements Root {
 		return false;
 	}
 	
-	public boolean exists(ID id, Content.Type<?> ct) throws Exception{		
+	public boolean exists(ID id, Content.Type<?> ct) throws IOException{		
 		updateCache();
 		
 		int idx = binarySearch(contents,nentries,id);
@@ -95,7 +98,7 @@ public abstract class AbstractRoot implements Root {
 		return false;
 	}
 	
-	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws Exception{		
+	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws IOException{		
 		updateCache();			
 	
 		int idx = binarySearch(contents,nentries,id);
@@ -111,7 +114,7 @@ public abstract class AbstractRoot implements Root {
 		return null;
 	}
 	
-	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws Exception{		
+	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{			
 		updateCache();
 			
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
@@ -124,7 +127,7 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}
 	
-	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws Exception{		
+	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{		
 		updateCache();
 					
 		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
@@ -138,11 +141,11 @@ public abstract class AbstractRoot implements Root {
 		return entries;
 	}	
 	
-	public void refresh() throws Exception{
+	public void refresh() throws IOException{
 		updateCache();
 	}
 	
-	public void flush() throws Exception{
+	public void flush() throws IOException{
 		for(int i=0;i!=nentries;++i) {
 			contents[i].flush();			
 		}
@@ -153,7 +156,7 @@ public abstract class AbstractRoot implements Root {
 	 * 
 	 * @param entry
 	 */
-	protected void insert(Path.Entry<?> entry) throws Exception{
+	protected void insert(Path.Entry<?> entry) throws IOException{
 		updateCache();
 		
 		Path.ID id = entry.id();
@@ -179,7 +182,7 @@ public abstract class AbstractRoot implements Root {
 		nentries++;
 	}
 	
-	private final void updateCache() throws Exception{
+	private final void updateCache() throws IOException{
 		if(contents == null) {
 			contents = contents();			
 			nentries = contents.length;
@@ -190,7 +193,7 @@ public abstract class AbstractRoot implements Root {
 	/**
 	 * Extract all entries from the given type.
 	 */
-	protected abstract Path.Entry<?>[] contents() throws Exception;
+	protected abstract Path.Entry<?>[] contents() throws IOException;
 	
 	private static final int binarySearch(final Path.Entry<?>[] children, int nchildren, final Path.ID key) {
 		int low = 0;

@@ -27,6 +27,7 @@ package wybs.lang;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.IOException;
 import java.util.*;
 
 public class Path {
@@ -174,14 +175,14 @@ public class Path {
 		 * appropriate). For items which has been modified, this operation has
 		 * no effect (i.e. the new contents are retained).
 		 */
-		public void refresh() throws Exception;
+		public void refresh() throws IOException;
 
 		/**
 		 * Force entry to write contents to permanent storage (where
 		 * appropriate). For items which have not been modified, this operation
 		 * has no effect (i.e. the old contents are retained).
 		 */
-		public void flush() throws Exception;
+		public void flush() throws IOException;
 
 		/**
 		 * Read contents of file. Note, however, that this does not mean the
@@ -189,7 +190,7 @@ public class Path {
 		 * already available in memory, then they will returned without
 		 * accessing permanent storage.
 		 */
-		public T read() throws Exception;
+		public T read() throws IOException;
 
 		/**
 		 * Write the contents of this entry. It is assumed that the contents
@@ -199,23 +200,23 @@ public class Path {
 		 * 
 		 * @param contents
 		 */
-		public void write(T contents) throws Exception;
+		public void write(T contents) throws IOException;
 
 		/**
 		 * Open a generic input stream to the entry.
 		 * 
 		 * @return
-		 * @throws Exception
+		 * @throws IOException
 		 */
-		public InputStream inputStream() throws Exception;
+		public InputStream inputStream() throws IOException;
 
 		/**
 		 * Open a generic output stream to the entry.
 		 * 
 		 * @return
-		 * @throws Exception
+		 * @throws IOException
 		 */
-		public OutputStream outputStream() throws Exception;
+		public OutputStream outputStream() throws IOException;
 	}
 
 	/**
@@ -235,16 +236,16 @@ public class Path {
 		 * @param entry
 		 * @return
 		 */
-		public boolean contains(Path.Entry<?> entry);
+		public boolean contains(Path.Entry<?> entry) throws IOException;
 
 		/**
 		 * Check whether or not a given entry and content-type is contained in
 		 * this root.
 		 * 
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 */
-		public boolean exists(ID id, Content.Type<?> ct) throws Exception;
+		public boolean exists(ID id, Content.Type<?> ct) throws IOException;
 
 		/**
 		 * Get the entry corresponding to a given ID and content type. If no
@@ -255,38 +256,38 @@ public class Path {
 		 * @return
 		 * @throws ResolveError
 		 *             if id is not found.
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 */
 		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct)
-				throws Exception;
+				throws IOException;
 
 		/**
 		 * Get all objects matching a given content filter stored in this root.
 		 * In the case of no matches, an empty list is returned.
 		 * 
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 * 
 		 * @param ct
 		 * @return
 		 */
 		public <T> List<Path.Entry<T>> get(Content.Filter<T> ct)
-				throws Exception;
+				throws IOException;
 
 		/**
 		 * Identify all entries matching a given content filter stored in this
 		 * root. In the case of no matches, an empty set is returned.
 		 * 
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 * 
 		 * @param filter
 		 *            --- filter to match entries with.
 		 * @return
 		 */
 		public <T> Set<Path.ID> match(Content.Filter<T> filter)
-				throws Exception;
+				throws IOException;
 
 		/**
 		 * Create an entry of a given content type at a given path, derived from
@@ -301,10 +302,10 @@ public class Path {
 		 * @param sources
 		 *            --- entries from which this entry is derived.
 		 * @return
-		 * @throws Exception
+		 * @throws IOException
 		 */
 		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct, Path.Entry<?> ...sources)
-				throws Exception;
+				throws IOException;
 		
 		/**
 		 * Force root to flush entries to permanent storage (where appropriate).
@@ -312,14 +313,14 @@ public class Path {
 		 * stored in memory. We must flush them to disk in order to preserve any
 		 * changes that were made.
 		 */
-		public void flush() throws Exception;
+		public void flush() throws IOException;
 
 		/**
 		 * Force root to refresh entries from permanent storage (where
 		 * appropriate). For items which has been modified, this operation has
 		 * no effect (i.e. the new contents are retained).
 		 */
-		public void refresh() throws Exception;
+		public void refresh() throws IOException;
 	}
 
 	/**

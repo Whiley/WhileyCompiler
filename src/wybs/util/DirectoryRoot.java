@@ -130,7 +130,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	}
 
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
-			Path.Entry<?>... sources) throws Exception {
+			Path.Entry<?>... sources) throws IOException {
 		Path.Entry<T> e = super.get(id,ct);
 		if(e == null) {			
 			String physID = id.toString();
@@ -191,11 +191,11 @@ public final class DirectoryRoot extends AbstractRoot {
 			return suffix;
 		}
 		
-		public InputStream inputStream() throws Exception {
+		public InputStream inputStream() throws IOException {
 			return new FileInputStream(file);
 		}
 		
-		public OutputStream outputStream() throws Exception {
+		public OutputStream outputStream() throws IOException {
 			return new FileOutputStream(file);
 		}
 	}

@@ -25,6 +25,7 @@
 
 package wybs.util;
 
+import java.io.IOException;
 import java.util.*;
 import wybs.lang.Path;
 
@@ -65,27 +66,27 @@ public abstract class AbstractEntry<T> implements Path.Entry<T> {
 		return contentType;
 	}
 	
-	public void refresh() throws Exception {
+	public void refresh() throws IOException {
 		if(!modified) {
 			contents = null; // reset contents
 		}
 	}
 	
-	public void flush() throws Exception {
+	public void flush() throws IOException {
 		if(modified && contents != null) {
 			contentType.write(outputStream(), contents);
 			this.modified = false;
 		}
 	}
 	
-	public T read() throws Exception {
+	public T read() throws IOException {
 		if (contents == null) {
 			contents = contentType.read(this,inputStream());
 		}
 		return contents;
 	}		
 			
-	public void write(T contents) throws Exception {
+	public void write(T contents) throws IOException {
 		this.modified = true;
 		this.contents = contents; 
 	}

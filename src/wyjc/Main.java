@@ -94,14 +94,26 @@ public class Main {
 	};
 	
 	/**
-	 * The purpose of the file filter is simply to prevent loading all different
-	 * kinds of files in a given directory root. It is not strictly necessary
+	 * The purpose of the source file filter is simply to ensure only source
+	 * files are loaded in a given directory root. It is not strictly necessary
 	 * for correct operation, although hopefully it offers some performance
 	 * benefits.
 	 */
-	public static final FileFilter fileFilter = new FileFilter() {
+	public static final FileFilter sourceFileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".whiley") || f.getName().endsWith(".class") || f.isDirectory();
+			return f.getName().endsWith(".whiley") || f.isDirectory();
+		}
+	};
+
+	/**
+	 * The purpose of the binary file filter is simply to ensure only binary
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter binaryFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".class") || f.isDirectory();
 		}
 	};
 	
@@ -221,11 +233,11 @@ public class Main {
 			List<String> sourcepath, boolean verbose) throws IOException {
 		ArrayList<DirectoryRoot> nitems = new ArrayList<DirectoryRoot>();
 		if (sourcepath.isEmpty()) {
-			nitems.add(new DirectoryRoot(".", fileFilter,registry));
+			nitems.add(new DirectoryRoot(".", sourceFileFilter,registry));
 		} else {			
 			for (String root : sourcepath) {
 				try {
-					nitems.add(new DirectoryRoot(root,fileFilter,registry));					
+					nitems.add(new DirectoryRoot(root,sourceFileFilter,registry));					
 				} catch (IOException e) {
 					if (verbose) {
 						System.err.println("Warning: " + root
@@ -252,7 +264,7 @@ public class Main {
 				if (root.endsWith(".jar")) {
 					nitems.add(new JarFileRoot(root,registry));
 				} else {
-					nitems.add(new DirectoryRoot(root,fileFilter,registry));
+					nitems.add(new DirectoryRoot(root,binaryFileFilter,registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -313,7 +325,7 @@ public class Main {
 			if (outputdir != null) {
 				// if an output directory is specified, everything is redirected
 				// to that.
-				target = new DirectoryRoot(outputdir,fileFilter,registry); 
+				target = new DirectoryRoot(outputdir,binaryFileFilter,registry); 
 				roots.add(target);
 			} 
 			
