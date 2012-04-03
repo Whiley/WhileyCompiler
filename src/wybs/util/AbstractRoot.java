@@ -48,40 +48,43 @@ import wybs.lang.Path.Root;
  */
 public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;
-	protected AbstractFolder root;
+	protected final AbstractFolder root;
 	
-	public AbstractRoot(Content.Registry contentTypes) {
+	public AbstractRoot(AbstractFolder root, Content.Registry contentTypes) {
 		this.contentTypes = contentTypes;
+		this.root = root;
 	}
 			
 	public boolean contains(Path.Entry<?> e) throws IOException {
-		if(root == null) { root = root(); }
+		return root.contains(e);
 	}
 	
 	public boolean exists(ID id, Content.Type<?> ct) throws IOException{		
-		if(root == null) { root = root(); }
+		return root.exists(id,ct);
 	}
 	
 	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws IOException{		
-		if(root == null) { root = root(); }
+		return root.get(id,ct);
 	}
 	
 	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{	
-		if(root == null) { root = root(); }
+		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();
+		root.addMatchingEntries(filter, entries);
+		return entries;
 	}
 	
 	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{	
-		if(root == null) { root = root(); }
+		HashSet<Path.ID> ids = new HashSet<Path.ID>();
+		root.addMatchingIDs(filter, ids);
+		return ids;
 	}	
 	
 	public void refresh() throws IOException{
-		root = root();
+		root.refresh();
 	}
 	
 	public void flush() throws IOException{
-		for(int i=0;i!=nentries;++i) {
-			contents[i].flush();			
-		}
+		root.flush();
 	}
 	
 	/**
