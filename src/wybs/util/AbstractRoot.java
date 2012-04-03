@@ -48,107 +48,34 @@ import wybs.lang.Path.Root;
  */
 public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;
-	protected Path.Entry<?>[] contents = null;
-	protected int nentries = 0;
+	protected AbstractFolder root;
 	
 	public AbstractRoot(Content.Registry contentTypes) {
 		this.contentTypes = contentTypes;
 	}
-	
-	public int size() throws IOException{
-		updateCache();
-		return nentries;
-	}
 			
-	public Path.Entry<?> get(int index) throws IOException{
-		updateCache();
-		return contents[index];
-	}		
-	
 	public boolean contains(Path.Entry<?> e) throws IOException {
-		updateCache();
-		
-		Path.ID id = e.id();
-		int idx = binarySearch(contents,nentries,id);
-		if(idx >= 0) {
-			Path.Entry<?> entry = contents[idx];
-			do {
-				if (entry == e) {
-					return true;
-				}
-			} while (++idx < nentries
-					&& (entry = contents[idx]).id().equals(id));
-		}
-		return false;
+		if(root == null) { root = root(); }
 	}
 	
 	public boolean exists(ID id, Content.Type<?> ct) throws IOException{		
-		updateCache();
-		
-		int idx = binarySearch(contents,nentries,id);
-		if(idx >= 0) {
-			Path.Entry<?> entry = contents[idx];
-			do {
-				if (entry.contentType() == ct) {
-					return true;
-				}
-			} while (++idx < nentries
-					&& (entry = contents[idx]).id().equals(id));
-		}
-		return false;
+		if(root == null) { root = root(); }
 	}
 	
 	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws IOException{		
-		updateCache();			
-	
-		int idx = binarySearch(contents,nentries,id);
-		if(idx >= 0) {
-			Path.Entry entry = contents[idx];
-			do {
-				if (entry.contentType() == ct) {
-					return entry;
-				}
-			} while (++idx < nentries
-					&& (entry = contents[idx]).id().equals(id));
-		}
-		return null;
+		if(root == null) { root = root(); }
 	}
 	
 	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{	
-//		if(this instanceof DirectoryRoot) { 
-//			System.out.println("GET CALLED: " + filter); 
-//		}
-		updateCache();
-			
-		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();			
-		for(int i=0;i!=nentries;++i) {
-			Path.Entry e = contents[i];
-			if(filter.matches(e.id(),e.contentType())) {
-				entries.add(e);
-			}
-		}
-		return entries;
+		if(root == null) { root = root(); }
 	}
 	
 	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{	
-//		if(this instanceof DirectoryRoot) { 
-//			System.out.println("MATCH CALLED: " + filter); 
-//		}
-		updateCache();
-					
-		HashSet<Path.ID> entries = new HashSet<Path.ID>();			
-		for(int i=0;i!=nentries;++i) {
-			Path.Entry e = contents[i];
-			if(filter.matches(e.id(),e.contentType())) {
-				entries.add(e.id());
-			}
-		}
-		
-		return entries;
+		if(root == null) { root = root(); }
 	}	
 	
 	public void refresh() throws IOException{
-		updateCache();
+		root = root();
 	}
 	
 	public void flush() throws IOException{
@@ -158,76 +85,11 @@ public abstract class AbstractRoot implements Root {
 	}
 	
 	/**
-	 * Add a newly created entry to this path.
+	 * Get the root folder for this abstract root. Note that this should be
+	 * loaded from scratch, and not cached in any way. This ensures that
+	 * invoking AbstractRoot.refresh() does indeed refresh entries.
 	 * 
-	 * @param entry
+	 * @return
 	 */
-	protected void insert(Path.Entry<?> entry) throws IOException{
-		updateCache();
-		
-		Path.ID id = entry.id();
-		int index = binarySearch(contents,nentries,id);
-		
-		if(index < 0) {
-			index = -index - 1; // calculate insertion point
-		} else {
-			// indicates already an entry with a different content type
-		}
-
-		if ((nentries + 1) < contents.length) {
-			System.arraycopy(contents, index, contents, index + 1, nentries
-					- index);			
-		} else {			
-			Path.Entry[] tmp = new Path.Entry[(nentries+1) * 2];
-			System.arraycopy(contents, 0, tmp, 0, index);
-			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
-			contents = tmp;			
-		}
-		
-		contents[index] = entry;
-		nentries++;
-	}
-	
-	private final void updateCache() throws IOException{
-		if(contents == null) {
-			contents = contents();			
-			nentries = contents.length;
-			Arrays.sort(contents,entryComparator);
-		}
-	}
-	
-	/**
-	 * Extract all entries from the given type.
-	 */
-	protected abstract Path.Entry<?>[] contents() throws IOException;
-	
-	private static final int binarySearch(final Path.Entry<?>[] children, int nchildren, final Path.ID key) {
-		int low = 0;
-        int high = nchildren-1;
-            
-        while (low <= high) {
-            int mid = (low + high) >> 1;
-            int c = children[mid].id().compareTo(key);
-                
-            if (c < 0) {
-                low = mid + 1; 
-            } else if (c > 0) {
-                high = mid - 1;
-            } else {
-            	// found a batch, locate start point
-            	mid = mid - 1;
-				while (mid >= 0 && children[mid].id().compareTo(key) == 0) {
-					mid = mid - 1;
-				}
-                return mid + 1;
-            }
-        }
-        return -(low + 1);
-	}
-	
-	private static final Comparator<Path.Entry> entryComparator = new Comparator<Path.Entry>() {
-		public int compare(Path.Entry e1, Path.Entry e2) {
-			return e1.id().compareTo(e2.id());
-		}
-	};
+	protected abstract AbstractFolder root();
 }
