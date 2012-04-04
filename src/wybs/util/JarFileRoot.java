@@ -62,9 +62,8 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 	@Override
 	public void refresh() throws IOException {
 		JarFile jf = new JarFile(dir);
+		Enumeration<JarEntry> entries = jf.entries();
 		contents = new Path.Entry[jf.size()];
-		Enumeration<JarEntry> entries = jf.entries();		
-		Path.Item[] contents = new Path.Entry[jf.size()];
 		int i = 0;
 		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();	
@@ -79,7 +78,6 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 			contentTypes.associate(pe);
 			contents[i++] = pe;
 		}		
-
 	}
 	
 	@Override
