@@ -144,6 +144,8 @@ public final class DirectoryRoot extends AbstractRoot {
 			File nfile = new File(dir.getAbsolutePath() + File.separatorChar + physID);			
 			e = new Entry(id,nfile);
 			e.associate(ct, null);
+			
+			// FIXME: this shouldn't even compile
 			root.insert(e);
 		}
 		return e;
@@ -242,20 +244,12 @@ public final class DirectoryRoot extends AbstractRoot {
 				return new Path.Item[0];
 			}
 		}
-	}
-	
-	/**
-	 * Recursively traverse a file system from a given location.
-	 * 
-	 * @param location
-	 *            --- current directory in file system.
-	 * @param pkg
-	 *            --- package that location represents.
-	 * @param entries
-	 *            --- list of entries being accumulated into.
-	 */
-	private void traverse(File location, Trie id,
-			ArrayList<Path.Entry<?>> contents) throws IOException {
-		
+
+		@Override
+		public <T> Entry<T> create(String name, Type<T> ct) throws IOException {
+			Entry<T> e = new Entry(id.append(name),new File(dir,name));
+			insert(e);
+			return e;
+		}
 	}
 }

@@ -189,12 +189,15 @@ public abstract class AbstractFolder implements Path.Folder {
 	}
 	
 	/**
-	 * Add a newly created entry to this folder.
+	 * Insert a newly created entry into this folder. Observe we assume
+	 * <code>entry.id().parent() == id</code>.
 	 * 
 	 * @param entry
 	 */
-	@Override
 	protected void insert(Path.Entry<?> entry) throws IOException{
+		if(entry.id().parent() != id) {
+			throw new IllegalArgumentException("Cannot insert with incorrect Path.ID entry into AbstractFolder");
+		}
 		updateContents();
 
 		Path.ID id = entry.id();

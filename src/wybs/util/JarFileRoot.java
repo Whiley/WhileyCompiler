@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.jar.*;
 
 import wybs.lang.Content;
+import wybs.lang.Content.Type;
 import wybs.lang.Path;
 
 /**
@@ -40,18 +41,14 @@ import wybs.lang.Path;
  * 
  */
 public final class JarFileRoot extends AbstractRoot implements Path.Root {	
-	private final JarFile jf;
+	private final String dir;
+	private Path.Item[] contents;
 	
 	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.jf = new JarFile(dir);		
+		this.dir = dir;		
 	}
 	
-	public JarFileRoot(JarFile dir, Content.Registry contentTypes) {
-		super(contentTypes);
-		this.jf = dir;		
-	}
-
 	@Override
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,Path.Entry<?>... sources) throws IOException {
 		throw new UnsupportedOperationException();
@@ -63,14 +60,37 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 	}
 
 	@Override
-	public void refresh() {
-		
+	public void refresh() throws IOException {
+		JarFile jf = new JarFile(dir);
+		contents = new Path.Entry[jf.size()];
+		Enumeration<JarEntry> entries = jf.entries();		
+		Path.Item[] contents = new Path.Entry[jf.size()];
+		int i = 0;
+		while (entries.hasMoreElements()) {
+			JarEntry e = entries.nextElement();	
+			String filename = e.getName();					
+			int lastSlash = filename.lastIndexOf('/');
+			int lastDot = filename.lastIndexOf('.');			
+			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));			
+			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
+			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
+			Trie id = pkg.append(name);
+			Entry pe = new Entry(id, jf, e);
+			contentTypes.associate(pe);
+			contents[i++] = pe;
+		}		
+
 	}
 	
 	@Override
 	protected Folder root() {
-		
+		return new Folder(Trie.ROOT);
 	}
+	
+	public String toString() {
+		return dir;
+	}
+	
 	
 	/**
 	 * Represents a directory on a physical file system.
@@ -79,38 +99,20 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 	 *
 	 */
 	public final class Folder extends AbstractFolder {
-		private final java.io.File dir; // isDirectory
-
-		public Folder(Path.ID id, java.io.File dir) {
+		public Folder(Path.ID id) {
 			super(id);
-			this.dir = dir;
 		}
 
 		@Override
 		protected Path.Item[] contents() throws IOException {		
-			Enumeration<JarEntry> entries = jf.entries();		
-			Path.Item[] contents = new Path.Entry[jf.size()];
-			int i = 0;
-			while (entries.hasMoreElements()) {
-				JarEntry e = entries.nextElement();			
-				String filename = e.getName();					
-				int lastSlash = filename.lastIndexOf('/');
-				int lastDot = filename.lastIndexOf('.');			
-				Trie pkg = Trie.fromString(filename.substring(0, lastSlash));			
-				String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
-				String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
-				Trie id = pkg.append(name);
-				Entry pe = new Entry(id, jf, e);
-				contentTypes.associate(pe);
-				contents[i++] = pe;
-			}		
-
+			
 			return contents;
 		}
-	}
-	
-	public String toString() {
-		return jf.getName();
+
+		@Override
+		public <T> wybs.lang.Path.Entry<T> create(String name, Type<T> ct) {
+			throw new UnsupportedOperationException();
+		}
 	}
 	
 	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		

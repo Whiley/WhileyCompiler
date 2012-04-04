@@ -282,10 +282,16 @@ public class Path {
 				throws IOException;
 
 		/**
-		 * Insert a given entry into this folder, or 
+		 * Create a new entry in this folder with the given name and
+		 * content-type.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
 		 * @param entry
 		 */
-		public <T> void insert(Path.Entry<T> entry);
+		public <T> Path.Entry<T> create(String name, Content.Type<T> ct)
+				throws IOException;
 		
 		/**
 		 * Get all objects matching a given content filter stored in this folder.
