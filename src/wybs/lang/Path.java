@@ -284,6 +284,12 @@ public class Path {
 				throws IOException;
 
 		/**
+		 * Insert a given entry into this folder, or 
+		 * @param entry
+		 */
+		public <T> void insert(Path.Entry<T> entry);
+		
+		/**
 		 * Get all objects matching a given content filter stored in this folder.
 		 * In the case of no matches, an empty list is returned.
 		 * 

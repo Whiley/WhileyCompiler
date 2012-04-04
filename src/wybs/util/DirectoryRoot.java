@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.Content;
+import wybs.lang.Content.Filter;
 import wybs.lang.Path;
 import wybs.lang.Content.Registry;
 import wybs.lang.Content.Type;
@@ -51,7 +52,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	};
 	
 	private final FileFilter filter;		
-	private final java.io.File dir;		
+	private final File dir;
 	
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
@@ -64,9 +65,9 @@ public final class DirectoryRoot extends AbstractRoot {
 	 * @throws IOException
 	 */
 	public DirectoryRoot(String path, Content.Registry contentTypes) throws IOException {
-		super(contentTypes);
-		this.dir = new File(path);				
-		this.filter = NULL_FILTER;		
+		super(contentTypes);		
+		this.dir = new File(path);
+		this.filter = NULL_FILTER;	 
 	}
 	
 	/**
@@ -128,11 +129,13 @@ public final class DirectoryRoot extends AbstractRoot {
 	public String toString() {
 		return dir.getPath();
 	}
-
+	
+	@Override
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
 			Path.Entry<?>... sources) throws IOException {
 		Path.Entry<T> e = super.get(id,ct);
 		if(e == null) {			
+			// Entry doesn't already exist, so create it			
 			String physID = id.toString();
 			if(File.separatorChar != '/') {
 				physID = physID.replace('/',File.separatorChar);
@@ -141,20 +144,18 @@ public final class DirectoryRoot extends AbstractRoot {
 			File nfile = new File(dir.getAbsolutePath() + File.separatorChar + physID);			
 			e = new Entry(id,nfile);
 			e.associate(ct, null);
-			super.insert(e);
+			root.insert(e);
 		}
 		return e;
 	}
 	
-	protected Path.Entry<?>[] contents() throws IOException {
-		ArrayList<Path.Entry<?>> contents = new ArrayList<Path.Entry<?>>();
-		traverse(dir,Trie.ROOT,contents);
-		return contents.toArray(new Path.Entry[contents.size()]);
+	@Override
+	protected Folder root() {
+		return new Folder(Trie.ROOT,dir);
 	}
 	
-	
 	/**
-	 * A WFile is a file on the file system which represents a Whiley module. The
+	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
 	 * source file and/or a binary wyil file.
 	 * 
@@ -201,6 +202,49 @@ public final class DirectoryRoot extends AbstractRoot {
 	}
 	
 	/**
+	 * Represents a directory on a physical file system.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public final class Folder extends AbstractFolder {
+		private final java.io.File dir; // isDirectory
+		
+		public Folder(Path.ID id, java.io.File dir) {
+			super(id);
+			this.dir = dir;
+		}
+
+		@Override
+		protected Path.Item[] contents() throws IOException {
+			if (dir.exists() && dir.isDirectory()) {
+				File[] files = dir.listFiles(filter);
+				Path.Item[] items = new Path.Item[files.length];
+				for(int i=0;i!=files.length;++i) {
+					File file = files[i];
+					String filename = file.getName();
+					if (file.isDirectory()) {
+						items[i] = new Folder(id.append(filename),file);
+					} else {
+						int idx = filename.lastIndexOf('.');
+						if (idx > 0) {
+							String name = filename.substring(0, idx);
+							String suffix = filename.substring(idx + 1);
+							Path.ID oid = id.append(name);
+							Entry e = new Entry(oid, file);
+							contentTypes.associate(e);
+							items[i] = e;
+						}
+					}
+				}
+				return items;
+			} else {
+				return new Path.Item[0];
+			}
+		}
+	}
+	
+	/**
 	 * Recursively traverse a file system from a given location.
 	 * 
 	 * @param location
@@ -212,23 +256,6 @@ public final class DirectoryRoot extends AbstractRoot {
 	 */
 	private void traverse(File location, Trie id,
 			ArrayList<Path.Entry<?>> contents) throws IOException {
-		if (location.exists() && location.isDirectory()) {
-			for (File file : location.listFiles(filter)) {
-				if (file.isDirectory()) {
-					traverse(file, id.append(file.getName()), contents);
-				} else {
-					String filename = file.getName();
-					int i = filename.lastIndexOf('.');
-					if (i > 0) {
-						String name = filename.substring(0, i);
-						String suffix = filename.substring(i + 1);
-						Path.ID oid = id.append(name);
-						Entry e = new Entry(oid, file);
-						contentTypes.associate(e);
-						contents.add(e);
-					}
-				}
-			}
-		}
+		
 	}
 }

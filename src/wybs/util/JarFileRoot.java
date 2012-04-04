@@ -52,37 +52,61 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		this.jf = dir;		
 	}
 
+	@Override
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,Path.Entry<?>... sources) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public void flush() {
 		// no=op
 	}
-	
+
+	@Override
 	public void refresh() {
 		
 	}
 	
-	protected Path.Entry[] contents() throws IOException {		
-		Enumeration<JarEntry> entries = jf.entries();		
-		Path.Entry[] contents = new Path.Entry[jf.size()];
-		int i = 0;
-		while (entries.hasMoreElements()) {
-			JarEntry e = entries.nextElement();			
-			String filename = e.getName();					
-			int lastSlash = filename.lastIndexOf('/');
-			int lastDot = filename.lastIndexOf('.');			
-			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));			
-			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
-			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
-			Trie id = pkg.append(name);
-			Entry pe = new Entry(id, jf, e);
-			contentTypes.associate(pe);
-			contents[i++] = pe;
-		}		
+	@Override
+	protected Folder root() {
 		
-		return contents;
+	}
+	
+	/**
+	 * Represents a directory on a physical file system.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public final class Folder extends AbstractFolder {
+		private final java.io.File dir; // isDirectory
+
+		public Folder(Path.ID id, java.io.File dir) {
+			super(id);
+			this.dir = dir;
+		}
+
+		@Override
+		protected Path.Item[] contents() throws IOException {		
+			Enumeration<JarEntry> entries = jf.entries();		
+			Path.Item[] contents = new Path.Entry[jf.size()];
+			int i = 0;
+			while (entries.hasMoreElements()) {
+				JarEntry e = entries.nextElement();			
+				String filename = e.getName();					
+				int lastSlash = filename.lastIndexOf('/');
+				int lastDot = filename.lastIndexOf('.');			
+				Trie pkg = Trie.fromString(filename.substring(0, lastSlash));			
+				String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
+				String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
+				Trie id = pkg.append(name);
+				Entry pe = new Entry(id, jf, e);
+				contentTypes.associate(pe);
+				contents[i++] = pe;
+			}		
+
+			return contents;
+		}
 	}
 	
 	public String toString() {

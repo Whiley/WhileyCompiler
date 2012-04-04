@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import wybs.lang.*;
 import wybs.lang.Path.Entry;
@@ -28,10 +30,12 @@ public abstract class AbstractFolder implements Path.Folder {
 		this.id = id;
 	}
 	
+	@Override
 	public Path.ID id() {
 		return id;
 	}	
 	
+	@Override
 	public boolean contains(Path.Entry<?> e) throws IOException {		
 		updateContents();	
 		Path.ID eid = e.id();
@@ -73,10 +77,12 @@ public abstract class AbstractFolder implements Path.Folder {
 		return false;
 	}
 	
+	@Override
 	public boolean exists(ID id, Content.Type<?> ct) throws IOException{				
 		return get(id,ct) != null;
 	}
 	
+	@Override
 	public <T> Path.Entry<T> get(ID eid, Content.Type<T> ct) throws IOException{				
 		updateContents();				
 		boolean contained;
@@ -122,10 +128,11 @@ public abstract class AbstractFolder implements Path.Folder {
 		return null;
 	}
 	
-	public <T> void addAll(Content.Filter<T> filter, ArrayList<Entry<T>> entries) throws IOException{			
+	@Override
+	public <T> void addAll(Content.Filter<T> filter, List<Entry<T>> entries) throws IOException{			
 		updateContents();
 		
-		// It would be nice to futher optimise this loop. The key issue is that,
+		// It would be nice to further optimise this loop. The key issue is that,
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
 		// potentially largel subtree.
@@ -144,10 +151,11 @@ public abstract class AbstractFolder implements Path.Folder {
 		}
 	}
 	
-	public <T> void addAll(Content.Filter<T> filter, HashSet<Path.ID> entries) throws IOException{			
+	@Override
+	public <T> void addAll(Content.Filter<T> filter, Set<Path.ID> entries) throws IOException{			
 		updateContents();
 		
-		// It would be nice to futher optimise this loop. The key issue is that,
+		// It would be nice to further optimise this loop. The key issue is that,
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
 		// potentially largel subtree.
@@ -166,10 +174,12 @@ public abstract class AbstractFolder implements Path.Folder {
 		}
 	}	
 	
+	@Override
 	public void refresh() {
 		contents = null;
 	}
 	
+	@Override
 	public void flush() throws IOException {
 		if(contents != null) {
 			for(Path.Item e : contents) {
@@ -183,31 +193,32 @@ public abstract class AbstractFolder implements Path.Folder {
 	 * 
 	 * @param entry
 	 */
-//	protected void insert(Path.Entry<?> entry) throws IOException{
-//		updateContents();
-//		
-//		Path.ID id = entry.id();
-//		int index = binarySearch(contents,nentries,id);
-//		
-//		if(index < 0) {
-//			index = -index - 1; // calculate insertion point
-//		} else {
-//			// indicates already an entry with a different content type
-//		}
-//
-//		if ((nentries + 1) < contents.length) {
-//			System.arraycopy(contents, index, contents, index + 1, nentries
-//					- index);			
-//		} else {			
-//			Path.Entry[] tmp = new Path.Entry[(nentries+1) * 2];
-//			System.arraycopy(contents, 0, tmp, 0, index);
-//			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
-//			contents = tmp;			
-//		}
-//		
-//		contents[index] = entry;
-//		nentries++;
-//	}
+	@Override
+	protected void insert(Path.Entry<?> entry) throws IOException{
+		updateContents();
+
+		Path.ID id = entry.id();
+		int index = binarySearch(contents,nentries,id);
+		
+		if(index < 0) {
+			index = -index - 1; // calculate insertion point
+		} else {
+			// indicates already an entry with a different content type
+		}
+
+		if ((nentries + 1) < contents.length) {
+			System.arraycopy(contents, index, contents, index + 1, nentries
+					- index);			
+		} else {			
+			Path.Entry[] tmp = new Path.Entry[(nentries+1) * 2];
+			System.arraycopy(contents, 0, tmp, 0, index);
+			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
+			contents = tmp;			
+		}
+		
+		contents[index] = entry;
+		nentries++;
+	}
 	
 	private final void updateContents() throws IOException{
 		if(contents == null) {
@@ -220,7 +231,7 @@ public abstract class AbstractFolder implements Path.Folder {
 	/**
 	 * Extract all entries from the given folder.
 	 */
-	protected abstract Path.Entry<?>[] contents() throws IOException;
+	protected abstract Path.Item[] contents() throws IOException;
 	
 	private static final int binarySearch(final Path.Item[] children, int nchildren, final Path.ID key) {
 		int low = 0;

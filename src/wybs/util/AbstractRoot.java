@@ -50,9 +50,9 @@ public abstract class AbstractRoot implements Root {
 	protected final Content.Registry contentTypes;
 	protected final AbstractFolder root;
 	
-	public AbstractRoot(AbstractFolder root, Content.Registry contentTypes) {
+	public AbstractRoot(Content.Registry contentTypes) {
 		this.contentTypes = contentTypes;
-		this.root = root;
+		this.root = root();
 	}
 			
 	public boolean contains(Path.Entry<?> e) throws IOException {
