@@ -103,8 +103,24 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 
 		@Override
 		protected Path.Item[] contents() throws IOException {		
+			int count = 0 ;
+			for(int i=0;i!=contents.length;++i) {
+				Path.Item item = contents[i];
+				if(item.id() == id) {
+					count++;
+				}
+			}
 			
-			return contents;
+			Path.Item[] myContents = new Path.Item[count];
+			count=0;
+			for(int i=0;i!=contents.length;++i) {
+				Path.Item item = contents[i];
+				if(item.id() == id) {
+					myContents[count++] = item;
+				}
+			}
+			
+			return myContents;
 		}
 
 		@Override
