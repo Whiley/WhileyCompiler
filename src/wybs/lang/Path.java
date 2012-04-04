@@ -202,8 +202,6 @@ public class Path {
 		 */
 		public Set<Path.Entry<?>> dependencies();
 		
-
-
 		/**
 		 * Read contents of file. Note, however, that this does not mean the
 		 * contents are re-read from permanent storage. If the contents are
@@ -299,7 +297,7 @@ public class Path {
 		 * @param ct
 		 * @return
 		 */
-		public <T> void addAll(Content.Filter<T> ct, List<Path.Entry<T>> entries)
+		public <T> void getAll(Content.Filter<T> ct, List<Path.Entry<T>> entries)
 				throws IOException;
 
 		/**
@@ -313,7 +311,7 @@ public class Path {
 		 *            --- filter to match entries with.
 		 * @return
 		 */
-		public <T> void addAll(Content.Filter<T> filter, Set<Path.ID> entries)
+		public <T> void getAll(Content.Filter<T> filter, Set<Path.ID> entries)
 				throws IOException;
 	}
 	

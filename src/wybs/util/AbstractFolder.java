@@ -129,7 +129,7 @@ public abstract class AbstractFolder implements Path.Folder {
 	}
 	
 	@Override
-	public <T> void addAll(Content.Filter<T> filter, List<Entry<T>> entries) throws IOException{			
+	public <T> void getAll(Content.Filter<T> filter, List<Entry<T>> entries) throws IOException{			
 		updateContents();
 		
 		// It would be nice to further optimise this loop. The key issue is that,
@@ -146,13 +146,13 @@ public abstract class AbstractFolder implements Path.Folder {
 				}
 			} else if(item instanceof Path.Folder) {
 				Path.Folder folder = (Path.Folder) item;
-				folder.addAll(filter, entries);
+				folder.getAll(filter, entries);
 			}
 		}
 	}
 	
 	@Override
-	public <T> void addAll(Content.Filter<T> filter, Set<Path.ID> entries) throws IOException{			
+	public <T> void getAll(Content.Filter<T> filter, Set<Path.ID> entries) throws IOException{			
 		updateContents();
 		
 		// It would be nice to further optimise this loop. The key issue is that,
@@ -169,7 +169,7 @@ public abstract class AbstractFolder implements Path.Folder {
 				}
 			} else if(item instanceof Path.Folder) {
 				Path.Folder folder = (Path.Folder) item;
-				folder.addAll(filter, entries);
+				folder.getAll(filter, entries);
 			}
 		}
 	}	

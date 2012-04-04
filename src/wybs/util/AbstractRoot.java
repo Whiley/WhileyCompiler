@@ -69,13 +69,13 @@ public abstract class AbstractRoot implements Root {
 	
 	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{	
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();
-		root.addAll(filter, entries);
+		root.getAll(filter, entries);
 		return entries;
 	}
 	
 	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{	
 		HashSet<Path.ID> ids = new HashSet<Path.ID>();
-		root.addAll(filter, ids);
+		root.getAll(filter, ids);
 		return ids;
 	}	
 	
