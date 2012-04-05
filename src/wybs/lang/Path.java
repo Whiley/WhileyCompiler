@@ -258,8 +258,8 @@ public class Path {
 		public boolean contains(Path.Entry<?> entry) throws IOException;
 
 		/**
-		 * Check whether or not a given entry and content-type is contained in
-		 * this folder.
+		 * Check whether or not an entry with a given ID ((taken relative to
+		 * this folder)) and content-type is contained in this folder.
 		 * 
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
@@ -267,8 +267,8 @@ public class Path {
 		public boolean exists(ID id, Content.Type<?> ct) throws IOException;
 
 		/**
-		 * Get the entry corresponding to a given ID and content type. If no
-		 * such entry exists, return null.
+		 * Get the entry corresponding to a given ID (taken relative to this
+		 * folder) and content type. If no such entry exists, return null.
 		 * 
 		 * @param id
 		 *            --- id of module to lookup.
@@ -282,16 +282,16 @@ public class Path {
 				throws IOException;
 
 		/**
-		 * Create a new entry in this folder with the given name and
-		 * content-type.
+		 * Create a new entry in this folder with the given ID (taken relative
+		 * to this folder) and content-type.
 		 * 
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
 		 * 
 		 * @param entry
-		 */
-		public <T> Path.Entry<T> create(String name, Content.Type<T> ct)
-				throws IOException;
+		 */		
+		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
+				Path.Entry<?>... sources) throws IOException;
 		
 		/**
 		 * Get all objects matching a given content filter stored in this folder.

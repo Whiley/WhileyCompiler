@@ -131,27 +131,6 @@ public final class DirectoryRoot extends AbstractRoot {
 	}
 	
 	@Override
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
-			Path.Entry<?>... sources) throws IOException {
-		Path.Entry<T> e = super.get(id,ct);
-		if(e == null) {			
-			// Entry doesn't already exist, so create it			
-			String physID = id.toString();
-			if(File.separatorChar != '/') {
-				physID = physID.replace('/',File.separatorChar);
-			}
-			physID = physID + "." + contentTypes.suffix(ct);
-			File nfile = new File(dir.getAbsolutePath() + File.separatorChar + physID);			
-			e = new Entry(id,nfile);
-			e.associate(ct, null);
-			
-			// FIXME: this shouldn't even compile
-			root.insert(e);
-		}
-		return e;
-	}
-	
-	@Override
 	protected Folder root() {
 		return new Folder(Trie.ROOT,dir);
 	}
