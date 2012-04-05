@@ -42,11 +42,13 @@ import wybs.lang.Path;
  */
 public final class JarFileRoot extends AbstractRoot implements Path.Root {	
 	private final String dir;
-	private Path.Item[] contents;
+	private Path.Item[] jfContents;
 	
 	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.dir = dir;		
+		this.dir = dir;
+		System.out.println("JAR FILE ROOT(1)");
+		refresh();
 	}
 	
 	@Override
@@ -63,7 +65,7 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 	public void refresh() throws IOException {
 		JarFile jf = new JarFile(dir);
 		Enumeration<JarEntry> entries = jf.entries();
-		contents = new Path.Entry[jf.size()];
+		this.jfContents = new Path.Entry[jf.size()];
 		int i = 0;
 		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();	
@@ -76,7 +78,7 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 			Trie id = pkg.append(name);
 			Entry pe = new Entry(id, jf, e);
 			contentTypes.associate(pe);
-			contents[i++] = pe;
+			jfContents[i++] = pe;
 		}		
 	}
 	
@@ -102,12 +104,12 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		}
 
 		@Override
-		protected Path.Item[] contents() throws IOException {		
+		protected Path.Item[] contents() throws IOException {	
 			// This algorithm is straightforward. I use a two loops instead of a
 			// single loop with ArrayList to avoid allocating on the heap. 
 			int count = 0 ;
-			for(int i=0;i!=contents.length;++i) {
-				Path.Item item = contents[i];
+			for(int i=0;i!=jfContents.length;++i) {
+				Path.Item item = jfContents[i];
 				if(item.id() == id) {
 					count++;
 				}
@@ -115,8 +117,8 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 			
 			Path.Item[] myContents = new Path.Item[count];
 			count=0;
-			for(int i=0;i!=contents.length;++i) {
-				Path.Item item = contents[i];
+			for(int i=0;i!=JarFileRoot.this.jfContents.length;++i) {
+				Path.Item item = jfContents[i];
 				if(item.id() == id) {
 					myContents[count++] = item;
 				}

@@ -1,10 +1,8 @@
 package wybs.util;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -23,8 +21,8 @@ import wybs.lang.Path.ID;
  */
 public abstract class AbstractFolder implements Path.Folder {
 	protected final Path.ID id;
-	protected Path.Item[] contents;
-	protected int nentries;
+	private Path.Item[] contents;
+	private int nentries;
 	
 	/**
 	 * Construct an Abstract Folder representing a given ID (taken relative to
@@ -249,7 +247,6 @@ public abstract class AbstractFolder implements Path.Folder {
 			contents = contents();			
 			nentries = contents.length;
 			Arrays.sort(contents,entryComparator);
-			System.out.println(Arrays.toString(contents));
 		}
 	}
 	
