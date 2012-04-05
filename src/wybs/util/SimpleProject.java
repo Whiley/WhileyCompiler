@@ -152,6 +152,7 @@ public class SimpleProject implements NameSpace {
 		// Firstly, initialise list of targets to rebuild.		
 		for (BuildRule r : rules) {
 			for (Path.Entry<?> source : sources) {
+				System.out.println("GOT: " + r.dependentsOf(source));
 				allTargets.addAll(r.dependentsOf(source));
 			}
 		}

@@ -235,7 +235,7 @@ public final class DirectoryRoot extends AbstractRoot {
 			if (nid.size() == 1) {
 				// attempting to create an entry in this folder
 				Path.Entry<T> e = super.get(nid.subpath(0, 1), ct);
-				if (e != null) {
+				if (e == null) {
 					// Entry doesn't already exist, so create it
 					String physID = nid.toString().replace('/',
 							File.separatorChar);

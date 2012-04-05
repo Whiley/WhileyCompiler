@@ -221,7 +221,6 @@ public abstract class AbstractFolder implements Path.Folder {
 					"Cannot insert with incorrect Path.ID entry into AbstractFolder");
 		}
 		updateContents();
-
 		Path.ID id = item.id();
 		int index = binarySearch(contents, nentries, id);
 
@@ -235,7 +234,7 @@ public abstract class AbstractFolder implements Path.Folder {
 			System.arraycopy(contents, index, contents, index + 1, nentries
 					- index);
 		} else {
-			Path.Entry[] tmp = new Path.Entry[(nentries + 1) * 2];
+			Path.Item[] tmp = new Path.Item[(nentries + 1) * 2];
 			System.arraycopy(contents, 0, tmp, 0, index);
 			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
 			contents = tmp;

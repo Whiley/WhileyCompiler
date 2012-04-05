@@ -77,7 +77,6 @@ public class StandardBuildRule implements BuildRule {
 			final Content.Filter includes = item.includes;
 			final Content.Filter excludes = item.excludes;
 			final Content.Type<?> to = item.to;			
-
 			if (source.contains(entry)
 					&& includes.matches(entry.id(), entry.contentType())
 					&& (excludes == null || !excludes.matches(entry.id(),
