@@ -47,7 +47,6 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.dir = dir;
-		System.out.println("JAR FILE ROOT(1)");
 		refresh();
 	}
 	
@@ -65,20 +64,25 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 	public void refresh() throws IOException {
 		JarFile jf = new JarFile(dir);
 		Enumeration<JarEntry> entries = jf.entries();
-		this.jfContents = new Path.Entry[jf.size()];
+		this.jfContents = new Path.Item[jf.size()];
 		int i = 0;
 		while (entries.hasMoreElements()) {
-			JarEntry e = entries.nextElement();	
-			String filename = e.getName();					
+			JarEntry e = entries.nextElement();
+			String filename = e.getName();	
 			int lastSlash = filename.lastIndexOf('/');
-			int lastDot = filename.lastIndexOf('.');			
-			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));			
-			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
-			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
-			Trie id = pkg.append(name);
-			Entry pe = new Entry(id, jf, e);
-			contentTypes.associate(pe);
-			jfContents[i++] = pe;
+			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));
+			if(!e.isDirectory()) {				
+				int lastDot = filename.lastIndexOf('.');										
+				String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
+				String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
+				Trie id = pkg.append(name);
+				Entry pe = new Entry(id, jf, e);
+				contentTypes.associate(pe);
+				jfContents[i++] = pe;
+			} else {
+				// folder
+				jfContents[i++] = new Folder(pkg);
+			}
 		}		
 	}
 	
@@ -109,17 +113,17 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 			// single loop with ArrayList to avoid allocating on the heap. 
 			int count = 0 ;
 			for(int i=0;i!=jfContents.length;++i) {
-				Path.Item item = jfContents[i];
-				if(item.id() == id) {
+				Path.Item item = jfContents[i];				
+				if(item.id().parent() == id) {
 					count++;
 				}
 			}
 			
 			Path.Item[] myContents = new Path.Item[count];
 			count=0;
-			for(int i=0;i!=JarFileRoot.this.jfContents.length;++i) {
+			for(int i=0;i!=jfContents.length;++i) {
 				Path.Item item = jfContents[i];
-				if(item.id() == id) {
+				if(item.id().parent() == id) {
 					myContents[count++] = item;
 				}
 			}
@@ -128,7 +132,7 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		}
 
 		@Override
-		public <T> wybs.lang.Path.Entry<T> create(Path.ID id, Type<T> ct, Path.Entry<?>... sources) {
+		public <T> wybs.lang.Path.Entry<T> create(Path.ID id, Content.Type<T> ct, Path.Entry<?>... sources) {
 			throw new UnsupportedOperationException();
 		}
 	}

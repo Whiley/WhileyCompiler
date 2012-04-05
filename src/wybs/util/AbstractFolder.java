@@ -91,7 +91,7 @@ public abstract class AbstractFolder implements Path.Folder {
 		updateContents();				
 		
 		ID tid = id.append(eid.get(0));		
-		
+				
 		int idx = binarySearch(contents,nentries,tid);
 		if(idx >= 0) {
 			// At this point, we've found a matching index for the given ID.
@@ -175,8 +175,8 @@ public abstract class AbstractFolder implements Path.Folder {
 	@Override
 	public void flush() throws IOException {
 		if(contents != null) {
-			for(Path.Item e : contents) {
-				e.flush();
+			for(int i=0;i!=nentries;++i) {
+				contents[i].flush();
 			}
 		}
 	}

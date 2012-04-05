@@ -60,7 +60,7 @@ public abstract class AbstractRoot implements Root {
 		return root.contains(e);
 	}
 	
-	public boolean exists(ID id, Content.Type<?> ct) throws IOException{		
+	public boolean exists(ID id, Content.Type<?> ct) throws IOException{
 		return root.exists(id,ct);
 	}
 	
