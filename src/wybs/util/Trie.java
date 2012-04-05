@@ -111,9 +111,13 @@ public final class Trie implements Path.ID, Path.Filter {
 	}
 	
 	public boolean matches(Path.ID id) {
-		return match(id, 0, 0);		
+		return match(id, 0, 0, false);		
 	}
-		
+	
+	public boolean matchesSubpath(Path.ID id) {
+		return match(id, 0, 0, true);		
+	}
+	
 	public String last() {
 		return component;
 	}
@@ -277,27 +281,30 @@ public final class Trie implements Path.ID, Path.Filter {
 	// Private Methods
 	// =========================================================
 	
-	private boolean match(Path.ID id, int idIndex, int myIndex) {
+	private boolean match(Path.ID id, int idIndex, int myIndex, boolean submatch) {
 		int mySize = depth + 1;
 		if (myIndex == mySize && idIndex == id.size()) {
 			return true;
-		} else if (myIndex == mySize || idIndex == id.size()) {
+		} else if(idIndex == id.size()) {
+			return submatch;
+		} else if (myIndex == mySize) {
 			return false;
 		}
+		
 		String myComponent = get(myIndex);
 		if (myComponent.equals("*")) {
-			return match(id, idIndex + 1, myIndex + 1);
+			return match(id, idIndex + 1, myIndex + 1, submatch);
 		} else if (myComponent.equals("**")) {
 			myIndex++;
 			for (int i = idIndex; i <= id.size(); ++i) {
-				if (match(id, i, myIndex)) {
+				if (match(id, i, myIndex, submatch)) {
 					return true;
 				}
 			}
 			return false;
 		} else {
 			return myComponent.equals(id.get(idIndex))
-					&& match(id, idIndex + 1, myIndex + 1);
+					&& match(id, idIndex + 1, myIndex + 1, submatch);
 		}
 	}
 	

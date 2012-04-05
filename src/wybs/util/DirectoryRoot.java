@@ -196,10 +196,9 @@ public final class DirectoryRoot extends AbstractRoot {
 		public Folder(Path.ID id) {
 			super(id);
 		}
-
+		
 		@Override
-		protected Path.Item[] contents() throws IOException {
-			
+		protected Path.Item[] contents() throws IOException {			
 			File myDir = new File(dir, id.toString().replace('/', File.separatorChar));		
 			
 			if (myDir.exists() && myDir.isDirectory()) {
@@ -215,7 +214,6 @@ public final class DirectoryRoot extends AbstractRoot {
 						int idx = filename.lastIndexOf('.');
 						if (idx > 0) {
 							String name = filename.substring(0, idx);
-							String suffix = filename.substring(idx + 1);
 							Path.ID oid = id.append(name);
 							Entry e = new Entry(oid, file);
 							contentTypes.associate(e);
@@ -223,7 +221,14 @@ public final class DirectoryRoot extends AbstractRoot {
 						}
 					}
 				}
-				return Arrays.copyOf(items,count);
+				
+				if(count != items.length) {
+					// trim the end since we didn't use all allocated elements.
+					return Arrays.copyOf(items,count);
+				} else {
+					// minor optimisation
+					return items;
+				}
 			} else {
 				return new Path.Item[0];
 			}

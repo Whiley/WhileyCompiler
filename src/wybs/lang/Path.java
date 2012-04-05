@@ -447,6 +447,16 @@ public class Path {
 		 * @return --- true if it matches, otherwise false.
 		 */
 		public boolean matches(Path.ID id);
+		
+		/**
+		 * Check whether a given subpath is matched by this filter. A matching
+		 * subpath does not necessarily identify an exact match; rather, it may
+		 * be an enclosing folder.
+		 * 
+		 * @param id
+		 * @return
+		 */
+		public boolean matchesSubpath(Path.ID id);
 	}
 
 }

@@ -65,7 +65,7 @@ public abstract class AbstractFolder implements Path.Folder {
 	}	
 	
 	@Override
-	public boolean contains(Path.Entry<?> e) throws IOException {		
+	public boolean contains(Path.Entry<?> e) throws IOException {
 		updateContents();	
 		Path.ID eid = e.id();
 		boolean contained;
@@ -162,7 +162,8 @@ public abstract class AbstractFolder implements Path.Folder {
 				if(filter.matches(entry.id(),entry.contentType())) {
 					entries.add(entry);
 				}
-			} else if(item instanceof Path.Folder) {
+			} else if (item instanceof Path.Folder
+					&& filter.matchesSubpath(item.id())) {
 				Path.Folder folder = (Path.Folder) item;
 				folder.getAll(filter, entries);
 			}
@@ -185,7 +186,8 @@ public abstract class AbstractFolder implements Path.Folder {
 				if (filter.matches(entry.id(), entry.contentType())) {
 					entries.add(entry.id());
 				}
-			} else if(item instanceof Path.Folder) {
+			} else if (item instanceof Path.Folder
+					&& filter.matchesSubpath(item.id())) {
 				Path.Folder folder = (Path.Folder) item;
 				folder.getAll(filter, entries);
 			}

@@ -62,7 +62,8 @@ public abstract class AbstractRoot implements Root {
 	}
 	
 	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws IOException{		
-		return root.get(id,ct);
+		Path.Entry<T> e = root.get(id,ct);
+		return e;
 	}
 	
 	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{	
