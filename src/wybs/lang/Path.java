@@ -70,13 +70,16 @@ public class Path {
 		public ID parent();
 		
 		/**
-		 * Get the parent of this path at the given depth. That is, the returned
-		 * parent has at most depth components and is a parent of this ID.
+		 * Get a sub ID from this id, which consists of those components between
+		 * start and end (exclusive).
 		 * 
-		 * @param depth
+		 * @param start
+		 *            --- starting component index
+		 * @param start
+		 *            --- one past last component index
 		 * @return
 		 */
-		public ID parent(int depth);
+		public ID subpath(int start, int end);
 		
 		/**
 		 * Append a component onto the end of this id.
@@ -258,8 +261,7 @@ public class Path {
 		public boolean contains(Path.Entry<?> entry) throws IOException;
 
 		/**
-		 * Check whether or not an entry with a given ID ((taken relative to
-		 * this folder)) and content-type is contained in this folder.
+		 * folder) and content-type is contained in this folder.
 		 * 
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
@@ -281,18 +283,6 @@ public class Path {
 		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct)
 				throws IOException;
 
-		/**
-		 * Create a new entry in this folder with the given ID (taken relative
-		 * to this folder) and content-type.
-		 * 
-		 * @throws IOException
-		 *             --- in case of some I/O failure.
-		 * 
-		 * @param entry
-		 */		
-		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
-				Path.Entry<?>... sources) throws IOException;
-		
 		/**
 		 * Get all objects matching a given content filter stored in this folder.
 		 * In the case of no matches, an empty list is returned.
@@ -319,6 +309,19 @@ public class Path {
 		 */
 		public <T> void getAll(Content.Filter<T> filter, Set<Path.ID> entries)
 				throws IOException;
+		
+		/**
+		 * Create a new entry in this folder with the given ID (taken relative
+		 * to this folder) and content-type. This will recursively construct
+		 * sub-folders as necessary.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
+		 * @param entry
+		 */		
+		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
+				Path.Entry<?>... sources) throws IOException;		
 	}
 	
 	/**

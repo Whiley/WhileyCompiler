@@ -122,6 +122,14 @@ public final class Trie implements Path.ID, Path.Filter {
 		return parent;
 	}
 	
+	public Trie subpath(int start, int end) {
+		Trie id = Trie.ROOT;
+		for(int i=start;i!=end;++i) {
+			// TODO: this could be made more efficient
+			id = id.append(get(i));
+		}
+		return id;
+	}
 	public Trie parent(int depth) {
 		if(this.depth < depth) {
 			return this;

@@ -56,7 +56,7 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 	
 	@Override
 	public void flush() {
-		// no=op
+		// no-op, since jar files are read-only.
 	}
 
 	@Override
@@ -103,6 +103,8 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 
 		@Override
 		protected Path.Item[] contents() throws IOException {		
+			// This algorithm is straightforward. I use a two loops instead of a
+			// single loop with ArrayList to avoid allocating on the heap. 
 			int count = 0 ;
 			for(int i=0;i!=contents.length;++i) {
 				Path.Item item = contents[i];
@@ -124,7 +126,7 @@ public final class JarFileRoot extends AbstractRoot implements Path.Root {
 		}
 
 		@Override
-		public <T> wybs.lang.Path.Entry<T> create(String name, Type<T> ct) {
+		public <T> wybs.lang.Path.Entry<T> create(Path.ID id, Type<T> ct, Path.Entry<?>... sources) {
 			throw new UnsupportedOperationException();
 		}
 	}

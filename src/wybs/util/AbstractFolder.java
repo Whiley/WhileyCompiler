@@ -26,6 +26,12 @@ public abstract class AbstractFolder implements Path.Folder {
 	protected Path.Item[] contents;
 	protected int nentries;
 	
+	/**
+	 * Construct an Abstract Folder representing a given ID (taken relative to
+	 * the enclosing root).
+	 * 
+	 * @param id
+	 */
 	public AbstractFolder(Path.ID id) {
 		this.id = id;
 	}
@@ -45,11 +51,11 @@ public abstract class AbstractFolder implements Path.Folder {
 			// The requested entry is contained in this folder. Therefore, we
 			// need to search for it. 
 			contained = true;
-		} else if(id == eid.parent(id.size())) {
+		} else if(id == eid.subpath(0,id.size())) {
 			// This folder is a parent of the requested entry. Therefore, we
 			// need to looking for a matching folder entry. If we find one, then
 			// we ask it for the requested entry.
-			eid = eid.parent(id.size()+1);
+			eid = eid.subpath(0,id.size()+1);
 			contained = false;
 		} else {
 			return false;
@@ -85,23 +91,8 @@ public abstract class AbstractFolder implements Path.Folder {
 	@Override
 	public <T> Path.Entry<T> get(ID eid, Content.Type<T> ct) throws IOException{				
 		updateContents();				
-		boolean contained;
 		
-		ID tid;
-		if(id == eid.parent()) {	
-			// The requested entry is contained in this folder. Therefore, we
-			// need to search for it. 
-			contained = true;
-			tid = eid;
-		} else if(id == eid.parent(id.size())) {
-			// This folder is a parent of the requested entry. Therefore, we
-			// need to looking for a matching folder entry. If we find one, then
-			// we ask it for the requested entry.
-			tid = eid.parent(id.size()+1);
-			contained = false;
-		} else {
-			return null;
-		}
+		ID tid = id.append(eid.get(0));		
 		
 		int idx = binarySearch(contents,nentries,tid);
 		if(idx >= 0) {
@@ -111,14 +102,18 @@ public abstract class AbstractFolder implements Path.Folder {
 			// they match the requested entry.
 			Path.Item item = contents[idx];
 			do {
-				if(item instanceof Entry) {
+				if(item instanceof Entry && eid.size() == 1) {
+					// In this case, we're looking for and have found an exact
+					// item.
 					Entry entry = (Entry) item;
 					if (entry.contentType() == ct) {
 						return entry;
 					}
-				} else if(!contained && item instanceof Path.Folder) {
+				} else if (item instanceof Path.Folder && eid.size() > 1) {
+					// In this case, the ID is indicates the item is not
+					// contained in this folder.
 					Path.Folder folder = (Path.Folder) item;
-					return folder.get(eid,ct);
+					return folder.get(eid.subpath(1,eid.size()), ct);
 				}
 			} while (++idx < nentries
 					&& (item = contents[idx]).id().equals(eid));
@@ -172,7 +167,7 @@ public abstract class AbstractFolder implements Path.Folder {
 				folder.getAll(filter, entries);
 			}
 		}
-	}	
+	}		
 	
 	@Override
 	public void refresh() {
@@ -188,22 +183,49 @@ public abstract class AbstractFolder implements Path.Folder {
 		}
 	}
 	
+	protected Path.Folder getFolder(String name) throws IOException {
+		updateContents();				
+		
+		ID tid = id.append(name);		
+		
+		int idx = binarySearch(contents, nentries, tid);
+		if (idx >= 0) {
+			// At this point, we've found a matching index for the given ID.
+			// However, there maybe multiple matching IDs with different
+			// content types. Therefore, we need to check them all to see if
+			// they match the requested entry.
+			Path.Item item = contents[idx];
+			do {
+				if (item instanceof Path.Folder) {
+					// In this case, the ID is indicates the item is not
+					// contained in this folder.
+					return (Path.Folder) item;
+				}
+			} while (++idx < nentries
+					&& (item = contents[idx]).id().equals(tid));
+		}
+			
+		// no dice
+		return null;
+	}
+	
 	/**
-	 * Insert a newly created entry into this folder. Observe we assume
+	 * Insert a newly created item into this folder. Observe we assume
 	 * <code>entry.id().parent() == id</code>.
 	 * 
-	 * @param entry
+	 * @param item
 	 */
-	protected void create(Path.Entry<?> entry) throws IOException{
-		if(entry.id().parent() != id) {
-			throw new IllegalArgumentException("Cannot insert with incorrect Path.ID entry into AbstractFolder");
+	protected void insert(Path.Item item) throws IOException {
+		if (item.id().parent() != id) {
+			throw new IllegalArgumentException(
+					"Cannot insert with incorrect Path.ID entry into AbstractFolder");
 		}
 		updateContents();
 
-		Path.ID id = entry.id();
-		int index = binarySearch(contents,nentries,id);
-		
-		if(index < 0) {
+		Path.ID id = item.id();
+		int index = binarySearch(contents, nentries, id);
+
+		if (index < 0) {
 			index = -index - 1; // calculate insertion point
 		} else {
 			// indicates already an entry with a different content type
@@ -211,15 +233,15 @@ public abstract class AbstractFolder implements Path.Folder {
 
 		if ((nentries + 1) < contents.length) {
 			System.arraycopy(contents, index, contents, index + 1, nentries
-					- index);			
-		} else {			
-			Path.Entry[] tmp = new Path.Entry[(nentries+1) * 2];
+					- index);
+		} else {
+			Path.Entry[] tmp = new Path.Entry[(nentries + 1) * 2];
 			System.arraycopy(contents, 0, tmp, 0, index);
 			System.arraycopy(contents, index, tmp, index + 1, nentries - index);
-			contents = tmp;			
+			contents = tmp;
 		}
-		
-		contents[index] = entry;
+
+		contents[index] = item;
 		nentries++;
 	}
 	
@@ -228,6 +250,7 @@ public abstract class AbstractFolder implements Path.Folder {
 			contents = contents();			
 			nentries = contents.length;
 			Arrays.sort(contents,entryComparator);
+			System.out.println(Arrays.toString(contents));
 		}
 	}
 	

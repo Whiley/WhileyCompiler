@@ -132,7 +132,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	
 	@Override
 	protected Folder root() {
-		return new Folder(Trie.ROOT,dir);
+		return new Folder(Trie.ROOT);
 	}
 	
 	/**
@@ -180,6 +180,10 @@ public final class DirectoryRoot extends AbstractRoot {
 		public OutputStream outputStream() throws IOException {
 			return new FileOutputStream(file);
 		}
+		
+		public String toString() {
+			return file.toString();
+		}
 	}
 	
 	/**
@@ -189,23 +193,24 @@ public final class DirectoryRoot extends AbstractRoot {
 	 *
 	 */
 	public final class Folder extends AbstractFolder {
-		private final java.io.File dir; // isDirectory
-		
-		public Folder(Path.ID id, java.io.File dir) {
+		public Folder(Path.ID id) {
 			super(id);
-			this.dir = dir;
 		}
 
 		@Override
 		protected Path.Item[] contents() throws IOException {
-			if (dir.exists() && dir.isDirectory()) {
-				File[] files = dir.listFiles(filter);
+			
+			File myDir = new File(dir, id.toString().replace('/', File.separatorChar));		
+			
+			if (myDir.exists() && myDir.isDirectory()) {
+				File[] files = myDir.listFiles(filter);
 				Path.Item[] items = new Path.Item[files.length];
+				int count = 0;
 				for(int i=0;i!=files.length;++i) {
 					File file = files[i];
 					String filename = file.getName();
 					if (file.isDirectory()) {
-						items[i] = new Folder(id.append(filename),file);
+						items[count++] = new Folder(id.append(filename));
 					} else {
 						int idx = filename.lastIndexOf('.');
 						if (idx > 0) {
@@ -214,21 +219,48 @@ public final class DirectoryRoot extends AbstractRoot {
 							Path.ID oid = id.append(name);
 							Entry e = new Entry(oid, file);
 							contentTypes.associate(e);
-							items[i] = e;
+							items[count++] = e;
 						}
 					}
 				}
-				return items;
+				return Arrays.copyOf(items,count);
 			} else {
 				return new Path.Item[0];
 			}
 		}
 
 		@Override
-		public <T> Entry<T> create(String name, Type<T> ct) throws IOException {
-			Entry<T> e = new Entry(id.append(name),new File(dir,name));
-			insert(e);
-			return e;
+		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct,
+				Path.Entry<?>... sources) throws IOException {	
+			if (nid.size() == 1) {
+				// attempting to create an entry in this folder
+				Path.Entry<T> e = super.get(nid.subpath(0, 1), ct);
+				if (e != null) {
+					// Entry doesn't already exist, so create it
+					String physID = nid.toString().replace('/',
+							File.separatorChar);
+					physID = physID + "." + contentTypes.suffix(ct);
+					File nfile = new File(dir.getAbsolutePath()
+							+ File.separatorChar + physID);
+					e = new Entry(nid, nfile);
+					e.associate(ct, null);
+					super.insert(e);
+				}
+				return e;
+			} else {
+				// attempting to create entry in subfolder.
+				Path.Folder folder = getFolder(nid.get(0));
+				if (folder == null) {
+					// Folder doesn't already exist, so create it.
+					folder = new Folder(id.append(nid.get(0)));
+					super.insert(folder);
+				}
+				return folder.create(nid.subpath(1, nid.size()), ct, sources);
+			}
+		}
+		
+		public String toString() {
+			return dir + ":" + id;
 		}
 	}
 }

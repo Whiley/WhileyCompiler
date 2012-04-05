@@ -83,23 +83,7 @@ public abstract class AbstractRoot implements Root {
 	@Override
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
 			Path.Entry<?>... sources) throws IOException {
-		return root.create(id,ct,sources);
-		Path.Entry<T> e = super.get(id,ct);
-		if(e == null) {			
-			// Entry doesn't already exist, so create it			
-			String physID = id.toString();
-			if(File.separatorChar != '/') {
-				physID = physID.replace('/',File.separatorChar);
-			}
-			physID = physID + "." + contentTypes.suffix(ct);
-			File nfile = new File(dir.getAbsolutePath() + File.separatorChar + physID);			
-			e = new Entry(id,nfile);
-			e.associate(ct, null);
-			
-			// FIXME: this shouldn't even compile
-			root.insert(e);
-		}
-		return e;
+		return root.create(id,ct,sources);	
 	}
 	
 	public void refresh() throws IOException{
