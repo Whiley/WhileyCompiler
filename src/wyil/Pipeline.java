@@ -25,6 +25,7 @@
 
 package wyil;
 
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -96,7 +97,7 @@ public class Pipeline {
 		register(DeadCodeElimination.class);
 		register(LiveVariablesAnalysis.class);
 		register(VerificationCheck.class);
-	}
+	}	
 	
 	/**
 	 * Set a specific option on a given pipeline stage. The previous value of
@@ -180,7 +181,7 @@ public class Pipeline {
 	 * @author David J. Pearce
 	 */
 	public static class Template {					
-		Class<? extends Transform> clazz;
+		public final Class<? extends Transform> clazz;
 		public Map<String,Object> options;
 		
 		public Template(Class<? extends Transform> clazz, 

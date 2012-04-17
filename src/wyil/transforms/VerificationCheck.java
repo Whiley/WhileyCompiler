@@ -64,10 +64,18 @@ public class VerificationCheck implements Transform {
 	
 	private String filename;
 	
-	private boolean enabled = false;
+	private boolean enabled = getEnable();
 	
 	public VerificationCheck(Builder builder) {
 		
+	}
+	
+	public static String describeEnable() {
+		return "Enable/disable compile-time verification";
+	}
+	
+	public static boolean getEnable() {
+		return false; // default value
 	}
 	
 	public void setEnable(boolean flag) {
