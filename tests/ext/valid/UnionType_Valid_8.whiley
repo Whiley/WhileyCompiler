@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define ADD as 0
 define SUB as 1

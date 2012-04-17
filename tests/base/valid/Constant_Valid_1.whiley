@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define TYPE as [CONSTANT]
 define CONSTANT as {(V1 is TYPE), (V2 is TYPE)}

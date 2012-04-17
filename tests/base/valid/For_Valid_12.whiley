@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define listsetdict as [int]|{int}|{int=>int}
 

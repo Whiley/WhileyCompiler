@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define bytes as {int b1, int b2}
 

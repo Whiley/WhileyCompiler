@@ -1,4 +1,4 @@
-import * from whiley.lang.System
+import println from whiley.lang.System
 
 public define Object as {
     int(Object) fn,

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define utr12nat as int where $ >= 0
 define intList as utr12nat|[int]

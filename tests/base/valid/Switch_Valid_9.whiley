@@ -1,4 +1,4 @@
-import * from whiley.lang.System
+import println from whiley.lang.System
 
 define IHDR_TYPE as 0x52444849
 define IEND_TYPE as 0x444e4549

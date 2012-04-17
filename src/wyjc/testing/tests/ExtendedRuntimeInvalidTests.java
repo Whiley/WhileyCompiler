@@ -127,7 +127,8 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void TupleAssign_Invalid_2_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_2"); }
  @Test public void TupleAssign_Invalid_3_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_3"); }
  @Test public void TupleDefine_CompileFail_2_RuntimeFailTest() { runtimeFailTest("TupleDefine_CompileFail_2"); } 
- @Test public void TypeEquals_Invalid_3_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_3"); } 
+ @Test public void TypeEquals_Invalid_3_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_3"); }
+ @Test public void TypeEquals_Invalid_4_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_4"); }
  @Test public void UnionType_CompileFail_8_RuntimeFailTest() { runtimeFailTest("UnionType_CompileFail_8"); }
  @Test public void UnionType_Invalid_1_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_1"); }
  @Test public void UnionType_Invalid_2_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_2"); }

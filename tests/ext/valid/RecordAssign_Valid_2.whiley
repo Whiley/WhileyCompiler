@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define tac2ta as {int f1, int f2} where f1 < f2
 define tac2tb as {int f1, int f2} where (f1+1) < f2

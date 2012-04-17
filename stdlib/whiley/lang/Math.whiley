@@ -114,15 +114,7 @@ int isqrt(int x) requires x >= 0, ensures $ >= 0:
 
 // The following is a first approximation at this.  It computes the
 // square root of a number to within a given error threshold.
-public real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
-    error = -error
-    root = isqrt(x) + 1
-    rem = 0.0
-    do:
-        rem = (real) x - (root*root)       
-        root = root + (rem / (root+root))
-    while rem < error
-    return root
+public native real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
 
 public real sqrt(real x, real error) requires x >= 0.0, ensures $ >= 0.0:
     numerator,denominator = x

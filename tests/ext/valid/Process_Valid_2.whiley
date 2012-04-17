@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define state as {int x, int y} where x < y
 define pState as ref state

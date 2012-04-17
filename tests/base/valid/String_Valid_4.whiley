@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 int|null indexOf(char c1, string str):
     i = 0

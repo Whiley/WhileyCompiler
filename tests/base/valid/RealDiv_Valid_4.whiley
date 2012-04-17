@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 real diver(real x, real y, real z):
     return x / y / z

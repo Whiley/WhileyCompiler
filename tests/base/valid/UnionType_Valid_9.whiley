@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 // this is a comment!
 define IntList as {int|[int] op}

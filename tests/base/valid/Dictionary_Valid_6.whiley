@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 {char=>int} reverse(string input):
     rs = {=>}

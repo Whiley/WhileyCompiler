@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define sr6nat as int
 define sr6tup as {sr6nat f, int g}

@@ -88,7 +88,17 @@ public class Content {
 		 *            --- entry to test.
 		 * @return --- entry (retyped) if it matches, otherwise null.
 		 */
-		public boolean matches(Path.ID id, Content.Type<T> ct);		
+		public boolean matches(Path.ID id, Content.Type<T> ct);	
+		
+		/**
+		 * Check whether a given subpath is matched by this filter. A matching
+		 * subpath does not necessarily identify an exact match; rather, it may
+		 * be an enclosing folder.
+		 * 
+		 * @param id
+		 * @return
+		 */
+		public boolean matchesSubpath(Path.ID id);
 	}
 	
 	/**
@@ -102,6 +112,9 @@ public class Content {
 		return new Filter<T>() {
 			public boolean matches(Path.ID id, Content.Type<T> ct) {
 				return ct == contentType && filter.matches(id);
+			}
+			public boolean matchesSubpath(Path.ID id) {
+				return filter.matchesSubpath(id);
 			}
 			public String toString() {
 				return filter.toString();
@@ -122,6 +135,9 @@ public class Content {
 			public boolean matches(Path.ID id, Content.Type<T> ct) {
 				return ct == contentType && filter.matches(id);
 			}
+			public boolean matchesSubpath(Path.ID id) {
+				return filter.matchesSubpath(id);
+			}
 			public String toString() {
 				return filter.toString();
 			}
@@ -139,6 +155,9 @@ public class Content {
 		return new Filter<T>() {
 			public boolean matches(Path.ID id, Content.Type<T> ct) {
 				return f1.matches(id, ct) || f2.matches(id, ct);
+			}
+			public boolean matchesSubpath(Path.ID id) {
+				return f1.matchesSubpath(id) || f2.matchesSubpath(id);
 			}
 			public String toString() {
 				return f1.toString() + "|" + f2.toString();
@@ -158,6 +177,9 @@ public class Content {
 		return new Filter<T>() {
 			public boolean matches(Path.ID id, Content.Type<T> ct) {
 				return f1.matches(id, ct) && f2.matches(id, ct);
+			}
+			public boolean matchesSubpath(Path.ID id) {
+				return f1.matchesSubpath(id) && f2.matchesSubpath(id);
 			}
 			public String toString() {
 				return f1.toString() + "&" + f2.toString();

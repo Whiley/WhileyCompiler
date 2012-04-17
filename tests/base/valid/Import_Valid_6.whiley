@@ -1,5 +1,5 @@
-import * from whiley.lang.* 
-import * from whiley.io.*
+import println from whiley.lang.System
+import println from whiley.io.*
 
 
 void ::main(System.Console sys):

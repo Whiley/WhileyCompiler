@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 real f(real x) requires x > 0, ensures $ < 0:
     return -x

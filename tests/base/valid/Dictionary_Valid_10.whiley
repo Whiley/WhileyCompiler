@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define DL1 as {int=>int}
 define DL2 as {any=>int}

@@ -104,16 +104,10 @@ public final class LocalGenerator {
 				return generateCondition(target, (Expr.AbstractInvoke) condition, environment);
 			} else if (condition instanceof Expr.RecordAccess) {
 				return generateCondition(target, (Expr.RecordAccess) condition, environment);
-			} else if (condition instanceof Expr.Record) {
-				return generateCondition(target, (Expr.Record) condition, environment);
-			} else if (condition instanceof Expr.Tuple) {
-				return generateCondition(target, (Expr.Tuple) condition, environment);
 			} else if (condition instanceof Expr.IndexOf) {
 				return generateCondition(target, (Expr.IndexOf) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
-			} else if (condition instanceof Expr.New) {
-				return generate((Expr.New) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}

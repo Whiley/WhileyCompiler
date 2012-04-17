@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define tenup as int
 define msg1 as {tenup op, [int] data}

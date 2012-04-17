@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define Link as { int data, LinkedList next }
 define LinkedList as null | Link

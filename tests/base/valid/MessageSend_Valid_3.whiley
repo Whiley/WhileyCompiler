@@ -1,4 +1,5 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
+import print from whiley.lang.System
 
 define MyObject as ref { System.Console sys }
 

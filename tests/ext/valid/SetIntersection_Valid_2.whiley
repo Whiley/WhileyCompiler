@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 string f({int} xs, {int} ys, {int} zs) requires zs == xs ∩ ys:
     return Any.toString(xs)
