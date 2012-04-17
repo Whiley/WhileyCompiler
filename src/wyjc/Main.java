@@ -158,7 +158,8 @@ public class Main {
 	 * The command-line options accepted by the main method.
 	 */
 	public static final OptArg[] options = new OptArg[]{
-			new OptArg("version", "Print version information"),
+			new OptArg("help", "Print this help information"),
+			new OptArg("version", "Print version information"),			
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("whileypath", "wp", PATHLIST,
@@ -287,7 +288,7 @@ public class Main {
 				String name = m.getName();
 				if(name.startsWith("set")) {
 					String shortName = name.substring(3).toLowerCase();
-					out.print("  \t" + shortName + "(" + argValues(m) + ")");
+					out.print("    " + shortName + "(" + argValues(m) + ")");
 					// print default value
 					try {
 						Method getter = t.getDeclaredMethod(name.replace("set", "get"));
@@ -355,8 +356,8 @@ public class Main {
 			return 0;
 		}
 		
-		// Otherwise, if no files to compile specified, then print usage
-		if(args.isEmpty()) {
+		// Otherwise, if no files to compile specified, then print usage		
+		if(args.isEmpty() || values.containsKey("help")) {
 			System.out.println("usage: wyjc <options> <source-files>");
 			OptArg.usage(System.out, options);
 			usage(System.out, Pipeline.defaultPipeline);
