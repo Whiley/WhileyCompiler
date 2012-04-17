@@ -533,18 +533,24 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.SetUnion code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
 		// TODO: complete this transform
 		return constraint;
 	}
 
 	protected WFormula transform(Code.SetDifference code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
 		// TODO: complete this transform
 		return constraint;
 	}
 
 	protected WFormula transform(Code.SetIntersect code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
 		// TODO: complete this transform
 		return constraint;
 	}
