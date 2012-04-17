@@ -26,6 +26,8 @@
 package wyjc;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.*;
 
@@ -35,6 +37,7 @@ import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
 import wyil.*;
+import wyil.Pipeline.Template;
 import wyil.lang.WyilFile;
 import wyil.util.*;
 import static wybs.lang.SyntaxError.*;
@@ -154,7 +157,8 @@ public class Main {
 	/**
 	 * The command-line options accepted by the main method.
 	 */
-	public static final OptArg[] options = new OptArg[] {
+	public static final OptArg[] options = new OptArg[]{
+			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),			
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
@@ -162,22 +166,17 @@ public class Main {
 					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", PATHLIST,
-					"Specify where to find whiley standard library files",					
+					"Specify where to find whiley standard library files",
 					new ArrayList<String>()),
 			new OptArg("sourcepath", "sp", PATHLIST,
 					"Specify where to find whiley (source) files",
 					new ArrayList<String>()),
 			new OptArg("outputdir", "d", STRING,
-					"Specify where to place generated class files",
-					null),
-			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
-			new OptArg("C", PIPELINECONFIGURE,
+					"Specify where to place generated class files", null),
+			new OptArg("X", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
-			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage"),
-			new OptArg(
-					"pause",
-					"Do not start compiling until character read from input stream (this is to allow time for visualvm to connect)"),	
-		};
+			new OptArg("A", PIPELINEAPPEND, "append new pipeline stage"),
+			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage")};
 
 	/**
 	 * In the case that no explicit bootpath has been specified on the
@@ -276,6 +275,68 @@ public class Main {
 		return nitems;
 	}
 	
+
+	/**
+	 * Print out the available list of options for the given pipeline 
+	 */
+	public static void usage(PrintStream out, List<Pipeline.Template> stages) {
+		out.println("\nstage configuration:");
+		for(Template template : stages) {
+			Class<? extends Transform> t = template.clazz;
+			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");			
+			for(Method m : t.getDeclaredMethods()) {
+				String name = m.getName();
+				if(name.startsWith("set")) {
+					String shortName = name.substring(3).toLowerCase();
+					out.print("    " + shortName + "(" + argValues(m) + ")");
+					// print default value
+					try {
+						Method getter = t.getDeclaredMethod(name.replace("set", "get"));
+						Object v = getter.invoke(null);						
+						out.print("[default=" + v + "]");						
+					} catch(NoSuchMethodException e) {
+						// just ignore
+					} catch (IllegalArgumentException e) {
+						// just ignore
+					} catch (IllegalAccessException e) {
+						// just ignore						
+					} catch (InvocationTargetException e) {
+						// just ignore						
+					}
+					// print description
+					try {
+						Method desc = t.getDeclaredMethod(name.replace("set", "describe"));
+						Object v = desc.invoke(null);
+						out.print("\t" + v);
+					} catch(NoSuchMethodException e) {
+						// just ignore
+					} catch (IllegalArgumentException e) {
+						// just ignore
+					} catch (IllegalAccessException e) {
+						// just ignore						
+					} catch (InvocationTargetException e) {
+						// just ignore						
+					}
+					out.println();
+				}				
+			}			
+		}
+	}
+	
+	public static String argValues(Method m) {
+		String r = "";
+		for(Class<?> p : m.getParameterTypes()) {
+			if(p == boolean.class) {
+				r = r + "boolean";
+			} else if(p == int.class) {
+				r = r + "int";
+			} else if(p == String.class) {
+				r = r + "string";
+			}
+		}
+		return r;
+	}
+	
 	/**
 	 * The run method is responsible for processing command-line arguments and
 	 * constructing an appropriate Compiler instance.
@@ -295,20 +356,12 @@ public class Main {
 			return 0;
 		}
 		
-		// Otherwise, if no files to compile specified, then print usage
-		if(args.isEmpty()) {
+		// Otherwise, if no files to compile specified, then print usage		
+		if(args.isEmpty() || values.containsKey("help")) {
 			System.out.println("usage: wyjc <options> <source-files>");
 			OptArg.usage(System.out, options);
+			usage(System.out, Pipeline.defaultPipeline);
 			System.exit(1);
-		}
-		
-		if(values.containsKey("pause")) {
-			System.out.println("Press any key to begin...");
-			try {
-				System.in.read();
-			} catch(IOException e) {
-				
-			}
 		}
 		
 		// read out option values
