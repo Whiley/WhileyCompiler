@@ -64,18 +64,26 @@ public class VerificationCheck implements Transform {
 	
 	private String filename;
 	
+	private boolean enabled = false;
+	
 	public VerificationCheck(Builder builder) {
 		
 	}
 	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+	
 	public void apply(WyilFile module) {
-		this.filename = module.filename();
-		for(WyilFile.TypeDef type : module.types()) {
-			transform(type);
-		}		
-		for(WyilFile.Method method : module.methods()) {
-			transform(method);
-		}		
+		if(enabled) {
+			this.filename = module.filename();
+			for(WyilFile.TypeDef type : module.types()) {
+				transform(type);
+			}		
+			for(WyilFile.Method method : module.methods()) {
+				transform(method);
+			}		
+		}
 	}
 	
 	protected void transform(WyilFile.TypeDef def) {
