@@ -5,9 +5,10 @@ import java.util.*;
 import wyil.lang.Code;
 import wyil.lang.Type;
 import wyil.lang.Block;
+import wyil.lang.Value;
 
 /**
- * Decision tres are used for the constraints induced by union types. The key
+ * Decision trees are used for the constraints induced by union types. The key
  * problem arises when we have a union type of two or more constrained types
  * which have related base types. For example:
  * 
@@ -192,54 +193,68 @@ public final class DecisionTree {
 	
 	/**
 	 * Flattern this tree into a sequential block. If the test passes then the
-	 * block exists, otherwise a fail statement is reached.
+	 * block exits, otherwise a fail statement is reached.
 	 * 
 	 * @return
 	 */
 	public Block flattern() {
 		Block blk = new Block(1);
 		String exitLabel = Block.freshLabel();
-		flattern(root,blk,exitLabel); // ?
+		flattern(root,blk,exitLabel,false);
 		blk.append(Code.Label(exitLabel));
 		return blk;
 	}
 	
-	private void flattern(Node node, Block blk, String target) {
-		if(node.constraint != null) {
-			String nextLabel = Block.freshLabel();
-			blk.append(chainBlock(nextLabel, node.constraint));											
-			blk.append(Code.Goto(target));						
-			blk.append(Code.Label(nextLabel));
+	private void flattern(Node node, Block blk, String target, boolean last) {
+		if(node.constraint != null) {	
+			if(last || node.children.isEmpty()) {
+				// no chaining is required in this case
+				blk.append(node.constraint);
+			} else {
+				String nextLabel = Block.freshLabel();
+				blk.append(chainBlock(nextLabel, node.constraint));											
+				blk.append(Code.Goto(target));						
+				blk.append(Code.Label(nextLabel));
+			}
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
-			// zero.
-			blk.append(Code.Goto(target));
+			// zero.			
+			blk.append(Code.Goto(target));				
 			return;
 		}
 
 		ArrayList<Node> children = node.children;
 		String nextLabel = null;
 
-		for(int i=0;i!=children.size();++i) {
-			if(i!=0) {
-				blk.append(Code.Label(nextLabel));
-			}
-			nextLabel = Block.freshLabel();
+		int lastIndex = children.size()-1;
+		for(int i=0;i!=children.size();++i) {			
+			nextLabel =  Block.freshLabel();
 			Node child = children.get(i);
 			
 			if(node != root || children.size() != 1) {
 				// in the very special case that this node is actually the root,
 				// and it only has one child then this test is unnecessary since
 				// the type system will already have enforced it.
-				blk.append(Code.IfType(node.type, Code.THIS_SLOT,
-						Type.Negation(child.type), nextLabel));
+				if(child.constraint == null) {
+					// in this case, we can perform a direct branch.
+					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
+							child.type, target));
+					// FIXME: there is a bug here, since we should fail at this
+					// point. To fix this we need to change the above iftype
+					// into an assert statement; however, no such statement
+					// exists.
+				} else {
+					// normal case
+					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
+							Type.Negation(child.type), nextLabel));
+					flattern(child,blk,target,i == lastIndex);	
+				}
 			}
-			flattern(child,blk,target);				
+			// add label for next case (if appropriate)
+			if(nextLabel != null) {
+				blk.append(Code.Label(nextLabel));
+			}
 		}
-		if(nextLabel != null) {
-			blk.append(Code.Label(nextLabel));
-		}
-		blk.append(Code.Fail("constraint not satisified"));		
 	}
 	
 	/**
@@ -255,8 +270,19 @@ public final class DecisionTree {
 	private static Block chainBlock(String target, Block blk) {	
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
-			if (e.code instanceof Code.Fail) {
-				nblock.append(Code.Goto(target), e.attributes());
+			if (e.code instanceof Code.Assert) {
+				Code.Assert a = (Code.Assert) e.code;				
+				Code.COp iop = Code.invert(a.op);
+				if(iop != null) {
+					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
+				} else {
+					// FIXME: avoid the branch here. This can be done by
+					// ensuring that every Code.COp is invertible.
+					String lab = Block.freshLabel();
+					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+					nblock.append(Code.Goto(target));
+					nblock.append(Code.Label(lab));
+				}
 			} else {
 				nblock.append(e.code, e.attributes());
 			}

@@ -34,7 +34,8 @@ public class StaticInvalidTests extends TestHarness {
   super("tests/base/invalid","tests/base/invalid","sysout");
  }
 
- @Test public void Assert_CompileFail_1_StaticTest() { contextFailTest("Assert_CompileFail_1"); }
+ @Test public void Assert_CompileFail_1_StaticTest() { contextFailTest("Assert_Invalid_1"); }
+ @Test public void Assert_CompileFail_2_StaticTest() { contextFailTest("Assert_Invalid_2"); }
  @Test public void Assign_CompileFail_1_StaticTest() { contextFailTest("Assign_CompileFail_1"); }
  @Test public void Assign_CompileFail_2_StaticTest() { contextFailTest("Assign_CompileFail_2"); }
  @Test public void Assign_CompileFail_3_StaticTest() { contextFailTest("Assign_CompileFail_3"); }

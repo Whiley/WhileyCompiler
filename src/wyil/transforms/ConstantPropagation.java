@@ -131,9 +131,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Assert) {
-			infer((Assert)code,entry,environment);
-		} else if(code instanceof BinOp) {
+		if(code instanceof BinOp) {
 			infer(index,(BinOp)code,entry,environment);
 		} else if(code instanceof Convert) {
 			infer(index,(Convert)code,entry,environment);
@@ -143,7 +141,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Debug)code,entry,environment);
 		}  else if(code instanceof Destructure) {
 			infer((Destructure)code,entry,environment);
-		} else if(code instanceof Fail) {
+		} else if(code instanceof Assert) {
 			// skip
 		} else if(code instanceof FieldLoad) {
 			infer(index,(FieldLoad)code,entry,environment);			
@@ -211,11 +209,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}	
 		
 		return environment;
-	}
-	
-	public void infer(Code.Assert code, Block.Entry entry,
-			Env environment) {
-		
 	}
 	
 	public void infer(int index, Code.BinOp code, Block.Entry entry,
