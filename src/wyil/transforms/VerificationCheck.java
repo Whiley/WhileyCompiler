@@ -44,6 +44,7 @@ import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.set.WSetConstructor;
 import wyone.theory.set.WSetVal;
+import wyone.theory.set.WSets;
 import wyone.theory.tuple.WTupleAccess;
 import wyone.theory.tuple.WTupleConstructor;
 import wyone.theory.tuple.WTupleVal;
@@ -677,8 +678,14 @@ public class VerificationCheck implements Transform {
 			return WNumerics.lessThanEq(lhs, rhs);
 		case LT:
 			return WNumerics.lessThan(lhs, rhs);
+		case SUBSET:
+			return WSets.subset(lhs, rhs);
+		case SUBSETEQ:
+			return WSets.subsetEq(lhs, rhs);
+		case ELEMOF:
+			return WSets.elementOf(lhs, rhs);
 		default:
-			internalFailure("unknown comparator",filename,elem);
+			internalFailure("unknown comparator (" + op + ")",filename,elem);
 			return null;
 		}
 	}
