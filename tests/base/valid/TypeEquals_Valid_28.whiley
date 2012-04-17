@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 [int] f([[real|int]] e):
     if e is [[int]]:

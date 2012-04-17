@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 real f({(int,real)} xs, int m):
     for i,r in xs:

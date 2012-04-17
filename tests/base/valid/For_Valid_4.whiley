@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 (int,int) f({int=>int} dict):
     k = 0

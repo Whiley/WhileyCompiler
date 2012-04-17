@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define msg1 as {int op, int s} where op == 1
 define msg2 as {int op, int s} where op == 2

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 string f({int} xs, {int} ys):
     if xs ⊂ ys:

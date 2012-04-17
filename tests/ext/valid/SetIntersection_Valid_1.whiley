@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 string f({int} xs) requires xs ⊆ {1,2,3}:
     return Any.toString(xs)

@@ -1,5 +1,5 @@
-import * from whiley.lang.System
-import * from whiley.lang.Any
+import println from whiley.lang.System
+import println from whiley.lang.System
 
 int toInt([int] ls):
     r = 0

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define ur4nat as int where $ > 0
 define tur4nat as int where $ > 10

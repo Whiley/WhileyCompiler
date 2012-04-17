@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
     
 define C1 as null|any
 define C2 as null|any

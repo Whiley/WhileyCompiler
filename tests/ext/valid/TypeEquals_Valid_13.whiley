@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define pos as int where $ > 0
 define neg as int where $ < 0

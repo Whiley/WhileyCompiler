@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 // ===========================================
 // Bytecode Structures
@@ -22,7 +22,7 @@ define fun_t as { jvm_t ret, [jvm_t] params }
 define jvm_t as primitive_t | ref_t
 
 define Unit as { int offset, int op }
-define Branch as { int offset, int op, i16 offset }
+define Branch as { int offset, int op, Int.i16 offset }
 
 define VarIndex as { int offset, int op, int index }
 define MethodIndex as { int offset, int op, class_t owner, string name, fun_t type }

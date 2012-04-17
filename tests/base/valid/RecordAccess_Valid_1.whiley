@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define etype as {int mode, ...}
 define Ptype as ref etype

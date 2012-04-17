@@ -1,6 +1,6 @@
 import whiley.lang.*
-import * from whiley.lang.Errors
-import * from whiley.lang.System
+import println from whiley.lang.System
+import println from whiley.lang.System
 
 void ::main(System.Console sys):
     i = 0

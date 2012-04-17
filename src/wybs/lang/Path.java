@@ -27,6 +27,7 @@ package wybs.lang;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.IOException;
 import java.util.*;
 
 public class Path {
@@ -69,6 +70,18 @@ public class Path {
 		public ID parent();
 		
 		/**
+		 * Get a sub ID from this id, which consists of those components between
+		 * start and end (exclusive).
+		 * 
+		 * @param start
+		 *            --- starting component index
+		 * @param start
+		 *            --- one past last component index
+		 * @return
+		 */
+		public ID subpath(int start, int end);
+		
+		/**
 		 * Append a component onto the end of this id.
 		 * 
 		 * @param component
@@ -76,6 +89,36 @@ public class Path {
 		 * @return
 		 */
 		public ID append(String component);
+	}
+	
+	/**
+	 * Represents an abstract or physical item of some sort which is reachable
+	 * from a <code>Root</code>. Valid instances of <code>Item</code> include
+	 * those valid instances of <code>Entry</code> and <code>Folder</code>.
+	 */
+	public interface Item {
+		/**
+		 * Return the identify of this item.
+		 * 
+		 * @return
+		 */
+		public ID id();
+		
+		/**
+		 * Force item to refresh contents from permanent storage (where
+		 * appropriate). For items which have been modified, this operation has
+		 * no effect (i.e. the new contents are retained). For folders, this
+		 * forces sub-folders to be refreshed as well.
+		 */
+		public void refresh() throws IOException;
+
+		/**
+		 * Force item to write contents to permanent storage (where
+		 * appropriate). For items which have not been modified, this operation
+		 * has no effect (i.e. the old contents are retained). For folers, this
+		 * forces sub-folders to be flushed as well.
+		 */
+		public void flush() throws IOException;
 	}
 	
 	/**
@@ -87,14 +130,7 @@ public class Path {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public interface Entry<T> {
-
-		/**
-		 * Return the identify of this entry.
-		 * 
-		 * @return
-		 */
-		public ID id();
+	public interface Entry<T> extends Item {
 
 		/**
 		 * Return the suffix of the item in question. This is necessary to
@@ -170,26 +206,12 @@ public class Path {
 		public Set<Path.Entry<?>> dependencies();
 		
 		/**
-		 * Force entry to refresh contents from permanent storage (where
-		 * appropriate). For items which has been modified, this operation has
-		 * no effect (i.e. the new contents are retained).
-		 */
-		public void refresh() throws Exception;
-
-		/**
-		 * Force entry to write contents to permanent storage (where
-		 * appropriate). For items which have not been modified, this operation
-		 * has no effect (i.e. the old contents are retained).
-		 */
-		public void flush() throws Exception;
-
-		/**
 		 * Read contents of file. Note, however, that this does not mean the
 		 * contents are re-read from permanent storage. If the contents are
 		 * already available in memory, then they will returned without
 		 * accessing permanent storage.
 		 */
-		public T read() throws Exception;
+		public T read() throws IOException;
 
 		/**
 		 * Write the contents of this entry. It is assumed that the contents
@@ -199,25 +221,109 @@ public class Path {
 		 * 
 		 * @param contents
 		 */
-		public void write(T contents) throws Exception;
+		public void write(T contents) throws IOException;
 
 		/**
 		 * Open a generic input stream to the entry.
 		 * 
 		 * @return
-		 * @throws Exception
+		 * @throws IOException
 		 */
-		public InputStream inputStream() throws Exception;
+		public InputStream inputStream() throws IOException;
 
 		/**
 		 * Open a generic output stream to the entry.
 		 * 
 		 * @return
-		 * @throws Exception
+		 * @throws IOException
 		 */
-		public OutputStream outputStream() throws Exception;
+		public OutputStream outputStream() throws IOException;
 	}
 
+	/**
+	 * An folder represents a special kind of entry which contains entries (and
+	 * other folders). As such, it cannot be considered a concrete entry which
+	 * can be read and written in the normal manner. Rather, it provides access
+	 * to entries. For example, in a physical file system, a folder would
+	 * correspond to a directory.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public interface Folder extends Item {
+		
+		/**
+		 * Check whether or not a given entry is contained in this folder;
+		 * 
+		 * @param entry
+		 * @return
+		 */
+		public boolean contains(Path.Entry<?> entry) throws IOException;
+
+		/**
+		 * folder) and content-type is contained in this folder.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 */
+		public boolean exists(ID id, Content.Type<?> ct) throws IOException;
+
+		/**
+		 * Get the entry corresponding to a given ID (taken relative to this
+		 * folder) and content type. If no such entry exists, return null.
+		 * 
+		 * @param id
+		 *            --- id of module to lookup.
+		 * @return
+		 * @throws ResolveError
+		 *             if id is not found.
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 */
+		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct)
+				throws IOException;
+
+		/**
+		 * Get all objects matching a given content filter stored in this folder.
+		 * In the case of no matches, an empty list is returned.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
+		 * @param ct
+		 * @return
+		 */
+		public <T> void getAll(Content.Filter<T> ct, List<Path.Entry<T>> entries)
+				throws IOException;
+
+		/**
+		 * Identify all entries matching a given content filter stored in this
+		 * folder. In the case of no matches, an empty set is returned.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
+		 * @param filter
+		 *            --- filter to match entries with.
+		 * @return
+		 */
+		public <T> void getAll(Content.Filter<T> filter, Set<Path.ID> entries)
+				throws IOException;
+		
+		/**
+		 * Create a new entry in this folder with the given ID (taken relative
+		 * to this folder) and content-type. This will recursively construct
+		 * sub-folders as necessary.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
+		 * @param entry
+		 */		
+		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
+				Path.Entry<?>... sources) throws IOException;		
+	}
+	
 	/**
 	 * Represents the root of a hierarchy of named entries. A instance of root
 	 * may correspond to a file system directory, a Jar file, or some other
@@ -235,16 +341,16 @@ public class Path {
 		 * @param entry
 		 * @return
 		 */
-		public boolean contains(Path.Entry<?> entry);
+		public boolean contains(Path.Entry<?> entry) throws IOException;
 
 		/**
 		 * Check whether or not a given entry and content-type is contained in
 		 * this root.
 		 * 
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 */
-		public boolean exists(ID id, Content.Type<?> ct) throws Exception;
+		public boolean exists(ID id, Content.Type<?> ct) throws IOException;
 
 		/**
 		 * Get the entry corresponding to a given ID and content type. If no
@@ -255,38 +361,38 @@ public class Path {
 		 * @return
 		 * @throws ResolveError
 		 *             if id is not found.
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 */
 		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct)
-				throws Exception;
+				throws IOException;
 
 		/**
 		 * Get all objects matching a given content filter stored in this root.
 		 * In the case of no matches, an empty list is returned.
 		 * 
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 * 
 		 * @param ct
 		 * @return
 		 */
 		public <T> List<Path.Entry<T>> get(Content.Filter<T> ct)
-				throws Exception;
+				throws IOException;
 
 		/**
 		 * Identify all entries matching a given content filter stored in this
 		 * root. In the case of no matches, an empty set is returned.
 		 * 
-		 * @throws Exception
-		 *             --- in case of some failure (e.g. IOException).
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
 		 * 
 		 * @param filter
 		 *            --- filter to match entries with.
 		 * @return
 		 */
 		public <T> Set<Path.ID> match(Content.Filter<T> filter)
-				throws Exception;
+				throws IOException;
 
 		/**
 		 * Create an entry of a given content type at a given path, derived from
@@ -301,10 +407,10 @@ public class Path {
 		 * @param sources
 		 *            --- entries from which this entry is derived.
 		 * @return
-		 * @throws Exception
+		 * @throws IOException
 		 */
 		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct, Path.Entry<?> ...sources)
-				throws Exception;
+				throws IOException;
 		
 		/**
 		 * Force root to flush entries to permanent storage (where appropriate).
@@ -312,14 +418,14 @@ public class Path {
 		 * stored in memory. We must flush them to disk in order to preserve any
 		 * changes that were made.
 		 */
-		public void flush() throws Exception;
+		public void flush() throws IOException;
 
 		/**
 		 * Force root to refresh entries from permanent storage (where
 		 * appropriate). For items which has been modified, this operation has
 		 * no effect (i.e. the new contents are retained).
 		 */
-		public void refresh() throws Exception;
+		public void refresh() throws IOException;
 	}
 
 	/**
@@ -341,6 +447,16 @@ public class Path {
 		 * @return --- true if it matches, otherwise false.
 		 */
 		public boolean matches(Path.ID id);
+		
+		/**
+		 * Check whether a given subpath is matched by this filter. A matching
+		 * subpath does not necessarily identify an exact match; rather, it may
+		 * be an enclosing folder.
+		 * 
+		 * @param id
+		 * @return
+		 */
+		public boolean matchesSubpath(Path.ID id);
 	}
 
 }

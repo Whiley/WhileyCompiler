@@ -94,9 +94,27 @@ public class AntTask extends MatchingTask {
 		}
 	};
 	
-	public static final FileFilter fileFilter = new FileFilter() {
+	/**
+	 * The purpose of the source file filter is simply to ensure only source
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter sourceFileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".whiley") || f.getName().endsWith(".class") || f.isDirectory();
+			return f.getName().endsWith(".whiley") || f.isDirectory();
+		}
+	};
+
+	/**
+	 * The purpose of the binary file filter is simply to ensure only binary
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter binaryFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".class") || f.isDirectory();
 		}
 	};
 	
@@ -203,12 +221,15 @@ public class AntTask extends MatchingTask {
     	try {
     		// first, initialise source and target roots
     		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-        	DirectoryRoot source = new DirectoryRoot(srcdir,fileFilter,registry); 
+        	DirectoryRoot source = new DirectoryRoot(srcdir,sourceFileFilter,registry); 
     		roots.add(source);    
         		        	
         	DirectoryRoot target = null;
         	if(destdir != null) {
-        		target = new DirectoryRoot(destdir,fileFilter,registry);        	
+        		target = new DirectoryRoot(destdir,binaryFileFilter,registry);        	
+        		roots.add(target);
+        	} else {
+        		target = new DirectoryRoot(srcdir,binaryFileFilter,registry);        	
         		roots.add(target);
         	}
         	    	       	
@@ -232,10 +253,10 @@ public class AntTask extends MatchingTask {
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			if (target != null) {
 				rule.add(source, includes, excludes, target,
-						WyilFile.ContentType);
+						WhileyFile.ContentType, WyilFile.ContentType);
 			} else {
 				rule.add(source, includes, excludes, source,
-						WyilFile.ContentType);
+						WhileyFile.ContentType, WyilFile.ContentType);
 			}
 			project.add(rule);
     		

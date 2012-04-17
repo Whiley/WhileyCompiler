@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 // This example was inspired by comments from Stuart Marshall.
 

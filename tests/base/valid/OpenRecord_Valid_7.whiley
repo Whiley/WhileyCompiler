@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define PointAny as {int x, int y, ...}
 define Point2D as {int x, int y}

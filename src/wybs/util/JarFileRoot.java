@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.jar.*;
 
 import wybs.lang.Content;
+import wybs.lang.Content.Type;
 import wybs.lang.Path;
 
 /**
@@ -40,53 +41,100 @@ import wybs.lang.Path;
  * 
  */
 public final class JarFileRoot extends AbstractRoot implements Path.Root {	
-	private final JarFile jf;
+	private final String dir;
+	private Path.Item[] jfContents;
 	
 	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.jf = new JarFile(dir);		
+		this.dir = dir;
+		refresh();
 	}
 	
-	public JarFileRoot(JarFile dir, Content.Registry contentTypes) {
-		super(contentTypes);
-		this.jf = dir;		
-	}
-
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,Path.Entry<?>... sources) throws Exception {
+	@Override
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,Path.Entry<?>... sources) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public void flush() {
-		// no=op
+		// no-op, since jar files are read-only.
 	}
-	
-	public void refresh() {
-		
-	}
-	
-	protected Path.Entry[] contents() throws IOException {		
-		Enumeration<JarEntry> entries = jf.entries();		
-		Path.Entry[] contents = new Path.Entry[jf.size()];
+
+	@Override
+	public void refresh() throws IOException {
+		JarFile jf = new JarFile(dir);
+		Enumeration<JarEntry> entries = jf.entries();
+		this.jfContents = new Path.Item[jf.size()];
 		int i = 0;
 		while (entries.hasMoreElements()) {
-			JarEntry e = entries.nextElement();			
-			String filename = e.getName();					
+			JarEntry e = entries.nextElement();
+			String filename = e.getName();	
 			int lastSlash = filename.lastIndexOf('/');
-			int lastDot = filename.lastIndexOf('.');			
-			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));			
-			String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
-			String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
-			Trie id = pkg.append(name);
-			Entry pe = new Entry(id, jf, e);
-			contentTypes.associate(pe);
-			contents[i++] = pe;
+			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));
+			if(!e.isDirectory()) {				
+				int lastDot = filename.lastIndexOf('.');										
+				String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
+				String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
+				Trie id = pkg.append(name);
+				Entry pe = new Entry(id, jf, e);
+				contentTypes.associate(pe);
+				jfContents[i++] = pe;
+			} else {
+				// folder
+				jfContents[i++] = new Folder(pkg);
+			}
 		}		
-		
-		return contents;
+	}
+	
+	@Override
+	protected Folder root() {
+		return new Folder(Trie.ROOT);
 	}
 	
 	public String toString() {
-		return jf.getName();
+		return dir;
+	}
+	
+	
+	/**
+	 * Represents a directory on a physical file system.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public final class Folder extends AbstractFolder {
+		public Folder(Path.ID id) {
+			super(id);
+		}
+
+		@Override
+		protected Path.Item[] contents() throws IOException {	
+			// This algorithm is straightforward. I use a two loops instead of a
+			// single loop with ArrayList to avoid allocating on the heap. 
+			int count = 0 ;
+			for(int i=0;i!=jfContents.length;++i) {
+				Path.Item item = jfContents[i];				
+				if(item.id().parent() == id) {
+					count++;
+				}
+			}
+			
+			Path.Item[] myContents = new Path.Item[count];
+			count=0;
+			for(int i=0;i!=jfContents.length;++i) {
+				Path.Item item = jfContents[i];
+				if(item.id().parent() == id) {
+					myContents[count++] = item;
+				}
+			}
+			
+			return myContents;
+		}
+
+		@Override
+		public <T> wybs.lang.Path.Entry<T> create(Path.ID id, Content.Type<T> ct, Path.Entry<?>... sources) {
+			throw new UnsupportedOperationException();
+		}
 	}
 	
 	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		

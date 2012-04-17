@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define msg1 as {int op, [int] data}
 define msg2 as {int op, [{int dum}] data}
