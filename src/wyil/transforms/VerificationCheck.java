@@ -400,7 +400,19 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.Invoke code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		
+		Type.FunctionOrMethod ft = code.type;
+		List<Type> ft_params = code.type.params();
+		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		for(int i=0;i!=ft_params.size();++i) {
+			args.add(pop(stack));
+		}
+		Collections.reverse(args);				
+		WVariable rv = new WVariable(code.name.toString(), args);
+		
+		// FIXME: need to support post-condition here.
+		
+		stack.add(rv);
 		return constraint;
 	}
 
