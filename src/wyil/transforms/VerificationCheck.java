@@ -101,7 +101,7 @@ public class VerificationCheck implements Transform {
 		
 	}
 	
-	protected void transform(WyilFile.Method method) {
+	protected void transform(WyilFile.Method method) {		
 		for(WyilFile.Case c : method.cases()) {
 			transform(c);
 		}
@@ -113,7 +113,7 @@ public class VerificationCheck implements Transform {
 		Block body = methodCase.body();				
 		ArrayList<Branch> branches = new ArrayList<Branch>();
 		ArrayList<WExpr> stack = new ArrayList<WExpr>();
-		int[] environment = new int[body.numSlots()];
+		int[] environment = new int[body.numSlots()];			
 		
 		// this is a tad inefficient; but, it's the easiest way to do it.
 		Block blk = new Block(body.numSlots());
@@ -125,7 +125,7 @@ public class VerificationCheck implements Transform {
 		blk.append(body);
 		
 		// take initial branch
-		transform(0,constraint,environment,stack,branches,assumes,body);
+		transform(0,constraint,environment,stack,branches,assumes,blk);
 		
 		// continue any resulting branches
 		while (!branches.isEmpty()) {
@@ -133,7 +133,7 @@ public class VerificationCheck implements Transform {
 			Branch branch = branches.get(last);
 			branches.remove(last);
 			transform(branch.pc, branch.constraint,branch.environment, branch.stack, branches,
-					assumes,body);
+					assumes,blk);
 		}
 	}
 	
@@ -161,7 +161,7 @@ public class VerificationCheck implements Transform {
 			ArrayList<WExpr> stack, ArrayList<Branch> branches, int assumes, Block body) {
 				
 		int bodySize = body.size();		
-		for (int i = pc; i != bodySize; ++i) {
+		for (int i = pc; i != bodySize; ++i) {			
 			Block.Entry entry = body.get(i);			
 			Code code = entry.code;
 			
@@ -312,11 +312,10 @@ public class VerificationCheck implements Transform {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
 		WFormula test = buildTest(code.op, stack, entry);
-
+		
 		if (assume) {
 			// in assumption mode we don't assert the test; rather, we assume
-			// it.
-			constraint = WFormulas.and(test, constraint);
+			// it. 
 		} else {
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
@@ -329,7 +328,7 @@ public class VerificationCheck implements Transform {
 			}
 		}
 		
-		return constraint;
+		return WFormulas.and(test, constraint);
 	}
 	
 	protected WFormula transform(Code.BinOp code, Block.Entry entry,
