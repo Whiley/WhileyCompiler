@@ -31,6 +31,7 @@ import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wyil.lang.*;
 import wyil.lang.Code.*;
+import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Code.*;
 import wyil.Transform;
@@ -42,6 +43,7 @@ import wyone.theory.list.WListConstructor;
 import wyone.theory.list.WListVal;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
+import wyone.theory.quantifier.WBoundedForall;
 import wyone.theory.set.WSetConstructor;
 import wyone.theory.set.WSetVal;
 import wyone.theory.set.WSets;
@@ -535,24 +537,60 @@ public class VerificationCheck implements Transform {
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		WExpr rhs = pop(stack);
 		WExpr lhs = pop(stack);
-		// TODO: complete this transform
-		return constraint;
+		WVariable rv = WVariable.freshVar();
+		WVariable rs = WVariable.freshVar();
+
+		HashMap<WVariable, WExpr> vars = new HashMap();
+		vars.put(rv, rs);
+		WSetConstructor sc = new WSetConstructor(rv);
+		WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs),
+				WSets.subsetEq(sc, rhs));
+
+		stack.add(rs);
+
+		return WFormulas.and(constraint, WSets.subsetEq(lhs, rs),
+				WSets.subsetEq(rhs, rs), new WBoundedForall(true, vars, allc));
 	}
 
 	protected WFormula transform(Code.SetDifference code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		WExpr rhs = pop(stack);
 		WExpr lhs = pop(stack);
-		// TODO: complete this transform
-		return constraint;
+		WVariable rv = WVariable.freshVar();
+		WVariable rs = WVariable.freshVar();
+		HashMap<WVariable, WExpr> vars = new HashMap();
+		vars.put(rv, rs);				
+		WSetConstructor sc = new WSetConstructor(rv);
+		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+				.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
+
+		stack.add(rs);
+		
+		return WFormulas
+				.and(constraint, WSets.subsetEq(lhs, rs), left);		
 	}
 
 	protected WFormula transform(Code.SetIntersect code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		WExpr rhs = pop(stack);
 		WExpr lhs = pop(stack);
-		// TODO: complete this transform
-		return constraint;
+		WVariable rv = WVariable.freshVar();
+		WVariable rs = WVariable.freshVar();
+		HashMap<WVariable, WExpr> vars = new HashMap();
+		vars.put(rv, rs);				
+		WSetConstructor sc = new WSetConstructor(rv);
+		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+				.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
+		
+		vars = new HashMap();
+		vars.put(rv, lhs);
+		WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
+				.subsetEq(sc, rhs), WSets.subsetEq(sc, rs)));
+
+		stack.add(rs);
+		
+		return WFormulas
+				.and(constraint, left, right, WSets.subsetEq(rs, lhs), WSets.subsetEq(rs, rhs));
 	}
 
 	protected WFormula transform(Code.StringAppend code, Block.Entry entry,
