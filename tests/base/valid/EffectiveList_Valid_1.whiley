@@ -1,4 +1,4 @@
-import println from whiley.lang.*
+import println from whiley.lang.System
 
 define rec as {int x, int y}
 

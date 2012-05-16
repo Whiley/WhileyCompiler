@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define sr9nat as int where $ > 0
 define sr9tup as {sr9nat f, int g} where g > f 

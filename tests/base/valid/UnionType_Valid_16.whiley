@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define IntList as {int op, [real] rest}|{int op, int mode}
 

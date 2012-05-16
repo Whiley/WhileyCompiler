@@ -69,6 +69,7 @@ public final class Trie implements Path.ID, Path.Filter {
 	private final Trie parent;
 	private final String component;
 	private final int depth;
+	private final boolean isConcrete;
 	private Trie[] children;
 	private int nchildren;
 
@@ -87,10 +88,16 @@ public final class Trie implements Path.ID, Path.Filter {
 		}
 		this.children = ONE_CHILD;
 		this.nchildren = 0;
+		this.isConcrete = (parent == null || parent.isConcrete)
+				&& !component.contains("*");
 	}
 	
 	public int size() {
 		return depth + 1;
+	}
+	
+	public boolean isConcrete() {
+		return isConcrete;
 	}
 	
 	public String get(final int index) {
@@ -104,15 +111,35 @@ public final class Trie implements Path.ID, Path.Filter {
 	}
 	
 	public boolean matches(Path.ID id) {
-		return match(id, 0, 0);		
+		return match(id, 0, 0, false);		
 	}
-		
+	
+	public boolean matchesSubpath(Path.ID id) {
+		return match(id, 0, 0, true);		
+	}
+	
 	public String last() {
 		return component;
 	}
 	
 	public Trie parent() {
 		return parent;
+	}
+	
+	public Trie subpath(int start, int end) {
+		Trie id = Trie.ROOT;
+		for(int i=start;i!=end;++i) {
+			// TODO: this could be made more efficient
+			id = id.append(get(i));
+		}
+		return id;
+	}
+	public Trie parent(int depth) {
+		if(this.depth < depth) {
+			return this;
+		} else {
+			return parent.parent(depth);
+		}
 	}
 	
 	public Iterator<String> iterator() {
@@ -254,27 +281,30 @@ public final class Trie implements Path.ID, Path.Filter {
 	// Private Methods
 	// =========================================================
 	
-	private boolean match(Path.ID id, int idIndex, int myIndex) {
-		int mySize = depth+1;
+	private boolean match(Path.ID id, int idIndex, int myIndex, boolean submatch) {
+		int mySize = depth + 1;
 		if (myIndex == mySize && idIndex == id.size()) {
 			return true;
-		} else if (myIndex == mySize || idIndex == id.size()) {
+		} else if(idIndex == id.size()) {
+			return submatch;
+		} else if (myIndex == mySize) {
 			return false;
 		}
+		
 		String myComponent = get(myIndex);
 		if (myComponent.equals("*")) {
-			return match(id, idIndex + 1, myIndex + 1);
+			return match(id, idIndex + 1, myIndex + 1, submatch);
 		} else if (myComponent.equals("**")) {
 			myIndex++;
 			for (int i = idIndex; i <= id.size(); ++i) {
-				if (match(id, i, myIndex)) {
+				if (match(id, i, myIndex, submatch)) {
 					return true;
 				}
 			}
 			return false;
 		} else {
 			return myComponent.equals(id.get(idIndex))
-					&& match(id, idIndex + 1, myIndex + 1);
+					&& match(id, idIndex + 1, myIndex + 1, submatch);
 		}
 	}
 	
@@ -321,8 +351,11 @@ public final class Trie implements Path.ID, Path.Filter {
 	
 	public static void main(String[] args) {
 		Trie t1 = ROOT.append("Hello");
-		Trie t2 = t1.append("World");
-		Trie t3 = t1.append("Blah");
+		Trie t2 = t1.append("*");
+		Trie t3 = t2.append("Blah");
+		System.out.println("T1: " + t3.parent(1));
+		System.out.println("T2: " + t3.parent(2));
+		System.out.println("T3: " + t3.parent(3));
 		Trie[] ids = {ROOT,t2,t3,t1};
 		for(Trie id : ids) {
 			System.out.println(id + "(" + id.size() + ")");

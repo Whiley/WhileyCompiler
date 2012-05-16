@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define ilist as int | [int]
 define rlist as real | [int]

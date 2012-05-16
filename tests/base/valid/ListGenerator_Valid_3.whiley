@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 string f([int] x):
      return Any.toString(|x|)

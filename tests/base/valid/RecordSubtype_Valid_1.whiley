@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 // this test tests distributivity of subtyping
 define R1 as { null|int x }

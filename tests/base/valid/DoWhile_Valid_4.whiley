@@ -1,4 +1,4 @@
-import * from whiley.lang.System
+import println from whiley.lang.System
 
 define Leaf as int
 define Link as { LinkedList next }

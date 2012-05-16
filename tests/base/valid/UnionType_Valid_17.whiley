@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define State as { string input, int pos }
 define Expr as real | { string id }
@@ -7,14 +7,14 @@ define SExpr as SyntaxError | Expr
 
 (SExpr, State) parseTerm(State st):
     if st.pos < |st.input|:
-        if isDigit(st.input[st.pos]):
+        if Char.isDigit(st.input[st.pos]):
             return parseNumber(st)
     return {err: "unknown expression encountered"},st
 
 (Expr, State) parseNumber(State st):    
     n = 0
     // inch forward until end of identifier reached
-    while st.pos < |st.input| && isDigit(st.input[st.pos]):
+    while st.pos < |st.input| && Char.isDigit(st.input[st.pos]):
         n = n + st.input[st.pos] - '0'
         st.pos = st.pos + 1    
     return n, st

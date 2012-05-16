@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 void ::main(System.Console sys):
     x = {f1:2,f2:3}

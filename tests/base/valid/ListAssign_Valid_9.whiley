@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define PAWN as 0
 define KNIGHT as 1 

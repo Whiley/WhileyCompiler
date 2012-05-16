@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define Expr as real | { Expr lhs, int data } | [Expr]
 define SubExpr as real | { SubExpr lhs, int data }

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define Rec1 as {int x}
 define Rec2 as {real x}

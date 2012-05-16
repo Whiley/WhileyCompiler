@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define bop as {int x, int y}
 define expr as int|bop

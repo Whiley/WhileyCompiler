@@ -91,7 +91,7 @@ public class TestHarness {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-sp",sourcepath,"-wp", "lib/wyrt.jar",name);
+		int r = compile("-sp",sourcepath,"-wp", "lib/wyrt.jar","-X","verification:enable=true",name);
 		
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");

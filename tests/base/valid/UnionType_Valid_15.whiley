@@ -1,4 +1,5 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
+import nat from whiley.lang.Int
 
 define nlist as int|[nat]
 

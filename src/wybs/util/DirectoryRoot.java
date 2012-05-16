@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.Content;
+import wybs.lang.Content.Filter;
 import wybs.lang.Path;
 import wybs.lang.Content.Registry;
 import wybs.lang.Content.Type;
@@ -51,7 +52,7 @@ public final class DirectoryRoot extends AbstractRoot {
 	};
 	
 	private final FileFilter filter;		
-	private final java.io.File dir;		
+	private final File dir;
 	
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
@@ -64,9 +65,9 @@ public final class DirectoryRoot extends AbstractRoot {
 	 * @throws IOException
 	 */
 	public DirectoryRoot(String path, Content.Registry contentTypes) throws IOException {
-		super(contentTypes);
-		this.dir = new File(path);				
-		this.filter = NULL_FILTER;		
+		super(contentTypes);		
+		this.dir = new File(path);
+		this.filter = NULL_FILTER;	 
 	}
 	
 	/**
@@ -128,33 +129,14 @@ public final class DirectoryRoot extends AbstractRoot {
 	public String toString() {
 		return dir.getPath();
 	}
-
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
-			Path.Entry<?>... sources) throws Exception {
-		Path.Entry<T> e = super.get(id,ct);
-		if(e == null) {			
-			String physID = id.toString();
-			if(File.separatorChar != '/') {
-				physID = physID.replace('/',File.separatorChar);
-			}
-			physID = physID + "." + contentTypes.suffix(ct);
-			File nfile = new File(dir.getAbsolutePath() + File.separatorChar + physID);			
-			e = new Entry(id,nfile);
-			e.associate(ct, null);
-			super.insert(e);
-		}
-		return e;
-	}
 	
-	protected Path.Entry<?>[] contents() throws IOException {
-		ArrayList<Path.Entry<?>> contents = new ArrayList<Path.Entry<?>>();
-		traverse(dir,Trie.ROOT,contents);
-		return contents.toArray(new Path.Entry[contents.size()]);
+	@Override
+	protected Folder root() {
+		return new Folder(Trie.ROOT);
 	}
-	
 	
 	/**
-	 * A WFile is a file on the file system which represents a Whiley module. The
+	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
 	 * source file and/or a binary wyil file.
 	 * 
@@ -191,44 +173,100 @@ public final class DirectoryRoot extends AbstractRoot {
 			return suffix;
 		}
 		
-		public InputStream inputStream() throws Exception {
+		public InputStream inputStream() throws IOException {
 			return new FileInputStream(file);
 		}
 		
-		public OutputStream outputStream() throws Exception {
+		public OutputStream outputStream() throws IOException {
 			return new FileOutputStream(file);
+		}
+		
+		public String toString() {
+			return file.toString();
 		}
 	}
 	
 	/**
-	 * Recursively traverse a file system from a given location.
+	 * Represents a directory on a physical file system.
 	 * 
-	 * @param location
-	 *            --- current directory in file system.
-	 * @param pkg
-	 *            --- package that location represents.
-	 * @param entries
-	 *            --- list of entries being accumulated into.
+	 * @author David J. Pearce
+	 *
 	 */
-	private void traverse(File location, Trie id,
-			ArrayList<Path.Entry<?>> contents) throws IOException {
-		if (location.exists() && location.isDirectory()) {
-			for (File file : location.listFiles(filter)) {
-				if (file.isDirectory()) {
-					traverse(file, id.append(file.getName()), contents);
-				} else {
+	public final class Folder extends AbstractFolder {
+		public Folder(Path.ID id) {
+			super(id);
+		}
+		
+		@Override
+		protected Path.Item[] contents() throws IOException {			
+			File myDir = new File(dir, id.toString().replace('/', File.separatorChar));		
+			
+			if (myDir.exists() && myDir.isDirectory()) {
+				File[] files = myDir.listFiles(filter);
+				Path.Item[] items = new Path.Item[files.length];
+				int count = 0;
+				for(int i=0;i!=files.length;++i) {
+					File file = files[i];
 					String filename = file.getName();
-					int i = filename.lastIndexOf('.');
-					if (i > 0) {
-						String name = filename.substring(0, i);
-						String suffix = filename.substring(i + 1);
-						Path.ID oid = id.append(name);
-						Entry e = new Entry(oid, file);
-						contentTypes.associate(e);
-						contents.add(e);
+					if (file.isDirectory()) {
+						items[count++] = new Folder(id.append(filename));
+					} else {
+						int idx = filename.lastIndexOf('.');
+						if (idx > 0) {
+							String name = filename.substring(0, idx);
+							Path.ID oid = id.append(name);
+							Entry e = new Entry(oid, file);
+							contentTypes.associate(e);
+							items[count++] = e;
+						}
 					}
 				}
+				
+				if(count != items.length) {
+					// trim the end since we didn't use all allocated elements.
+					return Arrays.copyOf(items,count);
+				} else {
+					// minor optimisation
+					return items;
+				}
+			} else {
+				return new Path.Item[0];
 			}
+		}
+
+		@Override
+		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct,
+				Path.Entry<?>... sources) throws IOException {	
+			if (nid.size() == 1) {
+				// attempting to create an entry in this folder
+				Path.Entry<T> e = super.get(nid.subpath(0, 1), ct);
+				if (e == null) {
+					// Entry doesn't already exist, so create it
+					nid = id.append(nid.get(0));
+					String physID = nid.toString().replace('/',
+							File.separatorChar);
+					physID = physID + "." + contentTypes.suffix(ct);
+					File nfile = new File(dir.getAbsolutePath()
+							+ File.separatorChar + physID);
+					e = new Entry(nid, nfile);
+					e.associate(ct, null);
+					super.insert(e);
+				}
+				return e;
+			} else {
+				// attempting to create entry in subfolder.
+				Path.Folder folder = getFolder(nid.get(0));
+				if (folder == null) {
+					// Folder doesn't already exist, so create it.
+					folder = new Folder(id.append(nid.get(0)));
+					super.insert(folder);
+				}
+				return folder.create(nid.subpath(1, nid.size()), ct, sources);
+			}
+		}
+		
+		public String toString() {
+			return dir + ":" + id;
 		}
 	}
 }

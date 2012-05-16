@@ -1,5 +1,5 @@
-import * from whiley.lang.*
-import * from whiley.lang.*
+import println from whiley.lang.System
+import println from whiley.lang.System
 
 define Queue as ref { [int] items }
 	 

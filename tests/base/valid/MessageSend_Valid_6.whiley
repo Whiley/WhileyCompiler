@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define wmcr6tup as {int x, int y}
 define Proc as ref { int state }

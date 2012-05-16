@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define Point as {int x, int y, ...}
 define VecPoint as [Point] | Point

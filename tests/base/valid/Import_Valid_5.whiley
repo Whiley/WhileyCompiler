@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 import toString from whiley.lang.Any
 import toString from whiley.lang.Any
 
