@@ -293,8 +293,7 @@ public class Path {
 		 * @param ct
 		 * @return
 		 */
-		public <T> void getAll(List<Path.Entry<T>> entries)
-				throws IOException;
+		public List<Path.Entry<?>> getAll() throws IOException;
 		
 		/**
 		 * Get all objects matching a given content filter stored in this folder
