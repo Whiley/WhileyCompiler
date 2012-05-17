@@ -284,18 +284,6 @@ public class Path {
 				throws IOException;
 
 		/**
-		 * Get all objects matching stored in this folder (including its
-		 * subfolders). In the case of no matches, an empty list is returned.
-		 * 
-		 * @throws IOException
-		 *             --- in case of some I/O failure.
-		 * 
-		 * @param ct
-		 * @return
-		 */
-		public <T> void getAll(List<Entry<T>> entries) throws IOException;
-		
-		/**
 		 * Get all objects matching a given content filter stored in this folder.
 		 * In the case of no matches, an empty list is returned.
 		 * 
