@@ -25,6 +25,7 @@
 
 package wyil;
 
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -64,16 +65,17 @@ public class Pipeline {
 	public static final List<Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Template>() {
 				{														
-					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
+					add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
 					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
-					// add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));										
+					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					// Constant Propagation is disabled as there are some
 					// serious problems with that phase.
 					//add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
+					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
 					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					// add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 				}
@@ -86,7 +88,7 @@ public class Pipeline {
 	 */
 	static {
 		register(BackPropagation.class);
-		register(DefiniteAssignment.class);
+		register(DefiniteAssignmentCheck.class);
 		register(ConstantPropagation.class);
 		register(ModuleCheck.class);
 		register(ConstraintInline.class);
@@ -94,7 +96,8 @@ public class Pipeline {
 		register(WyilFileWriter.class);
 		register(DeadCodeElimination.class);
 		register(LiveVariablesAnalysis.class);
-	}
+		register(VerificationCheck.class);
+	}	
 	
 	/**
 	 * Set a specific option on a given pipeline stage. The previous value of
@@ -178,7 +181,7 @@ public class Pipeline {
 	 * @author David J. Pearce
 	 */
 	public static class Template {					
-		Class<? extends Transform> clazz;
+		public final Class<? extends Transform> clazz;
 		public Map<String,Object> options;
 		
 		public Template(Class<? extends Transform> clazz, 

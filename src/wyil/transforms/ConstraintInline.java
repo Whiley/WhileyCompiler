@@ -289,20 +289,22 @@ public class ConstraintInline implements Transform {
 			// TODO: mark as check block
 			blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
 			blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
-			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
 			blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
-			blk.append(Code.LengthOf(code.type),attributes(elem));
-			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
-			blk.append(Code.Label(falseLabel),attributes(elem));
-			blk.append(Code.Fail("index out of bounds"),attributes(elem));
-			blk.append(Code.Label(exitLabel),attributes(elem));
-			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
+			blk.append(Code.Assert(Type.T_INT, Code.COp.GTEQ,
+					"index out of bounds (negative)"), attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
+			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+					attributes(elem));
+			blk.append(Code.LengthOf(code.type), attributes(elem));
+			blk.append(Code.Assert(Type.T_INT, Code.COp.LT,
+					"index out of bounds (not less than length)"),
+					attributes(elem));
+			blk.append(Code.Label(exitLabel), attributes(elem));
+			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+					attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
 			return blk;		
 		} else {
 			return null; // FIXME
@@ -333,19 +335,19 @@ public class ConstraintInline implements Transform {
 		
 		if(code.bop == Code.BOp.DIV) {
 			Block blk = new Block(0);
-			// TODO: mark as check block
-			blk.append(Code.Store(code.type, freeSlot),attributes(elem));
-			String label = Block.freshLabel();
-			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
-			if(code.type instanceof Type.Int) { 
-				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+			blk.append(Code.Store(code.type, freeSlot), attributes(elem));
+			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
+			if (code.type instanceof Type.Int) {
+				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),
+						attributes(elem));
 			} else {
-				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),attributes(elem));
+				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),
+						attributes(elem));
 			}
-			blk.append(Code.IfGoto(code.type, Code.COp.NEQ, label),attributes(elem));
-			blk.append(Code.Fail("division by zero"),attributes(elem));
-			blk.append(Code.Label(label),attributes(elem));
-			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
+			blk.append(
+					Code.Assert(code.type, Code.COp.NEQ, "division by zero"),
+					attributes(elem));
+			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
 			return blk;
 		} 
 		

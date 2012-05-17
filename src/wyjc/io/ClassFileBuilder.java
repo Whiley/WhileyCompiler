@@ -422,9 +422,7 @@ public class ClassFileBuilder {
 			ArrayList<UnresolvedHandler> handlers, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
-			if(code instanceof Assert) {
-				 // translate((Assert)code,freeSlot,bytecodes);
-			} else if(code instanceof BinOp) {
+			if(code instanceof BinOp) {
 				 translate((BinOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Convert) {
 				 translate((Convert)code,freeSlot,constants,bytecodes);
@@ -436,8 +434,8 @@ public class ClassFileBuilder {
 				 translate((Destructure)code,freeSlot,bytecodes);
 			} else if(code instanceof LoopEnd) {
 				 translate((LoopEnd)code,freeSlot,bytecodes);
-			} else if(code instanceof Fail) {
-				 translate((Fail)code,freeSlot,bytecodes);
+			} else if(code instanceof Assert) {
+				 translate((Assert)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof FieldLoad) {
 				 translate((FieldLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof ForAll) {
@@ -445,7 +443,8 @@ public class ClassFileBuilder {
 			} else if(code instanceof Goto) {
 				 translate((Goto)code,freeSlot,bytecodes);
 			} else if(code instanceof IfGoto) {
-				translate((IfGoto) code, entry, freeSlot, bytecodes);
+				IfGoto ifgoto = (IfGoto) code;
+				translateIfGoto(ifgoto.type,ifgoto.op,ifgoto.target, entry, freeSlot, bytecodes);
 			} else if(code instanceof IfType) {
 				translate((IfType) code, entry, freeSlot, constants, bytecodes);
 			} else if(code instanceof IndirectInvoke) {
@@ -766,10 +765,7 @@ public class ClassFileBuilder {
 				String target = p.second();
 				translate(value,freeSlot+1,bytecodes);
 				bytecodes.add(new Bytecode.Load(freeSlot, convertType(c.type)));				
-				// Now, construct fake bytecode to do the comparison.
-				// FIXME: bug if types require some kind of coercion
-				Code.IfGoto ifgoto = Code.IfGoto(value.type(),Code.COp.EQ,target);			
-				translate(ifgoto,entry,freeSlot+1,bytecodes);
+				translateIfGoto(value.type(),Code.COp.EQ,target,entry,freeSlot+1,bytecodes);
 			}
 			bytecodes.add(new Bytecode.Goto(c.defaultTarget));
 		}
@@ -817,25 +813,25 @@ public class ClassFileBuilder {
 		handlers.add(trampolineHandler);
 	}
 	
-	public void translate(Code.IfGoto c, Entry stmt, int freeSlot,
+	public void translateIfGoto(Type c_type, Code.COp cop, String target, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
 				
-		JvmType type = convertType(c.type);
-		if(c.type == Type.T_BOOL) {
+		JvmType type = convertType(c_type);
+		if(c_type == Type.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an
 			// object on the JVM stack. Therefore, we need to use the "if_cmp"
 			// bytecode, rather than calling .equals() and using "if" bytecode.
-			switch(c.op) {
+			switch(cop) {
 			case EQ:				
-				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.EQ, type, c.target));
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.EQ, type, target));
 				break;			
 			case NEQ:				
-				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, c.target));				
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, target));				
 				break;			
 			}
-		} else if(c.type == Type.T_CHAR || c.type == Type.T_BYTE) {
+		} else if(c_type == Type.T_CHAR || c_type == Type.T_BYTE) {
 			int op;
-			switch(c.op) {
+			switch(cop) {
 			case EQ:				
 				op = Bytecode.IfCmp.EQ;
 				break;
@@ -858,15 +854,15 @@ public class ClassFileBuilder {
 				internalFailure("unknown if condition encountered",filename,stmt);
 				return;
 			}
-			bytecodes.add(new Bytecode.IfCmp(op, T_BYTE,c.target));
+			bytecodes.add(new Bytecode.IfCmp(op, T_BYTE,target));
 		} else {
 			// Non-primitive case. Just use the Object.equals() method, followed
 			// by "if" bytecode.			
 			int op;
-			switch(c.op) {
+			switch(cop) {
 			case EQ:
 			{				
-				if(Type.isSubtype(c.type, Type.T_NULL)) {
+				if(Type.isSubtype(c_type, Type.T_NULL)) {
 					// this indicates an interesting special case. The left
 					// handside of this equality can be null. Therefore, we
 					// cannot directly call "equals()" on this method, since
@@ -884,7 +880,7 @@ public class ClassFileBuilder {
 			}
 			case NEQ:
 			{
-				if (Type.isSubtype(c.type, Type.T_NULL)) {
+				if (Type.isSubtype(c_type, Type.T_NULL)) {
 					// this indicates an interesting special case. The left
 					// handside of this equality can be null. Therefore, we
 					// cannot directly call "equals()" on this method, since
@@ -967,7 +963,7 @@ public class ClassFileBuilder {
 			}
 			
 			// do the jump
-			bytecodes.add(new Bytecode.If(op, c.target));
+			bytecodes.add(new Bytecode.If(op, target));
 		}
 	}
 	
@@ -1138,8 +1134,10 @@ public class ClassFileBuilder {
 		}		
 	}
 	
-	public void translate(Code.Fail c, int freeSlot,
+	public void translate(Code.Assert c, Block.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
+		String lab = freshLabel();
+		translateIfGoto(c.type, c.op, lab, entry, freeSlot, bytecodes);
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.LoadConst(c.msg));
@@ -1147,6 +1145,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_RUNTIMEEXCEPTION, "<init>",
 				ftype, Bytecode.SPECIAL));
 		bytecodes.add(new Bytecode.Throw());
+		bytecodes.add(new Bytecode.Label(lab));
 	}
 	
 	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {

@@ -74,6 +74,84 @@ public final class LocalGenerator {
 	}
 	
 	/**
+	 * Translate a source-level assertion into a wyil block, using a given
+	 * environment mapping named variables to slots. If the condition evaluates
+	 * to true, then control continues as normal. Otherwise, an assertion
+	 * failure is raised with the given message.
+	 * 
+	 * @param message
+	 *            --- message to report if condition is false.
+	 * @param condition
+	 *            --- source-level condition to be translated
+	 * @param environment
+	 *            --- mapping from variable names to to slot numbers.
+	 * @return
+	 */
+	public Block generateAssertion(String message, Expr condition,
+			 HashMap<String, Integer> environment) {
+		try {
+			if (condition instanceof Expr.Constant
+					|| condition instanceof Expr.ConstantAccess
+					|| condition instanceof Expr.LocalVariable
+					|| condition instanceof Expr.UnOp
+					|| condition instanceof Expr.AbstractInvoke
+					|| condition instanceof Expr.RecordAccess
+					|| condition instanceof Expr.IndexOf
+					|| condition instanceof Expr.Comprehension) {
+				// fall through to default case
+			} else if (condition instanceof Expr.BinOp) {
+				return generateAssertion(message, (Expr.BinOp) condition, environment);
+			} else {				
+				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
+			}
+			
+			// The default case simply compares the computed value against
+			// true. In some cases, we could do better. For example, !(x < 5)
+			// could be rewritten into x>=5. 
+			
+			Block blk = generate(condition,environment);
+			blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
+			blk.append(Code.Assert(Type.T_BOOL, Code.COp.EQ, message),attributes(condition));
+			return blk;
+		} catch (SyntaxError se) {
+			throw se;
+		} catch (Exception ex) {			
+			internalFailure(ex.getMessage(), context, condition, ex);
+		}
+		return null;
+	}
+	
+	protected Block generateAssertion(String message, Expr.BinOp v,
+			HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		Expr.BOp bop = v.op;
+		
+		if (bop == Expr.BOp.OR) {
+			String lab = Block.freshLabel();
+			blk.append(generateCondition(lab, v.lhs, environment));
+			blk.append(generateAssertion(message, v.rhs, environment));
+			blk.append(Code.Label(lab));
+			return blk;
+		} else if (bop == Expr.BOp.AND) {
+			blk.append(generateAssertion(message, v.lhs, environment));
+			blk.append(generateAssertion(message, v.rhs, environment));
+			return blk;
+		} 
+		
+		// TODO: there are some cases which will break here. In particular,
+		// those involving type tests. If/When WYIL changes to be register based
+		// this should fall out in the wash.
+		
+		Code.COp cop = OP2COP(bop,v);
+		
+		blk.append(generate(v.lhs, environment));			
+		blk.append(generate(v.rhs, environment));					
+		blk.append(Code.Assert(v.srcType.raw(), cop, message), attributes(v));
+		
+		return blk;
+	}
+
+	/**
 	 * Translate a source-level condition into a wyil block, using a given
 	 * environment mapping named variables to slots. If the condition evaluates
 	 * to true, then control is transferred to the given target. Otherwise,
@@ -92,25 +170,31 @@ public final class LocalGenerator {
 		try {
 			if (condition instanceof Expr.Constant) {
 				return generateCondition(target, (Expr.Constant) condition, environment);
-			} else if (condition instanceof Expr.LocalVariable) {
-				return generateCondition(target, (Expr.LocalVariable) condition, environment);
-			} else if (condition instanceof Expr.ConstantAccess) {
-				return generateCondition(target, (Expr.ConstantAccess) condition, environment);
-			} else if (condition instanceof Expr.BinOp) {
-				return generateCondition(target, (Expr.BinOp) condition, environment);
+			} else if (condition instanceof Expr.ConstantAccess
+					|| condition instanceof Expr.LocalVariable
+					|| condition instanceof Expr.AbstractInvoke
+					|| condition instanceof Expr.RecordAccess
+					|| condition instanceof Expr.IndexOf) {
+				// fall through to default case
 			} else if (condition instanceof Expr.UnOp) {
 				return generateCondition(target, (Expr.UnOp) condition, environment);
-			} else if (condition instanceof Expr.AbstractInvoke) {
-				return generateCondition(target, (Expr.AbstractInvoke) condition, environment);
-			} else if (condition instanceof Expr.RecordAccess) {
-				return generateCondition(target, (Expr.RecordAccess) condition, environment);
-			} else if (condition instanceof Expr.IndexOf) {
-				return generateCondition(target, (Expr.IndexOf) condition, environment);
+			} else if (condition instanceof Expr.BinOp) {
+				return generateCondition(target, (Expr.BinOp) condition, environment);
 			} else if (condition instanceof Expr.Comprehension) {
 				return generateCondition(target, (Expr.Comprehension) condition, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
+			
+			// The default case simply compares the computed value against
+			// true. In some cases, we could do better. For example, !(x < 5)
+			// could be rewritten into x>=5. 
+			
+			Block blk = generate(condition,environment);
+			blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
+			blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(condition));
+			return blk;
+			
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {			
@@ -130,31 +214,7 @@ public final class LocalGenerator {
 		}
 		return blk;
 	}
-
-	private Block generateCondition(String target, Expr.LocalVariable v, 
-			HashMap<String, Integer> environment) throws ResolveError {
-		
-		Block blk = new Block(environment.size());				
-		blk.append(Code.Load(Type.T_BOOL, environment.get(v.var)));
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL,Code.COp.EQ, target),attributes(v));			
-
-		return blk;
-	}
 	
-	private Block generateCondition(String target, Expr.ConstantAccess v, 
-			HashMap<String, Integer> environment) throws ResolveError {
-		
-		Block blk = new Block(environment.size());		
-		Value val = v.value;
-		
-		// Obviously, this will be evaluated one way or another.
-		blk.append(Code.Const(val));
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(v.result().raw(),Code.COp.EQ, target),attributes(v));			
-		return blk;
-	}
-		
 	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
 		
 		Expr.BOp bop = v.op;
@@ -267,28 +327,7 @@ public final class LocalGenerator {
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 		return null;
 	}
-
-	private Block generateCondition(String target, Expr.IndexOf v, HashMap<String,Integer> environment) {
-		Block blk = generate(v, environment);
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
-		return blk;
-	}
 	
-	private Block generateCondition(String target, Expr.RecordAccess v, HashMap<String,Integer> environment) {
-		Block blk = generate(v, environment);		
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));		
-		return blk;
-	}
-
-	private Block generateCondition(String target, Expr.AbstractInvoke v, HashMap<String,Integer> environment) throws ResolveError {
-		Block blk = generate((Expr) v, environment);	
-		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
-		return blk;
-	}
-
 	private Block generateCondition(String target, Expr.Comprehension e,  
 			HashMap<String,Integer> environment) {
 		
@@ -1011,18 +1050,38 @@ public final class LocalGenerator {
 		return nblock.relabel();
 	}
 	
+	/**
+	 * The chainBlock method takes a block and replaces every fail statement
+	 * with a goto to a given label. This is useful for handling constraints in
+	 * union types, since if the constraint is not met that doesn't mean its
+	 * game over.
+	 * 
+	 * @param target
+	 * @param blk
+	 * @return
+	 */
 	private static Block chainBlock(String target, Block blk) {	
 		Block nblock = new Block(blk.numInputs());
 		for (Block.Entry e : blk) {
-			if (e.code instanceof Code.Fail) {
-				nblock.append(Code.Goto(target), e.attributes());
+			if (e.code instanceof Code.Assert) {
+				Code.Assert a = (Code.Assert) e.code;				
+				Code.COp iop = Code.invert(a.op);
+				if(iop != null) {
+					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
+				} else {
+					// FIXME: avoid the branch here. This can be done by
+					// ensuring that every Code.COp is invertible.
+					String lab = Block.freshLabel();
+					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+					nblock.append(Code.Goto(target));
+					nblock.append(Code.Label(lab));
+				}
 			} else {
 				nblock.append(e.code, e.attributes());
 			}
 		}
 		return nblock.relabel();
 	}
-	
 	
 	/**
 	 * The attributes method extracts those attributes of relevance to wyil, and

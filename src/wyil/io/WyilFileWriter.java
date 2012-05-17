@@ -46,11 +46,11 @@ import wyil.Transform;
  */
 public final class WyilFileWriter implements Transform {
 	private PrintWriter out;
-	private boolean writeLabels;
-	private boolean writeAttributes;
-	private boolean writeSlots;
+	private boolean writeLabels = getLabels();
+	private boolean writeAttributes = getAttributes();
+	private boolean writeSlots = getSlots();
 		
-	public WyilFileWriter(Builder builder) {
+	public WyilFileWriter(wybs.lang.Builder builder) {
 
 	}
 	
@@ -58,12 +58,36 @@ public final class WyilFileWriter implements Transform {
 		writeLabels = flag;
 	}
 	
+	public static boolean getLabels() {
+		return false;
+	}
+	
+	public static String describeLabels() {
+		return "Include all labels in output";
+	}
+	
 	public void setAttributes(boolean flag) {
 		writeAttributes = flag;
 	}
 	
+	public static boolean getAttributes() {
+		return false;
+	}
+	
+	public static String describeAttributes() {
+		return "Include bytecode attributes in output";
+	}
+	
 	public void setSlots(boolean flag) {
 		writeSlots = flag;
+	}
+	
+	public static boolean getSlots() {
+		return false;
+	}
+	
+	public static String describeSlots() {
+		return "Include raw slow numbers in output";
 	}
 	
 	public void apply(WyilFile module) throws IOException {

@@ -77,15 +77,15 @@ public abstract class Code {
 	// ===============================================================
 	
 	/**
-	 * Construct an <code>assert</code> bytecode which identifies a sequence of
-	 * bytecodes which represent a runtime assertion.
+	 * Construct an <code>assert</code> bytecode which raises an assertion
+	 * failure with the given if the given condition evaluates to false.
 	 * 
-	 * @param label
-	 *            --- end of block.
+	 * @param message
+	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assert Assert(String label) {
-		return get(new Assert(label));
+	public static Assert Assert(Type type, COp cop, String message) {
+		return get(new Assert(type,cop,message));
 	}
 	
 	public static BinOp BinOp(Type type, BOp op) {
@@ -119,18 +119,7 @@ public abstract class Code {
 	public static LoopEnd End(String label) {
 		return get(new LoopEnd(label));
 	}
-	
-	/**
-	 * Construct a <code>fail</code> bytecode which indicates a runtime failure.
-	 * 
-	 * @param label
-	 *            --- end of block.
-	 * @return
-	 */
-	public static Fail Fail(String label) {
-		return get(new Fail(label));
-	}
-	
+		
 	/**
 	 * Construct a <code>fieldload</code> bytecode which reads a given field
 	 * from a record of a given type.
@@ -522,45 +511,7 @@ public abstract class Code {
 	
 	// ===============================================================
 	// Bytecode Implementations
-	// ===============================================================
-
-	/**
-	 * Indicates the start of a code block representing an assertion. This
-	 * includes assertions arising from type invariants, as well as
-	 * method/function pre- and post-conditions. The target identifies the label
-	 * terminating this block.
-	 */
-	public static final class Assert extends Code {
-		public final String target;
-		
-		private  Assert(String target) {
-			this.target = target;
-		}
-	
-		public Assert relabel(Map<String,String> labels) {
-			String nlabel = labels.get(target);
-			if(nlabel == null) {
-				return this;
-			} else {
-				return Assert(nlabel);
-			}
-		}
-		
-		public int hashCode() {
-			return target.hashCode();
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Assert) {
-				return target.equals(((Assert)o).target);
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return "assert " + target;
-		}		
-	}
+	// ===============================================================	
 
 	/**
 	 * Represents a binary operator (e.g. '+','-',etc) that is provided to a
@@ -840,33 +791,48 @@ public abstract class Code {
 	}	
 
 	/**
-	 * Raises an assertion failure fault with the given message. Fail bytecodes
-	 * may only appear within assertion blocks.
+	 * Raises an assertion failure if the given condition is false with the
+	 * given message.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Fail extends Code {
+	public static final class Assert extends Code {
+		public final Type type;
+		public final COp op;
 		public final String msg;
 		
-		private Fail(String msg) {
+		private Assert(Type type, COp cop, String msg) {
+			if(cop == null) {
+				throw new IllegalArgumentException("Assert op argument cannot be null");
+			}			
+			this.type = type;
+			this.op = cop;
 			this.msg = msg;
 		}
 		
 		public int hashCode() {
-			return msg.hashCode();
+			if(type == null) {
+				return op.hashCode() + msg.hashCode();
+			} else {
+				return type.hashCode() + op.hashCode() + msg.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Fail) {
-				return msg.equals(((Fail)o).msg);
+			if (o instanceof Assert) {
+				Assert ig = (Assert) o;
+				return op == ig.op
+						&& msg.equals(ig.msg)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));
 			}
 			return false;
 		}
-		
+	
 		public String toString() {
-			return "fail \"" + msg + "\"";
-		}		
+			return toString("assert " + op + " \"" + msg + "\"",type);
+		}			
 	}
 
 	/**
@@ -1071,6 +1037,30 @@ public abstract class Code {
 		}		
 	};
 
+	/**
+	 * Determine the inverse comparator, or null if no inverse exists.
+	 * 
+	 * @param cop
+	 * @return
+	 */
+	public static Code.COp invert(Code.COp cop) {
+		switch(cop) {
+		case EQ:
+			return Code.COp.NEQ;
+		case NEQ:
+			return Code.COp.EQ;
+		case LT:
+			return Code.COp.GTEQ;
+		case LTEQ:
+			return Code.COp.GT;
+		case GT:
+			return Code.COp.LTEQ;
+		case GTEQ:
+			return Code.COp.LT;
+		}
+		return null;
+	}
+	
 	/**
 	 * <p>
 	 * Branches conditionally to the given label based on the result of a
