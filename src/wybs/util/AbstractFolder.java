@@ -147,6 +147,27 @@ public abstract class AbstractFolder implements Path.Folder {
 	}
 	
 	@Override
+	public <T> void getAll(List<Entry<T>> entries) throws IOException{			
+		updateContents();
+		
+		// It would be nice to further optimise this loop. The key issue is that,
+		// at some point, we might know the filter could never match. In which
+		// case, we want to stop the recursion early, rather than exploring a
+		// potentially largel subtree.
+		
+		for(int i=0;i!=nentries;++i) {
+			Path.Item item = contents[i];
+			if(item instanceof Entry) {
+				Entry entry = (Entry) item;
+				entries.add(entry);
+			} else if (item instanceof Path.Folder) {
+				Path.Folder folder = (Path.Folder) item;
+				folder.getAll(entries);
+			}
+		}
+	}
+	
+	@Override
 	public <T> void getAll(Content.Filter<T> filter, List<Entry<T>> entries) throws IOException{			
 		updateContents();
 		
