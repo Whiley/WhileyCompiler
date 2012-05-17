@@ -43,7 +43,7 @@ import wybs.lang.Path.ID;
  * @author David J. Pearce
  * 
  */
-public final class DirectoryRoot extends AbstractRoot {
+public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	
 	public final static FileFilter NULL_FILTER = new FileFilter() {
 		public boolean accept(File file) {

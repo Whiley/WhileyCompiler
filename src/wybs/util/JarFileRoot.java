@@ -40,7 +40,7 @@ import wybs.lang.Path;
  * @author David J. Pearce
  * 
  */
-public final class JarFileRoot extends AbstractRoot implements Path.Root {	
+public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implements Path.Root {	
 	private final String dir;
 	private Path.Item[] jfContents;
 	
