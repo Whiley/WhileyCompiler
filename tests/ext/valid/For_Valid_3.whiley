@@ -1,4 +1,5 @@
 import println from whiley.lang.System
+import * from whiley.lang.Int
 
 int sum({nat} xs) ensures $ >= 0:
     r = 0
