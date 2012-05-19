@@ -115,17 +115,20 @@ public class VerificationCheck implements Transform {
 		ArrayList<Branch> branches = new ArrayList<Branch>();
 		ArrayList<WExpr> stack = new ArrayList<WExpr>();
 		ArrayList<Scope> scopes = new ArrayList<Scope>();
-		int[] environment = new int[body.numSlots()];			
-		
+		int numSlots = body.numSlots();
+					
 		// this is a tad inefficient; but, it's the easiest way to do it.
 		Block blk = new Block(body.numSlots());
 		int assumes = 0;
 		if(pre != null) {
 			blk.append(pre);
 			assumes = pre.size();
+			numSlots = Math.max(numSlots,pre.numSlots());
 		} 
 		blk.append(body);
 		
+		int[] environment = new int[numSlots];
+
 		// take initial branch
 		transform(0,constraint,environment,stack,scopes,branches,assumes,blk);
 		
@@ -201,7 +204,12 @@ public class VerificationCheck implements Transform {
 			
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
-				i = findLabel(i,g.target,body);				
+				i = findLabel(i,g.target,body);	
+				while(!scopes.isEmpty() && top(scopes).end <= i) {
+					// yes, we're exiting a scope
+					Scope scope = pop(scopes);
+					System.out.println("EXITING SCOPE");
+				}
 				// FIXME: check for exiting block
 			} else if(code instanceof Code.IfGoto) {
 				Code.IfGoto ifgoto = (Code.IfGoto) code;
@@ -215,9 +223,11 @@ public class VerificationCheck implements Transform {
 				Code.ForAll forall = (Code.ForAll) code; 
 				int end = findLabel(i,forall.target,body);
 				WExpr src = pop(stack);
+				System.out.println("FORALL SLOT: " + forall.slot);
 				WVariable var = new WVariable(forall.slot + "$"
 						+ environment[forall.slot]);
 				scopes.add(new ForScope(forall,end,src,var));
+				
 				if (forall.type instanceof Type.EffectiveList) {
 					// We have to treat lists differently from sets because of the
 					// way wyone handles list quantification. It's kind of annoying,
@@ -233,6 +243,7 @@ public class VerificationCheck implements Transform {
 				} else if (forall.type instanceof Type.EffectiveDictionary) {
 					// TODO
 				}
+				
 				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 
@@ -860,6 +871,12 @@ public class VerificationCheck implements Transform {
 		int last = stack.size()-1;
 		T c = stack.get(last);
 		stack.remove(last);
+		return c;
+	}
+	
+	private static <T> T top(ArrayList<T> stack) {
+		int last = stack.size()-1;
+		T c = stack.get(last);
 		return c;
 	}
 }
