@@ -1,4 +1,5 @@
 import println from whiley.lang.System
+import * from whiley.lang.Int
 
 int g(int x) ensures $ > 0 && $ < 125:
     if(x <= 0 || x >= 125):
