@@ -195,27 +195,27 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(int pc, WFormula constraint, int[] environment,
-			ArrayList<WExpr> stack, ArrayList<Scope> scopes, ArrayList<Branch> branches, int assumes, Block body) {
-				
+			ArrayList<WExpr> stack, ArrayList<Scope> scopes,
+			ArrayList<Branch> branches, int assumes, Block body) {
+		
+		// the following is necessary for branches generated from conditionals
+		
 		int bodySize = body.size();		
-		for (int i = pc; i != bodySize; ++i) {			
+		for (int i = pc; i != bodySize; ++i) {	
+			constraint = exitScope(constraint,environment,scopes,i);
+			
 			Block.Entry entry = body.get(i);			
 			Code code = entry.code;
 			
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
-				i = findLabel(i,g.target,body);	
-				while(!scopes.isEmpty() && top(scopes).end <= i) {
-					// yes, we're exiting a scope
-					Scope scope = pop(scopes);
-					System.out.println("EXITING SCOPE");
-				}
-				// FIXME: check for exiting block
+				i = findLabel(i,g.target,body);					
 			} else if(code instanceof Code.IfGoto) {
 				Code.IfGoto ifgoto = (Code.IfGoto) code;
 				WFormula test = buildTest(ifgoto.op,stack,entry);				
-				int targetpc = findLabel(i,ifgoto.target,body);
-				branches.add(new Branch(targetpc,WFormulas.and(constraint,test),environment,stack,scopes));
+				int targetpc = findLabel(i,ifgoto.target,body)	;
+				branches.add(new Branch(targetpc, WFormulas.and(constraint,
+						test), environment, stack, scopes));
 				constraint = WFormulas.and(constraint,test.not());
 			} else if(code instanceof Code.IfType) {
 				// TODO: implement me!
@@ -223,7 +223,6 @@ public class VerificationCheck implements Transform {
 				Code.ForAll forall = (Code.ForAll) code; 
 				int end = findLabel(i,forall.target,body);
 				WExpr src = pop(stack);
-				System.out.println("FORALL SLOT: " + forall.slot);
 				WVariable var = new WVariable(forall.slot + "$"
 						+ environment[forall.slot]);
 				scopes.add(new ForScope(forall,end,src,var));
@@ -251,29 +250,6 @@ public class VerificationCheck implements Transform {
 				scopes.add(new LoopScope(loop,end));
 				// FIXME: assume loop invariant?
 				// FIXME: assume condition?
-			} else if(code instanceof Code.LoopEnd) {
-				// At the end of a loop, trash any modified variables. And
-				// universally quantify for forall loops.  
-				LoopScope scope = (LoopScope) pop(scopes);
-								
-				// trash modified variables
-				for (int slot : scope.loop.modifies) {
-					environment[slot] = environment[slot] + 1;
-				}
-				if (scope instanceof ForScope) {
-					// Quantify for all
-					ForScope fscope = (ForScope) scope;
-					WVariable var = fscope.var;
-					// Split for the formula into those bits which need to be
-					// quantified, and those which don't
-					Pair<WFormula, WFormula> split = splitFormula(var.name(),
-							constraint);
-					constraint = WFormulas.and(
-							split.second(),
-							new WBoundedForall(true, var, fscope.src, split
-									.first()));
-					System.out.println("QUANTIFIED: " + constraint);
-				}
 			} else if(code instanceof Code.Return) {
 				// we don't need to do anything for a return!
 				return;
@@ -282,6 +258,48 @@ public class VerificationCheck implements Transform {
 						stack, i < assumes);
 			}
 		}
+	}
+	
+	private static WFormula exitScope(WFormula constraint,
+			int[] environment, ArrayList<Scope> scopes, int pc) {
+		
+		while (!scopes.isEmpty() && top(scopes).end <= pc) {
+			// yes, we're exiting a scope
+			Scope scope = pop(scopes);
+			
+			if(scope instanceof LoopScope) {
+				LoopScope lscope = (LoopScope) scope;
+
+				// trash modified variables
+				for (int slot : lscope.loop.modifies) {
+					environment[slot] = environment[slot] + 1;
+				}
+				if(lscope instanceof ForScope) {
+					ForScope fscope = (ForScope) lscope;
+					// existing for all scope so existentially quantify generated
+					// formula
+					WVariable var = fscope.var;
+					// Split for the formula into those bits which need to be
+					// quantified, and those which don't
+					Pair<WFormula, WFormula> split = splitFormula(var.name(),
+							constraint);
+					
+					if(pc == fscope.end) { 						
+						constraint = WFormulas.and(
+								split.second(),
+								new WBoundedForall(true, var, fscope.src, split
+										.first()));
+					} else {
+						constraint = WFormulas.and(
+								split.second(),
+								new WBoundedForall(false, var, fscope.src, split
+										.first().not()));						
+					}
+				}
+			}			
+		}
+		
+		return constraint;
 	}
 	
 	private static int findLabel(int i, String label, Block body) {
@@ -734,7 +752,7 @@ public class VerificationCheck implements Transform {
 	// which use the given variable (left), and those which don't (right). This
 	// is done to avoid quantifying more than is necessary when dealing with
 	// loops.
-	protected Pair<WFormula, WFormula> splitFormula(String var, WFormula f) {
+	protected static Pair<WFormula, WFormula> splitFormula(String var, WFormula f) {
 		if (f instanceof WConjunct) {
 			WConjunct c = (WConjunct) f;
 			WFormula ts = WBool.TRUE;
