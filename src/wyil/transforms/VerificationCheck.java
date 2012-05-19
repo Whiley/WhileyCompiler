@@ -113,6 +113,7 @@ public class VerificationCheck implements Transform {
 		Block body = methodCase.body();				
 		ArrayList<Branch> branches = new ArrayList<Branch>();
 		ArrayList<WExpr> stack = new ArrayList<WExpr>();
+		ArrayList<Scope> scopes = new ArrayList<Scope>();
 		int[] environment = new int[body.numSlots()];			
 		
 		// this is a tad inefficient; but, it's the easiest way to do it.
@@ -125,15 +126,43 @@ public class VerificationCheck implements Transform {
 		blk.append(body);
 		
 		// take initial branch
-		transform(0,constraint,environment,stack,branches,assumes,blk);
+		transform(0,constraint,environment,stack,scopes,branches,assumes,blk);
 		
 		// continue any resulting branches
 		while (!branches.isEmpty()) {
 			int last = branches.size() - 1;
 			Branch branch = branches.get(last);
 			branches.remove(last);
-			transform(branch.pc, branch.constraint,branch.environment, branch.stack, branches,
-					assumes,blk);
+			transform(branch.pc, branch.constraint, branch.environment,
+					branch.stack, branch.scopes, branches, assumes, blk);
+		}
+	}
+	
+	public static class Scope {
+		public final int end;
+		
+		public Scope(int end) {
+			this.end = end;
+		}
+	}
+	
+	private static class LoopScope<T extends Code.Loop> extends Scope {
+		public final T loop;
+		
+		public LoopScope(T loop, int end) {
+			super(end);
+			this.loop = loop;
+		}
+	}
+	
+	private static class ForScope extends LoopScope<Code.ForAll> {
+		public final WExpr src;
+		public final WVariable var;
+
+		public ForScope(Code.ForAll forall, int end, WExpr src, WVariable var) {
+			super(forall, end);
+			this.src = src;
+			this.var = var;
 		}
 	}
 	
@@ -149,16 +178,20 @@ public class VerificationCheck implements Transform {
 		public final WFormula constraint;
 		public final int[] environment;
 		public final ArrayList<WExpr> stack;
-		public Branch(int pc, WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		public final ArrayList<Scope> scopes;
+
+		public Branch(int pc, WFormula constraint, int[] environment,
+				ArrayList<WExpr> stack, ArrayList<Scope> scopes) {
 			this.pc = pc;
 			this.constraint = constraint;
 			this.environment = Arrays.copyOf(environment,environment.length);
 			this.stack = new ArrayList<WExpr>(stack);
+			this.scopes = new ArrayList<Scope>(scopes);
 		}
 	}
 	
 	protected void transform(int pc, WFormula constraint, int[] environment,
-			ArrayList<WExpr> stack, ArrayList<Branch> branches, int assumes, Block body) {
+			ArrayList<WExpr> stack, ArrayList<Scope> scopes, ArrayList<Branch> branches, int assumes, Block body) {
 				
 		int bodySize = body.size();		
 		for (int i = pc; i != bodySize; ++i) {			
@@ -168,16 +201,52 @@ public class VerificationCheck implements Transform {
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
 				i = findLabel(i,g.target,body);				
+				// FIXME: check for exiting block
 			} else if(code instanceof Code.IfGoto) {
 				Code.IfGoto ifgoto = (Code.IfGoto) code;
 				WFormula test = buildTest(ifgoto.op,stack,entry);				
 				int targetpc = findLabel(i,ifgoto.target,body);
-				branches.add(new Branch(targetpc,WFormulas.and(constraint,test),environment,stack));
+				branches.add(new Branch(targetpc,WFormulas.and(constraint,test),environment,stack,scopes));
 				constraint = WFormulas.and(constraint,test.not());
 			} else if(code instanceof Code.IfType) {
 				// TODO: implement me!
+			} else if(code instanceof Code.ForAll) {
+				Code.ForAll forall = (Code.ForAll) code; 
+				int end = findLabel(i,forall.target,body);
+				WExpr src = pop(stack);
+				WVariable var = new WVariable(forall.slot + "$"
+						+ environment[forall.slot]);
+				scopes.add(new ForScope(forall,end,src,var));
+				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
-				// TODO: implement me!
+				Code.ForAll forall = (Code.ForAll) code; 
+				int end = findLabel(i,forall.target,body);
+				scopes.add(new LoopScope(forall,end));
+				// FIXME: assume loop invariant?
+				// FIXME: assume condition?
+			} else if(code instanceof Code.LoopEnd) {
+				// At the end of a loop, trash any modified variables. And
+				// universally quantify for forall loops.  
+				LoopScope scope = (LoopScope) pop(scopes);
+								
+				// trash modified variables
+				for (int slot : scope.loop.modifies) {
+					environment[slot] = environment[slot] + 1;
+				}
+				if (scope instanceof ForScope) {
+					// Quantify for all
+					ForScope fscope = (ForScope) scope;
+					WVariable var = fscope.var;
+					// Split for the formula into those bits which need to be
+					// quantified, and those which don't
+					Pair<WFormula, WFormula> split = splitFormula(var.name(),
+							constraint);
+					constraint = WFormulas.and(
+							split.second(),
+							new WBoundedForall(true, var, fscope.src, split
+									.first()));
+					System.out.println("QUANTIFIED: " + constraint);
+				}
 			} else if(code instanceof Code.Return) {
 				// we don't need to do anything for a return!
 				return;
@@ -634,7 +703,33 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 	
-
+	// The following method splits a formula into two components: those bits
+	// which use the given variable (left), and those which don't (right). This
+	// is done to avoid quantifying more than is necessary when dealing with
+	// loops.
+	protected Pair<WFormula, WFormula> splitFormula(String var, WFormula f) {
+		if (f instanceof WConjunct) {
+			WConjunct c = (WConjunct) f;
+			WFormula ts = WBool.TRUE;
+			WFormula fs = WBool.TRUE;
+			for (WFormula st : c.subterms()) {
+				Pair<WFormula, WFormula> r = splitFormula(var, st);
+				ts = WFormulas.and(ts, r.first());
+				fs = WFormulas.and(fs, r.second());
+			}
+			return new Pair<WFormula, WFormula>(ts, fs);
+		} else {
+			// not a conjunct, so check whether or not this uses var or not.
+			Set<WVariable> uses = WExprs.match(WVariable.class, f);
+			for (WVariable v : uses) {
+				if (v.name().equals(var)) {
+					return new Pair<WFormula, WFormula>(f, WBool.TRUE);
+				}
+			}
+			// Ok, doesn't use variable
+			return new Pair<WFormula, WFormula>(WBool.TRUE, f);
+		}
+	}
 	/**
 	 * Convert between a WYIL value and a WYONE value. Basically, this is really
 	 * stupid and it would be good for them to be the same.
@@ -745,9 +840,9 @@ public class VerificationCheck implements Transform {
 		}
 	}
 	
-	private static WExpr pop(ArrayList<WExpr> stack) {
+	private static <T> T pop(ArrayList<T> stack) {
 		int last = stack.size()-1;
-		WExpr c = stack.get(last);
+		T c = stack.get(last);
 		stack.remove(last);
 		return c;
 	}
