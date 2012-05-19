@@ -231,13 +231,13 @@ public class VerificationCheck implements Transform {
 					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
 					constraint = WFormulas.and(constraint, WSets.elementOf(var, src));
 				} else if (forall.type instanceof Type.EffectiveDictionary) {
-					// FIXME!
+					// TODO
 				}
 				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
-				Code.ForAll forall = (Code.ForAll) code; 
-				int end = findLabel(i,forall.target,body);
-				scopes.add(new LoopScope(forall,end));
+				Code.Loop loop = (Code.Loop) code; 
+				int end = findLabel(i,loop.target,body);
+				scopes.add(new LoopScope(loop,end));
 				// FIXME: assume loop invariant?
 				// FIXME: assume condition?
 			} else if(code instanceof Code.LoopEnd) {
