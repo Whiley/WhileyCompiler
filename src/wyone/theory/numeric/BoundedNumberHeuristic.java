@@ -151,7 +151,8 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 	
 	private static void updateBounds(WInequality wieq, WExpr var,
 			boolean isInteger, HashMap<WExpr, Pair<Bound, Bound>> bounds) {
-		Pair<BoundUpdate,BoundUpdate> r = rearrange(wieq,var);		
+		// FIXME: could do better here?
+		Pair<BoundUpdate,BoundUpdate> r = rearrange(wieq,null,var);		
 		BoundUpdate below = r.first();
 		BoundUpdate above = r.second();				
 		
