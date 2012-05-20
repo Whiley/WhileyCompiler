@@ -40,17 +40,22 @@ import wyone.core.*;
 import wyone.theory.list.WLengthOf;
 import wyone.theory.list.WListAccess;
 import wyone.theory.list.WListConstructor;
+import wyone.theory.list.WListType;
 import wyone.theory.list.WListVal;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.WBoundedForall;
 import wyone.theory.set.WSetConstructor;
+import wyone.theory.set.WSetType;
 import wyone.theory.set.WSetVal;
 import wyone.theory.set.WSets;
 import wyone.theory.tuple.WTupleAccess;
 import wyone.theory.tuple.WTupleConstructor;
+import wyone.theory.tuple.WTupleType;
 import wyone.theory.tuple.WTupleVal;
+import wyone.theory.type.WAnyType;
 import wyone.theory.type.WTypes;
+import wyone.theory.type.WVoidType;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -104,11 +109,11 @@ public class VerificationCheck implements Transform {
 	
 	protected void transform(WyilFile.Method method) {		
 		for(WyilFile.Case c : method.cases()) {
-			transform(c);
+			transform(c,method);
 		}
 	}
 	
-	protected void transform(WyilFile.Case methodCase) {
+	protected void transform(WyilFile.Case methodCase, WyilFile.Method method) {
 		WFormula constraint = WBool.TRUE;					
 		Block pre = methodCase.precondition();				
 		Block body = methodCase.body();				
@@ -129,6 +134,19 @@ public class VerificationCheck implements Transform {
 		
 		int[] environment = new int[numSlots];
 
+		// add type information available from parameters
+		Type.FunctionOrMethodOrMessage fmm = method.type();
+		int paramStart = 0;
+		if(fmm instanceof Type.Message) {
+			
+		}
+		for(int i=paramStart;i!=fmm.params().size();++i) {
+			Type paramType = fmm.params().get(i); 
+			WVariable pv = new WVariable(i + "$" + 0);
+			constraint = WFormulas.and(constraint,
+					WTypes.subtypeOf(pv, convert(paramType)));
+		}
+		
 		// take initial branch
 		transform(0,constraint,environment,stack,scopes,branches,assumes,blk);
 		
@@ -848,6 +866,41 @@ public class VerificationCheck implements Transform {
 		}
 	}
 	
+	/**
+	 * Convert a Wyil type into a Wyone type. Mostly, the conversion is
+	 * straightforward and obvious.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	protected WType convert(Type type) {
+		if(type == Type.T_VOID) {
+			return WVoidType.T_VOID;
+		} else if(type == Type.T_BOOL) {
+			return WBoolType.T_BOOL;
+		} else if(type == Type.T_INT) {
+			return WIntType.T_INT;
+		} else if(type == Type.T_REAL) {
+			return WRealType.T_REAL;
+		} else if(type instanceof Type.EffectiveList) {
+			Type.EffectiveList tl = (Type.EffectiveList) type;
+			return new WListType(convert(tl.element()));			
+		} else if(type instanceof Type.EffectiveSet) {
+			Type.EffectiveSet tl = (Type.EffectiveSet) type;
+			return new WSetType(convert(tl.element()));			
+		} else if(type instanceof Type.EffectiveRecord) {
+			Type.EffectiveRecord tl = (Type.EffectiveRecord) type;
+			ArrayList<String> keys = new ArrayList<String>(tl.fields().keySet());
+			ArrayList<wyone.util.Pair<String,WType>> types = new ArrayList();
+			Collections.sort(keys);
+			for(String key : keys) {
+				types.add(new wyone.util.Pair(key,convert(tl.fields().get(key))));
+			}
+			return new WTupleType(types);
+		} else {
+			return WAnyType.T_ANY;
+		}
+	}
 	/**
 	 * Generate a formula representing a condition from an Code.IfCode or
 	 * Code.Assert bytecodes.
