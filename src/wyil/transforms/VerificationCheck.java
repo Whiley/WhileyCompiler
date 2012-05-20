@@ -216,8 +216,11 @@ public class VerificationCheck implements Transform {
 			int last = branches.size() - 1;
 			Branch branch = branches.get(last);
 			branches.remove(last);
-			transform(branch.pc, branch.constraint, branch.environment,
-					branch.stack, branch.scopes, branches, assumes, blk);
+			constraint = WFormulas
+					.or(constraint,
+							transform(branch.pc, branch.constraint,
+									branch.environment, branch.stack,
+									branch.scopes, branches, assumes, blk));
 		}
 
 		return constraint;
@@ -561,8 +564,11 @@ public class VerificationCheck implements Transform {
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
 		for(int i=0;i!=ft_params.size();++i) {
-			args.add(pop(stack));
+			WExpr arg = pop(stack);
+			args.add(arg);
+			binding.put(new WVariable((i+1) + "$" + 0), arg);
 		}
 		Collections.reverse(args);				
 		WVariable rv = new WVariable(code.name.toString(), args);
@@ -573,9 +579,10 @@ public class VerificationCheck implements Transform {
 		
 		// now deal with post-condition		
 		Block postcondition = findPostcondition(code.name,ft,entry);
-		if(postcondition != null) {
-			// FIXME: deal with post-condition
-			System.out.println("NEED TO DEAL WITH POSTCONDITION");
+		if(postcondition != null) {						
+			WFormula pc = transform(WBool.TRUE, true, postcondition);
+			binding.put(new WVariable("0$0"),rv);
+			constraint = WFormulas.and(constraint,pc.substitute(binding));			
 		}
 		return constraint;
 	}
