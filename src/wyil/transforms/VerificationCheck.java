@@ -222,8 +222,18 @@ public class VerificationCheck implements Transform {
 									branch.environment, branch.stack,
 									branch.scopes, branches, assumes, blk));
 		}
+		
+		// The following is necessary to prevent any possible clashes between
+		// temporary variables used in pre- and post-conditions which are then
+		// merged into the running constraint.
+		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
+		for(int i=blk.numInputs();i<blk.numSlots();++i) {
+			for(int j=0;j<=environment[i];++j) {
+				binding.put(new WVariable(i + "$" + j),WVariable.freshVar());
+			}
+		}
 
-		return constraint;
+		return constraint.substitute(binding);
 	}
 	
 	protected WFormula transform(int pc, WFormula constraint, int[] environment,
@@ -559,7 +569,6 @@ public class VerificationCheck implements Transform {
 	protected WFormula transform(Code.Invoke code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack)
 			throws Exception {
-		
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
@@ -583,6 +592,7 @@ public class VerificationCheck implements Transform {
 			binding.put(new WVariable("0$0"),rv);
 			constraint = WFormulas.and(constraint,pc.substitute(binding));
 		}
+		
 		return constraint;
 	}
 
