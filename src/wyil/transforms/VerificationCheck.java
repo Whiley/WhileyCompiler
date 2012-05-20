@@ -28,12 +28,16 @@ package wyil.transforms;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.Code.*;
+import wyil.util.ErrorMessages;
 import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Code.*;
+import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wyjc.runtime.BigRational;
 import wyone.core.*;
@@ -75,8 +79,10 @@ public class VerificationCheck implements Transform {
 	
 	private boolean enabled = getEnable();
 	
+	private Builder builder;
+	
 	public VerificationCheck(Builder builder) {
-		
+		this.builder = builder;
 	}
 	
 	public static String describeEnable() {
@@ -360,6 +366,7 @@ public class VerificationCheck implements Transform {
 			int[] environment, ArrayList<WExpr> stack, boolean assume) {
 		Code code = entry.code;		
 		
+		try {
 		if(code instanceof Code.Assert) {
 			constraint = transform((Assert)code,entry,constraint,environment,stack,assume);
 		} else if(code instanceof BinOp) {
@@ -437,6 +444,13 @@ public class VerificationCheck implements Transform {
 		} else {			
 			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
+		}
+		} catch(InternalFailure e) {
+			throw e;
+		} catch(SyntaxError e) {
+			throw e;
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,entry,e);
 		}
 		return constraint;
 	}
@@ -534,7 +548,8 @@ public class VerificationCheck implements Transform {
 	}
 
 	protected WFormula transform(Code.Invoke code, Block.Entry entry,
-			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack)
+			throws Exception {
 		
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
@@ -544,12 +559,17 @@ public class VerificationCheck implements Transform {
 		}
 		Collections.reverse(args);				
 		WVariable rv = new WVariable(code.name.toString(), args);
+		stack.add(rv);
 		
-		// FIXME: need to support post-condition here.
 		constraint = WFormulas.and(constraint,
 				WTypes.subtypeOf(rv, convert(ft.ret())));
 		
-		stack.add(rv);
+		// now deal with post-condition		
+		Block postcondition = findPostcondition(code.name,ft,entry);
+		if(postcondition != null) {
+			// FIXME: deal with post-condition
+			System.out.println("NEED TO DEAL WITH POSTCONDITION");
+		}
 		return constraint;
 	}
 
@@ -771,6 +791,25 @@ public class VerificationCheck implements Transform {
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;
+	}
+	
+	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
+			SyntacticElement elem) throws Exception {
+		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),
+				WyilFile.ContentType);
+		if (e == null) {
+			syntaxError(
+					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
+							.toString()), filename, elem);
+		}
+		WyilFile m = e.read();
+		WyilFile.Method method = m.method(name.name(), fun);
+
+		for (WyilFile.Case c : method.cases()) {
+			// FIXME: this is a hack for now
+			return c.postcondition();
+		}
+		return null;
 	}
 	
 	// The following method splits a formula into two components: those bits
