@@ -247,16 +247,18 @@ public final class FourierMotzkinSolver implements InferenceRule {
 			// FIXME: need to check that WSubtype is an INT??
 			if(c instanceof WSubtype) {
 				WSubtype st = (WSubtype) c;
-				if(st.lhs().equals(atom)) {
-					// This is the easiest case. 
-					factors.add(new WRational(new WPolynomial(atom)));					
-					break; // no need to identify any more factors
-				} else if (st.lhs() instanceof WRational
-						&& st.lhs().subterms().contains(atom)) {
-					// The harder case, where we have a constraint of the form
-					// e.g. "int 2*x", where we're looking for atom "x".
-					// In such case, we'll return two as the factor.					
-					factors.add((WRational) st.lhs());
+				if(st.rhs() instanceof WIntType) {
+					if(st.lhs().equals(atom)) {
+						// This is the easiest case. 
+						factors.add(new WRational(new WPolynomial(atom)));					
+						break; // no need to identify any more factors
+					} else if (st.lhs() instanceof WRational
+							&& st.lhs().subterms().contains(atom)) {
+						// The harder case, where we have a constraint of the form
+						// e.g. "int 2*x", where we're looking for atom "x".
+						// In such case, we'll return two as the factor.					
+						factors.add((WRational) st.lhs());
+					}
 				}
 			}
 		}			

@@ -243,6 +243,8 @@ public class VerificationCheck implements Transform {
 				WExpr src = pop(stack);
 				WVariable var = new WVariable(forall.slot + "$"
 						+ environment[forall.slot]);
+				constraint = WFormulas.and(constraint,
+						WTypes.subtypeOf(var, convert(forall.type.element())));
 				scopes.add(new ForScope(forall,end,src,var));
 				
 				if (forall.type instanceof Type.EffectiveList) {
@@ -253,7 +255,8 @@ public class VerificationCheck implements Transform {
 					constraint = WFormulas.and(constraint,
 							WExprs.equals(var, new WListAccess(src,index)),
 							WNumerics.lessThanEq(WNumber.ZERO, index),
-							WNumerics.lessThan(index, new WLengthOf(src)));
+							WNumerics.lessThan(index, new WLengthOf(src)),
+							WTypes.subtypeOf(index, WIntType.T_INT));
 				} else if (forall.type instanceof Type.EffectiveSet) {
 					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
 					constraint = WFormulas.and(constraint, WSets.elementOf(var, src));
@@ -543,6 +546,8 @@ public class VerificationCheck implements Transform {
 		WVariable rv = new WVariable(code.name.toString(), args);
 		
 		// FIXME: need to support post-condition here.
+		constraint = WFormulas.and(constraint,
+				WTypes.subtypeOf(rv, convert(ft.ret())));
 		
 		stack.add(rv);
 		return constraint;
@@ -673,7 +678,8 @@ public class VerificationCheck implements Transform {
 		environment[slot] = environment[slot] + 1;
 		WExpr lhs = new WVariable(slot + "$" + environment[slot]);
 		WExpr rhs = pop(stack);
-		constraint = WFormulas.and(constraint,WExprs.equals(lhs, rhs));
+		constraint = WFormulas.and(constraint, WExprs.equals(lhs, rhs),
+				WTypes.subtypeOf(lhs, convert(code.type)));
 		return constraint;
 	}
 
