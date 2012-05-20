@@ -121,30 +121,16 @@ public class VerificationCheck implements Transform {
 	
 	protected void transform(WyilFile.Case methodCase, WyilFile.Method method) {
 		WFormula constraint = WBool.TRUE;					
-		Block pre = methodCase.precondition();				
-		Block body = methodCase.body();				
-		ArrayList<Branch> branches = new ArrayList<Branch>();
-		ArrayList<WExpr> stack = new ArrayList<WExpr>();
-		ArrayList<Scope> scopes = new ArrayList<Scope>();
-		int numSlots = body.numSlots();
-					
-		// this is a tad inefficient; but, it's the easiest way to do it.
-		Block blk = new Block(body.numSlots());
-		int assumes = 0;
-		if(pre != null) {
-			blk.append(pre);
-			assumes = pre.size();
-			numSlots = Math.max(numSlots,pre.numSlots());
-		} 
-		blk.append(body);
-		
-		int[] environment = new int[numSlots];
-
+				
 		// add type information available from parameters
 		Type.FunctionOrMethodOrMessage fmm = method.type();
 		int paramStart = 0;
-		if(fmm instanceof Type.Message) {
-			
+		if (fmm instanceof Type.Message) {
+			Type.Message mt = (Type.Message) fmm;
+			WVariable pv = new WVariable(0 + "$" + 0);
+			constraint = WFormulas.and(constraint,
+					WTypes.subtypeOf(pv, convert(mt.receiver())));
+			paramStart++;
 		}
 		for(int i=paramStart;i!=fmm.params().size();++i) {
 			Type paramType = fmm.params().get(i); 
@@ -153,18 +139,15 @@ public class VerificationCheck implements Transform {
 					WTypes.subtypeOf(pv, convert(paramType)));
 		}
 		
-		// take initial branch
-		transform(0,constraint,environment,stack,scopes,branches,assumes,blk);
+		Block precondition = methodCase.precondition();				
 		
-		// continue any resulting branches
-		while (!branches.isEmpty()) {
-			int last = branches.size() - 1;
-			Branch branch = branches.get(last);
-			branches.remove(last);
-			transform(branch.pc, branch.constraint, branch.environment,
-					branch.stack, branch.scopes, branches, assumes, blk);
+		if(precondition != null) {
+			constraint = transform(constraint,true,precondition);
 		}
+		
+		transform(constraint,false,methodCase.body());
 	}
+	
 	
 	public static class Scope {
 		public final int end;
@@ -218,9 +201,31 @@ public class VerificationCheck implements Transform {
 		}
 	}
 	
-	protected void transform(int pc, WFormula constraint, int[] environment,
+	protected WFormula transform(WFormula constraint, boolean assumes, Block blk) {
+		ArrayList<Branch> branches = new ArrayList<Branch>();
+		ArrayList<WExpr> stack = new ArrayList<WExpr>();
+		ArrayList<Scope> scopes = new ArrayList<Scope>();
+		int[] environment = new int[blk.numSlots()];
+
+		// take initial branch
+		constraint = transform(0, constraint, environment, stack, scopes,
+				branches, assumes, blk);
+
+		// continue any resulting branches
+		while (!branches.isEmpty()) {
+			int last = branches.size() - 1;
+			Branch branch = branches.get(last);
+			branches.remove(last);
+			transform(branch.pc, branch.constraint, branch.environment,
+					branch.stack, branch.scopes, branches, assumes, blk);
+		}
+
+		return constraint;
+	}
+	
+	protected WFormula transform(int pc, WFormula constraint, int[] environment,
 			ArrayList<WExpr> stack, ArrayList<Scope> scopes,
-			ArrayList<Branch> branches, int assumes, Block body) {
+			ArrayList<Branch> branches, boolean assumes, Block body) {
 		
 		// the following is necessary for branches generated from conditionals
 		
@@ -279,12 +284,14 @@ public class VerificationCheck implements Transform {
 				// FIXME: assume condition?
 			} else if(code instanceof Code.Return) {
 				// we don't need to do anything for a return!
-				return;
+				return constraint;
 			} else {
 				constraint = transform(entry, constraint, environment,
-						stack, i < assumes);
+						stack, assumes);
 			}
 		}
+		
+		return constraint;
 	}
 	
 	private static WFormula exitScope(WFormula constraint,
