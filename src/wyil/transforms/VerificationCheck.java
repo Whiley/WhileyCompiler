@@ -476,7 +476,6 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
-			System.out.println("CHECKING: " + WFormulas.and(test.not(), constraint));
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),
@@ -565,10 +564,10 @@ public class VerificationCheck implements Transform {
 		List<Type> ft_params = code.type.params();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
-		for(int i=0;i!=ft_params.size();++i) {
+		for(int i=ft_params.size();i>0;--i) {
 			WExpr arg = pop(stack);
 			args.add(arg);
-			binding.put(new WVariable((i+1) + "$" + 0), arg);
+			binding.put(new WVariable(i + "$0"), arg);
 		}
 		Collections.reverse(args);				
 		WVariable rv = new WVariable(code.name.toString(), args);
@@ -579,10 +578,10 @@ public class VerificationCheck implements Transform {
 		
 		// now deal with post-condition		
 		Block postcondition = findPostcondition(code.name,ft,entry);
-		if(postcondition != null) {						
+		if(postcondition != null) {					
 			WFormula pc = transform(WBool.TRUE, true, postcondition);
 			binding.put(new WVariable("0$0"),rv);
-			constraint = WFormulas.and(constraint,pc.substitute(binding));			
+			constraint = WFormulas.and(constraint,pc.substitute(binding));
 		}
 		return constraint;
 	}
