@@ -26,6 +26,7 @@
 package wybs.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -144,6 +145,29 @@ public abstract class AbstractFolder implements Path.Folder {
 			
 		// no dice
 		return null;
+	}
+	
+	@Override
+	public List<Entry<?>> getAll() throws IOException{			
+		ArrayList entries = new ArrayList();
+		updateContents();
+		
+		// It would be nice to further optimise this loop. Basically, to avoid
+		// creating so many ArrayList objects. However, it's tricky to get right
+		// given Java's generic type system.
+		
+		for(int i=0;i!=nentries;++i) {
+			Path.Item item = contents[i];
+			if(item instanceof Entry) {
+				Entry entry = (Entry) item;
+				entries.add(entry);			
+			} else if (item instanceof Path.Folder) {
+				Path.Folder folder = (Path.Folder) item;
+				entries.addAll(folder.getAll());
+			}
+		}
+		
+		return entries;
 	}
 	
 	@Override

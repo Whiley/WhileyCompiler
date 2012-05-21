@@ -284,8 +284,21 @@ public class Path {
 				throws IOException;
 
 		/**
-		 * Get all objects matching a given content filter stored in this folder.
-		 * In the case of no matches, an empty list is returned.
+		 * Get all objects contained in this folder (including those contained
+		 * in subfolders). In the case of no matches, an empty list is returned.
+		 * 
+		 * @throws IOException
+		 *             --- in case of some I/O failure.
+		 * 
+		 * @param ct
+		 * @return
+		 */
+		public List<Path.Entry<?>> getAll() throws IOException;
+		
+		/**
+		 * Get all objects matching a given content filter stored in this folder
+		 * (including its subfolders). In the case of no matches, an empty list
+		 * is returned.
 		 * 
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
@@ -298,7 +311,8 @@ public class Path {
 
 		/**
 		 * Identify all entries matching a given content filter stored in this
-		 * folder. In the case of no matches, an empty set is returned.
+		 * folder (including its subfolders). In the case of no matches, an
+		 * empty set is returned.
 		 * 
 		 * @throws IOException
 		 *             --- in case of some I/O failure.

@@ -54,7 +54,7 @@ public class SimpleProject implements NameSpace {
 	 * assumed that for any given transformation there is only one possible
 	 * pathway described.
 	 */
-	private final ArrayList<BuildRule> rules;
+	protected final ArrayList<BuildRule> rules;
 	
 	
 	public SimpleProject(Collection<Path.Root> roots) {
@@ -146,7 +146,7 @@ public class SimpleProject implements NameSpace {
 	 * @param sources
 	 * @throws Exception
 	 */
-	public void build(Collection<Path.Entry<?>> sources) throws Exception {
+	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
 		HashSet<Path.Entry<?>> allTargets = new HashSet();
 
 		// Firstly, initialise list of targets to rebuild.		
