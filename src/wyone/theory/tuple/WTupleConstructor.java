@@ -28,7 +28,7 @@ public final class WTupleConstructor extends WConstructor<WExpr> implements WExp
 	private final ArrayList<String> fields;
 
 	public WTupleConstructor(Collection<String> fields, Collection<WExpr> params) {
-		super("()", params);
+		super("(..)", params);
 		this.fields = new ArrayList<String>(fields);
 	}
 	

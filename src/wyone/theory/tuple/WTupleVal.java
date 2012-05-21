@@ -28,7 +28,7 @@ public final class WTupleVal extends WConstructor<WValue> implements WValue {
 	private final ArrayList<String> fields;
 
 	public WTupleVal(Collection<String> fields, Collection<WValue> params) {
-		super("()",params);
+		super("(.)",params);
 		this.fields = new ArrayList<String>(fields);
 	}
 	
