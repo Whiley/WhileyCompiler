@@ -229,12 +229,10 @@ public class VerificationCheck implements Transform {
 		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
 		for(int i=blk.numInputs();i<blk.numSlots();++i) {
 			for(int j=0;j<=environment[i];++j) {
-				binding.put(new WVariable(i + "$" + j),WVariable.freshVar());
+				binding.put(new WVariable(i + "$" + j), WVariable.freshVar());
 			}
 		}
 
-		//System.out.println("GENERATED: " + constraint.substitute(binding));
-		
 		return constraint.substitute(binding);
 	}
 	
@@ -599,7 +597,7 @@ public class VerificationCheck implements Transform {
 				binding.put(new WVariable("0$0"),rv);
 				constraint = WFormulas.and(constraint,pc.substitute(binding));
 			}
-		}
+		}		
 		
 		return constraint;
 	}
