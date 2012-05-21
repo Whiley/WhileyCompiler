@@ -51,8 +51,6 @@ import wyone.util.WConstructor;
  */
 public class WVariable extends WConstructor<WExpr> implements WExpr {
 	
-	private final static int CID = WExprs.registerCID(); 
-	
 	public WVariable(String var, WExpr... args) {
 		super(var,args);
 	}
@@ -60,8 +58,6 @@ public class WVariable extends WConstructor<WExpr> implements WExpr {
 	public WVariable(String var, Collection<WExpr> args) {
 		super(var,args);
 	}
-			
-	public int cid() { return CID; }
 	
 	public boolean isConcrete() {
 		for(WExpr p : subterms) {
@@ -127,10 +123,14 @@ public class WVariable extends WConstructor<WExpr> implements WExpr {
 			return super.toString();
 		}
 	}
-		
+
+	private final static int CID = WExprs.registerCID(); 
+	public int cid() { return CID; }
+	
 	// =================================================================
 	// HELPER METHODS
 	// =================================================================
+	
 	
 	private static int fvidx = 0;
 	public static WVariable freshVar() {

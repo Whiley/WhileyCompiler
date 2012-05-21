@@ -486,6 +486,7 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
+			System.out.println("CHECKING: " + constraint + " " + test + ", " + test.not());
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),
