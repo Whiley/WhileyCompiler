@@ -233,6 +233,8 @@ public class VerificationCheck implements Transform {
 			}
 		}
 
+		//System.out.println("GENERATED: " + constraint.substitute(binding));
+		
 		return constraint.substitute(binding);
 	}
 	
@@ -569,6 +571,8 @@ public class VerificationCheck implements Transform {
 	protected WFormula transform(Code.Invoke code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack)
 			throws Exception {
+		
+		// first, take arguments off the stack
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
@@ -577,20 +581,24 @@ public class VerificationCheck implements Transform {
 			WExpr arg = pop(stack);
 			args.add(arg);
 			binding.put(new WVariable(i + "$0"), arg);
-		}
-		Collections.reverse(args);				
-		WVariable rv = new WVariable(code.name.toString(), args);
-		stack.add(rv);
+		}		
+		Collections.reverse(args);		
 		
-		constraint = WFormulas.and(constraint,
-				WTypes.subtypeOf(rv, convert(ft.ret())));
-		
-		// now deal with post-condition		
-		Block postcondition = findPostcondition(code.name,ft,entry);
-		if(postcondition != null) {					
-			WFormula pc = transform(WBool.TRUE, true, postcondition);
-			binding.put(new WVariable("0$0"),rv);
-			constraint = WFormulas.and(constraint,pc.substitute(binding));
+		// second, setup return value
+		if(code.retval) {
+			WVariable rv = new WVariable(code.name.toString(), args);
+			stack.add(rv);
+
+			constraint = WFormulas.and(constraint,
+					WTypes.subtypeOf(rv, convert(ft.ret())));
+
+			// now deal with post-condition		
+			Block postcondition = findPostcondition(code.name,ft,entry);
+			if(postcondition != null) {					
+				WFormula pc = transform(WBool.TRUE, true, postcondition);
+				binding.put(new WVariable("0$0"),rv);
+				constraint = WFormulas.and(constraint,pc.substitute(binding));
+			}
 		}
 		
 		return constraint;
