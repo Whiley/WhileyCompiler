@@ -546,6 +546,20 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.Destructure code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		WExpr src = pop(stack);
+		
+		if(code.type instanceof Type.EffectiveTuple) {
+			Type.EffectiveTuple et = (Type.EffectiveTuple) code.type;
+			
+			int field = 0;
+			for (Type t : et.elements()) {
+				stack.add(new WTupleAccess(src, Integer.toString(field++)));				
+			}
+		} else {
+			// FIXME: really need to do better		
+			stack.add(src);
+			stack.add(src);
+		}
 		// TODO: complete this transform		
 		return constraint;
 	}
@@ -701,7 +715,14 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.NewTuple code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		ArrayList<String> fields = new ArrayList<String>();
+		ArrayList<WExpr> terms = new ArrayList<WExpr>();
+		int field=0;
+		for(Type t : code.type.elements()) {			
+			terms.add(pop(stack));
+			fields.add(Integer.toString(field++));
+		}
+		stack.add(new WTupleConstructor(fields,terms));
 		return constraint;
 	}
 
@@ -821,7 +842,8 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.TupleLoad code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		WExpr src = pop(stack);
+		stack.add(new WTupleAccess(src, Integer.toString(code.index)));		
 		return constraint;
 	}
 	

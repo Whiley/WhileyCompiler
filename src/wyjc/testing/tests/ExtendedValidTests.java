@@ -51,6 +51,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedSet_Valid_2_RuntimeTest() { verifyRunTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RuntimeTest() { verifyRunTest("ConstrainedSet_Valid_3"); }
  @Test public void ConstrainedSet_Valid_4_RuntimeTest() { verifyRunTest("ConstrainedSet_Valid_4"); }
+ @Test public void ConstrainedTuple_Valid_1_RuntimeTest() { verifyRunTest("ConstrainedTuple_Valid_1"); }
  @Test public void Ensures_Valid_1_RuntimeTest() { verifyRunTest("Ensures_Valid_1"); }
  @Test public void Ensures_Valid_2_RuntimeTest() { verifyRunTest("Ensures_Valid_2"); }
  @Test public void Ensures_Valid_3_RuntimeTest() { verifyRunTest("Ensures_Valid_3"); }
