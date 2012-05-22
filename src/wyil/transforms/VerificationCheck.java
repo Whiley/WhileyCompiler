@@ -142,7 +142,8 @@ public class VerificationCheck implements Transform {
 		Block precondition = methodCase.precondition();				
 		
 		if(precondition != null) {
-			constraint = transform(constraint,true,precondition);
+			WFormula precon = transform(WBool.TRUE, true, precondition);
+			constraint = WFormulas.and(constraint,precon);
 		}
 		
 		transform(constraint,false,methodCase.body());
@@ -486,9 +487,9 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
-			System.out.println("==============================================");
-			System.out.println("CHECKING: " + WFormulas.and(test.not(), constraint));
-			System.out.println("==============================================");
+//			System.out.println("==============================================");
+//			System.out.println("CHECKING: " + WFormulas.and(test.not(), constraint));
+//			System.out.println("==============================================");
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),
