@@ -32,6 +32,10 @@ public final class WTupleConstructor extends WConstructor<WExpr> implements WExp
 		this.fields = new ArrayList<String>(fields);
 	}
 	
+	public List<String> fields() {
+		return fields;
+	}
+	
 	public WExpr field(String name) {
 		for(int i=0;i!=fields.size();++i) {
 			if(fields.get(i).equals(name)) {

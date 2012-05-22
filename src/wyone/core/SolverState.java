@@ -114,11 +114,11 @@ public final class SolverState implements Iterable<WFormula> {
 	 * @param f
 	 */
 	public void eliminate(WFormula oldf) {
-//		Integer x = assignments.get(oldf);							
-//		if(x != null) {			
-//			assertions.clear(x);			
-//			eliminations.set(x);
-//		}		
+		Integer x = assignments.get(oldf);							
+		if(x != null) {			
+			assertions.clear(x);			
+			eliminations.set(x);
+		}		
 	}
 
 	/**
