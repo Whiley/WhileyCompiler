@@ -40,7 +40,7 @@ import static wyone.theory.numeric.WNumerics.*;
  * 
  */
 public final class FourierMotzkinSolver implements InferenceRule {	
-	
+	private static int count = 0;
 	public void infer(WFormula delta, SolverState state, Solver solver) {								
 		if (delta instanceof WInequality) {			
 			WInequality eq = (WInequality) delta;
@@ -70,7 +70,6 @@ public final class FourierMotzkinSolver implements InferenceRule {
 			intConstraints.add(new WRational(new WPolynomial(v)));
 			isInteger = false;
 		}
-		
 		for(WRational factor : intConstraints) {
 			Pair<BoundUpdate,BoundUpdate> update = rearrange(ieq,factor,v);
 			BoundUpdate lower = update.first();
@@ -221,7 +220,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 			ub = multiply(ub,below.factor);			
 		}
 		
-		if(lb.equals(ub) && (belowSign || aboveSign)) {			
+		if(lb.equals(ub) && (belowSign || aboveSign)) {		
 			state.infer(WBool.FALSE,solver);
 		} else {			
 			// Second, generate new inequalities
@@ -235,7 +234,6 @@ public final class FourierMotzkinSolver implements InferenceRule {
 				} else {					
 					f = lessThanEq(lb, ub);													
 				}				
-								
 				state.infer(f,solver);										
 			} 
 		}		

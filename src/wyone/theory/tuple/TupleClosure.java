@@ -74,7 +74,7 @@ public class TupleClosure implements InferenceRule {
 			}			
 			WExpr tval = new WTupleConstructor(names,exprs).substitute(Collections.EMPTY_MAP);			
 			WFormula nf = WExprs.equals(target, tval);								
-			if(!state.contains(nf)) {				
+			if(!state.contains(nf)) {			
 				state.infer(nf, solver);
 			}
 		}

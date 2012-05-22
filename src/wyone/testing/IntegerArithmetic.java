@@ -160,6 +160,11 @@ public class IntegerArithmetic {
 		assertTrue(checkUnsat("y <: int && 2*y == x && x > 0 && x < 2"));
 	}
 	
+	@Test public void Unsat_30() {
+		// This one is a real challenge I think
+		assertTrue(checkUnsat("x+1 <: int && x>0 && x<1"));
+	}
+	
 	/*
 	 * ============= SAT TESTS ==============
 	 */
