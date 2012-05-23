@@ -137,7 +137,7 @@ public final class SolverState implements Iterable<WFormula> {
 			WFormula f = rassignments.get(x);
 			//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 			for(InferenceRule ir : solver.theories()) {
-				if(assignments.size() >= limit) {
+				if(worklist.size() >= limit || assignments.size() >= limit) {
 					return;
 				} else if(assertions.get(x)) {					
 					ir.infer(f, this, solver);
