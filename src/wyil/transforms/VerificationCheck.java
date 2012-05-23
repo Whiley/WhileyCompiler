@@ -71,9 +71,9 @@ import wyone.theory.type.WVoidType;
  */
 public class VerificationCheck implements Transform {	
 	/**
-	 * Timeout in milliseconds when solving constraints.
+	 * limit on number of steps theorem prover is allowed to take.
 	 */
-	private int timeout = getTimeout();
+	private int limit = getLimit();
 	
 	/**
 	 * Determines whether verification is enabled or not.
@@ -100,12 +100,16 @@ public class VerificationCheck implements Transform {
 		this.enabled = flag;
 	}
 	
-	public static int getTimeout() {
-		return 1000;
+	public static int getLimit() {
+		return 100;
 	}
 	
-	public void setTimeout(int timeout) {
-		this.timeout = timeout;
+	public void setLimit(int limit) {
+		this.limit = limit;
+	}
+	
+	public static String describeLimit() {
+		return "Set maximum limit on size of derivations";
 	}
 	
 	public void apply(WyilFile module) {
@@ -500,7 +504,7 @@ public class VerificationCheck implements Transform {
 			// it. 
 		} else {
 			// Pass constraint through the solver to check for unsatisfiability
-			Proof tp = Solver.checkUnsatisfiable(timeout,
+			Proof tp = Solver.checkUnsatisfiable(limit,
 					WFormulas.and(test.not(), constraint),
 					wyone.Main.heuristic, wyone.Main.theories);
 

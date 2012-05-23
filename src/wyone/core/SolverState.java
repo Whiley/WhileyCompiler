@@ -46,24 +46,28 @@ public final class SolverState implements Iterable<WFormula> {
 	 */
 	private final BitSet eliminations;
 
-	private final static int DERIVATION_LIMIT = 1000;
+	private final int limit;
 	
-	public SolverState() {
+	public SolverState(int limit) {
+		this.limit = limit;
 		 assignments = new HashMap<WFormula,Integer>();
 		rassignments = new ArrayList<WFormula>();
 		assertions = new BitSet();
 		eliminations = new BitSet();
 	}
 	
-	public SolverState(
+	public SolverState(int limit,
 			HashMap<WFormula,Integer> assignments,
 			ArrayList<WFormula> rassignments,
 			BitSet assertions, BitSet eliminations) {
+		this.limit = limit;
 		this.assignments = (HashMap) assignments.clone();
 		this.rassignments = (ArrayList) rassignments.clone();
 		this.assertions = (BitSet) assertions.clone();
 		this.eliminations = (BitSet) eliminations.clone();
 	}
+	
+	public int count() { return assignments.size(); }
 	
 	public boolean contains(WFormula f) {
 		Integer x = assignments.get(f);
@@ -128,15 +132,14 @@ public final class SolverState implements Iterable<WFormula> {
 	 * are immediate consequences of some fact being asserted.
 	 */
 	private void infer(Solver solver) {				
-		for(int i=0;i!=worklist.size();++i) {
-			if(assignments.size() >= DERIVATION_LIMIT) {
-				return;
-			}
+		for(int i=0;i!=worklist.size();++i) {			
 			Integer x = worklist.get(i);			
 			WFormula f = rassignments.get(x);
 			//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
-			for(InferenceRule ir : solver.theories()) {				
-				if(assertions.get(x)) {					
+			for(InferenceRule ir : solver.theories()) {
+				if(assignments.size() >= limit) {
+					return;
+				} else if(assertions.get(x)) {					
 					ir.infer(f, this, solver);
 					if(contains(WBool.FALSE)){				
 						return; // early termination
@@ -228,7 +231,7 @@ public final class SolverState implements Iterable<WFormula> {
 	}	
 
 	public SolverState clone() {
-		SolverState nls = new SolverState(assignments, rassignments, assertions, eliminations);				
+		SolverState nls = new SolverState(limit, assignments, rassignments, assertions, eliminations);				
 		return nls;
 	}
 		
