@@ -124,7 +124,7 @@ public final class Solver implements Callable<Proof> {
 	protected Proof checkUnsatisfiable(SolverState state, int level) {		
 		if(debug) { indent(level); System.out.println("STATE: " + state); }
 		
-		if(state.contains(WBool.FALSE)) {			
+		if(state.contains(WBool.FALSE)) {	
 			// Here, we've reached a contradiction on this branch			
 			return Proof.UNSAT;
 		} else {			
@@ -147,7 +147,6 @@ public final class Solver implements Callable<Proof> {
 						}
 					}
 				}
-				
 				return checkModel(valuation);
 			} else {				
 				for(SolverState s : substates) {
@@ -155,7 +154,7 @@ public final class Solver implements Callable<Proof> {
 					if(!(p instanceof Proof.Unsat)) {						
 						return p;
 					}
-				}				
+				}	
 				return Proof.UNSAT;
 			}
 		}

@@ -76,7 +76,7 @@ public class Main {
 		WFormula f = parser.parseInput();
 		Proof r = Solver.checkUnsatisfiable(1000, f,
 				heuristic, theories);
-		return r instanceof Proof.Sat;
+		return !(r instanceof Proof.Unsat);
 	}
 	
 	public static void main(String[] args) {	
