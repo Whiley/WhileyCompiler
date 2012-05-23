@@ -101,7 +101,7 @@ public class VerificationCheck implements Transform {
 	}
 	
 	public static int getTimeout() {
-		return 500;
+		return 1000;
 	}
 	
 	public void setTimeout(int timeout) {
@@ -499,9 +499,6 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
-//			System.out.println("==============================================");
-//			System.out.println("CHECKING: " + test.not() + " && " + constraint);
-//			System.out.println("==============================================");
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),
