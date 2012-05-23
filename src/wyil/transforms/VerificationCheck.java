@@ -101,7 +101,7 @@ public class VerificationCheck implements Transform {
 	}
 	
 	public static int getLimit() {
-		return 100;
+		return 500;
 	}
 	
 	public void setLimit(int limit) {
