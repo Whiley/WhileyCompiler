@@ -281,7 +281,6 @@ public class VerificationCheck implements Transform {
 						+ environment[forall.slot]);
 				constraint = WFormulas.and(constraint,
 						WTypes.subtypeOf(var, convert(forall.type.element())));
-				scopes.add(new ForScope(forall,end,src,var));
 				
 				if (forall.type instanceof Type.EffectiveList) {
 					// We have to treat lists differently from sets because of the
@@ -293,9 +292,11 @@ public class VerificationCheck implements Transform {
 							WNumerics.lessThanEq(WNumber.ZERO, index),
 							WNumerics.lessThan(index, new WLengthOf(src)),
 							WTypes.subtypeOf(index, WIntType.T_INT));
+					scopes.add(new ForScope(forall,end,src,index));
 				} else if (forall.type instanceof Type.EffectiveSet) {
 					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
 					constraint = WFormulas.and(constraint, WSets.elementOf(var, src));
+					scopes.add(new ForScope(forall,end,src,var));
 				} else if (forall.type instanceof Type.EffectiveDictionary) {
 					// TODO
 				}
