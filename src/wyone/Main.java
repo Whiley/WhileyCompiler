@@ -45,9 +45,9 @@ public class Main {
 			new DisjunctHeuristic(),
 			new BoundedNumberHeuristic(true, true), 			
 			new BoundedSetHeuristic(),			
-			new BoundedNumberHeuristic(true, false),
-			new UnboundedNumberHeuristic(true),
-			new UnboundedNumberHeuristic(false)		
+			new BoundedNumberHeuristic(true, false)
+			//new UnboundedNumberHeuristic(true),
+			//new UnboundedNumberHeuristic(false)		
 	);
 
 	public static final InferenceRule[] theories = {		

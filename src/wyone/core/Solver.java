@@ -115,7 +115,6 @@ public final class Solver implements Callable<Proof> {
 	 * @return
 	 */
 	private Proof checkUnsatisfiable() {		
-		SolverState.reset_state();
 		SolverState facts = new SolverState();
 		facts.add(formula, this);
 		return checkUnsatisfiable(facts,0);
