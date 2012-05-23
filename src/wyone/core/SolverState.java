@@ -45,29 +45,22 @@ public final class SolverState implements Iterable<WFormula> {
 	 * have been subsumed by something else.
 	 */
 	private final BitSet eliminations;
-
-	private final int limit;
 	
-	public SolverState(int limit) {
-		this.limit = limit;
-		 assignments = new HashMap<WFormula,Integer>();
+	public SolverState() {
+		assignments = new HashMap<WFormula,Integer>();
 		rassignments = new ArrayList<WFormula>();
 		assertions = new BitSet();
 		eliminations = new BitSet();
 	}
 	
-	public SolverState(int limit,
-			HashMap<WFormula,Integer> assignments,
+	public SolverState(HashMap<WFormula,Integer> assignments,
 			ArrayList<WFormula> rassignments,
 			BitSet assertions, BitSet eliminations) {
-		this.limit = limit;
-		this.assignments = (HashMap) assignments.clone();
-		this.rassignments = (ArrayList) rassignments.clone();
+		this.assignments = assignments;
+		this.rassignments = rassignments;
 		this.assertions = (BitSet) assertions.clone();
 		this.eliminations = (BitSet) eliminations.clone();
 	}
-	
-	public int count() { return assignments.size(); }
 	
 	public boolean contains(WFormula f) {
 		Integer x = assignments.get(f);
@@ -137,9 +130,7 @@ public final class SolverState implements Iterable<WFormula> {
 			WFormula f = rassignments.get(x);
 			//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 			for(InferenceRule ir : solver.theories()) {
-				if(worklist.size() >= limit || assignments.size() >= limit) {
-					return;
-				} else if(assertions.get(x)) {					
+				if(assertions.get(x)) {					
 					ir.infer(f, this, solver);
 					if(contains(WBool.FALSE)){				
 						return; // early termination
@@ -231,7 +222,8 @@ public final class SolverState implements Iterable<WFormula> {
 	}	
 
 	public SolverState clone() {
-		SolverState nls = new SolverState(limit, assignments, rassignments, assertions, eliminations);				
+		SolverState nls = new SolverState(assignments, rassignments,
+				assertions, eliminations);
 		return nls;
 	}
 		
@@ -250,7 +242,7 @@ public final class SolverState implements Iterable<WFormula> {
 	}
 	
 	private void internal_add(WFormula f) {		
-		//f = reduce(f); 		
+		f = reduce(f); 		
 		
 		if(f instanceof WConjunct) {
 			WConjunct wc = (WConjunct) f;

@@ -73,7 +73,7 @@ public class VerificationCheck implements Transform {
 	/**
 	 * limit on number of steps theorem prover is allowed to take.
 	 */
-	private int limit = getLimit();
+	private int timeout = getTimeout();	
 	
 	/**
 	 * Determines whether verification is enabled or not.
@@ -100,18 +100,14 @@ public class VerificationCheck implements Transform {
 		this.enabled = flag;
 	}
 	
-	public static int getLimit() {
-		return 500;
+	public static int getTimeout() {
+		return 250;
 	}
 	
-	public void setLimit(int limit) {
-		this.limit = limit;
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
-	
-	public static String describeLimit() {
-		return "Set maximum limit on size of derivations";
-	}
-	
+
 	public void apply(WyilFile module) {
 		if(enabled) {
 			this.filename = module.filename();
@@ -503,8 +499,11 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
+//			System.out.println("======================================");
+//			System.out.println("CHECKING: " + test.not() + " && " + constraint);
+//			System.out.println("======================================");
 			// Pass constraint through the solver to check for unsatisfiability
-			Proof tp = Solver.checkUnsatisfiable(limit,
+			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),
 					wyone.Main.heuristic, wyone.Main.theories);
 

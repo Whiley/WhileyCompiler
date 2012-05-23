@@ -23,15 +23,10 @@ import java.util.concurrent.*;
 import wyone.theory.congruence.*;
 import wyone.theory.logic.*;
 
-public final class Solver {
+public final class Solver implements Callable<Proof> {
 	
 	public static boolean debug = false;
-	
-	/**
-	 * A limit on the number of facts which can be derived.
-	 */
-	private final int limit;
-	
+		
 	/**
 	 * The list of theories to use when performing local inference.
 	 */
@@ -48,9 +43,8 @@ public final class Solver {
 	 */
 	private final WFormula formula;
 		
-	Solver(int limit, WFormula formula, 
+	Solver(WFormula formula, 
 			SplitHeuristic heuristic,InferenceRule... theories) {
-		this.limit = limit;
 		this.formula = formula;
 		this.theories = new ArrayList<InferenceRule>();
 		this.splitHeuristic = heuristic;
@@ -78,13 +72,37 @@ public final class Solver {
 	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
-	public static synchronized Proof checkUnsatisfiable(int limit,WFormula formula,
+	public static synchronized Proof checkUnsatisfiable(int timeout,WFormula formula,
 			SplitHeuristic heuristic,
 			InferenceRule... theories) {		
 		
 		// System.out.println("UNSAT: " + formula + " : " + types);
- 		
-		return new Solver(limit,formula,heuristic, theories).checkUnsatisfiable();				
+		// The following uses the java.util.concurrent library to enforce a
+		// timeout on how long the solver will run for.
+		ExecutorService es = Executors.newSingleThreadExecutor();
+		FutureTask<Proof> task = new FutureTask<Proof>(new Solver(formula,
+				heuristic, theories));
+		es.submit(task);
+
+		Proof r = Proof.UNKNOWN;
+
+		try {
+			r = task.get(timeout, TimeUnit.MILLISECONDS);
+		} catch (ExecutionException ee) {
+			throw (RuntimeException) ee.getCause();
+		} catch (InterruptedException ie) {
+
+		} catch (TimeoutException ie) {
+			// timeout
+		}
+
+		es.shutdown();
+
+		return r;				
+	}
+	
+	public Proof call() {					
+		return checkUnsatisfiable();				
 	}
 	
 	/**
@@ -96,7 +114,7 @@ public final class Solver {
 	 * @return
 	 */
 	private Proof checkUnsatisfiable() {		
-		SolverState facts = new SolverState(limit);
+		SolverState facts = new SolverState();
 		facts.add(formula, this);
 		return checkUnsatisfiable(facts,0);
 	}
@@ -133,9 +151,7 @@ public final class Solver {
 					Proof p = checkUnsatisfiable(s, level+1);
 					if(!(p instanceof Proof.Unsat)) {						
 						return p;
-					} else if(s.count() >= limit) {
-						return Proof.UNKNOWN;
-					}
+					} 
 				}	
 				return Proof.UNSAT;
 			}
