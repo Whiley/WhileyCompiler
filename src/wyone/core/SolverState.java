@@ -86,7 +86,7 @@ public final class SolverState implements Iterable<WFormula> {
 	 * @param f
 	 * @param solver
 	 */
-	public void infer(WFormula f, Solver solver) {			
+	public void infer(WFormula f, Solver solver) {
 		if(f == WBool.TRUE) {
 			// do nothing
 		} else if(f instanceof WConjunct) {
@@ -125,7 +125,7 @@ public final class SolverState implements Iterable<WFormula> {
 	 * The purpose of the following method is to determine all new facts which
 	 * are immediate consequences of some fact being asserted.
 	 */
-	private void infer(Solver solver) {		
+	private void infer(Solver solver) {				
 		for(int i=0;i!=worklist.size();++i) {
 			Integer x = worklist.get(i);			
 			WFormula f = rassignments.get(x);

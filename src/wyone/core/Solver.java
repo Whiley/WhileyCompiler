@@ -131,7 +131,7 @@ public final class Solver implements Callable<Proof> {
 			// This is the recursive case; we need to find a way to further
 			// split the facts.
 			List<SolverState> substates = splitHeuristic.split(state, this);
-			
+
 			if(substates == null) {
 				// At this point, we've run out of things to try. So, have we
 				// found a model or not ?

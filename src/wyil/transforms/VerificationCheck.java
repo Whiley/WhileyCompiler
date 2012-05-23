@@ -487,9 +487,9 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
-//			System.out.println("==============================================");
-//			System.out.println("CHECKING: " + WFormulas.and(test.not(), constraint));
-//			System.out.println("==============================================");
+			System.out.println("==============================================");
+			System.out.println("CHECKING: " + test.not() + " && " + constraint);
+			System.out.println("==============================================");
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),
@@ -521,7 +521,7 @@ public class VerificationCheck implements Transform {
 			result = WNumerics.multiply(lhs, rhs);
 			break;
 		case DIV:
-			result = WNumerics.divide(lhs, rhs);
+			result = WNumerics.divide(lhs, rhs);			
 			break;	
 		default:
 			internalFailure("unknown binary operator",filename,entry);

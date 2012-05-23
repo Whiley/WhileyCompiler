@@ -113,7 +113,7 @@ public class CongruenceClosure implements InferenceRule {
 				// f has been replaced!															
 				state.infer(lnf,solver);							
 			}
-			WFormula rnf = typeCheck(f.substitute(lhsBinding),state);									
+			WFormula rnf = typeCheck(f.substitute(rhsBinding),state);									
 			if(rnf != f) {
 				// f has been replaced!															
 				state.infer(rnf,solver);							

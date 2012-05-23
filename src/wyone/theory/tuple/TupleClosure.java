@@ -31,9 +31,9 @@ public class TupleClosure implements InferenceRule {
 			WExpr lhs = weq.lhs();
 			WExpr rhs = weq.rhs();
 			
-			if (weq.sign() && weq.lhs() instanceof WTupleAccess) {
+			if (weq.sign() && lhs instanceof WTupleAccess) {
 				inferTuple(weq, state, solver);
-			} else if(weq.sign() && lhs instanceof WTupleConstructor  && rhs instanceof WTupleConstructor) {
+			} else if(weq.sign() && lhs instanceof WTupleConstructor && rhs instanceof WTupleConstructor) {
 				equate((WTupleConstructor)lhs,(WTupleConstructor)rhs,state,solver);
 			} else if(weq.sign() && lhs instanceof WTupleVal  && rhs instanceof WTupleConstructor) {
 				equate((WTupleVal)lhs,(WTupleConstructor)rhs,state,solver);
