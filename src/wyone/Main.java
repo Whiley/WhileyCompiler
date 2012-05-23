@@ -42,12 +42,12 @@ public class Main {
 	
 	public static final CompoundHeuristic heuristic = new CompoundHeuristic(
 			new NotEqualsHeuristic(), 
-			new DisjunctHeuristic()
-			//new BoundedNumberHeuristic(true, true), 			
-			//new BoundedSetHeuristic(),			
-			//new BoundedNumberHeuristic(true, false),
-			//new UnboundedNumberHeuristic(true),
-			//new UnboundedNumberHeuristic(false)		
+			new DisjunctHeuristic(),
+			new BoundedNumberHeuristic(true, true), 			
+			new BoundedSetHeuristic(),			
+			new BoundedNumberHeuristic(true, false),
+			new UnboundedNumberHeuristic(true),
+			new UnboundedNumberHeuristic(false)		
 	);
 
 	public static final InferenceRule[] theories = {		
@@ -66,7 +66,7 @@ public class Main {
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);
 		WFormula f = parser.parseInput();		
-		Proof r = Solver.checkUnsatisfiable(500, f,
+		Proof r = Solver.checkUnsatisfiable(1000, f,
 				heuristic, theories);		
 		return r instanceof Proof.Unsat;
 	}
@@ -74,7 +74,7 @@ public class Main {
 	public static boolean checkSat(String input) {		
 		Parser parser = new Parser(input);
 		WFormula f = parser.parseInput();
-		Proof r = Solver.checkUnsatisfiable(500, f,
+		Proof r = Solver.checkUnsatisfiable(1000, f,
 				heuristic, theories);
 		return !(r instanceof Proof.Unsat);
 	}
