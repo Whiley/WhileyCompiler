@@ -49,16 +49,21 @@ public final class FourierMotzkinSolver implements InferenceRule {
 	}
 
 	private static void internal_infer(WInequality ieq, SolverState state,
-			Solver solver) {				
+			Solver solver) {
 		WExpr ieq_rhs = ieq.rhs();
-		WExpr v;
-		
 		if(ieq_rhs instanceof WRational) {			
-			v = ieq_rhs.subterms().iterator().next();
+			for(WExpr subterm : ieq_rhs.subterms()) {
+				internal_infer(subterm,ieq,state,solver);
+			}			
 		} else {
-			v = ieq_rhs;
+			internal_infer(ieq_rhs,ieq,state,solver);
 		}		
 		
+	}
+	
+	private static void internal_infer(WExpr v, WInequality ieq, SolverState state,
+			Solver solver) {				
+				
 		// The purpose of the integer constraints are to identify those terms
 		// involving v which are constrained to be an integer. This is then fed
 		// into the constraint closure component which can perform additional
@@ -122,8 +127,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 		Pair<WExpr,WExpr> r = rearrangeFor(v,ieq);				
 		WExpr factor = r.second();		
 		WExpr remainder = r.first();
-		
-		
+				
 		if(term != null) {
 			Pair<WPolynomial,WPolynomial> p = term.rearrangeFor(v);		
 			WExpr divisor = WNumerics.normalise(term.denominator());

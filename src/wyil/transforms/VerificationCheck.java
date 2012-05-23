@@ -73,7 +73,7 @@ public class VerificationCheck implements Transform {
 	/**
 	 * Timeout in milliseconds when solving constraints.
 	 */
-	private int timeout = 100;
+	private int timeout = 1000;
 	
 	private String filename;
 	
@@ -135,7 +135,7 @@ public class VerificationCheck implements Transform {
 		for(int i=paramStart;i!=fmm.params().size();++i) {
 			Type paramType = fmm.params().get(i); 
 			WVariable pv = new WVariable(i + "$" + 0);
-			constraint = WFormulas.and(constraint,
+			constraint = WFormulas.and(constraint, WBool.TRUE,
 					WTypes.subtypeOf(pv, convert(paramType)));
 		}
 		
@@ -487,9 +487,9 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
-			System.out.println("==============================================");
-			System.out.println("CHECKING: " + test.not() + " && " + constraint);
-			System.out.println("==============================================");
+//			System.out.println("==============================================");
+//			System.out.println("CHECKING: " + test.not() + " && " + constraint);
+//			System.out.println("==============================================");
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),

@@ -247,7 +247,7 @@ public final class SolverState implements Iterable<WFormula> {
 	}
 	
 	private void internal_add(WFormula f) {		
-		f = reduce(f); 		
+		//f = reduce(f); 		
 		
 		if(f instanceof WConjunct) {
 			WConjunct wc = (WConjunct) f;
