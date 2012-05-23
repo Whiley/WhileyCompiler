@@ -69,17 +69,20 @@ import wyone.theory.type.WVoidType;
  * @author David J. Pearce
  * 
  */
-public class VerificationCheck implements Transform {
+public class VerificationCheck implements Transform {	
 	/**
 	 * Timeout in milliseconds when solving constraints.
 	 */
-	private int timeout = 1000;
+	private int timeout = getTimeout();
 	
-	private String filename;
-	
+	/**
+	 * Determines whether verification is enabled or not.
+	 */
 	private boolean enabled = getEnable();
 	
 	private Builder builder;
+	
+	private String filename;	
 	
 	public VerificationCheck(Builder builder) {
 		this.builder = builder;
@@ -95,6 +98,14 @@ public class VerificationCheck implements Transform {
 	
 	public void setEnable(boolean flag) {
 		this.enabled = flag;
+	}
+	
+	public static int getTimeout() {
+		return 500;
+	}
+	
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
 	
 	public void apply(WyilFile module) {
@@ -135,7 +146,7 @@ public class VerificationCheck implements Transform {
 		for(int i=paramStart;i!=fmm.params().size();++i) {
 			Type paramType = fmm.params().get(i); 
 			WVariable pv = new WVariable(i + "$" + 0);
-			constraint = WFormulas.and(constraint, WBool.TRUE,
+			constraint = WFormulas.and(constraint,
 					WTypes.subtypeOf(pv, convert(paramType)));
 		}
 		
