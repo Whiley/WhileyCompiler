@@ -26,13 +26,13 @@ public final class SolverState implements Iterable<WFormula> {
 	 * The assignment is a global mapping of formulas to integer numbers
 	 * which are, in effect, unique references for them.
 	 */
-	private static HashMap<WFormula,Integer> assignments = new HashMap<WFormula,Integer>();
+	private final HashMap<WFormula,Integer> assignments;
 
 	/**
 	 * The rassignments lists is the inverse map of the assignments list. Each
 	 * formula is located at a given index.
 	 */
-	private static ArrayList<WFormula> rassignments = new ArrayList<WFormula>();
+	private final ArrayList<WFormula> rassignments;
 	
 	/**
 	 * The assertions bitset detemines which assigned facts are currently
@@ -45,15 +45,19 @@ public final class SolverState implements Iterable<WFormula> {
 	 * have been subsumed by something else.
 	 */
 	private final BitSet eliminations;
-
 	
 	public SolverState() {
+		assignments = new HashMap<WFormula,Integer>();
+		rassignments = new ArrayList<WFormula>();
 		assertions = new BitSet();
 		eliminations = new BitSet();
 	}
 	
-	public SolverState(
+	public SolverState(HashMap<WFormula,Integer> assignments,
+			ArrayList<WFormula> rassignments,
 			BitSet assertions, BitSet eliminations) {
+		this.assignments = assignments;
+		this.rassignments = rassignments;
 		this.assertions = (BitSet) assertions.clone();
 		this.eliminations = (BitSet) eliminations.clone();
 	}
@@ -86,7 +90,7 @@ public final class SolverState implements Iterable<WFormula> {
 	 * @param f
 	 * @param solver
 	 */
-	public void infer(WFormula f, Solver solver) {			
+	public void infer(WFormula f, Solver solver) {
 		if(f == WBool.TRUE) {
 			// do nothing
 		} else if(f instanceof WConjunct) {
@@ -99,12 +103,7 @@ public final class SolverState implements Iterable<WFormula> {
 		}		
 	}
 
-	/**
-	 * The following worklist is a bit of a hack, but it works nicely. Making it
-	 * static certainly improves overall performance, however there will be a
-	 * distinct problem when moving to a parallel solver implementation.
-	 */
-	private static final ArrayList<Integer> worklist = new ArrayList<Integer>();
+	private final ArrayList<Integer> worklist = new ArrayList<Integer>();
 	
 	/**
 	 * A formula is eliminated if it is implied by something else already present
@@ -125,12 +124,12 @@ public final class SolverState implements Iterable<WFormula> {
 	 * The purpose of the following method is to determine all new facts which
 	 * are immediate consequences of some fact being asserted.
 	 */
-	private void infer(Solver solver) {		
-		for(int i=0;i!=worklist.size();++i) {
+	private void infer(Solver solver) {				
+		for(int i=0;i!=worklist.size();++i) {			
 			Integer x = worklist.get(i);			
 			WFormula f = rassignments.get(x);
 			//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
-			for(InferenceRule ir : solver.theories()) {				
+			for(InferenceRule ir : solver.theories()) {
 				if(assertions.get(x)) {					
 					ir.infer(f, this, solver);
 					if(contains(WBool.FALSE)){				
@@ -223,7 +222,8 @@ public final class SolverState implements Iterable<WFormula> {
 	}	
 
 	public SolverState clone() {
-		SolverState nls = new SolverState(assertions, eliminations);				
+		SolverState nls = new SolverState(assignments, rassignments,
+				assertions, eliminations);
 		return nls;
 	}
 		
@@ -239,11 +239,6 @@ public final class SolverState implements Iterable<WFormula> {
 		}
 		r += "]";
 		return r;
-	}
-	
-	public static void reset_state() {
-		rassignments = new ArrayList<WFormula>();
-		assignments = new HashMap();
 	}
 	
 	private void internal_add(WFormula f) {		
@@ -272,7 +267,7 @@ public final class SolverState implements Iterable<WFormula> {
 		}
 	}
 		
-	private static final class AssertionIterator implements Iterator<WFormula> {
+	private final class AssertionIterator implements Iterator<WFormula> {
 		private final BitSet assertions;
 		private int index;
 		

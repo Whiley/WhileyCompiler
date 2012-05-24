@@ -52,10 +52,8 @@ public class CongruenceClosure implements InferenceRule {
 		
 		WFormula nf = formula.substitute(binding);
 		if(nf != formula) {			
-			state.eliminate(formula);	
-			if(!state.contains(nf)) {				
-				state.infer(nf,solver);
-			}
+			//state.eliminate(formula);				
+			state.infer(nf,solver);
 		}
 	}
 	
@@ -101,21 +99,31 @@ public class CongruenceClosure implements InferenceRule {
 		// class of equivalences, and ensure that all constraints are in terms
 		// of the current representatives.
 			
-		HashMap<WExpr, WExpr> binding = new HashMap<WExpr,WExpr>();
-		binding.put(eq.lhs(),eq.rhs());
+		HashMap<WExpr, WExpr> lhsBinding = new HashMap<WExpr,WExpr>();
+		lhsBinding.put(eq.lhs(),eq.rhs());
+		HashMap<WExpr, WExpr> rhsBinding = new HashMap<WExpr,WExpr>();
+		rhsBinding.put(eq.rhs(),eq.lhs());
 		
 		// Second, we iterate all existing literals and attempt to simplify
 		// them. Those which are simplified are subsumed, and their simplified
 		// forms are added into the literal set.
 		for(WFormula f : state) {
 			if(f == eq) { continue; }			
-			WFormula nf = typeCheck(f.substitute(binding),state);									
-			if(nf != f) {
-				// f has been replaced!					
+			WFormula lnf = typeCheck(f.substitute(lhsBinding),state);									
+			if(lnf != f) {
+				// f has been replaced!
 				if(!isAssignment(f)) {					
-					state.eliminate(f);
-				}							
-				state.infer(nf,solver);							
+					//state.eliminate(f);
+				}	
+				state.infer(lnf,solver);							
+			}
+			WFormula rnf = typeCheck(f.substitute(rhsBinding),state);									
+			if(rnf != f) {
+				// f has been replaced!
+				if(!isAssignment(f)) {					
+					//state.eliminate(f);
+				}															
+				state.infer(rnf,solver);							
 			}
 		}
 	}	

@@ -299,10 +299,8 @@ public class Parser {
 		} else if (c == '|') {			
 			return parseLengthTerm();			
 		} else if (index < input.length()
-				&& (Character.isJavaIdentifierStart(c) || c == '%' || c == '$' || c == ':')) {
-			return parseIdentifierTerm();			
-		} else if (Character.isDigit(c)) {
-			return parseNumber();
+				&& (Character.isJavaIdentifierStart(c) || Character.isDigit(c) || c == '%' || c == '$' || c == ':')) {
+			return parseNumberOrIdentifier();			
 		} else if (c == '-') {
 			return parseNegation();
 		} else {
@@ -354,7 +352,7 @@ public class Parser {
 		return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
 	}
 	
-	private WExpr parseIdentifierTerm() {
+	private WExpr parseNumberOrIdentifier() {
 		int start = index;		
 		String v = parseIdentifier();
 		
@@ -379,7 +377,14 @@ public class Parser {
 		} 
 				
 		if(params == null) {
-			return  new WVariable(v);
+			for(int i=0;i!=v.length();++i) {
+				char c = v.charAt(i);
+				if(!Character.isDigit(c) && c != '.') {
+					return new WVariable(v);					
+				}
+			}
+			index = start;
+			return parseNumber();
 		} else {
 			return new WVariable(v,params);
 		}					

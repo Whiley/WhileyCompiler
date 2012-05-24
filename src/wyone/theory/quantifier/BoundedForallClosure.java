@@ -109,7 +109,7 @@ public class BoundedForallClosure implements InferenceRule {
 		if(inferences.size() == 0) {
 			return false; // didn't infer anything
 		} else {
-			state.eliminate(bf);
+			//state.eliminate(bf);
 			for(WFormula nf : inferences) {
 				if(!state.contains(nf)) {					
 					state.infer(nf,solver);

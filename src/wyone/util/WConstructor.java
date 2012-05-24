@@ -30,7 +30,7 @@ import wyone.theory.numeric.*;
  * @author djp
  * 
  */
-public class WConstructor<T extends WExpr> implements Iterable<T> {
+public abstract class WConstructor<T extends WExpr> implements Iterable<T> {
 	protected final String name; // constructor name
 	protected final ArrayList<T> subterms; 	
 	

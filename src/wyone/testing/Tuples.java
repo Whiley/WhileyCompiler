@@ -40,7 +40,7 @@ public class Tuples {
 	}
 
 	@Test public void Unsat_5() {
-		assertTrue(checkUnsat("x <: (int f1,int f2)&& x==(f1:1.0,f2:3.0) && x.f2 <= 2"));		
+		assertTrue(checkUnsat("x <: (int f1,int f2)&& x==(f1=1.0,f2=3.0) && x.f2 <= 2"));		
 	}
 	
 	@Test public void Unsat_6() { 
@@ -57,23 +57,23 @@ public class Tuples {
 	
 	@Test public void Unsat_9() { 
 		assertTrue(checkUnsat("x <: (int f1,int f2) && y <: (int f1,int f2) && " + 
-				"y==(f1:1.0,f2:3.0) && x.f1==1 && x.f2==3 && x!=y"));
+				"y==(f1=1.0,f2=3.0) && x.f1==1 && x.f2==3 && x!=y"));
 	}
 	
 	@Test public void Unsat_10() { 
 		assertTrue(checkUnsat("x <: (int f1,int f2) && y <: (int f1,int f2) && z<:int &&" +
-				"y==(f1:z,f2:3.0) && x.f1==z && x.f2==3 && x!=y"));
+				"y==(f1=z,f2=3.0) && x.f1==z && x.f2==3 && x!=y"));
 	}
 	
 	@Test public void Unsat_11() { 
-		assertTrue(checkUnsat("x <: ((int f1,int f2) f) && y <: (int f1,int f2) && y==(f1:1.0,f2:3.0) && x.f.f1==1 && x.f.f2==3 && x.f!=y"));
+		assertTrue(checkUnsat("x <: ((int f1,int f2) f) && y <: (int f1,int f2) && y==(f1=1.0,f2=3.0) && x.f.f1==1 && x.f.f2==3 && x.f!=y"));
 	}
 	
 	@Test public void Unsat_12() { 
-		assertTrue(checkUnsat("x <: (int f1,int f2) && y <: (int f1,int f2) && a <: int && y==(f1:a,f2:3.0) && x==(f1:1,f2:3.0) && x != y && a == 1"));
+		assertTrue(checkUnsat("x <: (int f1,int f2) && y <: (int f1,int f2) && a <: int && y==(f1=a,f2=3.0) && x==(f1=1,f2=3.0) && x != y && a == 1"));
 	}
 	
 	@Test public void Sat_1() { 
-		assertTrue(checkSat("x <: (int f1,int f2) && y <: (int f1,int f2) && y==(f1:1.0,f2:3.0) && x.f1==2.0 && y.f2==x.f2 && x.f1!=x.f2"));
+		assertTrue(checkSat("x <: (int f1,int f2) && y <: (int f1,int f2) && y==(f1=1.0,f2=3.0) && x.f1==2.0 && y.f2==x.f2 && x.f1!=x.f2"));
 	}
 }

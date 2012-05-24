@@ -26,7 +26,7 @@ import wyone.theory.logic.*;
 public final class Solver implements Callable<Proof> {
 	
 	public static boolean debug = false;
-	
+		
 	/**
 	 * The list of theories to use when performing local inference.
 	 */
@@ -44,7 +44,7 @@ public final class Solver implements Callable<Proof> {
 	private final WFormula formula;
 		
 	Solver(WFormula formula, 
-			SplitHeuristic heuristic,InferenceRule... theories) {		
+			SplitHeuristic heuristic,InferenceRule... theories) {
 		this.formula = formula;
 		this.theories = new ArrayList<InferenceRule>();
 		this.splitHeuristic = heuristic;
@@ -72,34 +72,33 @@ public final class Solver implements Callable<Proof> {
 	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
-	public static synchronized Proof checkUnsatisfiable(int timeout, WFormula formula,
+	public static synchronized Proof checkUnsatisfiable(int timeout,WFormula formula,
 			SplitHeuristic heuristic,
 			InferenceRule... theories) {		
 		
 		// System.out.println("UNSAT: " + formula + " : " + types);
- 
 		// The following uses the java.util.concurrent library to enforce a
 		// timeout on how long the solver will run for.
-		ExecutorService es = Executors.newSingleThreadExecutor ();
+		ExecutorService es = Executors.newSingleThreadExecutor();
 		FutureTask<Proof> task = new FutureTask<Proof>(new Solver(formula,
 				heuristic, theories));
 		es.submit(task);
-		
+
 		Proof r = Proof.UNKNOWN;
-		
-		try {			
-			r = task.get(timeout,TimeUnit.MILLISECONDS);				
-		} catch(ExecutionException ee) {
+
+		try {
+			r = task.get(timeout, TimeUnit.MILLISECONDS);
+		} catch (ExecutionException ee) {
 			throw (RuntimeException) ee.getCause();
-		} catch(InterruptedException ie) {
-			
-		} catch(TimeoutException ie) {
+		} catch (InterruptedException ie) {
+
+		} catch (TimeoutException ie) {
 			// timeout
 		}
-		
+
 		es.shutdown();
-		
-		return r;
+
+		return r;				
 	}
 	
 	public Proof call() {					
@@ -115,7 +114,6 @@ public final class Solver implements Callable<Proof> {
 	 * @return
 	 */
 	private Proof checkUnsatisfiable() {		
-		SolverState.reset_state();
 		SolverState facts = new SolverState();
 		facts.add(formula, this);
 		return checkUnsatisfiable(facts,0);
@@ -124,14 +122,14 @@ public final class Solver implements Callable<Proof> {
 	protected Proof checkUnsatisfiable(SolverState state, int level) {		
 		if(debug) { indent(level); System.out.println("STATE: " + state); }
 		
-		if(state.contains(WBool.FALSE)) {			
+		if(state.contains(WBool.FALSE)) {	
 			// Here, we've reached a contradiction on this branch			
 			return Proof.UNSAT;
 		} else {			
 			// This is the recursive case; we need to find a way to further
 			// split the facts.
 			List<SolverState> substates = splitHeuristic.split(state, this);
-			
+
 			if(substates == null) {
 				// At this point, we've run out of things to try. So, have we
 				// found a model or not ?
@@ -147,15 +145,14 @@ public final class Solver implements Callable<Proof> {
 						}
 					}
 				}
-				
 				return checkModel(valuation);
 			} else {				
 				for(SolverState s : substates) {
 					Proof p = checkUnsatisfiable(s, level+1);
 					if(!(p instanceof Proof.Unsat)) {						
 						return p;
-					}
-				}				
+					} 
+				}	
 				return Proof.UNSAT;
 			}
 		}

@@ -1,4 +1,5 @@
 import println from whiley.lang.System
+import * from whiley.lang.Int
 
 define bytes as {i8 b1, i8 b2}
 

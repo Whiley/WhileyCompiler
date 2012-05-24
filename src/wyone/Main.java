@@ -45,9 +45,9 @@ public class Main {
 			new DisjunctHeuristic(),
 			new BoundedNumberHeuristic(true, true), 			
 			new BoundedSetHeuristic(),			
-			new BoundedNumberHeuristic(true, false),
-			new UnboundedNumberHeuristic(true),
-			new UnboundedNumberHeuristic(false)		
+			new BoundedNumberHeuristic(true, false)
+			//new UnboundedNumberHeuristic(true),
+			//new UnboundedNumberHeuristic(false)		
 	);
 
 	public static final InferenceRule[] theories = {		
@@ -66,7 +66,7 @@ public class Main {
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);
 		WFormula f = parser.parseInput();		
-		Proof r = Solver.checkUnsatisfiable(1000, f,
+		Proof r = Solver.checkUnsatisfiable(500, f,
 				heuristic, theories);		
 		return r instanceof Proof.Unsat;
 	}
@@ -74,9 +74,9 @@ public class Main {
 	public static boolean checkSat(String input) {		
 		Parser parser = new Parser(input);
 		WFormula f = parser.parseInput();
-		Proof r = Solver.checkUnsatisfiable(1000, f,
+		Proof r = Solver.checkUnsatisfiable(500, f,
 				heuristic, theories);
-		return r instanceof Proof.Sat;
+		return !(r instanceof Proof.Unsat);
 	}
 	
 	public static void main(String[] args) {	
@@ -87,7 +87,7 @@ public class Main {
 					System.exit(1);
 				} 				
 				
-				int timeout = 1000; // milli-seconds;
+				int timeout = 500; 
 				boolean proof = false;				
 				
 				int fileArgsBegin = 0;

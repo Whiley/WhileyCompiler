@@ -28,28 +28,38 @@ package wyil.transforms;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.Code.*;
+import wyil.util.ErrorMessages;
 import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Code.*;
+import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wyjc.runtime.BigRational;
 import wyone.core.*;
 import wyone.theory.list.WLengthOf;
 import wyone.theory.list.WListAccess;
 import wyone.theory.list.WListConstructor;
+import wyone.theory.list.WListType;
 import wyone.theory.list.WListVal;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.WBoundedForall;
 import wyone.theory.set.WSetConstructor;
+import wyone.theory.set.WSetType;
 import wyone.theory.set.WSetVal;
 import wyone.theory.set.WSets;
 import wyone.theory.tuple.WTupleAccess;
 import wyone.theory.tuple.WTupleConstructor;
+import wyone.theory.tuple.WTupleType;
 import wyone.theory.tuple.WTupleVal;
+import wyone.theory.type.WAnyType;
+import wyone.theory.type.WTypes;
+import wyone.theory.type.WVoidType;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -59,18 +69,23 @@ import wyone.theory.tuple.WTupleVal;
  * @author David J. Pearce
  * 
  */
-public class VerificationCheck implements Transform {
+public class VerificationCheck implements Transform {	
 	/**
-	 * Timeout in milliseconds when solving constraints.
+	 * limit on number of steps theorem prover is allowed to take.
 	 */
-	private int timeout = 100;
+	private int timeout = getTimeout();	
 	
-	private String filename;
-	
+	/**
+	 * Determines whether verification is enabled or not.
+	 */
 	private boolean enabled = getEnable();
 	
+	private Builder builder;
+	
+	private String filename;	
+	
 	public VerificationCheck(Builder builder) {
-		
+		this.builder = builder;
 	}
 	
 	public static String describeEnable() {
@@ -85,6 +100,14 @@ public class VerificationCheck implements Transform {
 		this.enabled = flag;
 	}
 	
+	public static int getTimeout() {
+		return 250;
+	}
+	
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
 	public void apply(WyilFile module) {
 		if(enabled) {
 			this.filename = module.filename();
@@ -103,37 +126,66 @@ public class VerificationCheck implements Transform {
 	
 	protected void transform(WyilFile.Method method) {		
 		for(WyilFile.Case c : method.cases()) {
-			transform(c);
+			transform(c,method);
 		}
 	}
 	
-	protected void transform(WyilFile.Case methodCase) {
+	protected void transform(WyilFile.Case methodCase, WyilFile.Method method) {
 		WFormula constraint = WBool.TRUE;					
-		Block pre = methodCase.precondition();				
-		Block body = methodCase.body();				
-		ArrayList<Branch> branches = new ArrayList<Branch>();
-		ArrayList<WExpr> stack = new ArrayList<WExpr>();
-		int[] environment = new int[body.numSlots()];			
+				
+		// add type information available from parameters
+		Type.FunctionOrMethodOrMessage fmm = method.type();
+		int paramStart = 0;
+		if (fmm instanceof Type.Message) {
+			Type.Message mt = (Type.Message) fmm;
+			WVariable pv = new WVariable(0 + "$" + 0);
+			constraint = WFormulas.and(constraint,
+					WTypes.subtypeOf(pv, convert(mt.receiver())));
+			paramStart++;
+		}
+		for(int i=paramStart;i!=fmm.params().size();++i) {
+			Type paramType = fmm.params().get(i); 
+			WVariable pv = new WVariable(i + "$" + 0);
+			constraint = WFormulas.and(constraint,
+					WTypes.subtypeOf(pv, convert(paramType)));
+		}
 		
-		// this is a tad inefficient; but, it's the easiest way to do it.
-		Block blk = new Block(body.numSlots());
-		int assumes = 0;
-		if(pre != null) {
-			blk.append(pre);
-			assumes = pre.size();
-		} 
-		blk.append(body);
+		Block precondition = methodCase.precondition();				
 		
-		// take initial branch
-		transform(0,constraint,environment,stack,branches,assumes,blk);
+		if(precondition != null) {
+			WFormula precon = transform(WBool.TRUE, true, precondition);
+			constraint = WFormulas.and(constraint,precon);
+		}
 		
-		// continue any resulting branches
-		while (!branches.isEmpty()) {
-			int last = branches.size() - 1;
-			Branch branch = branches.get(last);
-			branches.remove(last);
-			transform(branch.pc, branch.constraint,branch.environment, branch.stack, branches,
-					assumes,blk);
+		transform(constraint,false,methodCase.body());
+	}
+	
+	
+	public static class Scope {
+		public final int end;
+		
+		public Scope(int end) {
+			this.end = end;
+		}
+	}
+	
+	private static class LoopScope<T extends Code.Loop> extends Scope {
+		public final T loop;
+		
+		public LoopScope(T loop, int end) {
+			super(end);
+			this.loop = loop;
+		}
+	}
+	
+	private static class ForScope extends LoopScope<Code.ForAll> {
+		public final WExpr src;
+		public final WVariable var;
+
+		public ForScope(Code.ForAll forall, int end, WExpr src, WVariable var) {
+			super(forall, end);
+			this.src = src;
+			this.var = var;
 		}
 	}
 	
@@ -149,43 +201,165 @@ public class VerificationCheck implements Transform {
 		public final WFormula constraint;
 		public final int[] environment;
 		public final ArrayList<WExpr> stack;
-		public Branch(int pc, WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		public final ArrayList<Scope> scopes;
+
+		public Branch(int pc, WFormula constraint, int[] environment,
+				ArrayList<WExpr> stack, ArrayList<Scope> scopes) {
 			this.pc = pc;
 			this.constraint = constraint;
 			this.environment = Arrays.copyOf(environment,environment.length);
 			this.stack = new ArrayList<WExpr>(stack);
+			this.scopes = new ArrayList<Scope>(scopes);
 		}
 	}
 	
-	protected void transform(int pc, WFormula constraint, int[] environment,
-			ArrayList<WExpr> stack, ArrayList<Branch> branches, int assumes, Block body) {
-				
+	protected WFormula transform(WFormula constraint, boolean assumes, Block blk) {
+		ArrayList<Branch> branches = new ArrayList<Branch>();
+		ArrayList<WExpr> stack = new ArrayList<WExpr>();
+		ArrayList<Scope> scopes = new ArrayList<Scope>();
+		int[] environment = new int[blk.numSlots()];
+
+		// take initial branch
+		constraint = transform(0, constraint, environment, stack, scopes,
+				branches, assumes, blk);
+
+		// continue any resulting branches
+		while (!branches.isEmpty()) {
+			int last = branches.size() - 1;
+			Branch branch = branches.get(last);
+			branches.remove(last);
+			constraint = WFormulas
+					.or(constraint,
+							transform(branch.pc, branch.constraint,
+									branch.environment, branch.stack,
+									branch.scopes, branches, assumes, blk));
+		}
+		
+		// The following is necessary to prevent any possible clashes between
+		// temporary variables used in pre- and post-conditions which are then
+		// merged into the running constraint.
+		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
+		for(int i=blk.numInputs();i<blk.numSlots();++i) {
+			for(int j=0;j<=environment[i];++j) {
+				binding.put(new WVariable(i + "$" + j), WVariable.freshVar());
+			}
+		}
+
+		return constraint.substitute(binding);
+	}
+	
+	protected WFormula transform(int pc, WFormula constraint, int[] environment,
+			ArrayList<WExpr> stack, ArrayList<Scope> scopes,
+			ArrayList<Branch> branches, boolean assumes, Block body) {
+		
+		// the following is necessary for branches generated from conditionals
+		
 		int bodySize = body.size();		
-		for (int i = pc; i != bodySize; ++i) {			
+		for (int i = pc; i != bodySize; ++i) {	
+			constraint = exitScope(constraint,environment,scopes,i);
+			
 			Block.Entry entry = body.get(i);			
 			Code code = entry.code;
 			
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
-				i = findLabel(i,g.target,body);				
+				i = findLabel(i,g.target,body);					
 			} else if(code instanceof Code.IfGoto) {
 				Code.IfGoto ifgoto = (Code.IfGoto) code;
 				WFormula test = buildTest(ifgoto.op,stack,entry);				
-				int targetpc = findLabel(i,ifgoto.target,body);
-				branches.add(new Branch(targetpc,WFormulas.and(constraint,test),environment,stack));
+				int targetpc = findLabel(i,ifgoto.target,body)	;
+				branches.add(new Branch(targetpc, WFormulas.and(constraint,
+						test), environment, stack, scopes));
 				constraint = WFormulas.and(constraint,test.not());
 			} else if(code instanceof Code.IfType) {
 				// TODO: implement me!
+			} else if(code instanceof Code.ForAll) {
+				Code.ForAll forall = (Code.ForAll) code; 
+				int end = findLabel(i,forall.target,body);
+				WExpr src = pop(stack);
+				WVariable var = new WVariable(forall.slot + "$"
+						+ environment[forall.slot]);
+				constraint = WFormulas.and(constraint,
+						WTypes.subtypeOf(var, convert(forall.type.element())));
+				
+				if (forall.type instanceof Type.EffectiveList) {
+					// We have to treat lists differently from sets because of the
+					// way wyone handles list quantification. It's kind of annoying,
+					// but there's not much we can do.
+					WVariable index = WVariable.freshVar();
+					constraint = WFormulas.and(constraint,
+							WExprs.equals(var, new WListAccess(src,index)),
+							WNumerics.lessThanEq(WNumber.ZERO, index),
+							WNumerics.lessThan(index, new WLengthOf(src)),
+							WTypes.subtypeOf(index, WIntType.T_INT));
+					scopes.add(new ForScope(forall,end,src,index));
+				} else if (forall.type instanceof Type.EffectiveSet) {
+					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
+					constraint = WFormulas.and(constraint, WSets.elementOf(var, src));
+					scopes.add(new ForScope(forall,end,src,var));
+				} else if (forall.type instanceof Type.EffectiveDictionary) {
+					// TODO
+				}
+				
+				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
-				// TODO: implement me!
+				Code.Loop loop = (Code.Loop) code; 
+				int end = findLabel(i,loop.target,body);
+				scopes.add(new LoopScope(loop,end));
+				// FIXME: assume loop invariant?
+				// FIXME: assume condition?
 			} else if(code instanceof Code.Return) {
 				// we don't need to do anything for a return!
-				return;
+				return constraint;
 			} else {
 				constraint = transform(entry, constraint, environment,
-						stack, i < assumes);
+						stack, assumes);
 			}
 		}
+		
+		return constraint;
+	}
+	
+	private static WFormula exitScope(WFormula constraint,
+			int[] environment, ArrayList<Scope> scopes, int pc) {
+		
+		while (!scopes.isEmpty() && top(scopes).end <= pc) {
+			// yes, we're exiting a scope
+			Scope scope = pop(scopes);
+			
+			if(scope instanceof LoopScope) {
+				LoopScope lscope = (LoopScope) scope;
+
+				// trash modified variables
+				for (int slot : lscope.loop.modifies) {
+					environment[slot] = environment[slot] + 1;
+				}
+				if(lscope instanceof ForScope) {
+					ForScope fscope = (ForScope) lscope;
+					// existing for all scope so existentially quantify generated
+					// formula
+					WVariable var = fscope.var;
+					// Split for the formula into those bits which need to be
+					// quantified, and those which don't
+					Pair<WFormula, WFormula> split = splitFormula(var.name(),
+							constraint);
+					
+					if(pc == fscope.end) { 						
+						constraint = WFormulas.and(
+								split.second(),
+								new WBoundedForall(true, var, fscope.src, split
+										.first()));
+					} else {
+						constraint = WFormulas.and(
+								split.second(),
+								new WBoundedForall(false, var, fscope.src, split
+										.first().not()));						
+					}
+				}
+			}			
+		}
+		
+		return constraint;
 	}
 	
 	private static int findLabel(int i, String label, Block body) {
@@ -225,6 +399,7 @@ public class VerificationCheck implements Transform {
 			int[] environment, ArrayList<WExpr> stack, boolean assume) {
 		Code code = entry.code;		
 		
+		try {
 		if(code instanceof Code.Assert) {
 			constraint = transform((Assert)code,entry,constraint,environment,stack,assume);
 		} else if(code instanceof BinOp) {
@@ -303,6 +478,13 @@ public class VerificationCheck implements Transform {
 			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
 		}
+		} catch(InternalFailure e) {
+			throw e;
+		} catch(SyntaxError e) {
+			throw e;
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,entry,e);
+		}
 		return constraint;
 	}
 	
@@ -317,6 +499,9 @@ public class VerificationCheck implements Transform {
 			// in assumption mode we don't assert the test; rather, we assume
 			// it. 
 		} else {
+//			System.out.println("======================================");
+//			System.out.println("CHECKING: " + test.not() + " && " + constraint);
+//			System.out.println("======================================");
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
 					WFormulas.and(test.not(), constraint),
@@ -348,7 +533,7 @@ public class VerificationCheck implements Transform {
 			result = WNumerics.multiply(lhs, rhs);
 			break;
 		case DIV:
-			result = WNumerics.divide(lhs, rhs);
+			result = WNumerics.divide(lhs, rhs);			
 			break;	
 		default:
 			internalFailure("unknown binary operator",filename,entry);
@@ -374,6 +559,20 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.Destructure code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+		WExpr src = pop(stack);
+		
+		if(code.type instanceof Type.EffectiveTuple) {
+			Type.EffectiveTuple et = (Type.EffectiveTuple) code.type;
+			
+			int field = 0;
+			for (Type t : et.elements()) {
+				stack.add(new WTupleAccess(src, Integer.toString(field++)));				
+			}
+		} else {
+			// FIXME: really need to do better		
+			stack.add(src);
+			stack.add(src);
+		}
 		// TODO: complete this transform		
 		return constraint;
 	}
@@ -398,20 +597,38 @@ public class VerificationCheck implements Transform {
 	}
 
 	protected WFormula transform(Code.Invoke code, Block.Entry entry,
-			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
+			WFormula constraint, int[] environment, ArrayList<WExpr> stack)
+			throws Exception {
 		
+		// first, take arguments off the stack
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
-		for(int i=0;i!=ft_params.size();++i) {
-			args.add(pop(stack));
-		}
-		Collections.reverse(args);				
-		WVariable rv = new WVariable(code.name.toString(), args);
+		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
+		for(int i=ft_params.size();i>0;--i) {
+			WExpr arg = pop(stack);
+			args.add(arg);
+			binding.put(new WVariable(i + "$0"), arg);
+		}		
+		Collections.reverse(args);		
 		
-		// FIXME: need to support post-condition here.
+		// second, setup return value
+		if(code.retval) {
+			WVariable rv = new WVariable(code.name.toString(), args);
+			stack.add(rv);
+
+			constraint = WFormulas.and(constraint,
+					WTypes.subtypeOf(rv, convert(ft.ret())));
+
+			// now deal with post-condition		
+			Block postcondition = findPostcondition(code.name,ft,entry);
+			if(postcondition != null) {					
+				WFormula pc = transform(WBool.TRUE, true, postcondition);
+				binding.put(new WVariable("0$0"),rv);
+				constraint = WFormulas.and(constraint,pc.substitute(binding));
+			}
+		}		
 		
-		stack.add(rv);
 		return constraint;
 	}
 
@@ -511,7 +728,14 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.NewTuple code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		ArrayList<String> fields = new ArrayList<String>();
+		ArrayList<WExpr> terms = new ArrayList<WExpr>();
+		int field=0;
+		for(Type t : code.type.elements()) {			
+			terms.add(pop(stack));
+			fields.add(Integer.toString(field++));
+		}
+		stack.add(new WTupleConstructor(fields,terms));
 		return constraint;
 	}
 
@@ -540,7 +764,8 @@ public class VerificationCheck implements Transform {
 		environment[slot] = environment[slot] + 1;
 		WExpr lhs = new WVariable(slot + "$" + environment[slot]);
 		WExpr rhs = pop(stack);
-		constraint = WFormulas.and(constraint,WExprs.equals(lhs, rhs));
+		constraint = WFormulas.and(constraint, WExprs.equals(lhs, rhs),
+				WTypes.subtypeOf(lhs, convert(code.type)));
 		return constraint;
 	}
 
@@ -630,11 +855,57 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.TupleLoad code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		WExpr src = pop(stack);
+		stack.add(new WTupleAccess(src, Integer.toString(code.index)));		
 		return constraint;
 	}
 	
+	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
+			SyntacticElement elem) throws Exception {
+		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),
+				WyilFile.ContentType);
+		if (e == null) {
+			syntaxError(
+					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
+							.toString()), filename, elem);
+		}
+		WyilFile m = e.read();
+		WyilFile.Method method = m.method(name.name(), fun);
 
+		for (WyilFile.Case c : method.cases()) {
+			// FIXME: this is a hack for now
+			return c.postcondition();
+		}
+		return null;
+	}
+	
+	// The following method splits a formula into two components: those bits
+	// which use the given variable (left), and those which don't (right). This
+	// is done to avoid quantifying more than is necessary when dealing with
+	// loops.
+	protected static Pair<WFormula, WFormula> splitFormula(String var, WFormula f) {
+		if (f instanceof WConjunct) {
+			WConjunct c = (WConjunct) f;
+			WFormula ts = WBool.TRUE;
+			WFormula fs = WBool.TRUE;
+			for (WFormula st : c.subterms()) {
+				Pair<WFormula, WFormula> r = splitFormula(var, st);
+				ts = WFormulas.and(ts, r.first());
+				fs = WFormulas.and(fs, r.second());
+			}
+			return new Pair<WFormula, WFormula>(ts, fs);
+		} else {
+			// not a conjunct, so check whether or not this uses var or not.
+			Set<WVariable> uses = WExprs.match(WVariable.class, f);
+			for (WVariable v : uses) {
+				if (v.name().equals(var)) {
+					return new Pair<WFormula, WFormula>(f, WBool.TRUE);
+				}
+			}
+			// Ok, doesn't use variable
+			return new Pair<WFormula, WFormula>(WBool.TRUE, f);
+		}
+	}
 	/**
 	 * Convert between a WYIL value and a WYONE value. Basically, this is really
 	 * stupid and it would be good for them to be the same.
@@ -708,6 +979,41 @@ public class VerificationCheck implements Transform {
 	}
 	
 	/**
+	 * Convert a Wyil type into a Wyone type. Mostly, the conversion is
+	 * straightforward and obvious.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	protected WType convert(Type type) {
+		if(type == Type.T_VOID) {
+			return WVoidType.T_VOID;
+		} else if(type == Type.T_BOOL) {
+			return WBoolType.T_BOOL;
+		} else if(type == Type.T_INT) {
+			return WIntType.T_INT;
+		} else if(type == Type.T_REAL) {
+			return WRealType.T_REAL;
+		} else if(type instanceof Type.EffectiveList) {
+			Type.EffectiveList tl = (Type.EffectiveList) type;
+			return new WListType(convert(tl.element()));			
+		} else if(type instanceof Type.EffectiveSet) {
+			Type.EffectiveSet tl = (Type.EffectiveSet) type;
+			return new WSetType(convert(tl.element()));			
+		} else if(type instanceof Type.EffectiveRecord) {
+			Type.EffectiveRecord tl = (Type.EffectiveRecord) type;
+			ArrayList<String> keys = new ArrayList<String>(tl.fields().keySet());
+			ArrayList<wyone.util.Pair<String,WType>> types = new ArrayList();
+			Collections.sort(keys);
+			for(String key : keys) {
+				types.add(new wyone.util.Pair(key,convert(tl.fields().get(key))));
+			}
+			return new WTupleType(types);
+		} else {
+			return WAnyType.T_ANY;
+		}
+	}
+	/**
 	 * Generate a formula representing a condition from an Code.IfCode or
 	 * Code.Assert bytecodes.
 	 * 
@@ -745,10 +1051,16 @@ public class VerificationCheck implements Transform {
 		}
 	}
 	
-	private static WExpr pop(ArrayList<WExpr> stack) {
+	private static <T> T pop(ArrayList<T> stack) {
 		int last = stack.size()-1;
-		WExpr c = stack.get(last);
+		T c = stack.get(last);
 		stack.remove(last);
+		return c;
+	}
+	
+	private static <T> T top(ArrayList<T> stack) {
+		int last = stack.size()-1;
+		T c = stack.get(last);
 		return c;
 	}
 }

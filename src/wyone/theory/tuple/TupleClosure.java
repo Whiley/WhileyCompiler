@@ -28,8 +28,45 @@ public class TupleClosure implements InferenceRule {
 	public void infer(WFormula nlit, SolverState state, Solver solver) {
 		if (nlit instanceof WEquality) {
 			WEquality weq = (WEquality) nlit;
-			if (weq.sign() && weq.lhs() instanceof WTupleAccess) {
+			WExpr lhs = weq.lhs();
+			WExpr rhs = weq.rhs();
+			
+			if (weq.sign() && lhs instanceof WTupleAccess) {
 				inferTuple(weq, state, solver);
+			} else if(weq.sign() && lhs instanceof WTupleConstructor && rhs instanceof WTupleConstructor) {
+				equate((WTupleConstructor)lhs,(WTupleConstructor)rhs,state,solver);
+			} else if(weq.sign() && lhs instanceof WTupleVal  && rhs instanceof WTupleConstructor) {
+				equate((WTupleVal)lhs,(WTupleConstructor)rhs,state,solver);
+			} else if(weq.sign() && lhs instanceof WTupleConstructor  && rhs instanceof WTupleVal) {
+				equate((WTupleVal)rhs,(WTupleConstructor)lhs,state,solver);
+			}
+		}
+	}
+	
+	public void equate(WTupleConstructor lhs, WTupleConstructor rhs,
+			SolverState state, Solver solver) {
+		if(!lhs.fields().equals(rhs.fields())) {
+			state.infer(WBool.FALSE,solver);
+		} else {
+			List<WExpr> lhsTerms = lhs.subterms();
+			List<WExpr> rhsTerms = rhs.subterms();
+			for(int i=0;i!=lhsTerms.size();++i) {
+				state.infer(WExprs.equals(lhsTerms.get(i), rhsTerms.get(i)),
+						solver);
+			}
+		}
+	}
+ 	
+	public void equate(WTupleVal lhs, WTupleConstructor rhs,
+			SolverState state, Solver solver) {
+		if(!lhs.fields().equals(rhs.fields())) {
+			state.infer(WBool.FALSE,solver);
+		} else {
+			List<WValue> lhsTerms = lhs.subterms();
+			List<WExpr> rhsTerms = rhs.subterms();
+			for(int i=0;i!=lhsTerms.size();++i) {
+				state.infer(WExprs.equals(lhsTerms.get(i), rhsTerms.get(i)),
+						solver);
 			}
 		}
 	}
@@ -74,7 +111,7 @@ public class TupleClosure implements InferenceRule {
 			}			
 			WExpr tval = new WTupleConstructor(names,exprs).substitute(Collections.EMPTY_MAP);			
 			WFormula nf = WExprs.equals(target, tval);								
-			if(!state.contains(nf)) {				
+			if(!state.contains(nf)) {			
 				state.infer(nf, solver);
 			}
 		}

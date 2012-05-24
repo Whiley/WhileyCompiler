@@ -53,7 +53,7 @@ public class TypeClosure implements InferenceRule {
 						return;
 					} else if(stsub && wsign && signs) {
 						// st is subsumed by ws
-						state.eliminate(st);
+						
 					} else if(stsub && wsign && !signs) {
 						// error
 						state.infer(WBool.FALSE, solver);

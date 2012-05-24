@@ -75,6 +75,18 @@ public class TestHarness {
 		}
 	}
 	
+	protected void verifyRunTest(String name, String... params) {						
+		String filename = sourcepath + File.separatorChar + name + ".whiley";
+		
+		if (compile("-sp",sourcepath,"-wp", "lib/wyrt.jar","-X","verification:enable=true",filename) != 0) {
+			fail("couldn't compile test!");
+		} else {
+			String output = run(sourcepath, name);
+			compare(output, outputPath + File.separatorChar + name + "."
+					+ outputExtension);
+		}
+	}
+	
 	protected void contextFailTest(String name) {				
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
