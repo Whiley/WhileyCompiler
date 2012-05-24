@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 void f([int] x) requires |x| > 0:
     z = |x|

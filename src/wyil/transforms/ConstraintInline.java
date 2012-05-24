@@ -28,12 +28,17 @@ package wyil.transforms;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.Builder;
+import wybs.lang.NameSpace;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
-import wyil.util.Pair;
-import wyil.util.ResolveError;
-import wyil.util.SyntacticElement;
-import static wyil.util.SyntaxError.*;
+import wyil.util.ErrorMessages;
+import static wybs.lang.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 import wyjc.runtime.BigRational;
 
 /**
@@ -52,25 +57,25 @@ import wyjc.runtime.BigRational;
  * 
  */
 public class ConstraintInline implements Transform {
-	private final ModuleLoader loader;	
+	private final Builder builder;	
 	private String filename;
 	
-	public ConstraintInline(ModuleLoader loader) {
-		this.loader = loader;
+	public ConstraintInline(Builder builder) {
+		this.builder = builder;
 	}
 	
-	public void apply(Module module) {
+	public void apply(WyilFile module) {
 		this.filename = module.filename();
 		
-		for(Module.TypeDef type : module.types()) {
+		for(WyilFile.TypeDef type : module.types()) {
 			module.add(transform(type));
 		}		
-		for(Module.Method method : module.methods()) {
+		for(WyilFile.Method method : module.methods()) {
 			module.add(transform(method));
 		}
 	}
 	
-	public Module.TypeDef transform(Module.TypeDef type) {
+	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
 		Block constraint = type.constraint();
 		
 		if (constraint != null) {
@@ -87,19 +92,19 @@ public class ConstraintInline implements Transform {
 			constraint = nconstraint;
 		}
 		
-		return new Module.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
+		return new WyilFile.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
 				type.attributes());
 	}
 	
-	public Module.Method transform(Module.Method method) {
-		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
-		for(Module.Case c : method.cases()) {
+	public WyilFile.Method transform(WyilFile.Method method) {
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		for(WyilFile.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	public Module.Case transform(Module.Case mcase, Module.Method method) {	
+	public WyilFile.Case transform(WyilFile.Case mcase, WyilFile.Method method) {	
 		Block body = mcase.body();				
 		Block nbody = new Block(body.numInputs());		
 		int freeSlot = buildShadows(nbody,mcase,method);		
@@ -113,7 +118,7 @@ public class ConstraintInline implements Transform {
 			nbody.append(entry);
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
 	
@@ -140,8 +145,8 @@ public class ConstraintInline implements Transform {
 	 * @param method
 	 * @return
 	 */
-	public int buildShadows(Block body, Module.Case mcase,
-			Module.Method method) {
+	public int buildShadows(Block body, WyilFile.Case mcase,
+			WyilFile.Method method) {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
@@ -157,7 +162,7 @@ public class ConstraintInline implements Transform {
 	}
 	
 	public Block transform(Block.Entry entry, int freeSlot,
-			Module.Case methodCase, Module.Method method) {
+			WyilFile.Case methodCase, WyilFile.Method method) {
 		Code code = entry.code;
 		
 		try {
@@ -175,6 +180,8 @@ public class ConstraintInline implements Transform {
 			} else if(code instanceof Code.Return) {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
+		} catch(SyntaxError e) {
+			throw e;
 		} catch(ResolveError e) {
 			syntaxError(e.getMessage(),filename,entry,e);
 		} catch(Throwable e) {
@@ -192,8 +199,8 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {		
-		Block precondition = findPrecondition(code.name,code.type);		
+	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws Exception {		
+		Block precondition = findPrecondition(code.name,code.type,elem);		
 		if(precondition != null) {			
 			Block blk = new Block(0);
 			List<Type> paramTypes = code.type.params();
@@ -239,7 +246,7 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
-			Module.Case methodCase, Module.Method method) {
+			WyilFile.Case methodCase, WyilFile.Method method) {
 		
 		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
@@ -282,20 +289,22 @@ public class ConstraintInline implements Transform {
 			// TODO: mark as check block
 			blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
 			blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
-			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
 			blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
-			blk.append(Code.LengthOf(code.type),attributes(elem));
-			blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
-			blk.append(Code.Label(falseLabel),attributes(elem));
-			blk.append(Code.Fail("index out of bounds"),attributes(elem));
-			blk.append(Code.Label(exitLabel),attributes(elem));
-			blk.append(Code.Load((Type) code.type, freeSlot+1),attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
+			blk.append(Code.Assert(Type.T_INT, Code.COp.GTEQ,
+					"index out of bounds (negative)"), attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
+			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+					attributes(elem));
+			blk.append(Code.LengthOf(code.type), attributes(elem));
+			blk.append(Code.Assert(Type.T_INT, Code.COp.LT,
+					"index out of bounds (not less than length)"),
+					attributes(elem));
+			blk.append(Code.Label(exitLabel), attributes(elem));
+			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+					attributes(elem));
+			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
 			return blk;		
 		} else {
 			return null; // FIXME
@@ -326,19 +335,19 @@ public class ConstraintInline implements Transform {
 		
 		if(code.bop == Code.BOp.DIV) {
 			Block blk = new Block(0);
-			// TODO: mark as check block
-			blk.append(Code.Store(code.type, freeSlot),attributes(elem));
-			String label = Block.freshLabel();
-			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
-			if(code.type instanceof Type.Int) { 
-				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+			blk.append(Code.Store(code.type, freeSlot), attributes(elem));
+			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
+			if (code.type instanceof Type.Int) {
+				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),
+						attributes(elem));
 			} else {
-				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),attributes(elem));
+				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),
+						attributes(elem));
 			}
-			blk.append(Code.IfGoto(code.type, Code.COp.NEQ, label),attributes(elem));
-			blk.append(Code.Fail("division by zero"),attributes(elem));
-			blk.append(Code.Label(label),attributes(elem));
-			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
+			blk.append(
+					Code.Assert(code.type, Code.COp.NEQ, "division by zero"),
+					attributes(elem));
+			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
 			return blk;
 		} 
 		
@@ -346,11 +355,17 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun) throws ResolveError {
-		Module m = loader.loadModule(name.module());				
-		Module.Method method = m.method(name.name(),fun);
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,SyntacticElement elem) throws Exception {		
+		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),WyilFile.ContentType);
+		if(e == null) {
+			syntaxError(
+					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
+							.toString()), filename, elem);
+		}
+		WyilFile m = e.read();
+		WyilFile.Method method = m.method(name.name(),fun);
 	
-		for(Module.Case c : method.cases()) {
+		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
 			return c.precondition();
 		}

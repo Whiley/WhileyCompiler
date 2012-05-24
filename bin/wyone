@@ -38,10 +38,10 @@ esac
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
     LIBDIR=`cygpath -pw "$LIBDIR"`
-    WHILEY_CLASSPATH="$LIBDIR/wyjx.jar;$CLASSPATH"
+    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar;$CLASSPATH"
 else
     # under UNIX the classpath separator must be ":"
-    WHILEY_CLASSPATH="$LIBDIR/wyjx.jar:$CLASSPATH"
+    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar:$CLASSPATH"
 fi
 
 java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyone.Main "$@"

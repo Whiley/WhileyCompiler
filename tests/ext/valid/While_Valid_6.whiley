@@ -1,4 +1,5 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
+import * from whiley.lang.Int
 
 [nat] extract([int] ls):
     i = 0

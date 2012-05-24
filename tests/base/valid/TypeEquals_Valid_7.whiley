@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define expr as [int]|int
 define tup as {expr lhs, int p}

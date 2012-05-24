@@ -27,7 +27,7 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
   super("tests/ext/invalid","tests/ext/invalid","sysout");
  }
 
- @Test public void ConstrainedDictionary_Invalid_1_RuntimeTest() { runtimeFailTest("ConstrainedDictionary_Invalid_1"); }
+ @Ignore("Known Issue") @Test public void ConstrainedDictionary_Invalid_1_RuntimeTest() { runtimeFailTest("ConstrainedDictionary_Invalid_1"); }
  @Test public void ConstrainedInt_Invalid_1_RuntimeFailTest() { runtimeFailTest("ConstrainedInt_Invalid_1"); }
  @Test public void ConstrainedInt_Invalid_10_RuntimeFailTest() { runtimeFailTest("ConstrainedInt_Invalid_10"); }
  @Test public void ConstrainedInt_Invalid_11_RuntimeFailTest() { runtimeFailTest("ConstrainedInt_Invalid_11"); }
@@ -87,10 +87,10 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void RecursiveType_Invalid_10_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_10"); }
  @Test public void RecursiveType_Invalid_3_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_3"); }
  @Test public void RecursiveType_Invalid_5_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_5"); }
- @Test public void RecursiveType_Invalid_6_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_6"); }
+ @Ignore("Known Issue") @Test public void RecursiveType_Invalid_6_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_6"); }
  @Test public void RecursiveType_Invalid_7_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_7"); }
  @Test public void RecursiveType_Invalid_8_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_8"); }
- @Test public void RecursiveType_Invalid_9_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_9"); }
+ @Ignore("Known Issue") @Test public void RecursiveType_Invalid_9_RuntimeFailTest() { runtimeFailTest("RecursiveType_Invalid_9"); }
  @Test public void Requires_Invalid_1_RuntimeFailTest() { runtimeFailTest("Requires_Invalid_1"); }
  @Test public void SetAssign_Invalid_1_RuntimeFailTest() { runtimeFailTest("SetAssign_Invalid_1"); }
  @Test public void SetComprehension_Invalid_1_RuntimeFailTest() { runtimeFailTest("SetComprehension_Invalid_1"); }
@@ -127,9 +127,10 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void TupleAssign_Invalid_2_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_2"); }
  @Test public void TupleAssign_Invalid_3_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_3"); }
  @Test public void TupleDefine_CompileFail_2_RuntimeFailTest() { runtimeFailTest("TupleDefine_CompileFail_2"); } 
- @Test public void TypeEquals_Invalid_3_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_3"); } 
+ @Test public void TypeEquals_Invalid_3_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_3"); }
+ @Ignore("Known Issue") @Test public void TypeEquals_Invalid_4_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_4"); }
  @Test public void UnionType_CompileFail_8_RuntimeFailTest() { runtimeFailTest("UnionType_CompileFail_8"); }
- @Test public void UnionType_Invalid_1_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_1"); }
+ @Ignore("Known Issue") @Test public void UnionType_Invalid_1_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_1"); }
  @Test public void UnionType_Invalid_2_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_2"); }
  @Test public void UnionType_Invalid_3_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_3"); } 
  @Test public void VarDecl_Invalid_1_RuntimeFailTest() { runtimeFailTest("VarDecl_Invalid_1"); }  

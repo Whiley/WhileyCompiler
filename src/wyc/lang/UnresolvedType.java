@@ -27,8 +27,8 @@ package wyc.lang;
 
 import java.util.*;
 
+import wybs.lang.SyntacticElement;
 import wyil.lang.Attribute;
-import wyil.util.SyntacticElement;
 
 /**
  * <p>
@@ -52,7 +52,7 @@ public interface UnresolvedType extends SyntacticElement {
 	 * A non-union type represents a type which is not an instance of
 	 * <code>Union</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public interface NonUnion extends UnresolvedType {

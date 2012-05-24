@@ -27,6 +27,7 @@ package wyjc.runtime;
 
 import java.math.BigInteger;
 import java.math.BigDecimal;
+import java.util.Random;
 
 public final class BigRational extends Number implements Comparable<BigRational> {	
 	private static final BigRational[] cache = new BigRational[20];
@@ -394,9 +395,38 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		}
 	}
 	
-	public static void main(String[] args) {
-		BigRational r = new BigRational(10,5);
-		System.out.println("GOT: " + r);
-		System.out.println("NOW: " + r.negate());
+
+	public static BigRational valueOf(double d) {
+		// Check against infinities and NAN
+		if(Double.isInfinite(d) || Double.isNaN(d)) {
+			throw new NumberFormatException("BigInteger.valueOf() --- parameter cannot be infinity or NAN");
+		}
+		long l = Double.doubleToLongBits(d);
+		
+		// Pull out IEEE754 info
+		boolean sign = (l&0x8000000000000000L) != 0;
+		int exponent = (int) ((l & 0x7FF0000000000000L) >> 52);		
+		long numerator = l & 0xFFFFFFFFFFFFFL;	
+		final long denominator = 0x10000000000000L;
+		boolean denormalised = exponent == 0;
+		if(denormalised) {
+			exponent = -1022;
+		} else {
+			exponent = exponent - 1023; // remove bias
+		}
+		
+		BigRational base = valueOf(numerator, denominator).add(BigInteger.ONE);
+		if (sign) {
+			base = base.negate();
+		}
+		if(exponent >= 0) {
+			// positive exponent so multiply
+			BigInteger exp = BigInteger.ONE.shiftLeft(exponent);
+			return base.multiply(exp);
+		} else {
+			// negative exponent so divide
+			BigInteger exp = BigInteger.ONE.shiftLeft(-exponent);
+			return base.divide(exp);
+		}
 	}
 }

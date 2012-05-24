@@ -1,4 +1,5 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
+define nat as int where $ >= 0
 
 int sum({nat} xs) ensures $ >= 0:
     r = 0

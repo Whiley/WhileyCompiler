@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define Rtypes as {int x, int y} | {int x, int z}
 

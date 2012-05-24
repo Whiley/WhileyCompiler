@@ -29,14 +29,15 @@ import java.util.*;
 
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
-import wyil.ModuleLoader;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
+import wyc.builder.*;
+import wyc.lang.*;
+import wyc.lang.Stmt.*;
 import wyil.util.*;
 import wyil.lang.*;
-import wyc.core.*;
-import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
-import wyc.lang.Stmt;
-import wyc.lang.Stmt.*;
 
 /**
  * <p>
@@ -78,7 +79,7 @@ import wyc.lang.Stmt.*;
  * 
  */
 public final class CodeGeneration {
-	private final ModuleLoader loader;	
+	private final WhileyBuilder builder;	
 	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
@@ -93,25 +94,16 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(ModuleLoader loader, GlobalResolver resolver) {
-		this.loader = loader;		
+	public CodeGeneration(WhileyBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
+		this.builder = builder;		
 		this.resolver = resolver;
+		this.globalGenerator = generator;
 	}
 
-	public List<Module> generate(CompilationGroup files) {
-		globalGenerator = new GlobalGenerator(loader,resolver,files);
-		
-		ArrayList<Module> modules = new ArrayList<Module>();
-		for(WhileyFile wf : files) {
-			modules.add(generate(wf));
-		}
-		return modules;
-	}
-	
-	private Module generate(WhileyFile wf) {
-		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
-		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
+	public WyilFile generate(WhileyFile wf) {
+		HashMap<Pair<Type.Function, String>, WyilFile.Method> methods = new HashMap();
+		ArrayList<WyilFile.TypeDef> types = new ArrayList<WyilFile.TypeDef>();
+		ArrayList<WyilFile.ConstDef> constants = new ArrayList<WyilFile.ConstDef>();
 
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
@@ -120,15 +112,15 @@ public final class CodeGeneration {
 				} else if (d instanceof Constant) {
 					constants.add(generate((Constant) d));
 				} else if (d instanceof FunctionOrMethodOrMessage) {
-					Module.Method mi = generate((FunctionOrMethodOrMessage) d);
+					WyilFile.Method mi = generate((FunctionOrMethodOrMessage) d);
 					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
-					Module.Method method = methods.get(key);
+					WyilFile.Method method = methods.get(key);
 					if (method != null) {
 						// coalesce cases
-						ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
+						ArrayList<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>(
 								method.cases());
 						ncases.addAll(mi.cases());
-						mi = new Module.Method(method.modifiers(), mi.name(),
+						mi = new WyilFile.Method(method.modifiers(), mi.name(),
 								mi.type(), ncases);
 					}
 					methods.put(key, mi);
@@ -140,16 +132,16 @@ public final class CodeGeneration {
 			}
 		}
 		
-		return new Module(wf.module, wf.filename, methods.values(), types,
+		return new WyilFile(wf.module, wf.filename, methods.values(), types,
 				constants);				
 	}
 
-	private Module.ConstDef generate(Constant cd) {
+	private WyilFile.ConstDef generate(Constant cd) {
 		// TODO: this the point where were should an evaluator
-		return new Module.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
+		return new WyilFile.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private Module.TypeDef generate(TypeDef td) throws ResolveError {		
+	private WyilFile.TypeDef generate(TypeDef td) throws Exception {		
 		Block constraint = null;
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
@@ -157,10 +149,10 @@ public final class CodeGeneration {
 			constraint = globalGenerator.generate(nid);			
 		}
 		
-		return new Module.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
+		return new WyilFile.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private Module.Method generate(FunctionOrMethodOrMessage fd) {		
+	private WyilFile.Method generate(FunctionOrMethodOrMessage fd) throws Exception {		
 		localGenerator = new LocalGenerator(globalGenerator,fd);	
 		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -205,12 +197,10 @@ public final class CodeGeneration {
 		if(fd.precondition != null) {	
 			if(precondition == null) {
 				precondition = new Block(nparams);
-			}
-			String lab = Block.freshLabel();
+			}	
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
-			precondition.append(localGenerator.generateCondition(lab, fd.precondition, preEnv));		
-			precondition.append(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
-			precondition.append(Code.Label(lab));			
+			precondition.append(localGenerator.generateAssertion(
+					"precondition not satisfied", fd.precondition, preEnv));		
 		}
 		
 		// ==================================================================
@@ -224,13 +214,9 @@ public final class CodeGeneration {
 			for(String var : environment.keySet()) {
 				postEnv.put(var, environment.get(var)+1);
 			}
-			String lab = Block.freshLabel();
 			postcondition = new Block(postEnv.size());
-			postcondition.append(localGenerator.generateCondition(lab, fd.postcondition,
-					postEnv));
-			postcondition.append(Code.Fail("postcondition not satisfied"),
-					attributes(fd.postcondition));
-			postcondition.append(Code.Label(lab));
+			postcondition.append(localGenerator.generateAssertion(
+					"postcondition not satisfied", fd.postcondition, postEnv));
 		}
 		
 		// ==================================================================
@@ -250,7 +236,7 @@ public final class CodeGeneration {
 		// removed as dead-code or remains and will cause an error.
 		body.append(Code.Return(Type.T_VOID),attributes(fd));		
 		
-		List<Module.Case> ncases = new ArrayList<Module.Case>();				
+		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
 		
 		for(int i=0;i!=environment.size();++i) {
@@ -261,17 +247,17 @@ public final class CodeGeneration {
 			locals.set(e.getValue(),e.getKey());
 		}	
 		
-		ncases.add(new Module.Case(body,precondition,postcondition,locals));
+		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
 				
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			return new Module.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
+			return new WyilFile.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
 		} else if(fd instanceof WhileyFile.Method) {
 			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		} else {
 			WhileyFile.Message md = (WhileyFile.Message) fd;					
-			return new Module.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		}		
 	}
 
@@ -413,12 +399,8 @@ public final class CodeGeneration {
 	}
 	
 	private Block generate(Assert s, HashMap<String,Integer> environment) {
-		String lab = Block.freshLabel();
 		Block blk = new Block(environment.size());
-		blk.append(Code.Assert(lab),attributes(s));
-		blk.append(localGenerator.generateCondition(lab, s.expr, environment));		
-		blk.append(Code.Fail("assertion failed"), attributes(s));
-		blk.append(Code.Label(lab));			
+		blk.append(localGenerator.generateAssertion("assertion failed", s.expr, environment));		
 		return blk;
 	}
 
@@ -493,7 +475,7 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Switch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Switch s, HashMap<String,Integer> environment) throws Exception {
 		String exitLab = Block.freshLabel();		
 		Block blk = localGenerator.generate(s.expr, environment);				
 		Block cblk = new Block(environment.size());
@@ -534,13 +516,14 @@ public final class CodeGeneration {
 				syntaxError(errorMessage(UNREACHABLE_CODE), localGenerator.context(), c);
 			}
 		}		
+		
 		blk.append(Code.Switch(s.expr.result().raw(),defaultTarget,cases),attributes(s));
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));		
 		return blk;
 	}
 	
-	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws Exception {
 		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {
@@ -582,15 +565,12 @@ public final class CodeGeneration {
 				
 		Block blk = new Block(environment.size());
 		
-		
-		if(s.invariant != null) {
-			String invariantLabel = Block.freshLabel();
-			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
-			blk.append(Code.Label(invariantLabel));			
+		if (s.invariant != null) {
+			blk.append(localGenerator.generateAssertion(
+					"loop invariant not satisfied on entry", s.invariant,
+					environment));
 		}
-		
+
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 				
@@ -603,11 +583,7 @@ public final class CodeGeneration {
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
-			String invariantLabel = Block.freshLabel();
-			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
-			blk.append(Code.Label(invariantLabel));			
+			blk.append(localGenerator.generateAssertion("loop invariant not restored", s.invariant, environment));		
 		}
 		
 		blk.append(Code.End(label));
@@ -621,11 +597,9 @@ public final class CodeGeneration {
 		Block blk = new Block(environment.size());
 		
 		if(s.invariant != null) {
-			String invariantLabel = Block.freshLabel();
-			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
-			blk.append(Code.Label(invariantLabel));			
+			blk.append(localGenerator.generateAssertion(
+					"loop invariant not satisfied on entry", s.invariant,
+					environment));		
 		}
 		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
@@ -638,11 +612,8 @@ public final class CodeGeneration {
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
-			String invariantLabel = Block.freshLabel();
-			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
-			blk.append(Code.Label(invariantLabel));			
+			blk.append(localGenerator.generateAssertion(
+					"loop invariant not restored", s.invariant, environment));
 		}
 		
 		blk.append(localGenerator.generateCondition(label, invert(s.condition), environment));
@@ -660,10 +631,9 @@ public final class CodeGeneration {
 		
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
-			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not satisfied on entry"), attributes(s));
-			blk.append(Code.Label(invariantLabel));			
+			blk.append(localGenerator.generateAssertion(
+					"loop invariant not satisfied on entry", s.invariant,
+					environment));
 		}
 		
 		blk.append(localGenerator.generate(s.source,environment));	
@@ -673,6 +643,7 @@ public final class CodeGeneration {
 			
 			// FIXME: loss of nominal information
 			Type.EffectiveCollection rawSrcType = s.srcType.raw();
+			
 			// FIXME: support destructuring of lists and sets			
 			if(!(rawSrcType instanceof Type.EffectiveDictionary)) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),localGenerator.context(),s.source);
@@ -702,11 +673,8 @@ public final class CodeGeneration {
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
-			String invariantLabel = Block.freshLabel();
-			blk.append(Code.Assert(invariantLabel),attributes(s));
-			blk.append(localGenerator.generateCondition(invariantLabel, s.invariant, environment));		
-			blk.append(Code.Fail("loop invariant not restored"), attributes(s));
-			blk.append(Code.Label(invariantLabel));			
+			blk.append(localGenerator.generateAssertion(
+					"loop invariant not restored", s.invariant, environment));		
 		}
 		blk.append(Code.End(label), attributes(s));		
 

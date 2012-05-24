@@ -26,6 +26,7 @@
 package wyc.stages;
 
 import java.util.*;
+
 import static wyc.stages.WhileyLexer.*;
 
 /**

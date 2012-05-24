@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define Attribute as {string name,...}
 define CodeAttr as {int maxLocals,int maxStack,string name,[byte] data}

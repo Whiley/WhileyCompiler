@@ -1,4 +1,4 @@
-import * from whiley.lang.System
+import println from whiley.lang.System
 
 void ::f(System.Console sys, [int] args):
     i = 0

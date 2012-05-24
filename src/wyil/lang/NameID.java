@@ -25,6 +25,8 @@
 
 package wyil.lang;
 
+import wybs.lang.Path;
+
 /**
  * A Name Identifier consists of a module, and a name within that module. The
  * purpose of this is to provide a uniform way of referring to modules +
@@ -34,10 +36,10 @@ package wyil.lang;
  * 
  */
 public final class NameID {
-	private final ModuleID module;
+	private final Path.ID module;
 	private final String name;
 		
-	public NameID(ModuleID module, String name) {		
+	public NameID(Path.ID module, String name) {		
 		this.module = module;
 		this.name = name;
 	}
@@ -46,7 +48,7 @@ public final class NameID {
 		return name;
 	}
 	
-	public ModuleID module() {
+	public Path.ID module() {
 		return module;
 	}
 	

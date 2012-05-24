@@ -1,4 +1,4 @@
-import println from whiley.lang.*
+import println from whiley.lang.System
 
 // ====================================================
 // A simple calculator for expressions

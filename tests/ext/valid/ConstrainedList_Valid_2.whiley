@@ -1,4 +1,5 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
+import * from whiley.lang.Int
 
 int g(int x) ensures $ > 0 && $ < 125:
     if(x <= 0 || x >= 125):
@@ -6,7 +7,7 @@ int g(int x) ensures $ > 0 && $ < 125:
     else:
         return x
 
-[int8] f(int x):
+[i8] f(int x):
     return [g(x)]
 
 void ::main(System.Console sys):

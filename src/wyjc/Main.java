@@ -26,20 +26,22 @@
 package wyjc;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.*;
-import java.util.jar.JarFile;
 
-import wyc.Pipeline;
-import wyc.Compiler;
+import wybs.lang.*;
+import wybs.util.*;
+import wyc.builder.WhileyBuilder;
+import wyc.lang.WhileyFile;
 import wyc.util.*;
 import wyil.*;
+import wyil.Pipeline.Template;
+import wyil.lang.WyilFile;
 import wyil.util.*;
-import wyil.util.path.*;
-import static wyil.util.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyc.util.OptArg.*;
-import wyjc.io.*;
-import wyjc.transforms.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line
@@ -60,6 +62,63 @@ public class Main {
 	public static final int SUCCESS=0;
 	public static final int SYNTAX_ERROR=1;
 	public static final int INTERNAL_FAILURE=2;
+
+	/**
+	 * The master project content type registry.
+	 */
+	public static final Content.Registry registry = new Content.Registry() {
+	
+		public void associate(Path.Entry e) {
+			if(e.suffix().equals("whiley")) {
+				e.associate(WhileyFile.ContentType, null);
+			} else if(e.suffix().equals("class")) {
+				// this could be either a normal JVM class, or a Wyil class. We
+				// need to determine which.
+				try { 					
+					WyilFile c = WyilFile.ContentType.read(e, e.inputStream());
+					if(c != null) {
+						e.associate(WyilFile.ContentType,c);
+					}					
+				} catch(Exception ex) {
+					// hmmm, not ideal
+				}
+			} 
+		}
+		
+		public String suffix(Content.Type<?> t) {
+			if(t == WhileyFile.ContentType) {
+				return "whiley";
+			} else if(t == WyilFile.ContentType) {
+				return "class";
+			} else {
+				return "dat";
+			}
+		}
+	};
+	
+	/**
+	 * The purpose of the source file filter is simply to ensure only source
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter sourceFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".whiley") || f.isDirectory();
+		}
+	};
+
+	/**
+	 * The purpose of the binary file filter is simply to ensure only binary
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter binaryFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".class") || f.isDirectory();
+		}
+	};
 	
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -92,36 +151,32 @@ public class Main {
 			MINOR_VERSION = 0;
 			MINOR_REVISION = 0;
 			BUILD_NUMBER = 0;
-		}
-		
-		// register additional pipeline transforms used by this compiler.
-		Pipeline.register(ClassWriter.class);
-		Pipeline.register(JvmBytecodeWriter.class);
+		}		
 	}
 
 	/**
 	 * The command-line options accepted by the main method.
 	 */
-	public static final OptArg[] options = new OptArg[] {
-			new OptArg("version", "Print version information"),
+	public static final OptArg[] options = new OptArg[]{
+			new OptArg("help", "Print this help information"),
+			new OptArg("version", "Print version information"),			
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("whileypath", "wp", PATHLIST,
 					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", PATHLIST,
-					"Specify where to find whiley standard library files",					
+					"Specify where to find whiley standard library files",
 					new ArrayList<String>()),
 			new OptArg("sourcepath", "sp", PATHLIST,
 					"Specify where to find whiley (source) files",
 					new ArrayList<String>()),
 			new OptArg("outputdir", "d", STRING,
-					"Specify where to place generated class files",
-					null),
-			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
-			new OptArg("C", PIPELINECONFIGURE,
+					"Specify where to place generated class files", null),
+			new OptArg("X", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
-			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage") };
+			new OptArg("A", PIPELINEAPPEND, "append new pipeline stage"),
+			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage")};
 
 	/**
 	 * In the case that no explicit bootpath has been specified on the
@@ -136,8 +191,7 @@ public class Main {
 	 * @param bootpath
 	 */
 	public static void initialiseBootPath(List<Path.Root> bootpath) {
-		if(bootpath.isEmpty()) {
-		
+		if(bootpath.isEmpty()) {		
 			//
 			try {
 				// String jarfile = Main.class.getPackage().getImplementationTitle();
@@ -156,7 +210,7 @@ public class Main {
 						// "."
 						jarfile += "stdlib";
 					}
-					bootpath.add(new JarFileRoot(jarfile));
+					bootpath.add(new JarFileRoot(jarfile,registry));
 				}				
 			} catch(Exception e) {
 				// just ignore.
@@ -174,16 +228,15 @@ public class Main {
 	 * @param sourcepath
 	 * @throws IOException
 	 */
-	public static ArrayList<Path.Root> initialiseSourceRoots(
-			List<String> sourcepath, BinaryDirectoryRoot outputDirectory,
-			boolean verbose) throws IOException {
-		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
+	public static ArrayList<DirectoryRoot> initialiseSourceRoots(
+			List<String> sourcepath, boolean verbose) throws IOException {
+		ArrayList<DirectoryRoot> nitems = new ArrayList<DirectoryRoot>();
 		if (sourcepath.isEmpty()) {
-			nitems.add(new SourceDirectoryRoot(".", outputDirectory));
+			nitems.add(new DirectoryRoot(".", sourceFileFilter,registry));
 		} else {			
 			for (String root : sourcepath) {
 				try {
-					nitems.add(new SourceDirectoryRoot(root,outputDirectory));					
+					nitems.add(new DirectoryRoot(root,sourceFileFilter,registry));					
 				} catch (IOException e) {
 					if (verbose) {
 						System.err.println("Warning: " + root
@@ -202,15 +255,15 @@ public class Main {
 	 * @param items
 	 * @return
 	 */
-	private static List<Path.Root> initialiseBinaryRoots(List<String> roots,
+	private static List<Path.Root> initialiseExternalRoots(List<String> roots,
 			boolean verbose) {
 		ArrayList<Path.Root> nitems = new ArrayList<Path.Root>();
 		for (String root : roots) {
 			try {
 				if (root.endsWith(".jar")) {
-					nitems.add(new JarFileRoot(root));
+					nitems.add(new JarFileRoot(root,registry));
 				} else {
-					nitems.add(new BinaryDirectoryRoot(root));
+					nitems.add(new DirectoryRoot(root,binaryFileFilter,registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -220,6 +273,68 @@ public class Main {
 			}
 		}
 		return nitems;
+	}
+	
+
+	/**
+	 * Print out the available list of options for the given pipeline 
+	 */
+	public static void usage(PrintStream out, List<Pipeline.Template> stages) {
+		out.println("\nstage configuration:");
+		for(Template template : stages) {
+			Class<? extends Transform> t = template.clazz;
+			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");			
+			for(Method m : t.getDeclaredMethods()) {
+				String name = m.getName();
+				if(name.startsWith("set")) {
+					String shortName = name.substring(3).toLowerCase();
+					out.print("    " + shortName + "(" + argValues(m) + ")");
+					// print default value
+					try {
+						Method getter = t.getDeclaredMethod(name.replace("set", "get"));
+						Object v = getter.invoke(null);						
+						out.print("[default=" + v + "]");						
+					} catch(NoSuchMethodException e) {
+						// just ignore
+					} catch (IllegalArgumentException e) {
+						// just ignore
+					} catch (IllegalAccessException e) {
+						// just ignore						
+					} catch (InvocationTargetException e) {
+						// just ignore						
+					}
+					// print description
+					try {
+						Method desc = t.getDeclaredMethod(name.replace("set", "describe"));
+						Object v = desc.invoke(null);
+						out.print("\t" + v);
+					} catch(NoSuchMethodException e) {
+						// just ignore
+					} catch (IllegalArgumentException e) {
+						// just ignore
+					} catch (IllegalAccessException e) {
+						// just ignore						
+					} catch (InvocationTargetException e) {
+						// just ignore						
+					}
+					out.println();
+				}				
+			}			
+		}
+	}
+	
+	public static String argValues(Method m) {
+		String r = "";
+		for(Class<?> p : m.getParameterTypes()) {
+			if(p == boolean.class) {
+				r = r + "boolean";
+			} else if(p == int.class) {
+				r = r + "int";
+			} else if(p == String.class) {
+				r = r + "string";
+			}
+		}
+		return r;
 	}
 	
 	/**
@@ -241,70 +356,104 @@ public class Main {
 			return 0;
 		}
 		
-		// Otherwise, if no files to compile specified, then print usage
-		if(args.isEmpty()) {
+		// Otherwise, if no files to compile specified, then print usage		
+		if(args.isEmpty() || values.containsKey("help")) {
 			System.out.println("usage: wyjc <options> <source-files>");
 			OptArg.usage(System.out, options);
+			usage(System.out, Pipeline.defaultPipeline);
 			System.exit(1);
 		}
-				
+		
 		// read out option values
 		boolean verbose = values.containsKey("verbose");
 		String outputdir = (String) values.get("outputdir");
 						
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
-		try {											
-			// initialise the boot path appropriately
-			List<Path.Root> bootpath = initialiseBinaryRoots((ArrayList) values.get("bootpath"),verbose);
-			initialiseBootPath(bootpath);
-
-			// initialise the whiley path appropriately
-			List<Path.Root> whileypath = initialiseBinaryRoots((ArrayList) values.get("whileypath"),verbose);	
+		try {				
+			// initialise target root appropriately (if one is provided)
+			DirectoryRoot target = null;
 			
-			// initialise the source path appropriately
-			BinaryDirectoryRoot bindir = null;
+			ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 			if (outputdir != null) {
-				bindir = new BinaryDirectoryRoot(outputdir);
-			}
-			List<Path.Root> sourcepath = initialiseSourceRoots(
-					(ArrayList) values.get("sourcepath"), bindir, verbose);
+				// if an output directory is specified, everything is redirected
+				// to that.
+				target = new DirectoryRoot(outputdir,binaryFileFilter,registry); 
+				roots.add(target);
+			} 
 			
-			// now initialise the whiley path			
-			whileypath.addAll(bootpath);
-
-			// now construct a pipline and initialise the compiler		
-			ModuleLoader loader = new ModuleLoader(sourcepath,whileypath);
-			loader.setModuleReader("class",  new ClassFileLoader());
-			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-			templates.add(new Pipeline.Template(ClassWriter.class, Collections.EMPTY_MAP));
-
-			Pipeline pipeline = new Pipeline(templates, loader);
+			// initialise the source roots appropriately
+			List<DirectoryRoot> sourceRoots = initialiseSourceRoots(
+					(ArrayList) values.get("sourcepath"), verbose);
+			roots.addAll(sourceRoots);
 			
+			// initialise the external roots appropriately
+			List<Path.Root> externalRoots = initialiseExternalRoots((ArrayList) values.get("whileypath"),verbose);	
+			roots.addAll(externalRoots);
+			
+			// initialise the boot path appropriately
+			List<Path.Root> bootpath = initialiseExternalRoots((ArrayList) values.get("bootpath"),verbose);
+			initialiseBootPath(bootpath);
+			roots.addAll(bootpath);
+			
+			// finally, construct the project	
+			SimpleProject project = new SimpleProject(roots) {        		
+        		public Path.ID create(String s) {
+        			return Trie.fromString(s);
+        		}
+        	};		
+
+			// now, initialise builder appropriately
+			Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
+
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);
 			}
+	
+			WhileyBuilder builder = new WhileyBuilder(project,pipeline);	
 			
-			if (outputdir != null) {
-				pipeline.setOption(ClassWriter.class, "outputDirectory",
-						outputdir);
-			}
-			
-			List<Transform> stages = pipeline.instantiate();
-			Compiler compiler = new Compiler(loader,stages);		
-			loader.setLogger(compiler);		
-
 			if(verbose) {			
-				compiler.setLogOut(System.err);
+				builder.setLogger(new Logger.Default(System.err));
+			}		
+			
+			Content.Filter includes = Content.filter(Trie.fromString("**"),WhileyFile.ContentType);
+			StandardBuildRule rule = new StandardBuildRule(builder);
+			for(DirectoryRoot source : sourceRoots) {
+				if(target != null) {
+					rule.add(source, includes, target, WhileyFile.ContentType, WyilFile.ContentType);
+				} else {
+					rule.add(source, includes, source, WhileyFile.ContentType, WyilFile.ContentType);
+				}
+			}
+			project.add(rule);
+			
+			// Now, touch all files indicated on command-line	
+			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
+			
+			for(DirectoryRoot source : sourceRoots) {				
+				File loc = source.location();
+				String locPath = loc.getCanonicalPath();
+				for (String _file : args) {
+					String filePath = new File(_file).getCanonicalPath();
+					if(filePath.startsWith(locPath)) {
+						int end = locPath.length();
+						if(end > 1) {
+							end++;
+						}
+						String module = filePath.substring(end).replace(File.separatorChar, '.');
+						module = module.substring(0,module.length()-7);						
+						Path.ID mid = Trie.fromString(module);						
+						Path.Entry<WhileyFile> e = source.get(mid,WhileyFile.ContentType);
+						if (e != null) {							
+							sources.add(e);
+						}
+					}
+				}
 			}
 		
-			// finally, let's compile some files!!!
-		
-			ArrayList<File> files = new ArrayList<File>();
-			for (String file : args) {
-				files.add(new File(file));
-			}
-			compiler.compile(files);
+			// finally, let's compile some files!!!					
+			project.build(sources);
+			project.flush(); // flush all built components to disk
 		} catch (InternalFailure e) {
 			e.outputSourceError(errout);
 			if (verbose) {

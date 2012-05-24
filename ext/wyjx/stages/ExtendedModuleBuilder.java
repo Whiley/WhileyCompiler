@@ -43,7 +43,7 @@ import wyjx.attributes.*;
 
 public class ExtendedModuleBuilder {
 	private final ModuleLoader loader;	
-	private HashSet<ModuleID> modules;
+	private HashSet<Path.ID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
 	private HashMap<NameID, List<Type.Fun>> functions;
 	private HashMap<NameID, Triple<Type, Block, Boolean>> types;
@@ -65,7 +65,7 @@ public class ExtendedModuleBuilder {
 	}
 
 	public List<Module> resolve(List<WhileyFile> files) {
-		modules = new HashSet<ModuleID>();
+		modules = new HashSet<Path.ID>();
 		filemap = new HashMap<NameID, WhileyFile>();
 		functions = new HashMap<NameID, List<Type.Fun>>();
 		types = new HashMap<NameID, Triple<Type, Block, Boolean>>();
@@ -578,7 +578,7 @@ public class ExtendedModuleBuilder {
 		}
 	}
 
-	protected void partResolve(ModuleID module, FunDecl fd) {
+	protected void partResolve(Path.ID module, FunDecl fd) {
 
 		ArrayList<Type> parameters = new ArrayList<Type>();
 		for (WhileyFile.Parameter p : fd.parameters) {
@@ -607,12 +607,12 @@ public class ExtendedModuleBuilder {
 		fd.attributes().add(new Attributes.Fun(ft));
 	}
 
-	protected Module.ConstDef resolve(ConstDecl td, ModuleID module) {
+	protected Module.ConstDef resolve(ConstDecl td, Path.ID module) {
 		Value v = constants.get(new NameID(module, td.name()));
 		return new Module.ConstDef(td.name(), v);
 	}
 
-	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
+	protected Module.TypeDef resolve(TypeDecl td, Path.ID module) {
 		Pair<Type, Block> p = types.get(new NameID(module, td.name()));
 		if (p.second() != null) {
 			return new Module.TypeDef(td.name(), p.first(), new Constraint(p
@@ -1807,7 +1807,7 @@ public class ExtendedModuleBuilder {
 			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
-			ModuleID mid = dt.attribute(Attributes.Module.class).module;
+			Path.ID mid = dt.attribute(Attributes.Module.class).module;
 			if (modules.contains(mid)) {
 				Pair<Type, Block> p = types.get(new NameID(mid, dt.name));				
 				return new Pair<Type, Block>(p.first(), Block.relabel(p

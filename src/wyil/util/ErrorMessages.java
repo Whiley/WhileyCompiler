@@ -25,6 +25,8 @@
 
 package wyil.util;
 
+import wyil.lang.Type;
+
 /**
  * <p>
  * Contains global constants mapping syntax errors to their error messages. The
@@ -42,117 +44,126 @@ package wyil.util;
  * would be nice to do a better job!
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ErrorMessages {
 	
-	public static final int CYCLIC_CONSTANT_DECLARATION = 0;
-	public static final int INVALID_CONSTANT_AS_TYPE = 1;
-	public static final int INVALID_FUNCTION_OR_METHOD_AS_TYPE = 2;
-	public static final int INVALID_CONSTANT_EXPRESSION = 3;
-	public static final int INVALID_BOOLEAN_EXPRESSION = 4;
-	public static final int INVALID_NUMERIC_EXPRESSION = 5;
-	public static final int INVALID_BINARY_EXPRESSION = 6;	
-	public static final int INVALID_LIST_EXPRESSION = 7;
-	public static final int INVALID_SET_EXPRESSION = 8;
-	public static final int INVALID_SET_OR_LIST_EXPRESSION = 9;
-	public static final int INVALID_DICTIONARY_EXPRESSION = 10;
-	public static final int INVALID_LVAL_EXPRESSION = 11;
-	public static final int INVALID_DESTRUCTURE_EXPRESSION = 12;
-	public static final int INVALID_TUPLE_LVAL = 13;
-	public static final int INVALID_MODULE_ACCESS = 14;
-	public static final int INVALID_PACKAGE_ACCESS = 15;	
-	public static final int BREAK_OUTSIDE_LOOP = 16;
-	public static final int RESOLUTION_ERROR = 17;
-	public static final int AMBIGUOUS_VARIABLE = 18;
-	public static final int UNKNOWN_VARIABLE = 19;
-	public static final int UNKNOWN_FUNCTION_OR_METHOD = 20;
-	public static final int VARIABLE_POSSIBLY_UNITIALISED = 21;
-	public static final int VARIABLE_ALREADY_DEFINED = 22;
-	public static final int DUPLICATE_DEFAULT_LABEL = 23;
-	public static final int DUPLICATE_CASE_LABEL = 24;
-	public static final int DEAD_CODE = 25;
-	public static final int UNREACHABLE_CODE = 26;
-	public static final int RECEIVER_NOT_REFERENCE = 27;
-	public static final int REFERENCE_NOT_PERMITTED_IN_FUNCTION = 28;
-	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 29;
-	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 30;
-	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 31;
-	public static final int REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION = 32;
-	public static final int SUBTYPE_ERROR = 33;
-	public static final int INCOMPARABLE_OPERANDS = 34;
-	public static final int RECORD_TYPE_REQUIRED = 35;
-	public static final int RECORD_MISSING_FIELD = 36;
-	public static final int RETURN_FROM_VOID = 37;
-	public static final int MISSING_RETURN_VALUE = 38;
-	public static final int BRANCH_ALWAYS_TAKEN = 39;
-	public static final int AMBIGUOUS_COERCION = 40;
-	public static final int MUST_DECLARE_THROWN_EXCEPTION = 41;
+	private static class Msg {
+		String msg;
+		public Msg(String msg) {
+			this.msg = msg;
+		}
+	}
 	
-		private final static String[] messages = {						
-			"cyclic constant expression",
-			"constant cannot be used as a type",
-			"function or method cannot be used as a type",
-			"invalid constant expression",
-			"invalid boolean expression",
-			"invalid numeric expression",
-			"invalid binary expression",			
-			"invalid list expression",
-			"invalid set expression",
-			"invalid set or list expression",
-			"invalid dictionary expression",
-			"invalid assignment expression",
-			"invalid destructure expression",
-			"invalid tuple lval",
-			"invalid module access",
-			"invalid package access",
-			"break outside switch or loop",
-			"$0", // resolution error
-			"ambiguous variable",
-			"unknown variable",
-			"unknown function or method",
-			"variable may be uninitialised",
-			"variable $0 already defined",
-			"duplicate default label",
-			"duplicate case label",
-			"dead-code encountered (i.e. this statement has no effect)",
-			"unreachable code encountered (i.e. execution can never reach this statement)",
-			"method receiver must have reference type",
-			"reference not permitted in function",
-			"message send not permitted in function",
-			"method invocation not permitted in function",
-			"object creation not permitted in function",
-			"dereference not permitted in function",
-			"expected type $0, found $1",
-			"incomparable operands: $0 and $1",
-			"record required, got: $0",
-			"record has no field named $0",
-			"cannot return value from method with void return type",
-			"missing return value",
-			"branch always taken",
-			"ambiguous coercion (from $0 to $1)",
-			"exception may be thrown which is not declared"
-	};
+	private static final class MsgWithNoParams extends Msg {
+		public MsgWithNoParams(String msg) {
+			super(msg);
+		}
+	}
+	
+	private static final class MsgWithStringParam extends Msg {		
+		public MsgWithStringParam(String msg) {
+			super(msg);			
+		}
+	}
+	
+	private static final class MsgWithTypeParam extends Msg {		
+		public MsgWithTypeParam(String msg) {
+			super(msg);			
+		}
+	}
+	
+	private static final class MsgWithTypeParams extends Msg {		
+		public MsgWithTypeParams(String msg) {
+			super(msg);			
+		}
+	}
+	
+	public static final MsgWithNoParams CYCLIC_CONSTANT_DECLARATION = new MsgWithNoParams("cyclic constant expression"); 
+	public static final MsgWithNoParams INVALID_CONSTANT_AS_TYPE = new MsgWithNoParams("constant cannot be used as a type");
+	public static final MsgWithNoParams INVALID_FUNCTION_OR_METHOD_AS_TYPE = new MsgWithNoParams("function or method cannot be used as a type");
+	public static final MsgWithNoParams INVALID_CONSTANT_EXPRESSION = new MsgWithNoParams("invalid constant expression");
+	public static final MsgWithNoParams INVALID_BOOLEAN_EXPRESSION = new MsgWithNoParams("invalid boolean expression");
+	public static final MsgWithNoParams INVALID_NUMERIC_EXPRESSION = new MsgWithNoParams("invalid numeric expression");
+	public static final MsgWithNoParams INVALID_BINARY_EXPRESSION = new MsgWithNoParams("invalid binary expression");	
+	public static final MsgWithNoParams INVALID_LIST_EXPRESSION  = new MsgWithNoParams("invalid list expression");
+	public static final MsgWithNoParams INVALID_SET_EXPRESSION = new MsgWithNoParams("invalid set expression");
+	public static final MsgWithNoParams INVALID_SET_OR_LIST_EXPRESSION = new MsgWithNoParams("invalid set or list expression");
+	public static final MsgWithNoParams INVALID_DICTIONARY_EXPRESSION = new MsgWithNoParams("invalid dictionary expression");
+	public static final MsgWithNoParams INVALID_LVAL_EXPRESSION = new MsgWithNoParams("invalid assignment expression");
+	public static final MsgWithNoParams INVALID_DESTRUCTURE_EXPRESSION = new MsgWithNoParams("invalid destructure expression");
+	public static final MsgWithNoParams INVALID_TUPLE_LVAL = new MsgWithNoParams("invalid tuple lval");
+	public static final MsgWithNoParams INVALID_MODULE_ACCESS = new MsgWithNoParams("invalid module access");
+	public static final MsgWithNoParams INVALID_PACKAGE_ACCESS = new MsgWithNoParams("invalid package access");	
+	public static final MsgWithNoParams BREAK_OUTSIDE_LOOP = new MsgWithNoParams("break outside switch or loop");
+	public static final MsgWithStringParam RESOLUTION_ERROR = new MsgWithStringParam("unable to resolve name ($0)");
+	public static final MsgWithNoParams AMBIGUOUS_VARIABLE = new MsgWithNoParams("ambiguous variable");
+	public static final MsgWithNoParams UNKNOWN_VARIABLE = new MsgWithNoParams("unknown variable");
+	public static final MsgWithNoParams UNKNOWN_FUNCTION_OR_METHOD = new MsgWithNoParams("unknown function or method");
+	public static final MsgWithNoParams VARIABLE_POSSIBLY_UNITIALISED = new MsgWithNoParams("variable may be uninitialised");
+	public static final MsgWithStringParam VARIABLE_ALREADY_DEFINED = new MsgWithStringParam("variable $0 already defined");
+	public static final MsgWithNoParams DUPLICATE_DEFAULT_LABEL = new MsgWithNoParams("duplicate default label");
+	public static final MsgWithNoParams DUPLICATE_CASE_LABEL = new MsgWithNoParams("duplicate case label");
+	public static final MsgWithNoParams DEAD_CODE = new MsgWithNoParams("dead-code encountered (i.e. this statement has no effect)");
+	public static final MsgWithNoParams UNREACHABLE_CODE = new MsgWithNoParams("unreachable code encountered (i.e. execution can never reach this statement)");
+	public static final MsgWithNoParams RECEIVER_NOT_REFERENCE = new MsgWithNoParams("method receiver must have reference type");
+	public static final MsgWithNoParams REFERENCE_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("reference not permitted in function");
+	public static final MsgWithNoParams SEND_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("message send not permitted in function");
+	public static final MsgWithNoParams METHODCALL_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("method invocation not permitted in function");
+	public static final MsgWithNoParams SPAWN_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("object creation not permitted in function");
+	public static final MsgWithNoParams REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("dereference not permitted in function");
+	public static final MsgWithTypeParams SUBTYPE_ERROR = new MsgWithTypeParams("expected type $0, found $1");
+	public static final MsgWithTypeParams INCOMPARABLE_OPERANDS = new MsgWithTypeParams("incomparable operands: $0 and $1");
+	public static final MsgWithTypeParam RECORD_TYPE_REQUIRED = new MsgWithTypeParam("record required, got: $0");
+	public static final MsgWithStringParam RECORD_MISSING_FIELD = new MsgWithStringParam("record has no field named $0");
+	public static final MsgWithNoParams RETURN_FROM_VOID = new MsgWithNoParams("cannot return value from method with void return type");
+	public static final MsgWithNoParams MISSING_RETURN_VALUE = new MsgWithNoParams("missing return value");
+	public static final MsgWithNoParams BRANCH_ALWAYS_TAKEN = new MsgWithNoParams("branch always taken");
+	public static final MsgWithTypeParams AMBIGUOUS_COERCION = new MsgWithTypeParams("ambiguous coercion (from $0 to $1)");
+	public static final MsgWithNoParams MUST_DECLARE_THROWN_EXCEPTION = new MsgWithNoParams("exception may be thrown which is not declared");
 	
 	/**
-	 * Return the error message for a given error kind. Supplementary data may
-	 * be required in some cases, and failure to provide the right data causes
-	 * an exception of some kind.
+	 * Return the error message for an error with no parameters.
 	 * 
 	 * @param kind
 	 * @param data
 	 * @return
 	 */
-	public static String errorMessage(int kind, Object... data) {
-		if(kind < 0 || kind >= messages.length) {
-			throw new IllegalArgumentException("Invalid error kind");
-		}
-		String r = messages[kind];
-		for (int i = 0; i != data.length; ++i) {
-			String rep = data[i].toString();			
-			r = r.replaceAll("\\$" + i, rep);			
-		}
-		return r;		
+	public static String errorMessage(MsgWithNoParams msg) {				
+		return msg.msg;		
+	}
+	
+	/**
+	 * Return the error message for an error with a single string parameter.
+	 * 
+	 * @param kind
+	 * @param data
+	 * @return
+	 */
+	public static String errorMessage(MsgWithStringParam msg, String param) {				
+		return msg.msg.replaceAll("\\$0",param);		
+	}
+	
+	/**
+	 * Return the error message for an error with a single type parameter.
+	 * 
+	 * @param kind
+	 * @param data
+	 * @return
+	 */
+	public static String errorMessage(MsgWithTypeParam msg, Type t1) {				
+		return msg.msg.replaceAll("\\$0",t1.toString());
+	}
+	
+	/**
+	 * Return the error message for an error with two type parameters.
+	 * 
+	 * @param kind
+	 * @param data
+	 * @return
+	 */
+	public static String errorMessage(MsgWithTypeParams msg, Type t1, Type t2) {				
+		return msg.msg.replaceAll("\\$0",t1.toString()).replaceAll("\\$1",t2.toString());
 	}
 }

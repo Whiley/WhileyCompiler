@@ -1,7 +1,8 @@
 <project name="whiley" default="wyjc">  
-  <property name="version" value="0.3.13"/>
+  <property name="version" value="0.3.15"/>
+
   <target name="compile">
-    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**,wyautl/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"> 
+    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"> 
       <src path="src"/>
       <src path="stdlib"/>
     </javac>
@@ -27,7 +28,7 @@
       <attribute name="Implementation-Version" value="${version}-${build.number}"/>
     </manifest>
     <jar destfile="lib/wyjc.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src" includes="wyil/**/*.class,wyc/**/*,wyjc/**/*.class,wyone/**/*.class,wyjvm/**/*.class,wyautl/**/*.class"/>
+      <fileset dir="src" includes="*/**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -42,7 +43,15 @@
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
     <jar destfile="wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src" includes="wyjc/**/*.class,wyil/**/*.class,wyc/**/*.class,wyjvm/**/*.class,wyautl/**/*.class"/>
+      <fileset dir="src">
+	<include name="wyautl/**/*.class"/>
+	<include name="wybs/**/*.class"/>
+	<include name="wyc/**/*.class"/>
+	<include name="wyjc/**/*.class"/>
+	<include name="wyil/**/*.class"/>
+	<include name="wyjvm/**/*.class"/>
+	<include name="wyone/**/*.class"/>
+      </fileset>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -51,7 +60,15 @@
   <target name="distsrc" depends="wyjc">
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
-    <fileset dir="." includes="src/wyc/**/*.java,src/wyjc/**/*.java,src/wyjvm/**/*.java,src/wyil/**/*.java,src/wyautl/**/*.java"/>
+    <fileset dir=".">
+      <include name="src/wyautl/**/*.java"/>
+      <include name="src/wybs/**/*.java"/>
+      <include name="src/wyc/**/*.java"/>
+      <include name="src/wyjc/**/*.java"/>
+      <include name="src/wyil/**/*.java"/>
+      <include name="src/wyjvm/**/*.java"/>
+      <include name="src/wyone/**/*.java"/>
+    </fileset>
     <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
     <fileset dir="." includes="examples/**/*.whiley"/>
     <fileset dir="." includes="stdlib/**/*.whiley"/>
@@ -84,7 +101,7 @@
 
   <target name="doc">
     <javadoc
-       packagenames="wyc.*,wyil.*,,wyone.*,wyjc.*,wyjvm.*,wyautl.*"
+       packagenames="wyc.*,wybs.*,wyil.*,,wyone.*,wyjc.*,wyjvm.*,wyautl.*"
        excludepackagenames="wyjc.testing.*,wyil.testing.*"
        sourcepath="src/"
        destdir="docs/api"
@@ -93,7 +110,7 @@
        use="true"
        windowtitle="Whiley API">
       <doctitle><![CDATA[<h1>The Whiley Programming Language (v${version})</h1>]]></doctitle>
-      <bottom><![CDATA[<i>Copyright &#169; 2010 David J. Pearce. All Rights Reserved.</i>]]></bottom>
+      <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       </javadoc>
   </target>
 

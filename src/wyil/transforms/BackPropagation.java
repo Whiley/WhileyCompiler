@@ -25,10 +25,14 @@
 
 package wyil.transforms;
 
-import static wyil.util.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
+
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wybs.lang.Builder;
+import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
+import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
@@ -87,12 +91,12 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
-	public BackPropagation(ModuleLoader loader) {
-		super(loader);
+	public BackPropagation(Builder builder) {
+		super();
 	}
 	
 	@Override
-	protected Module.TypeDef propagate(Module.TypeDef type) {		
+	protected WyilFile.TypeDef propagate(WyilFile.TypeDef type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}
@@ -109,7 +113,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	}
 	
 	@Override
-	protected Module.Case propagate(Module.Case mcase) {		
+	protected WyilFile.Case propagate(WyilFile.Case mcase) {		
 
 		// TODO: back propagate through pre- and post-conditions
 		
@@ -137,7 +141,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			} 							
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 
@@ -149,9 +153,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		afterInserts.remove(index);		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Assert) {
-			infer(index,(Assert)code,entry,environment);
-		} else if(code instanceof BinOp) {
+		if(code instanceof BinOp) {
 			infer(index,(BinOp)code,entry,environment);
 		} else if(code instanceof Convert) {
 			infer(index,(Convert)code,entry,environment);
@@ -161,8 +163,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Debug)code,entry,environment);
 		} else if(code instanceof Destructure) {
 			infer(index,(Destructure)code,entry,environment);
-		} else if(code instanceof Fail) {
-			// skip
+		} else if(code instanceof Assert) {
+			infer(index,(Assert)code,entry,environment);
 		} else if(code instanceof FieldLoad) {
 			infer(index,(FieldLoad)code,entry,environment);			
 		} else if(code instanceof IndirectInvoke) {
@@ -232,10 +234,19 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		return environment;
 	}
-	
-	private void infer(int index, Code.Assert code, Block.Entry entry,
-			Env environment) {
+
+	protected Env infer(int index,
+			Code.Assert code, Block.Entry stmt, Env environment) {
+		if(code.op == Code.COp.ELEMOF) {
+			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
+			environment.push(src.element());
+			environment.push(code.type);
+		} else {		
+			environment.push(code.type);
+			environment.push(code.type);
+		}
 		
+		return environment;
 	}
 	
 	private void infer(int index, Code.BinOp code, Block.Entry entry,
@@ -660,20 +671,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		Env environment = join(trueEnv,falseEnv);
 		
 		if(igoto.op == Code.COp.ELEMOF) {
-			Type src = igoto.type;
-			Type element;
-			
-			// FIXME: this is soooo broken
-			
-			if(src instanceof Type.Set) {
-				Type.Set s = (Type.Set) src;
-				element = s.element();
-			} else {
-				Type.List s = (Type.List) src;
-				element = s.element();
-			}
-						
-			environment.push(element);
+			Type.EffectiveCollection src = (Type.EffectiveCollection) igoto.type;		
+			environment.push(src.element());
 			environment.push(igoto.type);
 		} else {		
 			environment.push(igoto.type);
@@ -796,17 +795,17 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		if (type == Type.T_BYTE) {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_BYTE);
-			name = new NameID(ModuleID.fromString("whiley.lang.Byte"),
+			name = new NameID(Trie.fromString("whiley/lang/Byte"),
 					"toString");
 		} else if (type == Type.T_CHAR) {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_CHAR);
-			name = new NameID(ModuleID.fromString("whiley.lang.Char"),
+			name = new NameID(Trie.fromString("whiley/lang/Char"),
 					"toString");
 		} else {
 			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
 					Type.T_ANY);
-			name = new NameID(ModuleID.fromString("whiley.lang.Any"),
+			name = new NameID(Trie.fromString("whiley/lang/Any"),
 					"toString");
 		}
 		

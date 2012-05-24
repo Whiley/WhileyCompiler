@@ -75,6 +75,18 @@ public class TestHarness {
 		}
 	}
 	
+	protected void verifyRunTest(String name, String... params) {						
+		String filename = sourcepath + File.separatorChar + name + ".whiley";
+		
+		if (compile("-sp",sourcepath,"-wp", "lib/wyrt.jar","-X","verification:enable=true",filename) != 0) {
+			fail("couldn't compile test!");
+		} else {
+			String output = run(sourcepath, name);
+			compare(output, outputPath + File.separatorChar + name + "."
+					+ outputExtension);
+		}
+	}
+	
 	protected void contextFailTest(String name) {				
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
@@ -86,7 +98,20 @@ public class TestHarness {
 			fail("Test caused internal failure!");
 		}
 	}
+	
+	protected void verifyFailTest(String name) {	
+		// this will need to turn on verification at some point.
+		name = sourcepath + File.separatorChar + name + ".whiley";
+
+		int r = compile("-sp",sourcepath,"-wp", "lib/wyrt.jar","-X","verification:enable=true",name);
 		
+		if (r == 0) {
+			fail("Test compiled when it shouldn't have!");
+		} else if(r == Main.INTERNAL_FAILURE) {
+			fail("Test caused internal failure!");
+		}
+	}
+	
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		

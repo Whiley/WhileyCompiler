@@ -25,7 +25,7 @@
 
 package wyil;
 
-import wyil.lang.Module;
+import wyil.lang.WyilFile;
 
 /**
  * Represents an action that may be applied to a Whiley module. Such actions
@@ -48,5 +48,5 @@ public interface Transform {
 	 * @throws Exception
 	 *             --- some kind of failure occurred.
 	 */
-	public void apply(Module module) throws Exception;
+	public void apply(WyilFile module) throws Exception;
 }

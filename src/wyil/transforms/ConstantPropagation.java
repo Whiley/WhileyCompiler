@@ -25,12 +25,13 @@
 
 package wyil.transforms;
 
-import static wyil.util.SyntaxError.internalFailure;
+import static wybs.lang.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.ModuleLoader;
+import wybs.lang.Builder;
+import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
@@ -42,11 +43,11 @@ import wyjc.runtime.BigRational;
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
-	public ConstantPropagation(ModuleLoader loader) {
-		super(loader);
+	public ConstantPropagation(Builder builder) {
+		
 	}
 		
-	public Module.TypeDef transform(Module.TypeDef type) {
+	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
 		// TODO: propagate constants through type constraints
 		return type;		
 	}
@@ -62,7 +63,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return environment;				
 	}
 	
-	public Module.Case propagate(Module.Case mcase) {		
+	public WyilFile.Case propagate(WyilFile.Case mcase) {		
 		methodCase = mcase;
 		block = mcase.body();
 		stores = new HashMap<String,Env>();		
@@ -88,7 +89,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 		
-		return new Module.Case(nbody, mcase.precondition(),
+		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 	
@@ -130,9 +131,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Assert) {
-			infer((Assert)code,entry,environment);
-		} else if(code instanceof BinOp) {
+		if(code instanceof BinOp) {
 			infer(index,(BinOp)code,entry,environment);
 		} else if(code instanceof Convert) {
 			infer(index,(Convert)code,entry,environment);
@@ -142,7 +141,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Debug)code,entry,environment);
 		}  else if(code instanceof Destructure) {
 			infer((Destructure)code,entry,environment);
-		} else if(code instanceof Fail) {
+		} else if(code instanceof Assert) {
 			// skip
 		} else if(code instanceof FieldLoad) {
 			infer(index,(FieldLoad)code,entry,environment);			
@@ -210,11 +209,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}	
 		
 		return environment;
-	}
-	
-	public void infer(Code.Assert code, Block.Entry entry,
-			Env environment) {
-		
 	}
 	
 	public void infer(int index, Code.BinOp code, Block.Entry entry,

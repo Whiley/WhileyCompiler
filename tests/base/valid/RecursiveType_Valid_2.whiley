@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define binop as {int op, expr left, expr right}
 define expr as int | binop

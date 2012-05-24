@@ -33,10 +33,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import wyautl.io.BinaryAutomataReader;
+import wybs.lang.Path;
 import wyil.io.ModuleReader;
 import wyil.lang.Attribute;
-import wyil.lang.Module;
-import wyil.lang.ModuleID;
+import wyil.lang.WyilFile;
 import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjc.attributes.WhileyDefine;
@@ -70,8 +70,9 @@ public class ClassFileLoader implements ModuleReader {
 		// probably want to add more readers here.  E.g. for pre and post-conditions.
 	}
 		
-	public Module read(ModuleID module, InputStream input)
+	public WyilFile read(Path.ID module, InputStream input)
 			throws IOException {
+		
 		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
 				this.readers);
 
@@ -79,7 +80,7 @@ public class ClassFileLoader implements ModuleReader {
 		return createModule(module, r.readClass());
 	}
 	
-	protected Module createModule(ModuleID mid, ClassFile cf) {
+	protected WyilFile createModule(Path.ID mid, ClassFile cf) {
 		if(cf.attribute("WhileyVersion") == null) {
 			// This indicates the class is not a WhileyFile. This means it was
 			// generate from some other source (e.g. it was a .java file
@@ -89,26 +90,26 @@ public class ClassFileLoader implements ModuleReader {
 			return null;
 		}
 		
-		HashMap<Pair<Type.Function,String>,Module.Method> methods = new HashMap();
+		HashMap<Pair<Type.Function,String>,WyilFile.Method> methods = new HashMap();
 		
 		for (ClassFile.Method cm : cf.methods()) {
 			if (!cm.isSynthetic()) {
-				Module.Method mi = createMethodInfo(mid, cm);
+				WyilFile.Method mi = createMethodInfo(mid, cm);
 				Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
-				Module.Method method = methods.get(key);
+				WyilFile.Method method = methods.get(key);
 				if (method != null) {
 					// coalesce cases
-					ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
+					ArrayList<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>(
 							method.cases());
 					ncases.addAll(mi.cases());
-					mi = new Module.Method(method.modifiers(), mi.name(), mi.type(), ncases);
+					mi = new WyilFile.Method(method.modifiers(), mi.name(), mi.type(), ncases);
 				}
 				methods.put(key, mi);
 			}
 		}
 		
-		ArrayList<Module.TypeDef> types = new ArrayList();
-		ArrayList<Module.ConstDef> constants = new ArrayList();
+		ArrayList<WyilFile.TypeDef> types = new ArrayList();
+		ArrayList<WyilFile.ConstDef> constants = new ArrayList();
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
 			
@@ -125,7 +126,7 @@ public class ClassFileLoader implements ModuleReader {
 						}
 					}
 					// TODO: generate proper modifiers
-					Module.ConstDef ci = new Module.ConstDef(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
+					WyilFile.ConstDef ci = new WyilFile.ConstDef(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
 					constants.add(ci);
 				} else {
 					// type definition
@@ -137,16 +138,16 @@ public class ClassFileLoader implements ModuleReader {
 						}
 					}
 					// TODO: generate proper modifiers
-					Module.TypeDef ti = new Module.TypeDef(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
+					WyilFile.TypeDef ti = new WyilFile.TypeDef(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
 					types.add(ti);
 				}
 			}
 		}
 				
-		return new Module(mid, cf.name(), methods.values(), types, constants);
+		return new WyilFile(mid, cf.name(), methods.values(), types, constants);
 	}
 	
-	protected Module.Method createMethodInfo(ModuleID mid, ClassFile.Method cm) {
+	protected WyilFile.Method createMethodInfo(Path.ID mid, ClassFile.Method cm) {
 		// string any mangling off.
 		try {			
 			int split = cm.name().indexOf('$');
@@ -171,11 +172,11 @@ public class ClassFileLoader implements ModuleReader {
 				parameterNames.add("$" + i);
 			}
 
-			List<Module.Case> mcases = new ArrayList<Module.Case>();
+			List<WyilFile.Case> mcases = new ArrayList<WyilFile.Case>();
 			// TODO: fix this problem here related to locals
-			mcases.add(new Module.Case(null, null, null, Collections.EMPTY_LIST, attrs));
+			mcases.add(new WyilFile.Case(null, null, null, Collections.EMPTY_LIST, attrs));
 			// TODO: generate proper modifiers
-			return new Module.Method(Collections.EMPTY_LIST,name, type, mcases);
+			return new WyilFile.Method(Collections.EMPTY_LIST,name, type, mcases);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 void ::main(System.Console sys):
     arr1 = [1,2,4]

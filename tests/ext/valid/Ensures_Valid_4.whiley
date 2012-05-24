@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 int f(int x) requires x>=0, ensures $>=0 && x>=0:
     return x

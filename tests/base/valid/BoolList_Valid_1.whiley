@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 void ::main(System.Console sys):
     ls = [true,false,true]

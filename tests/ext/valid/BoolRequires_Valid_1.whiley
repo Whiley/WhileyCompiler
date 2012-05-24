@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 string f([bool] x) requires |x| > 0 && x[0]:
     return Any.toString(x)

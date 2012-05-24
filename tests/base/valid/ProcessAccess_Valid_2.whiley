@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import * from whiley.lang.System
 
 define state as {int x, int y, SystemOutWriter out}
 define pState as ref state

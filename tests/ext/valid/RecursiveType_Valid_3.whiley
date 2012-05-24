@@ -1,4 +1,4 @@
-import * from whiley.lang.*
+import println from whiley.lang.System
 
 define nat as int where $ >= 0
 define expr as nat | {int op, expr left, expr right}
