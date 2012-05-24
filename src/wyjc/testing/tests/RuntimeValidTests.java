@@ -261,7 +261,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void OpenRecord_Valid_7_RuntimeTest() { runTest("OpenRecord_Valid_7"); }
  @Test public void OpenRecord_Valid_8_RuntimeTest() { runTest("OpenRecord_Valid_8"); }
  @Test public void OpenRecord_Valid_9_RuntimeTest() { runTest("OpenRecord_Valid_9"); }
- @Test public void OpenRecord_Valid_10_RuntimeTest() { runTest("OpenRecord_Valid_10"); }
+ @Ignore("Known Issue") @Test public void OpenRecord_Valid_10_RuntimeTest() { runTest("OpenRecord_Valid_10"); }
  @Test public void Print_Valid_1_RuntimeTest() { runTest("Print_Valid_1"); }
  @Test public void ProcessAccess_Valid_1_RuntimeTest() { runTest("ProcessAccess_Valid_1"); }
  @Test public void ProcessAccess_Valid_2_RuntimeTest() { runTest("ProcessAccess_Valid_2"); }
