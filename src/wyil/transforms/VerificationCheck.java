@@ -31,6 +31,7 @@ import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wyil.lang.*;
 import wyil.lang.Code.*;
+import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.lang.Code.*;
 import wyil.Transform;
@@ -42,8 +43,10 @@ import wyone.theory.list.WListConstructor;
 import wyone.theory.list.WListVal;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
+import wyone.theory.quantifier.WBoundedForall;
 import wyone.theory.set.WSetConstructor;
 import wyone.theory.set.WSetVal;
+import wyone.theory.set.WSets;
 import wyone.theory.tuple.WTupleAccess;
 import wyone.theory.tuple.WTupleConstructor;
 import wyone.theory.tuple.WTupleVal;
@@ -98,7 +101,7 @@ public class VerificationCheck implements Transform {
 		
 	}
 	
-	protected void transform(WyilFile.Method method) {
+	protected void transform(WyilFile.Method method) {		
 		for(WyilFile.Case c : method.cases()) {
 			transform(c);
 		}
@@ -110,7 +113,7 @@ public class VerificationCheck implements Transform {
 		Block body = methodCase.body();				
 		ArrayList<Branch> branches = new ArrayList<Branch>();
 		ArrayList<WExpr> stack = new ArrayList<WExpr>();
-		int[] environment = new int[body.numSlots()];
+		int[] environment = new int[body.numSlots()];			
 		
 		// this is a tad inefficient; but, it's the easiest way to do it.
 		Block blk = new Block(body.numSlots());
@@ -122,7 +125,7 @@ public class VerificationCheck implements Transform {
 		blk.append(body);
 		
 		// take initial branch
-		transform(0,constraint,environment,stack,branches,assumes,body);
+		transform(0,constraint,environment,stack,branches,assumes,blk);
 		
 		// continue any resulting branches
 		while (!branches.isEmpty()) {
@@ -130,7 +133,7 @@ public class VerificationCheck implements Transform {
 			Branch branch = branches.get(last);
 			branches.remove(last);
 			transform(branch.pc, branch.constraint,branch.environment, branch.stack, branches,
-					assumes,body);
+					assumes,blk);
 		}
 	}
 	
@@ -158,7 +161,7 @@ public class VerificationCheck implements Transform {
 			ArrayList<WExpr> stack, ArrayList<Branch> branches, int assumes, Block body) {
 				
 		int bodySize = body.size();		
-		for (int i = pc; i != bodySize; ++i) {
+		for (int i = pc; i != bodySize; ++i) {			
 			Block.Entry entry = body.get(i);			
 			Code code = entry.code;
 			
@@ -309,11 +312,10 @@ public class VerificationCheck implements Transform {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
 		WFormula test = buildTest(code.op, stack, entry);
-
+		
 		if (assume) {
 			// in assumption mode we don't assert the test; rather, we assume
-			// it.
-			constraint = WFormulas.and(test, constraint);
+			// it. 
 		} else {
 			// Pass constraint through the solver to check for unsatisfiability
 			Proof tp = Solver.checkUnsatisfiable(timeout,
@@ -326,7 +328,7 @@ public class VerificationCheck implements Transform {
 			}
 		}
 		
-		return constraint;
+		return WFormulas.and(test, constraint);
 	}
 	
 	protected WFormula transform(Code.BinOp code, Block.Entry entry,
@@ -397,7 +399,19 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.Invoke code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
+		
+		Type.FunctionOrMethod ft = code.type;
+		List<Type> ft_params = code.type.params();
+		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		for(int i=0;i!=ft_params.size();++i) {
+			args.add(pop(stack));
+		}
+		Collections.reverse(args);				
+		WVariable rv = new WVariable(code.name.toString(), args);
+		
+		// FIXME: need to support post-condition here.
+		
+		stack.add(rv);
 		return constraint;
 	}
 
@@ -532,20 +546,62 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.SetUnion code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
-		return constraint;
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
+		WVariable rv = WVariable.freshVar();
+		WVariable rs = WVariable.freshVar();
+
+		HashMap<WVariable, WExpr> vars = new HashMap();
+		vars.put(rv, rs);
+		WSetConstructor sc = new WSetConstructor(rv);
+		WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs),
+				WSets.subsetEq(sc, rhs));
+
+		stack.add(rs);
+
+		return WFormulas.and(constraint, WSets.subsetEq(lhs, rs),
+				WSets.subsetEq(rhs, rs), new WBoundedForall(true, vars, allc));
 	}
 
 	protected WFormula transform(Code.SetDifference code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
-		return constraint;
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
+		WVariable rv = WVariable.freshVar();
+		WVariable rs = WVariable.freshVar();
+		HashMap<WVariable, WExpr> vars = new HashMap();
+		vars.put(rv, rs);				
+		WSetConstructor sc = new WSetConstructor(rv);
+		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+				.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
+
+		stack.add(rs);
+		
+		return WFormulas
+				.and(constraint, WSets.subsetEq(lhs, rs), left);		
 	}
 
 	protected WFormula transform(Code.SetIntersect code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		// TODO: complete this transform
-		return constraint;
+		WExpr rhs = pop(stack);
+		WExpr lhs = pop(stack);
+		WVariable rv = WVariable.freshVar();
+		WVariable rs = WVariable.freshVar();
+		HashMap<WVariable, WExpr> vars = new HashMap();
+		vars.put(rv, rs);				
+		WSetConstructor sc = new WSetConstructor(rv);
+		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+				.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
+		
+		vars = new HashMap();
+		vars.put(rv, lhs);
+		WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
+				.subsetEq(sc, rhs), WSets.subsetEq(sc, rs)));
+
+		stack.add(rs);
+		
+		return WFormulas
+				.and(constraint, left, right, WSets.subsetEq(rs, lhs), WSets.subsetEq(rs, rhs));
 	}
 
 	protected WFormula transform(Code.StringAppend code, Block.Entry entry,
@@ -677,8 +733,14 @@ public class VerificationCheck implements Transform {
 			return WNumerics.lessThanEq(lhs, rhs);
 		case LT:
 			return WNumerics.lessThan(lhs, rhs);
+		case SUBSET:
+			return WSets.subset(lhs, rhs);
+		case SUBSETEQ:
+			return WSets.subsetEq(lhs, rhs);
+		case ELEMOF:
+			return WSets.elementOf(lhs, rhs);
 		default:
-			internalFailure("unknown comparator",filename,elem);
+			internalFailure("unknown comparator (" + op + ")",filename,elem);
 			return null;
 		}
 	}

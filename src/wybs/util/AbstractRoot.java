@@ -34,6 +34,7 @@ import java.util.Set;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.Path.Entry;
+import wybs.lang.Path.Folder;
 import wybs.lang.Path.ID;
 import wybs.lang.Path.Root;
 
@@ -44,9 +45,9 @@ import wybs.lang.Path.Root;
  * @author David J. Pearce
  * 
  */
-public abstract class AbstractRoot implements Root {
+public abstract class AbstractRoot<T extends Folder> implements Root {
 	protected final Content.Registry contentTypes;
-	protected final AbstractFolder root;
+	protected final T root;
 	
 	public AbstractRoot(Content.Registry contentTypes) {
 		this.contentTypes = contentTypes;
@@ -99,5 +100,5 @@ public abstract class AbstractRoot implements Root {
 	 * 
 	 * @return
 	 */
-	protected abstract AbstractFolder root();
+	protected abstract T root();
 }
