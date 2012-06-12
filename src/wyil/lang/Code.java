@@ -558,8 +558,9 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * A binary operation takes two items off the stack and pushes a single
-	 * result. The binary operators are:
+	 * A binary operation takes reads values from two operand registers,
+	 * performs an operation and writes the result to target register. The
+	 * binary operators are:
 	 * </p>
 	 * <ul>
 	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
@@ -576,28 +577,37 @@ public abstract class Code {
 	public static final class BinOp extends Code {		
 		public final BOp bop;
 		public final Type type;
+		public final int target;
+		public final int leftOperand;
+		public final int rightOperand;
 		
-		private BinOp(Type type, BOp bop) {
+		private BinOp(Type type, BOp bop, int target, int lhs, int rhs) {
+			if(type == null) {
+				throw new IllegalArgumentException("BinOp type argument cannot be null");
+			}
 			if(bop == null) {
 				throw new IllegalArgumentException("BinOp bop argument cannot be null");
 			}
 			this.bop = bop;
 			this.type = type;
+			this.target = target;
+			this.leftOperand = lhs;
+			this.rightOperand = rhs;
 		}
 		
 		public int hashCode() {
-			if(type == null) {
-				return bop.hashCode();
-			} else {
-				return type.hashCode() + bop.hashCode();
-			}
+			return type.hashCode() + bop.hashCode() + target + leftOperand
+					+ rightOperand;
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof BinOp) {
 				BinOp bo = (BinOp) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type))) && bop.equals(bo.bop); 
+				return type.equals(bo.type)
+						&& bop.equals(bo.bop)
+						&& target == bo.target
+						&& leftOperand == bo.leftOperand
+						&& rightOperand == bo.rightOperand; 
 			}
 			return false;
 		}
@@ -609,10 +619,10 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Pops a value from the stack, converts it to a given type and pushes it
-	 * back on. This bytecode is the only way to change the type of a value.
-	 * It's purpose is to simplify implementations which have different
-	 * representations of data types.
+	 * Read a value from the operand register, converts it to a given type and
+	 * writes it the target register. This bytecode is the only way to change
+	 * the type of a value. It's purpose is to simplify implementations which
+	 * have different representations of data types.
 	 * </p>
 	 * 
 	 * <p>
@@ -621,7 +631,7 @@ public abstract class Code {
 	 * JVM, <code>any</code> translates to <code>Object</code>, whilst
 	 * <code>[any]</code> translates to <code>List</code> (which is an instance
 	 * of <code>Object</code>). Thus, no conversion is necessary since
-	 * <code>List</code> can safely flow into <code>Object</code>.  
+	 * <code>List</code> can safely flow into <code>Object</code>.
 	 * </p>
 	 * 
 	 * <p>
@@ -633,28 +643,31 @@ public abstract class Code {
 	public static final class Convert extends Code {
 		public final Type from;
 		public final Type to;
+		public final int target;
+		public final int operand;
 		
-		private Convert(Type from, Type to) {
+		private Convert(Type from, Type to, int target, int operand) {
+			if(from == null) {
+				throw new IllegalArgumentException("Convert from argument cannot be null");
+			}
 			if(to == null) {
 				throw new IllegalArgumentException("Convert to argument cannot be null");
 			}
 			this.from = from;
 			this.to = to;
+			this.target = target;
+			this.operand = operand;
 		}
 		
 		public int hashCode() {
-			if(from == null) {
-				return to.hashCode();
-			} else {
-				return from.hashCode() + to.hashCode();
-			}
+			return from.hashCode() + to.hashCode() + target + operand;
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Convert) {
+			if (o instanceof Convert) {
 				Convert c = (Convert) o;
-				return (from == c.from || (from != null && from.equals(c.from)))
-						&& to.equals(c.to);  
+				return from.equals(c.from) && to.equals(c.to)
+						&& target == c.target && operand == c.operand;
 			}
 			return false;
 		}
@@ -665,28 +678,30 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pushes a constant value onto the stack. This includes integer constants,
-	 * rational constants, list constants, set constants, dictionary constants,
-	 * function constants, etc.
+	 * Writes a constant value to a target register. This includes integer
+	 * constants, rational constants, list constants, set constants, dictionary
+	 * constants, function constants, etc.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Const extends Code {		
 		public final Value constant;
+		public final int target;
 		
-		private Const(Value constant) {
+		private Const(Value constant, int target) {
 			this.constant = constant;
+			this.target = target;
 		}
 		
 		public int hashCode() {
-			return constant.hashCode();
+			return constant.hashCode() + target;
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Const) {
 				Const c = (Const) o;
-				return constant.equals(c.constant);  
+				return constant.equals(c.constant) && target == c.target;  
 			}
 			return false;
 		}
@@ -697,7 +712,7 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops a string from the stack and writes it to the debug console. This
+	 * Read a string from the operand and writes it to the debug console. This
 	 * bytecode is not intended to form part of the programs operation. Rather,
 	 * it is to facilitate debugging within functions (since they cannot have
 	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
@@ -707,13 +722,20 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Debug extends Code {
-		Debug() {}
+		public final int operand;
+
+		Debug(int operand) {
+			this.operand = operand;
+		}
+
 		public int hashCode() {
-			return 101;
+			return operand;
 		}
+
 		public boolean equals(Object o) {
-			return o instanceof Debug;
+			return o instanceof Debug && operand == ((Debug) o).operand;
 		}
+
 		public String toString() {
 			return "debug";
 		}
