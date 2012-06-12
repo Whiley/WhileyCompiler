@@ -39,6 +39,7 @@ import wyjc.io.ClassFileLoader;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 import wyjvm.util.DeadCodeElimination;
+import wyjvm.util.TypeAnalysis;
 import wyjvm.util.Validation;
 
 public final class WyilFile {
@@ -78,6 +79,9 @@ public final class WyilFile {
 				
 			// eliminate any dead code that was introduced.		
 			// new DeadCodeElimination().apply(file);			
+			
+			// Compute the StackMapTable
+			new TypeAnalysis().apply(file);
 			
 			ClassFileWriter writer = new ClassFileWriter(output,null);			
 			writer.write(file);	

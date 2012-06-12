@@ -65,6 +65,15 @@ public class Code implements BytecodeAttribute {
 		return attributes;
 	}
 	
+	public <T extends BytecodeAttribute> T attribute(Class<T> c) {
+		for(BytecodeAttribute a : attributes) {
+			if(c.isInstance(a)) {
+				return (T) a;
+			}
+		}
+		return null;
+	}
+	
 	/**
 	 * Determine the maximum number of local variable slots required for
 	 * this method.
