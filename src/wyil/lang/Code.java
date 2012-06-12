@@ -742,42 +742,6 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops a compound value from the stack "destructures" it into multiple
-	 * values which are pushed back on the stack. For example, a rational can be
-	 * destructured into two integers (the <i>numerator</i> and
-	 * <i>denominator</i>). Or, an n-tuple can be destructured into n values.
-	 * 
-	 * Probably should be deprecated in favour of tupeload bytecode.
-	 */
-	public static final class Destructure extends Code {
-		public final Type type;
-		
-		private Destructure(Type from) {			
-			this.type = from;			
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 12345;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Destructure) {
-				Destructure c = (Destructure) o;
-				return (type == c.type || (type != null && type.equals(c.type)));  
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return "destructure " + type;
-		}
-	}
-	
-	/**
 	 * Marks the end of a loop block.
 	 * @author David J. Pearce
 	 *
@@ -813,8 +777,8 @@ public abstract class Code {
 	}	
 
 	/**
-	 * Raises an assertion failure if the given condition is false with the
-	 * given message.
+	 * Reads values from two operand registers and compares them. An assertion
+	 * failure with the given message is raised if comparison is false.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -823,22 +787,27 @@ public abstract class Code {
 		public final Type type;
 		public final COp op;
 		public final String msg;
+		public final int leftOperand;
+		public final int rightOperand;
 		
-		private Assert(Type type, COp cop, String msg) {
+		private Assert(Type type, COp cop, int leftOperand, int rightOperand,
+				String msg) {
+			if(type == null) {
+				throw new IllegalArgumentException("Assert type argument cannot be null");
+			}
 			if(cop == null) {
 				throw new IllegalArgumentException("Assert op argument cannot be null");
 			}			
 			this.type = type;
 			this.op = cop;
 			this.msg = msg;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
 		}
 		
-		public int hashCode() {
-			if(type == null) {
-				return op.hashCode() + msg.hashCode();
-			} else {
-				return type.hashCode() + op.hashCode() + msg.hashCode();
-			}
+		public int hashCode() {			
+			return type.hashCode() + op.hashCode() + msg.hashCode()
+					+ leftOperand + rightOperand;
 		}
 		
 		public boolean equals(Object o) {
@@ -846,8 +815,9 @@ public abstract class Code {
 				Assert ig = (Assert) o;
 				return op == ig.op
 						&& msg.equals(ig.msg)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));
+						&& type.equals(ig.type)
+						&& leftOperand == ig.leftOperand 
+						&& rightOperand == ig.rightOperand;
 			}
 			return false;
 		}
@@ -858,8 +828,8 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops a record from the stack and pushes the value from the given
-	 * field back on.
+	 * Reads a record from an operand register, reads the value of given field
+	 * and writes its target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -867,22 +837,26 @@ public abstract class Code {
 	public static final class FieldLoad extends Code {
 		public final Type.EffectiveRecord type;		
 		public final String field;
+		public final int target;
+		public final int operand;
 				
-		private FieldLoad(Type.EffectiveRecord type, String field) {
+		private FieldLoad(Type.EffectiveRecord type, String field, int target, int operand) {
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"FieldLoad type argument cannot be null");
+			}
 			if (field == null) {
 				throw new IllegalArgumentException(
 						"FieldLoad field argument cannot be null");
 			}
 			this.type = type;
 			this.field = field;
+			this.target = target;
+			this.operand = operand;
 		}
 		
 		public int hashCode() {
-			if(type != null) {
-				return type.hashCode() + field.hashCode();
-			} else {
-				return field.hashCode();
-			}
+			return type.hashCode() + field.hashCode() + target + operand;
 		}
 		
 		public Type fieldType() {
@@ -892,8 +866,8 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
-				return (i.type == type || (type != null && type.equals(i.type)))
-						&& field.equals(i.field);
+				return type.equals(i.type) && field.equals(i.field)
+						&& target == i.target && operand == i.operand;
 			}
 			return false;
 		}
