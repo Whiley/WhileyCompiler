@@ -1284,27 +1284,66 @@ public abstract class Code {
 	 */
 	public static final class IndirectInvoke extends Code {		
 		public final Type.FunctionOrMethod type;
-		public final boolean retval;
+		public final int[] operands;
+		public final int target;
 		
-		private IndirectInvoke(Type.FunctionOrMethod type, boolean retval) {
+		private IndirectInvoke(Type.FunctionOrMethod type, Collection<Integer> operands) {
+			this(type,-1,operands);
+		}
+		
+		private IndirectInvoke(Type.FunctionOrMethod type, int target, Collection<Integer> operands) {
 			this.type = type;
-			this.retval = retval;
+			this.operands = new int[operands.size()];
+			int i = 0;
+			for(Integer operand : operands) {
+				this.operands[i++] = operand;
+			}
+			this.target = target;
+		}
+		
+		@Override
+		public void slots(Set<Integer> slots) {
+			for(int operand : operands) {
+				slots.add(operand);
+			}
+			if(target >= 0) {
+				slots.add(target);
+			}
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			int[] nOperands = new int[operands.length];
+			boolean changed = false;
+			for(int i=0;i!=nOperands.length;++i) {
+				int operand = operands[i];
+				Integer nOperand = binding.get(operand);
+				if(nOperand != null) {
+					changed = true;
+					nOperands[i] = nOperand;
+				} else {
+					nOperands[i] = operand;
+				}				
+			}
+			
+			Integer nTarget = binding.get(target);			
+			if(changed || nTarget != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				return IndirectInvoke(type,nTarget,nOperands);
+			} else {
+				return this;
+			}
 		}
 		
 		public int hashCode() {
-			if(type != null) {
-				return type.hashCode();
-			} else {
-				return 123;
-			}
+			return type.hashCode() + Arrays.hashCode(operands) + target;
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof IndirectInvoke) {
 				IndirectInvoke i = (IndirectInvoke) o;				
-				return retval == i.retval
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+				return type.equals(i.type) && target == i.target
+						&& Arrays.equals(operands, i.operands);
 			}
 			return false;
 		}
