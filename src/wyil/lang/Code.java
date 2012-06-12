@@ -1284,20 +1284,22 @@ public abstract class Code {
 	 */
 	public static final class IndirectInvoke extends Code {		
 		public final Type.FunctionOrMethod type;
+		public final int operand;
 		public final int[] operands;
 		public final int target;
 		
-		private IndirectInvoke(Type.FunctionOrMethod type, Collection<Integer> operands) {
+		private IndirectInvoke(Type.FunctionOrMethod type, int operand, Collection<Integer> operands) {
 			this(type,-1,operands);
 		}
 		
-		private IndirectInvoke(Type.FunctionOrMethod type, int target, Collection<Integer> operands) {
+		private IndirectInvoke(Type.FunctionOrMethod type, int target, int operand, Collection<Integer> operands) {
 			this.type = type;
 			this.operands = new int[operands.size()];
 			int i = 0;
-			for(Integer operand : operands) {
-				this.operands[i++] = operand;
+			for(Integer o : operands) {
+				this.operands[i++] = o;
 			}
+			this.operand = operand;
 			this.target = target;
 		}
 		
@@ -1309,6 +1311,7 @@ public abstract class Code {
 			if(target >= 0) {
 				slots.add(target);
 			}
+			slots.add(operand);
 		}
 		
 		@Override
@@ -1316,20 +1319,22 @@ public abstract class Code {
 			int[] nOperands = new int[operands.length];
 			boolean changed = false;
 			for(int i=0;i!=nOperands.length;++i) {
-				int operand = operands[i];
-				Integer nOperand = binding.get(operand);
+				int o = operands[i];
+				Integer nOperand = binding.get(o);
 				if(nOperand != null) {
 					changed = true;
 					nOperands[i] = nOperand;
 				} else {
-					nOperands[i] = operand;
+					nOperands[i] = o;
 				}				
 			}
 			
-			Integer nTarget = binding.get(target);			
-			if(changed || nTarget != null) {
+			Integer nTarget = binding.get(target);	
+			Integer nOperand = binding.get(operand);			
+			if(changed || nTarget != null || nOperand != null) {
 				nTarget = nTarget != null ? nTarget : target;
-				return IndirectInvoke(type,nTarget,nOperands);
+				nOperand = nOperand != null ? nOperand : operand;
+				return IndirectInvoke(type,nTarget,nOperand,nOperands);
 			} else {
 				return this;
 			}
@@ -1349,7 +1354,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			if(retval) {
+			if(target >= 0) {
 				return toString("indirectinvoke",type);
 			} else {
 				return toString("vindirectinvoke",type);
@@ -1373,35 +1378,81 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class IndirectSend extends Code {
-		 public final boolean synchronous;
-		 public final boolean retval;
-		 public final Type.Message type;
-			
-		 private IndirectSend(Type.Message type, boolean synchronous, boolean retval) {
-			 this.type = type;
-			 this.synchronous = synchronous;
-			 this.retval = retval;
-		 }
+		public final boolean synchronous;
+		public final Type.Message type;
+		public final int operand;
+		public final int[] operands;
+		public final int target;
+	
+		private IndirectSend(Type.Message type, boolean synchronous,
+				int target, int operand, Collection<Integer> operands) {
+			this.type = type;
+			this.operands = new int[operands.size()];
+			int i = 0;
+			for (Integer o : operands) {
+				this.operands[i++] = o;
+			}
+			this.synchronous = synchronous;
+			this.operand = operand;
+			this.target = target;
+		}
 
-		 public int hashCode() {
-			 if(type != null) {
-					return type.hashCode();
+		@Override
+		public void slots(Set<Integer> slots) {
+			for(int operand : operands) {
+				slots.add(operand);
+			}
+			if(target >= 0) {
+				slots.add(target);
+			}
+			slots.add(operand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			int[] nOperands = new int[operands.length];
+			boolean changed = false;
+			for(int i=0;i!=nOperands.length;++i) {
+				int o = operands[i];
+				Integer nOperand = binding.get(o);
+				if(nOperand != null) {
+					changed = true;
+					nOperands[i] = nOperand;
 				} else {
-					return 123;
-				}
-		 }
+					nOperands[i] = o;
+				}				
+			}
+			
+			Integer nTarget = binding.get(target);	
+			Integer nOperand = binding.get(operand);			
+			if(changed || nTarget != null || nOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;
+				return IndirectSend(type,synchronous,nTarget,nOperand,nOperands);
+			} else {
+				return this;
+			}
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + Arrays.hashCode(operands) + operand
+					+ target;
+		}
 
 		 public boolean equals(Object o) {
 			 if(o instanceof IndirectSend) {
 				 IndirectSend i = (IndirectSend) o;
-				 return type == i.type || (type != null && type.equals(i.type));
+				 return type.equals(i.type)
+						 && Arrays.equals(operands,i.operands)
+						 && operand == i.operand
+						 && target == i.target;
 			 }
 			 return false;
 		 }
 
 		 public String toString() {			 
 			 if(synchronous) {		
-				 if(retval) {
+				 if(target >= 0) {
 					 return toString("isend",type);
 				 } else {
 					 return toString("ivsend",type);
@@ -1413,15 +1464,41 @@ public abstract class Code {
 	}
 	
 	public static final class Not extends Code {		
-		private Not() {						
+		public final int target;
+		public final int operand;
+		
+		private Not(int target, int operand) {
+			this.target = target;
+			this.operand = operand;
+		}
+		
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(operand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(operand);
+			if (nTarget != null || nOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;			
+				return Code.Not(nTarget, nOperand);
+			}
+			return this;
 		}
 		
 		public int hashCode() {			
-			return 12875;			
+			return target + operand;			
 		}
 		
 		public boolean equals(Object o) {
-			return o instanceof Not;
+			if(o instanceof Not) {
+				Not n = (Not) o;
+				return target == n.target && operand == n.operand;
+			}
 		}
 				
 		public String toString() {
@@ -1432,7 +1509,8 @@ public abstract class Code {
 	/**
 	 * Corresponds to a direct function call whose parameters are found on the
 	 * stack in the order corresponding to the function type. If a return value
-	 * is required, this is pushed onto the stack after the function call.
+	 * is required, this is written to a target register after the function
+	 * call.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1440,35 +1518,39 @@ public abstract class Code {
 	public static final class Invoke extends Code {		
 		public final Type.FunctionOrMethod type;
 		public final NameID name;
-		public final boolean retval;
+		public final int[] operands;
+		public final int target;
 				
-		private Invoke(Type.FunctionOrMethod type, NameID name, boolean retval) {
+		private Invoke(Type.FunctionOrMethod type, NameID name, int target,
+				Collection<Integer> operands) {
 			this.type = type;
 			this.name = name;
-			this.retval = retval;
+			this.operands = new int[operands.size()];
+			int i = 0;
+			for (Integer o : operands) {
+				this.operands[i++] = o;
+			}
+			this.target = target;
 		}
 		
-		public int hashCode() {
-			if(type == null) {
-				return name.hashCode();
-			} else {
-				return type.hashCode() + name.hashCode();
-			}
+		public int hashCode() {			
+			return type.hashCode() + name.hashCode() + target
+					+ Arrays.hashCode(operands);
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
 				return name.equals(i.name)
-						&& retval == i.retval
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+						&& target == i.target
+						&& type.equals(i.type)
+						&& Arrays.equals(operands, i.operands);
 			}
 			return false;
 		}
 	
 		public String toString() {
-			if(retval) {
+			if(target >= 0) {
 				return toString("invoke " + name,type);
 			} else {
 				return toString("vinvoke " + name,type);
@@ -1525,29 +1607,59 @@ public abstract class Code {
 	public static final class ListAppend extends Code {				
 		public final OpDir dir;
 		public final Type.EffectiveList type;
+		public final int target;
+		public final int leftOperand;
+		public final int rightOperand;
 		
-		private ListAppend(Type.EffectiveList type, OpDir dir) {			
+		private ListAppend(Type.EffectiveList type, OpDir dir, int target, int leftOperand, int rightOperand) {
+			if(type == null) {
+				throw new IllegalArgumentException("ListAppend type cannot be null");
+			}
 			if(dir == null) {
 				throw new IllegalArgumentException("ListAppend direction cannot be null");
 			}			
 			this.type = type;
 			this.dir = dir;
+			this.target = target;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
+		}
+		
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(leftOperand);
+			slots.add(rightOperand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nTarget != null || nLeftOperand != null || nRightOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
+				return Code.ListAppend(type, dir, nTarget, nLeftOperand, nRightOperand);
+			}
+			return this;
 		}
 		
 		public int hashCode() {
-			if(type == null) {
-				return dir.hashCode(); 
-			} else {
-				return type.hashCode() + dir.hashCode();
-			}
+			return type.hashCode() + dir.hashCode() + target + leftOperand
+					+ rightOperand;
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof ListAppend) {
 				ListAppend setop = (ListAppend) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)))						
-						&& dir.equals(setop.dir);
+				return type.equals(setop.type)					
+						&& dir.equals(setop.dir)
+						&& target == setop.target 
+						&& leftOperand == setop.leftOperand
+						&& rightOperand == setop.rightOperand;
+						
 			}
 			return false;
 		}
