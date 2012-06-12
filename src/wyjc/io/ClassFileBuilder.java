@@ -978,16 +978,16 @@ public class ClassFileBuilder {
 			String trueLabel = freshLabel();
 					
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
+			translateTypeTest(trueLabel, c.type, c.rightOperand, bytecodes, constants);
 
-			Type gdiff = Type.intersect(c.type,Type.Negation(c.test));			
+			Type gdiff = Type.intersect(c.type,Type.Negation(c.rightOperand));			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcast									
 			addReadConversion(gdiff,bytecodes);			
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));			
-			Type glb = Type.intersect(c.type, c.test);			
+			Type glb = Type.intersect(c.type, c.rightOperand);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcast						
 			addReadConversion(glb,bytecodes);
@@ -997,7 +997,7 @@ public class ClassFileBuilder {
 		} else {
 			// This is the easy case. We're not updating the type of a local
 			// variable; rather we're just type testing a value on the stack.
-			translateTypeTest(c.target, c.type, c.test, bytecodes, constants);
+			translateTypeTest(c.target, c.type, c.rightOperand, bytecodes, constants);
 		}
 	}
 	

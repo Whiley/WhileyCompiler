@@ -595,6 +595,27 @@ public abstract class Code {
 			this.rightOperand = rhs;
 		}
 		
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(leftOperand);
+			slots.add(rightOperand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nTarget != null || nLeftOperand != null || nRightOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
+				return Code.BinOp(type, bop, nTarget, nLeftOperand, nRightOperand);
+			}
+			return this;
+		}
+		
 		public int hashCode() {
 			return type.hashCode() + bop.hashCode() + target + leftOperand
 					+ rightOperand;
@@ -659,6 +680,23 @@ public abstract class Code {
 			this.operand = operand;
 		}
 		
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(operand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(operand);
+			if (nTarget != null || nOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;			
+				return Code.Convert(from,to, nTarget, nOperand);
+			}
+			return this;
+		}
 		public int hashCode() {
 			return from.hashCode() + to.hashCode() + target + operand;
 		}
@@ -694,6 +732,19 @@ public abstract class Code {
 			this.target = target;
 		}
 		
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(target);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			if (nTarget != null) {
+				return Code.Const(constant,nTarget);
+			}
+			return this;
+		}
 		public int hashCode() {
 			return constant.hashCode() + target;
 		}
@@ -732,6 +783,20 @@ public abstract class Code {
 			return operand;
 		}
 
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(operand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if (nOperand != null) {
+				return Code.Debug(nOperand);
+			}
+			return this;
+		}
+		
 		public boolean equals(Object o) {
 			return o instanceof Debug && operand == ((Debug) o).operand;
 		}
@@ -805,6 +870,24 @@ public abstract class Code {
 			this.rightOperand = rightOperand;
 		}
 		
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(leftOperand);
+			slots.add(rightOperand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nLeftOperand != null || nRightOperand != null) {
+				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
+				return Code.Assert(type, op, nLeftOperand, nRightOperand, msg);
+			}
+			return this;
+		}
+		
 		public int hashCode() {			
 			return type.hashCode() + op.hashCode() + msg.hashCode()
 					+ leftOperand + rightOperand;
@@ -853,6 +936,24 @@ public abstract class Code {
 			this.field = field;
 			this.target = target;
 			this.operand = operand;
+		}
+		
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(operand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(operand);
+			if (nTarget != null || nOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;			
+				return Code.FieldLoad(type, field, nTarget, nOperand);
+			}
+			return this;
 		}
 		
 		public int hashCode() {
@@ -923,8 +1024,8 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label by popping two operands from
-	 * the stack and comparing them. The possible comparators are:
+	 * Branches conditionally to the given label by read values from two operand
+	 * registers and comparing them. The possible comparators are:
 	 * </p>
 	 * <ul>
 	 * <li><i>equals (eq) and not-equals (ne)</i>. Both operands must have the
@@ -938,7 +1039,7 @@ public abstract class Code {
 	 * <li><i>subset (ss) and subset-equals (sse)</i>. Both operands must have
 	 * the given type, which additionally must be a set.</li>
 	 * </ul>
-	 *  
+	 * 
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
@@ -948,10 +1049,15 @@ public abstract class Code {
 	 */
 	public static final class IfGoto extends Code {
 		public final Type type;
-		public final COp op;
 		public final String target;
-
-		private  IfGoto(Type type, COp op, String target) {
+		public final COp op;
+		public final int leftOperand;
+		public final int rightOperand;
+		
+		private  IfGoto(Type type, String target, COp op, int leftOperand, int rightOperand) {
+			if(type == null) {
+				throw new IllegalArgumentException("IfGoto type argument cannot be null");
+			}
 			if(op == null) {
 				throw new IllegalArgumentException("IfGoto op argument cannot be null");
 			}
@@ -961,6 +1067,8 @@ public abstract class Code {
 			this.type = type;
 			this.op = op;						
 			this.target = target;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
 		}
 		
 		public IfGoto relabel(Map<String,String> labels) {
@@ -968,16 +1076,31 @@ public abstract class Code {
 			if(nlabel == null) {
 				return this;
 			} else {
-				return IfGoto(type,op,nlabel);
+				return IfGoto(type,nlabel,op,leftOperand,rightOperand);
 			}
 		}
 		
-		public int hashCode() {
-			if(type == null) {
-				return op.hashCode() + target.hashCode();
-			} else {
-				return type.hashCode() + op.hashCode() + target.hashCode();
+		@Override
+		public void slots(Set<Integer> slots) {			
+			slots.add(leftOperand);
+			slots.add(rightOperand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nLeftOperand != null || nRightOperand != null) {
+				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
+				return Code.IfGoto(type, target, nLeftOperand, nRightOperand);
 			}
+			return this;
+		}
+		
+		public int hashCode() {			
+			return type.hashCode() + op.hashCode() + target.hashCode()
+					+ leftOperand + rightOperand;
 		}
 		
 		public boolean equals(Object o) {
@@ -985,8 +1108,9 @@ public abstract class Code {
 				IfGoto ig = (IfGoto) o;
 				return op == ig.op
 					&& target.equals(ig.target)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));
+						&& type.equals(ig.type)
+						&& leftOperand == ig.leftOperand
+						&& rightOperand == ig.rightOperand;
 			}
 			return false;
 		}
@@ -1060,16 +1184,14 @@ public abstract class Code {
 	/**
 	 * <p>
 	 * Branches conditionally to the given label based on the result of a
-	 * runtime type test against a given value. More specifically, it checks
-	 * whether the value is a subtype of the type test. The value in question is
-	 * either loaded directly from a register, or popped off the stack.
+	 * runtime type test against a value from the operand register. More
+	 * specifically, it checks whether the value is a subtype of the type test.
 	 * </p>
 	 * <p>
-	 * In the case that the value is obtained from a register, then that
-	 * variable is automatically <i>retyped</i> as a result of the type test. On
-	 * the true branch, its type is intersected with type test. On the false
-	 * branch, its type is intersected with the <i>negation</i> of the type
-	 * test.
+	 * The operand register is automatically <i>retyped</i> as a result of the
+	 * type test. On the true branch, its type is intersected with type test. On
+	 * the false branch, its type is intersected with the <i>negation</i> of the
+	 * type test.
 	 * </p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
@@ -1080,21 +1202,24 @@ public abstract class Code {
 	 */	
 	public static final class IfType extends Code {
 		public final Type type;
-		public final int slot;
-		public final Type test;		
 		public final String target;
+		public final int leftOperand;
+		public final Type rightOperand;		
 
-		private  IfType(Type type, int slot, Type test, String target) {
-			if(test == null) {
-				throw new IllegalArgumentException("IfGoto op argument cannot be null");
+		private  IfType(Type type, String target, int leftOperand, Type rightOperand) {
+			if(type == null) {
+				throw new IllegalArgumentException("IfGoto tpe argument cannot be null");
+			}
+			if(rightOperand == null) {
+				throw new IllegalArgumentException("IfGoto test argument cannot be null");
 			}
 			if(target == null) {
 				throw new IllegalArgumentException("IfGoto target argument cannot be null");
 			}
 			this.type = type;
-			this.slot = slot;
-			this.test = test;						
 			this.target = target;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;						
 		}
 		
 		public IfType relabel(Map<String,String> labels) {
@@ -1102,53 +1227,43 @@ public abstract class Code {
 			if(nlabel == null) {
 				return this;
 			} else {
-				return IfType(type,slot,test,nlabel);
+				return IfType(type,nlabel,leftOperand,rightOperand);
 			}
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {
-			if(slot >= 0) {
-				slots.add(slot);
-			}
+		public void slots(Set<Integer> slots) {			
+			slots.add(leftOperand);
 		}
 		
+		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			if (slot >= 0) {
-				Integer nslot = binding.get(slot);
-				if (nslot != null) {
-					return Code.IfType(type, nslot, test, target);
-				}
+			Integer nslot = binding.get(leftOperand);
+			if (nslot != null) {
+				return Code.IfType(type, target, nslot, rightOperand);
 			}
 			return this;
 		}
 		
 		public int hashCode() {
-			if(type == null) {
-				return test.hashCode() + target.hashCode();
-			} else {
-				return type.hashCode() + test.hashCode() + target.hashCode();
-			}
+			return type.hashCode() + rightOperand.hashCode()
+					+ target.hashCode() + leftOperand + rightOperand.hashCode();
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof IfType) {
 				IfType ig = (IfType) o;
-				return test.equals(ig.test)
-					&& slot == ig.slot
+				return leftOperand == ig.leftOperand
+					&& rightOperand.equals(ig.rightOperand)						 
 					&& target.equals(ig.target)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));
+					&& type.equals(ig.type);
 			}
 			return false;
 		}
 	
 		public String toString() {
-			if(slot >= 0) {
-				return toString("if " + slot + " is " + test + " goto " + target,type);
-			} else {				
-				return toString("if " + test + " goto " + target,type);
-			}
+			return toString("if " + leftOperand + " is " + rightOperand
+					+ " goto " + target, type); 
 		}
 	}
 
