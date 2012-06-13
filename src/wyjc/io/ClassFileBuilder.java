@@ -549,7 +549,7 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Convert c, int freeSlot,
 			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {		
-		addCoercion(c.from,c.to,freeSlot,constants,bytecodes);		
+		addCoercion(c.from,c.result,freeSlot,constants,bytecodes);		
 	}
 	
 	

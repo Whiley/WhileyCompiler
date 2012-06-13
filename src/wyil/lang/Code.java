@@ -84,12 +84,14 @@ public abstract class Code {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assert Assert(Type type, COp cop, String message) {
-		return get(new Assert(type,cop,message));
+	public static Assert Assert(Type type, int leftOperand, int rightOperand,
+			COp cop, String message) {
+		return get(new Assert(type, leftOperand, rightOperand, cop, message));
 	}
 	
-	public static BinOp BinOp(Type type, BOp op) {
-		return get(new BinOp(type,op));
+	public static BinOp BinOp(Type type, int target, int leftOperand,
+			int rightOperand, BOp op) {
+		return get(new BinOp(type, target, leftOperand, rightOperand, op));
 	}
 	
 	/**
@@ -102,18 +104,16 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Const Const(Value constant) {
-		return get(new Const(constant));
+	public static Const Const(int target, Value constant) {
+		return get(new Const(target, constant));
 	}
 	
-	public static Convert Convert(Type from, Type to) {
-		return get(new Convert(from,to));
+	public static Convert Convert(Type from, int target, int operand, Type to) {
+		return get(new Convert(from,target,operand,to));
 	}
 	
-	public static final Debug debug = new Debug();
-
-	public static Destructure Destructure(Type from) {
-		return get(new Destructure(from));
+	public static final Debug Debug(int operand) {
+		return get(new Debug(operand));
 	}
 	
 	public static LoopEnd End(String label) {
@@ -130,9 +130,10 @@ public abstract class Code {
 	 *            --- field to load.
 	 * @return
 	 */
-	public static FieldLoad FieldLoad(Type.EffectiveRecord type, String field) {
-		return get(new FieldLoad(type,field));
-	}	
+	public static FieldLoad FieldLoad(Type.EffectiveRecord type, int target,
+			int operand, String field) {
+		return get(new FieldLoad(type, target, operand, field));
+	}
 	
 	/**
 	 * Construct a <code>goto</code> bytecode which branches unconditionally to
@@ -157,8 +158,8 @@ public abstract class Code {
 		return get(new Invoke(fun,name,retval));
 	}
 
-	public static Not Not() {
-		return get(new Not());
+	public static Not Not(int target, int operand) {
+		return get(new Not(target, operand));
 	}
 	
 	/**
@@ -175,8 +176,8 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
-	public static LengthOf LengthOf(Type.EffectiveCollection type) {
-		return get(new LengthOf(type));
+	public static LengthOf LengthOf(Type.EffectiveCollection type, int target, int operand) {
+		return get(new LengthOf(type, target, operand));
 	}
 	
 	/**
@@ -194,12 +195,15 @@ public abstract class Code {
 		return get(new Move(type,reg));
 	}
 	
-	public static SubList SubList(Type.EffectiveList type) {
-		return get(new SubList(type));
+	public static SubList SubList(Type.EffectiveList type, int target,
+			int sourceOperand, int leftOperand, int rightOperand) {
+		return get(new SubList(type, target, sourceOperand, leftOperand,
+				rightOperand));
 	}
 	
-	public static ListAppend ListAppend(Type.EffectiveList type, OpDir dir) {
-		return get(new ListAppend(type,dir));
+	public static ListAppend ListAppend(Type.EffectiveList type, int target,
+			int leftOperand, int rightOperand, OpDir dir) {
+		return get(new ListAppend(type, target, leftOperand, rightOperand, dir));
 	}
 	
 	/**
@@ -301,12 +305,13 @@ public abstract class Code {
 		return get(new Return(t));
 	}
 	
-	public static IfGoto IfGoto(Type type, COp cop, String label) {
-		return get(new IfGoto(type,cop,label));
+	public static IfGoto IfGoto(Type type, int leftOperand, int rightOperand,
+			COp cop, String label) {
+		return get(new IfGoto(type,leftOperand,rightOperand,cop,label));
 	}
 
-	public static IfType IfType(Type type, int slot, Type test, String label) {
-		return get(new IfType(type,slot,test,label));
+	public static IfType IfType(Type type, int leftOperand, Type rightOperand, String label) {
+		return get(new IfType(type,leftOperand,rightOperand,label));
 	}
 	
 	/**
@@ -510,6 +515,163 @@ public abstract class Code {
 	}
 	
 	// ===============================================================
+	// Abstract Bytecodes
+	// ===============================================================
+
+	public static abstract class AbstractUnOp<T extends Type> extends Code {
+		public final T type;
+		public final int target;
+		public final int operand;
+		
+		private AbstractUnOp(T type, int target, int operand) {
+			if(type == null) {
+				throw new IllegalArgumentException("AbstractUnOp type argument cannot be null");
+			}
+			this.type = type;
+			this.target = target;
+			this.operand = operand;
+		}
+		
+		@Override
+		public final void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(operand);
+		}
+		
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(operand);
+			if (nTarget != null || nOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;
+				return clone(nTarget, nOperand);
+			}
+			return this;
+		}
+		
+		protected abstract Code clone(int nTarget, int nOperand);
+		
+		public int hashCode() {
+			return type.hashCode() + target + operand;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof AbstractBinOp) {
+				AbstractUnOp bo = (AbstractUnOp) o;
+				return target == bo.target
+						&& operand == bo.operand
+						&& type.equals(bo.type); 
+			}
+			return false;
+		}				
+	}
+	
+	public static abstract class AbstractBinOp<T extends Type> extends Code {
+		public final T type;
+		public final int target;
+		public final int leftOperand;
+		public final int rightOperand;
+		
+		private AbstractBinOp(T type, int target, int leftOperand, int rightOperand) {
+			if(type == null) {
+				throw new IllegalArgumentException("AbstractBinOp type argument cannot be null");
+			}
+			this.type = type;
+			this.target = target;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
+		}
+		
+		@Override
+		public final void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(leftOperand);
+			slots.add(rightOperand);
+		}
+		
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nTarget != null || nLeftOperand != null || nRightOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
+				return clone(nTarget, nLeftOperand, nRightOperand);
+			}
+			return this;
+		}
+		
+		protected abstract Code clone(int nTarget, int nLeftOperand, int nRightOperand);
+		
+		public int hashCode() {
+			return type.hashCode() + target + leftOperand + rightOperand;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof AbstractBinOp) {
+				AbstractBinOp bo = (AbstractBinOp) o;
+				return target == bo.target
+						&& leftOperand == bo.leftOperand
+						&& rightOperand == bo.rightOperand 
+						&& type.equals(bo.type); 
+			}
+			return false;
+		}				
+	}
+
+	public static abstract class AbstractBinCond<T extends Type> extends Code {
+		public final T type;
+		public final int leftOperand;
+		public final int rightOperand;
+		
+		private AbstractBinCond(T type, int leftOperand, int rightOperand) {
+			if(type == null) {
+				throw new IllegalArgumentException("AbstractBinCond type argument cannot be null");
+			}
+			this.type = type;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
+		}
+		
+		@Override
+		public final void slots(Set<Integer> slots) {			
+			slots.add(leftOperand);
+			slots.add(rightOperand);
+		}
+		
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nLeftOperand != null || nRightOperand != null) {
+				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
+				return clone(nLeftOperand, nRightOperand);
+			}
+			return this;
+		}
+		
+		protected abstract Code clone(int nLeftOperand, int nRightOperand);
+		
+		public int hashCode() {
+			return type.hashCode() + leftOperand + rightOperand;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof AbstractBinCond) {
+				AbstractBinCond bo = (AbstractBinCond) o;
+				return leftOperand == bo.leftOperand
+						&& rightOperand == bo.rightOperand
+						&& type.equals(bo.type); 
+			}
+			return false;
+		}				
+	}
+
+	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================	
 
@@ -574,61 +736,31 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class BinOp extends Code {		
+	public static final class BinOp extends AbstractBinOp {		
 		public final BOp bop;
-		public final Type type;
-		public final int target;
-		public final int leftOperand;
-		public final int rightOperand;
 		
-		private BinOp(Type type, BOp bop, int target, int lhs, int rhs) {
-			if(type == null) {
-				throw new IllegalArgumentException("BinOp type argument cannot be null");
-			}
+		private BinOp(Type type, int target, int lhs, int rhs, BOp bop) {
+			super(type, target,lhs,rhs);
 			if(bop == null) {
 				throw new IllegalArgumentException("BinOp bop argument cannot be null");
 			}
 			this.bop = bop;
-			this.type = type;
-			this.target = target;
-			this.leftOperand = lhs;
-			this.rightOperand = rhs;
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {			
-			slots.add(target);
-			slots.add(leftOperand);
-			slots.add(rightOperand);
-		}
-		
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nTarget != null || nLeftOperand != null || nRightOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
-				return Code.BinOp(type, bop, nTarget, nLeftOperand, nRightOperand);
-			}
-			return this;
+		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.BinOp(type, nTarget, nLeftOperand, nRightOperand, bop);
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + bop.hashCode() + target + leftOperand
-					+ rightOperand;
+			return bop.hashCode() + super.hashCode();
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof BinOp) {
 				BinOp bo = (BinOp) o;
-				return type.equals(bo.type)
-						&& bop.equals(bo.bop)
-						&& target == bo.target
-						&& leftOperand == bo.leftOperand
-						&& rightOperand == bo.rightOperand; 
+				return bop.equals(bo.bop)
+						&& super.equals(bo); 
 			}
 			return false;
 		}
@@ -661,57 +793,36 @@ public abstract class Code {
 	 * passed as a parameter, assigned to a field, etc.
 	 * </p>
 	 */
-	public static final class Convert extends Code {
-		public final Type from;
-		public final Type to;
-		public final int target;
-		public final int operand;
+	public static final class Convert extends AbstractUnOp<Type> {
+		public final Type result;
 		
-		private Convert(Type from, Type to, int target, int operand) {
-			if(from == null) {
-				throw new IllegalArgumentException("Convert from argument cannot be null");
-			}
-			if(to == null) {
+		private Convert(Type from, int target, int operand, Type result) {
+			super(from,target,operand);			
+			if(result == null) {
 				throw new IllegalArgumentException("Convert to argument cannot be null");
 			}
-			this.from = from;
-			this.to = to;
-			this.target = target;
-			this.operand = operand;
+			this.result = result;
 		}
 		
-		@Override
-		public void slots(Set<Integer> slots) {			
-			slots.add(target);
-			slots.add(operand);
+		
+		public Code clone(int nTarget, int nOperand) {
+			return Code.Convert(type, nTarget, nOperand,result);
 		}
 		
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(operand);
-			if (nTarget != null || nOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : operand;			
-				return Code.Convert(from,to, nTarget, nOperand);
-			}
-			return this;
-		}
 		public int hashCode() {
-			return from.hashCode() + to.hashCode() + target + operand;
+			return result.hashCode() + super.hashCode();
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof Convert) {
 				Convert c = (Convert) o;
-				return from.equals(c.from) && to.equals(c.to)
-						&& target == c.target && operand == c.operand;
+				return super.equals(c) && result.equals(c.result);
 			}
 			return false;
 		}
 				
 		public String toString() {
-			return "convert " + from + " to " + to;
+			return "convert " + type + " to " + result;
 		}
 	}
 
@@ -727,7 +838,7 @@ public abstract class Code {
 		public final Value constant;
 		public final int target;
 		
-		private Const(Value constant, int target) {
+		private Const(int target, Value constant) {
 			this.constant = constant;
 			this.target = target;
 		}
@@ -741,7 +852,7 @@ public abstract class Code {
 		public Code remap(Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
 			if (nTarget != null) {
-				return Code.Const(constant,nTarget);
+				return Code.Const(nTarget,constant);
 			}
 			return this;
 		}
@@ -848,49 +959,27 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Assert extends Code {
-		public final Type type;
+	public static final class Assert extends AbstractBinCond<Type> {
 		public final COp op;
 		public final String msg;
-		public final int leftOperand;
-		public final int rightOperand;
 		
-		private Assert(Type type, COp cop, int leftOperand, int rightOperand,
+		private Assert(Type type, int leftOperand, int rightOperand,COp cop, 
 				String msg) {
-			if(type == null) {
-				throw new IllegalArgumentException("Assert type argument cannot be null");
-			}
+			super(type,leftOperand,rightOperand);			
 			if(cop == null) {
 				throw new IllegalArgumentException("Assert op argument cannot be null");
 			}			
-			this.type = type;
 			this.op = cop;
 			this.msg = msg;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {			
-			slots.add(leftOperand);
-			slots.add(rightOperand);
+		public Code clone(int nLeftOperand, int nRightOperand) {
+			return Code.Assert(type, nLeftOperand, nRightOperand, op, msg);
 		}
 		
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nLeftOperand != null || nRightOperand != null) {
-				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
-				return Code.Assert(type, op, nLeftOperand, nRightOperand, msg);
-			}
-			return this;
-		}
-		
-		public int hashCode() {			
-			return type.hashCode() + op.hashCode() + msg.hashCode()
-					+ leftOperand + rightOperand;
+		public int hashCode() {
+			return op.hashCode() + msg.hashCode() + super.hashCode();
 		}
 		
 		public boolean equals(Object o) {
@@ -898,9 +987,7 @@ public abstract class Code {
 				Assert ig = (Assert) o;
 				return op == ig.op
 						&& msg.equals(ig.msg)
-						&& type.equals(ig.type)
-						&& leftOperand == ig.leftOperand 
-						&& rightOperand == ig.rightOperand;
+						&& super.equals(ig);
 			}
 			return false;
 		}
@@ -917,47 +1004,25 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class FieldLoad extends Code {
-		public final Type.EffectiveRecord type;		
+	public static final class FieldLoad extends AbstractUnOp<Type.EffectiveRecord> {		
 		public final String field;
-		public final int target;
-		public final int operand;
 				
-		private FieldLoad(Type.EffectiveRecord type, String field, int target, int operand) {
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"FieldLoad type argument cannot be null");
-			}
+		private FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
+			super(type,target,operand);
 			if (field == null) {
 				throw new IllegalArgumentException(
 						"FieldLoad field argument cannot be null");
 			}
-			this.type = type;
 			this.field = field;
-			this.target = target;
-			this.operand = operand;
 		}
-		
+
 		@Override
-		public void slots(Set<Integer> slots) {			
-			slots.add(target);
-			slots.add(operand);
-		}
-		
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(operand);
-			if (nTarget != null || nOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : operand;			
-				return Code.FieldLoad(type, field, nTarget, nOperand);
-			}
-			return this;
+		public Code clone(int nTarget, int nOperand) {
+			return Code.FieldLoad(type, nTarget, nOperand, field);
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + field.hashCode() + target + operand;
+			return super.hashCode() + field.hashCode();
 		}
 		
 		public Type fieldType() {
@@ -965,10 +1030,9 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof FieldLoad) {
+			if (o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
-				return type.equals(i.type) && field.equals(i.field)
-						&& target == i.target && operand == i.operand;
+				return super.equals(i) && field.equals(i.field);
 			}
 			return false;
 		}
@@ -1047,28 +1111,20 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IfGoto extends Code {
-		public final Type type;
+	public static final class IfGoto extends AbstractBinCond<Type> {
 		public final String target;
 		public final COp op;
-		public final int leftOperand;
-		public final int rightOperand;
 		
-		private  IfGoto(Type type, String target, COp op, int leftOperand, int rightOperand) {
-			if(type == null) {
-				throw new IllegalArgumentException("IfGoto type argument cannot be null");
-			}
+		private  IfGoto(Type type, int leftOperand, int rightOperand, COp op, String target) {
+			super(type,leftOperand,rightOperand);
 			if(op == null) {
 				throw new IllegalArgumentException("IfGoto op argument cannot be null");
 			}
 			if(target == null) {
 				throw new IllegalArgumentException("IfGoto target argument cannot be null");
 			}
-			this.type = type;
 			this.op = op;						
 			this.target = target;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
 		}
 		
 		public IfGoto relabel(Map<String,String> labels) {
@@ -1076,31 +1132,17 @@ public abstract class Code {
 			if(nlabel == null) {
 				return this;
 			} else {
-				return IfGoto(type,nlabel,op,leftOperand,rightOperand);
+				return IfGoto(type,leftOperand,rightOperand,op,nlabel);
 			}
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {			
-			slots.add(leftOperand);
-			slots.add(rightOperand);
+		public Code clone(int nLeftOperand, int nRightOperand) {
+			return Code.IfGoto(type, nLeftOperand, nRightOperand, op, target);
 		}
-		
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nLeftOperand != null || nRightOperand != null) {
-				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
-				return Code.IfGoto(type, target, nLeftOperand, nRightOperand);
-			}
-			return this;
-		}
-		
+
 		public int hashCode() {			
-			return type.hashCode() + op.hashCode() + target.hashCode()
-					+ leftOperand + rightOperand;
+			return super.hashCode() + op.hashCode() + target.hashCode();
 		}
 		
 		public boolean equals(Object o) {
@@ -1108,9 +1150,7 @@ public abstract class Code {
 				IfGoto ig = (IfGoto) o;
 				return op == ig.op
 					&& target.equals(ig.target)
-						&& type.equals(ig.type)
-						&& leftOperand == ig.leftOperand
-						&& rightOperand == ig.rightOperand;
+						&& super.equals(ig);
 			}
 			return false;
 		}
@@ -1206,7 +1246,7 @@ public abstract class Code {
 		public final int leftOperand;
 		public final Type rightOperand;		
 
-		private  IfType(Type type, String target, int leftOperand, Type rightOperand) {
+		private  IfType(Type type, int leftOperand, Type rightOperand, String target) {
 			if(type == null) {
 				throw new IllegalArgumentException("IfGoto tpe argument cannot be null");
 			}
@@ -1227,7 +1267,7 @@ public abstract class Code {
 			if(nlabel == null) {
 				return this;
 			} else {
-				return IfType(type,nlabel,leftOperand,rightOperand);
+				return IfType(type,leftOperand,rightOperand,nlabel);
 			}
 		}
 		
@@ -1238,9 +1278,9 @@ public abstract class Code {
 		
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			Integer nslot = binding.get(leftOperand);
-			if (nslot != null) {
-				return Code.IfType(type, target, nslot, rightOperand);
+			Integer nLeftOperand = binding.get(leftOperand);
+			if (nLeftOperand != null) {
+				return Code.IfType(type, nLeftOperand, rightOperand, target);
 			}
 			return this;
 		}
@@ -1463,46 +1503,31 @@ public abstract class Code {
 		 }		
 	}
 	
-	public static final class Not extends Code {		
-		public final int target;
-		public final int operand;
+	public static final class Not extends AbstractUnOp<Type.Bool> {		
 		
 		private Not(int target, int operand) {
-			this.target = target;
-			this.operand = operand;
+			super(Type.T_BOOL,target,operand);
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {			
-			slots.add(target);
-			slots.add(operand);
-		}
-		
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(operand);
-			if (nTarget != null || nOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : operand;			
-				return Code.Not(nTarget, nOperand);
-			}
-			return this;
+		public Code clone(int nTarget, int nOperand) {
+			return Code.Not(nTarget, nOperand);
 		}
 		
 		public int hashCode() {			
-			return target + operand;			
+			return super.hashCode();			
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Not) {
 				Not n = (Not) o;
-				return target == n.target && operand == n.operand;
+				return super.equals(n);
 			}
+			return false;
 		}
 				
 		public String toString() {
-			return toString("not",Type.T_BYTE);
+			return toString("not",Type.T_BOOL);
 		}
 	}
 
@@ -1538,6 +1563,39 @@ public abstract class Code {
 					+ Arrays.hashCode(operands);
 		}
 		
+		@Override
+		public void slots(Set<Integer> slots) {
+			for(int operand : operands) {
+				slots.add(operand);
+			}
+			if(target >= 0) {
+				slots.add(target);
+			}
+		}
+		
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			int[] nOperands = new int[operands.length];
+			boolean changed = false;
+			for(int i=0;i!=nOperands.length;++i) {
+				int o = operands[i];
+				Integer nOperand = binding.get(o);
+				if(nOperand != null) {
+					changed = true;
+					nOperands[i] = nOperand;
+				} else {
+					nOperands[i] = o;
+				}				
+			}
+			
+			Integer nTarget = binding.get(target);			
+			if(changed || nTarget != null) {
+				nTarget = nTarget != null ? nTarget : target;				
+				return Invoke(type,nTarget,nOperands);
+			} else {
+				return this;
+			}
+		}
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
@@ -1604,62 +1662,33 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ListAppend extends Code {				
+	public static final class ListAppend extends AbstractBinOp<Type.EffectiveList> {				
 		public final OpDir dir;
-		public final Type.EffectiveList type;
-		public final int target;
-		public final int leftOperand;
-		public final int rightOperand;
 		
-		private ListAppend(Type.EffectiveList type, OpDir dir, int target, int leftOperand, int rightOperand) {
-			if(type == null) {
-				throw new IllegalArgumentException("ListAppend type cannot be null");
+		private ListAppend(Type.EffectiveList type, int target,
+				int leftOperand, int rightOperand, OpDir dir) {
+			super(type, target, leftOperand, rightOperand);
+			if (dir == null) {
+				throw new IllegalArgumentException(
+						"ListAppend direction cannot be null");
 			}
-			if(dir == null) {
-				throw new IllegalArgumentException("ListAppend direction cannot be null");
-			}			
-			this.type = type;
 			this.dir = dir;
-			this.target = target;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {			
-			slots.add(target);
-			slots.add(leftOperand);
-			slots.add(rightOperand);
-		}
-		
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nTarget != null || nLeftOperand != null || nRightOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
-				return Code.ListAppend(type, dir, nTarget, nLeftOperand, nRightOperand);
-			}
-			return this;
+		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.ListAppend(type, dir, nTarget, nLeftOperand, nRightOperand);
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + dir.hashCode() + target + leftOperand
-					+ rightOperand;
+			return super.hashCode() + dir.hashCode();
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof ListAppend) {
 				ListAppend setop = (ListAppend) o;
-				return type.equals(setop.type)					
-						&& dir.equals(setop.dir)
-						&& target == setop.target 
-						&& leftOperand == setop.leftOperand
-						&& rightOperand == setop.rightOperand;
-						
+				return super.equals(setop)					
+						&& dir.equals(setop.dir);						
 			}
 			return false;
 		}
@@ -1675,26 +1704,18 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class LengthOf extends Code {						
-		public final Type.EffectiveCollection type;
-		
-		private LengthOf(Type.EffectiveCollection type) {									
-			this.type = type;			
+	public static final class LengthOf extends AbstractUnOp<Type.EffectiveCollection> {						
+		private LengthOf(Type.EffectiveCollection type, int target, int operand) {									
+			super(type,target,operand);
 		}
 		
-		public int hashCode() {
-			if(type == null) {
-				return 124987; 
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.LengthOf(nTarget,nOperand);
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof LengthOf) {
-				LengthOf setop = (LengthOf) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -1706,24 +1727,59 @@ public abstract class Code {
 	
 	public static final class SubList extends Code {						
 		public final Type.EffectiveList type;
+		public final int target;
+		public final int sourceOperand;
+		public final int leftOperand;
+		public final int rightOperand;
 		
-		private SubList(Type.EffectiveList type) {									
-			this.type = type;			
+		private SubList(Type.EffectiveList type, int target, int sourceOperand,
+				int leftOperand, int rightOperand) {									
+			this.type = type;
+			this.target = target;
+			this.sourceOperand = sourceOperand;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
 		}
 		
-		public int hashCode() {
-			if(type == null) {
-				return 124987; 
-			} else {
-				return type.hashCode();
+		@Override
+		public final void slots(Set<Integer> slots) {			
+			slots.add(target);
+			slots.add(sourceOperand);
+			slots.add(leftOperand);
+			slots.add(rightOperand);
+		}
+		
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nSourceOperand = binding.get(sourceOperand);
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nTarget != null || nSourceOperand != null
+					|| nLeftOperand != null || nRightOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nSourceOperand = nSourceOperand != null ? nSourceOperand : sourceOperand;
+				nLeftOperand = nLeftOperand != null ? nLeftOperand : leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand : rightOperand;
+				return Code.SubList(type, nTarget, nSourceOperand,
+						nLeftOperand, nRightOperand);
 			}
+			return this;
+		}
+		public int hashCode() {
+			return type.hashCode() + target + sourceOperand + leftOperand
+					+ rightOperand;
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof SubList) {
-				SubList setop = (SubList) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
+				SubList sl = (SubList) o;
+				return type.equals(sl.type) 
+						&& target == sl.target
+						&& sourceOperand == sl.sourceOperand
+						&& leftOperand == sl.leftOperand
+						&& rightOperand == sl.rightOperand;
+						
 			}
 			return false;
 		}

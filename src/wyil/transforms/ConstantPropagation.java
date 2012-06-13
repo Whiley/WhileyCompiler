@@ -301,7 +301,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		// FIXME: I think there's a bug here
 		if (val instanceof Value.Rational && code.from == Type.T_INT
-				&& code.to == Type.T_REAL) {			
+				&& code.result == Type.T_REAL) {			
 			entry = new Block.Entry(Code.Const(val),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,1));					
 		} else {			

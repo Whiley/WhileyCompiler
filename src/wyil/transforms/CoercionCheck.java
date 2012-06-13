@@ -100,7 +100,7 @@ public class CoercionCheck implements Transform {
 			Code code = stmt.code;
 			if (code instanceof Code.Convert) {				
 				Code.Convert conv = (Code.Convert) code; 				
-				check(conv.from,conv.to,new HashSet<Pair<Type,Type>>(),stmt);
+				check(conv.from,conv.result,new HashSet<Pair<Type,Type>>(),stmt);
 			} 
 		}	
 	}
