@@ -160,17 +160,20 @@ public abstract class Code {
 	public static Goto Goto(String label) {
 		return get(new Goto(label));
 	}
-
-	/**
-	 * Construct an <code>invoke</code> bytecode which invokes a method.
-	 * 
-	 * @param label
-	 *            --- destination label.
-	 * @return
-	 */
-	public static Invoke Invoke(Type.FunctionOrMethod fun, NameID name,
-			boolean retval) {
-		return get(new Invoke(fun, name, retval));
+	
+	private static Invoke Invoke(Type.FunctionOrMethod fun, int target,
+			Collection<Integer> operands, NameID name) {
+		int[] ops = new int[operands.size()];
+		int i = 0;
+		for (Integer o : operands) {
+			ops[i++] = o;
+		}
+		return get(new Invoke(fun, name, target, ops));
+	}
+	
+	private static Invoke Invoke(Type.FunctionOrMethod fun, NameID name,
+			int target, int[] operands) {
+		return get(new Invoke(fun, name, target, operands));
 	}
 
 	public static Not Not(int target, int operand) {
@@ -182,19 +185,8 @@ public abstract class Code {
 		return get(new LengthOf(type, target, operand));
 	}
 
-	/**
-	 * Construct a <code>move</code> bytecode which moves a given register onto
-	 * the stack. The register contents of the register are voided after this
-	 * operation.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param reg
-	 *            --- reg to load.
-	 * @return
-	 */
-	public static Move Move(Type type, int reg) {
-		return get(new Move(type, reg));
+	public static Move Move(Type type, int target, int operand) {
+		return get(new Move(type, target, operand));
 	}
 
 	public static SubList SubList(Type.EffectiveList type, int target,
@@ -318,17 +310,20 @@ public abstract class Code {
 		return get(new IfType(type, leftOperand, rightOperand, label));
 	}
 
-	/**
-	 * Construct an <code>indirectsend</code> bytecode which sends an indirect
-	 * message to an actor. This may be either synchronous or asynchronous.
-	 * 
-	 * @param label
-	 *            --- destination label.
-	 * @return
-	 */
 	public static IndirectSend IndirectSend(Type.Message msg,
-			boolean synchronous, boolean retval) {
-		return get(new IndirectSend(msg, synchronous, retval));
+			boolean synchronous, int target, int operand,
+			Collection<Integer> operands) {
+		int[] ops = new int[operands.size()];
+		int i = 0;
+		for (Integer o : operands) {
+			ops[i++] = o;
+		}
+		return get(new IndirectSend(msg, synchronous, target, operand, ops));
+	}
+	
+	private static IndirectSend IndirectSend(Type.Message msg,
+			boolean synchronous, int target, int operand, int[] operands) {
+		return get(new IndirectSend(msg, synchronous, target, operand, operands));
 	}
 
 	/**
@@ -1451,22 +1446,10 @@ public abstract class Code {
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = new int[operands.length];
-			boolean changed = false;
-			for (int i = 0; i != nOperands.length; ++i) {
-				int o = operands[i];
-				Integer nOperand = binding.get(o);
-				if (nOperand != null) {
-					changed = true;
-					nOperands[i] = nOperand;
-				} else {
-					nOperands[i] = o;
-				}
-			}
-
+			int[] nOperands = remap(binding, operands);
 			Integer nTarget = binding.get(target);
 			Integer nOperand = binding.get(operand);
-			if (changed || nTarget != null || nOperand != null) {
+			if (nOperands != operands || nTarget != null || nOperand != null) {
 				nTarget = nTarget != null ? nTarget : target;
 				nOperand = nOperand != null ? nOperand : operand;
 				return IndirectInvoke(type, nTarget, nOperand, nOperands);
@@ -1520,13 +1503,9 @@ public abstract class Code {
 		public final int target;
 
 		private IndirectSend(Type.Message type, boolean synchronous,
-				int target, int operand, Collection<Integer> operands) {
+				int target, int operand, int[] operands) {
 			this.type = type;
-			this.operands = new int[operands.size()];
-			int i = 0;
-			for (Integer o : operands) {
-				this.operands[i++] = o;
-			}
+			this.operands = operands;
 			this.synchronous = synchronous;
 			this.operand = operand;
 			this.target = target;
@@ -1545,22 +1524,10 @@ public abstract class Code {
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = new int[operands.length];
-			boolean changed = false;
-			for (int i = 0; i != nOperands.length; ++i) {
-				int o = operands[i];
-				Integer nOperand = binding.get(o);
-				if (nOperand != null) {
-					changed = true;
-					nOperands[i] = nOperand;
-				} else {
-					nOperands[i] = o;
-				}
-			}
-
+			int[] nOperands = remap(binding,operands);
 			Integer nTarget = binding.get(target);
 			Integer nOperand = binding.get(operand);
-			if (changed || nTarget != null || nOperand != null) {
+			if (nOperands != operands || nTarget != null || nOperand != null) {
 				nTarget = nTarget != null ? nTarget : target;
 				nOperand = nOperand != null ? nOperand : operand;
 				return IndirectSend(type, synchronous, nTarget, nOperand,
@@ -1642,14 +1609,10 @@ public abstract class Code {
 		public final int target;
 
 		private Invoke(Type.FunctionOrMethod type, NameID name, int target,
-				Collection<Integer> operands) {
+				int[] operands) {
 			this.type = type;
 			this.name = name;
-			this.operands = new int[operands.size()];
-			int i = 0;
-			for (Integer o : operands) {
-				this.operands[i++] = o;
-			}
+			this.operands = operands;
 			this.target = target;
 		}
 
@@ -1670,23 +1633,11 @@ public abstract class Code {
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = new int[operands.length];
-			boolean changed = false;
-			for (int i = 0; i != nOperands.length; ++i) {
-				int o = operands[i];
-				Integer nOperand = binding.get(o);
-				if (nOperand != null) {
-					changed = true;
-					nOperands[i] = nOperand;
-				} else {
-					nOperands[i] = o;
-				}
-			}
-
+			int[] nOperands = remap(binding,operands);			
 			Integer nTarget = binding.get(target);
-			if (changed || nTarget != null) {
+			if (nOperands != operands || nTarget != null) {
 				nTarget = nTarget != null ? nTarget : target;
-				return Invoke(type, nTarget, nOperands);
+				return Invoke(type, nTarget, nOperands, name);
 			} else {
 				return this;
 			}
@@ -1919,70 +1870,46 @@ public abstract class Code {
 	}
 
 	/**
-	 * Moves the contents of the given register onto the stack. This is similar
-	 * to a <code>load</code> bytecode, except that the register's contents are
-	 * "voided" afterwards. This guarantees that the register is no longer live,
-	 * which is useful for determining the live ranges of register in a function
-	 * or method.
+	 * Moves the contents of a given operand register into a given target
+	 * register. This is similar to a <code>copy</code> bytecode, except that
+	 * the register's contents are "voided" afterwards. This guarantees that the
+	 * register is no longer live, which is useful for determining the live
+	 * ranges of register in a function or method.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Move extends Code {
-		public final Type type;
-		public final int slot;
+	public static final class Move extends AbstractUnOp<Type> {
 
-		private Move(Type type, int slot) {
-			this.type = type;
-			this.slot = slot;
+		private Move(Type type, int target, int operand) {
+			super(type,target,operand);
 		}
 
-		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.Move(type, nTarget,nOperand);		
 		}
-
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if (nslot != null) {
-				return Code.Move(type, nslot);
-			} else {
-				return this;
-			}
-		}
-
-		public int hashCode() {
-			if (type == null) {
-				return slot;
-			} else {
-				return type.hashCode() + slot;
-			}
-		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof Move) {
-				Move i = (Move) o;
-				return slot == i.slot
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("move " + slot, type);
+			return toString("move", type);
 		}
 	}
 
 	public static class Loop extends Code {
 		public final String target;
-		public final HashSet<Integer> modifies;
+		public final int[] modifies;
 
-		private Loop(String target, Collection<Integer> modifies) {
+		private Loop(String target, int[] modifies) {
 			this.target = target;
-			this.modifies = new HashSet<Integer>(modifies);
+			this.modifies = modifies;
 		}
-
+		
 		public Loop relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
 			if (nlabel == null) {
@@ -1992,14 +1919,32 @@ public abstract class Code {
 			}
 		}
 
+
+		@Override
+		public void slots(Set<Integer> slots) {
+			for (int operand : modifies) {
+				slots.add(operand);
+			}			
+		}
+
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			int[] nOperands = remap(binding,modifies);
+			if (nOperands != modifies) {
+				return Code.Loop(target,nOperands);
+			} else {
+				return this;
+			}
+		}
+		
 		public int hashCode() {
-			return target.hashCode();
+			return target.hashCode() + Arrays.hashCode(modifies);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop f = (Loop) o;
-				return target.equals(f.target) && modifies.equals(f.modifies);
+				return target.equals(f.target) && Arrays.equals(modifies,f.modifies);
 			}
 			return false;
 		}
@@ -3320,6 +3265,21 @@ public abstract class Code {
 		}
 	}
 
+	private static int[] remap(Map<Integer,Integer> binding, int[] operands) {
+		int[] nOperands = operands;
+		for (int i = 0; i != nOperands.length; ++i) {
+			int o = operands[i];
+			Integer nOperand = binding.get(o);
+			if (nOperand != null) {
+				if (nOperands == operands) {
+					nOperands = Arrays.copyOf(operands, operands.length);
+				}
+				nOperands[i] = nOperand;
+			}
+		}
+		return nOperands;
+	}
+	
 	private static final ArrayList<Code> values = new ArrayList<Code>();
 	private static final HashMap<Code, Integer> cache = new HashMap<Code, Integer>();
 
