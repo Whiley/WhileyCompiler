@@ -162,13 +162,8 @@ public abstract class Code {
 	}
 	
 	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
-			Collection<Integer> operands, NameID name) {
-		int[] ops = new int[operands.size()];
-		int i = 0;
-		for (Integer o : operands) {
-			ops[i++] = o;
-		}
-		return get(new Invoke(fun, target, ops, name));
+			Collection<Integer> operands, NameID name) {		
+		return get(new Invoke(fun, target, toIntArray(operands), name));
 	}
 	
 	private static Invoke Invoke(Type.FunctionOrMethod fun, int target,
@@ -213,13 +208,8 @@ public abstract class Code {
 		return get(new IndexOf(type, target, leftOperand, rightOperand));
 	}
 
-	public static Loop Loop(String label, Collection<Integer> operands) {
-		int[] ops = new int[operands.size()];
-		int i = 0;
-		for (Integer o : operands) {
-			ops[i++] = o;
-		}
-		return get(new Loop(label, ops));
+	public static Loop Loop(String label, Collection<Integer> operands) {		
+		return get(new Loop(label, toIntArray(operands)));
 	}
 
 	private static Loop Loop(String label, int[] modifies) {
@@ -227,13 +217,8 @@ public abstract class Code {
 	}
 
 	public static ForAll ForAll(Type.EffectiveCollection type, int indexOperand,
-			Collection<Integer> modifiedOperands, String label) {
-		int[] ops = new int[modifiedOperands.size()];
-		int i = 0;
-		for (Integer o : modifiedOperands) {
-			ops[i++] = o;
-		}
-		return get(new ForAll(type, indexOperand, ops, label));
+			Collection<Integer> modifiedOperands, String label) {		
+		return get(new ForAll(type, indexOperand, toIntArray(modifiedOperands), label));
 	}
 
 	private static ForAll ForAll(Type.EffectiveCollection type,
@@ -248,8 +233,14 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewDict NewDict(Type.Dictionary type, int nargs) {
-		return get(new NewDict(type, nargs));
+	public static NewDict NewDict(Type.Dictionary type, int target,
+			Collection<Integer> operands) {
+		return get(new NewDict(type, target, toIntArray(operands)));
+	}
+	
+	public static NewDict NewDict(Type.Dictionary type, int target,
+			int[] operands) {
+		return get(new NewDict(type, target, operands));
 	}
 
 	/**
@@ -313,12 +304,8 @@ public abstract class Code {
 	public static IndirectSend IndirectSend(Type.Message msg,
 			boolean synchronous, int target, int operand,
 			Collection<Integer> operands) {
-		int[] ops = new int[operands.size()];
-		int i = 0;
-		for (Integer o : operands) {
-			ops[i++] = o;
-		}
-		return get(new IndirectSend(msg, synchronous, target, operand, ops));
+		return get(new IndirectSend(msg, synchronous, target, operand,
+				toIntArray(operands)));
 	}
 	
 	private static IndirectSend IndirectSend(Type.Message msg,
@@ -328,12 +315,8 @@ public abstract class Code {
 
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
 			int target, int operand, Collection<Integer> operands) {
-		int[] ops = new int[operands.size()];
-		int i = 0;
-		for (Integer o : operands) {
-			ops[i++] = o;
-		}
-		return get(new IndirectInvoke(fun, target, operand, ops));
+		return get(new IndirectInvoke(fun, target, operand,
+				toIntArray(operands)));
 	}
 	
 	private static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
@@ -2345,34 +2328,25 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewDict extends Code {
-		public final Type.Dictionary type;
-		public final int nargs;
+	public static final class NewDict extends AbstractNaryOp<Type.Dictionary> {
 
-		private NewDict(Type.Dictionary type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+		private NewDict(Type.Dictionary type, int target, int[] operands) {
+			super(type, target, operands);
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return nargs;
-			} else {
-				return type.hashCode() + nargs;
-			}
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewDict(type, target, operands);
 		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof NewDict) {
-				NewDict i = (NewDict) o;
-				return (type == i.type || (type != null && type.equals(i.type)))
-						&& nargs == i.nargs;
+				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("newdict #" + nargs, type);
+			return toString("newdict", type);
 		}
 	}
 
@@ -3285,6 +3259,15 @@ public abstract class Code {
 		} else {
 			return str + " : " + before + " => " + after;
 		}
+	}
+	
+	private static int[] toIntArray(Collection<Integer> operands) {
+		int[] ops = new int[operands.size()];
+		int i = 0;
+		for (Integer o : operands) {
+			ops[i++] = o;
+		}
+		return ops;
 	}
 
 	private static int[] remap(Map<Integer,Integer> binding, int[] operands) {
