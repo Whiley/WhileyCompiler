@@ -93,7 +93,7 @@ public class DefiniteAssignmentCheck extends
 			in.add(store.slot); 
 		} else if(code instanceof Code.Load) {
 			Code.Load load = (Code.Load) code;
-			if(!in.contains(load.slot)) {
+			if(!in.contains(load.indexOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 						filename, entry);
 			}
@@ -138,7 +138,7 @@ public class DefiniteAssignmentCheck extends
 		if (loop instanceof Code.ForAll) {
 			in = new HashSet<Integer>(in);
 			Code.ForAll fall = (Code.ForAll) loop;
-			in.add(fall.slot);
+			in.add(fall.indexOperand);
 		}
 
 		HashSet<Integer> r = propagate(start + 1, end, in, handlers);

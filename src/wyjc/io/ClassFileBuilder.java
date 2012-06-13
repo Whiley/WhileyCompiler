@@ -1074,7 +1074,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
 				Bytecode.INTERFACE));
 		addReadConversion(elementType, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.slot, convertType(elementType)));
+		bytecodes.add(new Bytecode.Store(c.indexOperand, convertType(elementType)));
 		
 		// we need to increase the freeSlot, since we've allocated one slot to
 		// hold the iterator.
@@ -1149,7 +1149,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.indexOperand, convertType(c.type)));
 		addIncRefs(c.type,bytecodes);
 	}
 	

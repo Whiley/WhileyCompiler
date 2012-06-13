@@ -526,7 +526,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(int index, Code.Load code, Block.Entry entry,
 			Env environment) {
 		
-		Value val = environment.get(code.slot);
+		Value val = environment.get(code.indexOperand);
 		if(val != null) {
 			// register rewrite
 			entry = new Block.Entry(Code.Const(val), entry.attributes());					
@@ -971,7 +971,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			
 			// TO DO: could unroll loop if src collection is a value.
 			
-			environment.set(fall.slot,null);
+			environment.set(fall.indexOperand,null);
 		} 
 		
 		// Now, kill every variable which is modified in the loop. This is a

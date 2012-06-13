@@ -161,19 +161,19 @@ public abstract class Code {
 		return get(new Goto(label));
 	}
 	
-	private static Invoke Invoke(Type.FunctionOrMethod fun, int target,
+	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
 			Collection<Integer> operands, NameID name) {
 		int[] ops = new int[operands.size()];
 		int i = 0;
 		for (Integer o : operands) {
 			ops[i++] = o;
 		}
-		return get(new Invoke(fun, name, target, ops));
+		return get(new Invoke(fun, target, ops, name));
 	}
 	
-	private static Invoke Invoke(Type.FunctionOrMethod fun, NameID name,
-			int target, int[] operands) {
-		return get(new Invoke(fun, name, target, operands));
+	private static Invoke Invoke(Type.FunctionOrMethod fun, int target,
+			int[] operands, NameID name) {
+		return get(new Invoke(fun, target, operands, name));
 	}
 
 	public static Not Not(int target, int operand) {
@@ -213,34 +213,33 @@ public abstract class Code {
 		return get(new IndexOf(type, target, leftOperand, rightOperand));
 	}
 
-	/**
-	 * Construct a <code>loop</code> bytecode which iterates the sequence of
-	 * bytecodes upto the exit label.
-	 * 
-	 * @param label
-	 *            --- exit label.
-	 * @return
-	 */
-	public static Loop Loop(String label, Collection<Integer> modifies) {
+	public static Loop Loop(String label, Collection<Integer> operands) {
+		int[] ops = new int[operands.size()];
+		int i = 0;
+		for (Integer o : operands) {
+			ops[i++] = o;
+		}
+		return get(new Loop(label, ops));
+	}
+
+	private static Loop Loop(String label, int[] modifies) {
 		return get(new Loop(label, modifies));
 	}
 
-	/**
-	 * Construct a <code>forall</code> bytecode which iterates over a given
-	 * source collection stored on top of the stack. The supplied variable
-	 * <code>var</code> is used as the iterator. The exit label denotes the end
-	 * of the loop block.
-	 * 
-	 * 
-	 * @param label
-	 *            --- exit label.
-	 * @return
-	 */
-	public static ForAll ForAll(Type.EffectiveCollection type, int var,
-			String label, Collection<Integer> modifies) {
-		return get(new ForAll(type, var, label, modifies));
+	public static ForAll ForAll(Type.EffectiveCollection type, int indexOperand,
+			Collection<Integer> modifiedOperands, String label) {
+		int[] ops = new int[modifiedOperands.size()];
+		int i = 0;
+		for (Integer o : modifiedOperands) {
+			ops[i++] = o;
+		}
+		return get(new ForAll(type, indexOperand, ops, label));
 	}
 
+	private static ForAll ForAll(Type.EffectiveCollection type, int indexOperanding label, int[] modifies) {
+		return get(new ForAll(type, var, modiindexOperand);
+	}
+	
 	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new
 	 * dictionary and puts it on the stack.
@@ -326,17 +325,19 @@ public abstract class Code {
 		return get(new IndirectSend(msg, synchronous, target, operand, operands));
 	}
 
-	/**
-	 * Construct an <code>indirectinvoke</code> bytecode which sends an indirect
-	 * message to an actor. This may be either synchronous or asynchronous.
-	 * 
-	 * @param label
-	 *            --- destination label.
-	 * @return
-	 */
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
-			boolean retval) {
-		return get(new IndirectInvoke(fun, retval));
+			int target, int operand, Collection<Integer> operands) {
+		int[] ops = new int[operands.size()];
+		int i = 0;
+		for (Integer o : operands) {
+			ops[i++] = o;
+		}
+		return get(new IndirectInvoke(fun, target, operand, ops));
+	}
+	
+	private static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
+			int target, int operand, int[] operands) {
+		return get(new IndirectInvoke(fun, target, operand, operands));
 	}
 
 	public static Invert Invert(Type type) {
@@ -804,7 +805,7 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Read a value from the operand register, converts it to a given type and
+	 * Reads a value from the operand register, converts it to a given type and
 	 * writes it the target register. This bytecode is the only way to change
 	 * the type of a value. It's purpose is to simplify implementations which
 	 * have different representations of data types.
@@ -1416,19 +1417,10 @@ public abstract class Code {
 		public final int[] operands;
 		public final int target;
 
-		private IndirectInvoke(Type.FunctionOrMethod type, int operand,
-				Collection<Integer> operands) {
-			this(type, -1, operands);
-		}
-
 		private IndirectInvoke(Type.FunctionOrMethod type, int target,
-				int operand, Collection<Integer> operands) {
+				int operand, int[] operands) {
 			this.type = type;
-			this.operands = new int[operands.size()];
-			int i = 0;
-			for (Integer o : operands) {
-				this.operands[i++] = o;
-			}
+			this.operands = operands;
 			this.operand = operand;
 			this.target = target;
 		}
@@ -1608,8 +1600,8 @@ public abstract class Code {
 		public final int[] operands;
 		public final int target;
 
-		private Invoke(Type.FunctionOrMethod type, NameID name, int target,
-				int[] operands) {
+		private Invoke(Type.FunctionOrMethod type, int target, int[] operands,
+				NameID name) {
 			this.type = type;
 			this.name = name;
 			this.operands = operands;
@@ -1637,7 +1629,7 @@ public abstract class Code {
 			Integer nTarget = binding.get(target);
 			if (nOperands != operands || nTarget != null) {
 				nTarget = nTarget != null ? nTarget : target;
-				return Invoke(type, nTarget, nOperands, name);
+				return Code.Invoke(type, nTarget, nOperands, name);
 			} else {
 				return this;
 			}
@@ -1903,11 +1895,11 @@ public abstract class Code {
 
 	public static class Loop extends Code {
 		public final String target;
-		public final int[] modifies;
+		public final int[] modifiedOperands;
 
 		private Loop(String target, int[] modifies) {
 			this.target = target;
-			this.modifies = modifies;
+			this.modifiedOperands = modifies;
 		}
 		
 		public Loop relabel(Map<String, String> labels) {
@@ -1915,22 +1907,22 @@ public abstract class Code {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return Loop(nlabel, modifies);
+				return Loop(nlabel, modifiedOperands);
 			}
 		}
 
 
 		@Override
 		public void slots(Set<Integer> slots) {
-			for (int operand : modifies) {
+			for (int operand : modifiedOperands) {
 				slots.add(operand);
 			}			
 		}
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding,modifies);
-			if (nOperands != modifies) {
+			int[] nOperands = remap(binding,modifiedOperands);
+			if (nOperands != modifiedOperands) {
 				return Code.Loop(target,nOperands);
 			} else {
 				return this;
@@ -1938,19 +1930,19 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return target.hashCode() + Arrays.hashCode(modifies);
+			return target.hashCode() + Arrays.hashCode(modifiedOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop f = (Loop) o;
-				return target.equals(f.target) && Arrays.equals(modifies,f.modifies);
+				return target.equals(f.target) && Arrays.equals(modifiedOperands,f.modifiedOperands);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "loop " + modifies;
+			return "loop " + modifiedOperands;
 		}
 	}
 
@@ -1963,14 +1955,14 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class ForAll extends Loop {
-		public final int slot;
+		public final int indexOperand;
 		public final Type.EffectiveCollection type;
 
-		private ForAll(Type.EffectiveCollection type, int slot, String target,
-				Collection<Integer> modifies) {
+		private ForAll(Type.EffectiveCollection type, int indexOperand,
+				int[] modifies, String target) {
 			super(target, modifies);
 			this.type = type;
-			this.slot = slot;
+			this.indexOperand = indexOperand;
 		}
 
 		public ForAll relabel(Map<String, String> labels) {
@@ -1978,26 +1970,26 @@ public abstract class Code {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return ForAll(type, slot, nlabel, modifies);
+				return ForAll(type, indexOperand, modifiedOperands, nlabel);
 			}
 		}
 
 		@Override
 		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+			slots.add(indexOperand);
 		}
 
 		public Code remap(Map<Integer, Integer> binding) {
-			Integer nslot = binding.get(slot);
+			Integer nslot = binding.get(indexOperand);
 			if (nslot != null) {
-				return Code.ForAll(type, nslot, target, modifies);
+				return Code.ForAll(type, nslot, target, modifiedOperands);
 			} else {
 				return this;
 			}
 		}
 
 		public int hashCode() {
-			return super.hashCode() + slot;
+			return super.hashCode() + indexOperand;
 		}
 
 		public boolean equals(Object o) {
@@ -2005,14 +1997,14 @@ public abstract class Code {
 				ForAll f = (ForAll) o;
 				return target.equals(f.target)
 						&& (type == f.type || (type != null && type
-								.equals(f.type))) && slot == f.slot
-						&& modifies.equals(f.modifies);
+								.equals(f.type))) && indexOperand == f.indexOperand
+						&& modifiedOperands.equals(f.modifiedOperands);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("forall " + slot + " " + modifies, (Type) type);
+			return toString("forall " + indexOperand + " " + modifiedOperands, (Type) type);
 		}
 	}
 

@@ -248,7 +248,7 @@ public final class WyilFileWriter implements Transform {
 			line = "store " + getLocal(store.slot,locals) + " : " + store.type;  
 		} else if(c instanceof Code.Load && !writeSlots){
 			Code.Load load = (Code.Load) c;
-			line = "load " + getLocal(load.slot,locals) + " : " + load.type;
+			line = "load " + getLocal(load.indexOperand,locals) + " : " + load.type;
 		} else if(c instanceof Code.Move && !writeSlots){
 			Code.Move move = (Code.Move) c;
 			line = "move " + getLocal(move.slot,locals) + " : " + move.type;
@@ -283,7 +283,7 @@ public final class WyilFileWriter implements Transform {
 				firstTime=false;
 				modifies += getLocal(slot,locals);
 			}
-			line = "forall " + getLocal(fall.slot,locals) + " [" + modifies + "] : " + fall.type;
+			line = "forall " + getLocal(fall.indexOperand,locals) + " [" + modifies + "] : " + fall.type;
 		} else {
 			line = c.toString();		
 		}

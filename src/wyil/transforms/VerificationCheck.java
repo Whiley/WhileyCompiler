@@ -277,8 +277,8 @@ public class VerificationCheck implements Transform {
 				Code.ForAll forall = (Code.ForAll) code; 
 				int end = findLabel(i,forall.target,body);
 				WExpr src = pop(stack);
-				WVariable var = new WVariable(forall.slot + "$"
-						+ environment[forall.slot]);
+				WVariable var = new WVariable(forall.indexOperand + "$"
+						+ environment[forall.indexOperand]);
 				constraint = WFormulas.and(constraint,
 						WTypes.subtypeOf(var, convert(forall.type.element())));
 				
@@ -674,7 +674,7 @@ public class VerificationCheck implements Transform {
 	
 	protected WFormula transform(Code.Load code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		int slot = code.slot;
+		int slot = code.indexOperand;
 		stack.add(new WVariable(slot + "$" + environment[slot]));
 		return constraint;
 	}

@@ -134,16 +134,16 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		Code code = entry.code;		
 		if(code instanceof Code.Load) {
 			Code.Load load = (Code.Load) code;
-			if(!environment.contains(load.slot)) {
+			if(!environment.contains(load.indexOperand)) {
 				rewrites.put(
 						index,
-						new Block.Entry(Code.Move(load.type, load.slot), entry
+						new Block.Entry(Code.Move(load.type, load.indexOperand), entry
 								.attributes()));				
 			} else {
 				rewrites.put(index, null);
 			}
 			environment = new Env(environment);
-			environment.add(load.slot);
+			environment.add(load.indexOperand);
 		} else if(code instanceof Code.Store) {
 			Code.Store store = (Code.Store) code;
 			// FIXME: should I report an error or warning here?			
@@ -228,7 +228,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 		
 			// FIXME: is the following really necessary?
-			environment.remove(fall.slot);
+			environment.remove(fall.indexOperand);
 		} 		
 		
 		return environment;		

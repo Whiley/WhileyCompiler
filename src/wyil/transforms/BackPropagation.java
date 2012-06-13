@@ -408,7 +408,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {		
 		Type req = environment.pop();
 		coerceAfter(req,code.type,index,entry);
-		environment.set(code.slot,code.type);		
+		environment.set(code.indexOperand,code.type);		
 	}
 	
 	private void infer(int index, Code.Update code, Block.Entry stmt,
@@ -741,7 +741,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Code.ForAll fall = (Code.ForAll) loop; 								
 			environment.push((Type) fall.type);			
 			// FIXME: a conversion here might be necessary?			
-			environment.set(fall.slot,Type.T_VOID);
+			environment.set(fall.indexOperand,Type.T_VOID);
 		} 		
 		
 		return environment;		
