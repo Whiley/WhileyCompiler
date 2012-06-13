@@ -236,8 +236,9 @@ public abstract class Code {
 		return get(new ForAll(type, indexOperand, ops, label));
 	}
 
-	private static ForAll ForAll(Type.EffectiveCollection type, int indexOperanding label, int[] modifies) {
-		return get(new ForAll(type, var, modiindexOperand);
+	private static ForAll ForAll(Type.EffectiveCollection type,
+			int indexOperand, int[] modifiedOperands, String label) {
+		return get(new ForAll(type, indexOperand, modifiedOperands, label));
 	}
 	
 	/**
@@ -630,6 +631,56 @@ public abstract class Code {
 		}
 	}
 
+	private static abstract class AbstractNaryOp<T> extends Code {
+		public final T type;
+		public final int target;
+		public final int[] operands;
+		
+		private AbstractNaryOp(T type, int target, int[] operands) {
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractBinOp type argument cannot be null");
+			}
+			this.type = type;
+			this.target = target;
+			this.operands = operands;
+		}
+
+		@Override
+		public final void slots(Set<Integer> slots) {
+			if(target >= 0) { slots.add(target); }
+			for(int i=0;i!=operands.length;++i) {
+				slots.add(operands[i]);
+			}
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			int[] nOperands = remap(binding,operands);
+			if (nTarget != null || nOperands != operands) {
+				nTarget = nTarget != null ? nTarget : target;
+				return clone(nTarget, nOperands);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nTarget, int[] nOperands);
+
+		public int hashCode() {
+			return type.hashCode() + target + Arrays.hashCode(operands);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractNaryOp) {
+				AbstractNaryOp bo = (AbstractNaryOp) o;
+				return target == bo.target
+						&& Arrays.equals(operands, bo.operands)
+						&& type.equals(bo.type);
+			}
+			return false;
+		}
+	}
 	private static abstract class AbstractBinCond<T> extends Code {
 		public final T type;
 		public final int leftOperand;
@@ -681,7 +732,7 @@ public abstract class Code {
 			return false;
 		}
 	}
-
+	
 	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================
@@ -1594,53 +1645,29 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Invoke extends Code {
-		public final Type.FunctionOrMethod type;
+	public static final class Invoke extends
+			AbstractNaryOp<Type.FunctionOrMethod> {
 		public final NameID name;
-		public final int[] operands;
-		public final int target;
 
 		private Invoke(Type.FunctionOrMethod type, int target, int[] operands,
 				NameID name) {
-			this.type = type;
+			super(type, target, operands);
 			this.name = name;
-			this.operands = operands;
-			this.target = target;
 		}
 
 		public int hashCode() {
-			return type.hashCode() + name.hashCode() + target
-					+ Arrays.hashCode(operands);
+			return name.hashCode() + super.hashCode();
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
-			for (int operand : operands) {
-				slots.add(operand);
-			}
-			if (target >= 0) {
-				slots.add(target);
-			}
-		}
-
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding,operands);			
-			Integer nTarget = binding.get(target);
-			if (nOperands != operands || nTarget != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				return Code.Invoke(type, nTarget, nOperands, name);
-			} else {
-				return this;
-			}
+		public Code clone(int nTarget, int[] nOperands) {
+			return Code.Invoke(type, nTarget, nOperands, name);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
-				return name.equals(i.name) && target == i.target
-						&& type.equals(i.type)
-						&& Arrays.equals(operands, i.operands);
+				return name.equals(i.name) && super.equals(i);
 			}
 			return false;
 		}
@@ -1652,7 +1679,6 @@ public abstract class Code {
 				return toString("vinvoke " + name, type);
 			}
 		}
-
 	}
 
 	/**
@@ -1977,28 +2003,32 @@ public abstract class Code {
 		@Override
 		public void slots(Set<Integer> slots) {
 			slots.add(indexOperand);
+			super.slots(slots);
 		}
 
+		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			Integer nslot = binding.get(indexOperand);
-			if (nslot != null) {
-				return Code.ForAll(type, nslot, target, modifiedOperands);
+			int[] nModifiedOperands = remap(binding, modifiedOperands);
+			Integer nIndexOperand = binding.get(indexOperand);
+			if (nIndexOperand != null || nModifiedOperands != modifiedOperands) {
+				return Code.ForAll(type, nIndexOperand, nModifiedOperands,
+						target);
 			} else {
 				return this;
 			}
 		}
 
 		public int hashCode() {
-			return super.hashCode() + indexOperand;
+			return super.hashCode() + indexOperand
+					+ Arrays.hashCode(modifiedOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof ForAll) {
 				ForAll f = (ForAll) o;
-				return target.equals(f.target)
-						&& (type == f.type || (type != null && type
-								.equals(f.type))) && indexOperand == f.indexOperand
-						&& modifiedOperands.equals(f.modifiedOperands);
+				return target.equals(f.target) && type.equals(f.type)
+						&& indexOperand == f.indexOperand
+						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
 			}
 			return false;
 		}
