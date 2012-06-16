@@ -239,7 +239,7 @@ public abstract class Code {
 		return get(new NewDict(type, target, toIntArray(operands)));
 	}
 
-	public static NewDict NewDict(Type.Dictionary type, int target,
+	private static NewDict NewDict(Type.Dictionary type, int target,
 			int[] operands) {
 		return get(new NewDict(type, target, operands));
 	}
@@ -251,8 +251,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewSet NewSet(Type.Set type, int nargs) {
-		return get(new NewSet(type, nargs));
+	public static NewSet NewSet(Type.Set type, int target,
+			Collection<Integer> operands) {
+		return get(new NewSet(type, target, toIntArray(operands)));
+	}
+
+	private static NewSet NewSet(Type.Set type, int target, int[] operands) {
+		return get(new NewSet(type, target, operands));
 	}
 
 	/**
@@ -262,8 +267,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewList NewList(Type.List type, int nargs) {
-		return get(new NewList(type, nargs));
+	public static NewList NewList(Type.List type, int target,
+			Collection<Integer> operands) {
+		return get(new NewList(type, target, toIntArray(operands)));
+	}
+	
+	private static NewList NewList(Type.List type, int target, int[] operands) {
+		return get(new NewList(type, target, operands));
 	}
 
 	/**
@@ -273,10 +283,15 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewTuple NewTuple(Type.Tuple type, int nargs) {
-		return get(new NewTuple(type, nargs));
+	public static NewTuple NewTuple(Type.Tuple type, int target,
+			Collection<Integer> operands) {
+		return get(new NewTuple(type, target, toIntArray(operands)));
 	}
 
+	private static NewTuple NewTuple(Type.Tuple type, int target, int[] operands) {
+		return get(new NewTuple(type, target, operands));
+	}
+	
 	/**
 	 * Construct a <code>newrecord</code> bytecode which constructs a new record
 	 * and puts it on the stack.
@@ -284,12 +299,38 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewRecord NewRecord(Type.Record type) {
-		return get(new NewRecord(type));
+	public static NewRecord NewRecord(Type.Record type, int target,
+			Collection<Integer> operands) {
+		return get(new NewRecord(type, target, toIntArray(operands)));
+	}
+	
+	private static NewRecord NewRecord(Type.Record type, int target,
+			int[] operands) {
+		return get(new NewRecord(type, target, operands));
 	}
 
-	public static Return Return(Type t) {
-		return get(new Return(t));
+	/**
+	 * Construct a return bytecode which does return a value and, hence, its
+	 * type automatically defaults to void.
+	 * 
+	 * @return
+	 */
+	public static Return Return() {
+		return get(new Return(Type.T_VOID,-1));
+	}
+	
+	/**
+	 * Construct a return bytecode which reads a value from the operand register
+	 * and returns it.
+	 * 
+	 * @param type
+	 *            --- type of the value to be returned (cannot be void).
+	 * @param operand
+	 *            --- register to read return value from.
+	 * @return
+	 */
+	public static Return Return(Type type, int operand) {
+		return get(new Return(type,operand));
 	}
 
 	public static IfGoto IfGoto(Type type, int leftOperand, int rightOperand,
@@ -325,34 +366,30 @@ public abstract class Code {
 		return get(new IndirectInvoke(fun, target, operand, operands));
 	}
 
-	public static Invert Invert(Type type) {
-		return get(new Invert(type));
+	public static Invert Invert(Type type, int target, int operand) {
+		return get(new Invert(type,target,operand));
 	}
 
 	public static Label Label(String label) {
 		return get(new Label(label));
 	}
 
-	public static final Skip Skip = new Skip();
+	public static final Nop Nop = new Nop();
 
-	public static SetUnion SetUnion(Type.EffectiveSet type, OpDir dir) {
-		return get(new SetUnion(type, dir));
+	public static SetOp SetOp(Type.EffectiveSet type, int target,
+			int leftOperand, int rightOperand, SetOperation operation) {
+		return get(new SetOp(type, target, leftOperand, rightOperand, operation));
 	}
 
-	public static SetIntersect SetIntersect(Type.EffectiveSet type, OpDir dir) {
-		return get(new SetIntersect(type, dir));
+	public static StringOp StringOp(int target, int leftOperand,
+			int rightOperand, StringOperation operation) {
+		return get(new StringOp(target, leftOperand, rightOperand, operation));
 	}
 
-	public static SetDifference SetDifference(Type.EffectiveSet type, OpDir dir) {
-		return get(new SetDifference(type, dir));
-	}
-
-	public static StringAppend StringAppend(OpDir dir) {
-		return get(new StringAppend(dir));
-	}
-
-	public static SubString SubString() {
-		return get(new SubString());
+	public static SubString SubString(int target, int sourceOperand,
+			int leftOperand, int rightOperand) {
+		return get(new SubString(target, sourceOperand, leftOperand,
+				rightOperand));
 	}
 
 	/**
@@ -366,19 +403,6 @@ public abstract class Code {
 	public static Send Send(Type.Message meth, NameID name,
 			boolean synchronous, boolean retval) {
 		return get(new Send(meth, name, synchronous, retval));
-	}
-
-	/**
-	 * Construct a <code>store</code> bytecode which writes a given register.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param reg
-	 *            --- reg to load.
-	 * @return
-	 */
-	public static Store Store(Type type, int reg) {
-		return get(new Store(type, reg));
 	}
 
 	/**
@@ -406,8 +430,8 @@ public abstract class Code {
 	 *            --- value type to throw
 	 * @return
 	 */
-	public static Throw Throw(Type t) {
-		return get(new Throw(t));
+	public static Throw Throw(Type type, int operand) {
+		return get(new Throw(type,operand));
 	}
 
 	/**
@@ -437,20 +461,22 @@ public abstract class Code {
 	 *            --- dictionary type.
 	 * @return
 	 */
-	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int index) {
-		return get(new TupleLoad(type, index));
+	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int target,
+			int operand, int index) {
+		return get(new TupleLoad(type, target, operand, index));
 	}
 
-	public static Negate Negate(Type type) {
-		return get(new Negate(type));
+	public static Negate Negate(Type type, int target, int operand) {
+		return get(new Negate(type, target, operand));
 	}
 
-	public static New New(Type.Reference type) {
-		return get(new New(type));
+	public static New New(Type.Reference type, int target, int operand) {
+		return get(new New(type, target, operand));
 	}
 
-	public static Dereference Dereference(Type.Reference type) {
-		return get(new Dereference(type));
+	public static Dereference Dereference(Type.Reference type, int target,
+			int operand) {
+		return get(new Dereference(type, target, operand));
 	}
 
 	/**
@@ -468,8 +494,8 @@ public abstract class Code {
 		return get(new Update(beforeType, afterType, slot, level, fields));
 	}
 
-	public static Void Void(Type type, int slot) {
-		return get(new Void(type, slot));
+	public static Void Void(Type type, int[] operands) {
+		return get(new Void(type, operands));
 	}
 
 	// ===============================================================
@@ -2632,244 +2658,218 @@ public abstract class Code {
 		}
 	}
 
-	public enum OpDir {
-		UNIFORM {
+	public enum SetOperation {
+		LEFT_UNION {
 			public String toString() {
-				return "";
+				return "union_l";
 			}
 		},
-		LEFT {
+		RIGHT_UNION {
 			public String toString() {
-				return "_l";
+				return "union_r";
 			}
 		},
-		RIGHT {
+		UNION {
 			public String toString() {
-				return "_r";
+				return "union";
+			}
+		},
+		LEFT_INTERSECTION {
+			public String toString() {
+				return "intersect_l";
+			}
+		},
+		RIGHT_INTERSECTION {
+			public String toString() {
+				return "intersect_r";
+			}
+		},
+		INTERSECTION {
+			public String toString() {
+				return "intersect";
+			}
+		},
+		LEFT_DIFFERENCE {
+			public String toString() {
+				return "difference_l";
+			}
+		},
+		RIGHT_DIFFERENCE {
+			public String toString() {
+				return "difference_r";
+			}
+		},
+		DIFFERENCE {
+			public String toString() {
+				return "difference";
 			}
 		}
 	}
 
-	public static final class SetUnion extends Code {
-		public final OpDir dir;
-		public final Type.EffectiveSet type;
+	public static final class SetOp extends AbstractBinOp<Type.EffectiveSet> {
+		public final SetOperation operation;
 
-		private SetUnion(Type.EffectiveSet type, OpDir dir) {
-			if (dir == null) {
+		private SetOp(Type.EffectiveSet type, int target, int leftOperand,
+				int rightOperand, SetOperation operation) {
+			super(type, target, leftOperand, rightOperand);
+			if (operation == null) {
 				throw new IllegalArgumentException(
-						"SetAppend direction cannot be null");
+						"SetOp operation cannot be null");
 			}
-			this.type = type;
-			this.dir = dir;
+			this.operation = operation;
+		}
+
+		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.SetOp(type, nTarget, nLeftOperand, nRightOperand, operation);
 		}
 
 		public int hashCode() {
-			if (type == null) {
-				return dir.hashCode();
-			} else {
-				return type.hashCode() + dir.hashCode();
-			}
+			return operation.hashCode() + super.hashCode();
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof SetUnion) {
-				SetUnion setop = (SetUnion) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type))) && dir.equals(setop.dir);
+			if (o instanceof SetOp) {
+				SetOp setop = (SetOp) o;
+				return operation.equals(setop.operation) && super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("union" + dir.toString(), (Type) type);
+			return toString(operation.toString(), (Type) type);
 		}
 	}
 
-	public static final class SetIntersect extends Code {
-		public final OpDir dir;
-		public final Type.EffectiveSet type;
+	public enum StringOperation {
+		LEFT_APPEND {
+			public String toString() {
+				return "strappend_l";
+			}
+		},
+		RIGHT_APPEND {
+			public String toString() {
+				return "strappend_r";
+			}
+		},
+		APPEND {
+			public String toString() {
+				return "strappend";
+			}
+		}
+	}
+	
+	public static final class StringOp extends AbstractBinOp<Type.Strung> {
+		public final StringOperation operation;
 
-		private SetIntersect(Type.EffectiveSet type, OpDir dir) {
-			if (dir == null) {
+		private StringOp(int target, int leftOperand, int rightOperand, StringOperation operation) {
+			super(Type.T_STRING,target,leftOperand,rightOperand);
+			if (operation == null) {
 				throw new IllegalArgumentException(
-						"SetAppend direction cannot be null");
+						"StringBinOp operation cannot be null");
 			}
-			this.type = type;
-			this.dir = dir;
+			this.operation = operation;
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return dir.hashCode();
-			} else {
-				return type.hashCode() + dir.hashCode();
-			}
+		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.StringOp(nTarget,nLeftOperand,nRightOperand,operation);
 		}
-
+		
 		public boolean equals(Object o) {
-			if (o instanceof SetIntersect) {
-				SetIntersect setop = (SetIntersect) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type))) && dir.equals(setop.dir);
+			if (o instanceof StringOp) {
+				StringOp setop = (StringOp) o;
+				return operation.equals(setop.operation) && super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("intersect" + dir.toString(), (Type) type);
+			return toString(operation.toString(), Type.T_STRING);
 		}
 	}
-
-	public static final class SetDifference extends Code {
-		public final OpDir dir;
-		public final Type.EffectiveSet type;
-
-		private SetDifference(Type.EffectiveSet type, OpDir dir) {
-			if (dir == null) {
-				throw new IllegalArgumentException(
-						"SetAppend direction cannot be null");
-			}
-			this.type = type;
-			this.dir = dir;
-		}
-
-		public int hashCode() {
-			if (type == null) {
-				return dir.hashCode();
-			} else {
-				return type.hashCode() + dir.hashCode();
-			}
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof SetDifference) {
-				SetDifference setop = (SetDifference) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type))) && dir.equals(setop.dir);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return toString("difference" + dir.toString(), (Type) type);
-		}
-	}
-
-	public static final class StringAppend extends Code {
-		public final OpDir dir;
-
-		private StringAppend(OpDir dir) {
-			if (dir == null) {
-				throw new IllegalArgumentException(
-						"StringAppend direction cannot be null");
-			}
-			this.dir = dir;
-		}
-
-		public int hashCode() {
-			return dir.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof StringAppend) {
-				StringAppend setop = (StringAppend) o;
-				return dir.equals(setop.dir);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return toString("stringappend" + dir.toString(), Type.T_STRING);
-		}
-	}
-
+	
+	/**
+	 * Reads the string value from a source operand register, and the
+	 * integer values from two index operand registers, computes the substring and
+	 * writes the result back to a target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class SubString extends Code {
-		private SubString() {
-		}
+		public final int target;
+		public final int sourceOperand;
+		public final int leftOperand;
+		public final int rightOperand;
 
-		public int hashCode() {
-			return 983745;
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof SubString;
-		}
-
-		public String toString() {
-			return toString("substring", Type.T_STRING);
-		}
-	}
-
-	public static final class Skip extends Code {
-		Skip() {
-		}
-
-		public int hashCode() {
-			return 101;
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof Skip;
-		}
-
-		public String toString() {
-			return "skip";
-		}
-	}
-
-	public static final class Store extends Code {
-		public final Type type;
-		public final int slot;
-
-		private Store(Type type, int slot) {
-			this.type = type;
-			this.slot = slot;
+		private SubString(int target, int sourceOperand,
+				int leftOperand, int rightOperand) {
+			this.target = target;
+			this.sourceOperand = sourceOperand;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+		public final void slots(Set<Integer> slots) {
+			slots.add(target);
+			slots.add(sourceOperand);
+			slots.add(leftOperand);
+			slots.add(rightOperand);
 		}
 
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if (nslot != null) {
-				return Code.Store(type, nslot);
-			} else {
-				return this;
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nSourceOperand = binding.get(sourceOperand);
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nTarget != null || nSourceOperand != null
+					|| nLeftOperand != null || nRightOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nSourceOperand = nSourceOperand != null ? nSourceOperand
+						: sourceOperand;
+				nLeftOperand = nLeftOperand != null ? nLeftOperand
+						: leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand
+						: rightOperand;
+				return Code.SubString(nTarget, nSourceOperand, nLeftOperand,
+						nRightOperand);
 			}
+			return this;
 		}
 
 		public int hashCode() {
-			if (type == null) {
-				return slot;
-			} else {
-				return type.hashCode() + slot;
-			}
+			return target + sourceOperand + leftOperand
+					+ rightOperand;
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Store) {
-				Store i = (Store) o;
-				return (type == i.type || (type != null && type.equals(i.type)))
-						&& slot == i.slot;
+			if (o instanceof SubString) {
+				SubString sl = (SubString) o;
+				return target == sl.target
+						&& sourceOperand == sl.sourceOperand
+						&& leftOperand == sl.leftOperand
+						&& rightOperand == sl.rightOperand;
+
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("store " + slot, type);
+			return toString("substr", (Type) Type.T_STRING);
 		}
 	}
 
 	public static final class Switch extends Code {
 		public final Type type;
+		public final int operand;
 		public final ArrayList<Pair<Value, String>> branches;
 		public final String defaultTarget;
 
-		Switch(Type type, String defaultTarget,
+		Switch(Type type, int operand, String defaultTarget,
 				Collection<Pair<Value, String>> branches) {
 			this.type = type;
+			this.operand = operand;
 			this.branches = new ArrayList<Pair<Value, String>>(branches);
 			this.defaultTarget = defaultTarget;
 		}
@@ -2894,21 +2894,17 @@ public abstract class Code {
 		}
 
 		public int hashCode() {
-			if (type == null) {
-				return defaultTarget.hashCode() + branches.hashCode();
-			} else {
-				return type.hashCode() + defaultTarget.hashCode()
-						+ branches.hashCode();
-			}
+			return type.hashCode() + operand + defaultTarget.hashCode()
+					+ branches.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Switch) {
 				Switch ig = (Switch) o;
-				return defaultTarget.equals(ig.defaultTarget)
+				return operand == ig.operand 
+						&& defaultTarget.equals(ig.defaultTarget)
 						&& branches.equals(ig.branches)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));
+						&& type.equals(ig.type);
 			}
 			return false;
 		}
@@ -2926,38 +2922,89 @@ public abstract class Code {
 			table += ", *->" + defaultTarget;
 			return "switch " + table;
 		}
+		
+		@Override
+		public void slots(Set<Integer> slots) {
+			slots.add(operand);
+		}
+		
+		@Override
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if(nOperand != null) {
+				return new Return(type,nOperand);
+			}
+			return this;
+		}
+		
 	}
 
 	public static final class Send extends Code {
 		public final boolean synchronous;
-		public final boolean retval;
 		public final NameID name;
 		public final Type.Message type;
-
-		private Send(Type.Message type, NameID name, boolean synchronous,
-				boolean retval) {
+		public final int target;
+		public final int receiver;
+		public final int[] operands;
+		
+		private Send(Type.Message type, int target, int receiver,
+				int[] operands, NameID name, boolean synchronous) {
 			this.type = type;
 			this.name = name;
 			this.synchronous = synchronous;
-			this.retval = retval;
+			this.target = target;
+			this.receiver = receiver;
+			this.operands = operands;
+		}
+		
+		@Override
+		public void slots(Set<Integer> slots) {
+			for (int operand : operands) {
+				slots.add(operand);
+			}
+			if (target >= 0) {
+				slots.add(target);
+			}
+			slots.add(receiver);
 		}
 
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			int[] nOperands = remap(binding, operands);
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(receiver);
+			if (nOperands != operands || nTarget != null || nOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : receiver;
+				return Send(type, nTarget, nOperand,
+						nOperands, synchronous);
+			} else {
+				return this;
+			}
+		}
+
+
+
 		public int hashCode() {
-			return type.hashCode() + name.hashCode();
+			return type.hashCode() + name.hashCode() + target + receiver
+					+ Arrays.hashCode(operands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Send) {
 				Send i = (Send) o;
-				return retval == i.retval && synchronous == i.synchronous
-						&& (type.equals(i.type) && name.equals(i.name));
+				return synchronous == i.synchronous
+						&& type.equals(i.type) && name.equals(i.name)
+						&& receiver == i.receiver 
+						&& target == i.target 
+						&& Arrays.equals(operands, i.operands);
 			}
 			return false;
 		}
 
 		public String toString() {
 			if (synchronous) {
-				if (retval) {
+				if (target >= 0) {
 					return toString("send " + name, type);
 				} else {
 					return toString("vsend " + name, type);
@@ -2970,32 +3017,42 @@ public abstract class Code {
 
 	public static final class Throw extends Code {
 		public final Type type;
+		public final int operand;
 
-		private Throw(Type type) {
+		private Throw(Type type, int operand) {
 			this.type = type;
+			this.operand = operand;
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 98923;
-			} else {
-				return type.hashCode();
+		public void slots(Set<Integer> slots) {
+			slots.add(operand);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if(nOperand != null) {
+				return Code.Throw(type,nOperand);
 			}
+			return this;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + operand;
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Throw) {
 				Throw i = (Throw) o;
-				return type == i.type || (type != null && type.equals(i.type));
+				return type.equals(i.type) && operand == i.operand;
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("throw", type);
+			return toString("throws", type);
 		}
 	}
-
+	
 	public static final class TryCatch extends Code {
 		public final String target;
 		public final ArrayList<Pair<Type, String>> catches;
@@ -3094,26 +3151,19 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Negate extends Code {
-		public final Type type;
+	public static final class Negate extends AbstractUnOp<Type> {
 
-		private Negate(Type type) {
-			this.type = type;
+		private Negate(Type type, int target, int operand) {
+			super(type,target,operand);
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.Negate(type, target, operand);
 		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof Negate) {
-				Negate bo = (Negate) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -3137,26 +3187,19 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Invert extends Code {
-		public final Type type;
-
-		private Invert(Type type) {
-			this.type = type;
+	public static final class Invert extends AbstractUnOp<Type> {
+		
+		private Invert(Type type, int target, int operand) {
+			super(type,target,operand);
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.Invert(type, target, operand);
 		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof Invert) {
-				Invert bo = (Invert) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -3165,27 +3208,27 @@ public abstract class Code {
 			return toString("invert", type);
 		}
 	}
-
-	public static final class New extends Code {
-		public final Type.Reference type;
-
-		private New(Type.Reference type) {
-			this.type = type;
+	
+	/**
+	 * Instantiate a new object from the value in a given operand register, and
+	 * write the result to a given target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class New extends AbstractUnOp<Type.Reference> {
+		
+		private New(Type.Reference type, int target, int operand) {
+			super(type,target,operand);
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.New(type, target, operand);
 		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof New) {
-				New bo = (New) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -3194,30 +3237,25 @@ public abstract class Code {
 			return toString("new", type);
 		}
 	}
-
-	public static final class TupleLoad extends Code {
-		public final Type.EffectiveTuple type;
+	
+	public static final class TupleLoad extends
+			AbstractUnOp<Type.EffectiveTuple> {
 		public final int index;
 
-		private TupleLoad(Type.EffectiveTuple type, int index) {
-			this.type = type;
+		private TupleLoad(Type.EffectiveTuple type, int target, int operand,
+				int index) {
+			super(type, target, operand);
 			this.index = index;
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.TupleLoad(type, target, operand);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof TupleLoad) {
 				TupleLoad i = (TupleLoad) o;
-				return index == i.index
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+				return index == i.index && super.equals(o);
 			}
 			return false;
 		}
@@ -3227,26 +3265,26 @@ public abstract class Code {
 		}
 	}
 
-	public static final class Dereference extends Code {
-		public final Type.Reference type;
+	/**
+	 * Dereference the reference value from the operand register and write the
+	 * result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Dereference extends AbstractUnOp<Type.Reference> {
 
-		private Dereference(Type.Reference type) {
-			this.type = type;
+		private Dereference(Type.Reference type, int target, int operand) {
+			super(type, target, operand);
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.Dereference(type, target, operand);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Dereference) {
-				Dereference bo = (Dereference) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -3257,49 +3295,34 @@ public abstract class Code {
 	}
 
 	/**
-	 * The void bytecode is used to indicate that a given register is no longer
-	 * live.
+	 * The void bytecode is used to indicate that the given register(s) are no
+	 * longer live. This is useful for communicating information to the memory
+	 * management system about which values could in principle be collected.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Void extends Code {
-		public final Type type;
-		public final int slot;
+	public static class Void extends AbstractNaryOp<Type> {
 
-		private Void(Type type, int slot) {
+		private Void(Type type, int[] operands) {
+			super(type, -1, operands);
 			this.type = type;
-			this.slot = slot;
+			this.operands = operands;
 		}
 
-		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
-		}
-
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if (nslot != null) {
-				return Code.Void(type, nslot);
-			} else {
-				return this;
-			}
-		}
-
-		public int hashCode() {
-			return type.hashCode() + slot;
+		protected Code clone(int nTarget, int[] operands) {
+			return Code.Void(type, operands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Void) {
-				Void i = (Void) o;
-				return type.equals(i.type) && slot == i.slot;
+				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("void " + slot, type);
+			return toString("void ", type);
 		}
 	}
 

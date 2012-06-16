@@ -560,10 +560,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		Type req = environment.pop();
 		Type codeType = (Type) code.type;
 		coerceAfter(req,codeType,index,entry);
-		if(code.dir == OpDir.UNIFORM) { 
+		if(code.operation == OpDir.UNIFORM) { 
 			environment.push(codeType);
 			environment.push(codeType);
-		} else if(code.dir == OpDir.LEFT) {
+		} else if(code.operation == OpDir.LEFT) {
 			environment.push(codeType);
 			environment.push(code.type.element());					
 		} else {					
@@ -577,10 +577,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		Type req = environment.pop();
 		Type codeType = (Type) code.type;
 		coerceAfter(req,codeType,index,entry);
-		if(code.dir == OpDir.UNIFORM) { 
+		if(code.operation == OpDir.UNIFORM) { 
 			environment.push(codeType);
 			environment.push(codeType);
-		} else if(code.dir == OpDir.LEFT) {
+		} else if(code.operation == OpDir.LEFT) {
 			environment.push(codeType);
 			environment.push(code.type.element());					
 		} else {					
@@ -594,7 +594,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		Type req = environment.pop();
 		Type codeType = (Type) code.type;
 		coerceAfter(req,codeType,index,entry);
-		if(code.dir == OpDir.UNIFORM) { 
+		if(code.operation == OpDir.UNIFORM) { 
 			environment.push(codeType);
 			environment.push(codeType);
 		} else {
@@ -607,10 +607,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {				
 		Type req = environment.pop();
 		coerceAfter(req,Type.T_STRING,index,entry);
-		if(code.dir == OpDir.UNIFORM) { 
+		if(code.operation == OpDir.UNIFORM) { 
 			environment.push(Type.T_STRING);
 			environment.push(Type.T_STRING);
-		} else if(code.dir == OpDir.LEFT) {
+		} else if(code.operation == OpDir.LEFT) {
 			environment.push(Type.T_STRING);
 			environment.push(Type.T_CHAR);					
 		} else {					

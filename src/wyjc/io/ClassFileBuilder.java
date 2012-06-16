@@ -1276,9 +1276,9 @@ public class ClassFileBuilder {
 	public void translate(Code.SetUnion c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype;
-		if(c.dir == OpDir.UNIFORM) {
+		if(c.operation == OpDir.UNIFORM) {
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-		} else if(c.dir == OpDir.LEFT) {
+		} else if(c.operation == OpDir.LEFT) {
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
 		} else {
 			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
@@ -1290,9 +1290,9 @@ public class ClassFileBuilder {
 	public void translate(Code.SetIntersect c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype;
-		if(c.dir == OpDir.UNIFORM) {
+		if(c.operation == OpDir.UNIFORM) {
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-		} else if(c.dir == OpDir.LEFT) {
+		} else if(c.operation == OpDir.LEFT) {
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
 		} else {
 			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
@@ -1304,7 +1304,7 @@ public class ClassFileBuilder {
 	public void translate(Code.SetDifference c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype;
-		if(c.dir == OpDir.UNIFORM) {
+		if(c.operation == OpDir.UNIFORM) {
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
 		} else {
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
@@ -1316,9 +1316,9 @@ public class ClassFileBuilder {
 	public void translate(Code.StringAppend c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType.Function ftype;
-		if(c.dir == OpDir.UNIFORM) {
+		if(c.operation == OpDir.UNIFORM) {
 			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_STRING);
-		} else if(c.dir == OpDir.LEFT) {
+		} else if(c.operation == OpDir.LEFT) {
 			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,T_CHAR);				
 		} else {
 			ftype = new JvmType.Function(JAVA_LANG_STRING,T_CHAR,JAVA_LANG_STRING);				

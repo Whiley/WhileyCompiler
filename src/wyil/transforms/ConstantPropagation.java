@@ -701,16 +701,16 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value result = null;
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
-		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+		if (code.operation == OpDir.UNIFORM && lhs instanceof Value.Set
 				&& rhs instanceof Value.Set) {
 			Value.Set lv = (Value.Set) lhs;
 			Value.Set rv = (Value.Set) rhs;
 			result = lv.union(rv);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set) {
+		} else if(code.operation == OpDir.LEFT && lhs instanceof Value.Set) {
 			Value.Set lv = (Value.Set) lhs;
 			Value rv = (Value) rhs;
 			result = lv.add(rv);
-		} else if(code.dir == OpDir.RIGHT && rhs instanceof Value.Set) {
+		} else if(code.operation == OpDir.RIGHT && rhs instanceof Value.Set) {
 			Value lv = (Value) lhs;
 			Value.Set rv = (Value.Set) rhs;
 			result = rv.add(lv);
@@ -730,12 +730,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
-		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+		if (code.operation == OpDir.UNIFORM && lhs instanceof Value.Set
 				&& rhs instanceof Value.Set) {
 			Value.Set lv = (Value.Set) lhs;
 			Value.Set rv = (Value.Set) rhs;
 			result = lv.intersect(rv);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
+		} else if(code.operation == OpDir.LEFT && lhs instanceof Value.Set
 				&& rhs instanceof Value) {
 			Value.Set lv = (Value.Set) lhs;
 			Value rv = (Value) rhs;
@@ -746,7 +746,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			} else {
 				result = Value.V_SET(Collections.EMPTY_SET);
 			}
-		} else if(code.dir == OpDir.RIGHT && rhs instanceof Value.Set) {
+		} else if(code.operation == OpDir.RIGHT && rhs instanceof Value.Set) {
 			Value lv = (Value) lhs;
 			Value.Set rv = (Value.Set) rhs;
 			if(rv.values.contains(lv)) {
@@ -772,12 +772,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
 		
-		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+		if (code.operation == OpDir.UNIFORM && lhs instanceof Value.Set
 				&& rhs instanceof Value.Set) {
 			Value.Set lv = (Value.Set) lhs;
 			Value.Set rv = (Value.Set) rhs;
 			result = lv.difference(rv);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set) {
+		} else if(code.operation == OpDir.LEFT && lhs instanceof Value.Set) {
 			Value.Set lv = (Value.Set) lhs;
 			Value rv = (Value) rhs;
 			result = lv.remove(rv);
@@ -796,13 +796,13 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
 		Value result = null;
-		if(code.dir == OpDir.UNIFORM && lhs instanceof Value.Strung && rhs instanceof Value.Strung) {
+		if(code.operation == OpDir.UNIFORM && lhs instanceof Value.Strung && rhs instanceof Value.Strung) {
 			Value.Strung left = (Value.Strung) lhs;
 			Value.Strung right = (Value.Strung) rhs;
 			result = Value.V_STRING(left.value + right.value);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Strung && rhs instanceof Value) {
+		} else if(code.operation == OpDir.LEFT && lhs instanceof Value.Strung && rhs instanceof Value) {
 			// TODO: need to add Value.Char
-		} else if(code.dir == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.Strung) {
+		} else if(code.operation == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.Strung) {
 			// TODO: need to add Value.Char					
 		} 
 		
