@@ -2402,7 +2402,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.NewDict(type, target, operands);
+			return Code.NewDict(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2433,31 +2433,24 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewRecord extends Code {
-		public final Type.Record type;
-
-		private NewRecord(Type.Record type) {
-			this.type = type;
+	public static final class NewRecord extends AbstractNaryOp<Type.Record> {
+		private NewRecord(Type.Record type, int target, int[] operands) {
+			super(type,target, operands);
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 952;
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewRecord(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof NewRecord) {
-				NewRecord i = (NewRecord) o;
-				return type == i.type || (type != null && type.equals(i.type));
+				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("newrec", type);
+			return toString("newrecord", type);
 		}
 	}
 
@@ -2477,82 +2470,63 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewTuple extends Code {
-		public final Type.Tuple type;
-		public final int nargs;
+	public static final class NewTuple extends AbstractNaryOp<Type.Tuple> {
 
-		private NewTuple(Type.Tuple type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+		private NewTuple(Type.Tuple type, int target, int[] operands) {
+			super(type,target,operands);
 		}
-
-		public int hashCode() {
-			if (type == null) {
-				return nargs;
-			} else {
-				return type.hashCode() + nargs;
-			}
+		
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewTuple(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof NewTuple) {
-				NewTuple i = (NewTuple) o;
-				return nargs == i.nargs
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("newtuple #" + nargs, type);
+			return toString("newtuple", type);
 		}
 	}
 
 	/**
-	 * Constructs a new set value from zero or more values on the stack. The new
-	 * set is load onto the stack. For example:
+	 * Constructs a new set value from zero or more register operands. The new
+	 * set is written to the target register. For example:
 	 * 
 	 * <pre>
-	 *     const 1 : int                           
-	 *     const 2 : int                           
-	 *     const 3 : int                           
-	 *     newset #3 : {int}
+	 *     int %1 = 1                            
+	 *     int %2 = 2                           
+	 *     int %3 = 3                           
+	 *     {int} %4 = newset %1,%2,%3
 	 * </pre>
 	 * 
-	 * Pushes the set value <code>{1,2,3}</code> onto the stack.
+	 * Writes the set value <code>{1,2,3}</code> into register %4.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewSet extends Code {
-		public final Type.Set type;
-		public final int nargs;
+	public static final class NewSet extends AbstractNaryOp<Type.Set> {
 
-		private NewSet(Type.Set type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+		private NewSet(Type.Set type, int target, int[] operands) {
+			super(type,target,operands);
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return nargs;
-			} else {
-				return type.hashCode();
-			}
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewSet(type, nTarget, nOperands);
 		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof NewSet) {
-				NewSet i = (NewSet) o;
-				return type == i.type || (type != null && type.equals(i.type))
-						&& nargs == i.nargs;
+				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("newset #" + nargs, type);
+			return toString("newset", type);
 		}
 	}
 
@@ -2573,37 +2547,35 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewList extends Code {
-		public final Type.List type;
-		public final int nargs;
+	public static final class NewList extends AbstractNaryOp<Type.List> {
 
-		private NewList(Type.List type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+		private NewList(Type.List type, int target, int[] operands) {
+			super(type,target,operands);
 		}
-
-		public int hashCode() {
-			if (type == null) {
-				return nargs;
-			} else {
-				return type.hashCode();
-			}
-		}
+		
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewList(type, nTarget, nOperands);
+		}		
 
 		public boolean equals(Object o) {
 			if (o instanceof NewList) {
-				NewList i = (NewList) o;
-				return type == i.type || (type != null && type.equals(i.type))
-						&& nargs == i.nargs;
+				return super.equals(operands);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("newlist #" + nargs, type);
+			return toString("newlist", type);
 		}
 	}
 
+	/**
+	 * Represents a no-operation bytecode which, as the name suggests, does
+	 * nothing.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Nop extends Code {
 		private Nop() {
 		}
@@ -2615,23 +2587,42 @@ public abstract class Code {
 
 	public static final class Return extends Code {
 		public final Type type;
+		public final int operand;
 
-		private Return(Type type) {
+		private Return(Type type, int operand) {
+			if (type == Type.T_VOID && operand != -1) {
+				throw new IllegalArgumentException(
+						"Return with void type cannot have target register.");
+			} else if (type != Type.T_VOID && operand == -1) {
+				throw new IllegalArgumentException(
+						"Return with non-void type must have target register.");
+			}
 			this.type = type;
+			this.operand = operand;
 		}
 
-		public int hashCode() {
-			if (type == null) {
-				return 996;
-			} else {
-				return type.hashCode();
+		public void slots(Set<Integer> slots) {
+			if(operand != -1) {
+				slots.add(operand);
 			}
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if(nOperand != null) {
+				return new Return(type,nOperand);
+			}
+			return this;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + operand;
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Return) {
 				Return i = (Return) o;
-				return type == i.type || (type != null && type.equals(i.type));
+				return type.equals(i.type) && operand == i.operand;
 			}
 			return false;
 		}
