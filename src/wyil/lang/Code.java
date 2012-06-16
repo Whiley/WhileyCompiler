@@ -160,12 +160,12 @@ public abstract class Code {
 	public static Goto Goto(String label) {
 		return get(new Goto(label));
 	}
-	
+
 	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
-			Collection<Integer> operands, NameID name) {		
+			Collection<Integer> operands, NameID name) {
 		return get(new Invoke(fun, target, toIntArray(operands), name));
 	}
-	
+
 	private static Invoke Invoke(Type.FunctionOrMethod fun, int target,
 			int[] operands, NameID name) {
 		return get(new Invoke(fun, target, operands, name));
@@ -208,7 +208,7 @@ public abstract class Code {
 		return get(new IndexOf(type, target, leftOperand, rightOperand));
 	}
 
-	public static Loop Loop(String label, Collection<Integer> operands) {		
+	public static Loop Loop(String label, Collection<Integer> operands) {
 		return get(new Loop(label, toIntArray(operands)));
 	}
 
@@ -216,16 +216,17 @@ public abstract class Code {
 		return get(new Loop(label, modifies));
 	}
 
-	public static ForAll ForAll(Type.EffectiveCollection type, int indexOperand,
-			Collection<Integer> modifiedOperands, String label) {		
-		return get(new ForAll(type, indexOperand, toIntArray(modifiedOperands), label));
+	public static ForAll ForAll(Type.EffectiveCollection type,
+			int indexOperand, Collection<Integer> modifiedOperands, String label) {
+		return get(new ForAll(type, indexOperand, toIntArray(modifiedOperands),
+				label));
 	}
 
 	private static ForAll ForAll(Type.EffectiveCollection type,
 			int indexOperand, int[] modifiedOperands, String label) {
 		return get(new ForAll(type, indexOperand, modifiedOperands, label));
 	}
-	
+
 	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new
 	 * dictionary and puts it on the stack.
@@ -237,7 +238,7 @@ public abstract class Code {
 			Collection<Integer> operands) {
 		return get(new NewDict(type, target, toIntArray(operands)));
 	}
-	
+
 	public static NewDict NewDict(Type.Dictionary type, int target,
 			int[] operands) {
 		return get(new NewDict(type, target, operands));
@@ -307,7 +308,7 @@ public abstract class Code {
 		return get(new IndirectSend(msg, synchronous, target, operand,
 				toIntArray(operands)));
 	}
-	
+
 	private static IndirectSend IndirectSend(Type.Message msg,
 			boolean synchronous, int target, int operand, int[] operands) {
 		return get(new IndirectSend(msg, synchronous, target, operand, operands));
@@ -318,7 +319,7 @@ public abstract class Code {
 		return get(new IndirectInvoke(fun, target, operand,
 				toIntArray(operands)));
 	}
-	
+
 	private static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
 			int target, int operand, int[] operands) {
 		return get(new IndirectInvoke(fun, target, operand, operands));
@@ -505,6 +506,15 @@ public abstract class Code {
 	// Abstract Bytecodes
 	// ===============================================================
 
+	/**
+	 * Represents the set of bytcodes which take a single register operand and
+	 * write a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
 	private static abstract class AbstractUnOp<T> extends Code {
 		public final T type;
 		public final int target;
@@ -554,6 +564,15 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Represents the set of bytcodes which take two register operands and write
+	 * a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
 	private static abstract class AbstractBinOp<T> extends Code {
 		public final T type;
 		public final int target;
@@ -614,11 +633,20 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Represents the set of bytcodes which take an arbitrary number of register
+	 * operands and write a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
 	private static abstract class AbstractNaryOp<T> extends Code {
 		public final T type;
 		public final int target;
 		public final int[] operands;
-		
+
 		private AbstractNaryOp(T type, int target, int[] operands) {
 			if (type == null) {
 				throw new IllegalArgumentException(
@@ -631,8 +659,10 @@ public abstract class Code {
 
 		@Override
 		public final void slots(Set<Integer> slots) {
-			if(target >= 0) { slots.add(target); }
-			for(int i=0;i!=operands.length;++i) {
+			if (target >= 0) {
+				slots.add(target);
+			}
+			for (int i = 0; i != operands.length; ++i) {
 				slots.add(operands[i]);
 			}
 		}
@@ -640,7 +670,7 @@ public abstract class Code {
 		@Override
 		public final Code remap(Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
-			int[] nOperands = remap(binding,operands);
+			int[] nOperands = remap(binding, operands);
 			if (nTarget != null || nOperands != operands) {
 				nTarget = nTarget != null ? nTarget : target;
 				return clone(nTarget, nOperands);
@@ -664,6 +694,16 @@ public abstract class Code {
 			return false;
 		}
 	}
+
+	/**
+	 * Represents the set of bytcodes which take two register operands and
+	 * perform a comparison of their values.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
 	private static abstract class AbstractBinCond<T> extends Code {
 		public final T type;
 		public final int leftOperand;
@@ -715,7 +755,7 @@ public abstract class Code {
 			return false;
 		}
 	}
-	
+
 	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================
@@ -1550,7 +1590,7 @@ public abstract class Code {
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding,operands);
+			int[] nOperands = remap(binding, operands);
 			Integer nTarget = binding.get(target);
 			Integer nOperand = binding.get(operand);
 			if (nOperands != operands || nTarget != null || nOperand != null) {
@@ -1591,6 +1631,13 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Represents the boolean not expression which reads a boolean operand,
+	 * inverts its value and writes back to a target regiseter.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Not extends AbstractUnOp<Type.Bool> {
 
 		private Not(int target, int operand) {
@@ -1703,8 +1750,8 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops two lists from the stack, appends them together and pushes the
-	 * result back onto the stack.
+	 * Reads the (effective) list values from two operand registers, appends
+	 * them and write the result back to a target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1747,7 +1794,8 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops a list from the stack and pushes its length back on.
+	 * Reads an (effective) collection from the operand register, and writes its
+	 * length into the target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1774,6 +1822,14 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Reads the (effective) list value from a source operand register, and the
+	 * integer values from two index operand registers, computes the sublist and
+	 * writes the result back to a target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class SubList extends Code {
 		public final Type.EffectiveList type;
 		public final int target;
@@ -1842,18 +1898,28 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops am integer index from the stack, followed by a list and pushes the
-	 * element at the given index back on.
+	 * Reads an effective map from the source (left) operand register, and a key
+	 * value from the key (right) operand register and returns the value
+	 * associated with that key in the map. If the key does not exist, then a
+	 * fault is raised.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class IndexOf extends AbstractBinOp<Type.EffectiveMap> {
-		private IndexOf(Type.EffectiveMap type, int target, int leftOperand,
-				int rightOperand) {
-			super(type, target, leftOperand, rightOperand);
+		private IndexOf(Type.EffectiveMap type, int target, int sourceOperand,
+				int keyOperand) {
+			super(type, target, sourceOperand, keyOperand);
 		}
 
+		public int sourceOperand() {
+			return leftOperand;
+		}
+		
+		public int keyOperand() {
+			return rightOperand;
+		}
+		
 		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return Code.IndexOf(type, nTarget, nLeftOperand, nRightOperand);
 		}
@@ -1883,13 +1949,13 @@ public abstract class Code {
 	public static final class Move extends AbstractUnOp<Type> {
 
 		private Move(Type type, int target, int operand) {
-			super(type,target,operand);
+			super(type, target, operand);
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.Move(type, nTarget,nOperand);		
+			return Code.Move(type, nTarget, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Move) {
 				return super.equals(o);
@@ -1910,7 +1976,7 @@ public abstract class Code {
 			this.target = target;
 			this.modifiedOperands = modifies;
 		}
-		
+
 		public Loop relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
 			if (nlabel == null) {
@@ -1920,24 +1986,23 @@ public abstract class Code {
 			}
 		}
 
-
 		@Override
 		public void slots(Set<Integer> slots) {
 			for (int operand : modifiedOperands) {
 				slots.add(operand);
-			}			
+			}
 		}
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding,modifiedOperands);
+			int[] nOperands = remap(binding, modifiedOperands);
 			if (nOperands != modifiedOperands) {
-				return Code.Loop(target,nOperands);
+				return Code.Loop(target, nOperands);
 			} else {
 				return this;
 			}
 		}
-		
+
 		public int hashCode() {
 			return target.hashCode() + Arrays.hashCode(modifiedOperands);
 		}
@@ -1945,7 +2010,8 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop f = (Loop) o;
-				return target.equals(f.target) && Arrays.equals(modifiedOperands,f.modifiedOperands);
+				return target.equals(f.target)
+						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
 			}
 			return false;
 		}
@@ -2017,7 +2083,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return toString("forall " + indexOperand + " " + modifiedOperands, (Type) type);
+			return toString("forall " + indexOperand + " " + modifiedOperands,
+					(Type) type);
 		}
 	}
 
@@ -2337,7 +2404,7 @@ public abstract class Code {
 		protected Code clone(int nTarget, int[] nOperands) {
 			return Code.NewDict(type, target, operands);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof NewDict) {
 				return super.equals(o);
@@ -3260,7 +3327,7 @@ public abstract class Code {
 			return str + " : " + before + " => " + after;
 		}
 	}
-	
+
 	private static int[] toIntArray(Collection<Integer> operands) {
 		int[] ops = new int[operands.size()];
 		int i = 0;
@@ -3270,7 +3337,7 @@ public abstract class Code {
 		return ops;
 	}
 
-	private static int[] remap(Map<Integer,Integer> binding, int[] operands) {
+	private static int[] remap(Map<Integer, Integer> binding, int[] operands) {
 		int[] nOperands = operands;
 		for (int i = 0; i != nOperands.length; ++i) {
 			int o = operands[i];
@@ -3284,7 +3351,7 @@ public abstract class Code {
 		}
 		return nOperands;
 	}
-	
+
 	private static final ArrayList<Code> values = new ArrayList<Code>();
 	private static final HashMap<Code, Integer> cache = new HashMap<Code, Integer>();
 
