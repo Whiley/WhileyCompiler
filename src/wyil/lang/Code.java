@@ -190,9 +190,9 @@ public abstract class Code {
 				rightOperand));
 	}
 
-	public static ListAppend ListAppend(Type.EffectiveList type, int target,
-			int leftOperand, int rightOperand, OpDir dir) {
-		return get(new ListAppend(type, target, leftOperand, rightOperand, dir));
+	public static ListOp ListOp(Type.EffectiveList type, int target,
+			int leftOperand, int rightOperand, ListOperation dir) {
+		return get(new ListOp(type, target, leftOperand, rightOperand, dir));
 	}
 
 	/**
@@ -400,9 +400,15 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Message meth, NameID name,
-			boolean synchronous, boolean retval) {
-		return get(new Send(meth, name, synchronous, retval));
+	public static Send Send(Type.Message meth, int target,
+			Collection<Integer> operands, NameID name, boolean synchronous) {
+		return get(new Send(meth, target, toIntArray(operands), name,
+				synchronous));
+	}
+	
+	private static Send Send(Type.Message meth, int target, int[] operands,
+			NameID name, boolean synchronous) {
+		return get(new Send(meth, target, operands, name, synchronous));
 	}
 
 	/**
@@ -417,9 +423,9 @@ public abstract class Code {
 	 *            --- map from values to destination labels.
 	 * @return
 	 */
-	public static Switch Switch(Type type, String defaultLabel,
+	public static Switch Switch(Type type, int operand, String defaultLabel,
 			Collection<Pair<Value, String>> cases) {
-		return get(new Switch(type, defaultLabel, cases));
+		return get(new Switch(type, operand, defaultLabel, cases));
 	}
 
 	/**
@@ -1775,6 +1781,25 @@ public abstract class Code {
 		}
 	}
 
+	public enum ListOperation {
+		LEFT_APPEND {
+			public String toString() {
+				return "listappend_l";
+			}
+		},
+		RIGHT_APPEND {
+			public String toString() {
+				return "listappend_r";
+			}
+		},
+		APPEND {
+			public String toString() {
+				return "listappend";
+			}
+		}
+	}
+
+	
 	/**
 	 * Reads the (effective) list values from two operand registers, appends
 	 * them and write the result back to a target register.
@@ -1782,40 +1807,40 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ListAppend extends
+	public static final class ListOp extends
 			AbstractBinOp<Type.EffectiveList> {
-		public final OpDir dir;
+		public final ListOperation operation;
 
-		private ListAppend(Type.EffectiveList type, int target,
-				int leftOperand, int rightOperand, OpDir dir) {
+		private ListOp(Type.EffectiveList type, int target, int leftOperand,
+				int rightOperand, ListOperation operation) {
 			super(type, target, leftOperand, rightOperand);
-			if (dir == null) {
+			if (operation == null) {
 				throw new IllegalArgumentException(
 						"ListAppend direction cannot be null");
 			}
-			this.dir = dir;
+			this.operation = operation;
 		}
 
 		@Override
 		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.ListAppend(type, nTarget, nLeftOperand, nRightOperand,
-					dir);
+			return Code.ListOp(type, nTarget, nLeftOperand, nRightOperand,
+					operation);
 		}
 
 		public int hashCode() {
-			return super.hashCode() + dir.hashCode();
+			return super.hashCode() + operation.hashCode();
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof ListAppend) {
-				ListAppend setop = (ListAppend) o;
-				return super.equals(setop) && dir.equals(setop.dir);
+			if (o instanceof ListOp) {
+				ListOp setop = (ListOp) o;
+				return super.equals(setop) && operation.equals(setop.operation);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("listappend" + dir.toString(), (Type) type);
+			return toString(operation.toString(), (Type) type);
 		}
 	}
 
@@ -2887,9 +2912,9 @@ public abstract class Code {
 
 			String nlabel = labels.get(defaultTarget);
 			if (nlabel == null) {
-				return Switch(type, defaultTarget, nbranches);
+				return Code.Switch(type, operand, defaultTarget, nbranches);
 			} else {
-				return Switch(type, nlabel, nbranches);
+				return Code.Switch(type, operand, nlabel, nbranches);
 			}
 		}
 
@@ -2939,55 +2964,20 @@ public abstract class Code {
 		
 	}
 
-	public static final class Send extends Code {
+	public static final class Send extends AbstractNaryOp<Type.Message> {
 		public final boolean synchronous;
 		public final NameID name;
-		public final Type.Message type;
-		public final int target;
-		public final int receiver;
-		public final int[] operands;
 		
-		private Send(Type.Message type, int target, int receiver,
+		private Send(Type.Message type, int target, 
 				int[] operands, NameID name, boolean synchronous) {
-			this.type = type;
+			super(type,target,operands);
 			this.name = name;
 			this.synchronous = synchronous;
-			this.target = target;
-			this.receiver = receiver;
-			this.operands = operands;
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {
-			for (int operand : operands) {
-				slots.add(operand);
-			}
-			if (target >= 0) {
-				slots.add(target);
-			}
-			slots.add(receiver);
-		}
-
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding, operands);
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(receiver);
-			if (nOperands != operands || nTarget != null || nOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : receiver;
-				return Send(type, nTarget, nOperand,
-						nOperands, synchronous);
-			} else {
-				return this;
-			}
-		}
-
-
-
-		public int hashCode() {
-			return type.hashCode() + name.hashCode() + target + receiver
-					+ Arrays.hashCode(operands);
+		public Code clone(int nTarget, int[] nOperands) {
+			return Send(type, nTarget, nOperands, name, synchronous);			
 		}
 
 		public boolean equals(Object o) {
@@ -2995,9 +2985,7 @@ public abstract class Code {
 				Send i = (Send) o;
 				return synchronous == i.synchronous
 						&& type.equals(i.type) && name.equals(i.name)
-						&& receiver == i.receiver 
-						&& target == i.target 
-						&& Arrays.equals(operands, i.operands);
+						&& super.equals(o);
 			}
 			return false;
 		}
@@ -3249,7 +3237,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.TupleLoad(type, target, operand);
+			return Code.TupleLoad(type, nTarget, nOperand, index);
 		}
 
 		public boolean equals(Object o) {
@@ -3306,8 +3294,6 @@ public abstract class Code {
 
 		private Void(Type type, int[] operands) {
 			super(type, -1, operands);
-			this.type = type;
-			this.operands = operands;
 		}
 
 		protected Code clone(int nTarget, int[] operands) {
