@@ -430,8 +430,6 @@ public class ClassFileBuilder {
 				translate((Const) code, freeSlot, constants, bytecodes);
 			} else if(code instanceof Debug) {
 				 translate((Debug)code,freeSlot,bytecodes);
-			} else if(code instanceof Destructure) {
-				 translate((Destructure)code,freeSlot,bytecodes);
 			} else if(code instanceof LoopEnd) {
 				 translate((LoopEnd)code,freeSlot,bytecodes);
 			} else if(code instanceof Assert) {
@@ -457,16 +455,16 @@ public class ClassFileBuilder {
 				 translate((Invert)code,freeSlot,bytecodes);
 			} else if(code instanceof Label) {
 				translate((Label)code,freeSlot,bytecodes);
-			} else if(code instanceof ListAppend) {
-				 translate((ListAppend)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof ListOp) {
+				 translate((ListOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof LengthOf) {
 				 translate((LengthOf)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SubList) {
 				 translate((SubList)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof IndexOf) {
 				 translate((IndexOf)code,freeSlot,bytecodes);
-			} else if(code instanceof Load) {
-				 translate((Load)code,freeSlot,bytecodes);
+			} else if(code instanceof Copy) {
+				 translate((Copy)code,freeSlot,bytecodes);
 			} else if(code instanceof Loop) {
 				 translate((Loop)code,freeSlot,bytecodes);
 			} else if(code instanceof Move) {
@@ -489,22 +487,16 @@ public class ClassFileBuilder {
 				 translate((Dereference)code,freeSlot,bytecodes);
 			} else if(code instanceof Return) {
 				 translate((Return)code,freeSlot,bytecodes);
-			} else if(code instanceof Skip) {
+			} else if(code instanceof Nop) {
 				// do nothing
 			} else if(code instanceof Send) {
 				 translate((Send)code,freeSlot,bytecodes);
-			} else if(code instanceof SetUnion) {
-				 translate((SetUnion)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof SetIntersect) {
-				 translate((SetIntersect)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof SetDifference) {
-				 translate((SetDifference)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof StringAppend) {
-				 translate((StringAppend)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof SetOp) {
+				 translate((SetOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof StringOp) {
+				 translate((StringOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof SubString) {
 				 translate((SubString)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof Store) {
-				 translate((Store)code,freeSlot,bytecodes);
 			} else if(code instanceof Switch) {
 				 translate((Switch)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof TryCatch) {
@@ -548,17 +540,10 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.Convert c, int freeSlot,
-			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {		
-		addCoercion(c.from,c.result,freeSlot,constants,bytecodes);		
+			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+		addCoercion(c.type, c.result, freeSlot, constants, bytecodes);
 	}
 	
-	
-	public void translate(Code.Store c, int freeSlot,			
-			ArrayList<Bytecode> bytecodes) {		
-		JvmType type = convertType(c.type);
-		bytecodes.add(new Bytecode.Store(c.slot, type));				
-	}
-
 	public void translate(Code.Update code, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 
@@ -970,28 +955,28 @@ public class ClassFileBuilder {
 	public void translate(Code.IfType c, Entry stmt, int freeSlot,
 			HashMap<Constant,Integer> constants, ArrayList<Bytecode> bytecodes) {						
 		
-		if(c.slot >= 0) {
+		if(c.leftOperand >= 0) {
 			// In this case, we're updating the type of a local variable. To
 			// make this work, we must update the JVM type of that slot as well
 			// using a checkcast. 
 			String exitLabel = freshLabel();
 			String trueLabel = freshLabel();
 					
-			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
 			translateTypeTest(trueLabel, c.type, c.rightOperand, bytecodes, constants);
 
 			Type gdiff = Type.intersect(c.type,Type.Negation(c.rightOperand));			
-			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
 			// now, add checkcast									
 			addReadConversion(gdiff,bytecodes);			
-			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
+			bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));			
 			Type glb = Type.intersect(c.type, c.rightOperand);			
-			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
 			// now, add checkcast						
 			addReadConversion(glb,bytecodes);
-			bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
+			bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(glb)));			
 			bytecodes.add(new Bytecode.Goto(c.target));
 			bytecodes.add(new Bytecode.Label(exitLabel));
 		} else {
@@ -1098,42 +1083,6 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 	}
 	
-	public void translate(Code.Destructure code, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		
-		if(code.type instanceof Type.EffectiveTuple) {
-			Type.EffectiveTuple t = (Type.EffectiveTuple) code.type;
-			List<Type> elements = t.elements();
-			for(int i=0;i!=elements.size();++i) {
-				Type elem = elements.get(i);
-				if((i+1) != elements.size()) {
-					bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
-				}
-				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);
-				bytecodes.add(new Bytecode.LoadConst(i));
-				// TODO: turn into static method call
-				// NOTE: this is interesting since we should really be
-				// decrementing the reference count. However, it's safe not to
-				// do this since the destructure is "consuming" the tuple
-				// anyway.
-				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", ftype,
-						Bytecode.VIRTUAL));
-				addReadConversion(elem,bytecodes);
-				if((i+1) != elements.size()) {
-					bytecodes.add(new Bytecode.Swap());
-				}
-			}
-		} else {
-			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
-			JvmType.Function ftype = new JvmType.Function(BIG_INTEGER);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "numerator", ftype,
-					Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Swap());
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "denominator", ftype,
-					Bytecode.VIRTUAL));
-		}		
-	}
-	
 	public void translate(Code.Assert c, Block.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		String lab = freshLabel();
@@ -1148,31 +1097,31 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(lab));
 	}
 	
-	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.indexOperand, convertType(c.type)));
+	public void translate(Code.Copy c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
 		addIncRefs(c.type,bytecodes);
 	}
 	
 	public void translate(Code.Move c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
 		// a move does not need to increment the reference count, since the
 		// register is no longer usable after this point.
 		
 		// TODO: the following codes are not strictly necessary, and clearly
 		// lead to less efficient bytecode. Therefore, at some point, they
-		// should be remove. However, they do provide useful debugging code to
+		// should be removed. However, they do provide useful debugging code to
 		// check that the Move bytecode is, in fact, doing what it should (i.e.
 		// the register in question is actually dead).
 		bytecodes.add(new Bytecode.LoadConst(1.0F));
-		bytecodes.add(new Bytecode.Store(c.slot, T_FLOAT));
+		bytecodes.add(new Bytecode.Store(c.operand, T_FLOAT));
 	}
 		
-	public void translate(Code.ListAppend c, Entry stmt, int freeSlot,
+	public void translate(Code.ListOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType.Function ftype;
-		if(c.dir == OpDir.UNIFORM) {
+		if(c.operation == ListOperation.APPEND) {
 			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,WHILEYLIST);
-		} else if(c.dir == OpDir.LEFT) {			
+		} else if(c.operation == ListOperation.LEFT_APPEND) {			
 			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,JAVA_LANG_OBJECT);
 		} else {
 			ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_OBJECT,WHILEYLIST);
@@ -1273,56 +1222,70 @@ public class ClassFileBuilder {
 		}		
 	}
 
-	public void translate(Code.SetUnion c, Entry stmt, int freeSlot,
+	public void translate(Code.SetOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype;
-		if(c.operation == OpDir.UNIFORM) {
+		String operation;
+		switch(c.operation) {
+		case UNION: 
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-		} else if(c.operation == OpDir.LEFT) {
+			operation = "union";
+			break;
+		case LEFT_UNION:
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
-		} else {
+			operation = "union";
+			break;
+		case RIGHT_UNION:
 			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
-		}													
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
+			operation = "union";
+			break;
+		case INTERSECTION: 
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
+			operation = "intersect";
+			break;
+		case LEFT_INTERSECTION:
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
+			operation = "intersect";
+			break;
+		case RIGHT_INTERSECTION:
+			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
+			operation = "intersect";
+			break;
+		case DIFFERENCE: 
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
+			operation = "difference";
+			break;
+		case LEFT_DIFFERENCE:
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
+			operation = "difference";
+			break;
+		default:
+			internalFailure("Unknown set operation encountered: ",filename,stmt);
+			return; // dead-code
+		}
+					
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, operation, ftype,
 				Bytecode.STATIC));				
 	}	
-	
-	public void translate(Code.SetIntersect c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {		
-		JvmType.Function ftype;
-		if(c.operation == OpDir.UNIFORM) {
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-		} else if(c.operation == OpDir.LEFT) {
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
-		} else {
-			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
-		}													
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect", ftype,
-				Bytecode.STATIC));
-	}
-	
-	public void translate(Code.SetDifference c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {		
-		JvmType.Function ftype;
-		if(c.operation == OpDir.UNIFORM) {
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-		} else {
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
-		} 												
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
-				Bytecode.STATIC));
-	}
 		
-	public void translate(Code.StringAppend c, Entry stmt, int freeSlot,
+	public void translate(Code.StringOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType.Function ftype;
-		if(c.operation == OpDir.UNIFORM) {
+		switch(c.operation) {
+		case APPEND:
 			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_STRING);
-		} else if(c.operation == OpDir.LEFT) {
-			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,T_CHAR);				
-		} else {
-			ftype = new JvmType.Function(JAVA_LANG_STRING,T_CHAR,JAVA_LANG_STRING);				
-		}													
+			break;
+		case LEFT_APPEND:
+			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,T_CHAR);			
+			break;
+		case RIGHT_APPEND:
+			ftype = new JvmType.Function(JAVA_LANG_STRING,T_CHAR,JAVA_LANG_STRING);			
+			break;
+		default:
+			internalFailure("Unknown string operation encountered: ",filename,stmt);
+			return; // dead-code
+		}
+		
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
 				Bytecode.STATIC));
 	}
@@ -1382,7 +1345,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(freeSlot, WHILEYMAP));
 		JvmType valueT = convertType(c.type.value());
 
-		for (int i = 0; i != c.nargs; ++i) {
+		for (int i = 0; i != c.operands.length; ++i) {
 			bytecodes.add(new Bytecode.Store(freeSlot + 1, valueT));
 			bytecodes.add(new Bytecode.Load(freeSlot, WHILEYMAP));
 			bytecodes.add(new Bytecode.Swap());
@@ -1400,13 +1363,13 @@ public class ClassFileBuilder {
 	protected void translate(Code.NewList c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(WHILEYLIST));		
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
-		bytecodes.add(new Bytecode.LoadConst(c.nargs));
+		bytecodes.add(new Bytecode.LoadConst(c.operands.length));
 		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
 				Bytecode.SPECIAL));
 		
 		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, JAVA_LANG_OBJECT);		
-		for(int i=0;i!=c.nargs;++i) {			
+		for(int i=0;i!=c.operands.length;++i) {			
 			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(c.type.element(),bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_add", ftype,
@@ -1460,7 +1423,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(WHILEYSET,
 				WHILEYSET,JAVA_LANG_OBJECT);
 		
-		for(int i=0;i!=c.nargs;++i) {
+		for(int i=0;i!=c.operands.length;++i) {
 			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(c.type.element(),bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"internal_add",ftype,Bytecode.STATIC));
@@ -1510,7 +1473,7 @@ public class ClassFileBuilder {
 
 		// now, handle the case of an invoke which returns a value that should
 		// be discarded. 
-		if(!c.retval && c.type.ret() != Type.T_VOID) {
+		if(c.target >= 0 && c.type.ret() != Type.T_VOID) {
 			bytecodes.add(new Bytecode.Pop(convertType(c.type.ret())));
 		}
 	}
@@ -1593,7 +1556,7 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
-		if (c.synchronous && c.retval) {			
+		if (c.synchronous && c.target >= 0) {			
 			ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,
@@ -1642,7 +1605,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Swap());
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
-		if (c.synchronous && c.retval) {			
+		if (c.synchronous && c.target >= 0) {			
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,

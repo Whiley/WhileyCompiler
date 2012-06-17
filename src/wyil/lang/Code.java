@@ -2719,11 +2719,6 @@ public abstract class Code {
 				return "difference_l";
 			}
 		},
-		RIGHT_DIFFERENCE {
-			public String toString() {
-				return "difference_r";
-			}
-		},
 		DIFFERENCE {
 			public String toString() {
 				return "difference";
