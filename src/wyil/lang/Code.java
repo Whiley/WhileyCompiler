@@ -3146,7 +3146,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.Negate(type, target, operand);
+			return Code.Negate(type, nTarget, nOperand);
 		}
 		
 		public boolean equals(Object o) {
@@ -3182,7 +3182,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.Invert(type, target, operand);
+			return Code.Invert(type, nTarget, nOperand);
 		}
 		
 		public boolean equals(Object o) {
@@ -3211,7 +3211,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.New(type, target, operand);
+			return Code.New(type, nTarget, nOperand);
 		}
 		
 		public boolean equals(Object o) {
@@ -3267,7 +3267,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.Dereference(type, target, operand);
+			return Code.Dereference(type, nTarget, nOperand);
 		}
 
 		public boolean equals(Object o) {
@@ -3296,8 +3296,8 @@ public abstract class Code {
 			super(type, -1, operands);
 		}
 
-		protected Code clone(int nTarget, int[] operands) {
-			return Code.Void(type, operands);
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.Void(type, nOperands);
 		}
 
 		public boolean equals(Object o) {
