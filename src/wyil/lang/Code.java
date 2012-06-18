@@ -166,7 +166,7 @@ public abstract class Code {
 		return get(new Invoke(fun, target, toIntArray(operands), name));
 	}
 
-	private static Invoke Invoke(Type.FunctionOrMethod fun, int target,
+	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
 			int[] operands, NameID name) {
 		return get(new Invoke(fun, target, operands, name));
 	}
@@ -212,7 +212,7 @@ public abstract class Code {
 		return get(new Loop(label, toIntArray(operands)));
 	}
 
-	private static Loop Loop(String label, int[] modifies) {
+	public static Loop Loop(String label, int[] modifies) {
 		return get(new Loop(label, modifies));
 	}
 
@@ -222,7 +222,7 @@ public abstract class Code {
 				toIntArray(modifiedOperands), label));
 	}
 
-	private static ForAll ForAll(Type.EffectiveCollection type,
+	public static ForAll ForAll(Type.EffectiveCollection type,
 			int sourceOperand, int indexOperand, int[] modifiedOperands, String label) {
 		return get(new ForAll(type, sourceOperand, indexOperand,
 				modifiedOperands, label));
@@ -240,7 +240,7 @@ public abstract class Code {
 		return get(new NewDict(type, target, toIntArray(operands)));
 	}
 
-	private static NewDict NewDict(Type.Dictionary type, int target,
+	public static NewDict NewDict(Type.Dictionary type, int target,
 			int[] operands) {
 		return get(new NewDict(type, target, operands));
 	}
@@ -257,7 +257,7 @@ public abstract class Code {
 		return get(new NewSet(type, target, toIntArray(operands)));
 	}
 
-	private static NewSet NewSet(Type.Set type, int target, int[] operands) {
+	public static NewSet NewSet(Type.Set type, int target, int[] operands) {
 		return get(new NewSet(type, target, operands));
 	}
 
@@ -273,7 +273,7 @@ public abstract class Code {
 		return get(new NewList(type, target, toIntArray(operands)));
 	}
 	
-	private static NewList NewList(Type.List type, int target, int[] operands) {
+	public static NewList NewList(Type.List type, int target, int[] operands) {
 		return get(new NewList(type, target, operands));
 	}
 
@@ -289,7 +289,7 @@ public abstract class Code {
 		return get(new NewTuple(type, target, toIntArray(operands)));
 	}
 
-	private static NewTuple NewTuple(Type.Tuple type, int target, int[] operands) {
+	public static NewTuple NewTuple(Type.Tuple type, int target, int[] operands) {
 		return get(new NewTuple(type, target, operands));
 	}
 	
@@ -305,7 +305,7 @@ public abstract class Code {
 		return get(new NewRecord(type, target, toIntArray(operands)));
 	}
 	
-	private static NewRecord NewRecord(Type.Record type, int target,
+	public static NewRecord NewRecord(Type.Record type, int target,
 			int[] operands) {
 		return get(new NewRecord(type, target, operands));
 	}
@@ -351,7 +351,7 @@ public abstract class Code {
 				toIntArray(operands)));
 	}
 
-	private static IndirectSend IndirectSend(Type.Message msg,
+	public static IndirectSend IndirectSend(Type.Message msg,
 			boolean synchronous, int target, int operand, int[] operands) {
 		return get(new IndirectSend(msg, synchronous, target, operand, operands));
 	}
@@ -362,7 +362,7 @@ public abstract class Code {
 				toIntArray(operands)));
 	}
 
-	private static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
+	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
 			int target, int operand, int[] operands) {
 		return get(new IndirectInvoke(fun, target, operand, operands));
 	}
@@ -407,7 +407,7 @@ public abstract class Code {
 				synchronous));
 	}
 	
-	private static Send Send(Type.Message meth, int target, int[] operands,
+	public static Send Send(Type.Message meth, int target, int[] operands,
 			NameID name, boolean synchronous) {
 		return get(new Send(meth, target, operands, name, synchronous));
 	}
@@ -496,9 +496,16 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Update Update(Type beforeType, Type afterType, int slot,
-			int level, Collection<String> fields) {
-		return get(new Update(beforeType, afterType, slot, level, fields));
+	public static Update Update(Type beforeType, Type afterType, int target,
+			int operand, Collection<Integer> operands, Collection<String> fields) {
+		return get(new Update(beforeType, afterType, target, operand,
+				toIntArray(operands), fields));
+	}
+	
+	public static Update Update(Type beforeType, Type afterType, int target,
+			int operand, int[] operands, Collection<String> fields) {
+		return get(new Update(beforeType, afterType, target, operand, operands,
+				fields));
 	}
 
 	public static Void Void(Type type, int[] operands) {
@@ -2333,11 +2340,13 @@ public abstract class Code {
 	public static final class Update extends Code implements Iterable<LVal> {
 		public final Type beforeType;
 		public final Type afterType;
-		public final int level;
-		public final int slot;
+		public final int target;
+		public final int operand;
+		public final int[] operands;
 		public final ArrayList<String> fields;
 
-		private Update(Type beforeType, Type afterType, int slot, int level,
+		private Update(Type beforeType, Type afterType, int target,
+				int operand, int[] operands, 
 				Collection<String> fields) {
 			if (fields == null) {
 				throw new IllegalArgumentException(
@@ -2345,18 +2354,31 @@ public abstract class Code {
 			}
 			this.beforeType = beforeType;
 			this.afterType = afterType;
-			this.slot = slot;
-			this.level = level;
+			this.target = target;
+			this.operand = operand;
+			this.operands = operands;
 			this.fields = new ArrayList<String>(fields);
 		}
 
+		public int level() {
+			int base = 0;
+			if(beforeType instanceof Type.Reference) {
+				base++;
+			}
+			return base + fields.size() + operands.length;
+		}
+		
 		@Override
 		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+			slots.add(target);
+			slots.add(operand);
+			for(int operand : operands) {
+				slots.add(operand);
+			}
 		}
 
 		public Iterator<LVal> iterator() {
-			return new UpdateIterator(afterType, level, fields);
+			return new UpdateIterator(afterType, level(), fields);
 		}
 
 		/**
@@ -2368,7 +2390,7 @@ public abstract class Code {
 			Type iter = afterType;
 
 			int fieldIndex = 0;
-			for (int i = 0; i != level; ++i) {
+			for (int i = 0; i != level(); ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
 				} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
@@ -2392,21 +2414,21 @@ public abstract class Code {
 			return iter;
 		}
 
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if (nslot != null) {
-				return Code.Update(beforeType, afterType, nslot, level, fields);
-			} else {
-				return this;
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(operand);
+			int[] nOperands = remap(binding,operands);
+			if (nTarget != null || nOperand != null && nOperands != operands) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;				
+				return Code.Update(beforeType,afterType,nTarget, nOperand,nOperands,fields);
 			}
+			return this;
 		}
 
-		public int hashCode() {
-			if (afterType == null) {
-				return level + fields.hashCode();
-			} else {
-				return afterType.hashCode() + slot + level + fields.hashCode();
-			}
+		public int hashCode() {			
+			return afterType.hashCode() + target + operand + Arrays.hashCode(operands) + fields.hashCode();
 		}
 
 		public boolean equals(Object o) {
@@ -2416,8 +2438,10 @@ public abstract class Code {
 						.equals(i.beforeType)))
 						&& (i.afterType == afterType || (afterType != null && afterType
 								.equals(i.afterType)))
-						&& level == i.level
-						&& slot == i.slot && fields.equals(i.fields);
+						&& target == i.target
+						&& operand == i.operand
+						&& Arrays.equals(operands,i.operands)
+						&& fields.equals(i.fields);
 			}
 			return false;
 		}
@@ -2432,8 +2456,9 @@ public abstract class Code {
 				firstTime = false;
 				fs += f;
 			}
-			return toString("update " + slot + " #" + level + fs, beforeType,
-					afterType);
+			return toString(
+					"update " + target + " #" + Arrays.toString(operands) + fs,
+					beforeType, afterType);
 		}
 	}
 

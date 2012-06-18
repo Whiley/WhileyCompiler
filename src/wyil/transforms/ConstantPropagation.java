@@ -549,7 +549,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment.pop(); // rhs
 		
-		environment.set(code.slot,null);
+		environment.set(code.target,null);
 	}
 	
 	public void infer(int index, Code.NewDict code, Block.Entry entry,
@@ -693,7 +693,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(Code.Store code, Block.Entry entry,
 			Env environment) {
-		environment.set(code.slot, environment.pop());
+		environment.set(code.target, environment.pop());
 	}
 	
 	public void infer(int index, Code.SetUnion code, Block.Entry entry,

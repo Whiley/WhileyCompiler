@@ -151,14 +151,14 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 //				deadcode.add(index);					
 //			} 			
 			environment = new Env(environment);
-			environment.remove(store.slot);
+			environment.remove(store.target);
 		} else if(code instanceof Code.Update) {
 			Code.Update update = (Code.Update) code;
 			if(update.beforeType instanceof Type.Reference) {
 				// updating a field on this constitutes a use
 				environment = new Env(environment);
-				environment.add(update.slot);
-			} else if(!environment.contains(update.slot)) {
+				environment.add(update.target);
+			} else if(!environment.contains(update.target)) {
 				deadcode.add(index);					
 			} else {
 				deadcode.remove(index);

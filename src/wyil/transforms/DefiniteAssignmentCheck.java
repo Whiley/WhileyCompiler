@@ -90,7 +90,7 @@ public class DefiniteAssignmentCheck extends
 		if(code instanceof Code.Store) {
 			Code.Store store = (Code.Store) code;
 			in = new HashSet<Integer>(in);			
-			in.add(store.slot); 
+			in.add(store.target); 
 		} else if(code instanceof Code.Load) {
 			Code.Load load = (Code.Load) code;
 			if(!in.contains(load.indexOperand)) {
