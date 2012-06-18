@@ -217,14 +217,15 @@ public abstract class Code {
 	}
 
 	public static ForAll ForAll(Type.EffectiveCollection type,
-			int indexOperand, Collection<Integer> modifiedOperands, String label) {
-		return get(new ForAll(type, indexOperand, toIntArray(modifiedOperands),
-				label));
+			int sourceOperand, int indexOperand, Collection<Integer> modifiedOperands, String label) {
+		return get(new ForAll(type, sourceOperand, indexOperand,
+				toIntArray(modifiedOperands), label));
 	}
 
 	private static ForAll ForAll(Type.EffectiveCollection type,
-			int indexOperand, int[] modifiedOperands, String label) {
-		return get(new ForAll(type, indexOperand, modifiedOperands, label));
+			int sourceOperand, int indexOperand, int[] modifiedOperands, String label) {
+		return get(new ForAll(type, sourceOperand, indexOperand,
+				modifiedOperands, label));
 	}
 
 	/**
@@ -2081,13 +2082,15 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class ForAll extends Loop {
+		public final int sourceOperand;
 		public final int indexOperand;
 		public final Type.EffectiveCollection type;
 
-		private ForAll(Type.EffectiveCollection type, int indexOperand,
-				int[] modifies, String target) {
+		private ForAll(Type.EffectiveCollection type, int sourceOperand,
+				int indexOperand, int[] modifies, String target) {
 			super(target, modifies);
 			this.type = type;
+			this.sourceOperand = sourceOperand;
 			this.indexOperand = indexOperand;
 		}
 
@@ -2096,13 +2099,14 @@ public abstract class Code {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return ForAll(type, indexOperand, modifiedOperands, nlabel);
+				return ForAll(type, sourceOperand, indexOperand, modifiedOperands, nlabel);
 			}
 		}
 
 		@Override
 		public void slots(Set<Integer> slots) {
 			slots.add(indexOperand);
+			slots.add(sourceOperand);
 			super.slots(slots);
 		}
 
@@ -2110,9 +2114,15 @@ public abstract class Code {
 		public Code remap(Map<Integer, Integer> binding) {
 			int[] nModifiedOperands = remap(binding, modifiedOperands);
 			Integer nIndexOperand = binding.get(indexOperand);
-			if (nIndexOperand != null || nModifiedOperands != modifiedOperands) {
-				return Code.ForAll(type, nIndexOperand, nModifiedOperands,
-						target);
+			Integer nSourceOperand = binding.get(sourceOperand);
+			if (nSourceOperand != null || nIndexOperand != null
+					|| nModifiedOperands != modifiedOperands) {
+				nSourceOperand = nSourceOperand != null ? nSourceOperand
+						: sourceOperand;
+				nIndexOperand = nIndexOperand != null ? nIndexOperand
+						: indexOperand;
+				return Code.ForAll(type, sourceOperand, nIndexOperand,
+						nModifiedOperands, target);
 			} else {
 				return this;
 			}
