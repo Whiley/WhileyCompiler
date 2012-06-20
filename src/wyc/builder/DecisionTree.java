@@ -274,12 +274,12 @@ public final class DecisionTree {
 				Code.Assert a = (Code.Assert) e.code;				
 				Code.COp iop = Code.invert(a.op);
 				if(iop != null) {
-					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
+					nblock.append(Code.IfGoto(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
 					String lab = Block.freshLabel();
-					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+					nblock.append(Code.IfGoto(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
 					nblock.append(Code.Goto(target));
 					nblock.append(Code.Label(lab));
 				}
