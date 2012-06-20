@@ -205,10 +205,20 @@ public class DefiniteAssignmentCheck extends
 	                        filename, entry);
 				}				
 			}
-		} else if(code instanceof Code.IndirectInvoke) {
-			
-		} else if(code instanceof Code.IndirectSend) {
-			
+			return;
+		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
+			Code.AbstractSplitNaryAssignable a = (Code.AbstractSplitNaryAssignable) code;
+			if(!in.contains(a.operand)) {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+                        filename, entry);
+			}				
+			for(int operand : a.operands) {
+				if(!in.contains(operand)) {
+					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+	                        filename, entry);
+				}				
+			}
+			return;
 		} else if(code instanceof Code.SubList) {
 			
 		} else if(code instanceof Code.SubString) {

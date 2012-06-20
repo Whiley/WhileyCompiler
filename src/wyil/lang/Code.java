@@ -548,15 +548,16 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Update Update(Type beforeType, Type afterType, int target,
-			int operand, Collection<Integer> operands, Collection<String> fields) {
-		return get(new Update(beforeType, afterType, target, operand,
-				toIntArray(operands), fields));
+	public static Update Update(Type beforeType, int target, int operand,
+			Collection<Integer> operands, Type afterType,
+			Collection<String> fields) {
+		return get(new Update(beforeType, target, operand,
+				toIntArray(operands), afterType, fields));
 	}
 	
-	public static Update Update(Type beforeType, Type afterType, int target,
-			int operand, int[] operands, Collection<String> fields) {
-		return get(new Update(beforeType, afterType, target, operand, operands,
+	public static Update Update(Type beforeType, int target,
+			int operand, int[] operands, Type afterType, Collection<String> fields) {
+		return get(new Update(beforeType, target, operand, operands, afterType, 
 				fields));
 	}
 
@@ -843,6 +844,73 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Represents the set of bytcodes which take an arbitrary number of register
+	 * operands and write a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractSplitNaryAssignable<T> extends AbstractAssignable {
+		public final T type;
+		public final int operand;
+		public final int[] operands;
+
+		private AbstractSplitNaryAssignable(T type, int target, int operand, int[] operands) {
+			super(target);
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractSplitNaryAssignable type argument cannot be null");
+			}
+			this.type = type;
+			this.operand = operand;
+			this.operands = operands;
+		}
+
+		@Override
+		public final void slots(Set<Integer> slots) {
+			if (target >= 0) {
+				slots.add(target);
+			}
+			slots.add(operand);
+			for (int i = 0; i != operands.length; ++i) {
+				slots.add(operands[i]);
+			}
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(target);
+			int[] nOperands = remap(binding, operands);
+			if (nTarget != null || nOperand != null || nOperands != operands) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;
+				return clone(nTarget, nOperand, nOperands);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nTarget, int nOperand, int[] nOperands);
+
+		public int hashCode() {
+			return type.hashCode() + target + operand + Arrays.hashCode(operands);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractSplitNaryAssignable) {
+				AbstractSplitNaryAssignable bo = (AbstractSplitNaryAssignable) o;
+				return target == bo.target
+						&& operand == bo.operand
+						&& Arrays.equals(operands, bo.operands)
+						&& type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+	
 	/**
 	 * Represents the set of bytcodes which take two register operands and
 	 * perform a comparison of their values.
@@ -1618,55 +1686,20 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectInvoke extends AbstractAssignable {
-		public final Type.FunctionOrMethod type;
-		public final int operand;
-		public final int[] operands;		
-
+	public static final class IndirectInvoke extends AbstractSplitNaryAssignable<Type.FunctionOrMethod> {
+		
 		private IndirectInvoke(Type.FunctionOrMethod type, int target,
 				int operand, int[] operands) {
-			super(target);
-			this.type = type;
-			this.operands = operands;
-			this.operand = operand;			
+			super(type,target,operand,operands);				
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
-			for (int operand : operands) {
-				slots.add(operand);
-			}
-			if (target >= 0) {
-				slots.add(target);
-			}
-			slots.add(operand);
-		}
-
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding, operands);
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(operand);
-			if (nOperands != operands || nTarget != null || nOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : operand;
-				return IndirectInvoke(type, nTarget, nOperand, nOperands);
-			} else {
-				return this;
-			}
-		}
-
-		public int hashCode() {
-			return type.hashCode() + Arrays.hashCode(operands) + target;
+		public Code clone(int nTarget, int nOperand, int[] nOperands) {
+			return IndirectInvoke(type, nTarget, nOperand, nOperands);			
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof IndirectInvoke) {
-				IndirectInvoke i = (IndirectInvoke) o;
-				return type.equals(i.type) && target == i.target
-						&& Arrays.equals(operands, i.operands);
-			}
-			return false;
+			return o instanceof IndirectInvoke && super.equals(o);						
 		}
 
 		public String toString() {
@@ -1693,62 +1726,24 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectSend extends AbstractAssignable {
+	public static final class IndirectSend extends AbstractSplitNaryAssignable<Type.Message> {
 		public final boolean synchronous;
-		public final Type.Message type;
-		public final int operand;
-		public final int[] operands;		
-
+		
 		private IndirectSend(Type.Message type, boolean synchronous,
 				int target, int operand, int[] operands) {
-			super(target);
-			this.type = type;
-			this.operands = operands;
+			super(type,target,operand,operands);					
 			this.synchronous = synchronous;
-			this.operand = operand;			
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
-			for (int operand : operands) {
-				slots.add(operand);
-			}
-			if (target >= 0) {
-				slots.add(target);
-			}
-			slots.add(operand);
-		}
-
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding, operands);
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(operand);
-			if (nOperands != operands || nTarget != null || nOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : operand;
-				return IndirectSend(type, nTarget, nOperand,
-						nOperands, synchronous);
-			} else {
-				return this;
-			}
-		}
-
-		public int hashCode() {
-			return type.hashCode() + Arrays.hashCode(operands) + operand
-					+ target;
+		public Code clone(int nTarget, int nOperand, int[] nOperands) {
+			return IndirectSend(type, nTarget, nOperand, nOperands, synchronous);			
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof IndirectSend) {
-				IndirectSend i = (IndirectSend) o;
-				return type.equals(i.type)
-						&& Arrays.equals(operands, i.operands)
-						&& operand == i.operand && target == i.target;
-			}
-			return false;
+			return o instanceof IndirectSend && super.equals(o);						
 		}
-
+		
 		public String toString() {
 			if (synchronous) {
 				if (target >= 0) {
@@ -2427,45 +2422,29 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Update extends AbstractAssignable implements Iterable<LVal> {
-		public final Type beforeType;
+	public static final class Update extends AbstractSplitNaryAssignable<Type> implements Iterable<LVal> {		
 		public final Type afterType;		
-		public final int operand;
-		public final int[] operands;
 		public final ArrayList<String> fields;
 
-		private Update(Type beforeType, Type afterType, int target,
-				int operand, int[] operands, 
-				Collection<String> fields) {
-			super(target);
+		private Update(Type beforeType, int target, int operand,
+				int[] operands, Type afterType, Collection<String> fields) {
+			super(beforeType,target,operand,operands);
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
-			}
-			this.beforeType = beforeType;
+			}			
 			this.afterType = afterType;			
-			this.operand = operand;
-			this.operands = operands;
 			this.fields = new ArrayList<String>(fields);
 		}
 
 		public int level() {
 			int base = 0;
-			if(beforeType instanceof Type.Reference) {
+			if(type instanceof Type.Reference) {
 				base++;
 			}
 			return base + fields.size() + operands.length;
 		}
 		
-		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(target);
-			slots.add(operand);
-			for(int operand : operands) {
-				slots.add(operand);
-			}
-		}
-
 		public Iterator<LVal> iterator() {
 			return new UpdateIterator(afterType, level(), fields);
 		}
@@ -2504,32 +2483,15 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(operand);
-			int[] nOperands = remap(binding,operands);
-			if (nTarget != null || nOperand != null && nOperands != operands) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : operand;				
-				return Code.Update(beforeType,afterType,nTarget, nOperand,nOperands,fields);
-			}
-			return this;
-		}
-
-		public int hashCode() {			
-			return afterType.hashCode() + target + operand + Arrays.hashCode(operands) + fields.hashCode();
+		public final Code clone(int nTarget, int nOperand, int[] nOperands) {
+			return Code.Update(type,nTarget, nOperand,nOperands,afterType,fields);			
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Update) {
 				Update i = (Update) o;
-				return (i.beforeType == beforeType || (beforeType != null && beforeType
-						.equals(i.beforeType)))
-						&& (i.afterType == afterType || (afterType != null && afterType
-								.equals(i.afterType)))
-						&& target == i.target
-						&& operand == i.operand
-						&& Arrays.equals(operands,i.operands)
+				return super.equals(o)
+						&& afterType.equals(i.afterType)
 						&& fields.equals(i.fields);
 			}
 			return false;
@@ -2547,7 +2509,7 @@ public abstract class Code {
 			}
 			return toString(
 					"update " + target + " #" + Arrays.toString(operands) + fs,
-					beforeType, afterType);
+					type, afterType);
 		}
 	}
 
