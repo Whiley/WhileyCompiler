@@ -104,7 +104,7 @@ public final class LocalGenerator {
 					|| condition instanceof Expr.Comprehension) {
 				// fall through to default case
 			} else if (condition instanceof Expr.BinOp) {
-				return generateAssertion(message, (Expr.BinOp) condition, environment);
+				return generateAssertion(message, (Expr.BinOp) condition, freeRegister, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
@@ -127,21 +127,24 @@ public final class LocalGenerator {
 	}
 	
 	protected Block generateAssertion(String message, Expr.BinOp v,
-			HashMap<String, Integer> environment) {
+			int freeRegister, HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
 		Expr.BOp bop = v.op;
 		
 		if (bop == Expr.BOp.OR) {
 			String lab = Block.freshLabel();
-			blk.append(generateCondition(lab, v.lhs, environment));
-			blk.append(generateAssertion(message, v.rhs, environment));
+			blk.append(generateCondition(lab, v.lhs, freeRegister, environment));
+			blk.append(generateAssertion(message, v.rhs, freeRegister,
+					environment));
 			blk.append(Code.Label(lab));
 			return blk;
 		} else if (bop == Expr.BOp.AND) {
-			blk.append(generateAssertion(message, v.lhs, environment));
-			blk.append(generateAssertion(message, v.rhs, environment));
+			blk.append(generateAssertion(message, v.lhs, freeRegister,
+					environment));
+			blk.append(generateAssertion(message, v.rhs, freeRegister,
+					environment));
 			return blk;
-		} 
+		}
 		
 		// TODO: there are some cases which will break here. In particular,
 		// those involving type tests. If/When WYIL changes to be register based
@@ -149,10 +152,12 @@ public final class LocalGenerator {
 		
 		Code.COp cop = OP2COP(bop,v);
 		
-		blk.append(generate(v.lhs, environment));			
-		blk.append(generate(v.rhs, environment));					
-		blk.append(Code.Assert(v.srcType.raw(), cop, message), attributes(v));
-		
+		blk.append(generate(v.lhs, freeRegister, freeRegister + 1, environment));
+		blk.append(generate(v.rhs, freeRegister + 1, freeRegister + 2,
+				environment));
+		blk.append(Code.Assert(v.srcType.raw(), freeRegister + 1,
+				freeRegister + 2, cop, message), attributes(v));
+
 		return blk;
 	}
 
@@ -177,7 +182,7 @@ public final class LocalGenerator {
 			 int freeRegister, HashMap<String, Integer> environment) {
 		try {
 			if (condition instanceof Expr.Constant) {
-				return generateCondition(target, (Expr.Constant) condition, environment);
+				return generateCondition(target, (Expr.Constant) condition, freeRegister, environment);
 			} else if (condition instanceof Expr.ConstantAccess
 					|| condition instanceof Expr.LocalVariable
 					|| condition instanceof Expr.AbstractInvoke
@@ -185,11 +190,11 @@ public final class LocalGenerator {
 					|| condition instanceof Expr.IndexOf) {
 				// fall through to default case
 			} else if (condition instanceof Expr.UnOp) {
-				return generateCondition(target, (Expr.UnOp) condition, environment);
+				return generateCondition(target, (Expr.UnOp) condition, freeRegister, environment);
 			} else if (condition instanceof Expr.BinOp) {
-				return generateCondition(target, (Expr.BinOp) condition, environment);
+				return generateCondition(target, (Expr.BinOp) condition, freeRegister, environment);
 			} else if (condition instanceof Expr.Comprehension) {
-				return generateCondition(target, (Expr.Comprehension) condition, environment);
+				return generateCondition(target, (Expr.Comprehension) condition, freeRegister, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
@@ -198,9 +203,12 @@ public final class LocalGenerator {
 			// true. In some cases, we could do better. For example, !(x < 5)
 			// could be rewritten into x>=5. 
 			
-			Block blk = generate(condition,environment);
-			blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
-			blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(condition));
+			Block blk = generate(condition, freeRegister, freeRegister + 1,
+					environment);
+			blk.append(Code.Const(freeRegister + 1, Value.V_BOOL(true)),
+					attributes(condition));
+			blk.append(Code.IfGoto(Type.T_BOOL, freeRegister, freeRegister + 1,
+					Code.COp.EQ, target), attributes(condition));
 			return blk;
 			
 		} catch (SyntaxError se) {
@@ -212,7 +220,7 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	private Block generateCondition(String target, Expr.Constant c, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.Constant c, int freeRegister, HashMap<String,Integer> environment) {
 		Value.Bool b = (Value.Bool) c.value;
 		Block blk = new Block(environment.size());
 		if (b.value) {
@@ -223,23 +231,23 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generateCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
+	private Block generateCondition(String target, Expr.BinOp v, int freeRegister, HashMap<String,Integer> environment) throws Exception {
 		
 		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
 
 		if (bop == Expr.BOp.OR) {
-			blk.append(generateCondition(target, v.lhs, environment));
-			blk.append(generateCondition(target, v.rhs, environment));
+			blk.append(generateCondition(target, v.lhs, freeRegister, environment));
+			blk.append(generateCondition(target, v.rhs, freeRegister, environment));
 			return blk;
 		} else if (bop == Expr.BOp.AND) {
 			String exitLabel = Block.freshLabel();
-			blk.append(generateCondition(exitLabel, invert(v.lhs), environment));
-			blk.append(generateCondition(target, v.rhs, environment));
+			blk.append(generateCondition(exitLabel, invert(v.lhs), freeRegister, environment));
+			blk.append(generateCondition(target, v.rhs, freeRegister, environment));
 			blk.append(Code.Label(exitLabel));
 			return blk;
 		} else if (bop == Expr.BOp.IS) {
-			return generateTypeCondition(target, v, environment);
+			return generateTypeCondition(target, v, freeRegister, environment);
 		}
 
 		Code.COp cop = OP2COP(bop,v);
@@ -268,75 +276,84 @@ public final class LocalGenerator {
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
-			blk.append(generate(v.lhs, environment));			
-			blk.append(generate(v.rhs, environment));					
-			blk.append(Code.IfGoto(v.srcType.raw(), cop, target), attributes(v));
+			blk.append(generate(v.lhs, freeRegister, freeRegister + 1,
+					environment));
+			blk.append(generate(v.rhs, freeRegister + 1, freeRegister + 2,
+					environment));
+			blk.append(Code.IfGoto(v.srcType.raw(), freeRegister,
+					freeRegister + 1, cop, target), attributes(v));
 		}
 		return blk;
 	}
 
-	private Block generateTypeCondition(String target, Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
+	private Block generateTypeCondition(String target, Expr.BinOp v,
+			int freeRegister, HashMap<String, Integer> environment)
+			throws Exception {
 		Block blk;
-		int slot;
-		
+		int leftOperand;
+
 		if (v.lhs instanceof Expr.LocalVariable) {
 			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
 			}
-			slot = environment.get(lhs.var);
+			leftOperand = environment.get(lhs.var);
 			blk = new Block(environment.size());
 		} else {
-			blk = generate(v.lhs, environment);
-			slot = -1;
+			blk = generate(v.lhs, freeRegister, freeRegister + 1, environment);
+			leftOperand = freeRegister;
 		}
-		
+
 		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
 		Block constraint = global.generate(rhs.unresolvedType, context);
-		if(constraint != null) {
-			String exitLabel = Block.freshLabel();			
-			Type glb = Type.intersect(v.srcType.raw(), Type.Negation(rhs.type.raw()));
-			
-			if(glb != Type.T_VOID) {
+		if (constraint != null) {
+			String exitLabel = Block.freshLabel();
+			Type glb = Type.intersect(v.srcType.raw(),
+					Type.Negation(rhs.type.raw()));
+
+			if (glb != Type.T_VOID) {
 				// Only put the actual type test in if it is necessary.
 				String nextLabel = Block.freshLabel();
-				
+
 				// FIXME: should be able to just test the glb here and branch to
 				// exit label directly. However, this currently doesn't work
 				// because of limitations with intersection of open records.
-				
-				blk.append(Code.IfType(v.srcType.raw(), slot, rhs.type.raw(), nextLabel),
-						attributes(v));		
+
+				blk.append(
+						Code.IfType(v.srcType.raw(), leftOperand,
+								rhs.type.raw(), nextLabel), attributes(v));
 				blk.append(Code.Goto(exitLabel));
 				blk.append(Code.Label(nextLabel));
 			}
-			// FIXME: I think there's a bug here when slot == -1
-			constraint = shiftBlockExceptionZero(environment.size()-1,slot,constraint);
-			blk.append(chainBlock(exitLabel,constraint)); 
+			constraint = shiftBlockExceptionZero(environment.size() - 1,
+					leftOperand, constraint);
+			blk.append(chainBlock(exitLabel, constraint));
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
-			blk.append(Code.IfType(v.srcType.raw(), slot, rhs.type.raw(), target),
-					attributes(v));
+			blk.append(Code.IfType(v.srcType.raw(), leftOperand,
+					rhs.type.raw(), target), attributes(v));
 		}
 		return blk;
 	}
 
-	private Block generateCondition(String target, Expr.UnOp v, HashMap<String,Integer> environment) {
+	private Block generateCondition(String target, Expr.UnOp v,
+			int freeRegister, HashMap<String, Integer> environment) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
-		case NOT:
-			String label = Block.freshLabel();
-			Block blk = generateCondition(label, v.mhs, environment);
-			blk.append(Code.Goto(target));
-			blk.append(Code.Label(label));
-			return blk;
+			case NOT :
+				String label = Block.freshLabel();
+				Block blk = generateCondition(label, v.mhs, freeRegister,
+						environment);
+				blk.append(Code.Goto(target));
+				blk.append(Code.Label(label));
+				return blk;
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 		return null;
 	}
 	
-	private Block generateCondition(String target, Expr.Comprehension e,  
+	private Block generateCondition(String target, Expr.Comprehension e, int freeRegister,  
 			HashMap<String,Integer> environment) {
 		
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
@@ -705,7 +722,7 @@ public final class LocalGenerator {
 				|| v.op == Expr.BOp.ELEMENTOF || v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			Block blk = generateCondition(trueLabel, v, environment);
+			Block blk = generateCondition(trueLabel, v, freeRegister, environment);
 			blk.append(Code.Const(target,Value.V_BOOL(false)), attributes(v));			
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
