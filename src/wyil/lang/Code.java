@@ -598,6 +598,14 @@ public abstract class Code {
 	// Abstract Bytecodes
 	// ===============================================================
 
+	public static abstract class AbstractAssignable extends Code {
+		public final int target;
+		
+		private AbstractAssignable(int target) {
+			this.target = target;
+		}
+	}
+	
 	/**
 	 * Represents the set of bytcodes which take a single register operand and
 	 * write a result to the target register.
@@ -607,18 +615,17 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	private static abstract class AbstractUnOp<T> extends Code {
-		public final T type;
-		public final int target;
+	public static abstract class AbstractUnaryAssignable<T> extends AbstractAssignable {
+		public final T type;		
 		public final int operand;
 
-		private AbstractUnOp(T type, int target, int operand) {
+		private AbstractUnaryAssignable(T type, int target, int operand) {
+			super(target);
 			if (type == null) {
 				throw new IllegalArgumentException(
 						"AbstractUnOp type argument cannot be null");
 			}
 			this.type = type;
-			this.target = target;
 			this.operand = operand;
 		}
 
@@ -647,8 +654,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof AbstractBinOp) {
-				AbstractUnOp bo = (AbstractUnOp) o;
+			if (o instanceof AbstractUnaryAssignable) {
+				AbstractUnaryAssignable bo = (AbstractUnaryAssignable) o;
 				return target == bo.target && operand == bo.operand
 						&& type.equals(bo.type);
 			}
@@ -656,6 +663,57 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Represents the set of bytcodes which take a single register operand, and
+	 * do not write any result.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractUnaryOp<T> extends Code {
+		public final T type;		
+		public final int operand;
+
+		private AbstractUnaryOp(T type, int operand) {			
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractUnaryOp type argument cannot be null");
+			}
+			this.type = type;
+			this.operand = operand;
+		}
+
+		@Override
+		public final void slots(Set<Integer> slots) {			
+			slots.add(operand);
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if (nOperand != null) {				
+				return clone(nOperand);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nOperand);
+
+		public int hashCode() {
+			return type.hashCode() + operand;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractUnaryOp) {
+				AbstractUnaryOp bo = (AbstractUnaryOp) o;
+				return operand == bo.operand && type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+	
 	/**
 	 * Represents the set of bytcodes which take two register operands and write
 	 * a result to the target register.
@@ -665,20 +723,19 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	private static abstract class AbstractBinOp<T> extends Code {
-		public final T type;
-		public final int target;
+	public static abstract class AbstractBinaryAssignable<T> extends AbstractAssignable {
+		public final T type;		
 		public final int leftOperand;
 		public final int rightOperand;
 
-		private AbstractBinOp(T type, int target, int leftOperand,
+		private AbstractBinaryAssignable(T type, int target, int leftOperand,
 				int rightOperand) {
+			super(target);
 			if (type == null) {
 				throw new IllegalArgumentException(
 						"AbstractBinOp type argument cannot be null");
 			}
-			this.type = type;
-			this.target = target;
+			this.type = type;			
 			this.leftOperand = leftOperand;
 			this.rightOperand = rightOperand;
 		}
@@ -715,8 +772,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof AbstractBinOp) {
-				AbstractBinOp bo = (AbstractBinOp) o;
+			if (o instanceof AbstractBinaryAssignable) {
+				AbstractBinaryAssignable bo = (AbstractBinaryAssignable) o;
 				return target == bo.target && leftOperand == bo.leftOperand
 						&& rightOperand == bo.rightOperand
 						&& type.equals(bo.type);
@@ -734,18 +791,17 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	private static abstract class AbstractNaryOp<T> extends Code {
+	public static abstract class AbstractNaryAssignable<T> extends AbstractAssignable {
 		public final T type;
-		public final int target;
 		public final int[] operands;
 
-		private AbstractNaryOp(T type, int target, int[] operands) {
+		private AbstractNaryAssignable(T type, int target, int[] operands) {
+			super(target);
 			if (type == null) {
 				throw new IllegalArgumentException(
 						"AbstractBinOp type argument cannot be null");
 			}
-			this.type = type;
-			this.target = target;
+			this.type = type;			
 			this.operands = operands;
 		}
 
@@ -777,8 +833,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof AbstractNaryOp) {
-				AbstractNaryOp bo = (AbstractNaryOp) o;
+			if (o instanceof AbstractNaryAssignable) {
+				AbstractNaryAssignable bo = (AbstractNaryAssignable) o;
 				return target == bo.target
 						&& Arrays.equals(operands, bo.operands)
 						&& type.equals(bo.type);
@@ -796,12 +852,12 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	private static abstract class AbstractBinCond<T> extends Code {
+	public static abstract class AbstractBinaryOp<T> extends Code {
 		public final T type;
 		public final int leftOperand;
 		public final int rightOperand;
 
-		private AbstractBinCond(T type, int leftOperand, int rightOperand) {
+		private AbstractBinaryOp(T type, int leftOperand, int rightOperand) {
 			if (type == null) {
 				throw new IllegalArgumentException(
 						"AbstractBinCond type argument cannot be null");
@@ -838,8 +894,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof AbstractBinCond) {
-				AbstractBinCond bo = (AbstractBinCond) o;
+			if (o instanceof AbstractBinaryOp) {
+				AbstractBinaryOp bo = (AbstractBinaryOp) o;
 				return leftOperand == bo.leftOperand
 						&& rightOperand == bo.rightOperand
 						&& type.equals(bo.type);
@@ -935,7 +991,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class BinOp extends AbstractBinOp<Type> {
+	public static final class BinOp extends AbstractBinaryAssignable<Type> {
 		public final BOp bop;
 
 		private BinOp(Type type, int target, int lhs, int rhs, BOp bop) {
@@ -992,7 +1048,7 @@ public abstract class Code {
 	 * passed as a parameter, assigned to a field, etc.
 	 * </p>
 	 */
-	public static final class Convert extends AbstractUnOp<Type> {
+	public static final class Convert extends AbstractUnaryAssignable<Type> {
 		public final Type result;
 
 		private Convert(Type from, int target, int operand, Type result) {
@@ -1033,13 +1089,12 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Const extends Code {
-		public final Value constant;
-		public final int target;
+	public static final class Const extends AbstractAssignable {
+		public final Value constant;		
 
 		private Const(int target, Value constant) {
-			this.constant = constant;
-			this.target = target;
+			super(target);
+			this.constant = constant;			
 		}
 
 		@Override
@@ -1080,7 +1135,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Copy extends AbstractUnOp<Type> {
+	public static final class Copy extends AbstractUnaryAssignable<Type> {
 
 		private Copy(Type type, int target, int operand) {
 			super(type, target, operand);
@@ -1112,33 +1167,19 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Debug extends Code {
-		public final int operand;
+	public static final class Debug extends AbstractUnaryOp<Type.Strung> {
 
-		Debug(int operand) {
-			this.operand = operand;
-		}
-
-		public int hashCode() {
-			return operand;
+		private Debug(int operand) {
+			super(Type.T_STRING, operand);
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(operand);
-		}
-
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			Integer nOperand = binding.get(operand);
-			if (nOperand != null) {
-				return Code.Debug(nOperand);
-			}
-			return this;
+		public Code clone(int nOperand) {
+			return Code.Debug(nOperand);
 		}
 
 		public boolean equals(Object o) {
-			return o instanceof Debug && operand == ((Debug) o).operand;
+			return o instanceof Debug && super.equals(o);
 		}
 
 		public String toString() {
@@ -1190,7 +1231,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Assert extends AbstractBinCond<Type> {
+	public static final class Assert extends AbstractBinaryOp<Type> {
 		public final COp op;
 		public final String msg;
 
@@ -1235,7 +1276,7 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class FieldLoad extends
-			AbstractUnOp<Type.EffectiveRecord> {
+			AbstractUnaryAssignable<Type.EffectiveRecord> {
 		public final String field;
 
 		private FieldLoad(Type.EffectiveRecord type, int target, int operand,
@@ -1343,7 +1384,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IfGoto extends AbstractBinCond<Type> {
+	public static final class IfGoto extends AbstractBinaryOp<Type> {
 		public final String target;
 		public final COp op;
 
@@ -1577,18 +1618,17 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectInvoke extends Code {
+	public static final class IndirectInvoke extends AbstractAssignable {
 		public final Type.FunctionOrMethod type;
 		public final int operand;
-		public final int[] operands;
-		public final int target;
+		public final int[] operands;		
 
 		private IndirectInvoke(Type.FunctionOrMethod type, int target,
 				int operand, int[] operands) {
+			super(target);
 			this.type = type;
 			this.operands = operands;
-			this.operand = operand;
-			this.target = target;
+			this.operand = operand;			
 		}
 
 		@Override
@@ -1653,20 +1693,19 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectSend extends Code {
+	public static final class IndirectSend extends AbstractAssignable {
 		public final boolean synchronous;
 		public final Type.Message type;
 		public final int operand;
-		public final int[] operands;
-		public final int target;
+		public final int[] operands;		
 
 		private IndirectSend(Type.Message type, boolean synchronous,
 				int target, int operand, int[] operands) {
+			super(target);
 			this.type = type;
 			this.operands = operands;
 			this.synchronous = synchronous;
-			this.operand = operand;
-			this.target = target;
+			this.operand = operand;			
 		}
 
 		@Override
@@ -1730,7 +1769,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Not extends AbstractUnOp<Type.Bool> {
+	public static final class Not extends AbstractUnaryAssignable<Type.Bool> {
 
 		private Not(int target, int operand) {
 			super(Type.T_BOOL, target, operand);
@@ -1768,7 +1807,7 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Invoke extends
-			AbstractNaryOp<Type.FunctionOrMethod> {
+			AbstractNaryAssignable<Type.FunctionOrMethod> {
 		public final NameID name;
 
 		private Invoke(Type.FunctionOrMethod type, int target, int[] operands,
@@ -1868,7 +1907,7 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class ListOp extends
-			AbstractBinOp<Type.EffectiveList> {
+			AbstractBinaryAssignable<Type.EffectiveList> {
 		public final ListOperation operation;
 
 		private ListOp(Type.EffectiveList type, int target, int leftOperand,
@@ -1912,7 +1951,7 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class LengthOf extends
-			AbstractUnOp<Type.EffectiveCollection> {
+			AbstractUnaryAssignable<Type.EffectiveCollection> {
 		private LengthOf(Type.EffectiveCollection type, int target, int operand) {
 			super(type, target, operand);
 		}
@@ -1941,17 +1980,16 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class SubList extends Code {
-		public final Type.EffectiveList type;
-		public final int target;
+	public static final class SubList extends AbstractAssignable {
+		public final Type.EffectiveList type;		
 		public final int sourceOperand;
 		public final int leftOperand;
 		public final int rightOperand;
 
 		private SubList(Type.EffectiveList type, int target, int sourceOperand,
 				int leftOperand, int rightOperand) {
-			this.type = type;
-			this.target = target;
+			super(target);
+			this.type = type;			
 			this.sourceOperand = sourceOperand;
 			this.leftOperand = leftOperand;
 			this.rightOperand = rightOperand;
@@ -2017,7 +2055,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndexOf extends AbstractBinOp<Type.EffectiveMap> {
+	public static final class IndexOf extends AbstractBinaryAssignable<Type.EffectiveMap> {
 		private IndexOf(Type.EffectiveMap type, int target, int sourceOperand,
 				int keyOperand) {
 			super(type, target, sourceOperand, keyOperand);
@@ -2057,7 +2095,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Move extends AbstractUnOp<Type> {
+	public static final class Move extends AbstractUnaryAssignable<Type> {
 
 		private Move(Type type, int target, int operand) {
 			super(type, target, operand);
@@ -2389,10 +2427,9 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Update extends Code implements Iterable<LVal> {
+	public static final class Update extends AbstractAssignable implements Iterable<LVal> {
 		public final Type beforeType;
-		public final Type afterType;
-		public final int target;
+		public final Type afterType;		
 		public final int operand;
 		public final int[] operands;
 		public final ArrayList<String> fields;
@@ -2400,13 +2437,13 @@ public abstract class Code {
 		private Update(Type beforeType, Type afterType, int target,
 				int operand, int[] operands, 
 				Collection<String> fields) {
+			super(target);
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
 			}
 			this.beforeType = beforeType;
-			this.afterType = afterType;
-			this.target = target;
+			this.afterType = afterType;			
 			this.operand = operand;
 			this.operands = operands;
 			this.fields = new ArrayList<String>(fields);
@@ -2533,7 +2570,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewDict extends AbstractNaryOp<Type.Dictionary> {
+	public static final class NewDict extends AbstractNaryAssignable<Type.Dictionary> {
 
 		private NewDict(Type.Dictionary type, int target, int[] operands) {
 			super(type, target, operands);
@@ -2571,7 +2608,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewRecord extends AbstractNaryOp<Type.Record> {
+	public static final class NewRecord extends AbstractNaryAssignable<Type.Record> {
 		private NewRecord(Type.Record type, int target, int[] operands) {
 			super(type,target, operands);
 		}
@@ -2608,7 +2645,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewTuple extends AbstractNaryOp<Type.Tuple> {
+	public static final class NewTuple extends AbstractNaryAssignable<Type.Tuple> {
 
 		private NewTuple(Type.Tuple type, int target, int[] operands) {
 			super(type,target,operands);
@@ -2646,7 +2683,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewSet extends AbstractNaryOp<Type.Set> {
+	public static final class NewSet extends AbstractNaryAssignable<Type.Set> {
 
 		private NewSet(Type.Set type, int target, int[] operands) {
 			super(type,target,operands);
@@ -2685,7 +2722,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewList extends AbstractNaryOp<Type.List> {
+	public static final class NewList extends AbstractNaryAssignable<Type.List> {
 
 		private NewList(Type.List type, int target, int[] operands) {
 			super(type,target,operands);
@@ -2723,44 +2760,26 @@ public abstract class Code {
 		}
 	}
 
-	public static final class Return extends Code {
-		public final Type type;
-		public final int operand;
-
+	public static final class Return extends AbstractUnaryOp<Type> {
+		
 		private Return(Type type, int operand) {
+			super(type,operand);
 			if (type == Type.T_VOID && operand != NULL_REG) {
 				throw new IllegalArgumentException(
 						"Return with void type cannot have target register.");
 			} else if (type != Type.T_VOID && operand == NULL_REG) {
 				throw new IllegalArgumentException(
 						"Return with non-void type must have target register.");
-			}
-			this.type = type;
-			this.operand = operand;
-		}
-
-		public void slots(Set<Integer> slots) {
-			if(operand != NULL_REG) {
-				slots.add(operand);
-			}
+			}			
 		}
 		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nOperand = binding.get(operand);
-			if(nOperand != null) {
-				return new Return(type,nOperand);
-			}
-			return this;
+		public Code clone(int nOperand) {
+			return new Return(type,nOperand);			
 		}
 		
-		public int hashCode() {
-			return type.hashCode() + operand;
-		}
-
 		public boolean equals(Object o) {
 			if (o instanceof Return) {
-				Return i = (Return) o;
-				return type.equals(i.type) && operand == i.operand;
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -2813,7 +2832,7 @@ public abstract class Code {
 		}
 	}
 
-	public static final class SetOp extends AbstractBinOp<Type.EffectiveSet> {
+	public static final class SetOp extends AbstractBinaryAssignable<Type.EffectiveSet> {
 		public final SetOperation operation;
 
 		private SetOp(Type.EffectiveSet type, int target, int leftOperand,
@@ -2865,7 +2884,7 @@ public abstract class Code {
 		}
 	}
 	
-	public static final class StringOp extends AbstractBinOp<Type.Strung> {
+	public static final class StringOp extends AbstractBinaryAssignable<Type.Strung> {
 		public final StringOperation operation;
 
 		private StringOp(int target, int leftOperand, int rightOperand, StringOperation operation) {
@@ -2902,15 +2921,14 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class SubString extends Code {
-		public final int target;
+	public static final class SubString extends AbstractAssignable {		
 		public final int sourceOperand;
 		public final int leftOperand;
 		public final int rightOperand;
 
 		private SubString(int target, int sourceOperand,
 				int leftOperand, int rightOperand) {
-			this.target = target;
+			super(target);
 			this.sourceOperand = sourceOperand;
 			this.leftOperand = leftOperand;
 			this.rightOperand = rightOperand;
@@ -3046,7 +3064,7 @@ public abstract class Code {
 		
 	}
 
-	public static final class Send extends AbstractNaryOp<Type.Message> {
+	public static final class Send extends AbstractNaryAssignable<Type.Message> {
 		public final boolean synchronous;
 		public final NameID name;
 		
@@ -3085,41 +3103,25 @@ public abstract class Code {
 		}
 	}
 
-	public static final class Throw extends Code {
-		public final Type type;
-		public final int operand;
-
+	public static final class Throw extends AbstractUnaryOp<Type> {		
 		private Throw(Type type, int operand) {
-			this.type = type;
-			this.operand = operand;
-		}
-
-		public void slots(Set<Integer> slots) {
-			slots.add(operand);
+			super(type,operand);
 		}
 		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nOperand = binding.get(operand);
-			if(nOperand != null) {
-				return Code.Throw(type,nOperand);
-			}
-			return this;
+		@Override
+		public Code clone(int nOperand) {
+			return Code.Throw(type,nOperand);			
 		}
 		
-		public int hashCode() {
-			return type.hashCode() + operand;
-		}
-
 		public boolean equals(Object o) {
-			if (o instanceof Throw) {
-				Throw i = (Throw) o;
-				return type.equals(i.type) && operand == i.operand;
+			if (o instanceof Throw) {				
+				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return toString("throws", type);
+			return toString("throw", type);
 		}
 	}
 	
@@ -3238,7 +3240,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Negate extends AbstractUnOp<Type> {
+	public static final class Negate extends AbstractUnaryAssignable<Type> {
 
 		private Negate(Type type, int target, int operand) {
 			super(type,target,operand);
@@ -3274,7 +3276,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Invert extends AbstractUnOp<Type> {
+	public static final class Invert extends AbstractUnaryAssignable<Type> {
 		
 		private Invert(Type type, int target, int operand) {
 			super(type,target,operand);
@@ -3303,7 +3305,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class New extends AbstractUnOp<Type.Reference> {
+	public static final class New extends AbstractUnaryAssignable<Type.Reference> {
 		
 		private New(Type.Reference type, int target, int operand) {
 			super(type,target,operand);
@@ -3326,7 +3328,7 @@ public abstract class Code {
 	}
 	
 	public static final class TupleLoad extends
-			AbstractUnOp<Type.EffectiveTuple> {
+			AbstractUnaryAssignable<Type.EffectiveTuple> {
 		public final int index;
 
 		private TupleLoad(Type.EffectiveTuple type, int target, int operand,
@@ -3359,7 +3361,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Dereference extends AbstractUnOp<Type.Reference> {
+	public static final class Dereference extends AbstractUnaryAssignable<Type.Reference> {
 
 		private Dereference(Type.Reference type, int target, int operand) {
 			super(type, target, operand);
@@ -3389,7 +3391,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Void extends AbstractNaryOp<Type> {
+	public static class Void extends AbstractNaryAssignable<Type> {
 
 		private Void(Type type, int[] operands) {
 			super(type, NULL_REG, operands);
