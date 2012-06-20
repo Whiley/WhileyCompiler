@@ -794,7 +794,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(start));
 		
 		UnresolvedHandler trampolineHandler = new UnresolvedHandler(start,
-				c.target, trampolineStart, WHILEYEXCEPTION);
+				c.label, trampolineStart, WHILEYEXCEPTION);
 		handlers.add(trampolineHandler);
 	}
 	

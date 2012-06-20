@@ -200,7 +200,7 @@ public final class CodeGeneration {
 			}	
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
 			precondition.append(localGenerator.generateAssertion(
-					"precondition not satisfied", fd.precondition, preEnv));		
+					"precondition not satisfied", fd.precondition, preEnv.size(), preEnv));		
 		}
 		
 		// ==================================================================
@@ -209,14 +209,15 @@ public final class CodeGeneration {
 		Block postcondition = globalGenerator.generate(fd.ret,fd);						
 		
 		if (fd.postcondition != null) {
-			HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
+			HashMap<String, Integer> postEnv = new HashMap<String, Integer>();
 			postEnv.put("$", 0);
-			for(String var : environment.keySet()) {
-				postEnv.put(var, environment.get(var)+1);
+			for (String var : environment.keySet()) {
+				postEnv.put(var, environment.get(var) + 1);
 			}
 			postcondition = new Block(postEnv.size());
 			postcondition.append(localGenerator.generateAssertion(
-					"postcondition not satisfied", fd.postcondition, postEnv));
+					"postcondition not satisfied", fd.postcondition,
+					postEnv.size(), postEnv));
 		}
 		
 		// ==================================================================
@@ -298,17 +299,17 @@ public final class CodeGeneration {
 			} else if (stmt instanceof ForAll) {
 				return generate((ForAll) stmt, environment);
 			} else if (stmt instanceof Expr.MessageSend) {
-				return localGenerator.generate((Expr.MessageSend) stmt,false,environment);								
+				return localGenerator.generate((Expr.MessageSend) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.MethodCall) {
-				return localGenerator.generate((Expr.MethodCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.MethodCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.FunctionCall) {
-				return localGenerator.generate((Expr.FunctionCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.FunctionCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.IndirectMethodCall) {
-				return localGenerator.generate((Expr.IndirectMethodCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.IndirectMethodCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
-				return localGenerator.generate((Expr.IndirectFunctionCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.IndirectFunctionCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.New) {
-				return localGenerator.generate((Expr.New) stmt, environment);
+				return localGenerator.generate((Expr.New) stmt, environment.size(), environment.size()+1, environment);
 			} else if (stmt instanceof Skip) {
 				return generate((Skip) stmt, environment);
 			} else {
@@ -329,11 +330,11 @@ public final class CodeGeneration {
 	private Block generate(Assign s, HashMap<String,Integer> environment) {
 		Block blk = null;
 		
-		if(s.lhs instanceof Expr.AssignedVariable) {			
-			blk = localGenerator.generate(s.rhs, environment);			
+		if(s.lhs instanceof Expr.AssignedVariable) {				
 			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
-			blk.append(Code.Store(v.afterType.raw(), allocate(v.var, environment)),
-					attributes(s));			
+			int target = allocate(v.var, environment);
+			blk = localGenerator.generate(s.rhs, target, environment.size(),
+					environment);					
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
 			blk = localGenerator.generate(s.rhs, environment);			
@@ -361,9 +362,9 @@ public final class CodeGeneration {
 			if(!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable",localGenerator.context(),l.first());
 			}
-			int slot = environment.get(lhs.var);
+			int target = environment.get(lhs.var);
 			blk.append(localGenerator.generate(s.rhs, environment));		
-			blk.append(Code.Update(lhs.type.raw(),lhs.afterType.raw(),slot,l.second(),fields),
+			blk.append(Code.Update(lhs.type.raw(),lhs.afterType.raw(),target,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", localGenerator.context(), s);
@@ -398,16 +399,18 @@ public final class CodeGeneration {
 		}
 	}
 	
-	private Block generate(Assert s, HashMap<String,Integer> environment) {
+	private Block generate(Assert s, HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(localGenerator.generateAssertion("assertion failed", s.expr, environment));		
+		blk.append(localGenerator.generateAssertion("assertion failed", s.expr,
+				environment.size(), environment));
 		return blk;
 	}
 
 	private Block generate(Return s, HashMap<String,Integer> environment) {
 
 		if (s.expr != null) {
-			Block blk = localGenerator.generate(s.expr, environment);
+			int freeRegister = environment.size();
+			Block blk = localGenerator.generate(s.expr, freeRegister, freeRegister+1, environment);
 	
 			// Here, we don't put the type propagated for the return expression.
 			// Instead, we use the declared return type of this function. This
@@ -416,11 +419,11 @@ public final class CodeGeneration {
 			
 			Type ret = currentFunDecl.resolvedType().raw().ret();	
 			
-			blk.append(Code.Return(ret), attributes(s));
+			blk.append(Code.Return(ret,freeRegister), attributes(s));
 			return blk;
 		} else {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Return(Type.T_VOID), attributes(s));
+			blk.append(Code.Return(), attributes(s));
 			return blk;
 		}
 	}
@@ -431,10 +434,11 @@ public final class CodeGeneration {
 		return blk;
 	}
 
-	private Block generate(Debug s, HashMap<String,Integer> environment) {
-		int target = environment.size();
-		Block blk = localGenerator.generate(s.expr, target, environment);		
-		blk.append(Code.Debug(target), attributes(s));
+	private Block generate(Debug s, HashMap<String, Integer> environment) {
+		int freeRegister = environment.size();
+		Block blk = localGenerator.generate(s.expr, freeRegister,
+				freeRegister + 1, environment);
+		blk.append(Code.Debug(freeRegister), attributes(s));
 		return blk;
 	}
 
@@ -442,7 +446,8 @@ public final class CodeGeneration {
 		String falseLab = Block.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
 				.freshLabel();
-		Block blk = localGenerator.generateCondition(falseLab, invert(s.condition), environment);
+		Block blk = localGenerator.generateCondition(falseLab,
+				invert(s.condition), environment.size(), environment);
 
 		for (Stmt st : s.trueBranch) {
 			blk.append(generate(st, environment));
@@ -460,71 +465,83 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Throw s, HashMap<String,Integer> environment) {
-		Block blk = localGenerator.generate(s.expr, environment);
-		blk.append(Code.Throw(s.expr.result().raw()), s.attributes());
+	private Block generate(Throw s, HashMap<String, Integer> environment) {
+		int freeRegister = environment.size();
+		Block blk = localGenerator.generate(s.expr, freeRegister,
+				freeRegister + 1, environment);
+		blk.append(Code.Throw(s.expr.result().raw(), freeRegister),
+				s.attributes());
 		return blk;
 	}
 	
-	private Block generate(Break s, HashMap<String,Integer> environment) {
+	private Block generate(Break s, HashMap<String, Integer> environment) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
-		if(scope == null) {
-			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP), localGenerator.context(), s);
+		if (scope == null) {
+			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
+					localGenerator.context(), s);
 		}
 		Block blk = new Block(environment.size());
 		blk.append(Code.Goto(scope.label));
 		return blk;
 	}
 	
-	private Block generate(Switch s, HashMap<String,Integer> environment) throws Exception {
-		String exitLab = Block.freshLabel();		
-		Block blk = localGenerator.generate(s.expr, environment);				
+	private Block generate(Switch s, HashMap<String, Integer> environment)
+			throws Exception {
+		int freeRegister = environment.size();
+		String exitLab = Block.freshLabel();
+		Block blk = localGenerator.generate(s.expr, freeRegister,
+				freeRegister + 1, environment);
 		Block cblk = new Block(environment.size());
 		String defaultTarget = exitLab;
 		HashSet<Value> values = new HashSet();
-		ArrayList<Pair<Value,String>> cases = new ArrayList();	
-		
-		for(Stmt.Case c : s.cases) {			
-			if(c.expr.isEmpty()) {
+		ArrayList<Pair<Value, String>> cases = new ArrayList();
+
+		for (Stmt.Case c : s.cases) {
+			if (c.expr.isEmpty()) {
 				// indicates the default block
-				if(defaultTarget != exitLab) {
-					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),localGenerator.context(),c);
+				if (defaultTarget != exitLab) {
+					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),
+							localGenerator.context(), c);
 				} else {
-					defaultTarget = Block.freshLabel();	
+					defaultTarget = Block.freshLabel();
 					cblk.append(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						cblk.append(generate(st, environment));
 					}
-					cblk.append(Code.Goto(exitLab),attributes(c));
+					cblk.append(Code.Goto(exitLab), attributes(c));
 				}
-			} else if(defaultTarget == exitLab) {
-				String target = Block.freshLabel();	
-				cblk.append(Code.Label(target), attributes(c));				
-				
-				for(Value constant : c.constants) { 					
-					if(values.contains(constant)) {
-						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),localGenerator.context(),c);
-					}									
-					cases.add(new Pair(constant,target));
+			} else if (defaultTarget == exitLab) {
+				String target = Block.freshLabel();
+				cblk.append(Code.Label(target), attributes(c));
+
+				for (Value constant : c.constants) {
+					if (values.contains(constant)) {
+						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),
+								localGenerator.context(), c);
+					}
+					cases.add(new Pair(constant, target));
 					values.add(constant);
 				}
-				
+
 				for (Stmt st : c.stmts) {
 					cblk.append(generate(st, environment));
 				}
-				cblk.append(Code.Goto(exitLab),attributes(c));
+				cblk.append(Code.Goto(exitLab), attributes(c));
 			} else {
-				syntaxError(errorMessage(UNREACHABLE_CODE), localGenerator.context(), c);
+				syntaxError(errorMessage(UNREACHABLE_CODE),
+						localGenerator.context(), c);
 			}
-		}		
-		
-		blk.append(Code.Switch(s.expr.result().raw(),defaultTarget,cases),attributes(s));
+		}
+
+		blk.append(Code.Switch(s.expr.result().raw(), freeRegister,
+				defaultTarget, cases), attributes(s));
 		blk.append(cblk);
-		blk.append(Code.Label(exitLab), attributes(s));		
+		blk.append(Code.Label(exitLab), attributes(s));
 		return blk;
 	}
 	
 	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws Exception {
+		int exceptionRegister = allocate(environment);
 		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {
@@ -533,8 +550,7 @@ public final class CodeGeneration {
 		cblk.append(Code.Goto(exitLab),attributes(s));	
 		String endLab = null;
 		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
-		for(Stmt.Catch c : s.catches) {
-			int freeReg = allocate(c.variable,environment);
+		for(Stmt.Catch c : s.catches) {			
 			Code.Label lab;
 			
 			if(endLab == null) {
@@ -547,7 +563,7 @@ public final class CodeGeneration {
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt,lab.label));
 			cblk.append(lab, attributes(c));
-			cblk.append(Code.Store(pt, freeReg), attributes(c));
+			environment.put(c.variable, exceptionRegister);
 			for (Stmt st : c.stmts) {
 				cblk.append(generate(st, environment));
 			}
@@ -555,7 +571,7 @@ public final class CodeGeneration {
 		}
 		
 		Block blk = new Block(environment.size());
-		blk.append(Code.TryCatch(endLab,catches),attributes(s));
+		blk.append(Code.TryCatch(exceptionRegister,endLab,catches),attributes(s));
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));
 		return blk;
@@ -569,13 +585,14 @@ public final class CodeGeneration {
 		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
-					environment));
+					environment.size(), environment));
 		}
 
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 				
-		blk.append(localGenerator.generateCondition(label, invert(s.condition), environment));
+		blk.append(localGenerator.generateCondition(label, invert(s.condition),
+				environment.size(), environment));
 
 		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {
@@ -584,7 +601,9 @@ public final class CodeGeneration {
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
-			blk.append(localGenerator.generateAssertion("loop invariant not restored", s.invariant, environment));		
+			blk.append(localGenerator.generateAssertion(
+					"loop invariant not restored", s.invariant,
+					environment.size(), environment));		
 		}
 		
 		blk.append(Code.End(label));
@@ -597,10 +616,10 @@ public final class CodeGeneration {
 				
 		Block blk = new Block(environment.size());
 		
-		if(s.invariant != null) {
+		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
-					environment));		
+					environment.size(), environment));
 		}
 		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
@@ -612,12 +631,14 @@ public final class CodeGeneration {
 		}		
 		scopes.pop(); // break
 		
-		if(s.invariant != null) {
+		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant, environment));
+					"loop invariant not restored", s.invariant,
+					environment.size(), environment));
 		}
 		
-		blk.append(localGenerator.generateCondition(label, invert(s.condition), environment));
+		blk.append(localGenerator.generateCondition(label, invert(s.condition),
+				environment.size(), environment));
 
 		
 		blk.append(Code.End(label));
@@ -634,11 +655,12 @@ public final class CodeGeneration {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
-					environment));
+					environment.size(), environment));
 		}
 		
-		blk.append(localGenerator.generate(s.source,environment));	
-		int freeSlot = allocate(environment);
+		int sourceRegister = allocate(environment);
+		blk.append(localGenerator.generate(s.source, sourceRegister,
+				environment.size(), environment));		
 		if(s.variables.size() > 1) {
 			// this is the destructuring case		
 			
@@ -651,19 +673,21 @@ public final class CodeGeneration {
 			}
 			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) rawSrcType;
 			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());
-			List<Type> elements = element.elements();
-			blk.append(Code.ForAll((Type.EffectiveDictionary) rawSrcType, freeSlot, label, Collections.EMPTY_SET), attributes(s));
-			blk.append(Code.Load(element, freeSlot), attributes(s));
-			blk.append(Code.Destructure(element), attributes(s));
-			for(int i=s.variables.size();i>0;--i) {
-				String var = s.variables.get(i-1);
+			int indexRegister = allocate(environment);
+			blk.append(Code
+					.ForAll((Type.EffectiveDictionary) rawSrcType,
+							sourceRegister, indexRegister,
+							Collections.EMPTY_SET, label), attributes(s));
+			for(int i=0;i<s.variables.size();++i) {
+				String var = s.variables.get(i);
 				int varReg = allocate(var,environment);
-				blk.append(Code.Store(elements.get(i-1), varReg), attributes(s));
+				blk.append(Code.TupleLoad(element, varReg, indexRegister, i), attributes(s));
 			}										
 		} else {
 			// easy case.
-			int freeReg = allocate(s.variables.get(0),environment);
-			blk.append(Code.ForAll(s.srcType.raw(), freeReg, label, Collections.EMPTY_SET), attributes(s));
+			int indexRegister = allocate(s.variables.get(0), environment);
+			blk.append(Code.ForAll(s.srcType.raw(), sourceRegister,
+					indexRegister, Collections.EMPTY_SET, label), attributes(s));
 		}		
 		
 		// FIXME: add a continue scope
@@ -675,7 +699,8 @@ public final class CodeGeneration {
 		
 		if(s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant, environment));		
+					"loop invariant not restored", s.invariant,
+					environment.size(), environment));		
 		}
 		blk.append(Code.End(label), attributes(s));		
 

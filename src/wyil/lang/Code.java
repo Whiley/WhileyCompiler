@@ -70,17 +70,61 @@ import wyil.util.*;
  * 
  */
 public abstract class Code {
+	/**
+	 * Provided to aid readability of client code. 
+	 */
+	public final static int NULL_REG = -1;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_0 = 0;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_1 = 1;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_2 = 2;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_3 = 3;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_4 = 4;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_5 = 5;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_6 = 6;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_7 = 7;
+	
+	/**
+	 * Provided to aid readability of client code. 
+	 */
 	public final static int REG_8 = 8;
-	public final static int REG_9 = 9;
 
+	/**
+	 * Provided to aid readability of client code. 
+	 */
+	public final static int REG_9 = 9;
+	
 	// ===============================================================
 	// Bytecode Constructors
 	// ===============================================================
@@ -326,7 +370,7 @@ public abstract class Code {
 	 * @return
 	 */
 	public static Return Return() {
-		return get(new Return(Type.T_VOID,-1));
+		return get(new Return(Type.T_VOID,NULL_REG));
 	}
 	
 	/**
@@ -459,9 +503,9 @@ public abstract class Code {
 	 *            --- map from types to destination labels.
 	 * @return
 	 */
-	public static TryCatch TryCatch(String target,
+	public static TryCatch TryCatch(int operand, String target,
 			Collection<Pair<Type, String>> catches) {
-		return get(new TryCatch(target, catches));
+		return get(new TryCatch(operand, target, catches));
 	}
 
 	public static TryEnd TryEnd(String label) {
@@ -2684,10 +2728,10 @@ public abstract class Code {
 		public final int operand;
 
 		private Return(Type type, int operand) {
-			if (type == Type.T_VOID && operand != -1) {
+			if (type == Type.T_VOID && operand != NULL_REG) {
 				throw new IllegalArgumentException(
 						"Return with void type cannot have target register.");
-			} else if (type != Type.T_VOID && operand == -1) {
+			} else if (type != Type.T_VOID && operand == NULL_REG) {
 				throw new IllegalArgumentException(
 						"Return with non-void type must have target register.");
 			}
@@ -2696,7 +2740,7 @@ public abstract class Code {
 		}
 
 		public void slots(Set<Integer> slots) {
-			if(operand != -1) {
+			if(operand != NULL_REG) {
 				slots.add(operand);
 			}
 		}
@@ -3080,14 +3124,30 @@ public abstract class Code {
 	}
 	
 	public static final class TryCatch extends Code {
-		public final String target;
+		public final int operand;
+		public final String label;
 		public final ArrayList<Pair<Type, String>> catches;
 
-		TryCatch(String target, Collection<Pair<Type, String>> catches) {
+		TryCatch(int operand, String label, Collection<Pair<Type, String>> catches) {
+			this.operand = operand;
 			this.catches = new ArrayList<Pair<Type, String>>(catches);
-			this.target = target;
+			this.label = label;
 		}
 
+		@Override
+		public void slots(Set<Integer> slots) {
+			slots.add(operand);
+		}
+
+		@Override
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if(nOperand != null) {
+				return Code.TryCatch(nOperand,label,catches);
+			}
+			return this;
+		}
+		
 		public TryCatch relabel(Map<String, String> labels) {
 			ArrayList<Pair<Type, String>> nbranches = new ArrayList();
 			for (Pair<Type, String> p : catches) {
@@ -3099,22 +3159,23 @@ public abstract class Code {
 				}
 			}
 
-			String ntarget = labels.get(target);
+			String ntarget = labels.get(label);
 			if (ntarget != null) {
-				return TryCatch(ntarget, nbranches);
+				return TryCatch(operand, ntarget, nbranches);
 			} else {
-				return TryCatch(target, nbranches);
+				return TryCatch(operand, label, nbranches);
 			}
 		}
 
 		public int hashCode() {
-			return target.hashCode() + catches.hashCode();
+			return operand + label.hashCode() + catches.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof TryCatch) {
 				TryCatch ig = (TryCatch) o;
-				return target.equals(ig.target) && catches.equals(ig.catches);
+				return operand == ig.operand && label.equals(ig.label)
+						&& catches.equals(ig.catches);
 			}
 			return false;
 		}
@@ -3331,7 +3392,7 @@ public abstract class Code {
 	public static class Void extends AbstractNaryOp<Type> {
 
 		private Void(Type type, int[] operands) {
-			super(type, -1, operands);
+			super(type, NULL_REG, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {

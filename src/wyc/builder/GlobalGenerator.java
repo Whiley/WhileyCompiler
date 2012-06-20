@@ -87,11 +87,11 @@ public class GlobalGenerator {
 						blk = new Block(1);					
 					}
 					HashMap<String,Integer> environment = new HashMap<String,Integer>();
-					environment.put("$",0);
+					environment.put("$",Code.REG_0);
 					addExposedNames(td.resolvedType.raw(),environment,blk);
 					blk.append(new LocalGenerator(this, td).generateAssertion(
 							"constraint not satisfied", td.constraint,
-							environment));							
+							environment.size(), environment));
 				}
 				cache.put(nid, blk);
 				return blk;

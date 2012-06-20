@@ -109,7 +109,7 @@ public class ModuleCheck implements Transform {
 						entry = block.get(i);
 						if (entry.code instanceof Code.Label) {
 							Code.Label l = (Code.Label) entry.code;
-							if (l.label.equals(sw.target)) {
+							if (l.label.equals(sw.label)) {
 								// end of loop body found
 								break;
 							}

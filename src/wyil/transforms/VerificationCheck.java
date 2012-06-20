@@ -760,7 +760,7 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.Store code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
-		int slot = code.target;		
+		int slot = code.label;		
 		environment[slot] = environment[slot] + 1;
 		WExpr lhs = new WVariable(slot + "$" + environment[slot]);
 		WExpr rhs = pop(stack);
