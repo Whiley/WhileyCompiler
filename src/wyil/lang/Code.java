@@ -70,7 +70,16 @@ import wyil.util.*;
  * 
  */
 public abstract class Code {
-	public final static int THIS_SLOT = 0;
+	public final static int REG_0 = 0;
+	public final static int REG_1 = 1;
+	public final static int REG_2 = 2;
+	public final static int REG_3 = 3;
+	public final static int REG_4 = 4;
+	public final static int REG_5 = 5;
+	public final static int REG_6 = 6;
+	public final static int REG_7 = 7;
+	public final static int REG_8 = 8;
+	public final static int REG_9 = 9;
 
 	// ===============================================================
 	// Bytecode Constructors
