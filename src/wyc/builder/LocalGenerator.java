@@ -80,15 +80,18 @@ public final class LocalGenerator {
 	 * failure is raised with the given message.
 	 * 
 	 * @param message
-	 *            --- message to report if condition is false.
+	 *            --- Message to report if condition is false.
 	 * @param condition
-	 *            --- source-level condition to be translated
+	 *            --- Source-level condition to be translated
+	 * @param freeRegister
+	 *            --- All registers with and index equal or higher than this are
+	 *            available for use as temporary storage.
 	 * @param environment
-	 *            --- mapping from variable names to to slot numbers.
+	 *            --- Mapping from variable names to to register indices.
 	 * @return
 	 */
 	public Block generateAssertion(String message, Expr condition,
-			 HashMap<String, Integer> environment) {
+			int freeRegister, HashMap<String, Integer> environment) {
 		try {
 			if (condition instanceof Expr.Constant
 					|| condition instanceof Expr.ConstantAccess
@@ -109,9 +112,10 @@ public final class LocalGenerator {
 			// true. In some cases, we could do better. For example, !(x < 5)
 			// could be rewritten into x>=5. 
 			
-			Block blk = generate(condition,environment);
-			blk.append(Code.Const(Value.V_BOOL(true)),attributes(condition));
-			blk.append(Code.Assert(Type.T_BOOL, Code.COp.EQ, message),attributes(condition));
+			Block blk = generate(condition,freeRegister,freeRegister,environment);
+			blk.append(Code.Const(freeRegister+1,Value.V_BOOL(true)),attributes(condition));
+			blk.append(Code.Assert(Type.T_BOOL, freeRegister, freeRegister + 1,
+					Code.COp.EQ, message), attributes(condition));
 			return blk;
 		} catch (SyntaxError se) {
 			throw se;
@@ -158,15 +162,18 @@ public final class LocalGenerator {
 	 * control will fall through to the following bytecode.
 	 * 
 	 * @param target
-	 *            --- target label to goto if condition is true.
+	 *            --- Target label to goto if condition is true.
 	 * @param condition
-	 *            --- source-level condition to be translated
+	 *            --- Source-level condition to be translated
+	 * @param freeRegister
+	 *            --- All registers with and index equal or higher than this are
+	 *            available for use as temporary storage.
 	 * @param environment
-	 *            --- mapping from variable names to to slot numbers.
+	 *            --- Mapping from variable names to to slot numbers.
 	 * @return
 	 */
 	public Block generateCondition(String target, Expr condition,
-			 HashMap<String, Integer> environment) {
+			 int freeRegister, HashMap<String, Integer> environment) {
 		try {
 			if (condition instanceof Expr.Constant) {
 				return generateCondition(target, (Expr.Constant) condition, environment);
@@ -398,17 +405,24 @@ public final class LocalGenerator {
 	}
 	
 	/**
-	 * Translate a source-level expression into a wyil bytecode block, using a
-	 * given environment mapping named variables to slots. The result of the
-	 * expression remains on the wyil stack.
+	 * Translate a source-level expression into a WYIL bytecode block, using a
+	 * given environment mapping named variables to registers. The result of the
+	 * expression is stored in a given target register.
 	 * 
 	 * @param expression
-	 *            --- source-level expression to be translated
+	 *            --- Source-level expression to be translated
+	 * @param target
+	 *            --- Register in to which the result from this expression
+	 *            should be stored. This may equal the freeRegsiter.
+	 * @param freeRegister
+	 *            --- All registers with and index equal or higher than this are
+	 *            available for use as temporary storage.
 	 * @param environment
-	 *            --- mapping from variable names to to slot numbers.
+	 *            --- Mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	public Block generate(Expr expression, HashMap<String,Integer> environment) {
+	public Block generate(Expr expression, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
 		try {
 			if (expression instanceof Expr.Constant) {
 				return generate((Expr.Constant) expression, environment);

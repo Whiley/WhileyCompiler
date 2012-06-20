@@ -234,7 +234,7 @@ public final class CodeGeneration {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.append(Code.Return(Type.T_VOID),attributes(fd));		
+		body.append(Code.Return(),attributes(fd));		
 		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
@@ -427,13 +427,14 @@ public final class CodeGeneration {
 
 	private Block generate(Skip s, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(Code.Skip, attributes(s));
+		blk.append(Code.Nop, attributes(s));
 		return blk;
 	}
 
-	private Block generate(Debug s, HashMap<String,Integer> environment) {		
-		Block blk = localGenerator.generate(s.expr, environment);		
-		blk.append(Code.debug, attributes(s));
+	private Block generate(Debug s, HashMap<String,Integer> environment) {
+		int target = environment.size();
+		Block blk = localGenerator.generate(s.expr, target, environment);		
+		blk.append(Code.Debug(target), attributes(s));
 		return blk;
 	}
 
