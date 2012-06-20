@@ -353,16 +353,15 @@ public abstract class Code {
 		return get(new IfType(type, leftOperand, rightOperand, label));
 	}
 
-	public static IndirectSend IndirectSend(Type.Message msg,
-			boolean synchronous, int target, int operand,
-			Collection<Integer> operands) {
+	public static IndirectSend IndirectSend(Type.Message msg, int target,
+			int operand, Collection<Integer> operands, boolean synchronous) {
 		return get(new IndirectSend(msg, synchronous, target, operand,
 				toIntArray(operands)));
 	}
 
-	public static IndirectSend IndirectSend(Type.Message msg,
-			boolean synchronous, int target, int operand, int[] operands) {
-		return get(new IndirectSend(msg, synchronous, target, operand, operands));
+	public static IndirectSend IndirectSend(Type.Message msg, int target,
+			int operand, int[] operands, boolean synchronous) {
+	return get(new IndirectSend(msg, synchronous, target, operand, operands));
 	}
 
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
@@ -1645,8 +1644,8 @@ public abstract class Code {
 			if (nOperands != operands || nTarget != null || nOperand != null) {
 				nTarget = nTarget != null ? nTarget : target;
 				nOperand = nOperand != null ? nOperand : operand;
-				return IndirectSend(type, synchronous, nTarget, nOperand,
-						nOperands);
+				return IndirectSend(type, nTarget, nOperand,
+						nOperands, synchronous);
 			} else {
 				return this;
 			}

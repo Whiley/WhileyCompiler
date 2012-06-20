@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wybs.lang.SyntacticElement;
@@ -413,7 +414,7 @@ public final class LocalGenerator {
 	 *            --- Source-level expression to be translated
 	 * @param target
 	 *            --- Register in to which the result from this expression
-	 *            should be stored. This may equal the freeRegsiter.
+	 *            should be stored. This may not equal the freeRegsiter.
 	 * @param freeRegister
 	 *            --- All registers with and index equal or higher than this are
 	 *            available for use as temporary storage.
@@ -425,57 +426,57 @@ public final class LocalGenerator {
 			HashMap<String, Integer> environment) {
 		try {
 			if (expression instanceof Expr.Constant) {
-				return generate((Expr.Constant) expression, environment);
+				return generate((Expr.Constant) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.LocalVariable) {
-				return generate((Expr.LocalVariable) expression, environment);
+				return generate((Expr.LocalVariable) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.ConstantAccess) {
-				return generate((Expr.ConstantAccess) expression, environment);
+				return generate((Expr.ConstantAccess) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Set) {
-				return generate((Expr.Set) expression, environment);
+				return generate((Expr.Set) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.List) {
-				return generate((Expr.List) expression, environment);
+				return generate((Expr.List) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.SubList) {
-				return generate((Expr.SubList) expression, environment);
+				return generate((Expr.SubList) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.SubString) {
-				return generate((Expr.SubString) expression, environment);
+				return generate((Expr.SubString) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.BinOp) {
-				return generate((Expr.BinOp) expression, environment);
+				return generate((Expr.BinOp) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.LengthOf) {
-				return generate((Expr.LengthOf) expression, environment);
+				return generate((Expr.LengthOf) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Dereference) {
-				return generate((Expr.Dereference) expression, environment);
+				return generate((Expr.Dereference) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Convert) {
-				return generate((Expr.Convert) expression, environment);
+				return generate((Expr.Convert) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.IndexOf) {
-				return generate((Expr.IndexOf) expression, environment);
+				return generate((Expr.IndexOf) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.UnOp) {
-				return generate((Expr.UnOp) expression, environment);
+				return generate((Expr.UnOp) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.FunctionCall) {
-				return generate((Expr.FunctionCall) expression, true, environment);
+				return generate((Expr.FunctionCall) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.MethodCall) {
-				return generate((Expr.MethodCall) expression, true, environment);
+				return generate((Expr.MethodCall) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.IndirectFunctionCall) {
-				return generate((Expr.IndirectFunctionCall) expression, true, environment);
+				return generate((Expr.IndirectFunctionCall) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.IndirectMethodCall) {
-				return generate((Expr.IndirectMethodCall) expression, true, environment);
+				return generate((Expr.IndirectMethodCall) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.IndirectMessageSend) {
-				return generate((Expr.IndirectMessageSend) expression, true, environment);
+				return generate((Expr.IndirectMessageSend) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.MessageSend) {
-				return generate((Expr.MessageSend) expression, true, environment);
+				return generate((Expr.MessageSend) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Comprehension) {
-				return generate((Expr.Comprehension) expression, environment);
+				return generate((Expr.Comprehension) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
-				return generate((Expr.RecordAccess) expression, environment);
+				return generate((Expr.RecordAccess) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Record) {
-				return generate((Expr.Record) expression, environment);
+				return generate((Expr.Record) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Tuple) {
-				return generate((Expr.Tuple) expression, environment);
+				return generate((Expr.Tuple) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Dictionary) {
-				return generate((Expr.Dictionary) expression, environment);
+				return generate((Expr.Dictionary) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.FunctionOrMethodOrMessage) {
-				return generate((Expr.FunctionOrMethodOrMessage) expression, environment);
+				return generate((Expr.FunctionOrMethodOrMessage) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.New) {
-				return generate((Expr.New) expression, environment);
+				return generate((Expr.New) expression, target, freeRegister, environment);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression: "
@@ -492,120 +493,134 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	public Block generate(Expr.MessageSend fc, boolean retval,
+	public Block generate(Expr.MessageSend fc, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
-		blk.append(generate(fc.qualification, environment));
-		
-		for (Expr e : fc.arguments) {
-			blk.append(generate(e, environment));
+		int[] operands = new int[fc.arguments.size() + 1];
+		blk.append(generate(fc.qualification, target, freeRegister, environment));
+		operands[0] = target;
+		for (int i = 0; i != operands.length; ++i) {
+			Expr arg = fc.arguments.get(i);
+			blk.append(generate(arg, freeRegister, freeRegister + 1,
+					environment));
+			operands[i] = freeRegister++;
 		}
-		
-		blk.append(Code.Send(fc.messageType.raw(), fc.nid, fc.synchronous, retval),
-				attributes(fc));		
+
+		blk.append(Code.Send(fc.messageType.raw(), target, operands, fc.nid,
+				fc.synchronous), attributes(fc));
 
 		return blk;
 	}
 	
-	public Block generate(Expr.MethodCall fc, boolean retval,
+	public Block generate(Expr.MethodCall fc, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
-		for (Expr e : fc.arguments) {
-			blk.append(generate(e, environment));
-		}
-
-		blk.append(Code.Invoke(fc.methodType.raw(), fc.nid(), retval), attributes(fc));
-
-		return blk;
-	}
-	
-	public Block generate(Expr.FunctionCall fc, boolean retval,
-			HashMap<String, Integer> environment) throws ResolveError {
-		Block blk = new Block(environment.size());
-
-		for (Expr e : fc.arguments) {
-			blk.append(generate(e, environment));
-		}
-
-		blk.append(Code.Invoke(fc.functionType.raw(), fc.nid(), retval), attributes(fc));
-
-		return blk;
-	}
-	
-	public Block generate(Expr.IndirectFunctionCall fc, boolean retval,
-			HashMap<String, Integer> environment) throws ResolveError {
-		Block blk = new Block(environment.size());
-
-		blk.append(generate(fc.src,environment));
+		int[] operands = generate(fc.arguments, target, freeRegister,
+				environment, blk);
 		
-		for (Expr e : fc.arguments) {
-			blk.append(generate(e, environment));
-		}
-
-		blk.append(Code.IndirectInvoke(fc.functionType.raw(), retval), attributes(fc));
+		blk.append(
+				Code.Invoke(fc.methodType.raw(), target, operands, fc.nid()),
+				attributes(fc));
 
 		return blk;
 	}
 	
-	public Block generate(Expr.IndirectMethodCall fc, boolean retval,
+	public Block generate(Expr.FunctionCall fc, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
-		blk.append(generate(fc.src,environment));
-		
-		for (Expr e : fc.arguments) {
-			blk.append(generate(e, environment));
-		}
-
-		blk.append(Code.IndirectInvoke(fc.methodType.raw(), retval), attributes(fc));
+		int[] operands = generate(fc.arguments, target, freeRegister,
+				environment, blk);
+		blk.append(
+				Code.Invoke(fc.functionType.raw(), target, operands, fc.nid()),
+				attributes(fc));
 
 		return blk;
 	}
 	
-	public Block generate(Expr.IndirectMessageSend fc, boolean retval,
+	public Block generate(Expr.IndirectFunctionCall fc, int target,
+			int freeRegister, HashMap<String, Integer> environment)
+			throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		blk.append(generate(fc.src, target, freeRegister, environment));
+
+		int[] operands = generate(fc.arguments, freeRegister, freeRegister + 1,
+				environment, blk);
+
+		blk.append(Code.IndirectInvoke(fc.functionType.raw(), target, target,
+				operands), attributes(fc));
+
+		return blk;
+	}
+	
+	public Block generate(Expr.IndirectMethodCall fc, int target,
+			int freeRegister, HashMap<String, Integer> environment)
+			throws ResolveError {
+		Block blk = new Block(environment.size());
+
+		blk.append(generate(fc.src, target, freeRegister, environment));
+
+		int[] operands = generate(fc.arguments, freeRegister, freeRegister + 1,
+				environment, blk);
+
+		blk.append(Code.IndirectInvoke(fc.methodType.raw(), target, target,
+				operands), attributes(fc));
+
+		return blk;
+	}
+	
+	public Block generate(Expr.IndirectMessageSend fc, int target,
+			int freeRegister, boolean retval,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
-		blk.append(generate(fc.src,environment));
-		
-		blk.append(generate(fc.receiver,environment));
-		
-		for (Expr e : fc.arguments) {
-			blk.append(generate(e, environment));
+		blk.append(generate(fc.src, target, freeRegister, environment));
+
+		int[] operands = new int[fc.arguments.size() + 1];
+		blk.append(generate(fc.receiver, target, freeRegister, environment));
+		operands[0] = freeRegister++;
+		for (int i = 0; i != operands.length; ++i) {
+			Expr arg = fc.arguments.get(i);
+			blk.append(generate(arg, freeRegister, freeRegister + 1,
+					environment));
+			operands[i] = freeRegister++;
 		}
 
-		blk.append(Code.IndirectSend(fc.messageType.raw(), fc.synchronous, retval), attributes(fc));
+		blk.append(Code.IndirectSend(fc.messageType.raw(), target, target,
+				operands, fc.synchronous), attributes(fc));
 
 		return blk;
 	}
 	
-	private Block generate(Expr.Constant c, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Constant c, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(c.value), attributes(c));		
+		blk.append(Code.Const(target, c.value), attributes(c));
 		return blk;
 	}
 
-	private Block generate(Expr.FunctionOrMethodOrMessage s, HashMap<String,Integer> environment) {						
+	private Block generate(Expr.FunctionOrMethodOrMessage s, int target, int freeRegister, HashMap<String,Integer> environment) {						
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(Value.V_FUN(s.nid, s.type.raw())),
+		blk.append(Code.Const(target, Value.V_FUN(s.nid, s.type.raw())),
 				attributes(s));
 		return blk;
 	}
 	
-	private Block generate(Expr.ConstantAccess v, HashMap<String,Integer> environment) throws ResolveError {						
+	private Block generate(Expr.ConstantAccess v, int target, int freeRegister, HashMap<String,Integer> environment) throws ResolveError {						
 		Block blk = new Block(environment.size());
 		Value val = v.value;				
-		blk.append(Code.Const(val),attributes(v));
+		blk.append(Code.Const(target,val),attributes(v));
 		return blk;
 	}
 	
-	private Block generate(Expr.LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
+	private Block generate(Expr.LocalVariable v, int target, int freeRegister, HashMap<String,Integer> environment) throws ResolveError {
 		
 		if (environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Load(v.result().raw(), environment.get(v.var)), attributes(v));
+			blk.append(Code.Copy(v.result().raw(), target, environment.get(v.var)), attributes(v));
 			return blk;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), context,
@@ -617,23 +632,23 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	private Block generate(Expr.UnOp v, HashMap<String,Integer> environment) {
-		Block blk = generate(v.mhs,  environment);	
+	private Block generate(Expr.UnOp v, int target, int freeRegister, HashMap<String,Integer> environment) {
+		Block blk = generate(v.mhs,  target, freeRegister, environment);	
 		switch (v.op) {
 		case NEG:
-			blk.append(Code.Negate(v.result().raw()), attributes(v));
+			blk.append(Code.Negate(v.result().raw(), target, target), attributes(v));
 			break;
 		case INVERT:
-			blk.append(Code.Invert(v.result().raw()), attributes(v));
+			blk.append(Code.Invert(v.result().raw(), target, target), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			blk = generateCondition(falseLabel, v.mhs, environment);
-			blk.append(Code.Const(Value.V_BOOL(true)), attributes(v));
+			blk = generateCondition(falseLabel, v.mhs, freeRegister, environment);
+			blk.append(Code.Const(target,Value.V_BOOL(true)), attributes(v));
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(falseLabel));
-			blk.append(Code.Const(Value.V_BOOL(false)), attributes(v));
+			blk.append(Code.Const(target,Value.V_BOOL(false)), attributes(v));
 			blk.append(Code.Label(exitLabel));
 			break;							
 		default:
@@ -644,37 +659,44 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.LengthOf v, HashMap<String,Integer> environment) {
-		Block blk = generate(v.src,  environment);	
-		blk.append(Code.LengthOf(v.srcType.raw()), attributes(v));
+	private Block generate(Expr.LengthOf v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block blk = generate(v.src, target, freeRegister, environment);
+		blk.append(Code.LengthOf(v.srcType.raw(), target, target),
+				attributes(v));
 		return blk;
 	}
 			
-	private Block generate(Expr.Dereference v, HashMap<String,Integer> environment) {
-		Block blk = generate(v.src,  environment);	
-		blk.append(Code.Dereference(v.srcType.raw()), attributes(v));
-		return blk;
-	}	
-	
-	private Block generate(Expr.IndexOf v, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, environment));
-		blk.append(generate(v.index, environment));
-		blk.append(Code.IndexOf(v.srcType.raw()),attributes(v));
+	private Block generate(Expr.Dereference v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block blk = generate(v.src, target, freeRegister, environment);
+		blk.append(Code.Dereference(v.srcType.raw(), target, target),
+				attributes(v));
 		return blk;
 	}
 	
-	private Block generate(Expr.Convert v, HashMap<String,Integer> environment) {
+	private Block generate(Expr.IndexOf v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.expr, environment));		
+		blk.append(generate(v.src, target, freeRegister, environment));
+		blk.append(generate(v.index, freeRegister, freeRegister+1, environment));
+		blk.append(Code.IndexOf(v.srcType.raw(), target, target, freeRegister),
+				attributes(v));
+		return blk;
+	}
+	
+	private Block generate(Expr.Convert v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(generate(v.expr, target, freeRegister, environment));
 		Type from = v.expr.result().raw();
 		Type to = v.result().raw();
 		// TODO: include constraints
-		blk.append(Code.Convert(from,to),attributes(v));
+		blk.append(Code.Convert(from, target, target, to), attributes(v));
 		return blk;
 	}
 	
-	private Block generate(Expr.BinOp v, HashMap<String,Integer> environment) throws Exception {
+	private Block generate(Expr.BinOp v, int target, int freeRegister, HashMap<String,Integer> environment) throws Exception {
 
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
@@ -684,97 +706,111 @@ public final class LocalGenerator {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			Block blk = generateCondition(trueLabel, v, environment);
-			blk.append(Code.Const(Value.V_BOOL(false)), attributes(v));			
+			blk.append(Code.Const(target,Value.V_BOOL(false)), attributes(v));			
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
-			blk.append(Code.Const(Value.V_BOOL(true)), attributes(v));				
+			blk.append(Code.Const(target,Value.V_BOOL(true)), attributes(v));				
 			blk.append(Code.Label(exitLabel));			
 			return blk;
 		}
 
 		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.lhs, environment));
-		blk.append(generate(v.rhs, environment));
+		blk.append(generate(v.lhs, target, freeRegister, environment));
+		blk.append(generate(v.rhs, freeRegister, freeRegister+1, environment));
 		Type result = v.result().raw();
 		
 		switch(bop) {		
 		case UNION:
-			blk.append(Code.SetUnion((Type.EffectiveSet)result,Code.OpDir.UNIFORM),attributes(v));			
+				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
+						target, freeRegister, Code.SetOperation.UNION),
+						attributes(v));			
 			return blk;			
 		case INTERSECTION:
-			blk.append(Code.SetIntersect((Type.EffectiveSet)result,Code.OpDir.UNIFORM),attributes(v));
-			return blk;			
+				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
+						target, freeRegister, Code.SetOperation.INTERSECTION),
+						attributes(v));
+				return blk;	
 		case DIFFERENCE:
-			blk.append(Code.SetDifference((Type.EffectiveSet)result,Code.OpDir.UNIFORM),attributes(v));
-			return blk;			
+				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
+						target, freeRegister, Code.SetOperation.DIFFERENCE),
+						attributes(v));
+				return blk;
 		case LISTAPPEND:
-			blk.append(Code.ListAppend((Type.EffectiveList)result,Code.OpDir.UNIFORM),attributes(v));
-			return blk;	
+				blk.append(Code.ListOp((Type.EffectiveList) result, target,
+						target, freeRegister, Code.ListOperation.APPEND),
+						attributes(v));
+				return blk;
 		case STRINGAPPEND:
 			Type lhs = v.lhs.result().raw();
 			Type rhs = v.rhs.result().raw();
-			Code.OpDir dir;
+			Code.StringOperation op;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
-				dir = Code.OpDir.UNIFORM;
+				op = Code.StringOperation.APPEND;
 			} else if(lhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, rhs)) {
-				dir = Code.OpDir.LEFT;
+				op = Code.StringOperation.LEFT_APPEND;
 			} else if(rhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, lhs)) {
-				dir = Code.OpDir.RIGHT;
+				op = Code.StringOperation.RIGHT_APPEND;
 			} else {
 				// this indicates that one operand must be explicitly converted
 				// into a string.
-				dir = Code.OpDir.UNIFORM;
+				op = Code.StringOperation.APPEND;
 			}
-			blk.append(Code.StringAppend(dir),attributes(v));
+			blk.append(Code.StringOp(target,target,freeRegister,op),attributes(v));
 			return blk;	
 		default:
-			blk.append(Code.BinOp(result, OP2BOP(bop,v)),attributes(v));			
+				blk.append(Code.BinOp(result, target, target, freeRegister,
+						OP2BOP(bop, v)), attributes(v));			
 			return blk;
 		}		
 	}
 
-	private Block generate(Expr.Set v, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());		
-		int nargs = 0;
-		for (Expr e : v.arguments) {				
-			nargs++;
-			blk.append(generate(e, environment));
-		}
-		blk.append(Code.NewSet(v.type.raw(),nargs),attributes(v));		
-		return blk;
-	}
-	
-	private Block generate(Expr.List v, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());		
-		int nargs = 0;
-		for (Expr e : v.arguments) {				
-			nargs++;
-			blk.append(generate(e, environment));
-		}
-		blk.append(Code.NewList(v.type.raw(),nargs),attributes(v));		
-		return blk;
-	}
-	
-	private Block generate(Expr.SubList v, HashMap<String, Integer> environment) {
+	private Block generate(Expr.Set v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, environment));
-		blk.append(generate(v.start, environment));
-		blk.append(generate(v.end, environment));
-		blk.append(Code.SubList(v.type.raw()), attributes(v));
+		int[] operands = generate(v.arguments, target, freeRegister, environment,
+				blk);		
+		blk.append(Code.NewSet(v.type.raw(), target, operands), attributes(v));
 		return blk;
 	}
 	
-	private Block generate(Expr.SubString v, HashMap<String, Integer> environment) {
+	private Block generate(Expr.List v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());		
+		int[] operands = generate(v.arguments, target, freeRegister, environment,
+				blk);		
+		blk.append(Code.NewList(v.type.raw(), target, operands), attributes(v));
+		return blk;
+	}
+	
+	private Block generate(Expr.SubList v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, environment));
-		blk.append(generate(v.start, environment));
-		blk.append(generate(v.end, environment));
-		blk.append(Code.SubString(), attributes(v));
+		blk.append(generate(v.src, target, freeRegister, environment));
+		blk.append(generate(v.start, freeRegister, freeRegister + 1,
+				environment));
+		blk.append(generate(v.end, freeRegister + 1, freeRegister + 2,
+				environment));
+		blk.append(Code.SubList(v.type.raw(), target, target, freeRegister,
+				freeRegister + 1), attributes(v));
 		return blk;
 	}
 	
-	private Block generate(Expr.Comprehension e, HashMap<String,Integer> environment) {
+	private Block generate(Expr.SubString v, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(generate(v.src, target, freeRegister, environment));
+		blk.append(generate(v.start, freeRegister, freeRegister + 1,
+				environment));
+		blk.append(generate(v.end, freeRegister + 1, freeRegister + 2,
+				environment));
+		blk.append(
+				Code.SubString(target, target, freeRegister, freeRegister + 1),
+				attributes(v));
+		return blk;
+	}
+	
+	private Block generate(Expr.Comprehension e, int target, int freeRegister, HashMap<String,Integer> environment) {
 
 		// First, check for boolean cases which are handled mostly by
 		// generateCondition.
@@ -782,15 +818,12 @@ public final class LocalGenerator {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			int freeSlot = allocate(environment);
-			Block blk = generateCondition(trueLabel, e, environment);					
-			blk.append(Code.Const(Value.V_BOOL(false)), attributes(e));
-			blk.append(Code.Store(Type.T_BOOL,freeSlot),attributes(e));			
+			Block blk = generateCondition(trueLabel, e, freeRegister, environment);					
+			blk.append(Code.Const(target, Value.V_BOOL(false)), attributes(e));					
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
-			blk.append(Code.Const(Value.V_BOOL(true)), attributes(e));
-			blk.append(Code.Store(Type.T_BOOL,freeSlot),attributes(e));
-			blk.append(Code.Label(exitLabel));
-			blk.append(Code.Load(Type.T_BOOL,freeSlot),attributes(e));
+			blk.append(Code.Const(target, Value.V_BOOL(true)), attributes(e));			
+			blk.append(Code.Label(exitLabel));			
 			return blk;
 		}
 
@@ -882,47 +915,83 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generate(Expr.Record sg, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Record sg, int target, int freeRegister, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
-		Collections.sort(keys);
-		for (String key : keys) {		
-			blk.append(generate(sg.fields.get(key), environment));
-		}		
-		blk.append(Code.NewRecord(sg.result().raw()), attributes(sg));
+		Collections.sort(keys);		
+		int[] operands = new int[sg.fields.size()];
+		int current = target;
+		int nextFree = freeRegister;
+		for (int i = 0; i != operands.length; ++i) {
+			String key = keys.get(i);
+			Expr arg = sg.fields.get(key);
+			blk.append(generate(arg, current, nextFree, environment));
+			operands[i] = current;
+			current = nextFree;
+			nextFree = nextFree + 1;
+		}
+		blk.append(Code.NewRecord(sg.result().raw(), target, operands), attributes(sg));
 		return blk;
 	}
 
-	private Block generate(Expr.Tuple sg, HashMap<String,Integer> environment) {		
-		Block blk = new Block(environment.size());		
-		for (Expr e : sg.fields) {									
-			blk.append(generate(e, environment));
-		}
-		blk.append(Code.NewTuple(sg.result().raw(),sg.fields.size()),attributes(sg));
-		return blk;		
+	private Block generate(Expr.Tuple sg, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		int[] operands = generate(sg.fields, target, freeRegister, environment,
+				blk);
+		blk.append(Code.NewTuple(sg.result().raw(), target, operands),
+				attributes(sg));
+		return blk;
 	}
 
-	private Block generate(Expr.Dictionary sg, HashMap<String,Integer> environment) {		
+	private Block generate(Expr.Dictionary sg, int target, int freeRegister, HashMap<String,Integer> environment) {		
 		Block blk = new Block(environment.size());		
-		for (Pair<Expr,Expr> e : sg.pairs) {			
-			blk.append(generate(e.first(), environment));
-			blk.append(generate(e.second(), environment));
+		int[] operands = new int[sg.pairs.size()*2];
+		int current = target;
+		int nextFree = freeRegister;
+		for (int i = 0; i != sg.pairs.size(); ++i) {
+			Pair<Expr,Expr> e = sg.pairs.get(i);
+			blk.append(generate(e.first(), current, nextFree, environment));
+			operands[i*2] = current;
+			current = nextFree;
+			nextFree = nextFree + 1;
+			blk.append(generate(e.second(), current, nextFree, environment));
+			operands[i*2] = current;
+			current = nextFree;
+			nextFree = nextFree + 1;
 		}
-		blk.append(Code.NewDict(sg.result().raw(),sg.pairs.size()),attributes(sg));
+		blk.append(Code.NewDict(sg.result().raw(),target,operands),attributes(sg));
 		return blk;
 	}
 	
-	private Block generate(Expr.RecordAccess sg, HashMap<String,Integer> environment) {
-		Block lhs = generate(sg.src, environment);		
-		lhs.append(Code.FieldLoad(sg.srcType.raw(),sg.name), attributes(sg));
+	private Block generate(Expr.RecordAccess sg, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block lhs = generate(sg.src, target, freeRegister, environment);
+		lhs.append(Code.FieldLoad(sg.srcType.raw(), target, target, sg.name),
+				attributes(sg));
 		return lhs;
 	}
 	
-	private Block generate(Expr.New expr,
+	private Block generate(Expr.New expr, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
-		Block blk = generate(expr.expr,environment);
-		blk.append(Code.New(expr.type.raw()));
+		Block blk = generate(expr.expr, target, freeRegister, environment);
+		blk.append(Code.New(expr.type.raw(), target, target));
 		return blk;
+	}
+	
+	private int[] generate(List<Expr> arguments, int target, int freeRegister,
+			HashMap<String, Integer> environment, Block blk) {
+		int[] operands = new int[arguments.size()];
+		int current = target;
+		int nextFree = freeRegister;
+		for (int i = 0; i != operands.length; ++i) {
+			Expr arg = arguments.get(i);
+			blk.append(generate(arg, current, nextFree, environment));
+			operands[i] = current;
+			current = nextFree;
+			nextFree = nextFree + 1;
+		}
+		return operands;
 	}
 	
 	private Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {
@@ -1081,12 +1150,12 @@ public final class LocalGenerator {
 				Code.Assert a = (Code.Assert) e.code;				
 				Code.COp iop = Code.invert(a.op);
 				if(iop != null) {
-					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
+					nblock.append(Code.IfGoto(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
 					String lab = Block.freshLabel();
-					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+					nblock.append(Code.IfGoto(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
 					nblock.append(Code.Goto(target));
 					nblock.append(Code.Label(lab));
 				}
