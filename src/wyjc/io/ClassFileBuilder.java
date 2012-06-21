@@ -440,9 +440,8 @@ public class ClassFileBuilder {
 				 freeSlot = translate((ForAll)code,freeSlot,bytecodes);
 			} else if(code instanceof Goto) {
 				 translate((Goto)code,freeSlot,bytecodes);
-			} else if(code instanceof IfGoto) {
-				IfGoto ifgoto = (IfGoto) code;
-				translateIfGoto(ifgoto.type,ifgoto.op,ifgoto.target, entry, freeSlot, bytecodes);
+			} else if(code instanceof IfGoto) {				
+				translateIfGoto((IfGoto) code, entry, freeSlot, bytecodes);
 			} else if(code instanceof IfType) {
 				translate((IfType) code, entry, freeSlot, constants, bytecodes);
 			} else if(code instanceof IndirectInvoke) {
@@ -688,15 +687,17 @@ public class ClassFileBuilder {
 		if (c.type == Type.T_VOID) {
 			bytecodes.add(new Bytecode.Return(null));
 		} else {
-			bytecodes.add(new Bytecode.Return(convertType(c.type)));
+			JvmType jt = convertType(c.type);
+			bytecodes.add(new Bytecode.Load(c.operand,jt));
+			bytecodes.add(new Bytecode.Return(jt));
 		}
 	}
 
 	public void translate(Code.Throw c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {			
 		bytecodes.add(new Bytecode.New(WHILEYEXCEPTION));
-		bytecodes.add(new Bytecode.DupX1());
-		bytecodes.add(new Bytecode.Swap());				
+		bytecodes.add(new Bytecode.Dup(WHILEYEXCEPTION));
+		bytecodes.add(new Bytecode.Load(c.operand,convertType(c.type)));		
 		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYEXCEPTION, "<init>", ftype,
 				Bytecode.SPECIAL));		
@@ -707,6 +708,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				WHILEYTUPLE, T_INT);
+		bytecodes.add(new Bytecode.Load(c.operand,convertType((Type) c.type)));
 		bytecodes.add(new Bytecode.LoadConst(c.index));		
 		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", ftype,
 				Bytecode.STATIC));		
@@ -736,6 +738,8 @@ public class ClassFileBuilder {
 			cases.add(new Pair(iv, p.second()));
 		}
 
+		bytecodes.add(new Bytecode.Load(c.operand,convertType((Type) c.type)));
+		
 		if (canUseSwitchBytecode) {
 			JvmType.Function ftype = new JvmType.Function(T_INT);
 			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "intValue", ftype,
@@ -743,14 +747,15 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Switch(c.defaultTarget, cases));
 		} else {
 			// ok, in this case we have to fall back to series of the if
-			// conditions. Not ideal.  
-			bytecodes.add(new Bytecode.Store(freeSlot, convertType(c.type)));
+			// conditions. Not ideal.  			
 			for (Pair<Value, String> p : c.branches) {
 				Value value = p.first();
 				String target = p.second();
-				translate(value,freeSlot+1,bytecodes);
-				bytecodes.add(new Bytecode.Load(freeSlot, convertType(c.type)));				
-				translateIfGoto(value.type(),Code.COp.EQ,target,entry,freeSlot+1,bytecodes);
+				translate(value, freeSlot, bytecodes);
+				bytecodes
+						.add(new Bytecode.Load(c.operand, convertType(c.type)));				
+				translateIfGoto(value.type(), Code.COp.EQ, target, entry,
+						freeSlot + 1, bytecodes);
 			}
 			bytecodes.add(new Bytecode.Goto(c.defaultTarget));
 		}
@@ -796,6 +801,14 @@ public class ClassFileBuilder {
 		UnresolvedHandler trampolineHandler = new UnresolvedHandler(start,
 				c.label, trampolineStart, WHILEYEXCEPTION);
 		handlers.add(trampolineHandler);
+	}
+	
+	public void translateIfGoto(Code.IfGoto code, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {	
+		JvmType jt = convertType(code.type);
+		bytecodes.add(new Bytecode.Load(code.leftOperand,jt));
+		bytecodes.add(new Bytecode.Load(code.rightOperand,jt));		
+		translateIfGoto(code.type,code.op,code.target,stmt,freeSlot,bytecodes);
 	}
 	
 	public void translateIfGoto(Type c_type, Code.COp cop, String target, Entry stmt, int freeSlot,
