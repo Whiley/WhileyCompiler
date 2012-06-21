@@ -671,6 +671,16 @@ public abstract class Code {
 			}
 			return false;
 		}
+		
+		protected abstract String codeString();
+		
+		public String toString() {
+			if(operand != Code.NULL_REG) { 
+				return "%" + target + " = " + codeString() + " %" + operand + " : " + type;
+			} else {
+				return "%" + target + " = " + codeString()  + " : " + type;
+			}
+		}
 	}
 
 	/**
@@ -721,6 +731,16 @@ public abstract class Code {
 				return operand == bo.operand && type.equals(bo.type);
 			}
 			return false;
+		}
+		
+		protected abstract String codeString();
+		
+		public String toString() {
+			if(operand != Code.NULL_REG) {
+				return codeString() + " %" + operand + " : " + type;
+			} else {
+				return codeString();
+			}
 		}
 	}
 	
@@ -789,6 +809,13 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
+		}
+		
+		protected abstract String codeString();
+		
+		public String toString() {			
+			return "%" + target + " = " + codeString() + " %" + leftOperand
+					+ ", %" + rightOperand + " : " + type;			
 		}
 	}
 
@@ -979,6 +1006,13 @@ public abstract class Code {
 			}
 			return false;
 		}
+		
+		protected abstract String codeString();
+		
+		public String toString() {
+			return codeString() + " %" + leftOperand + ", %" + rightOperand
+					+ " : " + type;
+		}
 	}
 
 	// ===============================================================
@@ -1153,8 +1187,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return "convert " + type + " to " + result;
+		public String codeString() {
+			return "convert " + result + "";
 		}
 	}
 
@@ -1201,7 +1235,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return toString("const " + constant, constant.type());
+			return "const " + constant;
 		}
 	}
 
@@ -1229,8 +1263,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("copy", type);
+		public String codeString() {
+			return "copy";
 		}
 	}
 
@@ -1259,7 +1293,7 @@ public abstract class Code {
 			return o instanceof Debug && super.equals(o);
 		}
 
-		public String toString() {
+		public String codeString() {
 			return "debug";
 		}
 	}
@@ -1387,8 +1421,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("fieldload " + field, (Type) type);
+		public String codeString() {
+			return "fieldload " + field;
 		}
 	}
 
@@ -1796,8 +1830,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("not", Type.T_BOOL);
+		public String codeString() {
+			return "not";
 		}
 	}
 
@@ -1971,8 +2005,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("length", (Type) type);
+		public String codeString() {
+			return "lengthOf";
 		}
 	}
 
@@ -2070,8 +2104,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("move", type);
+		public String codeString() {
+			return "move";
 		}
 	}
 
@@ -2709,8 +2743,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("return", type);
+		public String codeString() {
+			return "return";
 		}
 	}
 
@@ -3001,8 +3035,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("throw", type);
+		public String codeString() {
+			return "throw";
 		}
 	}
 	
@@ -3138,8 +3172,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("neg", type);
+		public String codeString() {
+			return "neg";
 		}
 	}
 
@@ -3174,8 +3208,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("invert", type);
+		public String codeString() {
+			return "invert";
 		}
 	}
 	
@@ -3203,7 +3237,7 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
+		public String codeString() {
 			return toString("new", type);
 		}
 	}
@@ -3230,8 +3264,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("tupleload " + index, (Type) type);
+		public String codeString() {
+			return "tupleload " + index;
 		}
 	}
 
@@ -3259,8 +3293,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			return toString("deref", type);
+		public String codeString() {
+			return "deref";
 		}
 	}
 
@@ -3291,22 +3325,6 @@ public abstract class Code {
 
 		public String toString() {
 			return toString("void ", type);
-		}
-	}
-
-	public static String toString(String str, Type t) {
-		if (t == null) {
-			return str + " : ?";
-		} else {
-			return str + " : " + t;
-		}
-	}
-
-	public static String toString(String str, Type before, Type after) {
-		if (before == null || after == null) {
-			return str + " : ?";
-		} else {
-			return str + " : " + before + " => " + after;
 		}
 	}
 
