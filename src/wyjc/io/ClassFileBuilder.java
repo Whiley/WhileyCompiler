@@ -968,35 +968,29 @@ public class ClassFileBuilder {
 	public void translate(Code.IfType c, Entry stmt, int freeSlot,
 			HashMap<Constant,Integer> constants, ArrayList<Bytecode> bytecodes) {						
 		
-		if(c.leftOperand >= 0) {
-			// In this case, we're updating the type of a local variable. To
-			// make this work, we must update the JVM type of that slot as well
-			// using a checkcast. 
-			String exitLabel = freshLabel();
-			String trueLabel = freshLabel();
-					
-			bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
-			translateTypeTest(trueLabel, c.type, c.rightOperand, bytecodes, constants);
+		// In this case, we're updating the type of a local variable. To
+		// make this work, we must update the JVM type of that slot as well
+		// using a checkcast. 
+		String exitLabel = freshLabel();
+		String trueLabel = freshLabel();
 
-			Type gdiff = Type.intersect(c.type,Type.Negation(c.rightOperand));			
-			bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
-			// now, add checkcast									
-			addReadConversion(gdiff,bytecodes);			
-			bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(gdiff)));							
-			bytecodes.add(new Bytecode.Goto(exitLabel));
-			bytecodes.add(new Bytecode.Label(trueLabel));			
-			Type glb = Type.intersect(c.type, c.rightOperand);			
-			bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
-			// now, add checkcast						
-			addReadConversion(glb,bytecodes);
-			bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(glb)));			
-			bytecodes.add(new Bytecode.Goto(c.target));
-			bytecodes.add(new Bytecode.Label(exitLabel));
-		} else {
-			// This is the easy case. We're not updating the type of a local
-			// variable; rather we're just type testing a value on the stack.
-			translateTypeTest(c.target, c.type, c.rightOperand, bytecodes, constants);
-		}
+		bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
+		translateTypeTest(trueLabel, c.type, c.rightOperand, bytecodes, constants);
+
+		Type gdiff = Type.intersect(c.type,Type.Negation(c.rightOperand));			
+		bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
+		// now, add checkcast									
+		addReadConversion(gdiff,bytecodes);			
+		bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(gdiff)));							
+		bytecodes.add(new Bytecode.Goto(exitLabel));
+		bytecodes.add(new Bytecode.Label(trueLabel));			
+		Type glb = Type.intersect(c.type, c.rightOperand);			
+		bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
+		// now, add checkcast						
+		addReadConversion(glb,bytecodes);
+		bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(glb)));			
+		bytecodes.add(new Bytecode.Goto(c.target));
+		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
 	
 	// The purpose of this method is to translate a type test. We're testing to
@@ -1057,6 +1051,7 @@ public class ClassFileBuilder {
 		
 		Type elementType = c.type.element();		
 
+		bytecodes.add(new Bytecode.Load(c.sourceOperand, convertType((Type) c.type)));
 		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "iterator", ftype, Bytecode.STATIC));
 		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
@@ -1092,6 +1087,7 @@ public class ClassFileBuilder {
 	public void translate(Code.Debug c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_STRING);
+		bytecodes.add(new Bytecode.Load(c.operand, JAVA_LANG_STRING));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "debug", ftype,
 				Bytecode.STATIC));
 	}
@@ -1099,6 +1095,9 @@ public class ClassFileBuilder {
 	public void translate(Code.Assert c, Block.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		String lab = freshLabel();
+		JvmType jt = convertType(c.type);
+		bytecodes.add(new Bytecode.Load(c.leftOperand, jt));
+		bytecodes.add(new Bytecode.Load(c.rightOperand, jt));
 		translateIfGoto(c.type, c.op, lab, entry, freeSlot, bytecodes);
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
@@ -1111,46 +1110,57 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.Copy c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
+		JvmType jt = convertType(c.type);
+		bytecodes.add(new Bytecode.Load(c.operand, jt));
 		addIncRefs(c.type,bytecodes);
+		bytecodes.add(new Bytecode.Store(c.target, jt));
 	}
 	
 	public void translate(Code.Move c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
-		// a move does not need to increment the reference count, since the
-		// register is no longer usable after this point.
-		
-		// TODO: the following codes are not strictly necessary, and clearly
-		// lead to less efficient bytecode. Therefore, at some point, they
-		// should be removed. However, they do provide useful debugging code to
-		// check that the Move bytecode is, in fact, doing what it should (i.e.
-		// the register in question is actually dead).
-		bytecodes.add(new Bytecode.LoadConst(1.0F));
-		bytecodes.add(new Bytecode.Store(c.operand, T_FLOAT));
+		JvmType jt = convertType(c.type);
+		bytecodes.add(new Bytecode.Load(c.operand, jt));
+		bytecodes.add(new Bytecode.Store(c.target, jt));
 	}
 		
 	public void translate(Code.ListOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
-		JvmType.Function ftype;
-		if(c.operation == ListOperation.APPEND) {
-			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,WHILEYLIST);
-		} else if(c.operation == ListOperation.LEFT_APPEND) {			
-			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,JAVA_LANG_OBJECT);
-		} else {
-			ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_OBJECT,WHILEYLIST);
-		}													
+		JvmType leftType;
+		JvmType rightType;
+		
+		switch(c.operation) {
+		case APPEND:
+			leftType = WHILEYLIST;
+			rightType = WHILEYLIST;
+			break;
+		case LEFT_APPEND:			
+			leftType = WHILEYLIST;
+			rightType = JAVA_LANG_OBJECT;
+			break;
+		case RIGHT_APPEND:
+			leftType = JAVA_LANG_OBJECT;
+			rightType = WHILEYLIST;
+			break;
+		default:
+			internalFailure("unknown list operation",filename,stmt);
+			return;
+		}			
+		
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,leftType,rightType);
+		bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));
+		bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
-				Bytecode.STATIC));			
+				Bytecode.STATIC));	
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYLIST));
 	}
 	
 	public void translate(Code.LengthOf c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {				
-		// FIXME: the following is a bit of a hack which works for now. When I
-		// refactor the collections library then it can be fixed properly.
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Load(c.operand, convertType((Type) c.type)));
 		JvmType.Clazz ctype = JAVA_LANG_OBJECT;
-		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,ctype);						
-		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "length",
-				ftype, Bytecode.STATIC));								
+		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER, ctype);
+		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "length", ftype,
+				Bytecode.STATIC));
+		bytecodes.add(new Bytecode.Store(c.target, BIG_INTEGER));
 	}
 	
 	public void translate(Code.SubList c, Entry stmt, int freeSlot,
