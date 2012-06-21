@@ -354,19 +354,22 @@ public final class LocalGenerator {
 	}
 	
 	private Block generateCondition(String target, Expr.Comprehension e, int freeRegister,  
-			HashMap<String,Integer> environment) {
-		
+			HashMap<String,Integer> _environment) {
+				
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, e);
 		}
-					
+		
+		HashMap<String,Integer> environment = new HashMap<String,Integer>(_environment);
+		
 		// Ok, non-boolean case.				
 		Block blk = new Block(environment.size());
 		ArrayList<Triple<Integer,Integer,Type.EffectiveCollection>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> src : e.sources) {
 			int srcSlot;
-			int varSlot = allocate(src.first(),environment); 
+			int varSlot = freeRegister++;
+			environment.put(src.first(), varSlot);
 			Nominal srcType = src.second().result();			
 			
 			if(src.second() instanceof Expr.LocalVariable) {
@@ -377,14 +380,12 @@ public final class LocalGenerator {
 					srcSlot = environment.get(v.var);
 				} else {					
 					// fall-back plan ...
-					blk.append(generate(src.second(), environment));
-					srcSlot = allocate(environment);
-					blk.append(Code.Store(srcType.raw(), srcSlot),attributes(e));	
+					srcSlot = freeRegister++;
+					blk.append(generate(src.second(), srcSlot, freeRegister, environment));					
 				}
 			} else {
-				blk.append(generate(src.second(), environment));
-				srcSlot = allocate(environment);
-				blk.append(Code.Store(srcType.raw(), srcSlot),attributes(e));	
+				srcSlot = freeRegister++;
+				blk.append(generate(src.second(), srcSlot, freeRegister, environment));				
 			}			
 			slots.add(new Triple(varSlot,srcSlot,srcType.raw()));											
 		}
@@ -394,17 +395,15 @@ public final class LocalGenerator {
 		
 		for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
 			Type.EffectiveCollection srcType = p.third();			
-			String lab = loopLabel + "$" + p.first();									
-			blk.append(Code.Load((Type) srcType, p.second()), attributes(e));			
-			blk.append(Code
-					.ForAll(srcType, p.first(), lab, Collections.EMPTY_LIST),
-					attributes(e));
+			String lab = loopLabel + "$" + p.first();															
+			blk.append(Code.ForAll(srcType, p.second(), p.first(),
+					Collections.EMPTY_LIST, lab), attributes(e));
 			labels.add(lab);
 		}
 								
 		if (e.cop == Expr.COp.NONE) {
 			String exitLabel = Block.freshLabel();
-			blk.append(generateCondition(exitLabel, e.condition, 
+			blk.append(generateCondition(exitLabel, e.condition, freeRegister,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {				
 				blk.append(Code.End(labels.get(i)));
@@ -412,7 +411,7 @@ public final class LocalGenerator {
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else { // SOME			
-			blk.append(generateCondition(target, e.condition, 
+			blk.append(generateCondition(target, e.condition, freeRegister,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				blk.append(Code.End(labels.get(i)));
@@ -827,15 +826,14 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.Comprehension e, int target, int freeRegister, HashMap<String,Integer> environment) {
+	private Block generate(Expr.Comprehension e, int target, int freeRegister, HashMap<String,Integer> _environment) {
 
 		// First, check for boolean cases which are handled mostly by
 		// generateCondition.
 		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE) {
 			String trueLabel = Block.freshLabel();
-			String exitLabel = Block.freshLabel();
-			int freeSlot = allocate(environment);
-			Block blk = generateCondition(trueLabel, e, freeRegister, environment);					
+			String exitLabel = Block.freshLabel();			
+			Block blk = generateCondition(trueLabel, e, freeRegister, _environment);					
 			blk.append(Code.Const(target, Value.V_BOOL(false)), attributes(e));					
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
@@ -844,13 +842,15 @@ public final class LocalGenerator {
 			return blk;
 		}
 
-		// Ok, non-boolean case.				
+		// Ok, non-boolean case.
+		HashMap<String,Integer> environment = new HashMap<String,Integer>(_environment);
 		Block blk = new Block(environment.size());
 		ArrayList<Triple<Integer,Integer,Type.EffectiveCollection>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> p : e.sources) {
 			int srcSlot;
-			int varSlot = allocate(p.first(),environment); 
+			int varSlot = freeRegister++;
+			environment.put(p.first(), freeRegister);
 			Expr src = p.second();
 			Type rawSrcType = src.result().raw();
 			
@@ -862,29 +862,26 @@ public final class LocalGenerator {
 					srcSlot = environment.get(v.var);
 				} else {
 					// fall-back plan ...
-					blk.append(generate(src, environment));
-					srcSlot = allocate(environment);				
-					blk.append(Code.Store(rawSrcType, srcSlot),attributes(e));	
+					srcSlot = freeRegister++;					
+					blk.append(generate(src, srcSlot, freeRegister, environment));													
 				}
 			} else {
-				blk.append(generate(src, environment));
-				srcSlot = allocate(environment);
-				blk.append(Code.Store(rawSrcType, srcSlot),attributes(e));	
+				srcSlot = freeRegister++;
+				blk.append(generate(src, srcSlot, freeRegister, environment));								
 			}			
 			slots.add(new Triple(varSlot,srcSlot,rawSrcType));											
 		}
 		
 		Type resultType;
-		int resultSlot = allocate(environment);
 		
 		if (e.cop == Expr.COp.LISTCOMP) {
 			resultType = e.type.raw();
-			blk.append(Code.NewList((Type.List) resultType,0), attributes(e));
-			blk.append(Code.Store((Type.List) resultType,resultSlot),attributes(e));
+			blk.append(Code.NewList((Type.List) resultType, target,
+					Collections.EMPTY_LIST), attributes(e));
 		} else {
 			resultType = e.type.raw();
-			blk.append(Code.NewSet((Type.Set) resultType,0), attributes(e));
-			blk.append(Code.Store((Type.Set) resultType,resultSlot),attributes(e));			
+			blk.append(Code.NewSet((Type.Set) resultType, target,
+					Collections.EMPTY_LIST), attributes(e));
 		}
 		
 		// At this point, it would be good to determine an appropriate loop
@@ -901,24 +898,24 @@ public final class LocalGenerator {
 		String loopLabel = Block.freshLabel();
 		
 		for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
-			String target = loopLabel + "$" + p.first();
-			blk.append(Code.Load((Type) p.third(), p.second()), attributes(e));
-			blk.append(Code.ForAll(p.third(), p.first(), target,
-					Collections.EMPTY_LIST), attributes(e));
-			labels.add(target);
+			String label = loopLabel + "$" + p.first();			
+			blk.append(Code.ForAll(p.third(), p.second(), p.first(), 
+					Collections.EMPTY_LIST, label), attributes(e));
+			labels.add(label);
 		}
 		
 		if (e.condition != null) {
 			blk.append(generateCondition(continueLabel, invert(e.condition),
-					environment));
+					freeRegister, environment));
 		}
-		
-		blk.append(Code.Load(resultType,resultSlot),attributes(e));
-		blk.append(generate(e.value, environment));
+				
+		blk.append(generate(e.value, freeRegister, freeRegister + 1,
+				environment));
+
 		// FIXME: following broken for list comprehensions
-		blk.append(Code.SetUnion((Type.Set) resultType, Code.OpDir.LEFT),attributes(e));
-		blk.append(Code.Store(resultType,resultSlot),attributes(e));
-			
+		blk.append(Code.SetOp((Type.Set) resultType, target, target,
+				freeRegister, Code.SetOperation.LEFT_UNION), attributes(e));
+	
 		if(e.condition != null) {
 			blk.append(Code.Label(continueLabel));			
 		} 
@@ -927,8 +924,6 @@ public final class LocalGenerator {
 			blk.append(Code.End(labels.get(i)));
 		}
 
-		blk.append(Code.Load(resultType,resultSlot),attributes(e));
-		
 		return blk;
 	}
 

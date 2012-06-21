@@ -328,28 +328,34 @@ public final class CodeGeneration {
 	}
 	
 	private Block generate(Assign s, HashMap<String,Integer> environment) {
-		Block blk = null;
+		Block blk = null;		
 		
 		if(s.lhs instanceof Expr.AssignedVariable) {				
 			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
 			int target = allocate(v.var, environment);
-			blk = localGenerator.generate(s.rhs, target, environment.size(),
+			int freeRegister = environment.size();
+			blk = localGenerator.generate(s.rhs, target, freeRegister,
 					environment);					
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
-			blk = localGenerator.generate(s.rhs, environment);			
-			blk.append(Code.Destructure(s.rhs.result().raw()),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
-			Collections.reverse(fields);
-			
-			for(Expr e : fields) {
-				if(!(e instanceof Expr.AssignedVariable)) {
-					syntaxError(errorMessage(INVALID_TUPLE_LVAL),localGenerator.context(),e);
+			for (int i = 0; i != fields.size(); ++i) {
+				Expr e = fields.get(i);
+				if (!(e instanceof Expr.AssignedVariable)) {
+					syntaxError(errorMessage(INVALID_TUPLE_LVAL),
+							localGenerator.context(), e);
 				}
 				Expr.AssignedVariable v = (Expr.AssignedVariable) e;
-				blk.append(
-						Code.Store(v.afterType.raw(),
-								allocate(v.var, environment)), attributes(s));
+				allocate(v.var, environment);
+			}
+			int freeRegister = environment.size();
+			blk = localGenerator.generate(s.rhs, freeRegister,
+					freeRegister + 1, environment);														
+			for (int i = 0; i != fields.size(); ++i) {
+				Expr.AssignedVariable v = (Expr.AssignedVariable) fields.get(i);
+				blk.append(Code.TupleLoad(
+						(Type.EffectiveTuple) v.afterType.raw(),
+						environment.get(v.var), freeRegister, i), attributes(s));
 			}
 			return blk;
 		} else if (s.lhs instanceof Expr.IndexOf
@@ -357,15 +363,25 @@ public final class CodeGeneration {
 				
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
-			Pair<Expr.AssignedVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
+			int rhsRegister = environment.size();
+			int freeRegister = environment.size() + 1;
+			Pair<Expr.AssignedVariable, Integer> l = extractLVal(s.lhs, fields,
+					blk, freeRegister + 1, environment);
 			Expr.AssignedVariable lhs = l.first();
-			if(!environment.containsKey(lhs.var)) {
-				syntaxError("unknown variable",localGenerator.context(),l.first());
+			if (!environment.containsKey(lhs.var)) {
+				syntaxError("unknown variable", localGenerator.context(),
+						l.first());
 			}
 			int target = environment.get(lhs.var);
-			blk.append(localGenerator.generate(s.rhs, environment));		
-			blk.append(Code.Update(lhs.type.raw(),lhs.afterType.raw(),target,l.second(),fields),
-					attributes(s));							
+			blk.append(localGenerator.generate(s.rhs, rhsRegister, freeRegister
+					+ l.second(), environment));
+
+			int[] operands = new int[l.second()];
+			for (int i = 0; i != l.second(); ++i) {
+				operands[i] = freeRegister + i;
+			}
+			blk.append(Code.Update(lhs.type.raw(), target, rhsRegister,
+					operands, lhs.afterType.raw(), fields), attributes(s));
 		} else {
 			syntaxError("invalid assignment", localGenerator.context(), s);
 		}
@@ -374,25 +390,23 @@ public final class CodeGeneration {
 	}
 
 	private Pair<Expr.AssignedVariable, Integer> extractLVal(Expr e,
-			ArrayList<String> fields, Block blk, 
+			ArrayList<String> fields, Block blk, int freeRegister,
 			HashMap<String, Integer> environment) {
 		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return new Pair(v,0);			
 		} else if (e instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) e;
-			Pair<Expr.AssignedVariable,Integer> p = extractLVal(pa.src, fields, blk, environment);
-			return new Pair(p.first(),p.second() + 1);			
+			return  extractLVal(pa.src, fields, blk, freeRegister, environment);					
 		} else if (e instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) e;
-			Pair<Expr.AssignedVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
-			blk.append(localGenerator.generate(la.index, environment));			
+			blk.append(localGenerator.generate(la.index, freeRegister, freeRegister+1, environment));
+			Pair<Expr.AssignedVariable,Integer> l = extractLVal(la.src, fields, blk, freeRegister+1,environment);									
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
-			Pair<Expr.AssignedVariable,Integer> l = extractLVal(ra.src, fields, blk, environment);
 			fields.add(ra.name);
-			return new Pair(l.first(),l.second() + 1);			
+			return  extractLVal(ra.src, fields, blk, freeRegister, environment);								
 		} else {
 			syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), localGenerator.context(), e);
 			return null; // dead code

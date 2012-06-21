@@ -1263,7 +1263,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "const " + constant;
+			return "%" + target + " = const " + constant;
 		}
 	}
 
