@@ -173,9 +173,7 @@ public class DefiniteAssignmentCheck extends
 		}
 		return r;
 	}
-	
-	
-
+		
 	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
@@ -219,12 +217,6 @@ public class DefiniteAssignmentCheck extends
 				}				
 			}
 			return;
-		} else if(code instanceof Code.SubList) {
-			
-		} else if(code instanceof Code.SubString) {
-			
-		} else if(code instanceof Code.Update) {
-			
 		} 
 		
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),

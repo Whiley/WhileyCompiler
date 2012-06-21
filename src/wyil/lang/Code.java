@@ -239,10 +239,15 @@ public abstract class Code {
 
 	public static SubList SubList(Type.EffectiveList type, int target,
 			int sourceOperand, int leftOperand, int rightOperand) {
-		return get(new SubList(type, target, sourceOperand, leftOperand,
-				rightOperand));
+		int[] operands = new int[] { sourceOperand, leftOperand, rightOperand };
+		return get(new SubList(type, target, operands));
 	}
 
+	private static SubList SubList(Type.EffectiveList type, int target,
+			int[] operands) {		
+		return get(new SubList(type, target, operands));
+	}
+	
 	public static ListOp ListOp(Type.EffectiveList type, int target,
 			int leftOperand, int rightOperand, ListOperation dir) {
 		return get(new ListOp(type, target, leftOperand, rightOperand, dir));
@@ -441,10 +446,14 @@ public abstract class Code {
 
 	public static SubString SubString(int target, int sourceOperand,
 			int leftOperand, int rightOperand) {
-		return get(new SubString(target, sourceOperand, leftOperand,
-				rightOperand));
+		int[] operands = new int[] {sourceOperand, leftOperand, rightOperand};
+		return get(new SubString(target, operands));
 	}
 
+	private static SubString SubString(int target, int[] operands) {		
+		return get(new SubString(target, operands));
+	}
+	
 	/**
 	 * Construct an <code>send</code> bytecode which sends a message to an
 	 * actor. This may be either synchronous or asynchronous.
@@ -1975,65 +1984,19 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class SubList extends AbstractAssignable {
-		public final Type.EffectiveList type;		
-		public final int sourceOperand;
-		public final int leftOperand;
-		public final int rightOperand;
-
-		private SubList(Type.EffectiveList type, int target, int sourceOperand,
-				int leftOperand, int rightOperand) {
-			super(target);
-			this.type = type;			
-			this.sourceOperand = sourceOperand;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
+	public static final class SubList extends AbstractNaryAssignable<Type.EffectiveList> {
+		
+		private SubList(Type.EffectiveList type, int target, int[] operands) {
+			super(type,target,operands);					
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {
-			slots.add(target);
-			slots.add(sourceOperand);
-			slots.add(leftOperand);
-			slots.add(rightOperand);
-		}
-
-		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nSourceOperand = binding.get(sourceOperand);
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nTarget != null || nSourceOperand != null
-					|| nLeftOperand != null || nRightOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nSourceOperand = nSourceOperand != null ? nSourceOperand
-						: sourceOperand;
-				nLeftOperand = nLeftOperand != null ? nLeftOperand
-						: leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand
-						: rightOperand;
-				return Code.SubList(type, nTarget, nSourceOperand,
-						nLeftOperand, nRightOperand);
-			}
-			return this;
-		}
-
-		public int hashCode() {
-			return type.hashCode() + target + sourceOperand + leftOperand
-					+ rightOperand;
+		public final Code clone(int nTarget, int[] nOperands) {
+			return Code.SubList(type, nTarget, nOperands);			
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof SubList) {
-				SubList sl = (SubList) o;
-				return type.equals(sl.type) && target == sl.target
-						&& sourceOperand == sl.sourceOperand
-						&& leftOperand == sl.leftOperand
-						&& rightOperand == sl.rightOperand;
-
-			}
-			return false;
+			return o instanceof SubList && super.equals(o);
 		}
 
 		public String toString() {
@@ -2883,63 +2846,19 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class SubString extends AbstractAssignable {		
-		public final int sourceOperand;
-		public final int leftOperand;
-		public final int rightOperand;
-
-		private SubString(int target, int sourceOperand,
-				int leftOperand, int rightOperand) {
-			super(target);
-			this.sourceOperand = sourceOperand;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
+	public static final class SubString extends AbstractNaryAssignable {		
+		
+		private SubString(int target, int[] operands) {
+			super(Type.T_STRING,target,operands);			
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {
-			slots.add(target);
-			slots.add(sourceOperand);
-			slots.add(leftOperand);
-			slots.add(rightOperand);
-		}
-
-		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nSourceOperand = binding.get(sourceOperand);
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nTarget != null || nSourceOperand != null
-					|| nLeftOperand != null || nRightOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nSourceOperand = nSourceOperand != null ? nSourceOperand
-						: sourceOperand;
-				nLeftOperand = nLeftOperand != null ? nLeftOperand
-						: leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand
-						: rightOperand;
-				return Code.SubString(nTarget, nSourceOperand, nLeftOperand,
-						nRightOperand);
-			}
-			return this;
-		}
-
-		public int hashCode() {
-			return target + sourceOperand + leftOperand
-					+ rightOperand;
+		public final Code clone(int nTarget, int[] nOperands) {
+			return Code.SubString(nTarget, nOperands);			
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof SubString) {
-				SubString sl = (SubString) o;
-				return target == sl.target
-						&& sourceOperand == sl.sourceOperand
-						&& leftOperand == sl.leftOperand
-						&& rightOperand == sl.rightOperand;
-
-			}
-			return false;
+			return o instanceof SubString && super.equals(o);				
 		}
 
 		public String toString() {

@@ -570,7 +570,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Store(indexSlot + i, t));
 		}
 
-		bytecodes.add(new Bytecode.Load(code.target, convertType(code.beforeType)));
+		bytecodes.add(new Bytecode.Load(code.target, convertType(code.type)));
 		
 		multiStoreHelper(code.afterType, code.level(), code.fields.iterator(),
 				indexSlot, val_t, freeSlot, bytecodes);

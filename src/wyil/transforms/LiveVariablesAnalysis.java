@@ -132,73 +132,47 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	@Override
 	public Env propagate(int index, Entry entry, Env environment) {		
 		Code code = entry.code;		
-		if(code instanceof Code.Load) {
-			Code.Load load = (Code.Load) code;
-			if(!environment.contains(load.indexOperand)) {
-				rewrites.put(
-						index,
-						new Block.Entry(Code.Move(load.type, load.indexOperand), entry
-								.attributes()));				
-			} else {
-				rewrites.put(index, null);
-			}
-			environment = new Env(environment);
-			environment.add(load.indexOperand);
-		} else if(code instanceof Code.Store) {
-			Code.Store store = (Code.Store) code;
-			// FIXME: should I report an error or warning here?			
-//			if(!environment.contains(store.slot)) {
-//				deadcode.add(index);					
-//			} 			
-			environment = new Env(environment);
-			environment.remove(store.label);
-		} else if(code instanceof Code.Update) {
-			Code.Update update = (Code.Update) code;
-			if(update.beforeType instanceof Type.Reference) {
-				// updating a field on this constitutes a use
-				environment = new Env(environment);
-				environment.add(update.target);
-			} else if(!environment.contains(update.target)) {
-				deadcode.add(index);					
-			} else {
-				deadcode.remove(index);
-			}
-		} 
-		
+				
 		return environment;
 	}
 	
 	@Override
-	public Env propagate(int index,
-			Code.IfGoto igoto, Entry stmt, Env trueEnv, Env falseEnv) {
-		return join(trueEnv,falseEnv);
+	public Env propagate(int index, Code.IfGoto code, Entry entry, Env trueEnv,
+			Env falseEnv) {
+		Env r = join(trueEnv, falseEnv);
+
+		r.add(code.leftOperand);
+		r.add(code.rightOperand);
+
+		return r;
 	}
 	
 	@Override
 	protected Env propagate(Type handler, Env normalEnv, Env exceptionEnv) {
+		
 		return join(normalEnv, exceptionEnv);
 	}
 	
 	@Override
 	public Env propagate(int index,
-			Code.IfType code, Entry stmt, Env trueEnv, Env falseEnv) {
+			Code.IfType code, Entry entry, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
-		
-		if(code.slot >= 0) {
-			r.add(code.slot);
-		}
+				
+		r.add(code.leftOperand);		
 		
 		return r;
 	}
 	
 	@Override
-	public Env propagate(int index, Code.Switch sw,
+	public Env propagate(int index, Code.Switch code,
 			Entry stmt, List<Env> environments, Env defEnv) {
 		Env environment = defEnv;
 		
-		for(int i=0;i!=sw.branches.size();++i) {
+		for(int i=0;i!=code.branches.size();++i) {
 			environment = join(environment,environments.get(i));
 		} 		
+		
+		environment.add(code.operand);
 		
 		return environment;
 	}

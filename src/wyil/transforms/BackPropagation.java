@@ -374,9 +374,9 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		Type req = environment.get(code.target);
 		Type codeType = (Type) code.type;
 		coerceAfter(req,codeType,code.target,index,entry);
-		environment.set(code.sourceOperand,codeType);
-		environment.set(code.leftOperand,Type.T_INT);
-		environment.set(code.rightOperand,Type.T_INT);
+		environment.set(code.operands[0],codeType);
+		environment.set(code.operands[1],Type.T_INT);
+		environment.set(code.operands[2],Type.T_INT);
 	}
 	
 	private void infer(int index, Code.IndexOf code, Block.Entry entry,
@@ -422,7 +422,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		// requirement on the value being assigned.
 		
 		environment.set(code.operand,code.rhs());		
-		environment.set(code.target, code.beforeType);		
+		environment.set(code.target, code.type);		
 	}
 	
 	private void infer(int index, Code.NewDict code, Block.Entry entry,
@@ -565,9 +565,9 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {				
 		Type req = environment.get(code.target);
 		coerceAfter(req,Type.T_STRING,code.target,index,entry);
-		environment.set(code.sourceOperand,Type.T_STRING);
-		environment.set(code.leftOperand,Type.T_INT);
-		environment.set(code.rightOperand,Type.T_INT);		
+		environment.set(code.operands[0],Type.T_STRING);
+		environment.set(code.operands[1],Type.T_INT);
+		environment.set(code.operands[2],Type.T_INT);		
 	}
 	
 	private void infer(int index, Code.Negate code, Block.Entry entry,
