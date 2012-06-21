@@ -260,7 +260,7 @@ public final class WyilFileWriter implements Transform {
 				firstTime=false;
 				fs += f;
 			}
-			line = "update " + getLocal(store.target,locals) + " #" + store.level() + fs + " : " + store.beforeType + " => " + store.afterType;
+			line = "update " + getLocal(store.target,locals) + " #" + store.level() + fs + " : " + store.type + " => " + store.afterType;
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;			
 			line = "if " + getLocal(iftype.leftOperand, locals) + " is "
