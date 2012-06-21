@@ -522,20 +522,21 @@ public class ClassFileBuilder {
 	public void translate(Code.Const c, int freeSlot,
 			HashMap<Constant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
-		
 		Value constant = c.constant;
+		JvmType jt = convertType(constant.type());
+		
 		if (constant instanceof Value.Rational || constant instanceof Value.Bool
 				|| constant instanceof Value.Null || constant instanceof Value.Byte) {
 			translate(constant,freeSlot,bytecodes);					
 		} else {
 			int id = ValueConst.get(constant,constants);			
 			String name = "constant$" + id;
-			JvmType type = convertType(constant.type());
-			bytecodes.add(new Bytecode.GetField(owner, name, type, Bytecode.STATIC));
+			bytecodes.add(new Bytecode.GetField(owner, name, jt, Bytecode.STATIC));
 			// the following is necessary to prevent in-place updates of our
 			// constants!
 			addIncRefs(constant.type(),bytecodes);
 		}		
+		bytecodes.add(new Bytecode.Load(c.target, jt));
 	}
 	
 	public void translate(Code.Convert c, int freeSlot,
