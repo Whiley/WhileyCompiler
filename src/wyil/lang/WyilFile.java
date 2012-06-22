@@ -81,7 +81,7 @@ public final class WyilFile {
 			// new DeadCodeElimination().apply(file);			
 			
 			// Compute the StackMapTable
-			new TypeAnalysis().apply(file);
+			// new TypeAnalysis().apply(file);
 			
 			ClassFileWriter writer = new ClassFileWriter(output,null);			
 			writer.write(file);	

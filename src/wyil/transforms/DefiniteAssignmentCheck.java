@@ -217,7 +217,10 @@ public class DefiniteAssignmentCheck extends
 				}				
 			}
 			return;
-		} 
+		} else {
+			// includes abstract-assignables and branching bytecodes
+			return;
+		}
 		
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
                 filename, entry);

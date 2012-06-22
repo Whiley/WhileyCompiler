@@ -516,8 +516,8 @@ public final class LocalGenerator {
 		int[] operands = new int[fc.arguments.size() + 1];
 		blk.append(generate(fc.qualification, target, freeRegister, environment));
 		operands[0] = target;
-		for (int i = 0; i != operands.length; ++i) {
-			Expr arg = fc.arguments.get(i);
+		for (int i = 1; i != operands.length; ++i) {
+			Expr arg = fc.arguments.get(i-1);
 			blk.append(generate(arg, freeRegister, freeRegister + 1,
 					environment));
 			operands[i] = freeRegister++;

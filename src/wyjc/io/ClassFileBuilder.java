@@ -536,7 +536,7 @@ public class ClassFileBuilder {
 			// constants!
 			addIncRefs(constant.type(),bytecodes);
 		}		
-		bytecodes.add(new Bytecode.Load(c.target, jt));
+		bytecodes.add(new Bytecode.Store(c.target, jt));
 	}
 	
 	public void translate(Code.Convert c, int freeSlot,
