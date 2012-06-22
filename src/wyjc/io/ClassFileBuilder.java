@@ -1443,30 +1443,30 @@ public class ClassFileBuilder {
 					ftype, Bytecode.STATIC));
 		}
 		
-		bytecodes.add(new Bytecode.Store(c.target, convertType(c.type)));
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYLIST));
 	}
 		
 	protected void translate(Code.NewDict c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
+		
 		construct(WHILEYMAP, freeSlot, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Store(freeSlot, WHILEYMAP));
-		JvmType valueT = convertType(c.type.value());
+				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);		
+		JvmType keyType = convertType(c.type.key());
+		JvmType valueType = convertType(c.type.value());
 
-		for (int i = 0; i != c.operands.length; ++i) {
-			bytecodes.add(new Bytecode.Store(freeSlot + 1, valueT));
-			bytecodes.add(new Bytecode.Load(freeSlot, WHILEYMAP));
-			bytecodes.add(new Bytecode.Swap());
-			addWriteConversion(c.type.key(), bytecodes);			
-			bytecodes.add(new Bytecode.Load(freeSlot + 1, valueT));
-			// FIXME: need write conversion here?
+		for (int i = 0; i != c.operands.length; i=i+2) {
+			bytecodes.add(new Bytecode.Dup(WHILEYMAP));
+			bytecodes.add(new Bytecode.Load(c.operands[i], keyType));
+			addWriteConversion(c.type.key(), bytecodes);
+			bytecodes.add(new Bytecode.Load(c.operands[i + 1],valueType));
+			addWriteConversion(c.type.value(), bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
 
-		bytecodes.add(new Bytecode.Load(freeSlot, WHILEYMAP));
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYMAP));		
 	}
 	
 	public void translate(Code.NewRecord expr, int freeSlot,
@@ -1500,10 +1500,13 @@ public class ClassFileBuilder {
 				WHILEYSET,JAVA_LANG_OBJECT);
 		
 		for(int i=0;i!=c.operands.length;++i) {
-			bytecodes.add(new Bytecode.Swap());			
+			bytecodes.add(new Bytecode.Load(c.operands[i], convertType(c.type
+					.element())));					
 			addWriteConversion(c.type.element(),bytecodes);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"internal_add",ftype,Bytecode.STATIC));
 		}
+		
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYSET));
 	}
 	
 	protected void translate(Code.NewTuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
