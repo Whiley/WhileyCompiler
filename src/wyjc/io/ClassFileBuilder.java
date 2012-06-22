@@ -1215,9 +1215,31 @@ public class ClassFileBuilder {
 		JvmType type = convertType(c.type);
 		JvmType.Function ftype = new JvmType.Function(type,type);
 		
-		bytecodes.add(new Bytecode.Load(c.leftOperand, type));
-		bytecodes.add(new Bytecode.Load(c.rightOperand, type));
+		// first, load operands
+		switch(c.bop) {
+			case ADD:
+			case SUB:	
+			case MUL:
+			case DIV:
+			case REM:
+			case BITWISEAND:
+			case BITWISEOR:
+			case BITWISEXOR:
+				bytecodes.add(new Bytecode.Load(c.leftOperand, type));
+				bytecodes.add(new Bytecode.Load(c.rightOperand, type));
+				break;
+			case LEFTSHIFT:
+			case RIGHTSHIFT:
+				bytecodes.add(new Bytecode.Load(c.leftOperand, type));
+				bytecodes.add(new Bytecode.Load(c.rightOperand, BIG_INTEGER));
+				break;
+			case RANGE:
+				bytecodes.add(new Bytecode.Load(c.leftOperand, BIG_INTEGER));
+				bytecodes.add(new Bytecode.Load(c.rightOperand, BIG_INTEGER));
+				break;
+		}
 		
+		// second, apply operation
 		switch(c.bop) {
 		case ADD:			
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "add", ftype,
