@@ -150,7 +150,7 @@ public class DefiniteAssignmentCheck extends
 		if (loop instanceof Code.ForAll) {						
 			Code.ForAll fall = (Code.ForAll) loop;
 			
-			if (in.contains(fall.sourceOperand)) {
+			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 						filename, entry);
 			}

@@ -541,7 +541,9 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Convert c, int freeSlot,
 			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
 		addCoercion(c.type, c.result, freeSlot, constants, bytecodes);
+		bytecodes.add(new Bytecode.Store(c.target, convertType(c.result)));
 	}
 	
 	public void translate(Code.Update code, int freeSlot,
@@ -1525,11 +1527,18 @@ public class ClassFileBuilder {
 					ftype, Bytecode.STATIC));
 		}
 		
-		bytecodes.add(new Bytecode.Store(c.target, WHILEYTUPLE ));		
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYTUPLE));		
 	}
 	
 	public void translate(Code.Invoke c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
+		
+		for (int i = 0; i != c.operands.length; ++i) {
+			int register = c.operands[i];
+			JvmType parameterType = convertType(c.type.params().get(i));
+			bytecodes.add(new Bytecode.Load(register, parameterType));
+		}
+		
 		Path.ID mid = c.name.module();
 		String mangled = nameMangle(c.name.name(), c.type);
 		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString()
@@ -1540,7 +1549,9 @@ public class ClassFileBuilder {
 
 		// now, handle the case of an invoke which returns a value that should
 		// be discarded. 
-		if(c.target >= 0 && c.type.ret() != Type.T_VOID) {
+		if(c.target != Code.NULL_REG){
+			bytecodes.add(new Bytecode.Store(c.target, convertType(c.type.ret())));
+		} else if(c.target == Code.NULL_REG && c.type.ret() != Type.T_VOID) {
 			bytecodes.add(new Bytecode.Pop(convertType(c.type.ret())));
 		}
 	}
