@@ -1509,34 +1509,23 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Code.NewTuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		construct(WHILEYTUPLE, freeSlot, bytecodes);
-		JvmType.Function ftype = new JvmType.Function(WHILEYTUPLE,
-				WHILEYTUPLE,JAVA_LANG_OBJECT);
-					
-		ArrayList<Type> types = new ArrayList<Type>(c.type.elements());
-		Collections.reverse(types);
+		bytecodes.add(new Bytecode.New(WHILEYTUPLE ));		
+		bytecodes.add(new Bytecode.Dup(WHILEYTUPLE ));
+		bytecodes.add(new Bytecode.LoadConst(c.operands.length));
+		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE , "<init>", ftype,
+				Bytecode.SPECIAL));
 		
-		for(Type type : types) {
-			bytecodes.add(new Bytecode.Swap());	
-			addWriteConversion(type,bytecodes);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"internal_add",ftype,Bytecode.STATIC));
+		ftype = new JvmType.Function(WHILEYTUPLE , WHILEYTUPLE , JAVA_LANG_OBJECT);
+		for (int i = 0; i != c.operands.length; ++i) {
+			Type elementType = c.type.elements().get(i);
+			bytecodes.add(new Bytecode.Load(c.operands[i], convertType(elementType)));
+			addWriteConversion(elementType, bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE , "internal_add",
+					ftype, Bytecode.STATIC));
 		}
 		
-		// At this stage, we have a problem. We've added the elements into the
-		// tuple in reverse order. For simplicity, I simply call reverse at this
-		// stage. However, it begs the question how we can do better.
-		//
-		// We could store each value into a register and then reload them in the
-		// reverse order. For very large lists, this might cause a problem I
-		// suspect.
-		//
-		// Another option would be to have a special list initialise function
-		// with a range of different constructors for different sized lists.
-				
-		JvmType.Clazz owner = new JvmType.Clazz("java.util","Collections");
-		ftype = new JvmType.Function(T_VOID, JAVA_UTIL_LIST);		
-		bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
-		bytecodes.add(new Bytecode.Invoke(owner,"reverse",ftype,Bytecode.STATIC));
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYTUPLE ));		
 	}
 	
 	public void translate(Code.Invoke c, int freeSlot,
