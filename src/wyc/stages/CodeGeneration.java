@@ -354,7 +354,7 @@ public final class CodeGeneration {
 			for (int i = 0; i != fields.size(); ++i) {
 				Expr.AssignedVariable v = (Expr.AssignedVariable) fields.get(i);
 				blk.append(Code.TupleLoad(
-						(Type.EffectiveTuple) tg.type.raw(),
+						(Type.EffectiveTuple) s.rhs.result().raw(),
 						environment.get(v.var), freeRegister, i), attributes(s));
 			}
 			return blk;
