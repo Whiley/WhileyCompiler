@@ -177,7 +177,7 @@ public class DefiniteAssignmentCheck extends
 	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
-			if(in.contains(a.operand)) {
+			if(a.operand == Code.NULL_REG || in.contains(a.operand)) {
 				return;
 			}
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
@@ -221,6 +221,8 @@ public class DefiniteAssignmentCheck extends
 			// includes abstract-assignables and branching bytecodes
 			return;
 		}
+
+		System.out.println(code);
 		
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
                 filename, entry);

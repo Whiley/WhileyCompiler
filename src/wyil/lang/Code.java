@@ -675,11 +675,8 @@ public abstract class Code {
 		protected abstract String codeString();
 		
 		public String toString() {
-			if(operand != Code.NULL_REG) { 
-				return "%" + target + " = " + codeString() + " %" + operand + " : " + type;
-			} else {
-				return "%" + target + " = " + codeString()  + " : " + type;
-			}
+			return "%" + target + " = " + codeString() + " %" + operand + " : "
+					+ type;
 		}
 	}
 

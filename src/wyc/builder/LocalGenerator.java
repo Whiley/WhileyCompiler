@@ -513,7 +513,7 @@ public final class LocalGenerator {
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
-		int[] operands = new int[fc.arguments.size() + 1];
+		int[] operands = new int[fc.arguments.size() + 1];		
 		blk.append(generate(fc.qualification, target, freeRegister, environment));
 		operands[0] = target;
 		for (int i = 1; i != operands.length; ++i) {
@@ -978,6 +978,7 @@ public final class LocalGenerator {
 	
 	private Block generate(Expr.RecordAccess sg, int target, int freeRegister,
 			HashMap<String, Integer> environment) {
+		
 		Block lhs = generate(sg.src, target, freeRegister, environment);
 		lhs.append(Code.FieldLoad(sg.srcType.raw(), target, target, sg.name),
 				attributes(sg));
