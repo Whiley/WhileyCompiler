@@ -2081,14 +2081,6 @@ public abstract class Code {
 			super(type, target, sourceOperand, keyOperand);
 		}
 
-		public int sourceOperand() {
-			return leftOperand;
-		}
-		
-		public int keyOperand() {
-			return rightOperand;
-		}
-		
 		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return Code.IndexOf(type, nTarget, nLeftOperand, nRightOperand);
 		}

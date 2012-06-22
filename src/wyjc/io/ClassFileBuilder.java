@@ -1165,36 +1165,56 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.SubList c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {	
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Load(c.operands[0], WHILEYLIST));
+		bytecodes.add(new Bytecode.Load(c.operands[1], BIG_INTEGER));
+		bytecodes.add(new Bytecode.Load(c.operands[2], BIG_INTEGER));
+		
 		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
 				BIG_INTEGER, BIG_INTEGER);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
 				Bytecode.STATIC));
+		
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYLIST));
 	}	
 	
 	public void translate(Code.IndexOf c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
+		
+		bytecodes.add(new Bytecode.Load(c.leftOperand, WHILEYLIST));
+		bytecodes.add(new Bytecode.Load(c.rightOperand, BIG_INTEGER));
 		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "indexOf", ftype,
 				Bytecode.STATIC));
 		addReadConversion(c.type.value(), bytecodes);
+		
+		bytecodes.add(new Bytecode.Store(c.target,
+				convertType(c.type.element())));
 	}
 	
 	public void translate(Code.FieldLoad c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {		
+			ArrayList<Bytecode> bytecodes) {
+		
+		bytecodes.add(new Bytecode.Load(c.operand, WHILEYRECORD));
+		
 		bytecodes.add(new Bytecode.LoadConst(c.field));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));						
-		addReadConversion(c.fieldType(),bytecodes);		
+		addReadConversion(c.fieldType(),bytecodes);
+		
+		bytecodes.add(new Bytecode.Store(c.target, convertType(c.fieldType())));
 	}
 
 	public void translate(Code.BinOp c, Block.Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
-				
+						
 		JvmType type = convertType(c.type);
 		JvmType.Function ftype = new JvmType.Function(type,type);
+		
+		bytecodes.add(new Bytecode.Load(c.leftOperand, type));
+		bytecodes.add(new Bytecode.Load(c.rightOperand, type));
 		
 		switch(c.bop) {
 		case ADD:			
@@ -1244,6 +1264,8 @@ public class ClassFileBuilder {
 		default:
 			internalFailure("unknown binary expression encountered",filename,stmt);
 		}		
+		
+		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 
 	public void translate(Code.SetOp c, Entry stmt, int freeSlot,

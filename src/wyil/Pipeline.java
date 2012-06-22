@@ -65,7 +65,7 @@ public class Pipeline {
 	public static final List<Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Template>() {
 				{														
-					// add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
+					add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
 					// add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
 					// add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));										
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
@@ -73,7 +73,7 @@ public class Pipeline {
 					// serious problems with that phase.
 					// add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					// add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
-					// add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
+					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
 					// add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
 					// add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
