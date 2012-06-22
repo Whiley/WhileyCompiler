@@ -532,8 +532,8 @@ public final class LocalGenerator {
 	public Block generate(Expr.MethodCall fc, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
-
-		int[] operands = generate(fc.arguments, target, freeRegister,
+		
+		int[] operands = generate(fc.arguments, freeRegister, freeRegister+1,
 				environment, blk);
 		
 		blk.append(
@@ -547,7 +547,7 @@ public final class LocalGenerator {
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 
-		int[] operands = generate(fc.arguments, target, freeRegister,
+		int[] operands = generate(fc.arguments, freeRegister, freeRegister+1,
 				environment, blk);
 		blk.append(
 				Code.Invoke(fc.functionType.raw(), target, operands, fc.nid()),
@@ -964,11 +964,11 @@ public final class LocalGenerator {
 		for (int i = 0; i != sg.pairs.size(); ++i) {
 			Pair<Expr,Expr> e = sg.pairs.get(i);
 			blk.append(generate(e.first(), current, nextFree, environment));
-			operands[i*2] = current;
+			operands[i<<1] = current;
 			current = nextFree;
 			nextFree = nextFree + 1;
 			blk.append(generate(e.second(), current, nextFree, environment));
-			operands[i*2] = current;
+			operands[(i<<1)+1] = current;
 			current = nextFree;
 			nextFree = nextFree + 1;
 		}

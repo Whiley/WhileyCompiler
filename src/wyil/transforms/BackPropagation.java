@@ -436,10 +436,11 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		Type key = code.type.key();
 		Type value = code.type.value();
-		for(int i=0;i!=code.operands.length;++i) {
-			int operand = code.operands[i];
-			environment.set(operand,key);
-			environment.set(operand,value);					
+		for(int i=0;i!=code.operands.length;i=i+2) {
+			int keyOperand = code.operands[i];
+			int valueOperand = code.operands[i+1];
+			environment.set(keyOperand,key);
+			environment.set(valueOperand,value);					
 		}					
 	}
 	
