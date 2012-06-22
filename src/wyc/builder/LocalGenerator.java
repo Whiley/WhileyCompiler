@@ -370,7 +370,7 @@ public final class LocalGenerator {
 			int srcSlot;
 			int varSlot = freeRegister++;
 			environment.put(src.first(), varSlot);
-			Nominal srcType = src.second().result();			
+			Nominal srcType = src.second().result();			1591
 			
 			if(src.second() instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better
@@ -514,8 +514,8 @@ public final class LocalGenerator {
 		Block blk = new Block(environment.size());
 
 		int[] operands = new int[fc.arguments.size() + 1];		
-		blk.append(generate(fc.qualification, target, freeRegister, environment));
-		operands[0] = target;
+		blk.append(generate(fc.qualification, freeRegister, freeRegister+1, environment));
+		operands[0] = freeRegister++;
 		for (int i = 1; i != operands.length; ++i) {
 			Expr arg = fc.arguments.get(i-1);
 			blk.append(generate(arg, freeRegister, freeRegister + 1,

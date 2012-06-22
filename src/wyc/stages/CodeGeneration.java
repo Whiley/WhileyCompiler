@@ -299,15 +299,15 @@ public final class CodeGeneration {
 			} else if (stmt instanceof ForAll) {
 				return generate((ForAll) stmt, environment);
 			} else if (stmt instanceof Expr.MessageSend) {
-				return localGenerator.generate((Expr.MessageSend) stmt,environment.size(),environment.size()+1,environment);								
+				return localGenerator.generate((Expr.MessageSend) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.MethodCall) {
-				return localGenerator.generate((Expr.MethodCall) stmt,environment.size(),environment.size()+1,environment);								
+				return localGenerator.generate((Expr.MethodCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.FunctionCall) {
-				return localGenerator.generate((Expr.FunctionCall) stmt,environment.size(),environment.size()+1,environment);								
+				return localGenerator.generate((Expr.FunctionCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.IndirectMethodCall) {
-				return localGenerator.generate((Expr.IndirectMethodCall) stmt,environment.size(),environment.size()+1,environment);								
+				return localGenerator.generate((Expr.IndirectMethodCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
-				return localGenerator.generate((Expr.IndirectFunctionCall) stmt,environment.size(),environment.size()+1,environment);								
+				return localGenerator.generate((Expr.IndirectFunctionCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.New) {
 				return localGenerator.generate((Expr.New) stmt, environment.size(), environment.size()+1, environment);
 			} else if (stmt instanceof Skip) {

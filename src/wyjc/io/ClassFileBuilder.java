@@ -1585,16 +1585,15 @@ public class ClassFileBuilder {
 		
 		List<Type> params = ft.params();
 		for(int i=1;i!=c.operands.length;++i) {
-			Type pt = params.get(i);
+			Type pt = params.get(i-1);
 			bytecodes.add(new Bytecode.Dup(arrT));					
 			bytecodes.add(new Bytecode.LoadConst(i));		
-			bytecodes.add(new Bytecode.Load(c.operands[i],convertType(params.get(i-1))));
+			bytecodes.add(new Bytecode.Load(c.operands[i],convertType(pt)));
 			addWriteConversion(pt,bytecodes);
 			bytecodes.add(new Bytecode.ArrayStore(arrT));			
 		}
 		
-		// finally, setup the stack for the send
-		
+		// finally, setup the stack for the send	
 		if (c.synchronous && c.target != Code.NULL_REG) {			
 			ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
