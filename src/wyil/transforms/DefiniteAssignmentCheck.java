@@ -102,7 +102,7 @@ public class DefiniteAssignmentCheck extends
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfGoto igoto, Entry entry, HashSet<Integer> in) {
 
-		if (in.contains(igoto.leftOperand) && in.contains(igoto.rightOperand)) {
+		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					entry);
 		}
@@ -114,7 +114,7 @@ public class DefiniteAssignmentCheck extends
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfType iftype, Entry entry, HashSet<Integer> in) {
 		
-		if (in.contains(iftype.leftOperand)) {
+		if (!in.contains(iftype.leftOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					entry);
 		}
@@ -126,7 +126,7 @@ public class DefiniteAssignmentCheck extends
 	public List<HashSet<Integer>> propagate(int index, Code.Switch sw,
 			Entry entry, HashSet<Integer> in) {
 
-		if (in.contains(sw.operand)) {
+		if (!in.contains(sw.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					entry);
 		}
