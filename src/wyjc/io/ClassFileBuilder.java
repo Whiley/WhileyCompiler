@@ -1565,49 +1565,44 @@ public class ClassFileBuilder {
 	public void translate(Code.Send c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
-		// The main issue here, is that we have all of the parameters + receiver
-		// on the stack. What we need to do is to put them into an array, so
-		// they can then be passed into Method.invoke()
-		//
-		// To make this work, what we'll do is use a temporary register to hold
-		// the array as we build it up.
-
-		Type.Message ft = c.type;		
-		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
-		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
-		bytecodes.add(new Bytecode.New(arrT));
-		bytecodes.add(new Bytecode.Store(freeSlot,arrT));
+		bytecodes.add(new Bytecode.Load(c.operands[0],convertType(c.type.receiver())));
 		
-		// first, peal parameters off stack in reverse order
-		
-		List<Type> params = ft.params();
-		for(int i=params.size()-1;i>=0;--i) {
-			Type pt = params.get(i);
-			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
-			bytecodes.add(new Bytecode.Swap());
-			bytecodes.add(new Bytecode.LoadConst(i+1));
-			bytecodes.add(new Bytecode.Swap());			
-			addWriteConversion(pt,bytecodes);
-			bytecodes.add(new Bytecode.ArrayStore(arrT));			
-		}
-		
-		// finally, setup the stack for the send
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
 				JAVA_LANG_STRING, JAVA_LANG_STRING);
-		
 		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString().replace('/','.')));		
 		bytecodes
 				.add(new Bytecode.LoadConst(nameMangle(c.name.name(), c.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
 				Bytecode.STATIC));
-		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
-							
-		if (c.synchronous && c.target >= 0) {			
+		
+		Type.Message ft = c.type;
+				
+		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
+		bytecodes.add(new Bytecode.New(arrT));		
+		
+		// first, peal parameters off stack in reverse order
+		
+		List<Type> params = ft.params();
+		for(int i=1;i!=c.operands.length;++i) {
+			Type pt = params.get(i);
+			bytecodes.add(new Bytecode.Dup(arrT));					
+			bytecodes.add(new Bytecode.LoadConst(i));		
+			bytecodes.add(new Bytecode.Load(c.operands[i],convertType(params.get(i-1))));
+			addWriteConversion(pt,bytecodes);
+			bytecodes.add(new Bytecode.ArrayStore(arrT));			
+		}
+		
+		// finally, setup the stack for the send
+		
+		if (c.synchronous && c.target != Code.NULL_REG) {			
 			ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,
 					Bytecode.VIRTUAL));
 			addReadConversion(c.type.ret(), bytecodes);
+			bytecodes.add(new Bytecode.Store(freeSlot,
+					convertType(c.type.ret())));
 		} else if (c.synchronous) {			
 			ftype = new JvmType.Function(T_VOID,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);

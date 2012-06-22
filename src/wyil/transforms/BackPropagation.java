@@ -508,9 +508,9 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		environment.set(code.operands[0],code.type.receiver());
 		
-		for(int i=0;i!=code.operands.length;++i) {
-			int operand = code.operands[i+1];
-			Type type = code.type.params().get(i);
+		for(int i=1;i!=code.operands.length;++i) {
+			int operand = code.operands[i];
+			Type type = code.type.params().get(i-1);
 			environment.set(operand,type);
 		}	
 	}
