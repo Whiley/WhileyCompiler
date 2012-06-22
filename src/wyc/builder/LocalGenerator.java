@@ -370,7 +370,7 @@ public final class LocalGenerator {
 			int srcSlot;
 			int varSlot = freeRegister++;
 			environment.put(src.first(), varSlot);
-			Nominal srcType = src.second().result();			1591
+			Nominal srcType = src.second().result();			
 			
 			if(src.second() instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better

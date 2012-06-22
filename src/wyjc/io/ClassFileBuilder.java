@@ -1270,39 +1270,54 @@ public class ClassFileBuilder {
 
 	public void translate(Code.SetOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
-		JvmType.Function ftype;
+		
+		JvmType leftType;
+		JvmType rightType;
+		
+		// First, load operands
+		switch(c.operation) {
+			case UNION:
+			case DIFFERENCE:
+			case INTERSECTION:
+				leftType = WHILEYSET;
+				rightType = WHILEYSET;
+				break;
+			case LEFT_UNION:
+			case LEFT_DIFFERENCE:
+			case LEFT_INTERSECTION:
+				leftType = WHILEYSET;
+				rightType = convertType(c.type.element());
+				break;
+			case RIGHT_UNION:			
+			case RIGHT_INTERSECTION:
+				leftType = convertType(c.type.element());
+				rightType = WHILEYSET;				
+				break;
+			default:
+				internalFailure("Unknown set operation encountered: ",filename,stmt);
+				return; // dead-code
+		}
+
+		bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));
+		bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));
+		
+		JvmType.Function ftype= new JvmType.Function(WHILEYSET,leftType,rightType);
+		
+		// Second, select operation
 		String operation;
 		switch(c.operation) {
-		case UNION: 
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
+		case UNION: 						
+		case LEFT_UNION:			
+		case RIGHT_UNION:			
 			operation = "union";
 			break;
-		case LEFT_UNION:
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
-			operation = "union";
-			break;
-		case RIGHT_UNION:
-			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
-			operation = "union";
-			break;
-		case INTERSECTION: 
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-			operation = "intersect";
-			break;
-		case LEFT_INTERSECTION:
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
-			operation = "intersect";
-			break;
+		case INTERSECTION: 			
+		case LEFT_INTERSECTION:			
 		case RIGHT_INTERSECTION:
-			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
 			operation = "intersect";
 			break;
-		case DIFFERENCE: 
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-			operation = "difference";
-			break;
+		case DIFFERENCE: 			
 		case LEFT_DIFFERENCE:
-			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
 			operation = "difference";
 			break;
 		default:
@@ -1311,78 +1326,126 @@ public class ClassFileBuilder {
 		}
 					
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, operation, ftype,
-				Bytecode.STATIC));				
+				Bytecode.STATIC));
+		
+		bytecodes.add(new Bytecode.Store(c.target, WHILEYSET));
 	}	
 		
 	public void translate(Code.StringOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
-		JvmType.Function ftype;
+		JvmType leftType;
+		JvmType rightType;
+		
 		switch(c.operation) {
 		case APPEND:
-			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_STRING);
+			leftType = JAVA_LANG_STRING;
+			rightType = JAVA_LANG_STRING;
 			break;
 		case LEFT_APPEND:
-			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,T_CHAR);			
+			leftType = JAVA_LANG_STRING;
+			rightType = T_CHAR;
 			break;
 		case RIGHT_APPEND:
-			ftype = new JvmType.Function(JAVA_LANG_STRING,T_CHAR,JAVA_LANG_STRING);			
+			leftType = T_CHAR;
+			rightType = JAVA_LANG_STRING;
 			break;
 		default:
 			internalFailure("Unknown string operation encountered: ",filename,stmt);
 			return; // dead-code
 		}
+
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,leftType,rightType);		
+		bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));
+		bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));
 		
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
 				Bytecode.STATIC));
+		
+		bytecodes.add(new Bytecode.Store(c.target, JAVA_LANG_STRING));
 	}
 		
 	public void translate(Code.SubString c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {						
+			ArrayList<Bytecode> bytecodes) {					
+		bytecodes.add(new Bytecode.Load(c.operands[0], JAVA_LANG_STRING));
+		bytecodes.add(new Bytecode.Load(c.operands[1], BIG_INTEGER));
+		bytecodes.add(new Bytecode.Load(c.operands[2], BIG_INTEGER));
+		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,
 				BIG_INTEGER, BIG_INTEGER);
+		
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "substring", ftype,
 				Bytecode.STATIC));
+		
+		bytecodes.add(new Bytecode.Store(c.target, JAVA_LANG_STRING));
 	}	
 	
 	public void translate(Code.Invert c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {	
+			ArrayList<Bytecode> bytecodes) {
+		JvmType type = convertType(c.type);
+		bytecodes.add(new Bytecode.Load(c.operand, type));
 		bytecodes.add(new Bytecode.LoadConst(-1));
-		bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.XOR,T_INT));			
+		bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.XOR, T_INT));
+		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 	
 	public void translate(Code.Negate c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {								
+			ArrayList<Bytecode> bytecodes) {										
 		JvmType type = convertType(c.type);
 		JvmType.Function ftype = new JvmType.Function(type);
+		bytecodes.add(new Bytecode.Load(c.operand, type));
 		bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
 				ftype, Bytecode.VIRTUAL));		
+		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 	
 	public void translate(Code.New c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {							
+			ArrayList<Bytecode> bytecodes) {			
+		JvmType type = convertType(c.type);		
 		bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
-		bytecodes.add(new Bytecode.DupX1());
-		bytecodes.add(new Bytecode.DupX1());			
-		bytecodes.add(new Bytecode.Swap());
-		// TODO: problem here ... need to swap or something				
+		bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));		
+		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type.element())));
 		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
 		ftype = new JvmType.Function(T_VOID);			
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "start", ftype,
 				Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 	
 	public void translate(Code.Dereference c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {				
+			ArrayList<Bytecode> bytecodes) {
+		JvmType type = convertType(c.type);
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.Load(c.operand, type));
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 				Bytecode.VIRTUAL));
 		// finally, we need to cast the object we got back appropriately.		
 		Type.Reference pt = (Type.Reference) c.type;						
 		addReadConversion(pt.element(), bytecodes);
+		bytecodes.add(new Bytecode.Store(c.target, convertType(c.type.element())));
 	}
 	
+	protected void translate(Code.NewList c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.New(WHILEYLIST));		
+		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+		bytecodes.add(new Bytecode.LoadConst(c.operands.length));
+		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
+				Bytecode.SPECIAL));
+		
+		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, JAVA_LANG_OBJECT);
+		for (int i = 0; i != c.operands.length; ++i) {
+			bytecodes.add(new Bytecode.Load(c.operands[i], convertType(c.type
+					.element())));
+			addWriteConversion(c.type.element(), bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_add",
+					ftype, Bytecode.STATIC));
+		}
+		
+		bytecodes.add(new Bytecode.Store(c.target, convertType(c.type)));
+	}
+		
 	protected void translate(Code.NewDict c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYMAP, freeSlot, bytecodes);
@@ -1404,39 +1467,6 @@ public class ClassFileBuilder {
 		}
 
 		bytecodes.add(new Bytecode.Load(freeSlot, WHILEYMAP));
-	}
-	
-	protected void translate(Code.NewList c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.New(WHILEYLIST));		
-		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
-		bytecodes.add(new Bytecode.LoadConst(c.operands.length));
-		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
-				Bytecode.SPECIAL));
-		
-		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, JAVA_LANG_OBJECT);		
-		for(int i=0;i!=c.operands.length;++i) {			
-			bytecodes.add(new Bytecode.Swap());			
-			addWriteConversion(c.type.element(),bytecodes);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_add", ftype,
-					Bytecode.STATIC));			
-		}
-		
-		// At this stage, we have a problem. We've added the elements into the
-		// list in reverse order. For simplicity, I simply call reverse at this
-		// stage. However, it begs the question how we can do better.
-		//
-		// We could store each value into a register and then reload them in the
-		// reverse order. For very large lists, this might cause a problem I
-		// suspect.
-		//
-		// Another option would be to have a special list initialise function
-		// with a range of different constructors for different sized lists.
-				
-		JvmType.Clazz owner = new JvmType.Clazz("java.util","Collections");
-		ftype = new JvmType.Function(T_VOID, JAVA_UTIL_LIST);		
-		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
-		bytecodes.add(new Bytecode.Invoke(owner,"reverse",ftype,Bytecode.STATIC));			
 	}
 	
 	public void translate(Code.NewRecord expr, int freeSlot,
