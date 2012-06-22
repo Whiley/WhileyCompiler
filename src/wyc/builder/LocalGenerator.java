@@ -113,7 +113,7 @@ public final class LocalGenerator {
 			// true. In some cases, we could do better. For example, !(x < 5)
 			// could be rewritten into x>=5. 
 			
-			Block blk = generate(condition,freeRegister,freeRegister,environment);
+			Block blk = generate(condition,freeRegister,freeRegister+1,environment);
 			blk.append(Code.Const(freeRegister+1,Value.V_BOOL(true)),attributes(condition));
 			blk.append(Code.Assert(Type.T_BOOL, freeRegister, freeRegister + 1,
 					Code.COp.EQ, message), attributes(condition));
@@ -155,8 +155,8 @@ public final class LocalGenerator {
 		blk.append(generate(v.lhs, freeRegister, freeRegister + 1, environment));
 		blk.append(generate(v.rhs, freeRegister + 1, freeRegister + 2,
 				environment));
-		blk.append(Code.Assert(v.srcType.raw(), freeRegister + 1,
-				freeRegister + 2, cop, message), attributes(v));
+		blk.append(Code.Assert(v.srcType.raw(), freeRegister,
+				freeRegister + 1, cop, message), attributes(v));
 
 		return blk;
 	}

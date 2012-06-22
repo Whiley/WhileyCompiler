@@ -90,7 +90,7 @@ public class DefiniteAssignmentCheck extends
 		checkUses(code,entry,in);
 		
 		int def = defs(code,entry);
-		if(def >= 0) {
+		if(def >= 0) {			
 			in = new HashSet<Integer>(in);			
 			in.add(def); 
 		} 	
@@ -191,7 +191,7 @@ public class DefiniteAssignmentCheck extends
 				return;
 			}
 		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp a = (Code.AbstractBinaryOp) code;
+			Code.AbstractBinaryOp a = (Code.AbstractBinaryOp) code;			
 			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
 				return;
 			}
@@ -222,8 +222,6 @@ public class DefiniteAssignmentCheck extends
 			return;
 		}
 
-		System.out.println(code);
-		
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
                 filename, entry);
 	}
