@@ -932,15 +932,11 @@ public final class LocalGenerator {
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);		
 		int[] operands = new int[sg.fields.size()];
-		int current = target;
-		int nextFree = freeRegister;
 		for (int i = 0; i != operands.length; ++i) {
 			String key = keys.get(i);
 			Expr arg = sg.fields.get(key);
-			blk.append(generate(arg, current, nextFree, environment));
-			operands[i] = current;
-			current = nextFree;
-			nextFree = nextFree + 1;
+			blk.append(generate(arg, freeRegister, freeRegister+1, environment));
+			operands[i] = freeRegister++;
 		}
 		blk.append(Code.NewRecord(sg.result().raw(), target, operands), attributes(sg));
 		return blk;

@@ -224,6 +224,15 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			return null;
 		}	
 		
+		// Now, update requirement for assignment register (if any)
+		
+		if(code instanceof Code.AbstractAssignable) {
+			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+			if(aa.target != Code.NULL_REG) {
+				environment.set(aa.target,Type.T_VOID);
+			}
+		}
+		
 		return environment;
 	}
 
@@ -461,9 +470,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Code.NewList code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
-		// TODO: could do better here by rewriting bytecode. For example, if we
-		// require a set then changing bytecode to newset makes sense!
-
+		
 		coerceAfter(req, code.type, code.target, index, entry);
 		Type value = code.type.element();
 		for (int operand : code.operands) {
@@ -584,7 +591,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		if(req instanceof Type.Reference) { 
 			Type.Reference tp = (Type.Reference) req;
 			coerceAfter(tp.element(), code.type.element(), code.operand, index,
-					entry);
+					entry);	
 			environment.set(code.operand,tp.element());
 		} else {
 			// default
