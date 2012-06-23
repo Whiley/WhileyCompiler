@@ -2259,8 +2259,16 @@ public abstract class Code {
 			return false;
 		}
 
-		public String codeString() {
-			return "forall ";
+		public String toString() {
+			String modifies = "";
+			for (int i = 0; i != modifiedOperands.length; ++i) {
+				if (i != 0) {
+					modifies += ",";
+				}
+				modifies += "%" + modifiedOperands[i];
+			}
+			return "forall %" + indexOperand + " in %" + sourceOperand + " ["
+					+ modifies + "] : " + type;
 		}
 	}
 

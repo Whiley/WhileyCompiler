@@ -704,7 +704,9 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(c.index));		
 		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", ftype,
 				Bytecode.STATIC));		
-		addReadConversion(c.type.elements().get(c.index), bytecodes);
+		addReadConversion(c.type.elements().get(c.index), bytecodes);		
+		bytecodes.add(new Bytecode.Store(c.target,convertType(c.type
+				.element(c.index))));
 	}
 	
 	public void translate(Code.Switch c, Block.Entry entry, int freeSlot,
