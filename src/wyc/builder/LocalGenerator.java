@@ -991,14 +991,11 @@ public final class LocalGenerator {
 	private int[] generate(List<Expr> arguments, int target, int freeRegister,
 			HashMap<String, Integer> environment, Block blk) {
 		int[] operands = new int[arguments.size()];
-		int current = target;
-		int nextFree = freeRegister;
 		for (int i = 0; i != operands.length; ++i) {
 			Expr arg = arguments.get(i);
-			blk.append(generate(arg, current, nextFree, environment));
-			operands[i] = current;
-			current = nextFree;
-			nextFree = nextFree + 1;
+			blk.append(generate(arg, freeRegister, freeRegister + 1,
+					environment));
+			operands[i] = freeRegister++;
 		}
 		return operands;
 	}
