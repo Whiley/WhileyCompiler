@@ -378,7 +378,7 @@ public final class CodeGeneration {
 
 			int[] operands = new int[l.second()];
 			for (int i = 0; i != l.second(); ++i) {
-				operands[i] = freeRegister + i;
+				operands[l.second()-i-1] = freeRegister + i;
 			}
 			blk.append(Code.Update(lhs.type.raw(), target, rhsRegister,
 					operands, lhs.afterType.raw(), fields), attributes(s));
