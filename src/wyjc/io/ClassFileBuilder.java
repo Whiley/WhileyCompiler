@@ -1125,14 +1125,22 @@ public class ClassFileBuilder {
 		case APPEND:
 			leftType = WHILEYLIST;
 			rightType = WHILEYLIST;
+			bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));			
+			bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));			
 			break;
 		case LEFT_APPEND:			
 			leftType = WHILEYLIST;
 			rightType = JAVA_LANG_OBJECT;
+			bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));			
+			bytecodes.add(new Bytecode.Load(c.rightOperand, convertType(c.type.element())));
+			addWriteConversion(c.type.element(),bytecodes);
 			break;
 		case RIGHT_APPEND:
 			leftType = JAVA_LANG_OBJECT;
 			rightType = WHILEYLIST;
+			bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type.element())));
+			addWriteConversion(c.type.element(),bytecodes);
+			bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));
 			break;
 		default:
 			internalFailure("unknown list operation",filename,stmt);
@@ -1140,8 +1148,6 @@ public class ClassFileBuilder {
 		}			
 		
 		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,leftType,rightType);
-		bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));
-		bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
 				Bytecode.STATIC));	
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYLIST));
@@ -1296,26 +1302,31 @@ public class ClassFileBuilder {
 			case INTERSECTION:
 				leftType = WHILEYSET;
 				rightType = WHILEYSET;
+				bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));		
+				bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));				
 				break;
 			case LEFT_UNION:
 			case LEFT_DIFFERENCE:
 			case LEFT_INTERSECTION:
 				leftType = WHILEYSET;
-				rightType = convertType(c.type.element());
+				rightType = JAVA_LANG_OBJECT;				
+				bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));		
+				bytecodes.add(new Bytecode.Load(c.rightOperand, convertType(c.type.element())));
+				addWriteConversion(c.type.element(),bytecodes);
 				break;
 			case RIGHT_UNION:			
 			case RIGHT_INTERSECTION:
-				leftType = convertType(c.type.element());
-				rightType = WHILEYSET;				
+				leftType = JAVA_LANG_OBJECT;
+				rightType = WHILEYSET;							
+				bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type.element())));
+				addWriteConversion(c.type.element(),bytecodes);
+				bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));				
 				break;
 			default:
 				internalFailure("Unknown set operation encountered: ",filename,stmt);
 				return; // dead-code
 		}
 
-		bytecodes.add(new Bytecode.Load(c.leftOperand, leftType));
-		bytecodes.add(new Bytecode.Load(c.rightOperand, rightType));
-		
 		JvmType.Function ftype= new JvmType.Function(WHILEYSET,leftType,rightType);
 		
 		// Second, select operation

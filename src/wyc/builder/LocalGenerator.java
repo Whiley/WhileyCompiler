@@ -850,7 +850,7 @@ public final class LocalGenerator {
 		for (Pair<String, Expr> p : e.sources) {
 			int srcSlot;
 			int varSlot = freeRegister++;
-			environment.put(p.first(), freeRegister);
+			environment.put(p.first(), varSlot);
 			Expr src = p.second();
 			Type rawSrcType = src.result().raw();
 			
