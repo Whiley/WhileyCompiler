@@ -1656,7 +1656,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,
 					Bytecode.VIRTUAL));
 			addReadConversion(c.type.ret(), bytecodes);
-			bytecodes.add(new Bytecode.Store(freeSlot,
+			bytecodes.add(new Bytecode.Store(c.target,
 					convertType(c.type.ret())));
 		} else if (c.synchronous) {			
 			ftype = new JvmType.Function(T_VOID,
