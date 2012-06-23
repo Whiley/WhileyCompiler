@@ -1428,8 +1428,10 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {			
 		JvmType type = convertType(c.type);		
 		bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
-		bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));		
+		bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));	
+		bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));	
 		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type.element())));
+		addWriteConversion(c.type.element(),bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));

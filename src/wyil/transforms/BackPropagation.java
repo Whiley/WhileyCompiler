@@ -581,11 +581,15 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Code.New code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
-		Type.Reference tp = (Type.Reference) req;
-		// I'm not sure where we should be really applying conversions
-		// here??
-		// coerce(tp.element(),code.type,index,entry);
-		environment.set(code.operand,tp.element());
+		if(req instanceof Type.Reference) { 
+			Type.Reference tp = (Type.Reference) req;
+			coerceAfter(tp.element(), code.type.element(), code.operand, index,
+					entry);
+			environment.set(code.operand,tp.element());
+		} else {
+			// default
+			environment.set(code.operand,code.type.element());
+		}
 	}
 	
 	private void infer(int index, Code.Throw code, Block.Entry entry,
