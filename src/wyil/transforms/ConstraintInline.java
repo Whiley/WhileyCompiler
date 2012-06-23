@@ -153,8 +153,7 @@ public class ConstraintInline implements Transform {
 			List<Type> params = method.type().params();
 			for (int i = 0; i != params.size(); ++i) {
 				Type t = params.get(i);
-				body.append(Code.Load(t, i));
-				body.append(Code.Store(t, i + freeSlot));
+				body.append(Code.Assign(t, i + freeSlot, i));
 			}
 			freeSlot += params.size();
 		}
@@ -208,17 +207,13 @@ public class ConstraintInline implements Transform {
 			// TODO: mark as check block
 			
 			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-			for(int i=paramTypes.size()-1;i>=0;--i) {				
-				blk.append(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
-				binding.put(i,freeSlot+i);
+			for(int i=paramTypes.size()-1;i>=0;--i) {								
+				binding.put(i,i);
 			}
 			
 			precondition = Block.resource(precondition, elem.attribute(Attribute.Source.class));
 			blk.importExternal(precondition,binding);
-			
-			for(int i=0;i<paramTypes.size();++i) {				
-				blk.append(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
-			}
+						
 			return blk;
 		}
 		
@@ -251,23 +246,21 @@ public class ConstraintInline implements Transform {
 		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
 			if(postcondition != null) {
-				Block blk = new Block(0);				
-				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
+				Block blk = new Block(0);												
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-				binding.put(0,freeSlot);
+				binding.put(0,code.operand);
 				Type.FunctionOrMethodOrMessage mtype = method.type();	
 				int pIndex = 1;
 				if (mtype instanceof Type.Message
 						&& ((Type.Message) mtype).receiver() != null) {
-					binding.put(pIndex++, Code.THIS_SLOT);
+					binding.put(pIndex++, Code.REG_0);
 				}
 				int shadowIndex = methodCase.body().numSlots();
 				for(Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
 				postcondition = Block.resource(postcondition,elem.attribute(Attribute.Source.class));
-				blk.importExternal(postcondition,binding);
-				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
+				blk.importExternal(postcondition,binding);				
 				return blk;
 			}
 		}
@@ -283,29 +276,23 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.IndexOf code, int freeSlot, SyntacticElement elem) {		
-		if(code.type instanceof Type.EffectiveList) {
+	public Block transform(Code.IndexOf code, int freeSlot,
+			SyntacticElement elem) {
+		if (code.type instanceof Type.EffectiveList) {
 			Block blk = new Block(0);
-			// TODO: mark as check block
-			blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
-			blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
-			String exitLabel = Block.freshLabel();
-			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-			blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-			blk.append(Code.Assert(Type.T_INT, Code.COp.GTEQ,
-					"index out of bounds (negative)"), attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
-			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+
+			blk.append(Code.Const(freeSlot, Value.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
-			blk.append(Code.LengthOf(code.type), attributes(elem));
-			blk.append(Code.Assert(Type.T_INT, Code.COp.LT,
-					"index out of bounds (not less than length)"),
+			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
+					Code.COp.GTEQ, "index out of bounds (negative)"),
 					attributes(elem));
-			blk.append(Code.Label(exitLabel), attributes(elem));
-			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+			blk.append(
+					Code.LengthOf(code.type, freeSlot + 1, code.leftOperand),
 					attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
-			return blk;		
+			blk.append(Code.Assert(Type.T_INT, freeSlot, freeSlot + 1,
+					Code.COp.LT, "index out of bounds (not less than length)"),
+					attributes(elem));
+			return blk;
 		} else {
 			return null; // FIXME
 		}
@@ -335,19 +322,15 @@ public class ConstraintInline implements Transform {
 		
 		if(code.bop == Code.BOp.DIV) {
 			Block blk = new Block(0);
-			blk.append(Code.Store(code.type, freeSlot), attributes(elem));
-			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
 			if (code.type instanceof Type.Int) {
-				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),
+				blk.append(Code.Const(freeSlot,Value.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
-				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),
+				blk.append(Code.Const(freeSlot,Value.V_RATIONAL(BigRational.ZERO)),
 						attributes(elem));
 			}
-			blk.append(
-					Code.Assert(code.type, Code.COp.NEQ, "division by zero"),
-					attributes(elem));
-			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
+			blk.append(Code.Assert(code.type, code.rightOperand, freeSlot,
+					Code.COp.NEQ, "division by zero"), attributes(elem));
 			return blk;
 		} 
 		
