@@ -470,8 +470,8 @@ public class ClassFileBuilder {
 				 translate((Move)code,freeSlot,bytecodes);
 			} else if(code instanceof Update) {
 				 translate((Update)code,freeSlot,bytecodes);
-			} else if(code instanceof NewDict) {
-				 translate((NewDict)code,freeSlot,bytecodes);
+			} else if(code instanceof Dict) {
+				 translate((Dict)code,freeSlot,bytecodes);
 			} else if(code instanceof NewList) {
 				 translate((NewList)code,freeSlot,bytecodes);
 			} else if(code instanceof Record) {
@@ -1474,7 +1474,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYLIST));
 	}
 		
-	protected void translate(Code.NewDict c, int freeSlot,
+	protected void translate(Code.Dict c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
 		construct(WHILEYMAP, freeSlot, bytecodes);

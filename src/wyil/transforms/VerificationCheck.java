@@ -438,8 +438,8 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Load)code,entry,constraint,environment,stack);
 		} else if(code instanceof Update) {
 			constraint = transform((Update)code,entry,constraint,environment,stack);
-		} else if(code instanceof NewDict) {
-			constraint = transform((NewDict)code,entry,constraint,environment,stack);
+		} else if(code instanceof Map) {
+			constraint = transform((Map)code,entry,constraint,environment,stack);
 		} else if(code instanceof NewList) {
 			constraint = transform((NewList)code,entry,constraint,environment,stack);
 		} else if(code instanceof Record) {
@@ -685,7 +685,7 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.NewDict code, Block.Entry entry,
+	protected WFormula transform(Code.Map code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		// TODO: complete this transform
 		return constraint;

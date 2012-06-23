@@ -293,14 +293,14 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewDict NewDict(Type.Dictionary type, int target,
+	public static Dict NewDict(Type.Dictionary type, int target,
 			Collection<Integer> operands) {
-		return get(new NewDict(type, target, toIntArray(operands)));
+		return get(new Dict(type, target, toIntArray(operands)));
 	}
 
-	public static NewDict NewDict(Type.Dictionary type, int target,
+	public static Dict NewDict(Type.Dictionary type, int target,
 			int[] operands) {
-		return get(new NewDict(type, target, operands));
+		return get(new Dict(type, target, operands));
 	}
 
 	/**
@@ -2526,9 +2526,9 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewDict extends AbstractNaryAssignable<Type.Dictionary> {
+	public static final class Dict extends AbstractNaryAssignable<Type.Dictionary> {
 
-		private NewDict(Type.Dictionary type, int target, int[] operands) {
+		private Dict(Type.Dictionary type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 
@@ -2537,7 +2537,7 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof NewDict) {
+			if (o instanceof Dict) {
 				return super.equals(o);
 			}
 			return false;

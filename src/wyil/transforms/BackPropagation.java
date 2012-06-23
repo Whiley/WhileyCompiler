@@ -187,8 +187,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Copy)code,entry,environment);
 		} else if(code instanceof Update) {
 			infer(index,(Update)code,entry,environment);
-		} else if(code instanceof NewDict) {
-			infer(index,(NewDict)code,entry,environment);
+		} else if(code instanceof Code.Dict) {
+			infer(index,(Code.Dict)code,entry,environment);
 		} else if(code instanceof NewList) {
 			infer(index,(NewList)code,entry,environment);
 		} else if(code instanceof Record) {
@@ -434,7 +434,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.target, code.type);		
 	}
 	
-	private void infer(int index, Code.NewDict code, Block.Entry entry,
+	private void infer(int index, Code.Dict code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		
