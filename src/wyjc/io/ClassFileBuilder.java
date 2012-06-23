@@ -1583,39 +1583,39 @@ public class ClassFileBuilder {
 	public void translate(Code.IndirectInvoke c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 		
-		// The main issue here, is that we have all of the parameters on the
-		// stack. What we need to do is to put them into an array, so they can
-		// then be passed into Method.invoke()
-		//
-		// To make this work, what we'll do is use a temporary register to hold
-		// the array as we build it up.
-
 		Type.FunctionOrMethodOrMessage ft = c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 
+		bytecodes.add(new Bytecode.Load(c.operand,JAVA_LANG_REFLECT_METHOD));
+		bytecodes.add(new Bytecode.LoadConst(null));
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
 		bytecodes.add(new Bytecode.New(arrT));
-		bytecodes.add(new Bytecode.Store(freeSlot,arrT));
-		
-		List<Type> params = ft.params();
-		for(int i=params.size()-1;i>=0;--i) {
-			Type pt = params.get(i);
-			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
-			bytecodes.add(new Bytecode.Swap());
+				
+		for (int i = 0; i != c.operands.length; ++i) {			
+			int register = c.operands[i];
+			Type pt = c.type.params().get(i);
+			JvmType jpt = convertType(pt);
+			bytecodes.add(new Bytecode.Dup(arrT));
 			bytecodes.add(new Bytecode.LoadConst(i));
-			bytecodes.add(new Bytecode.Swap());
+			bytecodes.add(new Bytecode.Load(register, jpt));
 			addWriteConversion(pt,bytecodes);
-			bytecodes.add(new Bytecode.ArrayStore(arrT));			
-		}
-
-		bytecodes.add(new Bytecode.LoadConst(null));
-		bytecodes.add(new Bytecode.Load(freeSlot,arrT));
+			bytecodes.add(new Bytecode.ArrayStore(arrT));
+		}		
+				
 		JvmType.Clazz owner = new JvmType.Clazz("java.lang.reflect","Method");		
 		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,arrT);		
 		
 		bytecodes.add(new Bytecode.Invoke(owner, "invoke", type,
-				Bytecode.VIRTUAL));						
-		addReadConversion(ft.ret(),bytecodes);	
+				Bytecode.VIRTUAL));									
+		// now, handle the case of an invoke which returns a value that should
+		// be discarded.
+		if (c.target != Code.NULL_REG) {
+			addReadConversion(ft.ret(),bytecodes);
+			bytecodes.add(new Bytecode.Store(c.target,
+					convertType(c.type.ret())));
+		} else if (c.target == Code.NULL_REG && c.type.ret() != Type.T_VOID) {
+			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+		}
 	}
 
 	public void translate(Code.Send c, int freeSlot,
