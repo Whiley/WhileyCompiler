@@ -358,14 +358,14 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewRecord NewRecord(Type.Record type, int target,
+	public static Record NewRecord(Type.Record type, int target,
 			Collection<Integer> operands) {
-		return get(new NewRecord(type, target, toIntArray(operands)));
+		return get(new Record(type, target, toIntArray(operands)));
 	}
 	
-	public static NewRecord NewRecord(Type.Record type, int target,
+	public static Record NewRecord(Type.Record type, int target,
 			int[] operands) {
-		return get(new NewRecord(type, target, operands));
+		return get(new Record(type, target, operands));
 	}
 
 	/**
@@ -2564,8 +2564,8 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewRecord extends AbstractNaryAssignable<Type.Record> {
-		private NewRecord(Type.Record type, int target, int[] operands) {
+	public static final class Record extends AbstractNaryAssignable<Type.Record> {
+		private Record(Type.Record type, int target, int[] operands) {
 			super(type,target, operands);
 		}
 
@@ -2574,7 +2574,7 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof NewRecord) {
+			if (o instanceof Record) {
 				return super.equals(o);
 			}
 			return false;

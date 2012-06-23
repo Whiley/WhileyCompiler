@@ -474,8 +474,8 @@ public class ClassFileBuilder {
 				 translate((NewDict)code,freeSlot,bytecodes);
 			} else if(code instanceof NewList) {
 				 translate((NewList)code,freeSlot,bytecodes);
-			} else if(code instanceof NewRecord) {
-				 translate((NewRecord)code,freeSlot,bytecodes);
+			} else if(code instanceof Record) {
+				 translate((Record)code,freeSlot,bytecodes);
 			} else if(code instanceof NewSet) {
 				 translate((NewSet)code,freeSlot,bytecodes);
 			} else if(code instanceof NewTuple) {
@@ -1497,7 +1497,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYMAP));		
 	}
 	
-	public void translate(Code.NewRecord code, int freeSlot,
+	public void translate(Code.Record code, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYRECORD, freeSlot, bytecodes);				
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,

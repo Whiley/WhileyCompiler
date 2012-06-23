@@ -442,8 +442,8 @@ public class VerificationCheck implements Transform {
 			constraint = transform((NewDict)code,entry,constraint,environment,stack);
 		} else if(code instanceof NewList) {
 			constraint = transform((NewList)code,entry,constraint,environment,stack);
-		} else if(code instanceof NewRecord) {
-			constraint = transform((NewRecord)code,entry,constraint,environment,stack);
+		} else if(code instanceof Record) {
+			constraint = transform((Record)code,entry,constraint,environment,stack);
 		} else if(code instanceof NewSet) {
 			constraint = transform((NewSet)code,entry,constraint,environment,stack);
 		} else if(code instanceof NewTuple) {
@@ -712,7 +712,7 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.NewRecord code, Block.Entry entry,
+	protected WFormula transform(Code.Record code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());

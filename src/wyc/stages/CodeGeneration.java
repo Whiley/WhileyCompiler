@@ -353,9 +353,9 @@ public final class CodeGeneration {
 					freeRegister + 1, environment);														
 			for (int i = 0; i != fields.size(); ++i) {
 				Expr.AssignedVariable v = (Expr.AssignedVariable) fields.get(i);
-				blk.append(Code.TupleLoad(
-						(Type.EffectiveTuple) s.rhs.result().raw(),
-						environment.get(v.var), freeRegister, i), attributes(s));
+				blk.append(Code.TupleLoad((Type.EffectiveTuple) s.rhs.result()
+						.raw(), environment.get(v.var), freeRegister, i),
+						attributes(s));
 			}
 			return blk;
 		} else if (s.lhs instanceof Expr.IndexOf
