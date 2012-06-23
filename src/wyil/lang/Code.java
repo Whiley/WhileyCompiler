@@ -1260,7 +1260,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "%" + target + " = const " + constant;
+			return "%" + target + " = " + constant + " : " + constant.type();
 		}
 	}
 
@@ -1288,8 +1288,13 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
-			return "copy";
+			return "";
+		}
+		
+		public String toString() {
+			return "%" + target + " = %" + operand + " : " + type;
 		}
 	}
 
@@ -2124,6 +2129,11 @@ public abstract class Code {
 		public String codeString() {
 			return "move";
 		}
+		
+
+		public String toString() {
+			return "%" + target + " <- %" + operand + " : " + type;
+		}
 	}
 
 	public static class Loop extends Code {
@@ -2281,11 +2291,14 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class DictLVal extends LVal {
-		public DictLVal(Type t) {
+		public final int keyOperand;
+		
+		public DictLVal(Type t, int keyOperand) {
 			super(t);
 			if (!(t instanceof Type.EffectiveDictionary)) {
 				throw new IllegalArgumentException("Invalid Dictionary Type");
 			}
+			this.keyOperand = keyOperand;
 		}
 
 		public Type.EffectiveDictionary type() {
@@ -2300,11 +2313,14 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class ListLVal extends LVal {
-		public ListLVal(Type t) {
+		public final int indexOperand;
+		
+		public ListLVal(Type t, int indexOperand) {
 			super(t);
 			if (!(t instanceof Type.EffectiveList)) {
 				throw new IllegalArgumentException("invalid List Type");
 			}
+			this.indexOperand = indexOperand;
 		}
 
 		public Type.EffectiveList type() {
@@ -2338,8 +2354,11 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class StringLVal extends LVal {
-		public StringLVal() {
+		public final int indexOperand;
+		
+		public StringLVal(int indexOperand) {
 			super(Type.T_STRING);
+			this.indexOperand = indexOperand;
 		}
 	}
 
@@ -2368,14 +2387,17 @@ public abstract class Code {
 
 	private static final class UpdateIterator implements Iterator<LVal> {
 		private final ArrayList<String> fields;
+		private final int[] operands;
 		private Type iter;
 		private int fieldIndex;
+		private int operandIndex;
 		private int index;
 
-		public UpdateIterator(Type type, int level, ArrayList<String> fields) {
+		public UpdateIterator(Type type, int level, int[] operands, ArrayList<String> fields) {
 			this.fields = fields;
 			this.iter = type;
 			this.index = level;
+			this.operands = operands;
 		}
 
 		public LVal next() {
@@ -2383,7 +2405,7 @@ public abstract class Code {
 			index--;
 			if (Type.isSubtype(Type.T_STRING, iter)) {
 				iter = Type.T_CHAR;
-				return new StringLVal();
+				return new StringLVal(operands[operandIndex++]);
 			} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
 				Type.Reference proc = Type.effectiveReference(iter);
 				iter = proc.element();
@@ -2391,11 +2413,11 @@ public abstract class Code {
 			} else if (iter instanceof Type.EffectiveList) {
 				Type.EffectiveList list = (Type.EffectiveList) iter;
 				iter = list.element();
-				return new ListLVal(raw);
+				return new ListLVal(raw,operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveDictionary) {
 				Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter;
 				iter = dict.value();
-				return new DictLVal(raw);
+				return new DictLVal(raw,operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
 				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 				String field = fields.get(fieldIndex++);
@@ -2459,7 +2481,7 @@ public abstract class Code {
 		}
 		
 		public Iterator<LVal> iterator() {
-			return new UpdateIterator(afterType, level(), fields);
+			return new UpdateIterator(afterType, level(), operands, fields);
 		}
 
 		/**
@@ -2510,17 +2532,30 @@ public abstract class Code {
 			return false;
 		}
 
-		public String codeString() {
-			String fs = fields.isEmpty() ? "" : " ";
-			boolean firstTime = true;
-			for (String f : fields) {
-				if (!firstTime) {
-					fs += ".";
+		@Override
+		public String codeString() { return ""; }
+		
+		public String toString() {
+			String r = "%" + target;			
+			for (LVal lv : this) {
+				if(lv instanceof ListLVal) {
+					ListLVal l = (ListLVal) lv;
+					r = r + "[%" + l.indexOperand + "]";
+				} else if(lv instanceof StringLVal) {
+					StringLVal l = (StringLVal) lv;
+					r = r + "[%" + l.indexOperand + "]";
+				} else if(lv instanceof DictLVal) {
+					DictLVal l = (DictLVal) lv;
+					r = r + "[%" + l.keyOperand + "]";
+				} else if(lv instanceof RecordLVal) {
+					RecordLVal l = (RecordLVal) lv;
+					r = r + "." + l.field;
+				} else {
+					ReferenceLVal l = (ReferenceLVal) lv;
+					r = "(*" + r + ")";
 				}
-				firstTime = false;
-				fs += f;
 			}
-			return "update " + fs + " => " + afterType;
+			return r + " = %" + operand + " : " + type + " -> " + afterType;
 		}
 	}
 
