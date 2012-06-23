@@ -670,14 +670,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}
-		
-		protected abstract String codeString();
-		
-		public String toString() {
-			return "%" + target + " = " + codeString() + " %" + operand + " : "
-					+ type;
-		}
+		}		
 	}
 
 	/**
@@ -728,17 +721,7 @@ public abstract class Code {
 				return operand == bo.operand && type.equals(bo.type);
 			}
 			return false;
-		}
-		
-		protected abstract String codeString();
-		
-		public String toString() {
-			if(operand != Code.NULL_REG) {
-				return codeString() + " %" + operand + " : " + type;
-			} else {
-				return codeString();
-			}
-		}
+		}		
 	}
 	
 	/**
@@ -806,14 +789,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}
-		
-		protected abstract String codeString();
-		
-		public String toString() {			
-			return "%" + target + " = " + codeString() + " %" + leftOperand
-					+ ", %" + rightOperand + " : " + type;			
-		}
+		}		
 	}
 
 	/**
@@ -874,21 +850,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}
-		
-		protected abstract String codeString();
-		
-		public String toString() {
-			String soperands = " ";
-			for (int i = 0; i != operands.length; ++i) {
-				if (i != 0) {
-					soperands += ", ";
-				}
-				soperands += "%" + operands[i];
-			}
-			return "%" + target + " = " + codeString() + soperands + " : "
-					+ type;
-		}
+		}		
 	}
 
 	/**
@@ -955,21 +917,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}
-		
-		protected abstract String codeString();
-		
-		public String toString() {
-			String soperands = " ";
-			for (int i = 0; i != operands.length; ++i) {
-				if (i != 0) {
-					soperands += ", ";
-				}
-				soperands += "%" + operands[i];
-			}
-			return "%" + target + " = " + codeString() + " %" + operand
-					+ soperands + " : " + type;
-		}
+		}		
 	}
 	
 	/**
@@ -1030,14 +978,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}
-		
-		protected abstract String codeString();
-		
-		public String toString() {
-			return codeString() + " %" + leftOperand + ", %" + rightOperand
-					+ " : " + type;
-		}
+		}		
 	}
 
 	// ===============================================================
@@ -1156,8 +1097,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String codeString() {
-			return bop.toString();			
+		public String toString() {
+			return bop + " %" + target + " %" + leftOperand + ", %" + rightOperand + " : " + type; 			
 		}
 	}
 
@@ -1212,8 +1153,8 @@ public abstract class Code {
 			return false;
 		}
 
-		public String codeString() {
-			return "convert " + result + "";
+		public String toString() {
+			return "convert %" + target + " %" + operand + " " + result + " : " + type; 			
 		}
 	}
 
@@ -1260,7 +1201,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "%" + target + " = " + constant + " : " + constant.type();
+			return "const %" + target + " " + constant + " : "
+					+ constant.type();
 		}
 	}
 
@@ -1288,13 +1230,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "";
-		}
-		
 		public String toString() {
-			return "%" + target + " = %" + operand + " : " + type;
+			return "assign %" + target + " %" + operand + " " + " : " + type; 			
 		}
 	}
 
@@ -1323,8 +1260,8 @@ public abstract class Code {
 			return o instanceof Debug && super.equals(o);
 		}
 
-		public String codeString() {
-			return "debug";
+		public String toString() {
+			return "debug %" + operand + " " + " : " + type; 			
 		}
 	}
 
@@ -1404,8 +1341,9 @@ public abstract class Code {
 			return false;
 		}
 
-		public String codeString() {
-			return "assert " + op + " \"" + msg + "\"";
+		public String toString() {
+			return "assert" + op + "%" + leftOperand + ", %" + rightOperand
+					+ " \"" + msg + "\"" + " : " + type;
 		}
 	}
 
@@ -1451,8 +1389,9 @@ public abstract class Code {
 			return false;
 		}
 
-		public String codeString() {
-			return "fieldload " + field;
+		public String toString() {
+			return "fieldload %" + target + " %" + operand + " " + field
+					+ " : " + type;
 		}
 	}
 
@@ -1572,7 +1511,12 @@ public abstract class Code {
 		}
 
 		public String codeString() {
-			return "if " + op + " goto " + target;
+			return null;
+		}
+		
+		public String toString() {
+			return "if" + op + " %" + leftOperand + ", %" + rightOperand
+					+ " goto " + target + " : " + type; 
 		}
 	}
 
@@ -1738,10 +1682,11 @@ public abstract class Code {
 			return false;
 		}
 
-		public String codeString() {
-			return "if " + leftOperand + " is " + rightOperand
-					+ " goto " + target;
+		public String toString() {
+			return "ifis" + " %" + leftOperand + ", " + rightOperand + " goto "
+					+ target + " : " + type; 
 		}
+		
 	}
 
 	/**
@@ -1775,6 +1720,7 @@ public abstract class Code {
 			return o instanceof IndirectInvoke && super.equals(o);						
 		}
 
+		@Override
 		public String codeString() {
 			if (target != Code.NULL_REG) {
 				return "indirectinvoke";
@@ -1817,15 +1763,18 @@ public abstract class Code {
 			return o instanceof IndirectSend && super.equals(o);						
 		}
 		
-		public String codeString() {
+		public String toString() {
 			if (synchronous) {
 				if (target != Code.NULL_REG) {
-					return "isend";
+					return "isend " + operand + " " + toString(operands)
+							+ " : " + type;
 				} else {
-					return "ivsend";
+					return "ivsend" + operand + " " + toString(operands)
+							+ " : " + type;
 				}
 			} else {
-				return "iasend";
+				return "iasend" + operand + " " + toString(operands) + " : "
+						+ type;
 			}
 		}
 	}
@@ -1860,6 +1809,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "not";
 		}
@@ -1901,6 +1851,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			if (target != Code.NULL_REG) {
 				return "invoke " + name;
@@ -2006,6 +1957,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return operation.toString();
 		}
@@ -2035,6 +1987,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "lengthof";
 		}
@@ -2063,6 +2016,7 @@ public abstract class Code {
 			return o instanceof SubList && super.equals(o);
 		}
 
+		@Override
 		public String codeString() {
 			return "sublist";
 		}
@@ -2094,6 +2048,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "indexof";
 		}
@@ -2126,14 +2081,10 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "move";
-		}
-		
-
-		public String toString() {
-			return "%" + target + " <- %" + operand + " : " + type;
-		}
+		}		
 	}
 
 	public static class Loop extends Code {
@@ -2603,6 +2554,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "map";
 		}
@@ -2640,6 +2592,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "record";
 		}
@@ -2678,6 +2631,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "tuple";
 		}
@@ -2716,6 +2670,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "set";
 		}
@@ -2755,6 +2710,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "list";
 		}
@@ -2800,6 +2756,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "return";
 		}
@@ -2877,6 +2834,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return operation.toString();
 		}
@@ -2924,6 +2882,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return operation.toString();
 		}
@@ -2952,6 +2911,7 @@ public abstract class Code {
 			return o instanceof SubString && super.equals(o);				
 		}
 
+		@Override
 		public String codeString() {
 			return "substr";
 		}
@@ -3062,6 +3022,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			if (synchronous) {
 				if (target != Code.NULL_REG) {
@@ -3092,6 +3053,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "throw";
 		}
@@ -3229,6 +3191,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "neg";
 		}
@@ -3265,6 +3228,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "invert";
 		}
@@ -3294,6 +3258,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "new";
 		}
@@ -3321,6 +3286,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "tupleload " + index;
 		}
@@ -3350,6 +3316,7 @@ public abstract class Code {
 			return false;
 		}
 
+		@Override
 		public String codeString() {
 			return "deref";
 		}
@@ -3379,12 +3346,23 @@ public abstract class Code {
 			}
 			return false;
 		}
-
-		public String codeString() {
-			return "void";
+		
+		public String toString() {
+			return "void " + toString(operands);
 		}
 	}
 
+	private static String toString(int[] operands) {
+		String r = "";
+		for (int i=0;i!=operands.length;++i) {
+			if(i!=0) {
+				r = r + ", ";
+			}
+			r = r + "%" + operands[i];
+		}
+		return r;
+	}
+	
 	private static int[] toIntArray(Collection<Integer> operands) {
 		int[] ops = new int[operands.size()];
 		int i = 0;
