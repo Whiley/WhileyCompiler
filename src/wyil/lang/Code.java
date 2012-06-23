@@ -1853,11 +1853,11 @@ public abstract class Code {
 
 		public String toString() {
 			if (target != Code.NULL_REG) {
-				return "invoke " + target + " " + toString(operands)
-						+ " : " + type;
+				return "invoke %" + target + " " + toString(operands)
+						+ " " + name + " : " + type;
 			} else {
-				return "invoke " + toString(operands)
-						+ " : " + type;				
+				return "invoke %" + toString(operands)
+						+ " " + name + " : " + type;				
 			}
 		}
 	}
@@ -2186,7 +2186,7 @@ public abstract class Code {
 						: sourceOperand;
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
-				return Code.ForAll(type, sourceOperand, nIndexOperand,
+				return Code.ForAll(type, nSourceOperand, nIndexOperand,
 						nModifiedOperands, target);
 			} else {
 				return this;
