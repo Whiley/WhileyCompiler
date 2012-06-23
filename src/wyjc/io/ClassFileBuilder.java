@@ -548,12 +548,10 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Update code, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-
 		bytecodes.add(new Bytecode.Load(code.target, convertType(code.type)));
-		
-		translateUpdate(code.iterator(),code, bytecodes);
-		
-		bytecodes.add(new Bytecode.Store(code.target, convertType(code.afterType)));
+		translateUpdate(code.iterator(), code, bytecodes);
+		bytecodes.add(new Bytecode.Store(code.target,
+				convertType(code.afterType)));
 	}
 
 	/**
@@ -569,52 +567,94 @@ public class ClassFileBuilder {
 	 */
 	public void translateUpdate(Iterator<Code.LVal> iterator, Code.Update code,
 			ArrayList<Bytecode> bytecodes) {
-		if(iterator.hasNext()) {
-			LVal lv = iterator.next();
-			if(lv instanceof ListLVal) {
-				ListLVal l = (ListLVal) lv;
-				if(iterator.hasNext()) {
-					// In this case, we're partially updating the element at a
-					// given position. 
-					bytecodes.add(new Bytecode.Dup(WHILEYLIST));											
-					bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));				
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-							WHILEYLIST,BIG_INTEGER);
-					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_get", ftype,
-							Bytecode.STATIC));				
-					addReadConversion(l.type().element(),bytecodes);
-					translateUpdate(iterator,code,bytecodes);		
-					bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));				
-					bytecodes.add(new Bytecode.Swap());
-				} else {
-					bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));
-					translateUpdate(iterator,code,bytecodes);
-				}
-
-				JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
-						WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);			
-				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
-						Bytecode.STATIC));	
-				
-			} else if(lv instanceof StringLVal) {
-				StringLVal l = (StringLVal) lv;
-				
-			} else if(lv instanceof DictLVal) {
-				DictLVal l = (DictLVal) lv;
-				
-			} else if(lv instanceof RecordLVal) {
-				RecordLVal l = (RecordLVal) lv;
-				
+		LVal lv = iterator.next();
+		if(lv instanceof ListLVal) {
+			ListLVal l = (ListLVal) lv;
+			if(iterator.hasNext()) {
+				// In this case, we're partially updating the element at a
+				// given position. 
+				bytecodes.add(new Bytecode.Dup(WHILEYLIST));											
+				bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));				
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+						WHILEYLIST,BIG_INTEGER);
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_get", ftype,
+						Bytecode.STATIC));				
+				addReadConversion(l.type().element(),bytecodes);
+				translateUpdate(iterator,code,bytecodes);		
+				bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));				
+				bytecodes.add(new Bytecode.Swap());
 			} else {
-				ReferenceLVal l = (ReferenceLVal) lv;
-				
+				bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));
+				bytecodes.add(new Bytecode.Load(code.operand, convertType(l
+						.type().element())));	
+				addWriteConversion(code.rhs(),bytecodes);
 			}
+
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
+					WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
+					Bytecode.STATIC));	
+
+		} else if(lv instanceof StringLVal) {
+			StringLVal l = (StringLVal) lv;
+			// assert: level must be zero here
+			bytecodes.add(new Bytecode.Load(l.indexOperand, BIG_INTEGER));
+			bytecodes.add(new Bytecode.Load(code.operand, T_CHAR));
+
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
+					JAVA_LANG_STRING, BIG_INTEGER, T_CHAR);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
+					Bytecode.STATIC));
+		} else if(lv instanceof DictLVal) {
+			DictLVal l = (DictLVal) lv;
+			JvmType keyType = convertType(l.type().key());
+			JvmType valueType = convertType(l.type().key());
+			if(iterator.hasNext()) {
+				// In this case, we're partially updating the element at a
+				// given position. 				
+				bytecodes.add(new Bytecode.Dup(WHILEYMAP));											
+				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));				
+				addWriteConversion(l.type().key(),bytecodes);				
+				JvmType.Function ftype = new JvmType.Function(
+						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "internal_get", ftype,
+					Bytecode.STATIC));				
+				addReadConversion(l.type().value(),bytecodes);
+				translateUpdate(iterator,code,bytecodes);
+				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));
+				bytecodes.add(new Bytecode.Swap());
+			} else {				
+				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));	
+				bytecodes.add(new Bytecode.Load(code.operand, valueType));	
+				addWriteConversion(code.rhs(),bytecodes);
+			}
+		} else if(lv instanceof RecordLVal) {
+			RecordLVal l = (RecordLVal) lv;
+			Type.EffectiveRecord type = l.type();
+			
+			if (iterator.hasNext()) {
+				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(l.field));
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+						WHILEYRECORD, JAVA_LANG_STRING);
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "internal_get",
+						ftype, Bytecode.STATIC));
+				addReadConversion(type.field(l.field), bytecodes);
+				translateUpdate(iterator, code, bytecodes);
+				bytecodes.add(new Bytecode.LoadConst(l.field));
+				bytecodes.add(new Bytecode.Swap());
+			} else {
+				bytecodes.add(new Bytecode.LoadConst(l.field));
+				bytecodes.add(new Bytecode.Load(code.operand, convertType(type
+						.field(l.field))));
+				addWriteConversion(type.field(l.field), bytecodes);
+			}
+			
+			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);						
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.STATIC));	
 		} else {
-			// in this case, we've reached the end of the update path.
-			// Therefore, we just need to load the right-hand side (rhs) onto
-			// the stack.			
-			bytecodes.add(new Bytecode.Load(code.operand, convertType(code.rhs())));	
-			addWriteConversion(code.rhs(),bytecodes);
+			ReferenceLVal l = (ReferenceLVal) lv;
+
 		}
 	}
 	
@@ -663,15 +703,7 @@ public class ClassFileBuilder {
 						
 		} else if(type == Type.T_STRING) {
 			
-			// assert: level must be zero here
-			bytecodes.add(new Bytecode.Load(indexSlot, BIG_INTEGER));
-			bytecodes.add(new Bytecode.Load(indexSlot+1, val_t));
-			addWriteConversion(Type.T_INT,bytecodes);			
-
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
-					JAVA_LANG_STRING,BIG_INTEGER,T_CHAR);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
-					Bytecode.STATIC));						
+									
 			
 		} else if(type instanceof Type.EffectiveList) {
 			Type.EffectiveList list = (Type.EffectiveList) type;				
