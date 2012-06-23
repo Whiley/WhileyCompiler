@@ -478,8 +478,8 @@ public class ClassFileBuilder {
 				 translate((Record)code,freeSlot,bytecodes);
 			} else if(code instanceof NewSet) {
 				 translate((NewSet)code,freeSlot,bytecodes);
-			} else if(code instanceof NewTuple) {
-				 translate((NewTuple)code,freeSlot,bytecodes);
+			} else if(code instanceof Tuple) {
+				 translate((Tuple)code,freeSlot,bytecodes);
 			} else if(code instanceof Negate) {
 				 translate((Negate)code,freeSlot,bytecodes);
 			} else if(code instanceof Dereference) {
@@ -1536,7 +1536,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYSET));
 	}
 	
-	protected void translate(Code.NewTuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Code.Tuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(WHILEYTUPLE ));		
 		bytecodes.add(new Bytecode.Dup(WHILEYTUPLE ));
 		bytecodes.add(new Bytecode.LoadConst(c.operands.length));

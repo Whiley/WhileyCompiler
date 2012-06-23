@@ -342,13 +342,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewTuple NewTuple(Type.Tuple type, int target,
+	public static Tuple NewTuple(Type.Tuple type, int target,
 			Collection<Integer> operands) {
-		return get(new NewTuple(type, target, toIntArray(operands)));
+		return get(new Tuple(type, target, toIntArray(operands)));
 	}
 
-	public static NewTuple NewTuple(Type.Tuple type, int target, int[] operands) {
-		return get(new NewTuple(type, target, operands));
+	public static Tuple NewTuple(Type.Tuple type, int target, int[] operands) {
+		return get(new Tuple(type, target, operands));
 	}
 	
 	/**
@@ -2602,9 +2602,9 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewTuple extends AbstractNaryAssignable<Type.Tuple> {
+	public static final class Tuple extends AbstractNaryAssignable<Type.Tuple> {
 
-		private NewTuple(Type.Tuple type, int target, int[] operands) {
+		private Tuple(Type.Tuple type, int target, int[] operands) {
 			super(type,target,operands);
 		}
 		
@@ -2613,7 +2613,7 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof NewTuple) {
+			if (o instanceof Tuple) {
 				return super.equals(o);
 			}
 			return false;
