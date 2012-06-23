@@ -444,8 +444,8 @@ public class VerificationCheck implements Transform {
 			constraint = transform((NewList)code,entry,constraint,environment,stack);
 		} else if(code instanceof Record) {
 			constraint = transform((Record)code,entry,constraint,environment,stack);
-		} else if(code instanceof NewSet) {
-			constraint = transform((NewSet)code,entry,constraint,environment,stack);
+		} else if(code instanceof Set) {
+			constraint = transform((Set)code,entry,constraint,environment,stack);
 		} else if(code instanceof Tuple) {
 			constraint = transform((Tuple)code,entry,constraint,environment,stack);
 		} else if(code instanceof Negate) {
@@ -702,7 +702,7 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.NewSet code, Block.Entry entry,
+	protected WFormula transform(Code.Set code, Block.Entry entry,
 			WFormula constraint, int[] environment, ArrayList<WExpr> stack) {
 		HashSet<WExpr> args = new HashSet<WExpr>();
 		for (int i=0;i!=code.nargs;++i) {			

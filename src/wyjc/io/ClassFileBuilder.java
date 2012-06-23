@@ -33,11 +33,9 @@ import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyVersion;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
-import wyil.*;
 import static wybs.lang.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
-import wyil.lang.Code.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
 import wyjvm.attributes.Code.Handler;
@@ -422,90 +420,90 @@ public class ClassFileBuilder {
 			ArrayList<UnresolvedHandler> handlers, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
-			if(code instanceof BinOp) {
-				 translate((BinOp)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof Convert) {
-				 translate((Convert)code,freeSlot,constants,bytecodes);
-			} else if(code instanceof Const) {
-				translate((Const) code, freeSlot, constants, bytecodes);
-			} else if(code instanceof Debug) {
-				 translate((Debug)code,freeSlot,bytecodes);
-			} else if(code instanceof LoopEnd) {
-				 translate((LoopEnd)code,freeSlot,bytecodes);
-			} else if(code instanceof Assert) {
-				 translate((Assert)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof FieldLoad) {
-				 translate((FieldLoad)code,freeSlot,bytecodes);
-			} else if(code instanceof ForAll) {
-				 freeSlot = translate((ForAll)code,freeSlot,bytecodes);
-			} else if(code instanceof Goto) {
-				 translate((Goto)code,freeSlot,bytecodes);
-			} else if(code instanceof IfGoto) {				
-				translateIfGoto((IfGoto) code, entry, freeSlot, bytecodes);
-			} else if(code instanceof IfType) {
-				translate((IfType) code, entry, freeSlot, constants, bytecodes);
-			} else if(code instanceof IndirectInvoke) {
-				 translate((IndirectInvoke)code,freeSlot,bytecodes);
-			} else if(code instanceof IndirectSend) {
-				 translate((IndirectSend)code,freeSlot,bytecodes);
-			} else if(code instanceof Invoke) {
-				 translate((Invoke)code,freeSlot,bytecodes);
-			} else if(code instanceof Invert) {
-				 translate((Invert)code,freeSlot,bytecodes);
-			} else if(code instanceof Label) {
-				translate((Label)code,freeSlot,bytecodes);
-			} else if(code instanceof ListOp) {
-				 translate((ListOp)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof LengthOf) {
-				 translate((LengthOf)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof SubList) {
-				 translate((SubList)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof IndexOf) {
-				 translate((IndexOf)code,freeSlot,bytecodes);
-			} else if(code instanceof Copy) {
-				 translate((Copy)code,freeSlot,bytecodes);
-			} else if(code instanceof Loop) {
-				 translate((Loop)code,freeSlot,bytecodes);
-			} else if(code instanceof Move) {
-				 translate((Move)code,freeSlot,bytecodes);
-			} else if(code instanceof Update) {
-				 translate((Update)code,freeSlot,bytecodes);
-			} else if(code instanceof Dict) {
-				 translate((Dict)code,freeSlot,bytecodes);
-			} else if(code instanceof NewList) {
-				 translate((NewList)code,freeSlot,bytecodes);
-			} else if(code instanceof Record) {
-				 translate((Record)code,freeSlot,bytecodes);
-			} else if(code instanceof NewSet) {
-				 translate((NewSet)code,freeSlot,bytecodes);
-			} else if(code instanceof Tuple) {
-				 translate((Tuple)code,freeSlot,bytecodes);
-			} else if(code instanceof Negate) {
-				 translate((Negate)code,freeSlot,bytecodes);
-			} else if(code instanceof Dereference) {
-				 translate((Dereference)code,freeSlot,bytecodes);
-			} else if(code instanceof Return) {
-				 translate((Return)code,freeSlot,bytecodes);
-			} else if(code instanceof Nop) {
+			if(code instanceof Code.BinOp) {
+				 translate((Code.BinOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.Convert) {
+				 translate((Code.Convert)code,freeSlot,constants,bytecodes);
+			} else if(code instanceof Code.Const) {
+				translate((Code.Const) code, freeSlot, constants, bytecodes);
+			} else if(code instanceof Code.Debug) {
+				 translate((Code.Debug)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.LoopEnd) {
+				 translate((Code.LoopEnd)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Assert) {
+				 translate((Code.Assert)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.FieldLoad) {
+				 translate((Code.FieldLoad)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.ForAll) {
+				 freeSlot = translate((Code.ForAll)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Goto) {
+				 translate((Code.Goto)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.IfGoto) {				
+				translateIfGoto((Code.IfGoto) code, entry, freeSlot, bytecodes);
+			} else if(code instanceof Code.IfType) {
+				translate((Code.IfType) code, entry, freeSlot, constants, bytecodes);
+			} else if(code instanceof Code.IndirectInvoke) {
+				 translate((Code.IndirectInvoke)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.IndirectSend) {
+				 translate((Code.IndirectSend)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Invoke) {
+				 translate((Code.Invoke)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Invert) {
+				 translate((Code.Invert)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Label) {
+				translate((Code.Label)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.ListOp) {
+				 translate((Code.ListOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.LengthOf) {
+				 translate((Code.LengthOf)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.SubList) {
+				 translate((Code.SubList)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.IndexOf) {
+				 translate((Code.IndexOf)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Copy) {
+				 translate((Code.Copy)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Loop) {
+				 translate((Code.Loop)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Move) {
+				 translate((Code.Move)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Update) {
+				 translate((Code.Update)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Dict) {
+				 translate((Code.Dict)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.NewList) {
+				 translate((Code.NewList)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Record) {
+				 translate((Code.Record)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Set) {
+				 translate((Code.Set)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Tuple) {
+				 translate((Code.Tuple)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Negate) {
+				 translate((Code.Negate)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Dereference) {
+				 translate((Code.Dereference)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Return) {
+				 translate((Code.Return)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Nop) {
 				// do nothing
-			} else if(code instanceof Send) {
-				 translate((Send)code,freeSlot,bytecodes);
-			} else if(code instanceof SetOp) {
-				 translate((SetOp)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof StringOp) {
-				 translate((StringOp)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof SubString) {
-				 translate((SubString)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof Switch) {
-				 translate((Switch)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof TryCatch) {
-				 translate((TryCatch)code,entry,freeSlot,handlers,constants,bytecodes);
-			} else if(code instanceof New) {
-				 translate((New)code,freeSlot,bytecodes);
-			} else if(code instanceof Throw) {
-				 translate((Throw)code,freeSlot,bytecodes);
-			} else if(code instanceof TupleLoad) {
-				 translate((TupleLoad)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Send) {
+				 translate((Code.Send)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.SetOp) {
+				 translate((Code.SetOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.StringOp) {
+				 translate((Code.StringOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.SubString) {
+				 translate((Code.SubString)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.Switch) {
+				 translate((Code.Switch)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.TryCatch) {
+				 translate((Code.TryCatch)code,entry,freeSlot,handlers,constants,bytecodes);
+			} else if(code instanceof Code.New) {
+				 translate((Code.New)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Throw) {
+				 translate((Code.Throw)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.TupleLoad) {
+				 translate((Code.TupleLoad)code,freeSlot,bytecodes);
 			} else {
 				internalFailure("unknown wyil code encountered (" + code + ")", filename, entry);
 			}
@@ -567,9 +565,9 @@ public class ClassFileBuilder {
 	 */
 	public void translateUpdate(Iterator<Code.LVal> iterator, Code.Update code,
 			ArrayList<Bytecode> bytecodes) {
-		LVal lv = iterator.next();
-		if(lv instanceof ListLVal) {
-			ListLVal l = (ListLVal) lv;
+		Code.LVal lv = iterator.next();
+		if(lv instanceof Code.ListLVal) {
+			Code.ListLVal l = (Code.ListLVal) lv;
 			if(iterator.hasNext()) {
 				// In this case, we're partially updating the element at a
 				// given position. 
@@ -595,8 +593,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.STATIC));	
 
-		} else if(lv instanceof StringLVal) {
-			StringLVal l = (StringLVal) lv;
+		} else if(lv instanceof Code.StringLVal) {
+			Code.StringLVal l = (Code.StringLVal) lv;
 			// assert: level must be zero here
 			bytecodes.add(new Bytecode.Load(l.indexOperand, BIG_INTEGER));
 			bytecodes.add(new Bytecode.Load(code.operand, T_CHAR));
@@ -605,8 +603,8 @@ public class ClassFileBuilder {
 					JAVA_LANG_STRING, BIG_INTEGER, T_CHAR);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));
-		} else if(lv instanceof DictLVal) {
-			DictLVal l = (DictLVal) lv;
+		} else if(lv instanceof Code.DictLVal) {
+			Code.DictLVal l = (Code.DictLVal) lv;
 			JvmType keyType = convertType(l.type().key());
 			JvmType valueType = convertType(l.type().value());
 			if(iterator.hasNext()) {
@@ -636,8 +634,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 					Bytecode.STATIC));			
 				
-		} else if(lv instanceof RecordLVal) {
-			RecordLVal l = (RecordLVal) lv;
+		} else if(lv instanceof Code.RecordLVal) {
+			Code.RecordLVal l = (Code.RecordLVal) lv;
 			Type.EffectiveRecord type = l.type();
 			
 			if (iterator.hasNext()) {
@@ -661,7 +659,7 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);						
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.STATIC));	
 		} else {
-			ReferenceLVal l = (ReferenceLVal) lv;
+			Code.ReferenceLVal l = (Code.ReferenceLVal) lv;
 			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
@@ -1521,7 +1519,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(code.target, WHILEYRECORD));
 	}
 	
-	protected void translate(Code.NewSet c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Code.Set c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYSET, freeSlot, bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(WHILEYSET,
 				WHILEYSET,JAVA_LANG_OBJECT);

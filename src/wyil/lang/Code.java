@@ -310,13 +310,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewSet NewSet(Type.Set type, int target,
+	public static Set NewSet(Type.Set type, int target,
 			Collection<Integer> operands) {
-		return get(new NewSet(type, target, toIntArray(operands)));
+		return get(new Set(type, target, toIntArray(operands)));
 	}
 
-	public static NewSet NewSet(Type.Set type, int target, int[] operands) {
-		return get(new NewSet(type, target, operands));
+	public static Set NewSet(Type.Set type, int target, int[] operands) {
+		return get(new Set(type, target, operands));
 	}
 
 	/**
@@ -579,7 +579,7 @@ public abstract class Code {
 	// ===============================================================
 
 	// The following method adds any slots used by a given bytecode
-	public void slots(Set<Integer> slots) {
+	public void slots(java.util.Set<Integer> slots) {
 		// default implementation does nothing
 	}
 
@@ -640,7 +640,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {
+		public final void slots(java.util.Set<Integer> slots) {
 			slots.add(target);
 			slots.add(operand);
 		}
@@ -696,7 +696,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {			
+		public final void slots(java.util.Set<Integer> slots) {			
 			slots.add(operand);
 		}
 
@@ -751,7 +751,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {
+		public final void slots(java.util.Set<Integer> slots) {
 			slots.add(target);
 			slots.add(leftOperand);
 			slots.add(rightOperand);
@@ -816,7 +816,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {
+		public final void slots(java.util.Set<Integer> slots) {
 			if (target >= 0) {
 				slots.add(target);
 			}
@@ -879,7 +879,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {
+		public final void slots(java.util.Set<Integer> slots) {
 			if (target >= 0) {
 				slots.add(target);
 			}
@@ -945,7 +945,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(Set<Integer> slots) {
+		public final void slots(java.util.Set<Integer> slots) {
 			slots.add(leftOperand);
 			slots.add(rightOperand);
 		}
@@ -1175,7 +1175,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
+		public void slots(java.util.Set<Integer> slots) {
 			slots.add(target);
 		}
 
@@ -1654,7 +1654,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
+		public void slots(java.util.Set<Integer> slots) {
 			slots.add(leftOperand);
 		}
 
@@ -2104,7 +2104,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
+		public void slots(java.util.Set<Integer> slots) {
 			for (int operand : modifiedOperands) {
 				slots.add(operand);
 			}
@@ -2169,7 +2169,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
+		public void slots(java.util.Set<Integer> slots) {
 			slots.add(indexOperand);
 			slots.add(sourceOperand);
 			super.slots(slots);
@@ -2640,9 +2640,9 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewSet extends AbstractNaryAssignable<Type.Set> {
+	public static final class Set extends AbstractNaryAssignable<Type.Set> {
 
-		private NewSet(Type.Set type, int target, int[] operands) {
+		private Set(Type.Set type, int target, int[] operands) {
 			super(type,target,operands);
 		}
 
@@ -2651,7 +2651,7 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof NewSet) {
+			if (o instanceof Set) {
 				return super.equals(o);
 			}
 			return false;
@@ -2969,7 +2969,7 @@ public abstract class Code {
 		}
 		
 		@Override
-		public void slots(Set<Integer> slots) {
+		public void slots(java.util.Set<Integer> slots) {
 			slots.add(operand);
 		}
 		
@@ -3058,7 +3058,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(Set<Integer> slots) {
+		public void slots(java.util.Set<Integer> slots) {
 			slots.add(operand);
 		}
 

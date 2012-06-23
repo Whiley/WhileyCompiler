@@ -35,7 +35,6 @@ import wybs.lang.SyntacticElement;
 import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
-import wyil.lang.Code.*;
 import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
@@ -153,72 +152,72 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		afterInserts.remove(index);		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof BinOp) {
-			infer(index,(BinOp)code,entry,environment);
-		} else if(code instanceof Convert) {
-			infer(index,(Convert)code,entry,environment);
-		} else if(code instanceof Const) {
-			infer(index,(Const)code,entry,environment);
-		} else if(code instanceof Debug) {
-			infer(index,(Debug)code,entry,environment);
-		} else if(code instanceof Assert) {
-			infer(index,(Assert)code,entry,environment);
-		} else if(code instanceof FieldLoad) {
-			infer(index,(FieldLoad)code,entry,environment);			
-		} else if(code instanceof IndirectInvoke) {
-			infer(index,(IndirectInvoke)code,entry,environment);
-		} else if(code instanceof IndirectSend) {
-			infer(index,(IndirectSend)code,entry,environment);
-		} else if(code instanceof Invoke) {
-			infer(index,(Invoke)code,entry,environment);
-		} else if(code instanceof Invert) {
-			infer(index,(Invert)code,entry,environment);
-		} else if(code instanceof Label) {
+		if(code instanceof Code.BinOp) {
+			infer(index,(Code.BinOp)code,entry,environment);
+		} else if(code instanceof Code.Convert) {
+			infer(index,(Code.Convert)code,entry,environment);
+		} else if(code instanceof Code.Const) {
+			infer(index,(Code.Const)code,entry,environment);
+		} else if(code instanceof Code.Debug) {
+			infer(index,(Code.Debug)code,entry,environment);
+		} else if(code instanceof Code.Assert) {
+			infer(index,(Code.Assert)code,entry,environment);
+		} else if(code instanceof Code.FieldLoad) {
+			infer(index,(Code.FieldLoad)code,entry,environment);			
+		} else if(code instanceof Code.IndirectInvoke) {
+			infer(index,(Code.IndirectInvoke)code,entry,environment);
+		} else if(code instanceof Code.IndirectSend) {
+			infer(index,(Code.IndirectSend)code,entry,environment);
+		} else if(code instanceof Code.Invoke) {
+			infer(index,(Code.Invoke)code,entry,environment);
+		} else if(code instanceof Code.Invert) {
+			infer(index,(Code.Invert)code,entry,environment);
+		} else if(code instanceof Code.Label) {
 			// skip			
-		} else if(code instanceof ListOp) {
-			infer(index,(ListOp)code,entry,environment);
-		} else if(code instanceof LengthOf) {
-			infer(index,(LengthOf)code,entry,environment);
-		} else if(code instanceof SubList) {
-			infer(index,(SubList)code,entry,environment);
-		} else if(code instanceof IndexOf) {
-			infer(index,(IndexOf)code,entry,environment);
-		} else if(code instanceof Copy) {
-			infer(index,(Copy)code,entry,environment);
-		} else if(code instanceof Update) {
-			infer(index,(Update)code,entry,environment);
+		} else if(code instanceof Code.ListOp) {
+			infer(index,(Code.ListOp)code,entry,environment);
+		} else if(code instanceof Code.LengthOf) {
+			infer(index,(Code.LengthOf)code,entry,environment);
+		} else if(code instanceof Code.SubList) {
+			infer(index,(Code.SubList)code,entry,environment);
+		} else if(code instanceof Code.IndexOf) {
+			infer(index,(Code.IndexOf)code,entry,environment);
+		} else if(code instanceof Code.Copy) {
+			infer(index,(Code.Copy)code,entry,environment);
+		} else if(code instanceof Code.Update) {
+			infer(index,(Code.Update)code,entry,environment);
 		} else if(code instanceof Code.Dict) {
 			infer(index,(Code.Dict)code,entry,environment);
-		} else if(code instanceof NewList) {
-			infer(index,(NewList)code,entry,environment);
-		} else if(code instanceof Record) {
-			infer(index,(Record)code,entry,environment);
-		} else if(code instanceof NewSet) {
-			infer(index,(NewSet)code,entry,environment);
-		} else if(code instanceof Tuple) {
-			infer(index,(Tuple)code,entry,environment);
-		} else if(code instanceof Negate) {
-			infer(index,(Negate)code,entry,environment);
-		} else if(code instanceof Dereference) {
-			infer(index,(Dereference)code,entry,environment);
-		} else if(code instanceof Return) {
-			infer(index,(Return)code,entry,environment);
-		} else if(code instanceof Nop) {
+		} else if(code instanceof Code.NewList) {
+			infer(index,(Code.NewList)code,entry,environment);
+		} else if(code instanceof Code.Record) {
+			infer(index,(Code.Record)code,entry,environment);
+		} else if(code instanceof Code.Set) {
+			infer(index,(Code.Set)code,entry,environment);
+		} else if(code instanceof Code.Tuple) {
+			infer(index,(Code.Tuple)code,entry,environment);
+		} else if(code instanceof Code.Negate) {
+			infer(index,(Code.Negate)code,entry,environment);
+		} else if(code instanceof Code.Dereference) {
+			infer(index,(Code.Dereference)code,entry,environment);
+		} else if(code instanceof Code.Return) {
+			infer(index,(Code.Return)code,entry,environment);
+		} else if(code instanceof Code.Nop) {
 			// skip			
-		} else if(code instanceof Send) {
-			infer(index,(Send)code,entry,environment);
-		} else if(code instanceof SetOp) {
-			infer(index,(SetOp)code,entry,environment);
-		} else if(code instanceof StringOp) {
-			infer(index,(StringOp)code,entry,environment);
-		} else if(code instanceof SubString) {
-			infer(index,(SubString)code,entry,environment);
-		} else if(code instanceof New) {
-			infer(index,(New)code,entry,environment);
-		} else if(code instanceof Throw) {
-			infer(index,(Throw)code,entry,environment);
-		} else if(code instanceof TupleLoad) {
-			infer(index,(TupleLoad)code,entry,environment);
+		} else if(code instanceof Code.Send) {
+			infer(index,(Code.Send)code,entry,environment);
+		} else if(code instanceof Code.SetOp) {
+			infer(index,(Code.SetOp)code,entry,environment);
+		} else if(code instanceof Code.StringOp) {
+			infer(index,(Code.StringOp)code,entry,environment);
+		} else if(code instanceof Code.SubString) {
+			infer(index,(Code.SubString)code,entry,environment);
+		} else if(code instanceof Code.New) {
+			infer(index,(Code.New)code,entry,environment);
+		} else if(code instanceof Code.Throw) {
+			infer(index,(Code.Throw)code,entry,environment);
+		} else if(code instanceof Code.TupleLoad) {
+			infer(index,(Code.TupleLoad)code,entry,environment);
 		} else {			
 			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
@@ -254,10 +253,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {
 		Type req = environment.get(code.target);		
 		coerceAfter(req,code.type,code.target,index,entry);	
-		if(code.bop == BOp.LEFTSHIFT || code.bop == BOp.RIGHTSHIFT) {
+		if(code.bop == Code.BOp.LEFTSHIFT || code.bop == Code.BOp.RIGHTSHIFT) {
 			environment.set(code.leftOperand,code.type);
 			environment.set(code.rightOperand,Type.T_INT);
-		} else if(code.bop == BOp.RANGE){
+		} else if(code.bop == Code.BOp.RANGE){
 			environment.set(code.leftOperand,Type.T_INT);
 			environment.set(code.rightOperand,Type.T_INT);
 		} else {		
@@ -417,10 +416,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 				
 		int i = 0;
 		for (Code.LVal lv : code) {
-			if (lv instanceof Code.StringLVal || lv instanceof ListLVal) {
+			if (lv instanceof Code.StringLVal || lv instanceof Code.ListLVal) {
 				environment.set(code.operands[i++], Type.T_INT);
-			} else if (lv instanceof DictLVal) {
-				DictLVal dlv = (DictLVal) lv;
+			} else if (lv instanceof Code.DictLVal) {
+				Code.DictLVal dlv = (Code.DictLVal) lv;
 				environment.set(code.operands[i++], dlv.type().key());
 			} else {
 				// RecordLVal and ProcessLVal have no stack requirement
@@ -478,7 +477,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.NewSet code, Block.Entry entry,
+	private void infer(int index, Code.Set code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type,code.target,index,entry);		
