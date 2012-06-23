@@ -460,8 +460,8 @@ public class ClassFileBuilder {
 				 translate((Code.SubList)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.IndexOf) {
 				 translate((Code.IndexOf)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Copy) {
-				 translate((Code.Copy)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Assign) {
+				 translate((Code.Assign)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Loop) {
 				 translate((Code.Loop)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Move) {
@@ -470,8 +470,8 @@ public class ClassFileBuilder {
 				 translate((Code.Update)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Dict) {
 				 translate((Code.Dict)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.NewList) {
-				 translate((Code.NewList)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.List) {
+				 translate((Code.List)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Record) {
 				 translate((Code.Record)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Set) {
@@ -1101,7 +1101,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(lab));
 	}
 	
-	public void translate(Code.Copy c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	public void translate(Code.Assign c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		JvmType jt = convertType(c.type);
 		bytecodes.add(new Bytecode.Load(c.operand, jt));
 		addIncRefs(c.type,bytecodes);
@@ -1452,7 +1452,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, convertType(c.type.element())));
 	}
 	
-	protected void translate(Code.NewList c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Code.List c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(WHILEYLIST));		
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 		bytecodes.add(new Bytecode.LoadConst(c.operands.length));

@@ -182,14 +182,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.SubList)code,entry,environment);
 		} else if(code instanceof Code.IndexOf) {
 			infer(index,(Code.IndexOf)code,entry,environment);
-		} else if(code instanceof Code.Copy) {
-			infer(index,(Code.Copy)code,entry,environment);
+		} else if(code instanceof Code.Assign) {
+			infer(index,(Code.Assign)code,entry,environment);
 		} else if(code instanceof Code.Update) {
 			infer(index,(Code.Update)code,entry,environment);
 		} else if(code instanceof Code.Dict) {
 			infer(index,(Code.Dict)code,entry,environment);
-		} else if(code instanceof Code.NewList) {
-			infer(index,(Code.NewList)code,entry,environment);
+		} else if(code instanceof Code.List) {
+			infer(index,(Code.List)code,entry,environment);
 		} else if(code instanceof Code.Record) {
 			infer(index,(Code.Record)code,entry,environment);
 		} else if(code instanceof Code.Set) {
@@ -395,7 +395,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.rightOperand,code.type.key());				
 	}
 	
-	private void infer(int index, Code.Copy code, Block.Entry entry,
+	private void infer(int index, Code.Assign code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type,code.target,index,entry);
@@ -466,7 +466,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.NewList code, Block.Entry entry,
+	private void infer(int index, Code.List code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		

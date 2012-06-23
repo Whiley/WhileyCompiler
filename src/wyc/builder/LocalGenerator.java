@@ -636,7 +636,7 @@ public final class LocalGenerator {
 		
 		if (environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Copy(v.result().raw(), target, environment.get(v.var)), attributes(v));
+			blk.append(Code.Assign(v.result().raw(), target, environment.get(v.var)), attributes(v));
 			return blk;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), context,
@@ -786,7 +786,7 @@ public final class LocalGenerator {
 		Block blk = new Block(environment.size());
 		int[] operands = generate(v.arguments, target, freeRegister, environment,
 				blk);		
-		blk.append(Code.NewSet(v.type.raw(), target, operands), attributes(v));
+		blk.append(Code.Set(v.type.raw(), target, operands), attributes(v));
 		return blk;
 	}
 	
@@ -795,7 +795,7 @@ public final class LocalGenerator {
 		Block blk = new Block(environment.size());		
 		int[] operands = generate(v.arguments, target, freeRegister, environment,
 				blk);		
-		blk.append(Code.NewList(v.type.raw(), target, operands), attributes(v));
+		blk.append(Code.List(v.type.raw(), target, operands), attributes(v));
 		return blk;
 	}
 	
@@ -875,11 +875,11 @@ public final class LocalGenerator {
 		
 		if (e.cop == Expr.COp.LISTCOMP) {
 			resultType = e.type.raw();
-			blk.append(Code.NewList((Type.List) resultType, target,
+			blk.append(Code.List((Type.List) resultType, target,
 					Collections.EMPTY_LIST), attributes(e));
 		} else {
 			resultType = e.type.raw();
-			blk.append(Code.NewSet((Type.Set) resultType, target,
+			blk.append(Code.Set((Type.Set) resultType, target,
 					Collections.EMPTY_LIST), attributes(e));
 		}
 		
@@ -937,7 +937,7 @@ public final class LocalGenerator {
 			blk.append(generate(arg, freeRegister, freeRegister+1, environment));
 			operands[i] = freeRegister++;
 		}
-		blk.append(Code.NewRecord(sg.result().raw(), target, operands), attributes(sg));
+		blk.append(Code.Record(sg.result().raw(), target, operands), attributes(sg));
 		return blk;
 	}
 
@@ -946,7 +946,7 @@ public final class LocalGenerator {
 		Block blk = new Block(environment.size());
 		int[] operands = generate(sg.fields, target, freeRegister, environment,
 				blk);
-		blk.append(Code.NewTuple(sg.result().raw(), target, operands),
+		blk.append(Code.Tuple(sg.result().raw(), target, operands),
 				attributes(sg));
 		return blk;
 	}

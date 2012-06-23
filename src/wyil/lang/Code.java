@@ -171,8 +171,8 @@ public abstract class Code {
 	 *            --- reg to load.
 	 * @return
 	 */
-	public static Copy Copy(Type type, int target, int operand) {
-		return get(new Copy(type, target, operand));
+	public static Assign Assign(Type type, int target, int operand) {
+		return get(new Assign(type, target, operand));
 	}
 
 	public static Convert Convert(Type from, int target, int operand, Type to) {
@@ -310,12 +310,12 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static Set NewSet(Type.Set type, int target,
+	public static Set Set(Type.Set type, int target,
 			Collection<Integer> operands) {
 		return get(new Set(type, target, toIntArray(operands)));
 	}
 
-	public static Set NewSet(Type.Set type, int target, int[] operands) {
+	public static Set Set(Type.Set type, int target, int[] operands) {
 		return get(new Set(type, target, operands));
 	}
 
@@ -326,13 +326,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewList NewList(Type.List type, int target,
+	public static List List(Type.List type, int target,
 			Collection<Integer> operands) {
-		return get(new NewList(type, target, toIntArray(operands)));
+		return get(new List(type, target, toIntArray(operands)));
 	}
 	
-	public static NewList NewList(Type.List type, int target, int[] operands) {
-		return get(new NewList(type, target, operands));
+	public static List List(Type.List type, int target, int[] operands) {
+		return get(new List(type, target, operands));
 	}
 
 	/**
@@ -342,12 +342,12 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static Tuple NewTuple(Type.Tuple type, int target,
+	public static Tuple Tuple(Type.Tuple type, int target,
 			Collection<Integer> operands) {
 		return get(new Tuple(type, target, toIntArray(operands)));
 	}
 
-	public static Tuple NewTuple(Type.Tuple type, int target, int[] operands) {
+	public static Tuple Tuple(Type.Tuple type, int target, int[] operands) {
 		return get(new Tuple(type, target, operands));
 	}
 	
@@ -358,12 +358,12 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static Record NewRecord(Type.Record type, int target,
+	public static Record Record(Type.Record type, int target,
 			Collection<Integer> operands) {
 		return get(new Record(type, target, toIntArray(operands)));
 	}
 	
-	public static Record NewRecord(Type.Record type, int target,
+	public static Record Record(Type.Record type, int target,
 			int[] operands) {
 		return get(new Record(type, target, operands));
 	}
@@ -1213,18 +1213,18 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Copy extends AbstractUnaryAssignable<Type> {
+	public static final class Assign extends AbstractUnaryAssignable<Type> {
 
-		private Copy(Type type, int target, int operand) {
+		private Assign(Type type, int target, int operand) {
 			super(type, target, operand);
 		}
 
 		public Code clone(int nTarget, int nOperand) {
-			return Code.Copy(type, nTarget, nOperand);
+			return Code.Assign(type, nTarget, nOperand);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Copy) {
+			if (o instanceof Assign) {
 				return super.equals(o);
 			}
 			return false;
@@ -2570,7 +2570,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.NewRecord(type, nTarget, nOperands);
+			return Code.Record(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2609,7 +2609,7 @@ public abstract class Code {
 		}
 		
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.NewTuple(type, nTarget, nOperands);
+			return Code.Tuple(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2647,7 +2647,7 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.NewSet(type, nTarget, nOperands);
+			return Code.Set(type, nTarget, nOperands);
 		}
 		
 		public boolean equals(Object o) {
@@ -2679,18 +2679,18 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewList extends AbstractNaryAssignable<Type.List> {
+	public static final class List extends AbstractNaryAssignable<Type.List> {
 
-		private NewList(Type.List type, int target, int[] operands) {
+		private List(Type.List type, int target, int[] operands) {
 			super(type,target,operands);
 		}
 		
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.NewList(type, nTarget, nOperands);
+			return Code.List(type, nTarget, nOperands);
 		}		
 
 		public boolean equals(Object o) {
-			if (o instanceof NewList) {
+			if (o instanceof List) {
 				return super.equals(operands);
 			}
 			return false;

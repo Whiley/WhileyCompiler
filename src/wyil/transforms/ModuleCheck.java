@@ -172,7 +172,7 @@ public class ModuleCheck implements Transform {
 		public final HashSet<Type> active;
 		public final Handler parent;
 
-		public Handler(List<Pair<Type, String>> handlers, Handler parent) {
+		public Handler(java.util.List<Pair<Type, String>> handlers, Handler parent) {
 			this.handlers = new ArrayList<Type>();
 			for(Pair<Type,String> handler : handlers) {
 				this.handlers.add(handler.first());

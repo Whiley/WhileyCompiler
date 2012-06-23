@@ -169,8 +169,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Update)code,entry,environment);
 		} else if(code instanceof Map) {
 			infer(index,(Map)code,entry,environment);
-		} else if(code instanceof NewList) {
-			infer(index,(NewList)code,entry,environment);
+		} else if(code instanceof List) {
+			infer(index,(List)code,entry,environment);
 		} else if(code instanceof Record) {
 			infer(index,(Record)code,entry,environment);
 		} else if(code instanceof Set) {
@@ -599,7 +599,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(result);
 	}
 	
-	public void infer(int index, Code.NewList code, Block.Entry entry,
+	public void infer(int index, Code.List code, Block.Entry entry,
 			Env environment) {
 		ArrayList<Value> values = new ArrayList<Value>();		
 
