@@ -366,7 +366,7 @@ public final class CodeGeneration {
 			int rhsRegister = environment.size();
 			int freeRegister = environment.size() + 1;
 			Pair<Expr.AssignedVariable, Integer> l = extractLVal(s.lhs, fields,
-					blk, freeRegister + 1, environment);
+					blk, freeRegister, environment);
 			Expr.AssignedVariable lhs = l.first();
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", localGenerator.context(),

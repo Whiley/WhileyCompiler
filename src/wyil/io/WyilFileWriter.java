@@ -243,41 +243,6 @@ public final class WyilFileWriter implements Transform {
 			} else {
 				line = "end";
 			}
-		} else if(c instanceof Code.Copy && !writeSlots){
-			Code.Copy copy = (Code.Copy) c;
-			line = "copy " + getLocal(copy.operand,locals) + " : " + copy.type;
-		} else if(c instanceof Code.Move && !writeSlots){
-			Code.Move move = (Code.Move) c;
-			line = "move " + getLocal(move.operand,locals) + " : " + move.type;
-		} else if(c instanceof Code.Update && !writeSlots){
-			Code.Update store = (Code.Update) c;
-			String fs = store.fields.isEmpty() ? "" : " ";
-			boolean firstTime=true;
-			for(String f : store.fields) {
-				if(!firstTime) {
-					fs += ".";
-				}
-				firstTime=false;
-				fs += f;
-			}
-			line = "update " + getLocal(store.target,locals) + " #" + store.level() + fs + " : " + store.type + " => " + store.afterType;
-		} else if(c instanceof Code.IfType && !writeSlots){
-			Code.IfType iftype = (Code.IfType) c;			
-			line = "if " + getLocal(iftype.leftOperand, locals) + " is "
-					+ iftype.rightOperand + " goto " + iftype.target + " : "
-					+ iftype.type;
-		} else if(c instanceof Code.ForAll && !writeSlots){
-			Code.ForAll fall = (Code.ForAll) c;			
-			String modifies = "";
-			boolean firstTime=true;
-			for(int slot : fall.modifiedOperands) {
-				if(!firstTime) {
-					modifies +=", ";
-				}
-				firstTime=false;
-				modifies += getLocal(slot,locals);
-			}
-			line = "forall " + getLocal(fall.indexOperand,locals) + " [" + modifies + "] : " + fall.type;
 		} else {
 			line = c.toString();		
 		}
