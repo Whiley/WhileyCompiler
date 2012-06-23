@@ -694,9 +694,9 @@ public final class LocalGenerator {
 	private Block generate(Expr.IndexOf v, int target, int freeRegister,
 			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, target, freeRegister, environment));
-		blk.append(generate(v.index, freeRegister, freeRegister+1, environment));
-		blk.append(Code.IndexOf(v.srcType.raw(), target, target, freeRegister),
+		blk.append(generate(v.src, freeRegister, freeRegister+1, environment));
+		blk.append(generate(v.index, freeRegister+1, freeRegister+2, environment));
+		blk.append(Code.IndexOf(v.srcType.raw(), target, freeRegister, freeRegister+1),
 				attributes(v));
 		return blk;
 	}
@@ -732,29 +732,29 @@ public final class LocalGenerator {
 
 		Expr.BOp bop = v.op;
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.lhs, target, freeRegister, environment));
-		blk.append(generate(v.rhs, freeRegister, freeRegister+1, environment));
+		blk.append(generate(v.lhs, freeRegister, freeRegister+1, environment));
+		blk.append(generate(v.rhs, freeRegister+1, freeRegister+2, environment));
 		Type result = v.result().raw();
 		
 		switch(bop) {		
 		case UNION:
 				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
-						target, freeRegister, Code.SetOperation.UNION),
+						freeRegister, freeRegister+1, Code.SetOperation.UNION),
 						attributes(v));			
 			return blk;			
 		case INTERSECTION:
 				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
-						target, freeRegister, Code.SetOperation.INTERSECTION),
+						freeRegister, freeRegister+1, Code.SetOperation.INTERSECTION),
 						attributes(v));
 				return blk;	
 		case DIFFERENCE:
 				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
-						target, freeRegister, Code.SetOperation.DIFFERENCE),
+						freeRegister, freeRegister+1, Code.SetOperation.DIFFERENCE),
 						attributes(v));
 				return blk;
 		case LISTAPPEND:
 				blk.append(Code.ListOp((Type.EffectiveList) result, target,
-						target, freeRegister, Code.ListOperation.APPEND),
+						freeRegister, freeRegister+1, Code.ListOperation.APPEND),
 						attributes(v));
 				return blk;
 		case STRINGAPPEND:
@@ -772,10 +772,10 @@ public final class LocalGenerator {
 				// into a string.
 				op = Code.StringOperation.APPEND;
 			}
-			blk.append(Code.StringOp(target,target,freeRegister,op),attributes(v));
+			blk.append(Code.StringOp(target,freeRegister, freeRegister+1,op),attributes(v));
 			return blk;	
 		default:
-				blk.append(Code.BinOp(result, target, target, freeRegister,
+				blk.append(Code.BinOp(result, target, freeRegister, freeRegister+1,
 						OP2BOP(bop, v)), attributes(v));			
 			return blk;
 		}		
@@ -802,27 +802,26 @@ public final class LocalGenerator {
 	private Block generate(Expr.SubList v, int target, int freeRegister,
 			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, target, freeRegister, environment));
-		blk.append(generate(v.start, freeRegister, freeRegister + 1,
+		blk.append(generate(v.src, freeRegister, freeRegister + 1, environment));
+		blk.append(generate(v.start, freeRegister + 1, freeRegister + 2,
 				environment));
-		blk.append(generate(v.end, freeRegister + 1, freeRegister + 2,
+		blk.append(generate(v.end, freeRegister + 2, freeRegister + 3,
 				environment));
-		blk.append(Code.SubList(v.type.raw(), target, target, freeRegister,
-				freeRegister + 1), attributes(v));
+		blk.append(Code.SubList(v.type.raw(), target, freeRegister,
+				freeRegister + 1, freeRegister + 2), attributes(v));
 		return blk;
 	}
 	
 	private Block generate(Expr.SubString v, int target, int freeRegister,
 			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(generate(v.src, target, freeRegister, environment));
-		blk.append(generate(v.start, freeRegister, freeRegister + 1,
+		blk.append(generate(v.src, freeRegister, freeRegister + 1, environment));
+		blk.append(generate(v.start, freeRegister + 1, freeRegister + 2,
 				environment));
-		blk.append(generate(v.end, freeRegister + 1, freeRegister + 2,
+		blk.append(generate(v.end, freeRegister + 2, freeRegister + 3,
 				environment));
-		blk.append(
-				Code.SubString(target, target, freeRegister, freeRegister + 1),
-				attributes(v));
+		blk.append(Code.SubString(target, freeRegister, freeRegister + 1,
+				freeRegister + 2), attributes(v));
 		return blk;
 	}
 	
@@ -952,23 +951,21 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generate(Expr.Dictionary sg, int target, int freeRegister, HashMap<String,Integer> environment) {		
-		Block blk = new Block(environment.size());		
-		int[] operands = new int[sg.pairs.size()*2];
-		int current = target;
-		int nextFree = freeRegister;
+	private Block generate(Expr.Dictionary sg, int target, int freeRegister,
+			HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		int[] operands = new int[sg.pairs.size() * 2];
 		for (int i = 0; i != sg.pairs.size(); ++i) {
-			Pair<Expr,Expr> e = sg.pairs.get(i);
-			blk.append(generate(e.first(), current, nextFree, environment));
-			operands[i<<1] = current;
-			current = nextFree;
-			nextFree = nextFree + 1;
-			blk.append(generate(e.second(), current, nextFree, environment));
-			operands[(i<<1)+1] = current;
-			current = nextFree;
-			nextFree = nextFree + 1;
+			Pair<Expr, Expr> e = sg.pairs.get(i);
+			blk.append(generate(e.first(), freeRegister, freeRegister + 1,
+					environment));
+			operands[i << 1] = freeRegister++;
+			blk.append(generate(e.second(), freeRegister, freeRegister + 1,
+					environment));
+			operands[(i << 1) + 1] = freeRegister++;
 		}
-		blk.append(Code.NewDict(sg.result().raw(),target,operands),attributes(sg));
+		blk.append(Code.NewDict(sg.result().raw(), target, operands),
+				attributes(sg));
 		return blk;
 	}
 	
