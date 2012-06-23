@@ -628,6 +628,12 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Load(code.operand, valueType));	
 				addWriteConversion(code.rhs(),bytecodes);
 			}
+						
+			JvmType.Function ftype = new JvmType.Function(WHILEYMAP,
+					WHILEYMAP,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);						
+			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
+					Bytecode.STATIC));			
+				
 		} else if(lv instanceof RecordLVal) {
 			RecordLVal l = (RecordLVal) lv;
 			Type.EffectiveRecord type = l.type();
