@@ -206,9 +206,10 @@ public class ConstraintInline implements Transform {
 			
 			// TODO: mark as check block
 			
+			int[] code_operands = code.operands;
 			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-			for(int i=paramTypes.size()-1;i>=0;--i) {								
-				binding.put(i,i);
+			for(int i=0;i!=code_operands.length;++i) {								
+				binding.put(i,code_operands[i]);
 			}
 			
 			precondition = Block.resource(precondition, elem.attribute(Attribute.Source.class));

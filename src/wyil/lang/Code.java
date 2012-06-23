@@ -1342,7 +1342,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "assert" + op + "%" + leftOperand + ", %" + rightOperand
+			return "assert" + op + " %" + leftOperand + ", %" + rightOperand
 					+ " \"" + msg + "\"" + " : " + type;
 		}
 	}
