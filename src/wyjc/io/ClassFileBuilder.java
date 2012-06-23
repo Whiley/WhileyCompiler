@@ -549,43 +549,78 @@ public class ClassFileBuilder {
 	public void translate(Code.Update code, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 
-		ArrayList<Type> indices = new ArrayList<Type>();
-		for (Code.LVal lv : code) {
-			if (lv instanceof Code.StringLVal || lv instanceof Code.ListLVal) {
-				indices.add(Type.T_INT);
-			} else if (lv instanceof Code.DictLVal) {
-				DictLVal dlv = (Code.DictLVal) lv;
-				indices.add(dlv.type().key());
-			} else {
-				// no need to do anything for records
-			}
-		}
-
-		int indexSlot = freeSlot;
-		freeSlot += indices.size();
-		// Third, store the value to be assigned
-		JvmType val_t = convertType(code.rhs());
-		bytecodes.add(new Bytecode.Store(freeSlot++, val_t));
-
-		for (int i = indices.size() - 1; i >= 0; --i) {
-			JvmType t = convertType(indices.get(i));
-			bytecodes.add(new Bytecode.Store(indexSlot + i, t));
-		}
-
 		bytecodes.add(new Bytecode.Load(code.target, convertType(code.type)));
 		
-		multiStoreHelper(code.afterType, code.level(), code.fields.iterator(),
-				indexSlot, val_t, freeSlot, bytecodes);
+		translateUpdate(code.iterator(),code, bytecodes);
+		
 		bytecodes.add(new Bytecode.Store(code.target, convertType(code.afterType)));
 	}
 
+	/**
+	 * Iterate down the chain of updates reading values out, updating them, and
+	 * writing them back.
+	 * 
+	 * @param iterator
+	 *            --- update iterator.
+	 * @param rhsOperand
+	 *            --- register operand of right-hand side
+	 * @param bytecodes
+	 *            --- list of bytecodes to append to.
+	 */
+	public void translateUpdate(Iterator<Code.LVal> iterator, Code.Update code,
+			ArrayList<Bytecode> bytecodes) {
+		if(iterator.hasNext()) {
+			LVal lv = iterator.next();
+			if(lv instanceof ListLVal) {
+				ListLVal l = (ListLVal) lv;
+				if(iterator.hasNext()) {
+					// In this case, we're partially updating the element at a
+					// given position. 
+					bytecodes.add(new Bytecode.Dup(WHILEYLIST));											
+					bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));				
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+							WHILEYLIST,BIG_INTEGER);
+					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_get", ftype,
+							Bytecode.STATIC));				
+					addReadConversion(l.type().element(),bytecodes);
+					translateUpdate(iterator,code,bytecodes);		
+					bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));				
+					bytecodes.add(new Bytecode.Swap());
+				} else {
+					bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));
+					translateUpdate(iterator,code,bytecodes);
+				}
+
+				JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
+						WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);			
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
+						Bytecode.STATIC));	
+				
+			} else if(lv instanceof StringLVal) {
+				StringLVal l = (StringLVal) lv;
+				
+			} else if(lv instanceof DictLVal) {
+				DictLVal l = (DictLVal) lv;
+				
+			} else if(lv instanceof RecordLVal) {
+				RecordLVal l = (RecordLVal) lv;
+				
+			} else {
+				ReferenceLVal l = (ReferenceLVal) lv;
+				
+			}
+		} else {
+			// in this case, we've reached the end of the update path.
+			// Therefore, we just need to load the right-hand side (rhs) onto
+			// the stack.			
+			bytecodes.add(new Bytecode.Load(code.operand, convertType(code.rhs())));	
+			addWriteConversion(code.rhs(),bytecodes);
+		}
+	}
+	
 	public void multiStoreHelper(Type type, int level,
 			Iterator<String> fields, int indexSlot, JvmType val_t, int freeSlot, 
 			ArrayList<Bytecode> bytecodes) {
-		
-		// This method is major ugly. I'm sure there must be a better way of
-		// doing this. Probably, if I change the multistore bytecode, that would
-		// help.
 		
 		if(Type.isSubtype(Type.Reference(Type.T_ANY), type)) {			
 			Type.Reference pt = (Type.Reference) type;
