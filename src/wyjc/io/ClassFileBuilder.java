@@ -608,7 +608,7 @@ public class ClassFileBuilder {
 		} else if(lv instanceof DictLVal) {
 			DictLVal l = (DictLVal) lv;
 			JvmType keyType = convertType(l.type().key());
-			JvmType valueType = convertType(l.type().key());
+			JvmType valueType = convertType(l.type().value());
 			if(iterator.hasNext()) {
 				// In this case, we're partially updating the element at a
 				// given position. 				
@@ -622,11 +622,13 @@ public class ClassFileBuilder {
 				addReadConversion(l.type().value(),bytecodes);
 				translateUpdate(iterator,code,bytecodes);
 				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));
+				addWriteConversion(l.type().key(),bytecodes);		
 				bytecodes.add(new Bytecode.Swap());
 			} else {				
 				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));	
+				addWriteConversion(l.type().key(),bytecodes);		
 				bytecodes.add(new Bytecode.Load(code.operand, valueType));	
-				addWriteConversion(code.rhs(),bytecodes);
+				addWriteConversion(l.type().value(),bytecodes);
 			}
 						
 			JvmType.Function ftype = new JvmType.Function(WHILEYMAP,
@@ -1171,8 +1173,8 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		
 		bytecodes.add(new Bytecode.Load(c.leftOperand, WHILEYLIST));
-		bytecodes.add(new Bytecode.Load(c.rightOperand, BIG_INTEGER));
-		
+		bytecodes.add(new Bytecode.Load(c.rightOperand, convertType(c.type.key())));
+		addWriteConversion(c.type.key(),bytecodes);
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYCOLLECTION, "indexOf", ftype,
