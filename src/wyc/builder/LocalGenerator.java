@@ -301,7 +301,7 @@ public final class LocalGenerator {
 			blk = new Block(environment.size());
 		} else {
 			blk = generate(v.lhs, freeRegister, freeRegister + 1, environment);
-			leftOperand = freeRegister;
+			leftOperand = freeRegister++;
 		}
 
 		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
