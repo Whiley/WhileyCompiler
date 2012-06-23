@@ -1098,7 +1098,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return bop + " %" + target + " %" + leftOperand + ", %" + rightOperand + " : " + type; 			
+			return bop + " %" + target + " = % " + leftOperand + ", %" + rightOperand + " : " + type; 			
 		}
 	}
 
@@ -1154,7 +1154,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "convert %" + target + " %" + operand + " " + result + " : " + type; 			
+			return "convert %" + target + " = % " + operand + " " + result + " : " + type; 			
 		}
 	}
 
@@ -1201,7 +1201,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "const %" + target + " " + constant + " : "
+			return "const %" + target + " = " + constant + " : "
 					+ constant.type();
 		}
 	}
@@ -1231,7 +1231,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "assign %" + target + " %" + operand + " " + " : " + type; 			
+			return "assign %" + target + " = %" + operand + " " + " : " + type; 			
 		}
 	}
 
@@ -1390,7 +1390,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "fieldload %" + target + " %" + operand + " " + field
+			return "fieldload %" + target + " = % " + operand + " " + field
 					+ " : " + type;
 		}
 	}
@@ -1720,12 +1720,13 @@ public abstract class Code {
 			return o instanceof IndirectInvoke && super.equals(o);						
 		}
 
-		@Override
-		public String codeString() {
+		public String toString() {
 			if (target != Code.NULL_REG) {
-				return "indirectinvoke";
+				return "indirectinvoke " + target + " " + operand + " "
+						+ toString(operands) + " : " + type;
 			} else {
-				return "vindirectinvoke";
+				return "indirectinvoke " + operand + " " + toString(operands)
+						+ " : " + type;
 			}
 		}
 	}
@@ -1766,8 +1767,8 @@ public abstract class Code {
 		public String toString() {
 			if (synchronous) {
 				if (target != Code.NULL_REG) {
-					return "isend " + operand + " " + toString(operands)
-							+ " : " + type;
+					return "isend " + target + " " + operand + " "
+							+ toString(operands) + " : " + type;
 				} else {
 					return "ivsend" + operand + " " + toString(operands)
 							+ " : " + type;
@@ -1809,9 +1810,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "not";
+		public String toString() {
+			return "not %" + target + " = % " + operand + " : " + type;
 		}
 	}
 
@@ -1851,12 +1851,13 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
+		public String toString() {
 			if (target != Code.NULL_REG) {
-				return "invoke " + name;
+				return "invoke " + target + " " + toString(operands)
+						+ " : " + type;
 			} else {
-				return "vinvoke " + name;
+				return "invoke " + toString(operands)
+						+ " : " + type;				
 			}
 		}
 	}
@@ -1957,10 +1958,9 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return operation.toString();
-		}
+		public String toString() {
+			return operation + " %" + target + " = % " + leftOperand + ", %" + rightOperand + " : " + type; 			
+		}		
 	}
 
 	/**
@@ -1987,9 +1987,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "lengthof";
+		public String toString() {
+			return "lengthof %" + target + " = % " + operand + " : " + type;
 		}
 	}
 
@@ -2016,9 +2015,9 @@ public abstract class Code {
 			return o instanceof SubList && super.equals(o);
 		}
 
-		@Override
-		public String codeString() {
-			return "sublist";
+		public String toString() {
+			return "sublist %" + target + " = % " + operands[0] + ", %"
+					+ operands[1] + ", %" + operands[2] + " : " + type;
 		}
 	}
 
@@ -2048,9 +2047,9 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "indexof";
+		public String toString() {
+			return "indexof %" + target + " = % " + leftOperand + ", %"
+					+ rightOperand + " : " + type;
 		}
 	}
 
@@ -2080,10 +2079,9 @@ public abstract class Code {
 			}
 			return false;
 		}
-
-		@Override
-		public String codeString() {
-			return "move";
+		
+		public String toString() {
+			return "move %" + target + " = % " + operand + " : " + type;
 		}		
 	}
 
@@ -2136,7 +2134,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "loop " + modifiedOperands;
+			return "loop " + toString(modifiedOperands);
 		}
 	}
 
@@ -2210,16 +2208,9 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {
-			String modifies = "";
-			for (int i = 0; i != modifiedOperands.length; ++i) {
-				if (i != 0) {
-					modifies += ",";
-				}
-				modifies += "%" + modifiedOperands[i];
-			}
-			return "forall %" + indexOperand + " in %" + sourceOperand + " ["
-					+ modifies + "] : " + type;
+		public String toString() {			
+			return "forall %" + indexOperand + " in %" + sourceOperand
+					+ " " + toString(modifiedOperands) + " : " + type;
 		}
 	}
 
@@ -2491,9 +2482,6 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() { return ""; }
-		
 		public String toString() {
 			String r = "%" + target;			
 			for (LVal lv : this) {
@@ -2514,7 +2502,8 @@ public abstract class Code {
 					r = "(*" + r + ")";
 				}
 			}
-			return r + " = %" + operand + " : " + type + " -> " + afterType;
+			return "update " + r + " %" + operand + " : " + type + " -> "
+					+ afterType;
 		}
 	}
 
@@ -2554,9 +2543,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "map";
+		public String toString() {
+			return "map %" + target + " " + toString(operands) + " : " + type;
 		}
 	}
 
@@ -2592,9 +2580,9 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "record";
+		public String toString() {
+			return "record %" + target + " " + toString(operands) + " : "
+					+ type;
 		}
 	}
 
@@ -2631,10 +2619,9 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "tuple";
-		}
+		public String toString() {
+			return "tuple %" + target + " " + toString(operands) + " : " + type;
+		}		
 	}
 
 	/**
@@ -2670,9 +2657,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "set";
+		public String toString() {
+			return "set %" + target + " " + toString(operands) + " : " + type;
 		}
 	}
 
@@ -2710,9 +2696,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "list";
+		public String toString() {
+			return "list %" + target + " " + toString(operands) + " : " + type;
 		}
 	}
 
@@ -2756,21 +2741,24 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "return";
+		public String toString() {
+			if(operand != Code.NULL_REG) {
+				return "return %" + operand + " : " + type;
+			} else {
+				return "return";
+			}
 		}
 	}
 
 	public enum SetOperation {
 		LEFT_UNION {
 			public String toString() {
-				return "union_l";
+				return "lunion";
 			}
 		},
 		RIGHT_UNION {
 			public String toString() {
-				return "union_r";
+				return "runion";
 			}
 		},
 		UNION {
@@ -2780,12 +2768,12 @@ public abstract class Code {
 		},
 		LEFT_INTERSECTION {
 			public String toString() {
-				return "intersect_l";
+				return "lintersect";
 			}
 		},
 		RIGHT_INTERSECTION {
 			public String toString() {
-				return "intersect_r";
+				return "rintersect";
 			}
 		},
 		INTERSECTION {
@@ -2795,12 +2783,12 @@ public abstract class Code {
 		},
 		LEFT_DIFFERENCE {
 			public String toString() {
-				return "difference_l";
+				return "ldiff";
 			}
 		},
 		DIFFERENCE {
 			public String toString() {
-				return "difference";
+				return "diff";
 			}
 		}
 	}
@@ -2834,10 +2822,10 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return operation.toString();
-		}
+		public String toString() {
+			return operation + " %" + target + " = %" + leftOperand + ", %"
+					+ rightOperand + " : " + type;
+		}		
 	}
 
 	public enum StringOperation {
@@ -2882,9 +2870,9 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return operation.toString();
+		public String toString() {
+			return operation + " %" + target + " = % " + leftOperand + ", %"
+					+ rightOperand + " : " + type;
 		}
 	}
 	
@@ -2911,9 +2899,9 @@ public abstract class Code {
 			return o instanceof SubString && super.equals(o);				
 		}
 
-		@Override
-		public String codeString() {
-			return "substr";
+		public String toString() {
+			return "substr %" + target + " = % " + operands[0] + ", %"
+					+ operands[1] + ", %" + operands[2] + " : " + type;
 		}
 	}
 
@@ -3022,17 +3010,17 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
+		public String toString() {
 			if (synchronous) {
 				if (target != Code.NULL_REG) {
-					return "send " + name;
+					return "send " + target + " " + toString(operands) + " : "
+							+ type;
 				} else {
-					return "vsend " + name;
+					return "vsend" + toString(operands) + " : " + type;
 				}
 			} else {
-				return "asend " + name;
-			}
+				return "asend" + toString(operands) + " : " + type;
+			}			
 		}
 	}
 
@@ -3053,9 +3041,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "throw";
+		public String toString() {
+			return "throw %" + operand + " : " + type;
 		}
 	}
 	
@@ -3191,9 +3178,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "neg";
+		public String toString() {
+			return "neg %" + target + " = % " + operand + " : " + type;
 		}
 	}
 
@@ -3228,9 +3214,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "invert";
+		public String toString() {
+			return "invert %" + target + " = % " + operand + " : " + type;
 		}
 	}
 	
@@ -3258,9 +3243,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "new";
+		public String toString() {
+			return "new %" + target + " = % " + operand + " : " + type;
 		}
 	}
 	
@@ -3286,9 +3270,9 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "tupleload " + index;
+		public String toString() {
+			return "tupleload %" + target + " = % " + operand + " " + index
+					+ " : " + type;
 		}
 	}
 
@@ -3316,9 +3300,8 @@ public abstract class Code {
 			return false;
 		}
 
-		@Override
-		public String codeString() {
-			return "deref";
+		public String toString() {
+			return "deref %" + target + " = % " + operand + " : " + type;
 		}
 	}
 
@@ -3353,14 +3336,14 @@ public abstract class Code {
 	}
 
 	private static String toString(int[] operands) {
-		String r = "";
+		String r = "(";
 		for (int i=0;i!=operands.length;++i) {
 			if(i!=0) {
 				r = r + ", ";
 			}
 			r = r + "%" + operands[i];
 		}
-		return r;
+		return r + ")";
 	}
 	
 	private static int[] toIntArray(Collection<Integer> operands) {
