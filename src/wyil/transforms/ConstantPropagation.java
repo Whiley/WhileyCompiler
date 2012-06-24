@@ -63,7 +63,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 	
 	public static boolean getEnable() {
-		return true; // default value
+		return false; // default value
 	}
 	
 	public void setEnable(boolean flag) {
