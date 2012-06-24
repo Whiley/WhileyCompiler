@@ -72,7 +72,7 @@ public class Pipeline {
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					// Constant Propagation is disabled as there are some
 					// serious problems with that phase.
-					// add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
+					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					// add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
 					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));

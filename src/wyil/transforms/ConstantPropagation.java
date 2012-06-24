@@ -42,8 +42,32 @@ import wyjc.runtime.BigRational;
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
+	/**
+	 * Determines whether constant propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
 	public ConstantPropagation(Builder builder) {
 		
+	}
+	
+	@Override
+	public void apply(WyilFile module) {
+		if(enabled) {
+			super.apply(module);
+		}
+	}
+	
+	public static String describeEnable() {
+		return "Enable/disable constant propagation";
+	}
+	
+	public static boolean getEnable() {
+		return true; // default value
+	}
+	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
 	}
 		
 	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
