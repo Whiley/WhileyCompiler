@@ -199,27 +199,24 @@ public class VerificationCheck implements Transform {
 		public final int pc;
 		public final WFormula constraint;
 		public final int[] environment;
-		public final ArrayList<WExpr> stack;
 		public final ArrayList<Scope> scopes;
 
 		public Branch(int pc, WFormula constraint, int[] environment,
-				ArrayList<WExpr> stack, ArrayList<Scope> scopes) {
+				ArrayList<Scope> scopes) {
 			this.pc = pc;
 			this.constraint = constraint;
 			this.environment = Arrays.copyOf(environment,environment.length);
-			this.stack = new ArrayList<WExpr>(stack);
 			this.scopes = new ArrayList<Scope>(scopes);
 		}
 	}
 	
 	protected WFormula transform(WFormula constraint, boolean assumes, Block blk) {
 		ArrayList<Branch> branches = new ArrayList<Branch>();
-		ArrayList<WExpr> stack = new ArrayList<WExpr>();
 		ArrayList<Scope> scopes = new ArrayList<Scope>();
 		int[] environment = new int[blk.numSlots()];
 
 		// take initial branch
-		constraint = transform(0, constraint, environment, stack, scopes,
+		constraint = transform(0, constraint, environment, scopes,
 				branches, assumes, blk);
 
 		// continue any resulting branches
@@ -230,7 +227,7 @@ public class VerificationCheck implements Transform {
 			constraint = WFormulas
 					.or(constraint,
 							transform(branch.pc, branch.constraint,
-									branch.environment, branch.stack,
+									branch.environment, 
 									branch.scopes, branches, assumes, blk));
 		}
 		
@@ -248,7 +245,7 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected WFormula transform(int pc, WFormula constraint, int[] environment,
-			ArrayList<WExpr> stack, ArrayList<Scope> scopes,
+			ArrayList<Scope> scopes,
 			ArrayList<Branch> branches, boolean assumes, Block body) {
 		
 		// the following is necessary for branches generated from conditionals
@@ -265,17 +262,18 @@ public class VerificationCheck implements Transform {
 				i = findLabel(i,g.target,body);					
 			} else if(code instanceof Code.IfGoto) {
 				Code.IfGoto ifgoto = (Code.IfGoto) code;
-				WFormula test = buildTest(ifgoto.op,entry);				
+				WFormula test = buildTest(ifgoto.op, entry, ifgoto.leftOperand,
+						ifgoto.rightOperand, environment);				
 				int targetpc = findLabel(i,ifgoto.target,body)	;
 				branches.add(new Branch(targetpc, WFormulas.and(constraint,
-						test), environment, stack, scopes));
+						test), environment, scopes));
 				constraint = WFormulas.and(constraint,test.not());
 			} else if(code instanceof Code.IfType) {
 				// TODO: implement me!
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll forall = (Code.ForAll) code; 
 				int end = findLabel(i,forall.target,body);
-				WExpr src = pop(stack);
+				WExpr src = operand(forall.sourceOperand,environment);
 				WVariable var = new WVariable(forall.indexOperand + "$"
 						+ environment[forall.indexOperand]);
 				constraint = WFormulas.and(constraint,
@@ -311,8 +309,7 @@ public class VerificationCheck implements Transform {
 				// we don't need to do anything for a return!
 				return constraint;
 			} else {
-				constraint = transform(entry, constraint, environment,
-						stack, assumes);
+				constraint = transform(entry, constraint, environment, assumes);
 			}
 		}
 		
@@ -484,7 +481,7 @@ public class VerificationCheck implements Transform {
 			boolean assume) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
-		WFormula test = buildTest(code.op, stack, entry);
+		WFormula test = buildTest(code.op, entry, code.leftOperand, code.rightOperand, environment);
 		
 		if (assume) {
 			// in assumption mode we don't assert the test; rather, we assume
@@ -509,8 +506,8 @@ public class VerificationCheck implements Transform {
 	
 	protected WFormula transform(Code.BinOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		WExpr rhs = pop(stack);
-		WExpr lhs = pop(stack);
+		WExpr lhs = operand(code.leftOperand,environment);
+		WExpr rhs = operand(code.rightOperand,environment);
 		WExpr result;
 		
 		switch(code.bop) {
@@ -530,29 +527,27 @@ public class VerificationCheck implements Transform {
 			internalFailure("unknown binary operator",filename,entry);
 			return null;
 		}
-		
-		stack.add(result);
-		
-		return constraint;
+				
+		return update(code.target,result,environment,constraint);
 	}
 
 	protected WFormula transform(Code.Convert code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+		WVariable result = operand(code.operand, environment);
+		return update(code.target, result, environment, constraint);
 	}
 
 	protected WFormula transform(Code.Const code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		stack.add(convert(code.constant,entry));
-		return constraint;
+		return update(code.target, convert(code.constant, entry), environment,
+				constraint);
 	}
 
 	protected WFormula transform(Code.FieldLoad code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		WExpr src = pop(stack);
-		stack.add(new WTupleAccess(src, code.field));
-		return constraint;
+		WVariable src = operand(code.operand, environment);
+		WExpr result = new WTupleAccess(src, code.field);
+		return update(code.target, result, environment, constraint);
 	}
 
 	protected WFormula transform(Code.IndirectInvoke code, Block.Entry entry,
@@ -576,29 +571,30 @@ public class VerificationCheck implements Transform {
 		List<Type> ft_params = code.type.params();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
-		for(int i=ft_params.size();i>0;--i) {
-			WExpr arg = pop(stack);
+		int[] code_operands = code.operands;
+		for(int i=0;i!=code_operands.length;++i) {
+			WExpr arg = operand(code_operands[i],environment);
 			args.add(arg);
 			binding.put(new WVariable(i + "$0"), arg);
-		}		
-		Collections.reverse(args);		
+		}			
 		
 		// second, setup return value
-		if(code.retval) {
-			WVariable rv = new WVariable(code.name.toString(), args);
-			stack.add(rv);
+		if (code.target != Code.NULL_REG) {
+			WVariable rhs = new WVariable(code.name.toString(), args);
 
 			constraint = WFormulas.and(constraint,
-					WTypes.subtypeOf(rv, convert(ft.ret())));
+					WTypes.subtypeOf(rhs, convert(ft.ret())));
 
-			// now deal with post-condition		
-			Block postcondition = findPostcondition(code.name,ft,entry);
-			if(postcondition != null) {					
+			// now deal with post-condition
+			Block postcondition = findPostcondition(code.name, ft, entry);
+			if (postcondition != null) {
 				WFormula pc = transform(WBool.TRUE, true, postcondition);
-				binding.put(new WVariable("0$0"),rv);
-				constraint = WFormulas.and(constraint,pc.substitute(binding));
+				binding.put(new WVariable("0$0"), rhs);
+				constraint = WFormulas.and(constraint, pc.substitute(binding));
 			}
-		}		
+
+			return update(code.target, rhs, environment, constraint);
+		}
 		
 		return constraint;
 	}
@@ -617,9 +613,9 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.LengthOf code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		WExpr src = pop(stack);
-		stack.add(new WLengthOf(src));
-		return constraint;
+		WExpr src = operand(code.operand, environment);
+		WExpr result = new WLengthOf(src);
+		return update(code.target, result, environment, constraint);
 	}
 
 	protected WFormula transform(Code.SubList code, Block.Entry entry,
@@ -630,24 +626,22 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.IndexOf code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		WExpr idx = pop(stack);
-		WExpr src = pop(stack);		
-		stack.add(new WListAccess(src, idx));		
-		return constraint;
+		WExpr src = operand(code.leftOperand, environment);
+		WExpr idx = operand(code.rightOperand, environment);
+		WExpr result = new WListAccess(src, idx);
+		return update(code.target, result, environment, constraint);
 	}
 
 	protected WFormula transform(Code.Move code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		int slot = code.slot;
-		stack.add(new WVariable(slot + "$" + environment[slot]));
-		return constraint;
+		return update(code.target, operand(code.operand, environment),
+				environment, constraint);
 	}
 	
 	protected WFormula transform(Code.Assign code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		int slot = code.indexOperand;
-		stack.add(new WVariable(slot + "$" + environment[slot]));
-		return constraint;
+		return update(code.target, operand(code.operand, environment),
+				environment, constraint);
 	}
 
 	protected WFormula transform(Code.Update code, Block.Entry entry,
@@ -665,56 +659,58 @@ public class VerificationCheck implements Transform {
 	protected WFormula transform(Code.List code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
-		for (int i=0;i!=code.nargs;++i) {			
-			args.add(pop(stack));			
+		int[] code_operands = code.operands;
+		for (int i=0;i!=code_operands.length;++i) {			
+			args.add(operand(code_operands[i],environment));			
 		}
-		Collections.reverse(args);
-		stack.add(new WListConstructor(args));
-		return constraint;
+		
+		WExpr result = new WListConstructor(args);
+		return update(code.target,result,environment,constraint);
 	}
 
 	protected WFormula transform(Code.Set code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		HashSet<WExpr> args = new HashSet<WExpr>();
-		for (int i=0;i!=code.nargs;++i) {			
-			args.add(pop(stack));			
+		int[] code_operands = code.operands;
+		for (int i = 0; i != code_operands.length; ++i) {
+			args.add(operand(code_operands[i], environment));
 		}
-		stack.add(new WSetConstructor(args));
-		return constraint;
+
+		WExpr result = new WSetConstructor(args);
+		return update(code.target, result, environment, constraint);
 	}
 
 	protected WFormula transform(Code.Record code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
-		ArrayList<WExpr> exprs = new ArrayList<WExpr>();
-		Collections.sort(fields);
-		for(int i=0;i!=fields.size();++i) {
-			exprs.add(pop(stack));
-		}
-		Collections.reverse(exprs);
-		stack.add(new WTupleConstructor(fields, exprs));
-		return constraint;
+		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		int[] code_operands = code.operands;
+		for (int i = 0; i != code_operands.length; ++i) {
+			args.add(operand(code_operands[i], environment));
+		}		
+		WExpr result = new WTupleConstructor(fields, args);
+		return update(code.target,result,environment,constraint);
 	}
 
 	protected WFormula transform(Code.Tuple code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		ArrayList<String> fields = new ArrayList<String>();
-		ArrayList<WExpr> terms = new ArrayList<WExpr>();
-		int field=0;
-		for(Type t : code.type.elements()) {			
-			terms.add(pop(stack));
-			fields.add(Integer.toString(field++));
+		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		int[] code_operands = code.operands;
+		for (int i = 0; i != code_operands.length; ++i) {
+			args.add(operand(code_operands[i], environment));
+			fields.add(Integer.toString(i));
 		}
-		stack.add(new WTupleConstructor(fields,terms));
-		return constraint;
+		WExpr result = new WTupleConstructor(fields, args);
+		return update(code.target, result, environment, constraint);
 	}
 
 	protected WFormula transform(Code.Negate code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		WExpr expr = pop(stack);
-		stack.add(WNumerics.negate(expr));
-		return constraint;		
+		WExpr expr = operand(code.operand, environment);
+		WExpr result = WNumerics.negate(expr);
+		return update(code.target, result, environment, constraint);
 	}
 
 	protected WFormula transform(Code.Dereference code, Block.Entry entry,
@@ -731,64 +727,51 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.SetOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		WExpr rhs = pop(stack);
-		WExpr lhs = pop(stack);
-		WVariable rv = WVariable.freshVar();
-		WVariable rs = WVariable.freshVar();
+		WVariable lhs = operand(code.leftOperand, environment);
+		WVariable rhs = operand(code.rightOperand, environment);
+		WVariable target = update(code.target, environment);
 
+		WVariable tmp = WVariable.freshVar();
+		WSetConstructor sc = new WSetConstructor(tmp);
+		
 		HashMap<WVariable, WExpr> vars = new HashMap();
-		vars.put(rv, rs);
-		WSetConstructor sc = new WSetConstructor(rv);
-		WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs),
+		vars.put(tmp, target);
+		
+		switch(code.operation) {
+		case UNION:	{
+			
+			WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs),
 				WSets.subsetEq(sc, rhs));
+			constraint = WFormulas.and(constraint, WSets.subsetEq(lhs, target), WSets
+					.subsetEq(rhs, target), new WBoundedForall(true, vars, allc));
+			break;
+		}
+		case DIFFERENCE: {
+			WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
 
-		stack.add(rs);
+			constraint = WFormulas
+					.and(constraint, WSets.subsetEq(lhs, target), left);		
+			break;
+		}
+		case INTERSECTION:
+			WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
+			vars = new HashMap();
+			vars.put(tmp, lhs);
+			WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
+					.subsetEq(sc, rhs), WSets.subsetEq(sc, target)));
+			
+			constraint = WFormulas
+					.and(constraint, left, right, WSets.subsetEq(target, lhs), WSets.subsetEq(target, rhs));
+			break;
+			default:
+				internalFailure("missing support for left/right set operations",filename,entry);
+		}
 
-		return WFormulas.and(constraint, WSets.subsetEq(lhs, rs),
-				WSets.subsetEq(rhs, rs), new WBoundedForall(true, vars, allc));
+		return constraint;
 	}
-
-	protected WFormula transform(Code.SetDifference code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
-		WExpr rhs = pop(stack);
-		WExpr lhs = pop(stack);
-		WVariable rv = WVariable.freshVar();
-		WVariable rs = WVariable.freshVar();
-		HashMap<WVariable, WExpr> vars = new HashMap();
-		vars.put(rv, rs);				
-		WSetConstructor sc = new WSetConstructor(rv);
-		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
-				.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
-
-		stack.add(rs);
-		
-		return WFormulas
-				.and(constraint, WSets.subsetEq(lhs, rs), left);		
-	}
-
-	protected WFormula transform(Code.SetIntersect code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
-		WExpr rhs = pop(stack);
-		WExpr lhs = pop(stack);
-		WVariable rv = WVariable.freshVar();
-		WVariable rs = WVariable.freshVar();
-		HashMap<WVariable, WExpr> vars = new HashMap();
-		vars.put(rv, rs);				
-		WSetConstructor sc = new WSetConstructor(rv);
-		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
-				.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
-		
-		vars = new HashMap();
-		vars.put(rv, lhs);
-		WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
-				.subsetEq(sc, rhs), WSets.subsetEq(sc, rs)));
-
-		stack.add(rs);
-		
-		return WFormulas
-				.and(constraint, left, right, WSets.subsetEq(rs, lhs), WSets.subsetEq(rs, rhs));
-	}
-
+	
 	protected WFormula transform(Code.StringOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		// TODO: complete this transform
@@ -815,9 +798,9 @@ public class VerificationCheck implements Transform {
 
 	protected WFormula transform(Code.TupleLoad code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
-		WExpr src = pop(stack);
-		stack.add(new WTupleAccess(src, Integer.toString(code.index)));		
-		return constraint;
+		WExpr src = operand(code.operand, environment);
+		WExpr result = new WTupleAccess(src, Integer.toString(code.index));
+		return update(code.target, result, environment, constraint);
 	}
 	
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
@@ -982,9 +965,9 @@ public class VerificationCheck implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	private WFormula buildTest(Code.COp op, SyntacticElement elem) {
-		WExpr rhs = pop(stack);
-		WExpr lhs = pop(stack);
+	private WFormula buildTest(Code.COp op, SyntacticElement elem, int leftOperand, int rightOperand, int[] environment) {
+		WExpr lhs = operand(leftOperand,environment);
+		WExpr rhs = operand(rightOperand,environment);
 		
 		switch(op) {
 		case EQ:
@@ -1009,6 +992,25 @@ public class VerificationCheck implements Transform {
 			internalFailure("unknown comparator (" + op + ")",filename,elem);
 			return null;
 		}
+	}
+	
+	private static WVariable operand(int register, int[] environment) {
+		return new WVariable(register + "$" + environment[register]);
+	}
+
+	private static WVariable update(int target, int[] environment) {
+		int nval = environment[target] + 1;
+		environment[target] = nval;
+		WVariable lhs = new WVariable(target + "$" + nval);
+		return lhs;
+	}
+	
+	private static WFormula update(int target, WExpr rhs, int[] environment,
+			WFormula constraint) {
+		int nval = environment[target] + 1;
+		environment[target] = nval;
+		WVariable lhs = new WVariable(target + "$" + nval);
+		return WFormulas.and(constraint, WExprs.equals(lhs, rhs));
 	}
 	
 	private static <T> T pop(ArrayList<T> stack) {
