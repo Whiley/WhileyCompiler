@@ -30,12 +30,14 @@ import wyil.util.*;
 
 /**
  * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
- * stack-based bytecodes, similar to the Java Virtual Machine. The frame of each
- * function/method consists of zero or more <i>local variables</i> (a.k.a
- * registers) and a <i>stack of unbounded depth</i>. Bytecodes may push/pop
- * values from the stack, and store/load them from local variables. Like Java
- * bytecode, WYIL uses unstructured control-flow and allows variables to take on
- * different types at different points. For example:
+ * register-based bytecodes (as opposed to say the Java Virtual Machine, which
+ * uses stack-based bytecodes). During execution, one can think of the "machine"
+ * as maintaining a call stack made up of "frames". For each function or method
+ * on the call stack, the corresponding frame consists of zero or more <i>local
+ * variables</i> (a.k.a registers). Bytecodes may read/write values from local
+ * variables. Like the Java Virtual Machine, WYIL uses unstructured
+ * control-flow. However, unlike the JVM, it also allows variables to take on
+ * different types at different points. The following illustrates:
  * 
  * <pre>
  * int sum([int] data):
@@ -51,23 +53,18 @@ import wyil.util.*;
  * int sum([int] data):
  * body: 
  *   var r, $2, item
- *   const 0 : int                           
- *   store r : int                           
- *   move data : [int]                       
- *   forall item [r] : [int]                 
- *       move r : int                            
- *       load item : int                         
- *       add : int                               
- *       store r : int                           
- *   move r : int                            
- *   return : int
+ *   const %1 = 0          : int                      
+ *   assign %2 = %0        : [int]                 
+ *   forall %3 in %2 ()    : [int]              
+ *       assign %4 = %1    : int                                
+ *       add %1 = %4, %3   : int                                     
+ *   return %1             : int
  * </pre>
  * 
  * Here, we can see that every bytecode is associated with one (or more) types.
  * These types are inferred by the compiler during type propagation.
  * 
  * @author David J. Pearce
- * 
  */
 public abstract class Code {
 	/**
@@ -1052,9 +1049,9 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * A binary operation takes reads values from two operand registers,
-	 * performs an operation and writes the result to target register. The
-	 * binary operators are:
+	 * A binary operation reads two numeric values from the operand registers,
+	 * performs an operation on them and writes the result to the target
+	 * register. The binary operators are:
 	 * </p>
 	 * <ul>
 	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
@@ -1105,9 +1102,12 @@ public abstract class Code {
 	/**
 	 * <p>
 	 * Reads a value from the operand register, converts it to a given type and
-	 * writes it the target register. This bytecode is the only way to change
-	 * the type of a value. It's purpose is to simplify implementations which
-	 * have different representations of data types.
+	 * writes the result to the target register. This bytecode is the only way
+	 * to change the type of a value. It's purpose is to simplify
+	 * implementations which have different representations of data types. A
+	 * convert bytecode must be inserted whenever the type of a register
+	 * changes. This includes at control-flow meet points, when the value is
+	 * passed as a parameter, assigned to a field, etc.
 	 * </p>
 	 * 
 	 * <p>
@@ -1119,11 +1119,6 @@ public abstract class Code {
 	 * <code>List</code> can safely flow into <code>Object</code>.
 	 * </p>
 	 * 
-	 * <p>
-	 * A convert bytecode must be inserted whenever the type of a register
-	 * changes. This includes at control-flow meet points, when the value is
-	 * passed as a parameter, assigned to a field, etc.
-	 * </p>
 	 */
 	public static final class Convert extends AbstractUnaryAssignable<Type> {
 		public final Type result;
@@ -1236,11 +1231,11 @@ public abstract class Code {
 	}
 
 	/**
-	 * Read a string from the operand and writes it to the debug console. This
-	 * bytecode is not intended to form part of the programs operation. Rather,
-	 * it is to facilitate debugging within functions (since they cannot have
-	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
-	 * nop.
+	 * Read a string from the operand register and prints it to the debug
+	 * console. This bytecode is not intended to form part of the program's
+	 * operation. Rather, it is to facilitate debugging within functions (since
+	 * they cannot have side-effects). Furthermore, if debugging is disabled,
+	 * this bytecode is a nop.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1303,8 +1298,9 @@ public abstract class Code {
 	}
 
 	/**
-	 * Reads values from two operand registers and compares them. An assertion
-	 * failure with the given message is raised if comparison is false.
+	 * Reads two operand registers, compares their values and raises an
+	 * assertion failure with the given message is raised if comparison is
+	 * false.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1348,8 +1344,8 @@ public abstract class Code {
 	}
 
 	/**
-	 * Reads a record from an operand register, reads the value of given field
-	 * and writes its target register.
+	 * Reads a record value from an operand register, extracts the value of
+	 * given field and writes this to the target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2508,20 +2504,25 @@ public abstract class Code {
 	}
 
 	/**
-	 * Constructs a new dictionary value from zero or more key-value pairs on
-	 * the stack. For each pair, the key must occur directly before the value on
-	 * the stack. For example:
-	 * 
+	 * Constructs a dictionary value from zero or more key-value pairs on the
+	 * stack. For each pair, the key must occur directly before the value on the
+	 * stack. For example, consider the following Whiley function <code>f()</code>:
 	 * <pre>
-	 *   const 1 : int                           
-	 *   const "Hello" : string                  
-	 *   const 2 : int                           
-	 *   const "World" : string                  
-	 *   newdict #2 : {int->string}
+	 * {int=>string} f():
+     *     return {1=>"Hello",2=>"World"}
+     * </pre>
+     * This could be compiled into the following WYIL code using this bytecode:
+	 * <pre>
+	 * {int->string} f():
+     * body:
+	 *   const %1 = 1                : int                           
+	 *   const %2 = "Hello"          : string                  
+	 *   const %3 = 2                : int                           
+	 *   const %4 = "World"          : string                  
+	 *   dict %0 = (%1,%2,%3,%4)     : {int=>string}
+	 *   return %0                   : {int=>string}
 	 * </pre>
 	 * 
-	 * Pushes the dictionary value <code>{1->"Hello",2->"World"}</code> onto the
-	 * stack.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -3277,8 +3278,8 @@ public abstract class Code {
 	}
 
 	/**
-	 * Dereference the reference value from the operand register and write the
-	 * result to the target register.
+	 * Reads a reference value from the operand register, dereferences it (i.e.
+	 * extracts the value it refers ot) and writes this to the target register.
 	 * 
 	 * @author David J. Pearce
 	 * 

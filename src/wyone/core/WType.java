@@ -33,8 +33,8 @@ import java.util.Map;
 public interface WType {
 	/**
 	 * Check whether the given value is an instance of this type.
-	 * @param environment TODO
-	 * @param o
+	 * @param v
+	 * @param environment 
 	 * 
 	 * @return
 	 */
