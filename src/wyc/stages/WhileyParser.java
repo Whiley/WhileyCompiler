@@ -395,7 +395,9 @@ public final class WhileyParser {
 		} else if(token.text.equals("return")) {
 			return parseReturn();
 		} else if(token.text.equals("assert")) {
-			return parseAssert();
+			return parseAssertOrAssume(false);
+		} else if(token.text.equals("assume")) {
+			return parseAssertOrAssume(true);
 		} else if(token.text.equals("debug")) {
 			return parseDebug();
 		} else if(token.text.equals("if")) {			
@@ -471,14 +473,22 @@ public final class WhileyParser {
 		return new Stmt.Return(e, sourceAttr(start, end - 1));
 	}
 	
-	private Stmt parseAssert() {
+	private Stmt parseAssertOrAssume(boolean isAssume) {
 		int start = index;
-		matchKeyword("assert");						
+		if(isAssume) {
+			matchKeyword("assume");
+		} else {
+			matchKeyword("assert");
+		}
 		checkNotEof();
 		Expr e = parseCondition(false);
 		int end = index;
-		matchEndLine();		
-		return new Stmt.Assert(e, sourceAttr(start,end));
+		matchEndLine();
+		if(isAssume) {
+			return new Stmt.Assume(e, sourceAttr(start,end));
+		} else {
+			return new Stmt.Assert(e, sourceAttr(start,end));
+		}
 	}
 	
 	private Stmt parseSkip() {

@@ -507,6 +507,7 @@ public class WhileyLexer {
 		"as",
 		"for",
 		"assert",
+		"assume",
 		"debug",		
 		"return",
 		"define",		

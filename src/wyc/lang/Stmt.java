@@ -84,6 +84,25 @@ public interface Stmt extends SyntacticElement {
 			return "assert " + expr;
 		}
 	}
+
+	public static final class Assume extends SyntacticElement.Impl implements Stmt {
+		public Expr expr;		
+
+		public Assume(Expr expr, Attribute... attributes) {
+			super(attributes);
+			this.expr = expr;			
+		}
+
+		public Assume(String msg, Expr expr, Collection<Attribute> attributes) {
+			super(attributes);
+			this.expr = expr;
+		}
+		
+		public String toString() {
+			return "assume " + expr;
+		}
+	}
+
 	
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
 		public Expr expr;		

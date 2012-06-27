@@ -222,6 +222,8 @@ public final class FlowTyping {
 				return propagate((Stmt.TryCatch) stmt,environment);
 			} else if(stmt instanceof Stmt.Assert) {
 				return propagate((Stmt.Assert) stmt,environment);
+			} else if(stmt instanceof Stmt.Assume) {
+				return propagate((Stmt.Assume) stmt,environment);
 			} else if(stmt instanceof Stmt.Debug) {
 				return propagate((Stmt.Debug) stmt,environment);
 			} else if(stmt instanceof Stmt.Skip) {
@@ -242,6 +244,13 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.Assert stmt,
+			Environment environment) {
+		stmt.expr = resolver.resolve(stmt.expr,environment,current);
+		checkIsSubtype(Type.T_BOOL,stmt.expr);
+		return environment;
+	}
+	
+	private Environment propagate(Stmt.Assume stmt,
 			Environment environment) {
 		stmt.expr = resolver.resolve(stmt.expr,environment,current);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
