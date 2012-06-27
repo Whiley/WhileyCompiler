@@ -200,7 +200,8 @@ public final class CodeGeneration {
 			}	
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
 			precondition.append(localGenerator.generateAssertion(
-					"precondition not satisfied", fd.precondition, preEnv.size(), preEnv));		
+					"precondition not satisfied", fd.precondition, false,
+					preEnv.size(), preEnv));		
 		}
 		
 		// ==================================================================
@@ -216,7 +217,7 @@ public final class CodeGeneration {
 			}
 			postcondition = new Block(postEnv.size());
 			postcondition.append(localGenerator.generateAssertion(
-					"postcondition not satisfied", fd.postcondition,
+					"postcondition not satisfied", fd.postcondition, false,
 					postEnv.size(), postEnv));
 		}
 		
@@ -278,6 +279,8 @@ public final class CodeGeneration {
 				return generate((Assign) stmt, environment);
 			} else if (stmt instanceof Assert) {
 				return generate((Assert) stmt, environment);
+			} else if (stmt instanceof Assume) {
+				return generate((Assume) stmt, environment);
 			} else if (stmt instanceof Return) {
 				return generate((Return) stmt, environment);
 			} else if (stmt instanceof Debug) {
@@ -415,11 +418,18 @@ public final class CodeGeneration {
 	
 	private Block generate(Assert s, HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(localGenerator.generateAssertion("assertion failed", s.expr,
+		blk.append(localGenerator.generateAssertion("assertion failed", s.expr, false,
 				environment.size(), environment));
 		return blk;
 	}
 
+	private Block generate(Assume s, HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(localGenerator.generateAssertion("assumption failed",
+				s.expr, true, environment.size(), environment));
+		return blk;
+	}
+	
 	private Block generate(Return s, HashMap<String,Integer> environment) {
 
 		if (s.expr != null) {
@@ -599,7 +609,7 @@ public final class CodeGeneration {
 		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
-					environment.size(), environment));
+					false, environment.size(), environment));
 		}
 
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
@@ -616,8 +626,8 @@ public final class CodeGeneration {
 		
 		if(s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant,
-					environment.size(), environment));		
+					"loop invariant not restored", s.invariant, false,
+					environment.size(), environment));
 		}
 		
 		blk.append(Code.End(label));
@@ -633,7 +643,7 @@ public final class CodeGeneration {
 		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
-					environment.size(), environment));
+					false, environment.size(), environment));
 		}
 		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
@@ -647,7 +657,7 @@ public final class CodeGeneration {
 		
 		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant,
+					"loop invariant not restored", s.invariant, false,
 					environment.size(), environment));
 		}
 		
@@ -668,7 +678,7 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not satisfied on entry", s.invariant,
+					"loop invariant not satisfied on entry", s.invariant, false,
 					environment.size(), environment));
 		}
 		
@@ -711,10 +721,10 @@ public final class CodeGeneration {
 		}		
 		scopes.pop(); // break
 		
-		if(s.invariant != null) {
+		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant,
-					environment.size(), environment));		
+					"loop invariant not restored", s.invariant, false,
+					environment.size(), environment));
 		}
 		blk.append(Code.End(label), attributes(s));		
 

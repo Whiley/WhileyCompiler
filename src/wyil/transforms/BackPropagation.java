@@ -160,8 +160,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.Const)code,entry,environment);
 		} else if(code instanceof Code.Debug) {
 			infer(index,(Code.Debug)code,entry,environment);
-		} else if(code instanceof Code.Assert) {
-			infer(index,(Code.Assert)code,entry,environment);
+		} else if(code instanceof Code.AssertOrAssume) {
+			infer(index,(Code.AssertOrAssume)code,entry,environment);
 		} else if(code instanceof Code.FieldLoad) {
 			infer(index,(Code.FieldLoad)code,entry,environment);			
 		} else if(code instanceof Code.IndirectInvoke) {
@@ -236,7 +236,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	}
 
 	protected Env infer(int index,
-			Code.Assert code, Block.Entry stmt, Env environment) {
+			Code.AssertOrAssume code, Block.Entry stmt, Env environment) {
 		if(code.op == Code.COp.ELEMOF) {
 			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
 			environment.set(code.leftOperand,src.element());

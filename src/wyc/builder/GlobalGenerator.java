@@ -90,7 +90,7 @@ public class GlobalGenerator {
 					environment.put("$",Code.REG_0);
 					addExposedNames(td.resolvedType.raw(),environment,blk);
 					blk.append(new LocalGenerator(this, td).generateAssertion(
-							"constraint not satisfied", td.constraint,
+							"constraint not satisfied", td.constraint, false,
 							environment.size(), environment));
 				}
 				cache.put(nid, blk);

@@ -84,6 +84,9 @@ public final class LocalGenerator {
 	 *            --- Message to report if condition is false.
 	 * @param condition
 	 *            --- Source-level condition to be translated
+	 * @param isAssumption
+	 *            --- indicates whether to generate an assumption or an
+	 *            assertion.
 	 * @param freeRegister
 	 *            --- All registers with and index equal or higher than this are
 	 *            available for use as temporary storage.
@@ -92,7 +95,8 @@ public final class LocalGenerator {
 	 * @return
 	 */
 	public Block generateAssertion(String message, Expr condition,
-			int freeRegister, HashMap<String, Integer> environment) {
+			boolean isAssumption, int freeRegister,
+			HashMap<String, Integer> environment) {
 		try {
 			if (condition instanceof Expr.Constant
 					|| condition instanceof Expr.ConstantAccess
@@ -104,7 +108,7 @@ public final class LocalGenerator {
 					|| condition instanceof Expr.Comprehension) {
 				// fall through to default case
 			} else if (condition instanceof Expr.BinOp) {
-				return generateAssertion(message, (Expr.BinOp) condition, freeRegister, environment);
+				return generateAssertion(message, (Expr.BinOp) condition, isAssumption, freeRegister, environment);
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
@@ -115,8 +119,14 @@ public final class LocalGenerator {
 			
 			Block blk = generate(condition,freeRegister,freeRegister+1,environment);
 			blk.append(Code.Const(freeRegister+1,Value.V_BOOL(true)),attributes(condition));
-			blk.append(Code.Assert(Type.T_BOOL, freeRegister, freeRegister + 1,
-					Code.COp.EQ, message), attributes(condition));
+			if(isAssumption) {
+				blk.append(Code.Assume(Type.T_BOOL, freeRegister,
+						freeRegister + 1, Code.COp.EQ, message),
+						attributes(condition));
+			} else {
+				blk.append(Code.Assert(Type.T_BOOL, freeRegister, freeRegister + 1,
+						Code.COp.EQ, message), attributes(condition));
+			}
 			return blk;
 		} catch (SyntaxError se) {
 			throw se;
@@ -127,21 +137,22 @@ public final class LocalGenerator {
 	}
 	
 	protected Block generateAssertion(String message, Expr.BinOp v,
-			int freeRegister, HashMap<String, Integer> environment) {
+			boolean isAssumption, int freeRegister,
+			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
 		Expr.BOp bop = v.op;
 		
 		if (bop == Expr.BOp.OR) {
 			String lab = Block.freshLabel();
 			blk.append(generateCondition(lab, v.lhs, freeRegister, environment));
-			blk.append(generateAssertion(message, v.rhs, freeRegister,
+			blk.append(generateAssertion(message, v.rhs, isAssumption, freeRegister,
 					environment));
 			blk.append(Code.Label(lab));
 			return blk;
 		} else if (bop == Expr.BOp.AND) {
-			blk.append(generateAssertion(message, v.lhs, freeRegister,
+			blk.append(generateAssertion(message, v.lhs, isAssumption, freeRegister,
 					environment));
-			blk.append(generateAssertion(message, v.rhs, freeRegister,
+			blk.append(generateAssertion(message, v.rhs, isAssumption, freeRegister,
 					environment));
 			return blk;
 		}
@@ -155,8 +166,13 @@ public final class LocalGenerator {
 		blk.append(generate(v.lhs, freeRegister, freeRegister + 1, environment));
 		blk.append(generate(v.rhs, freeRegister + 1, freeRegister + 2,
 				environment));
-		blk.append(Code.Assert(v.srcType.raw(), freeRegister,
-				freeRegister + 1, cop, message), attributes(v));
+		if (isAssumption) {
+			blk.append(Code.Assume(v.srcType.raw(), freeRegister,
+					freeRegister + 1, cop, message), attributes(v));
+		} else {
+			blk.append(Code.Assert(v.srcType.raw(), freeRegister,
+					freeRegister + 1, cop, message), attributes(v));
+		}
 
 		return blk;
 	}

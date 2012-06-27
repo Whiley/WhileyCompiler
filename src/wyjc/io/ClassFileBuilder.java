@@ -430,8 +430,8 @@ public class ClassFileBuilder {
 				 translate((Code.Debug)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.LoopEnd) {
 				 translate((Code.LoopEnd)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Assert) {
-				 translate((Code.Assert)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.AssertOrAssume) {
+				 translate((Code.AssertOrAssume)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.FieldLoad) {
 				 translate((Code.FieldLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.ForAll) {
@@ -1084,7 +1084,7 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 	}
 	
-	public void translate(Code.Assert c, Block.Entry entry, int freeSlot,
+	public void translate(Code.AssertOrAssume c, Block.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		String lab = freshLabel();
 		JvmType jt = convertType(c.type);

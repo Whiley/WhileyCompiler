@@ -139,6 +139,19 @@ public abstract class Code {
 		return get(new Assert(type, leftOperand, rightOperand, cop, message));
 	}
 
+	/**
+	 * Construct an <code>assumet</code> bytecode which raises an assertion
+	 * failure with the given if the given condition evaluates to false.
+	 * 
+	 * @param message
+	 *            --- message to report upon failure.
+	 * @return
+	 */
+	public static Assume Assume(Type type, int leftOperand, int rightOperand,
+			COp cop, String message) {
+		return get(new Assume(type, leftOperand, rightOperand, cop, message));
+	}
+	
 	public static BinOp BinOp(Type type, int target, int leftOperand,
 			int rightOperand, BOp op) {
 		return get(new BinOp(type, target, leftOperand, rightOperand, op));
@@ -1304,19 +1317,11 @@ public abstract class Code {
 		}
 	}
 
-	/**
-	 * Reads two operand registers, compares their values and raises an
-	 * assertion failure with the given message is raised if comparison is
-	 * false.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Assert extends AbstractBinaryOp<Type> {
+	public static abstract class AssertOrAssume extends AbstractBinaryOp<Type> {
 		public final COp op;
 		public final String msg;
 
-		private Assert(Type type, int leftOperand, int rightOperand, COp cop,
+		private AssertOrAssume(Type type, int leftOperand, int rightOperand, COp cop,
 				String msg) {
 			super(type, leftOperand, rightOperand);
 			if (cop == null) {
@@ -1325,15 +1330,27 @@ public abstract class Code {
 			}
 			this.op = cop;
 			this.msg = msg;
+		}		
+	}
+	
+	/**
+	 * Reads two operand registers, compares their values and raises an
+	 * assertion failure with the given message is raised if comparison is
+	 * false.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Assert extends AssertOrAssume {
+
+		private Assert(Type type, int leftOperand, int rightOperand, COp cop,
+				String msg) {
+			super(type, leftOperand, rightOperand, cop, msg);			
 		}
 
 		@Override
 		public Code clone(int nLeftOperand, int nRightOperand) {
 			return Code.Assert(type, nLeftOperand, nRightOperand, op, msg);
-		}
-
-		public int hashCode() {
-			return op.hashCode() + msg.hashCode() + super.hashCode();
 		}
 
 		public boolean equals(Object o) {
@@ -1363,28 +1380,16 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Assume extends AbstractBinaryOp<Type> {
-		public final COp op;
-		public final String msg;
+	public static final class Assume extends AssertOrAssume {
 
 		private Assume(Type type, int leftOperand, int rightOperand, COp cop,
 				String msg) {
-			super(type, leftOperand, rightOperand);
-			if (cop == null) {
-				throw new IllegalArgumentException(
-						"Assume op argument cannot be null");
-			}
-			this.op = cop;
-			this.msg = msg;
+			super(type, leftOperand, rightOperand, cop, msg);			
 		}
 
 		@Override
 		public Code clone(int nLeftOperand, int nRightOperand) {
-			return Code.Assert(type, nLeftOperand, nRightOperand, op, msg);
-		}
-
-		public int hashCode() {
-			return op.hashCode() + msg.hashCode() + super.hashCode();
+			return Code.Assume(type, nLeftOperand, nRightOperand, op, msg);
 		}
 
 		public boolean equals(Object o) {
