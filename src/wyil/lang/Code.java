@@ -68,60 +68,60 @@ import wyil.util.*;
  */
 public abstract class Code {
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int NULL_REG = -1;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_0 = 0;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_1 = 1;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_2 = 2;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_3 = 3;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_4 = 4;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_5 = 5;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_6 = 6;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_7 = 7;
-	
+
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_8 = 8;
 
 	/**
-	 * Provided to aid readability of client code. 
+	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_9 = 9;
-	
+
 	// ===============================================================
 	// Bytecode Constructors
 	// ===============================================================
@@ -241,10 +241,10 @@ public abstract class Code {
 	}
 
 	private static SubList SubList(Type.EffectiveList type, int target,
-			int[] operands) {		
+			int[] operands) {
 		return get(new SubList(type, target, operands));
 	}
-	
+
 	public static ListOp ListOp(Type.EffectiveList type, int target,
 			int leftOperand, int rightOperand, ListOperation dir) {
 		return get(new ListOp(type, target, leftOperand, rightOperand, dir));
@@ -272,13 +272,15 @@ public abstract class Code {
 	}
 
 	public static ForAll ForAll(Type.EffectiveCollection type,
-			int sourceOperand, int indexOperand, Collection<Integer> modifiedOperands, String label) {
+			int sourceOperand, int indexOperand,
+			Collection<Integer> modifiedOperands, String label) {
 		return get(new ForAll(type, sourceOperand, indexOperand,
 				toIntArray(modifiedOperands), label));
 	}
 
 	public static ForAll ForAll(Type.EffectiveCollection type,
-			int sourceOperand, int indexOperand, int[] modifiedOperands, String label) {
+			int sourceOperand, int indexOperand, int[] modifiedOperands,
+			String label) {
 		return get(new ForAll(type, sourceOperand, indexOperand,
 				modifiedOperands, label));
 	}
@@ -295,8 +297,7 @@ public abstract class Code {
 		return get(new Dict(type, target, toIntArray(operands)));
 	}
 
-	public static Dict NewDict(Type.Dictionary type, int target,
-			int[] operands) {
+	public static Dict NewDict(Type.Dictionary type, int target, int[] operands) {
 		return get(new Dict(type, target, operands));
 	}
 
@@ -327,7 +328,7 @@ public abstract class Code {
 			Collection<Integer> operands) {
 		return get(new List(type, target, toIntArray(operands)));
 	}
-	
+
 	public static List List(Type.List type, int target, int[] operands) {
 		return get(new List(type, target, operands));
 	}
@@ -347,7 +348,7 @@ public abstract class Code {
 	public static Tuple Tuple(Type.Tuple type, int target, int[] operands) {
 		return get(new Tuple(type, target, operands));
 	}
-	
+
 	/**
 	 * Construct a <code>newrecord</code> bytecode which constructs a new record
 	 * and puts it on the stack.
@@ -359,9 +360,8 @@ public abstract class Code {
 			Collection<Integer> operands) {
 		return get(new Record(type, target, toIntArray(operands)));
 	}
-	
-	public static Record Record(Type.Record type, int target,
-			int[] operands) {
+
+	public static Record Record(Type.Record type, int target, int[] operands) {
 		return get(new Record(type, target, operands));
 	}
 
@@ -372,9 +372,9 @@ public abstract class Code {
 	 * @return
 	 */
 	public static Return Return() {
-		return get(new Return(Type.T_VOID,NULL_REG));
+		return get(new Return(Type.T_VOID, NULL_REG));
 	}
-	
+
 	/**
 	 * Construct a return bytecode which reads a value from the operand register
 	 * and returns it.
@@ -386,7 +386,7 @@ public abstract class Code {
 	 * @return
 	 */
 	public static Return Return(Type type, int operand) {
-		return get(new Return(type,operand));
+		return get(new Return(type, operand));
 	}
 
 	public static IfGoto IfGoto(Type type, int leftOperand, int rightOperand,
@@ -407,7 +407,7 @@ public abstract class Code {
 
 	public static IndirectSend IndirectSend(Type.Message msg, int target,
 			int operand, int[] operands, boolean synchronous) {
-	return get(new IndirectSend(msg, synchronous, target, operand, operands));
+		return get(new IndirectSend(msg, synchronous, target, operand, operands));
 	}
 
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
@@ -422,7 +422,7 @@ public abstract class Code {
 	}
 
 	public static Invert Invert(Type type, int target, int operand) {
-		return get(new Invert(type,target,operand));
+		return get(new Invert(type, target, operand));
 	}
 
 	public static Label Label(String label) {
@@ -443,14 +443,14 @@ public abstract class Code {
 
 	public static SubString SubString(int target, int sourceOperand,
 			int leftOperand, int rightOperand) {
-		int[] operands = new int[] {sourceOperand, leftOperand, rightOperand};
+		int[] operands = new int[] { sourceOperand, leftOperand, rightOperand };
 		return get(new SubString(target, operands));
 	}
 
-	private static SubString SubString(int target, int[] operands) {		
+	private static SubString SubString(int target, int[] operands) {
 		return get(new SubString(target, operands));
 	}
-	
+
 	/**
 	 * Construct an <code>send</code> bytecode which sends a message to an
 	 * actor. This may be either synchronous or asynchronous.
@@ -464,7 +464,7 @@ public abstract class Code {
 		return get(new Send(meth, target, toIntArray(operands), name,
 				synchronous));
 	}
-	
+
 	public static Send Send(Type.Message meth, int target, int[] operands,
 			NameID name, boolean synchronous) {
 		return get(new Send(meth, target, operands, name, synchronous));
@@ -496,7 +496,7 @@ public abstract class Code {
 	 * @return
 	 */
 	public static Throw Throw(Type type, int operand) {
-		return get(new Throw(type,operand));
+		return get(new Throw(type, operand));
 	}
 
 	/**
@@ -560,10 +560,10 @@ public abstract class Code {
 		return get(new Update(beforeType, target, operand,
 				toIntArray(operands), afterType, fields));
 	}
-	
-	public static Update Update(Type beforeType, int target,
-			int operand, int[] operands, Type afterType, Collection<String> fields) {
-		return get(new Update(beforeType, target, operand, operands, afterType, 
+
+	public static Update Update(Type beforeType, int target, int operand,
+			int[] operands, Type afterType, Collection<String> fields) {
+		return get(new Update(beforeType, target, operand, operands, afterType,
 				fields));
 	}
 
@@ -607,12 +607,12 @@ public abstract class Code {
 
 	public static abstract class AbstractAssignable extends Code {
 		public final int target;
-		
+
 		private AbstractAssignable(int target) {
 			this.target = target;
 		}
 	}
-	
+
 	/**
 	 * Represents the set of bytcodes which take a single register operand and
 	 * write a result to the target register.
@@ -622,8 +622,9 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractUnaryAssignable<T> extends AbstractAssignable {
-		public final T type;		
+	public static abstract class AbstractUnaryAssignable<T> extends
+			AbstractAssignable {
+		public final T type;
 		public final int operand;
 
 		private AbstractUnaryAssignable(T type, int target, int operand) {
@@ -667,7 +668,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}		
+		}
 	}
 
 	/**
@@ -680,10 +681,10 @@ public abstract class Code {
 	 *            --- the type associated with this bytecode.
 	 */
 	public static abstract class AbstractUnaryOp<T> extends Code {
-		public final T type;		
+		public final T type;
 		public final int operand;
 
-		private AbstractUnaryOp(T type, int operand) {			
+		private AbstractUnaryOp(T type, int operand) {
 			if (type == null) {
 				throw new IllegalArgumentException(
 						"AbstractUnaryOp type argument cannot be null");
@@ -693,14 +694,14 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(java.util.Set<Integer> slots) {			
+		public final void slots(java.util.Set<Integer> slots) {
 			slots.add(operand);
 		}
 
 		@Override
 		public final Code remap(Map<Integer, Integer> binding) {
 			Integer nOperand = binding.get(operand);
-			if (nOperand != null) {				
+			if (nOperand != null) {
 				return clone(nOperand);
 			}
 			return this;
@@ -718,9 +719,9 @@ public abstract class Code {
 				return operand == bo.operand && type.equals(bo.type);
 			}
 			return false;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents the set of bytcodes which take two register operands and write
 	 * a result to the target register.
@@ -730,8 +731,9 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractBinaryAssignable<T> extends AbstractAssignable {
-		public final T type;		
+	public static abstract class AbstractBinaryAssignable<T> extends
+			AbstractAssignable {
+		public final T type;
 		public final int leftOperand;
 		public final int rightOperand;
 
@@ -742,7 +744,7 @@ public abstract class Code {
 				throw new IllegalArgumentException(
 						"AbstractBinOp type argument cannot be null");
 			}
-			this.type = type;			
+			this.type = type;
 			this.leftOperand = leftOperand;
 			this.rightOperand = rightOperand;
 		}
@@ -786,7 +788,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}		
+		}
 	}
 
 	/**
@@ -798,7 +800,8 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractNaryAssignable<T> extends AbstractAssignable {
+	public static abstract class AbstractNaryAssignable<T> extends
+			AbstractAssignable {
 		public final T type;
 		public final int[] operands;
 
@@ -808,7 +811,7 @@ public abstract class Code {
 				throw new IllegalArgumentException(
 						"AbstractBinOp type argument cannot be null");
 			}
-			this.type = type;			
+			this.type = type;
 			this.operands = operands;
 		}
 
@@ -847,7 +850,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}		
+		}
 	}
 
 	/**
@@ -859,12 +862,14 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractSplitNaryAssignable<T> extends AbstractAssignable {
+	public static abstract class AbstractSplitNaryAssignable<T> extends
+			AbstractAssignable {
 		public final T type;
 		public final int operand;
 		public final int[] operands;
 
-		private AbstractSplitNaryAssignable(T type, int target, int operand, int[] operands) {
+		private AbstractSplitNaryAssignable(T type, int target, int operand,
+				int[] operands) {
 			super(target);
 			if (type == null) {
 				throw new IllegalArgumentException(
@@ -902,21 +907,21 @@ public abstract class Code {
 		protected abstract Code clone(int nTarget, int nOperand, int[] nOperands);
 
 		public int hashCode() {
-			return type.hashCode() + target + operand + Arrays.hashCode(operands);
+			return type.hashCode() + target + operand
+					+ Arrays.hashCode(operands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof AbstractSplitNaryAssignable) {
 				AbstractSplitNaryAssignable bo = (AbstractSplitNaryAssignable) o;
-				return target == bo.target
-						&& operand == bo.operand
+				return target == bo.target && operand == bo.operand
 						&& Arrays.equals(operands, bo.operands)
 						&& type.equals(bo.type);
 			}
 			return false;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents the set of bytcodes which take two register operands and
 	 * perform a comparison of their values.
@@ -975,7 +980,7 @@ public abstract class Code {
 						&& type.equals(bo.type);
 			}
 			return false;
-		}		
+		}
 	}
 
 	// ===============================================================
@@ -1095,7 +1100,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return bop + " %" + target + " = % " + leftOperand + ", %" + rightOperand + " : " + type; 			
+			return bop + " %" + target + " = % " + leftOperand + ", %"
+					+ rightOperand + " : " + type;
 		}
 	}
 
@@ -1149,7 +1155,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "convert %" + target + " = % " + operand + " " + result + " : " + type; 			
+			return "convert %" + target + " = % " + operand + " " + result
+					+ " : " + type;
 		}
 	}
 
@@ -1162,11 +1169,11 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Const extends AbstractAssignable {
-		public final Value constant;		
+		public final Value constant;
 
 		private Const(int target, Value constant) {
 			super(target);
-			this.constant = constant;			
+			this.constant = constant;
 		}
 
 		@Override
@@ -1226,7 +1233,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "assign %" + target + " = %" + operand + " " + " : " + type; 			
+			return "assign %" + target + " = %" + operand + " " + " : " + type;
 		}
 	}
 
@@ -1256,7 +1263,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "debug %" + operand + " " + " : " + type; 			
+			return "debug %" + operand + " " + " : " + type;
 		}
 	}
 
@@ -1339,6 +1346,57 @@ public abstract class Code {
 
 		public String toString() {
 			return "assert" + op + " %" + leftOperand + ", %" + rightOperand
+					+ " \"" + msg + "\"" + " : " + type;
+		}
+	}
+
+	/**
+	 * Reads two operand registers, compares their values and raises an
+	 * assertion failure with the given message is raised if comparison is
+	 * false. Whilst this is very similar to an assert statement, it causes a
+	 * slightly different interaction with the type checker and/or theorem
+	 * prover. More specifically, they will not attempt to show the condition is
+	 * true and, instead, will simply assume it is (and leave an appropriate
+	 * runtime check). This is useful for override these processes in situations
+	 * where they are not smart enough to prove something is true.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Assume extends AbstractBinaryOp<Type> {
+		public final COp op;
+		public final String msg;
+
+		private Assume(Type type, int leftOperand, int rightOperand, COp cop,
+				String msg) {
+			super(type, leftOperand, rightOperand);
+			if (cop == null) {
+				throw new IllegalArgumentException(
+						"Assume op argument cannot be null");
+			}
+			this.op = cop;
+			this.msg = msg;
+		}
+
+		@Override
+		public Code clone(int nLeftOperand, int nRightOperand) {
+			return Code.Assert(type, nLeftOperand, nRightOperand, op, msg);
+		}
+
+		public int hashCode() {
+			return op.hashCode() + msg.hashCode() + super.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Assume) {
+				Assume ig = (Assume) o;
+				return op == ig.op && msg.equals(ig.msg) && super.equals(ig);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "assume" + op + " %" + leftOperand + ", %" + rightOperand
 					+ " \"" + msg + "\"" + " : " + type;
 		}
 	}
@@ -1509,10 +1567,10 @@ public abstract class Code {
 		public String codeString() {
 			return null;
 		}
-		
+
 		public String toString() {
 			return "if" + op + " %" + leftOperand + ", %" + rightOperand
-					+ " goto " + target + " : " + type; 
+					+ " goto " + target + " : " + type;
 		}
 	}
 
@@ -1680,9 +1738,9 @@ public abstract class Code {
 
 		public String toString() {
 			return "ifis" + " %" + leftOperand + ", " + rightOperand + " goto "
-					+ target + " : " + type; 
+					+ target + " : " + type;
 		}
-		
+
 	}
 
 	/**
@@ -1700,20 +1758,21 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectInvoke extends AbstractSplitNaryAssignable<Type.FunctionOrMethod> {
-		
+	public static final class IndirectInvoke extends
+			AbstractSplitNaryAssignable<Type.FunctionOrMethod> {
+
 		private IndirectInvoke(Type.FunctionOrMethod type, int target,
 				int operand, int[] operands) {
-			super(type,target,operand,operands);				
+			super(type, target, operand, operands);
 		}
 
 		@Override
 		public Code clone(int nTarget, int nOperand, int[] nOperands) {
-			return IndirectInvoke(type, nTarget, nOperand, nOperands);			
+			return IndirectInvoke(type, nTarget, nOperand, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			return o instanceof IndirectInvoke && super.equals(o);						
+			return o instanceof IndirectInvoke && super.equals(o);
 		}
 
 		public String toString() {
@@ -1742,24 +1801,25 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectSend extends AbstractSplitNaryAssignable<Type.Message> {
+	public static final class IndirectSend extends
+			AbstractSplitNaryAssignable<Type.Message> {
 		public final boolean synchronous;
-		
+
 		private IndirectSend(Type.Message type, boolean synchronous,
 				int target, int operand, int[] operands) {
-			super(type,target,operand,operands);					
+			super(type, target, operand, operands);
 			this.synchronous = synchronous;
 		}
 
 		@Override
 		public Code clone(int nTarget, int nOperand, int[] nOperands) {
-			return IndirectSend(type, nTarget, nOperand, nOperands, synchronous);			
+			return IndirectSend(type, nTarget, nOperand, nOperands, synchronous);
 		}
 
 		public boolean equals(Object o) {
-			return o instanceof IndirectSend && super.equals(o);						
+			return o instanceof IndirectSend && super.equals(o);
 		}
-		
+
 		public String toString() {
 			if (synchronous) {
 				if (target != Code.NULL_REG) {
@@ -1849,11 +1909,11 @@ public abstract class Code {
 
 		public String toString() {
 			if (target != Code.NULL_REG) {
-				return "invoke %" + target + " " + toString(operands)
-						+ " " + name + " : " + type;
+				return "invoke %" + target + " " + toString(operands) + " "
+						+ name + " : " + type;
 			} else {
-				return "invoke %" + toString(operands)
-						+ " " + name + " : " + type;				
+				return "invoke %" + toString(operands) + " " + name + " : "
+						+ type;
 			}
 		}
 	}
@@ -1914,7 +1974,6 @@ public abstract class Code {
 		}
 	}
 
-	
 	/**
 	 * Reads the (effective) list values from two operand registers, appends
 	 * them and write the result back to a target register.
@@ -1955,8 +2014,9 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = % " + leftOperand + ", %" + rightOperand + " : " + type; 			
-		}		
+			return operation + " %" + target + " = % " + leftOperand + ", %"
+					+ rightOperand + " : " + type;
+		}
 	}
 
 	/**
@@ -1996,15 +2056,16 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class SubList extends AbstractNaryAssignable<Type.EffectiveList> {
-		
+	public static final class SubList extends
+			AbstractNaryAssignable<Type.EffectiveList> {
+
 		private SubList(Type.EffectiveList type, int target, int[] operands) {
-			super(type,target,operands);					
+			super(type, target, operands);
 		}
 
 		@Override
 		public final Code clone(int nTarget, int[] nOperands) {
-			return Code.SubList(type, nTarget, nOperands);			
+			return Code.SubList(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2026,7 +2087,8 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndexOf extends AbstractBinaryAssignable<Type.EffectiveMap> {
+	public static final class IndexOf extends
+			AbstractBinaryAssignable<Type.EffectiveMap> {
 		private IndexOf(Type.EffectiveMap type, int target, int sourceOperand,
 				int keyOperand) {
 			super(type, target, sourceOperand, keyOperand);
@@ -2075,10 +2137,10 @@ public abstract class Code {
 			}
 			return false;
 		}
-		
+
 		public String toString() {
 			return "move %" + target + " = % " + operand + " : " + type;
-		}		
+		}
 	}
 
 	public static class Loop extends Code {
@@ -2160,7 +2222,8 @@ public abstract class Code {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return ForAll(type, sourceOperand, indexOperand, modifiedOperands, nlabel);
+				return ForAll(type, sourceOperand, indexOperand,
+						modifiedOperands, nlabel);
 			}
 		}
 
@@ -2204,9 +2267,9 @@ public abstract class Code {
 			return false;
 		}
 
-		public String toString() {			
-			return "forall %" + indexOperand + " in %" + sourceOperand
-					+ " " + toString(modifiedOperands) + " : " + type;
+		public String toString() {
+			return "forall %" + indexOperand + " in %" + sourceOperand + " "
+					+ toString(modifiedOperands) + " : " + type;
 		}
 	}
 
@@ -2238,7 +2301,7 @@ public abstract class Code {
 	 */
 	public static final class DictLVal extends LVal {
 		public final int keyOperand;
-		
+
 		public DictLVal(Type t, int keyOperand) {
 			super(t);
 			if (!(t instanceof Type.EffectiveDictionary)) {
@@ -2260,7 +2323,7 @@ public abstract class Code {
 	 */
 	public static final class ListLVal extends LVal {
 		public final int indexOperand;
-		
+
 		public ListLVal(Type t, int indexOperand) {
 			super(t);
 			if (!(t instanceof Type.EffectiveList)) {
@@ -2301,7 +2364,7 @@ public abstract class Code {
 	 */
 	public static final class StringLVal extends LVal {
 		public final int indexOperand;
-		
+
 		public StringLVal(int indexOperand) {
 			super(Type.T_STRING);
 			this.indexOperand = indexOperand;
@@ -2339,7 +2402,8 @@ public abstract class Code {
 		private int operandIndex;
 		private int index;
 
-		public UpdateIterator(Type type, int level, int[] operands, ArrayList<String> fields) {
+		public UpdateIterator(Type type, int level, int[] operands,
+				ArrayList<String> fields) {
 			this.fields = fields;
 			this.iter = type;
 			this.index = level;
@@ -2359,11 +2423,11 @@ public abstract class Code {
 			} else if (iter instanceof Type.EffectiveList) {
 				Type.EffectiveList list = (Type.EffectiveList) iter;
 				iter = list.element();
-				return new ListLVal(raw,operands[operandIndex++]);
+				return new ListLVal(raw, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveDictionary) {
 				Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter;
 				iter = dict.value();
-				return new DictLVal(raw,operands[operandIndex++]);
+				return new DictLVal(raw, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
 				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 				String field = fields.get(fieldIndex++);
@@ -2403,29 +2467,30 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Update extends AbstractSplitNaryAssignable<Type> implements Iterable<LVal> {		
-		public final Type afterType;		
+	public static final class Update extends AbstractSplitNaryAssignable<Type>
+			implements Iterable<LVal> {
+		public final Type afterType;
 		public final ArrayList<String> fields;
 
 		private Update(Type beforeType, int target, int operand,
 				int[] operands, Type afterType, Collection<String> fields) {
-			super(beforeType,target,operand,operands);
+			super(beforeType, target, operand, operands);
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
-			}			
-			this.afterType = afterType;			
+			}
+			this.afterType = afterType;
 			this.fields = new ArrayList<String>(fields);
 		}
 
 		public int level() {
 			int base = 0;
-			if(type instanceof Type.Reference) {
+			if (type instanceof Type.Reference) {
 				base++;
 			}
 			return base + fields.size() + operands.length;
 		}
-		
+
 		public Iterator<LVal> iterator() {
 			return new UpdateIterator(afterType, level(), operands, fields);
 		}
@@ -2465,32 +2530,32 @@ public abstract class Code {
 
 		@Override
 		public final Code clone(int nTarget, int nOperand, int[] nOperands) {
-			return Code.Update(type,nTarget, nOperand,nOperands,afterType,fields);			
+			return Code.Update(type, nTarget, nOperand, nOperands, afterType,
+					fields);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Update) {
 				Update i = (Update) o;
-				return super.equals(o)
-						&& afterType.equals(i.afterType)
+				return super.equals(o) && afterType.equals(i.afterType)
 						&& fields.equals(i.fields);
 			}
 			return false;
 		}
 
 		public String toString() {
-			String r = "%" + target;			
+			String r = "%" + target;
 			for (LVal lv : this) {
-				if(lv instanceof ListLVal) {
+				if (lv instanceof ListLVal) {
 					ListLVal l = (ListLVal) lv;
 					r = r + "[%" + l.indexOperand + "]";
-				} else if(lv instanceof StringLVal) {
+				} else if (lv instanceof StringLVal) {
 					StringLVal l = (StringLVal) lv;
 					r = r + "[%" + l.indexOperand + "]";
-				} else if(lv instanceof DictLVal) {
+				} else if (lv instanceof DictLVal) {
 					DictLVal l = (DictLVal) lv;
 					r = r + "[%" + l.keyOperand + "]";
-				} else if(lv instanceof RecordLVal) {
+				} else if (lv instanceof RecordLVal) {
 					RecordLVal l = (RecordLVal) lv;
 					r = r + "." + l.field;
 				} else {
@@ -2506,15 +2571,19 @@ public abstract class Code {
 	/**
 	 * Constructs a dictionary value from zero or more key-value pairs on the
 	 * stack. For each pair, the key must occur directly before the value on the
-	 * stack. For example, consider the following Whiley function <code>f()</code>:
+	 * stack. For example, consider the following Whiley function
+	 * <code>f()</code>:
+	 * 
 	 * <pre>
 	 * {int=>string} f():
-     *     return {1=>"Hello",2=>"World"}
-     * </pre>
-     * This could be compiled into the following WYIL code using this bytecode:
+	 *     return {1=>"Hello",2=>"World"}
+	 * </pre>
+	 * 
+	 * This could be compiled into the following WYIL code using this bytecode:
+	 * 
 	 * <pre>
 	 * {int->string} f():
-     * body:
+	 * body:
 	 *   const %1 = 1                : int                           
 	 *   const %2 = "Hello"          : string                  
 	 *   const %3 = 2                : int                           
@@ -2527,7 +2596,8 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Dict extends AbstractNaryAssignable<Type.Dictionary> {
+	public static final class Dict extends
+			AbstractNaryAssignable<Type.Dictionary> {
 
 		private Dict(Type.Dictionary type, int target, int[] operands) {
 			super(type, target, operands);
@@ -2565,9 +2635,10 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Record extends AbstractNaryAssignable<Type.Record> {
+	public static final class Record extends
+			AbstractNaryAssignable<Type.Record> {
 		private Record(Type.Record type, int target, int[] operands) {
-			super(type,target, operands);
+			super(type, target, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
@@ -2606,9 +2677,9 @@ public abstract class Code {
 	public static final class Tuple extends AbstractNaryAssignable<Type.Tuple> {
 
 		private Tuple(Type.Tuple type, int target, int[] operands) {
-			super(type,target,operands);
+			super(type, target, operands);
 		}
-		
+
 		protected Code clone(int nTarget, int[] nOperands) {
 			return Code.Tuple(type, nTarget, nOperands);
 		}
@@ -2622,7 +2693,7 @@ public abstract class Code {
 
 		public String toString() {
 			return "tuple %" + target + " " + toString(operands) + " : " + type;
-		}		
+		}
 	}
 
 	/**
@@ -2644,13 +2715,13 @@ public abstract class Code {
 	public static final class Set extends AbstractNaryAssignable<Type.Set> {
 
 		private Set(Type.Set type, int target, int[] operands) {
-			super(type,target,operands);
+			super(type, target, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
 			return Code.Set(type, nTarget, nOperands);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Set) {
 				return super.equals(o);
@@ -2683,12 +2754,12 @@ public abstract class Code {
 	public static final class List extends AbstractNaryAssignable<Type.List> {
 
 		private List(Type.List type, int target, int[] operands) {
-			super(type,target,operands);
+			super(type, target, operands);
 		}
-		
+
 		protected Code clone(int nTarget, int[] nOperands) {
 			return Code.List(type, nTarget, nOperands);
-		}		
+		}
 
 		public boolean equals(Object o) {
 			if (o instanceof List) {
@@ -2719,22 +2790,22 @@ public abstract class Code {
 	}
 
 	public static final class Return extends AbstractUnaryOp<Type> {
-		
+
 		private Return(Type type, int operand) {
-			super(type,operand);
+			super(type, operand);
 			if (type == Type.T_VOID && operand != NULL_REG) {
 				throw new IllegalArgumentException(
 						"Return with void type cannot have target register.");
 			} else if (type != Type.T_VOID && operand == NULL_REG) {
 				throw new IllegalArgumentException(
 						"Return with non-void type must have target register.");
-			}			
+			}
 		}
-		
+
 		public Code clone(int nOperand) {
-			return new Return(type,nOperand);			
+			return new Return(type, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Return) {
 				return super.equals(o);
@@ -2743,7 +2814,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			if(operand != Code.NULL_REG) {
+			if (operand != Code.NULL_REG) {
 				return "return %" + operand + " : " + type;
 			} else {
 				return "return";
@@ -2794,7 +2865,8 @@ public abstract class Code {
 		}
 	}
 
-	public static final class SetOp extends AbstractBinaryAssignable<Type.EffectiveSet> {
+	public static final class SetOp extends
+			AbstractBinaryAssignable<Type.EffectiveSet> {
 		public final SetOperation operation;
 
 		private SetOp(Type.EffectiveSet type, int target, int leftOperand,
@@ -2808,7 +2880,8 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.SetOp(type, nTarget, nLeftOperand, nRightOperand, operation);
+			return Code.SetOp(type, nTarget, nLeftOperand, nRightOperand,
+					operation);
 		}
 
 		public int hashCode() {
@@ -2826,7 +2899,7 @@ public abstract class Code {
 		public String toString() {
 			return operation + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
-		}		
+		}
 	}
 
 	public enum StringOperation {
@@ -2846,12 +2919,14 @@ public abstract class Code {
 			}
 		}
 	}
-	
-	public static final class StringOp extends AbstractBinaryAssignable<Type.Strung> {
+
+	public static final class StringOp extends
+			AbstractBinaryAssignable<Type.Strung> {
 		public final StringOperation operation;
 
-		private StringOp(int target, int leftOperand, int rightOperand, StringOperation operation) {
-			super(Type.T_STRING,target,leftOperand,rightOperand);
+		private StringOp(int target, int leftOperand, int rightOperand,
+				StringOperation operation) {
+			super(Type.T_STRING, target, leftOperand, rightOperand);
 			if (operation == null) {
 				throw new IllegalArgumentException(
 						"StringBinOp operation cannot be null");
@@ -2860,9 +2935,10 @@ public abstract class Code {
 		}
 
 		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.StringOp(nTarget,nLeftOperand,nRightOperand,operation);
+			return Code.StringOp(nTarget, nLeftOperand, nRightOperand,
+					operation);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof StringOp) {
 				StringOp setop = (StringOp) o;
@@ -2876,28 +2952,28 @@ public abstract class Code {
 					+ rightOperand + " : " + type;
 		}
 	}
-	
+
 	/**
-	 * Reads the string value from a source operand register, and the
-	 * integer values from two index operand registers, computes the substring and
+	 * Reads the string value from a source operand register, and the integer
+	 * values from two index operand registers, computes the substring and
 	 * writes the result back to a target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class SubString extends AbstractNaryAssignable {		
-		
+	public static final class SubString extends AbstractNaryAssignable {
+
 		private SubString(int target, int[] operands) {
-			super(Type.T_STRING,target,operands);			
+			super(Type.T_STRING, target, operands);
 		}
 
 		@Override
 		public final Code clone(int nTarget, int[] nOperands) {
-			return Code.SubString(nTarget, nOperands);			
+			return Code.SubString(nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			return o instanceof SubString && super.equals(o);				
+			return o instanceof SubString && super.equals(o);
 		}
 
 		public String toString() {
@@ -2947,10 +3023,9 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if (o instanceof Switch) {
 				Switch ig = (Switch) o;
-				return operand == ig.operand 
+				return operand == ig.operand
 						&& defaultTarget.equals(ig.defaultTarget)
-						&& branches.equals(ig.branches)
-						&& type.equals(ig.type);
+						&& branches.equals(ig.branches) && type.equals(ig.type);
 			}
 			return false;
 		}
@@ -2968,45 +3043,44 @@ public abstract class Code {
 			table += ", *->" + defaultTarget;
 			return "switch " + table;
 		}
-		
+
 		@Override
 		public void slots(java.util.Set<Integer> slots) {
 			slots.add(operand);
 		}
-		
+
 		@Override
-		public Code remap(Map<Integer,Integer> binding) {
+		public Code remap(Map<Integer, Integer> binding) {
 			Integer nOperand = binding.get(operand);
-			if(nOperand != null) {
-				return new Return(type,nOperand);
+			if (nOperand != null) {
+				return new Return(type, nOperand);
 			}
 			return this;
 		}
-		
+
 	}
 
 	public static final class Send extends AbstractNaryAssignable<Type.Message> {
 		public final boolean synchronous;
 		public final NameID name;
-		
-		private Send(Type.Message type, int target, 
-				int[] operands, NameID name, boolean synchronous) {
-			super(type,target,operands);
+
+		private Send(Type.Message type, int target, int[] operands,
+				NameID name, boolean synchronous) {
+			super(type, target, operands);
 			this.name = name;
 			this.synchronous = synchronous;
 		}
-		
+
 		@Override
 		public Code clone(int nTarget, int[] nOperands) {
-			return Send(type, nTarget, nOperands, name, synchronous);			
+			return Send(type, nTarget, nOperands, name, synchronous);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Send) {
 				Send i = (Send) o;
-				return synchronous == i.synchronous
-						&& type.equals(i.type) && name.equals(i.name)
-						&& super.equals(o);
+				return synchronous == i.synchronous && type.equals(i.type)
+						&& name.equals(i.name) && super.equals(o);
 			}
 			return false;
 		}
@@ -3021,22 +3095,22 @@ public abstract class Code {
 				}
 			} else {
 				return "asend" + toString(operands) + " : " + type;
-			}			
+			}
 		}
 	}
 
-	public static final class Throw extends AbstractUnaryOp<Type> {		
+	public static final class Throw extends AbstractUnaryOp<Type> {
 		private Throw(Type type, int operand) {
-			super(type,operand);
+			super(type, operand);
 		}
-		
+
 		@Override
 		public Code clone(int nOperand) {
-			return Code.Throw(type,nOperand);			
+			return Code.Throw(type, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
-			if (o instanceof Throw) {				
+			if (o instanceof Throw) {
 				return super.equals(o);
 			}
 			return false;
@@ -3046,13 +3120,14 @@ public abstract class Code {
 			return "throw %" + operand + " : " + type;
 		}
 	}
-	
+
 	public static final class TryCatch extends Code {
 		public final int operand;
 		public final String label;
 		public final ArrayList<Pair<Type, String>> catches;
 
-		TryCatch(int operand, String label, Collection<Pair<Type, String>> catches) {
+		TryCatch(int operand, String label,
+				Collection<Pair<Type, String>> catches) {
 			this.operand = operand;
 			this.catches = new ArrayList<Pair<Type, String>>(catches);
 			this.label = label;
@@ -3064,14 +3139,14 @@ public abstract class Code {
 		}
 
 		@Override
-		public Code remap(Map<Integer,Integer> binding) {
+		public Code remap(Map<Integer, Integer> binding) {
 			Integer nOperand = binding.get(operand);
-			if(nOperand != null) {
-				return Code.TryCatch(nOperand,label,catches);
+			if (nOperand != null) {
+				return Code.TryCatch(nOperand, label, catches);
 			}
 			return this;
 		}
-		
+
 		public TryCatch relabel(Map<String, String> labels) {
 			ArrayList<Pair<Type, String>> nbranches = new ArrayList();
 			for (Pair<Type, String> p : catches) {
@@ -3165,13 +3240,13 @@ public abstract class Code {
 	public static final class Negate extends AbstractUnaryAssignable<Type> {
 
 		private Negate(Type type, int target, int operand) {
-			super(type,target,operand);
+			super(type, target, operand);
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
 			return Code.Negate(type, nTarget, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Negate) {
 				return super.equals(o);
@@ -3199,15 +3274,15 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Invert extends AbstractUnaryAssignable<Type> {
-		
+
 		private Invert(Type type, int target, int operand) {
-			super(type,target,operand);
+			super(type, target, operand);
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
 			return Code.Invert(type, nTarget, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Invert) {
 				return super.equals(o);
@@ -3219,7 +3294,7 @@ public abstract class Code {
 			return "invert %" + target + " = % " + operand + " : " + type;
 		}
 	}
-	
+
 	/**
 	 * Instantiate a new object from the value in a given operand register, and
 	 * write the result to a given target register.
@@ -3227,16 +3302,17 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class New extends AbstractUnaryAssignable<Type.Reference> {
-		
+	public static final class New extends
+			AbstractUnaryAssignable<Type.Reference> {
+
 		private New(Type.Reference type, int target, int operand) {
-			super(type,target,operand);
+			super(type, target, operand);
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
 			return Code.New(type, nTarget, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof New) {
 				return super.equals(o);
@@ -3248,7 +3324,7 @@ public abstract class Code {
 			return "new %" + target + " = % " + operand + " : " + type;
 		}
 	}
-	
+
 	public static final class TupleLoad extends
 			AbstractUnaryAssignable<Type.EffectiveTuple> {
 		public final int index;
@@ -3284,7 +3360,8 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Dereference extends AbstractUnaryAssignable<Type.Reference> {
+	public static final class Dereference extends
+			AbstractUnaryAssignable<Type.Reference> {
 
 		private Dereference(Type.Reference type, int target, int operand) {
 			super(type, target, operand);
@@ -3330,7 +3407,7 @@ public abstract class Code {
 			}
 			return false;
 		}
-		
+
 		public String toString() {
 			return "void " + toString(operands);
 		}
@@ -3338,15 +3415,15 @@ public abstract class Code {
 
 	private static String toString(int[] operands) {
 		String r = "(";
-		for (int i=0;i!=operands.length;++i) {
-			if(i!=0) {
+		for (int i = 0; i != operands.length; ++i) {
+			if (i != 0) {
 				r = r + ", ";
 			}
 			r = r + "%" + operands[i];
 		}
 		return r + ")";
 	}
-	
+
 	private static int[] toIntArray(Collection<Integer> operands) {
 		int[] ops = new int[operands.size()];
 		int i = 0;
