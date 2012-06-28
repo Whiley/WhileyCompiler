@@ -35,6 +35,7 @@ public class RuntimeValidTests extends TestHarness {
 
  @Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }
  @Test public void Access_Valid_2_RuntimeTest() { runTest("Access_Valid_2"); }
+ @Test public void Assert_Valid_1_RuntimeTest() { runTest("Assert_Valid_1"); }
  @Test public void Assume_Valid_1_RuntimeTest() { runTest("Assume_Valid_1"); }
  @Test public void BoolAssign_Valid_1_RuntimeTest() { runTest("BoolAssign_Valid_1"); }
  @Test public void BoolAssign_Valid_2_RuntimeTest() { runTest("BoolAssign_Valid_2"); }
