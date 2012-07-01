@@ -478,8 +478,8 @@ public class ClassFileBuilder {
 				 translate((Code.Set)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Tuple) {
 				 translate((Code.Tuple)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Negate) {
-				 translate((Code.Negate)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.Neg) {
+				 translate((Code.Neg)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Dereference) {
 				 translate((Code.Dereference)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Return) {
@@ -1412,7 +1412,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 	
-	public void translate(Code.Negate c, int freeSlot,
+	public void translate(Code.Neg c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {										
 		JvmType type = convertType(c.type);
 		JvmType.Function ftype = new JvmType.Function(type);

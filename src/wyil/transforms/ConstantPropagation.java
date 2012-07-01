@@ -195,8 +195,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Code.Set)code,entry,environment);
 		} else if(code instanceof Code.Tuple) {
 			infer(index,(Code.Tuple)code,entry,environment);
-		} else if(code instanceof Code.Negate) {
-			infer(index,(Code.Negate)code,entry,environment);
+		} else if(code instanceof Code.Neg) {
+			infer(index,(Code.Neg)code,entry,environment);
 		} else if(code instanceof Code.Dereference) {
 			infer(index,(Code.Dereference)code,entry,environment);
 		} else if(code instanceof Code.Return) {
@@ -815,7 +815,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target,result);
 	}
 	
-	public void infer(int index, Code.Negate code, Block.Entry entry,
+	public void infer(int index, Code.Neg code, Block.Entry entry,
 			Env environment) {
 		Value val = environment.get(code.operand);
 		Value result = null;

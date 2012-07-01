@@ -544,8 +544,8 @@ public abstract class Code {
 		return get(new TupleLoad(type, target, operand, index));
 	}
 
-	public static Negate Negate(Type type, int target, int operand) {
-		return get(new Negate(type, target, operand));
+	public static Neg Neg(Type type, int target, int operand) {
+		return get(new Neg(type, target, operand));
 	}
 
 	public static New New(Type.Reference type, int target, int operand) {
@@ -1858,8 +1858,25 @@ public abstract class Code {
 	}
 
 	/**
-	 * Represents the boolean not expression which reads a boolean operand,
-	 * inverts its value and writes back to a target regiseter.
+	 * Read a boolean value from the operand register, inverts it and writes the
+	 * result to the target register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * bool f(bool x):
+	 *     return !x
+	 * </pre>
+	 * 
+	 * translates into the following WYIL:
+	 * 
+	 * <pre>
+	 * bool f(bool x):
+	 * body:                    
+	 *     not %0 = %0     : int                      
+	 *     return %0       : int
+	 * </pre>
+	 * 
+	 * This simply reads the parameter <code>x</code> stored in register
+	 * <code>%0</code>, inverts it and then returns the inverted value.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2146,7 +2163,7 @@ public abstract class Code {
 
 	/**
 	 * Moves the contents of a given operand register into a given target
-	 * register. This is similar to a <code>copy</code> bytecode, except that
+	 * register. This is similar to an <code>assign</code> bytecode, except that
 	 * the register's contents are "voided" afterwards. This guarantees that the
 	 * register is no longer live, which is useful for determining the live
 	 * ranges of register in a function or method.
@@ -2183,7 +2200,7 @@ public abstract class Code {
 	 * <pre>
 	 * int f():
 	 * body: 
-	 *     const %0 = 0 : int                      
+	 *     const %0 = 0             : int                      
 	 *     loop (%0)                                                    
 	 *         const %1 = 10        : int                     
 	 *         ifge %0, %1 goto blklab0 : int                             
@@ -2193,9 +2210,16 @@ public abstract class Code {
 	 *     return %0                : int
 	 * </pre>
 	 * 
+	 * <p>
 	 * Here, we see a loop which increments an accumulator register
 	 * <code>%0</code> until it reaches <code>10</code>, and then exits the loop
 	 * block.
+	 * </p>
+	 * <p>
+	 * The <i>modified operands</i> of a loop bytecode (shown in brackets
+	 * alongside the bytecode) indicate those operands which are modified at
+	 * some point within the loop.
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -3297,24 +3321,42 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops a number (int or real) from the stack, negates it and pushes the
-	 * result back on.
+	 * Read a number (int or real) from the operand register, negates it and
+	 * writes the result to the target register. For example, the following
+	 * Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     return -x
+	 * </pre>
+	 * 
+	 * translates into the following WYIL:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body:                    
+	 *     neg %0 = %0     : int                      
+	 *     return %0       : int
+	 * </pre>
+	 * 
+	 * This simply reads the parameter <code>x</code> stored in register
+	 * <code>%0</code>, negates it and then returns the negated value.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Negate extends AbstractUnaryAssignable<Type> {
+	public static final class Neg extends AbstractUnaryAssignable<Type> {
 
-		private Negate(Type type, int target, int operand) {
+		private Neg(Type type, int target, int operand) {
 			super(type, target, operand);
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.Negate(type, nTarget, nOperand);
+			return Code.Neg(type, nTarget, nOperand);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Negate) {
+			if (o instanceof Neg) {
 				return super.equals(o);
 			}
 			return false;

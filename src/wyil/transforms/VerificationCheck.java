@@ -442,8 +442,8 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Code.Set)code,entry,constraint,environment);
 		} else if(code instanceof Code.Tuple) {
 			constraint = transform((Code.Tuple)code,entry,constraint,environment);
-		} else if(code instanceof Code.Negate) {
-			constraint = transform((Code.Negate)code,entry,constraint,environment);
+		} else if(code instanceof Code.Neg) {
+			constraint = transform((Code.Neg)code,entry,constraint,environment);
 		} else if(code instanceof Code.Dereference) {
 			constraint = transform((Code.Dereference)code,entry,constraint,environment);
 		} else if(code instanceof Code.Nop) {
@@ -706,7 +706,7 @@ public class VerificationCheck implements Transform {
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.Negate code, Block.Entry entry,
+	protected WFormula transform(Code.Neg code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		WExpr expr = operand(code.operand, environment);
 		WExpr result = WNumerics.negate(expr);

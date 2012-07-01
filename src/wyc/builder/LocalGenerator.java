@@ -668,7 +668,7 @@ public final class LocalGenerator {
 		Block blk = generate(v.mhs,  target, freeRegister, environment);	
 		switch (v.op) {
 		case NEG:
-			blk.append(Code.Negate(v.result().raw(), target, target), attributes(v));
+			blk.append(Code.Neg(v.result().raw(), target, target), attributes(v));
 			break;
 		case INVERT:
 			blk.append(Code.Invert(v.result().raw(), target, target), attributes(v));
