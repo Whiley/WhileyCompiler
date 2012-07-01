@@ -151,7 +151,7 @@ public abstract class Code {
 			COp cop, String message) {
 		return get(new Assume(type, leftOperand, rightOperand, cop, message));
 	}
-	
+
 	public static BinOp BinOp(Type type, int target, int leftOperand,
 			int rightOperand, BOp op) {
 		return get(new BinOp(type, target, leftOperand, rightOperand, op));
@@ -1321,8 +1321,8 @@ public abstract class Code {
 		public final COp op;
 		public final String msg;
 
-		private AssertOrAssume(Type type, int leftOperand, int rightOperand, COp cop,
-				String msg) {
+		private AssertOrAssume(Type type, int leftOperand, int rightOperand,
+				COp cop, String msg) {
 			super(type, leftOperand, rightOperand);
 			if (cop == null) {
 				throw new IllegalArgumentException(
@@ -1330,9 +1330,9 @@ public abstract class Code {
 			}
 			this.op = cop;
 			this.msg = msg;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Reads two operand registers, compares their values and raises an
 	 * assertion failure with the given message if comparison is false. For
@@ -1361,7 +1361,7 @@ public abstract class Code {
 
 		private Assert(Type type, int leftOperand, int rightOperand, COp cop,
 				String msg) {
-			super(type, leftOperand, rightOperand, cop, msg);			
+			super(type, leftOperand, rightOperand, cop, msg);
 		}
 
 		@Override
@@ -1400,7 +1400,7 @@ public abstract class Code {
 
 		private Assume(Type type, int leftOperand, int rightOperand, COp cop,
 				String msg) {
-			super(type, leftOperand, rightOperand, cop, msg);			
+			super(type, leftOperand, rightOperand, cop, msg);
 		}
 
 		@Override
@@ -2701,17 +2701,28 @@ public abstract class Code {
 	}
 
 	/**
-	 * Constructs a new record value from zero or more values on the stack. Each
-	 * value is associated with a field name, and will be popped from the stack
-	 * in the reverse order. For example:
+	 * Constructs a new record value from the values of zero or more operand
+	 * register, each of which is associated with a field name. The new record
+	 * value is then written into the target register. For example, the
+	 * following Whiley code:
 	 * 
 	 * <pre>
-	 *   const 1 : int                           
-	 *   const 2 : int                           
-	 *   newrec : {int x,int y}
+	 * define Point as {real x, real y}
+	 * 
+	 * Point f(real x, real y):
+	 *     return {x: x, y: x}
 	 * </pre>
 	 * 
-	 * Pushes the record value <code>{x:1,y:2}</code> onto the stack.
+	 * translates into the following WYIL:
+	 * 
+	 * <pre>
+	 * {real x,real y} f(real x, real y):
+	 * body: 
+	 *     assign %3 = %0        : real                  
+	 *     assign %4 = %0        : real                  
+	 *     record %2 (%3, %4)    : {real x,real y}    
+	 *     return %2             : {real x,real y}
+	 * </pre>
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2740,17 +2751,28 @@ public abstract class Code {
 	}
 
 	/**
-	 * Constructs a new tuple value from two or more values on the stack. Values
-	 * are popped from the stack in the reverse order they occur in the tuple.
-	 * For example:
+	 * Constructs a new tuple value from the values given by zero or more
+	 * operand registers. The new tuple is then written into the target
+	 * register. For example, the following Whiley code:
 	 * 
 	 * <pre>
-	 *   const 1 : int                           
-	 *   const 2 : int                           
-	 *   newtuple #2 : (int,int)
+	 * (int,int) f(int x, int y):
+	 *     return x,y
 	 * </pre>
 	 * 
-	 * Pushes the tuple value <code>(1,2)</code> onto the stack.
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * (int,int) f(int x, int y):
+	 * body: 
+	 *     assign %3 = %0  : int                   
+	 *     assign %4 = %1  : int                   
+	 *     tuple %2 = (%3, %4) : (int,int)         
+	 *     return %2 : (int,int)
+	 * </pre>
+	 * 
+	 * This writes the tuple value generated from <code>(x,y)</code> into
+	 * register <code>%2</code> and returns it.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2773,14 +2795,22 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "tuple %" + target + " " + toString(operands) + " : " + type;
+			return "tuple %" + target + " = " + toString(operands) + " : "
+					+ type;
 		}
 	}
 
 	/**
 	 * Constructs a new set value from the values given by zero or more operand
 	 * registers. The new set is then written into the target register. For
-	 * example:
+	 * example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * {int} f(int x, int y, int z):
+	 *     return {x,y,z}
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
 	 * 
 	 * <pre>
 	 * [int] f(int x, int y, int z):
@@ -2788,7 +2818,7 @@ public abstract class Code {
 	 *    assign %4 = %0        : int                   
 	 *    assign %5 = %1        : int                   
 	 *    assign %6 = %2        : int                   
-	 *    set %3 (%4, %5, %6)  : [int]            
+	 *    set %3 = (%4,%5,%6)   : [int]            
 	 *    return %3             : [int]
 	 * </pre>
 	 * 
@@ -2816,14 +2846,21 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "set %" + target + " " + toString(operands) + " : " + type;
+			return "set %" + target + " = " + toString(operands) + " : " + type;
 		}
 	}
 
 	/**
 	 * Constructs a new list value from the values given by zero or more operand
 	 * registers. The new list is then written into the target register. For
-	 * example:
+	 * example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * [int] f(int x, int y, int z):
+	 *     return [x,y,z]
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
 	 * 
 	 * <pre>
 	 * [int] f(int x, int y, int z):
@@ -2831,7 +2868,7 @@ public abstract class Code {
 	 *    assign %4 = %0        : int                   
 	 *    assign %5 = %1        : int                   
 	 *    assign %6 = %2        : int                   
-	 *    list %3 (%4, %5, %6)  : [int]            
+	 *    list %3 = (%4,%5,%6)  : [int]            
 	 *    return %3             : [int]
 	 * </pre>
 	 * 
@@ -2859,7 +2896,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "list %" + target + " " + toString(operands) + " : " + type;
+			return "list %" + target + " = " + toString(operands) + " : "
+					+ type;
 		}
 	}
 
@@ -2879,6 +2917,32 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Returns from the enclosing function or method, possibly returning a
+	 * value. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     return x + y
+	 * </pre>
+	 * 
+	 * translates into the following WYIL:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     assign %3 = %0  : int                   
+	 *     assign %4 = %1  : int                   
+	 *     add %2 = % 3, %4 : int                  
+	 *     return %2 : int
+	 * </pre>
+	 * 
+	 * Here, the
+	 * <code>return<code> bytecode returns the value of its operand register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Return extends AbstractUnaryOp<Type> {
 
 		private Return(Type type, int operand) {
@@ -3072,6 +3136,49 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Performs a multi-way branch based on the value contained in the operand
+	 * register. A <i>dispatch table</i> is provided which maps individual
+	 * matched values to their destination labels. For example, the following
+	 * Whiley code:
+	 * 
+	 * <pre>
+	 * string f(int x):
+	 *     switch x:
+	 *         case 1:
+	 *             return "ONE"
+	 *         case 2:
+	 *             return "TWO"
+	 *         default:
+	 *             return "OTHER"
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * string f(int x):
+	 * body:              
+	 *     switch %0 1->blklab1, 2->blklab2, *->blklab3
+	 * .blklab1                                
+	 *     const %1 = "ONE" : string               
+	 *     return %1 : string                      
+	 * .blklab2                                
+	 *     const %1 = "TWO" : string               
+	 *     return %1 : string                      
+	 * .blklab3                                
+	 *     const %1 = "OTHER" : string             
+	 *     return %1 : string
+	 * </pre>
+	 * 
+	 * Here, we see how e.g. value <code>1</code> is mapped to the label
+	 * <code>blklab1</code>. Thus, if the operand register <code>%0</code>
+	 * contains value <code>1</code>, then control will be transferred to that
+	 * label. The final mapping <code>*->blklab3</code> covers the default case
+	 * where the value in the operand is not otherwise matched.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Switch extends Code {
 		public final Type type;
 		public final int operand;
@@ -3131,7 +3238,7 @@ public abstract class Code {
 				table += p.first() + "->" + p.second();
 			}
 			table += ", *->" + defaultTarget;
-			return "switch " + table;
+			return "switch %" + operand + " " + table;
 		}
 
 		@Override
@@ -3189,6 +3296,38 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Throws an exception containing the value in the given operand register.
+	 * For example, the following Whiley Code:
+	 * 
+	 * <pre>
+	 * int f(int x) throws string:
+	 *     if x < 0:
+	 *         throw "ERROR"
+	 *     else:
+	 *         return 1
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x) throws string:
+	 * body:             
+	 *     const %1 = 0 : int                      
+	 *     ifge %0, %1 goto blklab0 : int          
+	 *     const %1 = "ERROR" : string             
+	 *     throw %1 : string                       
+	 * .blklab0                                
+	 *     const %1 = 1 : int                      
+	 *     return %1 : int
+	 * </pre>
+	 * 
+	 * Here, we see an exception containing a <code>string</code> value will be
+	 * thrown when the parameter <code>x</code> is negative.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Throw extends AbstractUnaryOp<Type> {
 		private Throw(Type type, int operand) {
 			super(type, operand);
