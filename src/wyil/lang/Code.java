@@ -407,7 +407,7 @@ public abstract class Code {
 		return get(new IfGoto(type, leftOperand, rightOperand, cop, label));
 	}
 
-	public static IfIs IfType(Type type, int leftOperand, Type rightOperand,
+	public static IfIs IfIs(Type type, int leftOperand, Type rightOperand,
 			String label) {
 		return get(new IfIs(type, leftOperand, rightOperand, label));
 	}
@@ -1335,8 +1335,24 @@ public abstract class Code {
 	
 	/**
 	 * Reads two operand registers, compares their values and raises an
-	 * assertion failure with the given message is raised if comparison is
-	 * false.
+	 * assertion failure with the given message if comparison is false. For
+	 * example:
+	 * 
+	 * <pre>
+	 * int f([int] xs):
+	 * body: 
+	 *    assign %2 = %0       : [int]                 
+	 *    const %3 = 0         : int                      
+	 *    const %4 = 0         : int                      
+	 *    assertge %3, %4 "index out of bounds (negative)" : int
+	 *    lengthof %5 = % 2    : [int]               
+	 *    assertlt %4, %5 "index out of bounds (not less than length)" : int
+	 *    indexof %1 = % 2, %3 : [int]            
+	 *    return %1            : int
+	 * </pre>
+	 * 
+	 * Here, we see <code>assert</code> bytecodes being used to check list
+	 * access is not out-of-bounds.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1708,7 +1724,7 @@ public abstract class Code {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return IfType(type, leftOperand, rightOperand, nlabel);
+				return IfIs(type, leftOperand, rightOperand, nlabel);
 			}
 		}
 
@@ -1721,7 +1737,7 @@ public abstract class Code {
 		public Code remap(Map<Integer, Integer> binding) {
 			Integer nLeftOperand = binding.get(leftOperand);
 			if (nLeftOperand != null) {
-				return Code.IfType(type, nLeftOperand, rightOperand, target);
+				return Code.IfIs(type, nLeftOperand, rightOperand, target);
 			}
 			return this;
 		}
@@ -1877,10 +1893,9 @@ public abstract class Code {
 	}
 
 	/**
-	 * Corresponds to a direct function call whose parameters are found on the
-	 * stack in the order corresponding to the function type. If a return value
-	 * is required, this is written to a target register after the function
-	 * call.
+	 * Corresponds to a direct function call whose parameters are provided in
+	 * zero or more operand registers. If a return value is required, this is
+	 * written to a target register after the function call.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1964,24 +1979,37 @@ public abstract class Code {
 	public enum ListOperation {
 		LEFT_APPEND {
 			public String toString() {
-				return "listappend_l";
+				return "lappend";
 			}
 		},
 		RIGHT_APPEND {
 			public String toString() {
-				return "listappend_r";
+				return "rappend";
 			}
 		},
 		APPEND {
 			public String toString() {
-				return "listappend";
+				return "append";
 			}
 		}
 	}
 
 	/**
-	 * Reads the (effective) list values from two operand registers, appends
-	 * them and write the result back to a target register.
+	 * Reads the (effective) list values from two operand registers, performs an
+	 * operation (e.g. append) on them and writes the result back to a target
+	 * register. For example:
+	 * 
+	 * <pre>
+	 * [int] f([int] xs, [int] ys):
+	 * body: 
+	 *    assign %3 = %0       : [int]                 
+	 *    assign %4 = %1       : [int]                 
+	 *    append %2 = %3, %4   : [int]             
+	 *    return %2            : [int]
+	 * </pre>
+	 * 
+	 * This appends two lists together writting the new list into register
+	 * <code>%2</code>.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2019,14 +2047,14 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = % " + leftOperand + ", %"
+			return operation + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
 
 	/**
-	 * Reads an (effective) collection from the operand register, and writes its
-	 * length into the target register.
+	 * Reads an (effective) collection (i.e. a set, list or map) from the
+	 * operand register, and writes its length into the target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2086,8 +2114,8 @@ public abstract class Code {
 	/**
 	 * Reads an effective map from the source (left) operand register, and a key
 	 * value from the key (right) operand register and returns the value
-	 * associated with that key in the map. If the key does not exist, then a
-	 * fault is raised.
+	 * associated with that key in a map or list. If the key does not exist,
+	 * then a fault is raised.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2148,6 +2176,30 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Represents a block of code which loops continuously until e.g. a
+	 * conditional branch is taken out of the block. For example:
+	 * 
+	 * <pre>
+	 * int f():
+	 * body: 
+	 *     const %0 = 0 : int                      
+	 *     loop (%0)                                                    
+	 *         const %1 = 10        : int                     
+	 *         ifge %0, %1 goto blklab0 : int                             
+	 *         const %1 = 1         : int                      
+	 *         add %0 = %0, %1      : int
+	 * .blklab0                                     
+	 *     return %0                : int
+	 * </pre>
+	 * 
+	 * Here, we see a loop which increments an accumulator register
+	 * <code>%0</code> until it reaches <code>10</code>, and then exits the loop
+	 * block.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static class Loop extends Code {
 		public final String target;
 		public final int[] modifiedOperands;
@@ -2203,7 +2255,7 @@ public abstract class Code {
 
 	/**
 	 * Pops a set, list or dictionary from the stack and iterates over every
-	 * element it contains. An register is identified to hold the current value
+	 * element it contains. A register is identified to hold the current value
 	 * being iterated over.
 	 * 
 	 * @author David J. Pearce
@@ -2702,17 +2754,22 @@ public abstract class Code {
 	}
 
 	/**
-	 * Constructs a new set value from zero or more register operands. The new
-	 * set is written to the target register. For example:
+	 * Constructs a new set value from the values given by zero or more operand
+	 * registers. The new set is then written into the target register. For
+	 * example:
 	 * 
 	 * <pre>
-	 *     int %1 = 1                            
-	 *     int %2 = 2                           
-	 *     int %3 = 3                           
-	 *     {int} %4 = newset %1,%2,%3
+	 * [int] f(int x, int y, int z):
+	 * body: 
+	 *    assign %4 = %0        : int                   
+	 *    assign %5 = %1        : int                   
+	 *    assign %6 = %2        : int                   
+	 *    set %3 (%4, %5, %6)  : [int]            
+	 *    return %3             : [int]
 	 * </pre>
 	 * 
-	 * Writes the set value <code>{1,2,3}</code> into register %4.
+	 * Writes the set value given by <code>{x,y,z}</code> into register
+	 * <code>%3</code> and returns it.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2740,18 +2797,22 @@ public abstract class Code {
 	}
 
 	/**
-	 * Constructs a new list value from zero or more values on the stack. The
-	 * values are popped from the stack in the reverse order they will occur in
-	 * the new list. The new list is load onto the stack. For example:
+	 * Constructs a new list value from the values given by zero or more operand
+	 * registers. The new list is then written into the target register. For
+	 * example:
 	 * 
 	 * <pre>
-	 *     const 1 : int                           
-	 *     const 2 : int                           
-	 *     const 3 : int                           
-	 *     newlist #3 : [int]
+	 * [int] f(int x, int y, int z):
+	 * body: 
+	 *    assign %4 = %0        : int                   
+	 *    assign %5 = %1        : int                   
+	 *    assign %6 = %2        : int                   
+	 *    list %3 (%4, %5, %6)  : [int]            
+	 *    return %3             : [int]
 	 * </pre>
 	 * 
-	 * Pushes the list value <code>[1,2,3]</code> onto the stack.
+	 * Writes the list value given by <code>[x,y,z]</code> into register
+	 * <code>%3</code> and returns it.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -3360,7 +3421,7 @@ public abstract class Code {
 
 	/**
 	 * Reads a reference value from the operand register, dereferences it (i.e.
-	 * extracts the value it refers ot) and writes this to the target register.
+	 * extracts the value it refers to) and writes this to the target register.
 	 * 
 	 * @author David J. Pearce
 	 * 

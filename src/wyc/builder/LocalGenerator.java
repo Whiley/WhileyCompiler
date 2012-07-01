@@ -277,7 +277,7 @@ public final class LocalGenerator {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
 			}
 			int slot = environment.get(lhs.var);								
-			blk.append(Code.IfType(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
+			blk.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
@@ -288,7 +288,7 @@ public final class LocalGenerator {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
 			}
 			int slot = environment.get(lhs.var);			
-			blk.append(Code.IfType(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
+			blk.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
@@ -336,7 +336,7 @@ public final class LocalGenerator {
 				// because of limitations with intersection of open records.
 
 				blk.append(
-						Code.IfType(v.srcType.raw(), leftOperand,
+						Code.IfIs(v.srcType.raw(), leftOperand,
 								rhs.type.raw(), nextLabel), attributes(v));
 				blk.append(Code.Goto(exitLabel));
 				blk.append(Code.Label(nextLabel));
@@ -347,7 +347,7 @@ public final class LocalGenerator {
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
-			blk.append(Code.IfType(v.srcType.raw(), leftOperand,
+			blk.append(Code.IfIs(v.srcType.raw(), leftOperand,
 					rhs.type.raw(), target), attributes(v));
 		}
 		return blk;
