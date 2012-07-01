@@ -440,8 +440,8 @@ public class ClassFileBuilder {
 				 translate((Code.Goto)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.IfGoto) {				
 				translateIfGoto((Code.IfGoto) code, entry, freeSlot, bytecodes);
-			} else if(code instanceof Code.IfType) {
-				translate((Code.IfType) code, entry, freeSlot, constants, bytecodes);
+			} else if(code instanceof Code.IfIs) {
+				translate((Code.IfIs) code, entry, freeSlot, constants, bytecodes);
 			} else if(code instanceof Code.IndirectInvoke) {
 				 translate((Code.IndirectInvoke)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.IndirectSend) {
@@ -957,7 +957,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void translate(Code.IfType c, Entry stmt, int freeSlot,
+	public void translate(Code.IfIs c, Entry stmt, int freeSlot,
 			HashMap<Constant,Integer> constants, ArrayList<Bytecode> bytecodes) {						
 		
 		// In this case, we're updating the type of a local variable. To

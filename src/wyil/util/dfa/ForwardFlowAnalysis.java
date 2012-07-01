@@ -134,8 +134,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
-				}  else if (code instanceof Code.IfType) {
-					Code.IfType ifgoto = (Code.IfType) code;
+				}  else if (code instanceof Code.IfIs) {
+					Code.IfIs ifgoto = (Code.IfIs) code;
 					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
@@ -288,7 +288,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(int index, Code.IfType iftype,
+	protected abstract Pair<T, T> propagate(int index, Code.IfIs iftype,
 			Entry entry, T store);
 
 	/**

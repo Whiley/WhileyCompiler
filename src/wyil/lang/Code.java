@@ -407,9 +407,9 @@ public abstract class Code {
 		return get(new IfGoto(type, leftOperand, rightOperand, cop, label));
 	}
 
-	public static IfType IfType(Type type, int leftOperand, Type rightOperand,
+	public static IfIs IfType(Type type, int leftOperand, Type rightOperand,
 			String label) {
-		return get(new IfType(type, leftOperand, rightOperand, label));
+		return get(new IfIs(type, leftOperand, rightOperand, label));
 	}
 
 	public static IndirectSend IndirectSend(Type.Message msg, int target,
@@ -1677,13 +1677,13 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IfType extends Code {
+	public static final class IfIs extends Code {
 		public final Type type;
 		public final String target;
 		public final int leftOperand;
 		public final Type rightOperand;
 
-		private IfType(Type type, int leftOperand, Type rightOperand,
+		private IfIs(Type type, int leftOperand, Type rightOperand,
 				String target) {
 			if (type == null) {
 				throw new IllegalArgumentException(
@@ -1703,7 +1703,7 @@ public abstract class Code {
 			this.rightOperand = rightOperand;
 		}
 
-		public IfType relabel(Map<String, String> labels) {
+		public IfIs relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
 			if (nlabel == null) {
 				return this;
@@ -1732,8 +1732,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof IfType) {
-				IfType ig = (IfType) o;
+			if (o instanceof IfIs) {
+				IfIs ig = (IfIs) o;
 				return leftOperand == ig.leftOperand
 						&& rightOperand.equals(ig.rightOperand)
 						&& target.equals(ig.target) && type.equals(ig.type);

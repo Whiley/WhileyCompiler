@@ -637,7 +637,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	@Override
 	protected Env propagate(int index,
-			Code.IfType code, Entry stmt, Env trueEnv, Env falseEnv) {
+			Code.IfIs code, Entry stmt, Env trueEnv, Env falseEnv) {
 		
 		Env environment = join(trueEnv,falseEnv);
 		

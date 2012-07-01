@@ -95,8 +95,8 @@ public class DeadCodeElimination implements Transform {
 				Code.IfGoto ig = (Code.IfGoto) code;				
 				addTarget(index+1,visited,worklist);
 				addTarget(labelMap.get(ig.target),visited,worklist);				
-			} else if(code instanceof Code.IfType) {								
-				Code.IfType ig = (Code.IfType) code;				
+			} else if(code instanceof Code.IfIs) {								
+				Code.IfIs ig = (Code.IfIs) code;				
 				addTarget(index+1,visited,worklist);
 				addTarget(labelMap.get(ig.target),visited,worklist);				
 			} else if(code instanceof Code.Switch) {

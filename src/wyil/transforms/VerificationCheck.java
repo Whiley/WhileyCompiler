@@ -268,7 +268,7 @@ public class VerificationCheck implements Transform {
 				branches.add(new Branch(targetpc, WFormulas.and(constraint,
 						test), environment, scopes));
 				constraint = WFormulas.and(constraint,test.not());
-			} else if(code instanceof Code.IfType) {
+			} else if(code instanceof Code.IfIs) {
 				// TODO: implement me!
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll forall = (Code.ForAll) code; 

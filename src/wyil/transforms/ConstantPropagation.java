@@ -866,7 +866,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	@Override
 	public Pair<Env, Env> propagate(int index,
-			Code.IfType code, Entry stmt, Env environment) {
+			Code.IfIs code, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
 		Value lhs = environment.get(code.leftOperand);
 		

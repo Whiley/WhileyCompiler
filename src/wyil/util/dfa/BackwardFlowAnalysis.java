@@ -142,8 +142,8 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
 					T trueStore = stores.get(ifgoto.target);					
 					store = propagate(i, ifgoto, stmt, trueStore,store);										
-				} else if (code instanceof Code.IfType) {
-					Code.IfType iftype = (Code.IfType) code;
+				} else if (code instanceof Code.IfIs) {
+					Code.IfIs iftype = (Code.IfIs) code;
 					T trueStore = stores.get(iftype.target);					
 					store = propagate(i, iftype, stmt, trueStore,store);										
 				} else if (code instanceof Code.Switch) {
@@ -266,7 +266,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.IfType iftype, Entry stmt,
+	protected abstract T propagate(int index, Code.IfIs iftype, Entry stmt,
 			T trueStore, T falseStore);
 
 	/**
