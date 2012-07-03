@@ -2665,12 +2665,12 @@ public abstract class Code {
 	 * <pre>
 	 * {int->string} f():
 	 * body:
-	 *   const %1 = 1                // int                           
-	 *   const %2 = "Hello"          // string                  
-	 *   const %3 = 2                // int                           
-	 *   const %4 = "World"          // string                  
-	 *   newmap %0 = (%1,%2,%3,%4)   // {int=>string}
-	 *   return %0                   // {int=>string}
+	 *   const %1 = 1                : int                           
+	 *   const %2 = "Hello"          : string                  
+	 *   const %3 = 2                : int                           
+	 *   const %4 = "World"          : string                  
+	 *   newmap %0 = (%1,%2,%3,%4)   : {int=>string}
+	 *   return %0                   : {int=>string}
 	 * </pre>
 	 * 
 	 * 
@@ -2718,10 +2718,10 @@ public abstract class Code {
 	 * <pre>
 	 * {real x,real y} f(real x, real y):
 	 * body: 
-	 *     assign %3 = %0         // real                  
-	 *     assign %4 = %0         // real                  
-	 *     newrecord %2 (%3, %4)  // {real x,real y}    
-	 *     return %2              // {real x,real y}
+	 *     assign %3 = %0         : real                  
+	 *     assign %4 = %0         : real                  
+	 *     newrecord %2 (%3, %4)  : {real x,real y}    
+	 *     return %2              : {real x,real y}
 	 * </pre>
 	 * 
 	 * @author David J. Pearce
@@ -2765,10 +2765,10 @@ public abstract class Code {
 	 * <pre>
 	 * (int,int) f(int x, int y):
 	 * body: 
-	 *     assign %3 = %0          // int                   
-	 *     assign %4 = %1          // int                   
-	 *     newtuple %2 = (%3, %4)  // (int,int)         
-	 *     return %2               // (int,int)
+	 *     assign %3 = %0          : int                   
+	 *     assign %4 = %1          : int                   
+	 *     newtuple %2 = (%3, %4)  : (int,int)         
+	 *     return %2               : (int,int)
 	 * </pre>
 	 * 
 	 * This writes the tuple value generated from <code>(x,y)</code> into
@@ -2815,11 +2815,11 @@ public abstract class Code {
 	 * <pre>
 	 * [int] f(int x, int y, int z):
 	 * body: 
-	 *    assign %4 = %0           // int                   
-	 *    assign %5 = %1           // int                   
-	 *    assign %6 = %2           // int                   
-	 *    newset %3 = (%4,%5,%6)   // [int]            
-	 *    return %3                // [int]
+	 *    assign %4 = %0           : int                   
+	 *    assign %5 = %1           : int                   
+	 *    assign %6 = %2           : int                   
+	 *    newset %3 = (%4,%5,%6)   : [int]            
+	 *    return %3                : [int]
 	 * </pre>
 	 * 
 	 * Writes the set value given by <code>{x,y,z}</code> into register
@@ -2865,11 +2865,11 @@ public abstract class Code {
 	 * <pre>
 	 * [int] f(int x, int y, int z):
 	 * body: 
-	 *    assign %4 = %0           // int                   
-	 *    assign %5 = %1           // int                   
-	 *    assign %6 = %2           // int                   
-	 *    newlist %3 = (%4,%5,%6)  // [int]            
-	 *    return %3                // [int]
+	 *    assign %4 = %0           : int                   
+	 *    assign %5 = %1           : int                   
+	 *    assign %6 = %2           : int                   
+	 *    newlist %3 = (%4,%5,%6)  : [int]            
+	 *    return %3                : [int]
 	 * </pre>
 	 * 
 	 * Writes the list value given by <code>[x,y,z]</code> into register
@@ -3507,15 +3507,26 @@ public abstract class Code {
 	}
 
 	/**
-	 * Corresponds to a bitwise inversion operation, which pops a byte off the
-	 * stack and pushes the result back on. For example:
+	 * Corresponds to a bitwise inversion operation, which reads a byte value
+	 * from the operand register, inverts it and writes the result to the target
+	 * resgister. For example, the following Whiley code:
 	 * 
 	 * <pre>
 	 * byte f(byte x):
 	 *    return ~x
 	 * </pre>
 	 * 
-	 * Here, the expression <code>~x</code> generates an inverstion bytecode.
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * byte f(byte x):
+	 * body:                   
+	 *     invert %0 = %0   : byte                  
+	 *     return %0        : byte
+	 * </pre>
+	 * 
+	 * Here, the expression <code>~x</code> generates an <code>invert</code>
+	 * bytecode.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -3568,10 +3579,35 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "new %" + target + " = % " + operand + " : " + type;
+			return "newobject %" + target + " = % " + operand + " : " + type;
 		}
 	}
 
+	/**
+	 * Read a tuple value from the operand register, extract the value it
+	 * contains at a given index and write that to the target register. For
+	 * example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int,int tup):
+	 *     return tup[0]
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int,int tup):
+	 * body: 
+	 *     tupleload %0 = %0 0  : int,int            
+	 *     return %0            : int
+	 * </pre>
+	 * 
+	 * This simply reads the parameter <code>x</code> stored in register
+	 * <code>%0</code>, and returns the value stored at index <code>0</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class TupleLoad extends
 			AbstractUnaryAssignable<Type.EffectiveTuple> {
 		public final int index;
@@ -3595,7 +3631,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "tupleload %" + target + " = % " + operand + " " + index
+			return "tupleload %" + target + " = %" + operand + " " + index
 					+ " : " + type;
 		}
 	}
