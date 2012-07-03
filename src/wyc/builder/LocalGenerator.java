@@ -802,7 +802,7 @@ public final class LocalGenerator {
 		Block blk = new Block(environment.size());
 		int[] operands = generate(v.arguments, target, freeRegister, environment,
 				blk);		
-		blk.append(Code.Set(v.type.raw(), target, operands), attributes(v));
+		blk.append(Code.NewSet(v.type.raw(), target, operands), attributes(v));
 		return blk;
 	}
 	
@@ -811,7 +811,7 @@ public final class LocalGenerator {
 		Block blk = new Block(environment.size());		
 		int[] operands = generate(v.arguments, target, freeRegister, environment,
 				blk);		
-		blk.append(Code.List(v.type.raw(), target, operands), attributes(v));
+		blk.append(Code.NewList(v.type.raw(), target, operands), attributes(v));
 		return blk;
 	}
 	
@@ -891,11 +891,11 @@ public final class LocalGenerator {
 		
 		if (e.cop == Expr.COp.LISTCOMP) {
 			resultType = e.type.raw();
-			blk.append(Code.List((Type.List) resultType, target,
+			blk.append(Code.NewList((Type.List) resultType, target,
 					Collections.EMPTY_LIST), attributes(e));
 		} else {
 			resultType = e.type.raw();
-			blk.append(Code.Set((Type.Set) resultType, target,
+			blk.append(Code.NewSet((Type.Set) resultType, target,
 					Collections.EMPTY_LIST), attributes(e));
 		}
 		
@@ -953,7 +953,7 @@ public final class LocalGenerator {
 			blk.append(generate(arg, freeRegister, freeRegister+1, environment));
 			operands[i] = freeRegister++;
 		}
-		blk.append(Code.Record(sg.result().raw(), target, operands), attributes(sg));
+		blk.append(Code.NewRecord(sg.result().raw(), target, operands), attributes(sg));
 		return blk;
 	}
 
@@ -962,7 +962,7 @@ public final class LocalGenerator {
 		Block blk = new Block(environment.size());
 		int[] operands = generate(sg.fields, target, freeRegister, environment,
 				blk);
-		blk.append(Code.Tuple(sg.result().raw(), target, operands),
+		blk.append(Code.NewTuple(sg.result().raw(), target, operands),
 				attributes(sg));
 		return blk;
 	}
@@ -980,7 +980,7 @@ public final class LocalGenerator {
 					environment));
 			operands[(i << 1) + 1] = freeRegister++;
 		}
-		blk.append(Code.NewDict(sg.result().raw(), target, operands),
+		blk.append(Code.NewMap(sg.result().raw(), target, operands),
 				attributes(sg));
 		return blk;
 	}
@@ -997,7 +997,7 @@ public final class LocalGenerator {
 	private Block generate(Expr.New expr, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = generate(expr.expr, target, freeRegister, environment);
-		blk.append(Code.New(expr.type.raw(), target, target));
+		blk.append(Code.NewObject(expr.type.raw(), target, target));
 		return blk;
 	}
 	

@@ -468,16 +468,16 @@ public class ClassFileBuilder {
 				 translate((Code.Move)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Update) {
 				 translate((Code.Update)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Dict) {
-				 translate((Code.Dict)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.List) {
-				 translate((Code.List)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Record) {
-				 translate((Code.Record)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Set) {
-				 translate((Code.Set)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Tuple) {
-				 translate((Code.Tuple)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.NewMap) {
+				 translate((Code.NewMap)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.NewList) {
+				 translate((Code.NewList)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.NewRecord) {
+				 translate((Code.NewRecord)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.NewSet) {
+				 translate((Code.NewSet)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.NewTuple) {
+				 translate((Code.NewTuple)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Neg) {
 				 translate((Code.Neg)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Dereference) {
@@ -498,8 +498,8 @@ public class ClassFileBuilder {
 				 translate((Code.Switch)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.TryCatch) {
 				 translate((Code.TryCatch)code,entry,freeSlot,handlers,constants,bytecodes);
-			} else if(code instanceof Code.New) {
-				 translate((Code.New)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.NewObject) {
+				 translate((Code.NewObject)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Throw) {
 				 translate((Code.Throw)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.TupleLoad) {
@@ -1422,7 +1422,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 	
-	public void translate(Code.New c, int freeSlot,
+	public void translate(Code.NewObject c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {			
 		JvmType type = convertType(c.type);		
 		bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
@@ -1452,7 +1452,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, convertType(c.type.element())));
 	}
 	
-	protected void translate(Code.List c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Code.NewList c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(WHILEYLIST));		
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 		bytecodes.add(new Bytecode.LoadConst(c.operands.length));
@@ -1472,7 +1472,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYLIST));
 	}
 		
-	protected void translate(Code.Dict c, int freeSlot,
+	protected void translate(Code.NewMap c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
 		construct(WHILEYMAP, freeSlot, bytecodes);
@@ -1495,7 +1495,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYMAP));		
 	}
 	
-	public void translate(Code.Record code, int freeSlot,
+	public void translate(Code.NewRecord code, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYRECORD, freeSlot, bytecodes);				
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
@@ -1519,7 +1519,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(code.target, WHILEYRECORD));
 	}
 	
-	protected void translate(Code.Set c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Code.NewSet c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYSET, freeSlot, bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(WHILEYSET,
 				WHILEYSET,JAVA_LANG_OBJECT);
@@ -1534,7 +1534,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYSET));
 	}
 	
-	protected void translate(Code.Tuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Code.NewTuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(WHILEYTUPLE ));		
 		bytecodes.add(new Bytecode.Dup(WHILEYTUPLE ));
 		bytecodes.add(new Bytecode.LoadConst(c.operands.length));

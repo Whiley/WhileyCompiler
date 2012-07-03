@@ -53,12 +53,12 @@ import wyil.util.*;
  * int sum([int] data):
  * body: 
  *   var r, $2, item
- *   const %1 = 0          : int                      
- *   assign %2 = %0        : [int]                 
- *   forall %3 in %2 ()    : [int]              
- *       assign %4 = %1    : int                                
- *       add %1 = %4, %3   : int                                     
- *   return %1             : int
+ *   const %1 = 0          // int                      
+ *   assign %2 = %0        // [int]                 
+ *   forall %3 in %2 ()    // [int]              
+ *       assign %4 = %1    // int                                
+ *       add %1 = %4, %3   // int                                     
+ *   return %1             // int
  * </pre>
  * 
  * Here, we can see that every bytecode is associated with one (or more) types.
@@ -305,13 +305,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static Dict NewDict(Type.Dictionary type, int target,
+	public static NewMap NewMap(Type.Dictionary type, int target,
 			Collection<Integer> operands) {
-		return get(new Dict(type, target, toIntArray(operands)));
+		return get(new NewMap(type, target, toIntArray(operands)));
 	}
 
-	public static Dict NewDict(Type.Dictionary type, int target, int[] operands) {
-		return get(new Dict(type, target, operands));
+	public static NewMap NewMap(Type.Dictionary type, int target, int[] operands) {
+		return get(new NewMap(type, target, operands));
 	}
 
 	/**
@@ -321,13 +321,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static Set Set(Type.Set type, int target,
+	public static NewSet NewSet(Type.Set type, int target,
 			Collection<Integer> operands) {
-		return get(new Set(type, target, toIntArray(operands)));
+		return get(new NewSet(type, target, toIntArray(operands)));
 	}
 
-	public static Set Set(Type.Set type, int target, int[] operands) {
-		return get(new Set(type, target, operands));
+	public static NewSet NewSet(Type.Set type, int target, int[] operands) {
+		return get(new NewSet(type, target, operands));
 	}
 
 	/**
@@ -337,13 +337,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static List List(Type.List type, int target,
+	public static NewList NewList(Type.List type, int target,
 			Collection<Integer> operands) {
-		return get(new List(type, target, toIntArray(operands)));
+		return get(new NewList(type, target, toIntArray(operands)));
 	}
 
-	public static List List(Type.List type, int target, int[] operands) {
-		return get(new List(type, target, operands));
+	public static NewList NewList(Type.List type, int target, int[] operands) {
+		return get(new NewList(type, target, operands));
 	}
 
 	/**
@@ -353,13 +353,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static Tuple Tuple(Type.Tuple type, int target,
+	public static NewTuple NewTuple(Type.Tuple type, int target,
 			Collection<Integer> operands) {
-		return get(new Tuple(type, target, toIntArray(operands)));
+		return get(new NewTuple(type, target, toIntArray(operands)));
 	}
 
-	public static Tuple Tuple(Type.Tuple type, int target, int[] operands) {
-		return get(new Tuple(type, target, operands));
+	public static NewTuple NewTuple(Type.Tuple type, int target, int[] operands) {
+		return get(new NewTuple(type, target, operands));
 	}
 
 	/**
@@ -369,13 +369,13 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static Record Record(Type.Record type, int target,
+	public static NewRecord NewRecord(Type.Record type, int target,
 			Collection<Integer> operands) {
-		return get(new Record(type, target, toIntArray(operands)));
+		return get(new NewRecord(type, target, toIntArray(operands)));
 	}
 
-	public static Record Record(Type.Record type, int target, int[] operands) {
-		return get(new Record(type, target, operands));
+	public static NewRecord NewRecord(Type.Record type, int target, int[] operands) {
+		return get(new NewRecord(type, target, operands));
 	}
 
 	/**
@@ -548,8 +548,8 @@ public abstract class Code {
 		return get(new Neg(type, target, operand));
 	}
 
-	public static New New(Type.Reference type, int target, int operand) {
-		return get(new New(type, target, operand));
+	public static NewObject NewObject(Type.Reference type, int target, int operand) {
+		return get(new NewObject(type, target, operand));
 	}
 
 	public static Dereference Dereference(Type.Reference type, int target,
@@ -2665,38 +2665,38 @@ public abstract class Code {
 	 * <pre>
 	 * {int->string} f():
 	 * body:
-	 *   const %1 = 1                : int                           
-	 *   const %2 = "Hello"          : string                  
-	 *   const %3 = 2                : int                           
-	 *   const %4 = "World"          : string                  
-	 *   dict %0 = (%1,%2,%3,%4)     : {int=>string}
-	 *   return %0                   : {int=>string}
+	 *   const %1 = 1                // int                           
+	 *   const %2 = "Hello"          // string                  
+	 *   const %3 = 2                // int                           
+	 *   const %4 = "World"          // string                  
+	 *   newmap %0 = (%1,%2,%3,%4)   // {int=>string}
+	 *   return %0                   // {int=>string}
 	 * </pre>
 	 * 
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Dict extends
+	public static final class NewMap extends
 			AbstractNaryAssignable<Type.Dictionary> {
 
-		private Dict(Type.Dictionary type, int target, int[] operands) {
+		private NewMap(Type.Dictionary type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.NewDict(type, nTarget, nOperands);
+			return Code.NewMap(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Dict) {
+			if (o instanceof NewMap) {
 				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "map %" + target + " " + toString(operands) + " : " + type;
+			return "newmap %" + target + " " + toString(operands) + " : " + type;
 		}
 	}
 
@@ -2718,34 +2718,34 @@ public abstract class Code {
 	 * <pre>
 	 * {real x,real y} f(real x, real y):
 	 * body: 
-	 *     assign %3 = %0        : real                  
-	 *     assign %4 = %0        : real                  
-	 *     record %2 (%3, %4)    : {real x,real y}    
-	 *     return %2             : {real x,real y}
+	 *     assign %3 = %0         // real                  
+	 *     assign %4 = %0         // real                  
+	 *     newrecord %2 (%3, %4)  // {real x,real y}    
+	 *     return %2              // {real x,real y}
 	 * </pre>
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Record extends
+	public static final class NewRecord extends
 			AbstractNaryAssignable<Type.Record> {
-		private Record(Type.Record type, int target, int[] operands) {
+		private NewRecord(Type.Record type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.Record(type, nTarget, nOperands);
+			return Code.NewRecord(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Record) {
+			if (o instanceof NewRecord) {
 				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "record %" + target + " " + toString(operands) + " : "
+			return "newrecord %" + target + " " + toString(operands) + " : "
 					+ type;
 		}
 	}
@@ -2765,10 +2765,10 @@ public abstract class Code {
 	 * <pre>
 	 * (int,int) f(int x, int y):
 	 * body: 
-	 *     assign %3 = %0  : int                   
-	 *     assign %4 = %1  : int                   
-	 *     tuple %2 = (%3, %4) : (int,int)         
-	 *     return %2 : (int,int)
+	 *     assign %3 = %0          // int                   
+	 *     assign %4 = %1          // int                   
+	 *     newtuple %2 = (%3, %4)  // (int,int)         
+	 *     return %2               // (int,int)
 	 * </pre>
 	 * 
 	 * This writes the tuple value generated from <code>(x,y)</code> into
@@ -2777,25 +2777,25 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Tuple extends AbstractNaryAssignable<Type.Tuple> {
+	public static final class NewTuple extends AbstractNaryAssignable<Type.Tuple> {
 
-		private Tuple(Type.Tuple type, int target, int[] operands) {
+		private NewTuple(Type.Tuple type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.Tuple(type, nTarget, nOperands);
+			return Code.NewTuple(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Tuple) {
+			if (o instanceof NewTuple) {
 				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "tuple %" + target + " = " + toString(operands) + " : "
+			return "newtuple %" + target + " = " + toString(operands) + " : "
 					+ type;
 		}
 	}
@@ -2815,11 +2815,11 @@ public abstract class Code {
 	 * <pre>
 	 * [int] f(int x, int y, int z):
 	 * body: 
-	 *    assign %4 = %0        : int                   
-	 *    assign %5 = %1        : int                   
-	 *    assign %6 = %2        : int                   
-	 *    set %3 = (%4,%5,%6)   : [int]            
-	 *    return %3             : [int]
+	 *    assign %4 = %0           // int                   
+	 *    assign %5 = %1           // int                   
+	 *    assign %6 = %2           // int                   
+	 *    newset %3 = (%4,%5,%6)   // [int]            
+	 *    return %3                // [int]
 	 * </pre>
 	 * 
 	 * Writes the set value given by <code>{x,y,z}</code> into register
@@ -2828,25 +2828,25 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Set extends AbstractNaryAssignable<Type.Set> {
+	public static final class NewSet extends AbstractNaryAssignable<Type.Set> {
 
-		private Set(Type.Set type, int target, int[] operands) {
+		private NewSet(Type.Set type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.Set(type, nTarget, nOperands);
+			return Code.NewSet(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Set) {
+			if (o instanceof NewSet) {
 				return super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "set %" + target + " = " + toString(operands) + " : " + type;
+			return "newset %" + target + " = " + toString(operands) + " : " + type;
 		}
 	}
 
@@ -2865,11 +2865,11 @@ public abstract class Code {
 	 * <pre>
 	 * [int] f(int x, int y, int z):
 	 * body: 
-	 *    assign %4 = %0        : int                   
-	 *    assign %5 = %1        : int                   
-	 *    assign %6 = %2        : int                   
-	 *    list %3 = (%4,%5,%6)  : [int]            
-	 *    return %3             : [int]
+	 *    assign %4 = %0           // int                   
+	 *    assign %5 = %1           // int                   
+	 *    assign %6 = %2           // int                   
+	 *    newlist %3 = (%4,%5,%6)  // [int]            
+	 *    return %3                // [int]
 	 * </pre>
 	 * 
 	 * Writes the list value given by <code>[x,y,z]</code> into register
@@ -2878,25 +2878,25 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class List extends AbstractNaryAssignable<Type.List> {
+	public static final class NewList extends AbstractNaryAssignable<Type.List> {
 
-		private List(Type.List type, int target, int[] operands) {
+		private NewList(Type.List type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 
 		protected Code clone(int nTarget, int[] nOperands) {
-			return Code.List(type, nTarget, nOperands);
+			return Code.NewList(type, nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof List) {
+			if (o instanceof NewList) {
 				return super.equals(operands);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "list %" + target + " = " + toString(operands) + " : "
+			return "newlist %" + target + " = " + toString(operands) + " : "
 					+ type;
 		}
 	}
@@ -3549,19 +3549,19 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class New extends
+	public static final class NewObject extends
 			AbstractUnaryAssignable<Type.Reference> {
 
-		private New(Type.Reference type, int target, int operand) {
+		private NewObject(Type.Reference type, int target, int operand) {
 			super(type, target, operand);
 		}
 
 		protected Code clone(int nTarget, int nOperand) {
-			return Code.New(type, nTarget, nOperand);
+			return Code.NewObject(type, nTarget, nOperand);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof New) {
+			if (o instanceof NewObject) {
 				return super.equals(o);
 			}
 			return false;

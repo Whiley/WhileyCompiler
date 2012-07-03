@@ -186,16 +186,16 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.Assign)code,entry,environment);
 		} else if(code instanceof Code.Update) {
 			infer(index,(Code.Update)code,entry,environment);
-		} else if(code instanceof Code.Dict) {
-			infer(index,(Code.Dict)code,entry,environment);
-		} else if(code instanceof Code.List) {
-			infer(index,(Code.List)code,entry,environment);
-		} else if(code instanceof Code.Record) {
-			infer(index,(Code.Record)code,entry,environment);
-		} else if(code instanceof Code.Set) {
-			infer(index,(Code.Set)code,entry,environment);
-		} else if(code instanceof Code.Tuple) {
-			infer(index,(Code.Tuple)code,entry,environment);
+		} else if(code instanceof Code.NewMap) {
+			infer(index,(Code.NewMap)code,entry,environment);
+		} else if(code instanceof Code.NewList) {
+			infer(index,(Code.NewList)code,entry,environment);
+		} else if(code instanceof Code.NewRecord) {
+			infer(index,(Code.NewRecord)code,entry,environment);
+		} else if(code instanceof Code.NewSet) {
+			infer(index,(Code.NewSet)code,entry,environment);
+		} else if(code instanceof Code.NewTuple) {
+			infer(index,(Code.NewTuple)code,entry,environment);
 		} else if(code instanceof Code.Neg) {
 			infer(index,(Code.Neg)code,entry,environment);
 		} else if(code instanceof Code.Dereference) {
@@ -212,8 +212,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.StringOp)code,entry,environment);
 		} else if(code instanceof Code.SubString) {
 			infer(index,(Code.SubString)code,entry,environment);
-		} else if(code instanceof Code.New) {
-			infer(index,(Code.New)code,entry,environment);
+		} else if(code instanceof Code.NewObject) {
+			infer(index,(Code.NewObject)code,entry,environment);
 		} else if(code instanceof Code.Throw) {
 			infer(index,(Code.Throw)code,entry,environment);
 		} else if(code instanceof Code.TupleLoad) {
@@ -433,7 +433,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.target, code.type);		
 	}
 	
-	private void infer(int index, Code.Dict code, Block.Entry entry,
+	private void infer(int index, Code.NewMap code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		
@@ -452,7 +452,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}					
 	}
 	
-	private void infer(int index, Code.Record code, Block.Entry entry,
+	private void infer(int index, Code.NewRecord code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req, code.type,code.target,index, entry);
@@ -466,7 +466,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.List code, Block.Entry entry,
+	private void infer(int index, Code.NewList code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		
@@ -477,7 +477,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.Set code, Block.Entry entry,
+	private void infer(int index, Code.NewSet code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type,code.target,index,entry);		
@@ -487,7 +487,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}		
 	}
 	
-	private void infer(int index, Code.Tuple code, Block.Entry entry,
+	private void infer(int index, Code.NewTuple code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type,code.target,index,entry);				
@@ -584,7 +584,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.operand,code.type);
 	}
 	
-	private void infer(int index, Code.New code, Block.Entry entry,
+	private void infer(int index, Code.NewObject code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		if(req instanceof Type.Reference) { 

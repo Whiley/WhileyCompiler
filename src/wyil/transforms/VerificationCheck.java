@@ -432,16 +432,16 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Code.Assign)code,entry,constraint,environment);
 		} else if(code instanceof Code.Update) {
 			constraint = transform((Code.Update)code,entry,constraint,environment);
-		} else if(code instanceof Code.Dict) {
-			constraint = transform((Code.Dict)code,entry,constraint,environment);
-		} else if(code instanceof Code.List) {
-			constraint = transform((Code.List)code,entry,constraint,environment);
-		} else if(code instanceof Code.Record) {
-			constraint = transform((Code.Record)code,entry,constraint,environment);
-		} else if(code instanceof Code.Set) {
-			constraint = transform((Code.Set)code,entry,constraint,environment);
-		} else if(code instanceof Code.Tuple) {
-			constraint = transform((Code.Tuple)code,entry,constraint,environment);
+		} else if(code instanceof Code.NewMap) {
+			constraint = transform((Code.NewMap)code,entry,constraint,environment);
+		} else if(code instanceof Code.NewList) {
+			constraint = transform((Code.NewList)code,entry,constraint,environment);
+		} else if(code instanceof Code.NewRecord) {
+			constraint = transform((Code.NewRecord)code,entry,constraint,environment);
+		} else if(code instanceof Code.NewSet) {
+			constraint = transform((Code.NewSet)code,entry,constraint,environment);
+		} else if(code instanceof Code.NewTuple) {
+			constraint = transform((Code.NewTuple)code,entry,constraint,environment);
 		} else if(code instanceof Code.Neg) {
 			constraint = transform((Code.Neg)code,entry,constraint,environment);
 		} else if(code instanceof Code.Dereference) {
@@ -456,8 +456,8 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Code.StringOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.SubString) {
 			constraint = transform((Code.SubString)code,entry,constraint,environment);
-		} else if(code instanceof Code.New) {
-			constraint = transform((Code.New)code,entry,constraint,environment);
+		} else if(code instanceof Code.NewObject) {
+			constraint = transform((Code.NewObject)code,entry,constraint,environment);
 		} else if(code instanceof Code.Throw) {
 			constraint = transform((Code.Throw)code,entry,constraint,environment);
 		} else if(code instanceof Code.TupleLoad) {
@@ -650,13 +650,13 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.Dict code, Block.Entry entry,
+	protected WFormula transform(Code.NewMap code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.List code, Block.Entry entry,
+	protected WFormula transform(Code.NewList code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		int[] code_operands = code.operands;
@@ -668,7 +668,7 @@ public class VerificationCheck implements Transform {
 		return update(code.target,result,environment,constraint);
 	}
 
-	protected WFormula transform(Code.Set code, Block.Entry entry,
+	protected WFormula transform(Code.NewSet code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		HashSet<WExpr> args = new HashSet<WExpr>();
 		int[] code_operands = code.operands;
@@ -680,7 +680,7 @@ public class VerificationCheck implements Transform {
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.Record code, Block.Entry entry,
+	protected WFormula transform(Code.NewRecord code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
@@ -693,7 +693,7 @@ public class VerificationCheck implements Transform {
 		return update(code.target,result,environment,constraint);
 	}
 
-	protected WFormula transform(Code.Tuple code, Block.Entry entry,
+	protected WFormula transform(Code.NewTuple code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		ArrayList<String> fields = new ArrayList<String>();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
@@ -784,7 +784,7 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.New code, Block.Entry entry,
+	protected WFormula transform(Code.NewObject code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;

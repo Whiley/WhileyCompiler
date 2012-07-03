@@ -185,16 +185,16 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Code.Assign)code,entry,environment);
 		} else if(code instanceof Code.Update) {
 			infer((Code.Update)code,entry,environment);
-		} else if(code instanceof Code.Dict) {
-			infer(index,(Code.Dict)code,entry,environment);
-		} else if(code instanceof Code.List) {
-			infer(index,(Code.List)code,entry,environment);
-		} else if(code instanceof Code.Record) {
-			infer(index,(Code.Record)code,entry,environment);
-		} else if(code instanceof Code.Set) {
-			infer(index,(Code.Set)code,entry,environment);
-		} else if(code instanceof Code.Tuple) {
-			infer(index,(Code.Tuple)code,entry,environment);
+		} else if(code instanceof Code.NewMap) {
+			infer(index,(Code.NewMap)code,entry,environment);
+		} else if(code instanceof Code.NewList) {
+			infer(index,(Code.NewList)code,entry,environment);
+		} else if(code instanceof Code.NewRecord) {
+			infer(index,(Code.NewRecord)code,entry,environment);
+		} else if(code instanceof Code.NewSet) {
+			infer(index,(Code.NewSet)code,entry,environment);
+		} else if(code instanceof Code.NewTuple) {
+			infer(index,(Code.NewTuple)code,entry,environment);
 		} else if(code instanceof Code.Neg) {
 			infer(index,(Code.Neg)code,entry,environment);
 		} else if(code instanceof Code.Dereference) {
@@ -211,8 +211,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Code.SubString)code,entry,environment);
 		} else if(code instanceof Code.Nop) {
 			// skip			
-		} else if(code instanceof Code.New) {
-			infer(index,(Code.New)code,entry,environment);
+		} else if(code instanceof Code.NewObject) {
+			infer(index,(Code.NewObject)code,entry,environment);
 		} else if(code instanceof Code.Throw) {
 			infer(index,(Code.Throw)code,entry,environment);
 		} else {
@@ -512,7 +512,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target,null);
 	}
 	
-	public void infer(int index, Code.Dict code, Block.Entry entry,
+	public void infer(int index, Code.NewMap code, Block.Entry entry,
 			Env environment) {
 		HashMap<Value, Value> values = new HashMap<Value, Value>();
 		boolean isValue = true;
@@ -536,7 +536,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target, result);
 	}
 	
-	public void infer(int index, Code.Record code, Block.Entry entry,
+	public void infer(int index, Code.NewRecord code, Block.Entry entry,
 			Env environment) {
 		HashMap<String, Value> values = new HashMap<String, Value>();
 		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
@@ -563,7 +563,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target,result);
 	}
 	
-	public void infer(int index, Code.List code, Block.Entry entry,
+	public void infer(int index, Code.NewList code, Block.Entry entry,
 			Env environment) {
 		ArrayList<Value> values = new ArrayList<Value>();
 
@@ -588,7 +588,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target, result);
 	}
 	
-	public void infer(int index, Code.Set code, Block.Entry entry,
+	public void infer(int index, Code.NewSet code, Block.Entry entry,
 			Env environment) {
 		HashSet<Value> values = new HashSet<Value>();
 
@@ -613,7 +613,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target, result);
 	}
 	
-	public void infer(int index, Code.Tuple code, Block.Entry entry,
+	public void infer(int index, Code.NewTuple code, Block.Entry entry,
 			Env environment) {
 		ArrayList<Value> values = new ArrayList<Value>();		
 
@@ -836,7 +836,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target,result);
 	}
 	
-	public void infer(int index, Code.New code, Block.Entry entry,
+	public void infer(int index, Code.NewObject code, Block.Entry entry,
 			Env environment) {
 		environment.set(code.target, null);
 	}
