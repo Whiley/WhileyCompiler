@@ -1223,7 +1223,36 @@ public abstract class Code {
 
 	/**
 	 * Copy the contents from a given operand register into a given target
-	 * register.
+	 * register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     x = x + 1
+	 *     return x
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body: 
+	 *     assign %1 = %0      : int                   
+	 *     const %2 = 1        : int                      
+	 *     add %0 = %1, %2     : int                                    
+	 *     return %0           : int
+	 * </pre>
+	 * 
+	 * Here we see that an initial assignment is made from register
+	 * <code>%0</code> to register <code>%1</code>. In fact, this assignment is
+	 * unecessary but is useful to illustrate the <code>assign</code> bytecode.
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> on many architectures this operation may not actually clone
+	 * the data in question. Rather, it may copy the <i>reference</i> to the
+	 * data and then increment its <i>reference count</i>. This is to ensure
+	 * efficient treatment of large compound structures (e.g. lists, sets, maps
+	 * and records).
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1252,7 +1281,27 @@ public abstract class Code {
 
 	/**
 	 * Read a string from the operand register and prints it to the debug
-	 * console. This bytecode is not intended to form part of the program's
+	 * console. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * void f(int x):
+	 *     debug "X = " + x
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * void f(int x):
+	 * body: 
+	 *     const %2 = "X = "       : string                                
+	 *     convert %0 = %0 any     : int              
+	 *     invoke %0 (%0) whiley/lang/Any:toString : string(any)
+	 *     strappend %1 = %2, %0   : string         
+	 *     debug %1                : string                      
+	 *     return
+	 * </pre>
+	 * 
+	 * <b>NOTE</b> This bytecode is not intended to form part of the program's
 	 * operation. Rather, it is to facilitate debugging within functions (since
 	 * they cannot have side-effects). Furthermore, if debugging is disabled,
 	 * this bytecode is a nop.
@@ -1317,6 +1366,13 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * An abstract class representing either an <code>assert</code> or
+	 * <code>assume</code> bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static abstract class AssertOrAssume extends AbstractBinaryOp<Type> {
 		public final COp op;
 		public final String msg;
@@ -1336,18 +1392,23 @@ public abstract class Code {
 	/**
 	 * Reads two operand registers, compares their values and raises an
 	 * assertion failure with the given message if comparison is false. For
-	 * example:
+	 * example, the following Whiley code:
 	 * 
 	 * <pre>
-	 * int f([int] xs):
-	 * body: 
-	 *    assign %2 = %0       : [int]                 
-	 *    const %3 = 0         : int                      
-	 *    const %4 = 0         : int                      
-	 *    assertge %3, %4 "index out of bounds (negative)" : int
-	 *    lengthof %5 = % 2    : [int]               
-	 *    assertlt %4, %5 "index out of bounds (not less than length)" : int
-	 *    indexof %1 = % 2, %3 : [int]            
+	 * int f([int] xs, int i):
+	 *     return xs[i]
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f([int] xs, int i):
+	 * body:          
+	 *    const %2 = 0         : int                                           
+	 *    assertge %1, %2 "index out of bounds (negative)" : int
+	 *    lengthof %3 = %0     : [int]               
+	 *    assertlt %2, %3 "index out of bounds (not less than length)" : int
+	 *    indexof %1 = %0, %1  : [int]            
 	 *    return %1            : int
 	 * </pre>
 	 * 
@@ -1423,8 +1484,27 @@ public abstract class Code {
 	}
 
 	/**
-	 * Reads a record value from an operand register, extracts the value of
-	 * given field and writes this to the target register.
+	 * Reads a record value from an operand register, extracts the value of a
+	 * given field and writes this to the target register. For example, the
+	 * following Whiley code:
+	 * 
+	 * <pre>
+	 * define Point as {int x, int y}
+	 * 
+	 * int f(Point p):
+	 *     return p.x + p.y
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f({int x,int y} p):
+	 * body:         
+	 *     fieldload %2 = %0 x    : {int x,int y}            
+	 *     fieldload %3 = %0 y    : {int x,int y}    
+	 *     add %1 = %2, %3        : int                  
+	 *     return %1              : int
+	 * </pre>
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1471,13 +1551,42 @@ public abstract class Code {
 	}
 
 	/**
-	 * <p>
-	 * Branches unconditionally to the given label.
-	 * </p>
+	 * Branches unconditionally to the given label. This is typically used for
+	 * if/else statements. For example, the following Whiley code:
 	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     if x >= 0:
+	 *         x = 1
+	 *     else:
+	 *         x = -1
+	 *     return x
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body:                   
+	 *     const %1 = 0             : int                      
+	 *     iflt %0, %1 goto blklab0 : int          
+	 *     const %0 = 1             : int                      
+	 *     goto blklab1                            
+	 * .blklab0                                
+	 *     const %0 = 1             : int                      
+	 *     neg %0 = % 0             : int                      
+	 * .blklab1                                                  
+	 *     return %0                : int
+	 * </pre>
+	 * 
+	 * Here, we see the <code>goto</code> bytecode being used to jump from the
+	 * end of the true branch over the false branch.
+	 * 
+	 * <p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
