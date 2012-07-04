@@ -152,8 +152,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		afterInserts.remove(index);		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Code.BinOp) {
-			infer(index,(Code.BinOp)code,entry,environment);
+		if(code instanceof Code.ArithOp) {
+			infer(index,(Code.ArithOp)code,entry,environment);
 		} else if(code instanceof Code.Convert) {
 			infer(index,(Code.Convert)code,entry,environment);
 		} else if(code instanceof Code.Const) {
@@ -237,7 +237,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 
 	protected Env infer(int index,
 			Code.AssertOrAssume code, Block.Entry stmt, Env environment) {
-		if(code.op == Code.COp.ELEMOF) {
+		if(code.op == Code.Comparator.ELEMOF) {
 			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
 			environment.set(code.leftOperand,src.element());
 			environment.set(code.rightOperand,code.type);
@@ -249,14 +249,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		return environment;
 	}
 	
-	private void infer(int index, Code.BinOp code, Block.Entry entry,
+	private void infer(int index, Code.ArithOp code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);		
 		coerceAfter(req,code.type,code.target,index,entry);	
-		if(code.bop == Code.BOp.LEFTSHIFT || code.bop == Code.BOp.RIGHTSHIFT) {
+		if(code.bop == Code.ArithOperation.LEFTSHIFT || code.bop == Code.ArithOperation.RIGHTSHIFT) {
 			environment.set(code.leftOperand,code.type);
 			environment.set(code.rightOperand,Type.T_INT);
-		} else if(code.bop == Code.BOp.RANGE){
+		} else if(code.bop == Code.ArithOperation.RANGE){
 			environment.set(code.leftOperand,Type.T_INT);
 			environment.set(code.rightOperand,Type.T_INT);
 		} else {		
@@ -619,11 +619,11 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	@Override
 	protected Env propagate(int index,
-			Code.IfGoto code, Entry stmt, Env trueEnv, Env falseEnv) {
+			Code.If code, Entry stmt, Env trueEnv, Env falseEnv) {
 		
 		Env environment = join(trueEnv,falseEnv);
 		
-		if(code.op == Code.COp.ELEMOF) {
+		if(code.op == Code.Comparator.ELEMOF) {
 			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
 			environment.set(code.leftOperand,src.element());
 			environment.set(code.rightOperand,code.type);

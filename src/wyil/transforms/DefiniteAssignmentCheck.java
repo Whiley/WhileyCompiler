@@ -100,7 +100,7 @@ public class DefiniteAssignmentCheck extends
 		
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Code.IfGoto igoto, Entry entry, HashSet<Integer> in) {
+			Code.If igoto, Entry entry, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,

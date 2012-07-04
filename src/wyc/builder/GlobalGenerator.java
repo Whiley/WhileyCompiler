@@ -103,7 +103,7 @@ public class GlobalGenerator {
 					blk = new Block(1);					
 					blk.append(Code.Const(Code.REG_1, v));
 					blk.append(Code.Assert(vs.type(), Code.REG_0, Code.REG_1,
-							Code.COp.ELEMOF, "constraint not satisfied"));
+							Code.Comparator.ELEMOF, "constraint not satisfied"));
 					cache.put(nid, blk);
 					return blk;
 				} 

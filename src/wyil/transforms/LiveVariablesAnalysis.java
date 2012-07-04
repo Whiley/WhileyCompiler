@@ -137,7 +137,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 	
 	@Override
-	public Env propagate(int index, Code.IfGoto code, Entry entry, Env trueEnv,
+	public Env propagate(int index, Code.If code, Entry entry, Env trueEnv,
 			Env falseEnv) {
 		Env r = join(trueEnv, falseEnv);
 

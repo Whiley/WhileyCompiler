@@ -121,7 +121,7 @@ public final class Block implements Iterable<Block.Entry> {
 	public int numSlots() {		
 		HashSet<Integer> slots = new HashSet<Integer>();
 		for(Entry s : stmts) {
-			s.code.slots(slots);
+			s.code.registers(slots);
 		}
 		int r = 0;
 		for(int i : slots) {

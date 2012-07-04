@@ -135,7 +135,7 @@ public abstract class Code {
 	 * @return
 	 */
 	public static Assert Assert(Type type, int leftOperand, int rightOperand,
-			COp cop, String message) {
+			Comparator cop, String message) {
 		return get(new Assert(type, leftOperand, rightOperand, cop, message));
 	}
 
@@ -148,13 +148,13 @@ public abstract class Code {
 	 * @return
 	 */
 	public static Assume Assume(Type type, int leftOperand, int rightOperand,
-			COp cop, String message) {
+			Comparator cop, String message) {
 		return get(new Assume(type, leftOperand, rightOperand, cop, message));
 	}
 
-	public static BinOp BinOp(Type type, int target, int leftOperand,
-			int rightOperand, BOp op) {
-		return get(new BinOp(type, target, leftOperand, rightOperand, op));
+	public static ArithOp ArithOp(Type type, int target, int leftOperand,
+			int rightOperand, ArithOperation op) {
+		return get(new ArithOp(type, target, leftOperand, rightOperand, op));
 	}
 
 	/**
@@ -402,9 +402,9 @@ public abstract class Code {
 		return get(new Return(type, operand));
 	}
 
-	public static IfGoto IfGoto(Type type, int leftOperand, int rightOperand,
-			COp cop, String label) {
-		return get(new IfGoto(type, leftOperand, rightOperand, cop, label));
+	public static If If(Type type, int leftOperand, int rightOperand,
+			Comparator cop, String label) {
+		return get(new If(type, leftOperand, rightOperand, cop, label));
 	}
 
 	public static IfIs IfIs(Type type, int leftOperand, Type rightOperand,
@@ -588,16 +588,23 @@ public abstract class Code {
 	// Abstract Methods
 	// ===============================================================
 
-	// The following method adds any slots used by a given bytecode
-	public void slots(java.util.Set<Integer> slots) {
+	/**
+	 * Determine which registers are used in this bytecode. This can be used,
+	 * for example, to determine the size of the register file required for a
+	 * given method.
+	 * 
+	 * @param register
+	 */
+	public void registers(java.util.Set<Integer> register) {
 		// default implementation does nothing
 	}
 
 	/**
-	 * The remap method remaps all slots according to a given binding. Slots not
+	 * Remaps all registers according to a given binding. Registers not
 	 * mentioned in the binding retain their original value.
 	 * 
 	 * @param binding
+	 *            --- map from (existing) registers to (new) registers.
 	 * @return
 	 */
 	public Code remap(Map<Integer, Integer> binding) {
@@ -651,9 +658,9 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(java.util.Set<Integer> slots) {
-			slots.add(target);
-			slots.add(operand);
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(target);
+			registers.add(operand);
 		}
 
 		@Override
@@ -707,8 +714,8 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(java.util.Set<Integer> slots) {
-			slots.add(operand);
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(operand);
 		}
 
 		@Override
@@ -763,10 +770,10 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(java.util.Set<Integer> slots) {
-			slots.add(target);
-			slots.add(leftOperand);
-			slots.add(rightOperand);
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(target);
+			registers.add(leftOperand);
+			registers.add(rightOperand);
 		}
 
 		@Override
@@ -829,12 +836,12 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(java.util.Set<Integer> slots) {
+		public final void registers(java.util.Set<Integer> registers) {
 			if (target >= 0) {
-				slots.add(target);
+				registers.add(target);
 			}
 			for (int i = 0; i != operands.length; ++i) {
-				slots.add(operands[i]);
+				registers.add(operands[i]);
 			}
 		}
 
@@ -894,13 +901,13 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(java.util.Set<Integer> slots) {
+		public final void registers(java.util.Set<Integer> registers) {
 			if (target >= 0) {
-				slots.add(target);
+				registers.add(target);
 			}
-			slots.add(operand);
+			registers.add(operand);
 			for (int i = 0; i != operands.length; ++i) {
-				slots.add(operands[i]);
+				registers.add(operands[i]);
 			}
 		}
 
@@ -960,9 +967,9 @@ public abstract class Code {
 		}
 
 		@Override
-		public final void slots(java.util.Set<Integer> slots) {
-			slots.add(leftOperand);
-			slots.add(rightOperand);
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(leftOperand);
+			registers.add(rightOperand);
 		}
 
 		@Override
@@ -1007,7 +1014,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public enum BOp {
+	public enum ArithOperation {
 		ADD {
 			public String toString() {
 				return "add";
@@ -1067,9 +1074,9 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * A binary operation reads two numeric values from the operand registers,
-	 * performs an operation on them and writes the result to the target
-	 * register. The binary operators are:
+	 * A binary operation which reads two numeric values from the operand
+	 * registers, performs an operation on them and writes the result to the
+	 * target register. The binary operators are:
 	 * </p>
 	 * <ul>
 	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
@@ -1108,10 +1115,10 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class BinOp extends AbstractBinaryAssignable<Type> {
-		public final BOp bop;
+	public static final class ArithOp extends AbstractBinaryAssignable<Type> {
+		public final ArithOperation bop;
 
-		private BinOp(Type type, int target, int lhs, int rhs, BOp bop) {
+		private ArithOp(Type type, int target, int lhs, int rhs, ArithOperation bop) {
 			super(type, target, lhs, rhs);
 			if (bop == null) {
 				throw new IllegalArgumentException(
@@ -1122,7 +1129,7 @@ public abstract class Code {
 
 		@Override
 		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.BinOp(type, nTarget, nLeftOperand, nRightOperand, bop);
+			return Code.ArithOp(type, nTarget, nLeftOperand, nRightOperand, bop);
 		}
 
 		public int hashCode() {
@@ -1130,8 +1137,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof BinOp) {
-				BinOp bo = (BinOp) o;
+			if (o instanceof ArithOp) {
+				ArithOp bo = (ArithOp) o;
 				return bop.equals(bo.bop) && super.equals(bo);
 			}
 			return false;
@@ -1261,8 +1268,8 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(java.util.Set<Integer> slots) {
-			slots.add(target);
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(target);
 		}
 
 		@Override
@@ -1445,11 +1452,11 @@ public abstract class Code {
 	 * 
 	 */
 	public static abstract class AssertOrAssume extends AbstractBinaryOp<Type> {
-		public final COp op;
+		public final Comparator op;
 		public final String msg;
 
 		private AssertOrAssume(Type type, int leftOperand, int rightOperand,
-				COp cop, String msg) {
+				Comparator cop, String msg) {
 			super(type, leftOperand, rightOperand);
 			if (cop == null) {
 				throw new IllegalArgumentException(
@@ -1491,7 +1498,7 @@ public abstract class Code {
 	 */
 	public static final class Assert extends AssertOrAssume {
 
-		private Assert(Type type, int leftOperand, int rightOperand, COp cop,
+		private Assert(Type type, int leftOperand, int rightOperand, Comparator cop,
 				String msg) {
 			super(type, leftOperand, rightOperand, cop, msg);
 		}
@@ -1530,7 +1537,7 @@ public abstract class Code {
 	 */
 	public static final class Assume extends AssertOrAssume {
 
-		private Assume(Type type, int leftOperand, int rightOperand, COp cop,
+		private Assume(Type type, int leftOperand, int rightOperand, Comparator cop,
 				String msg) {
 			super(type, leftOperand, rightOperand, cop, msg);
 		}
@@ -1747,11 +1754,11 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IfGoto extends AbstractBinaryOp<Type> {
+	public static final class If extends AbstractBinaryOp<Type> {
 		public final String target;
-		public final COp op;
+		public final Comparator op;
 
-		private IfGoto(Type type, int leftOperand, int rightOperand, COp op,
+		private If(Type type, int leftOperand, int rightOperand, Comparator op,
 				String target) {
 			super(type, leftOperand, rightOperand);
 			if (op == null) {
@@ -1766,18 +1773,18 @@ public abstract class Code {
 			this.target = target;
 		}
 
-		public IfGoto relabel(Map<String, String> labels) {
+		public If relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
 			if (nlabel == null) {
 				return this;
 			} else {
-				return IfGoto(type, leftOperand, rightOperand, op, nlabel);
+				return If(type, leftOperand, rightOperand, op, nlabel);
 			}
 		}
 
 		@Override
 		public Code clone(int nLeftOperand, int nRightOperand) {
-			return Code.IfGoto(type, nLeftOperand, nRightOperand, op, target);
+			return Code.If(type, nLeftOperand, nRightOperand, op, target);
 		}
 
 		public int hashCode() {
@@ -1785,8 +1792,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof IfGoto) {
-				IfGoto ig = (IfGoto) o;
+			if (o instanceof If) {
+				If ig = (If) o;
 				return op == ig.op && target.equals(ig.target)
 						&& super.equals(ig);
 			}
@@ -1810,7 +1817,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public enum COp {
+	public enum Comparator {
 		EQ() {
 			public String toString() {
 				return "eq";
@@ -1864,20 +1871,20 @@ public abstract class Code {
 	 * @param cop
 	 * @return
 	 */
-	public static Code.COp invert(Code.COp cop) {
+	public static Code.Comparator invert(Code.Comparator cop) {
 		switch (cop) {
 		case EQ:
-			return Code.COp.NEQ;
+			return Code.Comparator.NEQ;
 		case NEQ:
-			return Code.COp.EQ;
+			return Code.Comparator.EQ;
 		case LT:
-			return Code.COp.GTEQ;
+			return Code.Comparator.GTEQ;
 		case LTEQ:
-			return Code.COp.GT;
+			return Code.Comparator.GT;
 		case GT:
-			return Code.COp.LTEQ;
+			return Code.Comparator.LTEQ;
 		case GTEQ:
-			return Code.COp.LT;
+			return Code.Comparator.LT;
 		}
 		return null;
 	}
@@ -1960,8 +1967,8 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(java.util.Set<Integer> slots) {
-			slots.add(leftOperand);
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(leftOperand);
 		}
 
 		@Override
@@ -2277,19 +2284,24 @@ public abstract class Code {
 	/**
 	 * Reads the (effective) list values from two operand registers, performs an
 	 * operation (e.g. append) on them and writes the result back to a target
-	 * register. For example:
+	 * register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * [int] f([int] xs, [int] ys):
+	 *    return xs ++ ys
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
 	 * 
 	 * <pre>
 	 * [int] f([int] xs, [int] ys):
 	 * body: 
-	 *    assign %3 = %0       : [int]                 
-	 *    assign %4 = %1       : [int]                 
-	 *    append %2 = %3, %4   : [int]             
+	 *    append %2 = %0, %1   : [int]             
 	 *    return %2            : [int]
 	 * </pre>
 	 * 
-	 * This appends two lists together writting the new list into register
-	 * <code>%2</code>.
+	 * This appends two the parameter lists together writting the new list into
+	 * register <code>%2</code>.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2334,7 +2346,22 @@ public abstract class Code {
 
 	/**
 	 * Reads an (effective) collection (i.e. a set, list or map) from the
-	 * operand register, and writes its length into the target register.
+	 * operand register, and writes its length into the target register. For
+	 * example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f([int] ls):
+	 *     return |ls|
+	 * </pre>
+	 * 
+	 * translates to the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f([int] ls):
+	 * body:                  
+	 *     lengthof %0 = %0   : [int]               
+	 *     return %0          : int
+	 * </pre>
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2446,9 +2473,32 @@ public abstract class Code {
 	/**
 	 * Moves the contents of a given operand register into a given target
 	 * register. This is similar to an <code>assign</code> bytecode, except that
-	 * the register's contents are "voided" afterwards. This guarantees that the
-	 * register is no longer live, which is useful for determining the live
-	 * ranges of register in a function or method.
+	 * the register's contents are <i>voided</i> afterwards. This guarantees
+	 * that the register is no longer live, which is useful for determining the
+	 * live ranges of registers in a function or method. For example, the
+	 * following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     x = x + 1
+	 *     return x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     ifge %0, %1 goto blklab0  : int          
+	 *     move %0 = %1              : int                   
+	 * .blklab0                                                   
+	 *     return %0                 : int
+	 * </pre>
+	 * 
+	 * Here we see that when <code>x < y</code> the value of <code>y</code>
+	 * (held in register <code>%1</code>) is <i>moved</i> into variable
+	 * <code>x</code> (held in register <code>%0</code>). This is safe because
+	 * register <code>%1</code> is no longer live at that point.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2479,6 +2529,14 @@ public abstract class Code {
 	 * Represents a block of code which loops continuously until e.g. a
 	 * conditional branch is taken out of the block. For example:
 	 * 
+	 * <pre>
+	 * int f():
+	 *     r = 0
+	 *     while r < 10:
+	 *         r = r + 1
+	 *     return r
+	 * </pre>
+	 * translates into the following WYIL code:
 	 * <pre>
 	 * int f():
 	 * body: 
@@ -2525,9 +2583,9 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(java.util.Set<Integer> slots) {
+		public void registers(java.util.Set<Integer> registers) {
 			for (int operand : modifiedOperands) {
-				slots.add(operand);
+				registers.add(operand);
 			}
 		}
 
@@ -2591,10 +2649,10 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(java.util.Set<Integer> slots) {
-			slots.add(indexOperand);
-			slots.add(sourceOperand);
-			super.slots(slots);
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(indexOperand);
+			registers.add(sourceOperand);
+			super.registers(registers);
 		}
 
 		@Override
@@ -3524,8 +3582,8 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(java.util.Set<Integer> slots) {
-			slots.add(operand);
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(operand);
 		}
 
 		@Override
@@ -3645,8 +3703,8 @@ public abstract class Code {
 		}
 
 		@Override
-		public void slots(java.util.Set<Integer> slots) {
-			slots.add(operand);
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(operand);
 		}
 
 		@Override

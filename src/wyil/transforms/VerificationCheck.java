@@ -260,8 +260,8 @@ public class VerificationCheck implements Transform {
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
 				i = findLabel(i,g.target,body);					
-			} else if(code instanceof Code.IfGoto) {
-				Code.IfGoto ifgoto = (Code.IfGoto) code;
+			} else if(code instanceof Code.If) {
+				Code.If ifgoto = (Code.If) code;
 				WFormula test = buildTest(ifgoto.op, entry, ifgoto.leftOperand,
 						ifgoto.rightOperand, environment);				
 				int targetpc = findLabel(i,ifgoto.target,body)	;
@@ -398,8 +398,8 @@ public class VerificationCheck implements Transform {
 		try {
 		if(code instanceof Code.Assert) {
 			constraint = transform((Code.Assert)code,entry,constraint,environment,assume);
-		} else if(code instanceof Code.BinOp) {
-			constraint = transform((Code.BinOp)code,entry,constraint,environment);
+		} else if(code instanceof Code.ArithOp) {
+			constraint = transform((Code.ArithOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.Convert) {
 			constraint = transform((Code.Convert)code,entry,constraint,environment);
 		} else if(code instanceof Code.Const) {
@@ -504,7 +504,7 @@ public class VerificationCheck implements Transform {
 		return WFormulas.and(test, constraint);
 	}
 	
-	protected WFormula transform(Code.BinOp code, Block.Entry entry,
+	protected WFormula transform(Code.ArithOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		WExpr lhs = operand(code.leftOperand,environment);
 		WExpr rhs = operand(code.rightOperand,environment);
@@ -965,7 +965,7 @@ public class VerificationCheck implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	private WFormula buildTest(Code.COp op, SyntacticElement elem, int leftOperand, int rightOperand, int[] environment) {
+	private WFormula buildTest(Code.Comparator op, SyntacticElement elem, int leftOperand, int rightOperand, int[] environment) {
 		WExpr lhs = operand(leftOperand,environment);
 		WExpr rhs = operand(rightOperand,environment);
 		

@@ -420,8 +420,8 @@ public class ClassFileBuilder {
 			ArrayList<UnresolvedHandler> handlers, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
-			if(code instanceof Code.BinOp) {
-				 translate((Code.BinOp)code,entry,freeSlot,bytecodes);
+			if(code instanceof Code.ArithOp) {
+				 translate((Code.ArithOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.Convert) {
 				 translate((Code.Convert)code,freeSlot,constants,bytecodes);
 			} else if(code instanceof Code.Const) {
@@ -438,8 +438,8 @@ public class ClassFileBuilder {
 				 freeSlot = translate((Code.ForAll)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Goto) {
 				 translate((Code.Goto)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.IfGoto) {				
-				translateIfGoto((Code.IfGoto) code, entry, freeSlot, bytecodes);
+			} else if(code instanceof Code.If) {				
+				translateIfGoto((Code.If) code, entry, freeSlot, bytecodes);
 			} else if(code instanceof Code.IfIs) {
 				translate((Code.IfIs) code, entry, freeSlot, constants, bytecodes);
 			} else if(code instanceof Code.IndirectInvoke) {
@@ -746,7 +746,7 @@ public class ClassFileBuilder {
 				translate(value, freeSlot, bytecodes);
 				bytecodes
 						.add(new Bytecode.Load(c.operand, convertType(c.type)));				
-				translateIfGoto(value.type(), Code.COp.EQ, target, entry,
+				translateIfGoto(value.type(), Code.Comparator.EQ, target, entry,
 						freeSlot + 1, bytecodes);
 			}
 			bytecodes.add(new Bytecode.Goto(c.defaultTarget));
@@ -795,7 +795,7 @@ public class ClassFileBuilder {
 		handlers.add(trampolineHandler);
 	}
 	
-	public void translateIfGoto(Code.IfGoto code, Entry stmt, int freeSlot,
+	public void translateIfGoto(Code.If code, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
 		JvmType jt = convertType(code.type);
 		bytecodes.add(new Bytecode.Load(code.leftOperand,jt));
@@ -803,7 +803,7 @@ public class ClassFileBuilder {
 		translateIfGoto(code.type,code.op,code.target,stmt,freeSlot,bytecodes);
 	}
 	
-	public void translateIfGoto(Type c_type, Code.COp cop, String target, Entry stmt, int freeSlot,
+	public void translateIfGoto(Type c_type, Code.Comparator cop, String target, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
 				
 		JvmType type = convertType(c_type);
@@ -1204,7 +1204,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, convertType(c.fieldType())));
 	}
 
-	public void translate(Code.BinOp c, Block.Entry stmt, int freeSlot,
+	public void translate(Code.ArithOp c, Block.Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 						
 		JvmType type = convertType(c.type);

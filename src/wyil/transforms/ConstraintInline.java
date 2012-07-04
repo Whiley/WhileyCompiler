@@ -174,8 +174,8 @@ public class ConstraintInline implements Transform {
 				return transform((Code.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Code.Update) {
 
-			} else if(code instanceof Code.BinOp) {
-				return transform((Code.BinOp)code,freeSlot,entry);
+			} else if(code instanceof Code.ArithOp) {
+				return transform((Code.ArithOp)code,freeSlot,entry);
 			} else if(code instanceof Code.Return) {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
@@ -285,13 +285,13 @@ public class ConstraintInline implements Transform {
 			blk.append(Code.Const(freeSlot, Value.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
 			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
-					Code.COp.GTEQ, "index out of bounds (negative)"),
+					Code.Comparator.GTEQ, "index out of bounds (negative)"),
 					attributes(elem));
 			blk.append(
 					Code.LengthOf(code.type, freeSlot + 1, code.leftOperand),
 					attributes(elem));
 			blk.append(Code.Assert(Type.T_INT, freeSlot, freeSlot + 1,
-					Code.COp.LT, "index out of bounds (not less than length)"),
+					Code.Comparator.LT, "index out of bounds (not less than length)"),
 					attributes(elem));
 			return blk;
 		} else {
@@ -319,9 +319,9 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.BinOp code, int freeSlot, SyntacticElement elem) {
+	public Block transform(Code.ArithOp code, int freeSlot, SyntacticElement elem) {
 		
-		if(code.bop == Code.BOp.DIV) {
+		if(code.bop == Code.ArithOperation.DIV) {
 			Block blk = new Block(0);
 			if (code.type instanceof Type.Int) {
 				blk.append(Code.Const(freeSlot,Value.V_INTEGER(BigInteger.ZERO)),
@@ -331,7 +331,7 @@ public class ConstraintInline implements Transform {
 						attributes(elem));
 			}
 			blk.append(Code.Assert(code.type, code.rightOperand, freeSlot,
-					Code.COp.NEQ, "division by zero"), attributes(elem));
+					Code.Comparator.NEQ, "division by zero"), attributes(elem));
 			return blk;
 		} 
 		

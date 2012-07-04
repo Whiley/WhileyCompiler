@@ -121,11 +121,11 @@ public final class LocalGenerator {
 			blk.append(Code.Const(freeRegister+1,Value.V_BOOL(true)),attributes(condition));
 			if(isAssumption) {
 				blk.append(Code.Assume(Type.T_BOOL, freeRegister,
-						freeRegister + 1, Code.COp.EQ, message),
+						freeRegister + 1, Code.Comparator.EQ, message),
 						attributes(condition));
 			} else {
 				blk.append(Code.Assert(Type.T_BOOL, freeRegister, freeRegister + 1,
-						Code.COp.EQ, message), attributes(condition));
+						Code.Comparator.EQ, message), attributes(condition));
 			}
 			return blk;
 		} catch (SyntaxError se) {
@@ -161,7 +161,7 @@ public final class LocalGenerator {
 		// those involving type tests. If/When WYIL changes to be register based
 		// this should fall out in the wash.
 		
-		Code.COp cop = OP2COP(bop,v);
+		Code.Comparator cop = OP2COP(bop,v);
 		
 		blk.append(generate(v.lhs, freeRegister, freeRegister + 1, environment));
 		blk.append(generate(v.rhs, freeRegister + 1, freeRegister + 2,
@@ -223,8 +223,8 @@ public final class LocalGenerator {
 					environment);
 			blk.append(Code.Const(freeRegister + 1, Value.V_BOOL(true)),
 					attributes(condition));
-			blk.append(Code.IfGoto(Type.T_BOOL, freeRegister, freeRegister + 1,
-					Code.COp.EQ, target), attributes(condition));
+			blk.append(Code.If(Type.T_BOOL, freeRegister, freeRegister + 1,
+					Code.Comparator.EQ, target), attributes(condition));
 			return blk;
 			
 		} catch (SyntaxError se) {
@@ -266,9 +266,9 @@ public final class LocalGenerator {
 			return generateTypeCondition(target, v, freeRegister, environment);
 		}
 
-		Code.COp cop = OP2COP(bop,v);
+		Code.Comparator cop = OP2COP(bop,v);
 		
-		if (cop == Code.COp.EQ && v.lhs instanceof Expr.LocalVariable
+		if (cop == Code.Comparator.EQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {
 			// this is a simple rewrite to enable type inference.
@@ -278,7 +278,7 @@ public final class LocalGenerator {
 			}
 			int slot = environment.get(lhs.var);								
 			blk.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
-		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.LocalVariable
+		} else if (cop == Code.Comparator.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
 			// this is a simple rewrite to enable type inference.
@@ -296,7 +296,7 @@ public final class LocalGenerator {
 					environment));
 			blk.append(generate(v.rhs, freeRegister + 1, freeRegister + 2,
 					environment));
-			blk.append(Code.IfGoto(v.srcType.raw(), freeRegister,
+			blk.append(Code.If(v.srcType.raw(), freeRegister,
 					freeRegister + 1, cop, target), attributes(v));
 		}
 		return blk;
@@ -791,7 +791,7 @@ public final class LocalGenerator {
 			blk.append(Code.StringOp(target,freeRegister, freeRegister+1,op),attributes(v));
 			return blk;	
 		default:
-				blk.append(Code.BinOp(result, target, freeRegister, freeRegister+1,
+				blk.append(Code.ArithOp(result, target, freeRegister, freeRegister+1,
 						OP2BOP(bop, v)), attributes(v));			
 			return blk;
 		}		
@@ -1013,55 +1013,55 @@ public final class LocalGenerator {
 		return operands;
 	}
 	
-	private Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	private Code.ArithOperation OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case ADD:
-			return Code.BOp.ADD;
+			return Code.ArithOperation.ADD;
 		case SUB:
-			return Code.BOp.SUB;		
+			return Code.ArithOperation.SUB;		
 		case MUL:
-			return Code.BOp.MUL;
+			return Code.ArithOperation.MUL;
 		case DIV:
-			return Code.BOp.DIV;
+			return Code.ArithOperation.DIV;
 		case REM:
-			return Code.BOp.REM;
+			return Code.ArithOperation.REM;
 		case RANGE:
-			return Code.BOp.RANGE;
+			return Code.ArithOperation.RANGE;
 		case BITWISEAND:
-			return Code.BOp.BITWISEAND;
+			return Code.ArithOperation.BITWISEAND;
 		case BITWISEOR:
-			return Code.BOp.BITWISEOR;
+			return Code.ArithOperation.BITWISEOR;
 		case BITWISEXOR:
-			return Code.BOp.BITWISEXOR;
+			return Code.ArithOperation.BITWISEXOR;
 		case LEFTSHIFT:
-			return Code.BOp.LEFTSHIFT;
+			return Code.ArithOperation.LEFTSHIFT;
 		case RIGHTSHIFT:
-			return Code.BOp.RIGHTSHIFT;
+			return Code.ArithOperation.RIGHTSHIFT;
 		}
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, elem);
 		return null;
 	}
 	
-	private Code.COp OP2COP(Expr.BOp bop, SyntacticElement elem) {
+	private Code.Comparator OP2COP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case EQ:
-			return Code.COp.EQ;
+			return Code.Comparator.EQ;
 		case NEQ:
-			return Code.COp.NEQ;
+			return Code.Comparator.NEQ;
 		case LT:
-			return Code.COp.LT;
+			return Code.Comparator.LT;
 		case LTEQ:
-			return Code.COp.LTEQ;
+			return Code.Comparator.LTEQ;
 		case GT:
-			return Code.COp.GT;
+			return Code.Comparator.GT;
 		case GTEQ:
-			return Code.COp.GTEQ;
+			return Code.Comparator.GTEQ;
 		case SUBSET:
-			return Code.COp.SUBSET;
+			return Code.Comparator.SUBSET;
 		case SUBSETEQ:
-			return Code.COp.SUBSETEQ;
+			return Code.Comparator.SUBSETEQ;
 		case ELEMENTOF:
-			return Code.COp.ELEMOF;
+			return Code.Comparator.ELEMOF;
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		return null;
@@ -1167,14 +1167,14 @@ public final class LocalGenerator {
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;				
-				Code.COp iop = Code.invert(a.op);
+				Code.Comparator iop = Code.invert(a.op);
 				if(iop != null) {
-					nblock.append(Code.IfGoto(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
+					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
 					String lab = Block.freshLabel();
-					nblock.append(Code.IfGoto(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
+					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
 					nblock.append(Code.Goto(target));
 					nblock.append(Code.Label(lab));
 				}
