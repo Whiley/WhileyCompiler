@@ -1093,7 +1093,7 @@ public abstract class Code {
 	 *     return ((x * y) + 1) / 2
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int x, int y):
@@ -1165,7 +1165,7 @@ public abstract class Code {
 	 *     return x + 1
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * real f(int x):
@@ -1235,7 +1235,7 @@ public abstract class Code {
 	 *     return |xs| + 1
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int x):
@@ -1309,7 +1309,7 @@ public abstract class Code {
 	 *     return x
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int x):
@@ -1366,7 +1366,7 @@ public abstract class Code {
 	 *     debug "X = " + x
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * void f(int x):
@@ -1477,7 +1477,7 @@ public abstract class Code {
 	 *     return xs[i]
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f([int] xs, int i):
@@ -1573,7 +1573,7 @@ public abstract class Code {
 	 *     return p.x + p.y
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f({int x,int y} p):
@@ -1641,7 +1641,7 @@ public abstract class Code {
 	 *     return x
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int x):
@@ -1730,7 +1730,7 @@ public abstract class Code {
 	 *         return 0
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int x, int y):
@@ -1906,7 +1906,7 @@ public abstract class Code {
 	 *         return x
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int|[int] x):
@@ -2104,7 +2104,7 @@ public abstract class Code {
 	 *     return !x
 	 * </pre>
 	 * 
-	 * translates into the following WYIL:
+	 * can be translated into the following WYIL:
 	 * 
 	 * <pre>
 	 * bool f(bool x):
@@ -2162,7 +2162,7 @@ public abstract class Code {
 	 *     return r + 1
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int g(int x, int y, int z):
@@ -2291,7 +2291,7 @@ public abstract class Code {
 	 *    return xs ++ ys
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * [int] f([int] xs, [int] ys):
@@ -2429,7 +2429,7 @@ public abstract class Code {
 	 *     return map[key]
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * string f({int->string} map, int key):
@@ -2536,7 +2536,7 @@ public abstract class Code {
 	 *         r = r + 1
 	 *     return r
 	 * </pre>
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * <pre>
 	 * int f():
 	 * body: 
@@ -3005,12 +3005,12 @@ public abstract class Code {
 	 * <pre>
 	 * {int->string} f():
 	 * body:
-	 *   const %1 = 1                : int                           
-	 *   const %2 = "Hello"          : string                  
-	 *   const %3 = 2                : int                           
-	 *   const %4 = "World"          : string                  
+	 *   const %1 = 1                   : int                           
+	 *   const %2 = "Hello"             : string                  
+	 *   const %3 = 2                   : int                           
+	 *   const %4 = "World"             : string                  
 	 *   newmap %0 = (%1, %2, %3, %4)   : {int=>string}
-	 *   return %0                   : {int=>string}
+	 *   return %0                      : {int=>string}
 	 * </pre>
 	 * 
 	 * 
@@ -3053,7 +3053,7 @@ public abstract class Code {
 	 *     return {x: x, y: x}
 	 * </pre>
 	 * 
-	 * translates into the following WYIL:
+	 * can be translated into the following WYIL:
 	 * 
 	 * <pre>
 	 * {real x,real y} f(real x, real y):
@@ -3100,7 +3100,7 @@ public abstract class Code {
 	 *     return x,y
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * (int,int) f(int x, int y):
@@ -3150,16 +3150,16 @@ public abstract class Code {
 	 *     return {x,y,z}
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * [int] f(int x, int y, int z):
 	 * body: 
-	 *    assign %4 = %0           : int                   
-	 *    assign %5 = %1           : int                   
-	 *    assign %6 = %2           : int                   
+	 *    assign %4 = %0             : int                   
+	 *    assign %5 = %1             : int                   
+	 *    assign %6 = %2             : int                   
 	 *    newset %3 = (%4, %5, %6)   : [int]            
-	 *    return %3                : [int]
+	 *    return %3                  : [int]
 	 * </pre>
 	 * 
 	 * Writes the set value given by <code>{x,y,z}</code> into register
@@ -3200,16 +3200,16 @@ public abstract class Code {
 	 *     return [x,y,z]
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * [int] f(int x, int y, int z):
 	 * body: 
-	 *    assign %4 = %0           : int                   
-	 *    assign %5 = %1           : int                   
-	 *    assign %6 = %2           : int                   
+	 *    assign %4 = %0             : int                   
+	 *    assign %5 = %1             : int                   
+	 *    assign %6 = %2             : int                   
 	 *    newlist %3 = (%4, %5, %6)  : [int]            
-	 *    return %3                : [int]
+	 *    return %3                  : [int]
 	 * </pre>
 	 * 
 	 * Writes the list value given by <code>[x,y,z]</code> into register
@@ -3266,15 +3266,15 @@ public abstract class Code {
 	 *     return x + y
 	 * </pre>
 	 * 
-	 * translates into the following WYIL:
+	 * can be translated into the following WYIL:
 	 * 
 	 * <pre>
 	 * int f(int x, int y):
 	 * body: 
-	 *     assign %3 = %0  : int                   
-	 *     assign %4 = %1  : int                   
-	 *     add %2 = % 3, %4 : int                  
-	 *     return %2 : int
+	 *     assign %3 = %0    : int                   
+	 *     assign %4 = %1    : int                   
+	 *     add %2 = % 3, %4  : int                  
+	 *     return %2         : int
 	 * </pre>
 	 * 
 	 * Here, the
@@ -3493,7 +3493,7 @@ public abstract class Code {
 	 *             return "OTHER"
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * string f(int x):
@@ -3648,7 +3648,7 @@ public abstract class Code {
 	 *         return 1
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int x) throws string:
@@ -3690,6 +3690,46 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Represents a try-catch block within which specified exceptions will
+	 * caught and processed within a handler. For example, the following Whiley
+	 * code:
+	 * 
+	 * <pre>
+	 * int f(int x) throws Error:
+	 *     ...
+	 * 
+	 * int g(int x):
+	 *     try:
+	 *         x = f(x)
+	 *     catch(Error e):
+	 *         return 0
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body: 
+	 *     ...                        
+	 * 
+	 * int g(int x):
+	 * body: 
+	 *     trycatch Error -> lab2          
+	 *        assign %3 = %0           : int                   
+	 *        invoke %0 = (%3) test:f  : int(int) throws {string msg}
+	 *     return
+	 * .lab2                          
+	 *     const %3 = 0                : int                      
+	 *     return %3                   : int
+	 * </pre>
+	 * 
+	 * Here, we see that within the try-catch block control is transferred to
+	 * <code>lab2</code> if an exception of type <code>Error</code> is thrown.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class TryCatch extends Code {
 		public final int operand;
 		public final String label;
@@ -3809,7 +3849,7 @@ public abstract class Code {
 	 *     return -x
 	 * </pre>
 	 * 
-	 * translates into the following WYIL:
+	 * can be translated into the following WYIL:
 	 * 
 	 * <pre>
 	 * int f(int x):
@@ -3856,7 +3896,7 @@ public abstract class Code {
 	 *    return ~x
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * byte f(byte x):
@@ -3895,7 +3935,29 @@ public abstract class Code {
 
 	/**
 	 * Instantiate a new object from the value in a given operand register, and
-	 * write the result to a given target register.
+	 * write the result (a reference to that object) to a given target register.
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * define PointObj as ref {real x, real y}
+	 * 
+	 * PointObj f(real x, real y):
+	 *     return new {x: x, y: y}
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * ref {real x,real y} f(int x, int y):
+	 * body: 
+	 *     newrecord %2 = (%0, %1)  : {real x,real y}   
+	 *     newobject %2 = %2        : ref {real x,real y}  
+	 *     return %2                : ref {real x,real y}
+	 * </pre>
+	 * 
+	 * <b>NOTE:</b> objects are unlike other data types in WYIL, in that they
+	 * represent mutable state allocated on a heap. Thus, changes to an object
+	 * within a method are visible to those outside of the method.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -3933,7 +3995,7 @@ public abstract class Code {
 	 *     return tup[0]
 	 * </pre>
 	 * 
-	 * translates into the following WYIL code:
+	 * can be translated into the following WYIL code:
 	 * 
 	 * <pre>
 	 * int f(int,int tup):
