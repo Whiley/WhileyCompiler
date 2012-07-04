@@ -57,7 +57,7 @@ import wyil.util.*;
  *   assign %2 = %0        // [int]                 
  *   forall %3 in %2 ()    // [int]              
  *       assign %4 = %1    // int                                
- *       add %1 = %4, %3   // int                                     
+ *       add %1 = %4,%3   // int                                     
  *   return %1             // int
  * </pre>
  * 
@@ -1113,26 +1113,45 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return bop + " %" + target + " = % " + leftOperand + ", %"
+			return bop + " %" + target + " = %" + leftOperand + ",%"
 					+ rightOperand + " : " + type;
 		}
 	}
 
 	/**
-	 * <p>
 	 * Reads a value from the operand register, converts it to a given type and
 	 * writes the result to the target register. This bytecode is the only way
 	 * to change the type of a value. It's purpose is to simplify
 	 * implementations which have different representations of data types. A
 	 * convert bytecode must be inserted whenever the type of a register
 	 * changes. This includes at control-flow meet points, when the value is
-	 * passed as a parameter, assigned to a field, etc.
-	 * </p>
+	 * passed as a parameter, assigned to a field, etc. For example, the
+	 * following Whiley code:
 	 * 
+	 * <pre>
+	 * real f(int x):
+	 *     return x + 1
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * real f(int x):
+	 * body: 
+	 *     const %2 = 1           : int                      
+	 *     add %1 = %0,%2         : int                  
+	 *     convert %1 = %1 real   : int             
+	 *     return %1              : real
+	 * </pre>
 	 * <p>
-	 * In many cases, this bytecode may correspond to a nop on the hardware.
-	 * Consider converting from <code>[any]</code> to <code>any</code>. On the
-	 * JVM, <code>any</code> translates to <code>Object</code>, whilst
+	 * Here, we see that the <code>int</code> value in register <code>%1</code>
+	 * must be explicitly converted into a <code>real</code> value before it can
+	 * be returned from this function.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> In many cases, this bytecode may correspond to a nop on the
+	 * hardware. Consider converting from <code>[any]</code> to <code>any</code>
+	 * . On the JVM, <code>any</code> translates to <code>Object</code>, whilst
 	 * <code>[any]</code> translates to <code>List</code> (which is an instance
 	 * of <code>Object</code>). Thus, no conversion is necessary since
 	 * <code>List</code> can safely flow into <code>Object</code>.
@@ -1168,15 +1187,42 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "convert %" + target + " = % " + operand + " " + result
+			return "convert %" + target + " = %" + operand + " " + result
 					+ " : " + type;
 		}
 	}
 
 	/**
-	 * Writes a constant value to a target register. This includes integer
-	 * constants, rational constants, list constants, set constants, dictionary
-	 * constants, function constants, etc.
+	 * Writes a constant value to a target register. This includes
+	 * <i>integers</i>, <i>rationals</i>, <i>lists</i>, <i>sets</i>,
+	 * <i>maps</i>, etc. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     xs = {1,2.12}
+	 *     return |xs| + 1
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body: 
+	 *     var xs
+	 *     const %2 = 1               : int                      
+	 *     convert %2 = % 2 int|real  : int         
+	 *     const %3 = 2.12            : real                   
+	 *     convert %3 = % 3 int|real  : real        
+	 *     newset %1 = (%2,%3)       : {int|real}       
+	 *     assign %3 = %1             : {int|real}            
+	 *     lengthof %3 = % 3          : {int|real}          
+	 *     const %4 = 1               : int                      
+	 *     add %2 = % 3,%4           : int                  
+	 *     return %2                  : int
+	 * </pre>
+	 * 
+	 * Here, we see two kinds of constants values being used: integers (i.e.
+	 * <code>const %2 = 1</code>) and rationals (i.e. <code>const %3 = 2.12</code>).
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1238,7 +1284,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %1 = %0      : int                   
 	 *     const %2 = 1        : int                      
-	 *     add %0 = %1, %2     : int                                    
+	 *     add %0 = %1,%2     : int                                    
 	 *     return %0           : int
 	 * </pre>
 	 * 
@@ -1296,7 +1342,7 @@ public abstract class Code {
 	 *     const %2 = "X = "       : string                                
 	 *     convert %0 = %0 any     : int              
 	 *     invoke %0 (%0) whiley/lang/Any:toString : string(any)
-	 *     strappend %1 = %2, %0   : string         
+	 *     strappend %1 = %2,%0   : string         
 	 *     debug %1                : string                      
 	 *     return
 	 * </pre>
@@ -1405,10 +1451,10 @@ public abstract class Code {
 	 * int f([int] xs, int i):
 	 * body:          
 	 *    const %2 = 0         : int                                           
-	 *    assertge %1, %2 "index out of bounds (negative)" : int
+	 *    assertge %1,%2 "index out of bounds (negative)" : int
 	 *    lengthof %3 = %0     : [int]               
-	 *    assertlt %2, %3 "index out of bounds (not less than length)" : int
-	 *    indexof %1 = %0, %1  : [int]            
+	 *    assertlt %2,%3 "index out of bounds (not less than length)" : int
+	 *    indexof %1 = %0,%1  : [int]            
 	 *    return %1            : int
 	 * </pre>
 	 * 
@@ -1439,7 +1485,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "assert" + op + " %" + leftOperand + ", %" + rightOperand
+			return "assert" + op + " %" + leftOperand + ",%" + rightOperand
 					+ " \"" + msg + "\"" + " : " + type;
 		}
 	}
@@ -1478,7 +1524,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "assume" + op + " %" + leftOperand + ", %" + rightOperand
+			return "assume" + op + " %" + leftOperand + ",%" + rightOperand
 					+ " \"" + msg + "\"" + " : " + type;
 		}
 	}
@@ -1502,7 +1548,7 @@ public abstract class Code {
 	 * body:         
 	 *     fieldload %2 = %0 x    : {int x,int y}            
 	 *     fieldload %3 = %0 y    : {int x,int y}    
-	 *     add %1 = %2, %3        : int                  
+	 *     add %1 = %2,%3        : int                  
 	 *     return %1              : int
 	 * </pre>
 	 * 
@@ -1545,7 +1591,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "fieldload %" + target + " = % " + operand + " " + field
+			return "fieldload %" + target + " = %" + operand + " " + field
 					+ " : " + type;
 		}
 	}
@@ -1569,7 +1615,7 @@ public abstract class Code {
 	 * int f(int x):
 	 * body:                   
 	 *     const %1 = 0             : int                      
-	 *     iflt %0, %1 goto blklab0 : int          
+	 *     iflt %0,%1 goto blklab0 : int          
 	 *     const %0 = 1             : int                      
 	 *     goto blklab1                            
 	 * .blklab0                                
@@ -1625,8 +1671,8 @@ public abstract class Code {
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label by read values from two operand
-	 * registers and comparing them. The possible comparators are:
+	 * Branches conditionally to the given label by reading the values from two
+	 * operand registers and comparing them. The possible comparators are:
 	 * </p>
 	 * <ul>
 	 * <li><i>equals (eq) and not-equals (ne)</i>. Both operands must have the
@@ -1640,6 +1686,34 @@ public abstract class Code {
 	 * <li><i>subset (ss) and subset-equals (sse)</i>. Both operands must have
 	 * the given type, which additionally must be a set.</li>
 	 * </ul>
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     if x < y:
+	 *         return -1
+	 *     else if x > y:
+	 *         return 1
+	 *     else:
+	 *         return 0
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     ifge %0,%1 goto blklab0 : int          
+	 *     const %2 = -1 : int                                          
+	 *     return %2 : int                         
+	 * .blklab0                                
+	 *     ifle %0,%1 goto blklab2 : int          
+	 *     const %2 = 1 : int                      
+	 *     return %2 : int                         
+	 * .blklab2                                
+	 *     const %2 = 0 : int                      
+	 *     return %2 : int
+	 * </pre>
 	 * 
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
@@ -1699,7 +1773,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "if" + op + " %" + leftOperand + ", %" + rightOperand
+			return "if" + op + " %" + leftOperand + ",%" + rightOperand
 					+ " goto " + target + " : " + type;
 		}
 	}
@@ -1784,20 +1858,43 @@ public abstract class Code {
 	}
 
 	/**
-	 * <p>
 	 * Branches conditionally to the given label based on the result of a
 	 * runtime type test against a value from the operand register. More
 	 * specifically, it checks whether the value is a subtype of the type test.
-	 * </p>
-	 * <p>
 	 * The operand register is automatically <i>retyped</i> as a result of the
 	 * type test. On the true branch, its type is intersected with type test. On
 	 * the false branch, its type is intersected with the <i>negation</i> of the
-	 * type test.
-	 * </p>
+	 * type test. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int|[int] x):
+	 *     if x is [int]:
+	 *         return |x|
+	 *     else:
+	 *         return x
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int|[int] x):
+	 * body: 
+	 *     ifis %0, [int] goto lab    : int|[int] 
+	 *     return %0                  : int     
+	 * .lab                                                
+	 *     lengthof %0 = %0           : [int]               
+	 *     return %0                  : int
+	 * </pre>
+	 * 
+	 * Here, we see that, on the false branch, register <code>%0</code> is
+	 * automatically given type <code>int</code>, whilst on the true branch it
+	 * is automatically given type <code>[int]</code>.
+	 * 
+	 * <p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1812,15 +1909,15 @@ public abstract class Code {
 				String target) {
 			if (type == null) {
 				throw new IllegalArgumentException(
-						"IfGoto tpe argument cannot be null");
+						"IfUs type argument cannot be null");
 			}
 			if (rightOperand == null) {
 				throw new IllegalArgumentException(
-						"IfGoto test argument cannot be null");
+						"IfIs test argument cannot be null");
 			}
 			if (target == null) {
 				throw new IllegalArgumentException(
-						"IfGoto target argument cannot be null");
+						"IfIs target argument cannot be null");
 			}
 			this.type = type;
 			this.target = target;
@@ -2014,14 +2111,46 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "not %" + target + " = % " + operand + " : " + type;
+			return "not %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
 	/**
-	 * Corresponds to a direct function call whose parameters are provided in
+	 * Corresponds to a function or method call whose parameters are read from
 	 * zero or more operand registers. If a return value is required, this is
-	 * written to a target register after the function call.
+	 * written to a target register afterwards. For example, the following
+	 * Whiley code:
+	 * 
+	 * <pre>
+	 * int g(int x, int y, int z):
+	 *     return x * y * z
+	 * 
+	 * int f(int x, int y):
+	 *     r = g(x,y,3)
+	 *     return r + 1
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int g(int x, int y, int z):
+	 * body: 
+	 *     mul %3 = %0,%1   : int                                    
+	 *     mul %3 = %3,%2   : int                  
+	 *     return %3         : int                         
+	 * 
+	 * int f(int x, int y):
+	 * body:              
+	 *     const %2 = 3                    : int                      
+	 *     invoke %2 = (%0,%1,%2) test:g   : int(int,int,int)                  
+	 *     const %3 = 1                    : int                      
+	 *     add %2 = (%2,%3)                : int                  
+	 *     return %2                       : int
+	 * </pre>
+	 * 
+	 * Here, we see that arguments to the <code>invoke</code> bytecode are
+	 * supplied in the order they are given in the function or method's
+	 * declaration.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2130,7 +2259,7 @@ public abstract class Code {
 	 * body: 
 	 *    assign %3 = %0       : [int]                 
 	 *    assign %4 = %1       : [int]                 
-	 *    append %2 = %3, %4   : [int]             
+	 *    append %2 = %3,%4   : [int]             
 	 *    return %2            : [int]
 	 * </pre>
 	 * 
@@ -2173,7 +2302,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = %" + leftOperand + ", %"
+			return operation + " %" + target + " = %" + leftOperand + ",%"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -2203,7 +2332,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "lengthof %" + target + " = % " + operand + " : " + type;
+			return "lengthof %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
@@ -2232,16 +2361,35 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "sublist %" + target + " = % " + operands[0] + ", %"
-					+ operands[1] + ", %" + operands[2] + " : " + type;
+			return "sublist %" + target + " = %" + operands[0] + ",%"
+					+ operands[1] + ",%" + operands[2] + " : " + type;
 		}
 	}
 
 	/**
-	 * Reads an effective map from the source (left) operand register, and a key
-	 * value from the key (right) operand register and returns the value
-	 * associated with that key in a map or list. If the key does not exist,
-	 * then a fault is raised.
+	 * Reads an effective list or map from the source (left) operand register,
+	 * and a key value from the key (right) operand register and returns the
+	 * value associated with that key. If the key does not exist, then a fault
+	 * is raised. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * string f({int=>string} map, int key):
+	 *     return map[key]
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * string f({int->string} map, int key):
+	 * body: 
+	 *     assertky %1,%0 "invalid key"       : {int->string}
+	 *     indexof %2 = %0,%1                 : {int->string}    
+	 *     return %2                          : string
+	 * </pre>
+	 * 
+	 * Here, we see the <code>assertky</code> bytecode is used to first check
+	 * that the given key exists in <code>map</code>, otherwise a fault is
+	 * raised.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -2265,7 +2413,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "indexof %" + target + " = % " + leftOperand + ", %"
+			return "indexof %" + target + " = %" + leftOperand + ",%"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -2298,7 +2446,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "move %" + target + " = % " + operand + " : " + type;
+			return "move %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
@@ -2312,9 +2460,9 @@ public abstract class Code {
 	 *     const %0 = 0             : int                      
 	 *     loop (%0)                                                    
 	 *         const %1 = 10        : int                     
-	 *         ifge %0, %1 goto blklab0 : int                             
+	 *         ifge %0,%1 goto blklab0 : int                             
 	 *         const %1 = 1         : int                      
-	 *         add %0 = %0, %1      : int
+	 *         add %0 = %0,%1      : int
 	 * .blklab0                                     
 	 *     return %0                : int
 	 * </pre>
@@ -2829,7 +2977,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %3 = %0         : real                  
 	 *     assign %4 = %0         : real                  
-	 *     newrecord %2 (%3, %4)  : {real x,real y}    
+	 *     newrecord %2 (%3,%4)  : {real x,real y}    
 	 *     return %2              : {real x,real y}
 	 * </pre>
 	 * 
@@ -2876,7 +3024,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %3 = %0          : int                   
 	 *     assign %4 = %1          : int                   
-	 *     newtuple %2 = (%3, %4)  : (int,int)         
+	 *     newtuple %2 = (%3,%4)  : (int,int)         
 	 *     return %2               : (int,int)
 	 * </pre>
 	 * 
@@ -3042,7 +3190,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %3 = %0  : int                   
 	 *     assign %4 = %1  : int                   
-	 *     add %2 = % 3, %4 : int                  
+	 *     add %2 = % 3,%4 : int                  
 	 *     return %2 : int
 	 * </pre>
 	 * 
@@ -3160,7 +3308,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = %" + leftOperand + ", %"
+			return operation + " %" + target + " = %" + leftOperand + ",%"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -3211,7 +3359,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = % " + leftOperand + ", %"
+			return operation + " %" + target + " = %" + leftOperand + ",%"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -3240,8 +3388,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "substr %" + target + " = % " + operands[0] + ", %"
-					+ operands[1] + ", %" + operands[2] + " : " + type;
+			return "substr %" + target + " = %" + operands[0] + ",%"
+					+ operands[1] + ",%" + operands[2] + " : " + type;
 		}
 	}
 
@@ -3423,7 +3571,7 @@ public abstract class Code {
 	 * int f(int x) throws string:
 	 * body:             
 	 *     const %1 = 0 : int                      
-	 *     ifge %0, %1 goto blklab0 : int          
+	 *     ifge %0,%1 goto blklab0 : int          
 	 *     const %1 = "ERROR" : string             
 	 *     throw %1 : string                       
 	 * .blklab0                                
@@ -3611,7 +3759,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "neg %" + target + " = % " + operand + " : " + type;
+			return "neg %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
@@ -3658,7 +3806,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "invert %" + target + " = % " + operand + " : " + type;
+			return "invert %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
@@ -3688,7 +3836,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newobject %" + target + " = % " + operand + " : " + type;
+			return "newobject %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
@@ -3771,7 +3919,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "deref %" + target + " = % " + operand + " : " + type;
+			return "deref %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
