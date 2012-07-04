@@ -2036,10 +2036,10 @@ public abstract class Code {
 
 		public String toString() {
 			if (target != Code.NULL_REG) {
-				return "indirectinvoke " + target + " " + operand + " "
+				return "indirectinvoke " + target + " = " + operand + " "
 						+ toString(operands) + " : " + type;
 			} else {
-				return "indirectinvoke " + operand + " " + toString(operands)
+				return "indirectinvoke " + operand + " = " + toString(operands)
 						+ " : " + type;
 			}
 		}
@@ -2216,7 +2216,7 @@ public abstract class Code {
 
 		public String toString() {
 			if (target != Code.NULL_REG) {
-				return "invoke %" + target + " " + toString(operands) + " "
+				return "invoke %" + target + " = " + toString(operands) + " "
 						+ name + " : " + type;
 			} else {
 				return "invoke %" + toString(operands) + " " + name + " : "
@@ -3036,7 +3036,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newmap %" + target + " " + toString(operands) + " : " + type;
+			return "newmap %" + target + " = " + toString(operands) + " : " + type;
 		}
 	}
 
@@ -3085,7 +3085,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newrecord %" + target + " " + toString(operands) + " : "
+			return "newrecord %" + target + " = " + toString(operands) + " : "
 					+ type;
 		}
 	}
