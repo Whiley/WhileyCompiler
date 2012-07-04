@@ -57,7 +57,7 @@ import wyil.util.*;
  *   assign %2 = %0        // [int]                 
  *   forall %3 in %2 ()    // [int]              
  *       assign %4 = %1    // int                                
- *       add %1 = %4,%3   // int                                     
+ *       add %1 = %4, %3   // int                                     
  *   return %1             // int
  * </pre>
  * 
@@ -1079,6 +1079,31 @@ public abstract class Code {
 	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
 	 * <li><i>leftshift,rightshift</i></li>
 	 * </ul>
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     return ((x * y) + 1) / 2
+	 * </pre>
+	 * 
+	 * translates into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     mul %2 = %0, %1   : int                  
+	 *     const %3 = 1      : int                      
+	 *     add %2 = %2, %3   : int                  
+	 *     const %3 = 2      : int                      
+	 *     const %4 = 0      : int                      
+	 *     assertne %3, %4 "division by zero" : int
+	 *     div %2 = %2, %3   : int                  
+	 *     return %2         : int
+	 * </pre>
+	 * 
+	 * Here, the <code>assertne</code> bytecode has been included to check
+	 * against division-by-zero. In this particular case the assertion is known
+	 * true at compile time and, in practice, would be compiled away.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -1113,7 +1138,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return bop + " %" + target + " = %" + leftOperand + ",%"
+			return bop + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -1139,7 +1164,7 @@ public abstract class Code {
 	 * real f(int x):
 	 * body: 
 	 *     const %2 = 1           : int                      
-	 *     add %1 = %0,%2         : int                  
+	 *     add %1 = %0, %2         : int                  
 	 *     convert %1 = %1 real   : int             
 	 *     return %1              : real
 	 * </pre>
@@ -1213,11 +1238,11 @@ public abstract class Code {
 	 *     convert %2 = % 2 int|real  : int         
 	 *     const %3 = 2.12            : real                   
 	 *     convert %3 = % 3 int|real  : real        
-	 *     newset %1 = (%2,%3)       : {int|real}       
+	 *     newset %1 = (%2, %3)       : {int|real}       
 	 *     assign %3 = %1             : {int|real}            
 	 *     lengthof %3 = % 3          : {int|real}          
 	 *     const %4 = 1               : int                      
-	 *     add %2 = % 3,%4           : int                  
+	 *     add %2 = % 3, %4           : int                  
 	 *     return %2                  : int
 	 * </pre>
 	 * 
@@ -1284,7 +1309,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %1 = %0      : int                   
 	 *     const %2 = 1        : int                      
-	 *     add %0 = %1,%2     : int                                    
+	 *     add %0 = %1, %2     : int                                    
 	 *     return %0           : int
 	 * </pre>
 	 * 
@@ -1342,7 +1367,7 @@ public abstract class Code {
 	 *     const %2 = "X = "       : string                                
 	 *     convert %0 = %0 any     : int              
 	 *     invoke %0 (%0) whiley/lang/Any:toString : string(any)
-	 *     strappend %1 = %2,%0   : string         
+	 *     strappend %1 = %2, %0   : string         
 	 *     debug %1                : string                      
 	 *     return
 	 * </pre>
@@ -1451,10 +1476,10 @@ public abstract class Code {
 	 * int f([int] xs, int i):
 	 * body:          
 	 *    const %2 = 0         : int                                           
-	 *    assertge %1,%2 "index out of bounds (negative)" : int
+	 *    assertge %1, %2 "index out of bounds (negative)" : int
 	 *    lengthof %3 = %0     : [int]               
-	 *    assertlt %2,%3 "index out of bounds (not less than length)" : int
-	 *    indexof %1 = %0,%1  : [int]            
+	 *    assertlt %2, %3 "index out of bounds (not less than length)" : int
+	 *    indexof %1 = %0, %1  : [int]            
 	 *    return %1            : int
 	 * </pre>
 	 * 
@@ -1485,7 +1510,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "assert" + op + " %" + leftOperand + ",%" + rightOperand
+			return "assert" + op + " %" + leftOperand + ", %" + rightOperand
 					+ " \"" + msg + "\"" + " : " + type;
 		}
 	}
@@ -1524,7 +1549,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "assume" + op + " %" + leftOperand + ",%" + rightOperand
+			return "assume" + op + " %" + leftOperand + ", %" + rightOperand
 					+ " \"" + msg + "\"" + " : " + type;
 		}
 	}
@@ -1548,7 +1573,7 @@ public abstract class Code {
 	 * body:         
 	 *     fieldload %2 = %0 x    : {int x,int y}            
 	 *     fieldload %3 = %0 y    : {int x,int y}    
-	 *     add %1 = %2,%3        : int                  
+	 *     add %1 = %2, %3        : int                  
 	 *     return %1              : int
 	 * </pre>
 	 * 
@@ -1615,7 +1640,7 @@ public abstract class Code {
 	 * int f(int x):
 	 * body:                   
 	 *     const %1 = 0             : int                      
-	 *     iflt %0,%1 goto blklab0 : int          
+	 *     iflt %0, %1 goto blklab0 : int          
 	 *     const %0 = 1             : int                      
 	 *     goto blklab1                            
 	 * .blklab0                                
@@ -1703,11 +1728,11 @@ public abstract class Code {
 	 * <pre>
 	 * int f(int x, int y):
 	 * body: 
-	 *     ifge %0,%1 goto blklab0 : int          
+	 *     ifge %0, %1 goto blklab0 : int          
 	 *     const %2 = -1 : int                                          
 	 *     return %2 : int                         
 	 * .blklab0                                
-	 *     ifle %0,%1 goto blklab2 : int          
+	 *     ifle %0, %1 goto blklab2 : int          
 	 *     const %2 = 1 : int                      
 	 *     return %2 : int                         
 	 * .blklab2                                
@@ -1773,7 +1798,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "if" + op + " %" + leftOperand + ",%" + rightOperand
+			return "if" + op + " %" + leftOperand + ", %" + rightOperand
 					+ " goto " + target + " : " + type;
 		}
 	}
@@ -2135,16 +2160,16 @@ public abstract class Code {
 	 * <pre>
 	 * int g(int x, int y, int z):
 	 * body: 
-	 *     mul %3 = %0,%1   : int                                    
-	 *     mul %3 = %3,%2   : int                  
+	 *     mul %3 = %0, %1   : int                                    
+	 *     mul %3 = %3, %2   : int                  
 	 *     return %3         : int                         
 	 * 
 	 * int f(int x, int y):
 	 * body:              
 	 *     const %2 = 3                    : int                      
-	 *     invoke %2 = (%0,%1,%2) test:g   : int(int,int,int)                  
+	 *     invoke %2 = (%0, %1, %2) test:g   : int(int,int,int)                  
 	 *     const %3 = 1                    : int                      
-	 *     add %2 = (%2,%3)                : int                  
+	 *     add %2 = (%2, %3)                : int                  
 	 *     return %2                       : int
 	 * </pre>
 	 * 
@@ -2259,7 +2284,7 @@ public abstract class Code {
 	 * body: 
 	 *    assign %3 = %0       : [int]                 
 	 *    assign %4 = %1       : [int]                 
-	 *    append %2 = %3,%4   : [int]             
+	 *    append %2 = %3, %4   : [int]             
 	 *    return %2            : [int]
 	 * </pre>
 	 * 
@@ -2302,7 +2327,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = %" + leftOperand + ",%"
+			return operation + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -2361,8 +2386,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "sublist %" + target + " = %" + operands[0] + ",%"
-					+ operands[1] + ",%" + operands[2] + " : " + type;
+			return "sublist %" + target + " = %" + operands[0] + ", %"
+					+ operands[1] + ", %" + operands[2] + " : " + type;
 		}
 	}
 
@@ -2382,8 +2407,8 @@ public abstract class Code {
 	 * <pre>
 	 * string f({int->string} map, int key):
 	 * body: 
-	 *     assertky %1,%0 "invalid key"       : {int->string}
-	 *     indexof %2 = %0,%1                 : {int->string}    
+	 *     assertky %1, %0 "invalid key"       : {int->string}
+	 *     indexof %2 = %0, %1                 : {int->string}    
 	 *     return %2                          : string
 	 * </pre>
 	 * 
@@ -2413,7 +2438,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "indexof %" + target + " = %" + leftOperand + ",%"
+			return "indexof %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -2460,9 +2485,9 @@ public abstract class Code {
 	 *     const %0 = 0             : int                      
 	 *     loop (%0)                                                    
 	 *         const %1 = 10        : int                     
-	 *         ifge %0,%1 goto blklab0 : int                             
+	 *         ifge %0, %1 goto blklab0 : int                             
 	 *         const %1 = 1         : int                      
-	 *         add %0 = %0,%1      : int
+	 *         add %0 = %0, %1      : int
 	 * .blklab0                                     
 	 *     return %0                : int
 	 * </pre>
@@ -2926,7 +2951,7 @@ public abstract class Code {
 	 *   const %2 = "Hello"          : string                  
 	 *   const %3 = 2                : int                           
 	 *   const %4 = "World"          : string                  
-	 *   newmap %0 = (%1,%2,%3,%4)   : {int=>string}
+	 *   newmap %0 = (%1, %2, %3, %4)   : {int=>string}
 	 *   return %0                   : {int=>string}
 	 * </pre>
 	 * 
@@ -2977,7 +3002,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %3 = %0         : real                  
 	 *     assign %4 = %0         : real                  
-	 *     newrecord %2 (%3,%4)  : {real x,real y}    
+	 *     newrecord %2 (%3, %4)  : {real x,real y}    
 	 *     return %2              : {real x,real y}
 	 * </pre>
 	 * 
@@ -3024,7 +3049,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %3 = %0          : int                   
 	 *     assign %4 = %1          : int                   
-	 *     newtuple %2 = (%3,%4)  : (int,int)         
+	 *     newtuple %2 = (%3, %4)  : (int,int)         
 	 *     return %2               : (int,int)
 	 * </pre>
 	 * 
@@ -3075,7 +3100,7 @@ public abstract class Code {
 	 *    assign %4 = %0           : int                   
 	 *    assign %5 = %1           : int                   
 	 *    assign %6 = %2           : int                   
-	 *    newset %3 = (%4,%5,%6)   : [int]            
+	 *    newset %3 = (%4, %5, %6)   : [int]            
 	 *    return %3                : [int]
 	 * </pre>
 	 * 
@@ -3125,7 +3150,7 @@ public abstract class Code {
 	 *    assign %4 = %0           : int                   
 	 *    assign %5 = %1           : int                   
 	 *    assign %6 = %2           : int                   
-	 *    newlist %3 = (%4,%5,%6)  : [int]            
+	 *    newlist %3 = (%4, %5, %6)  : [int]            
 	 *    return %3                : [int]
 	 * </pre>
 	 * 
@@ -3190,7 +3215,7 @@ public abstract class Code {
 	 * body: 
 	 *     assign %3 = %0  : int                   
 	 *     assign %4 = %1  : int                   
-	 *     add %2 = % 3,%4 : int                  
+	 *     add %2 = % 3, %4 : int                  
 	 *     return %2 : int
 	 * </pre>
 	 * 
@@ -3308,7 +3333,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = %" + leftOperand + ",%"
+			return operation + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -3359,7 +3384,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = %" + leftOperand + ",%"
+			return operation + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -3388,8 +3413,8 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "substr %" + target + " = %" + operands[0] + ",%"
-					+ operands[1] + ",%" + operands[2] + " : " + type;
+			return "substr %" + target + " = %" + operands[0] + ", %"
+					+ operands[1] + ", %" + operands[2] + " : " + type;
 		}
 	}
 
@@ -3571,7 +3596,7 @@ public abstract class Code {
 	 * int f(int x) throws string:
 	 * body:             
 	 *     const %1 = 0 : int                      
-	 *     ifge %0,%1 goto blklab0 : int          
+	 *     ifge %0, %1 goto blklab0 : int          
 	 *     const %1 = "ERROR" : string             
 	 *     throw %1 : string                       
 	 * .blklab0                                
@@ -3953,7 +3978,7 @@ public abstract class Code {
 		}
 	}
 
-	private static String toString(int[] operands) {
+	private static String toString(int... operands) {
 		String r = "(";
 		for (int i = 0; i != operands.length; ++i) {
 			if (i != 0) {
