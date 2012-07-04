@@ -52,13 +52,12 @@ import wyil.util.*;
  * <pre>
  * int sum([int] data):
  * body: 
- *   var r, $2, item
- *   const %1 = 0          // int                      
- *   assign %2 = %0        // [int]                 
- *   forall %3 in %2 ()    // [int]              
- *       assign %4 = %1    // int                                
- *       add %1 = %4, %3   // int                                     
- *   return %1             // int
+ *   const %1 = 0          : int                      
+ *   assign %2 = %0        : [int]                 
+ *   forall %3 in %2 ()    : [int]              
+ *       assign %4 = %1    : int                                
+ *       add %1 = %4, %3   : int                                     
+ *   return %1             : int
  * </pre>
  * 
  * Here, we can see that every bytecode is associated with one (or more) types.
@@ -1171,7 +1170,7 @@ public abstract class Code {
 	 * real f(int x):
 	 * body: 
 	 *     const %2 = 1           : int                      
-	 *     add %1 = %0, %2         : int                  
+	 *     add %1 = %0, %2        : int                  
 	 *     convert %1 = %1 real   : int             
 	 *     return %1              : real
 	 * </pre>
@@ -3359,6 +3358,62 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * <p>
+	 * A binary operation which reads two set values from the operand registers,
+	 * performs an operation on them and writes the result to the target
+	 * register. The binary set operators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>union, intersection, difference</i>. Both operands must be have
+	 * the given (effective) set type. same type is produced.</li>
+	 * <li><i>left union, left intersection, left difference</i>. The left
+	 * operand must have the given (effective) set type, whilst the right
+	 * operand has the given (effective) set element type.</li>
+	 * <li><i>right union, right intersection</i>. The right operand must have
+	 * the given (effective) set type, whilst the left operand has the given
+	 * (effective) set element type.</li>
+	 * </ul>
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * {int} f({int} xs, {int} ys):
+	 *     return xs + ys // set union
+	 * 
+	 * {int} g(int x, {int} ys):
+	 *     return {x} & ys // set intersection
+	 * 
+	 * {int} h({int} xs, int y):
+	 *     return xs - {y} // set difference
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * {int} f({int} xs, {int} ys):
+	 * body: 
+	 *     union %2 = %0, %1  : {int}               
+	 *     return %2          : {int}                       
+	 * 
+	 * {int} g(int x, {int} ys):
+	 * body: 
+	 *     rintersect %2 = %0, %1  : {int}           
+	 *     return %2               : {int}
+	 *     
+	 * {int} h({int} xs, int y):
+	 * body: 
+	 *     ldiff %2 = %0, %1    : {int}                
+	 *     return %2            : {int}
+	 * </pre>
+	 * 
+	 * Here, we see that the purpose of the <i>left-</i> and <i>right-</i>
+	 * operations is to avoid creating a temporary set in the common case of a
+	 * single element set on one side. This is largely an optimisation and it is
+	 * expected that the front-end of the compiler will spots such situations
+	 * and compile them down appropriately.
+	 * 
+	 * @author David J. Pearce
+	 */
 	public static final class SetOp extends
 			AbstractBinaryAssignable<Type.EffectiveSet> {
 		public final SetOperation operation;
@@ -3414,6 +3469,49 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * <p>
+	 * A binary operation which reads two string values from the operand
+	 * registers, performs an operation (append) on them and writes the result
+	 * to the target register. The binary set operators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>append</i>. Both operands must be have string type.</li>
+	 * <li><i>left append</i>. The left operand must have string type, whilst
+	 * the right operand has char type.</li>
+	 * <li><i>right append</i>. The right operand must have string type, whilst
+	 * the left operand has char type.</li>
+	 * </ul>
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * string f(string xs, string ys):
+	 *     return xs + ys
+	 * 
+	 * string g(string xs, char y):
+	 *     return xs + y
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * string f(string xs, string ys):
+	 * body: 
+	 *     strappend %2 = %0, %2    : string         
+	 *     return %2                : string
+	 *     
+	 * string g(string xs, char y):
+	 * body: 
+	 *     strappend_l %2 = %0, %1  : string       
+	 *     return %2                : string
+	 * </pre>
+	 * 
+	 * Here, we see that the purpose of the <i>left-</i> and <i>right-</i>
+	 * operations is to avoid creating a temporary string in the common case of
+	 * a single char being appended.
+	 * 
+	 * @author David J. Pearce
+	 */
 	public static final class StringOp extends
 			AbstractBinaryAssignable<Type.Strung> {
 		public final StringOperation operation;
