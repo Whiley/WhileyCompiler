@@ -485,9 +485,9 @@ public final class WhileyParser {
 		int end = index;
 		matchEndLine();
 		if(isAssume) {
-			return new Stmt.Assume(e, sourceAttr(start,end));
+			return new Stmt.Assume(e, sourceAttr(start,end-1));
 		} else {
-			return new Stmt.Assert(e, sourceAttr(start,end));
+			return new Stmt.Assert(e, sourceAttr(start,end-1));
 		}
 	}
 	
