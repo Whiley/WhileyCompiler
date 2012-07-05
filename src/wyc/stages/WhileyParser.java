@@ -478,7 +478,7 @@ public final class WhileyParser {
 		Expr e = parseCondition(false);
 		int end = index;
 		matchEndLine();		
-		return new Stmt.Assert(e, sourceAttr(start,end));
+		return new Stmt.Assert(e, sourceAttr(start,end - 1));
 	}
 	
 	private Stmt parseSkip() {
