@@ -353,7 +353,7 @@ public final class FlowTyping {
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
-			Nominal.EffectiveMap srcType = la.srcType;
+			Nominal.EffectiveIndexible srcType = la.srcType;
 			afterType = (Nominal) srcType.update(la.index.result(), afterType);
 			return inferAfterType((Expr.LVal) la.src, 
 					afterType);
@@ -434,8 +434,8 @@ public final class FlowTyping {
 		// is permitted in some cases.
 		
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];
-		if(elementTypes.length == 2 && srcType instanceof Nominal.EffectiveDictionary) {
-			Nominal.EffectiveDictionary dt = (Nominal.EffectiveDictionary) srcType;
+		if(elementTypes.length == 2 && srcType instanceof Nominal.EffectiveMap) {
+			Nominal.EffectiveMap dt = (Nominal.EffectiveMap) srcType;
 			elementTypes[0] = dt.key();
 			elementTypes[1] = dt.value();
 		} else {			
@@ -661,7 +661,7 @@ public final class FlowTyping {
 				Expr index = resolver.resolve(ai.index,environment,current);
 				ai.src = src;
 				ai.index = index;
-				Nominal.EffectiveMap srcType = resolver.expandAsEffectiveMap(src.result());
+				Nominal.EffectiveIndexible srcType = resolver.expandAsEffectiveMap(src.result());
 				if(srcType == null) {
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
 				}

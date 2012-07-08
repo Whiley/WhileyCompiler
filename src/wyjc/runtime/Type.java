@@ -44,7 +44,7 @@ import static wyil.lang.Type.K_STRING;
 import static wyil.lang.Type.K_TUPLE;
 import static wyil.lang.Type.K_SET;
 import static wyil.lang.Type.K_LIST;
-import static wyil.lang.Type.K_DICTIONARY;
+import static wyil.lang.Type.K_MAP;
 import static wyil.lang.Type.K_REFERENCE;
 import static wyil.lang.Type.K_RECORD;
 import static wyil.lang.Type.K_UNION;
@@ -119,7 +119,7 @@ public abstract class Type {
 		public Type value;
 		
 		public Dictionary(Type key, Type value) {
-			super(K_DICTIONARY);
+			super(K_MAP);
 			this.key = key;
 			this.value = value;
 		}
@@ -232,7 +232,7 @@ public abstract class Type {
 			boolean nonEmpty = reader.read_bit();				
 			return new List(children[0],nonEmpty);
 		}
-		case K_DICTIONARY: {
+		case K_MAP: {
 			return new Dictionary(children[0],children[1]);
 		}
 		case K_REFERENCE: {		
@@ -303,7 +303,7 @@ public abstract class Type {
 			t.element = substitute((Label)t.element,nodes);
 			return;
 		}
-		case K_DICTIONARY: {
+		case K_MAP: {
 			Dictionary t = (Dictionary) type;
 			t.key = substitute((Label)t.key,nodes);
 			t.value = substitute((Label)t.value,nodes);
@@ -402,7 +402,7 @@ public abstract class Type {
 				set.element = substitute(set.element,label,root,visited); 
 				break;
 			}
-			case K_DICTIONARY:
+			case K_MAP:
 			{
 				Type.Dictionary dict = (Type.Dictionary) type;
 				dict.key = substitute(dict.key,label,root,visited); 

@@ -156,8 +156,8 @@ public class GlobalGenerator {
 				blk = nblk;
 			}
 			return blk;
-		} else if (t instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
+		} else if (t instanceof UnresolvedType.Map) {
+			UnresolvedType.Map st = (UnresolvedType.Map) t;
 			Block blk = null;
 			// FIXME: put in constraints. REQUIRES ITERATION OVER DICTIONARIES
 			Block key = generate(st.key, context);

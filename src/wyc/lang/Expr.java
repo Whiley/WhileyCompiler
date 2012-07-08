@@ -273,7 +273,7 @@ public interface Expr extends SyntacticElement {
 			Expr, LVal {		
 		public Expr src;
 		public Expr index;	
-		public Nominal.EffectiveMap srcType;
+		public Nominal.EffectiveIndexible srcType;
 	
 		public IndexOf(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -593,16 +593,16 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 		
-	public static class Dictionary extends SyntacticElement.Impl implements Expr {
+	public static class Map extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Pair<Expr,Expr>> pairs;		
-		public Nominal.Dictionary type;		
+		public Nominal.Map type;		
 		
-		public Dictionary(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
+		public Map(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
 			super(attributes);
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
 		
-		public Nominal.Dictionary result() {
+		public Nominal.Map result() {
 			return type;
 		}		
 	}
@@ -612,7 +612,7 @@ public interface Expr extends SyntacticElement {
 		public final HashMap<String, Expr> fields;
 		public Nominal.Record type;		
 
-		public Record(Map<String, Expr> fields,
+		public Record(java.util.Map<String, Expr> fields,
 				Attribute... attributes) {
 			super(attributes);
 			this.fields = new HashMap<String, Expr>(fields);

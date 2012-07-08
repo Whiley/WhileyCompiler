@@ -1399,7 +1399,7 @@ public final class WhileyParser {
 			match(StrongRightArrow.class);		
 			match(RightCurly.class);			
 			// empty dictionary definition
-			Value v = Value.V_DICTIONARY(Collections.EMPTY_SET); 
+			Value v = Value.V_MAP(Collections.EMPTY_SET); 
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
 		}
 		
@@ -1498,7 +1498,7 @@ public final class WhileyParser {
 			token = tokens.get(index);
 		}
 		match(RightCurly.class);
-		return new Expr.Dictionary(pairs,sourceAttr(start, index - 1));
+		return new Expr.Map(pairs,sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseRecordVal(int start, String ident) {
@@ -1812,7 +1812,7 @@ public final class WhileyParser {
 				match(StrongRightArrow.class);
 				UnresolvedType v = parseType();			
 				match(RightCurly.class);
-				t = new UnresolvedType.Dictionary(t,v,sourceAttr(start,index-1));				
+				t = new UnresolvedType.Map(t,v,sourceAttr(start,index-1));				
 			} else {				
 				// record type
 				HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();

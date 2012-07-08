@@ -692,14 +692,14 @@ public final class CodeGeneration {
 			Type.EffectiveCollection rawSrcType = s.srcType.raw();
 			
 			// FIXME: support destructuring of lists and sets			
-			if(!(rawSrcType instanceof Type.EffectiveDictionary)) {
+			if(!(rawSrcType instanceof Type.EffectiveMap)) {
 				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),localGenerator.context(),s.source);
 			}
-			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) rawSrcType;
+			Type.EffectiveMap dict = (Type.EffectiveMap) rawSrcType;
 			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());
 			int indexRegister = allocate(environment);
 			blk.append(Code
-					.ForAll((Type.EffectiveDictionary) rawSrcType,
+					.ForAll((Type.EffectiveMap) rawSrcType,
 							sourceRegister, indexRegister,
 							Collections.EMPTY_SET, label), attributes(s));
 			for(int i=0;i<s.variables.size();++i) {

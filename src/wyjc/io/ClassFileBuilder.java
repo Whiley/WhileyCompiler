@@ -603,8 +603,8 @@ public class ClassFileBuilder {
 					JAVA_LANG_STRING, BIG_INTEGER, T_CHAR);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));
-		} else if(lv instanceof Code.DictLVal) {
-			Code.DictLVal l = (Code.DictLVal) lv;
+		} else if(lv instanceof Code.MapLVal) {
+			Code.MapLVal l = (Code.MapLVal) lv;
 			JvmType keyType = convertType(l.type().key());
 			JvmType valueType = convertType(l.type().value());
 			if(iterator.hasNext()) {
@@ -1745,8 +1745,8 @@ public class ClassFileBuilder {
 			translate((Value.List)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Record) {
 			translate((Value.Record)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Dictionary) {
-			translate((Value.Dictionary)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Map) {
+			translate((Value.Map)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Tuple) {
 			translate((Value.Tuple)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.FunctionOrMethodOrMessage) {
@@ -2001,7 +2001,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void translate(Value.Dictionary expr, int freeSlot,
+	protected void translate(Value.Map expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
@@ -2155,14 +2155,14 @@ public class ClassFileBuilder {
 			// TODO			
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
 			buildCoercion((Type.Set) from, (Type.Set) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.Set && to instanceof Type.Dictionary) {
-			buildCoercion((Type.Set) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.Set && to instanceof Type.Map) {
+			buildCoercion((Type.Set) from, (Type.Map) to, freeSlot, constants, bytecodes);			
 		} else if(from instanceof Type.List && to instanceof Type.Set) {
 			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.Dictionary && to instanceof Type.Dictionary) {
-			buildCoercion((Type.Dictionary) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
-			buildCoercion((Type.List) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.Map && to instanceof Type.Map) {
+			buildCoercion((Type.Map) from, (Type.Map) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.List && to instanceof Type.Map) {
+			buildCoercion((Type.List) from, (Type.Map) to, freeSlot, constants, bytecodes);			
 		} else if(from instanceof Type.List && to instanceof Type.List) {
 			buildCoercion((Type.List) from, (Type.List) to, freeSlot, constants, bytecodes);			
 		} else if(to instanceof Type.Record && from instanceof Type.Record) {
@@ -2256,7 +2256,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYLIST));
 	}
 	
-	protected void buildCoercion(Type.List fromType, Type.Dictionary toType, 
+	protected void buildCoercion(Type.List fromType, Type.Map toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 
@@ -2310,7 +2310,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));		
 	}
 	
-	protected void buildCoercion(Type.Dictionary fromType, Type.Dictionary toType, 
+	protected void buildCoercion(Type.Map fromType, Type.Map toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
@@ -2379,7 +2379,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));
 	}
 	
-	protected void buildCoercion(Type.Set fromType, Type.Dictionary toType, 
+	protected void buildCoercion(Type.Set fromType, Type.Map toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		// this case can only happen in one situation --- when the set is empty.
@@ -2666,7 +2666,7 @@ public class ClassFileBuilder {
 			// FIXME: what about negations?
 			return t instanceof Type.Any || t instanceof Type.List
 					|| t instanceof Type.Tuple || t instanceof Type.Set
-					|| t instanceof Type.Dictionary || t instanceof Type.Record;
+					|| t instanceof Type.Map || t instanceof Type.Record;
 		}
 	}
 
@@ -2694,7 +2694,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
 	}
 	
-	public static void addIncRefs(Type.Dictionary type, ArrayList<Bytecode> bytecodes) {				
+	public static void addIncRefs(Type.Map type, ArrayList<Bytecode> bytecodes) {				
 		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP);			
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
 	}		
@@ -2792,7 +2792,7 @@ public class ClassFileBuilder {
 			return WHILEYLIST;
 		} else if(t instanceof Type.EffectiveSet) {
 			return WHILEYSET;
-		} else if(t instanceof Type.EffectiveDictionary) {
+		} else if(t instanceof Type.EffectiveMap) {
 			return WHILEYMAP;
 		} else if(t instanceof Type.EffectiveRecord) {
 			return WHILEYRECORD;

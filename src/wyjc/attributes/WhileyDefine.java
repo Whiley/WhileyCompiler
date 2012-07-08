@@ -200,8 +200,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Set) val, writer, constantPool);
 		} else if(val instanceof Value.List) {
 			write((Value.List) val, writer, constantPool);
-		} else if(val instanceof Value.Dictionary) {
-			write((Value.Dictionary) val, writer, constantPool);
+		} else if(val instanceof Value.Map) {
+			write((Value.Map) val, writer, constantPool);
 		} else if(val instanceof Value.Record) {
 			write((Value.Record) val, writer, constantPool);
 		} else if(val instanceof Value.Tuple) {
@@ -297,7 +297,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 	
-	public static void write(Value.Dictionary expr, BinaryOutputStream writer,
+	public static void write(Value.Map expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(DICTIONARYVAL);
 		writer.write_u2(expr.values.size());

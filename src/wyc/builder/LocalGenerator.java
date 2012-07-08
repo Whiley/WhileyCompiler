@@ -503,8 +503,8 @@ public final class LocalGenerator {
 				return generate((Expr.Record) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Tuple) {
 				return generate((Expr.Tuple) expression, target, freeRegister, environment);
-			} else if (expression instanceof Expr.Dictionary) {
-				return generate((Expr.Dictionary) expression, target, freeRegister, environment);
+			} else if (expression instanceof Expr.Map) {
+				return generate((Expr.Map) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.FunctionOrMethodOrMessage) {
 				return generate((Expr.FunctionOrMethodOrMessage) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.New) {
@@ -967,7 +967,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generate(Expr.Dictionary sg, int target, int freeRegister,
+	private Block generate(Expr.Map sg, int target, int freeRegister,
 			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
 		int[] operands = new int[sg.pairs.size() * 2];

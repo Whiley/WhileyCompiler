@@ -191,7 +191,7 @@ public class SubtypeOperator {
 				}
 				return true;
 			case K_REFERENCE:
-			case K_DICTIONARY:
+			case K_MAP:
 			case K_TUPLE:  {				
 				if(fromSign || toSign) {					
 					// nary nodes

@@ -528,7 +528,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		Value result = null;
 		if (isValue) {
-			result = Value.V_DICTIONARY(values);
+			result = Value.V_MAP(values);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));

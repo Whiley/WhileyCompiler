@@ -270,7 +270,7 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static IndexOf IndexOf(Type.EffectiveMap type, int target,
+	public static IndexOf IndexOf(Type.EffectiveIndexible type, int target,
 			int leftOperand, int rightOperand) {
 		return get(new IndexOf(type, target, leftOperand, rightOperand));
 	}
@@ -299,17 +299,17 @@ public abstract class Code {
 
 	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new
-	 * dictionary and puts it on the stack.
+	 * map and puts it on the stack.
 	 * 
 	 * @param type
 	 * @return
 	 */
-	public static NewMap NewMap(Type.Dictionary type, int target,
+	public static NewMap NewMap(Type.Map type, int target,
 			Collection<Integer> operands) {
 		return get(new NewMap(type, target, toIntArray(operands)));
 	}
 
-	public static NewMap NewMap(Type.Dictionary type, int target, int[] operands) {
+	public static NewMap NewMap(Type.Map type, int target, int[] operands) {
 		return get(new NewMap(type, target, operands));
 	}
 
@@ -530,14 +530,6 @@ public abstract class Code {
 		return get(new TryEnd(label));
 	}
 
-	/**
-	 * Construct a <code>tupleload</code> bytecode which reads the value at a
-	 * given index in a tuple
-	 * 
-	 * @param type
-	 *            --- dictionary type.
-	 * @return
-	 */
 	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int target,
 			int operand, int index) {
 		return get(new TupleLoad(type, target, operand, index));
@@ -555,17 +547,7 @@ public abstract class Code {
 			int operand) {
 		return get(new Dereference(type, target, operand));
 	}
-
-	/**
-	 * Construct a <code>update</code> bytecode which writes a value into a
-	 * compound structure, as determined by a given access path.
-	 * 
-	 * @param afterType
-	 *            --- record type.
-	 * @param field
-	 *            --- field to write.
-	 * @return
-	 */
+	
 	public static Update Update(Type beforeType, int target, int operand,
 			Collection<Integer> operands, Type afterType,
 			Collection<String> fields) {
@@ -2446,8 +2428,8 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class IndexOf extends
-			AbstractBinaryAssignable<Type.EffectiveMap> {
-		private IndexOf(Type.EffectiveMap type, int target, int sourceOperand,
+			AbstractBinaryAssignable<Type.EffectiveIndexible> {
+		private IndexOf(Type.EffectiveIndexible type, int target, int sourceOperand,
 				int keyOperand) {
 			super(type, target, sourceOperand, keyOperand);
 		}
@@ -2617,7 +2599,7 @@ public abstract class Code {
 	}
 
 	/**
-	 * Pops a set, list or dictionary from the stack and iterates over every
+	 * Pops a set, list or map from the stack and iterates over every
 	 * element it contains. A register is identified to hold the current value
 	 * being iterated over.
 	 * 
@@ -2714,24 +2696,24 @@ public abstract class Code {
 	}
 
 	/**
-	 * An LVal with dictionary type.
+	 * An LVal with map type.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class DictLVal extends LVal {
+	public static final class MapLVal extends LVal {
 		public final int keyOperand;
 
-		public DictLVal(Type t, int keyOperand) {
+		public MapLVal(Type t, int keyOperand) {
 			super(t);
-			if (!(t instanceof Type.EffectiveDictionary)) {
-				throw new IllegalArgumentException("Invalid Dictionary Type");
+			if (!(t instanceof Type.EffectiveMap)) {
+				throw new IllegalArgumentException("Invalid map Type");
 			}
 			this.keyOperand = keyOperand;
 		}
 
-		public Type.EffectiveDictionary type() {
-			return (Type.EffectiveDictionary) type;
+		public Type.EffectiveMap type() {
+			return (Type.EffectiveMap) type;
 		}
 	}
 
@@ -2844,10 +2826,10 @@ public abstract class Code {
 				Type.EffectiveList list = (Type.EffectiveList) iter;
 				iter = list.element();
 				return new ListLVal(raw, operands[operandIndex++]);
-			} else if (iter instanceof Type.EffectiveDictionary) {
-				Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter;
+			} else if (iter instanceof Type.EffectiveMap) {
+				Type.EffectiveMap dict = (Type.EffectiveMap) iter;
 				iter = dict.value();
-				return new DictLVal(raw, operands[operandIndex++]);
+				return new MapLVal(raw, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
 				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 				String field = fields.get(fieldIndex++);
@@ -2933,8 +2915,8 @@ public abstract class Code {
 				} else if (iter instanceof Type.EffectiveList) {
 					Type.EffectiveList list = (Type.EffectiveList) iter;
 					iter = list.element();
-				} else if (iter instanceof Type.EffectiveDictionary) {
-					Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter;
+				} else if (iter instanceof Type.EffectiveMap) {
+					Type.EffectiveMap dict = (Type.EffectiveMap) iter;
 					iter = dict.value();
 				} else if (iter instanceof Type.EffectiveRecord) {
 					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
@@ -2972,8 +2954,8 @@ public abstract class Code {
 				} else if (lv instanceof StringLVal) {
 					StringLVal l = (StringLVal) lv;
 					r = r + "[%" + l.indexOperand + "]";
-				} else if (lv instanceof DictLVal) {
-					DictLVal l = (DictLVal) lv;
+				} else if (lv instanceof MapLVal) {
+					MapLVal l = (MapLVal) lv;
 					r = r + "[%" + l.keyOperand + "]";
 				} else if (lv instanceof RecordLVal) {
 					RecordLVal l = (RecordLVal) lv;
@@ -2989,7 +2971,7 @@ public abstract class Code {
 	}
 
 	/**
-	 * Constructs a dictionary value from zero or more key-value pairs on the
+	 * Constructs a map value from zero or more key-value pairs on the
 	 * stack. For each pair, the key must occur directly before the value on the
 	 * stack. For example, consider the following Whiley function
 	 * <code>f()</code>:
@@ -3017,9 +2999,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class NewMap extends
-			AbstractNaryAssignable<Type.Dictionary> {
+			AbstractNaryAssignable<Type.Map> {
 
-		private NewMap(Type.Dictionary type, int target, int[] operands) {
+		private NewMap(Type.Map type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 

@@ -344,8 +344,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.Constant) expr,environment,context); 
 			} else if(expr instanceof Expr.Convert) {
 				return resolve((Expr.Convert) expr,environment,context); 
-			} else if(expr instanceof Expr.Dictionary) {
-				return resolve((Expr.Dictionary) expr,environment,context); 
+			} else if(expr instanceof Expr.Map) {
+				return resolve((Expr.Map) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
 				return resolve((Expr.AbstractFunctionOrMethodOrMessage) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
@@ -844,7 +844,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			Environment environment, Context context) throws Exception {			
 		expr.src = resolve(expr.src,environment,context);
 		expr.index = resolve(expr.index,environment,context);		
-		Nominal.EffectiveMap srcType = expandAsEffectiveMap(expr.src.result());
+		Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(expr.src.result());
 		
 		if(srcType == null) {
 			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), context, expr.src);
@@ -964,7 +964,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 	
 	
-	private Expr resolve(Expr.Dictionary expr,
+	private Expr resolve(Expr.Map expr,
 			Environment environment, Context context) {
 		Nominal keyType = Nominal.T_VOID;
 		Nominal valueType = Nominal.T_VOID;		
@@ -982,7 +982,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			valueType = Nominal.Union(vt,valueType);
 		}
 		
-		expr.type = Nominal.Dictionary(keyType,valueType);
+		expr.type = Nominal.Map(keyType,valueType);
 		
 		return expr;
 	}

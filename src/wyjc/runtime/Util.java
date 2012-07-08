@@ -43,7 +43,7 @@ import static wyil.lang.Type.K_STRING;
 import static wyil.lang.Type.K_TUPLE;
 import static wyil.lang.Type.K_SET;
 import static wyil.lang.Type.K_LIST;
-import static wyil.lang.Type.K_DICTIONARY;
+import static wyil.lang.Type.K_MAP;
 import static wyil.lang.Type.K_RECORD;
 import static wyil.lang.Type.K_UNION;
 import static wyil.lang.Type.K_NEGATION;
@@ -549,7 +549,7 @@ public class Util {
 				}
 				break;
 			}
-			case K_DICTIONARY:
+			case K_MAP:
 			{
 				if(obj instanceof Dictionary) {
 					Dictionary ol = (Dictionary) obj;

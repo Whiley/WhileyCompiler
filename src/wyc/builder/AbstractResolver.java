@@ -86,7 +86,20 @@ public abstract class AbstractResolver<T extends Exception> {
 		}
 	}
 	
-	public Nominal.EffectiveMap expandAsEffectiveMap(Nominal lhs) throws Exception {
+	public Nominal.EffectiveIndexible expandAsEffectiveMap(Nominal lhs) throws Exception {
+		Type raw = lhs.raw();
+		if(raw instanceof Type.EffectiveIndexible) {
+			Type nominal = expandOneLevel(lhs.nominal());
+			if(!(nominal instanceof Type.EffectiveIndexible)) {
+				nominal = raw; // discard nominal information
+			}
+			return (Nominal.EffectiveIndexible) Nominal.construct(nominal,raw);
+		} else {
+			return null;
+		}
+	}
+	
+	public Nominal.EffectiveMap expandAsEffectiveDictionary(Nominal lhs) throws Exception {
 		Type raw = lhs.raw();
 		if(raw instanceof Type.EffectiveMap) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -94,19 +107,6 @@ public abstract class AbstractResolver<T extends Exception> {
 				nominal = raw; // discard nominal information
 			}
 			return (Nominal.EffectiveMap) Nominal.construct(nominal,raw);
-		} else {
-			return null;
-		}
-	}
-	
-	public Nominal.EffectiveDictionary expandAsEffectiveDictionary(Nominal lhs) throws Exception {
-		Type raw = lhs.raw();
-		if(raw instanceof Type.EffectiveDictionary) {
-			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.EffectiveDictionary)) {
-				nominal = raw; // discard nominal information
-			}
-			return (Nominal.EffectiveDictionary) Nominal.construct(nominal,raw);
 		} else {
 			return null;
 		}
@@ -216,7 +216,7 @@ public abstract class AbstractResolver<T extends Exception> {
 				|| type instanceof Type.Tuple
 				|| type instanceof Type.Set
 				|| type instanceof Type.List
-				|| type instanceof Type.Dictionary
+				|| type instanceof Type.Map
 				|| type instanceof Type.Record
 				|| type instanceof Type.FunctionOrMethodOrMessage
 				|| type instanceof Type.Negation) {

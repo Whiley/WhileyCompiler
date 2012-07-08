@@ -146,8 +146,8 @@ public class CoercionCheck implements Transform {
 			Type.Set t1 = (Type.Set) from;
 			Type.Set t2 = (Type.Set) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
-			Type.Dictionary t1 = (Type.Dictionary) from;
+		} else if(from instanceof Type.Map && to instanceof Type.Set) {
+			Type.Map t1 = (Type.Map) from;
 			Type.Set t2 = (Type.Set) to;
 			Type tup = Type.Tuple(t1.key(),t1.value());
 			check(tup,t2.element(),visited,elem);
@@ -155,9 +155,9 @@ public class CoercionCheck implements Transform {
 			Type.List t1 = (Type.List) from;
 			Type.Set t2 = (Type.Set) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
+		} else if(from instanceof Type.List && to instanceof Type.Map) {
 			Type.List t1 = (Type.List) from;
-			Type.Dictionary t2 = (Type.Dictionary) to;
+			Type.Map t2 = (Type.Map) to;
 			check(t1.element(),t2.value(),visited,elem);
 		} else if(from instanceof Type.List && to instanceof Type.List) {
 			Type.List t1 = (Type.List) from;

@@ -294,7 +294,7 @@ public class VerificationCheck implements Transform {
 					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
 					constraint = WFormulas.and(constraint, WSets.elementOf(var, src));
 					scopes.add(new ForScope(forall,end,src,var));
-				} else if (forall.type instanceof Type.EffectiveDictionary) {
+				} else if (forall.type instanceof Type.EffectiveMap) {
 					// TODO
 				}
 				
@@ -867,7 +867,7 @@ public class VerificationCheck implements Transform {
 			wyil.lang.Value.Char v = (wyil.lang.Value.Char) value;
 			// Simple, but mostly good translation
 			return new WNumber(v.value);
-		} else if(value instanceof wyil.lang.Value.Dictionary) {
+		} else if(value instanceof wyil.lang.Value.Map) {
 			return WBool.FALSE; // FIXME
 		} else if(value instanceof wyil.lang.Value.FunctionOrMethodOrMessage) {
 			return WBool.FALSE; // FIXME

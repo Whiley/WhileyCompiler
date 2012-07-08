@@ -721,7 +721,7 @@ public final class TypeAlgorithms {
 			case Type.K_SET:
 				return intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_REFERENCE:
-			case Type.K_DICTIONARY: 										
+			case Type.K_MAP: 										
 				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);							
 			case Type.K_NEGATION: 
 				return intersectNegations(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);								

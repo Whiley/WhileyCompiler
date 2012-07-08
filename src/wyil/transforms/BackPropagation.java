@@ -418,8 +418,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		for (Code.LVal lv : code) {
 			if (lv instanceof Code.StringLVal || lv instanceof Code.ListLVal) {
 				environment.set(code.operands[i++], Type.T_INT);
-			} else if (lv instanceof Code.DictLVal) {
-				Code.DictLVal dlv = (Code.DictLVal) lv;
+			} else if (lv instanceof Code.MapLVal) {
+				Code.MapLVal dlv = (Code.MapLVal) lv;
 				environment.set(code.operands[i++], dlv.type().key());
 			} else {
 				// RecordLVal and ProcessLVal have no stack requirement

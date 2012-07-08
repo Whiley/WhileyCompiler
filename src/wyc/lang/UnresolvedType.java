@@ -127,10 +127,10 @@ public interface UnresolvedType extends SyntacticElement {
 			this.element = element;
 		}
 	}
-	public static final class Dictionary extends SyntacticElement.Impl implements NonUnion {
+	public static final class Map extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType key;
 		public final UnresolvedType value;
-		public Dictionary(UnresolvedType key,UnresolvedType value, Attribute... attributes) {
+		public Map(UnresolvedType key,UnresolvedType value, Attribute... attributes) {
 			super(attributes);
 			this.key=key;
 			this.value=value;
@@ -175,7 +175,7 @@ public interface UnresolvedType extends SyntacticElement {
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
 		public final boolean isOpen;
-		public Record(boolean isOpen, Map<String,UnresolvedType> types, Attribute... attributes) {
+		public Record(boolean isOpen, java.util.Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(

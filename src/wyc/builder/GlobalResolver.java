@@ -303,9 +303,9 @@ public class GlobalResolver extends LocalResolver {
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(st.element,context,states,roots,nominal,unconstrained);
 			myData = false;
-		} else if(type instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) type;
-			myKind = Type.K_DICTIONARY;
+		} else if(type instanceof UnresolvedType.Map) {
+			UnresolvedType.Map st = (UnresolvedType.Map) type;
+			myKind = Type.K_MAP;
 			myChildren = new int[2];
 			myChildren[0] = resolveAsType(st.key,context,states,roots,nominal,unconstrained);
 			myChildren[1] = resolveAsType(st.value,context,states,roots,nominal,unconstrained);			
@@ -667,8 +667,8 @@ public class GlobalResolver extends LocalResolver {
 					values.add(v);				
 				}
 				return Value.V_TUPLE(values);
-			}  else if (expr instanceof Expr.Dictionary) {
-				Expr.Dictionary rg = (Expr.Dictionary) expr;			
+			}  else if (expr instanceof Expr.Map) {
+				Expr.Map rg = (Expr.Map) expr;			
 				HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 				for(Pair<Expr,Expr> e : rg.pairs) {
 					Value key = resolveAsConstant(e.first(), context,visited);
@@ -678,7 +678,7 @@ public class GlobalResolver extends LocalResolver {
 					}
 					values.add(new Pair<Value,Value>(key,value));				
 				}
-				return Value.V_DICTIONARY(values);
+				return Value.V_MAP(values);
 			} else if (expr instanceof Expr.FunctionOrMethodOrMessage) {
 				Expr.FunctionOrMethodOrMessage f = (Expr.FunctionOrMethodOrMessage) expr;
 				return Value.V_FUN(f.nid, f.type.raw());
