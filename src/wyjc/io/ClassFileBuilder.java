@@ -786,6 +786,8 @@ public class ClassFileBuilder {
 			Pair<Type,String> handler = c.catches.get(i);
 			bytecodes.add(new Bytecode.Label(bounce));
 			addReadConversion(handler.first(),bytecodes);
+			bytecodes.add(new Bytecode.Store(c.operand, convertType(handler
+					.first())));
 			bytecodes.add(new Bytecode.Goto(handler.second()));			
 		}
 		bytecodes.add(new Bytecode.Label(start));
