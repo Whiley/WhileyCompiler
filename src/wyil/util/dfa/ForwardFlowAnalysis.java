@@ -90,7 +90,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		return mcase;
 	}		
 	
-	protected T propagate(int start, int end, T store, List<Pair<Type,String>> handlers) {
+	protected T propagate(int start, int end, T store, List<Code.TryCatch> handlers) {
 		for(int i=start;i<end;++i) {						
 			Entry entry = block.get(i);			
 			try {				
@@ -154,7 +154,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					merge(sw.defaultTarget, store, stores);
 					store = null;
 				} else if (code instanceof Code.TryCatch) {
-					Code.TryCatch sw = (Code.TryCatch) code;					
+					Code.TryCatch tc = (Code.TryCatch) code;					
 					int s = i;
 
 					// Note, I could make this more efficient!					
@@ -162,15 +162,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						entry = block.get(i);
 						if (entry.code instanceof Code.Label) {
 							Code.Label l = (Code.Label) entry.code;
-							if (l.label.equals(sw.label)) {
+							if (l.label.equals(tc.label)) {
 								// end of loop body found
 								break;
 							}
 						}						
 					}
 					
-					ArrayList<Pair<Type,String>> nhandlers = new ArrayList<Pair<Type,String>>(handlers);														
-					nhandlers.addAll(0,sw.catches);
+					ArrayList<Code.TryCatch> nhandlers = new ArrayList<Code.TryCatch>(handlers);														
+					nhandlers.add(tc);
 					store = propagate(s+1,i,store,nhandlers);
 					i = i - 1; // this is necessary since last label of
 								// try-catch is first label of catch handler
@@ -208,7 +208,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		}
 	}
 
-	protected void mergeHandlers(int index, Code code, T store, List<Pair<Type, String>> handlers,
+	protected void mergeHandlers(int index, Code code, T store, List<Code.TryCatch> handlers,
 			Map<String, T> stores) {
 		if(code instanceof Code.Throw) {
 			Code.Throw t = (Code.Throw) code;	
@@ -228,21 +228,24 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		}
 	}
 	
-	protected void mergeHandler(Type type, T store, List<Pair<Type, String>> handlers,
+	protected void mergeHandler(Type type, T store, List<Code.TryCatch> handlers,
 			Map<String, T> stores) {
-		for(Pair<Type,String> p : handlers) {
-			Type handler = p.first();			
+		for(int i=handlers.size()-1;i>=0;--i) {
+			Code.TryCatch tc = handlers.get(i);
+			for(Pair<Type,String> p : tc.catches) { 
+				Type handler = p.first();			
 
-			if(Type.isSubtype(handler,type)) {
-				T nstore = propagate(handler,store);
-				merge(p.second(),nstore,stores);
-				return; // completely subsumed
-			} else if(Type.isSubtype(type, handler)) {
-				T nstore = propagate(handler,store);
-				merge(p.second(),nstore,stores);
-				// not completely subsumed
-				type = Type.intersect(type,Type.Negation(handler));
-			} 
+				if(Type.isSubtype(handler,type)) {
+					T nstore = propagate(handler,tc,store);
+					merge(p.second(),nstore,stores);
+					return; // completely subsumed
+				} else if(Type.isSubtype(type, handler)) {
+					T nstore = propagate(handler,tc,store);
+					merge(p.second(),nstore,stores);
+					// not completely subsumed
+					type = Type.intersect(type,Type.Negation(handler));
+				}
+			}
 		}
 	}
 	
@@ -315,11 +318,13 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * 
 	 * @param handler
 	 *            --- type of handler catching exception
+	 * @param tc
+	 *            --- the code of the enclosing try-catch handler
 	 * @param store
 	 *            --- store immediately before cause
 	 * @return
 	 */
-	protected abstract T propagate(Type handler, T store);
+	protected abstract T propagate(Type handler, Code.TryCatch tc, T store);
 	
 	/**
 	 * <p>
@@ -347,7 +352,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * @return
 	 */
 	protected abstract T propagate(int start, int end, 
-			Code.Loop code, Entry entry, T store, List<Pair<Type,String>> handlers);
+			Code.Loop code, Entry entry, T store, List<Code.TryCatch> handlers);
 
 	/**
 	 * <p>

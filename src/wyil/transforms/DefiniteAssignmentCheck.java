@@ -139,13 +139,15 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(Type handler, HashSet<Integer> in) {
+	public HashSet<Integer> propagate(Type handler, Code.TryCatch tc, HashSet<Integer> in) {
+		in = new HashSet<Integer>(in);
+		in.add(tc.operand);
 		return in;
 	}
 	
 	@Override
 	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
-			Entry entry, HashSet<Integer> in, List<Pair<Type, String>> handlers) {
+			Entry entry, HashSet<Integer> in, List<Code.TryCatch> handlers) {
 
 		if (loop instanceof Code.ForAll) {						
 			Code.ForAll fall = (Code.ForAll) loop;

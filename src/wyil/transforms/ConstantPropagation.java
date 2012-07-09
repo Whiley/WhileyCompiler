@@ -892,7 +892,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 
 	@Override
-	public Env propagate(Type handler, Env environment) {		
+	public Env propagate(Type handler, Code.TryCatch tc, Env environment) {		
 		Env catchEnvironment = (Env) environment.clone();		
 		// TODO: implement me!
 		return catchEnvironment;
@@ -900,7 +900,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	@Override
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
+			Entry stmt, Env environment, List<Code.TryCatch> handlers) {
 		
 		environment = new Env(environment);
 		
