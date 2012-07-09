@@ -693,7 +693,7 @@ public final class CodeGeneration {
 			
 			// FIXME: support destructuring of lists and sets			
 			if(!(rawSrcType instanceof Type.EffectiveMap)) {
-				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),localGenerator.context(),s.source);
+				syntaxError(errorMessage(INVALID_MAP_EXPRESSION),localGenerator.context(),s.source);
 			}
 			Type.EffectiveMap dict = (Type.EffectiveMap) rawSrcType;
 			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());

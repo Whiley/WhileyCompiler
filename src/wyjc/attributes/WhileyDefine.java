@@ -299,7 +299,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	public static void write(Value.Map expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(DICTIONARYVAL);
+		writer.write_u1(MAPVAL);
 		writer.write_u2(expr.values.size());
 		for(Map.Entry<Value,Value> e : expr.values.entrySet()) {
 			write(e.getKey(),writer,constantPool);
@@ -507,7 +507,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	public final static int TUPLEVAL = 9;
 	public final static int BYTEVAL = 10;
 	public final static int STRINGVAL = 11;
-	public final static int DICTIONARYVAL = 12;
+	public final static int MAPVAL = 12;
 	public final static int FUNCTIONVAL = 13;	
 	public final static int METHODVAL = 14;
 	public final static int MESSAGEVAL = 15;
