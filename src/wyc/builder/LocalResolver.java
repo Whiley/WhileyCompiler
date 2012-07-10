@@ -705,7 +705,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			// Yes, this function or method is qualified
 			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
 			NameID name = new NameID(ma.mid,expr.name);
-			Nominal.FunctionOrMethod funType = resolveAsFunctionOrMethod(name,  paramTypes);			
+			Nominal.FunctionOrMethod funType = resolveAsFunctionOrMethod(name,  paramTypes, context);			
 			if(funType instanceof Nominal.Function) {
 				Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs, expr.attributes());
 				r.functionType = (Nominal.Function) funType;				
@@ -1173,21 +1173,21 @@ public abstract class LocalResolver extends AbstractResolver {
 	 * @throws Exception
 	 */
 	private Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid, 
-			List<Nominal> parameters) throws Exception {
+			List<Nominal> parameters, Context context) throws Exception {
 		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
 
-		addCandidateFunctionsAndMethods(nid, parameters, candidates);
+		addCandidateFunctionsAndMethods(nid, parameters, candidates, context);
 
 		return selectCandidateFunctionOrMethod(nid.name(), parameters,
-				candidates).second();		
+				candidates,context).second();		
 	}
 
 	private Nominal.Message resolveAsMessage(NameID nid,
-			Type.Reference receiver, List<Nominal> parameters)
+			Type.Reference receiver, List<Nominal> parameters, Context context)
 			throws Exception {
 		HashSet<Pair<NameID, Nominal.Message>> candidates = new HashSet<Pair<NameID, Nominal.Message>>();
 
-		addCandidateMessages(nid, parameters, candidates);
+		addCandidateMessages(nid, parameters, candidates, context);
 
 		return selectCandidateMessage(nid.name(), receiver, parameters,
 				candidates).second();
@@ -1265,12 +1265,12 @@ public abstract class LocalResolver extends AbstractResolver {
 				}
 				for (Path.ID mid : builder.imports(filter)) {					
 					NameID nid = new NameID(mid,name);				
-					addCandidateFunctionsAndMethods(nid,parameters,candidates);					
+					addCandidateFunctionsAndMethods(nid,parameters,candidates,context);					
 				}
 			} 
 		}
 
-		return selectCandidateFunctionOrMethod(name,parameters,candidates);
+		return selectCandidateFunctionOrMethod(name,parameters,candidates,context);
 	}
 	
 	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
@@ -1291,7 +1291,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				}
 				for (Path.ID mid : builder.imports(filter)) {				
 					NameID nid = new NameID(mid, name);
-					addCandidateMessages(nid, parameters, candidates);					
+					addCandidateMessages(nid, parameters, candidates, context);					
 				}
 			}
 		}
@@ -1355,10 +1355,10 @@ public abstract class LocalResolver extends AbstractResolver {
 		return paramStr + ")";		
 	}
 
-	private Pair<NameID,Nominal.FunctionOrMethod> selectCandidateFunctionOrMethod(String name,
-			List<Nominal> parameters,
-			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
-					throws Exception {
+	private Pair<NameID, Nominal.FunctionOrMethod> selectCandidateFunctionOrMethod(
+			String name, List<Nominal> parameters,
+			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates,
+			Context context) throws Exception {
 
 		List<Type> rawParameters; 
 		Type.Function target;
@@ -1402,7 +1402,30 @@ public abstract class LocalResolver extends AbstractResolver {
 			}
 
 			throw new ResolveError(msg);
-		}				
+		} else {
+			// now check protection modified
+			WhileyFile wf = builder.getSourceFile(candidateID.module());
+			if(wf != null) {
+				if(wf != context.file()) {
+					for (WhileyFile.FunctionOrMethod d : wf.declarations(
+							WhileyFile.FunctionOrMethod.class, candidateID.name())) {
+						if(d.parameters.equals(candidateType.params())) {
+							if(!d.isPublic() && !d.isProtected()) {
+								String msg = candidateID.module() + "." + name + parameterString(parameters) + " is not visible";
+								throw new ResolveError(msg);
+							}
+						}
+					}
+				}
+			} else {				
+				WyilFile m = builder.getModule(candidateID.module());
+				WyilFile.Method d = m.method(candidateID.name(),candidateType.raw());
+				if(!d.isPublic() && !d.isProtected()) {
+					String msg = candidateID.module() + "." + name + parameterString(parameters) + " is not visible";
+					throw new ResolveError(msg);
+				}
+			}
+		}
 
 		return new Pair<NameID,Nominal.FunctionOrMethod>(candidateID,candidateType);
 	}
@@ -1472,7 +1495,7 @@ public abstract class LocalResolver extends AbstractResolver {
 
 	private void addCandidateFunctionsAndMethods(NameID nid,
 			List<?> parameters,
-			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates)
+			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates, Context context)
 					throws Exception {
 		Path.ID mid = nid.module();
 
@@ -1482,7 +1505,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		if (wf != null) {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
-				if (nparams == -1 || f.parameters.size() == nparams) {
+				if ((nparams == -1 || f.parameters.size() == nparams)) {
 					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(
 							f.unresolvedType(), f);
 					candidates.add(new Pair<NameID, Nominal.FunctionOrMethod>(
@@ -1519,7 +1542,7 @@ public abstract class LocalResolver extends AbstractResolver {
 	}
 
 	private void addCandidateMessages(NameID nid, List<?> parameters,
-			Collection<Pair<NameID, Nominal.Message>> candidates)
+			Collection<Pair<NameID, Nominal.Message>> candidates, Context context)
 			throws Exception {
 		Path.ID mid = nid.module();
 
@@ -1528,7 +1551,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		if (wf != null) {
 			for (WhileyFile.Message m : wf.declarations(
 					WhileyFile.Message.class, nid.name())) {
-				if (nparams == -1 || m.parameters.size() == nparams) {
+				if ((nparams == -1 || m.parameters.size() == nparams)) {
 					Nominal.Message ft = (Nominal.Message) resolveAsType(
 							m.unresolvedType(), m);
 					candidates.add(new Pair<NameID, Nominal.Message>(nid, ft));

@@ -352,8 +352,11 @@ public final class WyilFile {
 		}
 		
 		public boolean isPublic() {
-				// TODO: fixme!
-			return true;
+			return modifiers.contains(Modifier.PUBLIC);
+		}
+		
+		public boolean isProtected() {
+			return modifiers.contains(Modifier.PROTECTED);
 		}
 		
 		public boolean isNative() {

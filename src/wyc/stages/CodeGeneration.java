@@ -250,7 +250,7 @@ public final class CodeGeneration {
 		}	
 		
 		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
-				
+		
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
 			return new WyilFile.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);

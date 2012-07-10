@@ -288,7 +288,7 @@ public class ClassFileBuilder {
 	public ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
 			WyilFile.Method method, HashMap<Constant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		if(method.isPublic()) {
+		if(method.isPublic() || method.isProtected()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);					

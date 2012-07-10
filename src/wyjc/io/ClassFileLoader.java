@@ -28,6 +28,7 @@ package wyjc.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -171,14 +172,25 @@ public class ClassFileLoader implements ModuleReader {
 			for (int i = 0; i != type.params().size(); ++i) {
 				parameterNames.add("$" + i);
 			}
-
+			
 			List<WyilFile.Case> mcases = new ArrayList<WyilFile.Case>();
 			// TODO: fix this problem here related to locals
 			mcases.add(new WyilFile.Case(null, null, null, Collections.EMPTY_LIST, attrs));
 			// TODO: generate proper modifiers
-			return new WyilFile.Method(Collections.EMPTY_LIST,name, type, mcases);
+			return new WyilFile.Method(modifiers(cm),name, type, mcases);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private List<wyil.lang.Modifier> modifiers(ClassFile.Method cm) {
+		if(cm.isPublic()) {
+			ArrayList<wyil.lang.Modifier> modifiers = new ArrayList();
+			modifiers.add(wyil.lang.Modifier.PUBLIC);
+			return modifiers;
+		} else {
+			return Collections.EMPTY_LIST;
+		}
+		
 	}
 }

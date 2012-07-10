@@ -287,6 +287,10 @@ public final class WhileyParser {
 				&& isModifier((lookahead = tokens.get(index)))) {
 			if(lookahead.text.equals("public")) {
 				mods.add(Modifier.PUBLIC);
+			} else if(lookahead.text.equals("protected")) {
+				mods.add(Modifier.PROTECTED);
+			} else if(lookahead.text.equals("private")) {
+				mods.add(Modifier.PRIVATE);
 			} else if(lookahead.text.equals("native")) {
 				mods.add(Modifier.NATIVE);
 			} else if(lookahead.text.equals("export")) {

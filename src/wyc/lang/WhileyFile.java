@@ -319,6 +319,15 @@ public final class WhileyFile {
 			return false;
 		}
 		
+		public boolean isProtected() {
+			for (Modifier m : modifiers) {
+				if (m instanceof Modifier.Protected) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
 		public String toString() {
 			return "define " + constant + " as " + name;
 		}
@@ -357,6 +366,15 @@ public final class WhileyFile {
 		public boolean isPublic() {
 			for(Modifier m : modifiers) {
 				if(m instanceof Modifier.Public) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		public boolean isProtected() {
+			for (Modifier m : modifiers) {
+				if (m instanceof Modifier.Protected) {
 					return true;
 				}
 			}
@@ -424,8 +442,17 @@ public final class WhileyFile {
 				}
 			}
 			return false;
+		}		
+		
+		public boolean isProtected() {
+			for (Modifier m : modifiers) {
+				if (m instanceof Modifier.Protected) {
+					return true;
+				}
+			}
+			return false;
 		}
-
+		
 		public String name() {
 			return name;
 		}		
