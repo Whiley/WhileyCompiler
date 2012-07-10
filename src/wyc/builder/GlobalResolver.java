@@ -83,7 +83,13 @@ public class GlobalResolver extends LocalResolver {
 				for (Path.ID mid : builder.imports(filter)) {
 					NameID nid = new NameID(mid, name);
 					if (builder.isName(nid)) {
-						return nid;
+						// ok, we have found the name in question. But, is it
+						// visible?
+						if(isVisible(nid,context)) {
+							return nid;
+						} else {
+							throw new ResolveError(nid + " is not visible");	
+						}
 					}
 				}
 			}
@@ -117,7 +123,11 @@ public class GlobalResolver extends LocalResolver {
 			Path.ID mid = resolveAsModule(names.get(0),context);		
 			NameID nid = new NameID(mid, name); 
 			if (builder.isName(nid)) {
-				return nid;
+				if(isVisible(nid,context)) {
+					return nid;
+				} else {
+					throw new ResolveError(nid + " is not visible");	
+				}
 			} 
 		} else {
 			String name = names.get(names.size()-1);
@@ -129,7 +139,11 @@ public class GlobalResolver extends LocalResolver {
 			Path.ID mid = pkg.append(module);
 			NameID nid = new NameID(mid, name); 
 			if (builder.isName(nid)) {
-				return nid;
+				if(isVisible(nid,context)) {
+					return nid;
+				} else {
+					throw new ResolveError(nid + " is not visible");	
+				}
 			} 			
 		}
 		
@@ -786,4 +800,35 @@ public class GlobalResolver extends LocalResolver {
 		syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,bop);
 		return null;
 	}		
+	
+	public boolean isVisible(NameID nid, Context context) throws Exception {		
+		Path.ID mid = nid.module();
+		if(mid.equals(context.file().module)) {
+			return true;
+		}
+		WhileyFile wf = builder.getSourceFile(mid);
+		if(wf != null) {
+			Declaration d = wf.declaration(nid.name());
+			if(d instanceof WhileyFile.Constant) {
+				WhileyFile.Constant td = (WhileyFile.Constant) d;
+				return td.isPublic() || td.isProtected();
+			} else if(d instanceof WhileyFile.TypeDef) {
+				WhileyFile.TypeDef td = (WhileyFile.TypeDef) d;
+				return td.isPublic() || td.isProtected();	
+			}
+			return false;
+		} else {
+			// we have to do the following basically because we don't load
+			// modifiers properly out of jvm class files (at the moment).
+			return true;
+//			WyilFile w = builder.getModule(mid);
+//			WyilFile.ConstDef c = w.constant(nid.name());
+//			WyilFile.TypeDef t = w.type(nid.name());
+//			if(c != null) {
+//				return c.isPublic() || c.isProtected();
+//			} else {
+//				return t.isPublic() || t.isProtected();
+//			}
+		}		
+	}
 }

@@ -261,6 +261,14 @@ public final class WyilFile {
 		public Block constraint() {
 			return constraint;
 		}
+		
+		public boolean isPublic() {
+			return modifiers.contains(Modifier.PUBLIC);
+		}
+		
+		public boolean isProtected() {
+			return modifiers.contains(Modifier.PROTECTED);
+		}
 	}
 	
 	public static final class ConstDef extends SyntacticElement.Impl {
@@ -292,6 +300,14 @@ public final class WyilFile {
 		
 		public Value constant() {
 			return constant;
+		}
+		
+		public boolean isPublic() {
+			return modifiers.contains(Modifier.PUBLIC);
+		}
+		
+		public boolean isProtected() {
+			return modifiers.contains(Modifier.PROTECTED);
 		}
 	}
 		

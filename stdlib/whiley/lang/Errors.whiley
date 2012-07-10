@@ -25,7 +25,7 @@
 
 package whiley.lang
 
-define Error as { string msg }
+public define Error as { string msg }
 
 public Error Error(string msg):
     return {msg: msg}

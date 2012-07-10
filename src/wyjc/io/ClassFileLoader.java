@@ -190,7 +190,6 @@ public class ClassFileLoader implements ModuleReader {
 			return modifiers;
 		} else {
 			return Collections.EMPTY_LIST;
-		}
-		
+		}		
 	}
 }
