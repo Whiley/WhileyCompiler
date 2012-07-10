@@ -352,7 +352,12 @@ public final class WyilFile {
 		}
 		
 		public boolean isPublic() {
-			return modifiers.contains(Modifier.PUBLIC);
+			// This needs to be reverted so it works as expected. Unfortunately,
+			// this requires changing the way that function/method references
+			// are implemented. That's because you can't invoke a private method
+			// declared in another class.
+			//return modifiers.contains(Modifier.PUBLIC);
+			return true;
 		}
 		
 		public boolean isProtected() {

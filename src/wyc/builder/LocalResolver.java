@@ -1505,7 +1505,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		if (wf != null) {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
-				if ((nparams == -1 || f.parameters.size() == nparams)) {
+				if (nparams == -1 || f.parameters.size() == nparams) {
 					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(
 							f.unresolvedType(), f);
 					candidates.add(new Pair<NameID, Nominal.FunctionOrMethod>(
@@ -1551,7 +1551,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		if (wf != null) {
 			for (WhileyFile.Message m : wf.declarations(
 					WhileyFile.Message.class, nid.name())) {
-				if ((nparams == -1 || m.parameters.size() == nparams)) {
+				if (nparams == -1 || m.parameters.size() == nparams) {
 					Nominal.Message ft = (Nominal.Message) resolveAsType(
 							m.unresolvedType(), m);
 					candidates.add(new Pair<NameID, Nominal.Message>(nid, ft));

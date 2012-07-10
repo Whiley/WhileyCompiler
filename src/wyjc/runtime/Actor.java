@@ -94,7 +94,7 @@ public final class Actor extends Thread {
 	public void run() {		
 		// this is where the action happens
 		while(1==1) {
-			try {
+			try {				
 				Message m = queue.take();
 				Object r = m.method.invoke(null, m.arguments);
 				if(m.synchronous){

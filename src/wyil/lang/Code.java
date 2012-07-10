@@ -3705,7 +3705,7 @@ public abstract class Code {
 		public String toString() {
 			if (synchronous) {
 				if (target != Code.NULL_REG) {
-					return "send " + target + " " + toString(operands) + " : "
+					return "send %" + target + " = " + toString(operands) + " : "
 							+ type;
 				} else {
 					return "vsend" + toString(operands) + " : " + type;
