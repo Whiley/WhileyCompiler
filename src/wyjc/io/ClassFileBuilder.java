@@ -1433,7 +1433,7 @@ public class ClassFileBuilder {
 				name = "denominator";
 				break;
 		}
-		JvmType.Function ftype = new JvmType.Function(srcType);
+		JvmType.Function ftype = new JvmType.Function(targetType);
 		bytecodes.add(new Bytecode.Load(c.operand, srcType));
 		bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) srcType, name,
 				ftype, Bytecode.VIRTUAL));		

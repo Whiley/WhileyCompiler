@@ -342,25 +342,26 @@ public final class CodeGeneration {
 		}else if(s.lhs instanceof Expr.RationalLVal) {
 			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
 			
-			int freeRegister = environment.size();
-			blk = localGenerator.generate(s.rhs, freeRegister,
-					freeRegister + 1, environment);
-			
+
 			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
-			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.numerator;
+			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.denominator;
 			
 			allocate(lv.var, environment);
 			allocate(rv.var, environment);
 						
-			blk.append(Code.TupleLoad((Type.EffectiveTuple) s.rhs.result()
-					.raw(), environment.get(lv.var), freeRegister, 0),
+			
+			int freeRegister = environment.size();
+			blk = localGenerator.generate(s.rhs, freeRegister,
+					freeRegister + 1, environment);
+			
+			blk.append(Code.UnArithOp(s.rhs.result()
+					.raw(), environment.get(lv.var), freeRegister, Code.UnArithKind.NUMERATOR),
 					attributes(s));
 			
-			
-			blk.append(Code.TupleLoad((Type.EffectiveTuple) s.rhs.result()
-					.raw(), environment.get(rv.var), freeRegister, 1),
+			blk.append(Code.UnArithOp(s.rhs.result()
+					.raw(), environment.get(rv.var), freeRegister, Code.UnArithKind.DENOMINATOR),
 					attributes(s));
-			
+						
 			return blk;
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;

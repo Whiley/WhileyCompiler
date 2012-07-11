@@ -1,7 +1,7 @@
 import println from whiley.lang.System
 
 (int,int) f(real z):
-    x,y = z
+    x / y = z
     return (x,y)
 
 void ::main(System.Console sys):

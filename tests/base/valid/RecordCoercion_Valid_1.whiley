@@ -4,7 +4,7 @@ define Rec1 as {int x}
 define Rec2 as {real x}
 
 int f(Rec2 rec):
-    x,y = rec.x
+    x/y = rec.x
     return x
 
 void ::main(System.Console sys):
