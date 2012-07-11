@@ -151,9 +151,9 @@ public abstract class Code {
 		return get(new Assume(type, leftOperand, rightOperand, cop, message));
 	}
 
-	public static ArithOp ArithOp(Type type, int target, int leftOperand,
-			int rightOperand, ArithOperation op) {
-		return get(new ArithOp(type, target, leftOperand, rightOperand, op));
+	public static BinArithOp BinArithOp(Type type, int target, int leftOperand,
+			int rightOperand, BinArithKind op) {
+		return get(new BinArithOp(type, target, leftOperand, rightOperand, op));
 	}
 
 	/**
@@ -535,10 +535,6 @@ public abstract class Code {
 		return get(new TupleLoad(type, target, operand, index));
 	}
 
-	public static Neg Neg(Type type, int target, int operand) {
-		return get(new Neg(type, target, operand));
-	}
-
 	public static NewObject NewObject(Type.Reference type, int target, int operand) {
 		return get(new NewObject(type, target, operand));
 	}
@@ -561,6 +557,11 @@ public abstract class Code {
 				fields));
 	}
 
+	public static UnArithOp UnArithOp(Type type, int target, int operand,
+			UnArithKind uop) {
+		return get(new UnArithOp(type, target, operand, uop));
+	}
+	
 	public static Void Void(Type type, int[] operands) {
 		return get(new Void(type, operands));
 	}
@@ -995,7 +996,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public enum ArithOperation {
+	public enum BinArithKind {
 		ADD {
 			public String toString() {
 				return "add";
@@ -1096,10 +1097,10 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ArithOp extends AbstractBinaryAssignable<Type> {
-		public final ArithOperation bop;
+	public static final class BinArithOp extends AbstractBinaryAssignable<Type> {
+		public final BinArithKind bop;
 
-		private ArithOp(Type type, int target, int lhs, int rhs, ArithOperation bop) {
+		private BinArithOp(Type type, int target, int lhs, int rhs, BinArithKind bop) {
 			super(type, target, lhs, rhs);
 			if (bop == null) {
 				throw new IllegalArgumentException(
@@ -1110,7 +1111,7 @@ public abstract class Code {
 
 		@Override
 		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.ArithOp(type, nTarget, nLeftOperand, nRightOperand, bop);
+			return Code.BinArithOp(type, nTarget, nLeftOperand, nRightOperand, bop);
 		}
 
 		public int hashCode() {
@@ -1118,8 +1119,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof ArithOp) {
-				ArithOp bo = (ArithOp) o;
+			if (o instanceof BinArithOp) {
+				BinArithOp bo = (BinArithOp) o;
 				return bop.equals(bo.bop) && super.equals(bo);
 			}
 			return false;
@@ -3919,53 +3920,7 @@ public abstract class Code {
 		}
 	}
 
-	/**
-	 * Read a number (int or real) from the operand register, negates it and
-	 * writes the result to the target register. For example, the following
-	 * Whiley code:
-	 * 
-	 * <pre>
-	 * int f(int x):
-	 *     return -x
-	 * </pre>
-	 * 
-	 * can be translated into the following WYIL:
-	 * 
-	 * <pre>
-	 * int f(int x):
-	 * body:                    
-	 *     neg %0 = %0     : int                      
-	 *     return %0       : int
-	 * </pre>
-	 * 
-	 * This simply reads the parameter <code>x</code> stored in register
-	 * <code>%0</code>, negates it and then returns the negated value.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Neg extends AbstractUnaryAssignable<Type> {
-
-		private Neg(Type type, int target, int operand) {
-			super(type, target, operand);
-		}
-
-		protected Code clone(int nTarget, int nOperand) {
-			return Code.Neg(type, nTarget, nOperand);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Neg) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "neg %" + target + " = %" + operand + " : " + type;
-		}
-	}
-
+		
 	/**
 	 * Corresponds to a bitwise inversion operation, which reads a byte value
 	 * from the operand register, inverts it and writes the result to the target
@@ -4148,6 +4103,85 @@ public abstract class Code {
 		}
 	}
 
+	public enum UnArithKind {
+		NEG {
+			public String toString() {
+				return "neg";
+			}
+		},
+		
+		NUMERATOR {
+			public String toString() {
+				return "num";
+			}
+		},
+		
+		DENOMINATOR {
+			public String toString() {
+				return "den";
+			}
+		}
+	};
+	
+	/**
+	 * Read a number (int or real) from the operand register, perform a unary
+	 * arithmetic operation on it (e.g. negation) and writes the result to the
+	 * target register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     return -x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body:                    
+	 *     neg %0 = %0     : int                      
+	 *     return %0       : int
+	 * </pre>
+	 * 
+	 * This simply reads the parameter <code>x</code> stored in register
+	 * <code>%0</code>, negates it and then returns the negated value.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class UnArithOp extends AbstractUnaryAssignable<Type> {
+		public final UnArithKind uop;
+
+		private UnArithOp(Type type, int target, int operand, UnArithKind uop) {
+			super(type, target, operand);
+			if (uop == null) {
+				throw new IllegalArgumentException(
+						"UnaryArithOp bop argument cannot be null");
+			}
+			this.uop = uop;
+		}
+
+		@Override
+		public Code clone(int nTarget, int nOperand) {
+			return Code.UnArithOp(type, nTarget, nOperand, uop);
+		}
+
+		public int hashCode() {
+			return uop.hashCode() + super.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof UnArithOp) {
+				UnArithOp bo = (UnArithOp) o;
+				return uop.equals(bo.uop) && super.equals(bo);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return uop + " %" + target + " = %" + operand + " : " + type;
+		}
+	}
+	
 	/**
 	 * The void bytecode is used to indicate that the given register(s) are no
 	 * longer live. This is useful for communicating information to the memory

@@ -339,6 +339,29 @@ public final class CodeGeneration {
 			int freeRegister = environment.size();
 			blk = localGenerator.generate(s.rhs, target, freeRegister,
 					environment);					
+		}else if(s.lhs instanceof Expr.RationalLVal) {
+			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
+			
+			int freeRegister = environment.size();
+			blk = localGenerator.generate(s.rhs, freeRegister,
+					freeRegister + 1, environment);
+			
+			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
+			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.numerator;
+			
+			allocate(lv.var, environment);
+			allocate(rv.var, environment);
+						
+			blk.append(Code.TupleLoad((Type.EffectiveTuple) s.rhs.result()
+					.raw(), environment.get(lv.var), freeRegister, 0),
+					attributes(s));
+			
+			
+			blk.append(Code.TupleLoad((Type.EffectiveTuple) s.rhs.result()
+					.raw(), environment.get(rv.var), freeRegister, 1),
+					attributes(s));
+			
+			return blk;
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);

@@ -152,8 +152,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		afterInserts.remove(index);		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Code.ArithOp) {
-			infer(index,(Code.ArithOp)code,entry,environment);
+		if(code instanceof Code.BinArithOp) {
+			infer(index,(Code.BinArithOp)code,entry,environment);
 		} else if(code instanceof Code.Convert) {
 			infer(index,(Code.Convert)code,entry,environment);
 		} else if(code instanceof Code.Const) {
@@ -249,14 +249,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		return environment;
 	}
 	
-	private void infer(int index, Code.ArithOp code, Block.Entry entry,
+	private void infer(int index, Code.BinArithOp code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);		
 		coerceAfter(req,code.type,code.target,index,entry);	
-		if(code.bop == Code.ArithOperation.LEFTSHIFT || code.bop == Code.ArithOperation.RIGHTSHIFT) {
+		if(code.bop == Code.BinArithKind.LEFTSHIFT || code.bop == Code.BinArithKind.RIGHTSHIFT) {
 			environment.set(code.leftOperand,code.type);
 			environment.set(code.rightOperand,Type.T_INT);
-		} else if(code.bop == Code.ArithOperation.RANGE){
+		} else if(code.bop == Code.BinArithKind.RANGE){
 			environment.set(code.leftOperand,Type.T_INT);
 			environment.set(code.rightOperand,Type.T_INT);
 		} else {		

@@ -174,8 +174,8 @@ public class ConstraintInline implements Transform {
 				return transform((Code.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Code.Update) {
 
-			} else if(code instanceof Code.ArithOp) {
-				return transform((Code.ArithOp)code,freeSlot,entry);
+			} else if(code instanceof Code.BinArithOp) {
+				return transform((Code.BinArithOp)code,freeSlot,entry);
 			} else if(code instanceof Code.Return) {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
@@ -319,9 +319,9 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.ArithOp code, int freeSlot, SyntacticElement elem) {
+	public Block transform(Code.BinArithOp code, int freeSlot, SyntacticElement elem) {
 		
-		if(code.bop == Code.ArithOperation.DIV) {
+		if(code.bop == Code.BinArithKind.DIV) {
 			Block blk = new Block(0);
 			if (code.type instanceof Type.Int) {
 				blk.append(Code.Const(freeSlot,Value.V_INTEGER(BigInteger.ZERO)),

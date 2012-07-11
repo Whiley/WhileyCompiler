@@ -398,8 +398,8 @@ public class VerificationCheck implements Transform {
 		try {
 		if(code instanceof Code.Assert) {
 			constraint = transform((Code.Assert)code,entry,constraint,environment,assume);
-		} else if(code instanceof Code.ArithOp) {
-			constraint = transform((Code.ArithOp)code,entry,constraint,environment);
+		} else if(code instanceof Code.BinArithOp) {
+			constraint = transform((Code.BinArithOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.Convert) {
 			constraint = transform((Code.Convert)code,entry,constraint,environment);
 		} else if(code instanceof Code.Const) {
@@ -504,7 +504,7 @@ public class VerificationCheck implements Transform {
 		return WFormulas.and(test, constraint);
 	}
 	
-	protected WFormula transform(Code.ArithOp code, Block.Entry entry,
+	protected WFormula transform(Code.BinArithOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		WExpr lhs = operand(code.leftOperand,environment);
 		WExpr rhs = operand(code.rightOperand,environment);

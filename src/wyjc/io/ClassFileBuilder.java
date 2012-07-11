@@ -420,8 +420,8 @@ public class ClassFileBuilder {
 			ArrayList<UnresolvedHandler> handlers, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
-			if(code instanceof Code.ArithOp) {
-				 translate((Code.ArithOp)code,entry,freeSlot,bytecodes);
+			if(code instanceof Code.BinArithOp) {
+				 translate((Code.BinArithOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.Convert) {
 				 translate((Code.Convert)code,freeSlot,constants,bytecodes);
 			} else if(code instanceof Code.Const) {
@@ -1206,7 +1206,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, convertType(c.fieldType())));
 	}
 
-	public void translate(Code.ArithOp c, Block.Entry stmt, int freeSlot,
+	public void translate(Code.BinArithOp c, Block.Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 						
 		JvmType type = convertType(c.type);

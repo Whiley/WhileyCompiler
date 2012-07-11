@@ -151,8 +151,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Code.ArithOp) {
-			infer(index,(Code.ArithOp)code,entry,environment);
+		if(code instanceof Code.BinArithOp) {
+			infer(index,(Code.BinArithOp)code,entry,environment);
 		} else if(code instanceof Code.Convert) {
 			infer(index,(Code.Convert)code,entry,environment);
 		} else if(code instanceof Code.Const) {
@@ -223,7 +223,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return environment;
 	}
 	
-	public void infer(int index, Code.ArithOp code, Block.Entry entry,
+	public void infer(int index, Code.BinArithOp code, Block.Entry entry,
 			Env environment) {		
 		Value lhs = environment.get(code.leftOperand);
 		Value rhs = environment.get(code.rightOperand);

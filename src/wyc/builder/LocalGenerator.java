@@ -791,7 +791,7 @@ public final class LocalGenerator {
 			blk.append(Code.StringOp(target,freeRegister, freeRegister+1,op),attributes(v));
 			return blk;	
 		default:
-				blk.append(Code.ArithOp(result, target, freeRegister, freeRegister+1,
+				blk.append(Code.BinArithOp(result, target, freeRegister, freeRegister+1,
 						OP2BOP(bop, v)), attributes(v));			
 			return blk;
 		}		
@@ -1013,30 +1013,30 @@ public final class LocalGenerator {
 		return operands;
 	}
 	
-	private Code.ArithOperation OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	private Code.BinArithKind OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case ADD:
-			return Code.ArithOperation.ADD;
+			return Code.BinArithKind.ADD;
 		case SUB:
-			return Code.ArithOperation.SUB;		
+			return Code.BinArithKind.SUB;		
 		case MUL:
-			return Code.ArithOperation.MUL;
+			return Code.BinArithKind.MUL;
 		case DIV:
-			return Code.ArithOperation.DIV;
+			return Code.BinArithKind.DIV;
 		case REM:
-			return Code.ArithOperation.REM;
+			return Code.BinArithKind.REM;
 		case RANGE:
-			return Code.ArithOperation.RANGE;
+			return Code.BinArithKind.RANGE;
 		case BITWISEAND:
-			return Code.ArithOperation.BITWISEAND;
+			return Code.BinArithKind.BITWISEAND;
 		case BITWISEOR:
-			return Code.ArithOperation.BITWISEOR;
+			return Code.BinArithKind.BITWISEOR;
 		case BITWISEXOR:
-			return Code.ArithOperation.BITWISEXOR;
+			return Code.BinArithKind.BITWISEXOR;
 		case LEFTSHIFT:
-			return Code.ArithOperation.LEFTSHIFT;
+			return Code.BinArithKind.LEFTSHIFT;
 		case RIGHTSHIFT:
-			return Code.ArithOperation.RIGHTSHIFT;
+			return Code.BinArithKind.RIGHTSHIFT;
 		}
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, elem);
 		return null;
