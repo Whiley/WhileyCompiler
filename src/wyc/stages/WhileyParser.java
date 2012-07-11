@@ -740,19 +740,58 @@ public final class WhileyParser {
 	private Stmt parseAssign() {		
 		// standard assignment
 		int start = index;
-		Expr lhs = parseTupleExpression();		
-		if(!(lhs instanceof Expr.LVal)) {
-			syntaxError("expecting lval, found " + lhs + ".", lhs);
-		}				
+		Expr.LVal lhs = parseTupleLVal();							
 		match(Equals.class);		
 		Expr rhs = parseCondition(false);
 		int end = index;
 		matchEndLine();
-		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start,
+		return new Stmt.Assign(lhs, rhs, sourceAttr(start,
 				end - 1));		
 	}	
 	
+	private Expr.LVal parseTupleLVal() {
+		int start = index;
+		Expr.LVal e = parseLVal();		
+		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			// this is a tuple constructor
+			ArrayList<Expr> exprs = new ArrayList<Expr>();
+			exprs.add(e);
+			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				exprs.add(parseLVal());
+				checkNotEof();
+			}
+			return new Expr.Tuple(exprs,sourceAttr(start,index-1));
+		} else {
+			return e;
+		}
+	}
 
+	private Expr.LVal parseLVal() {
+		checkNotEof();
+
+		int start = index;
+		Token token = tokens.get(index);
+
+		if(token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			
+			checkNotEof();			
+			Expr.LVal v = parseTupleLVal();			
+			
+			checkNotEof();
+			token = tokens.get(index);			
+			match(RightBrace.class);
+			return v;			 		
+		} else if (token instanceof Identifier) {
+			return new Expr.AbstractVariable(matchIdentifier().text,
+					sourceAttr(start, index - 1));
+		}
+
+		syntaxError("unrecognised lval", token);
+		return null;
+	}
+	
 	private Expr parseTupleExpression() {
 		int start = index;
 		Expr e = parseCondition(false);		
@@ -770,7 +809,7 @@ public final class WhileyParser {
 			return e;
 		}
 	}
-
+	
 	/**
 	 * The startSetComp flag is used to indicate whether this expression is the
 	 * first first value of a set expression. This is necessary in order to
