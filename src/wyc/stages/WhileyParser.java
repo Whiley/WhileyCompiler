@@ -751,14 +751,14 @@ public final class WhileyParser {
 	
 	private Expr.LVal parseTupleLVal() {
 		int start = index;
-		Expr.LVal e = parseLVal();		
+		Expr.LVal e = parseIndexLVal();		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a tuple constructor
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseLVal());
+				exprs.add(parseIndexLVal());
 				checkNotEof();
 			}
 			return new Expr.Tuple(exprs,sourceAttr(start,index-1));
@@ -767,6 +767,52 @@ public final class WhileyParser {
 		}
 	}
 
+	private Expr.LVal parseIndexLVal() {
+		checkNotEof();
+		int start = index;
+		Expr.LVal lhs = parseLVal();
+		
+		if(index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+
+			while (lookahead instanceof LeftSquare 
+					|| lookahead instanceof Dot
+					|| lookahead instanceof Question		
+					|| lookahead instanceof Shreak
+					|| lookahead instanceof RightArrow
+					|| lookahead instanceof LeftBrace) {				
+				if(lookahead instanceof LeftSquare) {
+					match(LeftSquare.class);				
+
+					lookahead = tokens.get(index);
+
+					Expr rhs = parseAddSubExpression();
+
+					match(RightSquare.class);
+					lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+							index - 1));					
+				} else if(lookahead instanceof Dot || lookahead instanceof RightArrow) {				
+					if(lookahead instanceof Dot) {
+						match(Dot.class);
+					} else {
+						match(RightArrow.class);
+						lhs = new Expr.Dereference(lhs,sourceAttr(start,index - 1));	
+					}
+					int tmp = index;
+					String name = matchIdentifier().text; 						
+					lhs =  new Expr.AbstractDotAccess(lhs, name, sourceAttr(start,index - 1));					
+				} 
+				if(index < tokens.size()) {
+					lookahead = tokens.get(index);	
+				} else {
+					lookahead = null;
+				}
+			}
+		}
+		
+		return lhs;		
+	}
+	
 	private Expr.LVal parseLVal() {
 		checkNotEof();
 
