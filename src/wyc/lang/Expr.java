@@ -870,6 +870,22 @@ public interface Expr extends SyntacticElement {
 			return type;
 		}		
 	}
+
+	public static class RationalLVal extends SyntacticElement.Impl implements
+	LVal {
+		public final LVal numerator;
+		public final LVal denominator;
+
+		public RationalLVal(LVal num, LVal den, Attribute... attributes) {
+			super(attributes);
+			this.numerator = num;
+			this.denominator = den;
+		}
+		
+		public final Nominal result() {
+			return null; // better be dead-code
+		}
+	}
 	
 	public enum BOp { 
 		AND {

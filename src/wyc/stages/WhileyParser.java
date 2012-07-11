@@ -751,14 +751,14 @@ public final class WhileyParser {
 	
 	private Expr.LVal parseTupleLVal() {
 		int start = index;
-		Expr.LVal e = parseIndexLVal();		
+		Expr.LVal e = parseRationalLVal();		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
-			// this is a tuple constructor
+			// this is a rational destructuring
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseIndexLVal());
+				exprs.add(parseRationalLVal());
 				checkNotEof();
 			}
 			return new Expr.Tuple(exprs,sourceAttr(start,index-1));
@@ -767,6 +767,20 @@ public final class WhileyParser {
 		}
 	}
 
+	private Expr.LVal parseRationalLVal() {
+		int start = index;
+		Expr.LVal lhs = parseIndexLVal();		
+		if (index < tokens.size() && tokens.get(index) instanceof RightSlash) {
+			// this is a rational destructuring
+			match(RightSlash.class);
+			checkNotEof();
+			Expr.LVal rhs = parseIndexLVal();			
+			return new Expr.RationalLVal(lhs,rhs,sourceAttr(start,index-1));
+		} else {
+			return lhs;
+		}
+	}
+	
 	private Expr.LVal parseIndexLVal() {
 		checkNotEof();
 		int start = index;
@@ -830,7 +844,7 @@ public final class WhileyParser {
 			match(RightBrace.class);
 			return v;			 		
 		} else if (token instanceof Identifier) {
-			return new Expr.AbstractVariable(matchIdentifier().text,
+			return new Expr.AssignedVariable(matchIdentifier().text,
 					sourceAttr(start, index - 1));
 		}
 

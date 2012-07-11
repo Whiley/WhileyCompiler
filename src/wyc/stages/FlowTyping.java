@@ -282,6 +282,28 @@ public final class FlowTyping {
 			lv.afterType = rhs.result();			
 			environment = environment.put(lv.var, lv.afterType);
 			lhs = lv;
+		} else if(lhs instanceof Expr.RationalLVal) {
+			// represents a destructuring assignment
+			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
+						
+			if(!Type.isImplicitCoerciveSubtype(Type.T_REAL, rhs.result().raw())) {
+				syntaxError("real value expected, got " + rhs.result(),filename,rhs);				
+			} 
+			
+			if (tv.numerator instanceof Expr.AssignedVariable
+					&& tv.denominator instanceof Expr.AssignedVariable) {
+				Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator; 				
+				Expr.AssignedVariable rv = (Expr.AssignedVariable) tv.denominator;
+				lv.type = Nominal.T_VOID;
+				rv.type = Nominal.T_VOID;
+				lv.afterType = Nominal.T_INT; 
+				rv.afterType = Nominal.T_INT;
+				environment = environment.put(lv.var, Nominal.T_INT);
+				environment = environment.put(rv.var, Nominal.T_INT);
+			} else {
+				syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,lhs);
+			}
+			
 		} else if(lhs instanceof Expr.Tuple) {
 			// represents a destructuring assignment
 			Expr.Tuple tv = (Expr.Tuple) lhs;
@@ -294,9 +316,7 @@ public final class FlowTyping {
 			// FIXME: the following is something of a kludge. It would also be
 			// nice to support more expressive destructuring assignment
 			// operations.
-			if(Type.isImplicitCoerciveSubtype(Type.T_REAL, rawRhs)) {
-				tupleRhs = Nominal.Tuple(Nominal.T_INT,Nominal.T_INT);
-			} else if(tupleRhs == null) {
+			if(tupleRhs == null) {
 				syntaxError("tuple value expected, got " + tupleRhs.nominal(),filename,rhs);
 				return null; // deadcode
 			} 
