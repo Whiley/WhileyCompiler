@@ -418,8 +418,8 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Code.Invert)code,entry,constraint,environment);
 		} else if(code instanceof Code.Label) {
 			// skip			
-		} else if(code instanceof Code.ListOp) {
-			constraint = transform((Code.ListOp)code,entry,constraint,environment);
+		} else if(code instanceof Code.BinListOp) {
+			constraint = transform((Code.BinListOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.LengthOf) {
 			constraint = transform((Code.LengthOf)code,entry,constraint,environment);
 		} else if(code instanceof Code.SubList) {
@@ -442,16 +442,16 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Code.NewSet)code,entry,constraint,environment);
 		} else if(code instanceof Code.NewTuple) {
 			constraint = transform((Code.NewTuple)code,entry,constraint,environment);
-		} else if(code instanceof Code.Neg) {
-			constraint = transform((Code.Neg)code,entry,constraint,environment);
+		} else if(code instanceof Code.UnArithOp) {
+			constraint = transform((Code.UnArithOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.Dereference) {
 			constraint = transform((Code.Dereference)code,entry,constraint,environment);
 		} else if(code instanceof Code.Nop) {
 			// skip			
 		} else if(code instanceof Code.Send) {
 			constraint = transform((Code.Send)code,entry,constraint,environment);
-		} else if(code instanceof Code.SetOp) {
-			constraint = transform((Code.SetOp)code,entry,constraint,environment);
+		} else if(code instanceof Code.BinSetOp) {
+			constraint = transform((Code.BinSetOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.StringOp) {
 			constraint = transform((Code.StringOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.SubString) {
@@ -510,7 +510,7 @@ public class VerificationCheck implements Transform {
 		WExpr rhs = operand(code.rightOperand,environment);
 		WExpr result;
 		
-		switch(code.bop) {
+		switch(code.kind) {
 		case ADD:
 			result = WNumerics.add(lhs, rhs);
 			break;
@@ -605,7 +605,7 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.ListOp code, Block.Entry entry,
+	protected WFormula transform(Code.BinListOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
@@ -706,8 +706,9 @@ public class VerificationCheck implements Transform {
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.Neg code, Block.Entry entry,
+	protected WFormula transform(Code.UnArithOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
+		// TODO: update to support numerator and denominators
 		WExpr expr = operand(code.operand, environment);
 		WExpr result = WNumerics.negate(expr);
 		return update(code.target, result, environment, constraint);
@@ -725,7 +726,7 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.SetOp code, Block.Entry entry,
+	protected WFormula transform(Code.BinSetOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		WVariable lhs = operand(code.leftOperand, environment);
 		WVariable rhs = operand(code.rightOperand, environment);
@@ -737,7 +738,7 @@ public class VerificationCheck implements Transform {
 		HashMap<WVariable, WExpr> vars = new HashMap();
 		vars.put(tmp, target);
 		
-		switch(code.operation) {
+		switch(code.kind) {
 		case UNION:	{
 			
 			WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs),

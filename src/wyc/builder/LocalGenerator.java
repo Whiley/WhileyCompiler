@@ -668,7 +668,7 @@ public final class LocalGenerator {
 		Block blk = generate(v.mhs,  target, freeRegister, environment);	
 		switch (v.op) {
 		case NEG:
-			blk.append(Code.Neg(v.result().raw(), target, target), attributes(v));
+			blk.append(Code.UnArithOp(v.result().raw(), target, target, Code.UnArithKind.NEG), attributes(v));
 			break;
 		case INVERT:
 			blk.append(Code.Invert(v.result().raw(), target, target), attributes(v));
@@ -754,23 +754,23 @@ public final class LocalGenerator {
 		
 		switch(bop) {		
 		case UNION:
-				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
-						freeRegister, freeRegister+1, Code.SetOperation.UNION),
+				blk.append(Code.BinSetOp((Type.EffectiveSet) result, target,
+						freeRegister, freeRegister+1, Code.BinSetKind.UNION),
 						attributes(v));			
 			return blk;			
 		case INTERSECTION:
-				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
-						freeRegister, freeRegister+1, Code.SetOperation.INTERSECTION),
+				blk.append(Code.BinSetOp((Type.EffectiveSet) result, target,
+						freeRegister, freeRegister+1, Code.BinSetKind.INTERSECTION),
 						attributes(v));
 				return blk;	
 		case DIFFERENCE:
-				blk.append(Code.SetOp((Type.EffectiveSet) result, target,
-						freeRegister, freeRegister+1, Code.SetOperation.DIFFERENCE),
+				blk.append(Code.BinSetOp((Type.EffectiveSet) result, target,
+						freeRegister, freeRegister+1, Code.BinSetKind.DIFFERENCE),
 						attributes(v));
 				return blk;
 		case LISTAPPEND:
-				blk.append(Code.ListOp((Type.EffectiveList) result, target,
-						freeRegister, freeRegister+1, Code.ListOperation.APPEND),
+				blk.append(Code.BinListOp((Type.EffectiveList) result, target,
+						freeRegister, freeRegister+1, Code.BinListKind.APPEND),
 						attributes(v));
 				return blk;
 		case STRINGAPPEND:
@@ -928,8 +928,8 @@ public final class LocalGenerator {
 				environment));
 
 		// FIXME: following broken for list comprehensions
-		blk.append(Code.SetOp((Type.Set) resultType, target, target,
-				freeRegister, Code.SetOperation.LEFT_UNION), attributes(e));
+		blk.append(Code.BinSetOp((Type.Set) resultType, target, target,
+				freeRegister, Code.BinSetKind.LEFT_UNION), attributes(e));
 	
 		if(e.condition != null) {
 			blk.append(Code.Label(continueLabel));			

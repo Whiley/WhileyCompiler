@@ -452,8 +452,8 @@ public class ClassFileBuilder {
 				 translate((Code.Invert)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Label) {
 				translate((Code.Label)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.ListOp) {
-				 translate((Code.ListOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.BinListOp) {
+				 translate((Code.BinListOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.LengthOf) {
 				 translate((Code.LengthOf)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.SubList) {
@@ -478,8 +478,8 @@ public class ClassFileBuilder {
 				 translate((Code.NewSet)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.NewTuple) {
 				 translate((Code.NewTuple)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.Neg) {
-				 translate((Code.Neg)code,freeSlot,bytecodes);
+			} else if(code instanceof Code.UnArithOp) {
+				 translate((Code.UnArithOp)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Dereference) {
 				 translate((Code.Dereference)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Return) {
@@ -488,8 +488,8 @@ public class ClassFileBuilder {
 				// do nothing
 			} else if(code instanceof Code.Send) {
 				 translate((Code.Send)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.SetOp) {
-				 translate((Code.SetOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.BinSetOp) {
+				 translate((Code.BinSetOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.StringOp) {
 				 translate((Code.StringOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.SubString) {
@@ -1116,12 +1116,12 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, jt));
 	}
 		
-	public void translate(Code.ListOp c, Entry stmt, int freeSlot,
+	public void translate(Code.BinListOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType leftType;
 		JvmType rightType;
 		
-		switch(c.operation) {
+		switch(c.kind) {
 		case APPEND:
 			leftType = WHILEYLIST;
 			rightType = WHILEYLIST;
@@ -1213,7 +1213,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(type,type);
 		
 		// first, load operands
-		switch(c.bop) {
+		switch(c.kind) {
 			case ADD:
 			case SUB:	
 			case MUL:
@@ -1237,7 +1237,7 @@ public class ClassFileBuilder {
 		}
 		
 		// second, apply operation
-		switch(c.bop) {
+		switch(c.kind) {
 		case ADD:			
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "add", ftype,
 					Bytecode.VIRTUAL));
@@ -1289,14 +1289,14 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 
-	public void translate(Code.SetOp c, Entry stmt, int freeSlot,
+	public void translate(Code.BinSetOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		
 		JvmType leftType;
 		JvmType rightType;
 		
 		// First, load operands
-		switch(c.operation) {
+		switch(c.kind) {
 			case UNION:
 			case DIFFERENCE:
 			case INTERSECTION:
@@ -1331,7 +1331,7 @@ public class ClassFileBuilder {
 		
 		// Second, select operation
 		String operation;
-		switch(c.operation) {
+		switch(c.kind) {
 		case UNION: 						
 		case LEFT_UNION:			
 		case RIGHT_UNION:			
@@ -1414,14 +1414,30 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 	
-	public void translate(Code.Neg c, int freeSlot,
+	public void translate(Code.UnArithOp c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {										
-		JvmType type = convertType(c.type);
-		JvmType.Function ftype = new JvmType.Function(type);
-		bytecodes.add(new Bytecode.Load(c.operand, type));
-		bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
+		JvmType srcType = convertType(c.type);
+		JvmType targetType = null;
+		String name = null;
+		switch(c.kind) {
+			case NEG:
+				targetType = srcType;
+				name = "negate";
+				break;
+			case NUMERATOR:
+				targetType = BIG_INTEGER;
+				name = "numerator";
+				break;
+			case DENOMINATOR:
+				targetType = BIG_INTEGER;
+				name = "denominator";
+				break;
+		}
+		JvmType.Function ftype = new JvmType.Function(srcType);
+		bytecodes.add(new Bytecode.Load(c.operand, srcType));
+		bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) srcType, name,
 				ftype, Bytecode.VIRTUAL));		
-		bytecodes.add(new Bytecode.Store(c.target, type));
+		bytecodes.add(new Bytecode.Store(c.target, targetType));
 	}
 	
 	public void translate(Code.NewObject c, int freeSlot,

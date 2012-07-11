@@ -257,9 +257,9 @@ public abstract class Code {
 		return get(new SubList(type, target, operands));
 	}
 
-	public static ListOp ListOp(Type.EffectiveList type, int target,
-			int leftOperand, int rightOperand, ListOperation dir) {
-		return get(new ListOp(type, target, leftOperand, rightOperand, dir));
+	public static BinListOp BinListOp(Type.EffectiveList type, int target,
+			int leftOperand, int rightOperand, BinListKind dir) {
+		return get(new BinListOp(type, target, leftOperand, rightOperand, dir));
 	}
 
 	/**
@@ -443,9 +443,9 @@ public abstract class Code {
 
 	public static final Nop Nop = new Nop();
 
-	public static SetOp SetOp(Type.EffectiveSet type, int target,
-			int leftOperand, int rightOperand, SetOperation operation) {
-		return get(new SetOp(type, target, leftOperand, rightOperand, operation));
+	public static BinSetOp BinSetOp(Type.EffectiveSet type, int target,
+			int leftOperand, int rightOperand, BinSetKind operation) {
+		return get(new BinSetOp(type, target, leftOperand, rightOperand, operation));
 	}
 
 	public static StringOp StringOp(int target, int leftOperand,
@@ -1098,7 +1098,7 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class BinArithOp extends AbstractBinaryAssignable<Type> {
-		public final BinArithKind bop;
+		public final BinArithKind kind;
 
 		private BinArithOp(Type type, int target, int lhs, int rhs, BinArithKind bop) {
 			super(type, target, lhs, rhs);
@@ -1106,28 +1106,28 @@ public abstract class Code {
 				throw new IllegalArgumentException(
 						"BinOp bop argument cannot be null");
 			}
-			this.bop = bop;
+			this.kind = bop;
 		}
 
 		@Override
 		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.BinArithOp(type, nTarget, nLeftOperand, nRightOperand, bop);
+			return Code.BinArithOp(type, nTarget, nLeftOperand, nRightOperand, kind);
 		}
 
 		public int hashCode() {
-			return bop.hashCode() + super.hashCode();
+			return kind.hashCode() + super.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof BinArithOp) {
 				BinArithOp bo = (BinArithOp) o;
-				return bop.equals(bo.bop) && super.equals(bo);
+				return kind.equals(bo.kind) && super.equals(bo);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return bop + " %" + target + " = %" + leftOperand + ", %"
+			return kind + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -2245,7 +2245,7 @@ public abstract class Code {
 		}
 	}
 
-	public enum ListOperation {
+	public enum BinListKind {
 		LEFT_APPEND {
 			public String toString() {
 				return "lappend";
@@ -2288,40 +2288,40 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ListOp extends
+	public static final class BinListOp extends
 			AbstractBinaryAssignable<Type.EffectiveList> {
-		public final ListOperation operation;
+		public final BinListKind kind;
 
-		private ListOp(Type.EffectiveList type, int target, int leftOperand,
-				int rightOperand, ListOperation operation) {
+		private BinListOp(Type.EffectiveList type, int target, int leftOperand,
+				int rightOperand, BinListKind operation) {
 			super(type, target, leftOperand, rightOperand);
 			if (operation == null) {
 				throw new IllegalArgumentException(
 						"ListAppend direction cannot be null");
 			}
-			this.operation = operation;
+			this.kind = operation;
 		}
 
 		@Override
 		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.ListOp(type, nTarget, nLeftOperand, nRightOperand,
-					operation);
+			return Code.BinListOp(type, nTarget, nLeftOperand, nRightOperand,
+					kind);
 		}
 
 		public int hashCode() {
-			return super.hashCode() + operation.hashCode();
+			return super.hashCode() + kind.hashCode();
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof ListOp) {
-				ListOp setop = (ListOp) o;
-				return super.equals(setop) && operation.equals(setop.operation);
+			if (o instanceof BinListOp) {
+				BinListOp setop = (BinListOp) o;
+				return super.equals(setop) && kind.equals(setop.kind);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = %" + leftOperand + ", %"
+			return kind + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -3298,7 +3298,7 @@ public abstract class Code {
 		}
 	}
 
-	public enum SetOperation {
+	public enum BinSetKind {
 		LEFT_UNION {
 			public String toString() {
 				return "lunion";
@@ -3397,39 +3397,39 @@ public abstract class Code {
 	 * 
 	 * @author David J. Pearce
 	 */
-	public static final class SetOp extends
+	public static final class BinSetOp extends
 			AbstractBinaryAssignable<Type.EffectiveSet> {
-		public final SetOperation operation;
+		public final BinSetKind kind;
 
-		private SetOp(Type.EffectiveSet type, int target, int leftOperand,
-				int rightOperand, SetOperation operation) {
+		private BinSetOp(Type.EffectiveSet type, int target, int leftOperand,
+				int rightOperand, BinSetKind operation) {
 			super(type, target, leftOperand, rightOperand);
 			if (operation == null) {
 				throw new IllegalArgumentException(
 						"SetOp operation cannot be null");
 			}
-			this.operation = operation;
+			this.kind = operation;
 		}
 
 		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.SetOp(type, nTarget, nLeftOperand, nRightOperand,
-					operation);
+			return Code.BinSetOp(type, nTarget, nLeftOperand, nRightOperand,
+					kind);
 		}
 
 		public int hashCode() {
-			return operation.hashCode() + super.hashCode();
+			return kind.hashCode() + super.hashCode();
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof SetOp) {
-				SetOp setop = (SetOp) o;
-				return operation.equals(setop.operation) && super.equals(o);
+			if (o instanceof BinSetOp) {
+				BinSetOp setop = (BinSetOp) o;
+				return kind.equals(setop.kind) && super.equals(o);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return operation + " %" + target + " = %" + leftOperand + ", %"
+			return kind + " %" + target + " = %" + leftOperand + ", %"
 					+ rightOperand + " : " + type;
 		}
 	}
@@ -4149,7 +4149,7 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class UnArithOp extends AbstractUnaryAssignable<Type> {
-		public final UnArithKind uop;
+		public final UnArithKind kind;
 
 		private UnArithOp(Type type, int target, int operand, UnArithKind uop) {
 			super(type, target, operand);
@@ -4157,28 +4157,28 @@ public abstract class Code {
 				throw new IllegalArgumentException(
 						"UnaryArithOp bop argument cannot be null");
 			}
-			this.uop = uop;
+			this.kind = uop;
 		}
 
 		@Override
 		public Code clone(int nTarget, int nOperand) {
-			return Code.UnArithOp(type, nTarget, nOperand, uop);
+			return Code.UnArithOp(type, nTarget, nOperand, kind);
 		}
 
 		public int hashCode() {
-			return uop.hashCode() + super.hashCode();
+			return kind.hashCode() + super.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof UnArithOp) {
 				UnArithOp bo = (UnArithOp) o;
-				return uop.equals(bo.uop) && super.equals(bo);
+				return kind.equals(bo.kind) && super.equals(bo);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return uop + " %" + target + " = %" + operand + " : " + type;
+			return kind + " %" + target + " = %" + operand + " : " + type;
 		}
 	}
 	

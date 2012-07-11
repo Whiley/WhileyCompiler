@@ -174,8 +174,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.Invert)code,entry,environment);
 		} else if(code instanceof Code.Label) {
 			// skip			
-		} else if(code instanceof Code.ListOp) {
-			infer(index,(Code.ListOp)code,entry,environment);
+		} else if(code instanceof Code.BinListOp) {
+			infer(index,(Code.BinListOp)code,entry,environment);
 		} else if(code instanceof Code.LengthOf) {
 			infer(index,(Code.LengthOf)code,entry,environment);
 		} else if(code instanceof Code.SubList) {
@@ -196,8 +196,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.NewSet)code,entry,environment);
 		} else if(code instanceof Code.NewTuple) {
 			infer(index,(Code.NewTuple)code,entry,environment);
-		} else if(code instanceof Code.Neg) {
-			infer(index,(Code.Neg)code,entry,environment);
+		} else if(code instanceof Code.UnArithOp) {
+			infer(index,(Code.UnArithOp)code,entry,environment);
 		} else if(code instanceof Code.Dereference) {
 			infer(index,(Code.Dereference)code,entry,environment);
 		} else if(code instanceof Code.Return) {
@@ -206,8 +206,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			// skip			
 		} else if(code instanceof Code.Send) {
 			infer(index,(Code.Send)code,entry,environment);
-		} else if(code instanceof Code.SetOp) {
-			infer(index,(Code.SetOp)code,entry,environment);
+		} else if(code instanceof Code.BinSetOp) {
+			infer(index,(Code.BinSetOp)code,entry,environment);
 		} else if(code instanceof Code.StringOp) {
 			infer(index,(Code.StringOp)code,entry,environment);
 		} else if(code instanceof Code.SubString) {
@@ -253,10 +253,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Env environment) {
 		Type req = environment.get(code.target);		
 		coerceAfter(req,code.type,code.target,index,entry);	
-		if(code.bop == Code.BinArithKind.LEFTSHIFT || code.bop == Code.BinArithKind.RIGHTSHIFT) {
+		if(code.kind == Code.BinArithKind.LEFTSHIFT || code.kind == Code.BinArithKind.RIGHTSHIFT) {
 			environment.set(code.leftOperand,code.type);
 			environment.set(code.rightOperand,Type.T_INT);
-		} else if(code.bop == Code.BinArithKind.RANGE){
+		} else if(code.kind == Code.BinArithKind.RANGE){
 			environment.set(code.leftOperand,Type.T_INT);
 			environment.set(code.rightOperand,Type.T_INT);
 		} else {		
@@ -349,12 +349,12 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.operand, code.type);
 	}
 	
-	private void infer(int index, Code.ListOp code, Block.Entry entry,
+	private void infer(int index, Code.BinListOp code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		Type codeType = (Type) code.type;
 		coerceAfter(req,codeType,code.target,index,entry);
-		switch(code.operation) {
+		switch(code.kind) {
 		case APPEND:
 			environment.set(code.leftOperand,codeType);
 			environment.set(code.rightOperand,codeType);
@@ -522,12 +522,12 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}	
 	}
 	
-	private void infer(int index, Code.SetOp code, Block.Entry entry,
+	private void infer(int index, Code.BinSetOp code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		Type codeType = (Type) code.type;
 		coerceAfter(req,codeType,code.target,index,entry);
-		switch(code.operation) {
+		switch(code.kind) {
 		case UNION:
 		case INTERSECTION:
 		case DIFFERENCE:
@@ -577,11 +577,23 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.operands[2],Type.T_INT);		
 	}
 	
-	private void infer(int index, Code.Neg code, Block.Entry entry,
+	private void infer(int index, Code.UnArithOp code, Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
-		coerceAfter(req,code.type,code.target,index,entry);
-		environment.set(code.operand,code.type);
+		switch(code.kind) {
+			case NEG: {
+				Type req = environment.get(code.target);
+				coerceAfter(req,code.type,code.target,index,entry);
+				environment.set(code.operand,code.type);
+				break;
+			}
+			case NUMERATOR:
+			case DENOMINATOR: {
+				Type req = environment.get(code.target);
+				coerceAfter(req,Type.T_INT,code.target,index,entry);
+				environment.set(code.operand,Type.T_REAL);
+			}
+		}
+		
 	}
 	
 	private void infer(int index, Code.NewObject code, Block.Entry entry,

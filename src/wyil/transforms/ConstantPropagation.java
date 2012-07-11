@@ -173,8 +173,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Code.Invert)code,entry,environment);
 		} else if(code instanceof Code.Label) {
 			// skip			
-		} else if(code instanceof Code.ListOp) {
-			infer(index,(Code.ListOp)code,entry,environment);
+		} else if(code instanceof Code.BinListOp) {
+			infer(index,(Code.BinListOp)code,entry,environment);
 		} else if(code instanceof Code.LengthOf) {
 			infer(index,(Code.LengthOf)code,entry,environment);
 		} else if(code instanceof Code.SubList) {
@@ -195,16 +195,16 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Code.NewSet)code,entry,environment);
 		} else if(code instanceof Code.NewTuple) {
 			infer(index,(Code.NewTuple)code,entry,environment);
-		} else if(code instanceof Code.Neg) {
-			infer(index,(Code.Neg)code,entry,environment);
+		} else if(code instanceof Code.UnArithOp) {
+			infer(index,(Code.UnArithOp)code,entry,environment);
 		} else if(code instanceof Code.Dereference) {
 			infer(index,(Code.Dereference)code,entry,environment);
 		} else if(code instanceof Code.Return) {
 			infer((Code.Return)code,entry,environment);
 		} else if(code instanceof Code.Send) {
 			infer((Code.Send)code,entry,environment);
-		} else if(code instanceof Code.SetOp) {
-			infer(index,(Code.SetOp)code,entry,environment);
+		} else if(code instanceof Code.BinSetOp) {
+			infer(index,(Code.BinSetOp)code,entry,environment);
 		} else if(code instanceof Code.StringOp) {
 			infer(index,(Code.StringOp)code,entry,environment);
 		} else if(code instanceof Code.SubString) {
@@ -233,7 +233,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Value.Rational lnum = (Value.Rational) lhs;
 			Value.Rational rnum = (Value.Rational) rhs;
 			
-			switch (code.bop) {
+			switch (code.kind) {
 			case ADD: {
 				result = lnum.add(rnum);
 				break;
@@ -257,7 +257,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Value.Integer lnum = (Value.Integer) lhs;
 			Value.Integer rnum = (Value.Integer) rhs;
 			
-			switch (code.bop) {
+			switch (code.kind) {
 			case ADD: {
 				result = lnum.add(rnum);
 				break;
@@ -365,12 +365,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 	}
 	
-	public void infer(int index, Code.ListOp code, Block.Entry entry,
+	public void infer(int index, Code.BinListOp code, Block.Entry entry,
 			Env environment) {
 		Value lhs = environment.get(code.leftOperand);
 		Value rhs = environment.get(code.rightOperand);
 		Value result = null;
-		switch(code.operation) {
+		switch(code.kind) {
 		case APPEND:
 			if (lhs instanceof Value.List && rhs instanceof Value.List) {
 				Value.List left = (Value.List) lhs;
@@ -649,12 +649,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 	}
 	
-	public void infer(int index, Code.SetOp code, Block.Entry entry,
+	public void infer(int index, Code.BinSetOp code, Block.Entry entry,
 			Env environment) {						
 		Value result = null;
 		Value lhs = environment.get(code.leftOperand);
 		Value rhs = environment.get(code.rightOperand);
-		switch(code.operation) {
+		switch(code.kind) {
 		case UNION:
 			if (lhs instanceof Value.Set
 					&& rhs instanceof Value.Set) {
@@ -815,17 +815,21 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target,result);
 	}
 	
-	public void infer(int index, Code.Neg code, Block.Entry entry,
+	public void infer(int index, Code.UnArithOp code, Block.Entry entry,
 			Env environment) {
+		// needs to be updated to support numerator and denominator
 		Value val = environment.get(code.operand);
 		Value result = null;
 		
-		if(val instanceof Value.Rational) {
-			Value.Rational num = (Value.Rational) val;
-			result = Value.V_RATIONAL(num.value.negate());
-		} else if (val instanceof Value.Integer) {
-			Value.Integer num = (Value.Integer) val;
-			result = Value.V_INTEGER(num.value.negate());
+		switch(code.kind) {
+			case NEG:
+				if(val instanceof Value.Rational) {
+					Value.Rational num = (Value.Rational) val;
+					result = Value.V_RATIONAL(num.value.negate());
+				} else if (val instanceof Value.Integer) {
+					Value.Integer num = (Value.Integer) val;
+					result = Value.V_INTEGER(num.value.negate());
+				}
 		}
 		
 		if(result != null) {

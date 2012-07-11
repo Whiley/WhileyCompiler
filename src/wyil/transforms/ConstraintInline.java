@@ -321,7 +321,7 @@ public class ConstraintInline implements Transform {
 	 */
 	public Block transform(Code.BinArithOp code, int freeSlot, SyntacticElement elem) {
 		
-		if(code.bop == Code.BinArithKind.DIV) {
+		if(code.kind == Code.BinArithKind.DIV) {
 			Block blk = new Block(0);
 			if (code.type instanceof Type.Int) {
 				blk.append(Code.Const(freeSlot,Value.V_INTEGER(BigInteger.ZERO)),
