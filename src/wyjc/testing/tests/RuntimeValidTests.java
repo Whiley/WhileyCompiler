@@ -46,6 +46,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void BoolIfElse_Valid_2_RuntimeTest() { runTest("BoolIfElse_Valid_2"); }
  @Test public void BoolList_Valid_1_RuntimeTest() { runTest("BoolList_Valid_1"); }
  @Test public void BoolList_Valid_2_RuntimeTest() { runTest("BoolList_Valid_2"); }
+ @Test public void BoolList_Valid_3_RuntimeTest() { runTest("BoolList_Valid_3"); }
  @Test public void BoolRecord_Valid_1_RuntimeTest() { runTest("BoolRecord_Valid_1"); }
  @Test public void BoolRecord_Valid_2_RuntimeTest() { runTest("BoolRecord_Valid_2"); } 
  @Test public void BoolReturn_Valid_1_RuntimeTest() { runTest("BoolReturn_Valid_1"); }
