@@ -79,8 +79,6 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	// ================================================================================	 	
 
 	public static Object get(Dictionary dict, Object key) {	
-		Util.decRefs(dict);
-		Util.decRefs(key);
 		Object item = dict.get(key);		
 		Util.incRefs(item);
 		return item;
@@ -88,9 +86,8 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	
 	public static Dictionary put(Dictionary dict, Object key, Object value) {
 		Util.countRefs(dict);
-		if(dict.refCount > 1) {
-			Util.countClone(dict);
-			Util.decRefs(dict);
+		if(dict.refCount > 0) {
+			Util.countClone(dict);			
 			dict = new Dictionary(dict);			
 		} else {
 			Util.ndict_inplace_updates++;
@@ -105,8 +102,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 		return dict;
 	}
 	
-	public static BigInteger length(Dictionary dict) {
-		Util.decRefs(dict);
+	public static BigInteger length(Dictionary dict) {		
 		return BigInteger.valueOf(dict.size());
 	}
 	
@@ -139,8 +135,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	 * @param item
 	 * @return
 	 */
-	public static Object internal_get(Dictionary dict, Object key) {	
-		Util.decRefs(key);
+	public static Object internal_get(Dictionary dict, Object key) {			
 		Object item = dict.get(key);
 		if(dict.refCount > 1) {
 			Util.incRefs(item);			

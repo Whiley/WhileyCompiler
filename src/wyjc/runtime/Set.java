@@ -74,14 +74,10 @@ public final class Set extends java.util.HashSet {
 	// ================================================================================	 	
 	
 	public static boolean subset(Set lhs, Set rhs) {
-		Util.decRefs(lhs);
-		Util.decRefs(rhs);
 		return rhs.containsAll(lhs) && rhs.size() > lhs.size();
 	}
 	
 	public static boolean subsetEq(Set lhs, Set rhs) {
-		Util.decRefs(lhs);
-		Util.decRefs(rhs);
 		return rhs.containsAll(lhs);
 	}
 	
@@ -89,19 +85,15 @@ public final class Set extends java.util.HashSet {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
 		
-		if(lhs.refCount == 1) {
-			Util.nset_inplace_updates++;			
-			Util.decRefs(rhs);
-		} else if(rhs.refCount == 1) {
-			Util.nset_inplace_updates++;			
-			Util.decRefs(lhs);
+		if(lhs.refCount == 0) {
+			Util.nset_inplace_updates++;						
+		} else if(rhs.refCount == 0) {
+			Util.nset_inplace_updates++;						
 			Set tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.countClone(lhs);
-			Util.decRefs(lhs);
-			Util.decRefs(rhs);
 			lhs = new Set(lhs);
 		}		
 		lhs.addAll(rhs);
@@ -114,11 +106,10 @@ public final class Set extends java.util.HashSet {
 	public static Set union(Set lhs, Object rhs) {
 		Util.countRefs(lhs);
 		
-		if(lhs.refCount == 1) {
+		if(lhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else {
-			Util.countClone(lhs);
-			Util.decRefs(lhs);
+			Util.countClone(lhs);			
 			lhs = new Set(lhs);			
 		}
 		lhs.add(rhs);
@@ -129,11 +120,10 @@ public final class Set extends java.util.HashSet {
 	public static Set union(Object lhs, Set rhs) {
 		Util.countRefs(rhs);
 		
-		if(rhs.refCount == 1) {
+		if(rhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else {
-			Util.countClone(rhs);
-			Util.decRefs(rhs);
+			Util.countClone(rhs);			
 			rhs = new Set(rhs);			
 		}		
 		rhs.add(lhs);
@@ -145,13 +135,10 @@ public final class Set extends java.util.HashSet {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
 		
-		if(lhs.refCount == 1) {
-			Util.nset_inplace_updates++;			
-			Util.decRefs(rhs);
+		if(lhs.refCount == 0) {
+			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);
-			Util.decRefs(lhs);
-			Util.decRefs(rhs);
 			lhs = new Set(lhs);
 		}			
 		lhs.removeAll(rhs);
@@ -163,13 +150,10 @@ public final class Set extends java.util.HashSet {
 	
 	public static Set difference(Set lhs, Object rhs) {
 		Util.countRefs(lhs);
-		if(lhs.refCount == 1) {
-			Util.nset_inplace_updates++;			
-			Util.decRefs(rhs);
+		if(lhs.refCount == 0) {
+			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);
-			Util.decRefs(lhs);
-			Util.decRefs(rhs);
 			lhs = new Set(lhs);
 		}	
 		lhs.remove(rhs);
@@ -180,19 +164,15 @@ public final class Set extends java.util.HashSet {
 	public static Set intersect(Set lhs, Set rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
-		if(lhs.refCount == 1) {
-			Util.nset_inplace_updates++;			
-			Util.decRefs(rhs);
+		if(lhs.refCount == 0) {
+			Util.nset_inplace_updates++;						
 		} else if(rhs.refCount == 1) {
 			Util.nset_inplace_updates++;			
-			Util.decRefs(lhs);
 			Set tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.countClone(lhs);
-			Util.decRefs(lhs);
-			Util.decRefs(rhs);
 			lhs = new Set(lhs);
 		}	
 		lhs.retainAll(rhs);
@@ -207,13 +187,10 @@ public final class Set extends java.util.HashSet {
 	public static Set intersect(Set lhs, Object rhs) {
 		Util.countRefs(lhs);
 		
-		if(lhs.refCount == 1) {
-			Util.nset_inplace_updates++;			
-			Util.decRefs(rhs);
+		if(lhs.refCount == 0) {
+			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);
-			Util.decRefs(lhs);
-			Util.decRefs(rhs);
 			lhs = new Set(lhs);
 		}
 		
@@ -234,13 +211,10 @@ public final class Set extends java.util.HashSet {
 	public static Set intersect(Object lhs, Set rhs) {		
 		Util.countRefs(rhs);
 		
-		if(rhs.refCount == 1) {
-			Util.nset_inplace_updates++;			
-			Util.decRefs(lhs);
+		if(rhs.refCount == 0) {
+			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(rhs);
-			Util.decRefs(rhs);
-			Util.decRefs(lhs);
 			rhs = new Set(rhs);
 		}
 		
@@ -258,8 +232,7 @@ public final class Set extends java.util.HashSet {
 		return rhs;
 	}	
 	
-	public static BigInteger length(Set set) {
-		Util.decRefs(set);
+	public static BigInteger length(Set set) {		
 		return BigInteger.valueOf(set.size());
 	}
 	

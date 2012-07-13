@@ -74,8 +74,7 @@ public final class List extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 		
-	public static Object get(List list, BigInteger index) {		
-		Util.decRefs(list);
+	public static Object get(List list, BigInteger index) {				
 		Object item = list.get(index.intValue());
 		return Util.incRefs(item);		
 	}
@@ -84,8 +83,7 @@ public final class List extends java.util.ArrayList {
 		Util.countRefs(list);
 		if(list.refCount > 1) {			
 			Util.countClone(list);			
-			// in this case, we need to clone the list in question
-			Util.decRefs(list);			
+			// in this case, we need to clone the list in question						
 			list = new List(list);						
 		} else {
 			Util.nlist_inplace_updates++;
@@ -101,7 +99,7 @@ public final class List extends java.util.ArrayList {
 		int st = start.intValue();
 		int en = end.intValue();	
 		
-		if(list.refCount == 1) {
+		if(list.refCount == 0) {
 			Util.nlist_inplace_updates++;
 			if(st <= en) {
 				for(int i=0;i!=st;++i) {
@@ -125,8 +123,7 @@ public final class List extends java.util.ArrayList {
 				Collections.reverse(list);
 				return list;
 			}
-		} else {					
-			Util.decRefs(list);	
+		} else {								
 			List r;		
 			if(st <= en) {
 				r = new List(en-st);
@@ -148,21 +145,17 @@ public final class List extends java.util.ArrayList {
 		}							
 	}
 	
-	public static BigInteger length(List list) {				
-		Util.decRefs(list);
+	public static BigInteger length(List list) {						
 		return BigInteger.valueOf(list.size());
 	}
 	
 	public static List append(List lhs, List rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
-		if(lhs.refCount == 1) {
-			Util.nlist_inplace_updates++;			
-			Util.decRefs(rhs);
+		if(lhs.refCount == 0) {
+			Util.nlist_inplace_updates++;						
 		} else {
-			Util.countClone(lhs);
-			Util.decRefs(lhs);
-			Util.decRefs(rhs);
+			Util.countClone(lhs);			
 			lhs = new List(lhs);				
 		} 
 		
@@ -177,11 +170,10 @@ public final class List extends java.util.ArrayList {
 	
 	public static List append(List list, final Object item) {
 		Util.countRefs(list);
-		if(list.refCount == 1) {
+		if(list.refCount == 0) {
 			Util.nlist_inplace_updates++;						
 		} else { 
-			Util.countClone(list);
-			Util.decRefs(list); 		
+			Util.countClone(list);			 	
 			list = new List(list);
 		}
 		list.add(item);
@@ -191,11 +183,10 @@ public final class List extends java.util.ArrayList {
 	
 	public static List append(final Object item, List list) {
 		Util.countRefs(list);
-		if(list.refCount == 1) {
+		if(list.refCount == 0) {
 			Util.nlist_inplace_updates++;						
 		} else { 
-			Util.countClone(list);
-			Util.decRefs(list);			 	
+			Util.countClone(list);						 
 			list = new List(list);
 		}
 		list.add(0,item);

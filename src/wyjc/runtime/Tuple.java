@@ -81,15 +81,13 @@ public final class Tuple extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 	
-	public static Object get(Tuple tuple, int index) {
-		Util.decRefs(tuple);
+	public static Object get(Tuple tuple, int index) {		
 		Object item = tuple.get(index);
 		Util.incRefs(item);
 		return item;
 	}
 		
-	public static BigInteger length(Tuple tuple) {
-		Util.decRefs(tuple);
+	public static BigInteger length(Tuple tuple) {		
 		return BigInteger.valueOf(tuple.size());
 	}
 	
