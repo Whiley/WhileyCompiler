@@ -81,7 +81,7 @@ public final class List extends java.util.ArrayList {
 			
 	public static List set(List list, final BigInteger index, final Object value) {
 		Util.countRefs(list);
-		if(list.refCount > 1) {			
+		if(list.refCount > 0) {			
 			Util.countClone(list);			
 			// in this case, we need to clone the list in question						
 			list = new List(list);						
@@ -221,7 +221,7 @@ public final class List extends java.util.ArrayList {
 	 */
 	public static Object internal_get(List list, BigInteger index) {		
 		Object item = list.get(index.intValue());
-		if(list.refCount > 1) {
+		if(list.refCount > 0) {
 			Util.incRefs(item);			
 		} 
 		return item;

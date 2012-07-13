@@ -137,7 +137,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	 */
 	public static Object internal_get(Dictionary dict, Object key) {			
 		Object item = dict.get(key);
-		if(dict.refCount > 1) {
+		if(dict.refCount > 0) {
 			Util.incRefs(item);			
 		} 
 		return item;

@@ -77,7 +77,7 @@ public final class Record extends HashMap<String,Object> {
 	
 	public static Record put(Record record, final String field, final Object value) {
 		Util.countRefs(record);
-		if(record.refCount > 1) {
+		if(record.refCount > 0) {
 			Util.countClone(record);			
 			record = new Record(record);			
 		} else {
@@ -91,7 +91,7 @@ public final class Record extends HashMap<String,Object> {
 	
 	public static Object internal_get(final Record record, final String field) {
 		Object item = record.get(field);
-		if(record.refCount > 1) {
+		if(record.refCount > 0) {
 			Util.incRefs(item);
 		}
 		return item;		

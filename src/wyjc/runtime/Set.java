@@ -166,7 +166,7 @@ public final class Set extends java.util.HashSet {
 		Util.countRefs(rhs);
 		if(lhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
-		} else if(rhs.refCount == 1) {
+		} else if(rhs.refCount == 0) {
 			Util.nset_inplace_updates++;			
 			Set tmp = rhs;
 			rhs = lhs;
