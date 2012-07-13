@@ -35,7 +35,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 1; 
+	int refCount = 100;  // temporary measure
 
 	// ================================================================================
 	// Generic Operations
