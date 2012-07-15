@@ -2766,7 +2766,7 @@ public abstract class Code {
 			super(t);
 			this.field = field;
 			if (!t.fields().containsKey(field)) {
-				throw new IllegalArgumentException("invalid Record Type (" + t + ")");
+				throw new IllegalArgumentException("invalid Record Type");
 			}
 		}
 	}
@@ -2857,7 +2857,7 @@ public abstract class Code {
 						"FieldStore fields argument cannot be null");
 			}
 			this.afterType = afterType;
-			this.fields = new ArrayList<String>(fields);
+			this.fields = new ArrayList<String>(fields);			
 		}
 
 		public int level() {
