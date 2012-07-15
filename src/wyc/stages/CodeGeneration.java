@@ -833,6 +833,7 @@ public final class CodeGeneration {
 			binding.put(i,i+amount);		
 		}
 		binding.put(0, zeroDest);
+		
 		Block nblock = new Block(blk.numInputs());
 		for(Block.Entry e : blk) {
 			Code code = e.code.remap(binding);

@@ -2648,6 +2648,7 @@ public abstract class Code {
 						: sourceOperand;
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
+				
 				return Code.ForAll(type, nSourceOperand, nIndexOperand,
 						nModifiedOperands, target);
 			} else {
@@ -2656,7 +2657,7 @@ public abstract class Code {
 		}
 
 		public int hashCode() {
-			return super.hashCode() + indexOperand
+			return super.hashCode() + sourceOperand + indexOperand
 					+ Arrays.hashCode(modifiedOperands);
 		}
 
@@ -2664,6 +2665,7 @@ public abstract class Code {
 			if (o instanceof ForAll) {
 				ForAll f = (ForAll) o;
 				return target.equals(f.target) && type.equals(f.type)
+						&& sourceOperand == f.sourceOperand
 						&& indexOperand == f.indexOperand
 						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
 			}
