@@ -79,6 +79,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ListGenerator_Valid_1_RuntimeTest() { runTest("ListGenerator_Valid_1"); }
  @Test public void ListGenerator_Valid_2_RuntimeTest() { runTest("ListGenerator_Valid_2"); }
  @Test public void ListSublist_Valid_1_RuntimeTest() { runTest("ListSublist_Valid_1"); }
+ @Test public void Method_Valid_1_RuntimeTest() { runTest("Method_Valid_1"); }
  @Test public void Process_Valid_2_RuntimeTest() { runTest("Process_Valid_2"); }
  @Test public void Quantifiers_Valid_1_RuntimeTest() { runTest("Quantifiers_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
