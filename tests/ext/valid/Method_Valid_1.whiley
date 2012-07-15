@@ -28,6 +28,9 @@ public int numPieces(Board board, Piece piece):
 	return count
 
 Board ::update(System.Console console, Board b):
+    b[0] = CIRCLE
+    b[1] = CROSS
+    b[0] = CIRCLE
     return b
 
 void ::main(System.Console console):
