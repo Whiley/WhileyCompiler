@@ -577,14 +577,14 @@ public class ClassFileBuilder {
 						WHILEYLIST,BIG_INTEGER);
 				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "internal_get", ftype,
 						Bytecode.STATIC));				
-				addReadConversion(l.type().element(),bytecodes);
+				addReadConversion(l.rawType().element(),bytecodes);
 				translateUpdate(iterator,code,bytecodes);		
 				bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));				
 				bytecodes.add(new Bytecode.Swap());
 			} else {
 				bytecodes.add(new Bytecode.Load(l.indexOperand,BIG_INTEGER));
 				bytecodes.add(new Bytecode.Load(code.operand, convertType(l
-						.type().element())));	
+						.rawType().element())));	
 				addWriteConversion(code.rhs(),bytecodes);
 			}
 
@@ -605,28 +605,28 @@ public class ClassFileBuilder {
 					Bytecode.STATIC));
 		} else if(lv instanceof Code.MapLVal) {
 			Code.MapLVal l = (Code.MapLVal) lv;
-			JvmType keyType = convertType(l.type().key());
-			JvmType valueType = convertType(l.type().value());
+			JvmType keyType = convertType(l.rawType().key());
+			JvmType valueType = convertType(l.rawType().value());
 			if(iterator.hasNext()) {
 				// In this case, we're partially updating the element at a
 				// given position. 				
 				bytecodes.add(new Bytecode.Dup(WHILEYMAP));											
 				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));				
-				addWriteConversion(l.type().key(),bytecodes);				
+				addWriteConversion(l.rawType().key(),bytecodes);				
 				JvmType.Function ftype = new JvmType.Function(
 						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
 				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "internal_get", ftype,
 					Bytecode.STATIC));				
-				addReadConversion(l.type().value(),bytecodes);
+				addReadConversion(l.rawType().value(),bytecodes);
 				translateUpdate(iterator,code,bytecodes);
 				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));
-				addWriteConversion(l.type().key(),bytecodes);		
+				addWriteConversion(l.rawType().key(),bytecodes);		
 				bytecodes.add(new Bytecode.Swap());
 			} else {				
 				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));	
-				addWriteConversion(l.type().key(),bytecodes);		
+				addWriteConversion(l.rawType().key(),bytecodes);		
 				bytecodes.add(new Bytecode.Load(code.operand, valueType));	
-				addWriteConversion(l.type().value(),bytecodes);
+				addWriteConversion(l.rawType().value(),bytecodes);
 			}
 						
 			JvmType.Function ftype = new JvmType.Function(WHILEYMAP,
@@ -636,7 +636,7 @@ public class ClassFileBuilder {
 				
 		} else if(lv instanceof Code.RecordLVal) {
 			Code.RecordLVal l = (Code.RecordLVal) lv;
-			Type.EffectiveRecord type = l.type();
+			Type.EffectiveRecord type = l.rawType();
 			
 			if (iterator.hasNext()) {
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
@@ -664,7 +664,7 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 					Bytecode.VIRTUAL));
-			addReadConversion(l.type().element(), bytecodes);
+			addReadConversion(l.rawType().element(), bytecodes);
 			translateUpdate(iterator, code, bytecodes);
 			ftype = new JvmType.Function(WHILEYPROCESS, JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "setState", ftype,
