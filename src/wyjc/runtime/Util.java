@@ -373,94 +373,94 @@ public class Util {
 	 * one.
 	 */
 	public static void decRefs(Object obj) {
-		if(obj instanceof List) {
-			List list = (List) obj;
-			list.refCount--;
-			if(list.refCount == 0) {
-				for(Object o : list) {
-					decRefs(o);
-				}
-			}
-		} else if(obj instanceof Record) {
-			Record rec = (Record) obj;			
-			rec.refCount--;
-			if(rec.refCount == 0) {				
-				for(Object o : rec.values()) {
-					decRefs(o);
-				}
-			}
-		} else if(obj instanceof Set) {
-			Set set = (Set) obj;
-			set.refCount--;			
-			if(set.refCount == 0) {
-				for(Object o : set) {
-					decRefs(o);
-				}
-			}
-		} else if(obj instanceof Dictionary) {
-			Dictionary dict = (Dictionary) obj;
-			dict.refCount--;	
-			if(dict.refCount == 0) {				
-				for(Map.Entry e : dict.entrySet()) {
-					decRefs(e.getKey());
-					decRefs(e.getValue());
-				}
-			}
-		} else if(obj instanceof Tuple) {
-			Tuple tuple = (Tuple) obj;
-			tuple.refCount--;			
-			if(tuple.refCount == 0) {
-				for(Object o : tuple) {
-					decRefs(o);
-				}
-			}
-		} 
+//		if(obj instanceof List) {
+//			List list = (List) obj;
+//			list.refCount--;
+//			if(list.refCount == 0) {
+//				for(Object o : list) {
+//					decRefs(o);
+//				}
+//			}
+//		} else if(obj instanceof Record) {
+//			Record rec = (Record) obj;			
+//			rec.refCount--;
+//			if(rec.refCount == 0) {				
+//				for(Object o : rec.values()) {
+//					decRefs(o);
+//				}
+//			}
+//		} else if(obj instanceof Set) {
+//			Set set = (Set) obj;
+//			set.refCount--;			
+//			if(set.refCount == 0) {
+//				for(Object o : set) {
+//					decRefs(o);
+//				}
+//			}
+//		} else if(obj instanceof Dictionary) {
+//			Dictionary dict = (Dictionary) obj;
+//			dict.refCount--;	
+//			if(dict.refCount == 0) {				
+//				for(Map.Entry e : dict.entrySet()) {
+//					decRefs(e.getKey());
+//					decRefs(e.getValue());
+//				}
+//			}
+//		} else if(obj instanceof Tuple) {
+//			Tuple tuple = (Tuple) obj;
+//			tuple.refCount--;			
+//			if(tuple.refCount == 0) {
+//				for(Object o : tuple) {
+//					decRefs(o);
+//				}
+//			}
+//		} 
 	}
 
 	public static void decRefs(List list) {		
-		list.refCount--;
-		if(list.refCount == 0) {
-			for(Object o : list) {
-				decRefs(o);
-			}
-		}
+//		list.refCount--;
+//		if(list.refCount == 0) {
+//			for(Object o : list) {
+//				decRefs(o);
+//			}
+//		}
 	}
 	
 	public static void decRefs(Set set) {
-		set.refCount--;
-		if(set.refCount == 0) {
-			for(Object o : set) {
-				decRefs(o);
-			}
-		}
+//		set.refCount--;
+//		if(set.refCount == 0) {
+//			for(Object o : set) {
+//				decRefs(o);
+//			}
+//		}
 	}
 	
 	public static void decRefs(Record rec) {
-		rec.refCount--;
-		if(rec.refCount == 0) {				
-			for(Object o : rec.values()) {
-				decRefs(o);
-			}
-		}		
+//		rec.refCount--;
+//		if(rec.refCount == 0) {				
+//			for(Object o : rec.values()) {
+//				decRefs(o);
+//			}
+//		}		
 	}
 	
 	public static void decRefs(Dictionary dict) {
-		dict.refCount--;
-		if(dict.refCount == 0) {				
-			for(Map.Entry e : dict.entrySet()) {
-				decRefs(e.getKey());
-				decRefs(e.getValue());
-			}
-		}
+//		dict.refCount--;
+//		if(dict.refCount == 0) {				
+//			for(Map.Entry e : dict.entrySet()) {
+//				decRefs(e.getKey());
+//				decRefs(e.getValue());
+//			}
+//		}
 	}
 	
 	public static void decRefs(Tuple tuple) {		
-		tuple.refCount--;
-		if(tuple.refCount == 0) {
-			for(Object o : tuple) {
-				decRefs(o);
-			}
-		}
+//		tuple.refCount--;
+//		if(tuple.refCount == 0) {
+//			for(Object o : tuple) {
+//				decRefs(o);
+//			}
+//		}
 	}
 	
 	/**
