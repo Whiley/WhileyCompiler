@@ -521,16 +521,16 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	public Block generate(Expr.MethodCall fc, int target, int freeRegister,
+	public Block generate(Expr.MethodCall mc, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 		
-		int[] operands = generate(fc.arguments, freeRegister, freeRegister+1,
+		int[] operands = generate(mc.arguments, freeRegister, freeRegister+1,
 				environment, blk);
-		
+
 		blk.append(
-				Code.Invoke(fc.methodType.raw(), target, operands, fc.nid()),
-				attributes(fc));
+				Code.Invoke(mc.methodType.raw(), target, operands, mc.nid()),
+				attributes(mc));
 
 		return blk;
 	}

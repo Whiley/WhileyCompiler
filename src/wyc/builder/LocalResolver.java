@@ -763,6 +763,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				
 				Expr.MethodCall r = new Expr.MethodCall(p.first(), null,
 						exprArgs, expr.attributes());
+				r.methodType = (Nominal.Method) p.second();
 				return r;
 			}
 		} else {
