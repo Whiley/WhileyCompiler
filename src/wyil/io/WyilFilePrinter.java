@@ -44,13 +44,13 @@ import wyil.Transform;
  * @author David J. Pearce
  * 
  */
-public final class WyilFileWriter implements Transform {
+public final class WyilFilePrinter implements Transform {
 	private PrintWriter out;
 	private boolean writeLabels = getLabels();
 	private boolean writeAttributes = getAttributes();
 	private boolean writeSlots = getSlots();
 		
-	public WyilFileWriter(wybs.lang.Builder builder) {
+	public WyilFilePrinter(wybs.lang.Builder builder) {
 
 	}
 	
