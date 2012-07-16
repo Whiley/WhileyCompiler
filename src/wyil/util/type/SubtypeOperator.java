@@ -227,8 +227,7 @@ public class SubtypeOperator {
 				break;
 			// === Heterogenous Compound States ===
 			case K_FUNCTION:
-			case K_METHOD:
-			case K_MESSAGE:
+			case K_METHOD:			
 				if(fromSign || toSign) {
 					// nary nodes
 					int[] fromChildren = fromState.children;
@@ -236,24 +235,16 @@ public class SubtypeOperator {
 					if(fromChildren.length != toChildren.length){
 						return false;
 					}
-					
-					int recIndex = fromKind == Type.K_MESSAGE ? 0 : -1;					
-					int retIndex = fromKind == Type.K_MESSAGE ? 1 : 0;
-					int throwsIndex = retIndex+1;
+																								
 					boolean andChildren = true;
 					boolean orChildren = false;					
 					for(int i=0;i<fromChildren.length;++i) {
 						boolean v;
-						if(i == recIndex) {
-							// receiver type is invariant
-							// FIXME: make receiver invariant!
-							v = isIntersection(fromChildren[i], !fromSign,
-									toChildren[i], !toSign);
-						} else if(i == retIndex) {
+						if(i == 0) {
 							// return type is co-variant
 							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);
-						} else if(i == throwsIndex) {
+						} else if(i == 1) {
 							// throws type is co-variant
 							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);

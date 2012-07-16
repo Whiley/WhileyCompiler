@@ -1906,18 +1906,12 @@ public abstract class Type {
 				middle = middle + "}";
 			}			
 			break;
-		}
-		case K_MESSAGE:
+		}		
 		case K_METHOD:
 		case K_FUNCTION: {
 			middle = "";
 			int[] children = state.children;
-			int start = 0;
-			String rec = null;
-			if(state.kind == K_MESSAGE) {
-				rec = toString(children[0],visited,headers,automaton);
-				start++;
-			}
+			int start = 0;			
 			String ret = toString(children[start], visited, headers, automaton);
 			String thros = toString(children[start+1], visited, headers, automaton);
 			boolean firstTime=true;
@@ -1930,11 +1924,9 @@ public abstract class Type {
 			}
 			if(state.kind == K_FUNCTION) {
 				middle = ret + "(" + middle + ")";
-			} else if(state.kind == K_METHOD) {
-				middle = "::" + ret + "(" + middle + ")";
 			} else {
-				middle = rec + "::" + ret + "(" + middle + ")";
-			}
+				middle = "::" + ret + "(" + middle + ")";
+			} 
 			if(!thros.equals("void")) {
 				middle = middle + " throws " + thros;
 			}
@@ -1971,7 +1963,6 @@ public abstract class Type {
 		switch(state.kind) {		
 			case K_UNION:
 			case K_FUNCTION:
-			case K_MESSAGE:
 			case K_METHOD:
 				return "(" + middle + ")";
 			default:
@@ -2345,8 +2336,7 @@ public abstract class Type {
 	public static final byte K_RECORD = 15;	
 	public static final byte K_UNION = 16;
 	public static final byte K_NEGATION = 17;
-	public static final byte K_FUNCTION = 18;
-	public static final byte K_MESSAGE = 19;
+	public static final byte K_FUNCTION = 18;	
 	public static final byte K_METHOD = 20; 
 	public static final byte K_NOMINAL = 21;
 	

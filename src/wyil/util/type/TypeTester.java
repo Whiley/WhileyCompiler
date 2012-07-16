@@ -91,9 +91,7 @@ public class TypeTester {
 				return true;
 			}			
 			case Type.K_FUNCTION: 
-			case Type.K_METHOD:
-			case Type.K_MESSAGE: {				
-				int start = state.kind == Type.K_MESSAGE ? 3 : 2;
+			case Type.K_METHOD: {				
 				int[] schildren = state.children;
 				Term[] vchildren = value.children;
 				if(schildren.length != vchildren.length) {
@@ -101,7 +99,7 @@ public class TypeTester {
 				}				
 				int length = schildren.length;
 				// First, do parameters (which are contravariant).
-				for(int i=start;i<length;++i) {
+				for(int i=2;i<length;++i) {
 					int schild = schildren[i];					
 					Term vchild = vchildren[i];
 					if(accepts(schild,automaton,vchild)) {
@@ -109,15 +107,10 @@ public class TypeTester {
 					}
 				}
 				// Second, do return values (which are covariant)
-				if(!accepts(schildren[start],automaton,vchildren[start])) {
+				if(!accepts(schildren[2],automaton,vchildren[2])) {
 					return false;
 				}
-				// Third, do return values (which should be contra-variant)
-				if(state.kind == Type.K_MESSAGE) {
-					if(accepts(schildren[start],automaton,vchildren[start])) {
-						return false;
-					}
-				}
+				// Third, do return values (which should be contra-variant)				
 				return true;
 			}			
 			case Type.K_NEGATION: {

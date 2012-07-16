@@ -262,8 +262,7 @@ public final class TypeAlgorithms {
 			// type of form [T+] so simplify like other compounds.
 		case Type.K_RECORD:
 		case Type.K_TUPLE:
-		case Type.K_FUNCTION:
-		case Type.K_MESSAGE:
+		case Type.K_FUNCTION:		
 		case Type.K_METHOD:			
 			changed = simplifyCompound(index, state, automaton);			
 			break;
@@ -294,9 +293,6 @@ public final class TypeAlgorithms {
 		for(int i=0;i<children.length;++i) {
 			if ((i == 0 || i == 1) && (kind == Type.K_METHOD || kind == Type.K_FUNCTION)) {
 				// headless method and function return or throws type allowed to be void
-				continue;
-			} else if((i == 1 || i == 2) && kind == Type.K_MESSAGE) {
-				// method return or throws type allowed to be void
 				continue;
 			} 
 			Automaton.State child = automaton.states[children[i]];
@@ -728,8 +724,7 @@ public final class TypeAlgorithms {
 			case Type.K_UNION: 
 				return intersectUnions(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_FUNCTION:
-			case Type.K_METHOD:
-			case Type.K_MESSAGE: 
+			case Type.K_METHOD:			
 				return intersectFunctionsOrMethods(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);			
 			default: {
 				return intersectPrimitives(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
@@ -1110,30 +1105,21 @@ public final class TypeAlgorithms {
 		
 		int[] fromChildren = fromState.children;
 		int[] toChildren = toState.children;
-		int[] myChildren = new int[fromChildren.length];
-		int returnIndex = 0; // index of return value in children
-		
-		if(fromState.kind == Type.K_MESSAGE) {
-			// receiver is invariant
-			myChildren[0] = intersect(fromChildren[0],
-					true, from, toChildren[0], true, to,
-					allocations, states);
-			returnIndex = 1;
-		}
+		int[] myChildren = new int[fromChildren.length];		
 		
 		// return value is co-variant (i.e. normal, like e.g. list elements)
-		myChildren[returnIndex] = intersect(fromChildren[returnIndex],
-				true, from, toChildren[returnIndex], toSign, to,
+		myChildren[0] = intersect(fromChildren[0],
+				true, from, toChildren[0], toSign, to,
 				allocations, states);
 		
 		// throws clause is co-variant (i.e. normal, like e.g. list elements)
-		myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
-				true, from, toChildren[returnIndex+1], toSign, to,
+		myChildren[1] = intersect(fromChildren[1],
+				true, from, toChildren[1], toSign, to,
 				allocations, states);
 		
 		if(toSign) {
 			// parameter values are harder, since they are contra-variant.
-			for(int i=returnIndex+2;i<fromChildren.length;++i) {
+			for(int i=2;i<fromChildren.length;++i) {
 				int fromChild = fromChildren[i];
 				int toChild = toChildren[i];
 				int[] childChildren = new int[2];
@@ -1146,7 +1132,7 @@ public final class TypeAlgorithms {
 			}
 		} else {			
 			// parameter values are harder, since they are contra-variant.
-			for(int i=returnIndex+2;i<fromChildren.length;++i) {
+			for(int i=2;i<fromChildren.length;++i) {
 				int fromChild = fromChildren[i];
 				int toChild = toChildren[i];
 				int[] childChildren = new int[2];
