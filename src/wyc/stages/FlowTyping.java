@@ -317,7 +317,7 @@ public final class FlowTyping {
 			// nice to support more expressive destructuring assignment
 			// operations.
 			if(tupleRhs == null) {
-				syntaxError("tuple value expected, got " + tupleRhs.nominal(),filename,rhs);
+				syntaxError("tuple value expected, got " + rhs.result().nominal(),filename,rhs);
 				return null; // deadcode
 			} 
 			
