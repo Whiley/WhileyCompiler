@@ -1752,9 +1752,11 @@ public final class WhileyParser {
 					types.add(parseType());
 				}
 				match(RightBrace.class);
+				return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
+			} else {
+				return new UnresolvedType.Function(t, null, types, sourceAttr(start, index - 1));		
 			}
-			
-			return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
+		
 		} else {
 			return t;
 		}
