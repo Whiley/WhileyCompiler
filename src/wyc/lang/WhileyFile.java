@@ -392,7 +392,7 @@ public final class WhileyFile {
 		}
 	}
 	
-	public abstract class FunctionOrMethodOrMessage extends AbstractContext implements
+	public abstract class FunctionOrMethod extends AbstractContext implements
 			Declaration {
 		public final ArrayList<Modifier> modifiers;
 		public final String name;		
@@ -419,7 +419,7 @@ public final class WhileyFile {
 		 * @param statements
 		 *            - The Statements making up the function body.
 		 */
-		public FunctionOrMethodOrMessage(List<Modifier> modifiers, String name,
+		public FunctionOrMethod(List<Modifier> modifiers, String name,
 				UnresolvedType ret, List<Parameter> parameters,
 				Expr precondition, Expr postcondition,
 				UnresolvedType throwType, List<Stmt> statements,
@@ -455,21 +455,6 @@ public final class WhileyFile {
 		
 		public String name() {
 			return name;
-		}		
-		
-		public abstract UnresolvedType.FunctionOrMethodOrMessage unresolvedType();
-		
-		public abstract Nominal.FunctionOrMethodOrMessage resolvedType();
-	}
-
-	public abstract class FunctionOrMethod extends FunctionOrMethodOrMessage {
-		public FunctionOrMethod(List<Modifier> modifiers, String name,
-				UnresolvedType ret, List<Parameter> parameters,
-				Expr precondition, Expr postcondition,
-				UnresolvedType throwType, List<Stmt> statements,
-				Attribute... attributes) {
-			super(modifiers, name, ret, parameters, precondition,
-					postcondition, throwType, statements, attributes);
 		}		
 		
 		public abstract UnresolvedType.FunctionOrMethod unresolvedType();
@@ -572,60 +557,7 @@ public final class WhileyFile {
 			return resolvedType;
 		}
 	}
-	
-	/**
-	 * Represents a message declaration in a Whiley source file. For example:
-	 * 
-	 * <pre>
-	 * int MyData::m(int x):
-	 *    return this.x + x
-	 * </pre>
-	 * 
-	 * <p>
-	 * Here, a message <code>m</code> is defined for a given object type
-	 * <code>MyData</code>, which is referred to as the <i>receiver</i>. The
-	 * special variable <code>this</code> is used to access fields within the
-	 * object type. Like methods, messages in Whiley as they may have
-	 * side-effects. This includes reading/writing I/O and modifying the state
-	 * of their receiver. Methods may also be <i>headless</i>, meaning they are
-	 * not attached to any specific receiver.
-	 * </p>
-	 * 
-	 * <p>
-	 * Method declarations may also have modifiers, such as <code>public</code>
-	 * and <code>private</code>.
-	 * </p>
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public final class Message extends FunctionOrMethodOrMessage {
-		public final UnresolvedType receiver;
-		public Nominal.Message resolvedType;
 		
-		public Message(List<Modifier> modifiers, String name,
-				UnresolvedType receiver, UnresolvedType ret,
-				List<Parameter> parameters, Expr precondition,
-				Expr postcondition, UnresolvedType throwType, 
-				List<Stmt> statements,
-				Attribute... attributes) {
-			super(modifiers,name,ret,parameters,precondition,postcondition,throwType,statements,attributes);
-			this.receiver = receiver;
-		}
-		
-		public UnresolvedType.Message unresolvedType() {
-			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
-			for (Parameter p : parameters) {
-				params.add(p.type);
-			}
-			return new UnresolvedType.Message(receiver, ret, throwType, params, attributes());
-		}
-		
-		public Nominal.Message resolvedType() {
-			return resolvedType;
-		}
-	}
-
 	/**
 	 * Represents a parameter declaration as part of a function or method
 	 * declaration. The primary purpose of this is to retain the source-code

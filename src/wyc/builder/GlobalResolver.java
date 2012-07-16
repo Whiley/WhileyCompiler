@@ -203,11 +203,6 @@ public class GlobalResolver extends LocalResolver {
 			Context context) {		
 		return (Nominal.Method) resolveAsType((UnresolvedType)t,context);
 	}
-	
-	public Nominal.Message resolveAsType(UnresolvedType.Message t,
-			Context context) {		
-		return (Nominal.Message) resolveAsType((UnresolvedType)t,context);
-	}
 
 	/**
 	 * Resolve a type in a given context by identifying all unknown names and
@@ -396,27 +391,18 @@ public class GlobalResolver extends LocalResolver {
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal,unconstrained);		
 		} else {			
-			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) type;			
+			UnresolvedType.FunctionOrMethod ut = (UnresolvedType.FunctionOrMethod) type;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
-			UnresolvedType receiver = null;
 			int start = 0;
 			
-			if(ut instanceof UnresolvedType.Message) {
-				UnresolvedType.Message mt = (UnresolvedType.Message) ut;
-				receiver = mt.receiver;				
-				myKind = Type.K_MESSAGE;
-				start++;				
-			} else if(ut instanceof UnresolvedType.Method) {
+			if(ut instanceof UnresolvedType.Method) {
 				myKind = Type.K_METHOD;
 			} else {
 				myKind = Type.K_FUNCTION;
 			}
 			
 			myChildren = new int[start + 2 + utParamTypes.size()];
-			
-			if(receiver != null) {
-				myChildren[0] = resolveAsType(receiver,context,states,roots,nominal,unconstrained);
-			}			
+					
 			myChildren[start++] = resolveAsType(ut.ret,context,states,roots,nominal,unconstrained);
 			if(ut.throwType == null) {
 				// this case indicates the user did not provide a throws clause.
@@ -693,8 +679,8 @@ public class GlobalResolver extends LocalResolver {
 					values.add(new Pair<Value,Value>(key,value));				
 				}
 				return Value.V_MAP(values);
-			} else if (expr instanceof Expr.FunctionOrMethodOrMessage) {
-				Expr.FunctionOrMethodOrMessage f = (Expr.FunctionOrMethodOrMessage) expr;
+			} else if (expr instanceof Expr.FunctionOrMethod) {
+				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
 				return Value.V_FUN(f.nid, f.type.raw());
 			}
 		} catch(SyntaxError.InternalFailure e) {

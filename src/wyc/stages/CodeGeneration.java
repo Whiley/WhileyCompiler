@@ -84,7 +84,7 @@ public final class CodeGeneration {
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
 	private Stack<Scope> scopes = new Stack<Scope>();
-	private FunctionOrMethodOrMessage currentFunDecl;
+	private FunctionOrMethod currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
 	// runtime checks for post conditions. The key issue is that a post
@@ -111,8 +111,8 @@ public final class CodeGeneration {
 					types.add(generate((TypeDef) d));
 				} else if (d instanceof Constant) {
 					constants.add(generate((Constant) d));
-				} else if (d instanceof FunctionOrMethodOrMessage) {
-					WyilFile.Method mi = generate((FunctionOrMethodOrMessage) d);
+				} else if (d instanceof FunctionOrMethod) {
+					WyilFile.Method mi = generate((FunctionOrMethod) d);
 					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
 					WyilFile.Method method = methods.get(key);
 					if (method != null) {
@@ -152,7 +152,7 @@ public final class CodeGeneration {
 		return new WyilFile.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private WyilFile.Method generate(FunctionOrMethodOrMessage fd) throws Exception {		
+	private WyilFile.Method generate(FunctionOrMethod fd) throws Exception {		
 		localGenerator = new LocalGenerator(globalGenerator,fd);	
 		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -160,15 +160,6 @@ public final class CodeGeneration {
 		// method return type		
 		int paramIndex = 0;
 		int nparams = fd.parameters.size();
-		// method receiver type (if applicable)
-		if (fd instanceof Message) {
-			Message md = (Message) fd;
-			if(md.receiver != null) {						
-				// TODO: fix receiver constraints
-				environment.put("this", paramIndex++);	
-				nparams++;
-			}
-		}
 		
 		// ==================================================================
 		// Generate pre-condition
@@ -254,13 +245,10 @@ public final class CodeGeneration {
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
 			return new WyilFile.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
-		} else if(fd instanceof WhileyFile.Method) {
+		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;			
 			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
-		} else {
-			WhileyFile.Message md = (WhileyFile.Message) fd;					
-			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
-		}		
+		} 		
 	}
 
 	/**
@@ -301,8 +289,6 @@ public final class CodeGeneration {
 				return generate((DoWhile) stmt, environment);
 			} else if (stmt instanceof ForAll) {
 				return generate((ForAll) stmt, environment);
-			} else if (stmt instanceof Expr.MessageSend) {
-				return localGenerator.generate((Expr.MessageSend) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.MethodCall) {
 				return localGenerator.generate((Expr.MethodCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.FunctionCall) {

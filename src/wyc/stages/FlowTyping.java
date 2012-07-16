@@ -93,7 +93,7 @@ public final class FlowTyping {
 	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
-	private WhileyFile.FunctionOrMethodOrMessage current;
+	private WhileyFile.FunctionOrMethod current;
 	
 	public FlowTyping(GlobalResolver resolver) {		
 		this.resolver = resolver;
@@ -104,8 +104,8 @@ public final class FlowTyping {
 		
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
-				if(decl instanceof FunctionOrMethodOrMessage) {
-					propagate((FunctionOrMethodOrMessage)decl);
+				if(decl instanceof FunctionOrMethod) {
+					propagate((FunctionOrMethod)decl);
 				} else if(decl instanceof TypeDef) {
 					propagate((TypeDef)decl);					
 				} else if(decl instanceof Constant) {
@@ -140,17 +140,12 @@ public final class FlowTyping {
 		}
 	}
 
-	public void propagate(FunctionOrMethodOrMessage d) throws Exception {		
+	public void propagate(FunctionOrMethod d) throws Exception {		
 		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
 		for (WhileyFile.Parameter p : d.parameters) {							
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,d));
-		}
-		
-		if(d instanceof Message) {
-			Message md = (Message) d;							
-			environment = environment.put("this",resolver.resolveAsType(md.receiver,d));			
 		}
 		
 		if(d.precondition != null) {
@@ -168,13 +163,10 @@ public final class FlowTyping {
 		if(d instanceof Function) {
 			Function f = (Function) d;
 			f.resolvedType = resolver.resolveAsType(f.unresolvedType(),d);					
-		} else if(d instanceof Method) {
+		} else {
 			Method m = (Method) d;			
 			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
-		} else {
-			Message m = (Message) d;
-			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
-		}
+		} 
 		
 		propagate(d.statements,environment);
 	}

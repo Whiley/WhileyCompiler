@@ -171,19 +171,6 @@ public abstract class AbstractResolver<T extends Exception> {
 		}
 	}
 
-	public Nominal.Message expandAsMessage(Nominal lhs) throws Exception {
-		Type.Message raw = Type.effectiveMessage(lhs.raw());
-		if(raw != null) {
-			Type nominal = expandOneLevel(lhs.nominal());
-			if(!(nominal instanceof Type.Message)) {
-				nominal = raw; // discard nominal information
-			}
-			return (Nominal.Message) Nominal.construct(nominal,raw);
-		} else {
-			return null;
-		}
-	}
-
 	private Type expandOneLevel(Type type) throws Exception {
 		if(type instanceof Type.Nominal){
 			Type.Nominal nt = (Type.Nominal) type;
@@ -218,7 +205,7 @@ public abstract class AbstractResolver<T extends Exception> {
 				|| type instanceof Type.List
 				|| type instanceof Type.Map
 				|| type instanceof Type.Record
-				|| type instanceof Type.FunctionOrMethodOrMessage
+				|| type instanceof Type.FunctionOrMethod
 				|| type instanceof Type.Negation) {
 			return type;
 		} else {

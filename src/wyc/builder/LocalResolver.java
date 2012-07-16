@@ -346,8 +346,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.Convert) expr,environment,context); 
 			} else if(expr instanceof Expr.Map) {
 				return resolve((Expr.Map) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractFunctionOrMethodOrMessage) {
-				return resolve((Expr.AbstractFunctionOrMethodOrMessage) expr,environment,context); 
+			} else if(expr instanceof Expr.AbstractFunctionOrMethod) {
+				return resolve((Expr.AbstractFunctionOrMethod) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
 				return resolve((Expr.AbstractInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.IndexOf) {
@@ -653,14 +653,14 @@ public abstract class LocalResolver extends AbstractResolver {
 		return c;
 	}
 	
-	private Expr resolve(Expr.AbstractFunctionOrMethodOrMessage expr,
+	private Expr resolve(Expr.AbstractFunctionOrMethod expr,
 			Environment environment, Context context) throws Exception {
 		
-		if(expr instanceof Expr.FunctionOrMethodOrMessage) {
+		if(expr instanceof Expr.FunctionOrMethod) {
 			return expr;
 		} 		
 		
-		Pair<NameID, Nominal.FunctionOrMethodOrMessage> p;
+		Pair<NameID, Nominal.FunctionOrMethod> p;
 		
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
@@ -670,10 +670,10 @@ public abstract class LocalResolver extends AbstractResolver {
 			// FIXME: clearly a bug here in the case of message reference
 			p = (Pair) resolveAsFunctionOrMethod(expr.name, paramTypes, context);			
 		} else {
-			p = resolveAsFunctionOrMethodOrMessage(expr.name, context);			
+			p = resolveAsFunctionOrMethod(expr.name, context);			
 		}
 		
-		expr = new Expr.FunctionOrMethodOrMessage(p.first(),expr.paramTypes,expr.attributes());
+		expr = new Expr.FunctionOrMethod(p.first(),expr.paramTypes,expr.attributes());
 		expr.type = p.second();
 		return expr;
 	}
@@ -1182,18 +1182,6 @@ public abstract class LocalResolver extends AbstractResolver {
 				candidates,context).second();		
 	}
 
-	private Nominal.Message resolveAsMessage(NameID nid,
-			Type.Reference receiver, List<Nominal> parameters, Context context)
-			throws Exception {
-		HashSet<Pair<NameID, Nominal.Message>> candidates = new HashSet<Pair<NameID, Nominal.Message>>();
-
-		addCandidateMessages(nid, parameters, candidates, context);
-
-		return selectCandidateMessage(nid.name(), receiver, parameters,
-				candidates).second();
-	}
-
-
 	/**
 	 * Responsible for determining the true type of a method or function being
 	 * invoked. In this case, no argument types are given. This means that any
@@ -1210,28 +1198,6 @@ public abstract class LocalResolver extends AbstractResolver {
 	public Pair<NameID,Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(String name, 
 			Context context) throws Exception {
 		return resolveAsFunctionOrMethod(name,null,context);
-	}
-
-	/**
-	 * Responsible for determining the true type of a funciont, method or
-	 * message being invoked. In this case, no argument types are given. This
-	 * means that any match is returned. However, if there are multiple matches,
-	 * then an ambiguity error is reported.
-	 * 
-	 * @param name
-	 *            --- function or method name whose type to determine.
-	 * @param context
-	 *            --- context in which to resolve this name.
-	 * @return
-	 * @throws Exception
-	 */
-	public Pair<NameID, Nominal.FunctionOrMethodOrMessage> resolveAsFunctionOrMethodOrMessage(
-			String name, Context context) throws Exception {
-		try {
-			return (Pair) resolveAsFunctionOrMethod(name, null, context);
-		} catch (ResolveError e) {
-			return (Pair) resolveAsMessage(name, null, null, context);
-		}
 	}
 	
 	/**
@@ -1273,33 +1239,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		return selectCandidateFunctionOrMethod(name,parameters,candidates,context);
 	}
 	
-	public Pair<NameID,Nominal.Message> resolveAsMessage(String name, Type.Reference receiver,
-			List<Nominal> parameters, Context context) throws Exception {
-
-		HashSet<Pair<NameID,Nominal.Message>> candidates = new HashSet<Pair<NameID,Nominal.Message>>(); 
-
-		// first, try to find the matching message
-		for (WhileyFile.Import imp : context.imports()) {
-			String impName = imp.name;
-			if (impName == null || impName.equals(name) || impName.equals("*")) {
-				Trie filter = imp.filter;
-				if(impName == null) {
-					// import name is null, but it's possible that a module of
-					// the given name exists, in which case any matching names
-					// are automatically imported. 
-					filter = filter.parent().append(name);
-				}
-				for (Path.ID mid : builder.imports(filter)) {				
-					NameID nid = new NameID(mid, name);
-					addCandidateMessages(nid, parameters, candidates, context);					
-				}
-			}
-		}
-
-		return selectCandidateMessage(name,receiver,parameters,candidates);
-	}
-	
-	private boolean paramSubtypes(Type.FunctionOrMethodOrMessage f1, Type.FunctionOrMethodOrMessage f2) {		
+	private boolean paramSubtypes(Type.FunctionOrMethod f1, Type.FunctionOrMethod f2) {		
 		List<Type> f1_params = f1.params();
 		List<Type> f2_params = f2.params();
 		if(f1_params.size() == f2_params.size()) {			
@@ -1316,7 +1256,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		return false;
 	}
 
-	private boolean paramStrictSubtypes(Type.FunctionOrMethodOrMessage f1, Type.FunctionOrMethodOrMessage f2) {		
+	private boolean paramStrictSubtypes(Type.FunctionOrMethod f1, Type.FunctionOrMethod f2) {		
 		List<Type> f1_params = f1.params();
 		List<Type> f2_params = f2.params();
 		if(f1_params.size() == f2_params.size()) {
@@ -1430,69 +1370,6 @@ public abstract class LocalResolver extends AbstractResolver {
 		return new Pair<NameID,Nominal.FunctionOrMethod>(candidateID,candidateType);
 	}
 
-	private Pair<NameID,Nominal.Message> selectCandidateMessage(String name,
-			Type.Reference receiver,
-			List<Nominal> parameters,
-			Collection<Pair<NameID, Nominal.Message>> candidates)
-					throws Exception {
-
-		List<Type> rawParameters; 
-		Type.Function target;
-
-		if (parameters != null) {
-			rawParameters = stripNominal(parameters);
-			target = (Type.Function) Type.Function(Type.T_ANY, Type.T_ANY,
-					rawParameters);
-		} else {
-			rawParameters = null;
-			target = null;
-		}
-
-		NameID candidateID = null;
-		Nominal.Message candidateType = null;			
-
-		for (Pair<NameID,Nominal.Message> p : candidates) {
-			Nominal.Message nmt = p.second();
-			Type.Message mt = nmt.raw();
-			Type funrec = mt.receiver();
-
-			if (receiver == funrec
-					|| receiver == null
-					|| (funrec != null && Type
-					.isImplicitCoerciveSubtype(receiver, funrec))) {					
-				// receivers match up OK ...				
-				if (parameters == null || paramSubtypes(mt, target)) {
-					// this is now a genuine candidate
-					if(candidateType == null || paramStrictSubtypes(candidateType.raw(), mt)) {
-						candidateType = nmt;
-						candidateID = p.first();						
-					} else if(!paramStrictSubtypes(mt, candidateType.raw())) {
-						// this is an ambiguous error
-						String msg = name + parameterString(parameters) + " is ambiguous";
-						// FIXME: should report all ambiguous matches here
-						msg += "\n\tfound: " + candidateID + " : " + candidateType.nominal();
-						msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
-						throw new ResolveError(msg);
-					}
-				}			
-			}
-		}				
-
-		if (candidateType == null) {
-			// second, didn't find matching message so generate error message
-			String msg = "no match for " + receiver + "::" + name
-					+ parameterString(parameters);
-
-			for (Pair<NameID, Nominal.Message> p : candidates) {
-				msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
-			}
-
-			throw new ResolveError(msg);
-		}				
-
-		return new Pair<NameID,Nominal.Message>(candidateID,candidateType);
-	}
-
 	private void addCandidateFunctionsAndMethods(NameID nid,
 			List<?> parameters,
 			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates, Context context)
@@ -1533,43 +1410,6 @@ public abstract class LocalResolver extends AbstractResolver {
 						candidates
 								.add(new Pair<NameID, Nominal.FunctionOrMethod>(
 										nid, fom));
-					}
-				}
-			} catch (ResolveError e) {
-
-			}
-		}
-	}
-
-	private void addCandidateMessages(NameID nid, List<?> parameters,
-			Collection<Pair<NameID, Nominal.Message>> candidates, Context context)
-			throws Exception {
-		Path.ID mid = nid.module();
-
-		int nparams = parameters != null ? parameters.size() : -1;		
-		WhileyFile wf = builder.getSourceFile(mid);
-		if (wf != null) {
-			for (WhileyFile.Message m : wf.declarations(
-					WhileyFile.Message.class, nid.name())) {
-				if (nparams == -1 || m.parameters.size() == nparams) {
-					Nominal.Message ft = (Nominal.Message) resolveAsType(
-							m.unresolvedType(), m);
-					candidates.add(new Pair<NameID, Nominal.Message>(nid, ft));
-				}
-			}
-		} else {			
-			try {				
-				WyilFile m = builder.getModule(mid);
-				for (WyilFile.Method mm : m.methods()) {				
-					if (mm.isMessage()
-							&& mm.name().equals(nid.name())
-							&& (nparams == -1 || mm.type().params().size() == nparams)) {
-						// FIXME: loss of nominal information
-						Nominal.Message ft = new Nominal.Message(
-								(Type.Message) mm.type(),
-								(Type.Message) mm.type());
-						candidates.add(new Pair<NameID, Nominal.Message>(nid,
-								ft));
 					}
 				}
 			} catch (ResolveError e) {

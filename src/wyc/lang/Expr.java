@@ -173,12 +173,12 @@ public interface Expr extends SyntacticElement {
 		}		
 	}
 	
-	public static class AbstractFunctionOrMethodOrMessage extends SyntacticElement.Impl implements Expr {
+	public static class AbstractFunctionOrMethod extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<UnresolvedType> paramTypes;
-		public Nominal.FunctionOrMethodOrMessage type;		
+		public Nominal.FunctionOrMethod type;		
 				
-		public AbstractFunctionOrMethodOrMessage(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+		public AbstractFunctionOrMethod(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;			
 			if(paramTypes != null) {
@@ -188,7 +188,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public AbstractFunctionOrMethodOrMessage(String name,
+		public AbstractFunctionOrMethod(String name,
 				Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
@@ -200,21 +200,21 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 		
-		public Nominal.FunctionOrMethodOrMessage result() {
+		public Nominal.FunctionOrMethod result() {
 			return type;
 		}		
 	}
 	
-	public static class FunctionOrMethodOrMessage extends AbstractFunctionOrMethodOrMessage {
+	public static class FunctionOrMethod extends AbstractFunctionOrMethod {
 		public final NameID nid;					
 		
-		public FunctionOrMethodOrMessage(NameID nid, Collection<UnresolvedType> paramTypes,
+		public FunctionOrMethod(NameID nid, Collection<UnresolvedType> paramTypes,
 				Attribute... attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
 		}
 		
-		public FunctionOrMethodOrMessage(NameID nid, Collection<UnresolvedType> paramTypes,
+		public FunctionOrMethod(NameID nid, Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
@@ -670,33 +670,6 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class MessageSend extends AbstractInvoke<Expr> {		
-		public final NameID nid;
-		public Nominal.Message messageType;
-		
-		public MessageSend(NameID nid, Expr receiver,
-				Collection<Expr> arguments, boolean synchronous,
-				Attribute... attributes) {
-			super(nid.name(), receiver, arguments, synchronous, attributes);
-			this.nid = nid;			
-		}
-
-		public MessageSend(NameID nid, Expr receiver,
-				Collection<Expr> arguments, boolean synchronous,
-				Collection<Attribute> attributes) {
-			super(nid.name(), receiver, arguments, synchronous, attributes);
-			this.nid = nid;
-		}
-		
-		public NameID nid() {
-			return nid;
-		}		
-		
-		public Nominal result() {
-			return messageType.ret();
-		}
-	}
-	
 	public static class MethodCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
 		public Nominal.Method methodType;
@@ -811,29 +784,6 @@ public interface Expr extends SyntacticElement {
 			return functionType.ret();
 		}
 	}	
-	
-	public static class IndirectMessageSend extends AbstractIndirectInvoke {				
-		public final Expr receiver;
-		public Nominal.Message messageType;		
-		
-		public IndirectMessageSend(Expr src, Expr receiver,
-				Collection<Expr> arguments, boolean synchronous,
-				Attribute... attributes) {
-			super(src, arguments, synchronous, attributes);
-			this.receiver = receiver;
-		}
-		
-		public IndirectMessageSend(Expr src, Expr receiver,
-				Collection<Expr> arguments, boolean synchronous,
-				Collection<Attribute> attributes) {
-			super(src, arguments, synchronous, attributes);
-			this.receiver = receiver;
-		}
-		
-		public Nominal result() {
-			return messageType.ret();
-		}
-	}
 	
 	public static class LengthOf extends SyntacticElement.Impl implements Expr {
 		public Expr src;

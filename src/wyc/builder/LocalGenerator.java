@@ -491,10 +491,6 @@ public final class LocalGenerator {
 				return generate((Expr.IndirectFunctionCall) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.IndirectMethodCall) {
 				return generate((Expr.IndirectMethodCall) expression, target, freeRegister, environment);
-			} else if (expression instanceof Expr.IndirectMessageSend) {
-				return generate((Expr.IndirectMessageSend) expression, target, freeRegister, environment);
-			} else if (expression instanceof Expr.MessageSend) {
-				return generate((Expr.MessageSend) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Comprehension) {
 				return generate((Expr.Comprehension) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.RecordAccess) {
@@ -505,8 +501,8 @@ public final class LocalGenerator {
 				return generate((Expr.Tuple) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.Map) {
 				return generate((Expr.Map) expression, target, freeRegister, environment);
-			} else if (expression instanceof Expr.FunctionOrMethodOrMessage) {
-				return generate((Expr.FunctionOrMethodOrMessage) expression, target, freeRegister, environment);
+			} else if (expression instanceof Expr.FunctionOrMethod) {
+				return generate((Expr.FunctionOrMethod) expression, target, freeRegister, environment);
 			} else if (expression instanceof Expr.New) {
 				return generate((Expr.New) expression, target, freeRegister, environment);
 			} else {
@@ -525,26 +521,6 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	public Block generate(Expr.MessageSend fc, int target, int freeRegister,
-			HashMap<String, Integer> environment) throws ResolveError {
-		Block blk = new Block(environment.size());
-
-		int[] operands = new int[fc.arguments.size() + 1];		
-		blk.append(generate(fc.qualification, freeRegister, freeRegister+1, environment));
-		operands[0] = freeRegister++;
-		for (int i = 1; i != operands.length; ++i) {
-			Expr arg = fc.arguments.get(i-1);
-			blk.append(generate(arg, freeRegister, freeRegister + 1,
-					environment));
-			operands[i] = freeRegister++;
-		}
-
-		blk.append(Code.Send(fc.messageType.raw(), target, operands, fc.nid,
-				fc.synchronous), attributes(fc));
-
-		return blk;
-	}
-	
 	public Block generate(Expr.MethodCall fc, int target, int freeRegister,
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
@@ -604,29 +580,6 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	public Block generate(Expr.IndirectMessageSend fc, int target,
-			int freeRegister, boolean retval,
-			HashMap<String, Integer> environment) throws ResolveError {
-		Block blk = new Block(environment.size());
-
-		blk.append(generate(fc.src, target, freeRegister, environment));
-
-		int[] operands = new int[fc.arguments.size() + 1];
-		blk.append(generate(fc.receiver, target, freeRegister, environment));
-		operands[0] = freeRegister++;
-		for (int i = 0; i != operands.length; ++i) {
-			Expr arg = fc.arguments.get(i);
-			blk.append(generate(arg, freeRegister, freeRegister + 1,
-					environment));
-			operands[i] = freeRegister++;
-		}
-
-		blk.append(Code.IndirectSend(fc.messageType.raw(), target, target,
-				operands, fc.synchronous), attributes(fc));
-
-		return blk;
-	}
-	
 	private Block generate(Expr.Constant c, int target, int freeRegister,
 			HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
@@ -634,7 +587,8 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generate(Expr.FunctionOrMethodOrMessage s, int target, int freeRegister, HashMap<String,Integer> environment) {						
+	private Block generate(Expr.FunctionOrMethod s, int target,
+			int freeRegister, HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(target, Value.V_FUN(s.nid, s.type.raw())),
 				attributes(s));

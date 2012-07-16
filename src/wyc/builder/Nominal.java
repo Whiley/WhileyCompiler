@@ -117,11 +117,6 @@ public abstract class Nominal {
 				nominal = raw;
 			}
 			return new Method((Type.Method)nominal,(Type.Method)raw);			
-		} else if(raw instanceof Type.Message) {
-			if(!(nominal instanceof Type.Message)) {
-				nominal = raw;
-			}
-			return new Message((Type.Message)nominal,(Type.Message)raw);			
 		} else {
 			return new Base(nominal,raw);
 		}
@@ -919,22 +914,14 @@ public abstract class Nominal {
 		}
 	}
 	
-	public abstract static class FunctionOrMethodOrMessage extends Nominal {
+	public abstract static class FunctionOrMethod extends Nominal {
+		abstract public Type.FunctionOrMethod nominal();
 		
-		abstract public Type.FunctionOrMethodOrMessage raw();
-		
-		abstract public Type.FunctionOrMethodOrMessage nominal();
-		
+		abstract public Type.FunctionOrMethod raw();
 		
 		abstract public Nominal ret();
 		
 		abstract public java.util.List<Nominal> params();
-	}
-	
-	public abstract static class FunctionOrMethod extends FunctionOrMethodOrMessage {
-		abstract public Type.FunctionOrMethod nominal();
-		
-		abstract public Type.FunctionOrMethod raw();		
 	}
 	
 	public static final class Function extends FunctionOrMethod {
@@ -1030,53 +1017,4 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class Message extends FunctionOrMethodOrMessage {
-		private final Type.Message nominal;
-		private final Type.Message raw;
-		
-		public Message(Type.Message nominal, Type.Message raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-		
-		public Type.Message nominal() {
-			return nominal;
-		}
-		
-		public Type.Message raw() {
-			return raw;
-		}
-		
-		public Nominal receiver() {
-			return construct(nominal.receiver(),raw.receiver());
-		}
-		
-		public Nominal ret() {
-			return construct(nominal.ret(),raw.ret());
-		}
-		
-		public java.util.List<Nominal> params() {			
-			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			java.util.List<Type> rawElements = raw.params();
-			java.util.List<Type> nominalElements = nominal.params();
-			for(int i=0;i!=rawElements.size();++i) {
-				Type nominalElement = nominalElements.get(i);
-				Type rawElement = rawElements.get(i);				
-				r.add(construct(nominalElement,rawElement));
-			}				
-			return r;			
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Message) {
-				Message b = (Message) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}	
 }
