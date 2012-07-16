@@ -91,7 +91,7 @@ public final class WyilFilePrinter implements Transform {
 	}
 	
 	public void apply(WyilFile module) throws IOException {
-		String filename = module.filename().replace(".whiley", ".wyil");
+		String filename = module.filename().replace(".whiley", ".wyasm");
 		out = new PrintWriter(new FileOutputStream(filename));
 		
 		//out.println("module: " + module.id());
