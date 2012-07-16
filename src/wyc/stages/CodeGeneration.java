@@ -432,8 +432,9 @@ public final class CodeGeneration {
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
+			Pair<Expr.AssignedVariable, Integer> r = extractLVal(ra.src, fields, blk, freeRegister, environment); 
 			fields.add(ra.name);
-			return  extractLVal(ra.src, fields, blk, freeRegister, environment);								
+			return r;
 		} else {
 			syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), localGenerator.context(), e);
 			return null; // dead code
@@ -832,6 +833,7 @@ public final class CodeGeneration {
 			binding.put(i,i+amount);		
 		}
 		binding.put(0, zeroDest);
+		
 		Block nblock = new Block(blk.numInputs());
 		for(Block.Entry e : blk) {
 			Code code = e.code.remap(binding);

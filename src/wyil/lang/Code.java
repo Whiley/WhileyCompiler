@@ -2648,6 +2648,7 @@ public abstract class Code {
 						: sourceOperand;
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
+				
 				return Code.ForAll(type, nSourceOperand, nIndexOperand,
 						nModifiedOperands, target);
 			} else {
@@ -2656,7 +2657,7 @@ public abstract class Code {
 		}
 
 		public int hashCode() {
-			return super.hashCode() + indexOperand
+			return super.hashCode() + sourceOperand + indexOperand
 					+ Arrays.hashCode(modifiedOperands);
 		}
 
@@ -2664,6 +2665,7 @@ public abstract class Code {
 			if (o instanceof ForAll) {
 				ForAll f = (ForAll) o;
 				return target.equals(f.target) && type.equals(f.type)
+						&& sourceOperand == f.sourceOperand
 						&& indexOperand == f.indexOperand
 						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
 			}
@@ -2684,14 +2686,14 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static abstract class LVal {
-		protected Type type;
+	public static abstract class LVal<T> {
+		protected T type;
 
-		public LVal(Type t) {
+		public LVal(T t) {
 			this.type = t;
 		}
 
-		public Type rawType() {
+		public T rawType() {
 			return type;
 		}
 	}
@@ -2702,20 +2704,13 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class MapLVal extends LVal {
+	public static final class MapLVal extends LVal<Type.EffectiveMap> {
 		public final int keyOperand;
 
-		public MapLVal(Type t, int keyOperand) {
-			super(t);
-			if (!(t instanceof Type.EffectiveMap)) {
-				throw new IllegalArgumentException("Invalid map Type");
-			}
+		public MapLVal(Type.EffectiveMap t, int keyOperand) {
+			super(t);			
 			this.keyOperand = keyOperand;
 		}
-
-		public Type.EffectiveMap type() {
-			return (Type.EffectiveMap) type;
-		}
 	}
 
 	/**
@@ -2724,19 +2719,12 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ListLVal extends LVal {
+	public static final class ListLVal extends LVal<Type.EffectiveList> {
 		public final int indexOperand;
 
-		public ListLVal(Type t, int indexOperand) {
-			super(t);
-			if (!(t instanceof Type.EffectiveList)) {
-				throw new IllegalArgumentException("invalid List Type");
-			}
+		public ListLVal(Type.EffectiveList t, int indexOperand) {
+			super(t);			
 			this.indexOperand = indexOperand;
-		}
-
-		public Type.EffectiveList type() {
-			return (Type.EffectiveList) type;
 		}
 	}
 
@@ -2746,16 +2734,9 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class ReferenceLVal extends LVal {
-		public ReferenceLVal(Type t) {
+	public static final class ReferenceLVal extends LVal<Type.Reference> {
+		public ReferenceLVal(Type.Reference t) {
 			super(t);
-			if (Type.effectiveReference(t) == null) {
-				throw new IllegalArgumentException("invalid reference type");
-			}
-		}
-
-		public Type.Reference type() {
-			return Type.effectiveReference(type);
 		}
 	}
 
@@ -2780,20 +2761,15 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class RecordLVal extends LVal {
+	public static final class RecordLVal extends LVal<Type.EffectiveRecord> {
 		public final String field;
 
-		public RecordLVal(Type t, String field) {
+		public RecordLVal(Type.EffectiveRecord t, String field) {
 			super(t);
 			this.field = field;
-			if (!(t instanceof Type.EffectiveRecord)
-					|| !((Type.EffectiveRecord) t).fields().containsKey(field)) {
-				throw new IllegalArgumentException("Invalid Record Type");
+			if (!t.fields().containsKey(field)) {
+				throw new IllegalArgumentException("invalid Record Type");
 			}
-		}
-
-		public Type.EffectiveRecord type() {
-			return (Type.EffectiveRecord) type;
 		}
 	}
 
@@ -2822,20 +2798,20 @@ public abstract class Code {
 			} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
 				Type.Reference proc = Type.effectiveReference(iter);
 				iter = proc.element();
-				return new ReferenceLVal(raw);
+				return new ReferenceLVal(proc);
 			} else if (iter instanceof Type.EffectiveList) {
 				Type.EffectiveList list = (Type.EffectiveList) iter;
 				iter = list.element();
-				return new ListLVal(raw, operands[operandIndex++]);
+				return new ListLVal(list, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveMap) {
 				Type.EffectiveMap dict = (Type.EffectiveMap) iter;
 				iter = dict.value();
-				return new MapLVal(raw, operands[operandIndex++]);
+				return new MapLVal(dict, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
 				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 				String field = fields.get(fieldIndex++);
 				iter = rec.fields().get(field);
-				return new RecordLVal(raw, field);
+				return new RecordLVal(rec, field);
 			} else {
 				throw new IllegalArgumentException(
 						"Invalid type for Code.Update");
@@ -2883,7 +2859,7 @@ public abstract class Code {
 						"FieldStore fields argument cannot be null");
 			}
 			this.afterType = afterType;
-			this.fields = new ArrayList<String>(fields);
+			this.fields = new ArrayList<String>(fields);			
 		}
 
 		public int level() {

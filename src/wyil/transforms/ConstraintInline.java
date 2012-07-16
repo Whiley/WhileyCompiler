@@ -213,6 +213,7 @@ public class ConstraintInline implements Transform {
 			}
 			
 			precondition = Block.resource(precondition, elem.attribute(Attribute.Source.class));
+						
 			blk.importExternal(precondition,binding);
 						
 			return blk;
