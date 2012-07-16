@@ -133,15 +133,8 @@ public class VerificationCheck implements Transform {
 		WFormula constraint = WBool.TRUE;					
 				
 		// add type information available from parameters
-		Type.FunctionOrMethodOrMessage fmm = method.type();
+		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
-		if (fmm instanceof Type.Message) {
-			Type.Message mt = (Type.Message) fmm;
-			WVariable pv = new WVariable(0 + "$" + 0);
-			constraint = WFormulas.and(constraint,
-					WTypes.subtypeOf(pv, convert(mt.receiver())));
-			paramStart++;
-		}
 		for(int i=paramStart;i!=fmm.params().size();++i) {
 			Type paramType = fmm.params().get(i); 
 			WVariable pv = new WVariable(i + "$" + 0);
@@ -410,8 +403,6 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Code.FieldLoad)code,entry,constraint,environment);			
 		} else if(code instanceof Code.IndirectInvoke) {
 			constraint = transform((Code.IndirectInvoke)code,entry,constraint,environment);
-		} else if(code instanceof Code.IndirectSend) {
-			constraint = transform((Code.IndirectSend)code,entry,constraint,environment);
 		} else if(code instanceof Code.Invoke) {
 			constraint = transform((Code.Invoke)code,entry,constraint,environment);
 		} else if(code instanceof Code.Invert) {
@@ -448,8 +439,6 @@ public class VerificationCheck implements Transform {
 			constraint = transform((Code.Dereference)code,entry,constraint,environment);
 		} else if(code instanceof Code.Nop) {
 			// skip			
-		} else if(code instanceof Code.Send) {
-			constraint = transform((Code.Send)code,entry,constraint,environment);
 		} else if(code instanceof Code.BinSetOp) {
 			constraint = transform((Code.BinSetOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.StringOp) {
@@ -551,12 +540,6 @@ public class VerificationCheck implements Transform {
 	}
 
 	protected WFormula transform(Code.IndirectInvoke code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
-	}
-
-	protected WFormula transform(Code.IndirectSend code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
@@ -720,12 +703,6 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.Send code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
-	}
-
 	protected WFormula transform(Code.BinSetOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		WVariable lhs = operand(code.leftOperand, environment);
@@ -870,7 +847,7 @@ public class VerificationCheck implements Transform {
 			return new WNumber(v.value);
 		} else if(value instanceof wyil.lang.Value.Map) {
 			return WBool.FALSE; // FIXME
-		} else if(value instanceof wyil.lang.Value.FunctionOrMethodOrMessage) {
+		} else if(value instanceof wyil.lang.Value.FunctionOrMethod) {
 			return WBool.FALSE; // FIXME
 		} else if(value instanceof wyil.lang.Value.Integer) {
 			wyil.lang.Value.Integer v = (wyil.lang.Value.Integer) value;

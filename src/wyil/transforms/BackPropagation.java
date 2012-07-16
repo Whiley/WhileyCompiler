@@ -166,8 +166,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.FieldLoad)code,entry,environment);			
 		} else if(code instanceof Code.IndirectInvoke) {
 			infer(index,(Code.IndirectInvoke)code,entry,environment);
-		} else if(code instanceof Code.IndirectSend) {
-			infer(index,(Code.IndirectSend)code,entry,environment);
 		} else if(code instanceof Code.Invoke) {
 			infer(index,(Code.Invoke)code,entry,environment);
 		} else if(code instanceof Code.Invert) {
@@ -204,8 +202,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.Return)code,entry,environment);
 		} else if(code instanceof Code.Nop) {
 			// skip			
-		} else if(code instanceof Code.Send) {
-			infer(index,(Code.Send)code,entry,environment);
 		} else if(code instanceof Code.BinSetOp) {
 			infer(index,(Code.BinSetOp)code,entry,environment);
 		} else if(code instanceof Code.StringOp) {
@@ -306,24 +302,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Type type = code.type.params().get(i);
 			environment.set(operand,type);
 		}		
-	}
-	
-	private void infer(int index, Code.IndirectSend code, Block.Entry entry,
-			Env environment) {
-
-		if (code.type.ret() != Type.T_VOID && code.target >= 0) {
-			Type req = environment.get(code.target);
-			coerceAfter(req, code.type.ret(),code.target, index, entry);
-		}
-
-		environment.set(code.operand, code.type);
-		environment.set(code.operands[0], code.type.receiver());
-
-		for (int i = 0; i != code.operands.length; ++i) {
-			int operand = code.operands[i + 1];
-			Type type = code.type.params().get(i);
-			environment.set(operand, type);
-		}
 	}
 	
 	private void infer(int index, Code.Invoke code, Block.Entry entry,
@@ -504,24 +482,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			environment.set(code.operand,code.type);
 		}
 	}
-	
-	private void infer(int index, Code.Send code, Block.Entry entry,
-			Env environment) {		
-		
-		if(code.type.ret() != Type.T_VOID && code.target >= 0) {
-			Type req = environment.get(code.target);
-			coerceAfter(req,code.type.ret(),code.target,index,entry);					
-		}
-		
-		environment.set(code.operands[0],code.type.receiver());
-		
-		for(int i=1;i!=code.operands.length;++i) {
-			int operand = code.operands[i];
-			Type type = code.type.params().get(i-1);
-			environment.set(operand,type);
-		}	
-	}
-	
+
 	private void infer(int index, Code.BinSetOp code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);

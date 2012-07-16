@@ -156,13 +156,7 @@ public class ModuleCheck implements Transform {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;
 			return i.type.throwsClause();
-		} else if(code instanceof Code.IndirectSend) {
-			Code.IndirectSend i = (Code.IndirectSend) code;
-			return i.type.throwsClause();
-		} else if(code instanceof Code.Send) {
-			Code.Send i = (Code.Send) code;
-			return i.type.throwsClause();
-		}
+		} 
 		
 		return Type.T_VOID;
 	}
@@ -213,10 +207,7 @@ public class ModuleCheck implements Transform {
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
-			if (code instanceof Code.Send || code instanceof Code.IndirectSend) {
-				// external message send
-				syntaxError(errorMessage(SEND_NOT_PERMITTED_IN_FUNCTION), filename, stmt);
-			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
+			if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
 			} else if(code instanceof Code.NewObject) {

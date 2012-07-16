@@ -219,13 +219,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;	
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.IndirectSend) {
-			Code.IndirectSend i = (Code.IndirectSend) code;
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.Send) {
-			Code.Send i = (Code.Send) code;			
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		}
+		} 
 	}
 	
 	protected void mergeHandler(Type type, T store, List<Code.TryCatch> handlers,

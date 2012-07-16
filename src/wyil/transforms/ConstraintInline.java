@@ -168,8 +168,6 @@ public class ConstraintInline implements Transform {
 			// TODO: add support for indirect invokes and sends
 			if(code instanceof Code.Invoke) {
 				return transform((Code.Invoke)code, freeSlot, entry);
-			} else if(code instanceof Code.Send) {
-
 			} else if(code instanceof Code.IndexOf) {
 				return transform((Code.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Code.Update) {
@@ -223,18 +221,6 @@ public class ConstraintInline implements Transform {
 	}		
 	
 	/**
-	 * For the send bytecode, we need to inline any preconditions associated
-	 * with the target.
-	 * 
-	 * @param code
-	 * @param elem
-	 * @return
-	 */
-	public Block transform(Code.Send code, SyntacticElement elem) {
-		return null;
-	}
-
-	/**
 	 * For the return bytecode, we need to inline any postcondition associated
 	 * with this function/method.
 	 * 
@@ -251,12 +237,8 @@ public class ConstraintInline implements Transform {
 				Block blk = new Block(0);												
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,code.operand);
-				Type.FunctionOrMethodOrMessage mtype = method.type();	
+				Type.FunctionOrMethod mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Type.Message
-						&& ((Type.Message) mtype).receiver() != null) {
-					binding.put(pIndex++, Code.REG_0);
-				}
 				int shadowIndex = methodCase.body().numSlots();
 				for(Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);

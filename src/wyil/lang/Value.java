@@ -90,9 +90,9 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Tuple(values));
 	}
 	
-	public static FunctionOrMethodOrMessage V_FUN(NameID name,
-			wyil.lang.Type.FunctionOrMethodOrMessage type) {
-		return get(new FunctionOrMethodOrMessage(name, type));
+	public static FunctionOrMethod V_FUN(NameID name,
+			wyil.lang.Type.FunctionOrMethod type) {
+		return get(new FunctionOrMethod(name, type));
 	}		
 	
 	public static final class Null extends Value {				
@@ -717,16 +717,16 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static final class FunctionOrMethodOrMessage extends Value {
+	public static final class FunctionOrMethod extends Value {
 		public final NameID name;
-		public final wyil.lang.Type.FunctionOrMethodOrMessage type;
+		public final wyil.lang.Type.FunctionOrMethod type;
 		
-		private FunctionOrMethodOrMessage(NameID name, wyil.lang.Type.FunctionOrMethodOrMessage type) {
+		private FunctionOrMethod(NameID name, wyil.lang.Type.FunctionOrMethod type) {
 			this.name = name;
 			this.type = type;
 		}
 
-		public wyil.lang.Type.FunctionOrMethodOrMessage type() {
+		public wyil.lang.Type.FunctionOrMethod type() {
 			if (type == null) {
 				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY,
 						wyil.lang.Type.T_ANY);
@@ -742,8 +742,8 @@ public abstract class Value implements Comparable<Value> {
 			}
 		}
 		public boolean equals(Object o) {
-			if(o instanceof FunctionOrMethodOrMessage) {
-				FunctionOrMethodOrMessage i = (FunctionOrMethodOrMessage) o;
+			if(o instanceof FunctionOrMethod) {
+				FunctionOrMethod i = (FunctionOrMethod) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
 								.equals(i.type)));
@@ -751,8 +751,8 @@ public abstract class Value implements Comparable<Value> {
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof FunctionOrMethodOrMessage) {
-				FunctionOrMethodOrMessage t = (FunctionOrMethodOrMessage) v;
+			if(v instanceof FunctionOrMethod) {
+				FunctionOrMethod t = (FunctionOrMethod) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {

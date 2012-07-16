@@ -191,13 +191,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;	
 			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.IndirectSend) {
-			Code.IndirectSend i = (Code.IndirectSend) code;
-			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.Send) {
-			Code.Send i = (Code.Send) code;			
-			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		}
+		} 
 		return store;
 	}
 	

@@ -142,20 +142,13 @@ public final class WyilFileWriter implements Transform {
 	
 	private void write(Case mcase, Method method, PrintWriter out) {
 		writeModifiers(method.modifiers(),out);
-		Type.FunctionOrMethodOrMessage ft = method.type(); 
+		Type.FunctionOrMethod ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
 		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
 		
 		int li = 0;
-		if(ft instanceof Type.Message) {			
-			Type.Message mt = (Type.Message) ft;
-			if(mt.receiver() != null) {
-				out.print(mt.receiver());
-				li++;
-			}
-			out.print("::");		
-		}
+		
 		out.print(method.name() + "(");
 		for(int i=0;i!=ft.params().size();++i) {						
 			if(i!=0) {

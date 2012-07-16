@@ -99,7 +99,7 @@ public final class WyilFile {
 		
 	private final Path.ID mid;
 	private final String filename;
-	private HashMap<Pair<String,Type.FunctionOrMethodOrMessage>,Method> methods;
+	private HashMap<Pair<String,Type.FunctionOrMethod>,Method> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
 	
@@ -116,13 +116,13 @@ public final class WyilFile {
 		this.filename = filename;
 		
 		// first, init the caches
-		this.methods = new HashMap<Pair<String,Type.FunctionOrMethodOrMessage>, Method>();
+		this.methods = new HashMap<Pair<String,Type.FunctionOrMethod>, Method>();
 		this.types = new HashMap<String, TypeDef>();
 		this.constants = new HashMap<String, ConstDef>();
 		
 		// second, build the caches
 		for(Method m : methods) {
-			Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
+			Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());
 			Method tmp = this.methods.get(p);
 			if (tmp != null) {
 				throw new IllegalArgumentException(
@@ -180,7 +180,7 @@ public final class WyilFile {
 	
 	public List<Method> method(String name) {
 		ArrayList<Method> r = new ArrayList<Method>();
-		for(Pair<String,Type.FunctionOrMethodOrMessage> p : methods.keySet()) {
+		for(Pair<String,Type.FunctionOrMethod> p : methods.keySet()) {
 			if(p.first().equals(name)) {
 				r.add(methods.get(p));
 			}
@@ -201,7 +201,7 @@ public final class WyilFile {
 	// =========================================================================
 	
 	public void add(WyilFile.Method m) {
-		Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
+		Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());
 		this.methods.put(p,m);
 	}
 	
@@ -314,11 +314,11 @@ public final class WyilFile {
 	public static final class Method extends SyntacticElement.Impl {
 		private List<Modifier> modifiers;
 		private String name;		
-		private Type.FunctionOrMethodOrMessage type;		
+		private Type.FunctionOrMethod type;		
 		private List<Case> cases;		
 				
 		public Method(Collection<Modifier> modifiers, String name,
-				Type.FunctionOrMethodOrMessage type, Collection<Case> cases,
+				Type.FunctionOrMethod type, Collection<Case> cases,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
@@ -329,7 +329,7 @@ public final class WyilFile {
 		}
 		
 		public Method(Collection<Modifier> modifiers, String name,
-				Type.FunctionOrMethodOrMessage type, Collection<Case> cases,
+				Type.FunctionOrMethod type, Collection<Case> cases,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
@@ -347,7 +347,7 @@ public final class WyilFile {
 			return name;
 		}
 		
-		public Type.FunctionOrMethodOrMessage type() {
+		public Type.FunctionOrMethod type() {
 			return type;
 		}
 
@@ -361,10 +361,6 @@ public final class WyilFile {
 		
 		public boolean isMethod() {
 			return type instanceof Type.Method;
-		}
-		
-		public boolean isMessage() {
-			return type instanceof Type.Message;
 		}
 		
 		public boolean isPublic() {

@@ -206,8 +206,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Record) val, writer, constantPool);
 		} else if(val instanceof Value.Tuple) {
 			write((Value.Tuple) val, writer, constantPool);
-		} else if(val instanceof Value.FunctionOrMethodOrMessage) {
-			write((Value.FunctionOrMethodOrMessage) val, writer, constantPool);
+		} else if(val instanceof Value.FunctionOrMethod) {
+			write((Value.FunctionOrMethod) val, writer, constantPool);
 		} else {
 			throw new RuntimeException("Unknown value encountered - " + val);
 		}
@@ -326,9 +326,9 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 	
-	public static void write(Value.FunctionOrMethodOrMessage expr, BinaryOutputStream writer,
+	public static void write(Value.FunctionOrMethod expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		Type.FunctionOrMethodOrMessage t = expr.type();
+		Type.FunctionOrMethod t = expr.type();
 		if(t instanceof Type.Function) {
 			writer.write_u1(FUNCTIONVAL);			
 		} else if(t instanceof Type.Method) {

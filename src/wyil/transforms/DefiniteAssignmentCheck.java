@@ -68,15 +68,7 @@ public class DefiniteAssignmentCheck extends
 		HashSet<Integer> defined = new HashSet<Integer>();
 		
 		int diff = 0;
-						
-		if(method.type() instanceof Type.Message) {
-			Type.Message mt = (Type.Message) method.type();
-			if(mt.receiver() != null) {
-				defined.add(diff);
-				diff++;
-			}
-		}
-		
+										
 		for(int i=0;i!=method.type().params().size();++i) {
 			defined.add(i+diff);
 		}								

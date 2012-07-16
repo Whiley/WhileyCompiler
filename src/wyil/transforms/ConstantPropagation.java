@@ -165,8 +165,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Code.FieldLoad)code,entry,environment);			
 		} else if(code instanceof Code.IndirectInvoke) {
 			infer((Code.IndirectInvoke)code,entry,environment);
-		} else if(code instanceof Code.IndirectSend) {
-			infer((Code.IndirectSend)code,entry,environment);
 		} else if(code instanceof Code.Invoke) {
 			infer((Code.Invoke)code,entry,environment);
 		} else if(code instanceof Code.Invert) {
@@ -201,8 +199,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Code.Dereference)code,entry,environment);
 		} else if(code instanceof Code.Return) {
 			infer((Code.Return)code,entry,environment);
-		} else if(code instanceof Code.Send) {
-			infer((Code.Send)code,entry,environment);
 		} else if(code instanceof Code.BinSetOp) {
 			infer(index,(Code.BinSetOp)code,entry,environment);
 		} else if(code instanceof Code.StringOp) {
@@ -345,13 +341,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: in principle we can do better here in the case that the target
 		// is a constant. This seems pretty unlikely though ...
 		
-		if (code.target != Code.NULL_REG) {
-			environment.set(code.target, null);
-		}
-	}
-	
-	public void infer(Code.IndirectSend code, Block.Entry entry,
-			Env environment) {
 		if (code.target != Code.NULL_REG) {
 			environment.set(code.target, null);
 		}
@@ -641,14 +630,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		
 	}
-	
-	public void infer(Code.Send code, Block.Entry entry,
-			Env environment) {
-		if (code.target != Code.NULL_REG) {
-			environment.set(code.target,null);
-		}
-	}
-	
+
 	public void infer(int index, Code.BinSetOp code, Block.Entry entry,
 			Env environment) {						
 		Value result = null;

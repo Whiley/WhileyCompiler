@@ -411,17 +411,6 @@ public abstract class Code {
 		return get(new IfIs(type, leftOperand, rightOperand, label));
 	}
 
-	public static IndirectSend IndirectSend(Type.Message msg, int target,
-			int operand, Collection<Integer> operands, boolean synchronous) {
-		return get(new IndirectSend(msg, synchronous, target, operand,
-				toIntArray(operands)));
-	}
-
-	public static IndirectSend IndirectSend(Type.Message msg, int target,
-			int operand, int[] operands, boolean synchronous) {
-		return get(new IndirectSend(msg, synchronous, target, operand, operands));
-	}
-
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
 			int target, int operand, Collection<Integer> operands) {
 		return get(new IndirectInvoke(fun, target, operand,
@@ -461,25 +450,6 @@ public abstract class Code {
 
 	private static SubString SubString(int target, int[] operands) {
 		return get(new SubString(target, operands));
-	}
-
-	/**
-	 * Construct an <code>send</code> bytecode which sends a message to an
-	 * actor. This may be either synchronous or asynchronous.
-	 * 
-	 * @param label
-	 *            --- destination label.
-	 * @return
-	 */
-	public static Send Send(Type.Message meth, int target,
-			Collection<Integer> operands, NameID name, boolean synchronous) {
-		return get(new Send(meth, target, toIntArray(operands), name,
-				synchronous));
-	}
-
-	public static Send Send(Type.Message meth, int target, int[] operands,
-			NameID name, boolean synchronous) {
-		return get(new Send(meth, target, operands, name, synchronous));
 	}
 
 	/**
@@ -2023,56 +1993,6 @@ public abstract class Code {
 			} else {
 				return "indirectinvoke " + operand + " = " + toString(operands)
 						+ " : " + type;
-			}
-		}
-	}
-
-	/**
-	 * Represents an indirect message send (either synchronous or asynchronous).
-	 * For example, consider the following:
-	 * 
-	 * <pre>
-	 * int ::method(Rec::int(int) m, Rec r, int x):
-	 *    return r.m(x)
-	 * </pre>
-	 * 
-	 * Here, the message send <code>r.m(x)</code> is indirect as the message
-	 * sent is determined by the variable <code>m</code>.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class IndirectSend extends
-			AbstractSplitNaryAssignable<Type.Message> {
-		public final boolean synchronous;
-
-		private IndirectSend(Type.Message type, boolean synchronous,
-				int target, int operand, int[] operands) {
-			super(type, target, operand, operands);
-			this.synchronous = synchronous;
-		}
-
-		@Override
-		public Code clone(int nTarget, int nOperand, int[] nOperands) {
-			return IndirectSend(type, nTarget, nOperand, nOperands, synchronous);
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof IndirectSend && super.equals(o);
-		}
-
-		public String toString() {
-			if (synchronous) {
-				if (target != Code.NULL_REG) {
-					return "isend " + target + " " + operand + " "
-							+ toString(operands) + " : " + type;
-				} else {
-					return "ivsend" + operand + " " + toString(operands)
-							+ " : " + type;
-				}
-			} else {
-				return "iasend" + operand + " " + toString(operands) + " : "
-						+ type;
 			}
 		}
 	}
@@ -3652,45 +3572,6 @@ public abstract class Code {
 			return this;
 		}
 
-	}
-
-	public static final class Send extends AbstractNaryAssignable<Type.Message> {
-		public final boolean synchronous;
-		public final NameID name;
-
-		private Send(Type.Message type, int target, int[] operands,
-				NameID name, boolean synchronous) {
-			super(type, target, operands);
-			this.name = name;
-			this.synchronous = synchronous;
-		}
-
-		@Override
-		public Code clone(int nTarget, int[] nOperands) {
-			return Send(type, nTarget, nOperands, name, synchronous);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Send) {
-				Send i = (Send) o;
-				return synchronous == i.synchronous && type.equals(i.type)
-						&& name.equals(i.name) && super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			if (synchronous) {
-				if (target != Code.NULL_REG) {
-					return "send %" + target + " = " + toString(operands) + " : "
-							+ type;
-				} else {
-					return "vsend" + toString(operands) + " : " + type;
-				}
-			} else {
-				return "asend" + toString(operands) + " : " + type;
-			}
-		}
 	}
 
 	/**

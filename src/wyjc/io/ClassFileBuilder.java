@@ -320,16 +320,8 @@ public class ClassFileBuilder {
 	public ArrayList<Bytecode> translateNativeOrExport(WyilFile.Method method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		Type.FunctionOrMethodOrMessage ft = method.type();
+		Type.FunctionOrMethod ft = method.type();
 		int slot = 0;
-		// first, check to see if need to load receiver
-		if (ft instanceof Type.Message) {
-			Type.Message mt = (Type.Message) ft;
-			if (mt.receiver() != null) {
-				bytecodes.add(new Bytecode.Load(slot++, convertType(mt
-						.receiver())));
-			}
-		}
 
 		for (Type param : ft.params()) {
 			bytecodes.add(new Bytecode.Load(slot++, convertType(param)));
@@ -444,8 +436,6 @@ public class ClassFileBuilder {
 				translate((Code.IfIs) code, entry, freeSlot, constants, bytecodes);
 			} else if(code instanceof Code.IndirectInvoke) {
 				 translate((Code.IndirectInvoke)code,freeSlot,bytecodes);
-			} else if(code instanceof Code.IndirectSend) {
-				 translate((Code.IndirectSend)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Invoke) {
 				 translate((Code.Invoke)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Invert) {
@@ -486,8 +476,6 @@ public class ClassFileBuilder {
 				 translate((Code.Return)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.Nop) {
 				// do nothing
-			} else if(code instanceof Code.Send) {
-				 translate((Code.Send)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.BinSetOp) {
 				 translate((Code.BinSetOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.StringOp) {
@@ -1601,7 +1589,7 @@ public class ClassFileBuilder {
 	public void translate(Code.IndirectInvoke c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 		
-		Type.FunctionOrMethodOrMessage ft = c.type;		
+		Type.FunctionOrMethod ft = c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 
 		bytecodes.add(new Bytecode.Load(c.operand,JAVA_LANG_REFLECT_METHOD));
@@ -1636,109 +1624,6 @@ public class ClassFileBuilder {
 		}
 	}
 
-	public void translate(Code.Send c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		
-		bytecodes.add(new Bytecode.Load(c.operands[0],convertType(c.type.receiver())));
-		
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,
-				JAVA_LANG_STRING, JAVA_LANG_STRING);
-		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString().replace('/','.')));		
-		bytecodes
-				.add(new Bytecode.LoadConst(nameMangle(c.name.name(), c.type)));
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
-				Bytecode.STATIC));
-		
-		Type.Message ft = c.type;
-				
-		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
-		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
-		bytecodes.add(new Bytecode.New(arrT));		
-		
-		// first, peal parameters off stack in reverse order
-		
-		List<Type> params = ft.params();
-		for(int i=1;i!=c.operands.length;++i) {
-			Type pt = params.get(i-1);
-			bytecodes.add(new Bytecode.Dup(arrT));					
-			bytecodes.add(new Bytecode.LoadConst(i));		
-			bytecodes.add(new Bytecode.Load(c.operands[i],convertType(pt)));
-			addWriteConversion(pt,bytecodes);
-			bytecodes.add(new Bytecode.ArrayStore(arrT));			
-		}
-		
-		// finally, setup the stack for the send	
-		if (c.synchronous && c.target != Code.NULL_REG) {			
-			ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,
-					Bytecode.VIRTUAL));
-			addReadConversion(c.type.ret(), bytecodes);
-			bytecodes.add(new Bytecode.Store(c.target,
-					convertType(c.type.ret())));
-		} else if (c.synchronous) {			
-			ftype = new JvmType.Function(T_VOID,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "vSyncSend", ftype,
-					Bytecode.VIRTUAL));
-		} else {
-			ftype = new JvmType.Function(T_VOID,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend",
-					ftype, Bytecode.VIRTUAL));
-		} 
-	}
-	
-	public void translate(Code.IndirectSend c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		// The main issue here, is that we have all of the parameters + receiver
-		// on the stack. What we need to do is to put them into an array, so
-		// they can then be passed into Method.invoke()
-		//
-		// To make this work, what we'll do is use a temporary register to hold
-		// the array as we build it up.
-
-		Type.Message ft = c.type;		
-		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
-		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
-		bytecodes.add(new Bytecode.New(arrT));
-		bytecodes.add(new Bytecode.Store(freeSlot,arrT));
-		
-		// first, peal parameters off stack in reverse order
-		
-		List<Type> params = ft.params();
-		for(int i=params.size()-1;i>=0;--i) {
-			Type pt = params.get(i);
-			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
-			bytecodes.add(new Bytecode.Swap());
-			bytecodes.add(new Bytecode.LoadConst(i+1));
-			bytecodes.add(new Bytecode.Swap());			
-			addWriteConversion(pt,bytecodes);
-			bytecodes.add(new Bytecode.ArrayStore(arrT));			
-		}
-		bytecodes.add(new Bytecode.Swap());
-		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
-							
-		if (c.synchronous && c.target >= 0) {			
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,
-					Bytecode.VIRTUAL));
-			addReadConversion(c.type.ret(), bytecodes);
-		} else if (c.synchronous) {			
-			JvmType.Function ftype = new JvmType.Function(T_VOID,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "vSyncSend", ftype,
-					Bytecode.VIRTUAL));
-		} else {
-			JvmType.Function ftype = new JvmType.Function(T_VOID,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend",
-					ftype, Bytecode.VIRTUAL));
-		} 
-
-	}
-		
 	public void translate(Value v, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		if(v instanceof Value.Null) {
@@ -1767,8 +1652,8 @@ public class ClassFileBuilder {
 			translate((Value.Map)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Tuple) {
 			translate((Value.Tuple)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.FunctionOrMethodOrMessage) {
-			translate((Value.FunctionOrMethodOrMessage)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.FunctionOrMethod) {
+			translate((Value.FunctionOrMethod)v,freeSlot,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
@@ -2040,7 +1925,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void translate(Value.FunctionOrMethodOrMessage e, int freeSlot,
+	protected void translate(Value.FunctionOrMethod e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		
@@ -2770,14 +2655,8 @@ public class ClassFileBuilder {
 	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang","AssertionError");
 	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util","Collection");	
 	
-	public JvmType.Function convertFunType(Type.FunctionOrMethodOrMessage ft) {		
+	public JvmType.Function convertFunType(Type.FunctionOrMethod ft) {		
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		if(ft instanceof Type.Message) {
-			Type.Message mt = (Type.Message)ft; 
-			if(mt.receiver() != null) {
-				paramTypes.add(convertType(mt.receiver()));
-			}
-		}
 		for(Type pt : ft.params()) {
 			paramTypes.add(convertType(pt));
 		}
@@ -2825,7 +2704,7 @@ public class ClassFileBuilder {
 			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
-		} else if(t instanceof Type.FunctionOrMethodOrMessage) {						
+		} else if(t instanceof Type.FunctionOrMethod) {						
 			return JAVA_LANG_REFLECT_METHOD;
 		}else {
 			throw new RuntimeException("unknown type encountered: " + t);
@@ -2837,7 +2716,7 @@ public class ClassFileBuilder {
 		return "cfblab" + label++;
 	}	
 	
-	public static String nameMangle(String name, Type.FunctionOrMethodOrMessage ft) {				
+	public static String nameMangle(String name, Type.FunctionOrMethod ft) {				
 		try {			
 			return name + "$" + typeMangle(ft);
 		} catch(IOException e) {
@@ -2845,7 +2724,7 @@ public class ClassFileBuilder {
 		}
 	}
 		
-	public static String typeMangle(Type.FunctionOrMethodOrMessage ft) throws IOException {		
+	public static String typeMangle(Type.FunctionOrMethod ft) throws IOException {		
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
 		Type.BinaryWriter tm = new Type.BinaryWriter(binout);
