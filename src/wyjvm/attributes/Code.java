@@ -120,14 +120,8 @@ public class Code implements BytecodeAttribute {
 	public int maxStack() {
 		// This algorithm computes a conservative over approximation. In
 		// theory, we can do better, but there's little need to.
-		int max = 0;
-		int current = 0;
-		int idx = 0;
-		HashMap<Integer,Integer> starts = new HashMap<Integer,Integer>();
-		for(Handler h : handlers) {
-			starts.put(h.start,1);
-		}
 		
+		int idx = 0;		
 		HashMap<String,Integer> labels = new HashMap<String,Integer>();
 		for(Bytecode b : bytecodes) {
 			if(b instanceof Bytecode.Label) {
@@ -137,7 +131,15 @@ public class Code implements BytecodeAttribute {
 			idx = idx + 1;
 		}
 		
+		HashMap<Integer,Integer> starts = new HashMap<Integer,Integer>();
+		for(Handler h : handlers) {
+			starts.put(labels.get(h.label),1);
+		}
+		
 		idx = 0;
+		int max = 0;
+		int current = 0;
+				
 		for(Bytecode b : bytecodes) {
 			if(starts.containsKey(idx)) {
 				// This bytecode is the first of an exception handler. Such
@@ -155,6 +157,8 @@ public class Code implements BytecodeAttribute {
 				if(!starts.containsKey(offset)) {
 					starts.put(offset, current);
 				}
+				current = 0;
+			} if(b instanceof Bytecode.Throw) {
 				current = 0;
 			} else if(b instanceof Bytecode.If) {
 				Bytecode.If gto = (Bytecode.If) b;
@@ -178,6 +182,7 @@ public class Code implements BytecodeAttribute {
 			
 			idx = idx + 1;
 		}
+		
 		return max;
 	}
 
