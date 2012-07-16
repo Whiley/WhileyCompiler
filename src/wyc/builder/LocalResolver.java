@@ -752,41 +752,18 @@ public abstract class LocalResolver extends AbstractResolver {
 				// In this case, we definitely have an object type. 
 				checkIsSubtype(Type.T_REF_ANY,expr.qualification,context);
 				Type.Reference procType = (Type.Reference) expr.qualification.result().raw(); 						
-
-				// ok, it's a message send (possibly indirect)
-				Nominal type = environment.get(expr.name);
-				Nominal.Message msgType = type != null ? expandAsMessage(type) : null;
 				
-				// FIXME: bad idea to use instanceof Nominal.Message here
-				if(msgType != null) {
-					// ok, matching local variable of message type.
-					List<Nominal> funTypeParams = msgType.params();
-					// FIXME: is this broken since should be equivalent, not subtype?
-					checkIsSubtype(msgType.receiver(),expr.qualification,context);
-					if(paramTypes.size() != funTypeParams.size()) {
-						syntaxError("insufficient arguments to message send",context,expr);
-					}
-					for (int i = 0; i != funTypeParams.size(); ++i) {
-						Nominal fpt = funTypeParams.get(i);
-						checkIsSubtype(fpt, paramTypes.get(i), exprArgs.get(i),context);
-					}
-					
-					Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
-					lv.type = type;								
-					Expr.IndirectMessageSend nexpr = new Expr.IndirectMessageSend(
-							lv, expr.qualification, expr.arguments,
-							expr.synchronous, expr.attributes());
-					nexpr.messageType = msgType; 
-					return nexpr;					
-				} else {
-
-					Pair<NameID, Nominal.Message> p = resolveAsMessage(expr.name, procType, paramTypes,
-									context);				
-					Expr.MessageSend r = new Expr.MessageSend(p.first(), receiver,
-							exprArgs, expr.synchronous, expr.attributes());			
-					r.messageType = p.second();
-					return r;
-				}
+				exprArgs.add(0,receiver);
+				paramTypes.add(0,receiver.result());
+				
+				Pair<NameID, Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(
+						expr.name, paramTypes, context);
+				
+				// TODO: problem if not Nominal.Method!
+				
+				Expr.MethodCall r = new Expr.MethodCall(p.first(), null,
+						exprArgs, expr.attributes());
+				return r;
 			}
 		} else {
 

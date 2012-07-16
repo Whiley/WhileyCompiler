@@ -173,18 +173,22 @@ public final class WhileyParser {
 		int start = index;		
 		UnresolvedType ret = parseType();				
 		// FIXME: potential bug here at end of file		
-		UnresolvedType receiver = null;
 		boolean method = false;
-		boolean message = false;	
 		
-		if(tokens.get(index) instanceof ColonColon) {
+		List<Parameter> paramTypes = new ArrayList();
+		HashSet<String> paramNames = new HashSet<String>();
+		
+		if (tokens.get(index) instanceof ColonColon) {
 			// headless method
 			method = true;
 			match(ColonColon.class);
-		} else if(tokens.get(index+1) instanceof ColonColon) {
-			message = true;
-			receiver = parseType();			
-			match(ColonColon.class);							
+		} else if (tokens.get(index + 1) instanceof ColonColon) {
+			method = true;
+			int pstart = index;
+			UnresolvedType t = parseType();
+			match(ColonColon.class);
+			paramTypes.add(wf.new Parameter(t, "this", sourceAttr(pstart,
+					index - 1)));
 		}
 		
 		Identifier name = matchIdentifier();						
@@ -192,9 +196,9 @@ public final class WhileyParser {
 		match(LeftBrace.class);		
 		
 		// Now build up the parameter types
-		List<Parameter> paramTypes = new ArrayList();
-		HashSet<String> paramNames = new HashSet<String>();
+
 		boolean firstTime=true;		
+
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightBrace)) {
 			if (!firstTime) {
@@ -224,11 +228,7 @@ public final class WhileyParser {
 		
 		List<Stmt> stmts = parseBlock(1);
 		Declaration declaration;
-		if(message) {
-			declaration = wf.new Message(modifiers, name.text, receiver, ret, paramTypes,
-					conditions.first(), conditions.second(), throwType, stmts,
-					sourceAttr(start, end - 1));
-		} else if(method) {
+		if(method) {
 			declaration = wf.new Method(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
@@ -1411,7 +1411,7 @@ public final class WhileyParser {
 			}
 			match(RightBrace.class);
 		}
-		return new Expr.AbstractFunctionOrMethodOrMessage(funName, paramTypes, sourceAttr(start, index - 1));			
+		return new Expr.AbstractFunctionOrMethod(funName, paramTypes, sourceAttr(start, index - 1));			
 	}
 
 	private Expr.New parseNew() {
@@ -1735,15 +1735,11 @@ public final class WhileyParser {
 				types.add(parseType());
 			}
 			match(RightBrace.class);
-			UnresolvedType receiver = null;
 			if (index < tokens.size() && (tokens.get(index) instanceof ColonColon)) {				
 				// this indicates a method type								
 				if(types.size() != 1) {
 					syntaxError("receiver type required for method type",tokens.get(index));
-				} else {
-					receiver = types.get(0);
-					types.clear();
-				}
+				} 
 				match(ColonColon.class);
 				match(LeftBrace.class);
 				firstTime = true;
@@ -1757,11 +1753,8 @@ public final class WhileyParser {
 				}
 				match(RightBrace.class);
 			}
-			if(receiver == null) {
-				return new UnresolvedType.Function(t, null, types, sourceAttr(start, index - 1));
-			} else {
-				return new UnresolvedType.Message(receiver, t, null, types, sourceAttr(start, index - 1));
-			}
+			
+			return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
 		} else {
 			return t;
 		}
