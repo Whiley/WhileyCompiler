@@ -77,7 +77,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}	
 	
 	@Override
-	public WyilFile.TypeDef propagate(WyilFile.TypeDef type) {		
+	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}

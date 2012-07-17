@@ -110,26 +110,26 @@ public class VerificationCheck implements Transform {
 	public void apply(WyilFile module) {
 		if(enabled) {
 			this.filename = module.filename();
-			for(WyilFile.TypeDef type : module.types()) {
+			for(WyilFile.TypeDeclaration type : module.types()) {
 				transform(type);
 			}		
-			for(WyilFile.Method method : module.methods()) {
+			for(WyilFile.MethodDeclaration method : module.methods()) {
 				transform(method);
 			}		
 		}
 	}
 	
-	protected void transform(WyilFile.TypeDef def) {
+	protected void transform(WyilFile.TypeDeclaration def) {
 		
 	}
 	
-	protected void transform(WyilFile.Method method) {		
+	protected void transform(WyilFile.MethodDeclaration method) {		
 		for(WyilFile.Case c : method.cases()) {
 			transform(c,method);
 		}
 	}
 	
-	protected void transform(WyilFile.Case methodCase, WyilFile.Method method) {
+	protected void transform(WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
 		WFormula constraint = WBool.TRUE;					
 				
 		// add type information available from parameters
@@ -791,7 +791,7 @@ public class VerificationCheck implements Transform {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.Method method = m.method(name.name(), fun);
+		WyilFile.MethodDeclaration method = m.method(name.name(), fun);
 
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now

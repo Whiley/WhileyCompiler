@@ -118,23 +118,23 @@ public final class WyilFile {
 		HashSet<String> constants = new HashSet<String>();
 		
 		for (Declaration d : declarations) {
-			if(d instanceof Method) {
-				Method m = (Method) d;
+			if(d instanceof MethodDeclaration) {
+				MethodDeclaration m = (MethodDeclaration) d;
 				Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());				
 				if (methods.contains(p)) {
 					throw new IllegalArgumentException(
 							"Multiple function or method definitions with the same name and type not permitted");
 				}
 				methods.add(p);	
-			} else if(d instanceof TypeDef) {
-				TypeDef t = (TypeDef) d;
+			} else if(d instanceof TypeDeclaration) {
+				TypeDeclaration t = (TypeDeclaration) d;
 				if (types.contains(t.name())) {
 					throw new IllegalArgumentException(
 							"Multiple type definitions with the same name not permitted");
 				}
 				types.add(t.name());
-			} else if (d instanceof ConstDef) {
-				ConstDef c = (ConstDef) d;				
+			} else if (d instanceof ConstantDeclaration) {
+				ConstantDeclaration c = (ConstantDeclaration) d;				
 				if (constants.contains(c.name())) {
 					throw new IllegalArgumentException(
 							"Multiple constant definitions with the same name not permitted");
@@ -156,10 +156,10 @@ public final class WyilFile {
 		return filename;
 	}
 	
-	public TypeDef type(String name) {
+	public TypeDeclaration type(String name) {
 		for (Declaration d : declarations) {
-			if(d instanceof TypeDef) {
-				TypeDef td = (TypeDef) d;
+			if(d instanceof TypeDeclaration) {
+				TypeDeclaration td = (TypeDeclaration) d;
 				if(td.name().equals(name)) {
 					return td;
 				}					
@@ -168,20 +168,20 @@ public final class WyilFile {
 		return null;		
 	}
 	
-	public Collection<WyilFile.TypeDef> types() {
-		ArrayList<TypeDef> r = new ArrayList<TypeDef>();
+	public Collection<WyilFile.TypeDeclaration> types() {
+		ArrayList<TypeDeclaration> r = new ArrayList<TypeDeclaration>();
 		for (Declaration d : declarations) {
-			if(d instanceof TypeDef) {
-				r.add((TypeDef)d);
+			if(d instanceof TypeDeclaration) {
+				r.add((TypeDeclaration)d);
 			}
 		}
 		return r;
 	}
 	
-	public ConstDef constant(String name) {
+	public ConstantDeclaration constant(String name) {
 		for (Declaration d : declarations) {
-			if(d instanceof ConstDef) {
-				ConstDef cd = (ConstDef) d;
+			if(d instanceof ConstantDeclaration) {
+				ConstantDeclaration cd = (ConstantDeclaration) d;
 				if(cd.name().equals(name)) {
 					return cd;
 				}					
@@ -190,21 +190,21 @@ public final class WyilFile {
 		return null;
 	}
 	
-	public Collection<WyilFile.ConstDef> constants() {
-		ArrayList<ConstDef> r = new ArrayList<ConstDef>();
+	public Collection<WyilFile.ConstantDeclaration> constants() {
+		ArrayList<ConstantDeclaration> r = new ArrayList<ConstantDeclaration>();
 		for (Declaration d : declarations) {
-			if(d instanceof ConstDef) {
-				r.add((ConstDef)d);
+			if(d instanceof ConstantDeclaration) {
+				r.add((ConstantDeclaration)d);
 			}
 		}
 		return r;		
 	}
 	
-	public List<Method> method(String name) {
-		ArrayList<Method> r = new ArrayList<Method>();
+	public List<MethodDeclaration> method(String name) {
+		ArrayList<MethodDeclaration> r = new ArrayList<MethodDeclaration>();
 		for (Declaration d : declarations) {
-			if (d instanceof Method) {
-				Method m = (Method) d;
+			if (d instanceof MethodDeclaration) {
+				MethodDeclaration m = (MethodDeclaration) d;
 				if (m.name().equals(name)) {
 					r.add(m);
 				}
@@ -213,10 +213,10 @@ public final class WyilFile {
 		return r;
 	}
 	
-	public Method method(String name, Type.FunctionOrMethod ft) {
+	public MethodDeclaration method(String name, Type.FunctionOrMethod ft) {
 		for (Declaration d : declarations) {
-			if (d instanceof Method) {
-				Method md = (Method) d;
+			if (d instanceof MethodDeclaration) {
+				MethodDeclaration md = (MethodDeclaration) d;
 				if (md.name().equals(name) && md.type().equals(ft)) {
 					return md;
 				}
@@ -225,11 +225,11 @@ public final class WyilFile {
 		return null;
 	}
 	
-	public Collection<WyilFile.Method> methods() {
-		ArrayList<Method> r = new ArrayList<Method>();
+	public Collection<WyilFile.MethodDeclaration> methods() {
+		ArrayList<MethodDeclaration> r = new ArrayList<MethodDeclaration>();
 		for (Declaration d : declarations) {
-			if(d instanceof Method) {
-				r.add((Method)d);
+			if(d instanceof MethodDeclaration) {
+				r.add((MethodDeclaration)d);
 			}
 		}
 		return r;
@@ -295,12 +295,12 @@ public final class WyilFile {
 		}
 	}
 	
-	public static final class TypeDef extends NamedDeclaration {
+	public static final class TypeDeclaration extends NamedDeclaration {
 		private List<Modifier> modifiers;		
 		private Type type;		
 		private Block constraint;
 
-		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
 				Block constraint, Attribute... attributes) {
 			super(name,attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);			
@@ -308,7 +308,7 @@ public final class WyilFile {
 			this.constraint = constraint;
 		}
 
-		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
 				Block constraint, Collection<Attribute> attributes) {
 			super(name,attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);			
@@ -337,17 +337,17 @@ public final class WyilFile {
 		}
 	}
 	
-	public static final class ConstDef extends NamedDeclaration {
+	public static final class ConstantDeclaration extends NamedDeclaration {
 		private List<Modifier> modifiers;			
 		private Value constant;
 		
-		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Attribute... attributes) {
+		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Value constant,  Attribute... attributes) {
 			super(name,attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.constant = constant;
 		}
 		
-		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Collection<Attribute> attributes) {
+		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Value constant,  Collection<Attribute> attributes) {
 			super(name,attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.constant = constant;
@@ -370,12 +370,12 @@ public final class WyilFile {
 		}
 	}
 		
-	public static final class Method extends NamedDeclaration {
+	public static final class MethodDeclaration extends NamedDeclaration {
 		private List<Modifier> modifiers;
 		private Type.FunctionOrMethod type;		
 		private List<Case> cases;		
 				
-		public Method(Collection<Modifier> modifiers, String name,
+		public MethodDeclaration(Collection<Modifier> modifiers, String name,
 				Type.FunctionOrMethod type, Collection<Case> cases,
 				Attribute... attributes) {
 			super(name,attributes);
@@ -385,7 +385,7 @@ public final class WyilFile {
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
-		public Method(Collection<Modifier> modifiers, String name,
+		public MethodDeclaration(Collection<Modifier> modifiers, String name,
 				Type.FunctionOrMethod type, Collection<Case> cases,
 				Collection<Attribute> attributes) {
 			super(name,attributes);

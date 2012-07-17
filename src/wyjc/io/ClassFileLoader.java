@@ -114,7 +114,7 @@ public class ClassFileLoader implements ModuleReader {
 						}
 					}
 					// TODO: generate proper modifiers
-					WyilFile.ConstDef ci = new WyilFile.ConstDef(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
+					WyilFile.ConstantDeclaration ci = new WyilFile.ConstantDeclaration(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
 					declarations.add(ci);
 				} else {
 					// type definition
@@ -126,7 +126,7 @@ public class ClassFileLoader implements ModuleReader {
 						}
 					}
 					// TODO: generate proper modifiers
-					WyilFile.TypeDef ti = new WyilFile.TypeDef(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
+					WyilFile.TypeDeclaration ti = new WyilFile.TypeDeclaration(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
 					declarations.add(ti);
 				}
 			}
@@ -135,7 +135,7 @@ public class ClassFileLoader implements ModuleReader {
 		return new WyilFile(mid, cf.name(), declarations);
 	}
 	
-	protected WyilFile.Method createMethodInfo(Path.ID mid, ClassFile.Method cm) {
+	protected WyilFile.MethodDeclaration createMethodInfo(Path.ID mid, ClassFile.Method cm) {
 		// string any mangling off.
 		try {			
 			int split = cm.name().indexOf('$');
@@ -164,7 +164,7 @@ public class ClassFileLoader implements ModuleReader {
 			// TODO: fix this problem here related to locals
 			mcases.add(new WyilFile.Case(null, null, null, Collections.EMPTY_LIST, attrs));
 			// TODO: generate proper modifiers
-			return new WyilFile.Method(modifiers(cm),name, type, mcases);
+			return new WyilFile.MethodDeclaration(modifiers(cm),name, type, mcases);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

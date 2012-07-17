@@ -83,18 +83,18 @@ public class CoercionCheck implements Transform {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(WyilFile.Method method : module.methods()) {
+		for(WyilFile.MethodDeclaration method : module.methods()) {
 			check(method);
 		}
 	}
 		
-	public void check(WyilFile.Method method) {				
+	public void check(WyilFile.MethodDeclaration method) {				
 		for (WyilFile.Case c : method.cases()) {
 			check(c.body(), method);
 		}		
 	}
 	
-	protected void check(Block block, WyilFile.Method method) {
+	protected void check(Block block, WyilFile.MethodDeclaration method) {
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;

@@ -122,12 +122,12 @@ public final class CodeGeneration {
 		return new WyilFile(wf.module, wf.filename, declarations);				
 	}
 
-	private WyilFile.ConstDef generate(Constant cd) {
+	private WyilFile.ConstantDeclaration generate(Constant cd) {
 		// TODO: this the point where were should an evaluator
-		return new WyilFile.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
+		return new WyilFile.ConstantDeclaration(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private WyilFile.TypeDef generate(TypeDef td) throws Exception {		
+	private WyilFile.TypeDeclaration generate(TypeDef td) throws Exception {		
 		Block constraint = null;
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
@@ -135,10 +135,10 @@ public final class CodeGeneration {
 			constraint = globalGenerator.generate(nid);			
 		}
 		
-		return new WyilFile.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
+		return new WyilFile.TypeDeclaration(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private WyilFile.Method generate(FunctionOrMethod fd) throws Exception {		
+	private WyilFile.MethodDeclaration generate(FunctionOrMethod fd) throws Exception {		
 		localGenerator = new LocalGenerator(globalGenerator,fd);	
 		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -230,10 +230,10 @@ public final class CodeGeneration {
 		
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			return new WyilFile.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
+			return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+			return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
 		} 		
 	}
 

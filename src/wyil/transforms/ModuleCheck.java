@@ -66,12 +66,12 @@ public class ModuleCheck implements Transform {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(WyilFile.Method method : module.methods()) {
+		for(WyilFile.MethodDeclaration method : module.methods()) {
 			check(method);
 		}
 	}
 		
-	public void check(WyilFile.Method method) {		
+	public void check(WyilFile.MethodDeclaration method) {		
 		for (WyilFile.Case c : method.cases()) {
 			checkTryCatchBlocks(c, method);
 			if(method.isFunction()) {
@@ -80,7 +80,7 @@ public class ModuleCheck implements Transform {
 		}		
 	}
 	
-	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.Method m) {
+	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.MethodDeclaration m) {
 		HashMap<String,Block.Entry> labelMap = new HashMap<String,Block.Entry>();
 		for (Block.Entry b : c.body()) {
 			if(b.code instanceof Code.Label) {

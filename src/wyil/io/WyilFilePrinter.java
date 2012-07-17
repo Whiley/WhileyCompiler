@@ -97,14 +97,14 @@ public final class WyilFilePrinter implements Transform {
 		//out.println("module: " + module.id());
 		out.println("source-file: " + module.filename());
 		out.println();
-		for(ConstDef cd : module.constants()) {
+		for(ConstantDeclaration cd : module.constants()) {
 			writeModifiers(cd.modifiers(),out);
 			out.println("define " + cd.name() + " as " + cd.constant());
 		}
 		if(!module.constants().isEmpty()) {
 			out.println();
 		}
-		for(TypeDef td : module.types()) {
+		for(TypeDeclaration td : module.types()) {
 			Type t = td.type();			
 			String t_str;			
 			t_str = t.toString();
@@ -127,20 +127,20 @@ public final class WyilFilePrinter implements Transform {
 		if(!module.types().isEmpty()) {
 			out.println();
 		}		
-		for(Method md : module.methods()) {
+		for(MethodDeclaration md : module.methods()) {
 			write(md,out);
 			out.println();
 		}
 		out.flush();		
 	}
 	
-	private void write(Method method, PrintWriter out) {
+	private void write(MethodDeclaration method, PrintWriter out) {
 		for (Case c : method.cases()) {
 			write(c, method, out);
 		}
 	}
 	
-	private void write(Case mcase, Method method, PrintWriter out) {
+	private void write(Case mcase, MethodDeclaration method, PrintWriter out) {
 		writeModifiers(method.modifiers(),out);
 		Type.FunctionOrMethod ft = method.type(); 
 		out.print(ft.ret() + " ");

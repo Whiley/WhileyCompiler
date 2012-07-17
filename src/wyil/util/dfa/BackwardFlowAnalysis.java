@@ -42,7 +42,7 @@ import wyil.util.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected String filename;
-	protected WyilFile.Method method;
+	protected WyilFile.MethodDeclaration method;
 	protected WyilFile.Case methodCase;
 	protected HashMap<String,T> stores;
 	
@@ -50,14 +50,14 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		filename = module.filename();
 		
 		for(WyilFile.Declaration d : module.declarations()) {
-			if(d instanceof WyilFile.ConstDef) {
-				WyilFile.ConstDef cd = (WyilFile.ConstDef) d; 
+			if(d instanceof WyilFile.ConstantDeclaration) {
+				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d; 
 				module.replace(cd,propagate((cd)));
-			} else if(d instanceof WyilFile.TypeDef) {
-				WyilFile.TypeDef td = (WyilFile.TypeDef) d;
+			} else if(d instanceof WyilFile.TypeDeclaration) {
+				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
 				module.replace(td,propagate(td));	
-			} else if(d instanceof WyilFile.Method) {
-				WyilFile.Method md = (WyilFile.Method) d;
+			} else if(d instanceof WyilFile.MethodDeclaration) {
+				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
 				if(!md.isNative()) {
 					// native functions/methods don't have bodies
 					module.replace(md,propagate(md));
@@ -66,20 +66,20 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		}				
 	}
 	
-	protected WyilFile.ConstDef propagate(WyilFile.ConstDef constant) {
+	protected WyilFile.ConstantDeclaration propagate(WyilFile.ConstantDeclaration constant) {
 		return constant;
 	}
-	protected WyilFile.TypeDef propagate(WyilFile.TypeDef type) {
+	protected WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
 		return type;
 	}
 	
-	protected WyilFile.Method propagate(WyilFile.Method method) {
+	protected WyilFile.MethodDeclaration propagate(WyilFile.MethodDeclaration method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {

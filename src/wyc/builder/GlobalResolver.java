@@ -435,7 +435,7 @@ public class GlobalResolver extends LocalResolver {
 			// FIXME: need to properly support unconstrained types here
 			
 			WyilFile mi = builder.getModule(key.module());
-			WyilFile.TypeDef td = mi.type(key.name());	
+			WyilFile.TypeDeclaration td = mi.type(key.name());	
 			return append(td.type(),states);			
 		} 
 		
@@ -589,7 +589,7 @@ public class GlobalResolver extends LocalResolver {
 			}
 		} else {		
 			WyilFile module = builder.getModule(key.module());
-			WyilFile.ConstDef cd = module.constant(key.name());
+			WyilFile.ConstantDeclaration cd = module.constant(key.name());
 			if(cd != null) {
 				result = cd.constant();
 			} else {

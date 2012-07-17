@@ -70,7 +70,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		this.enabled = flag;
 	}
 		
-	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
+	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
 		// TODO: propagate constants through type constraints
 		return type;		
 	}

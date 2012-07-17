@@ -65,6 +65,17 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	private void buildPools(WyilFile module) {
+		addPoolItem(module.id());
+		for(WyilFile.Declaration d : module.declarations()) {
+			buildPools(d);
+		}
+	}
+	
+	private void buildPools(WyilFile.Declaration declaration) {
+		
+	}
+	
+	public void addPoolItem(Path.ID pid) {
 		
 	}
 	

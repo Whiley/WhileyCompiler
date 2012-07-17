@@ -189,7 +189,7 @@ public abstract class AbstractResolver<T extends Exception> {
 				} 
 			} else {
 				WyilFile m = builder.getModule(mid);
-				WyilFile.TypeDef td = m.type(nid.name());
+				WyilFile.TypeDeclaration td = m.type(nid.name());
 				if(td != null) {
 					r = td.type();
 				}

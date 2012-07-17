@@ -81,7 +81,7 @@ public class ClassFileBuilder {
 		
 		boolean addMainLauncher = false;		
 				
-		for(WyilFile.ConstDef cd : module.constants()) {	
+		for(WyilFile.ConstantDeclaration cd : module.constants()) {	
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : cd.attributes()) {
@@ -93,7 +93,7 @@ public class ClassFileBuilder {
 			cf.attributes().add(wd);
 		}
 		
-		for(WyilFile.TypeDef td : module.types()) {
+		for(WyilFile.TypeDeclaration td : module.types()) {
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 			for(Attribute a : td.attributes()) {
@@ -107,7 +107,7 @@ public class ClassFileBuilder {
 		}
 		
 		HashMap<Constant,Integer> constants = new HashMap<Constant,Integer>();
-		for(WyilFile.Method method : module.methods()) {				
+		for(WyilFile.MethodDeclaration method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			
@@ -229,7 +229,7 @@ public class ClassFileBuilder {
 		return cm;	
 	}
 	
-	public List<ClassFile.Method> build(WyilFile.Method method,
+	public List<ClassFile.Method> build(WyilFile.MethodDeclaration method,
 			HashMap<Constant, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
@@ -247,7 +247,7 @@ public class ClassFileBuilder {
 	}
 	
 	public ClassFile.Method build(int caseNum, WyilFile.Case mcase,
-			WyilFile.Method method, HashMap<Constant,Integer> constants) {		
+			WyilFile.MethodDeclaration method, HashMap<Constant,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -286,7 +286,7 @@ public class ClassFileBuilder {
 	}
 	
 	public ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
-			WyilFile.Method method, HashMap<Constant,Integer> constants) {
+			WyilFile.MethodDeclaration method, HashMap<Constant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic() || method.isProtected()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
@@ -317,7 +317,7 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translateNativeOrExport(WyilFile.Method method) {
+	public ArrayList<Bytecode> translateNativeOrExport(WyilFile.MethodDeclaration method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.FunctionOrMethod ft = method.type();

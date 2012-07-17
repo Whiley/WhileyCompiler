@@ -95,7 +95,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	}
 	
 	@Override
-	protected WyilFile.TypeDef propagate(WyilFile.TypeDef type) {		
+	protected WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {		
 		// TODO: back propagate through type constraints
 		return type;		
 	}

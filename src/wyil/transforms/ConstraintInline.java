@@ -68,11 +68,11 @@ public class ConstraintInline implements Transform {
 		this.filename = module.filename();
 		
 		for(WyilFile.Declaration d : module.declarations()) {
-			if(d instanceof WyilFile.TypeDef) {
-				WyilFile.TypeDef td = (WyilFile.TypeDef) d;
+			if(d instanceof WyilFile.TypeDeclaration) {
+				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
 				module.replace(td,transform(td));	
-			} else if(d instanceof WyilFile.Method) {
-				WyilFile.Method md = (WyilFile.Method) d;
+			} else if(d instanceof WyilFile.MethodDeclaration) {
+				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
 				if(!md.isNative()) {
 					// native functions/methods don't have bodies
 					module.replace(md,transform(md));
@@ -81,7 +81,7 @@ public class ConstraintInline implements Transform {
 		}			
 	}
 	
-	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
+	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
 		Block constraint = type.constraint();
 		
 		if (constraint != null) {
@@ -98,19 +98,19 @@ public class ConstraintInline implements Transform {
 			constraint = nconstraint;
 		}
 		
-		return new WyilFile.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
+		return new WyilFile.TypeDeclaration(type.modifiers(), type.name(), type.type(), constraint,
 				type.attributes());
 	}
 	
-	public WyilFile.Method transform(WyilFile.Method method) {
+	public WyilFile.MethodDeclaration transform(WyilFile.MethodDeclaration method) {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(WyilFile.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	public WyilFile.Case transform(WyilFile.Case mcase, WyilFile.Method method) {	
+	public WyilFile.Case transform(WyilFile.Case mcase, WyilFile.MethodDeclaration method) {	
 		Block body = mcase.body();				
 		Block nbody = new Block(body.numInputs());		
 		int freeSlot = buildShadows(nbody,mcase,method);		
@@ -152,7 +152,7 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public int buildShadows(Block body, WyilFile.Case mcase,
-			WyilFile.Method method) {
+			WyilFile.MethodDeclaration method) {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
@@ -167,7 +167,7 @@ public class ConstraintInline implements Transform {
 	}
 	
 	public Block transform(Block.Entry entry, int freeSlot,
-			WyilFile.Case methodCase, WyilFile.Method method) {
+			WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
 		Code code = entry.code;
 		
 		try {
@@ -235,7 +235,7 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
-			WyilFile.Case methodCase, WyilFile.Method method) {
+			WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
 		
 		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
@@ -336,7 +336,7 @@ public class ConstraintInline implements Transform {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.Method method = m.method(name.name(),fun);
+		WyilFile.MethodDeclaration method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now

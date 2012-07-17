@@ -1337,7 +1337,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				}
 			} else {				
 				WyilFile m = builder.getModule(candidateID.module());
-				WyilFile.Method d = m.method(candidateID.name(),candidateType.raw());
+				WyilFile.MethodDeclaration d = m.method(candidateID.name(),candidateType.raw());
 				if(!d.isPublic() && !d.isProtected()) {
 					String msg = candidateID.module() + "." + name + parameterString(parameters) + " is not visible";
 					throw new ResolveError(msg);
@@ -1370,7 +1370,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		} else {
 			try {
 				WyilFile m = builder.getModule(mid);
-				for (WyilFile.Method mm : m.methods()) {
+				for (WyilFile.MethodDeclaration mm : m.methods()) {
 					if ((mm.isFunction() || mm.isMethod())
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {

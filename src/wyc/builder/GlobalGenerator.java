@@ -112,7 +112,7 @@ public class GlobalGenerator {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.
 			WyilFile m = builder.getModule(mid);
-			WyilFile.TypeDef td = m.type(nid.name());
+			WyilFile.TypeDeclaration td = m.type(nid.name());
 			if(td != null) {
 				// should I cache this?
 				return td.constraint();
