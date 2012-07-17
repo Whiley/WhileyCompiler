@@ -91,26 +91,13 @@ public class ClassFileLoader implements ModuleReader {
 			return null;
 		}
 		
-		HashMap<Pair<Type.Function,String>,WyilFile.Method> methods = new HashMap();
+		ArrayList<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>(); 
 		
 		for (ClassFile.Method cm : cf.methods()) {
 			if (!cm.isSynthetic()) {
-				WyilFile.Method mi = createMethodInfo(mid, cm);
-				Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
-				WyilFile.Method method = methods.get(key);
-				if (method != null) {
-					// coalesce cases
-					ArrayList<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>(
-							method.cases());
-					ncases.addAll(mi.cases());
-					mi = new WyilFile.Method(method.modifiers(), mi.name(), mi.type(), ncases);
-				}
-				methods.put(key, mi);
+				declarations.add(createMethodInfo(mid, cm));				
 			}
 		}
-		
-		ArrayList<WyilFile.TypeDef> types = new ArrayList();
-		ArrayList<WyilFile.ConstDef> constants = new ArrayList();
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
 			
@@ -128,7 +115,7 @@ public class ClassFileLoader implements ModuleReader {
 					}
 					// TODO: generate proper modifiers
 					WyilFile.ConstDef ci = new WyilFile.ConstDef(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
-					constants.add(ci);
+					declarations.add(ci);
 				} else {
 					// type definition
 					List<Attribute> attrs = new ArrayList<Attribute>();						
@@ -140,12 +127,12 @@ public class ClassFileLoader implements ModuleReader {
 					}
 					// TODO: generate proper modifiers
 					WyilFile.TypeDef ti = new WyilFile.TypeDef(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
-					types.add(ti);
+					declarations.add(ti);
 				}
 			}
 		}
 				
-		return new WyilFile(mid, cf.name(), methods.values(), types, constants);
+		return new WyilFile(mid, cf.name(), declarations);
 	}
 	
 	protected WyilFile.Method createMethodInfo(Path.ID mid, ClassFile.Method cm) {

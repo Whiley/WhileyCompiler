@@ -100,30 +100,17 @@ public final class CodeGeneration {
 		this.globalGenerator = generator;
 	}
 
-	public WyilFile generate(WhileyFile wf) {
-		HashMap<Pair<Type.Function, String>, WyilFile.Method> methods = new HashMap();
-		ArrayList<WyilFile.TypeDef> types = new ArrayList<WyilFile.TypeDef>();
-		ArrayList<WyilFile.ConstDef> constants = new ArrayList<WyilFile.ConstDef>();
+	public WyilFile generate(WhileyFile wf) {		
+		ArrayList<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
 
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
 				if (d instanceof TypeDef) {
-					types.add(generate((TypeDef) d));
+					declarations.add(generate((TypeDef) d));
 				} else if (d instanceof Constant) {
-					constants.add(generate((Constant) d));
+					declarations.add(generate((Constant) d));
 				} else if (d instanceof FunctionOrMethod) {
-					WyilFile.Method mi = generate((FunctionOrMethod) d);
-					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
-					WyilFile.Method method = methods.get(key);
-					if (method != null) {
-						// coalesce cases
-						ArrayList<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>(
-								method.cases());
-						ncases.addAll(mi.cases());
-						mi = new WyilFile.Method(method.modifiers(), mi.name(),
-								mi.type(), ncases);
-					}
-					methods.put(key, mi);
+					declarations.add(generate((FunctionOrMethod) d));					
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -132,8 +119,7 @@ public final class CodeGeneration {
 			}
 		}
 		
-		return new WyilFile(wf.module, wf.filename, methods.values(), types,
-				constants);				
+		return new WyilFile(wf.module, wf.filename, declarations);				
 	}
 
 	private WyilFile.ConstDef generate(Constant cd) {

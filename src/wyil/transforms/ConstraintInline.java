@@ -67,12 +67,18 @@ public class ConstraintInline implements Transform {
 	public void apply(WyilFile module) {
 		this.filename = module.filename();
 		
-		for(WyilFile.TypeDef type : module.types()) {
-			module.add(transform(type));
-		}		
-		for(WyilFile.Method method : module.methods()) {
-			module.add(transform(method));
-		}
+		for(WyilFile.Declaration d : module.declarations()) {
+			if(d instanceof WyilFile.TypeDef) {
+				WyilFile.TypeDef td = (WyilFile.TypeDef) d;
+				module.replace(td,transform(td));	
+			} else if(d instanceof WyilFile.Method) {
+				WyilFile.Method md = (WyilFile.Method) d;
+				if(!md.isNative()) {
+					// native functions/methods don't have bodies
+					module.replace(md,transform(md));
+				}
+			}
+		}			
 	}
 	
 	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {

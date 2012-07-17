@@ -25,9 +25,17 @@ public class WyilFileWriter implements Transform {
 		String filename = module.filename().replace(".whiley", ".wyasm");
 		output = new BinaryOutputStream(new FileOutputStream(filename));
 		
+		buildPools(module);
+		
 		writeHeader(module);
 	}	
 	
+	/**
+	 * Write the header information for this WYIL file.
+	 * 
+	 * @param module
+	 * @throws IOException
+	 */
 	private void writeHeader(WyilFile module)
 			throws IOException {
 		
@@ -54,6 +62,10 @@ public class WyilFileWriter implements Transform {
 		
 		// finally, write the number of blocks
 		output.write_uv(module.declarations().size());
+	}
+	
+	private void buildPools(WyilFile module) {
+		
 	}
 	
 	/**

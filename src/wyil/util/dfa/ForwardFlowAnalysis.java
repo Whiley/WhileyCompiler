@@ -49,17 +49,19 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	public void apply(WyilFile module) {			
 		filename = module.filename();
 		
-		for(WyilFile.ConstDef type : module.constants()) {
-			module.add(propagate(type));
-		}
-		for(WyilFile.TypeDef type : module.types()) {
-			module.add(propagate(type));
-		}	
-		
-		for(WyilFile.Method method : module.methods()) {					
-			if(!method.isNative()) {
-				// native functions/methods don't have bodies
-				module.add(propagate(method));
+		for(WyilFile.Declaration d : module.declarations()) {
+			if(d instanceof WyilFile.ConstDef) {
+				WyilFile.ConstDef cd = (WyilFile.ConstDef) d; 
+				module.replace(cd,propagate((cd)));
+			} else if(d instanceof WyilFile.TypeDef) {
+				WyilFile.TypeDef td = (WyilFile.TypeDef) d;
+				module.replace(td,propagate(td));	
+			} else if(d instanceof WyilFile.Method) {
+				WyilFile.Method md = (WyilFile.Method) d;
+				if(!md.isNative()) {
+					// native functions/methods don't have bodies
+					module.replace(md,propagate(md));
+				}
 			}
 		}		
 	}
