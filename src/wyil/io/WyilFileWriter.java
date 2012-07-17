@@ -1,9 +1,7 @@
 package wyil.io;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 
 import wyil.Transform;
 import wybs.lang.Path;
@@ -165,6 +163,9 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	private int addTypeItem(Type t) {
+		
+		// TODO: this could be made way more efficient.
+		
 		Integer index = typeCache.get(t);
 		if(index == null) {
 			int i = typePool.size();
@@ -186,28 +187,53 @@ public class WyilFileWriter implements Transform {
 				kind = TYPE_Kind.RATIONAL;
 			} else if(t instanceof Type.Strung) {
 				kind = TYPE_Kind.STRING;
-			} else if(t instanceof Type.List) {
+			} else if(t instanceof Type.List) {				
+				Type.List l = (Type.List) t;
 				kind = TYPE_Kind.LIST;
-				
-				Type.List l = (Type.List) v;
-				kind = TYPE_Kind.LIST;
-				children = new int[l.values.size()];
-				for (int k = 0; k != children.length; ++k) {
-					children[k] = addConstantItem(l.values.get(k));
-				}
-				
+				children = new int[1];				
+				children[0] = addTypeItem(l.element());				
 			} else if(t instanceof Type.Set) {
-				
+				Type.Set l = (Type.Set) t;
+				kind = TYPE_Kind.SET;
+				children = new int[1];				
+				children[0] = addTypeItem(l.element());
+			} else if(t instanceof Type.Map) {
+				Type.Map l = (Type.Map) t;
+				kind = TYPE_Kind.MAP;
+				children = new int[2];				
+				children[0] = addTypeItem(l.key());
+				children[1] = addTypeItem(l.value());
 			} else if(t instanceof Type.Tuple) {
-				
+				Type.Tuple l = (Type.Tuple) t;
+				kind = TYPE_Kind.TUPLE;				
+				List<Type> elements = l.elements();
+				children = new int[elements.size()];
+				for(int k=0;k!=elements.size();++k) {
+					children[k] = addTypeItem(elements.get(k));
+				}
 			} else if(t instanceof Type.Record) {
-				
+				Type.Record l = (Type.Record) t;
+				kind = TYPE_Kind.RECORD;				
+				HashSet<String> fields = l.keys();
+				children = new int[fields.size()*2];
+				int k = 0;
+				for(String field : fields) {
+					children[k] = addTypeItem(l.field(field));
+					children[k+1] = addStringItem(field);
+					k = k + 2;
+				}
 			} else if(t instanceof Type.FunctionOrMethod) {
-				
+				kind = TYPE_Kind.FUNCTION;
 			} else if(t instanceof Type.Reference) {
-				
+				Type.Reference l = (Type.Reference) t;
+				kind = TYPE_Kind.REFERENCE;
+				children = new int[1];				
+				children[0] = addTypeItem(l.element());
 			} else if(t instanceof Type.Negation) {
-				
+				Type.Negation l = (Type.Negation) t;
+				kind = TYPE_Kind.NEGATION;
+				children = new int[1];				
+				children[0] = addTypeItem(l.element());
 			} else if(t instanceof Type.EffectiveList) {
 				
 			} else if(t instanceof Type.EffectiveSet) {
