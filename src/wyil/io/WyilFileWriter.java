@@ -222,8 +222,12 @@ public class WyilFileWriter implements Transform {
 					children[k+1] = addStringItem(field);
 					k = k + 2;
 				}
-			} else if(t instanceof Type.FunctionOrMethod) {
+			} else if(t instanceof Type.Function) {
 				kind = TYPE_Kind.FUNCTION;
+				// TODO:
+			} else if(t instanceof Type.Method) {
+				kind = TYPE_Kind.METHOD;
+				// TODO:
 			} else if(t instanceof Type.Reference) {
 				Type.Reference l = (Type.Reference) t;
 				kind = TYPE_Kind.REFERENCE;
@@ -235,21 +239,30 @@ public class WyilFileWriter implements Transform {
 				children = new int[1];				
 				children[0] = addTypeItem(l.element());
 			} else if(t instanceof Type.EffectiveList) {
-				
-			} else if(t instanceof Type.EffectiveSet) {
-				
-			} else if(t instanceof Type.EffectiveMap) {
-				
-			} else if(t instanceof Type.EffectiveTuple) {
-				
-			} else if(t instanceof Type.EffectiveRecord) {
-				
-			} else if(t instanceof Type.EffectiveIndexible) {
-				
-			} else if(t instanceof Type.EffectiveCollection) {
-				
-			} else if(t instanceof Type.Union) {
-				
+				kind = TYPE_Kind.EFFECTIVE_LIST;
+			} else if(t instanceof Type.Union) {					
+				if(t instanceof Type.EffectiveSet) {
+					kind = TYPE_Kind.EFFECTIVE_SET;
+				} else if(t instanceof Type.EffectiveMap) {
+					kind = TYPE_Kind.EFFECTIVE_MAP;
+				} else if(t instanceof Type.EffectiveTuple) {
+					kind = TYPE_Kind.EFFECTIVE_TUPLE;
+				} else if(t instanceof Type.EffectiveRecord) {
+					kind = TYPE_Kind.EFFECTIVE_RECORD;
+				} else if(t instanceof Type.EffectiveIndexible) {
+					kind = TYPE_Kind.EFFECTIVE_INDEXIBLE;
+				} else if(t instanceof Type.EffectiveCollection) {
+					kind = TYPE_Kind.EFFECTIVE_COLLECTION;
+				} else {
+					kind = TYPE_Kind.UNION;
+				}
+				Type.Union u = (Type.Union) t;
+				HashSet<Type> bounds = u.bounds();
+				children = new int[bounds.size()];
+				int k = 0;
+				for(Type bound : bounds) {
+					children[k++] = addTypeItem(bound);
+				}
 			} else {
 				throw new IllegalArgumentException("unknown type encountered");
 			}
