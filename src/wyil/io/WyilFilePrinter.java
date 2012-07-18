@@ -54,6 +54,14 @@ public final class WyilFilePrinter implements Transform {
 
 	}
 	
+	public WyilFilePrinter(PrintWriter writer) {
+		this.out = writer;
+	}
+	
+	public WyilFilePrinter(OutputStream stream) {
+		this.out = new PrintWriter(new OutputStreamWriter(stream));
+	}
+	
 	public void setLabels(boolean flag) {
 		writeLabels = flag;
 	}
@@ -91,9 +99,15 @@ public final class WyilFilePrinter implements Transform {
 	}
 	
 	public void apply(WyilFile module) throws IOException {
-		String filename = module.filename().replace(".whiley", ".wyasm");
-		out = new PrintWriter(new FileOutputStream(filename));
 		
+		if(out == null) {
+			
+			// TODO: where does this go?
+			
+			String filename = module.filename().replace(".whiley", ".wyasm");
+			out = new PrintWriter(new FileOutputStream(filename));
+		}
+	
 		//out.println("module: " + module.id());
 		out.println("source-file: " + module.filename());
 		out.println();

@@ -59,14 +59,14 @@ public class WyilFileWriter implements Transform {
 			throws IOException {
 		
 		// first, write magic number
-		output.write(0x57); // W
-		output.write(0x59); // Y
-		output.write(0x49); // I
-		output.write(0x4C); // L
-		output.write(0x46); // F
-		output.write(0x49); // I
-		output.write(0x4C); // L
-		output.write(0x45); // E
+		output.write_u1(0x57); // W
+		output.write_u1(0x59); // Y
+		output.write_u1(0x49); // I
+		output.write_u1(0x4C); // L
+		output.write_u1(0x46); // F
+		output.write_u1(0x49); // I
+		output.write_u1(0x4C); // L
+		output.write_u1(0x45); // E
 		
 		// second, write the file version number 
 		output.write_uv(MAJOR_VERSION); 
