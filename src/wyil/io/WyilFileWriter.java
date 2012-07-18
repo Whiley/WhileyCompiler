@@ -27,17 +27,26 @@ public class WyilFileWriter implements Transform {
 	private ArrayList<CONSTANT_Item> constantPool = new ArrayList<CONSTANT_Item>();
 	private HashMap<Value,Integer> constantCache = new HashMap<Value,Integer>();
 	
-	private ArrayList<TYPE_Item> typePool = new ArrayList<TYPE_Item>();
+	private ArrayList<Type> typePool = new ArrayList<Type>();
 	private HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
+	
+	public WyilFileWriter(wybs.lang.Builder builder) {
+
+	}
 	
 	@Override
 	public void apply(WyilFile module) throws IOException {
-		String filename = module.filename().replace(".whiley", ".wyasm");
+		String filename = module.filename().replace(".whiley", ".wyil");
 		output = new BinaryOutputStream(new FileOutputStream(filename));
+		
+		System.out.println("GOT HERE");
 		
 		buildPools(module);
 		
 		writeHeader(module);
+		writePools();
+		
+		output.close();
 	}	
 	
 	/**
@@ -72,6 +81,53 @@ public class WyilFileWriter implements Transform {
 		
 		// finally, write the number of blocks
 		output.write_uv(module.declarations().size());
+	}
+	
+	private void writePools() throws IOException{
+		writeStringPool();
+		writePathPool();
+		writeNamePool();
+		writeConstantPool();
+		writeTypePool();
+	}
+	
+	/**
+	 * Write the list of strings making up the string pool in UTF8.
+	 * 
+	 * @throws IOException
+	 */
+	private void writeStringPool() throws IOException {
+		for (String s : stringPool) {
+			try {
+				byte[] bytes = s.getBytes("UTF8");
+				output.write_uv(bytes.length);
+				output.write(bytes, 0, bytes.length);
+			} catch (UnsupportedEncodingException e) {
+				// hmmm, this aint pretty ;)
+			}
+		}
+	}
+	
+	private void writePathPool() throws IOException {
+		for (PATH_Item p : pathPool) {
+			output.write_uv(p.parentIndex + 1);
+			output.write_uv(p.stringIndex);
+		}
+	}
+
+	private void writeNamePool() throws IOException {
+		for (NAME_Item p : namePool) {
+			output.write_uv(p.kind.kind());
+			output.write_uv(p.pathIndex);
+		}
+	}
+
+	private void writeConstantPool() {
+
+	}
+
+	private void writeTypePool() {
+
 	}
 	
 	private void buildPools(WyilFile module) {
@@ -164,109 +220,15 @@ public class WyilFileWriter implements Transform {
 	
 	private int addTypeItem(Type t) {
 		
-		// TODO: this could be made way more efficient.
+		// TODO: this could be made way more efficient. In particular, we should
+		// combine resources into a proper aliased pool rather than write out
+		// types individually ... because that's sooooo inefficient!
 		
 		Integer index = typeCache.get(t);
 		if(index == null) {
-			int i = typePool.size();
+			int i = constantPool.size();
 			typeCache.put(t, i);
-			
-			TYPE_Kind kind;
-			int[] children = null;
-			if(t instanceof Type.Null) {
-				kind = TYPE_Kind.NULL;
-			} else if(t instanceof Type.Bool) {
-				kind = TYPE_Kind.BOOL;
-			} else if(t instanceof Type.Byte) {
-				kind = TYPE_Kind.BYTE;
-			} else if(t instanceof Type.Char) {
-				kind = TYPE_Kind.CHAR;
-			} else if(t instanceof Type.Int) {
-				kind = TYPE_Kind.INT;
-			} else if(t instanceof Type.Real) {
-				kind = TYPE_Kind.RATIONAL;
-			} else if(t instanceof Type.Strung) {
-				kind = TYPE_Kind.STRING;
-			} else if(t instanceof Type.List) {				
-				Type.List l = (Type.List) t;
-				kind = TYPE_Kind.LIST;
-				children = new int[1];				
-				children[0] = addTypeItem(l.element());				
-			} else if(t instanceof Type.Set) {
-				Type.Set l = (Type.Set) t;
-				kind = TYPE_Kind.SET;
-				children = new int[1];				
-				children[0] = addTypeItem(l.element());
-			} else if(t instanceof Type.Map) {
-				Type.Map l = (Type.Map) t;
-				kind = TYPE_Kind.MAP;
-				children = new int[2];				
-				children[0] = addTypeItem(l.key());
-				children[1] = addTypeItem(l.value());
-			} else if(t instanceof Type.Tuple) {
-				Type.Tuple l = (Type.Tuple) t;
-				kind = TYPE_Kind.TUPLE;				
-				List<Type> elements = l.elements();
-				children = new int[elements.size()];
-				for(int k=0;k!=elements.size();++k) {
-					children[k] = addTypeItem(elements.get(k));
-				}
-			} else if(t instanceof Type.Record) {
-				Type.Record l = (Type.Record) t;
-				kind = TYPE_Kind.RECORD;				
-				HashSet<String> fields = l.keys();
-				children = new int[fields.size()*2];
-				int k = 0;
-				for(String field : fields) {
-					children[k] = addTypeItem(l.field(field));
-					children[k+1] = addStringItem(field);
-					k = k + 2;
-				}
-			} else if(t instanceof Type.Function) {
-				kind = TYPE_Kind.FUNCTION;
-				// TODO:
-			} else if(t instanceof Type.Method) {
-				kind = TYPE_Kind.METHOD;
-				// TODO:
-			} else if(t instanceof Type.Reference) {
-				Type.Reference l = (Type.Reference) t;
-				kind = TYPE_Kind.REFERENCE;
-				children = new int[1];				
-				children[0] = addTypeItem(l.element());
-			} else if(t instanceof Type.Negation) {
-				Type.Negation l = (Type.Negation) t;
-				kind = TYPE_Kind.NEGATION;
-				children = new int[1];				
-				children[0] = addTypeItem(l.element());
-			} else if(t instanceof Type.EffectiveList) {
-				kind = TYPE_Kind.EFFECTIVE_LIST;
-			} else if(t instanceof Type.Union) {					
-				if(t instanceof Type.EffectiveSet) {
-					kind = TYPE_Kind.EFFECTIVE_SET;
-				} else if(t instanceof Type.EffectiveMap) {
-					kind = TYPE_Kind.EFFECTIVE_MAP;
-				} else if(t instanceof Type.EffectiveTuple) {
-					kind = TYPE_Kind.EFFECTIVE_TUPLE;
-				} else if(t instanceof Type.EffectiveRecord) {
-					kind = TYPE_Kind.EFFECTIVE_RECORD;
-				} else if(t instanceof Type.EffectiveIndexible) {
-					kind = TYPE_Kind.EFFECTIVE_INDEXIBLE;
-				} else if(t instanceof Type.EffectiveCollection) {
-					kind = TYPE_Kind.EFFECTIVE_COLLECTION;
-				} else {
-					kind = TYPE_Kind.UNION;
-				}
-				Type.Union u = (Type.Union) t;
-				HashSet<Type> bounds = u.bounds();
-				children = new int[bounds.size()];
-				int k = 0;
-				for(Type bound : bounds) {
-					children[k++] = addTypeItem(bound);
-				}
-			} else {
-				throw new IllegalArgumentException("unknown type encountered");
-			}
-			typePool.add(new TYPE_Item(kind,children));
+			typePool.add(t);			
 			return i;
 		} else {
 			return index;
@@ -458,68 +420,6 @@ public class WyilFileWriter implements Transform {
 		public CONSTANT_Item(CONSTANT_Kind kind, int... children) {
 			this.kind = kind;
 			this.children = children;
-		}
-	}
-	
-	private enum TYPE_Kind {
-		NULL(0), 
-		BOOL(1),
-		BYTE(2),
-		CHAR(3),
-		INT(4),
-		RATIONAL(5),
-		STRING(6),
-		LIST(7),
-		SET(8),
-		MAP(9),
-		TUPLE(10),
-		RECORD(11),
-		REFERENCE(12),
-		FUNCTION(13),
-		METHOD(14),
-		NOMINAL(15),		
-		NEGATION(16),
-		UNION(17),
-		EFFECTIVE_COLLECTION(18),
-		EFFECTIVE_INDEXIBLE(19),
-		EFFECTIVE_LIST(20),
-		EFFECTIVE_SET(21),
-		EFFECTIVE_MAP(22),
-		EFFECTIVE_TUPLE(23),
-		EFFECTIVE_RECORD(24);
-
-		private final int kind;
-
-		private TYPE_Kind(int kind) {
-			this.kind = kind;
-		}
-
-		public int kind() {
-			return kind;
-		}
-	}
-	
-	/**
-	 * A pool item represents a WYIL type. For example, a <code>int</code> type
-	 * or <code>[int]</code> (i.e. list of int) type.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	private class TYPE_Item {
-		/**
-		 * Type kind (e.g. INT, REAL, etc)
-		 */
-		public final TYPE_Kind kind;
-		
-		/**
-		 * Indices of any children in type pool
-		 */
-		public final int[] children;
-		
-		public TYPE_Item(TYPE_Kind kind, int[] children) {
-			this.kind = kind;
-			this.children = Arrays.copyOf(children, children.length);
 		}
 	}
 }

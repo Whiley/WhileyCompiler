@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import wybs.lang.Builder;
-import wyil.io.WyilFilePrinter;
+import wyil.io.*;
 import wyil.transforms.*;
 
 /**
@@ -78,6 +78,7 @@ public class Pipeline {
 					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
 					// add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));
+					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 				}
 			});
 
@@ -93,6 +94,7 @@ public class Pipeline {
 		register(ModuleCheck.class);
 		register(ConstraintInline.class);
 		register(CoercionCheck.class);
+		register(WyilFileWriter.class);
 		register(WyilFilePrinter.class);
 		register(DeadCodeElimination.class);
 		register(LiveVariablesAnalysis.class);
