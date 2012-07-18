@@ -204,7 +204,7 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	private int addPathItem(Path.ID pid) {
-		if(pid == null) {
+		if(pid.last().equals("")) {
 			return -1;
 		}
 		

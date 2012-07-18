@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 import wybs.lang.Path;
+import wybs.util.Trie;
 import wyil.lang.*;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.lang.Constant;
@@ -80,8 +81,21 @@ public class WyilFileReader {
 		}
 	}
 	
-	private void readPathPool(int size) {
+	private void readPathPool(int size) throws IOException {
 		pathPool.clear();
+		for(int i=0;i!=size;++i) {
+			int parent = input.read_uv();
+			int stringIndex = input.read_uv();
+			Path.ID id;
+			if(parent == 0) {
+				id = Trie.ROOT;
+			} else {
+				id = pathPool.get(parent-1);
+			}
+			id = id.append(stringPool.get(stringIndex));
+			pathPool.add(id);
+			System.out.println("#" + i + " = " + id);
+		}
 	}
 
 	private void readNamePool(int size) {
