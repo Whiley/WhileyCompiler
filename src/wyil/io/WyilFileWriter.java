@@ -99,8 +99,9 @@ public class WyilFileWriter implements Transform {
 	private void writeStringPool() throws IOException {
 		for (String s : stringPool) {
 			try {
-				byte[] bytes = s.getBytes("UTF8");
-				output.write_uv(bytes.length);
+				byte[] bytes = s.getBytes("UTF-8");
+				System.out.println("WRITING: " + bytes.length);
+				output.write_uv(bytes.length);				
 				output.write(bytes, 0, bytes.length);
 			} catch (UnsupportedEncodingException e) {
 				// hmmm, this aint pretty ;)

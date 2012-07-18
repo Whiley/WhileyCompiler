@@ -48,15 +48,21 @@ public class BinaryOutputStream extends OutputStream {
 	 */
 	public void write(int i) throws IOException {
 		if(count == 0) {
-			output.write(i);
+			output.write(i & 0xFF);
 		} else {
-			write_un(i,8);
+			write_un(i & 0xFF,8);
 		}
 	}		
 	
 	public void write(byte[] bytes) throws IOException {
 		for(byte b : bytes) {
 			write(b);
+		}
+	}
+	
+	public void write(byte[] bytes, int offset, int length) throws IOException {
+		for(;offset < length;++offset) {
+			write(bytes[offset]);
 		}
 	}
 	
