@@ -1,13 +1,17 @@
 package wyil.io;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 import wyil.Transform;
 import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.util.Pair;
+import wyjc.attributes.WhileyType;
+import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryOutputStream;
+import wyjvm.lang.Constant;
 
 public class WyilFileWriter implements Transform {
 	private static final int MAJOR_VERSION = 0;
@@ -24,7 +28,7 @@ public class WyilFileWriter implements Transform {
 	private ArrayList<NAME_Item> namePool = new ArrayList<NAME_Item>();
 	private HashMap<Pair<NAME_Kind,Path.ID>,Integer> nameCache = new HashMap<Pair<NAME_Kind,Path.ID>,Integer>();
 	
-	private ArrayList<CONSTANT_Item> constantPool = new ArrayList<CONSTANT_Item>();
+	private ArrayList<Value> constantPool = new ArrayList<Value>();
 	private HashMap<Value,Integer> constantCache = new HashMap<Value,Integer>();
 	
 	private ArrayList<Type> typePool = new ArrayList<Type>();
@@ -38,8 +42,6 @@ public class WyilFileWriter implements Transform {
 	public void apply(WyilFile module) throws IOException {
 		String filename = module.filename().replace(".whiley", ".wyil");
 		output = new BinaryOutputStream(new FileOutputStream(filename));
-		
-		System.out.println("GOT HERE");
 		
 		buildPools(module);
 		
@@ -97,10 +99,10 @@ public class WyilFileWriter implements Transform {
 	 * @throws IOException
 	 */
 	private void writeStringPool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " string item(s).");
 		for (String s : stringPool) {
 			try {
 				byte[] bytes = s.getBytes("UTF-8");
-				System.out.println("WRITING: " + bytes.length);
 				output.write_uv(bytes.length);				
 				output.write(bytes, 0, bytes.length);
 			} catch (UnsupportedEncodingException e) {
@@ -110,6 +112,7 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	private void writePathPool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " path item(s).");
 		for (PATH_Item p : pathPool) {
 			output.write_uv(p.parentIndex + 1);
 			output.write_uv(p.stringIndex);
@@ -117,25 +120,27 @@ public class WyilFileWriter implements Transform {
 	}
 
 	private void writeNamePool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " name item(s).");
 		for (NAME_Item p : namePool) {
 			output.write_uv(p.kind.kind());
 			output.write_uv(p.pathIndex);
 		}
 	}
 
-	private void writeConstantPool() {
-		for (CONSTANT_Item p : constantPool) {
-			output.write_uv(p.kind.kind());
-			output.write_uv(p.pathIndex);
+	private void writeConstantPool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " constant item(s).");
+		ValueWriter bout = new ValueWriter(output);
+		for (Value v : constantPool) {
+			bout.write(v);
 		}
 	}
 
 	private void writeTypePool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " type item(s).");
 		Type.BinaryWriter bout = new Type.BinaryWriter(output);
 		for (Type t : typePool) {
 			bout.write(t);
 		}
-		bout.close();
 	}
 	
 	private void buildPools(WyilFile module) {
@@ -244,81 +249,57 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	private int addConstantItem(Value v) {
+		
+		// TODO: this could be made way more efficient. In particular, we should
+		// combine resources into a proper aliased pool rather than write out
+		// types individually ... because that's sooooo inefficient!
+	
 		Integer index = constantCache.get(v);
 		if(index == null) {
 			int i = constantPool.size();
 			constantCache.put(v, i);
-			CONSTANT_Kind kind;
-			int[] children = null;
-			if(v instanceof Value.Null) {
-				kind = CONSTANT_Kind.NULL;
-			} else if(v instanceof Value.Bool) {
-				kind = CONSTANT_Kind.BOOL;
-			} else if(v instanceof Value.Byte) {
-				kind = CONSTANT_Kind.BYTE;
-			} else if(v instanceof Value.Char) {
-				kind = CONSTANT_Kind.CHAR;
-			} else if(v instanceof Value.Integer) {
-				kind = CONSTANT_Kind.INT;
-			} else if(v instanceof Value.Rational) {
-				kind = CONSTANT_Kind.RATIONAL;
-			} else if(v instanceof Value.Strung) {
-				kind = CONSTANT_Kind.STRING;
-			} else if(v instanceof Value.List) {
-				Value.List l = (Value.List) v;
-				kind = CONSTANT_Kind.LIST;
-				children = new int[l.values.size()];
-				for (int k = 0; k != children.length; ++k) {
-					children[k] = addConstantItem(l.values.get(k));
-				}
-			} else if(v instanceof Value.Set) {
-				Value.Set s = (Value.Set) v;
-				kind = CONSTANT_Kind.SET;				
-				children = new int[s.values.size()];
-				ArrayList<Value> values = new ArrayList<Value>(s.values);
-				for (int k = 0; k != children.length; ++k) {					
-					children[k] = addConstantItem(values.get(k));
-				}
-			} else if(v instanceof Value.Map) {				
-				Value.Map s = (Value.Map) v;
-				kind = CONSTANT_Kind.MAP;								
-				ArrayList<Value> values = new ArrayList<Value>(s.values.keySet());
-				children = new int[values.size() * 2];
-				for (int k = 0; k != values.size(); ++k) {				
-					Value key = values.get(k);
-					Value val = s.values.get(key);					
-					children[k * 2] = addConstantItem(key);
-					children[(k * 2) + 1] = addConstantItem(val);
-				}
-			} else if(v instanceof Value.Tuple) {
-				Value.Tuple t = (Value.Tuple) v;
-				kind = CONSTANT_Kind.TUPLE;
-				children = new int[t.values.size()];
-				for (int k = 0; k != children.length; ++k) {
-					children[k] = addConstantItem(t.values.get(k));
-				}
-			} else if(v instanceof Value.Record) {
-				Value.Record r = (Value.Record) v;
-				kind = CONSTANT_Kind.RECORD;
-				ArrayList<String> fields = new ArrayList<String>(r.values.keySet());
-				children = new int[fields.size()*2];				
-				for (int k = 0; k != fields.size(); ++k) {
-					String field = fields.get(k);
-					children[k << 1] = addStringItem(field);
-					children[(k << 1) + 1] = addConstantItem(r.values.get(field));
-				}
-			} else if(v instanceof Value.FunctionOrMethod){
-				kind = CONSTANT_Kind.FUNCTION_OR_METHOD;
-				// TODO
-			} else {
-				throw new IllegalArgumentException("unknown value encountered");
-			}
-			constantPool.add(new CONSTANT_Item(kind,children));
+			constantPool.add(v);
+			addConstantStringItems(v);
 			return i;
-		} else {
-			return index;
 		}
+		return index;
 	}
+	
+	private void addConstantStringItems(Value v) {
+		if(v instanceof Value.Strung) {
+			Value.Strung s = (Value.Strung) v;
+			addStringItem(s.value);
+		} else if(v instanceof Value.List) {
+			Value.List l = (Value.List) v;				
+			for (Value e : l.values) {
+				addConstantStringItems(e);
+			}
+		} else if(v instanceof Value.Set) {
+			Value.Set s = (Value.Set) v;
+			for (Value e : s.values) {
+				addConstantStringItems(e);
+			}
+		} else if(v instanceof Value.Map) {				
+			Value.Map m = (Value.Map) v;
+			for (Map.Entry<Value,Value> e : m.values.entrySet()) {
+				addConstantStringItems(e.getKey());
+				addConstantStringItems(e.getValue());
+			}
+		} else if(v instanceof Value.Tuple) {
+			Value.Tuple t = (Value.Tuple) v;
+			for (Value e : t.values) {
+				addConstantStringItems(e);
+			}
+		} else if(v instanceof Value.Record) {
+			Value.Record r = (Value.Record) v;
+			for (Map.Entry<String,Value> e : r.values.entrySet()) {
+				addStringItem(e.getKey());
+				addConstantStringItems(e.getValue());
+			}				
+		} else if(v instanceof Value.FunctionOrMethod){
+			// TODO
+		} 			
+	} 
 	
 	/**
 	 * An PATH_Item represents a path item.
@@ -387,47 +368,187 @@ public class WyilFileWriter implements Transform {
 		}				
 	}		
 	
-	
-	private enum CONSTANT_Kind {
-		NULL(0), 
-		BOOL(1),
-		BYTE(2),
-		CHAR(3),
-		INT(4),
-		RATIONAL(5),
-		STRING(6),
-		LIST(7),
-		SET(8),
-		MAP(9),
-		TUPLE(10),
-		RECORD(11),
-		FUNCTION_OR_METHOD(12);
-
-		private final int kind;
-
-		private CONSTANT_Kind(int kind) {
-			this.kind = kind;
+	// FIXME: this is really a temporary class because we ideally want to
+	// exploit the potential for sharing amongst substructure of values.
+	private class ValueWriter {
+		private final BinaryOutputStream output;
+		
+		public ValueWriter(BinaryOutputStream output) {
+			this.output = output;
+		}
+		
+		public void write(Value val) throws IOException {
+			if(val instanceof Value.Null) {
+				write((Value.Null) val);
+			} else if(val instanceof Value.Bool) {
+				write((Value.Bool) val);
+			} else if(val instanceof Value.Byte) {
+				write((Value.Byte) val);
+			} else if(val instanceof Value.Char) {
+				write((Value.Char) val);
+			} else if(val instanceof Value.Integer) {
+				write((Value.Integer) val);
+			} else if(val instanceof Value.Rational) {
+				write((Value.Rational) val);
+			} else if(val instanceof Value.Strung) {
+				write((Value.Strung) val);
+			} else if(val instanceof Value.Set) {
+				write((Value.Set) val);
+			} else if(val instanceof Value.List) {
+				write((Value.List) val);
+			} else if(val instanceof Value.Map) {
+				write((Value.Map) val);
+			} else if(val instanceof Value.Record) {
+				write((Value.Record) val);
+			} else if(val instanceof Value.Tuple) {
+				write((Value.Tuple) val);
+			} else if(val instanceof Value.FunctionOrMethod) {
+				write((Value.FunctionOrMethod) val);
+			} else {
+				throw new RuntimeException("Unknown value encountered - " + val);
+			}
+		}
+		
+		public void write(Value.Null expr) throws IOException {				
+			output.write_u1(NULL);
+		}
+		
+		public void write(Value.Bool expr) throws IOException {
+			
+			if(expr.value) {
+				output.write_u1(TRUE);
+			} else {
+				output.write_u1(FALSE);
+			}
+		}
+		
+		public void write(Value.Byte expr) throws IOException {		
+			output.write_u1(BYTEVAL);		
+			output.write_u1(expr.value);		
+		}
+		
+		public void write(Value.Char expr) throws IOException {		
+			output.write_u1(CHARVAL);		
+			output.write_u2(expr.value);		
+		}
+		
+		public void write(Value.Integer expr) throws IOException {		
+			output.write_u1(INTVAL);		
+			BigInteger num = expr.value;
+			byte[] numbytes = num.toByteArray();
+			// FIXME: bug here for constants that require more than 65535 bytes
+			output.write_u2(numbytes.length);
+			output.write(numbytes);
 		}
 
-		public int kind() {
-			return kind;
+		public void write(Value.Rational expr) throws IOException {		
+			
+			output.write_u1(REALVAL);
+			BigRational br = expr.value;
+			BigInteger num = br.numerator();
+			BigInteger den = br.denominator();
+
+			byte[] numbytes = num.toByteArray();
+			// FIXME: bug here for constants that require more than 65535 bytes
+			output.write_u2(numbytes.length);
+			output.write(numbytes);
+
+			byte[] denbytes = den.toByteArray();
+			// FIXME: bug here for constants that require more than 65535 bytes
+			output.write_u2(denbytes.length);
+			output.write(denbytes);
+		}
+			
+		public void write(Value.Strung expr) throws IOException {	
+			output.write_u1(STRINGVAL);
+			String value = expr.value;
+			int valueLength = value.length();		
+			output.write_u2(valueLength);
+			for(int i=0;i!=valueLength;++i) {
+				output.write_u2(value.charAt(i));
+			}
+		}
+		public void write(Value.Set expr) throws IOException {
+			output.write_u1(SETVAL);
+			output.write_u2(expr.values.size());
+			for(Value v : expr.values) {
+				write(v);
+			}
+		}
+		
+		public void write(Value.List expr) throws IOException {
+			output.write_u1(LISTVAL);
+			output.write_u2(expr.values.size());
+			for(Value v : expr.values) {
+				write(v);
+			}
+		}
+		
+		public void write(Value.Map expr) throws IOException {
+			output.write_u1(MAPVAL);
+			output.write_u2(expr.values.size());
+			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
+				write(e.getKey());
+				write(e.getValue());
+			}
+		}
+		
+		public void write(Value.Record expr) throws IOException {
+			output.write_u1(RECORDVAL);
+			output.write_u2(expr.values.size());
+			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
+				output.write_u2(stringCache.get(v.getKey()));
+				write(v.getValue());
+			}
+		}
+		
+		public void write(Value.Tuple expr) throws IOException {
+			output.write_u1(TUPLEVAL); // FIXME: should be TUPLE!!!
+			output.write_u2(expr.values.size());
+			for(Value v : expr.values) {
+				write(v);
+			}
+		}
+		
+		public void write(Value.FunctionOrMethod expr) throws IOException {
+			throw new RuntimeException("ValueWriter.write(Value.FunctionOrMethod) undefined");
+//			Type.FunctionOrMethod t = expr.type();
+//			if(t instanceof Type.Function) {
+//				output.write_u1(FUNCTIONVAL);			
+//			} else if(t instanceof Type.Method) {
+//				output.write_u1(METHODVAL);
+//			} else {
+//				output.write_u1(MESSAGEVAL);
+//			}
+//			
+//			WhileyType.write(t, writer, constantPool);
+//			String value = expr.name.toString();
+//			int valueLength = value.length();		
+//			output.write_u2(valueLength);
+//			for(int i=0;i!=valueLength;++i) {
+//				output.write_u2(value.charAt(i));
+//			}	
 		}
 	}
 
-	/**
-	 * Represents a WYIL Constant value.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	private class CONSTANT_Item {
-		public final CONSTANT_Kind kind;
+	// =========================================================================
+	// Value Identifiers
+	// =========================================================================
 
-		public final int[] children;
-				
-		public CONSTANT_Item(CONSTANT_Kind kind, int... children) {
-			this.kind = kind;
-			this.children = children;
-		}
-	}
+	public final static int NULL = 0;
+	public final static int TRUE = 1;
+	public final static int FALSE = 2;
+	public final static int CHARVAL = 3;
+	public final static int INTVAL = 4;
+	public final static int REALVAL = 5;
+	public final static int SETVAL = 6;
+	public final static int LISTVAL = 7;
+	public final static int RECORDVAL = 8;
+	public final static int TUPLEVAL = 9;
+	public final static int BYTEVAL = 10;
+	public final static int STRINGVAL = 11;
+	public final static int MAPVAL = 12;
+	public final static int FUNCTIONVAL = 13;
+	public final static int METHODVAL = 14;
+	public final static int MESSAGEVAL = 15;
 }

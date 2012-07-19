@@ -25,11 +25,15 @@
 
 package wyil.lang;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
 import wyil.util.Pair;
+import wyjc.attributes.WhileyType;
 import wyjc.runtime.BigRational;
+import wyjvm.io.BinaryOutputStream;
+import wyjvm.lang.Constant;
 
 public abstract class Value implements Comparable<Value> {	
 
@@ -825,7 +829,7 @@ public abstract class Value implements Comparable<Value> {
 			return r + ")";
 		}
 	}
-	
+		
 	private static final ArrayList<Value> values = new ArrayList<Value>();
 	private static final HashMap<Value,java.lang.Integer> cache = new HashMap<Value,java.lang.Integer>();
 	
