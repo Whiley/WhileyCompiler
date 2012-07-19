@@ -124,11 +124,18 @@ public class WyilFileWriter implements Transform {
 	}
 
 	private void writeConstantPool() {
-
+		for (CONSTANT_Item p : constantPool) {
+			output.write_uv(p.kind.kind());
+			output.write_uv(p.pathIndex);
+		}
 	}
 
-	private void writeTypePool() {
-
+	private void writeTypePool() throws IOException {
+		Type.BinaryWriter bout = new Type.BinaryWriter(output);
+		for (Type t : typePool) {
+			bout.write(t);
+		}
+		bout.close();
 	}
 	
 	private void buildPools(WyilFile module) {

@@ -98,8 +98,15 @@ public class WyilFileReader {
 		}
 	}
 
-	private void readNamePool(int size) {
+	private void readNamePool(int size) throws IOException {
 		namePool.clear();
+		for(int i=0;i!=size;++i) {
+			int kind = input.read_uv();
+			int pathIndex = input.read_uv();
+			Path.ID id = pathPool.get(pathIndex);
+			
+			System.out.println("#" + i + " = " + kind + " " + id);
+		}
 	}
 
 	private void readConstantPool(int size) {
