@@ -126,16 +126,8 @@ public final class WyilFilePrinter implements Transform {
 			out.println("define " + td.name() + " as " + t_str);
 			Block constraint = td.constraint();
 			if(constraint != null) {
-				out.println("where:");
-				ArrayList<String> env = new ArrayList<String>();
-				env.add("$");			
-				// Now, add space for any other slots needed in the block. This can
-				// arise as a result of temporary loop variables, etc.
-				int maxSlots = constraint.numSlots();
-				for(int i=1;i!=maxSlots;++i) {
-					env.add(Integer.toString(i));
-				}
-				write(0,td.constraint(),env,out);
+				out.println("where:");				
+				write(0,td.constraint(),out);
 			}
 		}
 		if(!module.types().isEmpty()) {
@@ -159,7 +151,6 @@ public final class WyilFilePrinter implements Transform {
 		Type.FunctionOrMethod ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
-		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
 		
 		int li = 0;
 		
@@ -168,7 +159,7 @@ public final class WyilFilePrinter implements Transform {
 			if(i!=0) {
 				out.print(", ");
 			}			
-			out.print(pts.get(i) + " " + locals.get(li++));			
+			out.print(pts.get(i));			
 		}
 		out.println("):");				
 		for(Attribute a : mcase.attributes()) {
@@ -180,54 +171,29 @@ public final class WyilFilePrinter implements Transform {
 
 		Block precondition = mcase.precondition();
 		if(precondition != null) {			
-			out.println("requires: ");
-			ArrayList<String> env = new ArrayList<String>();			
-			// Now, add space for any other slots needed in the block. This can
-			// arise as a result of temporary loop variables, etc.
-			int maxSlots = precondition.numSlots();
-			for(int i=0;i!=maxSlots;++i) {
-				env.add(Integer.toString(i));
-			}
-			write(0,precondition,env,out);
+			out.println("requires: ");			
+			write(0,precondition,out);
 		}
 		
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
-			out.println("ensures: ");
-			ArrayList<String> env = new ArrayList<String>();
-			env.add("$");			
-			// Now, add space for any other slots needed in the block. This can
-			// arise as a result of temporary loop variables, etc.
-			int maxSlots = postcondition.numSlots();
-			for(int i=1;i!=maxSlots;++i) {
-				env.add(Integer.toString(i));
-			}
-			write(0,postcondition,env,out);
+			out.println("ensures: ");							
+			write(0,postcondition,out);
 		}
 		out.println("body: ");
 		boolean firstTime=true;		
-		if(li < locals.size()) {			
-			out.print("    var ");
-			for(;li<locals.size();++li) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print(locals.get(li));
-			}
-			out.println();
-		}		
-		write(0,mcase.body(),locals,out);	
+			
+		write(0,mcase.body(),out);	
 	}
 	
-	private void write(int indent, Block blk, List<String> locals, PrintWriter out) {
+	private void write(int indent, Block blk, PrintWriter out) {
 		for(Block.Entry s : blk) {
 			if(s.code instanceof Code.LoopEnd) {				
 				--indent;
 			} else if(s.code instanceof Code.Label) { 
-				write(indent-1,s.code,s.attributes(),locals,out);
+				write(indent-1,s.code,s.attributes(),out);
 			} else {
-				write(indent,s.code,s.attributes(),locals,out);
+				write(indent,s.code,s.attributes(),out);
 			}
 			if(s.code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) s.code; 
@@ -238,7 +204,7 @@ public final class WyilFilePrinter implements Transform {
 		}
 	}
 	
-	private void write(int indent, Code c, List<Attribute> attributes, List<String> locals, PrintWriter out) {		
+	private void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
 		String line = "null";		
 		tabIndent(indent+1,out);
 	
