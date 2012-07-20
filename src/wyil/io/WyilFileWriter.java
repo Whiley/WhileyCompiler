@@ -149,6 +149,7 @@ public class WyilFileWriter implements Transform {
 		output.write_uv(BLOCK_module);
 		// TODO: write block size
 		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
+		
 		output.write_uv(module.declarations().size());
 		for(WyilFile.Declaration d : module.declarations()) {
 			if(d instanceof WyilFile.ConstantDeclaration) {
@@ -184,8 +185,14 @@ public class WyilFileWriter implements Transform {
 					output.write_uv(BLOCK_method);
 				}
 				// TODO: write block size
-				// TODO: write modifiers
-				output.write_uv(md.cases().size());				
+				
+				output.write_uv(stringCache.get(md.name()));
+				System.out.println("TYPE: " + md.type());
+				System.out.println("INDEX: " + typeCache.get(md.type()));
+				output.write_uv(typeCache.get(md.type()));			
+				// TODO: write modifiers				
+				output.write_uv(md.cases().size());
+				
 				for(WyilFile.Case c : md.cases()) {
 					output.write_uv(BLOCK_case);
 					// TODO: write block size
@@ -195,12 +202,15 @@ public class WyilFileWriter implements Transform {
 					n += c.body() != null ? 1 : 0;
 					output.write_uv(n);
 					if(c.precondition() != null) {
+						output.write_uv(BLOCK_precondition);
 						writeBlock(c.precondition());
 					}
 					if(c.postcondition() != null) {
+						output.write_uv(BLOCK_postcondition);
 						writeBlock(c.postcondition());
 					}
 					if(c.body() != null) {
+						output.write_uv(BLOCK_body);
 						writeBlock(c.body());
 					}
 					// TODO: write annotations
@@ -382,7 +392,7 @@ public class WyilFileWriter implements Transform {
 		
 		Integer index = typeCache.get(t);
 		if(index == null) {
-			int i = constantPool.size();
+			int i = typePool.size();
 			typeCache.put(t, i);
 			typePool.add(t);			
 			return i;

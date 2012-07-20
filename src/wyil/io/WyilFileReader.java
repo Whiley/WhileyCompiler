@@ -139,18 +139,24 @@ public class WyilFileReader {
 		typePool.clear();
 		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for(int i=0;i!=size;++i) {
-			Type t = bin.readType();
+			Type t = bin.readType();			
 			typePool.add(t);
+			System.out.println("#" + i + " = " + t);
 		}
 	}
 	
 	private WyilFile readModule() throws IOException {
+		System.out.println("=== MODULE ===");
 		int nameIdx = input.read_uv();
 		int numBlocks = input.read_uv();
+		System.out.println("ID: " + pathPool.get(nameIdx));
+		System.out.println("NUM BLOCKS: " + numBlocks);
 		List<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
-		for(int i=0;i!=numBlocks;++i) {
-			declarations.add(readModuleBlock());			
+		for(int i=0;i!=numBlocks;++i) {			
+			declarations.add(readModuleBlock());
+			System.out.println("READ DECLARATION");
 		}
+		System.out.println("DONE");
 		return new WyilFile(pathPool.get(nameIdx),"unknown.whiley",declarations);
 	}
 	
@@ -191,17 +197,65 @@ public class WyilFileReader {
 				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
 	}
 	
-	private Block readCodeBlock() throws IOException {
-		return new Block(0);		
-	}
-	
 	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
-		return null;
+		int nameIdx = input.read_uv();
+		int typeIdx = input.read_uv();
+		int numCases = input.read_uv();
+		System.out.println("TYPE INDEX: " + typeIdx);
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		for(int i=0;i!=numCases;++i) {
+			int kind = input.read_uv(); // unsued
+			cases.add(readFunctionOrMethodCase());
+		}
+		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
+				stringPool.get(nameIdx), (Type.Function) typePool.get(typeIdx),
+				cases);
 	}
 	
 	private WyilFile.MethodDeclaration readMethodBlock() throws IOException {
-		return null;
+		int nameIdx = input.read_uv();
+		int typeIdx = input.read_uv();
+		int numCases = input.read_uv();
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		for(int i=0;i!=numCases;++i) {
+			int kind = input.read_uv(); // unused
+			// TODO: read block size
+			cases.add(readFunctionOrMethodCase());
+		}
+		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
+				stringPool.get(nameIdx), (Type.Method) typePool.get(typeIdx),
+				cases);
 	}
+	
+	private WyilFile.Case readFunctionOrMethodCase() throws IOException {
+		Block precondition = null;
+		Block postcondition = null;
+		Block body = null;
+
+		int nBlocks = input.read_uv();
+		for (int i = 0; i != nBlocks; ++i) {
+			int kind = input.read_uv();
+			switch (kind) {
+			case WyilFileWriter.BLOCK_precondition:
+				precondition = readCodeBlock();
+				break;
+			case WyilFileWriter.BLOCK_postcondition:
+				postcondition = readCodeBlock();
+				break;
+			case WyilFileWriter.BLOCK_body:
+				body = readCodeBlock();
+				break;
+			default:
+				throw new RuntimeException("Unknown case block encountered");
+			}
+		}
+
+		return new WyilFile.Case(body, precondition, postcondition, Collections.EMPTY_LIST);
+	}
+	
+	private Block readCodeBlock() throws IOException {
+		return new Block(0);		
+	}	
 	
 	public final class ValueReader  {		
 		private BinaryInputStream reader;

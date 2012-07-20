@@ -78,7 +78,7 @@ public class Pipeline {
 					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
 					// add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));
-					//add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
+					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
 				}
 			});
 
