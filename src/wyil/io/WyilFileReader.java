@@ -191,18 +191,6 @@ public class WyilFileReader {
 				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
 	}
 	
-	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {		
-		int nameIdx = input.read_uv();
-		int typeIdx = input.read_uv();
-		int nBlocks = input.read_uv();
-		Block constraint = null;
-		if(nBlocks != 0) {
-			constraint = readCodeBlock();
-		}
-		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
-				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
-	}
-	
 	private Block readCodeBlock() throws IOException {
 		return new Block(0);		
 	}
