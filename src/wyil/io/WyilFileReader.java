@@ -4,6 +4,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,14 +68,16 @@ public class WyilFileReader {
 		readPathPool(pathPoolSize);
 		readNamePool(namePoolSize);
 		readConstantPool(constantPoolSize);
-		readTypePool(typePoolSize);			
+		readTypePool(typePoolSize);		
 		
-		return null;
+		// FIXME: problem if more than one block.
+		input.read_uv(); // block identifier
+		// TODO: read block size
+		return readModule();				
 	}
 	
 	private void readStringPool(int size) throws IOException {
-		System.out.println("STRING POOL");
-		System.out.println("=====================");
+		System.out.println("=== TYPES ===");		
 		stringPool.clear();
 		for(int i=0;i!=size;++i) {
 			int length = input.read_uv();
@@ -91,6 +94,7 @@ public class WyilFileReader {
 	}
 	
 	private void readPathPool(int size) throws IOException {
+		System.out.println("=== PATHS ===");
 		pathPool.clear();
 		for(int i=0;i!=size;++i) {
 			int parent = input.read_uv();
@@ -108,6 +112,7 @@ public class WyilFileReader {
 	}
 
 	private void readNamePool(int size) throws IOException {
+		System.out.println("=== NAMES ===");
 		namePool.clear();
 		for(int i=0;i!=size;++i) {
 			int kind = input.read_uv();
@@ -119,6 +124,7 @@ public class WyilFileReader {
 	}
 
 	private void readConstantPool(int size) throws IOException {
+		System.out.println("=== CONSTANTS ===");
 		constantPool.clear();
 		ValueReader bin = new ValueReader(input);
 		for(int i=0;i!=size;++i) {
@@ -129,12 +135,84 @@ public class WyilFileReader {
 	}
 
 	private void readTypePool(int size) throws IOException {
+		System.out.println("=== TYPES ===");
 		typePool.clear();
 		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for(int i=0;i!=size;++i) {
 			Type t = bin.readType();
 			typePool.add(t);
 		}
+	}
+	
+	private WyilFile readModule() throws IOException {
+		int nameIdx = input.read_uv();
+		int numBlocks = input.read_uv();
+		List<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
+		for(int i=0;i!=numBlocks;++i) {
+			declarations.add(readModuleBlock());			
+		}
+		return new WyilFile(pathPool.get(nameIdx),"unknown.whiley",declarations);
+	}
+	
+	private WyilFile.Declaration readModuleBlock() throws IOException {
+		int kind = input.read_uv();
+		// TODO: read block size
+		switch(kind) {
+			case WyilFileWriter.BLOCK_constant:
+				return readConstantBlock();
+			case WyilFileWriter.BLOCK_type:
+				return readTypeBlock();
+			case WyilFileWriter.BLOCK_function:
+				return readFunctionBlock();
+			case WyilFileWriter.BLOCK_method:
+				return readMethodBlock();				
+			default:
+				throw new RuntimeException("unknown module block encountered");
+		}
+	}
+	
+	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {
+		int nameIdx = input.read_uv();
+		int constantIdx = input.read_uv();
+		int nBlocks = input.read_uv(); // unused
+		return new WyilFile.ConstantDeclaration(Collections.EMPTY_LIST,
+				stringPool.get(nameIdx), constantPool.get(constantIdx));
+	}
+	
+	private WyilFile.TypeDeclaration readTypeBlock() throws IOException {		
+		int nameIdx = input.read_uv();
+		int typeIdx = input.read_uv();
+		int nBlocks = input.read_uv();
+		Block constraint = null;
+		if(nBlocks != 0) {
+			constraint = readCodeBlock();
+		}
+		return new WyilFile.TypeDeclaration(Collections.EMPTY_LIST,
+				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
+	}
+	
+	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {		
+		int nameIdx = input.read_uv();
+		int typeIdx = input.read_uv();
+		int nBlocks = input.read_uv();
+		Block constraint = null;
+		if(nBlocks != 0) {
+			constraint = readCodeBlock();
+		}
+		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
+				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
+	}
+	
+	private Block readCodeBlock() throws IOException {
+		return new Block(0);		
+	}
+	
+	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
+		return null;
+	}
+	
+	private WyilFile.MethodDeclaration readMethodBlock() throws IOException {
+		return null;
 	}
 	
 	public final class ValueReader  {		
@@ -147,23 +225,23 @@ public class WyilFileReader {
 		public Value read() throws IOException {		
 			int code = reader.read_u1();				
 			switch (code) {			
-			case WyilFileWriter.NULL:
+			case WyilFileWriter.CONSTANT_null:
 				return Value.V_NULL;
-			case WyilFileWriter.FALSE:
+			case WyilFileWriter.CONSTANT_false:
 				return Value.V_BOOL(false);
-			case WyilFileWriter.TRUE:
+			case WyilFileWriter.CONSTANT_true:
 				return Value.V_BOOL(true);				
-			case WyilFileWriter.BYTEVAL:			
+			case WyilFileWriter.CONSTANT_byte:			
 			{
 				byte val = (byte) reader.read_u1();				
 				return Value.V_BYTE(val);
 			}
-			case WyilFileWriter.CHARVAL:			
+			case WyilFileWriter.CONSTANT_char:			
 			{
 				char val = (char) reader.read_u2();				
 				return Value.V_CHAR(val);
 			}
-			case WyilFileWriter.INTVAL:			
+			case WyilFileWriter.CONSTANT_int:			
 			{
 				int len = reader.read_u2();				
 				byte[] bytes = new byte[len];
@@ -171,7 +249,7 @@ public class WyilFileReader {
 				BigInteger bi = new BigInteger(bytes);
 				return Value.V_INTEGER(bi);
 			}
-			case WyilFileWriter.REALVAL:			
+			case WyilFileWriter.CONSTANT_real:			
 			{
 				int len = reader.read_u2();
 				byte[] bytes = new byte[len];
@@ -184,7 +262,7 @@ public class WyilFileReader {
 				BigRational br = new BigRational(num,den);
 				return Value.V_RATIONAL(br);
 			}
-			case WyilFileWriter.STRINGVAL:
+			case WyilFileWriter.CONSTANT_string:
 			{
 				int len = reader.read_u2();
 				StringBuffer sb = new StringBuffer();
@@ -194,7 +272,7 @@ public class WyilFileReader {
 				}
 				return Value.V_STRING(sb.toString());
 			}
-			case WyilFileWriter.LISTVAL:
+			case WyilFileWriter.CONSTANT_list:
 			{
 				int len = reader.read_u2();
 				ArrayList<Value> values = new ArrayList<Value>();
@@ -203,7 +281,7 @@ public class WyilFileReader {
 				}
 				return Value.V_LIST(values);
 			}
-			case WyilFileWriter.SETVAL:
+			case WyilFileWriter.CONSTANT_set:
 			{
 				int len = reader.read_u2();
 				ArrayList<Value> values = new ArrayList<Value>();
@@ -212,7 +290,7 @@ public class WyilFileReader {
 				}
 				return Value.V_SET(values);
 			}
-			case WyilFileWriter.TUPLEVAL:
+			case WyilFileWriter.CONSTANT_tuple:
 			{
 				int len = reader.read_u2();
 				ArrayList<Value> values = new ArrayList<Value>();
@@ -221,7 +299,7 @@ public class WyilFileReader {
 				}
 				return Value.V_TUPLE(values);
 			}
-			case WyilFileWriter.RECORDVAL:
+			case WyilFileWriter.CONSTANT_record:
 			{
 				int len = reader.read_u2();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();

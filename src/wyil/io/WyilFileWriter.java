@@ -3,6 +3,7 @@ package wyil.io;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.CyclicBarrier;
 
 import wyil.Transform;
 import wybs.lang.Path;
@@ -46,7 +47,8 @@ public class WyilFileWriter implements Transform {
 		buildPools(module);
 		
 		writeHeader(module);
-		writePools();
+		writePools();		
+		writeBlock(module); // in principle we could write multiple blocks
 		
 		output.close();
 	}	
@@ -82,7 +84,7 @@ public class WyilFileWriter implements Transform {
 		output.write_uv(typePool.size());		
 		
 		// finally, write the number of blocks
-		output.write_uv(module.declarations().size());
+		output.write_uv(module.declarations().size());		
 	}
 	
 	private void writePools() throws IOException{
@@ -143,6 +145,75 @@ public class WyilFileWriter implements Transform {
 		}
 	}
 	
+	private void writeBlock(WyilFile module) throws IOException {
+		output.write_uv(BLOCK_module);
+		// TODO: write block size
+		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
+		output.write_uv(module.declarations().size());
+		for(WyilFile.Declaration d : module.declarations()) {
+			if(d instanceof WyilFile.ConstantDeclaration) {
+				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d;
+				output.write_uv(BLOCK_constant);
+				// TODO: write block size	
+				// TODO: write modifiers
+				output.write_uv(stringCache.get(cd.name()));
+				output.write_uv(constantCache.get(cd.constant()));
+				output.write_uv(0); // no sub-blocks
+				// TODO: write annotations
+				
+			} else if(d instanceof WyilFile.TypeDeclaration) {
+				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
+				output.write_uv(BLOCK_type);
+				// TODO: write block size
+				// TODO: write modifiers
+				output.write_uv(stringCache.get(td.name()));
+				output.write_uv(typeCache.get(td.type()));
+				if(td.constraint() == null) {
+					output.write_uv(0); // no sub-blocks
+				} else {
+					output.write_uv(1); // one sub-block
+					writeBlock(td.constraint());
+				}
+				// TODO: write annotations
+				
+			} else if(d instanceof WyilFile.MethodDeclaration) {
+				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+				if(md.type() instanceof Type.Function) {
+					output.write_uv(BLOCK_function);
+				} else {
+					output.write_uv(BLOCK_method);
+				}
+				// TODO: write block size
+				// TODO: write modifiers
+				output.write_uv(md.cases().size());				
+				for(WyilFile.Case c : md.cases()) {
+					output.write_uv(BLOCK_case);
+					// TODO: write block size
+					int n = 0;
+					n += c.precondition() != null ? 1 : 0;
+					n += c.postcondition() != null ? 1 : 0;
+					n += c.body() != null ? 1 : 0;
+					output.write_uv(n);
+					if(c.precondition() != null) {
+						writeBlock(c.precondition());
+					}
+					if(c.postcondition() != null) {
+						writeBlock(c.postcondition());
+					}
+					if(c.body() != null) {
+						writeBlock(c.body());
+					}
+					// TODO: write annotations
+				}
+				// TODO: write annotations
+			} 
+		}
+	}
+	
+	private void writeBlock(Block block) throws IOException {		
+		// TODO: write block size
+	}
+	
 	private void buildPools(WyilFile module) {
 		stringPool.clear();
 		stringCache.clear();
@@ -177,7 +248,8 @@ public class WyilFileWriter implements Transform {
 	
 	private void buildPools(WyilFile.TypeDeclaration declaration) {
 		addStringItem(declaration.name());
-		addTypeItem(declaration.type());
+		addTypeItem(declaration.type());		
+		buildPools(declaration.constraint());		
 	}
 	
 	private void buildPools(WyilFile.ConstantDeclaration declaration) {
@@ -188,6 +260,77 @@ public class WyilFileWriter implements Transform {
 	private void buildPools(WyilFile.MethodDeclaration declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
+		for(WyilFile.Case c : declaration.cases()) {			
+			buildPools(c.precondition());						
+			buildPools(c.body());						
+			buildPools(c.postcondition());			
+		}
+	}
+	
+	private void buildPools(Block block) {
+		if(block == null) { return; }
+		for(Block.Entry e : block) {
+			buildPools(e.code);
+		}
+	}
+	
+	private void buildPools(Code code) {
+		
+		// First, deal with special cases
+		if(code instanceof Code.Const) {
+			Code.Const c = (Code.Const) code;
+			addConstantItem(c.constant);
+		} else if(code instanceof Code.Convert) {
+			Code.Convert c = (Code.Convert) code;
+			addTypeItem(c.result);
+		} else if(code instanceof Code.FieldLoad) {
+			Code.FieldLoad c = (Code.FieldLoad) code;
+			addStringItem(c.field);
+		} else if(code instanceof Code.IfIs) {
+			Code.IfIs c = (Code.IfIs) code;
+			addTypeItem(c.type);
+			addTypeItem(c.rightOperand);
+		} else if(code instanceof Code.Invoke) {
+			Code.Invoke c = (Code.Invoke) code;
+			if(c.type instanceof Type.Function) { 
+				// FIXME: this is totally broken
+				addPathItem(NAME_Kind.FUNCTION,c.name.module().append(c.name.name()));
+			} else {
+				// FIXME: this is totally broken
+				addPathItem(NAME_Kind.METHOD,c.name.module().append(c.name.name()));
+			}
+		} else if(code instanceof Code.Update) {
+			Code.Update c = (Code.Update) code;
+			addTypeItem(c.type);
+			addTypeItem(c.afterType);
+			for(Code.LVal l : c) {
+				if(l instanceof Code.RecordLVal) {
+					Code.RecordLVal lv = (Code.RecordLVal) l;
+					addStringItem(lv.field);
+				}
+			}
+		}
+		
+		// Second, deal with standard cases
+		if(code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractUnaryAssignable) {
+			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractNaryAssignable) {
+			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
+			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
+			addTypeItem(a.type);
+		} 
 	}
 	
 	private int addPathItem(NAME_Kind kind, Path.ID pid) {
@@ -410,30 +553,30 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Null expr) throws IOException {				
-			output.write_u1(NULL);
+			output.write_u1(CONSTANT_null);
 		}
 		
 		public void write(Value.Bool expr) throws IOException {
 			
 			if(expr.value) {
-				output.write_u1(TRUE);
+				output.write_u1(CONSTANT_true);
 			} else {
-				output.write_u1(FALSE);
+				output.write_u1(CONSTANT_false);
 			}
 		}
 		
 		public void write(Value.Byte expr) throws IOException {		
-			output.write_u1(BYTEVAL);		
+			output.write_u1(CONSTANT_byte);		
 			output.write_u1(expr.value);		
 		}
 		
 		public void write(Value.Char expr) throws IOException {		
-			output.write_u1(CHARVAL);		
+			output.write_u1(CONSTANT_char);		
 			output.write_u2(expr.value);		
 		}
 		
 		public void write(Value.Integer expr) throws IOException {		
-			output.write_u1(INTVAL);		
+			output.write_u1(CONSTANT_int);		
 			BigInteger num = expr.value;
 			byte[] numbytes = num.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
@@ -443,7 +586,7 @@ public class WyilFileWriter implements Transform {
 
 		public void write(Value.Rational expr) throws IOException {		
 			
-			output.write_u1(REALVAL);
+			output.write_u1(CONSTANT_real);
 			BigRational br = expr.value;
 			BigInteger num = br.numerator();
 			BigInteger den = br.denominator();
@@ -460,7 +603,7 @@ public class WyilFileWriter implements Transform {
 		}
 			
 		public void write(Value.Strung expr) throws IOException {	
-			output.write_u1(STRINGVAL);
+			output.write_u1(CONSTANT_string);
 			String value = expr.value;
 			int valueLength = value.length();		
 			output.write_u2(valueLength);
@@ -469,7 +612,7 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		public void write(Value.Set expr) throws IOException {
-			output.write_u1(SETVAL);
+			output.write_u1(CONSTANT_set);
 			output.write_u2(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
@@ -477,7 +620,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.List expr) throws IOException {
-			output.write_u1(LISTVAL);
+			output.write_u1(CONSTANT_list);
 			output.write_u2(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
@@ -485,7 +628,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Map expr) throws IOException {
-			output.write_u1(MAPVAL);
+			output.write_u1(CONSTANT_map);
 			output.write_u2(expr.values.size());
 			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
 				write(e.getKey());
@@ -494,7 +637,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Record expr) throws IOException {
-			output.write_u1(RECORDVAL);
+			output.write_u1(CONSTANT_record);
 			output.write_u2(expr.values.size());
 			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
 				output.write_u2(stringCache.get(v.getKey()));
@@ -503,7 +646,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Tuple expr) throws IOException {
-			output.write_u1(TUPLEVAL); // FIXME: should be TUPLE!!!
+			output.write_u1(CONSTANT_tuple); // FIXME: should be TUPLE!!!
 			output.write_u2(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
@@ -532,23 +675,42 @@ public class WyilFileWriter implements Transform {
 	}
 
 	// =========================================================================
-	// Value Identifiers
+	// BLOCK identifiers
+	// =========================================================================
+	
+	public final static int BLOCK_module = 0;
+	public final static int BLOCK_documentation = 1;
+	public final static int BLOCK_license = 2;
+	// ... (anticipating some others here)
+	public final static int BLOCK_type = 10;
+	public final static int BLOCK_constant = 11;
+	public final static int BLOCK_function = 12;
+	public final static int BLOCK_method = 13;
+	public final static int BLOCK_case = 14;
+	// ... (anticipating some others here)
+	public final static int BLOCK_body = 20;
+	public final static int BLOCK_precondition = 21;
+	public final static int BLOCK_postcondition = 22;
+	public final static int BLOCK_constraint = 23;
+	// ... (anticipating some others here)
+	
+	// =========================================================================
+	// CONSTANT identifies
 	// =========================================================================
 
-	public final static int NULL = 0;
-	public final static int TRUE = 1;
-	public final static int FALSE = 2;
-	public final static int CHARVAL = 3;
-	public final static int INTVAL = 4;
-	public final static int REALVAL = 5;
-	public final static int SETVAL = 6;
-	public final static int LISTVAL = 7;
-	public final static int RECORDVAL = 8;
-	public final static int TUPLEVAL = 9;
-	public final static int BYTEVAL = 10;
-	public final static int STRINGVAL = 11;
-	public final static int MAPVAL = 12;
-	public final static int FUNCTIONVAL = 13;
-	public final static int METHODVAL = 14;
-	public final static int MESSAGEVAL = 15;
+	public final static int CONSTANT_null = 0;
+	public final static int CONSTANT_true = 1;
+	public final static int CONSTANT_false = 2;
+	public final static int CONSTANT_byte = 3;
+	public final static int CONSTANT_char = 4;
+	public final static int CONSTANT_int = 5;
+	public final static int CONSTANT_real = 6;
+	public final static int CONSTANT_set = 7;	
+	public final static int CONSTANT_string = 8;	
+	public final static int CONSTANT_list = 9;
+	public final static int CONSTANT_record = 10;
+	public final static int CONSTANT_tuple = 11;
+	public final static int CONSTANT_map = 12;
+	public final static int CONSTANT_function = 13;
+	public final static int CONSTANT_method = 14;
 }
