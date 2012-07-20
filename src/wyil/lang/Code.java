@@ -573,6 +573,11 @@ public abstract class Code {
 		return this;
 	}
 
+	/**
+	 * return the opcode value of this bytecode
+	 * @return
+	 */
+	public abstract int opcode();
 	// ===============================================================
 	// Abstract Bytecodes
 	// ===============================================================
@@ -1158,6 +1163,8 @@ public abstract class Code {
 			return Code.Convert(type, nTarget, nOperand, result);
 		}
 
+		public int opcode() { return OPCODE_convert; }
+		
 		public int hashCode() {
 			return result.hashCode() + super.hashCode();
 		}
@@ -1219,6 +1226,8 @@ public abstract class Code {
 			this.constant = constant;
 		}
 
+		public int opcode() { return OPCODE_constt; }
+		
 		@Override
 		public void registers(java.util.Set<Integer> registers) {
 			registers.add(target);
@@ -1293,6 +1302,8 @@ public abstract class Code {
 			super(type, target, operand);
 		}
 
+		public int opcode() { return OPCODE_assign; }
+		
 		public Code clone(int nTarget, int nOperand) {
 			return Code.Assign(type, nTarget, nOperand);
 		}
@@ -1345,6 +1356,8 @@ public abstract class Code {
 			super(Type.T_STRING, operand);
 		}
 
+		public int opcode() { return OPCODE_debug; }
+		
 		@Override
 		public Code clone(int nOperand) {
 			return Code.Debug(nOperand);
@@ -1455,6 +1468,8 @@ public abstract class Code {
 			super(type, leftOperand, rightOperand, cop, msg);
 		}
 
+		public int opcode() { return OPCODE_asserteq + op.offset; }
+		
 		@Override
 		public Code clone(int nLeftOperand, int nRightOperand) {
 			return Code.Assert(type, nLeftOperand, nRightOperand, op, msg);
@@ -1494,6 +1509,8 @@ public abstract class Code {
 			super(type, leftOperand, rightOperand, cop, msg);
 		}
 
+		public int opcode() { return OPCODE_assumeeq + op.offset; }
+		
 		@Override
 		public Code clone(int nLeftOperand, int nRightOperand) {
 			return Code.Assume(type, nLeftOperand, nRightOperand, op, msg);
@@ -1558,6 +1575,8 @@ public abstract class Code {
 			return Code.FieldLoad(type, nTarget, nOperand, field);
 		}
 
+		public int opcode() { return OPCODE_fieldload; }
+		
 		public int hashCode() {
 			return super.hashCode() + field.hashCode();
 		}
@@ -1628,6 +1647,8 @@ public abstract class Code {
 			this.target = target;
 		}
 
+		public int opcode() { return OPCODE_goto; }
+		
 		public Goto relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
 			if (nlabel == null) {
@@ -1734,6 +1755,8 @@ public abstract class Code {
 			}
 		}
 
+		public int opcode() { return OPCODE_ifeq + op.offset; }
+		
 		@Override
 		public Code clone(int nLeftOperand, int nRightOperand) {
 			return Code.If(type, nLeftOperand, nRightOperand, op, target);
@@ -1770,50 +1793,54 @@ public abstract class Code {
 	 * 
 	 */
 	public enum Comparator {
-		EQ() {
+		EQ(0) {
 			public String toString() {
 				return "eq";
 			}
 		},
-		NEQ {
+		NEQ(1) {
 			public String toString() {
 				return "ne";
 			}
 		},
-		LT {
+		LT(2) {
 			public String toString() {
 				return "lt";
 			}
 		},
-		LTEQ {
+		LTEQ(3) {
 			public String toString() {
 				return "le";
 			}
 		},
-		GT {
+		GT(4) {
 			public String toString() {
 				return "gt";
 			}
 		},
-		GTEQ {
+		GTEQ(5) {
 			public String toString() {
 				return "ge";
 			}
 		},
-		ELEMOF {
+		ELEMOF(6) {
 			public String toString() {
 				return "in";
 			}
 		},
-		SUBSET {
+		SUBSET(7) {
 			public String toString() {
 				return "sb";
 			}
 		},
-		SUBSETEQ {
+		SUBSETEQ(8) {
 			public String toString() {
 				return "sbe";
 			}
+		};
+		public int offset;
+		private Comparator(int offset) {
+			this.offset = offset;
 		}
 	};
 
@@ -1909,6 +1936,8 @@ public abstract class Code {
 			this.rightOperand = rightOperand;
 		}
 
+		public int opcode() { return OPCODE_ifis; }
+		
 		public IfIs relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
 			if (nlabel == null) {
@@ -1977,6 +2006,8 @@ public abstract class Code {
 			super(type, target, operand, operands);
 		}
 
+		public int opcode() { return OPCODE_indirectinvoke; }
+		
 		@Override
 		public Code clone(int nTarget, int nOperand, int[] nOperands) {
 			return IndirectInvoke(type, nTarget, nOperand, nOperands);
@@ -2027,6 +2058,8 @@ public abstract class Code {
 			super(Type.T_BOOL, target, operand);
 		}
 
+		public int opcode() { return OPCODE_not; }
+		
 		@Override
 		public Code clone(int nTarget, int nOperand) {
 			return Code.Not(nTarget, nOperand);
@@ -2099,6 +2132,8 @@ public abstract class Code {
 			this.name = name;
 		}
 
+		public int opcode() { return OPCODE_invoke; }
+		
 		public int hashCode() {
 			return name.hashCode() + super.hashCode();
 		}
@@ -2140,6 +2175,8 @@ public abstract class Code {
 			this.label = label;
 		}
 
+		public int opcode() { return -1; }
+		
 		public Label relabel(Map<String, String> labels) {
 			String nlabel = labels.get(label);
 			if (nlabel == null) {
@@ -2166,20 +2203,24 @@ public abstract class Code {
 	}
 
 	public enum BinListKind {
-		LEFT_APPEND {
-			public String toString() {
-				return "lappend";
-			}
-		},
-		RIGHT_APPEND {
-			public String toString() {
-				return "rappend";
-			}
-		},
-		APPEND {
+		APPEND(0) {
 			public String toString() {
 				return "append";
 			}
+		},
+		LEFT_APPEND(1) {
+			public String toString() {
+				return "appendl";
+			}
+		},
+		RIGHT_APPEND(2) {
+			public String toString() {
+				return "appendr";
+			}
+		};		
+		public final int offset;
+		private BinListKind(int offset) {
+			this.offset = offset;
 		}
 	}
 
@@ -2222,6 +2263,8 @@ public abstract class Code {
 			this.kind = operation;
 		}
 
+		public int opcode() { return OPCODE_append + kind.offset; }
+		
 		@Override
 		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return Code.BinListOp(type, nTarget, nLeftOperand, nRightOperand,
@@ -2274,6 +2317,8 @@ public abstract class Code {
 			super(type, target, operand);
 		}
 
+		public int opcode() { return OPCODE_lengthof; }
+		
 		protected Code clone(int nTarget, int nOperand) {
 			return Code.LengthOf(type, nTarget, nOperand);
 		}
@@ -2305,6 +2350,8 @@ public abstract class Code {
 			super(type, target, operands);
 		}
 
+		public int opcode() { return OPCODE_sublist; }
+		
 		@Override
 		public final Code clone(int nTarget, int[] nOperands) {
 			return Code.SubList(type, nTarget, nOperands);
@@ -2355,6 +2402,8 @@ public abstract class Code {
 			super(type, target, sourceOperand, keyOperand);
 		}
 
+		public int opcode() { return OPCODE_indexof; }
+		
 		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return Code.IndexOf(type, nTarget, nLeftOperand, nRightOperand);
 		}
@@ -4117,4 +4166,59 @@ public abstract class Code {
 			return type;
 		}
 	}
+	
+	public final int OPCODE_convert = 1;
+	public final int OPCODE_const = 2;
+	public final int OPCODE_assign = 3;
+	
+	public final int OPCODE_append = 3;
+	public final int OPCODE_appendl = 3;
+	public final int OPCODE_appendr = 3;
+	
+	public final int OPCODE_asserteq = 5;
+	public final int OPCODE_assertne = 6;
+	public final int OPCODE_assertlt = 7;
+	public final int OPCODE_assertle = 8;
+	public final int OPCODE_assertgt = 9;
+	public final int OPCODE_assertge = 10;
+	public final int OPCODE_assertel = 11;
+	public final int OPCODE_assertss = 12;
+	public final int OPCODE_assertse = 13;
+	
+	public final int OPCODE_assumeeq = 14;
+	public final int OPCODE_assumene = 15;
+	public final int OPCODE_assumelt = 16;
+	public final int OPCODE_assumele = 17;
+	public final int OPCODE_assumegt = 18;
+	public final int OPCODE_assumege = 19;
+	public final int OPCODE_assumeel = 20;
+	public final int OPCODE_assumess = 21;
+	public final int OPCODE_assumese = 22;
+	
+	public final int OPCODE_debug = 4;
+	public final int OPCODE_fieldload = 4;
+	public final int OPCODE_goto = 4;
+	
+	public final int OPCODE_ifeq = 14;
+	public final int OPCODE_ifne = 15;
+	public final int OPCODE_iflt = 16;
+	public final int OPCODE_ifle = 17;
+	public final int OPCODE_ifgt = 18;
+	public final int OPCODE_ifge = 19;
+	public final int OPCODE_ifel = 20;
+	public final int OPCODE_ifss = 21;
+	public final int OPCODE_ifse = 22;
+	
+	public final int OPCODE_ifis = 14;
+	
+	public final int OPCODE_indexof = 14;
+	public final int OPCODE_indirectinvoke = 14;
+	public final int OPCODE_invoke = 14;
+	public final int OPCODE_lengthof = 14;
+	
+	public final int OPCODE_not = 14;
+	
+
+	public final int OPCODE_sublist = 14;
+	
 }
