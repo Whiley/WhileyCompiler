@@ -222,6 +222,96 @@ public class WyilFileWriter implements Transform {
 	
 	private void writeBlock(Block block) throws IOException {		
 		// TODO: write block size
+		output.write_uv(block.size()); // instruction count (not same as block size)
+		
+		for(Block.Entry e : block) {
+			writeCode(e.code);
+		}
+	}
+	
+	private void writeCode(Code code) throws IOException {
+		// first, deal with standard instruction formats
+		output.write_u1(code.opcode());
+		
+		if(code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
+			output.write_u1(a.operand);
+			output.write_uv(typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
+			output.write_u1(a.leftOperand);
+			output.write_u1(a.rightOperand);
+			output.write_uv(typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractUnaryAssignable) {
+			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
+			output.write_u1(a.target);
+			output.write_u1(a.operand);
+			output.write_uv(typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
+			output.write_u1(a.target);
+			output.write_u1(a.leftOperand);
+			output.write_u1(a.rightOperand);
+			output.write_uv(typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractNaryAssignable) {
+			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			if(a.target != Code.NULL_REG) {
+				output.write_u1(a.target);
+			}
+			int[] operands = a.operands;
+			output.write_u1(operands.length); // TODO: some bytecodes don't require this
+			for(int i=0;i!=operands.length;++i) {
+				output.write_u1(operands[i]);
+			}
+			output.write_uv(typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
+			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
+			if(a.target != Code.NULL_REG) {
+				output.write_u1(a.target);
+			}			
+			int[] operands = a.operands;
+			output.write_u1(operands.length+1); // TODO: some bytecodes don't require this
+			output.write_u1(a.operand);
+			for(int i=0;i!=operands.length;++i) {
+				output.write_u1(operands[i]);
+			}
+			output.write_uv(typeCache.get(a.type));
+		}
+		
+		// now deal with non-uniform instructions
+		// First, deal with special cases
+		if(code instanceof Code.Const) {
+			Code.Const c = (Code.Const) code;
+			output.write_uv(constantCache.get(c.constant));
+		} else if(code instanceof Code.Convert) {
+			Code.Convert c = (Code.Convert) code;
+			output.write_uv(typeCache.get(c.result));
+		} else if(code instanceof Code.FieldLoad) {
+			Code.FieldLoad c = (Code.FieldLoad) code;
+			output.write_uv(stringCache.get(c.field));
+		} else if(code instanceof Code.IfIs) {
+			Code.IfIs c = (Code.IfIs) code;
+			output.write_uv(typeCache.get(c.rightOperand));
+			// FIXME: write target!
+		} else if(code instanceof Code.If) {
+			Code.If c = (Code.If) code;			
+			// FIXME: write target!
+		} else if(code instanceof Code.Invoke) {
+			Code.Invoke c = (Code.Invoke) code;
+			output.write_uv(nameCache.get(c.name));
+		} else if(code instanceof Code.Update) {
+			Code.Update c = (Code.Update) code;
+			// TODO:
+		} else if(code instanceof Code.Switch) {
+			Code.Switch c = (Code.Switch) code;
+			List<Pair<Value,String>> branches = c.branches;
+			// FIXME: write default target
+			output.write_u1(branches.size());
+			for(Pair<Value,String> b : branches) {
+				output.write_u1(constantCache.get(b.first()));
+				// FIXME: write target
+			}
+		}
 	}
 	
 	private void buildPools(WyilFile module) {
@@ -319,6 +409,12 @@ public class WyilFileWriter implements Transform {
 					addStringItem(lv.field);
 				}
 			}
+		} else if(code instanceof Code.Switch) {
+			Code.Switch s = (Code.Switch) code;
+			addTypeItem(s.type);
+			for(Pair<Value,String> b : s.branches) {
+				addConstantItem(b.first());
+			}
 		}
 		
 		// Second, deal with standard cases
@@ -340,7 +436,7 @@ public class WyilFileWriter implements Transform {
 		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
 			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
 			addTypeItem(a.type);
-		} 
+		}
 	}
 	
 	private int addPathItem(NAME_Kind kind, Path.ID pid) {

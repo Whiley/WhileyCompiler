@@ -441,8 +441,8 @@ public class VerificationCheck implements Transform {
 			// skip			
 		} else if(code instanceof Code.BinSetOp) {
 			constraint = transform((Code.BinSetOp)code,entry,constraint,environment);
-		} else if(code instanceof Code.StringOp) {
-			constraint = transform((Code.StringOp)code,entry,constraint,environment);
+		} else if(code instanceof Code.BinStringOp) {
+			constraint = transform((Code.BinStringOp)code,entry,constraint,environment);
 		} else if(code instanceof Code.SubString) {
 			constraint = transform((Code.SubString)code,entry,constraint,environment);
 		} else if(code instanceof Code.NewObject) {
@@ -750,7 +750,7 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 	
-	protected WFormula transform(Code.StringOp code, Block.Entry entry,
+	protected WFormula transform(Code.BinStringOp code, Block.Entry entry,
 			WFormula constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;

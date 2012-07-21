@@ -158,7 +158,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Code.IfIs code, Entry entry, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
 				
-		r.add(code.leftOperand);		
+		r.add(code.operand);		
 		
 		return r;
 	}

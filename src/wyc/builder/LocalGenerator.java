@@ -730,17 +730,17 @@ public final class LocalGenerator {
 		case STRINGAPPEND:
 			Type lhs = v.lhs.result().raw();
 			Type rhs = v.rhs.result().raw();
-			Code.StringOperation op;
+			Code.BinStringKind op;
 			if(lhs == Type.T_STRING && rhs == Type.T_STRING) {
-				op = Code.StringOperation.APPEND;
+				op = Code.BinStringKind.APPEND;
 			} else if(lhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, rhs)) {
-				op = Code.StringOperation.LEFT_APPEND;
+				op = Code.BinStringKind.LEFT_APPEND;
 			} else if(rhs == Type.T_STRING && Type.isSubtype(Type.T_CHAR, lhs)) {
-				op = Code.StringOperation.RIGHT_APPEND;
+				op = Code.BinStringKind.RIGHT_APPEND;
 			} else {
 				// this indicates that one operand must be explicitly converted
 				// into a string.
-				op = Code.StringOperation.APPEND;
+				op = Code.BinStringKind.APPEND;
 			}
 			blk.append(Code.StringOp(target,freeRegister, freeRegister+1,op),attributes(v));
 			return blk;	

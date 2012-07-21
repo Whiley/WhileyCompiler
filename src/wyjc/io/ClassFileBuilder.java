@@ -478,8 +478,8 @@ public class ClassFileBuilder {
 				// do nothing
 			} else if(code instanceof Code.BinSetOp) {
 				 translate((Code.BinSetOp)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof Code.StringOp) {
-				 translate((Code.StringOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.BinStringOp) {
+				 translate((Code.BinStringOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.SubString) {
 				 translate((Code.SubString)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.Switch) {
@@ -956,21 +956,21 @@ public class ClassFileBuilder {
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
 
-		bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
 		translateTypeTest(trueLabel, c.type, c.rightOperand, bytecodes, constants);
 
 		Type gdiff = Type.intersect(c.type,Type.Negation(c.rightOperand));			
-		bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
 		// now, add checkcast									
 		addReadConversion(gdiff,bytecodes);			
-		bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(gdiff)));							
+		bytecodes.add(new Bytecode.Store(c.operand,convertType(gdiff)));							
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));			
 		Type glb = Type.intersect(c.type, c.rightOperand);			
-		bytecodes.add(new Bytecode.Load(c.leftOperand, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
 		// now, add checkcast						
 		addReadConversion(glb,bytecodes);
-		bytecodes.add(new Bytecode.Store(c.leftOperand,convertType(glb)));			
+		bytecodes.add(new Bytecode.Store(c.operand,convertType(glb)));			
 		bytecodes.add(new Bytecode.Goto(c.target));
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
@@ -1345,12 +1345,12 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYSET));
 	}	
 		
-	public void translate(Code.StringOp c, Entry stmt, int freeSlot,
+	public void translate(Code.BinStringOp c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType leftType;
 		JvmType rightType;
 		
-		switch(c.operation) {
+		switch(c.kind) {
 		case APPEND:
 			leftType = JAVA_LANG_STRING;
 			rightType = JAVA_LANG_STRING;

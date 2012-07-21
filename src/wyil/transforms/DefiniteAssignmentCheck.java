@@ -106,7 +106,7 @@ public class DefiniteAssignmentCheck extends
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfIs iftype, Entry entry, HashSet<Integer> in) {
 		
-		if (!in.contains(iftype.leftOperand)) {
+		if (!in.contains(iftype.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					entry);
 		}

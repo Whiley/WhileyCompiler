@@ -201,8 +201,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Code.Return)code,entry,environment);
 		} else if(code instanceof Code.BinSetOp) {
 			infer(index,(Code.BinSetOp)code,entry,environment);
-		} else if(code instanceof Code.StringOp) {
-			infer(index,(Code.StringOp)code,entry,environment);
+		} else if(code instanceof Code.BinStringOp) {
+			infer(index,(Code.BinStringOp)code,entry,environment);
 		} else if(code instanceof Code.SubString) {
 			infer(index,(Code.SubString)code,entry,environment);
 		} else if(code instanceof Code.Nop) {
@@ -718,12 +718,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.target,null);
 	}
 	
-	public void infer(int index, Code.StringOp code, Block.Entry entry,
+	public void infer(int index, Code.BinStringOp code, Block.Entry entry,
 			Env environment) {
 		Value lhs = environment.get(code.leftOperand);
 		Value rhs = environment.get(code.rightOperand);
 		Value result = null;
-		switch(code.operation) {
+		switch(code.kind) {
 		case APPEND:
 			if(lhs instanceof Value.Strung && rhs instanceof Value.Strung) {
 				Value.Strung left = (Value.Strung) lhs;
@@ -854,7 +854,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public Pair<Env, Env> propagate(int index,
 			Code.IfIs code, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
-		Value lhs = environment.get(code.leftOperand);
+		Value lhs = environment.get(code.operand);
 		
 		// TODO: could do more here to eliminate conditionals which must either
 		// be taken or untaken.

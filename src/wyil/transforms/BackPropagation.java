@@ -204,8 +204,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			// skip			
 		} else if(code instanceof Code.BinSetOp) {
 			infer(index,(Code.BinSetOp)code,entry,environment);
-		} else if(code instanceof Code.StringOp) {
-			infer(index,(Code.StringOp)code,entry,environment);
+		} else if(code instanceof Code.BinStringOp) {
+			infer(index,(Code.BinStringOp)code,entry,environment);
 		} else if(code instanceof Code.SubString) {
 			infer(index,(Code.SubString)code,entry,environment);
 		} else if(code instanceof Code.NewObject) {
@@ -509,11 +509,11 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.StringOp code, Block.Entry entry,
+	private void infer(int index, Code.BinStringOp code, Block.Entry entry,
 			Env environment) {				
 		Type req = environment.get(code.target);
 		coerceAfter(req,Type.T_STRING,code.target,index,entry);
-		switch(code.operation) {
+		switch(code.kind) {
 		case APPEND:
 			environment.set(code.leftOperand,Type.T_STRING);
 			environment.set(code.rightOperand,Type.T_STRING);
@@ -614,7 +614,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		Env environment = join(trueEnv,falseEnv);
 		
-		environment.set(code.leftOperand,code.type);
+		environment.set(code.operand,code.type);
 		
 		return environment;
 	}
