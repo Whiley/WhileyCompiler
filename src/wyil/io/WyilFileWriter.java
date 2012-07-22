@@ -405,7 +405,10 @@ public class WyilFileWriter implements Transform {
 	private void buildPools(Code code) {
 		
 		// First, deal with special cases
-		if(code instanceof Code.Const) {
+		if(code instanceof Code.AssertOrAssume) {
+			Code.AssertOrAssume c = (Code.AssertOrAssume) code;
+			addStringItem(c.msg);
+		} else if(code instanceof Code.Const) {
 			Code.Const c = (Code.Const) code;
 			addConstantItem(c.constant);
 		} else if(code instanceof Code.Convert) {
