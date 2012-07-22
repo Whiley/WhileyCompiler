@@ -437,7 +437,7 @@ public abstract class Code {
 		return get(new BinSetOp(type, target, leftOperand, rightOperand, operation));
 	}
 
-	public static BinStringOp StringOp(int target, int leftOperand,
+	public static BinStringOp BinStringOp(int target, int leftOperand,
 			int rightOperand, BinStringKind operation) {
 		return get(new BinStringOp(target, leftOperand, rightOperand, operation));
 	}
@@ -3506,7 +3506,7 @@ public abstract class Code {
 		}
 		
 		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return Code.StringOp(nTarget, nLeftOperand, nRightOperand,
+			return Code.BinStringOp(nTarget, nLeftOperand, nRightOperand,
 					kind);
 		}
 

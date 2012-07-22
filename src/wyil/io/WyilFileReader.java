@@ -257,17 +257,19 @@ public class WyilFileReader {
 	private Block readCodeBlock(int numInputs) throws IOException {
 		Block block = new Block(numInputs);
 		int nCodes = input.read_uv();
+		HashMap<Integer,String> labels = new HashMap<Integer,String>();
 		
 		for(int i=0;i!=nCodes;++i) {
-			Code code = readCode();
+			Code code = readCode(i,labels);
 			System.out.println("READ: " + code);
 			block.append(code);
 		}
 		
+		// FIXME: insert label opcodes.
 		return block;
 	}	
 	
-	private Code readCode() throws IOException {
+	private Code readCode(int offset, HashMap<Integer,String> labels) throws IOException {
 		int opcode = input.read_u1();
 		switch (opcode) {
 		case Code.OPCODE_debug:
@@ -315,7 +317,7 @@ public class WyilFileReader {
 		case Code.OPCODE_ifel:
 		case Code.OPCODE_ifss:
 		case Code.OPCODE_ifse:
-			return readBinaryOp(opcode);
+			return readBinaryOp(opcode, offset, labels);
 		case Code.OPCODE_append:
 		case Code.OPCODE_appendl:
 		case Code.OPCODE_appendr:
@@ -458,12 +460,129 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readBinaryOp(int opcode) throws IOException {
+	private Code readBinaryOp(int opcode, int offset, HashMap<Integer, String> labels)
+			throws IOException {
+		int leftOperand = input.read_u1();
+		int rightOperand = input.read_u1();
+		int typeIdx = input.read_uv();
+		Type type = typePool.get(typeIdx);
+		switch(opcode) {
+		case Code.OPCODE_asserteq:
+		case Code.OPCODE_assertne:
+		case Code.OPCODE_assertlt:
+		case Code.OPCODE_assertle:
+		case Code.OPCODE_assertgt:
+		case Code.OPCODE_assertge:
+		case Code.OPCODE_assertel:
+		case Code.OPCODE_assertss:
+		case Code.OPCODE_assertse: {
+			int msgIdx = input.read_uv();
+			String msg = stringPool.get(msgIdx);
+			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_asserteq];
+			return Code.Assert(type, leftOperand, rightOperand, cop, msg);
+		}
+		case Code.OPCODE_assumeeq:
+		case Code.OPCODE_assumene:
+		case Code.OPCODE_assumelt:
+		case Code.OPCODE_assumele:
+		case Code.OPCODE_assumegt:
+		case Code.OPCODE_assumege:
+		case Code.OPCODE_assumeel:
+		case Code.OPCODE_assumess:
+		case Code.OPCODE_assumese: {
+			int msgIdx = input.read_uv();
+			String msg = stringPool.get(msgIdx);
+			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_assumeeq];
+			return Code.Assume(type, leftOperand, rightOperand, cop, msg);
+		}
+		case Code.OPCODE_ifeq:
+		case Code.OPCODE_ifne:
+		case Code.OPCODE_iflt:
+		case Code.OPCODE_ifle:
+		case Code.OPCODE_ifgt:
+		case Code.OPCODE_ifge:
+		case Code.OPCODE_ifel:
+		case Code.OPCODE_ifss:
+		case Code.OPCODE_ifse: {
+			int target = input.read_u1(); 
+			String lab = findLabel(offset + target,labels);
+			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_ifeq];
+			return Code.If(type, leftOperand, rightOperand, cop, lab);
+		}
+		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
 	
 	private Code readBinaryAssign(int opcode) throws IOException {
+		int target = input.read_u1();
+		int leftOperand = input.read_u1();
+		int rightOperand = input.read_u1();
+		int typeIdx = input.read_uv();
+		Type type = typePool.get(typeIdx);
+		switch(opcode) {
+		case Code.OPCODE_append:
+		case Code.OPCODE_appendl:
+		case Code.OPCODE_appendr: {
+			if (!(type instanceof Type.EffectiveList)) {
+				throw new RuntimeException("expecting list type");
+			}
+			Code.BinListKind kind = Code.BinListKind.values()[opcode
+					- Code.OPCODE_append];
+			return Code.BinListOp((Type.EffectiveList) type, target,
+					leftOperand, rightOperand, kind);
+		}
+		case Code.OPCODE_sappend:
+		case Code.OPCODE_sappendl:
+		case Code.OPCODE_sappendr: {
+			if (!(type instanceof Type.Strung)) {
+				throw new RuntimeException("expecting string type");
+			}
+			Code.BinStringKind kind = Code.BinStringKind.values()[opcode
+					- Code.OPCODE_sappend];
+			return Code.BinStringOp(target, leftOperand, rightOperand, kind);
+		}
+		case Code.OPCODE_indexof: {
+			if (!(type instanceof Type.EffectiveIndexible)) {
+				throw new RuntimeException("expecting indexible type");
+			}
+			return Code.IndexOf((Type.EffectiveIndexible) type, target,
+					leftOperand, rightOperand);
+		}
+		case Code.OPCODE_add:
+		case Code.OPCODE_sub:
+		case Code.OPCODE_mul:
+		case Code.OPCODE_div:
+		case Code.OPCODE_rem:
+		case Code.OPCODE_range:
+		case Code.OPCODE_bitwiseor:
+		case Code.OPCODE_bitwisexor:
+		case Code.OPCODE_bitwiseand:
+		case Code.OPCODE_lshr:
+		case Code.OPCODE_rshr: {
+			Code.BinArithKind kind = Code.BinArithKind.values()[opcode
+					- Code.OPCODE_add];
+			return Code.BinArithOp(type, target, leftOperand, rightOperand,
+					kind);
+		}
+		case Code.OPCODE_union:
+		case Code.OPCODE_unionl:
+		case Code.OPCODE_unionr:
+		case Code.OPCODE_intersect:
+		case Code.OPCODE_intersectl:
+		case Code.OPCODE_intersectr:
+		case Code.OPCODE_difference:
+		case Code.OPCODE_differencel: {
+			if (!(type instanceof Type.EffectiveSet)) {
+				throw new RuntimeException("expecting set type");
+			}
+			Code.BinSetKind kind = Code.BinSetKind.values()[opcode
+					- Code.OPCODE_union];
+			return Code.BinSetOp((Type.EffectiveSet) type, target, leftOperand,
+					rightOperand, kind);
+		}
+			
+		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
@@ -489,6 +608,17 @@ public class WyilFileReader {
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
+	}
+	
+	private static int labelCount = 0;
+
+	private static String findLabel(int target, HashMap<Integer, String> labels) {
+		String label = labels.get(target);
+		if (label == null) {
+			label = "label" + labelCount++;
+			labels.put(target, label);
+		}
+		return label;
 	}
 	
 	public final class ValueReader  {		

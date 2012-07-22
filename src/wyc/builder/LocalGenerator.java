@@ -742,7 +742,7 @@ public final class LocalGenerator {
 				// into a string.
 				op = Code.BinStringKind.APPEND;
 			}
-			blk.append(Code.StringOp(target,freeRegister, freeRegister+1,op),attributes(v));
+			blk.append(Code.BinStringOp(target,freeRegister, freeRegister+1,op),attributes(v));
 			return blk;	
 		default:
 				blk.append(Code.BinArithOp(result, target, freeRegister, freeRegister+1,

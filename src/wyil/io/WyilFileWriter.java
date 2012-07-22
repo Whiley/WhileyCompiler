@@ -280,7 +280,10 @@ public class WyilFileWriter implements Transform {
 		
 		// now deal with non-uniform instructions
 		// First, deal with special cases
-		if(code instanceof Code.Const) {
+		if(code instanceof Code.AssertOrAssume) {
+			Code.AssertOrAssume c = (Code.AssertOrAssume) code;			
+			output.write_uv(stringCache.get(c.msg));
+		} else if(code instanceof Code.Const) {
 			Code.Const c = (Code.Const) code;
 			output.write_u1(c.target);
 			output.write_uv(constantCache.get(c.constant));
