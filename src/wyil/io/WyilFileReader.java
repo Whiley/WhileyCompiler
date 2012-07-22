@@ -116,12 +116,13 @@ public class WyilFileReader {
 	private void readNamePool(int size) throws IOException {
 		System.out.println("=== NAMES ===");
 		namePool.clear();
-		for(int i=0;i!=size;++i) {
-			int kind = input.read_uv();
+		for (int i = 0; i != size; ++i) {
+			// int kind = input.read_uv();
 			int pathIndex = input.read_uv();
+			int nameIndex = input.read_uv();
 			Path.ID id = pathPool.get(pathIndex);
-			
-			System.out.println("#" + i + " = " + kind + " " + id);
+			String name = stringPool.get(nameIndex);
+			namePool.add(new NameID(id, name));
 		}
 	}
 

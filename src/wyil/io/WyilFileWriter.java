@@ -27,7 +27,7 @@ public class WyilFileWriter implements Transform {
 	private HashMap<Path.ID,Integer> pathCache = new HashMap<Path.ID,Integer>();
 	
 	private ArrayList<NAME_Item> namePool = new ArrayList<NAME_Item>();
-	private HashMap<Pair<NAME_Kind,Path.ID>,Integer> nameCache = new HashMap<Pair<NAME_Kind,Path.ID>,Integer>();
+	private HashMap<NameID,Integer> nameCache = new HashMap<NameID,Integer>();
 	
 	private ArrayList<Value> constantPool = new ArrayList<Value>();
 	private HashMap<Value,Integer> constantCache = new HashMap<Value,Integer>();
@@ -101,7 +101,7 @@ public class WyilFileWriter implements Transform {
 	 * @throws IOException
 	 */
 	private void writeStringPool() throws IOException {
-		System.out.println("Writing " + stringPool.size() + " string item(s).");
+		//System.out.println("Writing " + stringPool.size() + " string item(s).");
 		for (String s : stringPool) {
 			try {
 				byte[] bytes = s.getBytes("UTF-8");
@@ -114,7 +114,7 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	private void writePathPool() throws IOException {
-		System.out.println("Writing " + stringPool.size() + " path item(s).");
+		//System.out.println("Writing " + stringPool.size() + " path item(s).");
 		for (PATH_Item p : pathPool) {
 			output.write_uv(p.parentIndex + 1);
 			output.write_uv(p.stringIndex);
@@ -122,15 +122,16 @@ public class WyilFileWriter implements Transform {
 	}
 
 	private void writeNamePool() throws IOException {
-		System.out.println("Writing " + stringPool.size() + " name item(s).");
+		//System.out.println("Writing " + stringPool.size() + " name item(s).");
 		for (NAME_Item p : namePool) {
-			output.write_uv(p.kind.kind());
+			//output.write_uv(p.kind.kind());
 			output.write_uv(p.pathIndex);
+			output.write_uv(p.nameIndex);
 		}
 	}
 
 	private void writeConstantPool() throws IOException {
-		System.out.println("Writing " + stringPool.size() + " constant item(s).");
+		//System.out.println("Writing " + stringPool.size() + " constant item(s).");
 		ValueWriter bout = new ValueWriter(output);
 		for (Value v : constantPool) {
 			bout.write(v);
@@ -138,7 +139,7 @@ public class WyilFileWriter implements Transform {
 	}
 
 	private void writeTypePool() throws IOException {
-		System.out.println("Writing " + stringPool.size() + " type item(s).");
+		//System.out.println("Writing " + stringPool.size() + " type item(s).");
 		Type.BinaryWriter bout = new Type.BinaryWriter(output);
 		for (Type t : typePool) {
 			bout.write(t);
@@ -187,8 +188,6 @@ public class WyilFileWriter implements Transform {
 				// TODO: write block size
 				
 				output.write_uv(stringCache.get(md.name()));
-				System.out.println("TYPE: " + md.type());
-				System.out.println("INDEX: " + typeCache.get(md.type()));
 				output.write_uv(typeCache.get(md.type()));			
 				// TODO: write modifiers				
 				output.write_uv(md.cases().size());
@@ -359,7 +358,7 @@ public class WyilFileWriter implements Transform {
 		typePool.clear();
 		typeCache.clear();
 		
-		addPathItem(NAME_Kind.MODULE,module.id());
+		addPathItem(module.id());
 		for(WyilFile.Declaration d : module.declarations()) {
 			buildPools(d);
 		}
@@ -421,13 +420,7 @@ public class WyilFileWriter implements Transform {
 			addTypeItem(c.rightOperand);
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
-			if(c.type instanceof Type.Function) { 
-				// FIXME: this is totally broken
-				addPathItem(NAME_Kind.FUNCTION,c.name.module().append(c.name.name()));
-			} else {
-				// FIXME: this is totally broken
-				addPathItem(NAME_Kind.METHOD,c.name.module().append(c.name.name()));
-			}
+			addNameItem(c.name);			
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
 			addTypeItem(c.type);
@@ -468,13 +461,13 @@ public class WyilFileWriter implements Transform {
 		}
 	}
 	
-	private int addPathItem(NAME_Kind kind, Path.ID pid) {
-		Pair<NAME_Kind,Path.ID> p = new Pair(kind,pid);
-		Integer index = nameCache.get(p);
+	private int addNameItem(NameID name) {
+		Integer index = nameCache.get(name);
 		if(index == null) {
 			int i = namePool.size();
-			nameCache.put(p, i);
-			namePool.add(new NAME_Item(kind,addPathItem(pid)));
+			nameCache.put(name, i);
+			namePool.add(new NAME_Item(addPathItem(name.module()),
+					addStringItem(name.name())));
 			return i;			
 		} else {
 			return index;
@@ -633,16 +626,22 @@ public class WyilFileWriter implements Transform {
 		/**
 		 * The kind of name item this represents.
 		 */
-		public final NAME_Kind kind;
+		// public final NAME_Kind kind;
 		
 		/**
 		 * Index of path for this item in path pool
 		 */
 		public final int pathIndex;
 		
-		public NAME_Item(NAME_Kind kind, int pathIndex) {
-			this.kind = kind;
+		/**
+		 * Index of string for this named item
+		 */
+		public final int nameIndex;
+		
+		public NAME_Item(/*NAME_Kind kind, */int pathIndex, int nameIndex) {
+			//this.kind = kind;
 			this.pathIndex = pathIndex;
+			this.nameIndex = nameIndex;
 		}				
 	}		
 	
