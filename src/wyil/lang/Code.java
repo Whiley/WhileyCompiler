@@ -4271,115 +4271,141 @@ public abstract class Code {
 		}
 	}
 	
-	// FIXME: the assignment of opcodes is somewhat arbitrary. A little bit of
-	// thought needs to be given to an assignment which is more logical and
-	// simplifies decoding.
+	public static final int FMT_SHIFT        = 5;
+	public static final int FMT_MASK         = 7 << FMT_SHIFT;
 	
-	public static final int OPCODE_convert = 1;
-	public static final int OPCODE_const = 2;
-	public static final int OPCODE_assign = 3;
+	public static final int FMT_EMPTY        = 0 << FMT_SHIFT;
+	public static final int FMT_UNARYOP      = 1 << FMT_SHIFT;
+	public static final int FMT_UNARYASSIGN  = 2 << FMT_SHIFT;
+	public static final int FMT_BINARYOP     = 3 << FMT_SHIFT;
+	public static final int FMT_BINARYASSIGN = 4 << FMT_SHIFT;
+	public static final int FMT_NARYOP       = 5 << FMT_SHIFT;
+	public static final int FMT_NARYASSIGN   = 6 << FMT_SHIFT;
+	public static final int FMT_OTHER        = 7 << FMT_SHIFT;
 	
-	public static final int OPCODE_append  = 4;
-	public static final int OPCODE_appendl = 5;   // must be OPCODE_ifeq + 1
-	public static final int OPCODE_appendr = 6;   // must be OPCODE_append + 2
+	// =========================================================================
+	// Empty Bytecodes
+	// =========================================================================
+	public static final int OPCODE_nop      = 0 + FMT_EMPTY;	
+	public static final int OPCODE_returnv  = 1 + FMT_EMPTY;		
+	public static final int OPCODE_const    = 2 + FMT_EMPTY; // +CONSTIDX
 	
-	public static final int OPCODE_asserteq = 7;
-	public static final int OPCODE_assertne = 8;  // must be OPCODE_asserteq + 1
-	public static final int OPCODE_assertlt = 9;  // must be OPCODE_asserteq + 2
-	public static final int OPCODE_assertle = 10; // must be OPCODE_asserteq + 3
-	public static final int OPCODE_assertgt = 11; // must be OPCODE_asserteq + 4
-	public static final int OPCODE_assertge = 12; // must be OPCODE_asserteq + 5
-	public static final int OPCODE_assertel = 13; // must be OPCODE_asserteq + 6
-	public static final int OPCODE_assertss = 14; // must be OPCODE_asserteq + 7
-	public static final int OPCODE_assertse = 15; // must be OPCODE_asserteq + 8
+	// =========================================================================
+	// Unary Operators
+	// =========================================================================
+	public static final int OPCODE_debug    = 0 + FMT_UNARYOP;
+	public static final int OPCODE_return   = 1 + FMT_UNARYOP;	
+	public static final int OPCODE_goto     = 2 + FMT_UNARYOP; // +INT 
+	public static final int OPCODE_ifis     = 3 + FMT_UNARYOP; // +TYPEIDX	
+	public static final int OPCODE_switch   = 4 + FMT_UNARYOP; // +OTHER
 	
-	public static final int OPCODE_assumeeq = 16;
-	public static final int OPCODE_assumene = 17; // must be OPCODE_assumeq + 1
-	public static final int OPCODE_assumelt = 18; // must be OPCODE_assumeq + 2
-	public static final int OPCODE_assumele = 19; // must be OPCODE_assumeq + 3
-	public static final int OPCODE_assumegt = 20; // must be OPCODE_assumeq + 4
-	public static final int OPCODE_assumege = 21; // must be OPCODE_assumeq + 5
-	public static final int OPCODE_assumeel = 22; // must be OPCODE_assumeq + 6
-	public static final int OPCODE_assumess = 23; // must be OPCODE_assumeq + 7
-	public static final int OPCODE_assumese = 24; // must be OPCODE_assumeq + 8
-	
-	public static final int OPCODE_debug    = 25;
-	public static final int OPCODE_dereference = 26;
-	public static final int OPCODE_fieldload = 27;
-	public static final int OPCODE_goto      = 28;
-	
-	public static final int OPCODE_ifeq     = 29;
-	public static final int OPCODE_ifne     = 30;  // must be OPCODE_ifeq + 1
-	public static final int OPCODE_iflt     = 31;  // must be OPCODE_ifeq + 2
-	public static final int OPCODE_ifle     = 32;  // must be OPCODE_ifeq + 3
-	public static final int OPCODE_ifgt     = 33;  // must be OPCODE_ifeq + 4
-	public static final int OPCODE_ifge     = 34;  // must be OPCODE_ifeq + 5
-	public static final int OPCODE_ifel     = 35;  // must be OPCODE_ifeq + 6
-	public static final int OPCODE_ifss     = 36;  // must be OPCODE_ifeq + 7
-	public static final int OPCODE_ifse     = 37;  // must be OPCODE_ifeq + 8
-	
-	public static final int OPCODE_ifis     = 38;
-	
-	public static final int OPCODE_indexof  = 39;
-	public static final int OPCODE_indirectinvokefn = 40;
-	public static final int OPCODE_indirectinvokemd = 41;
-	public static final int OPCODE_indirectinvokemdv = 42;
-	public static final int OPCODE_invert = 43;
-	public static final int OPCODE_invokefn = 44;
-	public static final int OPCODE_invokemd = 45;
-	public static final int OPCODE_invokemdv = 46;	
-	public static final int OPCODE_lengthof = 47;	
-	public static final int OPCODE_loop     = 48;	
-	public static final int OPCODE_forall   = 49;	
-	public static final int OPCODE_move     = 50;	
-	public static final int OPCODE_newmap   = 51;
-	public static final int OPCODE_newrecord = 52;
-	public static final int OPCODE_newlist = 53;
-	public static final int OPCODE_newset = 54;
-	public static final int OPCODE_newtuple = 55;
-	public static final int OPCODE_newobject = 56;	
-	public static final int OPCODE_neg       = 57;
-	public static final int OPCODE_numerator = 58;   // must be OPCODE_neg + 1
-	public static final int OPCODE_denominator = 59; // must be OPCODE_neg + 2	
-	public static final int OPCODE_not = 60;
-	public static final int OPCODE_nop = 61;
-	
-	public static final int OPCODE_return = 62;   // return item	
-	public static final int OPCODE_returnv = 63;  // return void, must be OPCODE_return + 1
-	
-	public static final int OPCODE_sappend = 64;
-	public static final int OPCODE_sappendl = 65; // must be OPCODE_sappend + 1
-	public static final int OPCODE_sappendr = 66; // must be OPCODE_sappend + 2
-	
-	public static final int OPCODE_sublist = 67;
-	public static final int OPCODE_substring = 68;
-	public static final int OPCODE_switch = 69;
-	
-	public static final int OPCODE_throw = 70;
-	public static final int OPCODE_trycatch = 71;
-	public static final int OPCODE_tupleload = 72;
-	
-	public static final int OPCODE_update = 73;
-	
-	public static final int OPCODE_union = 80;   	
-	public static final int OPCODE_unionl = 81; // must be OPCODE_union + 1
-	public static final int OPCODE_unionr = 82; // must be OPCODE_union + 2
-	public static final int OPCODE_intersect = 83;  // must be OPCODE_union + 3
-	public static final int OPCODE_intersectl = 84; // must be OPCODE_union + 4
-	public static final int OPCODE_intersectr = 85; // must be OPCODE_union + 5	
-	public static final int OPCODE_difference = 86;  // must be OPCODE_union + 6
-	public static final int OPCODE_differencel = 87; // must be OPCODE_union + 7
+	// =========================================================================
+	// Unary Assignables
+	// =========================================================================		
+	public static final int OPCODE_assign      = 0 + FMT_UNARYASSIGN;
+	public static final int OPCODE_dereference = 1 + FMT_UNARYASSIGN;
+	public static final int OPCODE_invert      = 2 + FMT_UNARYASSIGN;	
+	public static final int OPCODE_lengthof    = 3 + FMT_UNARYASSIGN;
+	public static final int OPCODE_move        = 4 + FMT_UNARYASSIGN;		
+	public static final int OPCODE_newobject   = 5 + FMT_UNARYASSIGN;	
+	public static final int OPCODE_neg         = 6 + FMT_UNARYASSIGN;
+	public static final int OPCODE_numerator   = 7 + FMT_UNARYASSIGN;
+	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;	
+	public static final int OPCODE_not         = 9 + FMT_UNARYASSIGN;
+	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
+	public static final int OPCODE_throw       = 11 + FMT_UNARYASSIGN;
+	public static final int OPCODE_fieldload   = 12 + FMT_UNARYASSIGN; // +STRINGIDX
+	public static final int OPCODE_convert     = 13 + FMT_UNARYASSIGN; // +TYPEIDX		
 		
-	public static final int OPCODE_void   = 88;	
-	public static final int OPCODE_add    = 89;
-	public static final int OPCODE_sub    = 90; // must be OPCODE_add + 1 
-	public static final int OPCODE_mul    = 91; // must be OPCODE_add + 2
-	public static final int OPCODE_div    = 92; // must be OPCODE_add + 3
-	public static final int OPCODE_rem    = 93; // must be OPCODE_add + 4
-	public static final int OPCODE_range  = 94; // must be OPCODE_add + 5
-	public static final int OPCODE_bitwiseor = 95; // must be OPCODE_add + 6
-	public static final int OPCODE_bitwisexor = 96; // must be OPCODE_add + 7
-	public static final int OPCODE_bitwiseand = 97; // must be OPCODE_add + 8
-	public static final int OPCODE_lshr   = 98; // must be OPCODE_add + 9
-	public static final int OPCODE_rshr   = 99; // must be OPCODE_add + 10
+	// =========================================================================
+	// Binary Operators
+	// =========================================================================
+	public static final int OPCODE_ifeq     = 0  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_ifne     = 1  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_iflt     = 2  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_ifle     = 3  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_ifgt     = 4  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_ifge     = 5  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_ifel     = 6  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_ifss     = 7  + FMT_BINARYOP; // +INT
+	public static final int OPCODE_ifse     = 8  + FMT_BINARYOP; // +INT	
+	public static final int OPCODE_asserteq = 9  + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertne = 10 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertlt = 11 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertle = 12 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertgt = 13 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertge = 14 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertel = 15 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertss = 16 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assertse = 17 + FMT_BINARYOP; // +STRINGIDX	
+	public static final int OPCODE_assumeeq = 18 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumene = 19 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumelt = 20 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumele = 21 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumegt = 22 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumege = 23 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumeel = 24 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumess = 25 + FMT_BINARYOP; // +STRINGIDX
+	public static final int OPCODE_assumese = 26 + FMT_BINARYOP; // +STRINGIDX
+	
+	// =========================================================================
+	// Binary Assignables
+	// =========================================================================
+	public static final int OPCODE_add         = 0  + FMT_BINARYASSIGN;
+	public static final int OPCODE_sub         = 1  + FMT_BINARYASSIGN;  
+	public static final int OPCODE_mul         = 2  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_div         = 3  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_rem         = 4  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_range       = 5  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_bitwiseor   = 6  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_bitwisexor  = 7  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_bitwiseand  = 8  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_lshr        = 9  + FMT_BINARYASSIGN; 
+	public static final int OPCODE_rshr        = 10 + FMT_BINARYASSIGN; 	
+	public static final int OPCODE_indexof     = 11 + FMT_BINARYASSIGN;	
+	public static final int OPCODE_union       = 12 + FMT_BINARYASSIGN;   	
+	public static final int OPCODE_unionl      = 13 + FMT_BINARYASSIGN; 
+	public static final int OPCODE_unionr      = 14 + FMT_BINARYASSIGN; 
+	public static final int OPCODE_intersect   = 15 + FMT_BINARYASSIGN; 
+	public static final int OPCODE_intersectl  = 16 + FMT_BINARYASSIGN; 
+	public static final int OPCODE_intersectr  = 17 + FMT_BINARYASSIGN; 	
+	public static final int OPCODE_difference  = 18 + FMT_BINARYASSIGN; 
+	public static final int OPCODE_differencel = 19 + FMT_BINARYASSIGN; 					
+	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
+	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
+	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
+	public static final int OPCODE_sappend     = 23 + FMT_BINARYASSIGN;
+	public static final int OPCODE_sappendl    = 24 + FMT_BINARYASSIGN;
+	public static final int OPCODE_sappendr    = 25 + FMT_BINARYASSIGN;
+	
+	// =========================================================================
+	// Nary Operators
+	// =========================================================================	
+	public static final int OPCODE_loop              = 0 + FMT_NARYOP;	
+	public static final int OPCODE_forall            = 1 + FMT_NARYOP;	
+	public static final int OPCODE_void              = 2 + FMT_NARYOP;
+	public static final int OPCODE_indirectinvokemdv = 3 + FMT_NARYOP;	
+	public static final int OPCODE_invokemdv         = 4 + FMT_NARYOP; // +NAMEIDX	
+		
+	// =========================================================================
+	// Nary Assignables
+	// =========================================================================		
+	public static final int OPCODE_newlist          = 0 + FMT_NARYASSIGN;
+	public static final int OPCODE_newset           = 1 + FMT_NARYASSIGN;
+	public static final int OPCODE_newmap           = 2 + FMT_NARYASSIGN;
+	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;	
+	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
+	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;
+	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
+	public static final int OPCODE_substring        = 7 + FMT_NARYASSIGN;	
+	public static final int OPCODE_invokefn         = 8 + FMT_NARYASSIGN; // +NAMEIDX
+	public static final int OPCODE_invokemd         = 9 + FMT_NARYASSIGN; // +NAMEIDX	
+	public static final int OPCODE_newrecord        = 10 + FMT_NARYASSIGN;// +OTHER
+	
+	// =========================================================================
+	// Other
+	// =========================================================================					
+	public static final int OPCODE_trycatch         = 0 + FMT_OTHER;	
+	public static final int OPCODE_update           = 1 + FMT_OTHER;
+	// this is where I will locate the WIDE and WIDEWIDE Markers
 }

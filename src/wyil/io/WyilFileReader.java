@@ -274,111 +274,51 @@ public class WyilFileReader {
 	
 	private Code readCode(int offset, HashMap<Integer,String> labels) throws IOException {
 		int opcode = input.read_u1();
-		switch (opcode) {
-		case Code.OPCODE_debug:
-		case Code.OPCODE_ifis:
-		case Code.OPCODE_throw:
-		case Code.OPCODE_return:
-		case Code.OPCODE_switch:
+		int fmt = (opcode & Code.FMT_MASK);
+		
+		switch (fmt) {
+		case Code.FMT_EMPTY:
+			return readEmpty(opcode,offset,labels);
+		case Code.FMT_UNARYOP:
 			return readUnaryOp(opcode,offset,labels);
-		case Code.OPCODE_convert:
-		case Code.OPCODE_assign:
-		case Code.OPCODE_dereference:
-		case Code.OPCODE_fieldload:
-		case Code.OPCODE_invert:
-		case Code.OPCODE_lengthof:
-		case Code.OPCODE_move:
-		case Code.OPCODE_newobject: 
-		case Code.OPCODE_neg:
-		case Code.OPCODE_numerator:
-		case Code.OPCODE_denominator:
-		case Code.OPCODE_not:
-		case Code.OPCODE_tupleload:
+		case Code.FMT_UNARYASSIGN:
 			return readUnaryAssign(opcode);
-		case Code.OPCODE_asserteq:
-		case Code.OPCODE_assertne:
-		case Code.OPCODE_assertlt:
-		case Code.OPCODE_assertle:
-		case Code.OPCODE_assertgt:
-		case Code.OPCODE_assertge:
-		case Code.OPCODE_assertel:
-		case Code.OPCODE_assertss:
-		case Code.OPCODE_assertse:
-		case Code.OPCODE_assumeeq:
-		case Code.OPCODE_assumene:
-		case Code.OPCODE_assumelt:
-		case Code.OPCODE_assumele:
-		case Code.OPCODE_assumegt:
-		case Code.OPCODE_assumege:
-		case Code.OPCODE_assumeel:
-		case Code.OPCODE_assumess:
-		case Code.OPCODE_assumese:
-		case Code.OPCODE_ifeq:
-		case Code.OPCODE_ifne:
-		case Code.OPCODE_iflt:
-		case Code.OPCODE_ifle:
-		case Code.OPCODE_ifgt:
-		case Code.OPCODE_ifge:
-		case Code.OPCODE_ifel:
-		case Code.OPCODE_ifss:
-		case Code.OPCODE_ifse:
+		case Code.FMT_BINARYOP:
 			return readBinaryOp(opcode, offset, labels);
-		case Code.OPCODE_append:
-		case Code.OPCODE_appendl:
-		case Code.OPCODE_appendr:
-		case Code.OPCODE_sappend:
-		case Code.OPCODE_sappendl:
-		case Code.OPCODE_sappendr:
-		case Code.OPCODE_indexof:
-		case Code.OPCODE_add:
-		case Code.OPCODE_sub:
-		case Code.OPCODE_mul:
-		case Code.OPCODE_div:
-		case Code.OPCODE_rem:
-		case Code.OPCODE_range:
-		case Code.OPCODE_bitwiseor:
-		case Code.OPCODE_bitwisexor:
-		case Code.OPCODE_bitwiseand:
-		case Code.OPCODE_lshr:
-		case Code.OPCODE_rshr:
-		case Code.OPCODE_union:
-		case Code.OPCODE_unionl:
-		case Code.OPCODE_unionr:
-		case Code.OPCODE_intersect:
-		case Code.OPCODE_intersectl:
-		case Code.OPCODE_intersectr:
-		case Code.OPCODE_difference:
-		case Code.OPCODE_differencel:
+		case Code.FMT_BINARYASSIGN:
 			return readBinaryAssign(opcode);
-		case Code.OPCODE_loop:
-		case Code.OPCODE_forall:
-		case Code.OPCODE_void:
+		case Code.FMT_NARYOP:
 			return readNaryOp(opcode);
-		case Code.OPCODE_indirectinvokefn:
-		case Code.OPCODE_indirectinvokemd:
-		case Code.OPCODE_indirectinvokemdv:
-		case Code.OPCODE_invokefn:
-		case Code.OPCODE_invokemd:
-		case Code.OPCODE_invokemdv:
-		case Code.OPCODE_newmap:
-		case Code.OPCODE_newrecord:
-		case Code.OPCODE_newlist:
-		case Code.OPCODE_newset:
-		case Code.OPCODE_newtuple:
-		case Code.OPCODE_sublist:
-		case Code.OPCODE_substring:
+		case Code.FMT_NARYASSIGN:
 			return readNaryAssign(opcode);
-		case Code.OPCODE_const:
-		case Code.OPCODE_goto:
-		case Code.OPCODE_nop:
-		case Code.OPCODE_returnv:
-		case Code.OPCODE_trycatch:
-		case Code.OPCODE_update:
+		case Code.FMT_OTHER:
 			return readOther(opcode,offset,labels);
 		default:
 			throw new RuntimeException("unknown opcode encountered (" + opcode
 					+ ")");
 		}
+	}
+	
+	private Code readEmpty(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {		
+		switch(opcode) {
+		case Code.OPCODE_const: {
+			int target = input.read_u1();
+			int idx = input.read_uv();
+			Value c = constantPool.get(idx);
+			return Code.Const(target,c);
+		}
+		case Code.OPCODE_goto: {
+			int target = input.read_u1(); 
+			String lab = findLabel(offset + target,labels);
+			return Code.Goto(lab);
+		}			
+		case Code.OPCODE_nop:
+			return Code.Nop;
+		case Code.OPCODE_returnv:
+			return Code.Return();		
+		}
+		throw new RuntimeException("unknown opcode encountered (" + opcode
+				+ ")");
 	}
 	
 	private Code readUnaryOp(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {
@@ -723,22 +663,7 @@ public class WyilFileReader {
 	}
 	
 	private Code readOther(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {		
-		switch(opcode) {
-		case Code.OPCODE_const: {
-			int target = input.read_u1();
-			int idx = input.read_uv();
-			Value c = constantPool.get(idx);
-			return Code.Const(target,c);
-		}
-		case Code.OPCODE_goto: {
-			int target = input.read_u1(); 
-			String lab = findLabel(offset + target,labels);
-			return Code.Goto(lab);
-		}			
-		case Code.OPCODE_nop:
-			return Code.Nop;
-		case Code.OPCODE_returnv:
-			return Code.Return();
+		switch(opcode) {		
 		case Code.OPCODE_trycatch:
 			// FIXME: todo
 		case Code.OPCODE_update:
