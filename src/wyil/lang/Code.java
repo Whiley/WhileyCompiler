@@ -578,7 +578,7 @@ public abstract class Code {
 	 * @return
 	 */
 	public abstract int opcode();
-	// ===============================================================
+	// ===============================================================C
 	// Abstract Bytecodes
 	// ===============================================================
 
@@ -4265,108 +4265,108 @@ public abstract class Code {
 	// thought needs to be given to an assignment which is more logical and
 	// simplifies decoding.
 	
-	public final int OPCODE_convert = 1;
-	public final int OPCODE_const = 2;
-	public final int OPCODE_assign = 3;
+	public static final int OPCODE_convert = 1;
+	public static final int OPCODE_const = 2;
+	public static final int OPCODE_assign = 3;
 	
-	public final int OPCODE_append  = 4;
-	public final int OPCODE_appendl = 5;   // must be OPCODE_ifeq + 1
-	public final int OPCODE_appendr = 6;   // must be OPCODE_append + 2
+	public static final int OPCODE_append  = 4;
+	public static final int OPCODE_appendl = 5;   // must be OPCODE_ifeq + 1
+	public static final int OPCODE_appendr = 6;   // must be OPCODE_append + 2
 	
-	public final int OPCODE_asserteq = 7;
-	public final int OPCODE_assertne = 8;  // must be OPCODE_asserteq + 1
-	public final int OPCODE_assertlt = 9;  // must be OPCODE_asserteq + 2
-	public final int OPCODE_assertle = 10; // must be OPCODE_asserteq + 3
-	public final int OPCODE_assertgt = 11; // must be OPCODE_asserteq + 4
-	public final int OPCODE_assertge = 12; // must be OPCODE_asserteq + 5
-	public final int OPCODE_assertel = 13; // must be OPCODE_asserteq + 6
-	public final int OPCODE_assertss = 14; // must be OPCODE_asserteq + 7
-	public final int OPCODE_assertse = 15; // must be OPCODE_asserteq + 8
+	public static final int OPCODE_asserteq = 7;
+	public static final int OPCODE_assertne = 8;  // must be OPCODE_asserteq + 1
+	public static final int OPCODE_assertlt = 9;  // must be OPCODE_asserteq + 2
+	public static final int OPCODE_assertle = 10; // must be OPCODE_asserteq + 3
+	public static final int OPCODE_assertgt = 11; // must be OPCODE_asserteq + 4
+	public static final int OPCODE_assertge = 12; // must be OPCODE_asserteq + 5
+	public static final int OPCODE_assertel = 13; // must be OPCODE_asserteq + 6
+	public static final int OPCODE_assertss = 14; // must be OPCODE_asserteq + 7
+	public static final int OPCODE_assertse = 15; // must be OPCODE_asserteq + 8
 	
-	public final int OPCODE_assumeeq = 16;
-	public final int OPCODE_assumene = 17; // must be OPCODE_assumeq + 1
-	public final int OPCODE_assumelt = 18; // must be OPCODE_assumeq + 2
-	public final int OPCODE_assumele = 19; // must be OPCODE_assumeq + 3
-	public final int OPCODE_assumegt = 20; // must be OPCODE_assumeq + 4
-	public final int OPCODE_assumege = 21; // must be OPCODE_assumeq + 5
-	public final int OPCODE_assumeel = 22; // must be OPCODE_assumeq + 6
-	public final int OPCODE_assumess = 23; // must be OPCODE_assumeq + 7
-	public final int OPCODE_assumese = 24; // must be OPCODE_assumeq + 8
+	public static final int OPCODE_assumeeq = 16;
+	public static final int OPCODE_assumene = 17; // must be OPCODE_assumeq + 1
+	public static final int OPCODE_assumelt = 18; // must be OPCODE_assumeq + 2
+	public static final int OPCODE_assumele = 19; // must be OPCODE_assumeq + 3
+	public static final int OPCODE_assumegt = 20; // must be OPCODE_assumeq + 4
+	public static final int OPCODE_assumege = 21; // must be OPCODE_assumeq + 5
+	public static final int OPCODE_assumeel = 22; // must be OPCODE_assumeq + 6
+	public static final int OPCODE_assumess = 23; // must be OPCODE_assumeq + 7
+	public static final int OPCODE_assumese = 24; // must be OPCODE_assumeq + 8
 	
-	public final int OPCODE_debug    = 25;
-	public final int OPCODE_dereference = 26;
-	public final int OPCODE_fieldload = 27;
-	public final int OPCODE_goto      = 28;
+	public static final int OPCODE_debug    = 25;
+	public static final int OPCODE_dereference = 26;
+	public static final int OPCODE_fieldload = 27;
+	public static final int OPCODE_goto      = 28;
 	
-	public final int OPCODE_ifeq     = 29;
-	public final int OPCODE_ifne     = 30;  // must be OPCODE_ifeq + 1
-	public final int OPCODE_iflt     = 31;  // must be OPCODE_ifeq + 2
-	public final int OPCODE_ifle     = 32;  // must be OPCODE_ifeq + 3
-	public final int OPCODE_ifgt     = 33;  // must be OPCODE_ifeq + 4
-	public final int OPCODE_ifge     = 34;  // must be OPCODE_ifeq + 5
-	public final int OPCODE_ifel     = 35;  // must be OPCODE_ifeq + 6
-	public final int OPCODE_ifss     = 36;  // must be OPCODE_ifeq + 7
-	public final int OPCODE_ifse     = 37;  // must be OPCODE_ifeq + 8
+	public static final int OPCODE_ifeq     = 29;
+	public static final int OPCODE_ifne     = 30;  // must be OPCODE_ifeq + 1
+	public static final int OPCODE_iflt     = 31;  // must be OPCODE_ifeq + 2
+	public static final int OPCODE_ifle     = 32;  // must be OPCODE_ifeq + 3
+	public static final int OPCODE_ifgt     = 33;  // must be OPCODE_ifeq + 4
+	public static final int OPCODE_ifge     = 34;  // must be OPCODE_ifeq + 5
+	public static final int OPCODE_ifel     = 35;  // must be OPCODE_ifeq + 6
+	public static final int OPCODE_ifss     = 36;  // must be OPCODE_ifeq + 7
+	public static final int OPCODE_ifse     = 37;  // must be OPCODE_ifeq + 8
 	
-	public final int OPCODE_ifis     = 38;
+	public static final int OPCODE_ifis     = 38;
 	
-	public final int OPCODE_indexof  = 39;
-	public final int OPCODE_indirectinvoke = 40;
-	public final int OPCODE_invert = 41;
-	public final int OPCODE_invokefn = 42;
-	public final int OPCODE_invokemd = 43;
-	public final int OPCODE_lengthof = 44;	
-	public final int OPCODE_loop     = 45;	
-	public final int OPCODE_forall   = 46;	
-	public final int OPCODE_move     = 47;	
-	public final int OPCODE_newmap   = 48;
-	public final int OPCODE_newrecord = 49;
-	public final int OPCODE_newlist = 50;
-	public final int OPCODE_newset = 51;
-	public final int OPCODE_newtuple = 52;
-	public final int OPCODE_newobject = 53;	
-	public final int OPCODE_neg       = 54;
-	public final int OPCODE_numerator = 55;   // must be OPCODE_numerator + 1
-	public final int OPCODE_denominator = 56; // must be OPCODE_numerator + 2	
-	public final int OPCODE_not = 57;
-	public final int OPCODE_nop = 58;
+	public static final int OPCODE_indexof  = 39;
+	public static final int OPCODE_indirectinvoke = 40;
+	public static final int OPCODE_invert = 41;
+	public static final int OPCODE_invokefn = 42;
+	public static final int OPCODE_invokemd = 43;
+	public static final int OPCODE_lengthof = 44;	
+	public static final int OPCODE_loop     = 45;	
+	public static final int OPCODE_forall   = 46;	
+	public static final int OPCODE_move     = 47;	
+	public static final int OPCODE_newmap   = 48;
+	public static final int OPCODE_newrecord = 49;
+	public static final int OPCODE_newlist = 50;
+	public static final int OPCODE_newset = 51;
+	public static final int OPCODE_newtuple = 52;
+	public static final int OPCODE_newobject = 53;	
+	public static final int OPCODE_neg       = 54;
+	public static final int OPCODE_numerator = 55;   // must be OPCODE_numerator + 1
+	public static final int OPCODE_denominator = 56; // must be OPCODE_numerator + 2	
+	public static final int OPCODE_not = 57;
+	public static final int OPCODE_nop = 58;
 	
-	public final int OPCODE_return = 60;   // return item	
-	public final int OPCODE_returnv = 61;  // return void, must be OPCODE_return + 1
+	public static final int OPCODE_return = 60;   // return item	
+	public static final int OPCODE_returnv = 61;  // return void, must be OPCODE_return + 1
 	
-	public final int OPCODE_sappend = 62;
-	public final int OPCODE_sappendl = 63; // must be OPCODE_sappend + 1
-	public final int OPCODE_sappendr = 64; // must be OPCODE_sappend + 2
+	public static final int OPCODE_sappend = 62;
+	public static final int OPCODE_sappendl = 63; // must be OPCODE_sappend + 1
+	public static final int OPCODE_sappendr = 64; // must be OPCODE_sappend + 2
 	
-	public final int OPCODE_sublist = 65;
-	public final int OPCODE_substring = 66;
-	public final int OPCODE_switch = 67;
+	public static final int OPCODE_sublist = 65;
+	public static final int OPCODE_substring = 66;
+	public static final int OPCODE_switch = 67;
 	
-	public final int OPCODE_throw = 70;
-	public final int OPCODE_trycatch = 71;
-	public final int OPCODE_tupleload = 72;
+	public static final int OPCODE_throw = 70;
+	public static final int OPCODE_trycatch = 71;
+	public static final int OPCODE_tupleload = 72;
 	
-	public final int OPCODE_update = 73;
+	public static final int OPCODE_update = 73;
 	
-	public final int OPCODE_union = 80;   	
-	public final int OPCODE_unionl = 81; // must be OPCODE_union + 1
-	public final int OPCODE_unionr = 82; // must be OPCODE_union + 2
-	public final int OPCODE_intersect = 83;  // must be OPCODE_union + 3
-	public final int OPCODE_intersectl = 84; // must be OPCODE_union + 4
-	public final int OPCODE_intersectr = 85; // must be OPCODE_union + 5	
-	public final int OPCODE_difference = 86;  // must be OPCODE_union + 6
-	public final int OPCODE_differencel = 87; // must be OPCODE_union + 7
+	public static final int OPCODE_union = 80;   	
+	public static final int OPCODE_unionl = 81; // must be OPCODE_union + 1
+	public static final int OPCODE_unionr = 82; // must be OPCODE_union + 2
+	public static final int OPCODE_intersect = 83;  // must be OPCODE_union + 3
+	public static final int OPCODE_intersectl = 84; // must be OPCODE_union + 4
+	public static final int OPCODE_intersectr = 85; // must be OPCODE_union + 5	
+	public static final int OPCODE_difference = 86;  // must be OPCODE_union + 6
+	public static final int OPCODE_differencel = 87; // must be OPCODE_union + 7
 		
-	public final int OPCODE_void   = 88;	
-	public final int OPCODE_add    = 89;
-	public final int OPCODE_sub    = 90; // must be OPCODE_add + 1 
-	public final int OPCODE_mul    = 91; // must be OPCODE_add + 2
-	public final int OPCODE_div    = 92; // must be OPCODE_add + 3
-	public final int OPCODE_rem    = 93; // must be OPCODE_add + 4
-	public final int OPCODE_range  = 94; // must be OPCODE_add + 5
-	public final int OPCODE_bitwiseor = 95; // must be OPCODE_add + 6
-	public final int OPCODE_bitwisexor = 96; // must be OPCODE_add + 7
-	public final int OPCODE_bitwiseand = 97; // must be OPCODE_add + 8
-	public final int OPCODE_lshr   = 98; // must be OPCODE_add + 9
-	public final int OPCODE_rshr   = 99; // must be OPCODE_add + 10
+	public static final int OPCODE_void   = 88;	
+	public static final int OPCODE_add    = 89;
+	public static final int OPCODE_sub    = 90; // must be OPCODE_add + 1 
+	public static final int OPCODE_mul    = 91; // must be OPCODE_add + 2
+	public static final int OPCODE_div    = 92; // must be OPCODE_add + 3
+	public static final int OPCODE_rem    = 93; // must be OPCODE_add + 4
+	public static final int OPCODE_range  = 94; // must be OPCODE_add + 5
+	public static final int OPCODE_bitwiseor = 95; // must be OPCODE_add + 6
+	public static final int OPCODE_bitwisexor = 96; // must be OPCODE_add + 7
+	public static final int OPCODE_bitwiseand = 97; // must be OPCODE_add + 8
+	public static final int OPCODE_lshr   = 98; // must be OPCODE_add + 9
+	public static final int OPCODE_rshr   = 99; // must be OPCODE_add + 10
 }

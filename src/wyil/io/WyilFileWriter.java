@@ -146,7 +146,7 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	private void writeBlock(WyilFile module) throws IOException {
-		output.write_uv(BLOCK_module);
+		output.write_uv(BLOCK_Module);
 		// TODO: write block size
 		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
 		
@@ -154,7 +154,7 @@ public class WyilFileWriter implements Transform {
 		for(WyilFile.Declaration d : module.declarations()) {
 			if(d instanceof WyilFile.ConstantDeclaration) {
 				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d;
-				output.write_uv(BLOCK_constant);
+				output.write_uv(BLOCK_Constant);
 				// TODO: write block size	
 				// TODO: write modifiers
 				output.write_uv(stringCache.get(cd.name()));
@@ -164,7 +164,7 @@ public class WyilFileWriter implements Transform {
 				
 			} else if(d instanceof WyilFile.TypeDeclaration) {
 				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
-				output.write_uv(BLOCK_type);
+				output.write_uv(BLOCK_Type);
 				// TODO: write block size
 				// TODO: write modifiers
 				output.write_uv(stringCache.get(td.name()));
@@ -180,9 +180,9 @@ public class WyilFileWriter implements Transform {
 			} else if(d instanceof WyilFile.MethodDeclaration) {
 				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
 				if(md.type() instanceof Type.Function) {
-					output.write_uv(BLOCK_function);
+					output.write_uv(BLOCK_Function);
 				} else {
-					output.write_uv(BLOCK_method);
+					output.write_uv(BLOCK_Method);
 				}
 				// TODO: write block size
 				
@@ -194,7 +194,7 @@ public class WyilFileWriter implements Transform {
 				output.write_uv(md.cases().size());
 				
 				for(WyilFile.Case c : md.cases()) {
-					output.write_uv(BLOCK_case);
+					output.write_uv(BLOCK_Case);
 					// TODO: write block size
 					int n = 0;
 					n += c.precondition() != null ? 1 : 0;
@@ -202,15 +202,15 @@ public class WyilFileWriter implements Transform {
 					n += c.body() != null ? 1 : 0;
 					output.write_uv(n);
 					if(c.precondition() != null) {
-						output.write_uv(BLOCK_precondition);
+						output.write_uv(BLOCK_Precondition);
 						writeBlock(c.precondition());
 					}
 					if(c.postcondition() != null) {
-						output.write_uv(BLOCK_postcondition);
+						output.write_uv(BLOCK_Postcondition);
 						writeBlock(c.postcondition());
 					}
 					if(c.body() != null) {
-						output.write_uv(BLOCK_body);
+						output.write_uv(BLOCK_Body);
 						writeBlock(c.body());
 					}
 					// TODO: write annotations
@@ -282,6 +282,7 @@ public class WyilFileWriter implements Transform {
 		// First, deal with special cases
 		if(code instanceof Code.Const) {
 			Code.Const c = (Code.Const) code;
+			output.write_u1(c.target);
 			output.write_uv(constantCache.get(c.constant));
 		} else if(code instanceof Code.Convert) {
 			Code.Convert c = (Code.Convert) code;
@@ -311,7 +312,10 @@ public class WyilFileWriter implements Transform {
 				output.write_u1(constantCache.get(b.first()));
 				// FIXME: write target
 			}
-		}
+		} else if(code instanceof Code.TupleLoad) {
+			Code.TupleLoad c = (Code.TupleLoad) code;
+			output.write_u1(c.index);
+		} 
 	}
 	
 	private void buildPools(WyilFile module) {
@@ -659,30 +663,30 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Null expr) throws IOException {				
-			output.write_u1(CONSTANT_null);
+			output.write_u1(CONSTANT_Null);
 		}
 		
 		public void write(Value.Bool expr) throws IOException {
 			
 			if(expr.value) {
-				output.write_u1(CONSTANT_true);
+				output.write_u1(CONSTANT_True);
 			} else {
-				output.write_u1(CONSTANT_false);
+				output.write_u1(CONSTANT_False);
 			}
 		}
 		
 		public void write(Value.Byte expr) throws IOException {		
-			output.write_u1(CONSTANT_byte);		
+			output.write_u1(CONSTANT_Byte);		
 			output.write_u1(expr.value);		
 		}
 		
 		public void write(Value.Char expr) throws IOException {		
-			output.write_u1(CONSTANT_char);		
+			output.write_u1(CONSTANT_Char);		
 			output.write_u2(expr.value);		
 		}
 		
 		public void write(Value.Integer expr) throws IOException {		
-			output.write_u1(CONSTANT_int);		
+			output.write_u1(CONSTANT_Int);		
 			BigInteger num = expr.value;
 			byte[] numbytes = num.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
@@ -692,7 +696,7 @@ public class WyilFileWriter implements Transform {
 
 		public void write(Value.Rational expr) throws IOException {		
 			
-			output.write_u1(CONSTANT_real);
+			output.write_u1(CONSTANT_Real);
 			BigRational br = expr.value;
 			BigInteger num = br.numerator();
 			BigInteger den = br.denominator();
@@ -709,7 +713,7 @@ public class WyilFileWriter implements Transform {
 		}
 			
 		public void write(Value.Strung expr) throws IOException {	
-			output.write_u1(CONSTANT_string);
+			output.write_u1(CONSTANT_String);
 			String value = expr.value;
 			int valueLength = value.length();		
 			output.write_u2(valueLength);
@@ -718,7 +722,7 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		public void write(Value.Set expr) throws IOException {
-			output.write_u1(CONSTANT_set);
+			output.write_u1(CONSTANT_Set);
 			output.write_u2(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
@@ -726,7 +730,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.List expr) throws IOException {
-			output.write_u1(CONSTANT_list);
+			output.write_u1(CONSTANT_List);
 			output.write_u2(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
@@ -734,7 +738,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Map expr) throws IOException {
-			output.write_u1(CONSTANT_map);
+			output.write_u1(CONSTANT_Map);
 			output.write_u2(expr.values.size());
 			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
 				write(e.getKey());
@@ -743,7 +747,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Record expr) throws IOException {
-			output.write_u1(CONSTANT_record);
+			output.write_u1(CONSTANT_Record);
 			output.write_u2(expr.values.size());
 			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
 				output.write_u2(stringCache.get(v.getKey()));
@@ -752,7 +756,7 @@ public class WyilFileWriter implements Transform {
 		}
 		
 		public void write(Value.Tuple expr) throws IOException {
-			output.write_u1(CONSTANT_tuple); // FIXME: should be TUPLE!!!
+			output.write_u1(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
 			output.write_u2(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
@@ -784,39 +788,39 @@ public class WyilFileWriter implements Transform {
 	// BLOCK identifiers
 	// =========================================================================
 	
-	public final static int BLOCK_module = 0;
-	public final static int BLOCK_documentation = 1;
-	public final static int BLOCK_license = 2;
+	public final static int BLOCK_Module = 0;
+	public final static int BLOCK_Documentation = 1;
+	public final static int BLOCK_License = 2;
 	// ... (anticipating some others here)
-	public final static int BLOCK_type = 10;
-	public final static int BLOCK_constant = 11;
-	public final static int BLOCK_function = 12;
-	public final static int BLOCK_method = 13;
-	public final static int BLOCK_case = 14;
+	public final static int BLOCK_Type = 10;
+	public final static int BLOCK_Constant = 11;
+	public final static int BLOCK_Function = 12;
+	public final static int BLOCK_Method = 13;
+	public final static int BLOCK_Case = 14;
 	// ... (anticipating some others here)
-	public final static int BLOCK_body = 20;
-	public final static int BLOCK_precondition = 21;
-	public final static int BLOCK_postcondition = 22;
-	public final static int BLOCK_constraint = 23;
+	public final static int BLOCK_Body = 20;
+	public final static int BLOCK_Precondition = 21;
+	public final static int BLOCK_Postcondition = 22;
+	public final static int BLOCK_Constraint = 23;
 	// ... (anticipating some others here)
 	
 	// =========================================================================
 	// CONSTANT identifies
 	// =========================================================================
 
-	public final static int CONSTANT_null = 0;
-	public final static int CONSTANT_true = 1;
-	public final static int CONSTANT_false = 2;
-	public final static int CONSTANT_byte = 3;
-	public final static int CONSTANT_char = 4;
-	public final static int CONSTANT_int = 5;
-	public final static int CONSTANT_real = 6;
-	public final static int CONSTANT_set = 7;	
-	public final static int CONSTANT_string = 8;	
-	public final static int CONSTANT_list = 9;
-	public final static int CONSTANT_record = 10;
-	public final static int CONSTANT_tuple = 11;
-	public final static int CONSTANT_map = 12;
-	public final static int CONSTANT_function = 13;
-	public final static int CONSTANT_method = 14;
+	public final static int CONSTANT_Null = 0;
+	public final static int CONSTANT_True = 1;
+	public final static int CONSTANT_False = 2;
+	public final static int CONSTANT_Byte = 3;
+	public final static int CONSTANT_Char = 4;
+	public final static int CONSTANT_Int = 5;
+	public final static int CONSTANT_Real = 6;
+	public final static int CONSTANT_Set = 7;	
+	public final static int CONSTANT_String = 8;	
+	public final static int CONSTANT_List = 9;
+	public final static int CONSTANT_Record = 10;
+	public final static int CONSTANT_Tuple = 11;
+	public final static int CONSTANT_Map = 12;
+	public final static int CONSTANT_Function = 13;
+	public final static int CONSTANT_Method = 14;
 }
