@@ -3,6 +3,7 @@ package wyil.io;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import java.util.Map;
 import wybs.lang.Path;
 import wybs.util.Trie;
 import wyil.lang.*;
+import wyil.util.Pair;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
 import wyjc.runtime.BigRational;
@@ -276,7 +278,8 @@ public class WyilFileReader {
 		case Code.OPCODE_ifis:
 		case Code.OPCODE_throw:
 		case Code.OPCODE_return:
-			return readUnaryOp(opcode);
+		case Code.OPCODE_switch:
+			return readUnaryOp(opcode,offset,labels);
 		case Code.OPCODE_convert:
 		case Code.OPCODE_assign:
 		case Code.OPCODE_dereference:
@@ -284,6 +287,7 @@ public class WyilFileReader {
 		case Code.OPCODE_invert:
 		case Code.OPCODE_lengthof:
 		case Code.OPCODE_move:
+		case Code.OPCODE_newobject: 
 		case Code.OPCODE_neg:
 		case Code.OPCODE_numerator:
 		case Code.OPCODE_denominator:
@@ -349,15 +353,17 @@ public class WyilFileReader {
 		case Code.OPCODE_forall:
 		case Code.OPCODE_void:
 			return readNaryOp(opcode);
-		case Code.OPCODE_indirectinvoke:
+		case Code.OPCODE_indirectinvokefn:
+		case Code.OPCODE_indirectinvokemd:
+		case Code.OPCODE_indirectinvokemdv:
 		case Code.OPCODE_invokefn:
 		case Code.OPCODE_invokemd:
+		case Code.OPCODE_invokemdv:
 		case Code.OPCODE_newmap:
 		case Code.OPCODE_newrecord:
 		case Code.OPCODE_newlist:
 		case Code.OPCODE_newset:
 		case Code.OPCODE_newtuple:
-		case Code.OPCODE_newobject:
 		case Code.OPCODE_sublist:
 		case Code.OPCODE_substring:
 			return readNaryAssign(opcode);
@@ -365,17 +371,16 @@ public class WyilFileReader {
 		case Code.OPCODE_goto:
 		case Code.OPCODE_nop:
 		case Code.OPCODE_returnv:
-		case Code.OPCODE_switch:
 		case Code.OPCODE_trycatch:
 		case Code.OPCODE_update:
-			return readOther(opcode);
+			return readOther(opcode,offset,labels);
 		default:
 			throw new RuntimeException("unknown opcode encountered (" + opcode
 					+ ")");
 		}
 	}
 	
-	private Code readUnaryOp(int opcode) throws IOException {
+	private Code readUnaryOp(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {
 		int operand = input.read_u1();
 		int typeIdx = input.read_uv();
 		Type type = typePool.get(typeIdx);
@@ -392,6 +397,20 @@ public class WyilFileReader {
 			return Code.Throw(type, operand);
 		case Code.OPCODE_return:
 			return Code.Return(type, operand);
+		case Code.OPCODE_switch: {
+			ArrayList<Pair<Value,String>> cases = new ArrayList<Pair<Value,String>>();
+			int target = input.read_u1(); 
+			String defaultLabel = findLabel(offset + target,labels);
+			int nCases = input.read_u1();
+			for(int i=0;i!=nCases;++i) {
+				int constIdx = input.read_u1();
+				Value constant = constantPool.get(constIdx);
+				target = input.read_u1(); 
+				String label = findLabel(offset + target,labels);
+				cases.add(new Pair<Value,String>(constant,label));
+			}
+			return Code.Switch(type,operand,defaultLabel,cases);
+		}
 		}	
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
@@ -427,6 +446,12 @@ public class WyilFileReader {
 		}
 		case Code.OPCODE_invert:
 			return Code.Invert(type, target, operand);
+		case Code.OPCODE_newobject: {
+			if (!(type instanceof Type.Reference)) {
+				throw new RuntimeException("expected reference type");
+			}
+			return Code.NewObject((Type.Reference) type, target, operand);
+		}
 		case Code.OPCODE_lengthof: {
 			if (!(type instanceof Type.EffectiveCollection)) {
 				throw new RuntimeException("expected collection type");
@@ -587,17 +612,116 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readNaryOp(int opcode) throws IOException {
+	private Code readNaryOp(int opcode) throws IOException {		
+		int nOperands = input.read_u1();
+		int[] operands = new int[nOperands];
+		for(int i=0;i!=nOperands;++i) {
+			operands[i] = input.read_u1();
+		}
+		int typeIdx = input.read_uv();
+		Type type = typePool.get(typeIdx);
+		switch(opcode) {
+		case Code.OPCODE_indirectinvokemdv: {
+			if(!(type instanceof Type.FunctionOrMethod)) {
+				throw new RuntimeException("expected method type");
+			}
+			int operand = operands[0];
+			operands = Arrays.copyOfRange(operands, 1, operands.length);
+			return Code.IndirectInvoke((Type.FunctionOrMethod) type,
+					Code.NULL_REG, operand, operands);
+		}
+		case Code.OPCODE_invokemdv: {
+			if(!(type instanceof Type.FunctionOrMethod)) {
+				throw new RuntimeException("expected method type");
+			}
+			int nameIdx = input.read_uv();
+			NameID nid = namePool.get(nameIdx);
+			return Code.Invoke((Type.FunctionOrMethod) type, Code.NULL_REG,
+					operands, nid);
+		}
+		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
 	
 	private Code readNaryAssign(int opcode) throws IOException {
+		int target = input.read_u1();
+		int nOperands = input.read_u1();
+		int[] operands = new int[nOperands];
+		for(int i=0;i!=nOperands;++i) {
+			operands[i] = input.read_u1();
+		}
+		int typeIdx = input.read_uv();
+		Type type = typePool.get(typeIdx);
+		switch(opcode) {
+		case Code.OPCODE_indirectinvokefn:
+		case Code.OPCODE_indirectinvokemd:{
+			if(!(type instanceof Type.FunctionOrMethod)) {
+				throw new RuntimeException("expected function or method type");
+			}
+			int operand = operands[0];
+			operands = Arrays.copyOfRange(operands, 1, operands.length);
+			return Code.IndirectInvoke((Type.FunctionOrMethod) type,
+					target, operand, operands);
+		}			
+		case Code.OPCODE_invokefn:
+		case Code.OPCODE_invokemd: {
+			if(!(type instanceof Type.FunctionOrMethod)) {
+				throw new RuntimeException("expected function or method type");
+			}
+			int nameIdx = input.read_uv();
+			NameID nid = namePool.get(nameIdx);
+			return Code.Invoke((Type.FunctionOrMethod) type, target, operands,
+					nid);
+		}			
+		case Code.OPCODE_newmap: {
+			if (!(type instanceof Type.Map)) {		
+				throw new RuntimeException("expected map type");
+			}
+			return Code.NewMap((Type.Map) type, target, operands);
+		}
+		case Code.OPCODE_newrecord: {
+			if (!(type instanceof Type.Record)) {		
+				throw new RuntimeException("expected record type");
+			}
+			return Code.NewRecord((Type.Record) type, target, operands);
+		}
+		case Code.OPCODE_newlist: {
+			if (!(type instanceof Type.List)) {
+				throw new RuntimeException("expected list type");
+			}
+			return Code.NewList((Type.List) type, target, operands);
+		}
+		case Code.OPCODE_newset: {
+			if (!(type instanceof Type.Set)) {
+				throw new RuntimeException("expected set type");
+			}
+			return Code.NewSet((Type.Set) type, target, operands);
+		}
+		case Code.OPCODE_newtuple: {
+			if (!(type instanceof Type.Tuple)) {
+				throw new RuntimeException("expected tuple type");
+			}
+			return Code.NewTuple((Type.Tuple) type, target, operands);
+		}	
+		case Code.OPCODE_sublist: {
+			if (!(type instanceof Type.EffectiveList)) {
+				throw new RuntimeException("expected list type");
+			}
+			return Code.SubList((Type.EffectiveList) type, target, operands[0],operands[1],operands[2]);
+		}
+		case Code.OPCODE_substring: {
+			if (!(type instanceof Type.Strung)) {
+				throw new RuntimeException("expected string type");
+			}
+			return Code.SubString(target, operands[0],operands[1],operands[2]);
+		}
+		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
 	
-	private Code readOther(int opcode) throws IOException {		
+	private Code readOther(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {		
 		switch(opcode) {
 		case Code.OPCODE_const: {
 			int target = input.read_u1();
@@ -605,6 +729,19 @@ public class WyilFileReader {
 			Value c = constantPool.get(idx);
 			return Code.Const(target,c);
 		}
+		case Code.OPCODE_goto: {
+			int target = input.read_u1(); 
+			String lab = findLabel(offset + target,labels);
+			return Code.Goto(lab);
+		}			
+		case Code.OPCODE_nop:
+			return Code.Nop;
+		case Code.OPCODE_returnv:
+			return Code.Return();
+		case Code.OPCODE_trycatch:
+			// FIXME: todo
+		case Code.OPCODE_update:
+			// FIXME: todo
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

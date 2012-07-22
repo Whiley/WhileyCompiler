@@ -223,13 +223,24 @@ public class WyilFileWriter implements Transform {
 	private void writeBlock(Block block) throws IOException {		
 		// TODO: write block size
 		output.write_uv(block.size()); // instruction count (not same as block size)
+		HashMap<String,Integer> labels = new HashMap<String,Integer>();
 		
+		int offset = 0;
 		for(Block.Entry e : block) {
-			writeCode(e.code);
+			Code code = e.code;
+			if(code instanceof Code.Label) {
+				Code.Label l = (Code.Label) code;
+				labels.put(l.label, offset);
+			}
+			offset++;
+		}
+		offset = 0;
+		for(Block.Entry e : block) {
+			writeCode(e.code, offset++, labels);
 		}
 	}
 	
-	private void writeCode(Code code) throws IOException {
+	private void writeCode(Code code, int offset, HashMap<String,Integer> labels) throws IOException {
 		// first, deal with standard instruction formats
 		output.write_u1(code.opcode());
 		
@@ -296,10 +307,16 @@ public class WyilFileWriter implements Transform {
 		} else if(code instanceof Code.IfIs) {
 			Code.IfIs c = (Code.IfIs) code;
 			output.write_uv(typeCache.get(c.rightOperand));
-			// FIXME: write target!
+			int target = labels.get(c.target) - offset; 
+			output.write_u1(target);
 		} else if(code instanceof Code.If) {
-			Code.If c = (Code.If) code;			
-			// FIXME: write target!
+			Code.If c = (Code.If) code;
+			int target = labels.get(c.target) - offset; 
+			output.write_u1(target);
+		} else if(code instanceof Code.Goto) {
+			Code.Goto c = (Code.Goto) code;
+			int target = labels.get(c.target) - offset; 
+			output.write_u1(target);
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
 			output.write_uv(nameCache.get(c.name));
@@ -309,12 +326,17 @@ public class WyilFileWriter implements Transform {
 		} else if(code instanceof Code.Switch) {
 			Code.Switch c = (Code.Switch) code;
 			List<Pair<Value,String>> branches = c.branches;
-			// FIXME: write default target
+			int target = labels.get(c.defaultTarget) - offset; 
+			output.write_u1(target);
 			output.write_u1(branches.size());
 			for(Pair<Value,String> b : branches) {
 				output.write_u1(constantCache.get(b.first()));
-				// FIXME: write target
+				target = labels.get(b.second()) - offset; 
+				output.write_u1(target);
 			}
+		} else if(code instanceof Code.TryCatch) {
+			Code.TryCatch c = (Code.TryCatch) code;
+			// FIXME: todo 
 		} else if(code instanceof Code.TupleLoad) {
 			Code.TupleLoad c = (Code.TupleLoad) code;
 			output.write_u1(c.index);

@@ -2001,7 +2001,15 @@ public abstract class Code {
 			super(type, target, operand, operands);
 		}
 
-		public int opcode() { return OPCODE_indirectinvoke; }
+		public int opcode() {
+			if(type instanceof Type.Function) {
+				return OPCODE_indirectinvokefn;
+			} else if(type.ret() != Type.T_VOID) {
+				return OPCODE_indirectinvokemd;
+			} else {
+				return OPCODE_indirectinvokemdv;
+			}
+		}
 		
 		@Override
 		public Code clone(int nTarget, int nOperand, int[] nOperands) {
@@ -2130,8 +2138,10 @@ public abstract class Code {
 		public int opcode() {
 			if(type instanceof Type.Function) {
 				return OPCODE_invokefn;
-			} else {
+			} else if(type.ret() != Type.T_VOID) {
 				return OPCODE_invokemd;
+			} else {
+				return OPCODE_invokemdv;
 			}
 		}
 		
@@ -4311,36 +4321,39 @@ public abstract class Code {
 	public static final int OPCODE_ifis     = 38;
 	
 	public static final int OPCODE_indexof  = 39;
-	public static final int OPCODE_indirectinvoke = 40;
-	public static final int OPCODE_invert = 41;
-	public static final int OPCODE_invokefn = 42;
-	public static final int OPCODE_invokemd = 43;
-	public static final int OPCODE_lengthof = 44;	
-	public static final int OPCODE_loop     = 45;	
-	public static final int OPCODE_forall   = 46;	
-	public static final int OPCODE_move     = 47;	
-	public static final int OPCODE_newmap   = 48;
-	public static final int OPCODE_newrecord = 49;
-	public static final int OPCODE_newlist = 50;
-	public static final int OPCODE_newset = 51;
-	public static final int OPCODE_newtuple = 52;
-	public static final int OPCODE_newobject = 53;	
-	public static final int OPCODE_neg       = 54;
-	public static final int OPCODE_numerator = 55;   // must be OPCODE_numerator + 1
-	public static final int OPCODE_denominator = 56; // must be OPCODE_numerator + 2	
-	public static final int OPCODE_not = 57;
-	public static final int OPCODE_nop = 58;
+	public static final int OPCODE_indirectinvokefn = 40;
+	public static final int OPCODE_indirectinvokemd = 41;
+	public static final int OPCODE_indirectinvokemdv = 42;
+	public static final int OPCODE_invert = 43;
+	public static final int OPCODE_invokefn = 44;
+	public static final int OPCODE_invokemd = 45;
+	public static final int OPCODE_invokemdv = 46;	
+	public static final int OPCODE_lengthof = 47;	
+	public static final int OPCODE_loop     = 48;	
+	public static final int OPCODE_forall   = 49;	
+	public static final int OPCODE_move     = 50;	
+	public static final int OPCODE_newmap   = 51;
+	public static final int OPCODE_newrecord = 52;
+	public static final int OPCODE_newlist = 53;
+	public static final int OPCODE_newset = 54;
+	public static final int OPCODE_newtuple = 55;
+	public static final int OPCODE_newobject = 56;	
+	public static final int OPCODE_neg       = 57;
+	public static final int OPCODE_numerator = 58;   // must be OPCODE_neg + 1
+	public static final int OPCODE_denominator = 59; // must be OPCODE_neg + 2	
+	public static final int OPCODE_not = 60;
+	public static final int OPCODE_nop = 61;
 	
-	public static final int OPCODE_return = 60;   // return item	
-	public static final int OPCODE_returnv = 61;  // return void, must be OPCODE_return + 1
+	public static final int OPCODE_return = 62;   // return item	
+	public static final int OPCODE_returnv = 63;  // return void, must be OPCODE_return + 1
 	
-	public static final int OPCODE_sappend = 62;
-	public static final int OPCODE_sappendl = 63; // must be OPCODE_sappend + 1
-	public static final int OPCODE_sappendr = 64; // must be OPCODE_sappend + 2
+	public static final int OPCODE_sappend = 64;
+	public static final int OPCODE_sappendl = 65; // must be OPCODE_sappend + 1
+	public static final int OPCODE_sappendr = 66; // must be OPCODE_sappend + 2
 	
-	public static final int OPCODE_sublist = 65;
-	public static final int OPCODE_substring = 66;
-	public static final int OPCODE_switch = 67;
+	public static final int OPCODE_sublist = 67;
+	public static final int OPCODE_substring = 68;
+	public static final int OPCODE_switch = 69;
 	
 	public static final int OPCODE_throw = 70;
 	public static final int OPCODE_trycatch = 71;
