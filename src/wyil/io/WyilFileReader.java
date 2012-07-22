@@ -274,41 +274,62 @@ public class WyilFileReader {
 	
 	private Code readCode(int offset, HashMap<Integer,String> labels) throws IOException {
 		int opcode = input.read_u1();
+		boolean wideBase = false;
+		boolean wideRest = false;
+		
+		// deal with wide bytecodes first
+		switch(opcode) {
+		case Code.OPCODE_wide:
+			opcode = input.read_u1();
+			wideBase = true;
+			break;
+		case Code.OPCODE_widerest:
+			opcode = input.read_u1();
+			wideRest = true;
+			break;
+		case Code.OPCODE_widewide:
+			opcode = input.read_u1();
+			wideBase = true;
+			wideRest = true;
+			break;
+		}
+		
 		int fmt = (opcode & Code.FMT_MASK);
 		
 		switch (fmt) {
 		case Code.FMT_EMPTY:
-			return readEmpty(opcode,offset,labels);
+			return readEmpty(opcode,wideBase,wideRest,offset,labels);
 		case Code.FMT_UNARYOP:
-			return readUnaryOp(opcode,offset,labels);
+			return readUnaryOp(opcode,wideBase,wideRest,offset,labels);
 		case Code.FMT_UNARYASSIGN:
-			return readUnaryAssign(opcode);
+			return readUnaryAssign(opcode,wideBase,wideRest);
 		case Code.FMT_BINARYOP:
-			return readBinaryOp(opcode, offset, labels);
+			return readBinaryOp(opcode, wideBase,wideRest,offset, labels);
 		case Code.FMT_BINARYASSIGN:
-			return readBinaryAssign(opcode);
+			return readBinaryAssign(opcode,wideBase,wideRest);
 		case Code.FMT_NARYOP:
-			return readNaryOp(opcode);
+			return readNaryOp(opcode,wideBase,wideRest);
 		case Code.FMT_NARYASSIGN:
-			return readNaryAssign(opcode);
+			return readNaryAssign(opcode,wideBase,wideRest);
 		case Code.FMT_OTHER:
-			return readOther(opcode,offset,labels);
+			return readOther(opcode,wideBase,wideRest,offset,labels);
 		default:
 			throw new RuntimeException("unknown opcode encountered (" + opcode
 					+ ")");
 		}
 	}
 	
-	private Code readEmpty(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {		
+	private Code readEmpty(int opcode, boolean wideBase, boolean wideRest,
+			int offset, HashMap<Integer, String> labels) throws IOException {		
 		switch(opcode) {
 		case Code.OPCODE_const: {
-			int target = input.read_u1();
-			int idx = input.read_uv();
+			int target = readBase(wideBase);
+			int idx = readRest(wideRest);
 			Value c = constantPool.get(idx);
 			return Code.Const(target,c);
 		}
 		case Code.OPCODE_goto: {
-			int target = input.read_u1(); 
+			int target = readRest(wideRest); 
 			String lab = findLabel(offset + target,labels);
 			return Code.Goto(lab);
 		}			
@@ -321,17 +342,18 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readUnaryOp(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {
-		int operand = input.read_u1();
-		int typeIdx = input.read_uv();
+	private Code readUnaryOp(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {
+		int operand = readBase(wideBase);
+		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
 		switch(opcode) {
 		case Code.OPCODE_debug:
 			return Code.Debug(operand);		
 		case Code.OPCODE_ifis: {
-			int resultIdx = input.read_uv();
+			int resultIdx = readRest(wideRest);
 			Type result = typePool.get(resultIdx);
-			String label = null; // FIXME
+			int target = readTarget(wideRest,offset);
+			String label = labels.get(target);
 			return Code.IfIs(type, operand, result, label);
 		}
 		case Code.OPCODE_throw:
@@ -342,12 +364,12 @@ public class WyilFileReader {
 			ArrayList<Pair<Value,String>> cases = new ArrayList<Pair<Value,String>>();
 			int target = input.read_u1(); 
 			String defaultLabel = findLabel(offset + target,labels);
-			int nCases = input.read_u1();
+			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
-				int constIdx = input.read_u1();
+				int constIdx = readTarget(wideRest,offset);
 				Value constant = constantPool.get(constIdx);
-				target = input.read_u1(); 
-				String label = findLabel(offset + target,labels);
+				target = readRest(wideRest); 
+				String label = findLabel(target,labels);
 				cases.add(new Pair<Value,String>(constant,label));
 			}
 			return Code.Switch(type,operand,defaultLabel,cases);
@@ -357,14 +379,15 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readUnaryAssign(int opcode) throws IOException {
-		int target = input.read_u1();
-		int operand = input.read_u1();
-		int typeIdx = input.read_uv();
+	private Code readUnaryAssign(int opcode, boolean wideBase, boolean wideRest) throws IOException {
+		int target = readBase(wideBase);
+		System.out.println("TARGET: " + target);
+		int operand = readBase(wideBase);
+		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
 		switch(opcode) {
 		case Code.OPCODE_convert: {
-			int i = input.read_uv();
+			int i = readRest(wideRest);
 			Type t = typePool.get(i);
 			return Code.Convert(type,target,operand,t);
 		}		
@@ -380,7 +403,7 @@ public class WyilFileReader {
 			if (!(type instanceof Type.EffectiveRecord)) {
 				throw new RuntimeException("expected record type");
 			}
-			int i = input.read_uv();
+			int i = readRest(wideRest);
 			String field = stringPool.get(i);
 			return Code.FieldLoad((Type.EffectiveRecord) type, target, operand,
 					field);
@@ -417,7 +440,7 @@ public class WyilFileReader {
 			if (!(type instanceof Type.EffectiveTuple)) {
 				throw new RuntimeException("expected tuple type");
 			}
-			int index = input.read_u1();
+			int index = readRest(wideRest);
 			return Code.TupleLoad((Type.Tuple) type, target, operand, index);
 		}
 		
@@ -426,11 +449,11 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readBinaryOp(int opcode, int offset, HashMap<Integer, String> labels)
+	private Code readBinaryOp(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer, String> labels)
 			throws IOException {
-		int leftOperand = input.read_u1();
-		int rightOperand = input.read_u1();
-		int typeIdx = input.read_uv();
+		int leftOperand = readBase(wideBase);
+		int rightOperand = readBase(wideBase);
+		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
 		switch(opcode) {
 		case Code.OPCODE_asserteq:
@@ -442,7 +465,7 @@ public class WyilFileReader {
 		case Code.OPCODE_assertel:
 		case Code.OPCODE_assertss:
 		case Code.OPCODE_assertse: {
-			int msgIdx = input.read_uv();
+			int msgIdx = readRest(wideRest);
 			String msg = stringPool.get(msgIdx);
 			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_asserteq];
 			return Code.Assert(type, leftOperand, rightOperand, cop, msg);
@@ -456,7 +479,7 @@ public class WyilFileReader {
 		case Code.OPCODE_assumeel:
 		case Code.OPCODE_assumess:
 		case Code.OPCODE_assumese: {
-			int msgIdx = input.read_uv();
+			int msgIdx = readRest(wideRest);
 			String msg = stringPool.get(msgIdx);
 			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_assumeeq];
 			return Code.Assume(type, leftOperand, rightOperand, cop, msg);
@@ -470,8 +493,8 @@ public class WyilFileReader {
 		case Code.OPCODE_ifel:
 		case Code.OPCODE_ifss:
 		case Code.OPCODE_ifse: {
-			int target = input.read_u1(); 
-			String lab = findLabel(offset + target,labels);
+			int target = readTarget(wideRest,offset); 
+			String lab = findLabel(target,labels);
 			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_ifeq];
 			return Code.If(type, leftOperand, rightOperand, cop, lab);
 		}
@@ -480,11 +503,11 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readBinaryAssign(int opcode) throws IOException {
-		int target = input.read_u1();
-		int leftOperand = input.read_u1();
-		int rightOperand = input.read_u1();
-		int typeIdx = input.read_uv();
+	private Code readBinaryAssign(int opcode, boolean wideBase, boolean wideRest) throws IOException {
+		int target = readBase(wideBase);
+		int leftOperand = readBase(wideBase);
+		int rightOperand = readBase(wideBase);
+		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
 		switch(opcode) {
 		case Code.OPCODE_append:
@@ -553,13 +576,13 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readNaryOp(int opcode) throws IOException {		
-		int nOperands = input.read_u1();
+	private Code readNaryOp(int opcode,boolean wideBase, boolean wideRest) throws IOException {		
+		int nOperands = readBase(wideBase);
 		int[] operands = new int[nOperands];
 		for(int i=0;i!=nOperands;++i) {
-			operands[i] = input.read_u1();
+			operands[i] = readBase(wideBase);
 		}
-		int typeIdx = input.read_uv();
+		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
 		switch(opcode) {
 		case Code.OPCODE_indirectinvokemdv: {
@@ -575,7 +598,7 @@ public class WyilFileReader {
 			if(!(type instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected method type");
 			}
-			int nameIdx = input.read_uv();
+			int nameIdx = readRest(wideRest);;
 			NameID nid = namePool.get(nameIdx);
 			return Code.Invoke((Type.FunctionOrMethod) type, Code.NULL_REG,
 					operands, nid);
@@ -585,14 +608,14 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readNaryAssign(int opcode) throws IOException {
-		int target = input.read_u1();
-		int nOperands = input.read_u1();
+	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest) throws IOException {
+		int target = readBase(wideBase);
+		int nOperands = readBase(wideBase);
 		int[] operands = new int[nOperands];
 		for(int i=0;i!=nOperands;++i) {
-			operands[i] = input.read_u1();
+			operands[i] = readBase(wideBase);
 		}
-		int typeIdx = input.read_uv();
+		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
 		switch(opcode) {
 		case Code.OPCODE_indirectinvokefn:
@@ -610,7 +633,7 @@ public class WyilFileReader {
 			if(!(type instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
 			}
-			int nameIdx = input.read_uv();
+			int nameIdx = readRest(wideRest);
 			NameID nid = namePool.get(nameIdx);
 			return Code.Invoke((Type.FunctionOrMethod) type, target, operands,
 					nid);
@@ -662,7 +685,7 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readOther(int opcode, int offset, HashMap<Integer,String> labels) throws IOException {		
+	private Code readOther(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {		
 		switch(opcode) {		
 		case Code.OPCODE_trycatch:
 			// FIXME: todo
@@ -671,6 +694,30 @@ public class WyilFileReader {
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
+	}
+	
+	private int readBase(boolean wide) throws IOException {
+		if(wide) {
+			return input.read_uv();
+		} else {
+			return input.read_un(4);
+		}
+	}
+	
+	private int readRest(boolean wide) throws IOException {
+		if(wide) {
+			return input.read_uv();
+		} else {
+			return input.read_u1();
+		}
+	}
+	
+	private int readTarget(boolean wide, int offset) throws IOException {
+		if(wide) {
+			return input.read_uv();
+		} else {
+			return input.read_u1() + offset - 128;
+		}
 	}
 	
 	private static int labelCount = 0;

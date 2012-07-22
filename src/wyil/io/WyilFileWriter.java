@@ -234,112 +234,308 @@ public class WyilFileWriter implements Transform {
 			offset++;
 		}
 		offset = 0;
+		int shorts = 0;
+		int wides = 0;
 		for(Block.Entry e : block) {
+			if(calculateWidth(e.code,offset,labels) != 0) {
+				wides++;
+			} else {
+				shorts++;
+			}
 			writeCode(e.code, offset++, labels);
 		}
+		System.out.println("SHORTS: " + shorts);
+		System.out.println("WIDES: " + wides);
 	}
 	
 	private void writeCode(Code code, int offset, HashMap<String,Integer> labels) throws IOException {
-		// first, deal with standard instruction formats
+		
+		// first determine whether we need some kind of wide instruction.
+		int width = calculateWidth(code,offset,labels);
+		
+		switch(width) {
+		case Code.OPCODE_wide:
+			output.write_u1(width);
+			writeBase(true,code,offset,labels);
+			writeRest(false,code,offset,labels);
+			break;
+		case Code.OPCODE_widerest:
+			output.write_u1(width);
+			writeBase(false,code,offset,labels);
+			writeRest(true,code,offset,labels);
+			break;
+		case Code.OPCODE_widewide:
+			output.write_u1(width);
+			writeBase(true,code,offset,labels);
+			writeRest(true,code,offset,labels);
+			break;
+		default:
+			writeBase(false,code,offset,labels);
+			writeRest(false,code,offset,labels);
+		}
+	}
+	
+	private void writeBase(boolean wide, Code code, int offset,
+			HashMap<String, Integer> labels) throws IOException {
+
+		// second, deal with standard instruction formats
 		output.write_u1(code.opcode());
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			output.write_u1(a.operand);
-			output.write_uv(typeCache.get(a.type));
+			writeBase(wide,a.operand);
 		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			output.write_u1(a.leftOperand);
-			output.write_u1(a.rightOperand);
-			output.write_uv(typeCache.get(a.type));
+			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;		
+			writeBase(wide,a.leftOperand);
+			writeBase(wide,a.rightOperand);
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
 			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			output.write_u1(a.target);
-			output.write_u1(a.operand);
-			output.write_uv(typeCache.get(a.type));
+			writeBase(wide,a.target);
+			writeBase(wide,a.operand);
 		} else if(code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			output.write_u1(a.target);
-			output.write_u1(a.leftOperand);
-			output.write_u1(a.rightOperand);
-			output.write_uv(typeCache.get(a.type));
+			writeBase(wide, a.target);
+			writeBase(wide, a.leftOperand);
+			writeBase(wide, a.rightOperand);
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
 			if(a.target != Code.NULL_REG) {
-				output.write_u1(a.target);
+				writeBase(wide,a.target);
 			}
 			int[] operands = a.operands;
-			output.write_u1(operands.length); // TODO: some bytecodes don't require this
+			writeBase(wide,operands.length);
 			for(int i=0;i!=operands.length;++i) {
-				output.write_u1(operands[i]);
+				writeBase(wide,operands[i]);
 			}
-			output.write_uv(typeCache.get(a.type));
 		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
 			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
 			if(a.target != Code.NULL_REG) {
-				output.write_u1(a.target);
+				writeBase(wide,a.target);
 			}			
-			int[] operands = a.operands;
-			output.write_u1(operands.length+1); // TODO: some bytecodes don't require this
-			output.write_u1(a.operand);
+			int[] operands = a.operands;			
+			writeBase(wide,operands.length+1);
+			writeBase(wide,a.operand);
 			for(int i=0;i!=operands.length;++i) {
-				output.write_u1(operands[i]);
+				writeBase(wide,a.operands[i]);
 			}
-			output.write_uv(typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractAssignable) {
+			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
+			writeBase(wide,c.target);
 		}
+	}
+	
+	private void writeRest(boolean wide, Code code, int offset,
+			HashMap<String, Integer> labels) throws IOException {
 		
+		if(code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
+			writeRest(wide,typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
+			writeRest(wide,typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractUnaryAssignable) {
+			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
+			writeRest(wide,typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
+			writeRest(wide,typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractNaryAssignable) {
+			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			writeRest(wide,typeCache.get(a.type));
+		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
+			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;			
+			writeRest(wide,typeCache.get(a.type));
+		}	
 		// now deal with non-uniform instructions
 		// First, deal with special cases
 		if(code instanceof Code.AssertOrAssume) {
-			Code.AssertOrAssume c = (Code.AssertOrAssume) code;			
-			output.write_uv(stringCache.get(c.msg));
+			Code.AssertOrAssume c = (Code.AssertOrAssume) code;
+			writeRest(wide,stringCache.get(c.msg));
 		} else if(code instanceof Code.Const) {
 			Code.Const c = (Code.Const) code;
-			output.write_u1(c.target);
-			output.write_uv(constantCache.get(c.constant));
+			writeRest(wide,constantCache.get(c.constant));
 		} else if(code instanceof Code.Convert) {
 			Code.Convert c = (Code.Convert) code;
-			output.write_uv(typeCache.get(c.result));
+			writeRest(wide,typeCache.get(c.result));
 		} else if(code instanceof Code.FieldLoad) {
 			Code.FieldLoad c = (Code.FieldLoad) code;
-			output.write_uv(stringCache.get(c.field));
+			writeRest(wide,stringCache.get(c.field));			
 		} else if(code instanceof Code.IfIs) {
 			Code.IfIs c = (Code.IfIs) code;
-			output.write_uv(typeCache.get(c.rightOperand));
-			int target = labels.get(c.target) - offset; 
-			output.write_u1(target);
+			int target = labels.get(c.target) - offset;			
+			writeRest(wide,typeCache.get(c.rightOperand)); 
+			writeTarget(wide,offset,target);			
 		} else if(code instanceof Code.If) {
 			Code.If c = (Code.If) code;
-			int target = labels.get(c.target) - offset; 
-			output.write_u1(target);
+			int target = labels.get(c.target);
+			writeTarget(wide,offset,target);
 		} else if(code instanceof Code.Goto) {
 			Code.Goto c = (Code.Goto) code;
-			int target = labels.get(c.target) - offset; 
-			output.write_u1(target);
+			int target = labels.get(c.target); 
+			writeTarget(wide,offset,target);
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
-			output.write_uv(nameCache.get(c.name));
+			writeRest(wide,nameCache.get(c.name));			
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
 			// TODO:
 		} else if(code instanceof Code.Switch) {
 			Code.Switch c = (Code.Switch) code;
 			List<Pair<Value,String>> branches = c.branches;
-			int target = labels.get(c.defaultTarget) - offset; 
-			output.write_u1(target);
-			output.write_u1(branches.size());
+			int target = labels.get(c.defaultTarget) - offset; 			
+			writeTarget(wide,offset,target);
+			writeRest(wide,branches.size());
 			for(Pair<Value,String> b : branches) {
-				output.write_u1(constantCache.get(b.first()));
-				target = labels.get(b.second()) - offset; 
-				output.write_u1(target);
+				writeRest(wide,constantCache.get(b.first()));
+				target = labels.get(b.second()); 
+				writeTarget(wide,offset,target);
 			}
 		} else if(code instanceof Code.TryCatch) {
 			Code.TryCatch c = (Code.TryCatch) code;
 			// FIXME: todo 
 		} else if(code instanceof Code.TupleLoad) {
-			Code.TupleLoad c = (Code.TupleLoad) code;
-			output.write_u1(c.index);
+			Code.TupleLoad c = (Code.TupleLoad) code;			
+			writeRest(wide,c.index);
 		} 
+	}
+	
+	private void writeBase(boolean wide, int value) throws IOException {
+		if(wide) {
+			output.write_uv(value);
+		} else {
+			if(value >= 16) {
+				throw new IllegalArgumentException("invalid base value");
+			}
+			output.write_un(value,4);
+		}
+	}
+	
+	private void writeRest(boolean wide, int value) throws IOException {
+		if(wide) {
+			output.write_uv(value);
+		} else {
+			if(value >= 256) {
+				throw new IllegalArgumentException("invalid base value");
+			}
+			output.write_u1(value);
+		}
+	}	
+	
+	private void writeTarget(boolean wide, int offset, int target) throws IOException {
+		if(wide) {
+			output.write_uv(target);
+		} else {
+			output.write_u1((target-offset) + 128);
+		}
+	}
+	
+	private int calculateWidth(Code code, int offset, HashMap<String,Integer> labels) {
+		int maxBase = 0;
+		int maxRest = 0;
+		
+		if(code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
+			maxBase = a.operand;
+			maxRest = typeCache.get(a.type);
+		} else if(code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
+			maxBase = Math.max(a.leftOperand,a.rightOperand);
+			maxRest = typeCache.get(a.type);
+		} else if(code instanceof Code.AbstractUnaryAssignable) {
+			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
+			maxBase = Math.max(a.target,a.operand);
+			maxRest = typeCache.get(a.type);
+		} else if(code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
+			maxBase = Math.max(a.leftOperand,a.rightOperand);
+			maxBase = Math.max(a.target,maxBase);
+			maxRest = typeCache.get(a.type);
+		} else if(code instanceof Code.AbstractNaryAssignable) {
+			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			int[] operands = a.operands;
+			maxBase = Math.max(a.target,operands.length);
+			for(int i=0;i!=operands.length;++i) {
+				maxBase = Math.max(maxBase,operands[i]);
+			}
+			maxRest = typeCache.get(a.type);
+		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
+			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;			
+			int[] operands = a.operands;
+			maxBase = Math.max(a.target,operands.length+1);
+			maxBase = Math.max(maxBase,a.operand);
+			for(int i=0;i!=operands.length;++i) {
+				maxBase = Math.max(maxBase,operands[i]);
+			}
+			maxRest = typeCache.get(a.type);
+		} else if(code instanceof Code.AbstractAssignable) {
+			Code.AbstractAssignable a = (Code.AbstractAssignable) code;
+			maxBase = a.target;			
+		} 
+		
+		// now, deal with non-uniform opcodes
+		if(code instanceof Code.AssertOrAssume) {
+			Code.AssertOrAssume c = (Code.AssertOrAssume) code;
+			maxRest = Math.max(maxRest,stringCache.get(c.msg));
+		} else if(code instanceof Code.Const) {
+			Code.Const c = (Code.Const) code;
+			maxRest = Math.max(maxRest,constantCache.get(c.constant));
+		} else if(code instanceof Code.Convert) {
+			Code.Convert c = (Code.Convert) code;
+			maxRest = Math.max(maxRest,typeCache.get(c.result));
+		} else if(code instanceof Code.FieldLoad) {
+			Code.FieldLoad c = (Code.FieldLoad) code;
+			maxRest = Math.max(maxRest,stringCache.get(c.field));			
+		} else if(code instanceof Code.IfIs) {
+			Code.IfIs c = (Code.IfIs) code;
+			int target = labels.get(c.target) - offset;			
+			maxRest = Math.max(maxRest,typeCache.get(c.rightOperand)); 
+			maxRest = Math.max(maxRest,target + 128);			
+		} else if(code instanceof Code.If) {
+			Code.If c = (Code.If) code;
+			int target = labels.get(c.target) - offset;
+			maxRest = Math.max(maxRest,target);
+		} else if(code instanceof Code.Goto) {
+			Code.Goto c = (Code.Goto) code;
+			int target = labels.get(c.target) - offset; 
+			maxRest = Math.max(maxRest,target + 128);
+		} else if(code instanceof Code.Invoke) {
+			Code.Invoke c = (Code.Invoke) code;
+			maxRest = Math.max(maxRest,nameCache.get(c.name));			
+		} else if(code instanceof Code.Update) {
+			Code.Update c = (Code.Update) code;
+			// TODO:
+		} else if(code instanceof Code.Switch) {
+			Code.Switch c = (Code.Switch) code;
+			List<Pair<Value,String>> branches = c.branches;
+			int target = labels.get(c.defaultTarget) - offset; 			
+			maxRest = Math.max(maxRest,target);
+			maxRest = Math.max(maxRest,branches.size());
+			for(Pair<Value,String> b : branches) {
+				maxRest = Math.max(maxRest,constantCache.get(b.first()));
+				target = labels.get(b.second()) - offset; 
+				maxRest = Math.max(maxRest,target + 128);
+			}
+		} else if(code instanceof Code.TryCatch) {
+			Code.TryCatch c = (Code.TryCatch) code;
+			// FIXME: todo 
+		} else if(code instanceof Code.TupleLoad) {
+			Code.TupleLoad c = (Code.TupleLoad) code;			
+			maxRest = Math.max(maxRest,c.index);
+		} 
+		
+		if(maxBase < 16) {
+			if(maxRest < 256) {
+				return 0; // standard
+			} else {
+				return Code.OPCODE_widerest; 
+			}
+		} else {
+			if(maxRest < 256) {
+				return Code.OPCODE_wide; 
+			} else {
+				return Code.OPCODE_widewide; 
+			}
+		}
 	}
 	
 	private void buildPools(WyilFile module) {

@@ -4405,7 +4405,11 @@ public abstract class Code {
 	// =========================================================================
 	// Other
 	// =========================================================================					
-	public static final int OPCODE_trycatch         = 0 + FMT_OTHER;	
-	public static final int OPCODE_update           = 1 + FMT_OTHER;
+	public static final int OPCODE_trycatch            = 0 + FMT_OTHER;	
+	public static final int OPCODE_update              = 1 + FMT_OTHER;
+	
 	// this is where I will locate the WIDE and WIDEWIDE Markers
+	public static final int OPCODE_wide                = 29 + FMT_OTHER;
+	public static final int OPCODE_widerest            = 30 + FMT_OTHER;
+	public static final int OPCODE_widewide            = 31 + FMT_OTHER;	
 }
