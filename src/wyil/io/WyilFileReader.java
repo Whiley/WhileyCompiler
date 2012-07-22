@@ -259,7 +259,9 @@ public class WyilFileReader {
 		int nCodes = input.read_uv();
 		
 		for(int i=0;i!=nCodes;++i) {
-			block.append(readCode());
+			Code code = readCode();
+			System.out.println("READ: " + code);
+			block.append(code);
 		}
 		
 		return block;
