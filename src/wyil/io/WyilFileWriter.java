@@ -234,18 +234,9 @@ public class WyilFileWriter implements Transform {
 			offset++;
 		}
 		offset = 0;
-		int shorts = 0;
-		int wides = 0;
-		for(Block.Entry e : block) {
-			if(calculateWidth(e.code,offset,labels) != 0) {
-				wides++;
-			} else {
-				shorts++;
-			}
+		for(Block.Entry e : block) {			
 			writeCode(e.code, offset++, labels);
 		}
-		System.out.println("SHORTS: " + shorts);
-		System.out.println("WIDES: " + wides);
 	}
 	
 	private void writeCode(Code code, int offset, HashMap<String,Integer> labels) throws IOException {
