@@ -31,7 +31,7 @@ import java.util.*;
 import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
-import wyc.builder.WhileyBuilder;
+import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
 import wyil.Pipeline;
 import wyil.lang.WyilFile;
@@ -244,7 +244,7 @@ public class AntTask extends MatchingTask {
     		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
     		
     		// fourth initialise the builder
-    		WhileyBuilder builder = new WhileyBuilder(project,pipeline);
+    		Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
     		
     		if(verbose) {			
     			builder.setLogger(new Logger.Default(System.err));

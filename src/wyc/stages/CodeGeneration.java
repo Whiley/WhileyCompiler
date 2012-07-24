@@ -79,7 +79,7 @@ import wyc.lang.WhileyFile.*;
  * 
  */
 public final class CodeGeneration {
-	private final WhileyBuilder builder;	
+	private final Whiley2WyilBuilder builder;	
 	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
@@ -94,7 +94,7 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(WhileyBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
+	public CodeGeneration(Whiley2WyilBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
 		this.builder = builder;		
 		this.resolver = resolver;
 		this.globalGenerator = generator;

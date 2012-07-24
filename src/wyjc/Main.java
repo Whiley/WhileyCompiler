@@ -33,7 +33,7 @@ import java.util.*;
 
 import wybs.lang.*;
 import wybs.util.*;
-import wyc.builder.WhileyBuilder;
+import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
 import wyil.*;
@@ -414,7 +414,7 @@ public class Main {
         	}
 
        	
-			WhileyBuilder builder = new WhileyBuilder(project,pipeline);	
+			Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);	
 			
 			if(verbose) {			
 				builder.setLogger(new Logger.Default(System.err));
@@ -435,7 +435,7 @@ public class Main {
 			// Wyil-to-Java Build Rule
 			// =====================================================================================
 		
-			Wyil2JavaBuilder jbuilder = new WhileyBuilder(project,pipeline);	
+			Wyil2JavaBuilder jbuilder = new Whiley2WyilBuilder(project,pipeline);	
 			
 			if(verbose) {			
 				jbuilder.setLogger(new Logger.Default(System.err));
