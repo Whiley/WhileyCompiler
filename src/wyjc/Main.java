@@ -435,7 +435,7 @@ public class Main {
 			// Wyil-to-Java Build Rule
 			// =====================================================================================
 		
-			Wyil2JavaBuilder jbuilder = new Whiley2WyilBuilder(project,pipeline);	
+			Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder();	
 			
 			if(verbose) {			
 				jbuilder.setLogger(new Logger.Default(System.err));
