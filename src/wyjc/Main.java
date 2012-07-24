@@ -40,6 +40,7 @@ import wyil.*;
 import wyil.Pipeline.Template;
 import wyil.lang.WyilFile;
 import wyil.util.*;
+import wyjvm.lang.ClassFile;
 import static wybs.lang.SyntaxError.*;
 import static wyc.util.OptArg.*;
 
@@ -72,16 +73,10 @@ public class Main {
 			if(e.suffix().equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
 			} else if(e.suffix().equals("wyil")) {
-				// this could be either a normal JVM class, or a Wyil class. We
-				// need to determine which.
-				try { 					
-					WyilFile c = WyilFile.ContentType.read(e, e.inputStream());
-					if(c != null) {
-						e.associate(WyilFile.ContentType,c);
-					}					
-				} catch(Exception ex) {
-					// hmmm, not ideal
-				}
+				e.associate(WyilFile.ContentType, null);				
+			} else if(e.suffix().equals("class")) {
+				// TODO
+				// e.associate(ClassFile.ContentType, null);				
 			} 
 		}
 		
@@ -116,7 +111,7 @@ public class Main {
 	 */
 	public static final FileFilter binaryFileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".class") || f.isDirectory();
+			return f.getName().endsWith(".wyil") || f.getName().endsWith(".class") || f.isDirectory();
 		}
 	};
 	
@@ -370,7 +365,11 @@ public class Main {
 						
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 		
 		
-		try {				
+		try {
+			// =====================================================================================
+			// Initialise Roots
+			// =====================================================================================
+
 			// initialise target root appropriately (if one is provided)
 			DirectoryRoot target = null;
 			
@@ -402,14 +401,19 @@ public class Main {
         			return Trie.fromString(s);
         		}
         	};		
+        	        
+			// =====================================================================================
+			// Whiley to Wyil Build Rule
+			// =====================================================================================
+			
+        	// now, initialise builder appropriately
+        	Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
 
-			// now, initialise builder appropriately
-			Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
+        	if(pipelineModifiers != null) {
+        		pipeline.apply(pipelineModifiers);
+        	}
 
-			if(pipelineModifiers != null) {
-				pipeline.apply(pipelineModifiers);
-			}
-	
+       	
 			WhileyBuilder builder = new WhileyBuilder(project,pipeline);	
 			
 			if(verbose) {			
@@ -426,6 +430,31 @@ public class Main {
 				}
 			}
 			project.add(rule);
+
+			// =====================================================================================
+			// Wyil-to-Java Build Rule
+			// =====================================================================================
+		
+			Wyil2JavaBuilder jbuilder = new WhileyBuilder(project,pipeline);	
+			
+			if(verbose) {			
+				jbuilder.setLogger(new Logger.Default(System.err));
+			}		
+			
+			includes = Content.filter(Trie.fromString("**"),WyilFile.ContentType);
+			rule = new StandardBuildRule(jbuilder);
+			for(DirectoryRoot source : sourceRoots) {
+				if(target != null) {
+					rule.add(source, includes, target, WyilFile.ContentType, ClassFile.ContentType);
+				} else {
+					rule.add(source, includes, source, WyilFile.ContentType, ClassFile.ContentType);
+				}
+			}
+			project.add(rule);
+		
+			// =====================================================================================
+			// Misc
+			// =====================================================================================		
 			
 			// Now, touch all files indicated on command-line	
 			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
