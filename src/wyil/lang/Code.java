@@ -805,7 +805,7 @@ public abstract class Code {
 		@Override
 		public final Code remap(Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
-			int[] nOperands = remap(binding, operands);
+			int[] nOperands = remapOperands(binding, operands);
 			if (nTarget != null || nOperands != operands) {
 				nTarget = nTarget != null ? nTarget : target;
 				return clone(nTarget, nOperands);
@@ -869,10 +869,10 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
+		public final Code remap(java.util.Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
 			Integer nOperand = binding.get(target);
-			int[] nOperands = remap(binding, operands);
+			int[] nOperands = remapOperands(binding, operands);
 			if (nTarget != null || nOperand != null || nOperands != operands) {
 				nTarget = nTarget != null ? nTarget : target;
 				nOperand = nOperand != null ? nOperand : operand;
@@ -2023,9 +2023,9 @@ public abstract class Code {
 		public String toString() {
 			if (target != Code.NULL_REG) {
 				return "indirectinvoke " + target + " = " + operand + " "
-						+ toString(operands) + " : " + type;
+						+ arrayToString(operands) + " : " + type;
 			} else {
-				return "indirectinvoke " + operand + " = " + toString(operands)
+				return "indirectinvoke " + operand + " = " + arrayToString(operands)
 						+ " : " + type;
 			}
 		}
@@ -2164,10 +2164,10 @@ public abstract class Code {
 
 		public String toString() {
 			if (target != Code.NULL_REG) {
-				return "invoke %" + target + " = " + toString(operands) + " "
+				return "invoke %" + target + " = " + arrayToString(operands) + " "
 						+ name + " : " + type;
 			} else {
-				return "invoke %" + toString(operands) + " " + name + " : "
+				return "invoke %" + arrayToString(operands) + " " + name + " : "
 						+ type;
 			}
 		}
@@ -2557,7 +2557,7 @@ public abstract class Code {
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remap(binding, modifiedOperands);
+			int[] nOperands = remapOperands(binding, modifiedOperands);
 			if (nOperands != modifiedOperands) {
 				return Code.Loop(target, nOperands);
 			} else {
@@ -2579,7 +2579,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "loop " + toString(modifiedOperands);
+			return "loop " + arrayToString(modifiedOperands);
 		}
 	}
 
@@ -2625,7 +2625,7 @@ public abstract class Code {
 
 		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			int[] nModifiedOperands = remap(binding, modifiedOperands);
+			int[] nModifiedOperands = remapOperands(binding, modifiedOperands);
 			Integer nIndexOperand = binding.get(indexOperand);
 			Integer nSourceOperand = binding.get(sourceOperand);
 			if (nSourceOperand != null || nIndexOperand != null
@@ -2660,7 +2660,7 @@ public abstract class Code {
 
 		public String toString() {
 			return "forall %" + indexOperand + " in %" + sourceOperand + " "
-					+ toString(modifiedOperands) + " : " + type;
+					+ arrayToString(modifiedOperands) + " : " + type;
 		}
 	}
 
@@ -2984,7 +2984,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newmap %" + target + " = " + toString(operands) + " : " + type;
+			return "newmap %" + target + " = " + arrayToString(operands) + " : " + type;
 		}
 	}
 
@@ -3035,7 +3035,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newrecord %" + target + " = " + toString(operands) + " : "
+			return "newrecord %" + target + " = " + arrayToString(operands) + " : "
 					+ type;
 		}
 	}
@@ -3087,7 +3087,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newtuple %" + target + " = " + toString(operands) + " : "
+			return "newtuple %" + target + " = " + arrayToString(operands) + " : "
 					+ type;
 		}
 	}
@@ -3140,7 +3140,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newset %" + target + " = " + toString(operands) + " : " + type;
+			return "newset %" + target + " = " + arrayToString(operands) + " : " + type;
 		}
 	}
 
@@ -3192,7 +3192,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "newlist %" + target + " = " + toString(operands) + " : "
+			return "newlist %" + target + " = " + arrayToString(operands) + " : "
 					+ type;
 		}
 	}
@@ -4218,11 +4218,11 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "void " + toString(operands);
+			return "void " + arrayToString(operands);
 		}
 	}
 
-	private static String toString(int... operands) {
+	private static String arrayToString(int... operands) {
 		String r = "(";
 		for (int i = 0; i != operands.length; ++i) {
 			if (i != 0) {
@@ -4242,7 +4242,7 @@ public abstract class Code {
 		return ops;
 	}
 
-	private static int[] remap(Map<Integer, Integer> binding, int[] operands) {
+	private static int[] remapOperands(Map<Integer, Integer> binding, int[] operands) {
 		int[] nOperands = operands;
 		for (int i = 0; i != nOperands.length; ++i) {
 			int o = operands[i];
