@@ -30,7 +30,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyil.util.Pair;
-import wyjc.attributes.WhileyType;
 import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.Constant;

@@ -14,12 +14,8 @@ import wybs.lang.Path;
 import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.Pair;
-import wyjc.attributes.WhileyDefine;
-import wyjc.attributes.WhileyType;
 import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryInputStream;
-import wyjvm.lang.BytecodeAttribute;
-import wyjvm.lang.Constant;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding

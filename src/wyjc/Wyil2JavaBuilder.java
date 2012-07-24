@@ -29,8 +29,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyjc.attributes.WhileyDefine;
-import wyjc.attributes.WhileyVersion;
 import wyjc.io.JavaIdentifierOutputStream;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
@@ -133,32 +131,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 		
 		boolean addMainLauncher = false;		
-				
-		for(WyilFile.ConstantDeclaration cd : module.constants()) {	
-			// FIXME: this is an ugly hack for now
-			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
-			for(Attribute a : cd.attributes()) {
-				if(a instanceof BytecodeAttribute) {
-					attrs.add((BytecodeAttribute)a);
-				}
-			}
-			WhileyDefine wd = new WhileyDefine(cd.name(),cd.constant(),attrs);
-			cf.attributes().add(wd);
-		}
-		
-		for(WyilFile.TypeDeclaration td : module.types()) {
-			// FIXME: this is an ugly hack for now
-			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
-			for(Attribute a : td.attributes()) {
-				if(a instanceof BytecodeAttribute) {
-					attrs.add((BytecodeAttribute)a);
-				}
-			}
-			Type t = td.type();			
-			WhileyDefine wd = new WhileyDefine(td.name(),t,attrs);
-			cf.attributes().add(wd);
-		}
-		
+								
 		HashMap<Constant,Integer> constants = new HashMap<Constant,Integer>();
 		for(WyilFile.MethodDeclaration method : module.methods()) {				
 			if(method.name().equals("main")) { 

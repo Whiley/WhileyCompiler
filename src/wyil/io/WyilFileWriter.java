@@ -3,16 +3,12 @@ package wyil.io;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.CyclicBarrier;
 
-import wyil.Transform;
 import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.util.Pair;
-import wyjc.attributes.WhileyType;
 import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryOutputStream;
-import wyjvm.lang.Constant;
 
 public class WyilFileWriter {
 	private static final int MAJOR_VERSION = 0;
