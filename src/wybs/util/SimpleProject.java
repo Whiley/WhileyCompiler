@@ -167,8 +167,6 @@ public class SimpleProject implements NameSpace {
 			}
 		} while (allTargets.size() != oldSize);
 
-		System.out.println("ALL TARGETS: " + allTargets);
-		
 		// Finally, build all identified targets!
 		do {
 			oldSize = allTargets.size();

@@ -75,8 +75,6 @@ public class Wyil2JavaBuilder implements Builder {
 		
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
 		
-		System.out.println("Wyil2JavaBuilder: " + delta);
-		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -86,9 +84,9 @@ public class Wyil2JavaBuilder implements Builder {
 		// ========================================================================
 
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			if(f.contentType() == WyilFile.ContentType) {
-				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) f;
+			Path.Entry<?> f = p.second();
+			if(f.contentType() == ClassFile.ContentType) {
+				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 				Path.Entry<ClassFile> df = (Path.Entry<ClassFile>) f;
 				ClassFile contents = build(sf.read());
 						
@@ -115,7 +113,7 @@ public class Wyil2JavaBuilder implements Builder {
 		// ========================================================================
 
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Compiled " + delta.size() + " file(s)",
+		logger.logTimedMessage("Wyil => Java: compiled " + delta.size() + " file(s)",
 				endTime - start, memory - runtime.freeMemory());
 	}	
 	

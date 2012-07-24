@@ -70,11 +70,13 @@ public class Main {
 	public static final Content.Registry registry = new Content.Registry() {
 	
 		public void associate(Path.Entry e) {
-			if(e.suffix().equals("whiley")) {
+			String suffix = e.suffix();
+			
+			if(suffix.equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
-			} else if(e.suffix().equals("wyil")) {
+			} else if(suffix.equals("wyil")) {
 				e.associate(WyilFile.ContentType, null);				
-			} else if(e.suffix().equals("class")) {				
+			} else if(suffix.equals("class")) {				
 				e.associate(ClassFile.ContentType, null);				
 			} 
 		}

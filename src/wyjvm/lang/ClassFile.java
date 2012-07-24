@@ -64,7 +64,7 @@ public class ClassFile {
 		}
 
 		public String toString() {
-			return "Content-Type: wyil";
+			return "Content-Type: class";
 		}
 	};
 

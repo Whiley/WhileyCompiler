@@ -91,7 +91,7 @@ public class StandardBuildRule implements BuildRule {
 
 	public void apply(Set<Path.Entry<?>> targets) throws Exception {
 		ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
-				
+		
 		for (int i = 0; i != items.size(); ++i) {
 			final Item item = items.get(i);
 			final Path.Root source = item.source;
@@ -102,7 +102,7 @@ public class StandardBuildRule implements BuildRule {
 			final Content.Type<?> to = item.to;
 
 			for (Path.Entry<?> te : targets) {
-				if (target.contains(te)) {
+				if (target.contains(te) && te.contentType() == to) {
 					// This entry is a valid target for this rule. Now, we must
 					// determine its corresponding source entry and check that
 					// it is included, and that it's not excluded.
@@ -110,7 +110,7 @@ public class StandardBuildRule implements BuildRule {
 					if (se != null
 							&& includes.matches(se.id(), se.contentType())
 							&& (excludes == null || !excludes.matches(se.id(),
-									se.contentType()))) {
+									se.contentType()))) {						
 						delta.add(new Pair<Path.Entry<?>, Path.Entry<?>>(se, te));
 					}
 				}

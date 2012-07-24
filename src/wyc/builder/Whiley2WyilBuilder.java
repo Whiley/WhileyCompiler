@@ -213,7 +213,7 @@ public final class Whiley2WyilBuilder implements Builder {
 		// ========================================================================
 		
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Compiled " + delta.size() + " file(s)",
+		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)",
 				endTime - start, memory - runtime.freeMemory());
 	}
 	
