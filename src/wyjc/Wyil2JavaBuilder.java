@@ -74,6 +74,9 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 		
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
+		
+		System.out.println("Wyil2JavaBuilder: " + delta);
+		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();

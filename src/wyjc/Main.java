@@ -74,9 +74,8 @@ public class Main {
 				e.associate(WhileyFile.ContentType, null);
 			} else if(e.suffix().equals("wyil")) {
 				e.associate(WyilFile.ContentType, null);				
-			} else if(e.suffix().equals("class")) {
-				// TODO
-				// e.associate(ClassFile.ContentType, null);				
+			} else if(e.suffix().equals("class")) {				
+				e.associate(ClassFile.ContentType, null);				
 			} 
 		}
 		
@@ -85,6 +84,8 @@ public class Main {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
 				return "wyil";
+			} else if(t == ClassFile.ContentType) {
+				return "class";
 			} else {
 				return "dat";
 			}
