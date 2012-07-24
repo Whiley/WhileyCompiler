@@ -58,7 +58,7 @@ public class BinaryInputStream extends InputStream {
 		return length;
 	}
 	
-	public int read_u1() throws IOException {
+	public int read_u8() throws IOException {
 		if(count == 0) {
 			return input.read() & 0xFF;
 		} else {
@@ -66,14 +66,14 @@ public class BinaryInputStream extends InputStream {
 		}
 	}	
 	
-	public int read_u2() throws IOException {
-		return (read_u1() << 8) | read_u1();
+	public int read_u16() throws IOException {
+		return (read_u8() << 8) | read_u8();
 	}
 		
-	public long read_u4() throws IOException {
+	public long read_u32() throws IOException {
 		// FIXME: this is most definitely broken
-		return (read_u1() << 24) | (read_u1() << 16) | (read_u1() << 8)
-				| read_u1();
+		return (read_u8() << 24) | (read_u8() << 16) | (read_u8() << 8)
+				| read_u8();
 	}
 	
 	public int read_un(int n) throws IOException {		

@@ -72,7 +72,7 @@ public class BinaryOutputStream extends OutputStream {
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write_u1(int w) throws IOException {
+	public void write_u8(int w) throws IOException {
 		if(count == 0) {
 			output.write(w & 0xFF);
 		} else {
@@ -86,9 +86,9 @@ public class BinaryOutputStream extends OutputStream {
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write_u2(int w) throws IOException {		
-		write_u1((w >> 8) & 0xFF);
-		write_u1(w & 0xFF);		
+	public void write_u16(int w) throws IOException {		
+		write_u8((w >> 8) & 0xFF);
+		write_u8(w & 0xFF);		
 	}
 
 	/**
@@ -97,11 +97,11 @@ public class BinaryOutputStream extends OutputStream {
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write_u4(int w) throws IOException {		
-		write_u1((w >> 24) & 0xFF);
-		write_u1((w >> 16) & 0xFF);
-		write_u1((w >> 8) & 0xFF);
-		write_u1(w & 0xFF);		
+	public void write_u32(int w) throws IOException {		
+		write_u8((w >> 24) & 0xFF);
+		write_u8((w >> 16) & 0xFF);
+		write_u8((w >> 8) & 0xFF);
+		write_u8(w & 0xFF);		
 	}
 
 	/**

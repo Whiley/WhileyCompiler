@@ -70,12 +70,12 @@ public class LineNumberTable implements Code.BytecodeMapAttribute {
 	public void write(int[] bytecodeOffsets, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {
-		writer.write_u2(constantPool.get(new Constant.Utf8("LineNumberTable")));
-		writer.write_u4(2 + (4 * entries.size()));
-		writer.write_u2(entries.size());	
+		writer.write_u16(constantPool.get(new Constant.Utf8("LineNumberTable")));
+		writer.write_u32(2 + (4 * entries.size()));
+		writer.write_u16(entries.size());	
 		for(Entry e : entries) {
-			writer.write_u2(bytecodeOffsets[e.start]);
-			writer.write_u2(e.line);
+			writer.write_u16(bytecodeOffsets[e.start]);
+			writer.write_u16(e.line);
 		}
 	}
 

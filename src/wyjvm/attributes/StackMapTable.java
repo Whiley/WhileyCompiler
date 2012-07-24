@@ -65,8 +65,8 @@ public class StackMapTable implements BytecodeAttribute {
 			throws IOException {
 		// TODO: implement me!		
 		// only empty attribute written
-		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
-		writer.write_u4(0);
+		writer.write_u16(constantPool.get(new Constant.Utf8(name())));
+		writer.write_u32(0);
 	}
 
 	@Override

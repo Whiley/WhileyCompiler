@@ -142,8 +142,8 @@ public interface BytecodeAttribute {
 				Map<String, BytecodeAttribute.Reader> readers)
 				throws IOException {
 			
-			int index =  input.read_u2();
-			int origLen = (int) input.read_u4();
+			int index =  input.read_u16();
+			int origLen = (int) input.read_u32();
 			int len = origLen + 6;
 			Constant.Utf8 cu = (Constant.Utf8) constantPool.get(index);											
 			byte[] bs = new byte[len];

@@ -341,39 +341,39 @@ public class Code implements BytecodeAttribute {
 		
 		// === WRITE CODE ATTRIBUTE ===		
 
-		writer.write_u2(constantPool.get(new Constant.Utf8("Code")));
+		writer.write_u16(constantPool.get(new Constant.Utf8("Code")));
 		// need to figure out exception_table length
 		int exception_table_length = handlers().size() * 8;
 		// need to figure out attribute_table length
 		int attribute_table_length = attrbytes.length;
 		// write attribute length
-		writer.write_u4(bytecodebytes.length + exception_table_length + attribute_table_length
+		writer.write_u32(bytecodebytes.length + exception_table_length + attribute_table_length
 				+ 12);
 		// now write data
-		writer.write_u2(maxStack());
-		writer.write_u2(maxLocals());
-		writer.write_u4(bytecodebytes.length);
+		writer.write_u16(maxStack());
+		writer.write_u16(maxLocals());
+		writer.write_u32(bytecodebytes.length);
 		// write bytecode instructions
 		for (int i = 0; i != bytecodebytes.length; ++i) {			
-			writer.write_u1(bytecodebytes[i]);
+			writer.write_u8(bytecodebytes[i]);
 		}
 
 		// write exception handlers
-		writer.write_u2(handlers().size());
+		writer.write_u16(handlers().size());
 		for (Handler h : handlers()) {
-			writer.write_u2(insnOffsets[h.start]);
-			writer.write_u2(insnOffsets[h.end]);
-			writer.write_u2(labelOffsets.get(h.label));
+			writer.write_u16(insnOffsets[h.start]);
+			writer.write_u16(insnOffsets[h.end]);
+			writer.write_u16(labelOffsets.get(h.label));
 
 			if (JvmTypes.isClass("java.lang", "Throwable", h.exception)) {
-				writer.write_u2(0);
+				writer.write_u16(0);
 			} else {
-				writer.write_u2(constantPool.get(Constant
+				writer.write_u16(constantPool.get(Constant
 						.buildClass(h.exception)));
 			}
 		}
 				
-		writer.write_u2(attributes.size()); 
+		writer.write_u16(attributes.size()); 
 		writer.write(attrbytes);		
 	}
 	

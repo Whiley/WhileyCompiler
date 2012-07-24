@@ -50,7 +50,7 @@ public class WyilFileReader {
 		
 		
 		for(int i=0;i!=8;++i) {
-			char c = (char) input.read_u1();
+			char c = (char) input.read_u8();
 			if(magic[i] != c) {
 				throw new IllegalArgumentException("invalid magic number");
 			}
@@ -276,22 +276,22 @@ public class WyilFileReader {
 	}	
 	
 	private Code readCode(int offset, HashMap<Integer,String> labels) throws IOException {
-		int opcode = input.read_u1();
+		int opcode = input.read_u8();
 		boolean wideBase = false;
 		boolean wideRest = false;
 		
 		// deal with wide bytecodes first
 		switch(opcode) {
 		case Code.OPCODE_wide:
-			opcode = input.read_u1();
+			opcode = input.read_u8();
 			wideBase = true;
 			break;
 		case Code.OPCODE_widerest:
-			opcode = input.read_u1();
+			opcode = input.read_u8();
 			wideRest = true;
 			break;
 		case Code.OPCODE_widewide:
-			opcode = input.read_u1();
+			opcode = input.read_u8();
 			wideBase = true;
 			wideRest = true;
 			break;
@@ -365,7 +365,7 @@ public class WyilFileReader {
 			return Code.Return(type, operand);
 		case Code.OPCODE_switch: {
 			ArrayList<Pair<Value,String>> cases = new ArrayList<Pair<Value,String>>();
-			int target = input.read_u1(); 
+			int target = input.read_u8(); 
 			String defaultLabel = findLabel(offset + target,labels);
 			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
@@ -711,7 +711,7 @@ public class WyilFileReader {
 		if(wide) {
 			return input.read_uv();
 		} else {
-			return input.read_u1();
+			return input.read_u8();
 		}
 	}
 	
@@ -719,7 +719,7 @@ public class WyilFileReader {
 		if(wide) {
 			return input.read_uv();
 		} else {
-			return input.read_u1() + offset - 128;
+			return input.read_u8() + offset - 128;
 		}
 	}
 	
@@ -742,7 +742,7 @@ public class WyilFileReader {
 		}
 		
 		public Value read() throws IOException {		
-			int code = reader.read_u1();				
+			int code = reader.read_u8();				
 			switch (code) {			
 			case WyilFileWriter.CONSTANT_Null:
 				return Value.V_NULL;
@@ -752,17 +752,17 @@ public class WyilFileReader {
 				return Value.V_BOOL(true);				
 			case WyilFileWriter.CONSTANT_Byte:			
 			{
-				byte val = (byte) reader.read_u1();				
+				byte val = (byte) reader.read_u8();				
 				return Value.V_BYTE(val);
 			}
 			case WyilFileWriter.CONSTANT_Char:			
 			{
-				char val = (char) reader.read_u2();				
+				char val = (char) reader.read_u16();				
 				return Value.V_CHAR(val);
 			}
 			case WyilFileWriter.CONSTANT_Int:			
 			{
-				int len = reader.read_u2();				
+				int len = reader.read_u16();				
 				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger bi = new BigInteger(bytes);
@@ -770,11 +770,11 @@ public class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Real:			
 			{
-				int len = reader.read_u2();
+				int len = reader.read_u16();
 				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger num = new BigInteger(bytes);
-				len = reader.read_u2();
+				len = reader.read_u16();
 				bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger den = new BigInteger(bytes);
@@ -783,17 +783,17 @@ public class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_String:
 			{
-				int len = reader.read_u2();
+				int len = reader.read_u16();
 				StringBuffer sb = new StringBuffer();
 				for(int i=0;i!=len;++i) {
-					char c = (char) reader.read_u2();
+					char c = (char) reader.read_u16();
 					sb.append(c);
 				}
 				return Value.V_STRING(sb.toString());
 			}
 			case WyilFileWriter.CONSTANT_List:
 			{
-				int len = reader.read_u2();
+				int len = reader.read_u16();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
 					values.add((Value) read());
@@ -802,7 +802,7 @@ public class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Set:
 			{
-				int len = reader.read_u2();
+				int len = reader.read_u16();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
 					values.add((Value) read());
@@ -811,7 +811,7 @@ public class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Tuple:
 			{
-				int len = reader.read_u2();
+				int len = reader.read_u16();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
 					values.add((Value) read());
@@ -820,10 +820,10 @@ public class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Record:
 			{
-				int len = reader.read_u2();
+				int len = reader.read_u16();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();
 				for(int i=0;i!=len;++i) {
-					int idx = reader.read_u2();
+					int idx = reader.read_u16();
 					String str = stringPool.get(idx);
 					Value lhs = (Value) read();
 					tvs.put(str, lhs);

@@ -268,7 +268,7 @@ public abstract class Type {
 		String r = "";
 		int nchars = reader.read_uv();
 		for(int i=0;i!=nchars;++i) {
-			char c = (char) reader.read_u2();
+			char c = (char) reader.read_u16();
 			r = r + c;
 		}
 		return r;

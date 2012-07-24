@@ -121,26 +121,26 @@ public class InnerClasses implements BytecodeAttribute {
 	public void write(BinaryOutputStream output,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {
-		output.write_u2(constantPool.get(new Constant.Utf8("InnerClasses")));
+		output.write_u16(constantPool.get(new Constant.Utf8("InnerClasses")));
 		
 		int ninners = inners.size();
 		
-		output.write_u4(2 + (8 * ninners));
-		output.write_u2(ninners);
+		output.write_u32(2 + (8 * ninners));
+		output.write_u16(ninners);
 		
 		for(Triple<JvmType.Clazz,JvmType.Clazz,List<Modifier>> i : inners) {
 			if(i.second() == null) {								
-				output.write_u2(0);
+				output.write_u16(0);
 			} else {
-				output.write_u2(constantPool.get(Constant.buildClass(i.second())));
+				output.write_u16(constantPool.get(Constant.buildClass(i.second())));
 			}
 			if(i.first() == null) {
-				output.write_u2(0);
+				output.write_u16(0);
 			} else {
-				output.write_u2(constantPool.get(Constant.buildClass(i.first())));
+				output.write_u16(constantPool.get(Constant.buildClass(i.first())));
 			}
 			String name = i.second().lastComponent().first();
-			output.write_u2(constantPool.get(new Constant.Utf8(name)));			
+			output.write_u16(constantPool.get(new Constant.Utf8(name)));			
 			writeInnerModifiers(i.third(),output);			
 		}		
 	}
@@ -171,7 +171,7 @@ public class InnerClasses implements BytecodeAttribute {
 			} 
 		}
 
-		output.write_u2(mods);
+		output.write_u16(mods);
 }
 	
 }

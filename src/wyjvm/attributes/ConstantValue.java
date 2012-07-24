@@ -68,9 +68,9 @@ public class ConstantValue implements BytecodeAttribute {
 	
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {
-		writer.write_u2(constantPool.get(new Constant.Utf8("ConstantValue")));
-		writer.write_u4(2);
-		writer.write_u2(constantPool.get(getConstantInfo()));
+		writer.write_u16(constantPool.get(new Constant.Utf8("ConstantValue")));
+		writer.write_u32(2);
+		writer.write_u16(constantPool.get(getConstantInfo()));
 	}
 	
 	public void print(PrintWriter output,

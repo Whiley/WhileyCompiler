@@ -467,7 +467,7 @@ public abstract class Type {
 			String r = "";
 			int nchars = reader.read_uv();
 			for(int i=0;i!=nchars;++i) {
-				char c = (char) reader.read_u2();
+				char c = (char) reader.read_u16();
 				r = r + c;
 			}
 			return r;
@@ -517,7 +517,7 @@ public abstract class Type {
 		private void writeString(String str) throws IOException {
 			writer.write_uv(str.length());
 			for (int i = 0; i != str.length(); ++i) {
-				writer.write_u2(str.charAt(i));
+				writer.write_u16(str.charAt(i));
 			}
 		}
 	}

@@ -58,11 +58,11 @@ public class Exceptions implements BytecodeAttribute {
 	 */
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {		
-		writer.write_u2(constantPool.get(new Constant.Utf8("Exceptions")));
-		writer.write_u4(2 + (2 * exceptions.size()));
-		writer.write_u2(exceptions.size());
+		writer.write_u16(constantPool.get(new Constant.Utf8("Exceptions")));
+		writer.write_u32(2 + (2 * exceptions.size()));
+		writer.write_u16(exceptions.size());
 		for (JvmType.Clazz e : exceptions) {
-			writer.write_u2(constantPool.get(Constant.buildClass(e)));
+			writer.write_u16(constantPool.get(Constant.buildClass(e)));
 		}
 	}
 	

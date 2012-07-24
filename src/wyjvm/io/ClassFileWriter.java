@@ -56,12 +56,12 @@ public class ClassFileWriter {
 			poolMap.put(ci, index++);
 		}
 		
-		output.write_u1(0xCA);
-		output.write_u1(0xFE);
-		output.write_u1(0xBA);
-		output.write_u1(0xBE);
-		output.write_u4(cfile.version());
-		output.write_u2(constantPool.size());
+		output.write_u8(0xCA);
+		output.write_u8(0xFE);
+		output.write_u8(0xBA);
+		output.write_u8(0xBE);
+		output.write_u32(cfile.version());
+		output.write_u16(constantPool.size());
 		// now, write the constant pool
 		for (Constant.Info c : constantPool) {
 			if (c != null) { // item at index 0 is always null
@@ -71,26 +71,26 @@ public class ClassFileWriter {
 		
 		// ok, done that now write more stuff
 		writeClassModifiers(cfile.modifiers());
-		output.write_u2(poolMap.get(Constant.buildClass(cfile.type())));
+		output.write_u16(poolMap.get(Constant.buildClass(cfile.type())));
 		if (cfile.superClass() != null) {
-			output.write_u2(poolMap.get(Constant.buildClass(cfile.superClass())));
+			output.write_u16(poolMap.get(Constant.buildClass(cfile.superClass())));
 		} 
-		output.write_u2(cfile.interfaces().size());
+		output.write_u16(cfile.interfaces().size());
 		for (JvmType.Reference i : cfile.interfaces()) {
-			output.write_u2(poolMap.get(Constant.buildClass(i)));
+			output.write_u16(poolMap.get(Constant.buildClass(i)));
 		}
 
-		output.write_u2(cfile.fields().size());
+		output.write_u16(cfile.fields().size());
 		for (ClassFile.Field f : cfile.fields()) {
 			writeField(f, poolMap);
 		}
 
-		output.write_u2(cfile.methods().size());
+		output.write_u16(cfile.methods().size());
 		for (ClassFile.Method m : cfile.methods()) {
 			writeMethod(m, poolMap);
 		}
 
-		output.write_u2(cfile.attributes().size());
+		output.write_u16(cfile.attributes().size());
 		for(BytecodeAttribute a : cfile.attributes()) {
 			a.write(output, poolMap, loader);
 		}
@@ -101,12 +101,12 @@ public class ClassFileWriter {
 	protected void writeField(ClassFile.Field f,
 			HashMap<Constant.Info, Integer> constantPool) throws IOException {
 		writeFieldModifiers(f.modifiers());
-		output.write_u2(constantPool.get(new Constant.Utf8(f.name())));
-		output.write_u2(constantPool.get(new Constant.Utf8(ClassFile
+		output.write_u16(constantPool.get(new Constant.Utf8(f.name())));
+		output.write_u16(constantPool.get(new Constant.Utf8(ClassFile
 				.descriptor(f.type(), false))));
 
 		// Write number of attributes
-		output.write_u2(f.attributes().size());
+		output.write_u16(f.attributes().size());
 
 		for (BytecodeAttribute a : f.attributes()) {
 			a.write(output, constantPool, loader);
@@ -117,11 +117,11 @@ public class ClassFileWriter {
 			HashMap<Constant.Info, Integer> constantPool) throws IOException {
 
 		writeMethodModifiers(m.modifiers());
-		output.write_u2(constantPool.get(new Constant.Utf8(m.name())));
-		output.write_u2(constantPool.get(new Constant.Utf8(ClassFile
+		output.write_u16(constantPool.get(new Constant.Utf8(m.name())));
+		output.write_u16(constantPool.get(new Constant.Utf8(ClassFile
 				.descriptor(m.type(), false))));
 		
-		output.write_u2(m.attributes().size());
+		output.write_u16(m.attributes().size());
 
 		for (BytecodeAttribute a : m.attributes()) {
 			a.write(output, constantPool, loader);
@@ -148,7 +148,7 @@ public class ClassFileWriter {
 			}
 		}
 		
-		output.write_u2(mods);
+		output.write_u16(mods);
 	}
 
 	protected void writeFieldModifiers(List<Modifier> modifiers)
@@ -177,7 +177,7 @@ public class ClassFileWriter {
 			}
 		}
 		
-		output.write_u2(mods);
+		output.write_u16(mods);
 	}
 
 	protected void writeMethodModifiers(List<Modifier> modifiers)
@@ -213,7 +213,7 @@ public class ClassFileWriter {
 			}
 		}
 		
-		output.write_u2(mods);
+		output.write_u16(mods);
 	}
 		
 	protected static void writeModifiers(List<Modifier> modifiers, int[] masks,
@@ -230,6 +230,6 @@ public class ClassFileWriter {
 			}
 		}
 
-		output.write_u2(mask);
+		output.write_u16(mask);
 	}
 }

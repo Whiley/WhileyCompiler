@@ -60,14 +60,14 @@ public class WyilFileWriter {
 			throws IOException {
 		
 		// first, write magic number
-		output.write_u1(0x57); // W
-		output.write_u1(0x59); // Y
-		output.write_u1(0x49); // I
-		output.write_u1(0x4C); // L
-		output.write_u1(0x46); // F
-		output.write_u1(0x49); // I
-		output.write_u1(0x4C); // L
-		output.write_u1(0x45); // E
+		output.write_u8(0x57); // W
+		output.write_u8(0x59); // Y
+		output.write_u8(0x49); // I
+		output.write_u8(0x4C); // L
+		output.write_u8(0x46); // F
+		output.write_u8(0x49); // I
+		output.write_u8(0x4C); // L
+		output.write_u8(0x45); // E
 		
 		// second, write the file version number 
 		output.write_uv(MAJOR_VERSION); 
@@ -243,17 +243,17 @@ public class WyilFileWriter {
 		
 		switch(width) {
 		case Code.OPCODE_wide:
-			output.write_u1(width);
+			output.write_u8(width);
 			writeBase(true,code,offset,labels);
 			writeRest(false,code,offset,labels);
 			break;
 		case Code.OPCODE_widerest:
-			output.write_u1(width);
+			output.write_u8(width);
 			writeBase(false,code,offset,labels);
 			writeRest(true,code,offset,labels);
 			break;
 		case Code.OPCODE_widewide:
-			output.write_u1(width);
+			output.write_u8(width);
 			writeBase(true,code,offset,labels);
 			writeRest(true,code,offset,labels);
 			break;
@@ -267,7 +267,7 @@ public class WyilFileWriter {
 			HashMap<String, Integer> labels) throws IOException {
 
 		// second, deal with standard instruction formats
-		output.write_u1(code.opcode());
+		output.write_u8(code.opcode());
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
@@ -405,7 +405,7 @@ public class WyilFileWriter {
 			if(value >= 256) {
 				throw new IllegalArgumentException("invalid base value");
 			}
-			output.write_u1(value);
+			output.write_u8(value);
 		}
 	}	
 	
@@ -413,7 +413,7 @@ public class WyilFileWriter {
 		if(wide) {
 			output.write_uv(target);
 		} else {
-			output.write_u1((target-offset) + 128);
+			output.write_u8((target-offset) + 128);
 		}
 	}
 	
@@ -874,83 +874,83 @@ public class WyilFileWriter {
 		}
 		
 		public void write(Value.Null expr) throws IOException {				
-			output.write_u1(CONSTANT_Null);
+			output.write_u8(CONSTANT_Null);
 		}
 		
 		public void write(Value.Bool expr) throws IOException {
 			
 			if(expr.value) {
-				output.write_u1(CONSTANT_True);
+				output.write_u8(CONSTANT_True);
 			} else {
-				output.write_u1(CONSTANT_False);
+				output.write_u8(CONSTANT_False);
 			}
 		}
 		
 		public void write(Value.Byte expr) throws IOException {		
-			output.write_u1(CONSTANT_Byte);		
-			output.write_u1(expr.value);		
+			output.write_u8(CONSTANT_Byte);		
+			output.write_u8(expr.value);		
 		}
 		
 		public void write(Value.Char expr) throws IOException {		
-			output.write_u1(CONSTANT_Char);		
-			output.write_u2(expr.value);		
+			output.write_u8(CONSTANT_Char);		
+			output.write_u16(expr.value);		
 		}
 		
 		public void write(Value.Integer expr) throws IOException {		
-			output.write_u1(CONSTANT_Int);		
+			output.write_u8(CONSTANT_Int);		
 			BigInteger num = expr.value;
 			byte[] numbytes = num.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_u2(numbytes.length);
+			output.write_u16(numbytes.length);
 			output.write(numbytes);
 		}
 
 		public void write(Value.Rational expr) throws IOException {		
 			
-			output.write_u1(CONSTANT_Real);
+			output.write_u8(CONSTANT_Real);
 			BigRational br = expr.value;
 			BigInteger num = br.numerator();
 			BigInteger den = br.denominator();
 
 			byte[] numbytes = num.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_u2(numbytes.length);
+			output.write_u16(numbytes.length);
 			output.write(numbytes);
 
 			byte[] denbytes = den.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_u2(denbytes.length);
+			output.write_u16(denbytes.length);
 			output.write(denbytes);
 		}
 			
 		public void write(Value.Strung expr) throws IOException {	
-			output.write_u1(CONSTANT_String);
+			output.write_u8(CONSTANT_String);
 			String value = expr.value;
 			int valueLength = value.length();		
-			output.write_u2(valueLength);
+			output.write_u16(valueLength);
 			for(int i=0;i!=valueLength;++i) {
-				output.write_u2(value.charAt(i));
+				output.write_u16(value.charAt(i));
 			}
 		}
 		public void write(Value.Set expr) throws IOException {
-			output.write_u1(CONSTANT_Set);
-			output.write_u2(expr.values.size());
+			output.write_u8(CONSTANT_Set);
+			output.write_u16(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
 			}
 		}
 		
 		public void write(Value.List expr) throws IOException {
-			output.write_u1(CONSTANT_List);
-			output.write_u2(expr.values.size());
+			output.write_u8(CONSTANT_List);
+			output.write_u16(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
 			}
 		}
 		
 		public void write(Value.Map expr) throws IOException {
-			output.write_u1(CONSTANT_Map);
-			output.write_u2(expr.values.size());
+			output.write_u8(CONSTANT_Map);
+			output.write_u16(expr.values.size());
 			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
 				write(e.getKey());
 				write(e.getValue());
@@ -958,17 +958,17 @@ public class WyilFileWriter {
 		}
 		
 		public void write(Value.Record expr) throws IOException {
-			output.write_u1(CONSTANT_Record);
-			output.write_u2(expr.values.size());
+			output.write_u8(CONSTANT_Record);
+			output.write_u16(expr.values.size());
 			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
-				output.write_u2(stringCache.get(v.getKey()));
+				output.write_u16(stringCache.get(v.getKey()));
 				write(v.getValue());
 			}
 		}
 		
 		public void write(Value.Tuple expr) throws IOException {
-			output.write_u1(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
-			output.write_u2(expr.values.size());
+			output.write_u8(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
+			output.write_u16(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
 			}

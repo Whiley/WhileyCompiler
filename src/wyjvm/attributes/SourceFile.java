@@ -52,9 +52,9 @@ public class SourceFile implements BytecodeAttribute {
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {		
-		writer.write_u2(constantPool.get(new Constant.Utf8("SourceFile")));
-		writer.write_u4(2);
-		writer.write_u2(constantPool.get(new Constant.Utf8(filename)));
+		writer.write_u16(constantPool.get(new Constant.Utf8("SourceFile")));
+		writer.write_u32(2);
+		writer.write_u16(constantPool.get(new Constant.Utf8(filename)));
 	}
 	
 	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {		
