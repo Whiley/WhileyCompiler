@@ -80,7 +80,7 @@ import wyc.stages.*;
  * @author David J. Pearce
  * 
  */
-public final class WhileyBuilder implements Builder {	
+public final class Whiley2WyilBuilder implements Builder {	
 	
 	/**
 	 * The master namespace for identifying all resources available to the
@@ -109,7 +109,7 @@ public final class WhileyBuilder implements Builder {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
 		
-	public WhileyBuilder(NameSpace namespace, Pipeline pipeline) {
+	public Whiley2WyilBuilder(NameSpace namespace, Pipeline pipeline) {
 		this.stages = pipeline.instantiate(this);
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
@@ -213,7 +213,7 @@ public final class WhileyBuilder implements Builder {
 		// ========================================================================
 		
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Compiled " + delta.size() + " file(s)",
+		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)",
 				endTime - start, memory - runtime.freeMemory());
 	}
 	

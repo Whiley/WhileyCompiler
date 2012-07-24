@@ -25,12 +25,53 @@
 
 package wyjvm.lang;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.*;
 
+import wybs.lang.Content;
+import wybs.lang.Path;
 import wyil.util.Pair;
 import wyjvm.attributes.*;
+import wyjvm.io.*;
 
 public class ClassFile {
+	
+	// =========================================================================
+	// Content Type
+	// =========================================================================
+
+	public static final Content.Type<ClassFile> ContentType = new Content.Type<ClassFile>() {
+		public Path.Entry<ClassFile> accept(Path.Entry<?> e) {
+			if (e.contentType() == this) {
+				return (Path.Entry<ClassFile>) e;
+			}
+			return null;
+		}
+
+		public ClassFile read(Path.Entry<ClassFile> e, InputStream input)
+				throws IOException {
+			ClassFileReader reader = new ClassFileReader(input);
+			return reader.readClass();	
+		}
+
+		public void write(OutputStream output, ClassFile module)
+				throws IOException {
+			ClassFileWriter writer = new ClassFileWriter(output,null);
+			writer.write(module);	
+			output.close();
+		}
+
+		public String toString() {
+			return "Content-Type: class";
+		}
+	};
+
+	// =========================================================================
+	// State
+	// =========================================================================
+
 	protected int version;
 	protected JvmType.Clazz type;
 	protected JvmType.Clazz superClazz;
@@ -39,6 +80,10 @@ public class ClassFile {
 	protected ArrayList<BytecodeAttribute> attributes;
 	protected ArrayList<Field> fields;
 	protected ArrayList<Method> methods;	
+
+	// =========================================================================
+	// Constructors
+	// =========================================================================
 	
 	public ClassFile(int version, JvmType.Clazz type, JvmType.Clazz superClazz,
 			List<JvmType.Clazz> interfaces, List<Modifier> modifiers, BytecodeAttribute... attributes) {
@@ -67,14 +112,14 @@ public class ClassFile {
 		this.attributes = new ArrayList<BytecodeAttribute>(attributes);
 	}
 	
+	// =========================================================================
+	// Accessors
+	// =========================================================================
+			
 	public JvmType.Clazz type() {
 		return type;
 	}
-	
-	public void setType(JvmType.Clazz t) {
-		type = t;
-	}	
-	
+		
 	public String name() {
 		return type.lastComponent().first();
 	}	
@@ -280,7 +325,19 @@ public class ClassFile {
 	public boolean isInnerClass() {
 		return type.components().size() > 1;
 	}
+
+	// =========================================================================
+	// Mutators
+	// =========================================================================
+
+	public void setType(JvmType.Clazz t) {
+		type = t;
+	}	
 	
+	// =========================================================================
+	// Types
+	// =========================================================================
+		
 	public static class Field {
 		protected String name;
 		protected JvmType type;

@@ -18,7 +18,7 @@ import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.*;
-import wyc.builder.WhileyBuilder;
+import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.Expr;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
@@ -42,11 +42,11 @@ public class GlobalResolver extends LocalResolver {
 	 */
 	private final HashMap<NameID, Value> constantCache = new HashMap();
 	
-	public GlobalResolver(WhileyBuilder project) {
+	public GlobalResolver(Whiley2WyilBuilder project) {
 		super(project);
 	}
 	
-	public WhileyBuilder loader() {
+	public Whiley2WyilBuilder loader() {
 		return builder;		
 	}
 	

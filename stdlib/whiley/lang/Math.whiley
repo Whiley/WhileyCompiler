@@ -74,7 +74,7 @@ int pow(int base, int exponent) requires exponent > 0:
 // round an arbitrary number x to the largest integer
 // not greater than x .
 int floor(real x):
-    num,den = x
+    num/den = x
     r = num / den  
     if x < 0 && den != 1: 	 
         return r - 1 
@@ -84,7 +84,7 @@ int floor(real x):
 // round an arbitrary number x to the smallest integer
 // not smaller than x.
 int ceil(real x):
-    num,den = x
+    num/den = x
     r = num / den  
     if x > 0 && den != 1: 	 
         return r + 1 
@@ -117,5 +117,5 @@ int isqrt(int x) requires x >= 0, ensures $ >= 0:
 public native real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
 
 public real sqrt(real x, real error) requires x >= 0.0, ensures $ >= 0.0:
-    numerator,denominator = x
+    numerator/denominator = x
     return sqrt(numerator,error) / sqrt(denominator,error)
