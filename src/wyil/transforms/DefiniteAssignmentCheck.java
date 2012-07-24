@@ -68,15 +68,7 @@ public class DefiniteAssignmentCheck extends
 		HashSet<Integer> defined = new HashSet<Integer>();
 		
 		int diff = 0;
-						
-		if(method.type() instanceof Type.Message) {
-			Type.Message mt = (Type.Message) method.type();
-			if(mt.receiver() != null) {
-				defined.add(diff);
-				diff++;
-			}
-		}
-		
+										
 		for(int i=0;i!=method.type().params().size();++i) {
 			defined.add(i+diff);
 		}								
@@ -87,38 +79,50 @@ public class DefiniteAssignmentCheck extends
 	public HashSet<Integer> propagate(int idx, Entry entry, HashSet<Integer> in) {						
 		Code code = entry.code;			
 		
-		if(code instanceof Code.Store) {
-			Code.Store store = (Code.Store) code;
+		checkUses(code,entry,in);
+		
+		int def = defs(code,entry);
+		if(def >= 0) {			
 			in = new HashSet<Integer>(in);			
-			in.add(store.slot); 
-		} else if(code instanceof Code.Load) {
-			Code.Load load = (Code.Load) code;
-			if(!in.contains(load.slot)) {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename, entry);
-			}
-		}		
+			in.add(def); 
+		} 	
 		
 		return in;
 	}
 		
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Code.IfGoto igoto, Entry stmt, HashSet<Integer> in) {
-		// nothing to do here
+			Code.If igoto, Entry entry, HashSet<Integer> in) {
+
+		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
+			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
+					entry);
+		}
+
 		return new Pair(in, in);
 	}
 
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Code.IfType iftype, Entry stmt, HashSet<Integer> in) {
-		// nothing to do here
+			Code.IfIs iftype, Entry entry, HashSet<Integer> in) {
+		
+		if (!in.contains(iftype.leftOperand)) {
+			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
+					entry);
+		}
+		
 		return new Pair(in,in);
 	}
 	
 	@Override
 	public List<HashSet<Integer>> propagate(int index, Code.Switch sw,
-			Entry stmt, HashSet<Integer> in) {
+			Entry entry, HashSet<Integer> in) {
+
+		if (!in.contains(sw.operand)) {
+			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
+					entry);
+		}
+
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
 		for (int i = 0; i != sw.branches.size(); ++i) {
 			stores.add(in);
@@ -127,18 +131,26 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(Type handler, HashSet<Integer> in) {
+	public HashSet<Integer> propagate(Type handler, Code.TryCatch tc, HashSet<Integer> in) {
+		in = new HashSet<Integer>(in);
+		in.add(tc.operand);
 		return in;
 	}
 	
 	@Override
 	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
-			Entry stmt, HashSet<Integer> in, List<Pair<Type, String>> handlers) {
+			Entry entry, HashSet<Integer> in, List<Code.TryCatch> handlers) {
 
-		if (loop instanceof Code.ForAll) {
-			in = new HashSet<Integer>(in);
+		if (loop instanceof Code.ForAll) {						
 			Code.ForAll fall = (Code.ForAll) loop;
-			in.add(fall.slot);
+			
+			if (!in.contains(fall.sourceOperand)) {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+						filename, entry);
+			}
+			
+			in = new HashSet<Integer>(in);
+			in.add(fall.indexOperand);
 		}
 
 		HashSet<Integer> r = propagate(start + 1, end, in, handlers);
@@ -154,5 +166,65 @@ public class DefiniteAssignmentCheck extends
 			}
 		}
 		return r;
-	}	
+	}
+		
+	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
+		if(code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
+			if(a.operand == Code.NULL_REG || in.contains(a.operand)) {
+				return;
+			}
+		} else if(code instanceof Code.AbstractUnaryAssignable) {
+			Code.AbstractUnaryAssignable a = (Code.AbstractUnaryAssignable) code;
+			if(in.contains(a.operand)) {
+				return;
+			}
+		} else if(code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable a = (Code.AbstractBinaryAssignable) code;
+			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
+				return;
+			}
+		} else if(code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp a = (Code.AbstractBinaryOp) code;			
+			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
+				return;
+			}
+		} else if(code instanceof Code.AbstractNaryAssignable) {
+			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
+			for(int operand : a.operands) {
+				if(!in.contains(operand)) {
+					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+	                        filename, entry);
+				}				
+			}
+			return;
+		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
+			Code.AbstractSplitNaryAssignable a = (Code.AbstractSplitNaryAssignable) code;
+			if(!in.contains(a.operand)) {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+                        filename, entry);
+			}				
+			for(int operand : a.operands) {
+				if(!in.contains(operand)) {
+					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+	                        filename, entry);
+				}				
+			}
+			return;
+		} else {
+			// includes abstract-assignables and branching bytecodes
+			return;
+		}
+
+		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+                filename, entry);
+	}
+	
+	public int defs(Code code, Entry entry) {
+		if (code instanceof Code.AbstractAssignable) {
+			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+			return aa.target;
+		}
+		return Code.NULL_REG;
+	}
 }

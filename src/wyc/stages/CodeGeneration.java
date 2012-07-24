@@ -84,7 +84,7 @@ public final class CodeGeneration {
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
 	private Stack<Scope> scopes = new Stack<Scope>();
-	private FunctionOrMethodOrMessage currentFunDecl;
+	private FunctionOrMethod currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
 	// runtime checks for post conditions. The key issue is that a post
@@ -100,30 +100,17 @@ public final class CodeGeneration {
 		this.globalGenerator = generator;
 	}
 
-	public WyilFile generate(WhileyFile wf) {
-		HashMap<Pair<Type.Function, String>, WyilFile.Method> methods = new HashMap();
-		ArrayList<WyilFile.TypeDef> types = new ArrayList<WyilFile.TypeDef>();
-		ArrayList<WyilFile.ConstDef> constants = new ArrayList<WyilFile.ConstDef>();
+	public WyilFile generate(WhileyFile wf) {		
+		ArrayList<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
 
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
 				if (d instanceof TypeDef) {
-					types.add(generate((TypeDef) d));
+					declarations.add(generate((TypeDef) d));
 				} else if (d instanceof Constant) {
-					constants.add(generate((Constant) d));
-				} else if (d instanceof FunctionOrMethodOrMessage) {
-					WyilFile.Method mi = generate((FunctionOrMethodOrMessage) d);
-					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
-					WyilFile.Method method = methods.get(key);
-					if (method != null) {
-						// coalesce cases
-						ArrayList<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>(
-								method.cases());
-						ncases.addAll(mi.cases());
-						mi = new WyilFile.Method(method.modifiers(), mi.name(),
-								mi.type(), ncases);
-					}
-					methods.put(key, mi);
+					declarations.add(generate((Constant) d));
+				} else if (d instanceof FunctionOrMethod) {
+					declarations.add(generate((FunctionOrMethod) d));					
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -132,16 +119,15 @@ public final class CodeGeneration {
 			}
 		}
 		
-		return new WyilFile(wf.module, wf.filename, methods.values(), types,
-				constants);				
+		return new WyilFile(wf.module, wf.filename, declarations);				
 	}
 
-	private WyilFile.ConstDef generate(Constant cd) {
+	private WyilFile.ConstantDeclaration generate(Constant cd) {
 		// TODO: this the point where were should an evaluator
-		return new WyilFile.ConstDef(cd.modifiers, cd.name, cd.resolvedValue);
+		return new WyilFile.ConstantDeclaration(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private WyilFile.TypeDef generate(TypeDef td) throws Exception {		
+	private WyilFile.TypeDeclaration generate(TypeDef td) throws Exception {		
 		Block constraint = null;
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
@@ -149,10 +135,10 @@ public final class CodeGeneration {
 			constraint = globalGenerator.generate(nid);			
 		}
 		
-		return new WyilFile.TypeDef(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
+		return new WyilFile.TypeDeclaration(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private WyilFile.Method generate(FunctionOrMethodOrMessage fd) throws Exception {		
+	private WyilFile.MethodDeclaration generate(FunctionOrMethod fd) throws Exception {		
 		localGenerator = new LocalGenerator(globalGenerator,fd);	
 		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -160,15 +146,6 @@ public final class CodeGeneration {
 		// method return type		
 		int paramIndex = 0;
 		int nparams = fd.parameters.size();
-		// method receiver type (if applicable)
-		if (fd instanceof Message) {
-			Message md = (Message) fd;
-			if(md.receiver != null) {						
-				// TODO: fix receiver constraints
-				environment.put("this", paramIndex++);	
-				nparams++;
-			}
-		}
 		
 		// ==================================================================
 		// Generate pre-condition
@@ -200,7 +177,8 @@ public final class CodeGeneration {
 			}	
 			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);						
 			precondition.append(localGenerator.generateAssertion(
-					"precondition not satisfied", fd.precondition, preEnv));		
+					"precondition not satisfied", fd.precondition, false,
+					preEnv.size(), preEnv));		
 		}
 		
 		// ==================================================================
@@ -209,14 +187,15 @@ public final class CodeGeneration {
 		Block postcondition = globalGenerator.generate(fd.ret,fd);						
 		
 		if (fd.postcondition != null) {
-			HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
+			HashMap<String, Integer> postEnv = new HashMap<String, Integer>();
 			postEnv.put("$", 0);
-			for(String var : environment.keySet()) {
-				postEnv.put(var, environment.get(var)+1);
+			for (String var : environment.keySet()) {
+				postEnv.put(var, environment.get(var) + 1);
 			}
 			postcondition = new Block(postEnv.size());
 			postcondition.append(localGenerator.generateAssertion(
-					"postcondition not satisfied", fd.postcondition, postEnv));
+					"postcondition not satisfied", fd.postcondition, false,
+					postEnv.size(), postEnv));
 		}
 		
 		// ==================================================================
@@ -234,7 +213,7 @@ public final class CodeGeneration {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.append(Code.Return(Type.T_VOID),attributes(fd));		
+		body.append(Code.Return(),attributes(fd));		
 		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
@@ -248,17 +227,14 @@ public final class CodeGeneration {
 		}	
 		
 		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
-				
+		
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			return new WyilFile.Method(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
-		} else if(fd instanceof WhileyFile.Method) {
-			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+			return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
 		} else {
-			WhileyFile.Message md = (WhileyFile.Message) fd;					
-			return new WyilFile.Method(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
-		}		
+			WhileyFile.Method md = (WhileyFile.Method) fd;			
+			return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+		} 		
 	}
 
 	/**
@@ -277,6 +253,8 @@ public final class CodeGeneration {
 				return generate((Assign) stmt, environment);
 			} else if (stmt instanceof Assert) {
 				return generate((Assert) stmt, environment);
+			} else if (stmt instanceof Assume) {
+				return generate((Assume) stmt, environment);
 			} else if (stmt instanceof Return) {
 				return generate((Return) stmt, environment);
 			} else if (stmt instanceof Debug) {
@@ -297,18 +275,16 @@ public final class CodeGeneration {
 				return generate((DoWhile) stmt, environment);
 			} else if (stmt instanceof ForAll) {
 				return generate((ForAll) stmt, environment);
-			} else if (stmt instanceof Expr.MessageSend) {
-				return localGenerator.generate((Expr.MessageSend) stmt,false,environment);								
 			} else if (stmt instanceof Expr.MethodCall) {
-				return localGenerator.generate((Expr.MethodCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.MethodCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.FunctionCall) {
-				return localGenerator.generate((Expr.FunctionCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.FunctionCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.IndirectMethodCall) {
-				return localGenerator.generate((Expr.IndirectMethodCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.IndirectMethodCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
-				return localGenerator.generate((Expr.IndirectFunctionCall) stmt,false,environment);								
+				return localGenerator.generate((Expr.IndirectFunctionCall) stmt,Code.NULL_REG,environment.size(),environment);								
 			} else if (stmt instanceof Expr.New) {
-				return localGenerator.generate((Expr.New) stmt, environment);
+				return localGenerator.generate((Expr.New) stmt, environment.size(), environment.size()+1, environment);
 			} else if (stmt instanceof Skip) {
 				return generate((Skip) stmt, environment);
 			} else {
@@ -327,28 +303,58 @@ public final class CodeGeneration {
 	}
 	
 	private Block generate(Assign s, HashMap<String,Integer> environment) {
-		Block blk = null;
+		Block blk = null;		
 		
-		if(s.lhs instanceof Expr.AssignedVariable) {			
-			blk = localGenerator.generate(s.rhs, environment);			
+		if(s.lhs instanceof Expr.AssignedVariable) {				
 			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
-			blk.append(Code.Store(v.afterType.raw(), allocate(v.var, environment)),
-					attributes(s));			
+			int target = allocate(v.var, environment);
+			int freeRegister = environment.size();
+			blk = localGenerator.generate(s.rhs, target, freeRegister,
+					environment);					
+		}else if(s.lhs instanceof Expr.RationalLVal) {
+			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
+			
+
+			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
+			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.denominator;
+			
+			allocate(lv.var, environment);
+			allocate(rv.var, environment);
+						
+			
+			int freeRegister = environment.size();
+			blk = localGenerator.generate(s.rhs, freeRegister,
+					freeRegister + 1, environment);
+			
+			blk.append(Code.UnArithOp(s.rhs.result()
+					.raw(), environment.get(lv.var), freeRegister, Code.UnArithKind.NUMERATOR),
+					attributes(s));
+			
+			blk.append(Code.UnArithOp(s.rhs.result()
+					.raw(), environment.get(rv.var), freeRegister, Code.UnArithKind.DENOMINATOR),
+					attributes(s));
+						
+			return blk;
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
-			blk = localGenerator.generate(s.rhs, environment);			
-			blk.append(Code.Destructure(s.rhs.result().raw()),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
-			Collections.reverse(fields);
-			
-			for(Expr e : fields) {
-				if(!(e instanceof Expr.AssignedVariable)) {
-					syntaxError(errorMessage(INVALID_TUPLE_LVAL),localGenerator.context(),e);
+			for (int i = 0; i != fields.size(); ++i) {
+				Expr e = fields.get(i);
+				if (!(e instanceof Expr.AssignedVariable)) {
+					syntaxError(errorMessage(INVALID_TUPLE_LVAL),
+							localGenerator.context(), e);
 				}
 				Expr.AssignedVariable v = (Expr.AssignedVariable) e;
-				blk.append(
-						Code.Store(v.afterType.raw(),
-								allocate(v.var, environment)), attributes(s));
+				allocate(v.var, environment);
+			}
+			int freeRegister = environment.size();
+			blk = localGenerator.generate(s.rhs, freeRegister,
+					freeRegister + 1, environment);														
+			for (int i = 0; i != fields.size(); ++i) {
+				Expr.AssignedVariable v = (Expr.AssignedVariable) fields.get(i);
+				blk.append(Code.TupleLoad((Type.EffectiveTuple) s.rhs.result()
+						.raw(), environment.get(v.var), freeRegister, i),
+						attributes(s));
 			}
 			return blk;
 		} else if (s.lhs instanceof Expr.IndexOf
@@ -356,15 +362,25 @@ public final class CodeGeneration {
 				
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
-			Pair<Expr.AssignedVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
+			int rhsRegister = environment.size();
+			int freeRegister = environment.size() + 1;
+			Pair<Expr.AssignedVariable, Integer> l = extractLVal(s.lhs, fields,
+					blk, freeRegister, environment);
 			Expr.AssignedVariable lhs = l.first();
-			if(!environment.containsKey(lhs.var)) {
-				syntaxError("unknown variable",localGenerator.context(),l.first());
+			if (!environment.containsKey(lhs.var)) {
+				syntaxError("unknown variable", localGenerator.context(),
+						l.first());
 			}
-			int slot = environment.get(lhs.var);
-			blk.append(localGenerator.generate(s.rhs, environment));		
-			blk.append(Code.Update(lhs.type.raw(),lhs.afterType.raw(),slot,l.second(),fields),
-					attributes(s));							
+			int target = environment.get(lhs.var);
+			blk.append(localGenerator.generate(s.rhs, rhsRegister, freeRegister
+					+ l.second(), environment));
+
+			int[] operands = new int[l.second()];
+			for (int i = 0; i != l.second(); ++i) {
+				operands[l.second()-i-1] = freeRegister + i;
+			}
+			blk.append(Code.Update(lhs.type.raw(), target, rhsRegister,
+					operands, lhs.afterType.raw(), fields), attributes(s));
 		} else {
 			syntaxError("invalid assignment", localGenerator.context(), s);
 		}
@@ -373,41 +389,49 @@ public final class CodeGeneration {
 	}
 
 	private Pair<Expr.AssignedVariable, Integer> extractLVal(Expr e,
-			ArrayList<String> fields, Block blk, 
+			ArrayList<String> fields, Block blk, int freeRegister,
 			HashMap<String, Integer> environment) {
 		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return new Pair(v,0);			
 		} else if (e instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) e;
-			Pair<Expr.AssignedVariable,Integer> p = extractLVal(pa.src, fields, blk, environment);
-			return new Pair(p.first(),p.second() + 1);			
+			return  extractLVal(pa.src, fields, blk, freeRegister, environment);					
 		} else if (e instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) e;
-			Pair<Expr.AssignedVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
-			blk.append(localGenerator.generate(la.index, environment));			
+			blk.append(localGenerator.generate(la.index, freeRegister, freeRegister+1, environment));
+			Pair<Expr.AssignedVariable,Integer> l = extractLVal(la.src, fields, blk, freeRegister+1,environment);									
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
-			Pair<Expr.AssignedVariable,Integer> l = extractLVal(ra.src, fields, blk, environment);
+			Pair<Expr.AssignedVariable, Integer> r = extractLVal(ra.src, fields, blk, freeRegister, environment); 
 			fields.add(ra.name);
-			return new Pair(l.first(),l.second() + 1);			
+			return r;
 		} else {
 			syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), localGenerator.context(), e);
 			return null; // dead code
 		}
 	}
 	
-	private Block generate(Assert s, HashMap<String,Integer> environment) {
+	private Block generate(Assert s, HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(localGenerator.generateAssertion("assertion failed", s.expr, environment));		
+		blk.append(localGenerator.generateAssertion("assertion failed", s.expr, false,
+				environment.size(), environment));
 		return blk;
 	}
 
+	private Block generate(Assume s, HashMap<String, Integer> environment) {
+		Block blk = new Block(environment.size());
+		blk.append(localGenerator.generateAssertion("assumption failed",
+				s.expr, true, environment.size(), environment));
+		return blk;
+	}
+	
 	private Block generate(Return s, HashMap<String,Integer> environment) {
 
 		if (s.expr != null) {
-			Block blk = localGenerator.generate(s.expr, environment);
+			int freeRegister = environment.size();
+			Block blk = localGenerator.generate(s.expr, freeRegister, freeRegister+1, environment);
 	
 			// Here, we don't put the type propagated for the return expression.
 			// Instead, we use the declared return type of this function. This
@@ -416,24 +440,26 @@ public final class CodeGeneration {
 			
 			Type ret = currentFunDecl.resolvedType().raw().ret();	
 			
-			blk.append(Code.Return(ret), attributes(s));
+			blk.append(Code.Return(ret,freeRegister), attributes(s));
 			return blk;
 		} else {
 			Block blk = new Block(environment.size());
-			blk.append(Code.Return(Type.T_VOID), attributes(s));
+			blk.append(Code.Return(), attributes(s));
 			return blk;
 		}
 	}
 
 	private Block generate(Skip s, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(Code.Skip, attributes(s));
+		blk.append(Code.Nop, attributes(s));
 		return blk;
 	}
 
-	private Block generate(Debug s, HashMap<String,Integer> environment) {		
-		Block blk = localGenerator.generate(s.expr, environment);		
-		blk.append(Code.debug, attributes(s));
+	private Block generate(Debug s, HashMap<String, Integer> environment) {
+		int freeRegister = environment.size();
+		Block blk = localGenerator.generate(s.expr, freeRegister,
+				freeRegister + 1, environment);
+		blk.append(Code.Debug(freeRegister), attributes(s));
 		return blk;
 	}
 
@@ -441,7 +467,8 @@ public final class CodeGeneration {
 		String falseLab = Block.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
 				.freshLabel();
-		Block blk = localGenerator.generateCondition(falseLab, invert(s.condition), environment);
+		Block blk = localGenerator.generateCondition(falseLab,
+				invert(s.condition), environment.size(), environment);
 
 		for (Stmt st : s.trueBranch) {
 			blk.append(generate(st, environment));
@@ -459,71 +486,83 @@ public final class CodeGeneration {
 		return blk;
 	}
 	
-	private Block generate(Throw s, HashMap<String,Integer> environment) {
-		Block blk = localGenerator.generate(s.expr, environment);
-		blk.append(Code.Throw(s.expr.result().raw()), s.attributes());
+	private Block generate(Throw s, HashMap<String, Integer> environment) {
+		int freeRegister = environment.size();
+		Block blk = localGenerator.generate(s.expr, freeRegister,
+				freeRegister + 1, environment);
+		blk.append(Code.Throw(s.expr.result().raw(), freeRegister),
+				s.attributes());
 		return blk;
 	}
 	
-	private Block generate(Break s, HashMap<String,Integer> environment) {
+	private Block generate(Break s, HashMap<String, Integer> environment) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
-		if(scope == null) {
-			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP), localGenerator.context(), s);
+		if (scope == null) {
+			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
+					localGenerator.context(), s);
 		}
 		Block blk = new Block(environment.size());
 		blk.append(Code.Goto(scope.label));
 		return blk;
 	}
 	
-	private Block generate(Switch s, HashMap<String,Integer> environment) throws Exception {
-		String exitLab = Block.freshLabel();		
-		Block blk = localGenerator.generate(s.expr, environment);				
+	private Block generate(Switch s, HashMap<String, Integer> environment)
+			throws Exception {
+		int freeRegister = environment.size();
+		String exitLab = Block.freshLabel();
+		Block blk = localGenerator.generate(s.expr, freeRegister,
+				freeRegister + 1, environment);
 		Block cblk = new Block(environment.size());
 		String defaultTarget = exitLab;
 		HashSet<Value> values = new HashSet();
-		ArrayList<Pair<Value,String>> cases = new ArrayList();	
-		
-		for(Stmt.Case c : s.cases) {			
-			if(c.expr.isEmpty()) {
+		ArrayList<Pair<Value, String>> cases = new ArrayList();
+
+		for (Stmt.Case c : s.cases) {
+			if (c.expr.isEmpty()) {
 				// indicates the default block
-				if(defaultTarget != exitLab) {
-					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),localGenerator.context(),c);
+				if (defaultTarget != exitLab) {
+					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),
+							localGenerator.context(), c);
 				} else {
-					defaultTarget = Block.freshLabel();	
+					defaultTarget = Block.freshLabel();
 					cblk.append(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						cblk.append(generate(st, environment));
 					}
-					cblk.append(Code.Goto(exitLab),attributes(c));
+					cblk.append(Code.Goto(exitLab), attributes(c));
 				}
-			} else if(defaultTarget == exitLab) {
-				String target = Block.freshLabel();	
-				cblk.append(Code.Label(target), attributes(c));				
-				
-				for(Value constant : c.constants) { 					
-					if(values.contains(constant)) {
-						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),localGenerator.context(),c);
-					}									
-					cases.add(new Pair(constant,target));
+			} else if (defaultTarget == exitLab) {
+				String target = Block.freshLabel();
+				cblk.append(Code.Label(target), attributes(c));
+
+				for (Value constant : c.constants) {
+					if (values.contains(constant)) {
+						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),
+								localGenerator.context(), c);
+					}
+					cases.add(new Pair(constant, target));
 					values.add(constant);
 				}
-				
+
 				for (Stmt st : c.stmts) {
 					cblk.append(generate(st, environment));
 				}
-				cblk.append(Code.Goto(exitLab),attributes(c));
+				cblk.append(Code.Goto(exitLab), attributes(c));
 			} else {
-				syntaxError(errorMessage(UNREACHABLE_CODE), localGenerator.context(), c);
+				syntaxError(errorMessage(UNREACHABLE_CODE),
+						localGenerator.context(), c);
 			}
-		}		
-		
-		blk.append(Code.Switch(s.expr.result().raw(),defaultTarget,cases),attributes(s));
+		}
+
+		blk.append(Code.Switch(s.expr.result().raw(), freeRegister,
+				defaultTarget, cases), attributes(s));
 		blk.append(cblk);
-		blk.append(Code.Label(exitLab), attributes(s));		
+		blk.append(Code.Label(exitLab), attributes(s));
 		return blk;
 	}
 	
 	private Block generate(TryCatch s, HashMap<String,Integer> environment) throws Exception {
+		int exceptionRegister = allocate(environment);
 		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {
@@ -532,8 +571,7 @@ public final class CodeGeneration {
 		cblk.append(Code.Goto(exitLab),attributes(s));	
 		String endLab = null;
 		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
-		for(Stmt.Catch c : s.catches) {
-			int freeReg = allocate(c.variable,environment);
+		for(Stmt.Catch c : s.catches) {			
 			Code.Label lab;
 			
 			if(endLab == null) {
@@ -546,7 +584,7 @@ public final class CodeGeneration {
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt,lab.label));
 			cblk.append(lab, attributes(c));
-			cblk.append(Code.Store(pt, freeReg), attributes(c));
+			environment.put(c.variable, exceptionRegister);
 			for (Stmt st : c.stmts) {
 				cblk.append(generate(st, environment));
 			}
@@ -554,7 +592,7 @@ public final class CodeGeneration {
 		}
 		
 		Block blk = new Block(environment.size());
-		blk.append(Code.TryCatch(endLab,catches),attributes(s));
+		blk.append(Code.TryCatch(exceptionRegister,endLab,catches),attributes(s));
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));
 		return blk;
@@ -568,13 +606,14 @@ public final class CodeGeneration {
 		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
-					environment));
+					false, environment.size(), environment));
 		}
 
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 				
-		blk.append(localGenerator.generateCondition(label, invert(s.condition), environment));
+		blk.append(localGenerator.generateCondition(label, invert(s.condition),
+				environment.size(), environment));
 
 		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {
@@ -583,7 +622,9 @@ public final class CodeGeneration {
 		scopes.pop(); // break
 		
 		if(s.invariant != null) {
-			blk.append(localGenerator.generateAssertion("loop invariant not restored", s.invariant, environment));		
+			blk.append(localGenerator.generateAssertion(
+					"loop invariant not restored", s.invariant, false,
+					environment.size(), environment));
 		}
 		
 		blk.append(Code.End(label));
@@ -596,10 +637,10 @@ public final class CodeGeneration {
 				
 		Block blk = new Block(environment.size());
 		
-		if(s.invariant != null) {
+		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
-					environment));		
+					false, environment.size(), environment));
 		}
 		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
@@ -611,12 +652,14 @@ public final class CodeGeneration {
 		}		
 		scopes.pop(); // break
 		
-		if(s.invariant != null) {
+		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant, environment));
+					"loop invariant not restored", s.invariant, false,
+					environment.size(), environment));
 		}
 		
-		blk.append(localGenerator.generateCondition(label, invert(s.condition), environment));
+		blk.append(localGenerator.generateCondition(label, invert(s.condition),
+				environment.size(), environment));
 
 		
 		blk.append(Code.End(label));
@@ -632,12 +675,13 @@ public final class CodeGeneration {
 		if(s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not satisfied on entry", s.invariant,
-					environment));
+					"loop invariant not satisfied on entry", s.invariant, false,
+					environment.size(), environment));
 		}
 		
-		blk.append(localGenerator.generate(s.source,environment));	
-		int freeSlot = allocate(environment);
+		int sourceRegister = allocate(environment);
+		blk.append(localGenerator.generate(s.source, sourceRegister,
+				environment.size(), environment));		
 		if(s.variables.size() > 1) {
 			// this is the destructuring case		
 			
@@ -645,24 +689,26 @@ public final class CodeGeneration {
 			Type.EffectiveCollection rawSrcType = s.srcType.raw();
 			
 			// FIXME: support destructuring of lists and sets			
-			if(!(rawSrcType instanceof Type.EffectiveDictionary)) {
-				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),localGenerator.context(),s.source);
+			if(!(rawSrcType instanceof Type.EffectiveMap)) {
+				syntaxError(errorMessage(INVALID_MAP_EXPRESSION),localGenerator.context(),s.source);
 			}
-			Type.EffectiveDictionary dict = (Type.EffectiveDictionary) rawSrcType;
+			Type.EffectiveMap dict = (Type.EffectiveMap) rawSrcType;
 			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());
-			List<Type> elements = element.elements();
-			blk.append(Code.ForAll((Type.EffectiveDictionary) rawSrcType, freeSlot, label, Collections.EMPTY_SET), attributes(s));
-			blk.append(Code.Load(element, freeSlot), attributes(s));
-			blk.append(Code.Destructure(element), attributes(s));
-			for(int i=s.variables.size();i>0;--i) {
-				String var = s.variables.get(i-1);
+			int indexRegister = allocate(environment);
+			blk.append(Code
+					.ForAll((Type.EffectiveMap) rawSrcType,
+							sourceRegister, indexRegister,
+							Collections.EMPTY_SET, label), attributes(s));
+			for(int i=0;i<s.variables.size();++i) {
+				String var = s.variables.get(i);
 				int varReg = allocate(var,environment);
-				blk.append(Code.Store(elements.get(i-1), varReg), attributes(s));
+				blk.append(Code.TupleLoad(element, varReg, indexRegister, i), attributes(s));
 			}										
 		} else {
 			// easy case.
-			int freeReg = allocate(s.variables.get(0),environment);
-			blk.append(Code.ForAll(s.srcType.raw(), freeReg, label, Collections.EMPTY_SET), attributes(s));
+			int indexRegister = allocate(s.variables.get(0), environment);
+			blk.append(Code.ForAll(s.srcType.raw(), sourceRegister,
+					indexRegister, Collections.EMPTY_SET, label), attributes(s));
 		}		
 		
 		// FIXME: add a continue scope
@@ -672,9 +718,10 @@ public final class CodeGeneration {
 		}		
 		scopes.pop(); // break
 		
-		if(s.invariant != null) {
+		if (s.invariant != null) {
 			blk.append(localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant, environment));		
+					"loop invariant not restored", s.invariant, false,
+					environment.size(), environment));
 		}
 		blk.append(Code.End(label), attributes(s));		
 
@@ -758,6 +805,7 @@ public final class CodeGeneration {
 			binding.put(i,i+amount);		
 		}
 		binding.put(0, zeroDest);
+		
 		Block nblock = new Block(blk.numInputs());
 		for(Block.Entry e : blk) {
 			Code code = e.code.remap(binding);

@@ -237,7 +237,7 @@ public final class DecisionTree {
 				// the type system will already have enforced it.
 				if(child.constraint == null) {
 					// in this case, we can perform a direct branch.
-					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
+					blk.append(Code.IfIs(node.type, Code.REG_0,
 							child.type, target));
 					// FIXME: there is a bug here, since we should fail at this
 					// point. To fix this we need to change the above iftype
@@ -245,7 +245,7 @@ public final class DecisionTree {
 					// exists.
 				} else {
 					// normal case
-					blk.append(Code.IfType(node.type, Code.THIS_SLOT,
+					blk.append(Code.IfIs(node.type, Code.REG_0,
 							Type.Negation(child.type), nextLabel));
 					flattern(child,blk,target,i == lastIndex);	
 				}
@@ -272,14 +272,14 @@ public final class DecisionTree {
 		for (Block.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;				
-				Code.COp iop = Code.invert(a.op);
+				Code.Comparator iop = Code.invert(a.op);
 				if(iop != null) {
-					nblock.append(Code.IfGoto(a.type,iop,target), e.attributes());
+					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
 					String lab = Block.freshLabel();
-					nblock.append(Code.IfGoto(a.type,a.op,lab), e.attributes());
+					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
 					nblock.append(Code.Goto(target));
 					nblock.append(Code.Label(lab));
 				}

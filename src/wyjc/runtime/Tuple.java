@@ -35,7 +35,7 @@ public final class Tuple extends java.util.ArrayList {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 1;
+	int refCount = 100; // temporary measure
 	
 	// ================================================================================
 	// Generic Operations
@@ -81,15 +81,13 @@ public final class Tuple extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 	
-	public static Object get(Tuple tuple, int index) {
-		Util.decRefs(tuple);
+	public static Object get(Tuple tuple, int index) {		
 		Object item = tuple.get(index);
 		Util.incRefs(item);
 		return item;
 	}
 		
-	public static BigInteger length(Tuple tuple) {
-		Util.decRefs(tuple);
+	public static BigInteger length(Tuple tuple) {		
 		return BigInteger.valueOf(tuple.size());
 	}
 	

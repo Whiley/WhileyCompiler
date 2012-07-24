@@ -83,26 +83,27 @@ public class CoercionCheck implements Transform {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(WyilFile.Method method : module.methods()) {
+		for(WyilFile.MethodDeclaration method : module.methods()) {
 			check(method);
 		}
 	}
 		
-	public void check(WyilFile.Method method) {				
+	public void check(WyilFile.MethodDeclaration method) {				
 		for (WyilFile.Case c : method.cases()) {
 			check(c.body(), method);
 		}		
 	}
 	
-	protected void check(Block block,  WyilFile.Method method) {		
+	protected void check(Block block, WyilFile.MethodDeclaration method) {
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
-			if (code instanceof Code.Convert) {				
-				Code.Convert conv = (Code.Convert) code; 				
-				check(conv.from,conv.to,new HashSet<Pair<Type,Type>>(),stmt);
-			} 
-		}	
+			if (code instanceof Code.Convert) {
+				Code.Convert conv = (Code.Convert) code;
+				check(conv.type, conv.result, new HashSet<Pair<Type, Type>>(),
+						stmt);
+			}
+		}
 	}
 
 	/**
@@ -145,8 +146,8 @@ public class CoercionCheck implements Transform {
 			Type.Set t1 = (Type.Set) from;
 			Type.Set t2 = (Type.Set) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
-			Type.Dictionary t1 = (Type.Dictionary) from;
+		} else if(from instanceof Type.Map && to instanceof Type.Set) {
+			Type.Map t1 = (Type.Map) from;
 			Type.Set t2 = (Type.Set) to;
 			Type tup = Type.Tuple(t1.key(),t1.value());
 			check(tup,t2.element(),visited,elem);
@@ -154,9 +155,9 @@ public class CoercionCheck implements Transform {
 			Type.List t1 = (Type.List) from;
 			Type.Set t2 = (Type.Set) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
+		} else if(from instanceof Type.List && to instanceof Type.Map) {
 			Type.List t1 = (Type.List) from;
-			Type.Dictionary t2 = (Type.Dictionary) to;
+			Type.Map t2 = (Type.Map) to;
 			check(t1.element(),t2.value(),visited,elem);
 		} else if(from instanceof Type.List && to instanceof Type.List) {
 			Type.List t1 = (Type.List) from;

@@ -50,15 +50,15 @@ public class DeadCodeElimination implements Transform {
 	}
 	
 	public void apply(WyilFile module) throws IOException {
-		for(WyilFile.TypeDef type : module.types()) {
+		for(WyilFile.TypeDeclaration type : module.types()) {
 			transform(type);
 		}		
-		for(WyilFile.Method method : module.methods()) {
+		for(WyilFile.MethodDeclaration method : module.methods()) {
 			transform(method);
 		}
 	}
 	
-	public void transform(WyilFile.TypeDef type) {
+	public void transform(WyilFile.TypeDeclaration type) {
 		Block constraint = type.constraint();
 		
 		if (constraint != null) {
@@ -66,13 +66,13 @@ public class DeadCodeElimination implements Transform {
 		}
 	}
 
-	public void transform(WyilFile.Method method) {		
+	public void transform(WyilFile.MethodDeclaration method) {		
 		for(WyilFile.Case c : method.cases()) {
 			transform(c,method);
 		}
 	}
 	
-	public void transform(WyilFile.Case mcase, WyilFile.Method method) {	
+	public void transform(WyilFile.Case mcase, WyilFile.MethodDeclaration method) {	
 		Block body = mcase.body();
 		transform(body);
 	}
@@ -91,12 +91,12 @@ public class DeadCodeElimination implements Transform {
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;				
 				addTarget(labelMap.get(g.target),visited,worklist);
-			} else if(code instanceof Code.IfGoto) {								
-				Code.IfGoto ig = (Code.IfGoto) code;				
+			} else if(code instanceof Code.If) {								
+				Code.If ig = (Code.If) code;				
 				addTarget(index+1,visited,worklist);
 				addTarget(labelMap.get(ig.target),visited,worklist);				
-			} else if(code instanceof Code.IfType) {								
-				Code.IfType ig = (Code.IfType) code;				
+			} else if(code instanceof Code.IfIs) {								
+				Code.IfIs ig = (Code.IfIs) code;				
 				addTarget(index+1,visited,worklist);
 				addTarget(labelMap.get(ig.target),visited,worklist);				
 			} else if(code instanceof Code.Switch) {

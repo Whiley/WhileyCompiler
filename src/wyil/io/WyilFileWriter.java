@@ -1,332 +1,716 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 package wyil.io;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.CyclicBarrier;
 
-import wybs.lang.Builder;
+import wyil.Transform;
 import wybs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.WyilFile.*;
-import wyil.Transform;
+import wyil.util.Pair;
+import wyjc.attributes.WhileyType;
+import wyjc.runtime.BigRational;
+import wyjvm.io.BinaryOutputStream;
+import wyjvm.lang.Constant;
 
-/**
- * Writes WYIL bytecodes in a textual from to a given file.
- * 
- * <b>NOTE:</b> currently, this class is somewhat broken since it does not
- * provide any way to specify the output directory. Rather, it simply puts the
- * WYIL file in the same place as the Whiley file.
- * 
- * @author David J. Pearce
- * 
- */
-public final class WyilFileWriter implements Transform {
-	private PrintWriter out;
-	private boolean writeLabels = getLabels();
-	private boolean writeAttributes = getAttributes();
-	private boolean writeSlots = getSlots();
-		
+public class WyilFileWriter implements Transform {
+	private static final int MAJOR_VERSION = 0;
+	private static final int MINOR_VERSION = 1;
+	
+	private BinaryOutputStream output;
+	
+	private ArrayList<String> stringPool  = new ArrayList<String>();
+	private HashMap<String,Integer> stringCache = new HashMap<String,Integer>();
+	
+	private ArrayList<PATH_Item> pathPool = new ArrayList<PATH_Item>();
+	private HashMap<Path.ID,Integer> pathCache = new HashMap<Path.ID,Integer>();
+	
+	private ArrayList<NAME_Item> namePool = new ArrayList<NAME_Item>();
+	private HashMap<Pair<NAME_Kind,Path.ID>,Integer> nameCache = new HashMap<Pair<NAME_Kind,Path.ID>,Integer>();
+	
+	private ArrayList<Value> constantPool = new ArrayList<Value>();
+	private HashMap<Value,Integer> constantCache = new HashMap<Value,Integer>();
+	
+	private ArrayList<Type> typePool = new ArrayList<Type>();
+	private HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
+	
 	public WyilFileWriter(wybs.lang.Builder builder) {
 
 	}
 	
-	public void setLabels(boolean flag) {
-		writeLabels = flag;
-	}
-	
-	public static boolean getLabels() {
-		return false;
-	}
-	
-	public static String describeLabels() {
-		return "Include all labels in output";
-	}
-	
-	public void setAttributes(boolean flag) {
-		writeAttributes = flag;
-	}
-	
-	public static boolean getAttributes() {
-		return false;
-	}
-	
-	public static String describeAttributes() {
-		return "Include bytecode attributes in output";
-	}
-	
-	public void setSlots(boolean flag) {
-		writeSlots = flag;
-	}
-	
-	public static boolean getSlots() {
-		return false;
-	}
-	
-	public static String describeSlots() {
-		return "Include raw slow numbers in output";
-	}
-	
+	@Override
 	public void apply(WyilFile module) throws IOException {
 		String filename = module.filename().replace(".whiley", ".wyil");
-		out = new PrintWriter(new FileOutputStream(filename));
+		output = new BinaryOutputStream(new FileOutputStream(filename));
 		
-		//out.println("module: " + module.id());
-		out.println("source-file: " + module.filename());
-		out.println();
-		for(ConstDef cd : module.constants()) {
-			writeModifiers(cd.modifiers(),out);
-			out.println("define " + cd.name() + " as " + cd.constant());
-		}
-		if(!module.constants().isEmpty()) {
-			out.println();
-		}
-		for(TypeDef td : module.types()) {
-			Type t = td.type();			
-			String t_str;			
-			t_str = t.toString();
-			writeModifiers(td.modifiers(),out);
-			out.println("define " + td.name() + " as " + t_str);
-			Block constraint = td.constraint();
-			if(constraint != null) {
-				out.println("where:");
-				ArrayList<String> env = new ArrayList<String>();
-				env.add("$");			
-				// Now, add space for any other slots needed in the block. This can
-				// arise as a result of temporary loop variables, etc.
-				int maxSlots = constraint.numSlots();
-				for(int i=1;i!=maxSlots;++i) {
-					env.add(Integer.toString(i));
-				}
-				write(0,td.constraint(),env,out);
-			}
-		}
-		if(!module.types().isEmpty()) {
-			out.println();
-		}		
-		for(Method md : module.methods()) {
-			write(md,out);
-			out.println();
-		}
-		out.flush();		
+		buildPools(module);
+		
+		writeHeader(module);
+		writePools();		
+		writeBlock(module); // in principle we could write multiple blocks
+		
+		output.close();
+	}	
+	
+	/**
+	 * Write the header information for this WYIL file.
+	 * 
+	 * @param module
+	 * @throws IOException
+	 */
+	private void writeHeader(WyilFile module)
+			throws IOException {
+		
+		// first, write magic number
+		output.write_u1(0x57); // W
+		output.write_u1(0x59); // Y
+		output.write_u1(0x49); // I
+		output.write_u1(0x4C); // L
+		output.write_u1(0x46); // F
+		output.write_u1(0x49); // I
+		output.write_u1(0x4C); // L
+		output.write_u1(0x45); // E
+		
+		// second, write the file version number 
+		output.write_uv(MAJOR_VERSION); 
+		output.write_uv(MINOR_VERSION); 
+		
+		// third, write the various pool sizes
+		output.write_uv(stringPool.size());
+		output.write_uv(pathPool.size());
+		output.write_uv(namePool.size());
+		output.write_uv(constantPool.size());
+		output.write_uv(typePool.size());		
+		
+		// finally, write the number of blocks
+		output.write_uv(module.declarations().size());		
 	}
 	
-	private void write(Method method, PrintWriter out) {
-		for (Case c : method.cases()) {
-			write(c, method, out);
+	private void writePools() throws IOException{
+		writeStringPool();
+		writePathPool();
+		writeNamePool();
+		writeConstantPool();
+		writeTypePool();
+	}
+	
+	/**
+	 * Write the list of strings making up the string pool in UTF8.
+	 * 
+	 * @throws IOException
+	 */
+	private void writeStringPool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " string item(s).");
+		for (String s : stringPool) {
+			try {
+				byte[] bytes = s.getBytes("UTF-8");
+				output.write_uv(bytes.length);				
+				output.write(bytes, 0, bytes.length);
+			} catch (UnsupportedEncodingException e) {
+				// hmmm, this aint pretty ;)
+			}
 		}
 	}
 	
-	private void write(Case mcase, Method method, PrintWriter out) {
-		writeModifiers(method.modifiers(),out);
-		Type.FunctionOrMethodOrMessage ft = method.type(); 
-		out.print(ft.ret() + " ");
-		List<Type> pts = ft.params();
-		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
-		
-		int li = 0;
-		if(ft instanceof Type.Message) {			
-			Type.Message mt = (Type.Message) ft;
-			if(mt.receiver() != null) {
-				out.print(mt.receiver());
-				li++;
-			}
-			out.print("::");		
+	private void writePathPool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " path item(s).");
+		for (PATH_Item p : pathPool) {
+			output.write_uv(p.parentIndex + 1);
+			output.write_uv(p.stringIndex);
 		}
-		out.print(method.name() + "(");
-		for(int i=0;i!=ft.params().size();++i) {						
-			if(i!=0) {
-				out.print(", ");
-			}			
-			out.print(pts.get(i) + " " + locals.get(li++));			
-		}
-		out.println("):");				
-		for(Attribute a : mcase.attributes()) {
-			if(a instanceof wyjvm.lang.BytecodeAttribute) {
-				wyjvm.lang.BytecodeAttribute ba = (wyjvm.lang.BytecodeAttribute) a;
-				out.println("attribute: " + ba.name());
-			}
-		}		
+	}
 
-		Block precondition = mcase.precondition();
-		if(precondition != null) {			
-			out.println("requires: ");
-			ArrayList<String> env = new ArrayList<String>();			
-			// Now, add space for any other slots needed in the block. This can
-			// arise as a result of temporary loop variables, etc.
-			int maxSlots = precondition.numSlots();
-			for(int i=0;i!=maxSlots;++i) {
-				env.add(Integer.toString(i));
+	private void writeNamePool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " name item(s).");
+		for (NAME_Item p : namePool) {
+			output.write_uv(p.kind.kind());
+			output.write_uv(p.pathIndex);
+		}
+	}
+
+	private void writeConstantPool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " constant item(s).");
+		ValueWriter bout = new ValueWriter(output);
+		for (Value v : constantPool) {
+			bout.write(v);
+		}
+	}
+
+	private void writeTypePool() throws IOException {
+		System.out.println("Writing " + stringPool.size() + " type item(s).");
+		Type.BinaryWriter bout = new Type.BinaryWriter(output);
+		for (Type t : typePool) {
+			bout.write(t);
+		}
+	}
+	
+	private void writeBlock(WyilFile module) throws IOException {
+		output.write_uv(BLOCK_module);
+		// TODO: write block size
+		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
+		output.write_uv(module.declarations().size());
+		for(WyilFile.Declaration d : module.declarations()) {
+			if(d instanceof WyilFile.ConstantDeclaration) {
+				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d;
+				output.write_uv(BLOCK_constant);
+				// TODO: write block size	
+				// TODO: write modifiers
+				output.write_uv(stringCache.get(cd.name()));
+				output.write_uv(constantCache.get(cd.constant()));
+				output.write_uv(0); // no sub-blocks
+				// TODO: write annotations
+				
+			} else if(d instanceof WyilFile.TypeDeclaration) {
+				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
+				output.write_uv(BLOCK_type);
+				// TODO: write block size
+				// TODO: write modifiers
+				output.write_uv(stringCache.get(td.name()));
+				output.write_uv(typeCache.get(td.type()));
+				if(td.constraint() == null) {
+					output.write_uv(0); // no sub-blocks
+				} else {
+					output.write_uv(1); // one sub-block
+					writeBlock(td.constraint());
+				}
+				// TODO: write annotations
+				
+			} else if(d instanceof WyilFile.MethodDeclaration) {
+				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+				if(md.type() instanceof Type.Function) {
+					output.write_uv(BLOCK_function);
+				} else {
+					output.write_uv(BLOCK_method);
+				}
+				// TODO: write block size
+				// TODO: write modifiers
+				output.write_uv(md.cases().size());				
+				for(WyilFile.Case c : md.cases()) {
+					output.write_uv(BLOCK_case);
+					// TODO: write block size
+					int n = 0;
+					n += c.precondition() != null ? 1 : 0;
+					n += c.postcondition() != null ? 1 : 0;
+					n += c.body() != null ? 1 : 0;
+					output.write_uv(n);
+					if(c.precondition() != null) {
+						writeBlock(c.precondition());
+					}
+					if(c.postcondition() != null) {
+						writeBlock(c.postcondition());
+					}
+					if(c.body() != null) {
+						writeBlock(c.body());
+					}
+					// TODO: write annotations
+				}
+				// TODO: write annotations
+			} 
+		}
+	}
+	
+	private void writeBlock(Block block) throws IOException {		
+		// TODO: write block size
+	}
+	
+	private void buildPools(WyilFile module) {
+		stringPool.clear();
+		stringCache.clear();
+		
+		pathPool.clear();
+		pathCache.clear();
+		
+		namePool.clear();
+		nameCache.clear();
+		
+		constantPool.clear();
+		constantCache.clear();
+		
+		typePool.clear();
+		typeCache.clear();
+		
+		addPathItem(NAME_Kind.MODULE,module.id());
+		for(WyilFile.Declaration d : module.declarations()) {
+			buildPools(d);
+		}
+	}
+	
+	private void buildPools(WyilFile.Declaration declaration) {
+		if(declaration instanceof WyilFile.TypeDeclaration) {
+			buildPools((WyilFile.TypeDeclaration)declaration);
+		} else if(declaration instanceof WyilFile.ConstantDeclaration) {
+			buildPools((WyilFile.ConstantDeclaration)declaration);
+		} else if(declaration instanceof WyilFile.MethodDeclaration) {
+			buildPools((WyilFile.MethodDeclaration)declaration);
+		} 
+	}
+	
+	private void buildPools(WyilFile.TypeDeclaration declaration) {
+		addStringItem(declaration.name());
+		addTypeItem(declaration.type());		
+		buildPools(declaration.constraint());		
+	}
+	
+	private void buildPools(WyilFile.ConstantDeclaration declaration) {
+		addStringItem(declaration.name());
+		addConstantItem(declaration.constant());
+	}
+
+	private void buildPools(WyilFile.MethodDeclaration declaration) {
+		addStringItem(declaration.name());
+		addTypeItem(declaration.type());
+		for(WyilFile.Case c : declaration.cases()) {			
+			buildPools(c.precondition());						
+			buildPools(c.body());						
+			buildPools(c.postcondition());			
+		}
+	}
+	
+	private void buildPools(Block block) {
+		if(block == null) { return; }
+		for(Block.Entry e : block) {
+			buildPools(e.code);
+		}
+	}
+	
+	private void buildPools(Code code) {
+		
+		// First, deal with special cases
+		if(code instanceof Code.Const) {
+			Code.Const c = (Code.Const) code;
+			addConstantItem(c.constant);
+		} else if(code instanceof Code.Convert) {
+			Code.Convert c = (Code.Convert) code;
+			addTypeItem(c.result);
+		} else if(code instanceof Code.FieldLoad) {
+			Code.FieldLoad c = (Code.FieldLoad) code;
+			addStringItem(c.field);
+		} else if(code instanceof Code.IfIs) {
+			Code.IfIs c = (Code.IfIs) code;
+			addTypeItem(c.type);
+			addTypeItem(c.rightOperand);
+		} else if(code instanceof Code.Invoke) {
+			Code.Invoke c = (Code.Invoke) code;
+			if(c.type instanceof Type.Function) { 
+				// FIXME: this is totally broken
+				addPathItem(NAME_Kind.FUNCTION,c.name.module().append(c.name.name()));
+			} else {
+				// FIXME: this is totally broken
+				addPathItem(NAME_Kind.METHOD,c.name.module().append(c.name.name()));
 			}
-			write(0,precondition,env,out);
+		} else if(code instanceof Code.Update) {
+			Code.Update c = (Code.Update) code;
+			addTypeItem(c.type);
+			addTypeItem(c.afterType);
+			for(Code.LVal l : c) {
+				if(l instanceof Code.RecordLVal) {
+					Code.RecordLVal lv = (Code.RecordLVal) l;
+					addStringItem(lv.field);
+				}
+			}
 		}
 		
-		Block postcondition = mcase.postcondition();
-		if(postcondition != null) {
-			out.println("ensures: ");
-			ArrayList<String> env = new ArrayList<String>();
-			env.add("$");			
-			// Now, add space for any other slots needed in the block. This can
-			// arise as a result of temporary loop variables, etc.
-			int maxSlots = postcondition.numSlots();
-			for(int i=1;i!=maxSlots;++i) {
-				env.add(Integer.toString(i));
-			}
-			write(0,postcondition,env,out);
+		// Second, deal with standard cases
+		if(code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractUnaryAssignable) {
+			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractNaryAssignable) {
+			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			addTypeItem(a.type);
+		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
+			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
+			addTypeItem(a.type);
+		} 
+	}
+	
+	private int addPathItem(NAME_Kind kind, Path.ID pid) {
+		Pair<NAME_Kind,Path.ID> p = new Pair(kind,pid);
+		Integer index = nameCache.get(p);
+		if(index == null) {
+			int i = namePool.size();
+			nameCache.put(p, i);
+			namePool.add(new NAME_Item(kind,addPathItem(pid)));
+			return i;			
+		} else {
+			return index;
 		}
-		out.println("body: ");
-		boolean firstTime=true;		
-		if(li < locals.size()) {			
-			out.print("    var ");
-			for(;li<locals.size();++li) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print(locals.get(li));
+	}
+	
+	private int addStringItem(String string) {
+		Integer index = stringCache.get(string);
+		if(index == null) {
+			int i = stringPool.size();
+			stringCache.put(string, i);
+			stringPool.add(string);
+			return i;
+		} else {
+			return index;
+		}
+	}
+	
+	private int addPathItem(Path.ID pid) {
+		if(pid.last().equals("")) {
+			return -1;
+		}
+		
+		Integer index = pathCache.get(pid);
+		if(index == null) {
+			int i = pathPool.size();
+			pathCache.put(pid, i);
+			pathPool.add(new PATH_Item(addPathItem(pid.parent()),addStringItem(pid.last())));
+			return i;
+		} else {
+			return index;
+		}
+	}
+	
+	private int addTypeItem(Type t) {
+		
+		// TODO: this could be made way more efficient. In particular, we should
+		// combine resources into a proper aliased pool rather than write out
+		// types individually ... because that's sooooo inefficient!
+		
+		Integer index = typeCache.get(t);
+		if(index == null) {
+			int i = constantPool.size();
+			typeCache.put(t, i);
+			typePool.add(t);			
+			return i;
+		} else {
+			return index;
+		}
+	}
+	
+	private int addConstantItem(Value v) {
+		
+		// TODO: this could be made way more efficient. In particular, we should
+		// combine resources into a proper aliased pool rather than write out
+		// types individually ... because that's sooooo inefficient!
+	
+		Integer index = constantCache.get(v);
+		if(index == null) {
+			int i = constantPool.size();
+			constantCache.put(v, i);
+			constantPool.add(v);
+			addConstantStringItems(v);
+			return i;
+		}
+		return index;
+	}
+	
+	private void addConstantStringItems(Value v) {
+		if(v instanceof Value.Strung) {
+			Value.Strung s = (Value.Strung) v;
+			addStringItem(s.value);
+		} else if(v instanceof Value.List) {
+			Value.List l = (Value.List) v;				
+			for (Value e : l.values) {
+				addConstantStringItems(e);
 			}
-			out.println();
+		} else if(v instanceof Value.Set) {
+			Value.Set s = (Value.Set) v;
+			for (Value e : s.values) {
+				addConstantStringItems(e);
+			}
+		} else if(v instanceof Value.Map) {				
+			Value.Map m = (Value.Map) v;
+			for (Map.Entry<Value,Value> e : m.values.entrySet()) {
+				addConstantStringItems(e.getKey());
+				addConstantStringItems(e.getValue());
+			}
+		} else if(v instanceof Value.Tuple) {
+			Value.Tuple t = (Value.Tuple) v;
+			for (Value e : t.values) {
+				addConstantStringItems(e);
+			}
+		} else if(v instanceof Value.Record) {
+			Value.Record r = (Value.Record) v;
+			for (Map.Entry<String,Value> e : r.values.entrySet()) {
+				addStringItem(e.getKey());
+				addConstantStringItems(e.getValue());
+			}				
+		} else if(v instanceof Value.FunctionOrMethod){
+			// TODO
+		} 			
+	} 
+	
+	/**
+	 * An PATH_Item represents a path item.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private class PATH_Item {
+		/**
+		 * The index in the path pool of the parent for this item, or -1 if it
+		 * has not parent.
+		 */
+		public final int parentIndex;
+		
+		/**
+		 * The index of this path component in the string pool
+		 */
+		public final int stringIndex;
+		
+		public PATH_Item(int parentIndex, int stringIndex) {
+			this.parentIndex = parentIndex;
+			this.stringIndex = stringIndex;
 		}		
-		write(0,mcase.body(),locals,out);	
 	}
 	
-	private void write(int indent, Block blk, List<String> locals, PrintWriter out) {
-		for(Block.Entry s : blk) {
-			if(s.code instanceof Code.LoopEnd) {				
-				--indent;
-			} else if(s.code instanceof Code.Label) { 
-				write(indent-1,s.code,s.attributes(),locals,out);
-			} else {
-				write(indent,s.code,s.attributes(),locals,out);
-			}
-			if(s.code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) s.code; 
-				indent++;								
-			} else if(s.code instanceof Code.Loop) {
-				indent++;
-			}
+	private enum NAME_Kind {
+		PACKAGE(0), 
+		MODULE(1), 
+		CONSTANT(2), 
+		TYPE(3), 
+		FUNCTION(4), 
+		METHOD(5);
+
+		private final int kind;
+
+		private NAME_Kind(int kind) {
+			this.kind = kind;
+		}
+
+		public int kind() {
+			return kind;
 		}
 	}
 	
-	private void write(int indent, Code c, List<Attribute> attributes, List<String> locals, PrintWriter out) {		
-		String line = "null";		
-		tabIndent(indent+1,out);
+	/**
+	 * A NAME_Item represents a named path item, such as a package, module or
+	 * something within a module (e.g. a function or method declaration).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	private class NAME_Item {
+		/**
+		 * The kind of name item this represents.
+		 */
+		public final NAME_Kind kind;
+		
+		/**
+		 * Index of path for this item in path pool
+		 */
+		public final int pathIndex;
+		
+		public NAME_Item(NAME_Kind kind, int pathIndex) {
+			this.kind = kind;
+			this.pathIndex = pathIndex;
+		}				
+	}		
 	
-		// First, write out code	
-		if(c instanceof Code.LoopEnd) {
-			Code.LoopEnd cend = (Code.LoopEnd)c;
-			if(writeLabels) {
-				line = "end " + cend.label;
-			} else {
-				line = "end";
-			}
-		} else if(c instanceof Code.Store && !writeSlots){
-			Code.Store store = (Code.Store) c;
-			line = "store " + getLocal(store.slot,locals) + " : " + store.type;  
-		} else if(c instanceof Code.Load && !writeSlots){
-			Code.Load load = (Code.Load) c;
-			line = "load " + getLocal(load.slot,locals) + " : " + load.type;
-		} else if(c instanceof Code.Move && !writeSlots){
-			Code.Move move = (Code.Move) c;
-			line = "move " + getLocal(move.slot,locals) + " : " + move.type;
-		} else if(c instanceof Code.Update && !writeSlots){
-			Code.Update store = (Code.Update) c;
-			String fs = store.fields.isEmpty() ? "" : " ";
-			boolean firstTime=true;
-			for(String f : store.fields) {
-				if(!firstTime) {
-					fs += ".";
-				}
-				firstTime=false;
-				fs += f;
-			}
-			line = "update " + getLocal(store.slot,locals) + " #" + store.level + fs + " : " + store.beforeType + " => " + store.afterType;
-		} else if(c instanceof Code.IfType && !writeSlots){
-			Code.IfType iftype = (Code.IfType) c;
-			if(iftype.slot >= 0) {
-				line = "if " + getLocal(iftype.slot,locals) + " is " + iftype.test
-						+ " goto " + iftype.target + " : " + iftype.type;
-			} else {
-				line = c.toString();
-			}			
-		} else if(c instanceof Code.ForAll && !writeSlots){
-			Code.ForAll fall = (Code.ForAll) c;			
-			String modifies = "";
-			boolean firstTime=true;
-			for(int slot : fall.modifies) {
-				if(!firstTime) {
-					modifies +=", ";
-				}
-				firstTime=false;
-				modifies += getLocal(slot,locals);
-			}
-			line = "forall " + getLocal(fall.slot,locals) + " [" + modifies + "] : " + fall.type;
-		} else {
-			line = c.toString();		
+	// FIXME: this is really a temporary class because we ideally want to
+	// exploit the potential for sharing amongst substructure of values.
+	private class ValueWriter {
+		private final BinaryOutputStream output;
+		
+		public ValueWriter(BinaryOutputStream output) {
+			this.output = output;
 		}
 		
-		// Second, write attributes				
-		while(line.length() < 40) {
-			line += " ";
-		}
-		out.print(line);
-		if (writeAttributes && attributes.size() > 0) {
-			out.print(" # ");
-			boolean firstTime = true;
-			for (Attribute a : attributes) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				out.print(a);
+		public void write(Value val) throws IOException {
+			if(val instanceof Value.Null) {
+				write((Value.Null) val);
+			} else if(val instanceof Value.Bool) {
+				write((Value.Bool) val);
+			} else if(val instanceof Value.Byte) {
+				write((Value.Byte) val);
+			} else if(val instanceof Value.Char) {
+				write((Value.Char) val);
+			} else if(val instanceof Value.Integer) {
+				write((Value.Integer) val);
+			} else if(val instanceof Value.Rational) {
+				write((Value.Rational) val);
+			} else if(val instanceof Value.Strung) {
+				write((Value.Strung) val);
+			} else if(val instanceof Value.Set) {
+				write((Value.Set) val);
+			} else if(val instanceof Value.List) {
+				write((Value.List) val);
+			} else if(val instanceof Value.Map) {
+				write((Value.Map) val);
+			} else if(val instanceof Value.Record) {
+				write((Value.Record) val);
+			} else if(val instanceof Value.Tuple) {
+				write((Value.Tuple) val);
+			} else if(val instanceof Value.FunctionOrMethod) {
+				write((Value.FunctionOrMethod) val);
+			} else {
+				throw new RuntimeException("Unknown value encountered - " + val);
 			}
 		}
-		out.println();
-	}
-	
-	private static void writeModifiers(List<Modifier> modifiers, PrintWriter out) {		
-		for(Modifier m : modifiers) {						
-			out.print(m.toString());
-			out.print(" ");
+		
+		public void write(Value.Null expr) throws IOException {				
+			output.write_u1(CONSTANT_null);
+		}
+		
+		public void write(Value.Bool expr) throws IOException {
+			
+			if(expr.value) {
+				output.write_u1(CONSTANT_true);
+			} else {
+				output.write_u1(CONSTANT_false);
+			}
+		}
+		
+		public void write(Value.Byte expr) throws IOException {		
+			output.write_u1(CONSTANT_byte);		
+			output.write_u1(expr.value);		
+		}
+		
+		public void write(Value.Char expr) throws IOException {		
+			output.write_u1(CONSTANT_char);		
+			output.write_u2(expr.value);		
+		}
+		
+		public void write(Value.Integer expr) throws IOException {		
+			output.write_u1(CONSTANT_int);		
+			BigInteger num = expr.value;
+			byte[] numbytes = num.toByteArray();
+			// FIXME: bug here for constants that require more than 65535 bytes
+			output.write_u2(numbytes.length);
+			output.write(numbytes);
+		}
+
+		public void write(Value.Rational expr) throws IOException {		
+			
+			output.write_u1(CONSTANT_real);
+			BigRational br = expr.value;
+			BigInteger num = br.numerator();
+			BigInteger den = br.denominator();
+
+			byte[] numbytes = num.toByteArray();
+			// FIXME: bug here for constants that require more than 65535 bytes
+			output.write_u2(numbytes.length);
+			output.write(numbytes);
+
+			byte[] denbytes = den.toByteArray();
+			// FIXME: bug here for constants that require more than 65535 bytes
+			output.write_u2(denbytes.length);
+			output.write(denbytes);
+		}
+			
+		public void write(Value.Strung expr) throws IOException {	
+			output.write_u1(CONSTANT_string);
+			String value = expr.value;
+			int valueLength = value.length();		
+			output.write_u2(valueLength);
+			for(int i=0;i!=valueLength;++i) {
+				output.write_u2(value.charAt(i));
+			}
+		}
+		public void write(Value.Set expr) throws IOException {
+			output.write_u1(CONSTANT_set);
+			output.write_u2(expr.values.size());
+			for(Value v : expr.values) {
+				write(v);
+			}
+		}
+		
+		public void write(Value.List expr) throws IOException {
+			output.write_u1(CONSTANT_list);
+			output.write_u2(expr.values.size());
+			for(Value v : expr.values) {
+				write(v);
+			}
+		}
+		
+		public void write(Value.Map expr) throws IOException {
+			output.write_u1(CONSTANT_map);
+			output.write_u2(expr.values.size());
+			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
+				write(e.getKey());
+				write(e.getValue());
+			}
+		}
+		
+		public void write(Value.Record expr) throws IOException {
+			output.write_u1(CONSTANT_record);
+			output.write_u2(expr.values.size());
+			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
+				output.write_u2(stringCache.get(v.getKey()));
+				write(v.getValue());
+			}
+		}
+		
+		public void write(Value.Tuple expr) throws IOException {
+			output.write_u1(CONSTANT_tuple); // FIXME: should be TUPLE!!!
+			output.write_u2(expr.values.size());
+			for(Value v : expr.values) {
+				write(v);
+			}
+		}
+		
+		public void write(Value.FunctionOrMethod expr) throws IOException {
+			throw new RuntimeException("ValueWriter.write(Value.FunctionOrMethod) undefined");
+//			Type.FunctionOrMethod t = expr.type();
+//			if(t instanceof Type.Function) {
+//				output.write_u1(FUNCTIONVAL);			
+//			} else if(t instanceof Type.Method) {
+//				output.write_u1(METHODVAL);
+//			} else {
+//				output.write_u1(MESSAGEVAL);
+//			}
+//			
+//			WhileyType.write(t, writer, constantPool);
+//			String value = expr.name.toString();
+//			int valueLength = value.length();		
+//			output.write_u2(valueLength);
+//			for(int i=0;i!=valueLength;++i) {
+//				output.write_u2(value.charAt(i));
+//			}	
 		}
 	}
+
+	// =========================================================================
+	// BLOCK identifiers
+	// =========================================================================
 	
-	private static String getLocal(int index, List<String> locals) {
-		if(index < locals.size()) {
-			// is a named local
-			return locals.get(index);
-		} else {
-			return "%" + (index - locals.size());
-		}
-	}
+	public final static int BLOCK_module = 0;
+	public final static int BLOCK_documentation = 1;
+	public final static int BLOCK_license = 2;
+	// ... (anticipating some others here)
+	public final static int BLOCK_type = 10;
+	public final static int BLOCK_constant = 11;
+	public final static int BLOCK_function = 12;
+	public final static int BLOCK_method = 13;
+	public final static int BLOCK_case = 14;
+	// ... (anticipating some others here)
+	public final static int BLOCK_body = 20;
+	public final static int BLOCK_precondition = 21;
+	public final static int BLOCK_postcondition = 22;
+	public final static int BLOCK_constraint = 23;
+	// ... (anticipating some others here)
 	
-	private static void tabIndent(int indent, PrintWriter out) {
-		indent = indent * 4;
-		for(int i=0;i<indent;++i) {
-			out.print(" ");
-		}
-	}
+	// =========================================================================
+	// CONSTANT identifies
+	// =========================================================================
+
+	public final static int CONSTANT_null = 0;
+	public final static int CONSTANT_true = 1;
+	public final static int CONSTANT_false = 2;
+	public final static int CONSTANT_byte = 3;
+	public final static int CONSTANT_char = 4;
+	public final static int CONSTANT_int = 5;
+	public final static int CONSTANT_real = 6;
+	public final static int CONSTANT_set = 7;	
+	public final static int CONSTANT_string = 8;	
+	public final static int CONSTANT_list = 9;
+	public final static int CONSTANT_record = 10;
+	public final static int CONSTANT_tuple = 11;
+	public final static int CONSTANT_map = 12;
+	public final static int CONSTANT_function = 13;
+	public final static int CONSTANT_method = 14;
 }

@@ -28,6 +28,7 @@ package wyjc.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -90,26 +91,13 @@ public class ClassFileLoader implements ModuleReader {
 			return null;
 		}
 		
-		HashMap<Pair<Type.Function,String>,WyilFile.Method> methods = new HashMap();
+		ArrayList<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>(); 
 		
 		for (ClassFile.Method cm : cf.methods()) {
 			if (!cm.isSynthetic()) {
-				WyilFile.Method mi = createMethodInfo(mid, cm);
-				Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
-				WyilFile.Method method = methods.get(key);
-				if (method != null) {
-					// coalesce cases
-					ArrayList<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>(
-							method.cases());
-					ncases.addAll(mi.cases());
-					mi = new WyilFile.Method(method.modifiers(), mi.name(), mi.type(), ncases);
-				}
-				methods.put(key, mi);
+				declarations.add(createMethodInfo(mid, cm));				
 			}
 		}
-		
-		ArrayList<WyilFile.TypeDef> types = new ArrayList();
-		ArrayList<WyilFile.ConstDef> constants = new ArrayList();
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
 			
@@ -126,8 +114,8 @@ public class ClassFileLoader implements ModuleReader {
 						}
 					}
 					// TODO: generate proper modifiers
-					WyilFile.ConstDef ci = new WyilFile.ConstDef(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
-					constants.add(ci);
+					WyilFile.ConstantDeclaration ci = new WyilFile.ConstantDeclaration(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
+					declarations.add(ci);
 				} else {
 					// type definition
 					List<Attribute> attrs = new ArrayList<Attribute>();						
@@ -138,16 +126,16 @@ public class ClassFileLoader implements ModuleReader {
 						}
 					}
 					// TODO: generate proper modifiers
-					WyilFile.TypeDef ti = new WyilFile.TypeDef(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
-					types.add(ti);
+					WyilFile.TypeDeclaration ti = new WyilFile.TypeDeclaration(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
+					declarations.add(ti);
 				}
 			}
 		}
 				
-		return new WyilFile(mid, cf.name(), methods.values(), types, constants);
+		return new WyilFile(mid, cf.name(), declarations);
 	}
 	
-	protected WyilFile.Method createMethodInfo(Path.ID mid, ClassFile.Method cm) {
+	protected WyilFile.MethodDeclaration createMethodInfo(Path.ID mid, ClassFile.Method cm) {
 		// string any mangling off.
 		try {			
 			int split = cm.name().indexOf('$');
@@ -156,7 +144,7 @@ public class ClassFileLoader implements ModuleReader {
 			// then read the type
 			BinaryInputStream bin = new BinaryInputStream(
 					new JavaIdentifierInputStream(mangle));
-			Type.FunctionOrMethodOrMessage type = (Type.FunctionOrMethodOrMessage) new Type.BinaryReader(bin).readType();
+			Type.FunctionOrMethod type = (Type.FunctionOrMethod) new Type.BinaryReader(bin).readType();
 			// now build the parameter names
 			List<Attribute> attrs = new ArrayList<Attribute>();
 			for (BytecodeAttribute ba : cm.attributes()) {
@@ -171,14 +159,24 @@ public class ClassFileLoader implements ModuleReader {
 			for (int i = 0; i != type.params().size(); ++i) {
 				parameterNames.add("$" + i);
 			}
-
+			
 			List<WyilFile.Case> mcases = new ArrayList<WyilFile.Case>();
 			// TODO: fix this problem here related to locals
 			mcases.add(new WyilFile.Case(null, null, null, Collections.EMPTY_LIST, attrs));
 			// TODO: generate proper modifiers
-			return new WyilFile.Method(Collections.EMPTY_LIST,name, type, mcases);
+			return new WyilFile.MethodDeclaration(modifiers(cm),name, type, mcases);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private List<wyil.lang.Modifier> modifiers(ClassFile.Method cm) {
+		if(cm.isPublic()) {
+			ArrayList<wyil.lang.Modifier> modifiers = new ArrayList();
+			modifiers.add(wyil.lang.Modifier.PUBLIC);
+			return modifiers;
+		} else {
+			return Collections.EMPTY_LIST;
+		}		
 	}
 }

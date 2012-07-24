@@ -98,9 +98,9 @@ public abstract class Type {
 	public static final List T_LIST_ANY = List(T_ANY,false);
 	
 	/**
-	 * The type representing all possible dictionary types.
+	 * The type representing all possible map types.
 	 */
-	public static final Dictionary T_DICT_ANY = Dictionary(T_ANY,T_ANY);
+	public static final Map T_MAP_ANY = Map(T_ANY,T_ANY);
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -172,12 +172,12 @@ public abstract class Type {
 	}
 
 	/**
-	 * Construct a dictionary type using the given key and value types.
+	 * Construct a map type using the given key and value types.
 	 * 
 	 * @param element
 	 */
-	public static final Type.Dictionary Dictionary(Type key, Type value) {
-		return (Type.Dictionary) construct(K_DICTIONARY, null, key, value);		
+	public static final Type.Map Map(Type key, Type value) {
+		return (Type.Map) construct(K_MAP, null, key, value);		
 	}
 	
 	/**
@@ -290,49 +290,6 @@ public abstract class Type {
 	}
 	
 	/**
-	 * Construct a method type using the given receiver, return and parameter types.
-	 * 
-	 * @param element
-	 */
-	public static final Type.Message Message(Type receiver, Type ret,
-			Type throwsClause, Collection<Type> params) {		
-		Type[] rparams = new Type[params.size()+3];		
-		int i = 3;
-		for (Type t : params) { rparams[i++] = t; }		
-		rparams[0] = receiver;
-		rparams[1] = ret;
-		rparams[2] = throwsClause;
-		Type r = construct(K_MESSAGE, null, rparams);
-		if (r instanceof Type.Message) {
-			return (Type.Message) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Message()");
-		}
-	}
-	
-	/**
-	 * Construct a function type using the given return and parameter types.
-	 * 
-	 * @param element
-	 */
-	public static final Type.Message Message(Reference receiver, Type ret,
-			Type throwsClause, Type... params) {		
-		Type[] rparams = new Type[params.length+3];		
-		System.arraycopy(params, 0, rparams, 3, params.length);
-		rparams[0] = receiver;
-		rparams[1] = ret;
-		rparams[2] = throwsClause;
-		Type r = construct(K_MESSAGE, null, rparams);	
-		if (r instanceof Type.Message) {
-			return (Type.Message) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Message()");
-		}
-	}
-	
-	/**
 	 * Construct a record type using the given fields. The given record may be
 	 * either "open" or "closed". A closed record indicates a type which must
 	 * have exactly the given mapping of fields to types. An open record
@@ -341,7 +298,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type.Record Record(boolean isOpen, Map<String,Type> fields) {				
+	public static final Type.Record Record(boolean isOpen, java.util.Map<String,Type> fields) {				
 		java.util.Set<String> keySet = fields.keySet();
 		Record.State keys = new Record.State(isOpen,keySet);
 		Collections.sort(keys);
@@ -658,14 +615,7 @@ public abstract class Type {
 		}
 		return null;
 	}
-	
-	public static Message effectiveMessage(Type t) {
-		if(t instanceof Type.Message) {
-			return (Type.Message) t;
-		}
-		return null;
-	}
-	
+		
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -875,7 +825,7 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Strung extends Leaf implements EffectiveMap {
+	public static final class Strung extends Leaf implements EffectiveIndexible {
 		private Strung() {}
 		public boolean equals(Object o) {
 			return o == T_STRING;
@@ -901,11 +851,11 @@ public abstract class Type {
 			return "string";
 		}
 		
-		public EffectiveMap update(Type key, Type value) {
+		public EffectiveIndexible update(Type key, Type value) {
 			if(key == T_INT && value == T_CHAR) {
 				return this;
 			} else {
-				return Dictionary(Type.Union(key,T_INT),Type.Union(value,T_CHAR));
+				return Map(Type.Union(key,T_INT),Type.Union(value,T_CHAR));
 			}
 		}
 	}
@@ -1044,7 +994,7 @@ public abstract class Type {
 	}	
 	
 	/**
-	 * A type which is either a set, list, dictionary, string or a union of such
+	 * A type which is either a set, list, map, string or a union of such
 	 * types. An effective collection gives access to an effective element type,
 	 * which is the union of possible element types.
 	 * 
@@ -1061,7 +1011,7 @@ public abstract class Type {
 	}
 	
 	/**
-	 * A type which is either a list, dictionary, string or a union of such
+	 * A type which is either a list, map, string or a union of such
 	 * types. An effective collection gives access to an effective element type,
 	 * which is the union of possible key and value types, and allows them to be
 	 * updated.
@@ -1075,12 +1025,12 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveMap extends EffectiveCollection {		
+	public interface EffectiveIndexible extends EffectiveCollection {		
 		public Type key();
 		
 		public Type value();
 		
-		public EffectiveMap update(Type key, Type Value);
+		public EffectiveIndexible update(Type key, Type Value);
 	}
 	
 	/**
@@ -1134,7 +1084,7 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveList extends EffectiveMap {
+	public interface EffectiveList extends EffectiveIndexible {
 		
 		public Type element();
 	
@@ -1170,11 +1120,11 @@ public abstract class Type {
 			return (Boolean) automaton.states[0].data;
 		}
 		
-		public EffectiveMap update(Type key, Type value) {
+		public EffectiveIndexible update(Type key, Type value) {
 			if(key == T_INT) {
 				return Type.List(Type.Union(value, element()), nonEmpty());
 			} else {
-				return Type.Dictionary(Type.Union(T_INT,key),Type.Union(value, element()));
+				return Type.Map(Type.Union(T_INT,key),Type.Union(value, element()));
 			}
 		}
 	}
@@ -1196,7 +1146,7 @@ public abstract class Type {
 	}
 
 	/**
-	 * A type which is either a dictionary, or a union of dictionaries. An
+	 * A type which is either a map, or a union of dictionaries. An
 	 * effective dictionary gives access to effective key and value types, which are
 	 * the union of possible key and value types (respectively).
 	 * 
@@ -1208,26 +1158,26 @@ public abstract class Type {
 	 * 
 	 * @return
 	 */
-	public interface EffectiveDictionary extends EffectiveMap {
+	public interface EffectiveMap extends EffectiveIndexible {
 		
 		public Type key();
 		
 		public Type value();
 		
-		public EffectiveDictionary update(Type key, Type Value);
+		public EffectiveMap update(Type key, Type Value);
 	}
 	
 	/**
-	 * A dictionary represents a one-many mapping from variables of one type to
-	 * variables of another type. For example, the dictionary type
+	 * A map represents a one-many mapping from variables of one type to
+	 * variables of another type. For example, the map type
 	 * <code>int->real</code> represents a map from integers to real values. A
 	 * valid instance of this type might be <code>{1->1.2,2->3}</code>.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Dictionary extends Compound implements EffectiveDictionary {
-		private Dictionary(Automaton automaton) {
+	public static final class Map extends Compound implements EffectiveMap {
+		private Map(Automaton automaton) {
 			super(automaton);
 		}
 		public Type key() {
@@ -1241,10 +1191,10 @@ public abstract class Type {
 		public Type element() {
 			return Type.Tuple(key(),value());
 		}
-		public Dictionary update(Type key, Type value) {
+		public Map update(Type key, Type value) {
 			key = Type.Union(key,key());
 			value = Type.Union(value,value());
-			return Type.Dictionary(key,value);
+			return Type.Map(key,value);
 		}
 	}
 	
@@ -1274,7 +1224,7 @@ public abstract class Type {
 	/**
 	 * A record is made up of a number of fields, each of which has a unique
 	 * name. Each field has a corresponding type. One can think of a record as a
-	 * special kind of "fixed" dictionary (i.e. where we know exactly which
+	 * special kind of "fixed" map (i.e. where we know exactly which
 	 * entries we have).
 	 * 
 	 * @author David J. Pearce
@@ -1441,7 +1391,7 @@ public abstract class Type {
 			return r;
 		}
 		
-		public EffectiveMap update(Type key, Type type) {
+		public EffectiveIndexible update(Type key, Type type) {
 			HashSet<Type> nbounds = new HashSet<Type>();
 			HashSet<Type.List> bounds = (HashSet) bounds();
 			for(Type.List bound : bounds) {
@@ -1455,20 +1405,20 @@ public abstract class Type {
 			//
 			// assigning type any into this yields [any]
 			
-			return (EffectiveMap) Type.Union(nbounds);
+			return (EffectiveIndexible) Type.Union(nbounds);
 		}
 	}
 	
-	public static final class UnionOfMaps extends Union
-	implements EffectiveMap {
-		private UnionOfMaps(Automaton automaton) {
+	public static final class UnionOfIndexibles extends Union
+	implements EffectiveIndexible {
+		private UnionOfIndexibles(Automaton automaton) {
 			super(automaton);
 		}
 
 		public Type key() {
 			Type r = null;
-			HashSet<EffectiveMap> bounds = (HashSet) bounds();
-			for (EffectiveMap bound : bounds) {
+			HashSet<EffectiveIndexible> bounds = (HashSet) bounds();
+			for (EffectiveIndexible bound : bounds) {
 				Type t = bound.key();
 				if (r == null || t == null) {
 					r = t;
@@ -1481,8 +1431,8 @@ public abstract class Type {
 		
 		public Type value() {
 			Type r = null;
-			HashSet<EffectiveMap> bounds = (HashSet) bounds();
-			for (EffectiveMap bound : bounds) {
+			HashSet<EffectiveIndexible> bounds = (HashSet) bounds();
+			for (EffectiveIndexible bound : bounds) {
 				Type t = bound.value();
 				if (r == null || t == null) {
 					r = t;
@@ -1495,8 +1445,8 @@ public abstract class Type {
 		
 		public Type element() {
 			Type r = null;
-			HashSet<EffectiveMap> bounds = (HashSet) bounds();
-			for (EffectiveMap bound : bounds) {
+			HashSet<EffectiveIndexible> bounds = (HashSet) bounds();
+			for (EffectiveIndexible bound : bounds) {
 				Type t = bound.element();
 				if (r == null || t == null) {
 					r = t;
@@ -1507,7 +1457,7 @@ public abstract class Type {
 			return r;
 		}
 		
-		public EffectiveMap update(Type key, Type type) {
+		public EffectiveIndexible update(Type key, Type type) {
 			HashSet<Type> nbounds = new HashSet<Type>();
 			HashSet<Type.List> bounds = (HashSet) bounds();
 			for(Type.List bound : bounds) {
@@ -1521,7 +1471,7 @@ public abstract class Type {
 			//
 			// assigning type any into this yields [any]
 			
-			return (EffectiveMap) Type.Union(nbounds);
+			return (EffectiveIndexible) Type.Union(nbounds);
 		}
 	}
 	
@@ -1547,16 +1497,16 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class UnionOfDictionaries extends Union implements
-	EffectiveDictionary {
-		private UnionOfDictionaries(Automaton automaton) {
+	public static final class UnionOfMaps extends Union implements
+	EffectiveMap {
+		private UnionOfMaps(Automaton automaton) {
 			super(automaton);
 		}
 
 		public Type key() {
 			Type r = null;
-			HashSet<Type.Dictionary> bounds = (HashSet) bounds();
-			for(Type.Dictionary bound : bounds) {
+			HashSet<Type.Map> bounds = (HashSet) bounds();
+			for(Type.Map bound : bounds) {
 				Type t = bound.key();
 				if(r == null || t == null) {
 					r = t;
@@ -1569,8 +1519,8 @@ public abstract class Type {
 
 		public Type value() {
 			Type r = null;
-			HashSet<Type.Dictionary> bounds = (HashSet) bounds();
-			for(Type.Dictionary bound : bounds) {
+			HashSet<Type.Map> bounds = (HashSet) bounds();
+			for(Type.Map bound : bounds) {
 				Type t = bound.value();
 				if(r == null || t == null) {
 					r = t;
@@ -1585,21 +1535,21 @@ public abstract class Type {
 			return Type.Tuple(key(),value());
 		}
 		
-		public EffectiveDictionary update(Type key, Type value) {
+		public EffectiveMap update(Type key, Type value) {
 			HashSet<Type> nbounds = new HashSet<Type>();
-			HashSet<Type.Dictionary> bounds = (HashSet) bounds();
-			for(Type.Dictionary bound : bounds) {
+			HashSet<Type.Map> bounds = (HashSet) bounds();
+			for(Type.Map bound : bounds) {
 				nbounds.add(bound.update(key,value));
 			}			
 
-			// we can only safely return an EffectiveDictionary here since an
+			// we can only safely return an EffectiveMap here since an
 			// update can fold multiple dictionaries into one. For example:
 			//
 			// {int=>string}|{int=>real} 
 			//
 			// assigning int=>any into this yields {int=>any}
 
-			return (EffectiveDictionary) Type.Union(nbounds);
+			return (EffectiveMap) Type.Union(nbounds);
 		}
 	}
 	
@@ -1691,7 +1641,7 @@ public abstract class Type {
 				return m2;
 			}
 			HashMap<String, Type> m3 = new HashMap<String, Type>();
-			for (Map.Entry<String, Type> e : m1.entrySet()) {
+			for (java.util.Map.Entry<String, Type> e : m1.entrySet()) {
 				String field = e.getKey();
 				Type t1 = e.getValue();
 				Type t2 = m2.get(field);
@@ -1737,20 +1687,8 @@ public abstract class Type {
 			return construct(Automata.extract(automaton,fields[0]));			
 		}		
 	}
-	
-	public abstract static class FunctionOrMethodOrMessage extends Compound {
-		FunctionOrMethodOrMessage(Automaton automaton) {
-			super(automaton);
-		}
 		
-		public abstract Type ret();
-		
-		public abstract Type throwsClause();
-		
-		public abstract ArrayList<Type> params();
-	}
-	
-	public abstract static class FunctionOrMethod extends FunctionOrMethodOrMessage {
+	public abstract static class FunctionOrMethod extends Compound {
 		FunctionOrMethod(Automaton automaton) {
 			super(automaton);
 		}
@@ -1807,61 +1745,6 @@ public abstract class Type {
 		Method(Automaton automaton) {
 			super(automaton);
 		}		
-	}
-	
-	public static final class Message extends FunctionOrMethodOrMessage {
-		Message(Automaton automaton) {
-			super(automaton);
-		}
-
-		/**
-		 * Get the receiver type of this function type.
-		 * 
-		 * @return
-		 */
-		public Type receiver() {
-			Automaton.State root = automaton.states[0];			
-			int[] fields = root.children;
-			return construct(Automata.extract(automaton,
-					fields[0]));
-		}
-		
-		/**
-		 * Get the return type of this method type.
-		 * 
-		 * @return
-		 */
-		public Type ret() {
-			Automaton.State root = automaton.states[0];
-			int[] fields = root.children;
-			return construct(Automata.extract(automaton, fields[1]));
-		}	
-		
-		/**
-		 * Get the throws clause for this method type.
-		 * 
-		 * @return
-		 */
-		public Type throwsClause() {
-			Automaton.State root = automaton.states[0];
-			int[] fields = root.children;
-			return construct(Automata.extract(automaton, fields[2]));
-		}	
-		
-		/**
-		 * Get the parameter types of this function type.
-		 * 
-		 * @return
-		 */
-		public ArrayList<Type> params() {
-			Automaton.State root = automaton.states[0];
-			int[] fields = root.children;
-			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=3;i<fields.length;++i) {
-				r.add(construct(Automata.extract(automaton, fields[i])));
-			}
-			return r;
-		}
 	}
 	
 	/**
@@ -1972,7 +1855,7 @@ public abstract class Type {
 			middle = "!" + toBracesString(state.children[0], visited, headers, automaton);			
 			break;
 		}
-		case K_DICTIONARY: {
+		case K_MAP: {
 			// binary node			
 			String k = toString(state.children[0], visited, headers, automaton);
 			String v = toString(state.children[1], visited, headers, automaton);
@@ -2023,18 +1906,12 @@ public abstract class Type {
 				middle = middle + "}";
 			}			
 			break;
-		}
-		case K_MESSAGE:
+		}		
 		case K_METHOD:
 		case K_FUNCTION: {
 			middle = "";
 			int[] children = state.children;
-			int start = 0;
-			String rec = null;
-			if(state.kind == K_MESSAGE) {
-				rec = toString(children[0],visited,headers,automaton);
-				start++;
-			}
+			int start = 0;			
 			String ret = toString(children[start], visited, headers, automaton);
 			String thros = toString(children[start+1], visited, headers, automaton);
 			boolean firstTime=true;
@@ -2047,11 +1924,9 @@ public abstract class Type {
 			}
 			if(state.kind == K_FUNCTION) {
 				middle = ret + "(" + middle + ")";
-			} else if(state.kind == K_METHOD) {
-				middle = "::" + ret + "(" + middle + ")";
 			} else {
-				middle = rec + "::" + ret + "(" + middle + ")";
-			}
+				middle = "::" + ret + "(" + middle + ")";
+			} 
 			if(!thros.equals("void")) {
 				middle = middle + " throws " + thros;
 			}
@@ -2088,7 +1963,6 @@ public abstract class Type {
 		switch(state.kind) {		
 			case K_UNION:
 			case K_FUNCTION:
-			case K_MESSAGE:
 			case K_METHOD:
 				return "(" + middle + ")";
 			default:
@@ -2247,8 +2121,8 @@ public abstract class Type {
 		case K_REFERENCE:
 			type = new Reference(automaton);
 			break;
-		case K_DICTIONARY:
-			type = new Dictionary(automaton);
+		case K_MAP:
+			type = new Map(automaton);
 			break;
 		case K_RECORD:
 			type = new Record(automaton);
@@ -2266,23 +2140,23 @@ public abstract class Type {
 				boolean isSet = bound instanceof Set;
 				boolean isList = bound instanceof List;
 				boolean isString = bound instanceof Strung;
-				boolean isDictionary = bound instanceof Dictionary;
+				boolean isMap = bound instanceof Map;
 				allRecords &= bound instanceof Record;				
 				allSets &= isSet;
 				allLists &= isList;
-				allDictionaries &= isDictionary;				
-				allMaps &= isList || isDictionary || isString;
-				allCollections &= isSet || isList || isDictionary || isString;
+				allDictionaries &= isMap;				
+				allMaps &= isList || isMap || isString;
+				allCollections &= isSet || isList || isMap || isString;
 				allTuples &= bound instanceof Tuple;
 			}
 			if(allSets) {
 				type = new UnionOfSets(automaton);
 			} else if(allDictionaries) {
-				type = new UnionOfDictionaries(automaton);
+				type = new UnionOfMaps(automaton);
 			} else if(allLists) {
 				type = new UnionOfLists(automaton);
 			} else if(allMaps) {
-				type = new UnionOfMaps(automaton);
+				type = new UnionOfIndexibles(automaton);
 			} else if(allCollections) {
 				type = new UnionOfCollections(automaton);
 			} else if(allTuples) {
@@ -2296,9 +2170,6 @@ public abstract class Type {
 		}
 		case K_NEGATION:
 			type = new Negation(automaton);
-			break;
-		case K_MESSAGE:
-			type = new Message(automaton);
 			break;
 		case K_METHOD:
 			type = new Method(automaton);
@@ -2460,13 +2331,12 @@ public abstract class Type {
 	public static final byte K_TUPLE = 10;
 	public static final byte K_SET = 11;
 	public static final byte K_LIST = 12;	
-	public static final byte K_DICTIONARY = 13;	
+	public static final byte K_MAP = 13;	
 	public static final byte K_REFERENCE = 14;	
 	public static final byte K_RECORD = 15;	
 	public static final byte K_UNION = 16;
 	public static final byte K_NEGATION = 17;
-	public static final byte K_FUNCTION = 18;
-	public static final byte K_MESSAGE = 19;
+	public static final byte K_FUNCTION = 18;	
 	public static final byte K_METHOD = 20; 
 	public static final byte K_NOMINAL = 21;
 	

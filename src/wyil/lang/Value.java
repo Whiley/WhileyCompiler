@@ -25,11 +25,15 @@
 
 package wyil.lang;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
 import wyil.util.Pair;
+import wyjc.attributes.WhileyType;
 import wyjc.runtime.BigRational;
+import wyjvm.io.BinaryOutputStream;
+import wyjvm.lang.Constant;
 
 public abstract class Value implements Comparable<Value> {	
 
@@ -69,17 +73,17 @@ public abstract class Value implements Comparable<Value> {
 		return get(new List(values));
 	}	
 	
-	public static Record V_RECORD(Map<String,Value> values) {
+	public static Record V_RECORD(java.util.Map<String,Value> values) {
 		return get(new Record(values));
 	}
 
-	public static Dictionary V_DICTIONARY(
+	public static Map V_MAP(
 			java.util.Set<Pair<Value, Value>> values) {
-		return get(new Dictionary(values));
+		return get(new Map(values));
 	}
 
-	public static Dictionary V_DICTIONARY(Map<Value, Value> values) {
-		return get(new Dictionary(values));
+	public static Map V_MAP(java.util.Map<Value, Value> values) {
+		return get(new Map(values));
 	}
 	
 	public static Type V_TYPE(wyil.lang.Type type) {
@@ -90,9 +94,9 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Tuple(values));
 	}
 	
-	public static FunctionOrMethodOrMessage V_FUN(NameID name,
-			wyil.lang.Type.FunctionOrMethodOrMessage type) {
-		return get(new FunctionOrMethodOrMessage(name, type));
+	public static FunctionOrMethod V_FUN(NameID name,
+			wyil.lang.Type.FunctionOrMethod type) {
+		return get(new FunctionOrMethod(name, type));
 	}		
 	
 	public static final class Null extends Value {				
@@ -533,13 +537,13 @@ public abstract class Value implements Comparable<Value> {
 	
 	public static final class Record extends Value {
 		public final HashMap<String,Value> values;
-		private Record(Map<String,Value> value) {
+		private Record(java.util.Map<String,Value> value) {
 			this.values = new HashMap<String,Value>(value);
 		}
 
 		public wyil.lang.Type.Record type() {
 			HashMap<String, wyil.lang.Type> types = new HashMap<String, wyil.lang.Type>();
-			for (Map.Entry<String, Value> e : values.entrySet()) {
+			for (java.util.Map.Entry<String, Value> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
 			}
 			return wyil.lang.Type.Record(false,types);
@@ -601,39 +605,39 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static final class Dictionary extends Value {
+	public static final class Map extends Value {
 		public final HashMap<Value,Value> values;
-		private Dictionary(Map<Value,Value> value) {
+		private Map(java.util.Map<Value,Value> value) {
 			this.values = new HashMap<Value,Value>(value);
 		}
-		private Dictionary(java.util.Set<Pair<Value,Value>> values) {
+		private Map(java.util.Set<Pair<Value,Value>> values) {
 			this.values = new HashMap<Value,Value>();
 			for(Pair<Value,Value> p : values) {
 				this.values.put(p.first(), p.second());
 			}
 		}
-		public wyil.lang.Type.Dictionary type() {
+		public wyil.lang.Type.Map type() {
 			wyil.lang.Type key = wyil.lang.Type.T_VOID;
 			wyil.lang.Type value = wyil.lang.Type.T_VOID;
-			for (Map.Entry<Value, Value> e : values.entrySet()) {
+			for (java.util.Map.Entry<Value, Value> e : values.entrySet()) {
 				key = wyil.lang.Type.Union(key,e.getKey().type());
 				value = wyil.lang.Type.Union(value,e.getKey().type());
 			}
-			return wyil.lang.Type.Dictionary(key,value);
+			return wyil.lang.Type.Map(key,value);
 		}
 		public int hashCode() {
 			return values.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Dictionary) {
-				Dictionary i = (Dictionary) o;
+			if(o instanceof Map) {
+				Map i = (Map) o;
 				return values.equals(i.values);
 			}
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof Dictionary) {
-				Dictionary l = (Dictionary) v;
+			if(v instanceof Map) {
+				Map l = (Map) v;
 				if(values.size() < l.values.size()) {
 					return -1;
 				} else if(values.size() > l.values.size()) {
@@ -717,16 +721,16 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
-	public static final class FunctionOrMethodOrMessage extends Value {
+	public static final class FunctionOrMethod extends Value {
 		public final NameID name;
-		public final wyil.lang.Type.FunctionOrMethodOrMessage type;
+		public final wyil.lang.Type.FunctionOrMethod type;
 		
-		private FunctionOrMethodOrMessage(NameID name, wyil.lang.Type.FunctionOrMethodOrMessage type) {
+		private FunctionOrMethod(NameID name, wyil.lang.Type.FunctionOrMethod type) {
 			this.name = name;
 			this.type = type;
 		}
 
-		public wyil.lang.Type.FunctionOrMethodOrMessage type() {
+		public wyil.lang.Type.FunctionOrMethod type() {
 			if (type == null) {
 				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY,
 						wyil.lang.Type.T_ANY);
@@ -742,8 +746,8 @@ public abstract class Value implements Comparable<Value> {
 			}
 		}
 		public boolean equals(Object o) {
-			if(o instanceof FunctionOrMethodOrMessage) {
-				FunctionOrMethodOrMessage i = (FunctionOrMethodOrMessage) o;
+			if(o instanceof FunctionOrMethod) {
+				FunctionOrMethod i = (FunctionOrMethod) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
 								.equals(i.type)));
@@ -751,8 +755,8 @@ public abstract class Value implements Comparable<Value> {
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof FunctionOrMethodOrMessage) {
-				FunctionOrMethodOrMessage t = (FunctionOrMethodOrMessage) v;
+			if(v instanceof FunctionOrMethod) {
+				FunctionOrMethod t = (FunctionOrMethod) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {
@@ -825,7 +829,7 @@ public abstract class Value implements Comparable<Value> {
 			return r + ")";
 		}
 	}
-	
+		
 	private static final ArrayList<Value> values = new ArrayList<Value>();
 	private static final HashMap<Value,java.lang.Integer> cache = new HashMap<Value,java.lang.Integer>();
 	

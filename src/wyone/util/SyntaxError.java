@@ -36,10 +36,10 @@ public final class SyntaxError extends RuntimeException {
 	 *            Message detailing the problem.
 	 * @param filename
 	 *            The source file that this error is referring to.
-	 * @param line
-	 *            Line number within file containing problem.
-	 * @param column
-	 *            Column within line of file containing problem.
+	 * @param start
+	 *            Start offset within file of this error
+	 * @param end
+	 *            Last offset within file of this error
 	 */
 	public SyntaxError(String msg, String filename, int start, int end) {
 		this.msg = msg;

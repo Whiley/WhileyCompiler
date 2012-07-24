@@ -127,10 +127,10 @@ public interface UnresolvedType extends SyntacticElement {
 			this.element = element;
 		}
 	}
-	public static final class Dictionary extends SyntacticElement.Impl implements NonUnion {
+	public static final class Map extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType key;
 		public final UnresolvedType value;
-		public Dictionary(UnresolvedType key,UnresolvedType value, Attribute... attributes) {
+		public Map(UnresolvedType key,UnresolvedType value, Attribute... attributes) {
 			super(attributes);
 			this.key=key;
 			this.value=value;
@@ -175,7 +175,7 @@ public interface UnresolvedType extends SyntacticElement {
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
 		public final boolean isOpen;
-		public Record(boolean isOpen, Map<String,UnresolvedType> types, Attribute... attributes) {
+		public Record(boolean isOpen, java.util.Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(
@@ -197,13 +197,13 @@ public interface UnresolvedType extends SyntacticElement {
 		}
 	}
 	
-	public abstract static class FunctionOrMethodOrMessage extends
+	public abstract static class FunctionOrMethod extends
 			SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType ret;
 		public final UnresolvedType throwType;
 		public final ArrayList<UnresolvedType> paramTypes;
 
-		public FunctionOrMethodOrMessage(UnresolvedType ret, UnresolvedType throwType,
+		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.ret = ret;
@@ -211,7 +211,7 @@ public interface UnresolvedType extends SyntacticElement {
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
 		}
 
-		public FunctionOrMethodOrMessage(UnresolvedType ret, UnresolvedType throwType,
+		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
 				Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
@@ -221,20 +221,6 @@ public interface UnresolvedType extends SyntacticElement {
 		}
 	}
 
-	public static class FunctionOrMethod extends FunctionOrMethodOrMessage
-			implements NonUnion {
-		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
-				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
-			super(ret, throwType, paramTypes, attributes);
-		}
-
-		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
-				Collection<UnresolvedType> paramTypes,
-				Collection<Attribute> attributes) {
-			super(ret, throwType, paramTypes, attributes);
-		}
-	}
-	
 	public static class Function extends FunctionOrMethod
 	implements NonUnion {
 		public Function(UnresolvedType ret, UnresolvedType throwType,
@@ -257,23 +243,6 @@ public interface UnresolvedType extends SyntacticElement {
 		public Method(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(ret,throwType,paramTypes,attributes);			
-		}
-	}
-		
-	public static final class Message extends FunctionOrMethodOrMessage {
-		public final UnresolvedType receiver;
-
-		public Message(UnresolvedType receiver, UnresolvedType ret, UnresolvedType throwType,
-				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
-			super(ret, throwType, paramTypes, attributes);
-			this.receiver = receiver;
-		}
-
-		public Message(UnresolvedType receiver, UnresolvedType ret, UnresolvedType throwType,
-				Collection<UnresolvedType> paramTypes,
-				Collection<Attribute> attributes) {
-			super(ret, throwType, paramTypes, attributes);
-			this.receiver = receiver;
 		}
 	}
 }

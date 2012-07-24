@@ -182,7 +182,7 @@ public class TypeParser {
 				match("->");
 				Type value = parse(typeVariables);				
 				match("}");
-				return Dictionary(elem,value);					
+				return Map(elem,value);					
 				
 			} else if(index < str.length() && str.charAt(index) != '}') {
 				// record

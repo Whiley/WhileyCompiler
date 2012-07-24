@@ -87,11 +87,11 @@ public class GlobalGenerator {
 						blk = new Block(1);					
 					}
 					HashMap<String,Integer> environment = new HashMap<String,Integer>();
-					environment.put("$",0);
+					environment.put("$",Code.REG_0);
 					addExposedNames(td.resolvedType.raw(),environment,blk);
 					blk.append(new LocalGenerator(this, td).generateAssertion(
-							"constraint not satisfied", td.constraint,
-							environment));							
+							"constraint not satisfied", td.constraint, false,
+							environment.size(), environment));
 				}
 				cache.put(nid, blk);
 				return blk;
@@ -100,10 +100,10 @@ public class GlobalGenerator {
 				if(v instanceof Value.Set) {
 					Value.Set vs = (Value.Set) v;
 					Type.Set type = vs.type();
-					blk = new Block(1);
-					blk.append(Code.Load(type.element(),0));
-					blk.append(Code.Const(v));	
-					blk.append(Code.Assert(vs.type(), Code.COp.ELEMOF, "constraint not satisfied"));
+					blk = new Block(1);					
+					blk.append(Code.Const(Code.REG_1, v));
+					blk.append(Code.Assert(vs.type(), Code.REG_0, Code.REG_1,
+							Code.Comparator.ELEMOF, "constraint not satisfied"));
 					cache.put(nid, blk);
 					return blk;
 				} 
@@ -112,7 +112,7 @@ public class GlobalGenerator {
 			// now check whether it's already compiled and available on the
 			// WHILEYPATH.
 			WyilFile m = builder.getModule(mid);
-			WyilFile.TypeDef td = m.type(nid.name());
+			WyilFile.TypeDeclaration td = m.type(nid.name());
 			if(td != null) {
 				// should I cache this?
 				return td.constraint();
@@ -134,9 +134,9 @@ public class GlobalGenerator {
 			if (blk != null) {
 				Block nblk = new Block(1);
 				String label = Block.freshLabel();
-				nblk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
-				nblk.append(Code.ForAll((Type.EffectiveCollection) raw, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST), t.attributes());
+				nblk.append(Code.ForAll((Type.EffectiveCollection) raw,
+						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
+						t.attributes());
 				nblk.append(shiftBlock(1, blk));
 				nblk.append(Code.End(label));
 				blk = nblk;
@@ -144,20 +144,20 @@ public class GlobalGenerator {
 			return blk;
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			Block blk = generate(st.element, context);			
+			Block blk = generate(st.element, context);
 			if (blk != null) {
 				Block nblk = new Block(1);
 				String label = Block.freshLabel();
-				nblk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
-				nblk.append(Code.ForAll((Type.EffectiveCollection) raw, Code.THIS_SLOT + 1, label,
-						Collections.EMPTY_LIST), t.attributes());
+				nblk.append(Code.ForAll((Type.EffectiveCollection) raw,
+						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
+						t.attributes());
 				nblk.append(shiftBlock(1, blk));
 				nblk.append(Code.End(label));
 				blk = nblk;
 			}
 			return blk;
-		} else if (t instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
+		} else if (t instanceof UnresolvedType.Map) {
+			UnresolvedType.Map st = (UnresolvedType.Map) t;
 			Block blk = null;
 			// FIXME: put in constraints. REQUIRES ITERATION OVER DICTIONARIES
 			Block key = generate(st.key, context);
@@ -177,9 +177,7 @@ public class GlobalGenerator {
 					if (blk == null) {
 						blk = new Block(1);
 					}
-					blk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
-					blk.append(Code.TupleLoad(ett, i), t.attributes());
-					blk.append(Code.Store(ettElements.get(i), Code.THIS_SLOT + 1),
+					blk.append(Code.TupleLoad(ett, Code.REG_1, Code.REG_0, i),
 							t.attributes());
 					blk.append(shiftBlock(1, p));
 				}
@@ -197,11 +195,10 @@ public class GlobalGenerator {
 				if (p != null) {
 					if (blk == null) {
 						blk = new Block(1);
-					}
-					blk.append(Code.Load(raw, Code.THIS_SLOT), t.attributes());
-					blk.append(Code.FieldLoad(ert, e.getKey()), t.attributes());
-					blk.append(Code.Store(fields.get(e.getKey()), Code.THIS_SLOT + 1),
-							t.attributes());
+					}					
+					blk.append(
+							Code.FieldLoad(ert, Code.REG_1, Code.REG_0,
+									e.getKey()), t.attributes());
 					blk.append(shiftBlock(1, p));
 				}
 			}
@@ -298,25 +295,24 @@ public class GlobalGenerator {
 	 * @param t
 	 * @param environment
 	 */
-	private void addExposedNames(Type t,
-			HashMap<String, Integer> environment, Block blk) {
-		// Extending this method to handle lists and sets etc, is very difficult.
-		// The primary problem is that we need to expand expressions involving
-		// names exposed in this way into quantified expressions (or something).		
-		if(t instanceof Type.Record) {
+	private void addExposedNames(Type t, HashMap<String, Integer> environment,
+			Block blk) {
+		// Extending this method to handle lists and sets etc, is very
+		// difficult. The primary problem is that we need to expand expressions
+		// involving names exposed in this way into quantified expressions (or
+		// something).
+		if (t instanceof Type.Record) {
 			Type.Record tt = (Type.Record) t;
-			for(Map.Entry<String,Type> e : tt.fields().entrySet()) {
+			for (Map.Entry<String, Type> e : tt.fields().entrySet()) {
 				String field = e.getKey();
 				Integer i = environment.get(field);
-				if(i == null) {
-					int slot = environment.size(); 
-					environment.put(field, slot);
-					blk.append(Code.Load(t, 0));
-					blk.append(Code.FieldLoad(tt, field));
-					blk.append(Code.Store(e.getValue(), slot));
-				}				
+				if (i == null) {
+					int target = environment.size();
+					environment.put(field, target);
+					blk.append(Code.FieldLoad(tt, target, Code.REG_0, field));
+				}
 			}
-		} 		
+		}
 	}
 	
 	private static final Block EMPTY_BLOCK = new Block(1);

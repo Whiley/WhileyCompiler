@@ -39,6 +39,7 @@ import wyjc.io.ClassFileLoader;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 import wyjvm.util.DeadCodeElimination;
+import wyjvm.util.TypeAnalysis;
 import wyjvm.util.Validation;
 
 public final class WyilFile {
@@ -79,6 +80,9 @@ public final class WyilFile {
 			// eliminate any dead code that was introduced.		
 			// new DeadCodeElimination().apply(file);			
 			
+			// Compute the StackMapTable
+			//new TypeAnalysis().apply(file);
+			
 			ClassFileWriter writer = new ClassFileWriter(output,null);			
 			writer.write(file);	
 			output.close();
@@ -95,9 +99,7 @@ public final class WyilFile {
 		
 	private final Path.ID mid;
 	private final String filename;
-	private HashMap<Pair<String,Type.FunctionOrMethodOrMessage>,Method> methods;
-	private HashMap<String,TypeDef> types;
-	private HashMap<String,ConstDef> constants;
+	private final ArrayList<Declaration> declarations;
 	
 	// =========================================================================
 	// Constructors
@@ -105,44 +107,40 @@ public final class WyilFile {
 
 	public WyilFile(Path.ID mid,
 			String filename,
-			Collection<Method> methods,
-			Collection<TypeDef> types,
-			Collection<ConstDef> constants) {		
+			List<Declaration> declarations) {		
 		this.mid = mid;
-		this.filename = filename;
+		this.filename = filename;		
+		this.declarations = new ArrayList<Declaration>(declarations);
 		
-		// first, init the caches
-		this.methods = new HashMap<Pair<String,Type.FunctionOrMethodOrMessage>, Method>();
-		this.types = new HashMap<String, TypeDef>();
-		this.constants = new HashMap<String, ConstDef>();
+		// second, validate methods and/or functions
+		HashSet<Pair<String,Type.FunctionOrMethod>> methods = new HashSet();
+		HashSet<String> types = new HashSet<String>();
+		HashSet<String> constants = new HashSet<String>();
 		
-		// second, build the caches
-		for(Method m : methods) {
-			Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
-			Method tmp = this.methods.get(p);
-			if (tmp != null) {
-				throw new IllegalArgumentException(
-						"Multiple function or method definitions with the same name and type not permitted");
+		for (Declaration d : declarations) {
+			if(d instanceof MethodDeclaration) {
+				MethodDeclaration m = (MethodDeclaration) d;
+				Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());				
+				if (methods.contains(p)) {
+					throw new IllegalArgumentException(
+							"Multiple function or method definitions with the same name and type not permitted");
+				}
+				methods.add(p);	
+			} else if(d instanceof TypeDeclaration) {
+				TypeDeclaration t = (TypeDeclaration) d;
+				if (types.contains(t.name())) {
+					throw new IllegalArgumentException(
+							"Multiple type definitions with the same name not permitted");
+				}
+				types.add(t.name());
+			} else if (d instanceof ConstantDeclaration) {
+				ConstantDeclaration c = (ConstantDeclaration) d;				
+				if (constants.contains(c.name())) {
+					throw new IllegalArgumentException(
+							"Multiple constant definitions with the same name not permitted");
+				}
+				constants.add(c.name());
 			}
-			this.methods.put(p,m);
-		}
-		
-		for (TypeDef t : types) {
-			TypeDef tmp = this.types.get(t.name());
-			if (tmp != null) {
-				throw new IllegalArgumentException(
-						"Multiple type definitions with the same name not permitted");
-			}
-			this.types.put(t.name(), t);
-		}
-
-		for (ConstDef c : constants) {
-			ConstDef tmp = this.constants.get(c.name());
-			if (tmp != null) {
-				throw new IllegalArgumentException(
-						"Multiple constant definitions with the same name not permitted");
-			}
-			this.constants.put(c.name(), c);
 		}
 	}
 	
@@ -158,86 +156,162 @@ public final class WyilFile {
 		return filename;
 	}
 	
-	public TypeDef type(String name) {
-		return types.get(name);
+	public TypeDeclaration type(String name) {
+		for (Declaration d : declarations) {
+			if(d instanceof TypeDeclaration) {
+				TypeDeclaration td = (TypeDeclaration) d;
+				if(td.name().equals(name)) {
+					return td;
+				}					
+			}
+		}
+		return null;		
 	}
 	
-	public Collection<WyilFile.TypeDef> types() {
-		return types.values();
-	}
-	
-	public ConstDef constant(String name) {
-		return constants.get(name);
-	}
-	
-	public Collection<WyilFile.ConstDef> constants() {
-		return constants.values();
-	}
-	
-	public List<Method> method(String name) {
-		ArrayList<Method> r = new ArrayList<Method>();
-		for(Pair<String,Type.FunctionOrMethodOrMessage> p : methods.keySet()) {
-			if(p.first().equals(name)) {
-				r.add(methods.get(p));
+	public Collection<WyilFile.TypeDeclaration> types() {
+		ArrayList<TypeDeclaration> r = new ArrayList<TypeDeclaration>();
+		for (Declaration d : declarations) {
+			if(d instanceof TypeDeclaration) {
+				r.add((TypeDeclaration)d);
 			}
 		}
 		return r;
 	}
 	
-	public Method method(String name, Type.FunctionOrMethod ft) {
-		return methods.get(new Pair<String, Type.FunctionOrMethod>(name, ft));
+	public ConstantDeclaration constant(String name) {
+		for (Declaration d : declarations) {
+			if(d instanceof ConstantDeclaration) {
+				ConstantDeclaration cd = (ConstantDeclaration) d;
+				if(cd.name().equals(name)) {
+					return cd;
+				}					
+			}
+		}
+		return null;
 	}
 	
-	public Collection<WyilFile.Method> methods() {
-		return methods.values();
+	public Collection<WyilFile.ConstantDeclaration> constants() {
+		ArrayList<ConstantDeclaration> r = new ArrayList<ConstantDeclaration>();
+		for (Declaration d : declarations) {
+			if(d instanceof ConstantDeclaration) {
+				r.add((ConstantDeclaration)d);
+			}
+		}
+		return r;		
+	}
+	
+	public List<MethodDeclaration> method(String name) {
+		ArrayList<MethodDeclaration> r = new ArrayList<MethodDeclaration>();
+		for (Declaration d : declarations) {
+			if (d instanceof MethodDeclaration) {
+				MethodDeclaration m = (MethodDeclaration) d;
+				if (m.name().equals(name)) {
+					r.add(m);
+				}
+			}
+		}
+		return r;
+	}
+	
+	public MethodDeclaration method(String name, Type.FunctionOrMethod ft) {
+		for (Declaration d : declarations) {
+			if (d instanceof MethodDeclaration) {
+				MethodDeclaration md = (MethodDeclaration) d;
+				if (md.name().equals(name) && md.type().equals(ft)) {
+					return md;
+				}
+			}
+		}
+		return null;
+	}
+	
+	public Collection<WyilFile.MethodDeclaration> methods() {
+		ArrayList<MethodDeclaration> r = new ArrayList<MethodDeclaration>();
+		for (Declaration d : declarations) {
+			if(d instanceof MethodDeclaration) {
+				r.add((MethodDeclaration)d);
+			}
+		}
+		return r;
+	}
+	
+	public List<WyilFile.Declaration> declarations() {
+		return declarations;
 	}
 	
 	// =========================================================================
 	// Mutators
 	// =========================================================================
 	
-	public void add(WyilFile.Method m) {
-		Pair<String,Type.FunctionOrMethodOrMessage> p = new Pair<String,Type.FunctionOrMethodOrMessage>(m.name(),m.type());
-		this.methods.put(p,m);
+	public void replace(WyilFile.Declaration old, WyilFile.Declaration nuw) {
+		for(int i=0;i!=declarations.size();++i) {
+			if(declarations.get(i) == old) {
+				declarations.set(i,nuw);
+				return;
+			}			
+		}
 	}
 	
-	public void add(WyilFile.TypeDef t) {
-		this.types.put(t.name(), t);
-	}
-	
-	public void add(WyilFile.ConstDef c) {
-		this.constants.put(c.name(), c);
-	}
-	
-	public boolean hasName(String name) {		
-		return types.get(name) != null || constants.get(name) != null
-				|| method(name).size() > 0;
+	public boolean hasName(String name) {
+		for (Declaration d : declarations) {
+			if(d instanceof NamedDeclaration) {
+				NamedDeclaration nd = (NamedDeclaration) d;
+				if(nd.name().equals(name)) {
+					return true;
+				}
+			} 
+		}		
+		return false;
 	}
 	
 	// =========================================================================
 	// Types
 	// =========================================================================		
 	
-	public static final class TypeDef extends SyntacticElement.Impl {
-		private List<Modifier> modifiers;
+	public static abstract class Declaration extends SyntacticElement.Impl {
+		public Declaration(Attribute... attributes) {
+			super(attributes);
+		}
+		public Declaration(Collection<Attribute> attributes) {
+			super(attributes);
+		}
+	}
+	
+	public static abstract class NamedDeclaration extends Declaration {
 		private String name;
+		
+		public NamedDeclaration(String name, Attribute...attributes) {
+			super(attributes);
+			this.name = name;
+		}
+		
+		public NamedDeclaration(String name, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+		}
+		
+		public String name() {
+			return name;
+		}
+	}
+	
+	public static final class TypeDeclaration extends NamedDeclaration {
+		private List<Modifier> modifiers;		
 		private Type type;		
 		private Block constraint;
 
-		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
 				Block constraint, Attribute... attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
+			super(name,attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.type = type;
 			this.constraint = constraint;
 		}
 
-		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
 				Block constraint, Collection<Attribute> attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
+			super(name,attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.type = type;
 			this.constraint = constraint;
 		}
@@ -245,10 +319,6 @@ public final class WyilFile {
 		public List<Modifier> modifiers() {
 			return modifiers;
 		}				
-		
-		public String name() {
-			return name;
-		}
 
 		public Type type() {
 			return type;
@@ -257,63 +327,69 @@ public final class WyilFile {
 		public Block constraint() {
 			return constraint;
 		}
+		
+		public boolean isPublic() {
+			return modifiers.contains(Modifier.PUBLIC);
+		}
+		
+		public boolean isProtected() {
+			return modifiers.contains(Modifier.PROTECTED);
+		}
 	}
 	
-	public static final class ConstDef extends SyntacticElement.Impl {
-		private List<Modifier> modifiers;
-		private String name;		
+	public static final class ConstantDeclaration extends NamedDeclaration {
+		private List<Modifier> modifiers;			
 		private Value constant;
 		
-		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Attribute... attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
+		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Value constant,  Attribute... attributes) {
+			super(name,attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.constant = constant;
 		}
 		
-		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Collection<Attribute> attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
+		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Value constant,  Collection<Attribute> attributes) {
+			super(name,attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.constant = constant;
 		}
 		
 		public List<Modifier> modifiers() {
 			return modifiers;
 		}
-		
-		public String name() {
-			return name;
-		}
-		
+				
 		public Value constant() {
 			return constant;
 		}
+		
+		public boolean isPublic() {
+			return modifiers.contains(Modifier.PUBLIC);
+		}
+		
+		public boolean isProtected() {
+			return modifiers.contains(Modifier.PROTECTED);
+		}
 	}
 		
-	public static final class Method extends SyntacticElement.Impl {
+	public static final class MethodDeclaration extends NamedDeclaration {
 		private List<Modifier> modifiers;
-		private String name;		
-		private Type.FunctionOrMethodOrMessage type;		
+		private Type.FunctionOrMethod type;		
 		private List<Case> cases;		
 				
-		public Method(Collection<Modifier> modifiers, String name,
-				Type.FunctionOrMethodOrMessage type, Collection<Case> cases,
+		public MethodDeclaration(Collection<Modifier> modifiers, String name,
+				Type.FunctionOrMethod type, Collection<Case> cases,
 				Attribute... attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
+			super(name,attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.type = type;
 			this.cases = Collections
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
-		public Method(Collection<Modifier> modifiers, String name,
-				Type.FunctionOrMethodOrMessage type, Collection<Case> cases,
+		public MethodDeclaration(Collection<Modifier> modifiers, String name,
+				Type.FunctionOrMethod type, Collection<Case> cases,
 				Collection<Attribute> attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
+			super(name,attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.type = type;
 			this.cases = Collections
 					.unmodifiableList(new ArrayList<Case>(cases));
@@ -323,11 +399,7 @@ public final class WyilFile {
 			return modifiers;
 		}
 		
-		public String name() {
-			return name;
-		}
-		
-		public Type.FunctionOrMethodOrMessage type() {
+		public Type.FunctionOrMethod type() {
 			return type;
 		}
 
@@ -343,13 +415,17 @@ public final class WyilFile {
 			return type instanceof Type.Method;
 		}
 		
-		public boolean isMessage() {
-			return type instanceof Type.Message;
+		public boolean isPublic() {
+			// This needs to be reverted so it works as expected. Unfortunately,
+			// this requires changing the way that function/method references
+			// are implemented. That's because you can't invoke a private method
+			// declared in another class.
+			//return modifiers.contains(Modifier.PUBLIC);
+			return true;
 		}
 		
-		public boolean isPublic() {
-				// TODO: fixme!
-			return true;
+		public boolean isProtected() {
+			return modifiers.contains(Modifier.PROTECTED);
 		}
 		
 		public boolean isNative() {

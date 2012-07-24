@@ -42,38 +42,44 @@ import wyil.util.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected String filename;
-	protected WyilFile.Method method;
+	protected WyilFile.MethodDeclaration method;
 	protected WyilFile.Case methodCase;
 	protected HashMap<String,T> stores;
 	
 	public void apply(WyilFile module) {	
 		filename = module.filename();
 		
-		for(WyilFile.ConstDef type : module.constants()) {
-			module.add(propagate(type));
-		}
-		for(WyilFile.TypeDef type : module.types()) {
-			module.add(propagate(type));
-		}		
-		for(WyilFile.Method method : module.methods()) {
-			module.add(propagate(method));
-		}		
+		for(WyilFile.Declaration d : module.declarations()) {
+			if(d instanceof WyilFile.ConstantDeclaration) {
+				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d; 
+				module.replace(cd,propagate((cd)));
+			} else if(d instanceof WyilFile.TypeDeclaration) {
+				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
+				module.replace(td,propagate(td));	
+			} else if(d instanceof WyilFile.MethodDeclaration) {
+				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+				if(!md.isNative()) {
+					// native functions/methods don't have bodies
+					module.replace(md,propagate(md));
+				}
+			}
+		}				
 	}
 	
-	protected WyilFile.ConstDef propagate(WyilFile.ConstDef constant) {
+	protected WyilFile.ConstantDeclaration propagate(WyilFile.ConstantDeclaration constant) {
 		return constant;
 	}
-	protected WyilFile.TypeDef propagate(WyilFile.TypeDef type) {
+	protected WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
 		return type;
 	}
 	
-	protected WyilFile.Method propagate(WyilFile.Method method) {
+	protected WyilFile.MethodDeclaration propagate(WyilFile.MethodDeclaration method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
@@ -124,7 +130,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 						stmt = block.get(i);
 						if (stmt.code instanceof Code.TryCatch) {
 							tc = (Code.TryCatch) stmt.code;
-							if (label.equals(tc.target)) {
+							if (label.equals(tc.label)) {
 								// start of loop body found
 								break;
 							}
@@ -138,12 +144,12 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 				} else if (code instanceof Code.Label) {
 					Code.Label l = (Code.Label) code;
 					stores.put(l.label,store);
-				} else if (code instanceof Code.IfGoto) {
-					Code.IfGoto ifgoto = (Code.IfGoto) code;
+				} else if (code instanceof Code.If) {
+					Code.If ifgoto = (Code.If) code;
 					T trueStore = stores.get(ifgoto.target);					
 					store = propagate(i, ifgoto, stmt, trueStore,store);										
-				} else if (code instanceof Code.IfType) {
-					Code.IfType iftype = (Code.IfType) code;
+				} else if (code instanceof Code.IfIs) {
+					Code.IfIs iftype = (Code.IfIs) code;
 					T trueStore = stores.get(iftype.target);					
 					store = propagate(i, iftype, stmt, trueStore,store);										
 				} else if (code instanceof Code.Switch) {
@@ -191,13 +197,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;	
 			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.IndirectSend) {
-			Code.IndirectSend i = (Code.IndirectSend) code;
-			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.Send) {
-			Code.Send i = (Code.Send) code;			
-			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		}
+		} 
 		return store;
 	}
 	
@@ -242,7 +242,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.IfGoto ifgoto, Entry stmt,
+	protected abstract T propagate(int index, Code.If ifgoto, Entry stmt,
 			T trueStore, T falseStore);
 
 	/**
@@ -266,7 +266,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.IfType iftype, Entry stmt,
+	protected abstract T propagate(int index, Code.IfIs iftype, Entry stmt,
 			T trueStore, T falseStore);
 
 	/**

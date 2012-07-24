@@ -66,12 +66,12 @@ public class ModuleCheck implements Transform {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(WyilFile.Method method : module.methods()) {
+		for(WyilFile.MethodDeclaration method : module.methods()) {
 			check(method);
 		}
 	}
 		
-	public void check(WyilFile.Method method) {		
+	public void check(WyilFile.MethodDeclaration method) {		
 		for (WyilFile.Case c : method.cases()) {
 			checkTryCatchBlocks(c, method);
 			if(method.isFunction()) {
@@ -80,7 +80,7 @@ public class ModuleCheck implements Transform {
 		}		
 	}
 	
-	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.Method m) {
+	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.MethodDeclaration m) {
 		HashMap<String,Block.Entry> labelMap = new HashMap<String,Block.Entry>();
 		for (Block.Entry b : c.body()) {
 			if(b.code instanceof Code.Label) {
@@ -109,7 +109,7 @@ public class ModuleCheck implements Transform {
 						entry = block.get(i);
 						if (entry.code instanceof Code.Label) {
 							Code.Label l = (Code.Label) entry.code;
-							if (l.label.equals(sw.target)) {
+							if (l.label.equals(sw.label)) {
 								// end of loop body found
 								break;
 							}
@@ -156,13 +156,7 @@ public class ModuleCheck implements Transform {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;
 			return i.type.throwsClause();
-		} else if(code instanceof Code.IndirectSend) {
-			Code.IndirectSend i = (Code.IndirectSend) code;
-			return i.type.throwsClause();
-		} else if(code instanceof Code.Send) {
-			Code.Send i = (Code.Send) code;
-			return i.type.throwsClause();
-		}
+		} 
 		
 		return Type.T_VOID;
 	}
@@ -172,7 +166,7 @@ public class ModuleCheck implements Transform {
 		public final HashSet<Type> active;
 		public final Handler parent;
 
-		public Handler(List<Pair<Type, String>> handlers, Handler parent) {
+		public Handler(java.util.List<Pair<Type, String>> handlers, Handler parent) {
 			this.handlers = new ArrayList<Type>();
 			for(Pair<Type,String> handler : handlers) {
 				this.handlers.add(handler.first());
@@ -213,13 +207,10 @@ public class ModuleCheck implements Transform {
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
-			if (code instanceof Code.Send || code instanceof Code.IndirectSend) {
-				// external message send
-				syntaxError(errorMessage(SEND_NOT_PERMITTED_IN_FUNCTION), filename, stmt);
-			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
+			if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.New) {
+			} else if(code instanceof Code.NewObject) {
 				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
 			} else if(code instanceof Code.Dereference){ 
 				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							

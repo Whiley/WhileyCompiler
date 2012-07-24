@@ -83,7 +83,13 @@ public class GlobalResolver extends LocalResolver {
 				for (Path.ID mid : builder.imports(filter)) {
 					NameID nid = new NameID(mid, name);
 					if (builder.isName(nid)) {
-						return nid;
+						// ok, we have found the name in question. But, is it
+						// visible?
+						if(isVisible(nid,context)) {
+							return nid;
+						} else {
+							throw new ResolveError(nid + " is not visible");	
+						}
 					}
 				}
 			}
@@ -117,7 +123,11 @@ public class GlobalResolver extends LocalResolver {
 			Path.ID mid = resolveAsModule(names.get(0),context);		
 			NameID nid = new NameID(mid, name); 
 			if (builder.isName(nid)) {
-				return nid;
+				if(isVisible(nid,context)) {
+					return nid;
+				} else {
+					throw new ResolveError(nid + " is not visible");	
+				}
 			} 
 		} else {
 			String name = names.get(names.size()-1);
@@ -129,7 +139,11 @@ public class GlobalResolver extends LocalResolver {
 			Path.ID mid = pkg.append(module);
 			NameID nid = new NameID(mid, name); 
 			if (builder.isName(nid)) {
-				return nid;
+				if(isVisible(nid,context)) {
+					return nid;
+				} else {
+					throw new ResolveError(nid + " is not visible");	
+				}
 			} 			
 		}
 		
@@ -188,11 +202,6 @@ public class GlobalResolver extends LocalResolver {
 	public Nominal.Method resolveAsType(UnresolvedType.Method t,
 			Context context) {		
 		return (Nominal.Method) resolveAsType((UnresolvedType)t,context);
-	}
-	
-	public Nominal.Message resolveAsType(UnresolvedType.Message t,
-			Context context) {		
-		return (Nominal.Message) resolveAsType((UnresolvedType)t,context);
 	}
 
 	/**
@@ -303,9 +312,9 @@ public class GlobalResolver extends LocalResolver {
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(st.element,context,states,roots,nominal,unconstrained);
 			myData = false;
-		} else if(type instanceof UnresolvedType.Dictionary) {
-			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) type;
-			myKind = Type.K_DICTIONARY;
+		} else if(type instanceof UnresolvedType.Map) {
+			UnresolvedType.Map st = (UnresolvedType.Map) type;
+			myKind = Type.K_MAP;
 			myChildren = new int[2];
 			myChildren[0] = resolveAsType(st.key,context,states,roots,nominal,unconstrained);
 			myChildren[1] = resolveAsType(st.value,context,states,roots,nominal,unconstrained);			
@@ -382,27 +391,18 @@ public class GlobalResolver extends LocalResolver {
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal,unconstrained);		
 		} else {			
-			UnresolvedType.FunctionOrMethodOrMessage ut = (UnresolvedType.FunctionOrMethodOrMessage) type;			
+			UnresolvedType.FunctionOrMethod ut = (UnresolvedType.FunctionOrMethod) type;			
 			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
-			UnresolvedType receiver = null;
 			int start = 0;
 			
-			if(ut instanceof UnresolvedType.Message) {
-				UnresolvedType.Message mt = (UnresolvedType.Message) ut;
-				receiver = mt.receiver;				
-				myKind = Type.K_MESSAGE;
-				start++;				
-			} else if(ut instanceof UnresolvedType.Method) {
+			if(ut instanceof UnresolvedType.Method) {
 				myKind = Type.K_METHOD;
 			} else {
 				myKind = Type.K_FUNCTION;
 			}
 			
 			myChildren = new int[start + 2 + utParamTypes.size()];
-			
-			if(receiver != null) {
-				myChildren[0] = resolveAsType(receiver,context,states,roots,nominal,unconstrained);
-			}			
+					
 			myChildren[start++] = resolveAsType(ut.ret,context,states,roots,nominal,unconstrained);
 			if(ut.throwType == null) {
 				// this case indicates the user did not provide a throws clause.
@@ -435,7 +435,7 @@ public class GlobalResolver extends LocalResolver {
 			// FIXME: need to properly support unconstrained types here
 			
 			WyilFile mi = builder.getModule(key.module());
-			WyilFile.TypeDef td = mi.type(key.name());	
+			WyilFile.TypeDeclaration td = mi.type(key.name());	
 			return append(td.type(),states);			
 		} 
 		
@@ -589,7 +589,7 @@ public class GlobalResolver extends LocalResolver {
 			}
 		} else {		
 			WyilFile module = builder.getModule(key.module());
-			WyilFile.ConstDef cd = module.constant(key.name());
+			WyilFile.ConstantDeclaration cd = module.constant(key.name());
 			if(cd != null) {
 				result = cd.constant();
 			} else {
@@ -667,8 +667,8 @@ public class GlobalResolver extends LocalResolver {
 					values.add(v);				
 				}
 				return Value.V_TUPLE(values);
-			}  else if (expr instanceof Expr.Dictionary) {
-				Expr.Dictionary rg = (Expr.Dictionary) expr;			
+			}  else if (expr instanceof Expr.Map) {
+				Expr.Map rg = (Expr.Map) expr;			
 				HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
 				for(Pair<Expr,Expr> e : rg.pairs) {
 					Value key = resolveAsConstant(e.first(), context,visited);
@@ -678,9 +678,9 @@ public class GlobalResolver extends LocalResolver {
 					}
 					values.add(new Pair<Value,Value>(key,value));				
 				}
-				return Value.V_DICTIONARY(values);
-			} else if (expr instanceof Expr.FunctionOrMethodOrMessage) {
-				Expr.FunctionOrMethodOrMessage f = (Expr.FunctionOrMethodOrMessage) expr;
+				return Value.V_MAP(values);
+			} else if (expr instanceof Expr.FunctionOrMethod) {
+				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
 				return Value.V_FUN(f.nid, f.type.raw());
 			}
 		} catch(SyntaxError.InternalFailure e) {
@@ -786,4 +786,35 @@ public class GlobalResolver extends LocalResolver {
 		syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,bop);
 		return null;
 	}		
+	
+	public boolean isVisible(NameID nid, Context context) throws Exception {		
+		Path.ID mid = nid.module();
+		if(mid.equals(context.file().module)) {
+			return true;
+		}
+		WhileyFile wf = builder.getSourceFile(mid);
+		if(wf != null) {
+			Declaration d = wf.declaration(nid.name());
+			if(d instanceof WhileyFile.Constant) {
+				WhileyFile.Constant td = (WhileyFile.Constant) d;
+				return td.isPublic() || td.isProtected();
+			} else if(d instanceof WhileyFile.TypeDef) {
+				WhileyFile.TypeDef td = (WhileyFile.TypeDef) d;
+				return td.isPublic() || td.isProtected();	
+			}
+			return false;
+		} else {
+			// we have to do the following basically because we don't load
+			// modifiers properly out of jvm class files (at the moment).
+			return true;
+//			WyilFile w = builder.getModule(mid);
+//			WyilFile.ConstDef c = w.constant(nid.name());
+//			WyilFile.TypeDef t = w.type(nid.name());
+//			if(c != null) {
+//				return c.isPublic() || c.isProtected();
+//			} else {
+//				return t.isPublic() || t.isProtected();
+//			}
+		}		
+	}
 }

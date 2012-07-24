@@ -26,7 +26,6 @@
 package wyjvm.io;
 
 import java.io.*;
-import java.io.OutputStream;
 
 public class BinaryInputStream extends InputStream {
 	protected InputStream input;
@@ -38,12 +37,30 @@ public class BinaryInputStream extends InputStream {
 	}
 	
 	public int read() throws IOException {
-		return input.read();		
+		if(count == 0) {
+			return input.read();
+		} else {
+			return read_un(8);
+		}
+	}
+	
+	public int read(byte[] bytes) throws IOException {
+		for (int i = 0; i != bytes.length; ++i) {
+			bytes[i] = (byte) read();
+		}
+		return bytes.length;
+	}
+	
+	public int read(byte[] bytes, int offset, int length) throws IOException {
+		for(;offset < length;++offset) {
+			bytes[offset] = (byte) read();			
+		}
+		return length;
 	}
 	
 	public int read_u1() throws IOException {
 		if(count == 0) {
-			return read() & 0xFF;
+			return input.read() & 0xFF;
 		} else {
 			return read_un(8);
 		}

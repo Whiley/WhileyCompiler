@@ -200,14 +200,14 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Set) val, writer, constantPool);
 		} else if(val instanceof Value.List) {
 			write((Value.List) val, writer, constantPool);
-		} else if(val instanceof Value.Dictionary) {
-			write((Value.Dictionary) val, writer, constantPool);
+		} else if(val instanceof Value.Map) {
+			write((Value.Map) val, writer, constantPool);
 		} else if(val instanceof Value.Record) {
 			write((Value.Record) val, writer, constantPool);
 		} else if(val instanceof Value.Tuple) {
 			write((Value.Tuple) val, writer, constantPool);
-		} else if(val instanceof Value.FunctionOrMethodOrMessage) {
-			write((Value.FunctionOrMethodOrMessage) val, writer, constantPool);
+		} else if(val instanceof Value.FunctionOrMethod) {
+			write((Value.FunctionOrMethod) val, writer, constantPool);
 		} else {
 			throw new RuntimeException("Unknown value encountered - " + val);
 		}
@@ -297,9 +297,9 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 	
-	public static void write(Value.Dictionary expr, BinaryOutputStream writer,
+	public static void write(Value.Map expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(DICTIONARYVAL);
+		writer.write_u1(MAPVAL);
 		writer.write_u2(expr.values.size());
 		for(Map.Entry<Value,Value> e : expr.values.entrySet()) {
 			write(e.getKey(),writer,constantPool);
@@ -326,9 +326,9 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 	
-	public static void write(Value.FunctionOrMethodOrMessage expr, BinaryOutputStream writer,
+	public static void write(Value.FunctionOrMethod expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		Type.FunctionOrMethodOrMessage t = expr.type();
+		Type.FunctionOrMethod t = expr.type();
 		if(t instanceof Type.Function) {
 			writer.write_u1(FUNCTIONVAL);			
 		} else if(t instanceof Type.Method) {
@@ -507,7 +507,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	public final static int TUPLEVAL = 9;
 	public final static int BYTEVAL = 10;
 	public final static int STRINGVAL = 11;
-	public final static int DICTIONARYVAL = 12;
+	public final static int MAPVAL = 12;
 	public final static int FUNCTIONVAL = 13;	
 	public final static int METHODVAL = 14;
 	public final static int MESSAGEVAL = 15;

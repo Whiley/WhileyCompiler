@@ -67,15 +67,21 @@ public class ConstraintInline implements Transform {
 	public void apply(WyilFile module) {
 		this.filename = module.filename();
 		
-		for(WyilFile.TypeDef type : module.types()) {
-			module.add(transform(type));
-		}		
-		for(WyilFile.Method method : module.methods()) {
-			module.add(transform(method));
-		}
+		for(WyilFile.Declaration d : module.declarations()) {
+			if(d instanceof WyilFile.TypeDeclaration) {
+				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
+				module.replace(td,transform(td));	
+			} else if(d instanceof WyilFile.MethodDeclaration) {
+				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+				if(!md.isNative()) {
+					// native functions/methods don't have bodies
+					module.replace(md,transform(md));
+				}
+			}
+		}			
 	}
 	
-	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
+	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
 		Block constraint = type.constraint();
 		
 		if (constraint != null) {
@@ -92,19 +98,19 @@ public class ConstraintInline implements Transform {
 			constraint = nconstraint;
 		}
 		
-		return new WyilFile.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
+		return new WyilFile.TypeDeclaration(type.modifiers(), type.name(), type.type(), constraint,
 				type.attributes());
 	}
 	
-	public WyilFile.Method transform(WyilFile.Method method) {
+	public WyilFile.MethodDeclaration transform(WyilFile.MethodDeclaration method) {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(WyilFile.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	public WyilFile.Case transform(WyilFile.Case mcase, WyilFile.Method method) {	
+	public WyilFile.Case transform(WyilFile.Case mcase, WyilFile.MethodDeclaration method) {	
 		Block body = mcase.body();				
 		Block nbody = new Block(body.numInputs());		
 		int freeSlot = buildShadows(nbody,mcase,method);		
@@ -146,15 +152,14 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public int buildShadows(Block body, WyilFile.Case mcase,
-			WyilFile.Method method) {
+			WyilFile.MethodDeclaration method) {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
 			List<Type> params = method.type().params();
 			for (int i = 0; i != params.size(); ++i) {
 				Type t = params.get(i);
-				body.append(Code.Load(t, i));
-				body.append(Code.Store(t, i + freeSlot));
+				body.append(Code.Assign(t, i + freeSlot, i));
 			}
 			freeSlot += params.size();
 		}
@@ -162,21 +167,19 @@ public class ConstraintInline implements Transform {
 	}
 	
 	public Block transform(Block.Entry entry, int freeSlot,
-			WyilFile.Case methodCase, WyilFile.Method method) {
+			WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
 		Code code = entry.code;
 		
 		try {
 			// TODO: add support for indirect invokes and sends
 			if(code instanceof Code.Invoke) {
 				return transform((Code.Invoke)code, freeSlot, entry);
-			} else if(code instanceof Code.Send) {
-
 			} else if(code instanceof Code.IndexOf) {
 				return transform((Code.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Code.Update) {
 
-			} else if(code instanceof Code.BinOp) {
-				return transform((Code.BinOp)code,freeSlot,entry);
+			} else if(code instanceof Code.BinArithOp) {
+				return transform((Code.BinArithOp)code,freeSlot,entry);
 			} else if(code instanceof Code.Return) {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
@@ -207,36 +210,22 @@ public class ConstraintInline implements Transform {
 			
 			// TODO: mark as check block
 			
+			int[] code_operands = code.operands;
 			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-			for(int i=paramTypes.size()-1;i>=0;--i) {				
-				blk.append(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
-				binding.put(i,freeSlot+i);
+			for(int i=0;i!=code_operands.length;++i) {								
+				binding.put(i,code_operands[i]);
 			}
 			
 			precondition = Block.resource(precondition, elem.attribute(Attribute.Source.class));
+						
 			blk.importExternal(precondition,binding);
-			
-			for(int i=0;i<paramTypes.size();++i) {				
-				blk.append(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
-			}
+						
 			return blk;
 		}
 		
 		return null;
 	}		
 	
-	/**
-	 * For the send bytecode, we need to inline any preconditions associated
-	 * with the target.
-	 * 
-	 * @param code
-	 * @param elem
-	 * @return
-	 */
-	public Block transform(Code.Send code, SyntacticElement elem) {
-		return null;
-	}
-
 	/**
 	 * For the return bytecode, we need to inline any postcondition associated
 	 * with this function/method.
@@ -246,28 +235,22 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
-			WyilFile.Case methodCase, WyilFile.Method method) {
+			WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
 		
 		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
 			if(postcondition != null) {
-				Block blk = new Block(0);				
-				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
+				Block blk = new Block(0);												
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-				binding.put(0,freeSlot);
-				Type.FunctionOrMethodOrMessage mtype = method.type();	
+				binding.put(0,code.operand);
+				Type.FunctionOrMethod mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Type.Message
-						&& ((Type.Message) mtype).receiver() != null) {
-					binding.put(pIndex++, Code.THIS_SLOT);
-				}
 				int shadowIndex = methodCase.body().numSlots();
 				for(Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
 				postcondition = Block.resource(postcondition,elem.attribute(Attribute.Source.class));
-				blk.importExternal(postcondition,binding);
-				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
+				blk.importExternal(postcondition,binding);				
 				return blk;
 			}
 		}
@@ -283,29 +266,23 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.IndexOf code, int freeSlot, SyntacticElement elem) {		
-		if(code.type instanceof Type.EffectiveList) {
+	public Block transform(Code.IndexOf code, int freeSlot,
+			SyntacticElement elem) {
+		if (code.type instanceof Type.EffectiveList) {
 			Block blk = new Block(0);
-			// TODO: mark as check block
-			blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
-			blk.append(Code.Store((Type) code.type, freeSlot+1),attributes(elem));
-			String exitLabel = Block.freshLabel();
-			blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-			blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-			blk.append(Code.Assert(Type.T_INT, Code.COp.GTEQ,
-					"index out of bounds (negative)"), attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
-			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+
+			blk.append(Code.Const(freeSlot, Value.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
-			blk.append(Code.LengthOf(code.type), attributes(elem));
-			blk.append(Code.Assert(Type.T_INT, Code.COp.LT,
-					"index out of bounds (not less than length)"),
+			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
+					Code.Comparator.GTEQ, "index out of bounds (negative)"),
 					attributes(elem));
-			blk.append(Code.Label(exitLabel), attributes(elem));
-			blk.append(Code.Load((Type) code.type, freeSlot + 1),
+			blk.append(
+					Code.LengthOf(code.type, freeSlot + 1, code.leftOperand),
 					attributes(elem));
-			blk.append(Code.Load(Type.T_INT, freeSlot), attributes(elem));
-			return blk;		
+			blk.append(Code.Assert(Type.T_INT, freeSlot, freeSlot + 1,
+					Code.Comparator.LT, "index out of bounds (not less than length)"),
+					attributes(elem));
+			return blk;
 		} else {
 			return null; // FIXME
 		}
@@ -331,23 +308,19 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.BinOp code, int freeSlot, SyntacticElement elem) {
+	public Block transform(Code.BinArithOp code, int freeSlot, SyntacticElement elem) {
 		
-		if(code.bop == Code.BOp.DIV) {
+		if(code.kind == Code.BinArithKind.DIV) {
 			Block blk = new Block(0);
-			blk.append(Code.Store(code.type, freeSlot), attributes(elem));
-			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
 			if (code.type instanceof Type.Int) {
-				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),
+				blk.append(Code.Const(freeSlot,Value.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
-				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),
+				blk.append(Code.Const(freeSlot,Value.V_RATIONAL(BigRational.ZERO)),
 						attributes(elem));
 			}
-			blk.append(
-					Code.Assert(code.type, Code.COp.NEQ, "division by zero"),
-					attributes(elem));
-			blk.append(Code.Load(code.type, freeSlot), attributes(elem));
+			blk.append(Code.Assert(code.type, code.rightOperand, freeSlot,
+					Code.Comparator.NEQ, "division by zero"), attributes(elem));
 			return blk;
 		} 
 		
@@ -363,7 +336,7 @@ public class ConstraintInline implements Transform {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.Method method = m.method(name.name(),fun);
+		WyilFile.MethodDeclaration method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now

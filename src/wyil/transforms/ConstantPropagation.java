@@ -34,8 +34,7 @@ import wybs.lang.Builder;
 import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
-import wyil.lang.Code.*;
-import wyil.lang.Code.SubList;
+import wyil.lang.Code;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
 import wyjc.runtime.BigRational;
@@ -43,11 +42,35 @@ import wyjc.runtime.BigRational;
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
+	/**
+	 * Determines whether constant propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
 	public ConstantPropagation(Builder builder) {
 		
 	}
+	
+	@Override
+	public void apply(WyilFile module) {
+		if(enabled) {
+			super.apply(module);
+		}
+	}
+	
+	public static String describeEnable() {
+		return "Enable/disable constant propagation";
+	}
+	
+	public static boolean getEnable() {
+		return false; // default value
+	}
+	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
 		
-	public WyilFile.TypeDef transform(WyilFile.TypeDef type) {
+	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
 		// TODO: propagate constants through type constraints
 		return type;		
 	}
@@ -79,10 +102,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Rewrite rewrite = rewrites.get(i);			
-			if(rewrite != null) {				
-				for(int j=0;j!=rewrite.stackArgs;++j) {
-					 nbody.remove(nbody.size()-1);
-				}				
+			if(rewrite != null) {					
 				nbody.append(rewrite.rewrite);				
 			} else {				
 				nbody.append(body.get(i));
@@ -131,78 +151,66 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof BinOp) {
-			infer(index,(BinOp)code,entry,environment);
-		} else if(code instanceof Convert) {
-			infer(index,(Convert)code,entry,environment);
-		} else if(code instanceof Const) {
-			infer((Const)code,entry,environment);
-		} else if(code instanceof Debug) {
-			infer((Debug)code,entry,environment);
-		}  else if(code instanceof Destructure) {
-			infer((Destructure)code,entry,environment);
-		} else if(code instanceof Assert) {
+		if(code instanceof Code.BinArithOp) {
+			infer(index,(Code.BinArithOp)code,entry,environment);
+		} else if(code instanceof Code.Convert) {
+			infer(index,(Code.Convert)code,entry,environment);
+		} else if(code instanceof Code.Const) {
+			infer((Code.Const)code,entry,environment);
+		} else if(code instanceof Code.Debug) {
+			infer((Code.Debug)code,entry,environment);
+		} else if(code instanceof Code.Assert) {
 			// skip
-		} else if(code instanceof FieldLoad) {
-			infer(index,(FieldLoad)code,entry,environment);			
-		} else if(code instanceof IndirectInvoke) {
-			infer((IndirectInvoke)code,entry,environment);
-		} else if(code instanceof IndirectSend) {
-			infer((IndirectSend)code,entry,environment);
-		} else if(code instanceof Invoke) {
-			infer((Invoke)code,entry,environment);
-		} else if(code instanceof Invert) {
-			infer(index,(Invert)code,entry,environment);
-		} else if(code instanceof Label) {
+		} else if(code instanceof Code.FieldLoad) {
+			infer(index,(Code.FieldLoad)code,entry,environment);			
+		} else if(code instanceof Code.IndirectInvoke) {
+			infer((Code.IndirectInvoke)code,entry,environment);
+		} else if(code instanceof Code.Invoke) {
+			infer((Code.Invoke)code,entry,environment);
+		} else if(code instanceof Code.Invert) {
+			infer(index,(Code.Invert)code,entry,environment);
+		} else if(code instanceof Code.Label) {
 			// skip			
-		} else if(code instanceof ListAppend) {
-			infer(index,(ListAppend)code,entry,environment);
-		} else if(code instanceof LengthOf) {
-			infer(index,(LengthOf)code,entry,environment);
-		} else if(code instanceof SubList) {
-			infer(index,(SubList)code,entry,environment);
-		} else if(code instanceof IndexOf) {
-			infer(index,(IndexOf)code,entry,environment);
-		} else if(code instanceof Load) {
-			infer(index,(Load)code,entry,environment);
-		} else if(code instanceof Update) {
-			infer((Update)code,entry,environment);
-		} else if(code instanceof NewDict) {
-			infer(index,(NewDict)code,entry,environment);
-		} else if(code instanceof NewList) {
-			infer(index,(NewList)code,entry,environment);
-		} else if(code instanceof NewRecord) {
-			infer(index,(NewRecord)code,entry,environment);
-		} else if(code instanceof NewSet) {
-			infer(index,(NewSet)code,entry,environment);
-		} else if(code instanceof NewTuple) {
-			infer(index,(NewTuple)code,entry,environment);
-		} else if(code instanceof Negate) {
-			infer(index,(Negate)code,entry,environment);
-		} else if(code instanceof Dereference) {
-			infer(index,(Dereference)code,entry,environment);
-		} else if(code instanceof Return) {
-			infer((Return)code,entry,environment);
-		} else if(code instanceof Send) {
-			infer((Send)code,entry,environment);
-		} else if(code instanceof Store) {
-			infer((Store)code,entry,environment);
-		} else if(code instanceof SetUnion) {
-			infer(index,(SetUnion)code,entry,environment);
-		} else if(code instanceof SetDifference) {
-			infer(index,(SetDifference)code,entry,environment);
-		} else if(code instanceof SetIntersect) {
-			infer(index,(SetIntersect)code,entry,environment);
-		} else if(code instanceof StringAppend) {
-			infer(index,(StringAppend)code,entry,environment);
-		} else if(code instanceof SubString) {
-			infer(index,(SubString)code,entry,environment);
-		} else if(code instanceof Skip) {
+		} else if(code instanceof Code.BinListOp) {
+			infer(index,(Code.BinListOp)code,entry,environment);
+		} else if(code instanceof Code.LengthOf) {
+			infer(index,(Code.LengthOf)code,entry,environment);
+		} else if(code instanceof Code.SubList) {
+			infer(index,(Code.SubList)code,entry,environment);
+		} else if(code instanceof Code.IndexOf) {
+			infer(index,(Code.IndexOf)code,entry,environment);
+		} else if(code instanceof Code.Assign) {
+			infer(index,(Code.Assign)code,entry,environment);
+		} else if(code instanceof Code.Update) {
+			infer((Code.Update)code,entry,environment);
+		} else if(code instanceof Code.NewMap) {
+			infer(index,(Code.NewMap)code,entry,environment);
+		} else if(code instanceof Code.NewList) {
+			infer(index,(Code.NewList)code,entry,environment);
+		} else if(code instanceof Code.NewRecord) {
+			infer(index,(Code.NewRecord)code,entry,environment);
+		} else if(code instanceof Code.NewSet) {
+			infer(index,(Code.NewSet)code,entry,environment);
+		} else if(code instanceof Code.NewTuple) {
+			infer(index,(Code.NewTuple)code,entry,environment);
+		} else if(code instanceof Code.UnArithOp) {
+			infer(index,(Code.UnArithOp)code,entry,environment);
+		} else if(code instanceof Code.Dereference) {
+			infer(index,(Code.Dereference)code,entry,environment);
+		} else if(code instanceof Code.Return) {
+			infer((Code.Return)code,entry,environment);
+		} else if(code instanceof Code.BinSetOp) {
+			infer(index,(Code.BinSetOp)code,entry,environment);
+		} else if(code instanceof Code.StringOp) {
+			infer(index,(Code.StringOp)code,entry,environment);
+		} else if(code instanceof Code.SubString) {
+			infer(index,(Code.SubString)code,entry,environment);
+		} else if(code instanceof Code.Nop) {
 			// skip			
-		} else if(code instanceof New) {
-			infer(index,(New)code,entry,environment);
-		} else if(code instanceof Throw) {
-			infer(index,(Throw)code,entry,environment);
+		} else if(code instanceof Code.NewObject) {
+			infer(index,(Code.NewObject)code,entry,environment);
+		} else if(code instanceof Code.Throw) {
+			infer(index,(Code.Throw)code,entry,environment);
 		} else {
 			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
 			return null;
@@ -211,17 +219,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return environment;
 	}
 	
-	public void infer(int index, Code.BinOp code, Block.Entry entry,
-			Env environment) {
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();
+	public void infer(int index, Code.BinArithOp code, Block.Entry entry,
+			Env environment) {		
+		Value lhs = environment.get(code.leftOperand);
+		Value rhs = environment.get(code.rightOperand);
 		Value result = null;
 		
 		if(lhs instanceof Value.Rational && rhs instanceof Value.Rational) {
 			Value.Rational lnum = (Value.Rational) lhs;
 			Value.Rational rnum = (Value.Rational) rhs;
 			
-			switch (code.bop) {
+			switch (code.kind) {
 			case ADD: {
 				result = lnum.add(rnum);
 				break;
@@ -239,13 +247,13 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				break;
 			}				
 			}		
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
+			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		} else if(lhs instanceof Value.Integer && rhs instanceof Value.Integer) {
 			Value.Integer lnum = (Value.Integer) lhs;
 			Value.Integer rnum = (Value.Integer) rhs;
 			
-			switch (code.bop) {
+			switch (code.kind) {
 			case ADD: {
 				result = lnum.add(rnum);
 				break;
@@ -284,80 +292,47 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 						break;
 					}
 				} 
-				environment.push(null);
+				environment.set(code.target,null);
 				return;
 			}	
 			}		
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
+			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		} 
 		
-		environment.push(result);
+		environment.set(code.target,result);
 	}
 	
 	public void infer(int index, Code.Convert code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.pop();
-		
-		// FIXME: I think there's a bug here
-		if (val instanceof Value.Rational && code.from == Type.T_INT
-				&& code.to == Type.T_REAL) {			
-			entry = new Block.Entry(Code.Const(val),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));					
-		} else {			
-			// need to apply other conversions here
-			val = null;
-		}
-		
-		environment.push(val);
+		// TODO: implement this		
+		Value val = environment.get(code.operand);
+		environment.set(code.target,null);
 	}
 	
 	public void infer(Code.Const code, Block.Entry entry,
 			Env environment) {
-		environment.push(code.constant);		
+		environment.set(code.target,code.constant);		
 	}
 	
 	public void infer(Code.Debug code, Block.Entry entry,
-			Env environment) {
-		environment.pop();
+			Env environment) {		
 	}
-	
-	public void infer(Code.Destructure code, Block.Entry entry,
-			Env environment) {
-		Value v = environment.pop();
-		
-		if(v instanceof Value.Tuple) {
-			Value.Tuple tup = (Value.Tuple) v;
-			for(Value tv : tup.values) {
-				environment.push(tv);
-			}
-		} else if(v instanceof Value.Rational) {
-			Value.Rational rat = (Value.Rational) v;
-			environment.push(Value.V_INTEGER(rat.value.numerator()));
-			environment.push(Value.V_INTEGER(rat.value.denominator()));
-		} else if(code.type instanceof Type.Tuple) {			
-			Type.Tuple tup = (Type.Tuple) code.type;
-			for(Type t : tup.elements()) {
-				environment.push(null);
-			}
-		} else {
-			environment.push(null);
-			environment.push(null);
-		}
-	}
-	
+			
 	public void infer(int index, Code.FieldLoad code, Block.Entry entry,
 			Env environment) {
-		Value src = environment.pop();
-		Value result = null;
-		if(src instanceof Value.Record) {
-			Value.Record rec = (Value.Record) src;			
-			result = rec.values.get(code.field);			
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
-		} 
+		Value src = environment.get(code.operand);
 		
-		environment.push(result);		
+		Value result = null;
+		if (src instanceof Value.Record) {
+			Value.Record rec = (Value.Record) src;
+			result = rec.values.get(code.field);
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
+		}
+		
+		environment.set(code.target,result);		
 	}
 	
 	public void infer(Code.IndirectInvoke code, Block.Entry entry,
@@ -366,106 +341,88 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: in principle we can do better here in the case that the target
 		// is a constant. This seems pretty unlikely though ...
 		
-		for(int i=0;i!=code.type.params().size();++i) {
-			environment.pop();
-		}
-		
-		environment.pop(); // target
-		
-		if(code.type.ret() != Type.T_VOID && code.retval) {
-			environment.push(null);
-		}
-	}
-	
-	public void infer(Code.IndirectSend code, Block.Entry entry,
-			Env environment) {
-
-		for(int i=0;i!=code.type.params().size();++i) {
-			environment.pop();
-		}
-		
-		environment.pop(); // receiver
-		environment.pop(); // target
-		
-		if(code.type.ret() != Type.T_VOID && code.retval) {
-			environment.push(null);
+		if (code.target != Code.NULL_REG) {
+			environment.set(code.target, null);
 		}
 	}
 	
 	public void infer(Code.Invoke code, Block.Entry entry,
 			Env environment) {
-		
-		// TODO: in the case of a function call (rather than an internal message
-		// send), we could potentially evaluate the function in question to give
-		// a constant value.
-		
-		for(int i=0;i!=code.type.params().size();++i) {
-			environment.pop();
-		}
 				
-		if(code.type.ret() != Type.T_VOID && code.retval) {
-			environment.push(null);
+		if (code.target != Code.NULL_REG) {
+			environment.set(code.target, null);
 		}
 	}
 	
-	public void infer(int index, Code.ListAppend code, Block.Entry entry,
+	public void infer(int index, Code.BinListOp code, Block.Entry entry,
 			Env environment) {
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();
+		Value lhs = environment.get(code.leftOperand);
+		Value rhs = environment.get(code.rightOperand);
 		Value result = null;
-		if(code.dir == OpDir.UNIFORM && lhs instanceof Value.List && rhs instanceof Value.List) {
-			Value.List left = (Value.List) lhs;
-			Value.List right = (Value.List) rhs;
-			ArrayList<Value> values = new ArrayList<Value>(left.values);
-			values.addAll(right.values);
-			result = Value.V_LIST(values);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.List && rhs instanceof Value) {
-			Value.List left = (Value.List) lhs;
-			Value right = (Value) rhs;
-			ArrayList<Value> values = new ArrayList<Value>(left.values);
-			values.add(right);
-			result = Value.V_LIST(values);
-		} else if(code.dir == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.List) {
-			Value left = (Value) lhs;
-			Value.List right = (Value.List) rhs;
-			ArrayList<Value> values = new ArrayList<Value>();
-			values.add(left);
-			values.addAll(right.values);
-			result = Value.V_LIST(values);
-		} 
+		switch(code.kind) {
+		case APPEND:
+			if (lhs instanceof Value.List && rhs instanceof Value.List) {
+				Value.List left = (Value.List) lhs;
+				Value.List right = (Value.List) rhs;
+				ArrayList<Value> values = new ArrayList<Value>(left.values);
+				values.addAll(right.values);
+				result = Value.V_LIST(values);
+			}
+			break;
+		case LEFT_APPEND:
+			if (lhs instanceof Value.List && rhs instanceof Value) {
+				Value.List left = (Value.List) lhs;
+				Value right = (Value) rhs;
+				ArrayList<Value> values = new ArrayList<Value>(left.values);
+				values.add(right);
+				result = Value.V_LIST(values);
+			}
+			break;
+		case RIGHT_APPEND:
+			if (lhs instanceof Value && rhs instanceof Value.List) {
+				Value left = (Value) lhs;
+				Value.List right = (Value.List) rhs;
+				ArrayList<Value> values = new ArrayList<Value>();
+				values.add(left);
+				values.addAll(right.values);
+				result = Value.V_LIST(values);
+			} 
+		}
 		
 		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		}
-		environment.push(result);
+		
+		environment.set(code.target,result);
 	}
 	
 	public void infer(int index, Code.LengthOf code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.pop();
+		Value val = environment.get(code.operand);
 		Value result = null;
 		
 		if(val instanceof Value.List) {
 			Value.List list = (Value.List) val;
 			result = Value.V_INTEGER(BigInteger.valueOf(list.values.size()));
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
+			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		} else if(val instanceof Value.Set) {
 			Value.Set list = (Value.Set) val;
 			result = Value.V_INTEGER(BigInteger.valueOf(list.values.size()));
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
+			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		} 
 		
-		environment.push(result);
+		environment.set(code.target,result);
 	}
 	
 	public void infer(int index, Code.SubList code, Block.Entry entry,
 			Env environment) {
-		Value end = environment.pop();
-		Value start = environment.pop();
-		Value list = environment.pop();
+		Value list = environment.get(code.operands[0]);
+		Value start = environment.get(code.operands[1]);
+		Value end = environment.get(code.operands[2]);
 		Value result = null;
 		if (list instanceof Value.List && start instanceof Value.Rational
 				&& end instanceof Value.Rational) {
@@ -475,8 +432,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				Value.List li = (Value.List) list;
 				int eni = en.value.intValue();
 				int sti = st.value.intValue();
-				if (BigRational.valueOf(eni).equals(en.value)
-						&& eni >= 0 && eni <= li.values.size()
+				if (BigRational.valueOf(eni).equals(en.value) && eni >= 0
+						&& eni <= li.values.size()
 						&& BigRational.valueOf(sti).equals(st.value)
 						&& sti >= 0 && sti <= li.values.size()) {
 					ArrayList<Value> nvals = new ArrayList<Value>();
@@ -484,18 +441,19 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 						nvals.add(li.values.get(i));
 					}
 					result = Value.V_LIST(nvals);
-					entry = new Block.Entry(Code.Const(result),entry.attributes());
-					rewrites.put(index, new Rewrite(entry,3));
+					entry = new Block.Entry(Code.Const(code.target, result),
+							entry.attributes());
+					rewrites.put(index, new Rewrite(entry));
 				}
 			}
-		} 
-		environment.push(result);
+		}
+		environment.set(code.target, result);
 	}
 	
 	public void infer(int index, Code.IndexOf code, Block.Entry entry,
-			Env environment) {
-		Value idx = environment.pop();
-		Value src = environment.pop();
+			Env environment) {		
+		Value src = environment.get(code.leftOperand);
+		Value idx = environment.get(code.rightOperand);
 		Value result = null;
 		if (idx instanceof Value.Rational && src instanceof Value.List) {
 			Value.Rational num = (Value.Rational) idx;
@@ -505,8 +463,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				if (BigRational.valueOf(i).equals(num.value) && i >= 0
 						&& i < list.values.size()) {
 					result = list.values.get(i);
-					entry = new Block.Entry(Code.Const(result),entry.attributes());
-					rewrites.put(index, new Rewrite(entry,2));
+					entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry));
 				}
 			}			
 		} else if(src instanceof Value.Strung && idx instanceof Value.Rational) {
@@ -520,58 +478,51 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				}
 			} 
 		
-		environment.push(result);		
+		environment.set(code.target,result);		
 	}
 	
-	public void infer(int index, Code.Load code, Block.Entry entry,
+	public void infer(int index, Code.Assign code, Block.Entry entry,
 			Env environment) {
-		
-		Value val = environment.get(code.slot);
-		if(val != null) {
+
+		Value result = environment.get(code.operand);
+		if (result != null) {
 			// register rewrite
-			entry = new Block.Entry(Code.Const(val), entry.attributes());					
-			rewrites.put(index, new Rewrite(entry,0));
-		} 
-		
-		environment.push(val);
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
+		}
+
+		environment.set(code.target, result);
 	}
 	
 	public void infer(Code.Update code, Block.Entry entry,
-			Env environment) {
-		
-		// TO DO: I could definitely do more here
-		
-		int npop = code.level - code.fields.size();
-		
-		for(int i=0;i!=npop;++i) {
-			environment.pop();
-		}
-		
-		environment.pop(); // rhs
-		
-		environment.set(code.slot,null);
+			Env environment) {		
+		// TODO: implement this!		
+		environment.set(code.target,null);
 	}
 	
-	public void infer(int index, Code.NewDict code, Block.Entry entry,
+	public void infer(int index, Code.NewMap code, Block.Entry entry,
 			Env environment) {
-		HashMap<Value,Value> values = new HashMap<Value,Value>();
+		HashMap<Value, Value> values = new HashMap<Value, Value>();
 		boolean isValue = true;
-		for(int i=0;i!=code.nargs;++i) {
-			Value val = environment.pop();
-			Value key = environment.pop();
-			if(key instanceof Value && val instanceof Value) {
+		int[] code_operands = code.operands;
+		for (int i = 0; i != code_operands.length; i = i + 2) {
+			Value val = environment.get(code_operands[i]);
+			Value key = environment.get(code_operands[i + 1]);
+			if (key instanceof Value && val instanceof Value) {
 				values.put(key, val);
 			} else {
-				isValue=false;
+				isValue = false;
 			}
 		}
 		Value result = null;
-		if(isValue) {
-			result = Value.V_DICTIONARY(values);			
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,code.nargs*2));			
+		if (isValue) {
+			result = Value.V_MAP(values);
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		}
-		environment.push(result);		
+		environment.set(code.target, result);
 	}
 	
 	public void infer(int index, Code.NewRecord code, Block.Entry entry,
@@ -579,12 +530,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		HashMap<String, Value> values = new HashMap<String, Value>();
 		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
 		Collections.sort(keys);
-		Collections.reverse(keys);
 		boolean isValue = true;
-		for (String key : keys) {
-			Value val = environment.pop();
+		int[] code_operands = code.operands;
+		for (int i=0;i!=code_operands.length;++i) {
+			Value val = environment.get(code_operands[i]);
 			if (val != null) {
-				values.put(key, val);
+				values.put(keys.get(i), val);
 			} else {
 				isValue = false;
 			}
@@ -593,66 +544,72 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value result = null;
 		if (isValue) {
 			result = Value.V_RECORD(values);
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,keys.size()));
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		}
-		environment.push(result);
+		
+		environment.set(code.target,result);
 	}
 	
 	public void infer(int index, Code.NewList code, Block.Entry entry,
 			Env environment) {
-		ArrayList<Value> values = new ArrayList<Value>();		
+		ArrayList<Value> values = new ArrayList<Value>();
 
 		boolean isValue = true;
-		for (int i=0;i!=code.nargs;++i) {
-			Value val = environment.pop();
+		int[] code_operands = code.operands;
+		for (int i = 0; i != code_operands.length; ++i) {
+			Value val = environment.get(code_operands[i]);
 			if (val != null) {
 				values.add(val);
 			} else {
 				isValue = false;
 			}
-		}		
-		
+		}
+
 		Value result = null;
 		if (isValue) {
-			Collections.reverse(values);
 			result = Value.V_LIST(values);
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,code.nargs));
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		}
-		environment.push(result);
+		environment.set(code.target, result);
 	}
 	
 	public void infer(int index, Code.NewSet code, Block.Entry entry,
 			Env environment) {
-		HashSet<Value> values = new HashSet<Value>();		
+		HashSet<Value> values = new HashSet<Value>();
 
 		boolean isValue = true;
-		for (int i=0;i!=code.nargs;++i) {
-			Value val = environment.pop();
+		int[] code_operands = code.operands;
+		for (int i = 0; i != code_operands.length; ++i) {
+			Value val = environment.get(code_operands[i]);
 			if (val != null) {
 				values.add(val);
 			} else {
 				isValue = false;
 			}
-		}		
-		
-		Value result = null;
-		if (isValue) {			
-			result = Value.V_SET(values);
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,code.nargs));
 		}
-		environment.push(result);
+
+		Value result = null;
+		if (isValue) {
+			result = Value.V_SET(values);
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
+		}
+		environment.set(code.target, result);
 	}
 	
 	public void infer(int index, Code.NewTuple code, Block.Entry entry,
 			Env environment) {
 		ArrayList<Value> values = new ArrayList<Value>();		
 
-		boolean isValue = true;
-		for (int i=0;i!=code.nargs;++i) {
-			Value val = environment.pop();
+		boolean isValue=true;
+		int[] code_operands = code.operands;
+		for (int i = 0; i != code_operands.length; ++i) {
+			Value val = environment.get(code_operands[i]);
 			if (val != null) {
 				values.add(val);
 			} else {
@@ -662,162 +619,141 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		Value result = null;
 		if (isValue) {	
-			Collections.reverse(values);
 			result = Value.V_TUPLE(values);
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,code.nargs));
+			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		}
-		environment.push(result);
+		environment.set(code.target,result);
 	}
 	
 	public void infer(Code.Return code, Block.Entry entry,
 			Env environment) {
-		if(code.type != Type.T_VOID) {
-			environment.pop();
-		}
+		
 	}
-	
-	public void infer(Code.Send code, Block.Entry entry,
-			Env environment) {
 
-		for(int i=0;i!=code.type.params().size();++i) {
-			environment.pop();
-		}
-		
-		environment.pop(); // receiver
-		
-		if (code.type.ret() != Type.T_VOID && code.synchronous && code.retval) {
-			environment.push(null);
-		}
-	}
-	
-	public void infer(Code.Store code, Block.Entry entry,
-			Env environment) {
-		environment.set(code.slot, environment.pop());
-	}
-	
-	public void infer(int index, Code.SetUnion code, Block.Entry entry,
+	public void infer(int index, Code.BinSetOp code, Block.Entry entry,
 			Env environment) {						
 		Value result = null;
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();
-		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
-				&& rhs instanceof Value.Set) {
-			Value.Set lv = (Value.Set) lhs;
-			Value.Set rv = (Value.Set) rhs;
-			result = lv.union(rv);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set) {
-			Value.Set lv = (Value.Set) lhs;
-			Value rv = (Value) rhs;
-			result = lv.add(rv);
-		} else if(code.dir == OpDir.RIGHT && rhs instanceof Value.Set) {
-			Value lv = (Value) lhs;
-			Value.Set rv = (Value.Set) rhs;
-			result = rv.add(lv);
-		}
-		
-		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
-		}
-		
-		environment.push(result);
-	}
-	
-	public void infer(int index, Code.SetIntersect code, Block.Entry entry,
-			Env environment) {						
-		Value result = null;
-		
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();
-		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
-				&& rhs instanceof Value.Set) {
-			Value.Set lv = (Value.Set) lhs;
-			Value.Set rv = (Value.Set) rhs;
-			result = lv.intersect(rv);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
-				&& rhs instanceof Value) {
-			Value.Set lv = (Value.Set) lhs;
-			Value rv = (Value) rhs;
-			if(lv.values.contains(rv)) {
-				HashSet<Value> nset = new HashSet<Value>();
-				nset.add(rv);
-				result = Value.V_SET(nset);
-			} else {
-				result = Value.V_SET(Collections.EMPTY_SET);
+		Value lhs = environment.get(code.leftOperand);
+		Value rhs = environment.get(code.rightOperand);
+		switch(code.kind) {
+		case UNION:
+			if (lhs instanceof Value.Set
+					&& rhs instanceof Value.Set) {
+				Value.Set lv = (Value.Set) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				result = lv.union(rv);
 			}
-		} else if(code.dir == OpDir.RIGHT && rhs instanceof Value.Set) {
-			Value lv = (Value) lhs;
-			Value.Set rv = (Value.Set) rhs;
-			if(rv.values.contains(lv)) {
-				HashSet<Value> nset = new HashSet<Value>();
-				nset.add(lv);
-				result = Value.V_SET(nset);
-			} else {
-				result = Value.V_SET(Collections.EMPTY_SET);
+			break;
+		case LEFT_UNION:
+			if(lhs instanceof Value.Set && rhs instanceof Value) {
+				Value.Set lv = (Value.Set) lhs;
+				Value rv = (Value) rhs;
+				result = lv.add(rv);
+			} 
+			break;
+		case RIGHT_UNION:
+			if(lhs instanceof Value && rhs instanceof Value.Set) {
+				Value lv = (Value) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				result = rv.add(lv);
 			}
+			break;
+		case INTERSECTION:
+			if (lhs instanceof Value.Set
+					&& rhs instanceof Value.Set) {
+				Value.Set lv = (Value.Set) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				result = lv.intersect(rv);
+			} 
+			break;
+		case LEFT_INTERSECTION:
+			if (lhs instanceof Value.Set && rhs instanceof Value) {
+				Value.Set lv = (Value.Set) lhs;
+				Value rv = (Value) rhs;
+				if (lv.values.contains(rv)) {
+					HashSet<Value> nset = new HashSet<Value>();
+					nset.add(rv);
+					result = Value.V_SET(nset);
+				} else {
+					result = Value.V_SET(Collections.EMPTY_SET);
+				}
+			}
+			break;
+		case RIGHT_INTERSECTION:
+			if(lhs instanceof Value && rhs instanceof Value.Set) {
+				Value lv = (Value) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				if(rv.values.contains(lv)) {
+					HashSet<Value> nset = new HashSet<Value>();
+					nset.add(lv);
+					result = Value.V_SET(nset);
+				} else {
+					result = Value.V_SET(Collections.EMPTY_SET);
+				}
+			}
+			break;
+		case DIFFERENCE:
+			if (lhs instanceof Value.Set && rhs instanceof Value.Set) {
+				Value.Set lv = (Value.Set) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				result = lv.difference(rv);
+			}
+			break;
+		case LEFT_DIFFERENCE:
+			if(lhs instanceof Value.Set && rhs instanceof Value) {
+				Value.Set lv = (Value.Set) lhs;
+				Value rv = (Value) rhs;
+				result = lv.remove(rv);
+			} 
+			break;
 		}
+		 
 		
 		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
+			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		}
 		
-		environment.push(result);
+		environment.set(code.target,null);
 	}
 	
-	public void infer(int index, Code.SetDifference code, Block.Entry entry,
-			Env environment) {						
-		Value result = null;
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();
-		
-		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
-				&& rhs instanceof Value.Set) {
-			Value.Set lv = (Value.Set) lhs;
-			Value.Set rv = (Value.Set) rhs;
-			result = lv.difference(rv);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set) {
-			Value.Set lv = (Value.Set) lhs;
-			Value rv = (Value) rhs;
-			result = lv.remove(rv);
-		} 
-		
-		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
-		}
-		
-		environment.push(result);
-	}
-	
-	public void infer(int index, Code.StringAppend code, Block.Entry entry,
+	public void infer(int index, Code.StringOp code, Block.Entry entry,
 			Env environment) {
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();
+		Value lhs = environment.get(code.leftOperand);
+		Value rhs = environment.get(code.rightOperand);
 		Value result = null;
-		if(code.dir == OpDir.UNIFORM && lhs instanceof Value.Strung && rhs instanceof Value.Strung) {
-			Value.Strung left = (Value.Strung) lhs;
-			Value.Strung right = (Value.Strung) rhs;
-			result = Value.V_STRING(left.value + right.value);
-		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Strung && rhs instanceof Value) {
+		switch(code.operation) {
+		case APPEND:
+			if(lhs instanceof Value.Strung && rhs instanceof Value.Strung) {
+				Value.Strung left = (Value.Strung) lhs;
+				Value.Strung right = (Value.Strung) rhs;
+				result = Value.V_STRING(left.value + right.value);
+			} 
+			break;
+		case LEFT_APPEND:
 			// TODO: need to add Value.Char
-		} else if(code.dir == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.Strung) {
-			// TODO: need to add Value.Char					
-		} 
-		
-		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
+			break;
+		case RIGHT_APPEND:
+			// TODO: need to add Value.Char
+			break;
 		}
-		environment.push(result);	
+
+		if (result != null) {
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
+		}
+		environment.set(code.target, result);
 	}
 	
 	public void infer(int index, Code.SubString code, Block.Entry entry,
-			Env environment) {
-		Value end = environment.pop();
-		Value start = environment.pop();
-		Value src = environment.pop();
+			Env environment) {		
+		
+		Value src = environment.get(code.operands[0]);
+		Value start = environment.get(code.operands[1]);
+		Value end = environment.get(code.operands[2]);
+		
 		Value result = null;
 		if (src instanceof Value.Strung && start instanceof Value.Rational
 				&& end instanceof Value.Rational) {
@@ -836,88 +772,89 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 						nval += str.value.charAt(i);
 					}
 					result = Value.V_STRING(nval);
-					entry = new Block.Entry(Code.Const(result),entry.attributes());
-					rewrites.put(index, new Rewrite(entry,3));
+					entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry));
 				}
 			}
 		} 
-		environment.push(result);
+		
+		environment.set(code.target,result);
 	}
 	
 	public void infer(int index, Code.Invert code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.pop();
+		Value val = environment.get(code.operand);
 		Value result = null;
 		
-		if(val instanceof Value.Byte) {
+		if (val instanceof Value.Byte) {
 			Value.Byte num = (Value.Byte) val;
-			result = Value.V_BYTE((byte)~num.value);
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
-		} 		
-		
-		environment.push(result);
+			result = Value.V_BYTE((byte) ~num.value);
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
+		}
+
+		environment.set(code.target,result);
 	}
 	
-	public void infer(int index, Code.Negate code, Block.Entry entry,
+	public void infer(int index, Code.UnArithOp code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.pop();
+		// needs to be updated to support numerator and denominator
+		Value val = environment.get(code.operand);
 		Value result = null;
 		
-		if(val instanceof Value.Rational) {
-			Value.Rational num = (Value.Rational) val;
-			result = Value.V_RATIONAL(num.value.negate());
-		} else if (val instanceof Value.Integer) {
-			Value.Integer num = (Value.Integer) val;
-			result = Value.V_INTEGER(num.value.negate());
+		switch(code.kind) {
+			case NEG:
+				if(val instanceof Value.Rational) {
+					Value.Rational num = (Value.Rational) val;
+					result = Value.V_RATIONAL(num.value.negate());
+				} else if (val instanceof Value.Integer) {
+					Value.Integer num = (Value.Integer) val;
+					result = Value.V_INTEGER(num.value.negate());
+				}
 		}
 		
 		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
+			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
 		}
 		
-		environment.push(result);
+		environment.set(code.target,result);
 	}
 	
-	public void infer(int index, Code.New code, Block.Entry entry,
+	public void infer(int index, Code.NewObject code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.pop();
-		Value result = null;
-		
-		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
-		}
-		
-		environment.push(result);
+		environment.set(code.target, null);
 	}
 	
 	public void infer(int index, Code.Throw code, Block.Entry entry,
-			Env environment) {
-		Value val = environment.pop();
+			Env environment) {		
 	}
 	
 	public void infer(int index, Code.Dereference code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.pop();
-		Value result = null;
-		
-		if(result != null) {
-			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,1));
-		}
-		
-		environment.push(result);
+		environment.set(code.target, null);
 	}	
 	
 	@Override
-	public Pair<Env, Env> propagate(int index,
-			Code.IfGoto igoto, Entry stmt, Env environment) {
+	public Pair<Env, Env> propagate(int index, Code.If code, Entry stmt,
+			Env environment) {
 		environment = (Env) environment.clone();
-		
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();
+
+		Value lhs = environment.get(code.leftOperand);
+		Value rhs = environment.get(code.rightOperand);
+
+		// TODO: could do more here to eliminate conditionals which must either
+		// be taken or untaken.
+
+		return new Pair(environment, environment);
+	}
+	
+	@Override
+	public Pair<Env, Env> propagate(int index,
+			Code.IfIs code, Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
+		Value lhs = environment.get(code.leftOperand);
 		
 		// TODO: could do more here to eliminate conditionals which must either
 		// be taken or untaken.
@@ -926,59 +863,46 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 	
 	@Override
-	public Pair<Env, Env> propagate(int index,
-			Code.IfType code, Entry stmt, Env environment) {
+	public List<Env> propagate(int index, Code.Switch code, Entry stmt,
+			Env environment) {
 		environment = (Env) environment.clone();
-		
-		if(code.slot < 0) {			
-			Value lhs = environment.pop();			
-		} 
-		
-		return new Pair(environment, environment);
-	}
-	
-	@Override
-	public List<Env> propagate(int index, Code.Switch sw,
-			Entry stmt, Env environment) {
-		environment = (Env) environment.clone();
-		
-		Value val = environment.pop();
-		
+
+		Value val = environment.get(code.operand);
+
 		ArrayList<Env> stores = new ArrayList();
-		for (int i = 0; i != sw.branches.size(); ++i) {
+		for (int i = 0; i != code.branches.size(); ++i) {
 			stores.add(environment);
 		}
-		
+
 		return stores;
 	}
 
 	@Override
-	public Env propagate(Type handler, Env environment) {		
+	public Env propagate(Type handler, Code.TryCatch tc, Env environment) {		
 		Env catchEnvironment = (Env) environment.clone();		
-		catchEnvironment.push(null); // the exception value
+		// TODO: implement me!
 		return catchEnvironment;
 	}
 	
 	@Override
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
+			Entry stmt, Env environment, List<Code.TryCatch> handlers) {
 		
 		environment = new Env(environment);
 		
 		if(loop instanceof Code.ForAll) {
-			Code.ForAll fall = (Code.ForAll) loop; 
-			environment.pop();		
+			Code.ForAll fall = (Code.ForAll) loop; 	
 			
 			// TO DO: could unroll loop if src collection is a value.
 			
-			environment.set(fall.slot,null);
+			environment.set(fall.indexOperand,null);
 		} 
 		
 		// Now, kill every variable which is modified in the loop. This is a
 		// safety precaution, and it's possible we could do better here in some
 		// circumstances (e.g. by unrolling the loop).
 		
-		for(int slot : loop.modifies) {
+		for(int slot : loop.modifiedOperands) {
 			environment.set(slot,null);
 		}
 		
@@ -1014,21 +938,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return env;
 	}	
 	
-	public static class Env extends ArrayList<Value> {
+	public final static class Env extends ArrayList<Value> {
 		public Env() {
 		}
 		public Env(Collection<Value> v) {
 			super(v);
-		}
-		public void push(Value t) {
-			add(t);
-		}
-		public Value top() {
-			return get(size()-1);
-		}
-		public Value pop() {
-			return remove(size()-1);			
-		}
+		}		
 		public Env clone() {
 			return new Env(this);
 		}
@@ -1037,11 +952,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 	private static class Rewrite {		
 		public final Block.Entry rewrite;
-		public final int stackArgs;		
 		
-		public Rewrite(Block.Entry rewrite, int stackArgs) {
+		public Rewrite(Block.Entry rewrite) {
 			this.rewrite = rewrite;
-			this.stackArgs = stackArgs;
 		}
 	}
 }

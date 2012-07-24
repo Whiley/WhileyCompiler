@@ -30,12 +30,14 @@ import wyil.util.*;
 
 /**
  * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
- * stack-based bytecodes, similar to the Java Virtual Machine. The frame of each
- * function/method consists of zero or more <i>local variables</i> (a.k.a
- * registers) and a <i>stack of unbounded depth</i>. Bytecodes may push/pop
- * values from the stack, and store/load them from local variables. Like Java
- * bytecode, WYIL uses unstructured control-flow and allows variables to take on
- * different types at different points. For example:
+ * register-based bytecodes (as opposed to say the Java Virtual Machine, which
+ * uses stack-based bytecodes). During execution, one can think of the "machine"
+ * as maintaining a call stack made up of "frames". For each function or method
+ * on the call stack, the corresponding frame consists of zero or more <i>local
+ * variables</i> (a.k.a registers). Bytecodes may read/write values from local
+ * variables. Like the Java Virtual Machine, WYIL uses unstructured
+ * control-flow. However, unlike the JVM, it also allows variables to take on
+ * different types at different points. The following illustrates:
  * 
  * <pre>
  * int sum([int] data):
@@ -50,32 +52,79 @@ import wyil.util.*;
  * <pre>
  * int sum([int] data):
  * body: 
- *   var r, $2, item
- *   const 0 : int                           
- *   store r : int                           
- *   move data : [int]                       
- *   forall item [r] : [int]                 
- *       move r : int                            
- *       load item : int                         
- *       add : int                               
- *       store r : int                           
- *   move r : int                            
- *   return : int
+ *   const %1 = 0          : int                      
+ *   assign %2 = %0        : [int]                 
+ *   forall %3 in %2 ()    : [int]              
+ *       assign %4 = %1    : int                                
+ *       add %1 = %4, %3   : int                                     
+ *   return %1             : int
  * </pre>
  * 
  * Here, we can see that every bytecode is associated with one (or more) types.
  * These types are inferred by the compiler during type propagation.
  * 
  * @author David J. Pearce
- * 
  */
 public abstract class Code {
-	public final static int THIS_SLOT = 0;
-	
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int NULL_REG = -1;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_0 = 0;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_1 = 1;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_2 = 2;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_3 = 3;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_4 = 4;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_5 = 5;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_6 = 6;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_7 = 7;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_8 = 8;
+
+	/**
+	 * Provided to aid readability of client code.
+	 */
+	public final static int REG_9 = 9;
+
 	// ===============================================================
 	// Bytecode Constructors
 	// ===============================================================
-	
+
 	/**
 	 * Construct an <code>assert</code> bytecode which raises an assertion
 	 * failure with the given if the given condition evaluates to false.
@@ -84,17 +133,32 @@ public abstract class Code {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assert Assert(Type type, COp cop, String message) {
-		return get(new Assert(type,cop,message));
+	public static Assert Assert(Type type, int leftOperand, int rightOperand,
+			Comparator cop, String message) {
+		return get(new Assert(type, leftOperand, rightOperand, cop, message));
 	}
-	
-	public static BinOp BinOp(Type type, BOp op) {
-		return get(new BinOp(type,op));
-	}
-	
+
 	/**
-	 * Construct a <code>const</code> bytecode which loads a given constant
-	 * onto the stack.
+	 * Construct an <code>assumet</code> bytecode which raises an assertion
+	 * failure with the given if the given condition evaluates to false.
+	 * 
+	 * @param message
+	 *            --- message to report upon failure.
+	 * @return
+	 */
+	public static Assume Assume(Type type, int leftOperand, int rightOperand,
+			Comparator cop, String message) {
+		return get(new Assume(type, leftOperand, rightOperand, cop, message));
+	}
+
+	public static BinArithOp BinArithOp(Type type, int target, int leftOperand,
+			int rightOperand, BinArithKind op) {
+		return get(new BinArithOp(type, target, leftOperand, rightOperand, op));
+	}
+
+	/**
+	 * Construct a <code>const</code> bytecode which loads a given constant onto
+	 * the stack.
 	 * 
 	 * @param afterType
 	 *            --- record type.
@@ -102,24 +166,36 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Const Const(Value constant) {
-		return get(new Const(constant));
+	public static Const Const(int target, Value constant) {
+		return get(new Const(target, constant));
 	}
-	
-	public static Convert Convert(Type from, Type to) {
-		return get(new Convert(from,to));
-	}
-	
-	public static final Debug debug = new Debug();
 
-	public static Destructure Destructure(Type from) {
-		return get(new Destructure(from));
+	/**
+	 * Construct a <code>copy</code> bytecode which copies the value from a
+	 * given operand register into a given target register.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param reg
+	 *            --- reg to load.
+	 * @return
+	 */
+	public static Assign Assign(Type type, int target, int operand) {
+		return get(new Assign(type, target, operand));
 	}
-	
+
+	public static Convert Convert(Type from, int target, int operand, Type to) {
+		return get(new Convert(from, target, operand, to));
+	}
+
+	public static final Debug Debug(int operand) {
+		return get(new Debug(operand));
+	}
+
 	public static LoopEnd End(String label) {
 		return get(new LoopEnd(label));
 	}
-		
+
 	/**
 	 * Construct a <code>fieldload</code> bytecode which reads a given field
 	 * from a record of a given type.
@@ -130,10 +206,11 @@ public abstract class Code {
 	 *            --- field to load.
 	 * @return
 	 */
-	public static FieldLoad FieldLoad(Type.EffectiveRecord type, String field) {
-		return get(new FieldLoad(type,field));
-	}	
-	
+	public static FieldLoad FieldLoad(Type.EffectiveRecord type, int target,
+			int operand, String field) {
+		return get(new FieldLoad(type, target, operand, field));
+	}
+
 	/**
 	 * Construct a <code>goto</code> bytecode which branches unconditionally to
 	 * a given label.
@@ -146,62 +223,45 @@ public abstract class Code {
 		return get(new Goto(label));
 	}
 
-	/**
-	 * Construct an <code>invoke</code> bytecode which invokes a method.
-	 * 
-	 * @param label
-	 *            --- destination label.
-	 * @return
-	 */
-	public static Invoke Invoke(Type.FunctionOrMethod fun, NameID name, boolean retval) {
-		return get(new Invoke(fun,name,retval));
+	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
+			Collection<Integer> operands, NameID name) {
+		return get(new Invoke(fun, target, toIntArray(operands), name));
 	}
 
-	public static Not Not() {
-		return get(new Not());
+	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
+			int[] operands, NameID name) {
+		return get(new Invoke(fun, target, operands, name));
 	}
-	
-	/**
-	 * Construct a <code>load</code> bytecode which pushes a given register onto
-	 * the stack.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param reg
-	 *            --- reg to load.
-	 * @return
-	 */
-	public static Load Load(Type type, int reg) {
-		return get(new Load(type,reg));
+
+	public static Not Not(int target, int operand) {
+		return get(new Not(target, operand));
 	}
-	
-	public static LengthOf LengthOf(Type.EffectiveCollection type) {
-		return get(new LengthOf(type));
+
+	public static LengthOf LengthOf(Type.EffectiveCollection type, int target,
+			int operand) {
+		return get(new LengthOf(type, target, operand));
 	}
-	
-	/**
-	 * Construct a <code>move</code> bytecode which moves a given register onto
-	 * the stack. The register contents of the register are voided after this
-	 * operation.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param reg
-	 *            --- reg to load.
-	 * @return
-	 */
-	public static Move Move(Type type, int reg) {
-		return get(new Move(type,reg));
+
+	public static Move Move(Type type, int target, int operand) {
+		return get(new Move(type, target, operand));
 	}
-	
-	public static SubList SubList(Type.EffectiveList type) {
-		return get(new SubList(type));
+
+	public static SubList SubList(Type.EffectiveList type, int target,
+			int sourceOperand, int leftOperand, int rightOperand) {
+		int[] operands = new int[] { sourceOperand, leftOperand, rightOperand };
+		return get(new SubList(type, target, operands));
 	}
-	
-	public static ListAppend ListAppend(Type.EffectiveList type, OpDir dir) {
-		return get(new ListAppend(type,dir));
+
+	private static SubList SubList(Type.EffectiveList type, int target,
+			int[] operands) {
+		return get(new SubList(type, target, operands));
 	}
-	
+
+	public static BinListOp BinListOp(Type.EffectiveList type, int target,
+			int leftOperand, int rightOperand, BinListKind dir) {
+		return get(new BinListOp(type, target, leftOperand, rightOperand, dir));
+	}
+
 	/**
 	 * Construct a <code>listload</code> bytecode which reads a value from a
 	 * given index in a given list.
@@ -210,71 +270,81 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static IndexOf IndexOf(Type.EffectiveMap type) {
-		return get(new IndexOf(type));
+	public static IndexOf IndexOf(Type.EffectiveIndexible type, int target,
+			int leftOperand, int rightOperand) {
+		return get(new IndexOf(type, target, leftOperand, rightOperand));
+	}
+
+	public static Loop Loop(String label, Collection<Integer> operands) {
+		return get(new Loop(label, toIntArray(operands)));
+	}
+
+	public static Loop Loop(String label, int[] modifies) {
+		return get(new Loop(label, modifies));
+	}
+
+	public static ForAll ForAll(Type.EffectiveCollection type,
+			int sourceOperand, int indexOperand,
+			Collection<Integer> modifiedOperands, String label) {
+		return get(new ForAll(type, sourceOperand, indexOperand,
+				toIntArray(modifiedOperands), label));
+	}
+
+	public static ForAll ForAll(Type.EffectiveCollection type,
+			int sourceOperand, int indexOperand, int[] modifiedOperands,
+			String label) {
+		return get(new ForAll(type, sourceOperand, indexOperand,
+				modifiedOperands, label));
 	}
 
 	/**
-	 * Construct a <code>loop</code> bytecode which iterates the sequence of
-	 * bytecodes upto the exit label.
+	 * Construct a <code>newdict</code> bytecode which constructs a new
+	 * map and puts it on the stack.
 	 * 
-	 * @param label
-	 *            --- exit label.
+	 * @param type
 	 * @return
 	 */
-	public static Loop Loop(String label, Collection<Integer> modifies) {
-		return get(new Loop(label,modifies));
+	public static NewMap NewMap(Type.Map type, int target,
+			Collection<Integer> operands) {
+		return get(new NewMap(type, target, toIntArray(operands)));
+	}
+
+	public static NewMap NewMap(Type.Map type, int target, int[] operands) {
+		return get(new NewMap(type, target, operands));
 	}
 
 	/**
-	 * Construct a <code>forall</code> bytecode which iterates over a given
-	 * source collection stored on top of the stack. The supplied variable
-	 * <code>var</code> is used as the iterator. The exit label denotes the end
-	 * of the loop block.
-	 * 
-	 * 
-	 * @param label
-	 *            --- exit label.
-	 * @return
-	 */
-	public static ForAll ForAll(Type.EffectiveCollection type, int var,
-			String label, Collection<Integer> modifies) {
-		return get(new ForAll(type, var, label, modifies));
-	}				
-	
-	/**
-	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
-	 * and puts it on the stack.
+	 * Construct a <code>newset</code> bytecode which constructs a new set and
+	 * puts it on the stack.
 	 * 
 	 * @param type
 	 * @return
 	 */
-	public static NewDict NewDict(Type.Dictionary type, int nargs) {
-		return get(new NewDict(type,nargs));
+	public static NewSet NewSet(Type.Set type, int target,
+			Collection<Integer> operands) {
+		return get(new NewSet(type, target, toIntArray(operands)));
 	}
-	
+
+	public static NewSet NewSet(Type.Set type, int target, int[] operands) {
+		return get(new NewSet(type, target, operands));
+	}
+
 	/**
-	 * Construct a <code>newset</code> bytecode which constructs a new set
-	 * and puts it on the stack.
+	 * Construct a <code>newlist</code> bytecode which constructs a new list and
+	 * puts it on the stack.
 	 * 
 	 * @param type
 	 * @return
 	 */
-	public static NewSet NewSet(Type.Set type, int nargs) {
-		return get(new NewSet(type,nargs));
+	public static NewList NewList(Type.List type, int target,
+			Collection<Integer> operands) {
+		return get(new NewList(type, target, toIntArray(operands)));
 	}
-	
-	/**
-	 * Construct a <code>newlist</code> bytecode which constructs a new list
-	 * and puts it on the stack.
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public static NewList NewList(Type.List type, int nargs) {
-		return get(new NewList(type,nargs));
+
+	public static NewList NewList(Type.List type, int target, int[] operands) {
+		return get(new NewList(type, target, operands));
 	}
-	
+
 	/**
 	 * Construct a <code>newtuple</code> bytecode which constructs a new tuple
 	 * and puts it on the stack.
@@ -282,10 +352,15 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewTuple NewTuple(Type.Tuple type, int nargs) {
-		return get(new NewTuple(type, nargs));
+	public static NewTuple NewTuple(Type.Tuple type, int target,
+			Collection<Integer> operands) {
+		return get(new NewTuple(type, target, toIntArray(operands)));
 	}
-	
+
+	public static NewTuple NewTuple(Type.Tuple type, int target, int[] operands) {
+		return get(new NewTuple(type, target, operands));
+	}
+
 	/**
 	 * Construct a <code>newrecord</code> bytecode which constructs a new record
 	 * and puts it on the stack.
@@ -293,101 +368,90 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewRecord NewRecord(Type.Record type) {
-		return get(new NewRecord(type));
-	}
-	
-	public static Return Return(Type t) {
-		return get(new Return(t));
-	}
-	
-	public static IfGoto IfGoto(Type type, COp cop, String label) {
-		return get(new IfGoto(type,cop,label));
+	public static NewRecord NewRecord(Type.Record type, int target,
+			Collection<Integer> operands) {
+		return get(new NewRecord(type, target, toIntArray(operands)));
 	}
 
-	public static IfType IfType(Type type, int slot, Type test, String label) {
-		return get(new IfType(type,slot,test,label));
+	public static NewRecord NewRecord(Type.Record type, int target, int[] operands) {
+		return get(new NewRecord(type, target, operands));
 	}
-	
+
 	/**
-	 * Construct an <code>indirectsend</code> bytecode which sends an indirect
-	 * message to an actor. This may be either synchronous or asynchronous.
+	 * Construct a return bytecode which does return a value and, hence, its
+	 * type automatically defaults to void.
 	 * 
-	 * @param label
-	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Message msg, boolean synchronous, boolean retval) {
-		return get(new IndirectSend(msg,synchronous,retval));
+	public static Return Return() {
+		return get(new Return(Type.T_VOID, NULL_REG));
 	}
-	
+
 	/**
-	 * Construct an <code>indirectinvoke</code> bytecode which sends an indirect
-	 * message to an actor. This may be either synchronous or asynchronous.
+	 * Construct a return bytecode which reads a value from the operand register
+	 * and returns it.
 	 * 
-	 * @param label
-	 *            --- destination label.
+	 * @param type
+	 *            --- type of the value to be returned (cannot be void).
+	 * @param operand
+	 *            --- register to read return value from.
 	 * @return
 	 */
-	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun, boolean retval) {
-		return get(new IndirectInvoke(fun,retval));
+	public static Return Return(Type type, int operand) {
+		return get(new Return(type, operand));
 	}
-	
-	public static Invert Invert(Type type) {
-		return get(new Invert(type));
-	}	
-	
+
+	public static If If(Type type, int leftOperand, int rightOperand,
+			Comparator cop, String label) {
+		return get(new If(type, leftOperand, rightOperand, cop, label));
+	}
+
+	public static IfIs IfIs(Type type, int leftOperand, Type rightOperand,
+			String label) {
+		return get(new IfIs(type, leftOperand, rightOperand, label));
+	}
+
+	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
+			int target, int operand, Collection<Integer> operands) {
+		return get(new IndirectInvoke(fun, target, operand,
+				toIntArray(operands)));
+	}
+
+	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
+			int target, int operand, int[] operands) {
+		return get(new IndirectInvoke(fun, target, operand, operands));
+	}
+
+	public static Invert Invert(Type type, int target, int operand) {
+		return get(new Invert(type, target, operand));
+	}
+
 	public static Label Label(String label) {
 		return get(new Label(label));
 	}
-	
-	public static final Skip Skip = new Skip();
-	
-	public static SetUnion SetUnion(Type.EffectiveSet type, OpDir dir) {
-		return get(new SetUnion(type,dir));
+
+	public static final Nop Nop = new Nop();
+
+	public static BinSetOp BinSetOp(Type.EffectiveSet type, int target,
+			int leftOperand, int rightOperand, BinSetKind operation) {
+		return get(new BinSetOp(type, target, leftOperand, rightOperand, operation));
 	}
-	
-	public static SetIntersect SetIntersect(Type.EffectiveSet type, OpDir dir) {
-		return get(new SetIntersect(type,dir));
+
+	public static StringOp StringOp(int target, int leftOperand,
+			int rightOperand, StringOperation operation) {
+		return get(new StringOp(target, leftOperand, rightOperand, operation));
 	}
-	
-	public static SetDifference SetDifference(Type.EffectiveSet type, OpDir dir) {
-		return get(new SetDifference(type,dir));
+
+	public static SubString SubString(int target, int sourceOperand,
+			int leftOperand, int rightOperand) {
+		int[] operands = new int[] { sourceOperand, leftOperand, rightOperand };
+		return get(new SubString(target, operands));
 	}
-	
-	public static StringAppend StringAppend(OpDir dir) {
-		return get(new StringAppend(dir));
+
+	private static SubString SubString(int target, int[] operands) {
+		return get(new SubString(target, operands));
 	}
-	
-	public static SubString SubString() {
-		return get(new SubString());
-	}
-	
-	/**
-	 * Construct an <code>send</code> bytecode which sends a message to an
-	 * actor. This may be either synchronous or asynchronous.
-	 * 
-	 * @param label
-	 *            --- destination label.
-	 * @return
-	 */
-	public static Send Send(Type.Message meth, NameID name, boolean synchronous, boolean retval) {
-		return get(new Send(meth,name,synchronous,retval));
-	}	
-	
-	/**
-	 * Construct a <code>store</code> bytecode which writes a given register.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param reg
-	 *            --- reg to load.
-	 * @return
-	 */
-	public static Store Store(Type type, int reg) {
-		return get(new Store(type,reg));
-	}
-	
+
 	/**
 	 * Construct a <code>switch</code> bytecode which pops a value off the
 	 * stack, and switches to a given label based on it.
@@ -400,26 +464,26 @@ public abstract class Code {
 	 *            --- map from values to destination labels.
 	 * @return
 	 */
-	public static Switch Switch(Type type, String defaultLabel,
+	public static Switch Switch(Type type, int operand, String defaultLabel,
 			Collection<Pair<Value, String>> cases) {
-		return get(new Switch(type,defaultLabel,cases));
+		return get(new Switch(type, operand, defaultLabel, cases));
 	}
 
 	/**
-	 * Construct a <code>throw</code> bytecode which pops a value off the
-	 * stack and throws it.
+	 * Construct a <code>throw</code> bytecode which pops a value off the stack
+	 * and throws it.
 	 * 
 	 * @param afterType
-	 *            --- value type to throw 
+	 *            --- value type to throw
 	 * @return
 	 */
-	public static Throw Throw(Type t) {
-		return get(new Throw(t));
+	public static Throw Throw(Type type, int operand) {
+		return get(new Throw(type, operand));
 	}
-	
+
 	/**
 	 * Construct a <code>trycatch</code> bytecode which defines a region of
-	 * bytecodes which are covered by one or more catch handles. 
+	 * bytecodes which are covered by one or more catch handles.
 	 * 
 	 * @param target
 	 *            --- identifies end-of-block label.
@@ -427,75 +491,75 @@ public abstract class Code {
 	 *            --- map from types to destination labels.
 	 * @return
 	 */
-	public static TryCatch TryCatch(String target,
+	public static TryCatch TryCatch(int operand, String target,
 			Collection<Pair<Type, String>> catches) {
-		return get(new TryCatch(target, catches));
+		return get(new TryCatch(operand, target, catches));
 	}
-	
+
 	public static TryEnd TryEnd(String label) {
 		return get(new TryEnd(label));
 	}
-	
-	/**
-	 * Construct a <code>tupleload</code> bytecode which reads the value
-	 * at a given index in a tuple
-	 * 
-	 * @param type
-	 *            --- dictionary type.
-	 * @return
-	 */
-	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int index) {
-		return get(new TupleLoad(type,index));
-	}
-	
-	public static Negate Negate(Type type) {
-		return get(new Negate(type));
-	}		
-	
-	public static New New(Type.Reference type) {
-		return get(new New(type));
-	}
-	
-	public static Dereference Dereference(Type.Reference type) {
-		return get(new Dereference(type));
-	}
-	
-	/**
-	 * Construct a <code>update</code> bytecode which writes a value into a
-	 * compound structure, as determined by a given access path.
-	 * 
-	 * @param afterType
-	 *            --- record type.
-	 * @param field
-	 *            --- field to write.
-	 * @return
-	 */
-	public static Update Update(Type beforeType, Type afterType, int slot,
-			int level, Collection<String> fields) {
-		return get(new Update(beforeType, afterType, slot, level, fields));
+
+	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int target,
+			int operand, int index) {
+		return get(new TupleLoad(type, target, operand, index));
 	}
 
-	public static Void Void(Type type, int slot) {
-		return get(new Void(type,slot));
+	public static NewObject NewObject(Type.Reference type, int target, int operand) {
+		return get(new NewObject(type, target, operand));
+	}
+
+	public static Dereference Dereference(Type.Reference type, int target,
+			int operand) {
+		return get(new Dereference(type, target, operand));
 	}
 	
+	public static Update Update(Type beforeType, int target, int operand,
+			Collection<Integer> operands, Type afterType,
+			Collection<String> fields) {
+		return get(new Update(beforeType, target, operand,
+				toIntArray(operands), afterType, fields));
+	}
+
+	public static Update Update(Type beforeType, int target, int operand,
+			int[] operands, Type afterType, Collection<String> fields) {
+		return get(new Update(beforeType, target, operand, operands, afterType,
+				fields));
+	}
+
+	public static UnArithOp UnArithOp(Type type, int target, int operand,
+			UnArithKind uop) {
+		return get(new UnArithOp(type, target, operand, uop));
+	}
+	
+	public static Void Void(Type type, int[] operands) {
+		return get(new Void(type, operands));
+	}
+
 	// ===============================================================
 	// Abstract Methods
 	// ===============================================================
-	
-	// The following method adds any slots used by a given bytecode 
-	public void slots(Set<Integer> slots) {
+
+	/**
+	 * Determine which registers are used in this bytecode. This can be used,
+	 * for example, to determine the size of the register file required for a
+	 * given method.
+	 * 
+	 * @param register
+	 */
+	public void registers(java.util.Set<Integer> register) {
 		// default implementation does nothing
 	}
-	
+
 	/**
-	 * The remap method remaps all slots according to a given binding. Slots not
+	 * Remaps all registers according to a given binding. Registers not
 	 * mentioned in the binding retain their original value.
 	 * 
 	 * @param binding
+	 *            --- map from (existing) registers to (new) registers.
 	 * @return
 	 */
-	public Code remap(Map<Integer,Integer> binding) {
+	public Code remap(Map<Integer, Integer> binding) {
 		return this;
 	}
 
@@ -505,13 +569,395 @@ public abstract class Code {
 	 * @param labels
 	 * @return
 	 */
-	public Code relabel(Map<String,String> labels) {
+	public Code relabel(Map<String, String> labels) {
 		return this;
 	}
-	
+
+	// ===============================================================
+	// Abstract Bytecodes
+	// ===============================================================
+
+	public static abstract class AbstractAssignable extends Code {
+		public final int target;
+
+		private AbstractAssignable(int target) {
+			this.target = target;
+		}
+	}
+
+	/**
+	 * Represents the set of bytcodes which take a single register operand and
+	 * write a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractUnaryAssignable<T> extends
+			AbstractAssignable {
+		public final T type;
+		public final int operand;
+
+		private AbstractUnaryAssignable(T type, int target, int operand) {
+			super(target);
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractUnOp type argument cannot be null");
+			}
+			this.type = type;
+			this.operand = operand;
+		}
+
+		@Override
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(target);
+			registers.add(operand);
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(operand);
+			if (nTarget != null || nOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;
+				return clone(nTarget, nOperand);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nTarget, int nOperand);
+
+		public int hashCode() {
+			return type.hashCode() + target + operand;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractUnaryAssignable) {
+				AbstractUnaryAssignable bo = (AbstractUnaryAssignable) o;
+				return target == bo.target && operand == bo.operand
+						&& type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Represents the set of bytcodes which take a single register operand, and
+	 * do not write any result.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractUnaryOp<T> extends Code {
+		public final T type;
+		public final int operand;
+
+		private AbstractUnaryOp(T type, int operand) {
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractUnaryOp type argument cannot be null");
+			}
+			this.type = type;
+			this.operand = operand;
+		}
+
+		@Override
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(operand);
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if (nOperand != null) {
+				return clone(nOperand);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nOperand);
+
+		public int hashCode() {
+			return type.hashCode() + operand;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractUnaryOp) {
+				AbstractUnaryOp bo = (AbstractUnaryOp) o;
+				return operand == bo.operand && type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Represents the set of bytcodes which take two register operands and write
+	 * a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractBinaryAssignable<T> extends
+			AbstractAssignable {
+		public final T type;
+		public final int leftOperand;
+		public final int rightOperand;
+
+		private AbstractBinaryAssignable(T type, int target, int leftOperand,
+				int rightOperand) {
+			super(target);
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractBinOp type argument cannot be null");
+			}
+			this.type = type;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
+		}
+
+		@Override
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(target);
+			registers.add(leftOperand);
+			registers.add(rightOperand);
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nTarget != null || nLeftOperand != null
+					|| nRightOperand != null) {
+				nTarget = nTarget != null ? nTarget : target;
+				nLeftOperand = nLeftOperand != null ? nLeftOperand
+						: leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand
+						: rightOperand;
+				return clone(nTarget, nLeftOperand, nRightOperand);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nTarget, int nLeftOperand,
+				int nRightOperand);
+
+		public int hashCode() {
+			return type.hashCode() + target + leftOperand + rightOperand;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractBinaryAssignable) {
+				AbstractBinaryAssignable bo = (AbstractBinaryAssignable) o;
+				return target == bo.target && leftOperand == bo.leftOperand
+						&& rightOperand == bo.rightOperand
+						&& type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Represents the set of bytcodes which take an arbitrary number of register
+	 * operands and write a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractNaryAssignable<T> extends
+			AbstractAssignable {
+		public final T type;
+		public final int[] operands;
+
+		private AbstractNaryAssignable(T type, int target, int[] operands) {
+			super(target);
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractBinOp type argument cannot be null");
+			}
+			this.type = type;
+			this.operands = operands;
+		}
+
+		@Override
+		public final void registers(java.util.Set<Integer> registers) {
+			if (target >= 0) {
+				registers.add(target);
+			}
+			for (int i = 0; i != operands.length; ++i) {
+				registers.add(operands[i]);
+			}
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			int[] nOperands = remap(binding, operands);
+			if (nTarget != null || nOperands != operands) {
+				nTarget = nTarget != null ? nTarget : target;
+				return clone(nTarget, nOperands);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nTarget, int[] nOperands);
+
+		public int hashCode() {
+			return type.hashCode() + target + Arrays.hashCode(operands);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractNaryAssignable) {
+				AbstractNaryAssignable bo = (AbstractNaryAssignable) o;
+				return target == bo.target
+						&& Arrays.equals(operands, bo.operands)
+						&& type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Represents the set of bytcodes which take an arbitrary number of register
+	 * operands and write a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractSplitNaryAssignable<T> extends
+			AbstractAssignable {
+		public final T type;
+		public final int operand;
+		public final int[] operands;
+
+		private AbstractSplitNaryAssignable(T type, int target, int operand,
+				int[] operands) {
+			super(target);
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractSplitNaryAssignable type argument cannot be null");
+			}
+			this.type = type;
+			this.operand = operand;
+			this.operands = operands;
+		}
+
+		@Override
+		public final void registers(java.util.Set<Integer> registers) {
+			if (target >= 0) {
+				registers.add(target);
+			}
+			registers.add(operand);
+			for (int i = 0; i != operands.length; ++i) {
+				registers.add(operands[i]);
+			}
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			Integer nOperand = binding.get(target);
+			int[] nOperands = remap(binding, operands);
+			if (nTarget != null || nOperand != null || nOperands != operands) {
+				nTarget = nTarget != null ? nTarget : target;
+				nOperand = nOperand != null ? nOperand : operand;
+				return clone(nTarget, nOperand, nOperands);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nTarget, int nOperand, int[] nOperands);
+
+		public int hashCode() {
+			return type.hashCode() + target + operand
+					+ Arrays.hashCode(operands);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractSplitNaryAssignable) {
+				AbstractSplitNaryAssignable bo = (AbstractSplitNaryAssignable) o;
+				return target == bo.target && operand == bo.operand
+						&& Arrays.equals(operands, bo.operands)
+						&& type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Represents the set of bytcodes which take two register operands and
+	 * perform a comparison of their values.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractBinaryOp<T> extends Code {
+		public final T type;
+		public final int leftOperand;
+		public final int rightOperand;
+
+		private AbstractBinaryOp(T type, int leftOperand, int rightOperand) {
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractBinCond type argument cannot be null");
+			}
+			this.type = type;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
+		}
+
+		@Override
+		public final void registers(java.util.Set<Integer> registers) {
+			registers.add(leftOperand);
+			registers.add(rightOperand);
+		}
+
+		@Override
+		public final Code remap(Map<Integer, Integer> binding) {
+			Integer nLeftOperand = binding.get(leftOperand);
+			Integer nRightOperand = binding.get(rightOperand);
+			if (nLeftOperand != null || nRightOperand != null) {
+				nLeftOperand = nLeftOperand != null ? nLeftOperand
+						: leftOperand;
+				nRightOperand = nRightOperand != null ? nRightOperand
+						: rightOperand;
+				return clone(nLeftOperand, nRightOperand);
+			}
+			return this;
+		}
+
+		protected abstract Code clone(int nLeftOperand, int nRightOperand);
+
+		public int hashCode() {
+			return type.hashCode() + leftOperand + rightOperand;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractBinaryOp) {
+				AbstractBinaryOp bo = (AbstractBinaryOp) o;
+				return leftOperand == bo.leftOperand
+						&& rightOperand == bo.rightOperand
+						&& type.equals(bo.type);
+			}
+			return false;
+		}
+	}
+
 	// ===============================================================
 	// Bytecode Implementations
-	// ===============================================================	
+	// ===============================================================
 
 	/**
 	 * Represents a binary operator (e.g. '+','-',etc) that is provided to a
@@ -520,46 +966,69 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public enum BOp { 
-		ADD{
-			public String toString() { return "add"; }
+	public enum BinArithKind {
+		ADD {
+			public String toString() {
+				return "add";
+			}
 		},
-		SUB{
-			public String toString() { return "sub"; }
+		SUB {
+			public String toString() {
+				return "sub";
+			}
 		},
-		MUL{
-			public String toString() { return "mul"; }
+		MUL {
+			public String toString() {
+				return "mul";
+			}
 		},
-		DIV{
-			public String toString() { return "div"; }
-		},		
-		REM{
-			public String toString() { return "rem"; }
+		DIV {
+			public String toString() {
+				return "div";
+			}
 		},
-		RANGE{
-			public String toString() { return "range"; }
+		REM {
+			public String toString() {
+				return "rem";
+			}
 		},
-		BITWISEOR{
-			public String toString() { return "or"; }
+		RANGE {
+			public String toString() {
+				return "range";
+			}
 		},
-		BITWISEXOR{
-			public String toString() { return "xor"; }
+		BITWISEOR {
+			public String toString() {
+				return "or";
+			}
 		},
-		BITWISEAND{
-			public String toString() { return "and"; }
+		BITWISEXOR {
+			public String toString() {
+				return "xor";
+			}
 		},
-		LEFTSHIFT{
-			public String toString() { return "shl"; }
+		BITWISEAND {
+			public String toString() {
+				return "and";
+			}
 		},
-		RIGHTSHIFT{
-			public String toString() { return "shr"; }
+		LEFTSHIFT {
+			public String toString() {
+				return "shl";
+			}
+		},
+		RIGHTSHIFT {
+			public String toString() {
+				return "shr";
+			}
 		},
 	};
 
 	/**
 	 * <p>
-	 * A binary operation takes two items off the stack and pushes a single
-	 * result. The binary operators are:
+	 * A binary operation which reads two numeric values from the operand
+	 * registers, performs an operation on them and writes the result to the
+	 * target register. The binary operators are:
 	 * </p>
 	 * <ul>
 	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
@@ -569,366 +1038,625 @@ public abstract class Code {
 	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
 	 * <li><i>leftshift,rightshift</i></li>
 	 * </ul>
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     return ((x * y) + 1) / 2
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     mul %2 = %0, %1   : int                  
+	 *     const %3 = 1      : int                      
+	 *     add %2 = %2, %3   : int                  
+	 *     const %3 = 2      : int                      
+	 *     const %4 = 0      : int                      
+	 *     assertne %3, %4 "division by zero" : int
+	 *     div %2 = %2, %3   : int                  
+	 *     return %2         : int
+	 * </pre>
+	 * 
+	 * Here, the <code>assertne</code> bytecode has been included to check
+	 * against division-by-zero. In this particular case the assertion is known
+	 * true at compile time and, in practice, would be compiled away.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class BinOp extends Code {		
-		public final BOp bop;
-		public final Type type;
-		
-		private BinOp(Type type, BOp bop) {
-			if(bop == null) {
-				throw new IllegalArgumentException("BinOp bop argument cannot be null");
+	public static final class BinArithOp extends AbstractBinaryAssignable<Type> {
+		public final BinArithKind kind;
+
+		private BinArithOp(Type type, int target, int lhs, int rhs, BinArithKind bop) {
+			super(type, target, lhs, rhs);
+			if (bop == null) {
+				throw new IllegalArgumentException(
+						"BinOp bop argument cannot be null");
 			}
-			this.bop = bop;
-			this.type = type;
+			this.kind = bop;
 		}
-		
+
+		@Override
+		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.BinArithOp(type, nTarget, nLeftOperand, nRightOperand, kind);
+		}
+
 		public int hashCode() {
-			if(type == null) {
-				return bop.hashCode();
-			} else {
-				return type.hashCode() + bop.hashCode();
-			}
+			return kind.hashCode() + super.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof BinOp) {
-				BinOp bo = (BinOp) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type))) && bop.equals(bo.bop); 
+			if (o instanceof BinArithOp) {
+				BinArithOp bo = (BinArithOp) o;
+				return kind.equals(bo.kind) && super.equals(bo);
 			}
 			return false;
 		}
-				
+
 		public String toString() {
-			return toString(bop.toString(),type);
+			return kind + " %" + target + " = %" + leftOperand + ", %"
+					+ rightOperand + " : " + type;
 		}
 	}
 
 	/**
-	 * <p>
-	 * Pops a value from the stack, converts it to a given type and pushes it
-	 * back on. This bytecode is the only way to change the type of a value.
-	 * It's purpose is to simplify implementations which have different
-	 * representations of data types.
-	 * </p>
+	 * Reads a value from the operand register, converts it to a given type and
+	 * writes the result to the target register. This bytecode is the only way
+	 * to change the type of a value. It's purpose is to simplify
+	 * implementations which have different representations of data types. A
+	 * convert bytecode must be inserted whenever the type of a register
+	 * changes. This includes at control-flow meet points, when the value is
+	 * passed as a parameter, assigned to a field, etc. For example, the
+	 * following Whiley code:
 	 * 
+	 * <pre>
+	 * real f(int x):
+	 *     return x + 1
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * real f(int x):
+	 * body: 
+	 *     const %2 = 1           : int                      
+	 *     add %1 = %0, %2        : int                  
+	 *     convert %1 = %1 real   : int             
+	 *     return %1              : real
+	 * </pre>
 	 * <p>
-	 * In many cases, this bytecode may correspond to a nop on the hardware.
-	 * Consider converting from <code>[any]</code> to <code>any</code>. On the
-	 * JVM, <code>any</code> translates to <code>Object</code>, whilst
+	 * Here, we see that the <code>int</code> value in register <code>%1</code>
+	 * must be explicitly converted into a <code>real</code> value before it can
+	 * be returned from this function.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> In many cases, this bytecode may correspond to a nop on the
+	 * hardware. Consider converting from <code>[any]</code> to <code>any</code>
+	 * . On the JVM, <code>any</code> translates to <code>Object</code>, whilst
 	 * <code>[any]</code> translates to <code>List</code> (which is an instance
 	 * of <code>Object</code>). Thus, no conversion is necessary since
-	 * <code>List</code> can safely flow into <code>Object</code>.  
+	 * <code>List</code> can safely flow into <code>Object</code>.
 	 * </p>
 	 * 
-	 * <p>
-	 * A convert bytecode must be inserted whenever the type of a register
-	 * changes. This includes at control-flow meet points, when the value is
-	 * passed as a parameter, assigned to a field, etc.
-	 * </p>
 	 */
-	public static final class Convert extends Code {
-		public final Type from;
-		public final Type to;
-		
-		private Convert(Type from, Type to) {
-			if(to == null) {
-				throw new IllegalArgumentException("Convert to argument cannot be null");
+	public static final class Convert extends AbstractUnaryAssignable<Type> {
+		public final Type result;
+
+		private Convert(Type from, int target, int operand, Type result) {
+			super(from, target, operand);
+			if (result == null) {
+				throw new IllegalArgumentException(
+						"Convert to argument cannot be null");
 			}
-			this.from = from;
-			this.to = to;
+			this.result = result;
 		}
-		
+
+		public Code clone(int nTarget, int nOperand) {
+			return Code.Convert(type, nTarget, nOperand, result);
+		}
+
 		public int hashCode() {
-			if(from == null) {
-				return to.hashCode();
-			} else {
-				return from.hashCode() + to.hashCode();
-			}
+			return result.hashCode() + super.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Convert) {
+			if (o instanceof Convert) {
 				Convert c = (Convert) o;
-				return (from == c.from || (from != null && from.equals(c.from)))
-						&& to.equals(c.to);  
+				return super.equals(c) && result.equals(c.result);
 			}
 			return false;
 		}
-				
+
 		public String toString() {
-			return "convert " + from + " to " + to;
+			return "convert %" + target + " = %" + operand + " " + result
+					+ " : " + type;
 		}
 	}
 
 	/**
-	 * Pushes a constant value onto the stack. This includes integer constants,
-	 * rational constants, list constants, set constants, dictionary constants,
-	 * function constants, etc.
+	 * Writes a constant value to a target register. This includes
+	 * <i>integers</i>, <i>rationals</i>, <i>lists</i>, <i>sets</i>,
+	 * <i>maps</i>, etc. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     xs = {1,2.12}
+	 *     return |xs| + 1
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body: 
+	 *     var xs
+	 *     const %2 = 1               : int                      
+	 *     convert %2 = % 2 int|real  : int         
+	 *     const %3 = 2.12            : real                   
+	 *     convert %3 = % 3 int|real  : real        
+	 *     newset %1 = (%2, %3)       : {int|real}       
+	 *     assign %3 = %1             : {int|real}            
+	 *     lengthof %3 = % 3          : {int|real}          
+	 *     const %4 = 1               : int                      
+	 *     add %2 = % 3, %4           : int                  
+	 *     return %2                  : int
+	 * </pre>
+	 * 
+	 * Here, we see two kinds of constants values being used: integers (i.e.
+	 * <code>const %2 = 1</code>) and rationals (i.e. <code>const %3 = 2.12</code>).
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Const extends Code {		
+	public static final class Const extends AbstractAssignable {
 		public final Value constant;
-		
-		private Const(Value constant) {
+
+		private Const(int target, Value constant) {
+			super(target);
 			this.constant = constant;
 		}
-		
-		public int hashCode() {
-			return constant.hashCode();
+
+		@Override
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(target);
 		}
-		
+
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target);
+			if (nTarget != null) {
+				return Code.Const(nTarget, constant);
+			}
+			return this;
+		}
+
+		public int hashCode() {
+			return constant.hashCode() + target;
+		}
+
 		public boolean equals(Object o) {
-			if(o instanceof Const) {
+			if (o instanceof Const) {
 				Const c = (Const) o;
-				return constant.equals(c.constant);  
+				return constant.equals(c.constant) && target == c.target;
 			}
 			return false;
 		}
-		
+
 		public String toString() {
-			return toString("const " + constant,constant.type());
+			return "const %" + target + " = " + constant + " : "
+					+ constant.type();
 		}
 	}
 
 	/**
-	 * Pops a string from the stack and writes it to the debug console. This
-	 * bytecode is not intended to form part of the programs operation. Rather,
-	 * it is to facilitate debugging within functions (since they cannot have
-	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
-	 * nop.
+	 * Copy the contents from a given operand register into a given target
+	 * register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     x = x + 1
+	 *     return x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body: 
+	 *     assign %1 = %0      : int                   
+	 *     const %2 = 1        : int                      
+	 *     add %0 = %1, %2     : int                                    
+	 *     return %0           : int
+	 * </pre>
+	 * 
+	 * Here we see that an initial assignment is made from register
+	 * <code>%0</code> to register <code>%1</code>. In fact, this assignment is
+	 * unecessary but is useful to illustrate the <code>assign</code> bytecode.
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> on many architectures this operation may not actually clone
+	 * the data in question. Rather, it may copy the <i>reference</i> to the
+	 * data and then increment its <i>reference count</i>. This is to ensure
+	 * efficient treatment of large compound structures (e.g. lists, sets, maps
+	 * and records).
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Debug extends Code {
-		Debug() {}
-		public int hashCode() {
-			return 101;
+	public static final class Assign extends AbstractUnaryAssignable<Type> {
+
+		private Assign(Type type, int target, int operand) {
+			super(type, target, operand);
 		}
+
+		public Code clone(int nTarget, int nOperand) {
+			return Code.Assign(type, nTarget, nOperand);
+		}
+
 		public boolean equals(Object o) {
-			return o instanceof Debug;
+			if (o instanceof Assign) {
+				return super.equals(o);
+			}
+			return false;
 		}
+
 		public String toString() {
-			return "debug";
+			return "assign %" + target + " = %" + operand + " " + " : " + type;
 		}
 	}
 
 	/**
-	 * Pops a compound value from the stack "destructures" it into multiple
-	 * values which are pushed back on the stack. For example, a rational can be
-	 * destructured into two integers (the <i>numerator</i> and
-	 * <i>denominator</i>). Or, an n-tuple can be destructured into n values.
+	 * Read a string from the operand register and prints it to the debug
+	 * console. For example, the following Whiley code:
 	 * 
-	 * Probably should be deprecated in favour of tupeload bytecode.
+	 * <pre>
+	 * void f(int x):
+	 *     debug "X = " + x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * void f(int x):
+	 * body: 
+	 *     const %2 = "X = "       : string                                
+	 *     convert %0 = %0 any     : int              
+	 *     invoke %0 (%0) whiley/lang/Any:toString : string(any)
+	 *     strappend %1 = %2, %0   : string         
+	 *     debug %1                : string                      
+	 *     return
+	 * </pre>
+	 * 
+	 * <b>NOTE</b> This bytecode is not intended to form part of the program's
+	 * operation. Rather, it is to facilitate debugging within functions (since
+	 * they cannot have side-effects). Furthermore, if debugging is disabled,
+	 * this bytecode is a nop.
+	 * 
+	 * @author David J. Pearce
+	 * 
 	 */
-	public static final class Destructure extends Code {
-		public final Type type;
-		
-		private Destructure(Type from) {			
-			this.type = from;			
+	public static final class Debug extends AbstractUnaryOp<Type.Strung> {
+
+		private Debug(int operand) {
+			super(Type.T_STRING, operand);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 12345;
-			} else {
-				return type.hashCode();
-			}
+
+		@Override
+		public Code clone(int nOperand) {
+			return Code.Debug(nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Destructure) {
-				Destructure c = (Destructure) o;
-				return (type == c.type || (type != null && type.equals(c.type)));  
-			}
-			return false;
+			return o instanceof Debug && super.equals(o);
 		}
-				
+
 		public String toString() {
-			return "destructure " + type;
+			return "debug %" + operand + " " + " : " + type;
 		}
 	}
-	
+
 	/**
 	 * Marks the end of a loop block.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
 	public static final class LoopEnd extends Label {
 		LoopEnd(String label) {
 			super(label);
 		}
-		
-		public LoopEnd relabel(Map<String,String> labels) {
+
+		public LoopEnd relabel(Map<String, String> labels) {
 			String nlabel = labels.get(label);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
 				return End(nlabel);
 			}
 		}
-		
+
 		public int hashCode() {
 			return label.hashCode();
 		}
+
 		public boolean equals(Object o) {
-			if(o instanceof LoopEnd) {
+			if (o instanceof LoopEnd) {
 				LoopEnd e = (LoopEnd) o;
 				return e.label.equals(label);
 			}
 			return false;
 		}
-		
+
 		public String toString() {
 			return "end " + label;
 		}
-	}	
-
-	/**
-	 * Raises an assertion failure if the given condition is false with the
-	 * given message.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Assert extends Code {
-		public final Type type;
-		public final COp op;
-		public final String msg;
-		
-		private Assert(Type type, COp cop, String msg) {
-			if(cop == null) {
-				throw new IllegalArgumentException("Assert op argument cannot be null");
-			}			
-			this.type = type;
-			this.op = cop;
-			this.msg = msg;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return op.hashCode() + msg.hashCode();
-			} else {
-				return type.hashCode() + op.hashCode() + msg.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Assert) {
-				Assert ig = (Assert) o;
-				return op == ig.op
-						&& msg.equals(ig.msg)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("assert " + op + " \"" + msg + "\"",type);
-		}			
 	}
 
 	/**
-	 * Pops a record from the stack and pushes the value from the given
-	 * field back on.
+	 * An abstract class representing either an <code>assert</code> or
+	 * <code>assume</code> bytecode.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class FieldLoad extends Code {
-		public final Type.EffectiveRecord type;		
+	public static abstract class AssertOrAssume extends AbstractBinaryOp<Type> {
+		public final Comparator op;
+		public final String msg;
+
+		private AssertOrAssume(Type type, int leftOperand, int rightOperand,
+				Comparator cop, String msg) {
+			super(type, leftOperand, rightOperand);
+			if (cop == null) {
+				throw new IllegalArgumentException(
+						"Assert op argument cannot be null");
+			}
+			this.op = cop;
+			this.msg = msg;
+		}
+	}
+
+	/**
+	 * Reads two operand registers, compares their values and raises an
+	 * assertion failure with the given message if comparison is false. For
+	 * example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f([int] xs, int i):
+	 *     return xs[i]
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f([int] xs, int i):
+	 * body:          
+	 *    const %2 = 0         : int                                           
+	 *    assertge %1, %2 "index out of bounds (negative)" : int
+	 *    lengthof %3 = %0     : [int]               
+	 *    assertlt %2, %3 "index out of bounds (not less than length)" : int
+	 *    indexof %1 = %0, %1  : [int]            
+	 *    return %1            : int
+	 * </pre>
+	 * 
+	 * Here, we see <code>assert</code> bytecodes being used to check list
+	 * access is not out-of-bounds.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Assert extends AssertOrAssume {
+
+		private Assert(Type type, int leftOperand, int rightOperand, Comparator cop,
+				String msg) {
+			super(type, leftOperand, rightOperand, cop, msg);
+		}
+
+		@Override
+		public Code clone(int nLeftOperand, int nRightOperand) {
+			return Code.Assert(type, nLeftOperand, nRightOperand, op, msg);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Assert) {
+				Assert ig = (Assert) o;
+				return op == ig.op && msg.equals(ig.msg) && super.equals(ig);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "assert" + op + " %" + leftOperand + ", %" + rightOperand
+					+ " \"" + msg + "\"" + " : " + type;
+		}
+	}
+
+	/**
+	 * Reads two operand registers, compares their values and raises an
+	 * assertion failure with the given message is raised if comparison is
+	 * false. Whilst this is very similar to an assert statement, it causes a
+	 * slightly different interaction with the type checker and/or theorem
+	 * prover. More specifically, they will not attempt to show the condition is
+	 * true and, instead, will simply assume it is (and leave an appropriate
+	 * runtime check). This is useful for override these processes in situations
+	 * where they are not smart enough to prove something is true.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Assume extends AssertOrAssume {
+
+		private Assume(Type type, int leftOperand, int rightOperand, Comparator cop,
+				String msg) {
+			super(type, leftOperand, rightOperand, cop, msg);
+		}
+
+		@Override
+		public Code clone(int nLeftOperand, int nRightOperand) {
+			return Code.Assume(type, nLeftOperand, nRightOperand, op, msg);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Assume) {
+				Assume ig = (Assume) o;
+				return op == ig.op && msg.equals(ig.msg) && super.equals(ig);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "assume" + op + " %" + leftOperand + ", %" + rightOperand
+					+ " \"" + msg + "\"" + " : " + type;
+		}
+	}
+
+	/**
+	 * Reads a record value from an operand register, extracts the value of a
+	 * given field and writes this to the target register. For example, the
+	 * following Whiley code:
+	 * 
+	 * <pre>
+	 * define Point as {int x, int y}
+	 * 
+	 * int f(Point p):
+	 *     return p.x + p.y
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f({int x,int y} p):
+	 * body:         
+	 *     fieldload %2 = %0 x    : {int x,int y}            
+	 *     fieldload %3 = %0 y    : {int x,int y}    
+	 *     add %1 = %2, %3        : int                  
+	 *     return %1              : int
+	 * </pre>
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class FieldLoad extends
+			AbstractUnaryAssignable<Type.EffectiveRecord> {
 		public final String field;
-				
-		private FieldLoad(Type.EffectiveRecord type, String field) {
+
+		private FieldLoad(Type.EffectiveRecord type, int target, int operand,
+				String field) {
+			super(type, target, operand);
 			if (field == null) {
 				throw new IllegalArgumentException(
 						"FieldLoad field argument cannot be null");
 			}
-			this.type = type;
 			this.field = field;
 		}
-		
-		public int hashCode() {
-			if(type != null) {
-				return type.hashCode() + field.hashCode();
-			} else {
-				return field.hashCode();
-			}
+
+		@Override
+		public Code clone(int nTarget, int nOperand) {
+			return Code.FieldLoad(type, nTarget, nOperand, field);
 		}
-		
+
+		public int hashCode() {
+			return super.hashCode() + field.hashCode();
+		}
+
 		public Type fieldType() {
 			return type.fields().get(field);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof FieldLoad) {
+			if (o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
-				return (i.type == type || (type != null && type.equals(i.type)))
-						&& field.equals(i.field);
+				return super.equals(i) && field.equals(i.field);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("fieldload " + field,(Type) type);			
-		}	
+			return "fieldload %" + target + " = %" + operand + " " + field
+					+ " : " + type;
+		}
 	}
 
 	/**
-	 * <p>
-	 * Branches unconditionally to the given label.
-	 * </p>
+	 * Branches unconditionally to the given label. This is typically used for
+	 * if/else statements. For example, the following Whiley code:
 	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     if x >= 0:
+	 *         x = 1
+	 *     else:
+	 *         x = -1
+	 *     return x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body:                   
+	 *     const %1 = 0             : int                      
+	 *     iflt %0, %1 goto blklab0 : int          
+	 *     const %0 = 1             : int                      
+	 *     goto blklab1                            
+	 * .blklab0                                
+	 *     const %0 = 1             : int                      
+	 *     neg %0 = % 0             : int                      
+	 * .blklab1                                                  
+	 *     return %0                : int
+	 * </pre>
+	 * 
+	 * Here, we see the <code>goto</code> bytecode being used to jump from the
+	 * end of the true branch over the false branch.
+	 * 
+	 * <p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Goto extends Code {
 		public final String target;
-		
-		private  Goto(String target) {
+
+		private Goto(String target) {
 			this.target = target;
 		}
-		
-		public Goto relabel(Map<String,String> labels) {
+
+		public Goto relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
 				return Goto(nlabel);
 			}
 		}
-		
+
 		public int hashCode() {
 			return target.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Goto) {
-				return target.equals(((Goto)o).target);
+			if (o instanceof Goto) {
+				return target.equals(((Goto) o).target);
 			}
 			return false;
 		}
-		
+
 		public String toString() {
-			return "goto " + target;		
-		}		
+			return "goto " + target;
+		}
 	}
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label by popping two operands from
-	 * the stack and comparing them. The possible comparators are:
+	 * Branches conditionally to the given label by reading the values from two
+	 * operand registers and comparing them. The possible comparators are:
 	 * </p>
 	 * <ul>
 	 * <li><i>equals (eq) and not-equals (ne)</i>. Both operands must have the
@@ -942,7 +1670,35 @@ public abstract class Code {
 	 * <li><i>subset (ss) and subset-equals (sse)</i>. Both operands must have
 	 * the given type, which additionally must be a set.</li>
 	 * </ul>
-	 *  
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     if x < y:
+	 *         return -1
+	 *     else if x > y:
+	 *         return 1
+	 *     else:
+	 *         return 0
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     ifge %0, %1 goto blklab0 : int          
+	 *     const %2 = -1 : int                                          
+	 *     return %2 : int                         
+	 * .blklab0                                
+	 *     ifle %0, %1 goto blklab2 : int          
+	 *     const %2 = 1 : int                      
+	 *     return %2 : int                         
+	 * .blklab2                                
+	 *     const %2 = 0 : int                      
+	 *     return %2 : int
+	 * </pre>
+	 * 
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
@@ -950,91 +1706,115 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IfGoto extends Code {
-		public final Type type;
-		public final COp op;
+	public static final class If extends AbstractBinaryOp<Type> {
 		public final String target;
+		public final Comparator op;
 
-		private  IfGoto(Type type, COp op, String target) {
-			if(op == null) {
-				throw new IllegalArgumentException("IfGoto op argument cannot be null");
+		private If(Type type, int leftOperand, int rightOperand, Comparator op,
+				String target) {
+			super(type, leftOperand, rightOperand);
+			if (op == null) {
+				throw new IllegalArgumentException(
+						"IfGoto op argument cannot be null");
 			}
-			if(target == null) {
-				throw new IllegalArgumentException("IfGoto target argument cannot be null");
+			if (target == null) {
+				throw new IllegalArgumentException(
+						"IfGoto target argument cannot be null");
 			}
-			this.type = type;
-			this.op = op;						
+			this.op = op;
 			this.target = target;
 		}
-		
-		public IfGoto relabel(Map<String,String> labels) {
+
+		public If relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
-				return IfGoto(type,op,nlabel);
+				return If(type, leftOperand, rightOperand, op, nlabel);
 			}
 		}
-		
+
+		@Override
+		public Code clone(int nLeftOperand, int nRightOperand) {
+			return Code.If(type, nLeftOperand, nRightOperand, op, target);
+		}
+
 		public int hashCode() {
-			if(type == null) {
-				return op.hashCode() + target.hashCode();
-			} else {
-				return type.hashCode() + op.hashCode() + target.hashCode();
-			}
+			return super.hashCode() + op.hashCode() + target.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof IfGoto) {
-				IfGoto ig = (IfGoto) o;
-				return op == ig.op
-					&& target.equals(ig.target)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));
+			if (o instanceof If) {
+				If ig = (If) o;
+				return op == ig.op && target.equals(ig.target)
+						&& super.equals(ig);
 			}
 			return false;
 		}
-	
+
+		public String codeString() {
+			return null;
+		}
+
 		public String toString() {
-			return toString("if" + op + " goto " + target,type);
+			return "if" + op + " %" + leftOperand + ", %" + rightOperand
+					+ " goto " + target + " : " + type;
 		}
 	}
-	
+
 	/**
-	 * Represents a comparison operator (e.g. '==','!=',etc) that is provided to a
-	 * <code>IfGoto</code> bytecode.
+	 * Represents a comparison operator (e.g. '==','!=',etc) that is provided to
+	 * a <code>IfGoto</code> bytecode.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public enum COp { 
+	public enum Comparator {
 		EQ() {
-			public String toString() { return "eq"; }
+			public String toString() {
+				return "eq";
+			}
 		},
-		NEQ{
-			public String toString() { return "ne"; }
+		NEQ {
+			public String toString() {
+				return "ne";
+			}
 		},
-		LT{
-			public String toString() { return "lt"; }
+		LT {
+			public String toString() {
+				return "lt";
+			}
 		},
-		LTEQ{
-			public String toString() { return "le"; }
+		LTEQ {
+			public String toString() {
+				return "le";
+			}
 		},
-		GT{
-			public String toString() { return "gt"; }
+		GT {
+			public String toString() {
+				return "gt";
+			}
 		},
-		GTEQ{
-			public String toString() { return "ge"; }
+		GTEQ {
+			public String toString() {
+				return "ge";
+			}
 		},
-		ELEMOF{
-			public String toString() { return "in"; }
+		ELEMOF {
+			public String toString() {
+				return "in";
+			}
 		},
-		SUBSET{
-			public String toString() { return "sb"; }
+		SUBSET {
+			public String toString() {
+				return "sb";
+			}
 		},
-		SUBSETEQ{
-			public String toString() { return "sbe"; }
-		}		
+		SUBSETEQ {
+			public String toString() {
+				return "sbe";
+			}
+		}
 	};
 
 	/**
@@ -1043,117 +1823,135 @@ public abstract class Code {
 	 * @param cop
 	 * @return
 	 */
-	public static Code.COp invert(Code.COp cop) {
-		switch(cop) {
+	public static Code.Comparator invert(Code.Comparator cop) {
+		switch (cop) {
 		case EQ:
-			return Code.COp.NEQ;
+			return Code.Comparator.NEQ;
 		case NEQ:
-			return Code.COp.EQ;
+			return Code.Comparator.EQ;
 		case LT:
-			return Code.COp.GTEQ;
+			return Code.Comparator.GTEQ;
 		case LTEQ:
-			return Code.COp.GT;
+			return Code.Comparator.GT;
 		case GT:
-			return Code.COp.LTEQ;
+			return Code.Comparator.LTEQ;
 		case GTEQ:
-			return Code.COp.LT;
+			return Code.Comparator.LT;
 		}
 		return null;
 	}
-	
+
 	/**
-	 * <p>
 	 * Branches conditionally to the given label based on the result of a
-	 * runtime type test against a given value. More specifically, it checks
-	 * whether the value is a subtype of the type test. The value in question is
-	 * either loaded directly from a register, or popped off the stack.
-	 * </p>
+	 * runtime type test against a value from the operand register. More
+	 * specifically, it checks whether the value is a subtype of the type test.
+	 * The operand register is automatically <i>retyped</i> as a result of the
+	 * type test. On the true branch, its type is intersected with type test. On
+	 * the false branch, its type is intersected with the <i>negation</i> of the
+	 * type test. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int|[int] x):
+	 *     if x is [int]:
+	 *         return |x|
+	 *     else:
+	 *         return x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int|[int] x):
+	 * body: 
+	 *     ifis %0, [int] goto lab    : int|[int] 
+	 *     return %0                  : int     
+	 * .lab                                                
+	 *     lengthof %0 = %0           : [int]               
+	 *     return %0                  : int
+	 * </pre>
+	 * 
+	 * Here, we see that, on the false branch, register <code>%0</code> is
+	 * automatically given type <code>int</code>, whilst on the true branch it
+	 * is automatically given type <code>[int]</code>.
+	 * 
 	 * <p>
-	 * In the case that the value is obtained from a register, then that
-	 * variable is automatically <i>retyped</i> as a result of the type test. On
-	 * the true branch, its type is intersected with type test. On the false
-	 * branch, its type is intersected with the <i>negation</i> of the type
-	 * test.
-	 * </p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
 	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
-	 */	
-	public static final class IfType extends Code {
+	 */
+	public static final class IfIs extends Code {
 		public final Type type;
-		public final int slot;
-		public final Type test;		
 		public final String target;
+		public final int leftOperand;
+		public final Type rightOperand;
 
-		private  IfType(Type type, int slot, Type test, String target) {
-			if(test == null) {
-				throw new IllegalArgumentException("IfGoto op argument cannot be null");
+		private IfIs(Type type, int leftOperand, Type rightOperand,
+				String target) {
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"IfUs type argument cannot be null");
 			}
-			if(target == null) {
-				throw new IllegalArgumentException("IfGoto target argument cannot be null");
+			if (rightOperand == null) {
+				throw new IllegalArgumentException(
+						"IfIs test argument cannot be null");
+			}
+			if (target == null) {
+				throw new IllegalArgumentException(
+						"IfIs target argument cannot be null");
 			}
 			this.type = type;
-			this.slot = slot;
-			this.test = test;						
 			this.target = target;
+			this.leftOperand = leftOperand;
+			this.rightOperand = rightOperand;
 		}
-		
-		public IfType relabel(Map<String,String> labels) {
+
+		public IfIs relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
-				return IfType(type,slot,test,nlabel);
+				return IfIs(type, leftOperand, rightOperand, nlabel);
 			}
 		}
-		
+
 		@Override
-		public void slots(Set<Integer> slots) {
-			if(slot >= 0) {
-				slots.add(slot);
-			}
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(leftOperand);
 		}
-		
+
+		@Override
 		public Code remap(Map<Integer, Integer> binding) {
-			if (slot >= 0) {
-				Integer nslot = binding.get(slot);
-				if (nslot != null) {
-					return Code.IfType(type, nslot, test, target);
-				}
+			Integer nLeftOperand = binding.get(leftOperand);
+			if (nLeftOperand != null) {
+				return Code.IfIs(type, nLeftOperand, rightOperand, target);
 			}
 			return this;
 		}
-		
+
 		public int hashCode() {
-			if(type == null) {
-				return test.hashCode() + target.hashCode();
-			} else {
-				return type.hashCode() + test.hashCode() + target.hashCode();
-			}
+			return type.hashCode() + rightOperand.hashCode()
+					+ target.hashCode() + leftOperand + rightOperand.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof IfType) {
-				IfType ig = (IfType) o;
-				return test.equals(ig.test)
-					&& slot == ig.slot
-					&& target.equals(ig.target)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));
+			if (o instanceof IfIs) {
+				IfIs ig = (IfIs) o;
+				return leftOperand == ig.leftOperand
+						&& rightOperand.equals(ig.rightOperand)
+						&& target.equals(ig.target) && type.equals(ig.type);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			if(slot >= 0) {
-				return toString("if " + slot + " is " + test + " goto " + target,type);
-			} else {				
-				return toString("if " + test + " goto " + target,type);
-			}
+			return "ifis" + " %" + leftOperand + ", " + rightOperand + " goto "
+					+ target + " : " + type;
 		}
+
 	}
 
 	/**
@@ -1171,160 +1969,162 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectInvoke extends Code {		
-		public final Type.FunctionOrMethod type;
-		public final boolean retval;
-		
-		private IndirectInvoke(Type.FunctionOrMethod type, boolean retval) {
-			this.type = type;
-			this.retval = retval;
+	public static final class IndirectInvoke extends
+			AbstractSplitNaryAssignable<Type.FunctionOrMethod> {
+
+		private IndirectInvoke(Type.FunctionOrMethod type, int target,
+				int operand, int[] operands) {
+			super(type, target, operand, operands);
 		}
-		
-		public int hashCode() {
-			if(type != null) {
-				return type.hashCode();
+
+		@Override
+		public Code clone(int nTarget, int nOperand, int[] nOperands) {
+			return IndirectInvoke(type, nTarget, nOperand, nOperands);
+		}
+
+		public boolean equals(Object o) {
+			return o instanceof IndirectInvoke && super.equals(o);
+		}
+
+		public String toString() {
+			if (target != Code.NULL_REG) {
+				return "indirectinvoke " + target + " = " + operand + " "
+						+ toString(operands) + " : " + type;
 			} else {
-				return 123;
+				return "indirectinvoke " + operand + " = " + toString(operands)
+						+ " : " + type;
 			}
 		}
-		
+	}
+
+	/**
+	 * Read a boolean value from the operand register, inverts it and writes the
+	 * result to the target register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * bool f(bool x):
+	 *     return !x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL:
+	 * 
+	 * <pre>
+	 * bool f(bool x):
+	 * body:                    
+	 *     not %0 = %0     : int                      
+	 *     return %0       : int
+	 * </pre>
+	 * 
+	 * This simply reads the parameter <code>x</code> stored in register
+	 * <code>%0</code>, inverts it and then returns the inverted value.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Not extends AbstractUnaryAssignable<Type.Bool> {
+
+		private Not(int target, int operand) {
+			super(Type.T_BOOL, target, operand);
+		}
+
+		@Override
+		public Code clone(int nTarget, int nOperand) {
+			return Code.Not(nTarget, nOperand);
+		}
+
+		public int hashCode() {
+			return super.hashCode();
+		}
+
 		public boolean equals(Object o) {
-			if(o instanceof IndirectInvoke) {
-				IndirectInvoke i = (IndirectInvoke) o;				
-				return retval == i.retval
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+			if (o instanceof Not) {
+				Not n = (Not) o;
+				return super.equals(n);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			if(retval) {
-				return toString("indirectinvoke",type);
-			} else {
-				return toString("vindirectinvoke",type);
-			}
-		}		
+			return "not %" + target + " = %" + operand + " : " + type;
+		}
 	}
 
 	/**
-	 * Represents an indirect message send (either synchronous or asynchronous).
-	 * For example, consider the following:
+	 * Corresponds to a function or method call whose parameters are read from
+	 * zero or more operand registers. If a return value is required, this is
+	 * written to a target register afterwards. For example, the following
+	 * Whiley code:
 	 * 
 	 * <pre>
-	 * int ::method(Rec::int(int) m, Rec r, int x):
-	 *    return r.m(x)
+	 * int g(int x, int y, int z):
+	 *     return x * y * z
+	 * 
+	 * int f(int x, int y):
+	 *     r = g(x,y,3)
+	 *     return r + 1
 	 * </pre>
 	 * 
-	 * Here, the message send <code>r.m(x)</code> is indirect as the message
-	 * sent is determined by the variable <code>m</code>.
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int g(int x, int y, int z):
+	 * body: 
+	 *     mul %3 = %0, %1   : int                                    
+	 *     mul %3 = %3, %2   : int                  
+	 *     return %3         : int                         
+	 * 
+	 * int f(int x, int y):
+	 * body:              
+	 *     const %2 = 3                    : int                      
+	 *     invoke %2 = (%0, %1, %2) test:g   : int(int,int,int)                  
+	 *     const %3 = 1                    : int                      
+	 *     add %2 = (%2, %3)                : int                  
+	 *     return %2                       : int
+	 * </pre>
+	 * 
+	 * Here, we see that arguments to the <code>invoke</code> bytecode are
+	 * supplied in the order they are given in the function or method's
+	 * declaration.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndirectSend extends Code {
-		 public final boolean synchronous;
-		 public final boolean retval;
-		 public final Type.Message type;
-			
-		 private IndirectSend(Type.Message type, boolean synchronous, boolean retval) {
-			 this.type = type;
-			 this.synchronous = synchronous;
-			 this.retval = retval;
-		 }
-
-		 public int hashCode() {
-			 if(type != null) {
-					return type.hashCode();
-				} else {
-					return 123;
-				}
-		 }
-
-		 public boolean equals(Object o) {
-			 if(o instanceof IndirectSend) {
-				 IndirectSend i = (IndirectSend) o;
-				 return type == i.type || (type != null && type.equals(i.type));
-			 }
-			 return false;
-		 }
-
-		 public String toString() {			 
-			 if(synchronous) {		
-				 if(retval) {
-					 return toString("isend",type);
-				 } else {
-					 return toString("ivsend",type);
-				 }
-			 } else {				 
-				 return toString("iasend",type);				 
-			 }
-		 }		
-	}
-	
-	public static final class Not extends Code {		
-		private Not() {						
-		}
-		
-		public int hashCode() {			
-			return 12875;			
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof Not;
-		}
-				
-		public String toString() {
-			return toString("not",Type.T_BYTE);
-		}
-	}
-
-	/**
-	 * Corresponds to a direct function call whose parameters are found on the
-	 * stack in the order corresponding to the function type. If a return value
-	 * is required, this is pushed onto the stack after the function call.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Invoke extends Code {		
-		public final Type.FunctionOrMethod type;
+	public static final class Invoke extends
+			AbstractNaryAssignable<Type.FunctionOrMethod> {
 		public final NameID name;
-		public final boolean retval;
-				
-		private Invoke(Type.FunctionOrMethod type, NameID name, boolean retval) {
-			this.type = type;
+
+		private Invoke(Type.FunctionOrMethod type, int target, int[] operands,
+				NameID name) {
+			super(type, target, operands);
 			this.name = name;
-			this.retval = retval;
 		}
-		
+
 		public int hashCode() {
-			if(type == null) {
-				return name.hashCode();
-			} else {
-				return type.hashCode() + name.hashCode();
-			}
+			return name.hashCode() + super.hashCode();
 		}
-		
+
+		@Override
+		public Code clone(int nTarget, int[] nOperands) {
+			return Code.Invoke(type, nTarget, nOperands, name);
+		}
+
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
-				return name.equals(i.name)
-						&& retval == i.retval
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+				return name.equals(i.name) && super.equals(i);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			if(retval) {
-				return toString("invoke " + name,type);
+			if (target != Code.NULL_REG) {
+				return "invoke %" + target + " = " + toString(operands) + " "
+						+ name + " : " + type;
 			} else {
-				return toString("vinvoke " + name,type);
+				return "invoke %" + toString(operands) + " " + name + " : "
+						+ type;
 			}
-		}	
-		
+		}
 	}
 
 	/**
@@ -1335,380 +2135,467 @@ public abstract class Code {
 	 */
 	public static class Label extends Code {
 		public final String label;
-		
+
 		private Label(String label) {
 			this.label = label;
 		}
-		
-		public Label relabel(Map<String,String> labels) {
+
+		public Label relabel(Map<String, String> labels) {
 			String nlabel = labels.get(label);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
 				return Label(nlabel);
 			}
 		}
-		
+
 		public int hashCode() {
 			return label.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Label) {
 				return label.equals(((Label) o).label);
 			}
 			return false;
 		}
-		
+
 		public String toString() {
 			return "." + label;
 		}
 	}
 
-	/**
-	 * Pops two lists from the stack, appends them together and pushes the
-	 * result back onto the stack.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class ListAppend extends Code {				
-		public final OpDir dir;
-		public final Type.EffectiveList type;
-		
-		private ListAppend(Type.EffectiveList type, OpDir dir) {			
-			if(dir == null) {
-				throw new IllegalArgumentException("ListAppend direction cannot be null");
-			}			
-			this.type = type;
-			this.dir = dir;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return dir.hashCode(); 
-			} else {
-				return type.hashCode() + dir.hashCode();
+	public enum BinListKind {
+		LEFT_APPEND {
+			public String toString() {
+				return "lappend";
 			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof ListAppend) {
-				ListAppend setop = (ListAppend) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)))						
-						&& dir.equals(setop.dir);
+		},
+		RIGHT_APPEND {
+			public String toString() {
+				return "rappend";
 			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("listappend" + dir.toString(), (Type) type);
+		},
+		APPEND {
+			public String toString() {
+				return "append";
+			}
 		}
 	}
 
 	/**
-	 * Pops a list from the stack and pushes its length back on.
+	 * Reads the (effective) list values from two operand registers, performs an
+	 * operation (e.g. append) on them and writes the result back to a target
+	 * register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * [int] f([int] xs, [int] ys):
+	 *    return xs ++ ys
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * [int] f([int] xs, [int] ys):
+	 * body: 
+	 *    append %2 = %0, %1   : [int]             
+	 *    return %2            : [int]
+	 * </pre>
+	 * 
+	 * This appends two the parameter lists together writting the new list into
+	 * register <code>%2</code>.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class LengthOf extends Code {						
-		public final Type.EffectiveCollection type;
-		
-		private LengthOf(Type.EffectiveCollection type) {									
-			this.type = type;			
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 124987; 
-			} else {
-				return type.hashCode();
+	public static final class BinListOp extends
+			AbstractBinaryAssignable<Type.EffectiveList> {
+		public final BinListKind kind;
+
+		private BinListOp(Type.EffectiveList type, int target, int leftOperand,
+				int rightOperand, BinListKind operation) {
+			super(type, target, leftOperand, rightOperand);
+			if (operation == null) {
+				throw new IllegalArgumentException(
+						"ListAppend direction cannot be null");
 			}
+			this.kind = operation;
 		}
-		
+
+		@Override
+		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.BinListOp(type, nTarget, nLeftOperand, nRightOperand,
+					kind);
+		}
+
+		public int hashCode() {
+			return super.hashCode() + kind.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof BinListOp) {
+				BinListOp setop = (BinListOp) o;
+				return super.equals(setop) && kind.equals(setop.kind);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return kind + " %" + target + " = %" + leftOperand + ", %"
+					+ rightOperand + " : " + type;
+		}
+	}
+
+	/**
+	 * Reads an (effective) collection (i.e. a set, list or map) from the
+	 * operand register, and writes its length into the target register. For
+	 * example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f([int] ls):
+	 *     return |ls|
+	 * </pre>
+	 * 
+	 * translates to the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f([int] ls):
+	 * body:                  
+	 *     lengthof %0 = %0   : [int]               
+	 *     return %0          : int
+	 * </pre>
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class LengthOf extends
+			AbstractUnaryAssignable<Type.EffectiveCollection> {
+		private LengthOf(Type.EffectiveCollection type, int target, int operand) {
+			super(type, target, operand);
+		}
+
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.LengthOf(type, nTarget, nOperand);
+		}
+
 		public boolean equals(Object o) {
 			if (o instanceof LengthOf) {
-				LengthOf setop = (LengthOf) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
+				return super.equals(o);
 			}
 			return false;
 		}
-				
+
 		public String toString() {
-			return toString("length", (Type) type);
-		}
-	}
-	
-	public static final class SubList extends Code {						
-		public final Type.EffectiveList type;
-		
-		private SubList(Type.EffectiveList type) {									
-			this.type = type;			
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 124987; 
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof SubList) {
-				SubList setop = (SubList) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)));
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("sublist", (Type) type);
+			return "lengthof %" + target + " = %" + operand + " : " + type;
 		}
 	}
 
 	/**
-	 * Pops am integer index from the stack, followed by a list and pushes the
-	 * element at the given index back on.
+	 * Reads the (effective) list value from a source operand register, and the
+	 * integer values from two index operand registers, computes the sublist and
+	 * writes the result back to a target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class IndexOf extends Code {
-		public final Type.EffectiveMap type;				
-		
-		private IndexOf(Type.EffectiveMap type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof IndexOf) {
-				IndexOf i = (IndexOf) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("indexof", (Type) type);
-		}	
-	}
+	public static final class SubList extends
+			AbstractNaryAssignable<Type.EffectiveList> {
 
-	/**
-	 * Loads the contents of the given register onto the stack.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Load extends Code {		
-		public final Type type;
-		public final int slot;		
-		
-		private Load(Type type, int slot) {
-			this.type = type;
-			this.slot = slot;
+		private SubList(Type.EffectiveList type, int target, int[] operands) {
+			super(type, target, operands);
 		}
-		
+
 		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+		public final Code clone(int nTarget, int[] nOperands) {
+			return Code.SubList(type, nTarget, nOperands);
 		}
-		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if(nslot != null) {
-				return Code.Load(type, nslot);
-			} else {
-				return this;
-			}
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return slot; 
-			} else { 
-				return type.hashCode() + slot;
-			}
-		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Load) {
-				Load i = (Load) o;
-				return slot == i.slot
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
-			}
-			return false;
+			return o instanceof SubList && super.equals(o);
 		}
-	
+
 		public String toString() {
-			return toString("load " + slot,type);
-		}	
+			return "sublist %" + target + " = %" + operands[0] + ", %"
+					+ operands[1] + ", %" + operands[2] + " : " + type;
+		}
 	}
 
 	/**
-	 * Moves the contents of the given register onto the stack. This is similar
-	 * to a <code>load</code> bytecode, except that the register's contents are
-	 * "voided" afterwards. This guarantees that the register is no longer live,
-	 * which is useful for determining the live ranges of register in a
-	 * function or method.
+	 * Reads an effective list or map from the source (left) operand register,
+	 * and a key value from the key (right) operand register and returns the
+	 * value associated with that key. If the key does not exist, then a fault
+	 * is raised. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * string f({int=>string} map, int key):
+	 *     return map[key]
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * string f({int->string} map, int key):
+	 * body: 
+	 *     assertky %1, %0 "invalid key"       : {int->string}
+	 *     indexof %2 = %0, %1                 : {int->string}    
+	 *     return %2                          : string
+	 * </pre>
+	 * 
+	 * Here, we see the <code>assertky</code> bytecode is used to first check
+	 * that the given key exists in <code>map</code>, otherwise a fault is
+	 * raised.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Move extends Code {		
-		public final Type type;
-		public final int slot;		
-		
-		private Move(Type type, int slot) {
-			this.type = type;
-			this.slot = slot;
+	public static final class IndexOf extends
+			AbstractBinaryAssignable<Type.EffectiveIndexible> {
+		private IndexOf(Type.EffectiveIndexible type, int target, int sourceOperand,
+				int keyOperand) {
+			super(type, target, sourceOperand, keyOperand);
 		}
-		
-		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+
+		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.IndexOf(type, nTarget, nLeftOperand, nRightOperand);
 		}
-		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if(nslot != null) {
-				return Code.Move(type, nslot);
-			} else {
-				return this;
-			}
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return slot; 
-			} else { 
-				return type.hashCode() + slot;
-			}
-		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Move) {
-				Move i = (Move) o;
-				return slot == i.slot
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+			if (o instanceof IndexOf) {
+				return super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("move " + slot,type);
-		}	
-	}		
-	
+			return "indexof %" + target + " = %" + leftOperand + ", %"
+					+ rightOperand + " : " + type;
+		}
+	}
+
+	/**
+	 * Moves the contents of a given operand register into a given target
+	 * register. This is similar to an <code>assign</code> bytecode, except that
+	 * the register's contents are <i>voided</i> afterwards. This guarantees
+	 * that the register is no longer live, which is useful for determining the
+	 * live ranges of registers in a function or method. For example, the
+	 * following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     x = x + 1
+	 *     return x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     ifge %0, %1 goto blklab0  : int          
+	 *     move %0 = %1              : int                   
+	 * .blklab0                                                   
+	 *     return %0                 : int
+	 * </pre>
+	 * 
+	 * Here we see that when <code>x < y</code> the value of <code>y</code>
+	 * (held in register <code>%1</code>) is <i>moved</i> into variable
+	 * <code>x</code> (held in register <code>%0</code>). This is safe because
+	 * register <code>%1</code> is no longer live at that point.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Move extends AbstractUnaryAssignable<Type> {
+
+		private Move(Type type, int target, int operand) {
+			super(type, target, operand);
+		}
+
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.Move(type, nTarget, nOperand);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Move) {
+				return super.equals(o);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "move %" + target + " = %" + operand + " : " + type;
+		}
+	}
+
+	/**
+	 * Represents a block of code which loops continuously until e.g. a
+	 * conditional branch is taken out of the block. For example:
+	 * 
+	 * <pre>
+	 * int f():
+	 *     r = 0
+	 *     while r < 10:
+	 *         r = r + 1
+	 *     return r
+	 * </pre>
+	 * can be translated into the following WYIL code:
+	 * <pre>
+	 * int f():
+	 * body: 
+	 *     const %0 = 0             : int                      
+	 *     loop (%0)                                                    
+	 *         const %1 = 10        : int                     
+	 *         ifge %0, %1 goto blklab0 : int                             
+	 *         const %1 = 1         : int                      
+	 *         add %0 = %0, %1      : int
+	 * .blklab0                                     
+	 *     return %0                : int
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, we see a loop which increments an accumulator register
+	 * <code>%0</code> until it reaches <code>10</code>, and then exits the loop
+	 * block.
+	 * </p>
+	 * <p>
+	 * The <i>modified operands</i> of a loop bytecode (shown in brackets
+	 * alongside the bytecode) indicate those operands which are modified at
+	 * some point within the loop.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static class Loop extends Code {
 		public final String target;
-		public final HashSet<Integer> modifies;
-		
-		private Loop(String target, Collection<Integer> modifies) {
+		public final int[] modifiedOperands;
+
+		private Loop(String target, int[] modifies) {
 			this.target = target;
-			this.modifies = new HashSet<Integer>(modifies);
+			this.modifiedOperands = modifies;
 		}
-		
-		public Loop relabel(Map<String,String> labels) {
+
+		public Loop relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
-				return Loop(nlabel,modifies);
+				return Loop(nlabel, modifiedOperands);
 			}
 		}
-		
-		public int hashCode() {
-			return target.hashCode();
+
+		@Override
+		public void registers(java.util.Set<Integer> registers) {
+			for (int operand : modifiedOperands) {
+				registers.add(operand);
+			}
 		}
-		
+
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			int[] nOperands = remap(binding, modifiedOperands);
+			if (nOperands != modifiedOperands) {
+				return Code.Loop(target, nOperands);
+			} else {
+				return this;
+			}
+		}
+
+		public int hashCode() {
+			return target.hashCode() + Arrays.hashCode(modifiedOperands);
+		}
+
 		public boolean equals(Object o) {
-			if(o instanceof Loop) {
+			if (o instanceof Loop) {
 				Loop f = (Loop) o;
 				return target.equals(f.target)
-						&& modifies.equals(f.modifies);
+						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
 			}
 			return false;
 		}
-		
+
 		public String toString() {
-			return "loop " + modifies;
-		}		
+			return "loop " + toString(modifiedOperands);
+		}
 	}
 
 	/**
-	 * Pops a set, list or dictionary from the stack and iterates over every
-	 * element it contains. An register is identified to hold the current value
+	 * Pops a set, list or map from the stack and iterates over every
+	 * element it contains. A register is identified to hold the current value
 	 * being iterated over.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class ForAll extends Loop {
-		public final int slot;
+		public final int sourceOperand;
+		public final int indexOperand;
 		public final Type.EffectiveCollection type;
-				
-		private ForAll(Type.EffectiveCollection type, int slot, String target, Collection<Integer> modifies) {
-			super(target,modifies);
+
+		private ForAll(Type.EffectiveCollection type, int sourceOperand,
+				int indexOperand, int[] modifies, String target) {
+			super(target, modifies);
 			this.type = type;
-			this.slot = slot;			
+			this.sourceOperand = sourceOperand;
+			this.indexOperand = indexOperand;
 		}
-		
-		public ForAll relabel(Map<String,String> labels) {
+
+		public ForAll relabel(Map<String, String> labels) {
 			String nlabel = labels.get(target);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
-				return ForAll(type,slot,nlabel,modifies);
+				return ForAll(type, sourceOperand, indexOperand,
+						modifiedOperands, nlabel);
 			}
 		}
-		
+
 		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(indexOperand);
+			registers.add(sourceOperand);
+			super.registers(registers);
 		}
-		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if(nslot != null) {
-				return Code.ForAll(type, nslot, target, modifies);
+
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			int[] nModifiedOperands = remap(binding, modifiedOperands);
+			Integer nIndexOperand = binding.get(indexOperand);
+			Integer nSourceOperand = binding.get(sourceOperand);
+			if (nSourceOperand != null || nIndexOperand != null
+					|| nModifiedOperands != modifiedOperands) {
+				nSourceOperand = nSourceOperand != null ? nSourceOperand
+						: sourceOperand;
+				nIndexOperand = nIndexOperand != null ? nIndexOperand
+						: indexOperand;
+				
+				return Code.ForAll(type, nSourceOperand, nIndexOperand,
+						nModifiedOperands, target);
 			} else {
 				return this;
 			}
 		}
-		
+
 		public int hashCode() {
-			return super.hashCode() + slot;
+			return super.hashCode() + sourceOperand + indexOperand
+					+ Arrays.hashCode(modifiedOperands);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof ForAll) {
 				ForAll f = (ForAll) o;
-				return target.equals(f.target)
-						&& (type == f.type || (type != null && type
-								.equals(f.type))) && slot == f.slot
-						&& modifies.equals(f.modifies);
+				return target.equals(f.target) && type.equals(f.type)
+						&& sourceOperand == f.sourceOperand
+						&& indexOperand == f.indexOperand
+						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
 			}
 			return false;
 		}
-		
-		public String toString() {			
-			return toString("forall " + slot + " " + modifies,(Type) type);
-		}		
+
+		public String toString() {
+			return "forall %" + indexOperand + " in %" + sourceOperand + " "
+					+ toString(modifiedOperands) + " : " + type;
+		}
 	}
 
 	/**
@@ -1719,151 +2606,145 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static abstract class LVal {
-		protected Type type;
-		
-		public LVal(Type t) {
+	public static abstract class LVal<T> {
+		protected T type;
+
+		public LVal(T t) {
 			this.type = t;
 		}
-		
-		public Type rawType() {
+
+		public T rawType() {
 			return type;
 		}
 	}
-	
+
 	/**
-	 * An LVal with dictionary type.
+	 * An LVal with map type.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
-	public static final class DictLVal extends LVal {
-		public DictLVal(Type t) {
+	public static final class MapLVal extends LVal<Type.EffectiveMap> {
+		public final int keyOperand;
+
+		public MapLVal(Type.EffectiveMap t, int keyOperand) {
 			super(t);			
-			if(!(t instanceof Type.EffectiveDictionary)) {
-				throw new IllegalArgumentException("Invalid Dictionary Type");
-			}
-		}
-		
-		public Type.EffectiveDictionary type() {			
-			return (Type.EffectiveDictionary) type;
+			this.keyOperand = keyOperand;
 		}
 	}
-	
+
 	/**
 	 * An LVal with list type.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
-	public static final class ListLVal extends LVal {
-		public ListLVal(Type t) {
-			super(t);
-			if(!(t instanceof Type.EffectiveList)) {
-				throw new IllegalArgumentException("invalid List Type");
-			}
-		}
-		
-		public Type.EffectiveList type() {
-			return (Type.EffectiveList) type;
+	public static final class ListLVal extends LVal<Type.EffectiveList> {
+		public final int indexOperand;
+
+		public ListLVal(Type.EffectiveList t, int indexOperand) {
+			super(t);			
+			this.indexOperand = indexOperand;
 		}
 	}
-	
+
 	/**
 	 * An LVal with list type.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
-	public static final class ReferenceLVal extends LVal {
-		public ReferenceLVal(Type t) {
+	public static final class ReferenceLVal extends LVal<Type.Reference> {
+		public ReferenceLVal(Type.Reference t) {
 			super(t);
-			if(Type.effectiveReference(t) == null) {
-				throw new IllegalArgumentException("invalid reference type");
-			}
-		}
-		
-		public Type.Reference type() {
-			return Type.effectiveReference(type);
 		}
 	}
-	
+
 	/**
 	 * An LVal with string type.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
 	public static final class StringLVal extends LVal {
-		public StringLVal() {
-			super(Type.T_STRING);			
-		}		
+		public final int indexOperand;
+
+		public StringLVal(int indexOperand) {
+			super(Type.T_STRING);
+			this.indexOperand = indexOperand;
+		}
 	}
-	
+
 	/**
 	 * An LVal with record type.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
-	public static final class RecordLVal extends LVal {
+	public static final class RecordLVal extends LVal<Type.EffectiveRecord> {
 		public final String field;
-		
-		public RecordLVal(Type t, String field) {
+
+		public RecordLVal(Type.EffectiveRecord t, String field) {
 			super(t);
-			this.field = field;			
-			if (!(t instanceof Type.EffectiveRecord)
-					|| !((Type.EffectiveRecord) t).fields().containsKey(field)) {
-				throw new IllegalArgumentException("Invalid Record Type");
-			}		
+			this.field = field;
+			if (!t.fields().containsKey(field)) {
+				throw new IllegalArgumentException("invalid Record Type");
+			}
 		}
-		
-		public Type.EffectiveRecord type() {
-			return (Type.EffectiveRecord) type;
-		}
-	}	
-	
-	private static final class UpdateIterator implements Iterator<LVal> {		
+	}
+
+	private static final class UpdateIterator implements Iterator<LVal> {
 		private final ArrayList<String> fields;
+		private final int[] operands;
 		private Type iter;
-		private int fieldIndex;	
+		private int fieldIndex;
+		private int operandIndex;
 		private int index;
-		
-		public UpdateIterator(Type type, int level, ArrayList<String> fields) {
+
+		public UpdateIterator(Type type, int level, int[] operands,
+				ArrayList<String> fields) {
 			this.fields = fields;
 			this.iter = type;
-			this.index = level;			
+			this.index = level;
+			this.operands = operands;
 		}
-		
+
 		public LVal next() {
 			Type raw = iter;
 			index--;
-			if(Type.isSubtype(Type.T_STRING,iter)) {
+			if (Type.isSubtype(Type.T_STRING, iter)) {
 				iter = Type.T_CHAR;
-				return new StringLVal();
-			} else if(Type.isSubtype(Type.Reference(Type.T_ANY),iter)) {			
-				Type.Reference proc = Type.effectiveReference(iter);											
+				return new StringLVal(operands[operandIndex++]);
+			} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
+				Type.Reference proc = Type.effectiveReference(iter);
 				iter = proc.element();
-				return new ReferenceLVal(raw);
-			} else if(iter instanceof Type.EffectiveList) {			
-				Type.EffectiveList list = (Type.EffectiveList) iter;											
+				return new ReferenceLVal(proc);
+			} else if (iter instanceof Type.EffectiveList) {
+				Type.EffectiveList list = (Type.EffectiveList) iter;
 				iter = list.element();
-				return new ListLVal(raw);
-			} else if(iter instanceof Type.EffectiveDictionary) {					
-				Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter; 											
-				iter = dict.value();	
-				return new DictLVal(raw);
-			} else  if(iter instanceof Type.EffectiveRecord) {
-				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;				
+				return new ListLVal(list, operands[operandIndex++]);
+			} else if (iter instanceof Type.EffectiveMap) {
+				Type.EffectiveMap dict = (Type.EffectiveMap) iter;
+				iter = dict.value();
+				return new MapLVal(dict, operands[operandIndex++]);
+			} else if (iter instanceof Type.EffectiveRecord) {
+				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 				String field = fields.get(fieldIndex++);
 				iter = rec.fields().get(field);
-				return new RecordLVal(raw,field);
+				return new RecordLVal(rec, field);
 			} else {
-				throw new IllegalArgumentException("Invalid type for Code.Update");
+				throw new IllegalArgumentException(
+						"Invalid type for Code.Update");
 			}
 		}
-		
+
 		public boolean hasNext() {
 			return index > 0;
 		}
-		
+
 		public void remove() {
-			throw new UnsupportedOperationException("UpdateIterator is unmodifiable");
+			throw new UnsupportedOperationException(
+					"UpdateIterator is unmodifiable");
 		}
 	}
 
@@ -1885,43 +2766,44 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Update extends Code implements Iterable<LVal> {
-		public final Type beforeType;
+	public static final class Update extends AbstractSplitNaryAssignable<Type>
+			implements Iterable<LVal> {
 		public final Type afterType;
-		public final int level;
-		public final int slot;
 		public final ArrayList<String> fields;
 
-		private Update(Type beforeType, Type afterType, int slot, int level, Collection<String> fields) {
+		private Update(Type beforeType, int target, int operand,
+				int[] operands, Type afterType, Collection<String> fields) {
+			super(beforeType, target, operand, operands);
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
 			}
-			this.beforeType = beforeType;
 			this.afterType = afterType;
-			this.slot = slot;
-			this.level = level;
-			this.fields = new ArrayList<String>(fields);
+			this.fields = new ArrayList<String>(fields);			
 		}
 
-		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+		public int level() {
+			int base = 0;
+			if (type instanceof Type.Reference) {
+				base++;
+			}
+			return base + fields.size() + operands.length;
 		}
-		
-		public Iterator<LVal> iterator() {			
-			return new UpdateIterator(afterType,level,fields);
+
+		public Iterator<LVal> iterator() {
+			return new UpdateIterator(afterType, level(), operands, fields);
 		}
-				
+
 		/**
 		 * Extract the type for the right-hand side of this assignment.
+		 * 
 		 * @return
 		 */
 		public Type rhs() {
 			Type iter = afterType;
-			
+
 			int fieldIndex = 0;
-			for (int i = 0; i != level; ++i) {
+			for (int i = 0; i != level(); ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
 				} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
@@ -1930,8 +2812,8 @@ public abstract class Code {
 				} else if (iter instanceof Type.EffectiveList) {
 					Type.EffectiveList list = (Type.EffectiveList) iter;
 					iter = list.element();
-				} else if (iter instanceof Type.EffectiveDictionary) {
-					Type.EffectiveDictionary dict = (Type.EffectiveDictionary) iter;
+				} else if (iter instanceof Type.EffectiveMap) {
+					Type.EffectiveMap dict = (Type.EffectiveMap) iter;
 					iter = dict.value();
 				} else if (iter instanceof Type.EffectiveRecord) {
 					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
@@ -1944,583 +2826,720 @@ public abstract class Code {
 			}
 			return iter;
 		}
-		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if(nslot != null) {
-				return Code.Update(beforeType, afterType, nslot, level, fields);
-			} else {
-				return this;
-			}
-		}
-				
-		public int hashCode() {
-			if(afterType == null) {
-				return level + fields.hashCode();
-			} else {
-				return afterType.hashCode() + slot + level + fields.hashCode();
-			}
+
+		@Override
+		public final Code clone(int nTarget, int nOperand, int[] nOperands) {
+			return Code.Update(type, nTarget, nOperand, nOperands, afterType,
+					fields);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Update) {
 				Update i = (Update) o;
-				return (i.beforeType == beforeType || (beforeType != null && beforeType
-						.equals(i.beforeType)))
-						&& (i.afterType == afterType || (afterType != null && afterType
-								.equals(i.afterType)))
-						&& level == i.level
-						&& slot == i.slot && fields.equals(i.fields);
+				return super.equals(o) && afterType.equals(i.afterType)
+						&& fields.equals(i.fields);
 			}
 			return false;
 		}
 
 		public String toString() {
-			String fs = fields.isEmpty() ? "" : " ";
-			boolean firstTime=true;
-			for(String f : fields) {
-				if(!firstTime) {
-					fs += ".";
+			String r = "%" + target;
+			for (LVal lv : this) {
+				if (lv instanceof ListLVal) {
+					ListLVal l = (ListLVal) lv;
+					r = r + "[%" + l.indexOperand + "]";
+				} else if (lv instanceof StringLVal) {
+					StringLVal l = (StringLVal) lv;
+					r = r + "[%" + l.indexOperand + "]";
+				} else if (lv instanceof MapLVal) {
+					MapLVal l = (MapLVal) lv;
+					r = r + "[%" + l.keyOperand + "]";
+				} else if (lv instanceof RecordLVal) {
+					RecordLVal l = (RecordLVal) lv;
+					r = r + "." + l.field;
+				} else {
+					ReferenceLVal l = (ReferenceLVal) lv;
+					r = "(*" + r + ")";
 				}
-				firstTime=false;
-				fs += f;
 			}
-			return toString("update " + slot + " #" + level + fs,beforeType,afterType);
+			return "update " + r + " %" + operand + " : " + type + " -> "
+					+ afterType;
 		}
 	}
 
 	/**
-	 * Constructs a new dictionary value from zero or more key-value pairs on
-	 * the stack. For each pair, the key must occur directly before the value on
-	 * the stack.  For example:
+	 * Constructs a map value from zero or more key-value pairs on the
+	 * stack. For each pair, the key must occur directly before the value on the
+	 * stack. For example, consider the following Whiley function
+	 * <code>f()</code>:
 	 * 
 	 * <pre>
-	 *   const 1 : int                           
-	 *   const "Hello" : string                  
-	 *   const 2 : int                           
-	 *   const "World" : string                  
-	 *   newdict #2 : {int->string}
+	 * {int=>string} f():
+	 *     return {1=>"Hello",2=>"World"}
 	 * </pre>
 	 * 
-	 * Pushes the dictionary value <code>{1->"Hello",2->"World"}</code> onto the
-	 * stack.
+	 * This could be compiled into the following WYIL code using this bytecode:
+	 * 
+	 * <pre>
+	 * {int->string} f():
+	 * body:
+	 *   const %1 = 1                   : int                           
+	 *   const %2 = "Hello"             : string                  
+	 *   const %3 = 2                   : int                           
+	 *   const %4 = "World"             : string                  
+	 *   newmap %0 = (%1, %2, %3, %4)   : {int=>string}
+	 *   return %0                      : {int=>string}
+	 * </pre>
+	 * 
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewDict extends Code {
-		public final Type.Dictionary type;
-		public final int nargs;
-		
-		private NewDict(Type.Dictionary type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+	public static final class NewMap extends
+			AbstractNaryAssignable<Type.Map> {
+
+		private NewMap(Type.Map type, int target, int[] operands) {
+			super(type, target, operands);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return nargs;
-			} else {
-				return type.hashCode() + nargs;
-			}
+
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewMap(type, nTarget, nOperands);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof NewDict) {
-				NewDict i = (NewDict) o;
-				return (type == i.type || (type != null && type.equals(i.type))) && nargs == i.nargs;
+			if (o instanceof NewMap) {
+				return super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("newdict #" + nargs,type);
-		}	
+			return "newmap %" + target + " = " + toString(operands) + " : " + type;
+		}
 	}
 
 	/**
-	 * Constructs a new record value from zero or more values on the stack. Each
-	 * value is associated with a field name, and will be popped from the stack
-	 * in the reverse order. For example:
+	 * Constructs a new record value from the values of zero or more operand
+	 * register, each of which is associated with a field name. The new record
+	 * value is then written into the target register. For example, the
+	 * following Whiley code:
 	 * 
 	 * <pre>
-	 *   const 1 : int                           
-	 *   const 2 : int                           
-	 *   newrec : {int x,int y}
+	 * define Point as {real x, real y}
+	 * 
+	 * Point f(real x, real y):
+	 *     return {x: x, y: x}
 	 * </pre>
 	 * 
-	 * Pushes the record value <code>{x:1,y:2}</code> onto the stack.
+	 * can be translated into the following WYIL:
+	 * 
+	 * <pre>
+	 * {real x,real y} f(real x, real y):
+	 * body: 
+	 *     assign %3 = %0         : real                  
+	 *     assign %4 = %0         : real                  
+	 *     newrecord %2 (%3, %4)  : {real x,real y}    
+	 *     return %2              : {real x,real y}
+	 * </pre>
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewRecord extends Code {
-		public final Type.Record type;
-		
-		private NewRecord(Type.Record type) {
-			this.type = type;
+	public static final class NewRecord extends
+			AbstractNaryAssignable<Type.Record> {
+		private NewRecord(Type.Record type, int target, int[] operands) {
+			super(type, target, operands);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 952;
-			} else {
-				return type.hashCode();
-			}
+
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewRecord(type, nTarget, nOperands);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof NewRecord) {
-				NewRecord i = (NewRecord) o;
-				return type == i.type || (type != null && type.equals(i.type));
+			if (o instanceof NewRecord) {
+				return super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("newrec",type);
-		}	
+			return "newrecord %" + target + " = " + toString(operands) + " : "
+					+ type;
+		}
 	}
 
 	/**
-	 * Constructs a new tuple value from two or more values on the stack. Values
-	 * are popped from the stack in the reverse order they occur in the tuple.
-	 * For example:
+	 * Constructs a new tuple value from the values given by zero or more
+	 * operand registers. The new tuple is then written into the target
+	 * register. For example, the following Whiley code:
 	 * 
 	 * <pre>
-	 *   const 1 : int                           
-	 *   const 2 : int                           
-	 *   newtuple #2 : (int,int)
+	 * (int,int) f(int x, int y):
+	 *     return x,y
 	 * </pre>
 	 * 
-	 * Pushes the tuple value <code>(1,2)</code> onto the stack.
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * (int,int) f(int x, int y):
+	 * body: 
+	 *     assign %3 = %0          : int                   
+	 *     assign %4 = %1          : int                   
+	 *     newtuple %2 = (%3, %4)  : (int,int)         
+	 *     return %2               : (int,int)
+	 * </pre>
+	 * 
+	 * This writes the tuple value generated from <code>(x,y)</code> into
+	 * register <code>%2</code> and returns it.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class NewTuple extends Code {
-		public final Type.Tuple type;
-		public final int nargs;
-		
-		private NewTuple(Type.Tuple type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+	public static final class NewTuple extends AbstractNaryAssignable<Type.Tuple> {
+
+		private NewTuple(Type.Tuple type, int target, int[] operands) {
+			super(type, target, operands);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return nargs;
-			} else {
-				return type.hashCode() + nargs;
-			}
+
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewTuple(type, nTarget, nOperands);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof NewTuple) {
-				NewTuple i = (NewTuple) o;
-				return nargs == i.nargs && (type == i.type || (type != null && type.equals(i.type)));
+			if (o instanceof NewTuple) {
+				return super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("newtuple #" + nargs,type);
-		}	
+			return "newtuple %" + target + " = " + toString(operands) + " : "
+					+ type;
+		}
 	}
 
 	/**
-	 * Constructs a new set value from zero or more values on the stack. The new
-	 * set is load onto the stack. For example:
+	 * Constructs a new set value from the values given by zero or more operand
+	 * registers. The new set is then written into the target register. For
+	 * example, the following Whiley code:
 	 * 
 	 * <pre>
-	 *     const 1 : int                           
-	 *     const 2 : int                           
-	 *     const 3 : int                           
-	 *     newset #3 : {int}
+	 * {int} f(int x, int y, int z):
+	 *     return {x,y,z}
 	 * </pre>
 	 * 
-	 * Pushes the set value <code>{1,2,3}</code> onto the stack.
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * [int] f(int x, int y, int z):
+	 * body: 
+	 *    assign %4 = %0             : int                   
+	 *    assign %5 = %1             : int                   
+	 *    assign %6 = %2             : int                   
+	 *    newset %3 = (%4, %5, %6)   : [int]            
+	 *    return %3                  : [int]
+	 * </pre>
+	 * 
+	 * Writes the set value given by <code>{x,y,z}</code> into register
+	 * <code>%3</code> and returns it.
 	 * 
 	 * @author David J. Pearce
 	 * 
-	 */		
-	public static final class NewSet extends Code {
-		public final Type.Set type;
-		public final int nargs;
-		
-		private NewSet(Type.Set type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+	 */
+	public static final class NewSet extends AbstractNaryAssignable<Type.Set> {
+
+		private NewSet(Type.Set type, int target, int[] operands) {
+			super(type, target, operands);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return nargs;
-			} else {
-				return type.hashCode();
-			}
+
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewSet(type, nTarget, nOperands);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof NewSet) {
-				NewSet i = (NewSet) o;
-				return type == i.type || (type != null && type.equals(i.type))
-						&& nargs == i.nargs;
+			if (o instanceof NewSet) {
+				return super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("newset #" + nargs,type);
-		}	
+			return "newset %" + target + " = " + toString(operands) + " : " + type;
+		}
 	}
 
 	/**
-	 * Constructs a new list value from zero or more values on the stack. The
-	 * values are popped from the stack in the reverse order they will occur in
-	 * the new list. The new list is load onto the stack. For example:
+	 * Constructs a new list value from the values given by zero or more operand
+	 * registers. The new list is then written into the target register. For
+	 * example, the following Whiley code:
 	 * 
 	 * <pre>
-	 *     const 1 : int                           
-	 *     const 2 : int                           
-	 *     const 3 : int                           
-	 *     newlist #3 : [int]
+	 * [int] f(int x, int y, int z):
+	 *     return [x,y,z]
 	 * </pre>
 	 * 
-	 * Pushes the list value <code>[1,2,3]</code> onto the stack.
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * [int] f(int x, int y, int z):
+	 * body: 
+	 *    assign %4 = %0             : int                   
+	 *    assign %5 = %1             : int                   
+	 *    assign %6 = %2             : int                   
+	 *    newlist %3 = (%4, %5, %6)  : [int]            
+	 *    return %3                  : [int]
+	 * </pre>
+	 * 
+	 * Writes the list value given by <code>[x,y,z]</code> into register
+	 * <code>%3</code> and returns it.
 	 * 
 	 * @author David J. Pearce
 	 * 
-	 */	
-	public static final class NewList extends Code {
-		public final Type.List type;
-		public final int nargs;
-		
-		private NewList(Type.List type, int nargs) {
-			this.type = type;
-			this.nargs = nargs;
+	 */
+	public static final class NewList extends AbstractNaryAssignable<Type.List> {
+
+		private NewList(Type.List type, int target, int[] operands) {
+			super(type, target, operands);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return nargs;
-			} else {
-				return type.hashCode();
-			}
+
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.NewList(type, nTarget, nOperands);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof NewList) {
-				NewList i = (NewList) o;
-				return type == i.type || (type != null && type.equals(i.type))
-						&& nargs == i.nargs;
+			if (o instanceof NewList) {
+				return super.equals(operands);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("newlist #" + nargs,type);
-		}	
+			return "newlist %" + target + " = " + toString(operands) + " : "
+					+ type;
+		}
 	}
-	
+
+	/**
+	 * Represents a no-operation bytecode which, as the name suggests, does
+	 * nothing.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Nop extends Code {
-		private Nop() {}
-		public String toString() { return "nop"; }
-	}	
-		
-	public static final class Return extends Code {
-		public final Type type;
-		
-		private Return(Type type) {
-			this.type = type;
+		private Nop() {
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 996;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Return) {
-				Return i = (Return) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
+
 		public String toString() {
-			return toString("return",type);
-		}
-	}
-	
-	public enum OpDir {
-		UNIFORM {
-			public String toString() { return ""; }
-		},
-		LEFT {
-			public String toString() { return "_l"; }
-		},
-		RIGHT {
-			public String toString() { return "_r"; }
-		}
-	}
-	
-	
-	public static final class SetUnion extends Code {		
-		public final OpDir dir;
-		public final Type.EffectiveSet type;
-		
-		private SetUnion(Type.EffectiveSet type, OpDir dir) {
-			if(dir == null) {
-				throw new IllegalArgumentException("SetAppend direction cannot be null");
-			}			
-			this.type = type;
-			this.dir = dir;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return dir.hashCode(); 
-			} else {
-				return type.hashCode() + dir.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof SetUnion) {
-				SetUnion setop = (SetUnion) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)))						
-						&& dir.equals(setop.dir);
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("union" + dir.toString(), (Type) type);
-		}
-	}
-	
-	public static final class SetIntersect extends Code {		
-		public final OpDir dir;
-		public final Type.EffectiveSet type;
-		
-		private SetIntersect(Type.EffectiveSet type, OpDir dir) {
-			if(dir == null) {
-				throw new IllegalArgumentException("SetAppend direction cannot be null");
-			}			
-			this.type = type;
-			this.dir = dir;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return dir.hashCode(); 
-			} else {
-				return type.hashCode() + dir.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof SetIntersect) {
-				SetIntersect setop = (SetIntersect) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)))						
-						&& dir.equals(setop.dir);
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("intersect" + dir.toString(), (Type) type);
-		}
-	}
-	
-	public static final class SetDifference extends Code {		
-		public final OpDir dir;
-		public final Type.EffectiveSet type;
-		
-		private SetDifference(Type.EffectiveSet type, OpDir dir) {
-			if(dir == null) {
-				throw new IllegalArgumentException("SetAppend direction cannot be null");
-			}			
-			this.type = type;
-			this.dir = dir;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return dir.hashCode(); 
-			} else {
-				return type.hashCode() + dir.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof SetDifference) {
-				SetDifference setop = (SetDifference) o;
-				return (type == setop.type || (type != null && type
-						.equals(setop.type)))						
-						&& dir.equals(setop.dir);
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("difference" + dir.toString(), (Type) type);
-		}
-	}
-		
-	public static final class StringAppend extends Code {			
-		public final OpDir dir;		
-		
-		private StringAppend(OpDir dir) {			
-			if(dir == null) {
-				throw new IllegalArgumentException("StringAppend direction cannot be null");
-			}			
-			this.dir = dir;
-		}
-		
-		public int hashCode() {			
-			return dir.hashCode();			
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof StringAppend) {
-				StringAppend setop = (StringAppend) o;
-				return dir.equals(setop.dir);
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("stringappend" + dir.toString(),Type.T_STRING);
-		}
-	}
-	
-	public static final class SubString extends Code {		
-		private SubString() {
-		}
-		
-		public int hashCode() {			
-			return 983745;			
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof SubString;
-		}
-				
-		public String toString() {
-			return toString("substring",Type.T_STRING);
-		}
-	}
-		
-	public static final class Skip extends Code {
-		Skip() {}
-		public int hashCode() {
-			return 101;
-		}
-		public boolean equals(Object o) {
-			return o instanceof Skip;
-		}
-		public String toString() {
-			return "skip";
+			return "nop";
 		}
 	}
 
-	public static final class Store extends Code {		
-		public final Type type;
-		public final int slot;		
-		
-		private Store(Type type, int slot) {
-			this.type = type;
-			this.slot = slot;
+	/**
+	 * Returns from the enclosing function or method, possibly returning a
+	 * value. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 *     return x + y
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL:
+	 * 
+	 * <pre>
+	 * int f(int x, int y):
+	 * body: 
+	 *     assign %3 = %0    : int                   
+	 *     assign %4 = %1    : int                   
+	 *     add %2 = % 3, %4  : int                  
+	 *     return %2         : int
+	 * </pre>
+	 * 
+	 * Here, the
+	 * <code>return<code> bytecode returns the value of its operand register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Return extends AbstractUnaryOp<Type> {
+
+		private Return(Type type, int operand) {
+			super(type, operand);
+			if (type == Type.T_VOID && operand != NULL_REG) {
+				throw new IllegalArgumentException(
+						"Return with void type cannot have target register.");
+			} else if (type != Type.T_VOID && operand == NULL_REG) {
+				throw new IllegalArgumentException(
+						"Return with non-void type must have target register.");
+			}
 		}
-		
+
+		public Code clone(int nOperand) {
+			return new Return(type, nOperand);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Return) {
+				return super.equals(o);
+			}
+			return false;
+		}
+
+		public String toString() {
+			if (operand != Code.NULL_REG) {
+				return "return %" + operand + " : " + type;
+			} else {
+				return "return";
+			}
+		}
+	}
+
+	public enum BinSetKind {
+		LEFT_UNION {
+			public String toString() {
+				return "lunion";
+			}
+		},
+		RIGHT_UNION {
+			public String toString() {
+				return "runion";
+			}
+		},
+		UNION {
+			public String toString() {
+				return "union";
+			}
+		},
+		LEFT_INTERSECTION {
+			public String toString() {
+				return "lintersect";
+			}
+		},
+		RIGHT_INTERSECTION {
+			public String toString() {
+				return "rintersect";
+			}
+		},
+		INTERSECTION {
+			public String toString() {
+				return "intersect";
+			}
+		},
+		LEFT_DIFFERENCE {
+			public String toString() {
+				return "ldiff";
+			}
+		},
+		DIFFERENCE {
+			public String toString() {
+				return "diff";
+			}
+		}
+	}
+
+	/**
+	 * <p>
+	 * A binary operation which reads two set values from the operand registers,
+	 * performs an operation on them and writes the result to the target
+	 * register. The binary set operators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>union, intersection, difference</i>. Both operands must be have
+	 * the given (effective) set type. same type is produced.</li>
+	 * <li><i>left union, left intersection, left difference</i>. The left
+	 * operand must have the given (effective) set type, whilst the right
+	 * operand has the given (effective) set element type.</li>
+	 * <li><i>right union, right intersection</i>. The right operand must have
+	 * the given (effective) set type, whilst the left operand has the given
+	 * (effective) set element type.</li>
+	 * </ul>
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * {int} f({int} xs, {int} ys):
+	 *     return xs + ys // set union
+	 * 
+	 * {int} g(int x, {int} ys):
+	 *     return {x} & ys // set intersection
+	 * 
+	 * {int} h({int} xs, int y):
+	 *     return xs - {y} // set difference
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * {int} f({int} xs, {int} ys):
+	 * body: 
+	 *     union %2 = %0, %1  : {int}               
+	 *     return %2          : {int}                       
+	 * 
+	 * {int} g(int x, {int} ys):
+	 * body: 
+	 *     rintersect %2 = %0, %1  : {int}           
+	 *     return %2               : {int}
+	 *     
+	 * {int} h({int} xs, int y):
+	 * body: 
+	 *     ldiff %2 = %0, %1    : {int}                
+	 *     return %2            : {int}
+	 * </pre>
+	 * 
+	 * Here, we see that the purpose of the <i>left-</i> and <i>right-</i>
+	 * operations is to avoid creating a temporary set in the common case of a
+	 * single element set on one side. This is largely an optimisation and it is
+	 * expected that the front-end of the compiler will spots such situations
+	 * and compile them down appropriately.
+	 * 
+	 * @author David J. Pearce
+	 */
+	public static final class BinSetOp extends
+			AbstractBinaryAssignable<Type.EffectiveSet> {
+		public final BinSetKind kind;
+
+		private BinSetOp(Type.EffectiveSet type, int target, int leftOperand,
+				int rightOperand, BinSetKind operation) {
+			super(type, target, leftOperand, rightOperand);
+			if (operation == null) {
+				throw new IllegalArgumentException(
+						"SetOp operation cannot be null");
+			}
+			this.kind = operation;
+		}
+
+		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.BinSetOp(type, nTarget, nLeftOperand, nRightOperand,
+					kind);
+		}
+
+		public int hashCode() {
+			return kind.hashCode() + super.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof BinSetOp) {
+				BinSetOp setop = (BinSetOp) o;
+				return kind.equals(setop.kind) && super.equals(o);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return kind + " %" + target + " = %" + leftOperand + ", %"
+					+ rightOperand + " : " + type;
+		}
+	}
+
+	public enum StringOperation {
+		LEFT_APPEND {
+			public String toString() {
+				return "strappend_l";
+			}
+		},
+		RIGHT_APPEND {
+			public String toString() {
+				return "strappend_r";
+			}
+		},
+		APPEND {
+			public String toString() {
+				return "strappend";
+			}
+		}
+	}
+
+	/**
+	 * <p>
+	 * A binary operation which reads two string values from the operand
+	 * registers, performs an operation (append) on them and writes the result
+	 * to the target register. The binary set operators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>append</i>. Both operands must be have string type.</li>
+	 * <li><i>left append</i>. The left operand must have string type, whilst
+	 * the right operand has char type.</li>
+	 * <li><i>right append</i>. The right operand must have string type, whilst
+	 * the left operand has char type.</li>
+	 * </ul>
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * string f(string xs, string ys):
+	 *     return xs + ys
+	 * 
+	 * string g(string xs, char y):
+	 *     return xs + y
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * string f(string xs, string ys):
+	 * body: 
+	 *     strappend %2 = %0, %2    : string         
+	 *     return %2                : string
+	 *     
+	 * string g(string xs, char y):
+	 * body: 
+	 *     strappend_l %2 = %0, %1  : string       
+	 *     return %2                : string
+	 * </pre>
+	 * 
+	 * Here, we see that the purpose of the <i>left-</i> and <i>right-</i>
+	 * operations is to avoid creating a temporary string in the common case of
+	 * a single char being appended.
+	 * 
+	 * @author David J. Pearce
+	 */
+	public static final class StringOp extends
+			AbstractBinaryAssignable<Type.Strung> {
+		public final StringOperation operation;
+
+		private StringOp(int target, int leftOperand, int rightOperand,
+				StringOperation operation) {
+			super(Type.T_STRING, target, leftOperand, rightOperand);
+			if (operation == null) {
+				throw new IllegalArgumentException(
+						"StringBinOp operation cannot be null");
+			}
+			this.operation = operation;
+		}
+
+		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+			return Code.StringOp(nTarget, nLeftOperand, nRightOperand,
+					operation);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof StringOp) {
+				StringOp setop = (StringOp) o;
+				return operation.equals(setop.operation) && super.equals(o);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return operation + " %" + target + " = %" + leftOperand + ", %"
+					+ rightOperand + " : " + type;
+		}
+	}
+
+	/**
+	 * Reads the string value from a source operand register, and the integer
+	 * values from two index operand registers, computes the substring and
+	 * writes the result back to a target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class SubString extends AbstractNaryAssignable {
+
+		private SubString(int target, int[] operands) {
+			super(Type.T_STRING, target, operands);
+		}
+
 		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+		public final Code clone(int nTarget, int[] nOperands) {
+			return Code.SubString(nTarget, nOperands);
 		}
-		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if(nslot != null) {
-				return Code.Store(type, nslot);	
-			} else {
-				return this;
-			}
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return slot;
-			} else {
-				return type.hashCode() + slot;
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Store) {
-				Store i = (Store) o;
-				return (type == i.type || (type != null && type.equals(i.type)))
-						&& slot == i.slot;
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("store " + slot,type);
-		}	
-	}	
 
+		public boolean equals(Object o) {
+			return o instanceof SubString && super.equals(o);
+		}
+
+		public String toString() {
+			return "substr %" + target + " = %" + operands[0] + ", %"
+					+ operands[1] + ", %" + operands[2] + " : " + type;
+		}
+	}
+
+	/**
+	 * Performs a multi-way branch based on the value contained in the operand
+	 * register. A <i>dispatch table</i> is provided which maps individual
+	 * matched values to their destination labels. For example, the following
+	 * Whiley code:
+	 * 
+	 * <pre>
+	 * string f(int x):
+	 *     switch x:
+	 *         case 1:
+	 *             return "ONE"
+	 *         case 2:
+	 *             return "TWO"
+	 *         default:
+	 *             return "OTHER"
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * string f(int x):
+	 * body:              
+	 *     switch %0 1->blklab1, 2->blklab2, *->blklab3
+	 * .blklab1                                
+	 *     const %1 = "ONE" : string               
+	 *     return %1 : string                      
+	 * .blklab2                                
+	 *     const %1 = "TWO" : string               
+	 *     return %1 : string                      
+	 * .blklab3                                
+	 *     const %1 = "OTHER" : string             
+	 *     return %1 : string
+	 * </pre>
+	 * 
+	 * Here, we see how e.g. value <code>1</code> is mapped to the label
+	 * <code>blklab1</code>. Thus, if the operand register <code>%0</code>
+	 * contains value <code>1</code>, then control will be transferred to that
+	 * label. The final mapping <code>*->blklab3</code> covers the default case
+	 * where the value in the operand is not otherwise matched.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Switch extends Code {
 		public final Type type;
-		public final ArrayList<Pair<Value,String>> branches;
+		public final int operand;
+		public final ArrayList<Pair<Value, String>> branches;
 		public final String defaultTarget;
 
-		Switch(Type type, String defaultTarget, Collection<Pair<Value,String>> branches) {			
+		Switch(Type type, int operand, String defaultTarget,
+				Collection<Pair<Value, String>> branches) {
 			this.type = type;
-			this.branches = new ArrayList<Pair<Value,String>>(branches);
+			this.operand = operand;
+			this.branches = new ArrayList<Pair<Value, String>>(branches);
 			this.defaultTarget = defaultTarget;
 		}
-	
-		public Switch relabel(Map<String,String> labels) {
-			ArrayList<Pair<Value,String>> nbranches = new ArrayList();
-			for(Pair<Value,String> p : branches) {
+
+		public Switch relabel(Map<String, String> labels) {
+			ArrayList<Pair<Value, String>> nbranches = new ArrayList();
+			for (Pair<Value, String> p : branches) {
 				String nlabel = labels.get(p.second());
-				if(nlabel == null) {
+				if (nlabel == null) {
 					nbranches.add(p);
 				} else {
-					nbranches.add(new Pair(p.first(),nlabel));
+					nbranches.add(new Pair(p.first(), nlabel));
 				}
 			}
-			
+
 			String nlabel = labels.get(defaultTarget);
-			if(nlabel == null) {
-				return Switch(type,defaultTarget,nbranches);
+			if (nlabel == null) {
+				return Code.Switch(type, operand, defaultTarget, nbranches);
 			} else {
-				return Switch(type,nlabel,nbranches);
+				return Code.Switch(type, operand, nlabel, nbranches);
 			}
 		}
-		
+
 		public int hashCode() {
-			if(type == null) {
-				return defaultTarget.hashCode() + branches.hashCode();
-			} else {
-				return type.hashCode() + defaultTarget.hashCode() + branches.hashCode();
-			}
+			return type.hashCode() + operand + defaultTarget.hashCode()
+					+ branches.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Switch) {
 				Switch ig = (Switch) o;
-				return defaultTarget.equals(ig.defaultTarget)
-						&& branches.equals(ig.branches)
-						&& (type == ig.type || (type != null && type
-								.equals(ig.type)));						
+				return operand == ig.operand
+						&& defaultTarget.equals(ig.defaultTarget)
+						&& branches.equals(ig.branches) && type.equals(ig.type);
 			}
 			return false;
 		}
@@ -2536,114 +3555,173 @@ public abstract class Code {
 				table += p.first() + "->" + p.second();
 			}
 			table += ", *->" + defaultTarget;
-			return "switch " + table;
+			return "switch %" + operand + " " + table;
 		}
-	}
 
-	public static final class Send extends Code {		 
-		 public final boolean synchronous;
-		 public final boolean retval;
-		 public final NameID name;
-		 public final Type.Message type;
-			
-		 private Send(Type.Message type, NameID name, boolean synchronous, boolean retval) {
-			 this.type = type;
-			 this.name = name;
-			 this.synchronous = synchronous;
-			 this.retval = retval;
-		 }
-
-		 public int hashCode() {
-			 return type.hashCode() + name.hashCode();
-		 }
-
-		 public boolean equals(Object o) {
-			 if(o instanceof Send) {
-				 Send i = (Send) o;
-				return retval == i.retval && synchronous == i.synchronous
-						&& (type.equals(i.type) && name.equals(i.name));
-			 }
-			 return false;
-		 }
-
-		 public String toString() {
-			 if(synchronous) {
-				 if(retval) {
-					 return toString("send " + name,type);
-				 } else {
-					 return toString("vsend " + name,type);
-				 }
-			 } else {
-				 return toString("asend " + name,type);
-			 }
-		 }	
-	}
-
-	public static final class Throw extends Code {
-		public final Type type;
-
-		private Throw(Type type) {
-			this.type = type;
+		@Override
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(operand);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 98923;
-			} else {
-				return type.hashCode();
+
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if (nOperand != null) {
+				return new Return(type, nOperand);
 			}
+			return this;
 		}
-		
+
+	}
+
+	/**
+	 * Throws an exception containing the value in the given operand register.
+	 * For example, the following Whiley Code:
+	 * 
+	 * <pre>
+	 * int f(int x) throws string:
+	 *     if x < 0:
+	 *         throw "ERROR"
+	 *     else:
+	 *         return 1
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x) throws string:
+	 * body:             
+	 *     const %1 = 0 : int                      
+	 *     ifge %0, %1 goto blklab0 : int          
+	 *     const %1 = "ERROR" : string             
+	 *     throw %1 : string                       
+	 * .blklab0                                
+	 *     const %1 = 1 : int                      
+	 *     return %1 : int
+	 * </pre>
+	 * 
+	 * Here, we see an exception containing a <code>string</code> value will be
+	 * thrown when the parameter <code>x</code> is negative.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Throw extends AbstractUnaryOp<Type> {
+		private Throw(Type type, int operand) {
+			super(type, operand);
+		}
+
+		@Override
+		public Code clone(int nOperand) {
+			return Code.Throw(type, nOperand);
+		}
+
 		public boolean equals(Object o) {
-			if(o instanceof Throw) {
-				Throw i = (Throw) o;
-				return type == i.type || (type != null && type.equals(i.type));
+			if (o instanceof Throw) {
+				return super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("throw",type);
+			return "throw %" + operand + " : " + type;
 		}
 	}
-	
-	public static final class TryCatch extends Code {		
-		public final String target;
-		public final ArrayList<Pair<Type,String>> catches;
 
-		TryCatch(String target, Collection<Pair<Type,String>> catches) {						
-			this.catches = new ArrayList<Pair<Type,String>>(catches);
-			this.target = target;
+	/**
+	 * Represents a try-catch block within which specified exceptions will
+	 * caught and processed within a handler. For example, the following Whiley
+	 * code:
+	 * 
+	 * <pre>
+	 * int f(int x) throws Error:
+	 *     ...
+	 * 
+	 * int g(int x):
+	 *     try:
+	 *         x = f(x)
+	 *     catch(Error e):
+	 *         return 0
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body: 
+	 *     ...                        
+	 * 
+	 * int g(int x):
+	 * body: 
+	 *     trycatch Error -> lab2          
+	 *        assign %3 = %0           : int                   
+	 *        invoke %0 = (%3) test:f  : int(int) throws {string msg}
+	 *     return
+	 * .lab2                          
+	 *     const %3 = 0                : int                      
+	 *     return %3                   : int
+	 * </pre>
+	 * 
+	 * Here, we see that within the try-catch block control is transferred to
+	 * <code>lab2</code> if an exception of type <code>Error</code> is thrown.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class TryCatch extends Code {
+		public final int operand;
+		public final String label;
+		public final ArrayList<Pair<Type, String>> catches;
+
+		TryCatch(int operand, String label,
+				Collection<Pair<Type, String>> catches) {
+			this.operand = operand;
+			this.catches = new ArrayList<Pair<Type, String>>(catches);
+			this.label = label;
 		}
-	
-		public TryCatch relabel(Map<String,String> labels) {
-			ArrayList<Pair<Type,String>> nbranches = new ArrayList();
-			for(Pair<Type,String> p : catches) {
+
+		@Override
+		public void registers(java.util.Set<Integer> registers) {
+			registers.add(operand);
+		}
+
+		@Override
+		public Code remap(Map<Integer, Integer> binding) {
+			Integer nOperand = binding.get(operand);
+			if (nOperand != null) {
+				return Code.TryCatch(nOperand, label, catches);
+			}
+			return this;
+		}
+
+		public TryCatch relabel(Map<String, String> labels) {
+			ArrayList<Pair<Type, String>> nbranches = new ArrayList();
+			for (Pair<Type, String> p : catches) {
 				String nlabel = labels.get(p.second());
-				if(nlabel == null) {
+				if (nlabel == null) {
 					nbranches.add(p);
 				} else {
-					nbranches.add(new Pair(p.first(),nlabel));
+					nbranches.add(new Pair(p.first(), nlabel));
 				}
 			}
-			
-			String ntarget = labels.get(target);
-			if(ntarget != null) {
-				return TryCatch(ntarget,nbranches);
+
+			String ntarget = labels.get(label);
+			if (ntarget != null) {
+				return TryCatch(operand, ntarget, nbranches);
 			} else {
-				return TryCatch(target,nbranches);
+				return TryCatch(operand, label, nbranches);
 			}
 		}
-		
+
 		public int hashCode() {
-			return target.hashCode() + catches.hashCode();			
+			return operand + label.hashCode() + catches.hashCode();
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof TryCatch) {
 				TryCatch ig = (TryCatch) o;
-				return target.equals(ig.target)
-						&& catches.equals(ig.catches);						
+				return operand == ig.operand && label.equals(ig.label)
+						&& catches.equals(ig.catches);
 			}
 			return false;
 		}
@@ -2661,280 +3739,379 @@ public abstract class Code {
 			return "trycatch " + table;
 		}
 	}
-	
+
 	/**
 	 * Marks the end of a try-catch block.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
 	public static final class TryEnd extends Label {
 		TryEnd(String label) {
 			super(label);
 		}
-		
-		public TryEnd relabel(Map<String,String> labels) {
+
+		public TryEnd relabel(Map<String, String> labels) {
 			String nlabel = labels.get(label);
-			if(nlabel == null) {
+			if (nlabel == null) {
 				return this;
 			} else {
 				return TryEnd(nlabel);
 			}
 		}
-		
+
 		public int hashCode() {
 			return label.hashCode();
 		}
+
 		public boolean equals(Object o) {
-			if(o instanceof TryEnd) {
+			if (o instanceof TryEnd) {
 				TryEnd e = (TryEnd) o;
 				return e.label.equals(label);
 			}
 			return false;
 		}
-		
+
 		public String toString() {
 			return "tryend " + label;
 		}
 	}
 
+		
 	/**
-	 * Pops a number (int or real) from the stack, negates it and pushes the
-	 * result back on.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Negate extends Code {
-		public final Type type;		
-		
-		private Negate(Type type) {			
-			this.type = type;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Negate) {
-				Negate bo = (Negate) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type))); 
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return toString("neg",type);
-		}
-	}
-
-	/**
-	 * Corresponds to a bitwise inversion operation, which pops a byte off the
-	 * stack and pushes the result back on. For example:
+	 * Corresponds to a bitwise inversion operation, which reads a byte value
+	 * from the operand register, inverts it and writes the result to the target
+	 * resgister. For example, the following Whiley code:
 	 * 
 	 * <pre>
 	 * byte f(byte x):
 	 *    return ~x
 	 * </pre>
 	 * 
-	 * Here, the expression <code>~x</code> generates an inverstion bytecode.
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * byte f(byte x):
+	 * body:                   
+	 *     invert %0 = %0   : byte                  
+	 *     return %0        : byte
+	 * </pre>
+	 * 
+	 * Here, the expression <code>~x</code> generates an <code>invert</code>
+	 * bytecode.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Invert extends Code {
-		public final Type type;		
-		
-		private Invert(Type type) {			
-			this.type = type;
+	public static final class Invert extends AbstractUnaryAssignable<Type> {
+
+		private Invert(Type type, int target, int operand) {
+			super(type, target, operand);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
+
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.Invert(type, nTarget, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Invert) {
-				Invert bo = (Invert) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type))); 
+			if (o instanceof Invert) {
+				return super.equals(o);
 			}
 			return false;
 		}
-				
+
 		public String toString() {
-			return toString("invert",type);
+			return "invert %" + target + " = %" + operand + " : " + type;
 		}
 	}
-	
-	public static final class New extends Code {
-		public final Type.Reference type;		
-		
-		private New(Type.Reference type) {			
-			this.type = type;
+
+	/**
+	 * Instantiate a new object from the value in a given operand register, and
+	 * write the result (a reference to that object) to a given target register.
+	 * For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * define PointObj as ref {real x, real y}
+	 * 
+	 * PointObj f(real x, real y):
+	 *     return new {x: x, y: y}
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * ref {real x,real y} f(int x, int y):
+	 * body: 
+	 *     newrecord %2 = (%0, %1)  : {real x,real y}   
+	 *     newobject %2 = %2        : ref {real x,real y}  
+	 *     return %2                : ref {real x,real y}
+	 * </pre>
+	 * 
+	 * <b>NOTE:</b> objects are unlike other data types in WYIL, in that they
+	 * represent mutable state allocated on a heap. Thus, changes to an object
+	 * within a method are visible to those outside of the method.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class NewObject extends
+			AbstractUnaryAssignable<Type.Reference> {
+
+		private NewObject(Type.Reference type, int target, int operand) {
+			super(type, target, operand);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
+
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.NewObject(type, nTarget, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof New) {
-				New bo = (New) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type))); 
+			if (o instanceof NewObject) {
+				return super.equals(o);
 			}
 			return false;
 		}
-				
+
 		public String toString() {
-			return toString("new",type);
+			return "newobject %" + target + " = %" + operand + " : " + type;
 		}
 	}
-	
-	public static final class TupleLoad extends Code {
-		public final Type.EffectiveTuple type;
+
+	/**
+	 * Read a tuple value from the operand register, extract the value it
+	 * contains at a given index and write that to the target register. For
+	 * example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int,int tup):
+	 *     return tup[0]
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL code:
+	 * 
+	 * <pre>
+	 * int f(int,int tup):
+	 * body: 
+	 *     tupleload %0 = %0 0  : int,int            
+	 *     return %0            : int
+	 * </pre>
+	 * 
+	 * This simply reads the parameter <code>x</code> stored in register
+	 * <code>%0</code>, and returns the value stored at index <code>0</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class TupleLoad extends
+			AbstractUnaryAssignable<Type.EffectiveTuple> {
 		public final int index;
-		
-		private TupleLoad(Type.EffectiveTuple type, int index) {
-			this.type = type;
+
+		private TupleLoad(Type.EffectiveTuple type, int target, int operand,
+				int index) {
+			super(type, target, operand);
 			this.index = index;
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
+
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.TupleLoad(type, nTarget, nOperand, index);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof TupleLoad) {
 				TupleLoad i = (TupleLoad) o;
-				return index == i.index
-						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+				return index == i.index && super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("tupleload " + index, (Type) type);
-		}	
+			return "tupleload %" + target + " = %" + operand + " " + index
+					+ " : " + type;
+		}
 	}
-	
-	public static final class Dereference extends Code {
-		public final Type.Reference type;		
-		
-		private Dereference(Type.Reference type) {			
-			this.type = type;
+
+	/**
+	 * Reads a reference value from the operand register, dereferences it (i.e.
+	 * extracts the value it refers to) and writes this to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Dereference extends
+			AbstractUnaryAssignable<Type.Reference> {
+
+		private Dereference(Type.Reference type, int target, int operand) {
+			super(type, target, operand);
 		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 239487;
-			} else {
-				return type.hashCode();
-			}
+
+		protected Code clone(int nTarget, int nOperand) {
+			return Code.Dereference(type, nTarget, nOperand);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Dereference) {
-				Dereference bo = (Dereference) o;
-				return (type == bo.type || (type != null && type
-						.equals(bo.type))); 
+			if (o instanceof Dereference) {
+				return super.equals(o);
 			}
 			return false;
 		}
-				
+
 		public String toString() {
-			return toString("deref",type);
+			return "deref %" + target + " = %" + operand + " : " + type;
+		}
+	}
+
+	public enum UnArithKind {
+		NEG {
+			public String toString() {
+				return "neg";
+			}
+		},
+		
+		NUMERATOR {
+			public String toString() {
+				return "num";
+			}
+		},
+		
+		DENOMINATOR {
+			public String toString() {
+				return "den";
+			}
+		}
+	};
+	
+	/**
+	 * Read a number (int or real) from the operand register, perform a unary
+	 * arithmetic operation on it (e.g. negation) and writes the result to the
+	 * target register. For example, the following Whiley code:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 *     return -x
+	 * </pre>
+	 * 
+	 * can be translated into the following WYIL:
+	 * 
+	 * <pre>
+	 * int f(int x):
+	 * body:                    
+	 *     neg %0 = %0     : int                      
+	 *     return %0       : int
+	 * </pre>
+	 * 
+	 * This simply reads the parameter <code>x</code> stored in register
+	 * <code>%0</code>, negates it and then returns the negated value.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class UnArithOp extends AbstractUnaryAssignable<Type> {
+		public final UnArithKind kind;
+
+		private UnArithOp(Type type, int target, int operand, UnArithKind uop) {
+			super(type, target, operand);
+			if (uop == null) {
+				throw new IllegalArgumentException(
+						"UnaryArithOp bop argument cannot be null");
+			}
+			this.kind = uop;
+		}
+
+		@Override
+		public Code clone(int nTarget, int nOperand) {
+			return Code.UnArithOp(type, nTarget, nOperand, kind);
+		}
+
+		public int hashCode() {
+			return kind.hashCode() + super.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof UnArithOp) {
+				UnArithOp bo = (UnArithOp) o;
+				return kind.equals(bo.kind) && super.equals(bo);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return kind + " %" + target + " = %" + operand + " : " + type;
 		}
 	}
 	
 	/**
-	 * The void bytecode is used to indicate that a given register is no longer live.
+	 * The void bytecode is used to indicate that the given register(s) are no
+	 * longer live. This is useful for communicating information to the memory
+	 * management system about which values could in principle be collected.
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
-	public static class Void extends Code {
-		public final Type type;
-		public final int slot;
-		
-		private Void(Type type, int slot) {
-			this.type = type;
-			this.slot = slot;
+	public static class Void extends AbstractNaryAssignable<Type> {
+
+		private Void(Type type, int[] operands) {
+			super(type, NULL_REG, operands);
 		}
-		
-		@Override
-		public void slots(Set<Integer> slots) {
-			slots.add(slot);
+
+		protected Code clone(int nTarget, int[] nOperands) {
+			return Code.Void(type, nOperands);
 		}
-		
-		public Code remap(Map<Integer,Integer> binding) {
-			Integer nslot = binding.get(slot);
-			if(nslot != null) {
-				return Code.Void(type, nslot);	
-			} else {
-				return this;
-			}
-		}
-		
-		public int hashCode() {
-			return type.hashCode() + slot;
-		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof Void) {
-				Void i = (Void) o;
-				return type.equals(i.type) && slot == i.slot;
+			if (o instanceof Void) {
+				return super.equals(o);
 			}
 			return false;
 		}
-	
+
 		public String toString() {
-			return toString("void " + slot,type);
+			return "void " + toString(operands);
 		}
 	}
-	
-	public static String toString(String str, Type t) {
-		if(t == null) {
-			return str + " : ?";
-		} else {
-			return str + " : " + t;
+
+	private static String toString(int... operands) {
+		String r = "(";
+		for (int i = 0; i != operands.length; ++i) {
+			if (i != 0) {
+				r = r + ", ";
+			}
+			r = r + "%" + operands[i];
 		}
+		return r + ")";
 	}
-	
-	public static String toString(String str, Type before, Type after) {
-		if(before == null || after == null) {
-			return str + " : ?";
-		} else {
-			return str + " : " + before + " => " + after;
+
+	private static int[] toIntArray(Collection<Integer> operands) {
+		int[] ops = new int[operands.size()];
+		int i = 0;
+		for (Integer o : operands) {
+			ops[i++] = o;
 		}
+		return ops;
 	}
-	
+
+	private static int[] remap(Map<Integer, Integer> binding, int[] operands) {
+		int[] nOperands = operands;
+		for (int i = 0; i != nOperands.length; ++i) {
+			int o = operands[i];
+			Integer nOperand = binding.get(o);
+			if (nOperand != null) {
+				if (nOperands == operands) {
+					nOperands = Arrays.copyOf(operands, operands.length);
+				}
+				nOperands[i] = nOperand;
+			}
+		}
+		return nOperands;
+	}
+
 	private static final ArrayList<Code> values = new ArrayList<Code>();
-	private static final HashMap<Code,Integer> cache = new HashMap<Code,Integer>();
-	
+	private static final HashMap<Code, Integer> cache = new HashMap<Code, Integer>();
+
 	private static <T extends Code> T get(T type) {
 		Integer idx = cache.get(type);
-		if(idx != null) {
+		if (idx != null) {
 			return (T) values.get(idx);
-		} else {					
+		} else {
 			cache.put(type, values.size());
 			values.add(type);
 			return type;

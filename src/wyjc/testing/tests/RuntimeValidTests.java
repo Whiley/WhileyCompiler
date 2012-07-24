@@ -35,6 +35,8 @@ public class RuntimeValidTests extends TestHarness {
 
  @Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }
  @Test public void Access_Valid_2_RuntimeTest() { runTest("Access_Valid_2"); }
+ @Ignore("Known Issue") @Test public void Assert_Valid_1_RuntimeTest() { runTest("Assert_Valid_1"); }
+ @Test public void Assume_Valid_1_RuntimeTest() { runTest("Assume_Valid_1"); }
  @Test public void BoolAssign_Valid_1_RuntimeTest() { runTest("BoolAssign_Valid_1"); }
  @Test public void BoolAssign_Valid_2_RuntimeTest() { runTest("BoolAssign_Valid_2"); }
  @Test public void BoolAssign_Valid_3_RuntimeTest() { runTest("BoolAssign_Valid_3"); }
@@ -43,6 +45,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void BoolIfElse_Valid_1_RuntimeTest() { runTest("BoolIfElse_Valid_1"); }
  @Test public void BoolIfElse_Valid_2_RuntimeTest() { runTest("BoolIfElse_Valid_2"); }
  @Test public void BoolList_Valid_1_RuntimeTest() { runTest("BoolList_Valid_1"); }
+ @Test public void BoolList_Valid_2_RuntimeTest() { runTest("BoolList_Valid_2"); }
+ @Test public void BoolList_Valid_3_RuntimeTest() { runTest("BoolList_Valid_3"); }
  @Test public void BoolRecord_Valid_1_RuntimeTest() { runTest("BoolRecord_Valid_1"); }
  @Test public void BoolRecord_Valid_2_RuntimeTest() { runTest("BoolRecord_Valid_2"); } 
  @Test public void BoolReturn_Valid_1_RuntimeTest() { runTest("BoolReturn_Valid_1"); }
@@ -244,8 +248,8 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue") @Test public void MethodCall_Valid_8_RuntimeTest() { runTest("MethodCall_Valid_8"); }
  @Test public void MethodRef_Valid_1_RuntimeTest() { runTest("MethodRef_Valid_1"); }
  @Test public void MethodRef_Valid_2_RuntimeTest() { runTest("MethodRef_Valid_2"); }
- @Test public void MessageRef_Valid_1_RuntimeTest() { runTest("MessageRef_Valid_1"); }
- @Test public void MessageRef_Valid_2_RuntimeTest() { runTest("MessageRef_Valid_2"); }
+ @Ignore("Known Issue") @Test public void MessageRef_Valid_1_RuntimeTest() { runTest("MessageRef_Valid_1"); }
+ @Ignore("Known Issue") @Test public void MessageRef_Valid_2_RuntimeTest() { runTest("MessageRef_Valid_2"); }
  @Test public void MultiLineComment_Valid_1_RuntimeTest() { runTest("MultiLineComment_Valid_1"); }
  @Test public void MultiLineComment_Valid_2_RuntimeTest() { runTest("MultiLineComment_Valid_2"); }
  @Test public void NegationType_Valid_1_RuntimeTest() { runTest("NegationType_Valid_1"); }
@@ -295,6 +299,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecordAssign_Valid_3_RuntimeTest() { runTest("RecordAssign_Valid_3"); }
  @Test public void RecordAssign_Valid_4_RuntimeTest() { runTest("RecordAssign_Valid_4"); }
  @Test public void RecordAssign_Valid_5_RuntimeTest() { runTest("RecordAssign_Valid_5"); }
+ @Test public void RecordAssign_Valid_6_RuntimeTest() { runTest("RecordAssign_Valid_6"); }
  @Test public void RecordConversion_Valid_1_RuntimeTest() { runTest("RecordConversion_Valid_1"); }
  @Test public void RecordCoercion_Valid_1_RuntimeTest() { runTest("RecordCoercion_Valid_1"); }
  @Test public void RecordDefine_Valid_1_RuntimeTest() { runTest("RecordDefine_Valid_1"); }
@@ -385,6 +390,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Switch_Valid_7_RuntimeTest() { runTest("Switch_Valid_7"); }
  @Test public void Switch_Valid_8_RuntimeTest() { runTest("Switch_Valid_8"); }
  @Test public void Switch_Valid_9_RuntimeTest() { runTest("Switch_Valid_9"); }
+ @Ignore("Known Issue") @Test public void Switch_Valid_10_RuntimeTest() { runTest("Switch_Valid_10"); }
  @Test public void Syntax_Valid_1_RuntimeTest() { runTest("Syntax_Valid_1"); }
  @Test public void TryCatch_Valid_1_RuntimeTest() { runTest("TryCatch_Valid_1"); }
  @Test public void TryCatch_Valid_2_RuntimeTest() { runTest("TryCatch_Valid_2"); }

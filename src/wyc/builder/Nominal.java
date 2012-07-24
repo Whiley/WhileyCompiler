@@ -77,21 +77,21 @@ public abstract class Nominal {
 				nominal = raw;
 			}
 			return new UnionOfLists((Type.UnionOfLists)raw,(Type.UnionOfLists)raw);			
-		} else if(raw instanceof Type.Dictionary) {
-			if(!(nominal instanceof Type.Dictionary)) {
+		} else if(raw instanceof Type.Map) {
+			if(!(nominal instanceof Type.Map)) {
 				nominal = raw;
 			}
-			return new Dictionary((Type.Dictionary)nominal,(Type.Dictionary)raw);			
-		} else if(raw instanceof Type.UnionOfDictionaries) {
-			if(!(nominal instanceof Type.UnionOfDictionaries)) {
-				nominal = raw;
-			}
-			return new UnionOfDictionaries((Type.UnionOfDictionaries)nominal,(Type.UnionOfDictionaries)raw);
+			return new Map((Type.Map)nominal,(Type.Map)raw);			
 		} else if(raw instanceof Type.UnionOfMaps) {
 			if(!(nominal instanceof Type.UnionOfMaps)) {
 				nominal = raw;
 			}
-			return new UnionOfMaps((Type.UnionOfMaps)nominal,(Type.UnionOfMaps)raw);			
+			return new UnionOfMaps((Type.UnionOfMaps)nominal,(Type.UnionOfMaps)raw);
+		} else if(raw instanceof Type.UnionOfIndexibles) {
+			if(!(nominal instanceof Type.UnionOfIndexibles)) {
+				nominal = raw;
+			}
+			return new UnionOfIndexibles((Type.UnionOfIndexibles)nominal,(Type.UnionOfIndexibles)raw);			
 		} else if(raw instanceof Type.UnionOfCollections) {
 			if(!(nominal instanceof Type.UnionOfCollections)) {
 				nominal = raw;
@@ -117,11 +117,6 @@ public abstract class Nominal {
 				nominal = raw;
 			}
 			return new Method((Type.Method)nominal,(Type.Method)raw);			
-		} else if(raw instanceof Type.Message) {
-			if(!(nominal instanceof Type.Message)) {
-				nominal = raw;
-			}
-			return new Message((Type.Message)nominal,(Type.Message)raw);			
 		} else {
 			return new Base(nominal,raw);
 		}
@@ -175,17 +170,17 @@ public abstract class Nominal {
 		return new List(nominal,raw);
 	}
 	
-	public static Dictionary Dictionary(Nominal key, Nominal value) {
-		Type.Dictionary nominal = Type.Dictionary(key.nominal(),value.nominal());
-		Type.Dictionary raw = Type.Dictionary(key.raw(),value.raw());
-		return new Dictionary(nominal,raw);
+	public static Map Map(Nominal key, Nominal value) {
+		Type.Map nominal = Type.Map(key.nominal(),value.nominal());
+		Type.Map raw = Type.Map(key.raw(),value.raw());
+		return new Map(nominal,raw);
 	}
 	
 	public static Record Record(boolean isOpen, java.util.Map<String,Nominal> fields) {
 		HashMap<String,Type> nominalFields = new HashMap<String,Type>();
 		HashMap<String,Type> rawFields = new HashMap<String,Type>();
 		
-		for(Map.Entry<String,Nominal> e : fields.entrySet()) {
+		for(java.util.Map.Entry<String,Nominal> e : fields.entrySet()) {
 			String field = e.getKey();
 			Nominal type = e.getValue();
 			nominalFields.put(field,type.nominal());
@@ -239,7 +234,7 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class Strung extends Nominal implements EffectiveMap {
+	public static final class Strung extends Nominal implements EffectiveIndexible {
 		private final Type.Strung raw;
 		private final Type.Strung nominal;
 		
@@ -264,8 +259,8 @@ public abstract class Nominal {
 			return Type.T_STRING;
 		}
 		
-		public EffectiveMap update(Nominal key, Nominal value) {
-			return (EffectiveMap) construct(
+		public EffectiveIndexible update(Nominal key, Nominal value) {
+			return (EffectiveIndexible) construct(
 					(Type) nominal.update(key.nominal(), value.nominal()),
 					(Type) raw.update(key.raw(), value.raw()));
 		}
@@ -363,15 +358,15 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveMap extends EffectiveCollection {
-		public Type.EffectiveMap raw();		
-		public Type.EffectiveMap nominal();		
+	public interface EffectiveIndexible extends EffectiveCollection {
+		public Type.EffectiveIndexible raw();		
+		public Type.EffectiveIndexible nominal();		
 		public Nominal key();					
 		public Nominal value();
-		public EffectiveMap update(Nominal key,Nominal value);
+		public EffectiveIndexible update(Nominal key,Nominal value);
 	}
 	
-	public interface EffectiveList extends EffectiveMap {
+	public interface EffectiveList extends EffectiveIndexible {
 		public Type.EffectiveList raw();		
 		public Type.EffectiveList nominal();		
 		public Nominal element();							
@@ -406,10 +401,10 @@ public abstract class Nominal {
 			return construct(nominal.element(),raw.element());			
 		}
 		
-		public Nominal.EffectiveMap update(Nominal key, Nominal value) {
+		public Nominal.EffectiveIndexible update(Nominal key, Nominal value) {
 			Type n = (Type) nominal.update(key.nominal(), value.nominal());
 			Type r = (Type) raw.update(key.raw(), value.raw());			
-			return (EffectiveMap) construct(n,r);
+			return (EffectiveIndexible) construct(n,r);
 		}
 		
 		public boolean equals(Object o) {
@@ -425,28 +420,28 @@ public abstract class Nominal {
 		}
 	}
 	
-	public interface EffectiveDictionary extends EffectiveMap {
-		public Type.EffectiveDictionary raw();		
-		public Type.EffectiveDictionary nominal();		
+	public interface EffectiveMap extends EffectiveIndexible {
+		public Type.EffectiveMap raw();		
+		public Type.EffectiveMap nominal();		
 		public Nominal key();					
 		public Nominal value();
-		public EffectiveDictionary update(Nominal key, Nominal value);
+		public EffectiveMap update(Nominal key, Nominal value);
 	}
 	
-	public static final class Dictionary extends Nominal implements EffectiveDictionary {
-		private final Type.Dictionary nominal;
-		private final Type.Dictionary raw;
+	public static final class Map extends Nominal implements EffectiveMap {
+		private final Type.Map nominal;
+		private final Type.Map raw;
 		
-		Dictionary(Type.Dictionary nominal, Type.Dictionary raw) {
+		Map(Type.Map nominal, Type.Map raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
 		
-		public Type.Dictionary nominal() {
+		public Type.Map nominal() {
 			return nominal;
 		}
 		
-		public Type.Dictionary raw() {
+		public Type.Map raw() {
 			return raw;
 		}
 		
@@ -462,15 +457,15 @@ public abstract class Nominal {
 			return Tuple(key(),value());
 		}
 		
-		public Nominal.Dictionary update(Nominal key, Nominal value) {
+		public Nominal.Map update(Nominal key, Nominal value) {
 			key = Nominal.Union(key, key());
 			value = Nominal.Union(value, value());
-			return Nominal.Dictionary(key,value);
+			return Nominal.Map(key,value);
 		}		
 		
 		public boolean equals(Object o) {
-			if (o instanceof Dictionary) {
-				Dictionary b = (Dictionary) o;
+			if (o instanceof Map) {
+				Map b = (Map) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;
@@ -573,7 +568,7 @@ public abstract class Nominal {
 		public HashMap<String,Nominal> fields() {
 			HashMap<String,Nominal> r = new HashMap<String,Nominal>();
 			HashMap<String,Type> nominalFields = nominal.fields();
-			for(Map.Entry<String, Type> e : raw.fields().entrySet()) {
+			for(java.util.Map.Entry<String, Type> e : raw.fields().entrySet()) {
 				String key = e.getKey();
 				Type rawField = e.getValue();
 				Type nominalField = nominalFields.get(key);
@@ -644,20 +639,20 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class UnionOfMaps extends Nominal implements EffectiveMap {
-		private final Type.UnionOfMaps nominal;
-		private final Type.UnionOfMaps raw;
+	public static final class UnionOfIndexibles extends Nominal implements EffectiveIndexible {
+		private final Type.UnionOfIndexibles nominal;
+		private final Type.UnionOfIndexibles raw;
 		
-		UnionOfMaps(Type.UnionOfMaps nominal, Type.UnionOfMaps raw) {
+		UnionOfIndexibles(Type.UnionOfIndexibles nominal, Type.UnionOfIndexibles raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
 		
-		public Type.UnionOfMaps nominal() {
+		public Type.UnionOfIndexibles nominal() {
 			return nominal;
 		}
 		
-		public Type.UnionOfMaps raw() {
+		public Type.UnionOfIndexibles raw() {
 			return raw;
 		}
 			
@@ -673,14 +668,14 @@ public abstract class Nominal {
 			return construct(nominal.element(),raw.element());			
 		}
 		
-		public Nominal.EffectiveMap update(Nominal key, Nominal value) {
-			return (EffectiveMap) construct((Type) nominal.update(key.nominal(), value.nominal()),
+		public Nominal.EffectiveIndexible update(Nominal key, Nominal value) {
+			return (EffectiveIndexible) construct((Type) nominal.update(key.nominal(), value.nominal()),
 					(Type) raw.update(key.raw(), value.raw()));
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof UnionOfMaps) {
-				UnionOfMaps b = (UnionOfMaps) o;
+			if (o instanceof UnionOfIndexibles) {
+				UnionOfIndexibles b = (UnionOfIndexibles) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;
@@ -725,20 +720,20 @@ public abstract class Nominal {
 		}
 	}	
 	
-	public static final class UnionOfDictionaries extends Nominal implements EffectiveDictionary {
-		private final Type.UnionOfDictionaries nominal;
-		private final Type.UnionOfDictionaries raw;
+	public static final class UnionOfMaps extends Nominal implements EffectiveMap {
+		private final Type.UnionOfMaps nominal;
+		private final Type.UnionOfMaps raw;
 		
-		UnionOfDictionaries(Type.UnionOfDictionaries nominal, Type.UnionOfDictionaries raw) {
+		UnionOfMaps(Type.UnionOfMaps nominal, Type.UnionOfMaps raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
 		
-		public Type.UnionOfDictionaries nominal() {
+		public Type.UnionOfMaps nominal() {
 			return nominal;
 		}
 		
-		public Type.UnionOfDictionaries raw() {
+		public Type.UnionOfMaps raw() {
 			return raw;
 		}
 				
@@ -754,15 +749,15 @@ public abstract class Nominal {
 			return Tuple(key(),value());
 		}
 		
-		public EffectiveDictionary update(Nominal key, Nominal value) {
-			Type.EffectiveDictionary n = nominal.update(key.nominal(),value.nominal());
-			Type.EffectiveDictionary r = raw.update(key.raw(),value.raw());
-			return (EffectiveDictionary) construct((Type) n, (Type)r);
+		public EffectiveMap update(Nominal key, Nominal value) {
+			Type.EffectiveMap n = nominal.update(key.nominal(),value.nominal());
+			Type.EffectiveMap r = raw.update(key.raw(),value.raw());
+			return (EffectiveMap) construct((Type) n, (Type)r);
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof UnionOfDictionaries) {
-				UnionOfDictionaries b = (UnionOfDictionaries) o;
+			if (o instanceof UnionOfMaps) {
+				UnionOfMaps b = (UnionOfMaps) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;
@@ -802,8 +797,8 @@ public abstract class Nominal {
 			return construct(nominal.element(),raw.element());			
 		}
 		
-		public Nominal.EffectiveMap update(Nominal key, Nominal value) {
-			return (EffectiveMap) construct((Type) nominal.update(key.nominal(), value.nominal()),
+		public Nominal.EffectiveIndexible update(Nominal key, Nominal value) {
+			return (EffectiveIndexible) construct((Type) nominal.update(key.nominal(), value.nominal()),
 					(Type) raw.update(key.raw(), value.raw()));
 		}
 		
@@ -840,7 +835,7 @@ public abstract class Nominal {
 		public HashMap<String,Nominal> fields() {
 			HashMap<String,Nominal> r = new HashMap<String,Nominal>();
 			HashMap<String,Type> nominalFields = nominal.fields();
-			for(Map.Entry<String, Type> e : raw.fields().entrySet()) {
+			for(java.util.Map.Entry<String, Type> e : raw.fields().entrySet()) {
 				String key = e.getKey();
 				Type rawField = e.getValue();
 				Type nominalField = nominalFields.get(key);
@@ -919,22 +914,14 @@ public abstract class Nominal {
 		}
 	}
 	
-	public abstract static class FunctionOrMethodOrMessage extends Nominal {
+	public abstract static class FunctionOrMethod extends Nominal {
+		abstract public Type.FunctionOrMethod nominal();
 		
-		abstract public Type.FunctionOrMethodOrMessage raw();
-		
-		abstract public Type.FunctionOrMethodOrMessage nominal();
-		
+		abstract public Type.FunctionOrMethod raw();
 		
 		abstract public Nominal ret();
 		
 		abstract public java.util.List<Nominal> params();
-	}
-	
-	public abstract static class FunctionOrMethod extends FunctionOrMethodOrMessage {
-		abstract public Type.FunctionOrMethod nominal();
-		
-		abstract public Type.FunctionOrMethod raw();		
 	}
 	
 	public static final class Function extends FunctionOrMethod {
@@ -1030,53 +1017,4 @@ public abstract class Nominal {
 		}
 	}
 	
-	public static final class Message extends FunctionOrMethodOrMessage {
-		private final Type.Message nominal;
-		private final Type.Message raw;
-		
-		public Message(Type.Message nominal, Type.Message raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-		
-		public Type.Message nominal() {
-			return nominal;
-		}
-		
-		public Type.Message raw() {
-			return raw;
-		}
-		
-		public Nominal receiver() {
-			return construct(nominal.receiver(),raw.receiver());
-		}
-		
-		public Nominal ret() {
-			return construct(nominal.ret(),raw.ret());
-		}
-		
-		public java.util.List<Nominal> params() {			
-			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			java.util.List<Type> rawElements = raw.params();
-			java.util.List<Type> nominalElements = nominal.params();
-			for(int i=0;i!=rawElements.size();++i) {
-				Type nominalElement = nominalElements.get(i);
-				Type rawElement = rawElements.get(i);				
-				r.add(construct(nominalElement,rawElement));
-			}				
-			return r;			
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Message) {
-				Message b = (Message) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}	
 }

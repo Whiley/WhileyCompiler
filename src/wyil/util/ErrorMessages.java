@@ -90,7 +90,7 @@ public class ErrorMessages {
 	public static final MsgWithNoParams INVALID_LIST_EXPRESSION  = new MsgWithNoParams("invalid list expression");
 	public static final MsgWithNoParams INVALID_SET_EXPRESSION = new MsgWithNoParams("invalid set expression");
 	public static final MsgWithNoParams INVALID_SET_OR_LIST_EXPRESSION = new MsgWithNoParams("invalid set or list expression");
-	public static final MsgWithNoParams INVALID_DICTIONARY_EXPRESSION = new MsgWithNoParams("invalid dictionary expression");
+	public static final MsgWithNoParams INVALID_MAP_EXPRESSION = new MsgWithNoParams("invalid map expression");
 	public static final MsgWithNoParams INVALID_LVAL_EXPRESSION = new MsgWithNoParams("invalid assignment expression");
 	public static final MsgWithNoParams INVALID_DESTRUCTURE_EXPRESSION = new MsgWithNoParams("invalid destructure expression");
 	public static final MsgWithNoParams INVALID_TUPLE_LVAL = new MsgWithNoParams("invalid tuple lval");

@@ -41,7 +41,7 @@ import static wyil.lang.Block.*;
 
 public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected String filename;
-	protected WyilFile.Method method;
+	protected WyilFile.MethodDeclaration method;
 	protected WyilFile.Case methodCase;
 	protected Block block;
 	protected HashMap<String,T> stores;
@@ -49,36 +49,38 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	public void apply(WyilFile module) {			
 		filename = module.filename();
 		
-		for(WyilFile.ConstDef type : module.constants()) {
-			module.add(propagate(type));
-		}
-		for(WyilFile.TypeDef type : module.types()) {
-			module.add(propagate(type));
-		}	
-		
-		for(WyilFile.Method method : module.methods()) {					
-			if(!method.isNative()) {
-				// native functions/methods don't have bodies
-				module.add(propagate(method));
+		for(WyilFile.Declaration d : module.declarations()) {
+			if(d instanceof WyilFile.ConstantDeclaration) {
+				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d; 
+				module.replace(cd,propagate((cd)));
+			} else if(d instanceof WyilFile.TypeDeclaration) {
+				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
+				module.replace(td,propagate(td));	
+			} else if(d instanceof WyilFile.MethodDeclaration) {
+				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+				if(!md.isNative()) {
+					// native functions/methods don't have bodies
+					module.replace(md,propagate(md));
+				}
 			}
 		}		
 	}
 	
-	protected WyilFile.ConstDef propagate(WyilFile.ConstDef constant) {
+	protected WyilFile.ConstantDeclaration propagate(WyilFile.ConstantDeclaration constant) {
 		return constant;
 	}
 	
-	protected WyilFile.TypeDef propagate(WyilFile.TypeDef type) {
+	protected WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
 		return type;
 	}
 	
-	protected WyilFile.Method propagate(WyilFile.Method method) {
+	protected WyilFile.MethodDeclaration propagate(WyilFile.MethodDeclaration method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.Method(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
@@ -90,7 +92,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		return mcase;
 	}		
 	
-	protected T propagate(int start, int end, T store, List<Pair<Type,String>> handlers) {
+	protected T propagate(int start, int end, T store, List<Code.TryCatch> handlers) {
 		for(int i=start;i<end;++i) {						
 			Entry entry = block.get(i);			
 			try {				
@@ -129,13 +131,13 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					}
 					store = propagate(s, i, loop, entry, store, handlers);					
 					continue;
-				} else if (code instanceof Code.IfGoto) {
-					Code.IfGoto ifgoto = (Code.IfGoto) code;
+				} else if (code instanceof Code.If) {
+					Code.If ifgoto = (Code.If) code;
 					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
-				}  else if (code instanceof Code.IfType) {
-					Code.IfType ifgoto = (Code.IfType) code;
+				}  else if (code instanceof Code.IfIs) {
+					Code.IfIs ifgoto = (Code.IfIs) code;
 					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
@@ -154,7 +156,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					merge(sw.defaultTarget, store, stores);
 					store = null;
 				} else if (code instanceof Code.TryCatch) {
-					Code.TryCatch sw = (Code.TryCatch) code;					
+					Code.TryCatch tc = (Code.TryCatch) code;					
 					int s = i;
 
 					// Note, I could make this more efficient!					
@@ -162,15 +164,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						entry = block.get(i);
 						if (entry.code instanceof Code.Label) {
 							Code.Label l = (Code.Label) entry.code;
-							if (l.label.equals(sw.target)) {
+							if (l.label.equals(tc.label)) {
 								// end of loop body found
 								break;
 							}
 						}						
 					}
 					
-					ArrayList<Pair<Type,String>> nhandlers = new ArrayList<Pair<Type,String>>(handlers);														
-					nhandlers.addAll(0,sw.catches);
+					ArrayList<Code.TryCatch> nhandlers = new ArrayList<Code.TryCatch>(handlers);														
+					nhandlers.add(tc);
 					store = propagate(s+1,i,store,nhandlers);
 					i = i - 1; // this is necessary since last label of
 								// try-catch is first label of catch handler
@@ -208,7 +210,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		}
 	}
 
-	protected void mergeHandlers(int index, Code code, T store, List<Pair<Type, String>> handlers,
+	protected void mergeHandlers(int index, Code code, T store, List<Code.TryCatch> handlers,
 			Map<String, T> stores) {
 		if(code instanceof Code.Throw) {
 			Code.Throw t = (Code.Throw) code;	
@@ -219,30 +221,27 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;	
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.IndirectSend) {
-			Code.IndirectSend i = (Code.IndirectSend) code;
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.Send) {
-			Code.Send i = (Code.Send) code;			
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		}
+		} 
 	}
 	
-	protected void mergeHandler(Type type, T store, List<Pair<Type, String>> handlers,
+	protected void mergeHandler(Type type, T store, List<Code.TryCatch> handlers,
 			Map<String, T> stores) {
-		for(Pair<Type,String> p : handlers) {
-			Type handler = p.first();			
+		for(int i=handlers.size()-1;i>=0;--i) {
+			Code.TryCatch tc = handlers.get(i);
+			for(Pair<Type,String> p : tc.catches) { 
+				Type handler = p.first();			
 
-			if(Type.isSubtype(handler,type)) {
-				T nstore = propagate(handler,store);
-				merge(p.second(),nstore,stores);
-				return; // completely subsumed
-			} else if(Type.isSubtype(type, handler)) {
-				T nstore = propagate(handler,store);
-				merge(p.second(),nstore,stores);
-				// not completely subsumed
-				type = Type.intersect(type,Type.Negation(handler));
-			} 
+				if(Type.isSubtype(handler,type)) {
+					T nstore = propagate(handler,tc,store);
+					merge(p.second(),nstore,stores);
+					return; // completely subsumed
+				} else if(Type.isSubtype(type, handler)) {
+					T nstore = propagate(handler,tc,store);
+					merge(p.second(),nstore,stores);
+					// not completely subsumed
+					type = Type.intersect(type,Type.Negation(handler));
+				}
+			}
 		}
 	}
 	
@@ -266,7 +265,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T,T> propagate(int index, Code.IfGoto ifgoto, Entry entry, T store);
+	protected abstract Pair<T,T> propagate(int index, Code.If ifgoto, Entry entry, T store);
 
 	/**
 	 * <p>
@@ -288,7 +287,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(int index, Code.IfType iftype,
+	protected abstract Pair<T, T> propagate(int index, Code.IfIs iftype,
 			Entry entry, T store);
 
 	/**
@@ -315,11 +314,13 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * 
 	 * @param handler
 	 *            --- type of handler catching exception
+	 * @param tc
+	 *            --- the code of the enclosing try-catch handler
 	 * @param store
 	 *            --- store immediately before cause
 	 * @return
 	 */
-	protected abstract T propagate(Type handler, T store);
+	protected abstract T propagate(Type handler, Code.TryCatch tc, T store);
 	
 	/**
 	 * <p>
@@ -347,7 +348,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * @return
 	 */
 	protected abstract T propagate(int start, int end, 
-			Code.Loop code, Entry entry, T store, List<Pair<Type,String>> handlers);
+			Code.Loop code, Entry entry, T store, List<Code.TryCatch> handlers);
 
 	/**
 	 * <p>

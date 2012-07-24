@@ -93,7 +93,7 @@ public final class FlowTyping {
 	private final GlobalResolver resolver;
 	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
-	private WhileyFile.FunctionOrMethodOrMessage current;
+	private WhileyFile.FunctionOrMethod current;
 	
 	public FlowTyping(GlobalResolver resolver) {		
 		this.resolver = resolver;
@@ -104,8 +104,8 @@ public final class FlowTyping {
 		
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
-				if(decl instanceof FunctionOrMethodOrMessage) {
-					propagate((FunctionOrMethodOrMessage)decl);
+				if(decl instanceof FunctionOrMethod) {
+					propagate((FunctionOrMethod)decl);
 				} else if(decl instanceof TypeDef) {
 					propagate((TypeDef)decl);					
 				} else if(decl instanceof Constant) {
@@ -140,17 +140,12 @@ public final class FlowTyping {
 		}
 	}
 
-	public void propagate(FunctionOrMethodOrMessage d) throws Exception {		
+	public void propagate(FunctionOrMethod d) throws Exception {		
 		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
 		for (WhileyFile.Parameter p : d.parameters) {							
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,d));
-		}
-		
-		if(d instanceof Message) {
-			Message md = (Message) d;							
-			environment = environment.put("this",resolver.resolveAsType(md.receiver,d));			
 		}
 		
 		if(d.precondition != null) {
@@ -168,13 +163,10 @@ public final class FlowTyping {
 		if(d instanceof Function) {
 			Function f = (Function) d;
 			f.resolvedType = resolver.resolveAsType(f.unresolvedType(),d);					
-		} else if(d instanceof Method) {
+		} else {
 			Method m = (Method) d;			
 			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
-		} else {
-			Message m = (Message) d;
-			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
-		}
+		} 
 		
 		propagate(d.statements,environment);
 	}
@@ -222,6 +214,8 @@ public final class FlowTyping {
 				return propagate((Stmt.TryCatch) stmt,environment);
 			} else if(stmt instanceof Stmt.Assert) {
 				return propagate((Stmt.Assert) stmt,environment);
+			} else if(stmt instanceof Stmt.Assume) {
+				return propagate((Stmt.Assume) stmt,environment);
 			} else if(stmt instanceof Stmt.Debug) {
 				return propagate((Stmt.Debug) stmt,environment);
 			} else if(stmt instanceof Stmt.Skip) {
@@ -242,6 +236,13 @@ public final class FlowTyping {
 	}
 	
 	private Environment propagate(Stmt.Assert stmt,
+			Environment environment) {
+		stmt.expr = resolver.resolve(stmt.expr,environment,current);
+		checkIsSubtype(Type.T_BOOL,stmt.expr);
+		return environment;
+	}
+	
+	private Environment propagate(Stmt.Assume stmt,
 			Environment environment) {
 		stmt.expr = resolver.resolve(stmt.expr,environment,current);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
@@ -273,6 +274,28 @@ public final class FlowTyping {
 			lv.afterType = rhs.result();			
 			environment = environment.put(lv.var, lv.afterType);
 			lhs = lv;
+		} else if(lhs instanceof Expr.RationalLVal) {
+			// represents a destructuring assignment
+			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
+						
+			if(!Type.isImplicitCoerciveSubtype(Type.T_REAL, rhs.result().raw())) {
+				syntaxError("real value expected, got " + rhs.result(),filename,rhs);				
+			} 
+			
+			if (tv.numerator instanceof Expr.AssignedVariable
+					&& tv.denominator instanceof Expr.AssignedVariable) {
+				Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator; 				
+				Expr.AssignedVariable rv = (Expr.AssignedVariable) tv.denominator;
+				lv.type = Nominal.T_VOID;
+				rv.type = Nominal.T_VOID;
+				lv.afterType = Nominal.T_INT; 
+				rv.afterType = Nominal.T_INT;
+				environment = environment.put(lv.var, Nominal.T_INT);
+				environment = environment.put(rv.var, Nominal.T_INT);
+			} else {
+				syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,lhs);
+			}
+			
 		} else if(lhs instanceof Expr.Tuple) {
 			// represents a destructuring assignment
 			Expr.Tuple tv = (Expr.Tuple) lhs;
@@ -285,10 +308,8 @@ public final class FlowTyping {
 			// FIXME: the following is something of a kludge. It would also be
 			// nice to support more expressive destructuring assignment
 			// operations.
-			if(Type.isImplicitCoerciveSubtype(Type.T_REAL, rawRhs)) {
-				tupleRhs = Nominal.Tuple(Nominal.T_INT,Nominal.T_INT);
-			} else if(tupleRhs == null) {
-				syntaxError("tuple value expected, got " + tupleRhs.nominal(),filename,rhs);
+			if(tupleRhs == null) {
+				syntaxError("tuple value expected, got " + rhs.result().nominal(),filename,rhs);
 				return null; // deadcode
 			} 
 			
@@ -344,7 +365,7 @@ public final class FlowTyping {
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
-			Nominal.EffectiveMap srcType = la.srcType;
+			Nominal.EffectiveIndexible srcType = la.srcType;
 			afterType = (Nominal) srcType.update(la.index.result(), afterType);
 			return inferAfterType((Expr.LVal) la.src, 
 					afterType);
@@ -425,8 +446,8 @@ public final class FlowTyping {
 		// is permitted in some cases.
 		
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];
-		if(elementTypes.length == 2 && srcType instanceof Nominal.EffectiveDictionary) {
-			Nominal.EffectiveDictionary dt = (Nominal.EffectiveDictionary) srcType;
+		if(elementTypes.length == 2 && srcType instanceof Nominal.EffectiveMap) {
+			Nominal.EffectiveMap dt = (Nominal.EffectiveMap) srcType;
 			elementTypes[0] = dt.key();
 			elementTypes[1] = dt.value();
 		} else {			
@@ -652,7 +673,7 @@ public final class FlowTyping {
 				Expr index = resolver.resolve(ai.index,environment,current);
 				ai.src = src;
 				ai.index = index;
-				Nominal.EffectiveMap srcType = resolver.expandAsEffectiveMap(src.result());
+				Nominal.EffectiveIndexible srcType = resolver.expandAsEffectiveMap(src.result());
 				if(srcType == null) {
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
 				}

@@ -34,7 +34,7 @@ public final class Record extends HashMap<String,Object> {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 1; 
+	int refCount = 100; // temporary measure
 	
 	public Record() {}
 	
@@ -69,8 +69,7 @@ public final class Record extends HashMap<String,Object> {
 	// Record Operations
 	// ================================================================================	 	
 
-	public static Object get(final Record record, final String field) {		
-		Util.decRefs(record);
+	public static Object get(final Record record, final String field) {				
 		Object item = record.get(field);
 		Util.incRefs(item);
 		return item;
@@ -78,22 +77,21 @@ public final class Record extends HashMap<String,Object> {
 	
 	public static Record put(Record record, final String field, final Object value) {
 		Util.countRefs(record);
-		if(record.refCount > 1) {
-			Util.countClone(record);
-			Util.decRefs(record);
+		if(record.refCount > 0) {
+			Util.countClone(record);			
 			record = new Record(record);			
 		} else {
 			Util.nrecord_strong_updates++;
 		}
 		Object val = record.put(field, value);
-		Util.decRefs(val);
-		Util.incRefs(value);		
+		Util.decRefs(val); // decrement overwritten value
+		Util.incRefs(value);
 		return record;
 	}
 	
 	public static Object internal_get(final Record record, final String field) {
 		Object item = record.get(field);
-		if(record.refCount > 1) {
+		if(record.refCount > 0) {
 			Util.incRefs(item);
 		}
 		return item;		
