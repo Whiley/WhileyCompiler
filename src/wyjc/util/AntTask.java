@@ -113,7 +113,7 @@ public class AntTask extends MatchingTask {
 	 */
 	public static final FileFilter binaryFileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".class") || f.isDirectory();
+			return f.getName().endsWith(".class") || f.getName().endsWith(".class") || f.isDirectory();
 		}
 	};
 	
@@ -121,8 +121,10 @@ public class AntTask extends MatchingTask {
 	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
 	private File srcdir;
 	private File destdir;
-	private Content.Filter<WhileyFile> includes = Content.filter("**", WhileyFile.ContentType);
-	private Content.Filter<WhileyFile> excludes = null;
+	private Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
+	private Content.Filter<WhileyFile> whileyExcludes = null;
+	private Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
+	private Content.Filter<WyilFile> wyilExcludes = null;
 	private boolean verbose = false;
 		
     public void setSrcdir (File srcdir) {
@@ -135,15 +137,14 @@ public class AntTask extends MatchingTask {
     
     public void setIncludes(String includes) {
     	String[] split = includes.split(",");
-    	Content.Filter<WhileyFile> filter = null;
+    	Content.Filter<WhileyFile> whileyFilter = null;
+    	Content.Filter<WyilFile> wyilFilter = null;
     	for(String s : split) {
     		if(s.endsWith(".whiley")) {
-    			Content.Filter<WhileyFile> f = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
-    			if(filter == null) {
-    				filter = f;
-    			} else {
-    				filter = Content.or(f, filter);
-    			}
+    			Content.Filter<WhileyFile> f1 = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
+    			Content.Filter<WyilFile> f2 = Content.filter(s.substring(0,s.length()-7),WyilFile.ContentType);
+    			whileyFilter = whileyFilter == null ? f1 : Content.or(f1, whileyFilter); 
+    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
     		}
     	}
     	
@@ -151,21 +152,20 @@ public class AntTask extends MatchingTask {
 		// think this indicates a limitation with the content type system I've
 		// designed.
     	
-    	this.includes = filter;
+    	this.whileyIncludes = whileyFilter;
+    	this.wyilIncludes = wyilFilter;
     }
     
     public void setExcludes(String excludes) {
     	String[] split = excludes.split(",");
-    	Content.Filter<WhileyFile> filter = null;
-    	
+    	Content.Filter<WhileyFile> whileyFilter = null;
+    	Content.Filter<WyilFile> wyilFilter = null;
     	for(String s : split) {
     		if(s.endsWith(".whiley")) {
-    			Content.Filter<WhileyFile> f = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
-    			if(filter == null) {
-    				filter = f;
-    			} else {
-    				filter = Content.or(f, filter);
-    			}
+    			Content.Filter<WhileyFile> f1 = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
+    			Content.Filter<WyilFile> f2 = Content.filter(s.substring(0,s.length()-7),WyilFile.ContentType);
+    			whileyFilter = whileyFilter == null ? f1 : Content.or(f1, whileyFilter); 
+    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
     		}
     	}
     	
@@ -173,7 +173,8 @@ public class AntTask extends MatchingTask {
 		// think this indicates a limitation with the content type system I've
 		// designed.
     	
-    	this.excludes = filter;
+    	this.whileyExcludes = whileyFilter;
+    	this.wyilExcludes = wyilFilter;
     }
     
     public void setWhileyPath (org.apache.tools.ant.types.Path path) throws IOException {
@@ -257,10 +258,10 @@ public class AntTask extends MatchingTask {
     		
 			StandardBuildRule rule = new StandardBuildRule(builder);
 			if (target != null) {
-				rule.add(source, includes, excludes, target,
+				rule.add(source, whileyIncludes, whileyExcludes, target,
 						WhileyFile.ContentType, WyilFile.ContentType);
 			} else {
-				rule.add(source, includes, excludes, source,
+				rule.add(source, whileyIncludes, whileyExcludes, source,
 						WhileyFile.ContentType, WyilFile.ContentType);
 			}
 			project.add(rule);
@@ -276,10 +277,10 @@ public class AntTask extends MatchingTask {
     		
 			rule = new StandardBuildRule(jbuilder);
 			if (target != null) {
-				rule.add(source, includes, excludes, target,
+				rule.add(source, wyilIncludes, wyilExcludes, target,
 						WyilFile.ContentType, ClassFile.ContentType);
 			} else {
-				rule.add(source, includes, excludes, source,
+				rule.add(source, wyilIncludes, wyilExcludes, source,
 						WyilFile.ContentType, ClassFile.ContentType);
 			}
 			project.add(rule);
@@ -291,7 +292,7 @@ public class AntTask extends MatchingTask {
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
 			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();			
-			for (Path.Entry<WhileyFile> e : source.get(includes)) {					
+			for (Path.Entry<WhileyFile> e : source.get(whileyIncludes)) {					
 				Path.Entry<WyilFile> binary;
 				
 				if (target != null) {
