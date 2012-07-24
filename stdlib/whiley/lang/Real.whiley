@@ -64,14 +64,14 @@ string toDecimal(real x, int ndigits):
         x = -x
     else:  
         r = ""    
-    n,d = x
+    n/d = x
     digit = n/d
     rem = x - digit
     r = r + digit + "."
     i = 1
     while i < ndigits && rem != 0:
         rem = rem * 10
-        n,d = rem
+        n/d = rem
         digit = n / d
         rem = rem - digit
         r = r + digit

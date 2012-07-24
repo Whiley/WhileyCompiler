@@ -39,9 +39,16 @@ public class WyilFileReader {
 	private final ArrayList<Type> typePool = new ArrayList<Type>();
 	
 	public WyilFileReader(String filename) throws IOException {
-		input = new BinaryInputStream(new FileInputStream(filename));
+		this.input = new BinaryInputStream(new FileInputStream(filename));
 	}
 	
+	public WyilFileReader(InputStream input) throws IOException {
+		this.input = new BinaryInputStream(input);
+	}
+	
+	public void close() throws IOException {
+		input.close();
+	}
 	
 	public WyilFile read() throws IOException {
 		

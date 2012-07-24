@@ -71,7 +71,7 @@ public class Main {
 		public void associate(Path.Entry e) {
 			if(e.suffix().equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
-			} else if(e.suffix().equals("class")) {
+			} else if(e.suffix().equals("wyil")) {
 				// this could be either a normal JVM class, or a Wyil class. We
 				// need to determine which.
 				try { 					
@@ -89,7 +89,7 @@ public class Main {
 			if(t == WhileyFile.ContentType) {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
-				return "class";
+				return "wyil";
 			} else {
 				return "dat";
 			}

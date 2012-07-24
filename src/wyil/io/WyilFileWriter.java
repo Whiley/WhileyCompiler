@@ -14,7 +14,7 @@ import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.Constant;
 
-public class WyilFileWriter implements Transform {
+public class WyilFileWriter {
 	private static final int MAJOR_VERSION = 0;
 	private static final int MINOR_VERSION = 1;
 	
@@ -35,15 +35,16 @@ public class WyilFileWriter implements Transform {
 	private ArrayList<Type> typePool = new ArrayList<Type>();
 	private HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
 	
-	public WyilFileWriter(wybs.lang.Builder builder) {
+	public WyilFileWriter(OutputStream output) {
+		this.output = new BinaryOutputStream(output); 
 
 	}
 	
-	@Override
-	public void apply(WyilFile module) throws IOException {
-		String filename = module.filename().replace(".whiley", ".wyil");
-		output = new BinaryOutputStream(new FileOutputStream(filename));
-		
+	public void close() throws IOException {
+		output.close();
+	}	
+	
+	public void write(WyilFile module) throws IOException {				
 		buildPools(module);
 		
 		writeHeader(module);
