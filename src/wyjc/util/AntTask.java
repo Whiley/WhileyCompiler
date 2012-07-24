@@ -35,6 +35,8 @@ import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
 import wyil.Pipeline;
 import wyil.lang.WyilFile;
+import wyjc.Wyil2JavaBuilder;
+import wyjvm.lang.ClassFile;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -67,19 +69,14 @@ public class AntTask extends MatchingTask {
 	public static final Content.Registry registry = new Content.Registry() {
 	
 		public void associate(Path.Entry e) {
-			if(e.suffix().equals("whiley")) {
+			String suffix = e.suffix();
+			
+			if(suffix.equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
-			} else if(e.suffix().equals("class")) {
-				// this could be either a normal JVM class, or a Wyil class. We
-				// need to determine which.
-				try { 
-					WyilFile c = WyilFile.ContentType.read(e, e.inputStream());
-					if(c != null) {
-						e.associate(WyilFile.ContentType,c);
-					}
-				} catch(Exception ex) {
-					// hmmm, not exactly ideal
-				}
+			} else if(suffix.equals("wyil")) {
+				e.associate(WyilFile.ContentType, null);				
+			} else if(suffix.equals("class")) {				
+				e.associate(ClassFile.ContentType, null);				
 			} 
 		}
 		
@@ -87,6 +84,8 @@ public class AntTask extends MatchingTask {
 			if(t == WhileyFile.ContentType) {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
+				return "wyil";
+			} else if(t == ClassFile.ContentType) {
 				return "class";
 			} else {
 				return "dat";
@@ -219,7 +218,10 @@ public class AntTask extends MatchingTask {
     	
     protected boolean compile() {
     	try {
-    		// first, initialise source and target roots
+    		// =====================================================================================
+    		// Initialise Roots
+    		// =====================================================================================
+
     		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
         	DirectoryRoot source = new DirectoryRoot(srcdir,sourceFileFilter,registry); 
     		roots.add(source);    
@@ -242,8 +244,11 @@ public class AntTask extends MatchingTask {
     		
     		// third, initialise the pipeline    		    	
     		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
-    		
-    		// fourth initialise the builder
+ 
+			// =====================================================================================
+			// Whiley to Wyil Build Rule
+			// =====================================================================================
+			
     		Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
     		
     		if(verbose) {			
@@ -260,6 +265,29 @@ public class AntTask extends MatchingTask {
 			}
 			project.add(rule);
     		
+			// =====================================================================================
+			// Wyil-to-Java Build Rule
+			// =====================================================================================
+			Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder();
+    		
+    		if(verbose) {			
+    			builder.setLogger(new Logger.Default(System.err));
+    		}
+    		
+			rule = new StandardBuildRule(jbuilder);
+			if (target != null) {
+				rule.add(source, includes, excludes, target,
+						WyilFile.ContentType, ClassFile.ContentType);
+			} else {
+				rule.add(source, includes, excludes, source,
+						WyilFile.ContentType, ClassFile.ContentType);
+			}
+			project.add(rule);
+    		
+			// =====================================================================================
+			// Misc
+			// =====================================================================================		
+
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
 			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();			
@@ -276,7 +304,7 @@ public class AntTask extends MatchingTask {
 					sources.add(e);
 				}
 			}
-    		
+			
 			log("Compiling " + sources.size() + " source file(s)");
 			
     		// finally, compile away!

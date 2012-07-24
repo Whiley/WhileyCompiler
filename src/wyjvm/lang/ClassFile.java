@@ -60,7 +60,6 @@ public class ClassFile {
 				throws IOException {
 			ClassFileWriter writer = new ClassFileWriter(output,null);
 			writer.write(module);	
-			output.close();
 		}
 
 		public String toString() {

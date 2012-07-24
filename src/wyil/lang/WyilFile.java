@@ -53,14 +53,12 @@ public final class WyilFile {
 		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {			
 			WyilFileReader reader = new WyilFileReader(input);
 			WyilFile mi = reader.read();
-			reader.close();
 			return mi;				
 		}
 		
 		public void write(OutputStream output, WyilFile module) throws IOException {
 			WyilFileWriter writer = new WyilFileWriter(output);
 			writer.write(module);
-			writer.close();
 		}
 		
 		public String toString() {
