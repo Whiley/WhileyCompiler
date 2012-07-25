@@ -763,6 +763,7 @@ public final class WyilFileReader {
 		switch (opcode) {
 			case Code.OPCODE_trycatch :
 				// FIXME: todo
+				break;
 			case Code.OPCODE_update :
 				int target = readBase(wideBase);
 				int nOperands = readBase(wideBase) - 1;

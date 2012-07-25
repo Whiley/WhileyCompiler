@@ -332,27 +332,51 @@ public final class WyilFileWriter {
 		switch(width) {
 		case Code.OPCODE_wide:
 			output.write_u8(width);
-			writeBase(true,code,offset,labels,output);
+			writeBase(true,code,output);
 			writeRest(false,code,offset,labels,output);
 			break;
 		case Code.OPCODE_widerest:
 			output.write_u8(width);
-			writeBase(false,code,offset,labels,output);
+			writeBase(false,code,output);
 			writeRest(true,code,offset,labels,output);
 			break;
 		case Code.OPCODE_widewide:
 			output.write_u8(width);
-			writeBase(true,code,offset,labels,output);
+			writeBase(true,code,output);
 			writeRest(true,code,offset,labels,output);
 			break;
 		default:
-			writeBase(false,code,offset,labels,output);
+			writeBase(false,code,output);
 			writeRest(false,code,offset,labels,output);
 		}
 	}
 	
-	private void writeBase(boolean wide, Code code, int offset,
-			HashMap<String, Integer> labels, BinaryOutputStream output) throws IOException {
+	/**
+	 * Write the "base" part of a bytecode instruction. This includes only the
+	 * opcode itself and the operands (if any).
+	 * 
+	 * @param wide
+	 *            --- indicates whether we should be writing the base in "wide"
+	 *            format. That is, using the unlimited representation of
+	 *            integers. In the alternative "short" representation, all
+	 *            operands are written using exactly 4 unsigned bits. This means
+	 *            we can encode registers 0-15, which covers the majority of
+	 *            cases. The wide format is then used for cases when we have to
+	 *            write a register operand whose index is > 15.
+	 * @param code
+	 *            --- The bytecode to be written.
+	 * @param offset
+	 *            --- The current offset of this bytecode in the bytecode array
+	 *            being generated. This offset is measured in complete
+	 *            bytecodes, not in e.g. bytes. Therefore, the first bytecode
+	 *            has offset zero, the second bytecode has offset 1, etc. The
+	 *            offset is required
+	 * @param output
+	 *            --- The binary stream to write this bytecode to.
+	 * @throws IOException
+	 */
+	private void writeBase(boolean wide, Code code, 
+			BinaryOutputStream output) throws IOException {
 
 		// second, deal with standard instruction formats
 		output.write_u8(code.opcode());
@@ -420,6 +444,38 @@ public final class WyilFileWriter {
 		} 
 	}
 	
+	/**
+	 * Write the "rest" of a bytecode instruction. This includes any additional
+	 * information, such as the type and/or other pool items required for the
+	 * bytecode.
+	 * 
+	 * @param wide
+	 *            --- indicates whether we should be writing the rest in "wide"
+	 *            format. That is, using the unlimited representation of
+	 *            integers. In the alternative "short" representation, all pool
+	 *            indices are written using exactly 8 unsigned bits. This means
+	 *            we can encode pool indices 0-255, which covers a large number
+	 *            of cases. The wide format is then used for cases when we have
+	 *            to a pool index > 255.
+	 * @param code
+	 *            --- The bytecode to be written.
+	 * @param offset
+	 *            --- The current offset of this bytecode in the bytecode array
+	 *            being generated. This offset is measured in complete
+	 *            bytecodes, not in e.g. bytes. Therefore, the first bytecode
+	 *            has offset zero, the second bytecode has offset 1, etc. The
+	 *            offset is required for calculating jump targets for branching
+	 *            instructions (e.g. goto). Since jump targets (in short form)
+	 *            are encoded as a relative offset, we need to know our current
+	 *            offset to compute the relative target.
+	 * @param labels
+	 *            --- A map from label to offset. This is required to determine
+	 *            the (relative) jump offset for a branching instruction.
+	 * @param output
+	 *            --- The binary output stream to which this bytecode is being
+	 *            written.
+	 * @throws IOException
+	 */
 	private void writeRest(boolean wide, Code code, int offset,
 			HashMap<String, Integer> labels, BinaryOutputStream output) throws IOException {
 		
