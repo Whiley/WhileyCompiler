@@ -300,19 +300,22 @@ public class WyilFileWriter {
 	private byte[] generateCodeBlock(Block block) throws IOException {		
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
-		
-		output.write_uv(block.size()); // instruction count (not same as block size!)
+				
 		HashMap<String,Integer> labels = new HashMap<String,Integer>();
 		
+		int nlabels = 0;
 		int offset = 0;
 		for(Block.Entry e : block) {
 			Code code = e.code;
 			if(code instanceof Code.Label) {
 				Code.Label l = (Code.Label) code;
 				labels.put(l.label, offset);
+				nlabels++;
 			}
 			offset++;
 		}
+		
+		output.write_uv(block.size()-nlabels); // instruction count (not same as block size!)
 		offset = 0;
 		for(Block.Entry e : block) {		
 			if(e.code instanceof Code.Label) {
