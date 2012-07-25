@@ -314,8 +314,12 @@ public class WyilFileWriter {
 			offset++;
 		}
 		offset = 0;
-		for(Block.Entry e : block) {			
-			writeCode(e.code, offset++, labels, output);
+		for(Block.Entry e : block) {		
+			if(e.code instanceof Code.Label) {
+				
+			} else {
+				writeCode(e.code, offset++, labels, output);
+			}
 		}
 		
 		output.close();
