@@ -357,7 +357,11 @@ public class WyilFileWriter {
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			writeBase(wide,a.operand,output);
+			if(a.operand != Code.NULL_REG) { 				
+				writeBase(wide,a.operand,output);
+			} else {
+				// possible only for empty return
+			}			
 		} else if(code instanceof Code.AbstractBinaryOp) {
 			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;		
 			writeBase(wide,a.leftOperand,output);
@@ -403,7 +407,11 @@ public class WyilFileWriter {
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			writeRest(wide,typeCache.get(a.type),output);
+			if(a.operand != Code.NULL_REG) { 
+				writeRest(wide,typeCache.get(a.type),output);
+			} else {
+				// possible only for empty return
+			}
 		} else if(code instanceof Code.AbstractBinaryOp) {
 			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
 			writeRest(wide,typeCache.get(a.type),output);

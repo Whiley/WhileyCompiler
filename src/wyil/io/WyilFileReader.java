@@ -373,7 +373,7 @@ public class WyilFileReader {
 	}
 	
 	private Code readEmpty(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, String> labels) throws IOException {		
+			int offset, HashMap<Integer, String> labels) throws IOException {				
 		switch(opcode) {
 		case Code.OPCODE_const: {
 			int target = readBase(wideBase);
