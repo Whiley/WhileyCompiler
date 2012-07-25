@@ -270,6 +270,9 @@ public abstract class AbstractFolder implements Path.Folder {
 					"Cannot insert with incorrect Path.Item (" + item.id() + ") into AbstractFolder (" + id + ")");
 		}
 		updateContents();
+		
+		System.out.println("INSERTING: " + item);		
+		
 		Path.ID id = item.id();
 		int index = binarySearch(contents, nentries, id);
 
@@ -291,6 +294,11 @@ public abstract class AbstractFolder implements Path.Folder {
 
 		contents[index] = item;
 		nentries++;
+		// debug
+		if(item instanceof Path.Entry) {
+			Path.Entry e = (Path.Entry) item;
+			System.out.println("RETRIEVED: " + get(item.id(),e.contentType()));
+		}
 	}
 	
 	private final void updateContents() throws IOException{
