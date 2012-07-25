@@ -314,7 +314,8 @@ public class WyilFileReader {
 		HashMap<Integer,String> labels = new HashMap<Integer,String>();
 		
 		for(int i=0;i!=nCodes;++i) {
-			Code code = readCode(i,labels);			
+			Code code = readCode(i,labels);
+			System.out.println("READ: " + code);
 			block.append(code);
 		}
 				
@@ -357,11 +358,11 @@ public class WyilFileReader {
 		case Code.FMT_UNARYASSIGN:
 			return readUnaryAssign(opcode,wideBase,wideRest);
 		case Code.FMT_BINARYOP:
-			return readBinaryOp(opcode, wideBase,wideRest,offset, labels);
+			return readBinaryOp(opcode, wideBase,wideRest,offset,labels);
 		case Code.FMT_BINARYASSIGN:
 			return readBinaryAssign(opcode,wideBase,wideRest);
 		case Code.FMT_NARYOP:
-			return readNaryOp(opcode,wideBase,wideRest);
+			return readNaryOp(opcode,wideBase,wideRest,offset,labels);
 		case Code.FMT_NARYASSIGN:
 			return readNaryAssign(opcode,wideBase,wideRest);
 		case Code.FMT_OTHER:
@@ -629,33 +630,54 @@ public class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readNaryOp(int opcode,boolean wideBase, boolean wideRest) throws IOException {		
+	private Code readNaryOp(int opcode,boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {		
 		int nOperands = readBase(wideBase);
-		int[] operands = new int[nOperands];
+		int[] operands = new int[nOperands];		
 		for(int i=0;i!=nOperands;++i) {
-			operands[i] = readBase(wideBase);
+			operands[i] = readBase(wideBase);			
 		}
+		
+		if(opcode == Code.OPCODE_loop) {
+			// special case which doesn't have a type.
+			int target = readRest(wideRest); 
+			String label = findLabel(offset + target,labels);
+			return Code.Loop(label, operands);
+		}
+		
 		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
-		switch(opcode) {
-		case Code.OPCODE_indirectinvokemdv: {
-			if(!(type instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected method type");
+		
+		switch(opcode) {		
+			case Code.OPCODE_forall : {
+				if (!(type instanceof Type.EffectiveCollection)) {
+					throw new RuntimeException("expected collection type");
+				}
+				int target = readRest(wideRest);
+				String label = findLabel(offset + target, labels);
+				int indexOperand = operands[0];
+				int sourceOperand = operands[1];
+				operands = Arrays.copyOfRange(operands, 2, operands.length);
+				return Code.ForAll((Type.EffectiveCollection) type,
+						sourceOperand, indexOperand, operands, label);
 			}
-			int operand = operands[0];
-			operands = Arrays.copyOfRange(operands, 1, operands.length);
-			return Code.IndirectInvoke((Type.FunctionOrMethod) type,
-					Code.NULL_REG, operand, operands);
-		}
-		case Code.OPCODE_invokemdv: {
-			if(!(type instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected method type");
+			case Code.OPCODE_indirectinvokemdv : {
+				if (!(type instanceof Type.FunctionOrMethod)) {
+					throw new RuntimeException("expected method type");
+				}
+				int operand = operands[0];
+				operands = Arrays.copyOfRange(operands, 1, operands.length);
+				return Code.IndirectInvoke((Type.FunctionOrMethod) type,
+						Code.NULL_REG, operand, operands);
 			}
-			int nameIdx = readRest(wideRest);;
-			NameID nid = namePool.get(nameIdx);
-			return Code.Invoke((Type.FunctionOrMethod) type, Code.NULL_REG,
-					operands, nid);
-		}
+			case Code.OPCODE_invokemdv : {
+				if (!(type instanceof Type.FunctionOrMethod)) {
+					throw new RuntimeException("expected method type");
+				}
+				int nameIdx = readRest(wideRest);;
+				NameID nid = namePool.get(nameIdx);
+				return Code.Invoke((Type.FunctionOrMethod) type, Code.NULL_REG,
+						operands, nid);
+			}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

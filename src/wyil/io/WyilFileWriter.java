@@ -380,7 +380,7 @@ public class WyilFileWriter {
 			if(a.target != Code.NULL_REG) {
 				writeBase(wide,a.target,output);
 			}
-			int[] operands = a.operands;
+			int[] operands = a.operands;			
 			writeBase(wide,operands.length,output);
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
@@ -394,12 +394,28 @@ public class WyilFileWriter {
 			writeBase(wide,operands.length+1,output);
 			writeBase(wide,a.operand,output);
 			for(int i=0;i!=operands.length;++i) {
-				writeBase(wide,a.operands[i],output);
+				writeBase(wide,operands[i],output);
 			}
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
 			writeBase(wide,c.target,output);
-		}
+		} else if(code instanceof Code.ForAll) {
+			Code.ForAll l = (Code.ForAll) code;			
+			int[] operands = l.modifiedOperands;	
+			writeBase(wide,operands.length + 2,output);
+			writeBase(wide,l.indexOperand,output);
+			writeBase(wide,l.sourceOperand,output);			
+			for(int i=0;i!=operands.length;++i) {
+				writeBase(wide,operands[i],output);
+			}
+		} else if(code instanceof Code.Loop) {
+			Code.Loop l = (Code.Loop) code;			
+			int[] operands = l.modifiedOperands;	
+			writeBase(wide,operands.length,output);
+			for(int i=0;i!=operands.length;++i) {
+				writeBase(wide,operands[i],output);
+			}
+		} 
 	}
 	
 	private void writeRest(boolean wide, Code code, int offset,
@@ -442,6 +458,11 @@ public class WyilFileWriter {
 		} else if(code instanceof Code.FieldLoad) {
 			Code.FieldLoad c = (Code.FieldLoad) code;
 			writeRest(wide,stringCache.get(c.field),output);			
+		} else if(code instanceof Code.ForAll) {
+			Code.ForAll f = (Code.ForAll) code;
+			writeRest(wide,typeCache.get(f.type),output);
+			int target = labels.get(f.target);
+			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Code.IfIs) {
 			Code.IfIs c = (Code.IfIs) code;
 			int target = labels.get(c.target) - offset;			
@@ -458,6 +479,10 @@ public class WyilFileWriter {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
 			writeRest(wide,nameCache.get(c.name),output);			
+		} else if(code instanceof Code.Loop) {
+			Code.Loop l = (Code.Loop) code;
+			int target = labels.get(l.target);
+			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
 			// TODO:
@@ -695,7 +720,10 @@ public class WyilFileWriter {
 		} else if(code instanceof Code.FieldLoad) {
 			Code.FieldLoad c = (Code.FieldLoad) code;
 			addStringItem(c.field);
-		} else if(code instanceof Code.IfIs) {
+		} else if(code instanceof Code.ForAll) {
+			Code.ForAll s = (Code.ForAll) code;
+			addTypeItem((Type)s.type);			
+		}else if(code instanceof Code.IfIs) {
 			Code.IfIs c = (Code.IfIs) code;
 			addTypeItem(c.type);
 			addTypeItem(c.rightOperand);
@@ -718,7 +746,7 @@ public class WyilFileWriter {
 			for(Pair<Value,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
-		}
+		} 
 		
 		// Second, deal with standard cases
 		if(code instanceof Code.AbstractUnaryOp) {
