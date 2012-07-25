@@ -160,7 +160,6 @@ public class WyilFileReader {
 		List<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
 		for(int i=0;i!=numBlocks;++i) {			
 			declarations.add(readModuleBlock());
-			System.out.println("READ DECLARATION");
 		}
 		System.out.println("DONE");
 		return new WyilFile(pathPool.get(nameIdx),"unknown.whiley",declarations);
@@ -179,14 +178,15 @@ public class WyilFileReader {
 			case WyilFileWriter.BLOCK_Method:
 				return readMethodBlock();				
 			default:
-				throw new RuntimeException("unknown module block encountered");
+				throw new RuntimeException("unknown module block encountered (" + kind + ")");
 		}
 	}
 	
-	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {
+	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {		
 		int nameIdx = input.read_uv();
 		int constantIdx = input.read_uv();
 		int nBlocks = input.read_uv(); // unused
+		System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
 		return new WyilFile.ConstantDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), constantPool.get(constantIdx));
 	}
@@ -199,6 +199,7 @@ public class WyilFileReader {
 		if(nBlocks != 0) {
 			constraint = readCodeBlock(1);
 		}
+		System.out.println("=== TYPE " + stringPool.get(nameIdx));
 		return new WyilFile.TypeDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
 	}
@@ -207,11 +208,18 @@ public class WyilFileReader {
 		int nameIdx = input.read_uv();
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();
+		System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
 		Type.Function type = (Type.Function) typePool.get(typeIdx);		
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
 			int kind = input.read_uv(); // unsued
-			cases.add(readFunctionOrMethodCase(type));
+			switch(kind) {
+				case WyilFileWriter.BLOCK_Case:
+					cases.add(readFunctionOrMethodCase(type));
+					break;
+				default:
+					throw new RuntimeException("Unknown function block encountered");
+			}
 		}
 		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), type,
@@ -222,12 +230,18 @@ public class WyilFileReader {
 		int nameIdx = input.read_uv();
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();
+		System.out.println("=== METHOD " + stringPool.get(nameIdx));
 		Type.Method type = (Type.Method) typePool.get(typeIdx);
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
 			int kind = input.read_uv(); // unused
-			// TODO: read block size
-			cases.add(readFunctionOrMethodCase(type));
+			switch(kind) {
+				case WyilFileWriter.BLOCK_Case:
+					cases.add(readFunctionOrMethodCase(type));
+					break;
+				default:
+					throw new RuntimeException("Unknown method block encountered");
+			}
 		}
 		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), type,
@@ -272,6 +286,7 @@ public class WyilFileReader {
 		}
 		
 		// FIXME: insert label opcodes.
+		
 		return block;
 	}	
 	

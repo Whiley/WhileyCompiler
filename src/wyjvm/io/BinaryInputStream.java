@@ -112,4 +112,8 @@ public class BinaryInputStream extends InputStream {
 		count = count - 1;
 		return r;
 	}
+	
+	public void pad_u8() throws IOException {		
+		count = 0; // easy!!
+	}
 }

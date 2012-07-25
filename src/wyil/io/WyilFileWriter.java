@@ -14,7 +14,7 @@ public class WyilFileWriter {
 	private static final int MAJOR_VERSION = 0;
 	private static final int MINOR_VERSION = 1;
 	
-	private BinaryOutputStream output;
+	private BinaryOutputStream out;
 	
 	private ArrayList<String> stringPool  = new ArrayList<String>();
 	private HashMap<String,Integer> stringCache = new HashMap<String,Integer>();
@@ -32,23 +32,78 @@ public class WyilFileWriter {
 	private HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
 	
 	public WyilFileWriter(OutputStream output) {
-		this.output = new BinaryOutputStream(output); 
+		this.out = new BinaryOutputStream(output); 
 
 	}
 	
 	public void close() throws IOException {
-		output.close();
+		out.close();
 	}	
 	
 	public void write(WyilFile module) throws IOException {				
+		// first, write magic number
+		out.write(0x57); // W
+		out.write(0x59); // Y
+		out.write(0x49); // I
+		out.write(0x4C); // L
+		out.write(0x46); // F
+		out.write(0x49); // I
+		out.write(0x4C); // L
+		out.write(0x45); // E
+
+		// second, build pools
 		buildPools(module);
 		
-		writeHeader(module);
-		writePools();		
-		writeBlock(module); // in principle we could write multiple blocks
+		// third, write head block
+		writeBlock(BLOCK_Header,module,out);
 		
-		output.close();
+		// fourth, write module block(s)
+		writeBlock(BLOCK_Module,module,out);
+		
+		out.flush();
 	}	
+	
+	private void writeBlock(int kind, Object data, BinaryOutputStream output)
+			throws IOException {
+		output.pad_u8(); // pad out to next byte boundary
+		
+		// determine bytes for block
+		byte[] bytes = null;
+		switch(kind) {
+			case BLOCK_Header:
+				bytes = generateHeaderBlock((WyilFile) data);
+				break;
+			case BLOCK_Module:
+				bytes = generateModuleBlock((WyilFile) data);
+				break;
+			case BLOCK_Type:
+				bytes = generateTypeBlock((WyilFile.TypeDeclaration) data);
+				break;
+			case BLOCK_Constant:
+				bytes = generateConstantBlock((WyilFile.ConstantDeclaration) data);
+				break;
+			case BLOCK_Function:
+				bytes = generateMethodBlock((WyilFile.MethodDeclaration) data);
+				break;
+			case BLOCK_Method:
+				bytes = generateMethodBlock((WyilFile.MethodDeclaration) data);
+				break;
+			case BLOCK_Case:
+				bytes = generateMethodCaseBlock((WyilFile.Case) data);
+				break;
+			case BLOCK_Body:
+			case BLOCK_Precondition:
+			case BLOCK_Postcondition:
+			case BLOCK_Constraint:
+				bytes = generateCodeBlock((Block) data);
+				break;
+		}
+		
+		output.write(kind);
+		output.write_uv(bytes.length);
+		output.pad_u8(); // pad out to next byte boundary
+		output.write(bytes);
+	}
 	
 	/**
 	 * Write the header information for this WYIL file.
@@ -56,20 +111,12 @@ public class WyilFileWriter {
 	 * @param module
 	 * @throws IOException
 	 */
-	private void writeHeader(WyilFile module)
+	private byte[] generateHeaderBlock(WyilFile module)
 			throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
-		// first, write magic number
-		output.write_u8(0x57); // W
-		output.write_u8(0x59); // Y
-		output.write_u8(0x49); // I
-		output.write_u8(0x4C); // L
-		output.write_u8(0x46); // F
-		output.write_u8(0x49); // I
-		output.write_u8(0x4C); // L
-		output.write_u8(0x45); // E
-		
-		// second, write the file version number 
+		// second, write the file version number		
 		output.write_uv(MAJOR_VERSION); 
 		output.write_uv(MINOR_VERSION); 
 		
@@ -80,16 +127,18 @@ public class WyilFileWriter {
 		output.write_uv(constantPool.size());
 		output.write_uv(typePool.size());		
 		
-		// finally, write the number of blocks
-		output.write_uv(module.declarations().size());		
-	}
-	
-	private void writePools() throws IOException{
-		writeStringPool();
-		writePathPool();
-		writeNamePool();
-		writeConstantPool();
-		writeTypePool();
+		// finally, write the number of remaining blocks
+		output.write_uv(module.declarations().size());
+				
+		writeStringPool(output);
+		writePathPool(output);
+		writeNamePool(output);
+		writeConstantPool(output);
+		writeTypePool(output);
+		
+		output.close();
+		
+		return bytes.toByteArray();
 	}
 	
 	/**
@@ -97,7 +146,7 @@ public class WyilFileWriter {
 	 * 
 	 * @throws IOException
 	 */
-	private void writeStringPool() throws IOException {
+	private void writeStringPool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " string item(s).");
 		for (String s : stringPool) {
 			try {
@@ -110,7 +159,7 @@ public class WyilFileWriter {
 		}
 	}
 	
-	private void writePathPool() throws IOException {
+	private void writePathPool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " path item(s).");
 		for (PATH_Item p : pathPool) {
 			output.write_uv(p.parentIndex + 1);
@@ -118,7 +167,7 @@ public class WyilFileWriter {
 		}
 	}
 
-	private void writeNamePool() throws IOException {
+	private void writeNamePool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " name item(s).");
 		for (NAME_Item p : namePool) {
 			//output.write_uv(p.kind.kind());
@@ -127,7 +176,7 @@ public class WyilFileWriter {
 		}
 	}
 
-	private void writeConstantPool() throws IOException {
+	private void writeConstantPool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " constant item(s).");
 		ValueWriter bout = new ValueWriter(output);
 		for (Value v : constantPool) {
@@ -135,7 +184,7 @@ public class WyilFileWriter {
 		}
 	}
 
-	private void writeTypePool() throws IOException {
+	private void writeTypePool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " type item(s).");
 		Type.BinaryWriter bout = new Type.BinaryWriter(output);
 		for (Type t : typePool) {
@@ -143,82 +192,105 @@ public class WyilFileWriter {
 		}
 	}
 	
-	private void writeBlock(WyilFile module) throws IOException {
-		output.write_uv(BLOCK_Module);
-		// TODO: write block size
+	private byte[] generateModuleBlock(WyilFile module) throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+		
 		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
 		
 		output.write_uv(module.declarations().size());
 		for(WyilFile.Declaration d : module.declarations()) {
-			if(d instanceof WyilFile.ConstantDeclaration) {
-				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d;
-				output.write_uv(BLOCK_Constant);
-				// TODO: write block size	
-				// TODO: write modifiers
-				output.write_uv(stringCache.get(cd.name()));
-				output.write_uv(constantCache.get(cd.constant()));
-				output.write_uv(0); // no sub-blocks
-				// TODO: write annotations
-				
-			} else if(d instanceof WyilFile.TypeDeclaration) {
-				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
-				output.write_uv(BLOCK_Type);
-				// TODO: write block size
-				// TODO: write modifiers
-				output.write_uv(stringCache.get(td.name()));
-				output.write_uv(typeCache.get(td.type()));
-				if(td.constraint() == null) {
-					output.write_uv(0); // no sub-blocks
-				} else {
-					output.write_uv(1); // one sub-block
-					writeBlock(td.constraint());
-				}
-				// TODO: write annotations
-				
-			} else if(d instanceof WyilFile.MethodDeclaration) {
-				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
-				if(md.type() instanceof Type.Function) {
-					output.write_uv(BLOCK_Function);
-				} else {
-					output.write_uv(BLOCK_Method);
-				}
-				// TODO: write block size
-				
-				output.write_uv(stringCache.get(md.name()));
-				output.write_uv(typeCache.get(md.type()));			
-				// TODO: write modifiers				
-				output.write_uv(md.cases().size());
-				
-				for(WyilFile.Case c : md.cases()) {
-					output.write_uv(BLOCK_Case);
-					// TODO: write block size
-					int n = 0;
-					n += c.precondition() != null ? 1 : 0;
-					n += c.postcondition() != null ? 1 : 0;
-					n += c.body() != null ? 1 : 0;
-					output.write_uv(n);
-					if(c.precondition() != null) {
-						output.write_uv(BLOCK_Precondition);
-						writeBlock(c.precondition());
-					}
-					if(c.postcondition() != null) {
-						output.write_uv(BLOCK_Postcondition);
-						writeBlock(c.postcondition());
-					}
-					if(c.body() != null) {
-						output.write_uv(BLOCK_Body);
-						writeBlock(c.body());
-					}
-					// TODO: write annotations
-				}
-				// TODO: write annotations
-			} 
+			writeModuleBlock(d,output);
 		}
+		
+		return bytes.toByteArray();
 	}
 	
-	private void writeBlock(Block block) throws IOException {		
-		// TODO: write block size
-		output.write_uv(block.size()); // instruction count (not same as block size)
+	private void writeModuleBlock(WyilFile.Declaration d,
+			BinaryOutputStream output) throws IOException {
+		if(d instanceof WyilFile.ConstantDeclaration) {
+			writeBlock(BLOCK_Constant, d ,output);			
+		} else if(d instanceof WyilFile.TypeDeclaration) {
+			writeBlock(BLOCK_Type, d, output);			
+		} else if(d instanceof WyilFile.MethodDeclaration) {
+			writeBlock(BLOCK_Method, d, output);
+		} 
+	}
+		
+	private byte[] generateConstantBlock(WyilFile.ConstantDeclaration cd) throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+					
+		// TODO: write modifiers
+		output.write_uv(stringCache.get(cd.name()));
+		output.write_uv(constantCache.get(cd.constant()));
+		output.write_uv(0); // no sub-blocks
+		// TODO: write annotations		
+		return bytes.toByteArray();
+	}
+	
+	private byte[] generateTypeBlock(WyilFile.TypeDeclaration td) throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+				
+		// TODO: write modifiers
+		output.write_uv(stringCache.get(td.name()));
+		output.write_uv(typeCache.get(td.type()));
+		if(td.constraint() == null) {
+			output.write_uv(0); // no sub-blocks
+		} else {
+			output.write_uv(1); // one sub-block
+			writeBlock(BLOCK_Constraint,td.constraint(),output);
+		}
+		
+		return bytes.toByteArray();
+	}
+
+	private byte[] generateMethodBlock(WyilFile.MethodDeclaration md) throws IOException {		
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+		
+		output.write_uv(stringCache.get(md.name()));
+		output.write_uv(typeCache.get(md.type()));			
+		// TODO: write modifiers				
+		output.write_uv(md.cases().size());
+
+		for(WyilFile.Case c : md.cases()) {
+			writeBlock(BLOCK_Case,c,output);		
+		}
+		
+		// TODO: write annotations
+		return bytes.toByteArray();
+	}
+	
+	private byte[] generateMethodCaseBlock(WyilFile.Case c) throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+		
+		int n = 0;
+		n += c.precondition() != null ? 1 : 0;
+		n += c.postcondition() != null ? 1 : 0;
+		n += c.body() != null ? 1 : 0;
+		output.write_uv(n);
+		if(c.precondition() != null) {			
+			writeBlock(BLOCK_Precondition,c.precondition(),output);
+		}
+		if(c.postcondition() != null) {			
+			writeBlock(BLOCK_Postcondition,c.precondition(),output);			
+		}
+		if(c.body() != null) {
+			writeBlock(BLOCK_Body,c.precondition(),output);			
+		}
+		// TODO: write annotations
+		
+		return bytes.toByteArray();
+	}
+	
+	private byte[] generateCodeBlock(Block block) throws IOException {		
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+		
+		output.write_uv(block.size()); // instruction count (not same as block size!)
 		HashMap<String,Integer> labels = new HashMap<String,Integer>();
 		
 		int offset = 0;
@@ -232,11 +304,13 @@ public class WyilFileWriter {
 		}
 		offset = 0;
 		for(Block.Entry e : block) {			
-			writeCode(e.code, offset++, labels);
+			writeCode(e.code, offset++, labels, output);
 		}
+		
+		return bytes.toByteArray();
 	}
 	
-	private void writeCode(Code code, int offset, HashMap<String,Integer> labels) throws IOException {
+	private void writeCode(Code code, int offset, HashMap<String,Integer> labels, BinaryOutputStream output) throws IOException {
 		
 		// first determine whether we need some kind of wide instruction.
 		int width = calculateWidth(code,offset,labels);
@@ -244,126 +318,126 @@ public class WyilFileWriter {
 		switch(width) {
 		case Code.OPCODE_wide:
 			output.write_u8(width);
-			writeBase(true,code,offset,labels);
-			writeRest(false,code,offset,labels);
+			writeBase(true,code,offset,labels,output);
+			writeRest(false,code,offset,labels,output);
 			break;
 		case Code.OPCODE_widerest:
 			output.write_u8(width);
-			writeBase(false,code,offset,labels);
-			writeRest(true,code,offset,labels);
+			writeBase(false,code,offset,labels,output);
+			writeRest(true,code,offset,labels,output);
 			break;
 		case Code.OPCODE_widewide:
 			output.write_u8(width);
-			writeBase(true,code,offset,labels);
-			writeRest(true,code,offset,labels);
+			writeBase(true,code,offset,labels,output);
+			writeRest(true,code,offset,labels,output);
 			break;
 		default:
-			writeBase(false,code,offset,labels);
-			writeRest(false,code,offset,labels);
+			writeBase(false,code,offset,labels,output);
+			writeRest(false,code,offset,labels,output);
 		}
 	}
 	
 	private void writeBase(boolean wide, Code code, int offset,
-			HashMap<String, Integer> labels) throws IOException {
+			HashMap<String, Integer> labels, BinaryOutputStream output) throws IOException {
 
 		// second, deal with standard instruction formats
 		output.write_u8(code.opcode());
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			writeBase(wide,a.operand);
+			writeBase(wide,a.operand,output);
 		} else if(code instanceof Code.AbstractBinaryOp) {
 			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;		
-			writeBase(wide,a.leftOperand);
-			writeBase(wide,a.rightOperand);
+			writeBase(wide,a.leftOperand,output);
+			writeBase(wide,a.rightOperand,output);
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
 			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			writeBase(wide,a.target);
-			writeBase(wide,a.operand);
+			writeBase(wide,a.target,output);
+			writeBase(wide,a.operand,output);
 		} else if(code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			writeBase(wide, a.target);
-			writeBase(wide, a.leftOperand);
-			writeBase(wide, a.rightOperand);
+			writeBase(wide, a.target,output);
+			writeBase(wide, a.leftOperand,output);
+			writeBase(wide, a.rightOperand,output);
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
 			if(a.target != Code.NULL_REG) {
-				writeBase(wide,a.target);
+				writeBase(wide,a.target,output);
 			}
 			int[] operands = a.operands;
-			writeBase(wide,operands.length);
+			writeBase(wide,operands.length,output);
 			for(int i=0;i!=operands.length;++i) {
-				writeBase(wide,operands[i]);
+				writeBase(wide,operands[i],output);
 			}
 		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
 			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
 			if(a.target != Code.NULL_REG) {
-				writeBase(wide,a.target);
+				writeBase(wide,a.target,output);
 			}			
 			int[] operands = a.operands;			
-			writeBase(wide,operands.length+1);
-			writeBase(wide,a.operand);
+			writeBase(wide,operands.length+1,output);
+			writeBase(wide,a.operand,output);
 			for(int i=0;i!=operands.length;++i) {
-				writeBase(wide,a.operands[i]);
+				writeBase(wide,a.operands[i],output);
 			}
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
-			writeBase(wide,c.target);
+			writeBase(wide,c.target,output);
 		}
 	}
 	
 	private void writeRest(boolean wide, Code code, int offset,
-			HashMap<String, Integer> labels) throws IOException {
+			HashMap<String, Integer> labels, BinaryOutputStream output) throws IOException {
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			writeRest(wide,typeCache.get(a.type));
+			writeRest(wide,typeCache.get(a.type),output);
 		} else if(code instanceof Code.AbstractBinaryOp) {
 			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			writeRest(wide,typeCache.get(a.type));
+			writeRest(wide,typeCache.get(a.type),output);
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
 			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type));
+			writeRest(wide,typeCache.get(a.type),output);
 		} else if(code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type));
+			writeRest(wide,typeCache.get(a.type),output);
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type));
+			writeRest(wide,typeCache.get(a.type),output);
 		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
 			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;			
-			writeRest(wide,typeCache.get(a.type));
+			writeRest(wide,typeCache.get(a.type),output);
 		}	
 		// now deal with non-uniform instructions
 		// First, deal with special cases
 		if(code instanceof Code.AssertOrAssume) {
 			Code.AssertOrAssume c = (Code.AssertOrAssume) code;
-			writeRest(wide,stringCache.get(c.msg));
+			writeRest(wide,stringCache.get(c.msg),output);
 		} else if(code instanceof Code.Const) {
 			Code.Const c = (Code.Const) code;
-			writeRest(wide,constantCache.get(c.constant));
+			writeRest(wide,constantCache.get(c.constant),output);
 		} else if(code instanceof Code.Convert) {
 			Code.Convert c = (Code.Convert) code;
-			writeRest(wide,typeCache.get(c.result));
+			writeRest(wide,typeCache.get(c.result),output);
 		} else if(code instanceof Code.FieldLoad) {
 			Code.FieldLoad c = (Code.FieldLoad) code;
-			writeRest(wide,stringCache.get(c.field));			
+			writeRest(wide,stringCache.get(c.field),output);			
 		} else if(code instanceof Code.IfIs) {
 			Code.IfIs c = (Code.IfIs) code;
 			int target = labels.get(c.target) - offset;			
-			writeRest(wide,typeCache.get(c.rightOperand)); 
-			writeTarget(wide,offset,target);			
+			writeRest(wide,typeCache.get(c.rightOperand),output); 
+			writeTarget(wide,offset,target,output);			
 		} else if(code instanceof Code.If) {
 			Code.If c = (Code.If) code;
 			int target = labels.get(c.target);
-			writeTarget(wide,offset,target);
+			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Code.Goto) {
 			Code.Goto c = (Code.Goto) code;
 			int target = labels.get(c.target); 
-			writeTarget(wide,offset,target);
+			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
-			writeRest(wide,nameCache.get(c.name));			
+			writeRest(wide,nameCache.get(c.name),output);			
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
 			// TODO:
@@ -371,23 +445,23 @@ public class WyilFileWriter {
 			Code.Switch c = (Code.Switch) code;
 			List<Pair<Value,String>> branches = c.branches;
 			int target = labels.get(c.defaultTarget) - offset; 			
-			writeTarget(wide,offset,target);
-			writeRest(wide,branches.size());
+			writeTarget(wide,offset,target,output);
+			writeRest(wide,branches.size(),output);
 			for(Pair<Value,String> b : branches) {
-				writeRest(wide,constantCache.get(b.first()));
+				writeRest(wide,constantCache.get(b.first()),output);
 				target = labels.get(b.second()); 
-				writeTarget(wide,offset,target);
+				writeTarget(wide,offset,target,output);
 			}
 		} else if(code instanceof Code.TryCatch) {
 			Code.TryCatch c = (Code.TryCatch) code;
 			// FIXME: todo 
 		} else if(code instanceof Code.TupleLoad) {
 			Code.TupleLoad c = (Code.TupleLoad) code;			
-			writeRest(wide,c.index);
+			writeRest(wide,c.index,output);
 		} 
 	}
 	
-	private void writeBase(boolean wide, int value) throws IOException {
+	private void writeBase(boolean wide, int value, BinaryOutputStream output) throws IOException {
 		if(wide) {
 			output.write_uv(value);
 		} else {
@@ -398,7 +472,7 @@ public class WyilFileWriter {
 		}
 	}
 	
-	private void writeRest(boolean wide, int value) throws IOException {
+	private void writeRest(boolean wide, int value, BinaryOutputStream output) throws IOException {
 		if(wide) {
 			output.write_uv(value);
 		} else {
@@ -409,7 +483,7 @@ public class WyilFileWriter {
 		}
 	}	
 	
-	private void writeTarget(boolean wide, int offset, int target) throws IOException {
+	private void writeTarget(boolean wide, int offset, int target, BinaryOutputStream output) throws IOException {
 		if(wide) {
 			output.write_uv(target);
 		} else {
@@ -999,9 +1073,10 @@ public class WyilFileWriter {
 	// BLOCK identifiers
 	// =========================================================================
 	
-	public final static int BLOCK_Module = 0;
-	public final static int BLOCK_Documentation = 1;
-	public final static int BLOCK_License = 2;
+	public final static int BLOCK_Header = 0;
+	public final static int BLOCK_Module = 1;
+	public final static int BLOCK_Documentation = 2;
+	public final static int BLOCK_License = 3;
 	// ... (anticipating some others here)
 	public final static int BLOCK_Type = 10;
 	public final static int BLOCK_Constant = 11;

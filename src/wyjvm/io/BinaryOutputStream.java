@@ -153,6 +153,19 @@ public class BinaryOutputStream extends OutputStream {
 			value = 0;
 		}
 	}
+	
+	/**
+	 * Pad out stream to nearest byte boundary
+	 * @throws IOException
+	 */
+	public void pad_u8() throws IOException {
+		if (count > 0) {
+			System.out.println("PADDING: " + count);
+			output.write(value >>> (8-count));
+			value = 0;
+			count = 0;
+		}
+	}
 		
 	public void close() throws IOException {
 		if(count != 0) {				
@@ -192,11 +205,29 @@ public class BinaryOutputStream extends OutputStream {
 			ByteArrayOutputStream bout = new ByteArrayOutputStream();
 			BinaryOutputStream binout = new BinaryOutputStream(bout);						
 			
-			binout.write_uv(128);			
+			binout.write_bit(true);			
+			binout.write_bit(false);
+			binout.write_bit(true);						
+			binout.pad_u8();
+			binout.write_bit(true);			
+			binout.write_bit(false);
+			binout.write_bit(true);			
+			binout.write_bit(true);
 			
-			binout.close();
+			binout.close();			
 			ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
-			BinaryInputStream binin = new BinaryInputStream(bin);									
+			BinaryInputStream binin = new BinaryInputStream(bin);
+			
+			System.out.println(binin.read_bit());
+			System.out.println(binin.read_bit());
+			System.out.println(binin.read_bit());
+			
+			binin.pad_u8();
+			
+			System.out.println(binin.read_bit());
+			System.out.println(binin.read_bit());
+			System.out.println(binin.read_bit());
+			System.out.println(binin.read_bit());
 		} catch(IOException e) {
 			
 		}
