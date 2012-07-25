@@ -760,11 +760,27 @@ public final class WyilFileReader {
 	}
 	
 	private Code readOther(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {		
-		switch(opcode) {		
-		case Code.OPCODE_trycatch:
-			// FIXME: todo
-		case Code.OPCODE_update:
-			// FIXME: todo
+		switch (opcode) {
+			case Code.OPCODE_trycatch :
+				// FIXME: todo
+			case Code.OPCODE_update :
+				int target = readBase(wideBase);
+				int nOperands = readBase(wideBase) - 1;
+				int operand = readBase(wideBase);
+				int[] operands = new int[nOperands];
+				for (int i = 0; i != nOperands; ++i) {
+					operands[i] = readBase(wideBase);
+				}
+				Type beforeType = typePool.get(readRest(wideRest));
+				Type afterType = typePool.get(readRest(wideRest));
+				int nFields = readRest(wideRest);
+				ArrayList<String> fields = new ArrayList<String>();
+				for (int i = 0; i != nFields; ++i) {
+					String field = stringPool.get(readRest(wideRest));
+					fields.add(field);
+				}
+				return Code.Update(beforeType, target, operand, operands,
+						afterType, fields);
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

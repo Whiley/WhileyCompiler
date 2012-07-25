@@ -487,7 +487,12 @@ public final class WyilFileWriter {
 			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
-			// TODO:
+			List<String> fields = c.fields;
+			writeRest(wide,typeCache.get(c.afterType),output);
+			writeRest(wide,fields.size(),output);
+			for (int i = 0; i != fields.size(); ++i) {
+				writeRest(wide, stringCache.get(fields.get(i)), output);
+			}
 		} else if(code instanceof Code.Switch) {
 			Code.Switch c = (Code.Switch) code;
 			List<Pair<Value,String>> branches = c.branches;
@@ -612,7 +617,12 @@ public final class WyilFileWriter {
 			maxRest = Math.max(maxRest,nameCache.get(c.name));			
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
-			// TODO:
+			maxRest = Math.max(maxRest,typeCache.get(c.afterType));
+			ArrayList<String> fields = c.fields; 
+			for(int i=0;i!=fields.size();++i) {
+				String field = fields.get(i);
+				maxRest = Math.max(maxRest,stringCache.get(field));				
+			}
 		} else if(code instanceof Code.Switch) {
 			Code.Switch c = (Code.Switch) code;
 			List<Pair<Value,String>> branches = c.branches;
