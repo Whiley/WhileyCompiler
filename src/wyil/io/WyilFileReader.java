@@ -54,7 +54,16 @@ public class WyilFileReader {
 				throw new IllegalArgumentException("invalid magic number");
 			}
 		}
-						
+		
+		// head blocker
+		int kind = input.read_uv();
+		int size = input.read_uv();
+		input.pad_u8();
+		
+		if(kind != WyilFileWriter.BLOCK_Header) {
+			throw new IllegalArgumentException("header block must come first");
+		}
+		
 		int majorVersion = input.read_uv();
 		int minorVersion = input.read_uv();
 		
@@ -151,7 +160,7 @@ public class WyilFileReader {
 	
 	private WyilFile readModule() throws IOException {
 		System.out.println("=== MODULE ===");		
-		input.read_uv(); // block identifier
+		int kind = input.read_uv(); // block identifier
 		int size = input.read_uv();	
 		input.pad_u8();
 		

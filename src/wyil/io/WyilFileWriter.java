@@ -42,14 +42,14 @@ public class WyilFileWriter {
 	
 	public void write(WyilFile module) throws IOException {				
 		// first, write magic number
-		out.write(0x57); // W
-		out.write(0x59); // Y
-		out.write(0x49); // I
-		out.write(0x4C); // L
-		out.write(0x46); // F
-		out.write(0x49); // I
-		out.write(0x4C); // L
-		out.write(0x45); // E
+		out.write_u8(0x57); // W
+		out.write_u8(0x59); // Y
+		out.write_u8(0x49); // I
+		out.write_u8(0x4C); // L
+		out.write_u8(0x46); // F
+		out.write_u8(0x49); // I
+		out.write_u8(0x4C); // L
+		out.write_u8(0x45); // E
 
 		// second, build pools
 		buildPools(module);
@@ -99,7 +99,7 @@ public class WyilFileWriter {
 				break;
 		}
 		
-		output.write(kind);
+		output.write_uv(kind);
 		output.write_uv(bytes.length);
 		output.pad_u8(); // pad out to next byte boundary
 		output.write(bytes);
@@ -203,6 +203,7 @@ public class WyilFileWriter {
 			writeModuleBlock(d,output);
 		}
 		
+		
 		return bytes.toByteArray();
 	}
 	
@@ -225,7 +226,9 @@ public class WyilFileWriter {
 		output.write_uv(stringCache.get(cd.name()));
 		output.write_uv(constantCache.get(cd.constant()));
 		output.write_uv(0); // no sub-blocks
-		// TODO: write annotations		
+		// TODO: write annotations
+		
+		output.close();
 		return bytes.toByteArray();
 	}
 	
@@ -242,7 +245,8 @@ public class WyilFileWriter {
 			output.write_uv(1); // one sub-block
 			writeBlock(BLOCK_Constraint,td.constraint(),output);
 		}
-		
+
+		output.close();
 		return bytes.toByteArray();
 	}
 
@@ -260,6 +264,7 @@ public class WyilFileWriter {
 		}
 		
 		// TODO: write annotations
+		output.close();
 		return bytes.toByteArray();
 	}
 	
@@ -283,6 +288,7 @@ public class WyilFileWriter {
 		}
 		// TODO: write annotations
 		
+		output.close();
 		return bytes.toByteArray();
 	}
 	
@@ -307,6 +313,7 @@ public class WyilFileWriter {
 			writeCode(e.code, offset++, labels, output);
 		}
 		
+		output.close();
 		return bytes.toByteArray();
 	}
 	
