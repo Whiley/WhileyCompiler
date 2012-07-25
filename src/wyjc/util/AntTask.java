@@ -101,7 +101,8 @@ public class AntTask extends MatchingTask {
 	 */
 	public static final FileFilter sourceFileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".whiley") || f.isDirectory();
+			String name = f.getName();
+			return name.endsWith(".whiley") || f.isDirectory();
 		}
 	};
 
@@ -113,7 +114,8 @@ public class AntTask extends MatchingTask {
 	 */
 	public static final FileFilter binaryFileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".class") || f.getName().endsWith(".class") || f.isDirectory();
+			String name = f.getName();
+			return name.endsWith(".wyil") || name.endsWith(".class") || f.isDirectory();			
 		}
 	};
 	
@@ -139,11 +141,17 @@ public class AntTask extends MatchingTask {
     	String[] split = includes.split(",");
     	Content.Filter<WhileyFile> whileyFilter = null;
     	Content.Filter<WyilFile> wyilFilter = null;
+    	
     	for(String s : split) {
     		if(s.endsWith(".whiley")) {
-    			Content.Filter<WhileyFile> f1 = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
-    			Content.Filter<WyilFile> f2 = Content.filter(s.substring(0,s.length()-7),WyilFile.ContentType);
+    			String name = s.substring(0,s.length()-7);
+    			Content.Filter<WhileyFile> f1 = Content.filter(name,WhileyFile.ContentType);
+    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);
     			whileyFilter = whileyFilter == null ? f1 : Content.or(f1, whileyFilter); 
+    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
+    		} else if(s.endsWith(".wyil")) {    			
+    			String name = s.substring(0,s.length()-5);
+    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);    			
     			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
     		}
     	}
@@ -162,9 +170,14 @@ public class AntTask extends MatchingTask {
     	Content.Filter<WyilFile> wyilFilter = null;
     	for(String s : split) {
     		if(s.endsWith(".whiley")) {
-    			Content.Filter<WhileyFile> f1 = Content.filter(s.substring(0,s.length()-7),WhileyFile.ContentType);
-    			Content.Filter<WyilFile> f2 = Content.filter(s.substring(0,s.length()-7),WyilFile.ContentType);
+    			String name = s.substring(0,s.length()-7);
+    			Content.Filter<WhileyFile> f1 = Content.filter(name,WhileyFile.ContentType);
+    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);
     			whileyFilter = whileyFilter == null ? f1 : Content.or(f1, whileyFilter); 
+    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
+    		} else if(s.endsWith(".wyil")) {    			
+    			String name = s.substring(0,s.length()-5);    			
+    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);    			
     			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
     		}
     	}
@@ -227,7 +240,7 @@ public class AntTask extends MatchingTask {
         	DirectoryRoot source = new DirectoryRoot(srcdir,sourceFileFilter,registry); 
     		roots.add(source);    
         		        	
-        	DirectoryRoot target = null;
+        	DirectoryRoot target;
         	if(destdir != null) {
         		target = new DirectoryRoot(destdir,binaryFileFilter,registry);        	
         		roots.add(target);
@@ -236,7 +249,7 @@ public class AntTask extends MatchingTask {
         		roots.add(target);
         	}
         	    	       	
-        	wyjc.Main.initialiseBootPath(bootpath);        	;        	
+        	wyjc.Main.initialiseBootPath(bootpath);      	
         	roots.addAll(whileypath);
         	roots.addAll(bootpath);
     		        	
@@ -248,22 +261,16 @@ public class AntTask extends MatchingTask {
  
 			// =====================================================================================
 			// Whiley to Wyil Build Rule
-			// =====================================================================================
-			
+			// =====================================================================================			
     		Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
     		
     		if(verbose) {			
     			builder.setLogger(new Logger.Default(System.err));
     		}
     		
-			StandardBuildRule rule = new StandardBuildRule(builder);
-			if (target != null) {
-				rule.add(source, whileyIncludes, whileyExcludes, target,
-						WhileyFile.ContentType, WyilFile.ContentType);
-			} else {
-				rule.add(source, whileyIncludes, whileyExcludes, source,
-						WhileyFile.ContentType, WyilFile.ContentType);
-			}
+			StandardBuildRule rule = new StandardBuildRule(builder);			
+			rule.add(source, whileyIncludes, whileyExcludes, target,
+					WhileyFile.ContentType, WyilFile.ContentType);			
 			project.add(rule);
     		
 			// =====================================================================================
@@ -272,17 +279,12 @@ public class AntTask extends MatchingTask {
 			Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder();
     		
     		if(verbose) {			
-    			builder.setLogger(new Logger.Default(System.err));
+    			jbuilder.setLogger(new Logger.Default(System.err));
     		}
     		
-			rule = new StandardBuildRule(jbuilder);
-			if (target != null) {
-				rule.add(source, wyilIncludes, wyilExcludes, target,
-						WyilFile.ContentType, ClassFile.ContentType);
-			} else {
-				rule.add(source, wyilIncludes, wyilExcludes, source,
-						WyilFile.ContentType, ClassFile.ContentType);
-			}
+			rule = new StandardBuildRule(jbuilder);			
+			rule.add(target, wyilIncludes, wyilExcludes, target,
+					WyilFile.ContentType, ClassFile.ContentType);			
 			project.add(rule);
     		
 			// =====================================================================================
@@ -291,18 +293,22 @@ public class AntTask extends MatchingTask {
 
 			// Now, touch all source files which have modification date after
 			// their corresponding binary.	
-			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();			
-			for (Path.Entry<WhileyFile> e : source.get(whileyIncludes)) {					
-				Path.Entry<WyilFile> binary;
-				
-				if (target != null) {
-					binary = target.get(e.id(), WyilFile.ContentType);
+			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
+			for (Path.Entry<WhileyFile> sourceFile : source.get(whileyIncludes)) {
+				Path.Entry<WyilFile> wyilBinary;
+
+				wyilBinary = target.get(sourceFile.id(), WyilFile.ContentType);
+
+				// first, check whether wyil file out-of-date with source file
+				if (wyilBinary == null || wyilBinary.lastModified() < sourceFile.lastModified()) {
+					sources.add(sourceFile);
 				} else {
-					binary = source.get(e.id(), WyilFile.ContentType);
-				}
-				
-				if (binary == null || binary.lastModified() < e.lastModified()) {
-					sources.add(e);
+					// second, check whether class file out of date with wyil file.
+					Path.Entry<ClassFile> classBinary = target.get(
+							sourceFile.id(), ClassFile.ContentType);
+					if (classBinary == null || classBinary.lastModified() < wyilBinary.lastModified()) {
+						sources.add(sourceFile);
+					}
 				}
 			}
 			

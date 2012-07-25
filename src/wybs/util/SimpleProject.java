@@ -160,11 +160,13 @@ public class SimpleProject implements NameSpace {
 		int oldSize;
 		do {
 			oldSize = allTargets.size();
+			HashSet<Path.Entry<?>> delta = new HashSet();
 			for (BuildRule r : rules) {
 				for (Path.Entry<?> target : allTargets) {
-					allTargets.addAll(r.dependentsOf(target));
+					delta.addAll(r.dependentsOf(target));
 				}
 			}
+			allTargets.addAll(delta);
 		} while (allTargets.size() != oldSize);
 
 		// Finally, build all identified targets!
