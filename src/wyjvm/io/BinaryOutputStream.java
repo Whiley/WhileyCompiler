@@ -159,8 +159,7 @@ public class BinaryOutputStream extends OutputStream {
 	 * @throws IOException
 	 */
 	public void pad_u8() throws IOException {
-		if (count > 0) {
-			System.out.println("PADDING: " + count);
+		if (count > 0) {			
 			output.write(value >>> (8-count));
 			value = 0;
 			count = 0;

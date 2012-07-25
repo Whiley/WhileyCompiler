@@ -276,10 +276,10 @@ public class WyilFileWriter {
 			writeBlock(BLOCK_Precondition,c.precondition(),output);
 		}
 		if(c.postcondition() != null) {			
-			writeBlock(BLOCK_Postcondition,c.precondition(),output);			
+			writeBlock(BLOCK_Postcondition,c.postcondition(),output);			
 		}
 		if(c.body() != null) {
-			writeBlock(BLOCK_Body,c.precondition(),output);			
+			writeBlock(BLOCK_Body,c.body(),output);			
 		}
 		// TODO: write annotations
 		

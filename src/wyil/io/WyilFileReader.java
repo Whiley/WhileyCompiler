@@ -47,8 +47,7 @@ public class WyilFileReader {
 	}
 	
 	public WyilFile read() throws IOException {
-		
-		
+				
 		for(int i=0;i!=8;++i) {
 			char c = (char) input.read_u8();
 			if(magic[i] != c) {
@@ -75,9 +74,8 @@ public class WyilFileReader {
 		readConstantPool(constantPoolSize);
 		readTypePool(typePoolSize);		
 		
-		// FIXME: problem if more than one block.
-		input.read_uv(); // block identifier
-		// TODO: read block size
+		input.pad_u8();
+						
 		return readModule();				
 	}
 	
@@ -152,7 +150,11 @@ public class WyilFileReader {
 	}
 	
 	private WyilFile readModule() throws IOException {
-		System.out.println("=== MODULE ===");
+		System.out.println("=== MODULE ===");		
+		input.read_uv(); // block identifier
+		int size = input.read_uv();	
+		input.pad_u8();
+		
 		int nameIdx = input.read_uv();
 		int numBlocks = input.read_uv();
 		System.out.println("ID: " + pathPool.get(nameIdx));
@@ -167,7 +169,9 @@ public class WyilFileReader {
 	
 	private WyilFile.Declaration readModuleBlock() throws IOException {
 		int kind = input.read_uv();
-		// TODO: read block size
+		int size = input.read_uv();
+		input.pad_u8();
+		
 		switch(kind) {
 			case WyilFileWriter.BLOCK_Constant:
 				return readConstantBlock();
@@ -186,6 +190,8 @@ public class WyilFileReader {
 		int nameIdx = input.read_uv();
 		int constantIdx = input.read_uv();
 		int nBlocks = input.read_uv(); // unused
+		
+		input.pad_u8();		
 		System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
 		return new WyilFile.ConstantDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), constantPool.get(constantIdx));
@@ -197,6 +203,9 @@ public class WyilFileReader {
 		int nBlocks = input.read_uv();
 		Block constraint = null;
 		if(nBlocks != 0) {
+			int kind = input.read_uv(); // unsued
+			int size = input.read_uv();
+			input.pad_u8();			
 			constraint = readCodeBlock(1);
 		}
 		System.out.println("=== TYPE " + stringPool.get(nameIdx));
@@ -213,6 +222,9 @@ public class WyilFileReader {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
 			int kind = input.read_uv(); // unsued
+			int size = input.read_uv();
+			input.pad_u8();
+			
 			switch(kind) {
 				case WyilFileWriter.BLOCK_Case:
 					cases.add(readFunctionOrMethodCase(type));
@@ -234,7 +246,10 @@ public class WyilFileReader {
 		Type.Method type = (Type.Method) typePool.get(typeIdx);
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
-			int kind = input.read_uv(); // unused
+			int kind = input.read_uv(); // unsued
+			int size = input.read_uv();
+			input.pad_u8();
+			
 			switch(kind) {
 				case WyilFileWriter.BLOCK_Case:
 					cases.add(readFunctionOrMethodCase(type));
@@ -254,8 +269,11 @@ public class WyilFileReader {
 		Block body = null;
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
-		for (int i = 0; i != nBlocks; ++i) {
-			int kind = input.read_uv();
+		for (int i = 0; i != nBlocks; ++i) {			
+			int kind = input.read_uv(); 
+			int size = input.read_uv();
+			input.pad_u8();
+			
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Precondition:
 				precondition = readCodeBlock(numInputs);
@@ -284,8 +302,10 @@ public class WyilFileReader {
 			System.out.println("READ: " + code);
 			block.append(code);
 		}
-		
+				
 		// FIXME: insert label opcodes.
+		
+		input.pad_u8(); // necessary
 		
 		return block;
 	}	
