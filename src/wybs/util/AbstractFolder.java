@@ -117,9 +117,9 @@ public abstract class AbstractFolder implements Path.Folder {
 		updateContents();				
 		
 		ID tid = id.append(eid.get(0));		
-				
+	
 		int idx = binarySearch(contents,nentries,tid);
-		if(idx >= 0) {
+		if(idx >= 0) {			
 			// At this point, we've found a matching index for the given ID.
 			// However, there maybe multiple matching IDs with different
 			// content types. Therefore, we need to check them all to see if
@@ -140,8 +140,8 @@ public abstract class AbstractFolder implements Path.Folder {
 					return folder.get(eid.subpath(1,eid.size()), ct);
 				}
 			} while (++idx < nentries
-					&& (item = contents[idx]).id().equals(eid));
-		}
+					&& (item = contents[idx]).id().equals(tid));
+		} 
 			
 		// no dice
 		return null;
@@ -271,8 +271,6 @@ public abstract class AbstractFolder implements Path.Folder {
 		}
 		updateContents();
 		
-		System.out.println("INSERTING: " + item);		
-		
 		Path.ID id = item.id();
 		int index = binarySearch(contents, nentries, id);
 
@@ -293,12 +291,7 @@ public abstract class AbstractFolder implements Path.Folder {
 		}
 
 		contents[index] = item;
-		nentries++;
-		// debug
-		if(item instanceof Path.Entry) {
-			Path.Entry e = (Path.Entry) item;
-			System.out.println("RETRIEVED: " + get(item.id(),e.contentType()));
-		}
+		nentries++;		
 	}
 	
 	private final void updateContents() throws IOException{
@@ -320,8 +313,7 @@ public abstract class AbstractFolder implements Path.Folder {
             
         while (low <= high) {
             int mid = (low + high) >> 1;
-            int c = children[mid].id().compareTo(key);
-                
+            int c = children[mid].id().compareTo(key); 
             if (c < 0) {
                 low = mid + 1; 
             } else if (c > 0) {
@@ -331,8 +323,8 @@ public abstract class AbstractFolder implements Path.Folder {
             	mid = mid - 1;
 				while (mid >= 0 && children[mid].id().compareTo(key) == 0) {
 					mid = mid - 1;
-				}
-                return mid + 1;
+				}				
+				return mid + 1;
             }
         }
         return -(low + 1);

@@ -115,10 +115,7 @@ public class StandardBuildRule implements BuildRule {
 					}
 				}
 			}
-					
-			System.out.println("DELTA: " + delta);
-			
-			
+								
 			// The following is an alternate formulation of the above loop. I've
 			// removed it because it forces a search over the entirety of the
 			// source roots. This is unnecessarily expensive. For now, I leave
