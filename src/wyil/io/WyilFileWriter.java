@@ -10,30 +10,28 @@ import wyil.util.Pair;
 import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryOutputStream;
 
-public class WyilFileWriter {
+public final class WyilFileWriter {
 	private static final int MAJOR_VERSION = 0;
 	private static final int MINOR_VERSION = 1;
 	
-	private BinaryOutputStream out;
+	private final BinaryOutputStream out;
 	
-	private ArrayList<String> stringPool  = new ArrayList<String>();
-	private HashMap<String,Integer> stringCache = new HashMap<String,Integer>();
+	private final ArrayList<String> stringPool  = new ArrayList<String>();
+	private final HashMap<String,Integer> stringCache = new HashMap<String,Integer>();	
+	private final ArrayList<PATH_Item> pathPool = new ArrayList<PATH_Item>();
+	private final HashMap<Path.ID,Integer> pathCache = new HashMap<Path.ID,Integer>();	
+	private final ArrayList<NAME_Item> namePool = new ArrayList<NAME_Item>();
+	private final HashMap<NameID,Integer> nameCache = new HashMap<NameID,Integer>();	
+	private final ArrayList<Value> constantPool = new ArrayList<Value>();
+	private final HashMap<Value,Integer> constantCache = new HashMap<Value,Integer>();	
+	private final ArrayList<Type> typePool = new ArrayList<Type>();
+	private final HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
 	
-	private ArrayList<PATH_Item> pathPool = new ArrayList<PATH_Item>();
-	private HashMap<Path.ID,Integer> pathCache = new HashMap<Path.ID,Integer>();
-	
-	private ArrayList<NAME_Item> namePool = new ArrayList<NAME_Item>();
-	private HashMap<NameID,Integer> nameCache = new HashMap<NameID,Integer>();
-	
-	private ArrayList<Value> constantPool = new ArrayList<Value>();
-	private HashMap<Value,Integer> constantCache = new HashMap<Value,Integer>();
-	
-	private ArrayList<Type> typePool = new ArrayList<Type>();
-	private HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
+	private final ByteArrayOutputStream bytes; // used as temporary storage
 	
 	public WyilFileWriter(OutputStream output) {
 		this.out = new BinaryOutputStream(output); 
-
+		this.bytes = new ByteArrayOutputStream();
 	}
 	
 	public void close() throws IOException {
@@ -113,7 +111,8 @@ public class WyilFileWriter {
 	 */
 	private byte[] generateHeaderBlock(WyilFile module)
 			throws IOException {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();		
+		bytes.reset();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
 		// second, write the file version number		
@@ -224,7 +223,8 @@ public class WyilFileWriter {
 	}
 		
 	private byte[] generateConstantBlock(WyilFile.ConstantDeclaration cd) throws IOException {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		bytes.reset();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 					
 		// TODO: write modifiers
@@ -238,7 +238,8 @@ public class WyilFileWriter {
 	}
 	
 	private byte[] generateTypeBlock(WyilFile.TypeDeclaration td) throws IOException {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		bytes.reset();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
 		// TODO: write modifiers
@@ -256,7 +257,8 @@ public class WyilFileWriter {
 	}
 
 	private byte[] generateMethodBlock(WyilFile.MethodDeclaration md) throws IOException {		
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		bytes.reset();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
 		output.write_uv(stringCache.get(md.name()));
@@ -274,7 +276,8 @@ public class WyilFileWriter {
 	}
 	
 	private byte[] generateMethodCaseBlock(WyilFile.Case c) throws IOException {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		bytes.reset();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
 		int n = 0;
@@ -298,7 +301,8 @@ public class WyilFileWriter {
 	}
 	
 	private byte[] generateCodeBlock(Block block) throws IOException {		
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		bytes.reset();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
 		HashMap<String,Integer> labels = new HashMap<String,Integer>();

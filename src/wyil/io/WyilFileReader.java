@@ -24,7 +24,7 @@ import wyjvm.io.BinaryInputStream;
  * @author David J. Pearce
  * 
  */
-public class WyilFileReader {
+public final class WyilFileReader {
 	private static final char[] magic = {'W','Y','I','L','F','I','L','E'};
 	
 	private final BinaryInputStream input;
@@ -147,16 +147,13 @@ public class WyilFileReader {
 		}
 	}
 	
-	private WyilFile readModule() throws IOException {
-		System.out.println("=== MODULE ===");		
+	private WyilFile readModule() throws IOException {		
 		int kind = input.read_uv(); // block identifier
 		int size = input.read_uv();	
 		input.pad_u8();
 		
 		int nameIdx = input.read_uv();
 		int numBlocks = input.read_uv();
-		System.out.println("ID: " + pathPool.get(nameIdx));
-		System.out.println("NUM BLOCKS: " + numBlocks);
 		
 		input.pad_u8();
 		
@@ -164,7 +161,7 @@ public class WyilFileReader {
 		for(int i=0;i!=numBlocks;++i) {			
 			declarations.add(readModuleBlock());
 		}
-		System.out.println("DONE");
+		
 		return new WyilFile(pathPool.get(nameIdx),"unknown.whiley",declarations);
 	}
 	
@@ -189,7 +186,7 @@ public class WyilFileReader {
 	
 	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {		
 		int nameIdx = input.read_uv();
-		System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
+		//System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
 		
 		int constantIdx = input.read_uv();
 		int nBlocks = input.read_uv(); // unused
@@ -201,7 +198,8 @@ public class WyilFileReader {
 	
 	private WyilFile.TypeDeclaration readTypeBlock() throws IOException {		
 		int nameIdx = input.read_uv();
-		System.out.println("=== TYPE " + stringPool.get(nameIdx));
+		//System.out.println("=== TYPE " + stringPool.get(nameIdx));
+		
 		int typeIdx = input.read_uv();
 		int nBlocks = input.read_uv();
 		
@@ -221,7 +219,8 @@ public class WyilFileReader {
 	
 	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
+		// System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
+		
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();		
 		
@@ -249,7 +248,7 @@ public class WyilFileReader {
 	
 	private WyilFile.MethodDeclaration readMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		System.out.println("=== METHOD " + stringPool.get(nameIdx));
+		// System.out.println("=== METHOD " + stringPool.get(nameIdx));
 		
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();
@@ -315,7 +314,7 @@ public class WyilFileReader {
 		
 		for(int i=0;i!=nCodes;++i) {
 			Code code = readCode(i,labels);
-			System.out.println("READ: " + code);
+			//System.out.println("READ: " + code);
 			block.append(code);
 		}
 				
