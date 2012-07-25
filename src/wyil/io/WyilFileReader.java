@@ -168,6 +168,9 @@ public class WyilFileReader {
 		int numBlocks = input.read_uv();
 		System.out.println("ID: " + pathPool.get(nameIdx));
 		System.out.println("NUM BLOCKS: " + numBlocks);
+		
+		input.pad_u8();
+		
 		List<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
 		for(int i=0;i!=numBlocks;++i) {			
 			declarations.add(readModuleBlock());
@@ -212,6 +215,9 @@ public class WyilFileReader {
 		System.out.println("=== TYPE " + stringPool.get(nameIdx));
 		int typeIdx = input.read_uv();
 		int nBlocks = input.read_uv();
+		
+		input.pad_u8();
+		
 		Block constraint = null;
 		if(nBlocks != 0) {
 			int kind = input.read_uv(); // unsued
@@ -219,8 +225,6 @@ public class WyilFileReader {
 			input.pad_u8();			
 			constraint = readCodeBlock(1);
 		}		
-		
-		input.pad_u8();
 		
 		return new WyilFile.TypeDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
@@ -231,6 +235,9 @@ public class WyilFileReader {
 		System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();		
+		
+		input.pad_u8();
+		
 		Type.Function type = (Type.Function) typePool.get(typeIdx);		
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
@@ -258,6 +265,8 @@ public class WyilFileReader {
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();
 		
+		input.pad_u8();
+		
 		Type.Method type = (Type.Method) typePool.get(typeIdx);
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
@@ -281,9 +290,12 @@ public class WyilFileReader {
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type) throws IOException {
 		Block precondition = null;
 		Block postcondition = null;
-		Block body = null;
+		Block body = null;		
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
+		
+		input.pad_u8();
+		
 		for (int i = 0; i != nBlocks; ++i) {			
 			int kind = input.read_uv(); 
 			int size = input.read_uv();
