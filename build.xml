@@ -20,7 +20,7 @@
     </jar>
   </target>
 
-  <target name="wyjc">
+  <target name="wyjc" depends="stdlib">
     <buildnumber file="build.num"/>
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">

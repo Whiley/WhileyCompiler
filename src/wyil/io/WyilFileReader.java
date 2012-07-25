@@ -67,8 +67,6 @@ public class WyilFileReader {
 		int majorVersion = input.read_uv();
 		int minorVersion = input.read_uv();
 		
-		System.out.println("VERSION: " + majorVersion + "." + minorVersion);		
-		
 		int stringPoolSize = input.read_uv();
 		int pathPoolSize = input.read_uv();
 		int namePoolSize = input.read_uv();
@@ -88,8 +86,7 @@ public class WyilFileReader {
 		return readModule();				
 	}
 	
-	private void readStringPool(int size) throws IOException {
-		System.out.println("=== TYPES ===");		
+	private void readStringPool(int size) throws IOException {		
 		stringPool.clear();
 		for(int i=0;i!=size;++i) {
 			int length = input.read_uv();
@@ -97,7 +94,6 @@ public class WyilFileReader {
 				byte[] data = new byte[length];
 				input.read(data);
 				String str = new String(data,0,length,"UTF-8");
-				System.out.println("#" + i + " = " + str);
 				stringPool.add(str);
 			} catch(UnsupportedEncodingException e) {
 				throw new RuntimeException("UTF-8 Charset not supported?");
@@ -106,7 +102,6 @@ public class WyilFileReader {
 	}
 	
 	private void readPathPool(int size) throws IOException {
-		System.out.println("=== PATHS ===");
 		pathPool.clear();
 		for(int i=0;i!=size;++i) {
 			int parent = input.read_uv();
@@ -119,12 +114,10 @@ public class WyilFileReader {
 			}
 			id = id.append(stringPool.get(stringIndex));
 			pathPool.add(id);
-			System.out.println("#" + i + " = " + id);
 		}
 	}
 
-	private void readNamePool(int size) throws IOException {
-		System.out.println("=== NAMES ===");
+	private void readNamePool(int size) throws IOException {		
 		namePool.clear();
 		for (int i = 0; i != size; ++i) {
 			// int kind = input.read_uv();
@@ -136,25 +129,21 @@ public class WyilFileReader {
 		}
 	}
 
-	private void readConstantPool(int size) throws IOException {
-		System.out.println("=== CONSTANTS ===");
+	private void readConstantPool(int size) throws IOException {		
 		constantPool.clear();
 		ValueReader bin = new ValueReader(input);
 		for(int i=0;i!=size;++i) {
-			Value v = bin.read();
-			System.out.println("#" + i + " = " + v);
+			Value v = bin.read();			
 			constantPool.add(v);
 		}
 	}
 
-	private void readTypePool(int size) throws IOException {
-		System.out.println("=== TYPES ===");
+	private void readTypePool(int size) throws IOException {		
 		typePool.clear();
 		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for(int i=0;i!=size;++i) {
 			Type t = bin.readType();			
-			typePool.add(t);
-			System.out.println("#" + i + " = " + t);
+			typePool.add(t);			
 		}
 	}
 	
@@ -325,8 +314,7 @@ public class WyilFileReader {
 		HashMap<Integer,String> labels = new HashMap<Integer,String>();
 		
 		for(int i=0;i!=nCodes;++i) {
-			Code code = readCode(i,labels);
-			System.out.println("READ: " + code);
+			Code code = readCode(i,labels);			
 			block.append(code);
 		}
 				
@@ -446,7 +434,7 @@ public class WyilFileReader {
 	
 	private Code readUnaryAssign(int opcode, boolean wideBase, boolean wideRest) throws IOException {
 		int target = readBase(wideBase);
-		System.out.println("TARGET: " + target);
+		
 		int operand = readBase(wideBase);
 		int typeIdx = readRest(wideRest);
 		Type type = typePool.get(typeIdx);
