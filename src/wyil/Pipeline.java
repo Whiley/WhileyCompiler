@@ -64,8 +64,7 @@ public class Pipeline {
 
 	public static final List<Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Template>() {
-				{														
-					add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));
+				{																			
 					add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
 					// add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
 					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));										

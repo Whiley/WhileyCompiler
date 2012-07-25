@@ -214,7 +214,12 @@ public class WyilFileWriter {
 		} else if(d instanceof WyilFile.TypeDeclaration) {
 			writeBlock(BLOCK_Type, d, output);			
 		} else if(d instanceof WyilFile.MethodDeclaration) {
-			writeBlock(BLOCK_Method, d, output);
+			WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+			if(md.type() instanceof Type.Function) {
+				writeBlock(BLOCK_Function, d, output);
+			} else {
+				writeBlock(BLOCK_Method, d, output);
+			}
 		} 
 	}
 		

@@ -197,17 +197,19 @@ public class WyilFileReader {
 	
 	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {		
 		int nameIdx = input.read_uv();
+		System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
+		
 		int constantIdx = input.read_uv();
 		int nBlocks = input.read_uv(); // unused
 		
-		input.pad_u8();		
-		System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
+		input.pad_u8();				
 		return new WyilFile.ConstantDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), constantPool.get(constantIdx));
 	}
 	
 	private WyilFile.TypeDeclaration readTypeBlock() throws IOException {		
 		int nameIdx = input.read_uv();
+		System.out.println("=== TYPE " + stringPool.get(nameIdx));
 		int typeIdx = input.read_uv();
 		int nBlocks = input.read_uv();
 		Block constraint = null;
@@ -216,17 +218,19 @@ public class WyilFileReader {
 			int size = input.read_uv();
 			input.pad_u8();			
 			constraint = readCodeBlock(1);
-		}
-		System.out.println("=== TYPE " + stringPool.get(nameIdx));
+		}		
+		
+		input.pad_u8();
+		
 		return new WyilFile.TypeDeclaration(Collections.EMPTY_LIST,
 				stringPool.get(nameIdx), typePool.get(typeIdx), constraint);
 	}
 	
 	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		int typeIdx = input.read_uv();
-		int numCases = input.read_uv();
 		System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
+		int typeIdx = input.read_uv();
+		int numCases = input.read_uv();		
 		Type.Function type = (Type.Function) typePool.get(typeIdx);		
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
@@ -249,9 +253,11 @@ public class WyilFileReader {
 	
 	private WyilFile.MethodDeclaration readMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
+		System.out.println("=== METHOD " + stringPool.get(nameIdx));
+		
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();
-		System.out.println("=== METHOD " + stringPool.get(nameIdx));
+		
 		Type.Method type = (Type.Method) typePool.get(typeIdx);
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
