@@ -27,11 +27,8 @@ public final class WyilFileWriter {
 	private final ArrayList<Type> typePool = new ArrayList<Type>();
 	private final HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
 	
-	private final ByteArrayOutputStream bytes; // used as temporary storage
-	
 	public WyilFileWriter(OutputStream output) {
 		this.out = new BinaryOutputStream(output); 
-		this.bytes = new ByteArrayOutputStream();
 	}
 	
 	public void close() throws IOException {
@@ -63,6 +60,7 @@ public final class WyilFileWriter {
 	
 	private void writeBlock(int kind, Object data, BinaryOutputStream output)
 			throws IOException {
+		
 		output.pad_u8(); // pad out to next byte boundary
 		
 		// determine bytes for block
@@ -111,8 +109,7 @@ public final class WyilFileWriter {
 	 */
 	private byte[] generateHeaderBlock(WyilFile module)
 			throws IOException {
-		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();		
-		bytes.reset();
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();		
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
 		// second, write the file version number		
@@ -195,13 +192,12 @@ public final class WyilFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
-		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
-		
+		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!	
 		output.write_uv(module.declarations().size());
+		
 		for(WyilFile.Declaration d : module.declarations()) {
 			writeModuleBlock(d,output);
-		}
-		
+		}		
 		
 		return bytes.toByteArray();
 	}
@@ -223,8 +219,7 @@ public final class WyilFileWriter {
 	}
 		
 	private byte[] generateConstantBlock(WyilFile.ConstantDeclaration cd) throws IOException {
-		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		bytes.reset();
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 					
 		// TODO: write modifiers
@@ -238,8 +233,7 @@ public final class WyilFileWriter {
 	}
 	
 	private byte[] generateTypeBlock(WyilFile.TypeDeclaration td) throws IOException {
-		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		bytes.reset();
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
 		// TODO: write modifiers
@@ -257,8 +251,7 @@ public final class WyilFileWriter {
 	}
 
 	private byte[] generateMethodBlock(WyilFile.MethodDeclaration md) throws IOException {		
-		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		bytes.reset();
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
 		output.write_uv(stringCache.get(md.name()));
@@ -276,8 +269,7 @@ public final class WyilFileWriter {
 	}
 	
 	private byte[] generateMethodCaseBlock(WyilFile.Case c) throws IOException {
-		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		bytes.reset();
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
 		int n = 0;
@@ -301,8 +293,7 @@ public final class WyilFileWriter {
 	}
 	
 	private byte[] generateCodeBlock(Block block) throws IOException {		
-		//ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		bytes.reset();
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();		
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
 		HashMap<String,Integer> labels = new HashMap<String,Integer>();

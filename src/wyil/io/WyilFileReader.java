@@ -219,7 +219,7 @@ public final class WyilFileReader {
 	
 	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		// System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
+		//System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
 		
 		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();		
