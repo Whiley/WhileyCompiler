@@ -4298,6 +4298,7 @@ public abstract class Code {
 	public static final int OPCODE_return   = 1 + FMT_UNARYOP;	 
 	public static final int OPCODE_ifis     = 3 + FMT_UNARYOP; // +TYPEIDX	
 	public static final int OPCODE_switch   = 4 + FMT_UNARYOP; // +OTHER
+	public static final int OPCODE_throw    = 5 + FMT_UNARYOP;
 	
 	// =========================================================================
 	// Unary Assignables
@@ -4313,9 +4314,8 @@ public abstract class Code {
 	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;	
 	public static final int OPCODE_not         = 9 + FMT_UNARYASSIGN;
 	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
-	public static final int OPCODE_throw       = 11 + FMT_UNARYASSIGN;
-	public static final int OPCODE_fieldload   = 12 + FMT_UNARYASSIGN; // +STRINGIDX
-	public static final int OPCODE_convert     = 13 + FMT_UNARYASSIGN; // +TYPEIDX		
+	public static final int OPCODE_fieldload   = 11 + FMT_UNARYASSIGN; // +STRINGIDX
+	public static final int OPCODE_convert     = 12 + FMT_UNARYASSIGN; // +TYPEIDX		
 		
 	// =========================================================================
 	// Binary Operators
