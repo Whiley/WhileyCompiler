@@ -4289,13 +4289,13 @@ public abstract class Code {
 	public static final int OPCODE_nop      = 0 + FMT_EMPTY;	
 	public static final int OPCODE_returnv  = 1 + FMT_EMPTY;		
 	public static final int OPCODE_const    = 2 + FMT_EMPTY; // +CONSTIDX
+	public static final int OPCODE_goto     = 3 + FMT_EMPTY; // +INT
 	
 	// =========================================================================
 	// Unary Operators
 	// =========================================================================
 	public static final int OPCODE_debug    = 0 + FMT_UNARYOP;
-	public static final int OPCODE_return   = 1 + FMT_UNARYOP;	
-	public static final int OPCODE_goto     = 2 + FMT_UNARYOP; // +INT 
+	public static final int OPCODE_return   = 1 + FMT_UNARYOP;	 
 	public static final int OPCODE_ifis     = 3 + FMT_UNARYOP; // +TYPEIDX	
 	public static final int OPCODE_switch   = 4 + FMT_UNARYOP; // +OTHER
 	
