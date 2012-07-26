@@ -27,13 +27,7 @@ package wyil.io;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import wybs.lang.Path;
 import wybs.util.Trie;
@@ -908,20 +902,16 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_String:
 			{
-				int len = reader.read_uv();
-				StringBuffer sb = new StringBuffer();
-				for(int i=0;i!=len;++i) {
-					char c = (char) reader.read_uv();
-					sb.append(c);
-				}
-				return Value.V_STRING(sb.toString());
+				int index = reader.read_uv();				
+				return Value.V_STRING(stringPool.get(index));
 			}
 			case WyilFileWriter.CONSTANT_List:
 			{
 				int len = reader.read_uv();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
-					values.add((Value) read());
+					int index = reader.read_uv();
+					values.add(constantPool.get(index));
 				}
 				return Value.V_LIST(values);
 			}
@@ -930,7 +920,8 @@ public final class WyilFileReader {
 				int len = reader.read_uv();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
-					values.add((Value) read());
+					int index = reader.read_uv();
+					values.add(constantPool.get(index));		
 				}
 				return Value.V_SET(values);
 			}
@@ -939,19 +930,33 @@ public final class WyilFileReader {
 				int len = reader.read_uv();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
-					values.add((Value) read());
+					int index = reader.read_uv();
+					values.add(constantPool.get(index));
 				}
 				return Value.V_TUPLE(values);
+			}
+			case WyilFileWriter.CONSTANT_Map:
+			{
+				int len = reader.read_uv();
+				HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();
+				for(int i=0;i!=len;++i) {
+					int keyIndex = reader.read_uv();
+					int valIndex = reader.read_uv();
+					Value key = constantPool.get(keyIndex);
+					Value val = constantPool.get(valIndex);
+					values.add(new Pair<Value,Value>(key,val));							
+				}
+				return Value.V_MAP(values);
 			}
 			case WyilFileWriter.CONSTANT_Record:
 			{
 				int len = reader.read_uv();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();
 				for(int i=0;i!=len;++i) {
-					int idx = reader.read_uv();
-					String str = stringPool.get(idx);
-					Value lhs = (Value) read();
-					tvs.put(str, lhs);
+					int fieldIndex = reader.read_uv();
+					int constantIndex = reader.read_uv();
+					String str = stringPool.get(fieldIndex);					
+					tvs.put(str,constantPool.get(constantIndex));					
 				}
 				return Value.V_RECORD(tvs);
 			}	

@@ -227,7 +227,7 @@ public final class WyilFileWriter {
 
 	private void writeConstantPool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " constant item(s).");
-		ValueWriter bout = new ValueWriter(output);
+		ConstantWriter bout = new ConstantWriter(output);
 		for (Value v : constantPool) {
 			bout.write(v);
 		}
@@ -1034,45 +1034,46 @@ public final class WyilFileWriter {
 	
 		Integer index = constantCache.get(v);
 		if(index == null) {
+			addConstantSubitems(v);
+			// all subitems must have lower indices
 			int i = constantPool.size();
 			constantCache.put(v, i);
-			constantPool.add(v);
-			addConstantItems(v);
+			constantPool.add(v);			
 			return i;
 		}
 		return index;
 	}
 	
-	private void addConstantItems(Value v) {
+	private void addConstantSubitems(Value v) {
 		if(v instanceof Value.Strung) {
 			Value.Strung s = (Value.Strung) v;
 			addStringItem(s.value);
 		} else if(v instanceof Value.List) {
 			Value.List l = (Value.List) v;				
 			for (Value e : l.values) {
-				addConstantItems(e);
+				addConstantItem(e);
 			}
 		} else if(v instanceof Value.Set) {
 			Value.Set s = (Value.Set) v;
 			for (Value e : s.values) {
-				addConstantItems(e);
+				addConstantItem(e);
 			}
 		} else if(v instanceof Value.Map) {				
 			Value.Map m = (Value.Map) v;
 			for (Map.Entry<Value,Value> e : m.values.entrySet()) {
-				addConstantItems(e.getKey());
-				addConstantItems(e.getValue());
+				addConstantItem(e.getKey());
+				addConstantItem(e.getValue());
 			}
 		} else if(v instanceof Value.Tuple) {
 			Value.Tuple t = (Value.Tuple) v;
 			for (Value e : t.values) {
-				addConstantItems(e);
+				addConstantItem(e);
 			}
 		} else if(v instanceof Value.Record) {
 			Value.Record r = (Value.Record) v;
 			for (Map.Entry<String,Value> e : r.values.entrySet()) {
 				addStringItem(e.getKey());
-				addConstantItems(e.getValue());
+				addConstantItem(e.getValue());
 			}				
 		} else if(v instanceof Value.FunctionOrMethod){
 			Value.FunctionOrMethod fm = (Value.FunctionOrMethod) v;
@@ -1156,10 +1157,10 @@ public final class WyilFileWriter {
 	
 	// FIXME: this is really a temporary class because we ideally want to
 	// exploit the potential for sharing amongst substructure of values.
-	private class ValueWriter {
+	private class ConstantWriter {
 		private final BinaryOutputStream output;
 		
-		public ValueWriter(BinaryOutputStream output) {
+		public ConstantWriter(BinaryOutputStream output) {
 			this.output = output;
 		}
 		
@@ -1248,17 +1249,14 @@ public final class WyilFileWriter {
 		public void write(Value.Strung expr) throws IOException {	
 			output.write_uv(CONSTANT_String);
 			String value = expr.value;
-			int valueLength = value.length();		
-			output.write_uv(valueLength);
-			for(int i=0;i!=valueLength;++i) {
-				output.write_uv(value.charAt(i));
-			}
+			output.write_uv(stringCache.get(value));			
 		}
 		public void write(Value.Set expr) throws IOException {
 			output.write_uv(CONSTANT_Set);
 			output.write_uv(expr.values.size());
 			for(Value v : expr.values) {
-				write(v);
+				int index = constantCache.get(v);
+				output.write_uv(index);
 			}
 		}
 		
@@ -1266,7 +1264,8 @@ public final class WyilFileWriter {
 			output.write_uv(CONSTANT_List);
 			output.write_uv(expr.values.size());
 			for(Value v : expr.values) {
-				write(v);
+				int index = constantCache.get(v);
+				output.write_uv(index);
 			}
 		}
 		
@@ -1274,8 +1273,10 @@ public final class WyilFileWriter {
 			output.write_uv(CONSTANT_Map);
 			output.write_uv(expr.values.size());
 			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
-				write(e.getKey());
-				write(e.getValue());
+				int keyIndex = constantCache.get(e.getKey());
+				output.write_uv(keyIndex);
+				int valIndex = constantCache.get(e.getValue());
+				output.write_uv(valIndex);
 			}
 		}
 		
@@ -1284,7 +1285,8 @@ public final class WyilFileWriter {
 			output.write_uv(expr.values.size());
 			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
 				output.write_uv(stringCache.get(v.getKey()));
-				write(v.getValue());
+				int index = constantCache.get(v.getValue());
+				output.write_uv(index);
 			}
 		}
 		
@@ -1292,7 +1294,8 @@ public final class WyilFileWriter {
 			output.write_uv(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
 			output.write_uv(expr.values.size());
 			for(Value v : expr.values) {
-				write(v);
+				int index = constantCache.get(v);
+				output.write_uv(index);
 			}
 		}
 		
