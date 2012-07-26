@@ -128,9 +128,11 @@ public final class WyilFileWriter {
 	}
 	
 	/**
-	 * Write the header information for this WYIL file.
+	 * Write the header information for this WYIL file, including the stratified
+	 * resource pool.
 	 * 
 	 * @param module
+	 * 
 	 * @throws IOException
 	 */
 	private byte[] generateHeaderBlock(WyilFile module)
@@ -350,30 +352,32 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 	
-	private void writeCode(Code code, int offset, HashMap<String,Integer> labels, BinaryOutputStream output) throws IOException {
-		
+	private void writeCode(Code code, int offset,
+			HashMap<String, Integer> labels, BinaryOutputStream output)
+			throws IOException {
+
 		// first determine whether we need some kind of wide instruction.
-		int width = calculateWidth(code,offset,labels);
-		
-		switch(width) {
-		case Code.OPCODE_wide:
-			output.write_u8(width);
-			writeBase(true,code,output);
-			writeRest(false,code,offset,labels,output);
-			break;
-		case Code.OPCODE_widerest:
-			output.write_u8(width);
-			writeBase(false,code,output);
-			writeRest(true,code,offset,labels,output);
-			break;
-		case Code.OPCODE_widewide:
-			output.write_u8(width);
-			writeBase(true,code,output);
-			writeRest(true,code,offset,labels,output);
-			break;
-		default:
-			writeBase(false,code,output);
-			writeRest(false,code,offset,labels,output);
+		int width = calculateWidth(code, offset, labels);
+
+		switch (width) {
+			case Code.OPCODE_wide :
+				output.write_u8(width);
+				writeBase(true, code, output);
+				writeRest(false, code, offset, labels, output);
+				break;
+			case Code.OPCODE_widerest :
+				output.write_u8(width);
+				writeBase(false, code, output);
+				writeRest(true, code, offset, labels, output);
+				break;
+			case Code.OPCODE_widewide :
+				output.write_u8(width);
+				writeBase(true, code, output);
+				writeRest(true, code, offset, labels, output);
+				break;
+			default :
+				writeBase(false, code, output);
+				writeRest(false, code, offset, labels, output);
 		}
 	}
 	
@@ -625,6 +629,29 @@ public final class WyilFileWriter {
 		}
 	}
 	
+	/**
+	 * Calculate the "width" of a given bytecode. That is, whether or not either
+	 * of the base or remainder components need to be encoded using the "wide"
+	 * format. The wide format allows for unlimited precision, but occupies more
+	 * space. The alternative "short" format uses fixed precision, but cannot
+	 * encode all possible register operands and/or pool indices.
+	 * 
+	 * @param code
+	 *            --- The bytecode whose width is to be determined.
+	 * @param offset
+	 *            --- The current offset of this bytecode in the bytecode array
+	 *            being generated. This offset is measured in complete
+	 *            bytecodes, not in e.g. bytes. Therefore, the first bytecode
+	 *            has offset zero, the second bytecode has offset 1, etc. The
+	 *            offset is required for calculating jump targets for branching
+	 *            instructions (e.g. goto). Since jump targets (in short form)
+	 *            are encoded as a relative offset, we need to know our current
+	 *            offset to compute the relative target.
+	 * @param labels
+	 *            --- A map from label to offset. This is required to determine
+	 *            the (relative) jump offset for a branching instruction.
+	 * @return
+	 */
 	private int calculateWidth(Code code, int offset, HashMap<String,Integer> labels) {
 		int maxBase = 0;
 		int maxRest = 0;
