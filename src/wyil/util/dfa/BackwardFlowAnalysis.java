@@ -130,7 +130,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 						stmt = block.get(i);
 						if (stmt.code instanceof Code.TryCatch) {
 							tc = (Code.TryCatch) stmt.code;
-							if (label.equals(tc.label)) {
+							if (label.equals(tc.target)) {
 								// start of loop body found
 								break;
 							}

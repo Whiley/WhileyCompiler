@@ -804,7 +804,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Label(start));
 		
 		UnresolvedHandler trampolineHandler = new UnresolvedHandler(start,
-				c.label, trampolineStart, WHILEYEXCEPTION);
+				c.target, trampolineStart, WHILEYEXCEPTION);
 		handlers.add(trampolineHandler);
 	}
 	

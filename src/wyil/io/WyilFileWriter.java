@@ -471,6 +471,9 @@ public final class WyilFileWriter {
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
+		} else if(code instanceof Code.TryCatch) {
+			Code.TryCatch tc = (Code.TryCatch) code;			
+			writeBase(wide,tc.operand,output);
 		} 
 	}
 	
@@ -591,8 +594,16 @@ public final class WyilFileWriter {
 				writeTarget(wide,offset,target,output);
 			}
 		} else if(code instanceof Code.TryCatch) {
-			Code.TryCatch c = (Code.TryCatch) code;
-			// FIXME: todo 
+			Code.TryCatch tc = (Code.TryCatch) code;
+			int target = labels.get(tc.target);
+			ArrayList<Pair<Type,String>> catches = tc.catches;
+			writeTarget(wide,offset,target,output);
+			writeRest(wide,catches.size(),output);
+			for (int i = 0; i != catches.size(); ++i) {
+				Pair<Type, String> handler = catches.get(i);
+				writeRest(wide, typeCache.get(handler.first()), output);
+				writeTarget(wide, offset, labels.get(handler.second()), output);
+			}
 		} else if(code instanceof Code.TupleLoad) {
 			Code.TupleLoad c = (Code.TupleLoad) code;			
 			writeRest(wide,c.index,output);
@@ -708,22 +719,36 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.FieldLoad) {
 			Code.FieldLoad c = (Code.FieldLoad) code;
 			maxRest = Math.max(maxRest,stringCache.get(c.field));			
+		} else if(code instanceof Code.ForAll) {
+			Code.ForAll f = (Code.ForAll) code;
+			int[] operands = f.modifiedOperands;
+			maxBase = Math.max(f.sourceOperand, f.indexOperand);				
+			for(int i=0;i!=operands.length;++i) {
+				maxBase = Math.max(maxBase, operands[i]);
+			}
+			maxRest = Math.max(maxRest,typeCache.get(f.type));
+			maxRest = Math.max(maxRest,targetWidth(f.target, offset, labels));
 		} else if(code instanceof Code.IfIs) {
 			Code.IfIs c = (Code.IfIs) code;
-			int target = labels.get(c.target) - offset;			
 			maxRest = Math.max(maxRest,typeCache.get(c.rightOperand)); 
-			maxRest = Math.max(maxRest,target + 128);			
+			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));			
 		} else if(code instanceof Code.If) {
 			Code.If c = (Code.If) code;
-			int target = labels.get(c.target) - offset;
-			maxRest = Math.max(maxRest,target);
+			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));
 		} else if(code instanceof Code.Goto) {
-			Code.Goto c = (Code.Goto) code;
-			int target = labels.get(c.target) - offset; 
-			maxRest = Math.max(maxRest,target + 128);
+			Code.Goto c = (Code.Goto) code;			
+			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
 			maxRest = Math.max(maxRest,nameCache.get(c.name));			
+		} else if(code instanceof Code.Loop) {
+			Code.Loop l = (Code.Loop) code;
+			int[] operands = l.modifiedOperands;
+			maxBase = 0;				
+			for(int i=0;i!=operands.length;++i) {
+				maxBase = Math.max(maxBase, operands[i]);
+			}
+			maxRest = Math.max(maxRest,targetWidth(l.target, offset, labels));
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
 			maxRest = Math.max(maxRest,typeCache.get(c.afterType));
@@ -735,17 +760,25 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.Switch) {
 			Code.Switch c = (Code.Switch) code;
 			List<Pair<Value,String>> branches = c.branches;
-			int target = labels.get(c.defaultTarget) - offset; 			
-			maxRest = Math.max(maxRest,target);
+			maxRest = Math.max(maxRest,targetWidth(c.defaultTarget, offset, labels));
 			maxRest = Math.max(maxRest,branches.size());
 			for(Pair<Value,String> b : branches) {
 				maxRest = Math.max(maxRest,constantCache.get(b.first()));
-				target = labels.get(b.second()) - offset; 
-				maxRest = Math.max(maxRest,target + 128);
+				maxRest = Math.max(maxRest,targetWidth(b.second(), offset, labels));
 			}
 		} else if(code instanceof Code.TryCatch) {
-			Code.TryCatch c = (Code.TryCatch) code;
-			// FIXME: todo 
+			Code.TryCatch tc = (Code.TryCatch) code;
+			maxBase = tc.operand;			
+			maxRest = Math.max(maxRest,
+					targetWidth(tc.target, offset, labels));
+			ArrayList<Pair<Type,String>> catches = tc.catches;
+			maxRest = Math.max(maxRest,catches.size());
+			for(int i=0;i!=catches.size();++i) {
+				Pair<Type,String> handler = catches.get(i);				
+				maxRest = Math.max(maxRest,typeCache.get(handler.first()));
+				maxRest = Math.max(maxRest,
+						targetWidth(handler.second(), offset, labels));
+			}			
 		} else if(code instanceof Code.TupleLoad) {
 			Code.TupleLoad c = (Code.TupleLoad) code;			
 			maxRest = Math.max(maxRest,c.index);
@@ -764,6 +797,12 @@ public final class WyilFileWriter {
 				return Code.OPCODE_widewide; 
 			}
 		}
+	}
+	
+	private int targetWidth(String label, int offset,
+			HashMap<String, Integer> labels) {
+		int target = labels.get(label) - offset;
+		return target + 128;
 	}
 	
 	private void buildPools(WyilFile module) {
@@ -867,7 +906,14 @@ public final class WyilFileWriter {
 			for(Pair<Value,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
-		} 
+		} else if(code instanceof Code.TryCatch) {
+			Code.TryCatch tc = (Code.TryCatch) code;
+			ArrayList<Pair<Type, String>> catches = tc.catches;
+			for (int i = 0; i != catches.size(); ++i) {
+				Pair<Type, String> handler = catches.get(i);
+				addTypeItem(handler.first());
+			}
+		}
 		
 		// Second, deal with standard cases
 		if(code instanceof Code.AbstractUnaryOp) {

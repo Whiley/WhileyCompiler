@@ -3783,14 +3783,14 @@ public abstract class Code {
 	 */
 	public static final class TryCatch extends Code {
 		public final int operand;
-		public final String label;
+		public final String target;
 		public final ArrayList<Pair<Type, String>> catches;
 
 		TryCatch(int operand, String label,
 				Collection<Pair<Type, String>> catches) {
 			this.operand = operand;
 			this.catches = new ArrayList<Pair<Type, String>>(catches);
-			this.label = label;
+			this.target = label;
 		}
 
 		@Override
@@ -3807,7 +3807,7 @@ public abstract class Code {
 		public Code remap(Map<Integer, Integer> binding) {
 			Integer nOperand = binding.get(operand);
 			if (nOperand != null) {
-				return Code.TryCatch(nOperand, label, catches);
+				return Code.TryCatch(nOperand, target, catches);
 			}
 			return this;
 		}
@@ -3823,22 +3823,22 @@ public abstract class Code {
 				}
 			}
 
-			String ntarget = labels.get(label);
+			String ntarget = labels.get(target);
 			if (ntarget != null) {
 				return TryCatch(operand, ntarget, nbranches);
 			} else {
-				return TryCatch(operand, label, nbranches);
+				return TryCatch(operand, target, nbranches);
 			}
 		}
 
 		public int hashCode() {
-			return operand + label.hashCode() + catches.hashCode();
+			return operand + target.hashCode() + catches.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof TryCatch) {
 				TryCatch ig = (TryCatch) o;
-				return operand == ig.operand && label.equals(ig.label)
+				return operand == ig.operand && target.equals(ig.target)
 						&& catches.equals(ig.catches);
 			}
 			return false;

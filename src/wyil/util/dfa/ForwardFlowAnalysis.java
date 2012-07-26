@@ -164,7 +164,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						entry = block.get(i);
 						if (entry.code instanceof Code.Label) {
 							Code.Label l = (Code.Label) entry.code;
-							if (l.label.equals(tc.label)) {
+							if (l.label.equals(tc.target)) {
 								// end of loop body found
 								break;
 							}

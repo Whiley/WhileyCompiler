@@ -399,7 +399,7 @@ public abstract class Type {
 	 * type is one which contains a "dangling" reference to some node which
 	 * needs to be connected to back to form a cycle.
 	 * 
-	 * @param label
+	 * @param target
 	 * @param t
 	 * @return
 	 */

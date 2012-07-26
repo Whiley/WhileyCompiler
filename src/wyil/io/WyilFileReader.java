@@ -314,7 +314,7 @@ public final class WyilFileReader {
 		
 		for(int i=0;i!=nCodes;++i) {
 			Code code = readCode(i,labels);
-			//System.out.println("READ: " + code);
+			System.out.println("READ: " + code);
 			block.append(code);
 		}
 				
@@ -761,10 +761,21 @@ public final class WyilFileReader {
 	
 	private Code readOther(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {		
 		switch (opcode) {
-			case Code.OPCODE_trycatch :
-				// FIXME: todo
-				break;
-			case Code.OPCODE_update :
+			case Code.OPCODE_trycatch: {
+				int operand = readBase(wideBase);
+				int target = readTarget(wideRest, offset);
+				String label = findLabel(target, labels);
+				int nCatches = readRest(wideRest);
+				ArrayList<Pair<Type, String>> catches = new ArrayList<Pair<Type, String>>();
+				for (int i = 0; i != nCatches; ++i) {
+					Type type = typePool.get(readRest(wideRest));
+					String handler = findLabel(readTarget(wideRest, offset),
+							labels);
+					catches.add(new Pair<Type, String>(type, handler));
+				}
+				return Code.TryCatch(operand,label,catches);
+			}
+			case Code.OPCODE_update: {
 				int target = readBase(wideBase);
 				int nOperands = readBase(wideBase) - 1;
 				int operand = readBase(wideBase);
@@ -782,6 +793,7 @@ public final class WyilFileReader {
 				}
 				return Code.Update(beforeType, target, operand, operands,
 						afterType, fields);
+			}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
