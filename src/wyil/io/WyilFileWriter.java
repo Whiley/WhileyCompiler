@@ -1037,45 +1037,47 @@ public final class WyilFileWriter {
 			int i = constantPool.size();
 			constantCache.put(v, i);
 			constantPool.add(v);
-			addConstantStringItems(v);
+			addConstantItems(v);
 			return i;
 		}
 		return index;
 	}
 	
-	private void addConstantStringItems(Value v) {
+	private void addConstantItems(Value v) {
 		if(v instanceof Value.Strung) {
 			Value.Strung s = (Value.Strung) v;
 			addStringItem(s.value);
 		} else if(v instanceof Value.List) {
 			Value.List l = (Value.List) v;				
 			for (Value e : l.values) {
-				addConstantStringItems(e);
+				addConstantItems(e);
 			}
 		} else if(v instanceof Value.Set) {
 			Value.Set s = (Value.Set) v;
 			for (Value e : s.values) {
-				addConstantStringItems(e);
+				addConstantItems(e);
 			}
 		} else if(v instanceof Value.Map) {				
 			Value.Map m = (Value.Map) v;
 			for (Map.Entry<Value,Value> e : m.values.entrySet()) {
-				addConstantStringItems(e.getKey());
-				addConstantStringItems(e.getValue());
+				addConstantItems(e.getKey());
+				addConstantItems(e.getValue());
 			}
 		} else if(v instanceof Value.Tuple) {
 			Value.Tuple t = (Value.Tuple) v;
 			for (Value e : t.values) {
-				addConstantStringItems(e);
+				addConstantItems(e);
 			}
 		} else if(v instanceof Value.Record) {
 			Value.Record r = (Value.Record) v;
 			for (Map.Entry<String,Value> e : r.values.entrySet()) {
 				addStringItem(e.getKey());
-				addConstantStringItems(e.getValue());
+				addConstantItems(e.getValue());
 			}				
 		} else if(v instanceof Value.FunctionOrMethod){
-			// TODO
+			Value.FunctionOrMethod fm = (Value.FunctionOrMethod) v;
+			addTypeItem(fm.type());
+			addNameItem(fm.name);
 		} 			
 	} 
 	
@@ -1194,83 +1196,83 @@ public final class WyilFileWriter {
 		}
 		
 		public void write(Value.Null expr) throws IOException {				
-			output.write_u8(CONSTANT_Null);
+			output.write_uv(CONSTANT_Null);
 		}
 		
 		public void write(Value.Bool expr) throws IOException {
 			
 			if(expr.value) {
-				output.write_u8(CONSTANT_True);
+				output.write_uv(CONSTANT_True);
 			} else {
-				output.write_u8(CONSTANT_False);
+				output.write_uv(CONSTANT_False);
 			}
 		}
 		
 		public void write(Value.Byte expr) throws IOException {		
-			output.write_u8(CONSTANT_Byte);		
+			output.write_uv(CONSTANT_Byte);		
 			output.write_u8(expr.value);		
 		}
 		
 		public void write(Value.Char expr) throws IOException {		
-			output.write_u8(CONSTANT_Char);		
-			output.write_u16(expr.value);		
+			output.write_uv(CONSTANT_Char);		
+			output.write_uv(expr.value);		
 		}
 		
 		public void write(Value.Integer expr) throws IOException {		
-			output.write_u8(CONSTANT_Int);		
+			output.write_uv(CONSTANT_Int);		
 			BigInteger num = expr.value;
 			byte[] numbytes = num.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_u16(numbytes.length);
+			output.write_uv(numbytes.length);
 			output.write(numbytes);
 		}
 
 		public void write(Value.Rational expr) throws IOException {		
 			
-			output.write_u8(CONSTANT_Real);
+			output.write_uv(CONSTANT_Real);
 			BigRational br = expr.value;
 			BigInteger num = br.numerator();
 			BigInteger den = br.denominator();
 
 			byte[] numbytes = num.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_u16(numbytes.length);
+			output.write_uv(numbytes.length);
 			output.write(numbytes);
 
 			byte[] denbytes = den.toByteArray();
 			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_u16(denbytes.length);
+			output.write_uv(denbytes.length);
 			output.write(denbytes);
 		}
 			
 		public void write(Value.Strung expr) throws IOException {	
-			output.write_u8(CONSTANT_String);
+			output.write_uv(CONSTANT_String);
 			String value = expr.value;
 			int valueLength = value.length();		
-			output.write_u16(valueLength);
+			output.write_uv(valueLength);
 			for(int i=0;i!=valueLength;++i) {
-				output.write_u16(value.charAt(i));
+				output.write_uv(value.charAt(i));
 			}
 		}
 		public void write(Value.Set expr) throws IOException {
-			output.write_u8(CONSTANT_Set);
-			output.write_u16(expr.values.size());
+			output.write_uv(CONSTANT_Set);
+			output.write_uv(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
 			}
 		}
 		
 		public void write(Value.List expr) throws IOException {
-			output.write_u8(CONSTANT_List);
-			output.write_u16(expr.values.size());
+			output.write_uv(CONSTANT_List);
+			output.write_uv(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
 			}
 		}
 		
 		public void write(Value.Map expr) throws IOException {
-			output.write_u8(CONSTANT_Map);
-			output.write_u16(expr.values.size());
+			output.write_uv(CONSTANT_Map);
+			output.write_uv(expr.values.size());
 			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
 				write(e.getKey());
 				write(e.getValue());
@@ -1278,40 +1280,31 @@ public final class WyilFileWriter {
 		}
 		
 		public void write(Value.Record expr) throws IOException {
-			output.write_u8(CONSTANT_Record);
-			output.write_u16(expr.values.size());
+			output.write_uv(CONSTANT_Record);
+			output.write_uv(expr.values.size());
 			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
-				output.write_u16(stringCache.get(v.getKey()));
+				output.write_uv(stringCache.get(v.getKey()));
 				write(v.getValue());
 			}
 		}
 		
 		public void write(Value.Tuple expr) throws IOException {
-			output.write_u8(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
-			output.write_u16(expr.values.size());
+			output.write_uv(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
+			output.write_uv(expr.values.size());
 			for(Value v : expr.values) {
 				write(v);
 			}
 		}
 		
 		public void write(Value.FunctionOrMethod expr) throws IOException {
-			throw new RuntimeException("ValueWriter.write(Value.FunctionOrMethod) undefined");
-//			Type.FunctionOrMethod t = expr.type();
-//			if(t instanceof Type.Function) {
-//				output.write_u1(FUNCTIONVAL);			
-//			} else if(t instanceof Type.Method) {
-//				output.write_u1(METHODVAL);
-//			} else {
-//				output.write_u1(MESSAGEVAL);
-//			}
-//			
-//			WhileyType.write(t, writer, constantPool);
-//			String value = expr.name.toString();
-//			int valueLength = value.length();		
-//			output.write_u2(valueLength);
-//			for(int i=0;i!=valueLength;++i) {
-//				output.write_u2(value.charAt(i));
-//			}	
+			Type.FunctionOrMethod t = expr.type();
+			if(t instanceof Type.Function) {
+				output.write_uv(CONSTANT_Function);			
+			} else {
+				output.write_uv(CONSTANT_Method);
+			}
+			output.write_uv(typeCache.get(t));
+			output.write_uv(nameCache.get(expr.name));
 		}
 	}
 

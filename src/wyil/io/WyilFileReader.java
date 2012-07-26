@@ -867,7 +867,7 @@ public final class WyilFileReader {
 		}
 		
 		public Value read() throws IOException {		
-			int code = reader.read_u8();				
+			int code = reader.read_uv();				
 			switch (code) {			
 			case WyilFileWriter.CONSTANT_Null:
 				return Value.V_NULL;
@@ -882,12 +882,12 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Char:			
 			{
-				char val = (char) reader.read_u16();				
+				char val = (char) reader.read_uv();				
 				return Value.V_CHAR(val);
 			}
 			case WyilFileWriter.CONSTANT_Int:			
 			{
-				int len = reader.read_u16();				
+				int len = reader.read_uv();				
 				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger bi = new BigInteger(bytes);
@@ -895,11 +895,11 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Real:			
 			{
-				int len = reader.read_u16();
+				int len = reader.read_uv();
 				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger num = new BigInteger(bytes);
-				len = reader.read_u16();
+				len = reader.read_uv();
 				bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger den = new BigInteger(bytes);
@@ -908,17 +908,17 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_String:
 			{
-				int len = reader.read_u16();
+				int len = reader.read_uv();
 				StringBuffer sb = new StringBuffer();
 				for(int i=0;i!=len;++i) {
-					char c = (char) reader.read_u16();
+					char c = (char) reader.read_uv();
 					sb.append(c);
 				}
 				return Value.V_STRING(sb.toString());
 			}
 			case WyilFileWriter.CONSTANT_List:
 			{
-				int len = reader.read_u16();
+				int len = reader.read_uv();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
 					values.add((Value) read());
@@ -927,7 +927,7 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Set:
 			{
-				int len = reader.read_u16();
+				int len = reader.read_uv();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
 					values.add((Value) read());
@@ -936,7 +936,7 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Tuple:
 			{
-				int len = reader.read_u16();
+				int len = reader.read_uv();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
 					values.add((Value) read());
@@ -945,16 +945,25 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Record:
 			{
-				int len = reader.read_u16();
+				int len = reader.read_uv();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();
 				for(int i=0;i!=len;++i) {
-					int idx = reader.read_u16();
+					int idx = reader.read_uv();
 					String str = stringPool.get(idx);
 					Value lhs = (Value) read();
 					tvs.put(str, lhs);
 				}
 				return Value.V_RECORD(tvs);
-			}			
+			}	
+			case WyilFileWriter.CONSTANT_Function:
+			case WyilFileWriter.CONSTANT_Method:
+			{
+				int typeIndex = reader.read_uv();
+				int nameIndex = reader.read_uv();
+				Type.FunctionOrMethod t = (Type.FunctionOrMethod) typePool.get(typeIndex);
+				NameID name = namePool.get(nameIndex);
+				return Value.V_FUN(name, t);
+			}	
 			}
 			throw new RuntimeException("Unknown Value encountered in WhileyDefine: " + code);
 		}
