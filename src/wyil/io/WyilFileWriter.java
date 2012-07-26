@@ -10,6 +10,32 @@ import wyil.util.Pair;
 import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryOutputStream;
 
+/**
+ * <p>
+ * Responsible for writing a WyilFile to an output stream in binary form. The
+ * binary format is structured to given maximum flexibility and to avoid
+ * built-in limitations in terms of e.g. maximum sizes, etc.
+ * </p>
+ * 
+ * <p>
+ * The primitive component of a WyilFile is a <i>block</i>. Each block has a
+ * kind, a given and then the payload. Blocks which are not recognised can be
+ * ignored by skipping over their payload. Blocks are always byte aligned, but
+ * their contents may not be.
+ * </p>
+ * 
+ * <p>
+ * A binary Wyil file begins with a header and a resource pool stratified into
+ * sections containing the string constants, general constants, types and more.
+ * Following the header are zero or more module blocks. Additional top-level
+ * block kinds (e.g. for licenses) may be specified in the future. Each module
+ * block consists of zero or more declaration blocks, which include method and
+ * function declarations, type declarations and constant declarations.
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public final class WyilFileWriter {
 	private static final int MAJOR_VERSION = 0;
 	private static final int MINOR_VERSION = 1;
