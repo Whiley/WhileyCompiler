@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# This file is part of the Whiley Development Kit (WDK).
+#
+# The Whiley Development Kit is free software; you can redistribute 
+# it and/or modify it under the terms of the GNU General Public 
+# License as published by the Free Software Foundation; either 
+# version 3 of the License, or (at your option) any later version.
+#
+# The Whiley Development Kit is distributed in the hope that it 
+# will be useful, but WITHOUT ANY WARRANTY; without even the 
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+# PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public 
+# License along with the Whiley Development Kit. If not, see 
+# <http://www.gnu.org/licenses/>
+#
+# Copyright 2012, David James Pearce. 
+
+##################
+# CONFIGURATION
+##################
+
+DIR=`dirname "$0"`/..
+LIBDIR=$DIR/lib
+LIBS="wyc*.jar wyil*.jar"
+
+# check for running under cywin
+cygwin=false
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+esac
+
+######################
+# CONSTRUCT CLASSPATH
+######################
+
+if $cygwin; then
+    # under cygwin the classpath separator must be ";"
+    LIBDIR=`cygpath -pw "$LIBDIR"`
+    PATHSEP=";"
+else
+    # under UNIX the classpath separator must be ":"
+    PATHSEP=":"
+fi
+
+WHILEY_CLASSPATH=$CLASSPATH
+
+for lib in $LIBS
+do
+    JAR=$(ls $LIBDIR/$lib)
+    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
+done
+
+echo $WHILEY_CLASSPATH
+
+######################
+# CONSTRUCT BOOTPATH
+######################
+
+WYRT_JAR=$(ls $LIBDIR/wyrt*.jar)
+WHILEY_BOOTPATH="$WYRT_JAR"
+
+######################
+# RUN APPLICATION
+######################
+
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyc.Main -bp "$WHILEY_BOOTPATH" "$@"
