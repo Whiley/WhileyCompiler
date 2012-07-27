@@ -206,6 +206,7 @@ public final class WyilFileReader {
 				case WyilFileWriter.CONSTANT_String : {
 					int index = input.read_uv();
 					constant = Value.V_STRING(stringPool[index]);
+					break;
 				}
 				case WyilFileWriter.CONSTANT_List : {
 					int len = input.read_uv();
