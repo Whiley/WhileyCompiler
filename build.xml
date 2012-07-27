@@ -7,14 +7,12 @@
     <subant failonerror="true" target="compile">
       <property name="version" value="${version}"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
-    </subant>
-    <subant failonerror="true" target="compile">
-      <property name="version" value="${version}"/>
-      <fileset dir="modules" includes="*/build.xml"/>
+      <fileset dir="modules" includes="wyc/build.xml"/>
+      <fileset dir="modules" includes="wyjc/build.xml"/>
     </subant>
   </target>
 
-  <target name="build-all">
+  <target name="build-all" depends="compile-all">
     <subant failonerror="true" target="build">
       <property name="version" value="${version}"/>
       <fileset dir="modules" includes="*/build.xml"/>
