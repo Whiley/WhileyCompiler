@@ -1,0 +1,23 @@
+<project name="wyrt" default="build">  
+
+  <target name="compile">
+    <taskdef name="wyjc" classname="wyc.util.AntTask" classpath="../wyc/src/"/>
+    <echo message="${ant.project.name}"/>
+    <wyjc verbose="false" srcdir="src" includes="whiley/**/*.whiley"/>
+  </target>
+
+  <target name="build" depends="compile">
+    <echo message="${ant.project.name}"/>
+    <jar destfile="../../lib/wyrt-${version}.jar">
+      <fileset dir="src" includes="*/**/*.wyil"/>
+    </jar>
+  </target>
+
+  <target name="clean">
+   <echo message="${ant.project.name}"/>
+   <delete includeEmptyDirs="true" failonerror="false">
+     <fileset dir="." includes="**/*.wyil,**/*.wyasm"/>
+   </delete>
+ </target>
+
+</project>
