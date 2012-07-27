@@ -6,6 +6,10 @@
   <target name="compile-all">
     <subant failonerror="true" target="compile">
       <property name="version" value="${version}"/>
+      <fileset dir="modules" includes="wyil/build.xml"/>
+    </subant>
+    <subant failonerror="true" target="compile">
+      <property name="version" value="${version}"/>
       <fileset dir="modules" includes="*/build.xml"/>
     </subant>
   </target>
