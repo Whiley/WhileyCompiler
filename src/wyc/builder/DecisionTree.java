@@ -5,7 +5,7 @@ import java.util.*;
 import wyil.lang.Code;
 import wyil.lang.Type;
 import wyil.lang.Block;
-import wyil.lang.Value;
+import wyil.lang.Constant;
 
 /**
  * Decision trees are used for the constraints induced by union types. The key

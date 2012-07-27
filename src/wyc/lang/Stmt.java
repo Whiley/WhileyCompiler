@@ -31,7 +31,7 @@ import wybs.lang.SyntacticElement;
 import wyc.builder.Nominal;
 import wyil.lang.Attribute;
 import wyil.lang.Type;
-import wyil.lang.Value;
+import wyil.lang.Constant;
 import wyil.util.*;
 import wyjvm.lang.Bytecode;
 
@@ -220,7 +220,7 @@ public interface Stmt extends SyntacticElement {
 	
 	public static final class Case extends SyntacticElement.Impl {
 		public ArrayList<Expr> expr; // needs to be proved all constants
-		public ArrayList<Value> constants; // needs to be proved all constants
+		public ArrayList<Constant> constants; // needs to be proved all constants
 		public final ArrayList<Stmt> stmts;
 		
 		public Case(List<Expr> values, List<Stmt> statements,

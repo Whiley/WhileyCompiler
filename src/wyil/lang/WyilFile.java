@@ -312,15 +312,15 @@ public final class WyilFile {
 	
 	public static final class ConstantDeclaration extends NamedDeclaration {
 		private List<Modifier> modifiers;			
-		private Value constant;
+		private Constant constant;
 		
-		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Value constant,  Attribute... attributes) {
+		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Constant constant,  Attribute... attributes) {
 			super(name,attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.constant = constant;
 		}
 		
-		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Value constant,  Collection<Attribute> attributes) {
+		public ConstantDeclaration(Collection<Modifier> modifiers, String name, Constant constant,  Collection<Attribute> attributes) {
 			super(name,attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);			
 			this.constant = constant;
@@ -330,7 +330,7 @@ public final class WyilFile {
 			return modifiers;
 		}
 				
-		public Value constant() {
+		public Constant constant() {
 			return constant;
 		}
 		

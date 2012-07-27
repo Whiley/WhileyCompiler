@@ -27,7 +27,6 @@ package wyc.stages;
 
 import java.util.*;
 
-import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
@@ -37,7 +36,6 @@ import wyc.lang.*;
 import wyc.lang.Stmt.*;
 import wyil.util.*;
 import wyil.lang.*;
-import wyc.lang.WhileyFile.*;
 
 /**
  * <p>
@@ -84,7 +82,7 @@ public final class CodeGeneration {
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
 	private Stack<Scope> scopes = new Stack<Scope>();
-	private FunctionOrMethod currentFunDecl;
+	private WhileyFile.FunctionOrMethod currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
 	// runtime checks for post conditions. The key issue is that a post
@@ -105,29 +103,29 @@ public final class CodeGeneration {
 
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
-				if (d instanceof TypeDef) {
-					declarations.add(generate((TypeDef) d));
-				} else if (d instanceof Constant) {
-					declarations.add(generate((Constant) d));
-				} else if (d instanceof FunctionOrMethod) {
-					declarations.add(generate((FunctionOrMethod) d));					
+				if (d instanceof WhileyFile.TypeDef) {
+					declarations.add(generate((WhileyFile.TypeDef) d));
+				} else if (d instanceof WhileyFile.Constant) {
+					declarations.add(generate((WhileyFile.Constant) d));
+				} else if (d instanceof WhileyFile.FunctionOrMethod) {
+					declarations.add(generate((WhileyFile.FunctionOrMethod) d));					
 				}
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure(ex.getMessage(), localGenerator.context(), d, ex);
+				WhileyFile.internalFailure(ex.getMessage(), localGenerator.context(), d, ex);
 			}
 		}
 		
 		return new WyilFile(wf.module, wf.filename, declarations);				
 	}
 
-	private WyilFile.ConstantDeclaration generate(Constant cd) {
+	private WyilFile.ConstantDeclaration generate(WhileyFile.Constant cd) {
 		// TODO: this the point where were should an evaluator
 		return new WyilFile.ConstantDeclaration(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private WyilFile.TypeDeclaration generate(TypeDef td) throws Exception {		
+	private WyilFile.TypeDeclaration generate(WhileyFile.TypeDef td) throws Exception {		
 		Block constraint = null;
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			
@@ -138,7 +136,7 @@ public final class CodeGeneration {
 		return new WyilFile.TypeDeclaration(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private WyilFile.MethodDeclaration generate(FunctionOrMethod fd) throws Exception {		
+	private WyilFile.MethodDeclaration generate(WhileyFile.FunctionOrMethod fd) throws Exception {		
 		localGenerator = new LocalGenerator(globalGenerator,fd);	
 		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
@@ -289,15 +287,15 @@ public final class CodeGeneration {
 				return generate((Skip) stmt, environment);
 			} else {
 				// should be dead-code
-				internalFailure("unknown statement: "
+				WhileyFile.internalFailure("unknown statement: "
 						+ stmt.getClass().getName(), localGenerator.context(), stmt);
 			}
 		} catch (ResolveError rex) {
-			syntaxError(rex.getMessage(), localGenerator.context(), stmt, rex);
+			WhileyFile.syntaxError(rex.getMessage(), localGenerator.context(), stmt, rex);
 		} catch (SyntaxError sex) {
 			throw sex;
 		} catch (Exception ex) {			
-			internalFailure(ex.getMessage(), localGenerator.context(), stmt, ex);
+			WhileyFile.internalFailure(ex.getMessage(), localGenerator.context(), stmt, ex);
 		}
 		return null;
 	}
@@ -341,7 +339,7 @@ public final class CodeGeneration {
 			for (int i = 0; i != fields.size(); ++i) {
 				Expr e = fields.get(i);
 				if (!(e instanceof Expr.AssignedVariable)) {
-					syntaxError(errorMessage(INVALID_TUPLE_LVAL),
+					WhileyFile.syntaxError(errorMessage(INVALID_TUPLE_LVAL),
 							localGenerator.context(), e);
 				}
 				Expr.AssignedVariable v = (Expr.AssignedVariable) e;
@@ -368,7 +366,7 @@ public final class CodeGeneration {
 					blk, freeRegister, environment);
 			Expr.AssignedVariable lhs = l.first();
 			if (!environment.containsKey(lhs.var)) {
-				syntaxError("unknown variable", localGenerator.context(),
+				WhileyFile.syntaxError("unknown variable", localGenerator.context(),
 						l.first());
 			}
 			int target = environment.get(lhs.var);
@@ -382,7 +380,7 @@ public final class CodeGeneration {
 			blk.append(Code.Update(lhs.type.raw(), target, rhsRegister,
 					operands, lhs.afterType.raw(), fields), attributes(s));
 		} else {
-			syntaxError("invalid assignment", localGenerator.context(), s);
+			WhileyFile.syntaxError("invalid assignment", localGenerator.context(), s);
 		}
 		
 		return blk;
@@ -408,7 +406,7 @@ public final class CodeGeneration {
 			fields.add(ra.name);
 			return r;
 		} else {
-			syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), localGenerator.context(), e);
+			WhileyFile.syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), localGenerator.context(), e);
 			return null; // dead code
 		}
 	}
@@ -498,7 +496,7 @@ public final class CodeGeneration {
 	private Block generate(Break s, HashMap<String, Integer> environment) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if (scope == null) {
-			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
+			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
 					localGenerator.context(), s);
 		}
 		Block blk = new Block(environment.size());
@@ -514,14 +512,14 @@ public final class CodeGeneration {
 				freeRegister + 1, environment);
 		Block cblk = new Block(environment.size());
 		String defaultTarget = exitLab;
-		HashSet<Value> values = new HashSet();
-		ArrayList<Pair<Value, String>> cases = new ArrayList();
+		HashSet<Constant> values = new HashSet();
+		ArrayList<Pair<Constant, String>> cases = new ArrayList();
 
 		for (Stmt.Case c : s.cases) {
 			if (c.expr.isEmpty()) {
 				// indicates the default block
 				if (defaultTarget != exitLab) {
-					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),
+					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),
 							localGenerator.context(), c);
 				} else {
 					defaultTarget = Block.freshLabel();
@@ -535,9 +533,9 @@ public final class CodeGeneration {
 				String target = Block.freshLabel();
 				cblk.append(Code.Label(target), attributes(c));
 
-				for (Value constant : c.constants) {
+				for (Constant constant : c.constants) {
 					if (values.contains(constant)) {
-						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),
+						WhileyFile.syntaxError(errorMessage(DUPLICATE_CASE_LABEL),
 								localGenerator.context(), c);
 					}
 					cases.add(new Pair(constant, target));
@@ -549,7 +547,7 @@ public final class CodeGeneration {
 				}
 				cblk.append(Code.Goto(exitLab), attributes(c));
 			} else {
-				syntaxError(errorMessage(UNREACHABLE_CODE),
+				WhileyFile.syntaxError(errorMessage(UNREACHABLE_CODE),
 						localGenerator.context(), c);
 			}
 		}
@@ -690,7 +688,7 @@ public final class CodeGeneration {
 			
 			// FIXME: support destructuring of lists and sets			
 			if(!(rawSrcType instanceof Type.EffectiveMap)) {
-				syntaxError(errorMessage(INVALID_MAP_EXPRESSION),localGenerator.context(),s.source);
+				WhileyFile.syntaxError(errorMessage(INVALID_MAP_EXPRESSION),localGenerator.context(),s.source);
 			}
 			Type.EffectiveMap dict = (Type.EffectiveMap) rawSrcType;
 			Type.Tuple element = (Type.Tuple) Type.Tuple(dict.key(),dict.value());

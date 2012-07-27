@@ -834,39 +834,39 @@ public class VerificationCheck implements Transform {
 	 * @param value
 	 * @return
 	 */
-	private WValue convert(wyil.lang.Value value, SyntacticElement elem) {
-		if(value instanceof wyil.lang.Value.Bool) {
-			wyil.lang.Value.Bool b = (wyil.lang.Value.Bool) value;
+	private WValue convert(wyil.lang.Constant value, SyntacticElement elem) {
+		if(value instanceof wyil.lang.Constant.Bool) {
+			wyil.lang.Constant.Bool b = (wyil.lang.Constant.Bool) value;
 			return b.value ? WBool.TRUE : WBool.FALSE;
-		} else if(value instanceof wyil.lang.Value.Byte) {
-			wyil.lang.Value.Byte v = (wyil.lang.Value.Byte) value;
+		} else if(value instanceof wyil.lang.Constant.Byte) {
+			wyil.lang.Constant.Byte v = (wyil.lang.Constant.Byte) value;
 			return new WNumber(v.value);
-		} else if(value instanceof wyil.lang.Value.Char) {
-			wyil.lang.Value.Char v = (wyil.lang.Value.Char) value;
+		} else if(value instanceof wyil.lang.Constant.Char) {
+			wyil.lang.Constant.Char v = (wyil.lang.Constant.Char) value;
 			// Simple, but mostly good translation
 			return new WNumber(v.value);
-		} else if(value instanceof wyil.lang.Value.Map) {
+		} else if(value instanceof wyil.lang.Constant.Map) {
 			return WBool.FALSE; // FIXME
-		} else if(value instanceof wyil.lang.Value.FunctionOrMethod) {
+		} else if(value instanceof wyil.lang.Constant.FunctionOrMethod) {
 			return WBool.FALSE; // FIXME
-		} else if(value instanceof wyil.lang.Value.Integer) {
-			wyil.lang.Value.Integer v = (wyil.lang.Value.Integer) value;
+		} else if(value instanceof wyil.lang.Constant.Integer) {
+			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
 			return new WNumber(v.value);
-		} else if(value instanceof wyil.lang.Value.List) {
-			Value.List vl = (Value.List) value;
+		} else if(value instanceof wyil.lang.Constant.List) {
+			Constant.List vl = (Constant.List) value;
 			ArrayList<WValue> vals = new ArrayList<WValue>();
-			for(Value e : vl.values) {
+			for(Constant e : vl.values) {
 				vals.add(convert(e,elem));
 			}
 			return new WListVal(vals);
-		} else if(value instanceof wyil.lang.Value.Null) {
+		} else if(value instanceof wyil.lang.Constant.Null) {
 			return WBool.FALSE; // FIXME
-		} else if(value instanceof wyil.lang.Value.Rational) {
-			wyil.lang.Value.Rational v = (wyil.lang.Value.Rational) value;
+		} else if(value instanceof wyil.lang.Constant.Rational) {
+			wyil.lang.Constant.Rational v = (wyil.lang.Constant.Rational) value;
 			BigRational br = v.value;
 			return new WNumber(br.numerator(),br.denominator());
-		} else if(value instanceof wyil.lang.Value.Record) {
-			Value.Record vt = (Value.Record) value;
+		} else if(value instanceof wyil.lang.Constant.Record) {
+			Constant.Record vt = (Constant.Record) value;
 			ArrayList<String> fields = new ArrayList<String>(vt.values.keySet());
 			ArrayList<WValue> values = new ArrayList<WValue>();
 			Collections.sort(fields);
@@ -874,21 +874,21 @@ public class VerificationCheck implements Transform {
 				values.add(convert(vt.values.get(f),elem));
 			}
 			return new WTupleVal(fields,values);
-		} else if(value instanceof wyil.lang.Value.Set) {
-			Value.Set vs = (Value.Set) value;			
+		} else if(value instanceof wyil.lang.Constant.Set) {
+			Constant.Set vs = (Constant.Set) value;			
 			HashSet<WValue> vals = new HashSet<WValue>();
-			for(Value e : vs.values) {
+			for(Constant e : vs.values) {
 				vals.add(convert(e,elem));
 			}
 			return new WSetVal(vals);
-		} else if(value instanceof wyil.lang.Value.Strung) {
+		} else if(value instanceof wyil.lang.Constant.Strung) {
 			return WBool.FALSE; // FIXME
-		} else if(value instanceof wyil.lang.Value.Tuple) {
-			Value.Tuple vt = (Value.Tuple) value;
+		} else if(value instanceof wyil.lang.Constant.Tuple) {
+			Constant.Tuple vt = (Constant.Tuple) value;
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<WValue> values = new ArrayList<WValue>();
 			int i = 0;
-			for(Value e : vt.values) {			
+			for(Constant e : vt.values) {			
 				values.add(convert(e,elem));
 				fields.add(""+i++);
 			}

@@ -19,7 +19,7 @@ import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
 import wyil.lang.NameID;
 import wyil.lang.Type;
-import wyil.lang.Value;
+import wyil.lang.Constant;
 import wyil.util.Pair;
 
 /**
@@ -300,7 +300,7 @@ public abstract class LocalResolver extends AbstractResolver {
 			
 			if (lhs instanceof Expr.LocalVariable
 					&& rhs instanceof Expr.Constant
-					&& ((Expr.Constant) rhs).value == Value.V_NULL) {
+					&& ((Expr.Constant) rhs).value == Constant.V_NULL) {
 				// bingo, special case
 				Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
 				Nominal newType;

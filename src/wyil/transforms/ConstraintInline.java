@@ -271,7 +271,7 @@ public class ConstraintInline implements Transform {
 		if (code.type instanceof Type.EffectiveList) {
 			Block blk = new Block(0);
 
-			blk.append(Code.Const(freeSlot, Value.V_INTEGER(BigInteger.ZERO)),
+			blk.append(Code.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
 			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
 					Code.Comparator.GTEQ, "index out of bounds (negative)"),
@@ -313,10 +313,10 @@ public class ConstraintInline implements Transform {
 		if(code.kind == Code.BinArithKind.DIV) {
 			Block blk = new Block(0);
 			if (code.type instanceof Type.Int) {
-				blk.append(Code.Const(freeSlot,Value.V_INTEGER(BigInteger.ZERO)),
+				blk.append(Code.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
-				blk.append(Code.Const(freeSlot,Value.V_RATIONAL(BigRational.ZERO)),
+				blk.append(Code.Const(freeSlot,Constant.V_RATIONAL(BigRational.ZERO)),
 						attributes(elem));
 			}
 			blk.append(Code.Assert(code.type, code.rightOperand, freeSlot,

@@ -101,7 +101,7 @@ public class DeadCodeElimination implements Transform {
 				addTarget(labelMap.get(ig.target),visited,worklist);				
 			} else if(code instanceof Code.Switch) {
 				Code.Switch sw = (Code.Switch) code;
-				for(Pair<Value,String> p : sw.branches) {
+				for(Pair<Constant,String> p : sw.branches) {
 					addTarget(labelMap.get(p.second()),visited,worklist);
 				}
 				addTarget(labelMap.get(sw.defaultTarget),visited,worklist);

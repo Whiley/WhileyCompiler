@@ -35,10 +35,9 @@ import wybs.lang.SyntaxError;
 import wybs.util.ResolveError;
 import wyc.builder.*;
 import wyc.lang.*;
-import wyc.lang.WhileyFile.*;
 import wyil.lang.NameID;
 import wyil.lang.Type;
-import wyil.lang.Value;
+import wyil.lang.Constant;
 import wyil.util.Pair;
 
 /**
@@ -104,12 +103,12 @@ public final class FlowTyping {
 		
 		for(WhileyFile.Declaration decl : wf.declarations) {
 			try {
-				if(decl instanceof FunctionOrMethod) {
-					propagate((FunctionOrMethod)decl);
-				} else if(decl instanceof TypeDef) {
-					propagate((TypeDef)decl);					
-				} else if(decl instanceof Constant) {
-					propagate((Constant)decl);					
+				if(decl instanceof WhileyFile.FunctionOrMethod) {
+					propagate((WhileyFile.FunctionOrMethod)decl);
+				} else if(decl instanceof WhileyFile.TypeDef) {
+					propagate((WhileyFile.TypeDef)decl);					
+				} else if(decl instanceof WhileyFile.Constant) {
+					propagate((WhileyFile.Constant)decl);					
 				}			
 			} catch(ResolveError e) {
 				syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,decl,e);
@@ -121,12 +120,12 @@ public final class FlowTyping {
 		}
 	}
 	
-	public void propagate(Constant cd) throws Exception {
+	public void propagate(WhileyFile.Constant cd) throws Exception {
 		NameID nid = new NameID(cd.file().module, cd.name);
 		cd.resolvedValue = resolver.resolveAsConstant(nid);
 	}
 	
-	public void propagate(TypeDef td) throws Exception {		
+	public void propagate(WhileyFile.TypeDef td) throws Exception {		
 		// first, resolve the declared type
 		td.resolvedType = resolver.resolveAsType(td.unresolvedType, td);
 		
@@ -140,7 +139,7 @@ public final class FlowTyping {
 		}
 	}
 
-	public void propagate(FunctionOrMethod d) throws Exception {		
+	public void propagate(WhileyFile.FunctionOrMethod d) throws Exception {		
 		this.current = d; // ugly		
 		Environment environment = new Environment();					
 		
@@ -160,11 +159,11 @@ public final class FlowTyping {
 			environment = environment.remove("$");
 		}
 
-		if(d instanceof Function) {
-			Function f = (Function) d;
+		if(d instanceof WhileyFile.Function) {
+			WhileyFile.Function f = (WhileyFile.Function) d;
 			f.resolvedType = resolver.resolveAsType(f.unresolvedType(),d);					
 		} else {
-			Method m = (Method) d;			
+			WhileyFile.Method m = (WhileyFile.Method) d;			
 			m.resolvedType = resolver.resolveAsType(m.unresolvedType(),d);		
 		} 
 		
@@ -552,7 +551,7 @@ public final class FlowTyping {
 			
 			// first, resolve the constants
 			
-			ArrayList<Value> values = new ArrayList<Value>();
+			ArrayList<Constant> values = new ArrayList<Constant>();
 			for(Expr e : c.expr) {
 				values.add(resolver.resolveAsConstant(e,current));				
 			}
@@ -749,7 +748,7 @@ public final class FlowTyping {
 	 * @param environment
 	 */
 	private Environment addExposedNames(UnresolvedType t,
-			Environment environment, Context context) {
+			Environment environment, WhileyFile.Context context) {
 		// Extended this method to handle lists and sets etc, is very difficult.
 		// The primary problem is that we need to expand expressions involved
 		// names exposed in this way into quantified

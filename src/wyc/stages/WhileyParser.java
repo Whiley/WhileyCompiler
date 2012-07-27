@@ -33,7 +33,6 @@ import wybs.lang.Path;
 import wybs.lang.SyntaxError;
 import wybs.util.Trie;
 import wyc.lang.*;
-import wyc.lang.WhileyFile.*;
 import wyc.util.*;
 import wyil.lang.*;
 import wyil.util.*;
@@ -165,7 +164,7 @@ public final class WhileyParser {
 		int end = index;
 		matchEndLine();
 		
-		wf.add(new Import(filter, name, sourceAttr(start,
+		wf.add(new WhileyFile.Import(filter, name, sourceAttr(start,
 				end - 1)));
 	}
 	
@@ -175,7 +174,7 @@ public final class WhileyParser {
 		// FIXME: potential bug here at end of file		
 		boolean method = false;
 		
-		List<Parameter> paramTypes = new ArrayList();
+		List<WhileyFile.Parameter> paramTypes = new ArrayList();
 		HashSet<String> paramNames = new HashSet<String>();
 		
 		if (tokens.get(index) instanceof ColonColon) {
@@ -227,7 +226,7 @@ public final class WhileyParser {
 		matchEndLine();
 		
 		List<Stmt> stmts = parseBlock(1);
-		Declaration declaration;
+		WhileyFile.Declaration declaration;
 		if(method) {
 			declaration = wf.new Method(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
@@ -265,7 +264,7 @@ public final class WhileyParser {
 			}
 			int end = index;			
 			matchEndLine();			
-			Declaration declaration = wf.new TypeDef(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
+			WhileyFile.Declaration declaration = wf.new TypeDef(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
 			wf.add(declaration);
 			return;
 		} catch(Exception e) {}
@@ -276,7 +275,7 @@ public final class WhileyParser {
 		Expr e = parseCondition(false);
 		int end = index;
 		matchEndLine();		
-		Declaration declaration = wf.new Constant(modifiers, e, name.text, sourceAttr(start,end-1));
+		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e, name.text, sourceAttr(start,end-1));
 		wf.add(declaration);
 	}
 	
@@ -1229,7 +1228,7 @@ public final class WhileyParser {
 						Expr end = parseAddSubExpression();
 						match(RightSquare.class);
 						return new Expr.SubList(lhs, new Expr.Constant(
-								Value.V_INTEGER(BigInteger.ZERO), sourceAttr(
+								Constant.V_INTEGER(BigInteger.ZERO), sourceAttr(
 										start, index - 1)), end, sourceAttr(
 								start, index - 1));
 					}
@@ -1332,15 +1331,15 @@ public final class WhileyParser {
 			return parseInvokeExpr();
 		} else if (token.text.equals("null")) {
 			matchKeyword("null");			
-			return new Expr.Constant(Value.V_NULL,
+			return new Expr.Constant(Constant.V_NULL,
 					sourceAttr(start, index - 1));
 		} else if (token.text.equals("true")) {
 			matchKeyword("true");			
-			return new Expr.Constant(Value.V_BOOL(true),
+			return new Expr.Constant(Constant.V_BOOL(true),
 					sourceAttr(start, index - 1));
 		} else if (token.text.equals("false")) {	
 			matchKeyword("false");
-			return new Expr.Constant(Value.V_BOOL(false),
+			return new Expr.Constant(Constant.V_BOOL(false),
 					sourceAttr(start, index - 1));			
 		} else if(token.text.equals("new")) {
 			return parseNew();			
@@ -1349,16 +1348,16 @@ public final class WhileyParser {
 					index - 1));			
 		} else if (token instanceof WhileyLexer.Byte) {			
 			byte val = match(WhileyLexer.Byte.class).value;
-			return new Expr.Constant(Value.V_BYTE(val), sourceAttr(start, index - 1));
+			return new Expr.Constant(Constant.V_BYTE(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Char) {			
 			char val = match(Char.class).value;
-			return new Expr.Constant(Value.V_CHAR(val), sourceAttr(start, index - 1));
+			return new Expr.Constant(Constant.V_CHAR(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
-			return new Expr.Constant(Value.V_INTEGER(val), sourceAttr(start, index - 1));
+			return new Expr.Constant(Constant.V_INTEGER(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Real) {
 			BigRational val = match(Real.class).value;
-			return new Expr.Constant(Value.V_RATIONAL(val), sourceAttr(start,
+			return new Expr.Constant(Constant.V_RATIONAL(val), sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof Strung) {
 			return parseString();
@@ -1372,7 +1371,7 @@ public final class WhileyParser {
 			return parseSetVal();
 		} else if (token instanceof EmptySet) {
 			match(EmptySet.class);
-			return new Expr.Constant(Value.V_SET(new ArrayList<Value>()),
+			return new Expr.Constant(Constant.V_SET(new ArrayList<Constant>()),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
@@ -1496,13 +1495,13 @@ public final class WhileyParser {
 		if(token instanceof RightCurly) {
 			match(RightCurly.class);			
 			// empty set definition
-			Value v = Value.V_SET(Collections.EMPTY_LIST); 
+			Constant v = Constant.V_SET(Collections.EMPTY_LIST); 
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
 		} else if(token instanceof StrongRightArrow) {
 			match(StrongRightArrow.class);		
 			match(RightCurly.class);			
 			// empty dictionary definition
-			Value v = Value.V_MAP(Collections.EMPTY_SET); 
+			Constant v = Constant.V_MAP(Collections.EMPTY_SET); 
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
 		}
 		
@@ -1657,9 +1656,9 @@ public final class WhileyParser {
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if (c.value instanceof Value.Rational) {
-				BigRational br = ((Value.Rational) c.value).value;
-				return new Expr.Constant(Value.V_RATIONAL(br.negate()),
+			if (c.value instanceof Constant.Rational) {
+				BigRational br = ((Constant.Rational) c.value).value;
+				return new Expr.Constant(Constant.V_RATIONAL(br.negate()),
 						sourceAttr(start, index));
 			}
 		} 
@@ -1693,7 +1692,7 @@ public final class WhileyParser {
 	private Expr parseString() {
 		int start = index;
 		String s = match(Strung.class).string;
-		Value.Strung str = Value.V_STRING(s);
+		Constant.Strung str = Constant.V_STRING(s);
 		return new Expr.Constant(str, sourceAttr(start, index - 1));
 	}
 	

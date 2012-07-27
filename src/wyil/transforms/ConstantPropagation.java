@@ -221,13 +221,13 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.BinArithOp code, Block.Entry entry,
 			Env environment) {		
-		Value lhs = environment.get(code.leftOperand);
-		Value rhs = environment.get(code.rightOperand);
-		Value result = null;
+		Constant lhs = environment.get(code.leftOperand);
+		Constant rhs = environment.get(code.rightOperand);
+		Constant result = null;
 		
-		if(lhs instanceof Value.Rational && rhs instanceof Value.Rational) {
-			Value.Rational lnum = (Value.Rational) lhs;
-			Value.Rational rnum = (Value.Rational) rhs;
+		if(lhs instanceof Constant.Rational && rhs instanceof Constant.Rational) {
+			Constant.Rational lnum = (Constant.Rational) lhs;
+			Constant.Rational rnum = (Constant.Rational) rhs;
 			
 			switch (code.kind) {
 			case ADD: {
@@ -249,9 +249,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}		
 			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
-		} else if(lhs instanceof Value.Integer && rhs instanceof Value.Integer) {
-			Value.Integer lnum = (Value.Integer) lhs;
-			Value.Integer rnum = (Value.Integer) rhs;
+		} else if(lhs instanceof Constant.Integer && rhs instanceof Constant.Integer) {
+			Constant.Integer lnum = (Constant.Integer) lhs;
+			Constant.Integer rnum = (Constant.Integer) rhs;
 			
 			switch (code.kind) {
 			case ADD: {
@@ -282,13 +282,13 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 						&& BigInteger.valueOf(end).equals(rnum.value)) {
 					if(start > -100 && start < 100 && end > -100 && end < 100) {
 						int dir = start < end ? 1 : -1;
-						ArrayList<Value> values = new ArrayList<Value>();
+						ArrayList<Constant> values = new ArrayList<Constant>();
 						while(start != end) {
-							values.add(Value.V_INTEGER(BigInteger
+							values.add(Constant.V_INTEGER(BigInteger
 									.valueOf(start)));
 							start = start + dir;
 						}
-						result = Value.V_LIST(values);
+						result = Constant.V_LIST(values);
 						break;
 					}
 				} 
@@ -306,7 +306,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(int index, Code.Convert code, Block.Entry entry,
 			Env environment) {
 		// TODO: implement this		
-		Value val = environment.get(code.operand);
+		Constant val = environment.get(code.operand);
 		environment.set(code.target,null);
 	}
 	
@@ -321,11 +321,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			
 	public void infer(int index, Code.FieldLoad code, Block.Entry entry,
 			Env environment) {
-		Value src = environment.get(code.operand);
+		Constant src = environment.get(code.operand);
 		
-		Value result = null;
-		if (src instanceof Value.Record) {
-			Value.Record rec = (Value.Record) src;
+		Constant result = null;
+		if (src instanceof Constant.Record) {
+			Constant.Record rec = (Constant.Record) src;
 			result = rec.values.get(code.field);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
@@ -356,36 +356,36 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.BinListOp code, Block.Entry entry,
 			Env environment) {
-		Value lhs = environment.get(code.leftOperand);
-		Value rhs = environment.get(code.rightOperand);
-		Value result = null;
+		Constant lhs = environment.get(code.leftOperand);
+		Constant rhs = environment.get(code.rightOperand);
+		Constant result = null;
 		switch(code.kind) {
 		case APPEND:
-			if (lhs instanceof Value.List && rhs instanceof Value.List) {
-				Value.List left = (Value.List) lhs;
-				Value.List right = (Value.List) rhs;
-				ArrayList<Value> values = new ArrayList<Value>(left.values);
+			if (lhs instanceof Constant.List && rhs instanceof Constant.List) {
+				Constant.List left = (Constant.List) lhs;
+				Constant.List right = (Constant.List) rhs;
+				ArrayList<Constant> values = new ArrayList<Constant>(left.values);
 				values.addAll(right.values);
-				result = Value.V_LIST(values);
+				result = Constant.V_LIST(values);
 			}
 			break;
 		case LEFT_APPEND:
-			if (lhs instanceof Value.List && rhs instanceof Value) {
-				Value.List left = (Value.List) lhs;
-				Value right = (Value) rhs;
-				ArrayList<Value> values = new ArrayList<Value>(left.values);
+			if (lhs instanceof Constant.List && rhs instanceof Constant) {
+				Constant.List left = (Constant.List) lhs;
+				Constant right = (Constant) rhs;
+				ArrayList<Constant> values = new ArrayList<Constant>(left.values);
 				values.add(right);
-				result = Value.V_LIST(values);
+				result = Constant.V_LIST(values);
 			}
 			break;
 		case RIGHT_APPEND:
-			if (lhs instanceof Value && rhs instanceof Value.List) {
-				Value left = (Value) lhs;
-				Value.List right = (Value.List) rhs;
-				ArrayList<Value> values = new ArrayList<Value>();
+			if (lhs instanceof Constant && rhs instanceof Constant.List) {
+				Constant left = (Constant) lhs;
+				Constant.List right = (Constant.List) rhs;
+				ArrayList<Constant> values = new ArrayList<Constant>();
 				values.add(left);
 				values.addAll(right.values);
-				result = Value.V_LIST(values);
+				result = Constant.V_LIST(values);
 			} 
 		}
 		
@@ -400,17 +400,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.LengthOf code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.get(code.operand);
-		Value result = null;
+		Constant val = environment.get(code.operand);
+		Constant result = null;
 		
-		if(val instanceof Value.List) {
-			Value.List list = (Value.List) val;
-			result = Value.V_INTEGER(BigInteger.valueOf(list.values.size()));
+		if(val instanceof Constant.List) {
+			Constant.List list = (Constant.List) val;
+			result = Constant.V_INTEGER(BigInteger.valueOf(list.values.size()));
 			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
-		} else if(val instanceof Value.Set) {
-			Value.Set list = (Value.Set) val;
-			result = Value.V_INTEGER(BigInteger.valueOf(list.values.size()));
+		} else if(val instanceof Constant.Set) {
+			Constant.Set list = (Constant.Set) val;
+			result = Constant.V_INTEGER(BigInteger.valueOf(list.values.size()));
 			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
 		} 
@@ -420,27 +420,27 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.SubList code, Block.Entry entry,
 			Env environment) {
-		Value list = environment.get(code.operands[0]);
-		Value start = environment.get(code.operands[1]);
-		Value end = environment.get(code.operands[2]);
-		Value result = null;
-		if (list instanceof Value.List && start instanceof Value.Rational
-				&& end instanceof Value.Rational) {
-			Value.Rational en = (Value.Rational) end;
-			Value.Rational st = (Value.Rational) start;
+		Constant list = environment.get(code.operands[0]);
+		Constant start = environment.get(code.operands[1]);
+		Constant end = environment.get(code.operands[2]);
+		Constant result = null;
+		if (list instanceof Constant.List && start instanceof Constant.Rational
+				&& end instanceof Constant.Rational) {
+			Constant.Rational en = (Constant.Rational) end;
+			Constant.Rational st = (Constant.Rational) start;
 			if (en.value.isInteger() && st.value.isInteger()) {
-				Value.List li = (Value.List) list;
+				Constant.List li = (Constant.List) list;
 				int eni = en.value.intValue();
 				int sti = st.value.intValue();
 				if (BigRational.valueOf(eni).equals(en.value) && eni >= 0
 						&& eni <= li.values.size()
 						&& BigRational.valueOf(sti).equals(st.value)
 						&& sti >= 0 && sti <= li.values.size()) {
-					ArrayList<Value> nvals = new ArrayList<Value>();
+					ArrayList<Constant> nvals = new ArrayList<Constant>();
 					for (int i = sti; i < eni; ++i) {
 						nvals.add(li.values.get(i));
 					}
-					result = Value.V_LIST(nvals);
+					result = Constant.V_LIST(nvals);
 					entry = new Block.Entry(Code.Const(code.target, result),
 							entry.attributes());
 					rewrites.put(index, new Rewrite(entry));
@@ -452,12 +452,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.IndexOf code, Block.Entry entry,
 			Env environment) {		
-		Value src = environment.get(code.leftOperand);
-		Value idx = environment.get(code.rightOperand);
-		Value result = null;
-		if (idx instanceof Value.Rational && src instanceof Value.List) {
-			Value.Rational num = (Value.Rational) idx;
-			Value.List list = (Value.List) src;
+		Constant src = environment.get(code.leftOperand);
+		Constant idx = environment.get(code.rightOperand);
+		Constant result = null;
+		if (idx instanceof Constant.Rational && src instanceof Constant.List) {
+			Constant.Rational num = (Constant.Rational) idx;
+			Constant.List list = (Constant.List) src;
 			if(num.value.isInteger()) {
 				int i = num.value.intValue();
 				if (BigRational.valueOf(i).equals(num.value) && i >= 0
@@ -467,9 +467,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 					rewrites.put(index, new Rewrite(entry));
 				}
 			}			
-		} else if(src instanceof Value.Strung && idx instanceof Value.Rational) {
-				Value.Strung str = (Value.Strung) src;
-				Value.Rational num = (Value.Rational) idx;			
+		} else if(src instanceof Constant.Strung && idx instanceof Constant.Rational) {
+				Constant.Strung str = (Constant.Strung) src;
+				Constant.Rational num = (Constant.Rational) idx;			
 				if (num.value.isInteger()) {
 					int i = num.value.intValue();
 					if(i >=0 && i < str.value.length()) {
@@ -484,7 +484,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(int index, Code.Assign code, Block.Entry entry,
 			Env environment) {
 
-		Value result = environment.get(code.operand);
+		Constant result = environment.get(code.operand);
 		if (result != null) {
 			// register rewrite
 			entry = new Block.Entry(Code.Const(code.target, result),
@@ -503,21 +503,21 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.NewMap code, Block.Entry entry,
 			Env environment) {
-		HashMap<Value, Value> values = new HashMap<Value, Value>();
+		HashMap<Constant, Constant> values = new HashMap<Constant, Constant>();
 		boolean isValue = true;
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; i = i + 2) {
-			Value val = environment.get(code_operands[i]);
-			Value key = environment.get(code_operands[i + 1]);
-			if (key instanceof Value && val instanceof Value) {
+			Constant val = environment.get(code_operands[i]);
+			Constant key = environment.get(code_operands[i + 1]);
+			if (key instanceof Constant && val instanceof Constant) {
 				values.put(key, val);
 			} else {
 				isValue = false;
 			}
 		}
-		Value result = null;
+		Constant result = null;
 		if (isValue) {
-			result = Value.V_MAP(values);
+			result = Constant.V_MAP(values);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
@@ -527,13 +527,13 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.NewRecord code, Block.Entry entry,
 			Env environment) {
-		HashMap<String, Value> values = new HashMap<String, Value>();
+		HashMap<String, Constant> values = new HashMap<String, Constant>();
 		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
 		Collections.sort(keys);
 		boolean isValue = true;
 		int[] code_operands = code.operands;
 		for (int i=0;i!=code_operands.length;++i) {
-			Value val = environment.get(code_operands[i]);
+			Constant val = environment.get(code_operands[i]);
 			if (val != null) {
 				values.put(keys.get(i), val);
 			} else {
@@ -541,9 +541,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 
-		Value result = null;
+		Constant result = null;
 		if (isValue) {
-			result = Value.V_RECORD(values);
+			result = Constant.V_RECORD(values);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
@@ -554,12 +554,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.NewList code, Block.Entry entry,
 			Env environment) {
-		ArrayList<Value> values = new ArrayList<Value>();
+		ArrayList<Constant> values = new ArrayList<Constant>();
 
 		boolean isValue = true;
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; ++i) {
-			Value val = environment.get(code_operands[i]);
+			Constant val = environment.get(code_operands[i]);
 			if (val != null) {
 				values.add(val);
 			} else {
@@ -567,9 +567,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 
-		Value result = null;
+		Constant result = null;
 		if (isValue) {
-			result = Value.V_LIST(values);
+			result = Constant.V_LIST(values);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
@@ -579,12 +579,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.NewSet code, Block.Entry entry,
 			Env environment) {
-		HashSet<Value> values = new HashSet<Value>();
+		HashSet<Constant> values = new HashSet<Constant>();
 
 		boolean isValue = true;
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; ++i) {
-			Value val = environment.get(code_operands[i]);
+			Constant val = environment.get(code_operands[i]);
 			if (val != null) {
 				values.add(val);
 			} else {
@@ -592,9 +592,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 
-		Value result = null;
+		Constant result = null;
 		if (isValue) {
-			result = Value.V_SET(values);
+			result = Constant.V_SET(values);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
@@ -604,12 +604,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.NewTuple code, Block.Entry entry,
 			Env environment) {
-		ArrayList<Value> values = new ArrayList<Value>();		
+		ArrayList<Constant> values = new ArrayList<Constant>();		
 
 		boolean isValue=true;
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; ++i) {
-			Value val = environment.get(code_operands[i]);
+			Constant val = environment.get(code_operands[i]);
 			if (val != null) {
 				values.add(val);
 			} else {
@@ -617,9 +617,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}		
 		
-		Value result = null;
+		Constant result = null;
 		if (isValue) {	
-			result = Value.V_TUPLE(values);
+			result = Constant.V_TUPLE(values);
 			entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
 		}
@@ -633,77 +633,77 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 	public void infer(int index, Code.BinSetOp code, Block.Entry entry,
 			Env environment) {						
-		Value result = null;
-		Value lhs = environment.get(code.leftOperand);
-		Value rhs = environment.get(code.rightOperand);
+		Constant result = null;
+		Constant lhs = environment.get(code.leftOperand);
+		Constant rhs = environment.get(code.rightOperand);
 		switch(code.kind) {
 		case UNION:
-			if (lhs instanceof Value.Set
-					&& rhs instanceof Value.Set) {
-				Value.Set lv = (Value.Set) lhs;
-				Value.Set rv = (Value.Set) rhs;
+			if (lhs instanceof Constant.Set
+					&& rhs instanceof Constant.Set) {
+				Constant.Set lv = (Constant.Set) lhs;
+				Constant.Set rv = (Constant.Set) rhs;
 				result = lv.union(rv);
 			}
 			break;
 		case LEFT_UNION:
-			if(lhs instanceof Value.Set && rhs instanceof Value) {
-				Value.Set lv = (Value.Set) lhs;
-				Value rv = (Value) rhs;
+			if(lhs instanceof Constant.Set && rhs instanceof Constant) {
+				Constant.Set lv = (Constant.Set) lhs;
+				Constant rv = (Constant) rhs;
 				result = lv.add(rv);
 			} 
 			break;
 		case RIGHT_UNION:
-			if(lhs instanceof Value && rhs instanceof Value.Set) {
-				Value lv = (Value) lhs;
-				Value.Set rv = (Value.Set) rhs;
+			if(lhs instanceof Constant && rhs instanceof Constant.Set) {
+				Constant lv = (Constant) lhs;
+				Constant.Set rv = (Constant.Set) rhs;
 				result = rv.add(lv);
 			}
 			break;
 		case INTERSECTION:
-			if (lhs instanceof Value.Set
-					&& rhs instanceof Value.Set) {
-				Value.Set lv = (Value.Set) lhs;
-				Value.Set rv = (Value.Set) rhs;
+			if (lhs instanceof Constant.Set
+					&& rhs instanceof Constant.Set) {
+				Constant.Set lv = (Constant.Set) lhs;
+				Constant.Set rv = (Constant.Set) rhs;
 				result = lv.intersect(rv);
 			} 
 			break;
 		case LEFT_INTERSECTION:
-			if (lhs instanceof Value.Set && rhs instanceof Value) {
-				Value.Set lv = (Value.Set) lhs;
-				Value rv = (Value) rhs;
+			if (lhs instanceof Constant.Set && rhs instanceof Constant) {
+				Constant.Set lv = (Constant.Set) lhs;
+				Constant rv = (Constant) rhs;
 				if (lv.values.contains(rv)) {
-					HashSet<Value> nset = new HashSet<Value>();
+					HashSet<Constant> nset = new HashSet<Constant>();
 					nset.add(rv);
-					result = Value.V_SET(nset);
+					result = Constant.V_SET(nset);
 				} else {
-					result = Value.V_SET(Collections.EMPTY_SET);
+					result = Constant.V_SET(Collections.EMPTY_SET);
 				}
 			}
 			break;
 		case RIGHT_INTERSECTION:
-			if(lhs instanceof Value && rhs instanceof Value.Set) {
-				Value lv = (Value) lhs;
-				Value.Set rv = (Value.Set) rhs;
+			if(lhs instanceof Constant && rhs instanceof Constant.Set) {
+				Constant lv = (Constant) lhs;
+				Constant.Set rv = (Constant.Set) rhs;
 				if(rv.values.contains(lv)) {
-					HashSet<Value> nset = new HashSet<Value>();
+					HashSet<Constant> nset = new HashSet<Constant>();
 					nset.add(lv);
-					result = Value.V_SET(nset);
+					result = Constant.V_SET(nset);
 				} else {
-					result = Value.V_SET(Collections.EMPTY_SET);
+					result = Constant.V_SET(Collections.EMPTY_SET);
 				}
 			}
 			break;
 		case DIFFERENCE:
-			if (lhs instanceof Value.Set && rhs instanceof Value.Set) {
-				Value.Set lv = (Value.Set) lhs;
-				Value.Set rv = (Value.Set) rhs;
+			if (lhs instanceof Constant.Set && rhs instanceof Constant.Set) {
+				Constant.Set lv = (Constant.Set) lhs;
+				Constant.Set rv = (Constant.Set) rhs;
 				result = lv.difference(rv);
 			}
 			break;
 		case LEFT_DIFFERENCE:
-			if(lhs instanceof Value.Set && rhs instanceof Value) {
-				Value.Set lv = (Value.Set) lhs;
-				Value rv = (Value) rhs;
+			if(lhs instanceof Constant.Set && rhs instanceof Constant) {
+				Constant.Set lv = (Constant.Set) lhs;
+				Constant rv = (Constant) rhs;
 				result = lv.remove(rv);
 			} 
 			break;
@@ -720,15 +720,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.BinStringOp code, Block.Entry entry,
 			Env environment) {
-		Value lhs = environment.get(code.leftOperand);
-		Value rhs = environment.get(code.rightOperand);
-		Value result = null;
+		Constant lhs = environment.get(code.leftOperand);
+		Constant rhs = environment.get(code.rightOperand);
+		Constant result = null;
 		switch(code.kind) {
 		case APPEND:
-			if(lhs instanceof Value.Strung && rhs instanceof Value.Strung) {
-				Value.Strung left = (Value.Strung) lhs;
-				Value.Strung right = (Value.Strung) rhs;
-				result = Value.V_STRING(left.value + right.value);
+			if(lhs instanceof Constant.Strung && rhs instanceof Constant.Strung) {
+				Constant.Strung left = (Constant.Strung) lhs;
+				Constant.Strung right = (Constant.Strung) rhs;
+				result = Constant.V_STRING(left.value + right.value);
 			} 
 			break;
 		case LEFT_APPEND:
@@ -750,17 +750,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(int index, Code.SubString code, Block.Entry entry,
 			Env environment) {		
 		
-		Value src = environment.get(code.operands[0]);
-		Value start = environment.get(code.operands[1]);
-		Value end = environment.get(code.operands[2]);
+		Constant src = environment.get(code.operands[0]);
+		Constant start = environment.get(code.operands[1]);
+		Constant end = environment.get(code.operands[2]);
 		
-		Value result = null;
-		if (src instanceof Value.Strung && start instanceof Value.Rational
-				&& end instanceof Value.Rational) {
-			Value.Rational en = (Value.Rational) end;
-			Value.Rational st = (Value.Rational) start;
+		Constant result = null;
+		if (src instanceof Constant.Strung && start instanceof Constant.Rational
+				&& end instanceof Constant.Rational) {
+			Constant.Rational en = (Constant.Rational) end;
+			Constant.Rational st = (Constant.Rational) start;
 			if (en.value.isInteger() && st.value.isInteger()) {
-				Value.Strung str = (Value.Strung) src;
+				Constant.Strung str = (Constant.Strung) src;
 				int eni = en.value.intValue();
 				int sti = st.value.intValue();
 				if (BigRational.valueOf(eni).equals(en.value)
@@ -771,7 +771,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 					for (int i = sti; i < eni; ++i) {
 						nval += str.value.charAt(i);
 					}
-					result = Value.V_STRING(nval);
+					result = Constant.V_STRING(nval);
 					entry = new Block.Entry(Code.Const(code.target,result),entry.attributes());
 					rewrites.put(index, new Rewrite(entry));
 				}
@@ -783,12 +783,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(int index, Code.Invert code, Block.Entry entry,
 			Env environment) {
-		Value val = environment.get(code.operand);
-		Value result = null;
+		Constant val = environment.get(code.operand);
+		Constant result = null;
 		
-		if (val instanceof Value.Byte) {
-			Value.Byte num = (Value.Byte) val;
-			result = Value.V_BYTE((byte) ~num.value);
+		if (val instanceof Constant.Byte) {
+			Constant.Byte num = (Constant.Byte) val;
+			result = Constant.V_BYTE((byte) ~num.value);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
@@ -800,17 +800,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(int index, Code.UnArithOp code, Block.Entry entry,
 			Env environment) {
 		// needs to be updated to support numerator and denominator
-		Value val = environment.get(code.operand);
-		Value result = null;
+		Constant val = environment.get(code.operand);
+		Constant result = null;
 		
 		switch(code.kind) {
 			case NEG:
-				if(val instanceof Value.Rational) {
-					Value.Rational num = (Value.Rational) val;
-					result = Value.V_RATIONAL(num.value.negate());
-				} else if (val instanceof Value.Integer) {
-					Value.Integer num = (Value.Integer) val;
-					result = Value.V_INTEGER(num.value.negate());
+				if(val instanceof Constant.Rational) {
+					Constant.Rational num = (Constant.Rational) val;
+					result = Constant.V_RATIONAL(num.value.negate());
+				} else if (val instanceof Constant.Integer) {
+					Constant.Integer num = (Constant.Integer) val;
+					result = Constant.V_INTEGER(num.value.negate());
 				}
 		}
 		
@@ -841,8 +841,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		environment = (Env) environment.clone();
 
-		Value lhs = environment.get(code.leftOperand);
-		Value rhs = environment.get(code.rightOperand);
+		Constant lhs = environment.get(code.leftOperand);
+		Constant rhs = environment.get(code.rightOperand);
 
 		// TODO: could do more here to eliminate conditionals which must either
 		// be taken or untaken.
@@ -854,7 +854,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public Pair<Env, Env> propagate(int index,
 			Code.IfIs code, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
-		Value lhs = environment.get(code.operand);
+		Constant lhs = environment.get(code.operand);
 		
 		// TODO: could do more here to eliminate conditionals which must either
 		// be taken or untaken.
@@ -867,7 +867,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		environment = (Env) environment.clone();
 
-		Value val = environment.get(code.operand);
+		Constant val = environment.get(code.operand);
 
 		ArrayList<Env> stores = new ArrayList();
 		for (int i = 0; i != code.branches.size(); ++i) {
@@ -926,9 +926,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		Env env = new Env();
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
-			Value mt = env1.get(i);
-			Value ot = env2.get(i);
-			if (ot instanceof Value && mt instanceof Value && ot.equals(mt)) {
+			Constant mt = env1.get(i);
+			Constant ot = env2.get(i);
+			if (ot instanceof Constant && mt instanceof Constant && ot.equals(mt)) {
 				env.add(mt);
 			} else {
 				env.add(null);
@@ -938,10 +938,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return env;
 	}	
 	
-	public final static class Env extends ArrayList<Value> {
+	public final static class Env extends ArrayList<Constant> {
 		public Env() {
 		}
-		public Env(Collection<Value> v) {
+		public Env(Collection<Constant> v) {
 			super(v);
 		}		
 		public Env clone() {

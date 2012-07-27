@@ -296,7 +296,7 @@ public final class WhileyFile {
 		public final List<Modifier> modifiers;
 		public final String name;
 		public Expr constant;
-		public Value resolvedValue;		
+		public wyil.lang.Constant resolvedValue;		
 
 		public Constant(List<Modifier> modifiers, Expr constant, String name,
 				Attribute... attributes) {

@@ -166,7 +166,7 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Const Const(int target, Value constant) {
+	public static Const Const(int target, Constant constant) {
 		return get(new Const(target, constant));
 	}
 
@@ -465,7 +465,7 @@ public abstract class Code {
 	 * @return
 	 */
 	public static Switch Switch(Type type, int operand, String defaultLabel,
-			Collection<Pair<Value, String>> cases) {
+			Collection<Pair<Constant, String>> cases) {
 		return get(new Switch(type, operand, defaultLabel, cases));
 	}
 
@@ -1229,9 +1229,9 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Const extends AbstractAssignable {
-		public final Value constant;
+		public final Constant constant;
 
-		private Const(int target, Value constant) {
+		private Const(int target, Constant constant) {
 			super(target);
 			this.constant = constant;
 		}
@@ -3612,13 +3612,13 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class Switch extends AbstractUnaryOp<Type> {
-		public final ArrayList<Pair<Value, String>> branches;
+		public final ArrayList<Pair<Constant, String>> branches;
 		public final String defaultTarget;
 
 		Switch(Type type, int operand, String defaultTarget,
-				Collection<Pair<Value, String>> branches) {
+				Collection<Pair<Constant, String>> branches) {
 			super(type,operand);
-			this.branches = new ArrayList<Pair<Value, String>>(branches);
+			this.branches = new ArrayList<Pair<Constant, String>>(branches);
 			this.defaultTarget = defaultTarget;
 		}
 
@@ -3628,8 +3628,8 @@ public abstract class Code {
 		}
 		
 		public Switch relabel(Map<String, String> labels) {
-			ArrayList<Pair<Value, String>> nbranches = new ArrayList();
-			for (Pair<Value, String> p : branches) {
+			ArrayList<Pair<Constant, String>> nbranches = new ArrayList();
+			for (Pair<Constant, String> p : branches) {
 				String nlabel = labels.get(p.second());
 				if (nlabel == null) {
 					nbranches.add(p);
@@ -3664,7 +3664,7 @@ public abstract class Code {
 		public String toString() {
 			String table = "";
 			boolean firstTime = true;
-			for (Pair<Value, String> p : branches) {
+			for (Pair<Constant, String> p : branches) {
 				if (!firstTime) {
 					table += ", ";
 				}

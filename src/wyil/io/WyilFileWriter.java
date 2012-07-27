@@ -73,8 +73,8 @@ public final class WyilFileWriter {
 	private final HashMap<Path.ID,Integer> pathCache = new HashMap<Path.ID,Integer>();	
 	private final ArrayList<NAME_Item> namePool = new ArrayList<NAME_Item>();
 	private final HashMap<NameID,Integer> nameCache = new HashMap<NameID,Integer>();	
-	private final ArrayList<Value> constantPool = new ArrayList<Value>();
-	private final HashMap<Value,Integer> constantCache = new HashMap<Value,Integer>();	
+	private final ArrayList<Constant> constantPool = new ArrayList<Constant>();
+	private final HashMap<Constant,Integer> constantCache = new HashMap<Constant,Integer>();	
 	private final ArrayList<Type> typePool = new ArrayList<Type>();
 	private final HashMap<Type,Integer> typeCache = new HashMap<Type,Integer>();
 	
@@ -228,40 +228,40 @@ public final class WyilFileWriter {
 	private void writeConstantPool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " constant item(s).");		
 		
-		for (Value val : constantPool) {
-			if(val instanceof Value.Null) {
+		for (Constant val : constantPool) {
+			if(val instanceof Constant.Null) {
 				output.write_uv(CONSTANT_Null);
 				
-			} else if(val instanceof Value.Bool) {
-				Value.Bool b = (Value.Bool) val; 
+			} else if(val instanceof Constant.Bool) {
+				Constant.Bool b = (Constant.Bool) val; 
 				output.write_uv(b.value ? CONSTANT_True : CONSTANT_False);							
 				
-			} else if(val instanceof Value.Byte) {
-				Value.Byte b = (Value.Byte) val;
+			} else if(val instanceof Constant.Byte) {
+				Constant.Byte b = (Constant.Byte) val;
 				output.write_uv(CONSTANT_Byte);		
 				output.write_u8(b.value);
 				
-			} else if(val instanceof Value.Char) {
-				Value.Char c = (Value.Char) val;
+			} else if(val instanceof Constant.Char) {
+				Constant.Char c = (Constant.Char) val;
 				output.write_uv(CONSTANT_Char);		
 				output.write_uv(c.value);	
 				
-			} else if(val instanceof Value.Integer) {
-				Value.Integer i = (Value.Integer) val; 					
+			} else if(val instanceof Constant.Integer) {
+				Constant.Integer i = (Constant.Integer) val; 					
 				BigInteger num = i.value;
 				byte[] numbytes = num.toByteArray();
 				output.write_uv(CONSTANT_Int);
 				output.write_uv(numbytes.length);
 				output.write(numbytes);			
 				
-			} else if(val instanceof Value.Strung) {
-				Value.Strung s = (Value.Strung) val;
+			} else if(val instanceof Constant.Strung) {
+				Constant.Strung s = (Constant.Strung) val;
 				output.write_uv(CONSTANT_String);
 				String value = s.value;
 				output.write_uv(stringCache.get(value));				
 				
-			} else if(val instanceof Value.Rational) {
-				Value.Rational r = (Value.Rational) val;
+			} else if(val instanceof Constant.Rational) {
+				Constant.Rational r = (Constant.Rational) val;
 				output.write_uv(CONSTANT_Real);
 				BigRational br = r.value;
 				BigInteger num = br.numerator();
@@ -275,56 +275,56 @@ public final class WyilFileWriter {
 				output.write_uv(denbytes.length);
 				output.write(denbytes);
 				
-			} else if(val instanceof Value.Set) {
-				Value.Set s = (Value.Set) val;
+			} else if(val instanceof Constant.Set) {
+				Constant.Set s = (Constant.Set) val;
 				output.write_uv(CONSTANT_Set);
 				output.write_uv(s.values.size());
-				for(Value v : s.values) {
+				for(Constant v : s.values) {
 					int index = constantCache.get(v);
 					output.write_uv(index);
 				}
 				
-			} else if(val instanceof Value.List) {				
-				Value.List s = (Value.List) val;
+			} else if(val instanceof Constant.List) {				
+				Constant.List s = (Constant.List) val;
 				output.write_uv(CONSTANT_List);
 				output.write_uv(s.values.size());
-				for(Value v : s.values) {
+				for(Constant v : s.values) {
 					int index = constantCache.get(v);
 					output.write_uv(index);
 				}
 				
-			} else if(val instanceof Value.Map) {
-				Value.Map m = (Value.Map) val;
+			} else if(val instanceof Constant.Map) {
+				Constant.Map m = (Constant.Map) val;
 				output.write_uv(CONSTANT_Map);
 				output.write_uv(m.values.size());
-				for(java.util.Map.Entry<Value,Value> e : m.values.entrySet()) {
+				for(java.util.Map.Entry<Constant,Constant> e : m.values.entrySet()) {
 					int keyIndex = constantCache.get(e.getKey());
 					output.write_uv(keyIndex);
 					int valIndex = constantCache.get(e.getValue());
 					output.write_uv(valIndex);
 				}		
 				
-			} else if(val instanceof Value.Record) {
-				Value.Record r = (Value.Record) val; 
+			} else if(val instanceof Constant.Record) {
+				Constant.Record r = (Constant.Record) val; 
 				output.write_uv(CONSTANT_Record);
 				output.write_uv(r.values.size());
-				for(java.util.Map.Entry<String,Value> v : r.values.entrySet()) {
+				for(java.util.Map.Entry<String,Constant> v : r.values.entrySet()) {
 					output.write_uv(stringCache.get(v.getKey()));
 					int index = constantCache.get(v.getValue());
 					output.write_uv(index);
 				}
 				
-			} else if(val instanceof Value.Tuple) {
-				Value.Tuple t = (Value.Tuple) val; 
+			} else if(val instanceof Constant.Tuple) {
+				Constant.Tuple t = (Constant.Tuple) val; 
 				output.write_uv(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
 				output.write_uv(t.values.size());
-				for(Value v : t.values) {
+				for(Constant v : t.values) {
 					int index = constantCache.get(v);
 					output.write_uv(index);
 				}
 				
-			} else if(val instanceof Value.FunctionOrMethod) {
-				Value.FunctionOrMethod fm = (Value.FunctionOrMethod) val; 
+			} else if(val instanceof Constant.FunctionOrMethod) {
+				Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) val; 
 				Type.FunctionOrMethod t = fm.type();
 				output.write_uv(t instanceof Type.Function ? CONSTANT_Function : CONSTANT_Method);
 				output.write_uv(typeCache.get(t));
@@ -711,11 +711,11 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Code.Switch) {
 			Code.Switch c = (Code.Switch) code;
-			List<Pair<Value,String>> branches = c.branches;
+			List<Pair<Constant,String>> branches = c.branches;
 			int target = labels.get(c.defaultTarget) - offset; 			
 			writeTarget(wide,offset,target,output);
 			writeRest(wide,branches.size(),output);
-			for(Pair<Value,String> b : branches) {
+			for(Pair<Constant,String> b : branches) {
 				writeRest(wide,constantCache.get(b.first()),output);
 				target = labels.get(b.second()); 
 				writeTarget(wide,offset,target,output);
@@ -886,10 +886,10 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Code.Switch) {
 			Code.Switch c = (Code.Switch) code;
-			List<Pair<Value,String>> branches = c.branches;
+			List<Pair<Constant,String>> branches = c.branches;
 			maxRest = Math.max(maxRest,targetWidth(c.defaultTarget, offset, labels));
 			maxRest = Math.max(maxRest,branches.size());
-			for(Pair<Value,String> b : branches) {
+			for(Pair<Constant,String> b : branches) {
 				maxRest = Math.max(maxRest,constantCache.get(b.first()));
 				maxRest = Math.max(maxRest,targetWidth(b.second(), offset, labels));
 			}
@@ -1036,7 +1036,7 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.Switch) {
 			Code.Switch s = (Code.Switch) code;
 			addTypeItem(s.type);
-			for(Pair<Value,String> b : s.branches) {
+			for(Pair<Constant,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
 		} else if(code instanceof Code.TryCatch) {
@@ -1128,7 +1128,7 @@ public final class WyilFileWriter {
 		}
 	}
 	
-	private int addConstantItem(Value v) {
+	private int addConstantItem(Constant v) {
 	
 		Integer index = constantCache.get(v);
 		if(index == null) {
@@ -1146,39 +1146,39 @@ public final class WyilFileWriter {
 		return index;
 	}
 	
-	private void addConstantSubitems(Value v) {
-		if(v instanceof Value.Strung) {
-			Value.Strung s = (Value.Strung) v;
+	private void addConstantSubitems(Constant v) {
+		if(v instanceof Constant.Strung) {
+			Constant.Strung s = (Constant.Strung) v;
 			addStringItem(s.value);
-		} else if(v instanceof Value.List) {
-			Value.List l = (Value.List) v;				
-			for (Value e : l.values) {
+		} else if(v instanceof Constant.List) {
+			Constant.List l = (Constant.List) v;				
+			for (Constant e : l.values) {
 				addConstantItem(e);
 			}
-		} else if(v instanceof Value.Set) {
-			Value.Set s = (Value.Set) v;
-			for (Value e : s.values) {
+		} else if(v instanceof Constant.Set) {
+			Constant.Set s = (Constant.Set) v;
+			for (Constant e : s.values) {
 				addConstantItem(e);
 			}
-		} else if(v instanceof Value.Map) {				
-			Value.Map m = (Value.Map) v;
-			for (Map.Entry<Value,Value> e : m.values.entrySet()) {
+		} else if(v instanceof Constant.Map) {				
+			Constant.Map m = (Constant.Map) v;
+			for (Map.Entry<Constant,Constant> e : m.values.entrySet()) {
 				addConstantItem(e.getKey());
 				addConstantItem(e.getValue());
 			}
-		} else if(v instanceof Value.Tuple) {
-			Value.Tuple t = (Value.Tuple) v;
-			for (Value e : t.values) {
+		} else if(v instanceof Constant.Tuple) {
+			Constant.Tuple t = (Constant.Tuple) v;
+			for (Constant e : t.values) {
 				addConstantItem(e);
 			}
-		} else if(v instanceof Value.Record) {
-			Value.Record r = (Value.Record) v;
-			for (Map.Entry<String,Value> e : r.values.entrySet()) {
+		} else if(v instanceof Constant.Record) {
+			Constant.Record r = (Constant.Record) v;
+			for (Map.Entry<String,Constant> e : r.values.entrySet()) {
 				addStringItem(e.getKey());
 				addConstantItem(e.getValue());
 			}				
-		} else if(v instanceof Value.FunctionOrMethod){
-			Value.FunctionOrMethod fm = (Value.FunctionOrMethod) v;
+		} else if(v instanceof Constant.FunctionOrMethod){
+			Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) v;
 			addTypeItem(fm.type());
 			addNameItem(fm.name);
 		} 			

@@ -96,9 +96,9 @@ public class GlobalGenerator {
 				cache.put(nid, blk);
 				return blk;
 			} else {
-				Value v = resolver.resolveAsConstant(nid);				
-				if(v instanceof Value.Set) {
-					Value.Set vs = (Value.Set) v;
+				Constant v = resolver.resolveAsConstant(nid);				
+				if(v instanceof Constant.Set) {
+					Constant.Set vs = (Constant.Set) v;
 					Type.Set type = vs.type();
 					blk = new Block(1);					
 					blk.append(Code.Const(Code.REG_1, v));

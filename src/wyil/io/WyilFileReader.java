@@ -50,7 +50,7 @@ public final class WyilFileReader {
 	private String[] stringPool;
 	private Path.ID[] pathPool;
 	private NameID[] namePool;
-	private Value[] constantPool;
+	private Constant[] constantPool;
 	private Type[] typePool;
 	
 	public WyilFileReader(String filename) throws IOException {
@@ -156,30 +156,30 @@ public final class WyilFileReader {
 	}
 
 	private void readConstantPool(int size) throws IOException {		
-		final Value[] myConstantPool = new Value[size];
+		final Constant[] myConstantPool = new Constant[size];
 				
 		for(int i=0;i!=size;++i) {
 			int code = input.read_uv();
-			Value constant;
+			Constant constant;
 			
 			switch (code) {
 				case WyilFileWriter.CONSTANT_Null :
-					constant = Value.V_NULL;
+					constant = Constant.V_NULL;
 					break;
 				case WyilFileWriter.CONSTANT_False :
-					constant = Value.V_BOOL(false);
+					constant = Constant.V_BOOL(false);
 					break;
 				case WyilFileWriter.CONSTANT_True :
-					constant = Value.V_BOOL(true);
+					constant = Constant.V_BOOL(true);
 					break;
 				case WyilFileWriter.CONSTANT_Byte : {
 					byte val = (byte) input.read_u8();
-					constant = Value.V_BYTE(val);
+					constant = Constant.V_BYTE(val);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Char : {
 					char val = (char) input.read_uv();
-					constant = Value.V_CHAR(val);
+					constant = Constant.V_CHAR(val);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Int : {
@@ -187,7 +187,7 @@ public final class WyilFileReader {
 					byte[] bytes = new byte[len];
 					input.read(bytes);
 					BigInteger bi = new BigInteger(bytes);
-					constant = Value.V_INTEGER(bi);
+					constant = Constant.V_INTEGER(bi);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Real : {
@@ -200,67 +200,67 @@ public final class WyilFileReader {
 					input.read(bytes);
 					BigInteger den = new BigInteger(bytes);
 					BigRational br = new BigRational(num, den);
-					constant = Value.V_RATIONAL(br);
+					constant = Constant.V_RATIONAL(br);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_String : {
 					int index = input.read_uv();
-					constant = Value.V_STRING(stringPool[index]);
+					constant = Constant.V_STRING(stringPool[index]);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_List : {
 					int len = input.read_uv();
-					ArrayList<Value> values = new ArrayList<Value>();
+					ArrayList<Constant> values = new ArrayList<Constant>();
 					for (int j = 0; j != len; ++j) {
 						int index = input.read_uv();							
 						values.add(myConstantPool[index]);
 					}
-					constant = Value.V_LIST(values);
+					constant = Constant.V_LIST(values);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Set : {
 					int len = input.read_uv();
-					ArrayList<Value> values = new ArrayList<Value>();
+					ArrayList<Constant> values = new ArrayList<Constant>();
 					for (int j = 0; j != len; ++j) {
 						int index = input.read_uv();
 						values.add(myConstantPool[index]);
 					}
-					constant = Value.V_SET(values);
+					constant = Constant.V_SET(values);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Tuple : {
 					int len = input.read_uv();
-					ArrayList<Value> values = new ArrayList<Value>();
+					ArrayList<Constant> values = new ArrayList<Constant>();
 					for (int j = 0; j != len; ++j) {
 						int index = input.read_uv();
 						values.add(myConstantPool[index]);
 					}
-					constant = Value.V_TUPLE(values);
+					constant = Constant.V_TUPLE(values);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Map : {
 					int len = input.read_uv();
-					HashSet<Pair<Value, Value>> values = new HashSet<Pair<Value, Value>>();
+					HashSet<Pair<Constant, Constant>> values = new HashSet<Pair<Constant, Constant>>();
 					for (int j = 0; j != len; ++j) {
 						int keyIndex = input.read_uv();
 						int valIndex = input.read_uv();
-						Value key = myConstantPool[keyIndex];
-						Value val = myConstantPool[valIndex];
-						values.add(new Pair<Value, Value>(key, val));
+						Constant key = myConstantPool[keyIndex];
+						Constant val = myConstantPool[valIndex];
+						values.add(new Pair<Constant, Constant>(key, val));
 					}
-					constant = Value.V_MAP(values);
+					constant = Constant.V_MAP(values);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Record : {
 					int len = input.read_uv();
-					HashMap<String, Value> tvs = new HashMap<String, Value>();
+					HashMap<String, Constant> tvs = new HashMap<String, Constant>();
 					for (int j = 0; j != len; ++j) {
 						int fieldIndex = input.read_uv();
 						int constantIndex = input.read_uv();
 						String str = stringPool[fieldIndex];
 						tvs.put(str, myConstantPool[constantIndex]);
 					}
-					constant = Value.V_RECORD(tvs);
+					constant = Constant.V_RECORD(tvs);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_Function :
@@ -269,7 +269,7 @@ public final class WyilFileReader {
 					int nameIndex = input.read_uv();
 					Type.FunctionOrMethod t = (Type.FunctionOrMethod) typePool[typeIndex];
 					NameID name = namePool[nameIndex];
-					constant = Value.V_FUN(name, t);
+					constant = Constant.V_FUN(name, t);
 					break;
 				}
 				default:
@@ -524,7 +524,7 @@ public final class WyilFileReader {
 		case Code.OPCODE_const: {
 			int target = readBase(wideBase);
 			int idx = readRest(wideRest);
-			Value c = constantPool[idx];
+			Constant c = constantPool[idx];
 			return Code.Const(target,c);
 		}
 		case Code.OPCODE_goto: {
@@ -560,16 +560,16 @@ public final class WyilFileReader {
 		case Code.OPCODE_return:
 			return Code.Return(type, operand);
 		case Code.OPCODE_switch: {
-			ArrayList<Pair<Value,String>> cases = new ArrayList<Pair<Value,String>>();
+			ArrayList<Pair<Constant,String>> cases = new ArrayList<Pair<Constant,String>>();
 			int target = input.read_u8(); 
 			String defaultLabel = findLabel(offset + target,labels);
 			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
 				int constIdx = readTarget(wideRest,offset);
-				Value constant = constantPool[constIdx];
+				Constant constant = constantPool[constIdx];
 				target = readRest(wideRest); 
 				String label = findLabel(target,labels);
-				cases.add(new Pair<Value,String>(constant,label));
+				cases.add(new Pair<Constant,String>(constant,label));
 			}
 			return Code.Switch(type,operand,defaultLabel,cases);
 		}

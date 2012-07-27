@@ -40,7 +40,7 @@ public class GlobalResolver extends LocalResolver {
 	/**
 	 * The constant cache contains a cache of expanded constant values.
 	 */
-	private final HashMap<NameID, Value> constantCache = new HashMap();
+	private final HashMap<NameID, Constant> constantCache = new HashMap();
 	
 	public GlobalResolver(Whiley2WyilBuilder project) {
 		super(project);
@@ -537,11 +537,11 @@ public class GlobalResolver extends LocalResolver {
 	// ResolveAsConstant
 	// =========================================================================
 	
-	public Value resolveAsConstant(NameID nid) throws Exception {				
+	public Constant resolveAsConstant(NameID nid) throws Exception {				
 		return resolveAsConstant(nid,new HashSet<NameID>());		
 	}
 
-	public Value resolveAsConstant(Expr e, Context context) {		
+	public Constant resolveAsConstant(Expr e, Context context) {		
 		e = resolve(e, new Environment(),context);
 		return resolveAsConstant(e,context,new HashSet<NameID>());		
 	}
@@ -562,8 +562,8 @@ public class GlobalResolver extends LocalResolver {
 	 * @return
 	 * @throws Exception
 	 */
-	private Value resolveAsConstant(NameID key, HashSet<NameID> visited) throws Exception {				
-		Value result = constantCache.get(key);
+	private Constant resolveAsConstant(NameID key, HashSet<NameID> visited) throws Exception {				
+		Constant result = constantCache.get(key);
 		if(result != null) {
 			return result;
 		} else if(visited.contains(key)) {
@@ -617,7 +617,7 @@ public class GlobalResolver extends LocalResolver {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 */
-	private Value resolveAsConstant(Expr expr, Context context,
+	private Constant resolveAsConstant(Expr expr, Context context,
 			HashSet<NameID> visited) {
 		try {
 			if (expr instanceof Expr.Constant) {
@@ -628,60 +628,60 @@ public class GlobalResolver extends LocalResolver {
 				return resolveAsConstant(c.nid,visited);				
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp bop = (Expr.BinOp) expr;
-				Value lhs = resolveAsConstant(bop.lhs, context, visited);
-				Value rhs = resolveAsConstant(bop.rhs, context, visited);
+				Constant lhs = resolveAsConstant(bop.lhs, context, visited);
+				Constant rhs = resolveAsConstant(bop.rhs, context, visited);
 				return evaluate(bop,lhs,rhs,context);			
 			} else if (expr instanceof Expr.Set) {
 				Expr.Set nop = (Expr.Set) expr;
-				ArrayList<Value> values = new ArrayList<Value>();
+				ArrayList<Constant> values = new ArrayList<Constant>();
 				for (Expr arg : nop.arguments) {
 					values.add(resolveAsConstant(arg,context, visited));
 				}			
-				return Value.V_SET(values);			
+				return Constant.V_SET(values);			
 			} else if (expr instanceof Expr.List) {
 				Expr.List nop = (Expr.List) expr;
-				ArrayList<Value> values = new ArrayList<Value>();
+				ArrayList<Constant> values = new ArrayList<Constant>();
 				for (Expr arg : nop.arguments) {
 					values.add(resolveAsConstant(arg,context, visited));
 				}			
-				return Value.V_LIST(values);			
+				return Constant.V_LIST(values);			
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
-				HashMap<String,Value> values = new HashMap<String,Value>();
+				HashMap<String,Constant> values = new HashMap<String,Constant>();
 				for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
-					Value v = resolveAsConstant(e.getValue(),context,visited);
+					Constant v = resolveAsConstant(e.getValue(),context,visited);
 					if(v == null) {
 						return null;
 					}
 					values.put(e.getKey(), v);
 				}
-				return Value.V_RECORD(values);
+				return Constant.V_RECORD(values);
 			} else if (expr instanceof Expr.Tuple) {
 				Expr.Tuple rg = (Expr.Tuple) expr;			
-				ArrayList<Value> values = new ArrayList<Value>();			
+				ArrayList<Constant> values = new ArrayList<Constant>();			
 				for(Expr e : rg.fields) {
-					Value v = resolveAsConstant(e, context,visited);
+					Constant v = resolveAsConstant(e, context,visited);
 					if(v == null) {
 						return null;
 					}
 					values.add(v);				
 				}
-				return Value.V_TUPLE(values);
+				return Constant.V_TUPLE(values);
 			}  else if (expr instanceof Expr.Map) {
 				Expr.Map rg = (Expr.Map) expr;			
-				HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
+				HashSet<Pair<Constant,Constant>> values = new HashSet<Pair<Constant,Constant>>();			
 				for(Pair<Expr,Expr> e : rg.pairs) {
-					Value key = resolveAsConstant(e.first(), context,visited);
-					Value value = resolveAsConstant(e.second(), context,visited);
+					Constant key = resolveAsConstant(e.first(), context,visited);
+					Constant value = resolveAsConstant(e.second(), context,visited);
 					if(key == null || value == null) {
 						return null;
 					}
-					values.add(new Pair<Value,Value>(key,value));				
+					values.add(new Pair<Constant,Constant>(key,value));				
 				}
-				return Value.V_MAP(values);
+				return Constant.V_MAP(values);
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return Value.V_FUN(f.nid, f.type.raw());
+				return Constant.V_FUN(f.nid, f.type.raw());
 			}
 		} catch(SyntaxError.InternalFailure e) {
 			throw e;
@@ -695,92 +695,92 @@ public class GlobalResolver extends LocalResolver {
 		return null; // deadcode
 	}
 
-	private Value evaluate(Expr.BinOp bop, Value v1, Value v2, Context context) {
+	private Constant evaluate(Expr.BinOp bop, Constant v1, Constant v2, Context context) {
 		Type lub = Type.Union(v1.type(), v2.type());
 
 		// FIXME: there are bugs here related to coercions.
 
 		if(Type.isSubtype(Type.T_BOOL, lub)) {
-			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2, context);
+			return evaluateBoolean(bop,(Constant.Bool) v1,(Constant.Bool) v2, context);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
-			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2, context);
+			return evaluate(bop,(Constant.Rational) v1, (Constant.Rational) v2, context);
 		} else if(Type.isSubtype(Type.T_LIST_ANY, lub)) {
-			return evaluate(bop,(Value.List)v1,(Value.List)v2, context);
+			return evaluate(bop,(Constant.List)v1,(Constant.List)v2, context);
 		} else if(Type.isSubtype(Type.T_SET_ANY, lub)) {
-			return evaluate(bop,(Value.Set) v1, (Value.Set) v2, context);
+			return evaluate(bop,(Constant.Set) v1, (Constant.Set) v2, context);
 		} 
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),context,bop);
 		return null;
 	}
 
-	private Value evaluateBoolean(Expr.BinOp bop, Value.Bool v1, Value.Bool v2, Context context) {				
+	private Constant evaluateBoolean(Expr.BinOp bop, Constant.Bool v1, Constant.Bool v2, Context context) {				
 		switch(bop.op) {
 		case AND:
-			return Value.V_BOOL(v1.value & v2.value);
+			return Constant.V_BOOL(v1.value & v2.value);
 		case OR:		
-			return Value.V_BOOL(v1.value | v2.value);
+			return Constant.V_BOOL(v1.value | v2.value);
 		case XOR:
-			return Value.V_BOOL(v1.value ^ v2.value);
+			return Constant.V_BOOL(v1.value ^ v2.value);
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),context,bop);
 		return null;
 	}
 
-	private Value evaluate(Expr.BinOp bop, Value.Rational v1, Value.Rational v2, Context context) {		
+	private Constant evaluate(Expr.BinOp bop, Constant.Rational v1, Constant.Rational v2, Context context) {		
 		switch(bop.op) {
 		case ADD:
-			return Value.V_RATIONAL(v1.value.add(v2.value));
+			return Constant.V_RATIONAL(v1.value.add(v2.value));
 		case SUB:
-			return Value.V_RATIONAL(v1.value.subtract(v2.value));
+			return Constant.V_RATIONAL(v1.value.subtract(v2.value));
 		case MUL:
-			return Value.V_RATIONAL(v1.value.multiply(v2.value));
+			return Constant.V_RATIONAL(v1.value.multiply(v2.value));
 		case DIV:
-			return Value.V_RATIONAL(v1.value.divide(v2.value));
+			return Constant.V_RATIONAL(v1.value.divide(v2.value));
 		case REM:
-			return Value.V_RATIONAL(v1.value.intRemainder(v2.value));	
+			return Constant.V_RATIONAL(v1.value.intRemainder(v2.value));	
 		}
 		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),context,bop);
 		return null;
 	}
 
-	private Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2, Context context) {
+	private Constant evaluate(Expr.BinOp bop, Constant.List v1, Constant.List v2, Context context) {
 		switch(bop.op) {
 		case ADD:
-			ArrayList<Value> vals = new ArrayList<Value>(v1.values);
+			ArrayList<Constant> vals = new ArrayList<Constant>(v1.values);
 			vals.addAll(v2.values);
-			return Value.V_LIST(vals);
+			return Constant.V_LIST(vals);
 		}
 		syntaxError(errorMessage(INVALID_LIST_EXPRESSION),context,bop);
 		return null;
 	}
 
-	private Value evaluate(Expr.BinOp bop, Value.Set v1, Value.Set v2, Context context) {		
+	private Constant evaluate(Expr.BinOp bop, Constant.Set v1, Constant.Set v2, Context context) {		
 		switch(bop.op) {
 		case UNION:
 		{
-			HashSet<Value> vals = new HashSet<Value>(v1.values);			
+			HashSet<Constant> vals = new HashSet<Constant>(v1.values);			
 			vals.addAll(v2.values);
-			return Value.V_SET(vals);
+			return Constant.V_SET(vals);
 		}
 		case INTERSECTION:
 		{
-			HashSet<Value> vals = new HashSet<Value>();			
-			for(Value v : v1.values) {
+			HashSet<Constant> vals = new HashSet<Constant>();			
+			for(Constant v : v1.values) {
 				if(v2.values.contains(v)) {
 					vals.add(v);
 				}
 			}			
-			return Value.V_SET(vals);
+			return Constant.V_SET(vals);
 		}
 		case SUB:
 		{
-			HashSet<Value> vals = new HashSet<Value>();			
-			for(Value v : v1.values) {
+			HashSet<Constant> vals = new HashSet<Constant>();			
+			for(Constant v : v1.values) {
 				if(!v2.values.contains(v)) {
 					vals.add(v);
 				}
 			}			
-			return Value.V_SET(vals);
+			return Constant.V_SET(vals);
 		}
 		}
 		syntaxError(errorMessage(INVALID_SET_EXPRESSION),context,bop);

@@ -44,7 +44,11 @@ import wyjvm.attributes.Code.Handler;
 import wyjvm.attributes.LineNumberTable;
 import wyjvm.attributes.SourceFile;
 import wyjvm.io.BinaryOutputStream;
-import wyjvm.lang.*;
+import wyjvm.lang.BytecodeAttribute;
+import wyjvm.lang.Bytecode;
+import wyjvm.lang.JvmType;
+import wyjvm.lang.ClassFile;
+import wyjvm.lang.JvmTypes;
 import wyjvm.lang.Modifier;
 import wyjvm.util.Validation;
 import static wyjvm.lang.JvmTypes.*;
@@ -132,7 +136,7 @@ public class Wyil2JavaBuilder implements Builder {
 		
 		boolean addMainLauncher = false;		
 								
-		HashMap<Constant,Integer> constants = new HashMap<Constant,Integer>();
+		HashMap<JvmConstant,Integer> constants = new HashMap<JvmConstant,Integer>();
 		for(WyilFile.MethodDeclaration method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
@@ -149,25 +153,25 @@ public class Wyil2JavaBuilder implements Builder {
 		return cf;
 	}	
 	
-	private void buildConstants(HashMap<Constant,Integer> constants, ClassFile cf) {						
+	private void buildConstants(HashMap<JvmConstant,Integer> constants, ClassFile cf) {						
 		buildCoercions(constants,cf);
 		buildValues(constants,cf);
 	}
 	
-	private void buildCoercions(HashMap<Constant,Integer> constants, ClassFile cf) {
-		HashSet<Constant> done = new HashSet<Constant>();
-		HashMap<Constant,Integer> original = constants;
+	private void buildCoercions(HashMap<JvmConstant,Integer> constants, ClassFile cf) {
+		HashSet<JvmConstant> done = new HashSet<JvmConstant>();
+		HashMap<JvmConstant,Integer> original = constants;
 		// this could be a little more efficient I think!!		
 		while(done.size() != constants.size()) {
 			// We have to clone the constants map, since it may be expanded as a
 			// result of buildCoercion(). This will occur if the coercion
 			// constructed requires a helper coercion that was not in the
 			// original constants map.  
-			HashMap<Constant,Integer> nconstants = new HashMap<Constant,Integer>(constants);		
-			for(Map.Entry<Constant,Integer> entry : constants.entrySet()) {
-				Constant e = entry.getKey();
-				if(!done.contains(e) && e instanceof Coercion) {
-					Coercion c = (Coercion) e;
+			HashMap<JvmConstant,Integer> nconstants = new HashMap<JvmConstant,Integer>(constants);		
+			for(Map.Entry<JvmConstant,Integer> entry : constants.entrySet()) {
+				JvmConstant e = entry.getKey();
+				if(!done.contains(e) && e instanceof JvmCoercion) {
+					JvmCoercion c = (JvmCoercion) e;
 					buildCoercion(c.from,c.to,entry.getValue(),nconstants,cf);
 				} 
 				done.add(e);
@@ -177,15 +181,15 @@ public class Wyil2JavaBuilder implements Builder {
 		original.putAll(constants);
 	}
 	
-	private void buildValues(HashMap<Constant,Integer> constants, ClassFile cf) {
+	private void buildValues(HashMap<JvmConstant,Integer> constants, ClassFile cf) {
 		int nvalues = 0;
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		
-		for(Map.Entry<Constant,Integer> entry : constants.entrySet()) {			
-			Constant c = entry.getKey();
-			if(c instanceof ValueConst) {
+		for(Map.Entry<JvmConstant,Integer> entry : constants.entrySet()) {			
+			JvmConstant c = entry.getKey();
+			if(c instanceof JvmValue) {
 				nvalues++;
-				Value constant = ((ValueConst)c).value;
+				Constant constant = ((JvmValue)c).value;
 				int index = entry.getValue();
 
 				// First, create the static final field that will hold this constant 
@@ -253,7 +257,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private List<ClassFile.Method> build(WyilFile.MethodDeclaration method,
-			HashMap<Constant, Integer> constants) {
+			HashMap<JvmConstant, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
 		for(WyilFile.Case c : method.cases()) {
@@ -270,7 +274,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private ClassFile.Method build(int caseNum, WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method, HashMap<Constant,Integer> constants) {		
+			WyilFile.MethodDeclaration method, HashMap<JvmConstant,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -309,7 +313,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method, HashMap<Constant,Integer> constants) {
+			WyilFile.MethodDeclaration method, HashMap<JvmConstant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic() || method.isProtected()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
@@ -373,7 +377,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private ArrayList<Bytecode> translate(WyilFile.Case mcase,
-			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
+			HashMap<JvmConstant, Integer> constants, ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		translate(mcase.body(), mcase.body().numSlots(), constants, handlers,
@@ -392,7 +396,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            --- list to insert bytecodes into *
 	 */
 	private void translate(Block blk, int freeSlot,
-			HashMap<Constant, Integer> constants, 
+			HashMap<JvmConstant, Integer> constants, 
 			ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers,
 			ArrayList<Bytecode> bytecodes) {
@@ -431,7 +435,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private int translate(Entry entry, int freeSlot,
-			HashMap<Constant, Integer> constants,
+			HashMap<JvmConstant, Integer> constants,
 			ArrayList<UnresolvedHandler> handlers, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
@@ -529,16 +533,16 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private void translate(Code.Const c, int freeSlot,
-			HashMap<Constant,Integer> constants,
+			HashMap<JvmConstant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
-		Value constant = c.constant;
+		Constant constant = c.constant;
 		JvmType jt = convertType(constant.type());
 		
-		if (constant instanceof Value.Rational || constant instanceof Value.Bool
-				|| constant instanceof Value.Null || constant instanceof Value.Byte) {
+		if (constant instanceof Constant.Rational || constant instanceof Constant.Bool
+				|| constant instanceof Constant.Null || constant instanceof Constant.Byte) {
 			translate(constant,freeSlot,bytecodes);					
 		} else {
-			int id = ValueConst.get(constant,constants);			
+			int id = JvmValue.get(constant,constants);			
 			String name = "constant$" + id;
 			bytecodes.add(new Bytecode.GetField(owner, name, jt, Bytecode.STATIC));
 			// the following is necessary to prevent in-place updates of our
@@ -549,7 +553,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private void translate(Code.Convert c, int freeSlot,
-			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
 		addCoercion(c.type, c.result, freeSlot, constants, bytecodes);
 		bytecodes.add(new Bytecode.Store(c.target, convertType(c.result)));
@@ -723,15 +727,15 @@ public class Wyil2JavaBuilder implements Builder {
 
 		ArrayList<Pair<Integer, String>> cases = new ArrayList();
 		boolean canUseSwitchBytecode = true;
-		for (Pair<Value, String> p : c.branches) {
+		for (Pair<Constant, String> p : c.branches) {
 			// first, check whether the switch value is indeed an integer.
-			Value v = (Value) p.first();
-			if (!(v instanceof Value.Integer)) {
+			Constant v = (Constant) p.first();
+			if (!(v instanceof Constant.Integer)) {
 				canUseSwitchBytecode = false;
 				break;
 			}
 			// second, check whether integer value can fit into a Java int
-			Value.Integer vi = (Value.Integer) v;
+			Constant.Integer vi = (Constant.Integer) v;
 			int iv = vi.value.intValue();
 			if (!BigInteger.valueOf(iv).equals(vi.value)) {
 				canUseSwitchBytecode = false;
@@ -751,8 +755,8 @@ public class Wyil2JavaBuilder implements Builder {
 		} else {
 			// ok, in this case we have to fall back to series of the if
 			// conditions. Not ideal.  			
-			for (Pair<Value, String> p : c.branches) {
-				Value value = p.first();
+			for (Pair<Constant, String> p : c.branches) {
+				Constant value = p.first();
 				String target = p.second();
 				translate(value, freeSlot, bytecodes);
 				bytecodes
@@ -766,7 +770,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(Code.TryCatch c, Block.Entry entry, int freeSlot,
 			ArrayList<UnresolvedHandler> handlers,
-			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		
 		// this code works by redirecting *all* whiley exceptions into the
 		// trampoline block. The trampoline then pulls out the matching ones,
@@ -971,7 +975,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private void translate(Code.IfIs c, Entry stmt, int freeSlot,
-			HashMap<Constant,Integer> constants, ArrayList<Bytecode> bytecodes) {						
+			HashMap<JvmConstant,Integer> constants, ArrayList<Bytecode> bytecodes) {						
 		
 		// In this case, we're updating the type of a local variable. To
 		// make this work, we must update the JVM type of that slot as well
@@ -1002,7 +1006,7 @@ public class Wyil2JavaBuilder implements Builder {
 	// see whether what's on the top of the stack (the value) is a subtype of
 	// the type being tested.  
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
-			ArrayList<Bytecode> bytecodes, HashMap<Constant,Integer> constants) {		
+			ArrayList<Bytecode> bytecodes, HashMap<JvmConstant,Integer> constants) {		
 		
 		// First, try for the easy cases
 		
@@ -1027,8 +1031,8 @@ public class Wyil2JavaBuilder implements Builder {
 			
 		} else {
 			// Fall-back to an external (recursive) check			
-			Value constant = Value.V_TYPE(test);
-			int id = ValueConst.get(constant,constants);			
+			Constant constant = Constant.V_TYPE(test);
+			int id = JvmValue.get(constant,constants);			
 			String name = "constant$" + id;
 
 			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.STATIC));
@@ -1647,47 +1651,47 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translate(Value v, int freeSlot,
+	private void translate(Constant v, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		if(v instanceof Value.Null) {
-			translate((Value.Null)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Bool) {
-			translate((Value.Bool)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Byte) {
-			translate((Value.Byte)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Char) {
-			translate((Value.Char)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Integer) {
-			translate((Value.Integer)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Type) {
-			translate((Value.Type)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Rational) {
-			translate((Value.Rational)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Strung) {
-			translate((Value.Strung)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Set) {
-			translate((Value.Set)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.List) {
-			translate((Value.List)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Record) {
-			translate((Value.Record)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Map) {
-			translate((Value.Map)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Tuple) {
-			translate((Value.Tuple)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.FunctionOrMethod) {
-			translate((Value.FunctionOrMethod)v,freeSlot,bytecodes);
+		if(v instanceof Constant.Null) {
+			translate((Constant.Null)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Bool) {
+			translate((Constant.Bool)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Byte) {
+			translate((Constant.Byte)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Char) {
+			translate((Constant.Char)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Integer) {
+			translate((Constant.Integer)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Type) {
+			translate((Constant.Type)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Rational) {
+			translate((Constant.Rational)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Strung) {
+			translate((Constant.Strung)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Set) {
+			translate((Constant.Set)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.List) {
+			translate((Constant.List)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Record) {
+			translate((Constant.Record)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Map) {
+			translate((Constant.Map)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Tuple) {
+			translate((Constant.Tuple)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.FunctionOrMethod) {
+			translate((Constant.FunctionOrMethod)v,freeSlot,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
 	}
 	
-	protected void translate(Value.Null e, int freeSlot,
+	protected void translate(Constant.Null e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(null));
 	}
 	
-	protected void translate(Value.Bool e, int freeSlot,
+	protected void translate(Constant.Bool e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		if (e.value) {
 			bytecodes.add(new Bytecode.LoadConst(1));
@@ -1696,7 +1700,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	protected void translate(Value.Type e, int freeSlot,
+	protected void translate(Constant.Type e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream bout = new BinaryOutputStream(jout);
@@ -1715,15 +1719,15 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.STATIC));		
 	}
 	
-	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Constant.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(e.value));		
 	}
 	
-	protected void translate(Value.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(Constant.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(e.value));		
 	}
 			
-	protected void translate(Value.Integer e, int freeSlot,			
+	protected void translate(Constant.Integer e, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
 		BigInteger num = e.value;
 		
@@ -1762,7 +1766,7 @@ public class Wyil2JavaBuilder implements Builder {
 	
 	}
 	
-	protected void translate(Value.Rational e, int freeSlot,
+	protected void translate(Constant.Rational e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		BigRational rat = e.value;
 		BigInteger den = rat.denominator();
@@ -1846,12 +1850,12 @@ public class Wyil2JavaBuilder implements Builder {
 		}		
 	}
 	
-	protected void translate(Value.Strung e, int freeSlot,
+	protected void translate(Constant.Strung e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		bytecodes.add(new Bytecode.LoadConst(e.value));
 	}
 	
-	protected void translate(Value.Set lv, int freeSlot,
+	protected void translate(Constant.Set lv, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
 		bytecodes.add(new Bytecode.New(WHILEYSET));		
 		bytecodes.add(new Bytecode.Dup(WHILEYSET));
@@ -1860,7 +1864,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.SPECIAL));
 		
 		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
-		for (Value e : lv.values) {
+		for (Constant e : lv.values) {
 			bytecodes.add(new Bytecode.Dup(WHILEYSET));
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
@@ -1870,7 +1874,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}		
 	}
 
-	protected void translate(Value.List lv, int freeSlot,
+	protected void translate(Constant.List lv, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		bytecodes.add(new Bytecode.New(WHILEYLIST));		
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
@@ -1880,7 +1884,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.SPECIAL));
 		
 		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
-		for (Value e : lv.values) {	
+		for (Constant e : lv.values) {	
 			bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
@@ -1890,7 +1894,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}				
 	}
 
-	protected void translate(Value.Tuple lv, int freeSlot,
+	protected void translate(Constant.Tuple lv, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		bytecodes.add(new Bytecode.New(WHILEYTUPLE));		
 		bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
@@ -1900,7 +1904,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.SPECIAL));
 		
 		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
-		for (Value e : lv.values) {	
+		for (Constant e : lv.values) {	
 			bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
@@ -1910,12 +1914,12 @@ public class Wyil2JavaBuilder implements Builder {
 		}				
 	}
 	
-	protected void translate(Value.Record expr, int freeSlot,
+	protected void translate(Constant.Record expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		construct(WHILEYRECORD, freeSlot, bytecodes);
-		for (Map.Entry<String, Value> e : expr.values.entrySet()) {
+		for (Map.Entry<String, Constant> e : expr.values.entrySet()) {
 			Type et = e.getValue().type();
 			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
@@ -1927,14 +1931,14 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 	
-	protected void translate(Value.Map expr, int freeSlot,
+	protected void translate(Constant.Map expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		
 		construct(WHILEYMAP, freeSlot, bytecodes);
 		
-		for (Map.Entry<Value, Value> e : expr.values.entrySet()) {
+		for (Map.Entry<Constant, Constant> e : expr.values.entrySet()) {
 			Type kt = e.getKey().type();
 			Type vt = e.getValue().type();
 			bytecodes.add(new Bytecode.Dup(WHILEYMAP));			
@@ -1948,7 +1952,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 	
-	protected void translate(Value.FunctionOrMethod e, int freeSlot,
+	protected void translate(Constant.FunctionOrMethod e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		
@@ -1958,7 +1962,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 
 	protected void addCoercion(Type from, Type to, int freeSlot,
-			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		
 		// First, deal with coercions which require a change of representation
 		// when going into a union.  For example, bool must => Boolean.
@@ -1979,7 +1983,7 @@ public class Wyil2JavaBuilder implements Builder {
 			buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
 		} else {			
 			// ok, it's a harder case so we use an explicit coercion function								
-			int id = Coercion.get(from,to,constants);
+			int id = JvmCoercion.get(from,to,constants);
 			String name = "coercion$" + id;
 			JvmType.Function ft = new JvmType.Function(convertType(to), convertType(from));
 			bytecodes.add(new Bytecode.Invoke(owner, name, ft, Bytecode.STATIC));
@@ -2051,7 +2055,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * 
 	 */
 	protected void buildCoercion(Type from, Type to, int id,
-			HashMap<Constant, Integer> constants, ClassFile cf) {
+			HashMap<JvmConstant, Integer> constants, ClassFile cf) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		
 		int freeSlot = 1;
@@ -2072,7 +2076,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	protected void buildCoercion(Type from, Type to, int freeSlot,
-			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		
 		// Second, case analysis on the various kinds of coercion
 		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
@@ -2107,7 +2111,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
-			int freeSlot, HashMap<Constant, Integer> constants,
+			int freeSlot, HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		int oldSlot = freeSlot++;
 		int newSlot = freeSlot++;		
@@ -2136,7 +2140,7 @@ public class Wyil2JavaBuilder implements Builder {
 	
 		
 	protected void buildCoercion(Type.List fromType, Type.List toType, 
-			int freeSlot, HashMap<Constant, Integer> constants,
+			int freeSlot, HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
 		if(fromType.element() == Type.T_VOID) {
@@ -2183,7 +2187,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	protected void buildCoercion(Type.List fromType, Type.Map toType, 
-			int freeSlot, HashMap<Constant, Integer> constants,
+			int freeSlot, HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 
 		if(fromType.element() == Type.T_VOID) {
@@ -2237,7 +2241,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	protected void buildCoercion(Type.Map fromType, Type.Map toType, 
-			int freeSlot, HashMap<Constant, Integer> constants,
+			int freeSlot, HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
 		if (fromType.key() == Type.T_VOID || toType.key() == Type.T_VOID) {
@@ -2306,7 +2310,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	protected void buildCoercion(Type.Set fromType, Type.Map toType, 
-			int freeSlot, HashMap<Constant, Integer> constants,
+			int freeSlot, HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		// this case can only happen in one situation --- when the set is empty.
 		
@@ -2320,7 +2324,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	protected void buildCoercion(Type.List fromType, Type.Set toType,
-			int freeSlot, HashMap<Constant,Integer> constants,			
+			int freeSlot, HashMap<JvmConstant,Integer> constants,			
 			ArrayList<Bytecode> bytecodes) {
 						
 		if(fromType.element() == Type.T_VOID) {
@@ -2366,7 +2370,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	protected void buildCoercion(Type.Set fromType, Type.Set toType,
-			int freeSlot, HashMap<Constant,Integer> constants,
+			int freeSlot, HashMap<JvmConstant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
 		if(fromType.element() == Type.T_VOID) {
@@ -2412,7 +2416,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private void buildCoercion(Type.Record fromType, Type.Record toType, 
-			int freeSlot, HashMap<Constant,Integer> constants,
+			int freeSlot, HashMap<JvmConstant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {		
 		int oldSlot = freeSlot++;
 		int newSlot = freeSlot++;		
@@ -2443,7 +2447,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private void buildCoercion(Type.Union from, Type to, 
-			int freeSlot, HashMap<Constant,Integer> constants,
+			int freeSlot, HashMap<JvmConstant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {	
 		
 		String exitLabel = freshLabel();
@@ -2479,7 +2483,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private void buildCoercion(Type from, Type.Union to, 
-			int freeSlot, HashMap<Constant,Integer> constants,
+			int freeSlot, HashMap<JvmConstant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {	
 		Type.Union t2 = (Type.Union) to;
 
@@ -2761,15 +2765,16 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @author David J. Pearce
 	 *
 	 */
-	private abstract static class Constant {}
-	private static final class ValueConst extends Constant {
-		public final Value value;
-		public ValueConst(Value v) {
+	private abstract static class JvmConstant {}
+	
+	private static final class JvmValue extends JvmConstant {
+		public final Constant value;
+		public JvmValue(Constant v) {
 			value = v;
 		}
 		public boolean equals(Object o) {
-			if(o instanceof ValueConst) {
-				ValueConst vc = (ValueConst) o;
+			if(o instanceof JvmValue) {
+				JvmValue vc = (JvmValue) o;
 				return value.equals(vc.value);
 			}
 			return false;
@@ -2777,8 +2782,8 @@ public class Wyil2JavaBuilder implements Builder {
 		public int hashCode() {
 			return value.hashCode();
 		}
-		public static int get(Value value, HashMap<Constant,Integer> constants) {
-			ValueConst vc = new ValueConst(value);
+		public static int get(Constant value, HashMap<JvmConstant,Integer> constants) {
+			JvmValue vc = new JvmValue(value);
 			Integer r = constants.get(vc);
 			if(r != null) {
 				return r;
@@ -2789,16 +2794,16 @@ public class Wyil2JavaBuilder implements Builder {
 			}			
 		}
 	}
-	private static final class Coercion extends Constant {
+	private static final class JvmCoercion extends JvmConstant {
 		public final Type from;
 		public final Type to;
-		public Coercion(Type from, Type to) {
+		public JvmCoercion(Type from, Type to) {
 			this.from = from;
 			this.to = to;
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Coercion) {
-				Coercion c = (Coercion) o;
+			if(o instanceof JvmCoercion) {
+				JvmCoercion c = (JvmCoercion) o;
 				return from.equals(c.from) && to.equals(c.to);
 			}
 			return false;
@@ -2806,8 +2811,8 @@ public class Wyil2JavaBuilder implements Builder {
 		public int hashCode() {
 			return from.hashCode() + to.hashCode();
 		}
-		public static int get(Type from, Type to, HashMap<Constant,Integer> constants) {
-			Coercion vc = new Coercion(from,to);
+		public static int get(Type from, Type to, HashMap<JvmConstant,Integer> constants) {
+			JvmCoercion vc = new JvmCoercion(from,to);
 			Integer r = constants.get(vc);
 			if(r != null) {
 				return r;

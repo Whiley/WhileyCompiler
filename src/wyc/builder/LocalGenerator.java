@@ -25,7 +25,7 @@ import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Type;
-import wyil.lang.Value;
+import wyil.lang.Constant;
 import wyil.util.Pair;
 import wyil.util.Triple;
 
@@ -118,7 +118,7 @@ public final class LocalGenerator {
 			// could be rewritten into x>=5. 
 			
 			Block blk = generate(condition,freeRegister,freeRegister+1,environment);
-			blk.append(Code.Const(freeRegister+1,Value.V_BOOL(true)),attributes(condition));
+			blk.append(Code.Const(freeRegister+1,Constant.V_BOOL(true)),attributes(condition));
 			if(isAssumption) {
 				blk.append(Code.Assume(Type.T_BOOL, freeRegister,
 						freeRegister + 1, Code.Comparator.EQ, message),
@@ -221,7 +221,7 @@ public final class LocalGenerator {
 			
 			Block blk = generate(condition, freeRegister, freeRegister + 1,
 					environment);
-			blk.append(Code.Const(freeRegister + 1, Value.V_BOOL(true)),
+			blk.append(Code.Const(freeRegister + 1, Constant.V_BOOL(true)),
 					attributes(condition));
 			blk.append(Code.If(Type.T_BOOL, freeRegister, freeRegister + 1,
 					Code.Comparator.EQ, target), attributes(condition));
@@ -237,7 +237,7 @@ public final class LocalGenerator {
 	}
 
 	private Block generateCondition(String target, Expr.Constant c, int freeRegister, HashMap<String,Integer> environment) {
-		Value.Bool b = (Value.Bool) c.value;
+		Constant.Bool b = (Constant.Bool) c.value;
 		Block blk = new Block(environment.size());
 		if (b.value) {
 			blk.append(Code.Goto(target));
@@ -270,7 +270,7 @@ public final class LocalGenerator {
 		
 		if (cop == Code.Comparator.EQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
-				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {
+				&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
 			// this is a simple rewrite to enable type inference.
 			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
@@ -280,7 +280,7 @@ public final class LocalGenerator {
 			blk.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.Comparator.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
-				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
+				&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {			
 			// this is a simple rewrite to enable type inference.
 			String exitLabel = Block.freshLabel();
 			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
@@ -590,14 +590,14 @@ public final class LocalGenerator {
 	private Block generate(Expr.FunctionOrMethod s, int target,
 			int freeRegister, HashMap<String, Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(target, Value.V_FUN(s.nid, s.type.raw())),
+		blk.append(Code.Const(target, Constant.V_FUN(s.nid, s.type.raw())),
 				attributes(s));
 		return blk;
 	}
 	
 	private Block generate(Expr.ConstantAccess v, int target, int freeRegister, HashMap<String,Integer> environment) throws ResolveError {						
 		Block blk = new Block(environment.size());
-		Value val = v.value;				
+		Constant val = v.value;				
 		blk.append(Code.Const(target,val),attributes(v));
 		return blk;
 	}
@@ -631,10 +631,10 @@ public final class LocalGenerator {
 			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			blk = generateCondition(falseLabel, v.mhs, freeRegister, environment);
-			blk.append(Code.Const(target,Value.V_BOOL(true)), attributes(v));
+			blk.append(Code.Const(target,Constant.V_BOOL(true)), attributes(v));
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(falseLabel));
-			blk.append(Code.Const(target,Value.V_BOOL(false)), attributes(v));
+			blk.append(Code.Const(target,Constant.V_BOOL(false)), attributes(v));
 			blk.append(Code.Label(exitLabel));
 			break;							
 		default:
@@ -692,10 +692,10 @@ public final class LocalGenerator {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			Block blk = generateCondition(trueLabel, v, freeRegister, environment);
-			blk.append(Code.Const(target,Value.V_BOOL(false)), attributes(v));			
+			blk.append(Code.Const(target,Constant.V_BOOL(false)), attributes(v));			
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
-			blk.append(Code.Const(target,Value.V_BOOL(true)), attributes(v));				
+			blk.append(Code.Const(target,Constant.V_BOOL(true)), attributes(v));				
 			blk.append(Code.Label(exitLabel));			
 			return blk;
 		}
@@ -803,10 +803,10 @@ public final class LocalGenerator {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();			
 			Block blk = generateCondition(trueLabel, e, freeRegister, _environment);					
-			blk.append(Code.Const(target, Value.V_BOOL(false)), attributes(e));					
+			blk.append(Code.Const(target, Constant.V_BOOL(false)), attributes(e));					
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
-			blk.append(Code.Const(target, Value.V_BOOL(true)), attributes(e));			
+			blk.append(Code.Const(target, Constant.V_BOOL(true)), attributes(e));			
 			blk.append(Code.Label(exitLabel));			
 			return blk;
 		}

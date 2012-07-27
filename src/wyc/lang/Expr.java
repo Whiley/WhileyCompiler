@@ -123,9 +123,9 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class Constant extends SyntacticElement.Impl implements Expr {
-		public final Value value;
+		public final wyil.lang.Constant value;
 
-		public Constant(Value val, Attribute... attributes) {
+		public Constant(wyil.lang.Constant val, Attribute... attributes) {
 			super(attributes);
 			this.value = val;
 		}
@@ -491,7 +491,7 @@ public interface Expr extends SyntacticElement {
 	// should extend abstract dot access?
 	public static class ConstantAccess extends AbstractDotAccess {
 		public final NameID nid;
-		public Value value;
+		public wyil.lang.Constant value;
 
 		public ConstantAccess(ModuleAccess src, String name, NameID nid,
 				Attribute... attributes) {

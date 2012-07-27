@@ -9,7 +9,7 @@ import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
 import wyil.lang.NameID;
 import wyil.lang.Type;
-import wyil.lang.Value;
+import wyil.lang.Constant;
 import wyil.util.Triple;
 
 
@@ -39,9 +39,9 @@ public abstract class AbstractResolver<T extends Exception> {
 	
 	public abstract Path.ID resolveAsModule(String name, Context context) throws Exception;
 	
-	public abstract Value resolveAsConstant(NameID nid) throws Exception;
+	public abstract Constant resolveAsConstant(NameID nid) throws Exception;
 	
-	public abstract Value resolveAsConstant(Expr e, Context context) ;
+	public abstract Constant resolveAsConstant(Expr e, Context context) ;
 	
 	// =========================================================================
 	// expandAsType
