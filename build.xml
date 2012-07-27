@@ -5,12 +5,14 @@
 
   <target name="compile-all">
     <subant failonerror="true" target="compile">
+      <property name="version" value="${version}"/>
       <fileset dir="modules" includes="*/build.xml"/>
     </subant>
   </target>
 
   <target name="build-all">
     <subant failonerror="true" target="build">
+      <property name="version" value="${version}"/>
       <fileset dir="modules" includes="*/build.xml"/>
     </subant>
   </target>
