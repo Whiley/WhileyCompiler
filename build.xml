@@ -120,7 +120,9 @@
    <fileset file="lib/*.jar"/>
    <fileset file="*.jar"/>
    <fileset file="*.tgz"/>
-   <fileset dir="src" includes="**/*.class"/>
+   <fileset dir="." includes="**/*.class"/>
+   <fileset dir="." includes="**/*.wyil"/>
+   <fileset dir="." includes="**/*.wyasm"/>
    <fileset dir="tmp/" includes="**"/>
   </delete>
  </target>
