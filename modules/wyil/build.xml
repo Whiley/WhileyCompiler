@@ -1,4 +1,4 @@
-<project name="whiley-compiler" default="build">  
+<project name="wyil" default="build">  
 
   <target name="compile">
     <echo message="${ant.project.name}"/>
@@ -9,21 +9,21 @@
 
   <target name="build" depends="compile">
     <echo message="${ant.project.name}"/>
-    <jar destfile="../../lib/wyc-${version}.jar">
+    <jar destfile="../../lib/wyil-${version}.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
   </target>
   
   <target name="doc">
     <javadoc
-       packagenames="wyc.*,wybs.*,wyil.*,wyone.*,wyautl.*"
+       packagenames="wybs.*,wyil.*,wyone.*,wyautl.*"
        excludepackagenames="wyil.testing.*,wyone..*"
        sourcepath="src/"
-       destdir="../../docs/wyc/api"
+       destdir="../../docs/wyil/api"
        author="true"
        version="true"
        use="true"
-       windowtitle="Whiley Compiler API">
+       windowtitle="Whiley Internmediate Language (WYIL) API">
       <doctitle><![CDATA[<h1>The Whiley Programming Language (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       </javadoc>

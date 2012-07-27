@@ -2,7 +2,7 @@
 
   <target name="compile">
     <echo message="${ant.project.name}"/>
-    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**" classpath="../core/src"> 
+    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**" classpath="../wyil/src"> 
       <src path="src"/>
     </javac>
   </target>
