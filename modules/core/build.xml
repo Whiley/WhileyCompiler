@@ -1,4 +1,4 @@
-<project name="whiley-core" default="jar">  
+<project name="whiley-core" default="build">  
   <property name="version" value="0.3.16"/>
 
   <target name="compile">
@@ -7,14 +7,14 @@
     </javac>
   </target>
 
-  <target name="jar" depends="compile">
+  <target name="build" depends="compile">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
       <attribute name="Main-Class" value="wyjc.Main"/>
-      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+      <attribute name="Implementation-Version" value="${version}"/>
     </manifest>
-    <jar destfile="lib/whiley-core.jar" manifest="tmp/MANIFEST.MF">
+    <jar destfile="../../lib/whiley-core-${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -37,7 +37,6 @@
 
  <target name="clean">
   <delete includeEmptyDirs="true" failonerror="false">
-   <fileset file="lib/*.jar"/>
    <fileset dir="." includes="**/*.wyil,**/*.wyasm"/>
    <fileset dir="tmp/" includes="**"/>
   </delete>
