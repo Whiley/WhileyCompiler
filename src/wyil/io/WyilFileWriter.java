@@ -226,13 +226,115 @@ public final class WyilFileWriter {
 	}
 
 	private void writeConstantPool(BinaryOutputStream output) throws IOException {
-		//System.out.println("Writing " + stringPool.size() + " constant item(s).");
-		ConstantWriter bout = new ConstantWriter(output);
-		for (Value v : constantPool) {
-			bout.write(v);
+		//System.out.println("Writing " + stringPool.size() + " constant item(s).");		
+		
+		for (Value val : constantPool) {
+			if(val instanceof Value.Null) {
+				output.write_uv(CONSTANT_Null);
+				
+			} else if(val instanceof Value.Bool) {
+				Value.Bool b = (Value.Bool) val; 
+				output.write_uv(b.value ? CONSTANT_True : CONSTANT_False);							
+				
+			} else if(val instanceof Value.Byte) {
+				Value.Byte b = (Value.Byte) val;
+				output.write_uv(CONSTANT_Byte);		
+				output.write_u8(b.value);
+				
+			} else if(val instanceof Value.Char) {
+				Value.Char c = (Value.Char) val;
+				output.write_uv(CONSTANT_Char);		
+				output.write_uv(c.value);	
+				
+			} else if(val instanceof Value.Integer) {
+				Value.Integer i = (Value.Integer) val; 					
+				BigInteger num = i.value;
+				byte[] numbytes = num.toByteArray();
+				output.write_uv(CONSTANT_Int);
+				output.write_uv(numbytes.length);
+				output.write(numbytes);			
+				
+			} else if(val instanceof Value.Strung) {
+				Value.Strung s = (Value.Strung) val;
+				output.write_uv(CONSTANT_String);
+				String value = s.value;
+				output.write_uv(stringCache.get(value));				
+				
+			} else if(val instanceof Value.Rational) {
+				Value.Rational r = (Value.Rational) val;
+				output.write_uv(CONSTANT_Real);
+				BigRational br = r.value;
+				BigInteger num = br.numerator();
+				BigInteger den = br.denominator();
+
+				byte[] numbytes = num.toByteArray();
+				output.write_uv(numbytes.length);
+				output.write(numbytes);
+
+				byte[] denbytes = den.toByteArray();
+				output.write_uv(denbytes.length);
+				output.write(denbytes);
+				
+			} else if(val instanceof Value.Set) {
+				Value.Set s = (Value.Set) val;
+				output.write_uv(CONSTANT_Set);
+				output.write_uv(s.values.size());
+				for(Value v : s.values) {
+					int index = constantCache.get(v);
+					output.write_uv(index);
+				}
+				
+			} else if(val instanceof Value.List) {				
+				Value.List s = (Value.List) val;
+				output.write_uv(CONSTANT_List);
+				output.write_uv(s.values.size());
+				for(Value v : s.values) {
+					int index = constantCache.get(v);
+					output.write_uv(index);
+				}
+				
+			} else if(val instanceof Value.Map) {
+				Value.Map m = (Value.Map) val;
+				output.write_uv(CONSTANT_Map);
+				output.write_uv(m.values.size());
+				for(java.util.Map.Entry<Value,Value> e : m.values.entrySet()) {
+					int keyIndex = constantCache.get(e.getKey());
+					output.write_uv(keyIndex);
+					int valIndex = constantCache.get(e.getValue());
+					output.write_uv(valIndex);
+				}		
+				
+			} else if(val instanceof Value.Record) {
+				Value.Record r = (Value.Record) val; 
+				output.write_uv(CONSTANT_Record);
+				output.write_uv(r.values.size());
+				for(java.util.Map.Entry<String,Value> v : r.values.entrySet()) {
+					output.write_uv(stringCache.get(v.getKey()));
+					int index = constantCache.get(v.getValue());
+					output.write_uv(index);
+				}
+				
+			} else if(val instanceof Value.Tuple) {
+				Value.Tuple t = (Value.Tuple) val; 
+				output.write_uv(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
+				output.write_uv(t.values.size());
+				for(Value v : t.values) {
+					int index = constantCache.get(v);
+					output.write_uv(index);
+				}
+				
+			} else if(val instanceof Value.FunctionOrMethod) {
+				Value.FunctionOrMethod fm = (Value.FunctionOrMethod) val; 
+				Type.FunctionOrMethod t = fm.type();
+				output.write_uv(t instanceof Type.Function ? CONSTANT_Function : CONSTANT_Method);
+				output.write_uv(typeCache.get(t));
+				output.write_uv(nameCache.get(fm.name));				
+			} else {
+				throw new RuntimeException("Unknown value encountered - " + val);
+			}
 		}
 	}
-
+	
 	private void writeTypePool(BinaryOutputStream output) throws IOException {
 		//System.out.println("Writing " + stringPool.size() + " type item(s).");
 		Type.BinaryWriter bout = new Type.BinaryWriter(output);
@@ -1027,15 +1129,15 @@ public final class WyilFileWriter {
 	}
 	
 	private int addConstantItem(Value v) {
-		
-		// TODO: this could be made way more efficient. In particular, we should
-		// combine resources into a proper aliased pool rather than write out
-		// types individually ... because that's sooooo inefficient!
 	
 		Integer index = constantCache.get(v);
 		if(index == null) {
+			// All subitems must have lower indices than the containing item.
+			// So, we must add subitems first before attempting to allocate a
+			// place for this value.   
 			addConstantSubitems(v);
-			// all subitems must have lower indices
+			
+			// finally allocate space for this constant.
 			int i = constantPool.size();
 			constantCache.put(v, i);
 			constantPool.add(v);			
@@ -1154,163 +1256,7 @@ public final class WyilFileWriter {
 			this.nameIndex = nameIndex;
 		}				
 	}		
-	
-	// FIXME: this is really a temporary class because we ideally want to
-	// exploit the potential for sharing amongst substructure of values.
-	private class ConstantWriter {
-		private final BinaryOutputStream output;
 		
-		public ConstantWriter(BinaryOutputStream output) {
-			this.output = output;
-		}
-		
-		public void write(Value val) throws IOException {
-			if(val instanceof Value.Null) {
-				write((Value.Null) val);
-			} else if(val instanceof Value.Bool) {
-				write((Value.Bool) val);
-			} else if(val instanceof Value.Byte) {
-				write((Value.Byte) val);
-			} else if(val instanceof Value.Char) {
-				write((Value.Char) val);
-			} else if(val instanceof Value.Integer) {
-				write((Value.Integer) val);
-			} else if(val instanceof Value.Rational) {
-				write((Value.Rational) val);
-			} else if(val instanceof Value.Strung) {
-				write((Value.Strung) val);
-			} else if(val instanceof Value.Set) {
-				write((Value.Set) val);
-			} else if(val instanceof Value.List) {
-				write((Value.List) val);
-			} else if(val instanceof Value.Map) {
-				write((Value.Map) val);
-			} else if(val instanceof Value.Record) {
-				write((Value.Record) val);
-			} else if(val instanceof Value.Tuple) {
-				write((Value.Tuple) val);
-			} else if(val instanceof Value.FunctionOrMethod) {
-				write((Value.FunctionOrMethod) val);
-			} else {
-				throw new RuntimeException("Unknown value encountered - " + val);
-			}
-		}
-		
-		public void write(Value.Null expr) throws IOException {				
-			output.write_uv(CONSTANT_Null);
-		}
-		
-		public void write(Value.Bool expr) throws IOException {
-			
-			if(expr.value) {
-				output.write_uv(CONSTANT_True);
-			} else {
-				output.write_uv(CONSTANT_False);
-			}
-		}
-		
-		public void write(Value.Byte expr) throws IOException {		
-			output.write_uv(CONSTANT_Byte);		
-			output.write_u8(expr.value);		
-		}
-		
-		public void write(Value.Char expr) throws IOException {		
-			output.write_uv(CONSTANT_Char);		
-			output.write_uv(expr.value);		
-		}
-		
-		public void write(Value.Integer expr) throws IOException {		
-			output.write_uv(CONSTANT_Int);		
-			BigInteger num = expr.value;
-			byte[] numbytes = num.toByteArray();
-			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_uv(numbytes.length);
-			output.write(numbytes);
-		}
-
-		public void write(Value.Rational expr) throws IOException {		
-			
-			output.write_uv(CONSTANT_Real);
-			BigRational br = expr.value;
-			BigInteger num = br.numerator();
-			BigInteger den = br.denominator();
-
-			byte[] numbytes = num.toByteArray();
-			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_uv(numbytes.length);
-			output.write(numbytes);
-
-			byte[] denbytes = den.toByteArray();
-			// FIXME: bug here for constants that require more than 65535 bytes
-			output.write_uv(denbytes.length);
-			output.write(denbytes);
-		}
-			
-		public void write(Value.Strung expr) throws IOException {	
-			output.write_uv(CONSTANT_String);
-			String value = expr.value;
-			output.write_uv(stringCache.get(value));			
-		}
-		public void write(Value.Set expr) throws IOException {
-			output.write_uv(CONSTANT_Set);
-			output.write_uv(expr.values.size());
-			for(Value v : expr.values) {
-				int index = constantCache.get(v);
-				output.write_uv(index);
-			}
-		}
-		
-		public void write(Value.List expr) throws IOException {
-			output.write_uv(CONSTANT_List);
-			output.write_uv(expr.values.size());
-			for(Value v : expr.values) {
-				int index = constantCache.get(v);
-				output.write_uv(index);
-			}
-		}
-		
-		public void write(Value.Map expr) throws IOException {
-			output.write_uv(CONSTANT_Map);
-			output.write_uv(expr.values.size());
-			for(java.util.Map.Entry<Value,Value> e : expr.values.entrySet()) {
-				int keyIndex = constantCache.get(e.getKey());
-				output.write_uv(keyIndex);
-				int valIndex = constantCache.get(e.getValue());
-				output.write_uv(valIndex);
-			}
-		}
-		
-		public void write(Value.Record expr) throws IOException {
-			output.write_uv(CONSTANT_Record);
-			output.write_uv(expr.values.size());
-			for(java.util.Map.Entry<String,Value> v : expr.values.entrySet()) {
-				output.write_uv(stringCache.get(v.getKey()));
-				int index = constantCache.get(v.getValue());
-				output.write_uv(index);
-			}
-		}
-		
-		public void write(Value.Tuple expr) throws IOException {
-			output.write_uv(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
-			output.write_uv(expr.values.size());
-			for(Value v : expr.values) {
-				int index = constantCache.get(v);
-				output.write_uv(index);
-			}
-		}
-		
-		public void write(Value.FunctionOrMethod expr) throws IOException {
-			Type.FunctionOrMethod t = expr.type();
-			if(t instanceof Type.Function) {
-				output.write_uv(CONSTANT_Function);			
-			} else {
-				output.write_uv(CONSTANT_Method);
-			}
-			output.write_uv(typeCache.get(t));
-			output.write_uv(nameCache.get(expr.name));
-		}
-	}
-
 	// =========================================================================
 	// BLOCK identifiers
 	// =========================================================================
