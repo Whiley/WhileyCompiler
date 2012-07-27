@@ -1,30 +1,30 @@
-<project name="whiley-core" default="build">  
+<project name="wyjc" default="build">  
 
   <target name="compile">
     <echo message="${ant.project.name}"/>
-    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyil/testing/**,wyone/testing/**"> 
+    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**" classpath="../core/src"> 
       <src path="src"/>
     </javac>
   </target>
 
   <target name="build" depends="compile">
     <echo message="${ant.project.name}"/>
-    <jar destfile="../../lib/wycore-${version}.jar">
+    <jar destfile="../../lib/wyjc-${version}.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
   </target>
   
   <target name="doc">
     <javadoc
-       packagenames="wyc.*,wybs.*,wyil.*,wyone.*,wyautl.*"
-       excludepackagenames="wyil.testing.*,wyone..*"
+       packagenames="wyjc.*,wyjvm.*"
+       excludepackagenames="wyjc.testing.*"
        sourcepath="src/"
        destdir="docs/api"
        author="true"
        version="true"
        use="true"
-       windowtitle="Whiley Core API">
-      <doctitle><![CDATA[<h1>The Whiley Programming Language (v${version})</h1>]]></doctitle>
+       windowtitle="Whiley-2-Java Compiler API">
+      <doctitle><![CDATA[<h1>The Whiley-2-Java Compiler (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       </javadoc>
   </target>
