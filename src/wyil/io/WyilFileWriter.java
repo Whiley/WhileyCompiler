@@ -347,7 +347,8 @@ public final class WyilFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
-		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!	
+		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
+		output.write_uv(MODIFIER_Public); // for now
 		output.write_uv(module.declarations().size());
 		
 		for(WyilFile.Declaration d : module.declarations()) {
@@ -377,8 +378,8 @@ public final class WyilFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 					
-		// TODO: write modifiers
 		output.write_uv(stringCache.get(cd.name()));
+		output.write_uv(generateModifiers(cd.modifiers()));
 		output.write_uv(constantCache.get(cd.constant()));
 		output.write_uv(0); // no sub-blocks
 		// TODO: write annotations
@@ -391,8 +392,8 @@ public final class WyilFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
-		// TODO: write modifiers
 		output.write_uv(stringCache.get(td.name()));
+		output.write_uv(generateModifiers(td.modifiers()));
 		output.write_uv(typeCache.get(td.type()));
 		if(td.constraint() == null) {
 			output.write_uv(0); // no sub-blocks
@@ -410,8 +411,8 @@ public final class WyilFileWriter {
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
 		output.write_uv(stringCache.get(md.name()));
-		output.write_uv(typeCache.get(md.type()));			
-		// TODO: write modifiers				
+		output.write_uv(generateModifiers(md.modifiers()));
+		output.write_uv(typeCache.get(md.type()));					
 		output.write_uv(md.cases().size());
 
 		for(WyilFile.Case c : md.cases()) {
@@ -938,6 +939,24 @@ public final class WyilFileWriter {
 		}
 	}
 	
+	private int generateModifiers(Collection<Modifier> modifiers) {
+		int mods = 0;
+		for(Modifier m : modifiers) {
+			if(m == Modifier.PUBLIC) {
+				mods |= MODIFIER_Public;
+			} else if(m == Modifier.PROTECTED) {
+				mods |= MODIFIER_Protected;
+			} else if(m == Modifier.PRIVATE) {
+				mods |= MODIFIER_Private;
+			} else if(m == Modifier.NATIVE) {
+				mods |= MODIFIER_Native;
+			} else if(m == Modifier.EXPORT) {
+				mods |= MODIFIER_Export;
+			}
+		}
+		return mods;
+	}
+	
 	private void buildPools(WyilFile module) {
 		stringPool.clear();
 		stringCache.clear();
@@ -1279,7 +1298,7 @@ public final class WyilFileWriter {
 	// ... (anticipating some others here)
 	
 	// =========================================================================
-	// CONSTANT identifies
+	// CONSTANT identifiers
 	// =========================================================================
 
 	public final static int CONSTANT_Null = 0;
@@ -1297,4 +1316,21 @@ public final class WyilFileWriter {
 	public final static int CONSTANT_Map = 12;
 	public final static int CONSTANT_Function = 13;
 	public final static int CONSTANT_Method = 14;
+	
+	// =========================================================================
+	// MODIFIER identifiers
+	// =========================================================================
+
+	public final static int MODIFIER_PROTECTION_MASK = 3;
+	public final static int MODIFIER_Private = 0;
+	public final static int MODIFIER_Protected = 1;
+	public final static int MODIFIER_Public = 2;
+	
+	// public final static int MODIFIER_Package = 3;
+	// public final static int MODIFIER_Module = 4;
+	
+	public final static int MODIFIER_MANGLE_MASK = 3 << 4;
+	public final static int MODIFIER_Native = 1 << 4;
+	public final static int MODIFIER_Export = 2 << 4;	
+	//public final static int MODIFIER_Total = 3 << 4;		
 }

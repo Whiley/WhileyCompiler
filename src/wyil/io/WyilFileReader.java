@@ -298,7 +298,8 @@ public final class WyilFileReader {
 		int size = input.read_uv();	
 		input.pad_u8();
 		
-		int nameIdx = input.read_uv();
+		int pathIdx = input.read_uv();
+		int modifiers = input.read_uv(); // unused
 		int numBlocks = input.read_uv();
 		
 		input.pad_u8();
@@ -308,7 +309,7 @@ public final class WyilFileReader {
 			declarations.add(readModuleBlock());
 		}
 		
-		return new WyilFile(pathPool[nameIdx],"unknown.whiley",declarations);
+		return new WyilFile(pathPool[pathIdx],"unknown.whiley",declarations);
 	}
 	
 	private WyilFile.Declaration readModuleBlock() throws IOException {
@@ -333,20 +334,20 @@ public final class WyilFileReader {
 	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {		
 		int nameIdx = input.read_uv();
 		//System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
-		
+		int modifiers = input.read_uv();
 		int constantIdx = input.read_uv();
 		int nBlocks = input.read_uv(); // unused
 		
 		input.pad_u8();				
-		return new WyilFile.ConstantDeclaration(Collections.EMPTY_LIST,
+		return new WyilFile.ConstantDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], constantPool[constantIdx]);
 	}
 	
 	private WyilFile.TypeDeclaration readTypeBlock() throws IOException {		
 		int nameIdx = input.read_uv();
 		//System.out.println("=== TYPE " + stringPool.get(nameIdx));
-		
-		int typeIdx = input.read_uv();
+		int modifiers = input.read_uv();
+		int typeIdx = input.read_uv();		
 		int nBlocks = input.read_uv();
 		
 		input.pad_u8();
@@ -359,15 +360,15 @@ public final class WyilFileReader {
 			constraint = readCodeBlock(1);
 		}		
 		
-		return new WyilFile.TypeDeclaration(Collections.EMPTY_LIST,
+		return new WyilFile.TypeDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], typePool[typeIdx], constraint);
 	}
 	
 	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		//System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
-		
-		int typeIdx = input.read_uv();
+		int modifiers = input.read_uv();
+		int typeIdx = input.read_uv();		
 		int numCases = input.read_uv();		
 		
 		input.pad_u8();
@@ -387,7 +388,7 @@ public final class WyilFileReader {
 					throw new RuntimeException("Unknown function block encountered");
 			}
 		}
-		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
+		return new WyilFile.MethodDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], type,
 				cases);
 	}
@@ -395,8 +396,8 @@ public final class WyilFileReader {
 	private WyilFile.MethodDeclaration readMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== METHOD " + stringPool.get(nameIdx));
-		
-		int typeIdx = input.read_uv();
+		int modifiers = input.read_uv();
+		int typeIdx = input.read_uv();		
 		int numCases = input.read_uv();
 		
 		input.pad_u8();
@@ -416,9 +417,40 @@ public final class WyilFileReader {
 					throw new RuntimeException("Unknown method block encountered");
 			}
 		}
-		return new WyilFile.MethodDeclaration(Collections.EMPTY_LIST,
+		return new WyilFile.MethodDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], type,
 				cases);
+	}
+	
+	private Collection<Modifier> generateModifiers(int modifiers) {
+		ArrayList<Modifier> mods = new ArrayList<Modifier>();
+
+		// first, protection modifiers
+		switch (modifiers & WyilFileWriter.MODIFIER_PROTECTION_MASK) {
+			case WyilFileWriter.MODIFIER_Public :
+				mods.add(Modifier.PUBLIC);
+				break;
+			case WyilFileWriter.MODIFIER_Protected :
+				mods.add(Modifier.PROTECTED);
+				break;
+			case WyilFileWriter.MODIFIER_Private :
+				mods.add(Modifier.PRIVATE);
+				break;
+			default :
+				throw new RuntimeException("Unknown modifier");
+		}
+		
+		// second, mangle modifiers
+		switch (modifiers & WyilFileWriter.MODIFIER_MANGLE_MASK) {
+			case WyilFileWriter.MODIFIER_Native :
+				mods.add(Modifier.NATIVE);
+				break;
+			case WyilFileWriter.MODIFIER_Export :
+				mods.add(Modifier.EXPORT);
+				break;			
+		}
+
+		return mods;
 	}
 	
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type) throws IOException {
