@@ -31,7 +31,7 @@ import java.util.*;
 import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.DefaultInterpretation.Term;
-import wyjvm.io.BinaryInputStream;
+import wyil.io.BinaryInputStream;
 
 public class Tester {
 	

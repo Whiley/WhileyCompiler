@@ -28,7 +28,7 @@ package wyautl.io;
 import java.io.IOException;
 
 import wyautl.lang.Automaton;
-import wyjvm.io.BinaryOutputStream;
+import wyil.io.BinaryOutputStream;
 
 /**
  * <p>

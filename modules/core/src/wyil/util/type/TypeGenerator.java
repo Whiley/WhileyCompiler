@@ -29,7 +29,8 @@ import java.io.*;
 import java.util.*;
 
 import wyil.lang.Type;
-import wyjvm.io.*;
+import wyil.io.BinaryOutputStream;
+import wyil.io.BinaryInputStream;
 import wyautl.io.*;
 import wyautl.lang.Automaton;
 import wyautl.lang.Automata;

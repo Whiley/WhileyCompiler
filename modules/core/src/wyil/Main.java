@@ -8,8 +8,6 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;
-import wyjvm.io.BinaryInputStream;
-import wyjvm.io.BinaryOutputStream;
 
 public class Main {
 	

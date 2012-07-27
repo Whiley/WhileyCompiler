@@ -39,7 +39,7 @@ import wyil.lang.*;
 import wyil.util.ErrorMessages;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
-import wyjc.runtime.BigRational;
+import wyil.util.BigRational;
 
 /**
  * The purpose of this transform is two-fold:

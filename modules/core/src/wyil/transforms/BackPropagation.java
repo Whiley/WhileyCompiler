@@ -37,7 +37,6 @@ import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
-import wyjc.runtime.BigRational;
 
 /**
  * <p>

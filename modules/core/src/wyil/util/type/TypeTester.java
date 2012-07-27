@@ -29,11 +29,10 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.BitSet;
 
-import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.DefaultInterpretation.Term;
 import wyautl.util.Tester;
-import wyjvm.io.*;
+import wyil.io.BinaryInputStream;
 import wyil.lang.Type;
 
 public class TypeTester {

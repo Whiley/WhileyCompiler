@@ -36,8 +36,7 @@ import wyc.lang.*;
 import wyc.util.*;
 import wyil.lang.*;
 import wyil.util.*;
-import wyjc.runtime.BigRational;
-import wyjvm.lang.Bytecode;
+import wyil.util.BigRational;
 
 import static wyc.stages.WhileyLexer.*;
 
@@ -713,27 +712,6 @@ public final class WhileyParser {
 		List<Stmt> blk = parseBlock(indent+1);								
 
 		return new Stmt.ForAll(variables,source,invariant,blk, sourceAttr(start,end-1));
-	}
-	
-	private Bytecode parseBytecode() {
-		String line = "";
-		int start = index;
-		while(index < tokens.size() && !(tokens.get(index) instanceof NewLine)) {
-			Token tok = tokens.get(index);
-			while(line.length() != tok.start) {
-				line = line + " ";
-			}			
-			line = line + tokens.get(index).text;			
-			index++;
-		}				
-		try {
-			Bytecode b = wyjvm.util.Parser.parseBytecode(line);			
-			matchEndLine();
-			return b;
-		} catch(wyjvm.util.Parser.ParseError err) {	
-			Attribute.Source sa = sourceAttr(start,index-1);
-			throw new SyntaxError(err.getMessage(),filename,sa.start,sa.end,err);
-		}
 	}		
 	
 	private Stmt parseAssign() {		

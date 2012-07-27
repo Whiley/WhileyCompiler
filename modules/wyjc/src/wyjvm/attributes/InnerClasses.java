@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import wyil.io.BinaryOutputStream;
 import wyil.util.Triple;
-import wyjvm.io.BinaryOutputStream;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;

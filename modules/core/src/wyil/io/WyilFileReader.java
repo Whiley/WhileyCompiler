@@ -33,8 +33,8 @@ import wybs.lang.Path;
 import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.Pair;
-import wyjc.runtime.BigRational;
-import wyjvm.io.BinaryInputStream;
+import wyil.util.BigRational;
+import wyil.io.BinaryInputStream;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding

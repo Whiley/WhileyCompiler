@@ -28,8 +28,8 @@ package wyjvm.lang;
 import java.util.*;
 import java.io.*;
 
-import wyjvm.io.BinaryInputStream;
-import wyjvm.io.BinaryOutputStream;
+import wyil.io.BinaryInputStream;
+import wyil.io.BinaryOutputStream;
 
 public interface BytecodeAttribute {
 	public String name();

@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import wyil.io.BinaryOutputStream;
 import wyjvm.lang.*;
 import wyjvm.io.*;
 

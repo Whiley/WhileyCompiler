@@ -161,13 +161,7 @@ public final class WyilFilePrinter implements Transform {
 			}			
 			out.print(pts.get(i));			
 		}
-		out.println("):");				
-		for(Attribute a : mcase.attributes()) {
-			if(a instanceof wyjvm.lang.BytecodeAttribute) {
-				wyjvm.lang.BytecodeAttribute ba = (wyjvm.lang.BytecodeAttribute) a;
-				out.println("attribute: " + ba.name());
-			}
-		}		
+		out.println("):");							
 
 		Block precondition = mcase.precondition();
 		if(precondition != null) {			

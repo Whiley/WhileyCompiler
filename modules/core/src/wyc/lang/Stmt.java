@@ -33,7 +33,6 @@ import wyil.lang.Attribute;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.util.*;
-import wyjvm.lang.Bytecode;
 
 /**
  * Provides classes for representing statements in Whiley's source language.

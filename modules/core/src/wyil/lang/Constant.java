@@ -25,13 +25,11 @@
 
 package wyil.lang;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
 import wyil.util.Pair;
-import wyjc.runtime.BigRational;
-import wyjvm.io.BinaryOutputStream;
+import wyil.util.BigRational;
 
 public abstract class Constant implements Comparable<Constant> {	
 
