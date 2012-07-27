@@ -19,7 +19,7 @@
        packagenames="wyjc.*,wyjvm.*"
        excludepackagenames="wyjc.testing.*"
        sourcepath="src/"
-       destdir="docs/api"
+       destdir="../../docs/wyjc/api"
        author="true"
        version="true"
        use="true"

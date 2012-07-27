@@ -1,4 +1,4 @@
-<project name="whiley-core" default="build">  
+<project name="whiley-compiler" default="build">  
 
   <target name="compile">
     <echo message="${ant.project.name}"/>
@@ -9,7 +9,7 @@
 
   <target name="build" depends="compile">
     <echo message="${ant.project.name}"/>
-    <jar destfile="../../lib/wycore-${version}.jar">
+    <jar destfile="../../lib/wyc-${version}.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
   </target>
@@ -19,11 +19,11 @@
        packagenames="wyc.*,wybs.*,wyil.*,wyone.*,wyautl.*"
        excludepackagenames="wyil.testing.*,wyone..*"
        sourcepath="src/"
-       destdir="docs/api"
+       destdir="../../docs/wyc/api"
        author="true"
        version="true"
        use="true"
-       windowtitle="Whiley Core API">
+       windowtitle="Whiley Compiler API">
       <doctitle><![CDATA[<h1>The Whiley Programming Language (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       </javadoc>

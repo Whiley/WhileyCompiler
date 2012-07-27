@@ -29,6 +29,17 @@
     </jar>
   </target>
 
+  <!-- Documenation --> 
+
+  <target name="doc">
+    <subant failonerror="false" target="doc">
+      <property name="version" value="${version}"/>
+      <fileset dir="modules" includes="*/build.xml"/>
+    </subant>
+  </target>
+
+  <!-- Misc Commands -->
+
   <target name="clean">
     <subant failonerror="false" target="clean">
       <fileset dir="modules" includes="*/build.xml"/>
@@ -37,7 +48,6 @@
       <fileset file="*~"/>
     </delete>
   </target>
- 
 
   <!-- Distributions -->
  
