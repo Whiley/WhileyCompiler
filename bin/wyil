@@ -16,14 +16,15 @@
 # License along with the Whiley Development Kit. If not, see 
 # <http://www.gnu.org/licenses/>
 #
-# Copyright 2010, David James Pearce. 
+# Copyright 2012, David James Pearce. 
 
-################
+##################
 # CONFIGURATION
-################
+##################
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
+LIBS="wyil*.jar"
 
 # check for running under cywin
 cygwin=false
@@ -31,19 +32,38 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
-##################
-# RUN APPLICATION
-##################
+######################
+# CONSTRUCT CLASSPATH
+######################
 
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
     LIBDIR=`cygpath -pw "$LIBDIR"`
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar;$CLASSPATH"
-    WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+    PATHSEP=";"
 else
     # under UNIX the classpath separator must be ":"
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar:$CLASSPATH"
-    WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+    PATHSEP=":"
 fi
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyil.Main "$@"
+WHILEY_CLASSPATH=$CLASSPATH
+
+for lib in $LIBS
+do
+    JAR=$(ls $LIBDIR/$lib)
+    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
+done
+
+echo $WHILEY_CLASSPATH
+
+######################
+# CONSTRUCT BOOTPATH
+######################
+
+WYRT_JAR=$(ls $LIBDIR/wyrt*.jar)
+WHILEY_BOOTPATH="$WYRT_JAR"
+
+######################
+# RUN APPLICATION
+######################
+
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyil.Main -bp "$WHILEY_BOOTPATH" "$@"
