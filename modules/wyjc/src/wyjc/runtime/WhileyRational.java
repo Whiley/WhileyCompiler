@@ -29,17 +29,17 @@ import java.math.BigInteger;
 import java.math.BigDecimal;
 import java.util.Random;
 
-public final class BigRational extends Number implements Comparable<BigRational> {	
-	private static final BigRational[] cache = new BigRational[20];
+public final class WhileyRational extends Number implements Comparable<WhileyRational> {	
+	private static final WhileyRational[] cache = new WhileyRational[20];
 
-	public static final BigRational MONE = BigRational.valueOf(-1);
-	public static final BigRational ZERO = BigRational.valueOf(0);
-	public static final BigRational ONE = BigRational.valueOf(1);
+	public static final WhileyRational MONE = WhileyRational.valueOf(-1);
+	public static final WhileyRational ZERO = WhileyRational.valueOf(0);
+	public static final WhileyRational ONE = WhileyRational.valueOf(1);
 	
 	private final BigInteger numerator;
 	private final BigInteger denominator;
 
-	public BigRational(String val) {		
+	public WhileyRational(String val) {		
 		int idx = val.indexOf('.');
 		if(idx > 0) {
 			String lhs = val.substring(0,idx);
@@ -71,16 +71,16 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		}		
 	}
 	
-	public BigRational(BigDecimal dec) {
+	public WhileyRational(BigDecimal dec) {
 		this(dec.unscaledValue(),BigInteger.TEN.pow(dec.scale()));
 	}
 	
-	public BigRational(BigInteger numerator) {
+	public WhileyRational(BigInteger numerator) {
 		this.numerator = numerator;
 		this.denominator = BigInteger.ONE;
 	}
 	
-	public BigRational(BigInteger numerator, BigInteger denominator) {			
+	public WhileyRational(BigInteger numerator, BigInteger denominator) {			
 		BigInteger gcd = numerator.gcd(denominator);		
 		if(!gcd.equals(BigInteger.ONE)) {
 			numerator = numerator.divide(gcd);
@@ -102,16 +102,16 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		this.denominator = denominator;
 	}
 
-	public BigRational(int numerator, int denominator) {
+	public WhileyRational(int numerator, int denominator) {
 		this(BigInteger.valueOf(numerator),BigInteger.valueOf(denominator));
 	}
 	
-	public BigRational(byte[] numbytes) {
+	public WhileyRational(byte[] numbytes) {
 		this.numerator = new BigInteger(numbytes);
 		this.denominator = BigInteger.ONE;
 	}
 	
-	public BigRational(byte[] numbytes, byte[] denbytes) {
+	public WhileyRational(byte[] numbytes, byte[] denbytes) {
 		this(new BigInteger(numbytes), new BigInteger(denbytes));
 	}
 	
@@ -158,8 +158,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	}
 	
 	public boolean equals(Object o) {
-		if (o instanceof BigRational) {
-			BigRational r = (BigRational) o;
+		if (o instanceof WhileyRational) {
+			WhileyRational r = (WhileyRational) o;
 			return numerator.equals(r.numerator)
 					&& denominator.equals(r.denominator);
 		}
@@ -170,7 +170,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return numerator.hashCode() + denominator.hashCode();
 	}
 	
-	public int compareTo(BigRational r) {
+	public int compareTo(WhileyRational r) {
 		BigInteger lhs = numerator.multiply(r.denominator);
 		BigInteger rhs = r.numerator.multiply(denominator);
 		return lhs.compareTo(rhs);
@@ -205,7 +205,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 			return numerator.toString() + ".0";
 		} else {
 			BigDecimal bd = round(10);
-			BigRational br = new BigRational(bd);
+			WhileyRational br = new WhileyRational(bd);
 			if (this.equals(br)) {
 				String s = bd.toString();
 				if (!s.contains(".")) {
@@ -223,180 +223,180 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	// ==================== ADDITION ===========================
 	// =========================================================
 	
-	public BigRational add(int r) {
+	public WhileyRational add(int r) {
 		BigInteger num = numerator.add(denominator.multiply(BigInteger.valueOf(r)));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational add(long r) {
+	public WhileyRational add(long r) {
 		BigInteger num = numerator.add(denominator.multiply(BigInteger.valueOf(r)));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational add(final BigInteger r) {
+	public WhileyRational add(final BigInteger r) {
 		BigInteger num = numerator.add(denominator.multiply(r));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational add(final BigRational r) {
+	public WhileyRational add(final WhileyRational r) {
 		BigInteger num = numerator.multiply(r.denominator).add(r.numerator.multiply(denominator));
 		BigInteger den = denominator.multiply(r.denominator);
-		return new BigRational(num,den);
+		return new WhileyRational(num,den);
 	}
 	
 	// =========================================================
 	// ==================== SUBTRACTION ========================
 	// =========================================================
 	
-	public BigRational subtract(int r) {
+	public WhileyRational subtract(int r) {
 		BigInteger num = numerator.subtract(denominator.multiply(BigInteger.valueOf(r)));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational subtract(long r) {
+	public WhileyRational subtract(long r) {
 		BigInteger num = numerator.subtract(denominator.multiply(BigInteger.valueOf(r)));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational subtract(final BigInteger r) {
+	public WhileyRational subtract(final BigInteger r) {
 		BigInteger num = numerator.subtract(denominator.multiply(r));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational subtract(final BigRational r) {
+	public WhileyRational subtract(final WhileyRational r) {
 		BigInteger num = numerator.multiply(r.denominator).subtract(
 				r.numerator.multiply(denominator));
 		BigInteger den = denominator.multiply(r.denominator);
-		return new BigRational(num, den);
+		return new WhileyRational(num, den);
 	}
 	
 	// =========================================================
 	// ==================== MULTIPLICATION =====================
 	// =========================================================
 	
-	public BigRational multiply(int r) {
+	public WhileyRational multiply(int r) {
 		BigInteger num = numerator.multiply(BigInteger.valueOf(r));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational multiply(long r) {
+	public WhileyRational multiply(long r) {
 		BigInteger num = numerator.multiply(BigInteger.valueOf(r));
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 	
-	public BigRational multiply(final BigInteger r) {
+	public WhileyRational multiply(final BigInteger r) {
 		BigInteger num = numerator.multiply(r);
-		return new BigRational(num,denominator);
+		return new WhileyRational(num,denominator);
 	}
 			
-	public BigRational multiply(final BigRational r) {
+	public WhileyRational multiply(final WhileyRational r) {
 		BigInteger num = numerator.multiply(r.numerator);
 		BigInteger den = denominator.multiply(r.denominator);
-		return new BigRational(num, den);
+		return new WhileyRational(num, den);
 	}
 	
 	// =========================================================
 	// ======================= DIVISION ========================
 	// =========================================================
 	
-	public BigRational divide(int r) {
+	public WhileyRational divide(int r) {
 		BigInteger den = denominator.multiply(BigInteger.valueOf(r));
-		return new BigRational(numerator,den);
+		return new WhileyRational(numerator,den);
 	}
 	
-	public BigRational divide(long r) {
+	public WhileyRational divide(long r) {
 		BigInteger den = denominator.multiply(BigInteger.valueOf(r));
-		return new BigRational(numerator,den);
+		return new WhileyRational(numerator,den);
 	}
 	
-	public BigRational divide(BigInteger r) {
+	public WhileyRational divide(BigInteger r) {
 		BigInteger den = denominator.multiply(r);
-		return new BigRational(numerator,den);
+		return new WhileyRational(numerator,den);
 	}
 	
-	public BigRational divide(final BigRational r) {		
+	public WhileyRational divide(final WhileyRational r) {		
 		BigInteger num = numerator.multiply(r.denominator);
 		BigInteger den = denominator.multiply(r.numerator);
-		return new BigRational(num, den);
+		return new WhileyRational(num, den);
 	}
 	
-	public BigRational intDivide(final BigRational r) {
+	public WhileyRational intDivide(final WhileyRational r) {
 		BigInteger num = numerator.divide(r.numerator);		
-		return new BigRational(num);
+		return new WhileyRational(num);
 	}
 	
-	public BigRational intRemainder(final BigRational r) {
+	public WhileyRational intRemainder(final WhileyRational r) {
 		BigInteger num = numerator.remainder(r.numerator);		
-		return new BigRational(num);
+		return new WhileyRational(num);
 	}
 	
 	// =========================================================
 	// ========================= OTHER =========================
 	// =========================================================
-	public BigRational negate() {
-		return new BigRational(numerator.negate(),denominator);
+	public WhileyRational negate() {
+		return new WhileyRational(numerator.negate(),denominator);
 	}
 	
-	public BigRational ceil() {		
+	public WhileyRational ceil() {		
 		BigInteger i = numerator;
 		BigInteger d = numerator.compareTo(BigInteger.ZERO) >= 0 ? BigInteger.ONE : BigInteger.valueOf(-1);
 		while (!i.divideAndRemainder(denominator)[1].equals(BigInteger.ZERO)) {
 			i = i.add(d);
 		}		
-		return new BigRational(i, denominator);
+		return new WhileyRational(i, denominator);
 	}
 	
-	public BigRational floor() {
+	public WhileyRational floor() {
 		BigInteger i = numerator;
 		BigInteger d = numerator.compareTo(BigInteger.ZERO) < 0 ? BigInteger.ONE : BigInteger.valueOf(-1);
 		while (!i.divideAndRemainder(denominator)[1].equals(BigInteger.ZERO)) {
 			i = i.add(d);
 		}		
-		return new BigRational(i, denominator);
+		return new WhileyRational(i, denominator);
 	}
 	
-	public static BigRational valueOf(int num, int den) {		
-		return new BigRational(BigInteger.valueOf(num),BigInteger.valueOf(den));		
+	public static WhileyRational valueOf(int num, int den) {		
+		return new WhileyRational(BigInteger.valueOf(num),BigInteger.valueOf(den));		
 	}
 	
-	public static BigRational valueOf(long num, long den) {		
-		return new BigRational(BigInteger.valueOf(num),BigInteger.valueOf(den));		
+	public static WhileyRational valueOf(long num, long den) {		
+		return new WhileyRational(BigInteger.valueOf(num),BigInteger.valueOf(den));		
 	}
 
-	public static BigRational valueOf(BigInteger num) {		
-		return new BigRational(num);		
+	public static WhileyRational valueOf(BigInteger num) {		
+		return new WhileyRational(num);		
 	}
 	
-	public static BigRational valueOf(int x) {
+	public static WhileyRational valueOf(int x) {
 		if(x > -10 && x <= 10) {
 			int idx = x + 9;
-			BigRational r = cache[idx];
+			WhileyRational r = cache[idx];
 			if(r == null) {
-				r = new BigRational(BigInteger.valueOf(x));
+				r = new WhileyRational(BigInteger.valueOf(x));
 				cache[idx] = r;
 			}
 			return r;
 		} else {
-			return new BigRational(BigInteger.valueOf(x));
+			return new WhileyRational(BigInteger.valueOf(x));
 		}
 	}
 	
-	public static BigRational valueOf(long x) {
+	public static WhileyRational valueOf(long x) {
 		if(x > -10 && x <= 10) {
 			int idx = (int) x + 9;
-			BigRational r = cache[idx];
+			WhileyRational r = cache[idx];
 			if(r == null) {
-				r = new BigRational(BigInteger.valueOf(x));
+				r = new WhileyRational(BigInteger.valueOf(x));
 				cache[idx] = r;
 			}
 			return r;
 		} else {
-			return new BigRational(BigInteger.valueOf(x));
+			return new WhileyRational(BigInteger.valueOf(x));
 		}
 	}
 	
 
-	public static BigRational valueOf(double d) {
+	public static WhileyRational valueOf(double d) {
 		// Check against infinities and NAN
 		if(Double.isInfinite(d) || Double.isNaN(d)) {
 			throw new NumberFormatException("BigInteger.valueOf() --- parameter cannot be infinity or NAN");
@@ -415,7 +415,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 			exponent = exponent - 1023; // remove bias
 		}
 		
-		BigRational base = valueOf(numerator, denominator).add(BigInteger.ONE);
+		WhileyRational base = valueOf(numerator, denominator).add(BigInteger.ONE);
 		if (sign) {
 			base = base.negate();
 		}

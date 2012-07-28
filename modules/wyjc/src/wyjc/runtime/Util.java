@@ -483,7 +483,7 @@ public class Util {
 			case K_INT:
 				return obj instanceof BigInteger;
 			case K_RATIONAL:
-				return obj instanceof BigRational;
+				return obj instanceof WhileyRational;
 			case K_STRING:
 				return obj instanceof String;
 			case K_LIST:
@@ -825,8 +825,8 @@ public class Util {
 			return compare((Character)o1,o2);
 		} else if(o1 instanceof BigInteger) {			
 			return compare((BigInteger)o1,o2);
-		} else if(o1 instanceof BigRational) {
-			return compare((BigRational)o1,o2);
+		} else if(o1 instanceof WhileyRational) {
+			return compare((WhileyRational)o1,o2);
 		} else if(o1 instanceof Set) {
 			return compare((Set)o1,o2);
 		} else if(o1 instanceof List) {
@@ -875,11 +875,11 @@ public class Util {
 		}
 	}
 
-	public static int compare(BigRational o1, Object o2) {
+	public static int compare(WhileyRational o1, Object o2) {
 		if(o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger) {
 			return 1;
-		} else if(o2 instanceof BigRational) {
-			BigRational b2 = (BigRational) o2;
+		} else if(o2 instanceof WhileyRational) {
+			WhileyRational b2 = (WhileyRational) o2;
 			return o1.compareTo(b2);
 		} else {
 			return -1;
@@ -888,7 +888,7 @@ public class Util {
 
 	public static int compare(Set o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof BigRational) {
+				|| o2 instanceof WhileyRational) {
 			return 1;
 		} else if (o2 instanceof Set) {
 			return compare(o1, (Set) o2);
@@ -924,7 +924,7 @@ public class Util {
 
 	public static int compare(List o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof BigRational || o2 instanceof Set) {
+				|| o2 instanceof WhileyRational || o2 instanceof Set) {
 			return 1;
 		} else if (o2 instanceof List) {
 			return compare(o1, (List) o2);
@@ -955,7 +955,7 @@ public class Util {
 
 	public static int compare(Tuple o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof BigRational || o2 instanceof Set
+				|| o2 instanceof WhileyRational || o2 instanceof Set
 				|| o2 instanceof List) {
 			return 1;
 		} else if (o2 instanceof Tuple) {
@@ -987,7 +987,7 @@ public class Util {
 
 	public static int compare(Record o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof BigRational || o2 instanceof Set
+				|| o2 instanceof WhileyRational || o2 instanceof Set
 				|| o2 instanceof Tuple) {
 			return 1;
 		} else if (o2 instanceof Record) {

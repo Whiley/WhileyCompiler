@@ -26,13 +26,13 @@
 package whiley.lang;
 
 import java.math.BigInteger;
-import wyjc.runtime.BigRational;
+import wyjc.runtime.WhileyRational;
 
 public final class Time$native {
     public static final BigInteger MILLIS = BigInteger.valueOf(1000);
 
-    public static BigRational current() {
+    public static WhileyRational current() {
 	long current = java.lang.System.currentTimeMillis();
-	return new BigRational(BigInteger.valueOf(current),MILLIS);
+	return new WhileyRational(BigInteger.valueOf(current),MILLIS);
     }
 }

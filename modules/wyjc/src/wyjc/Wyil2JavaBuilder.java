@@ -40,7 +40,7 @@ import wyil.util.*;
 import wyil.io.BinaryOutputStream;
 import wyil.lang.*;
 import static wyil.lang.Block.*;
-import wyjc.runtime.BigRational;
+import wyjc.runtime.WhileyRational;
 import wyjvm.attributes.Code.Handler;
 import wyjvm.attributes.LineNumberTable;
 import wyjvm.attributes.SourceFile;
@@ -1023,7 +1023,7 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		} else if(test instanceof Type.Real) {
-			bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));			
+			bytecodes.add(new Bytecode.InstanceOf(WHILEYRAT));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		} else if(test instanceof Type.Strung) {
 			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_STRING));			
@@ -1775,13 +1775,13 @@ public class Wyil2JavaBuilder implements Builder {
 			// this 
 			if(num.bitLength() < 32) {			
 				bytecodes.add(new Bytecode.LoadConst(num.intValue()));				
-				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
+				JvmType.Function ftype = new JvmType.Function(WHILEYRAT,T_INT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
 						Bytecode.STATIC));
 			} else if(num.bitLength() < 64) {			
 				bytecodes.add(new Bytecode.LoadConst(num.longValue()));				
-				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_LONG);
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
+				JvmType.Function ftype = new JvmType.Function(WHILEYRAT,T_LONG);
+				bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
 						Bytecode.STATIC));
 			} else {
 				// in this context, we need to use a byte array to construct the
@@ -1789,8 +1789,8 @@ public class Wyil2JavaBuilder implements Builder {
 				byte[] bytes = num.toByteArray();
 				JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
 
-				bytecodes.add(new Bytecode.New(BIG_RATIONAL));		
-				bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));			
+				bytecodes.add(new Bytecode.New(WHILEYRAT));		
+				bytecodes.add(new Bytecode.Dup(WHILEYRAT));			
 				bytecodes.add(new Bytecode.LoadConst(bytes.length));
 				bytecodes.add(new Bytecode.New(bat));
 				for(int i=0;i!=bytes.length;++i) {
@@ -1801,28 +1801,28 @@ public class Wyil2JavaBuilder implements Builder {
 				}			
 
 				JvmType.Function ftype = new JvmType.Function(T_VOID,bat);						
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,
+				bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "<init>", ftype,
 						Bytecode.SPECIAL));								
 			}	
 		} else if(num.bitLength() < 32 && den.bitLength() < 32) {			
 			bytecodes.add(new Bytecode.LoadConst(num.intValue()));
 			bytecodes.add(new Bytecode.LoadConst(den.intValue()));
-			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT,T_INT);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
+			JvmType.Function ftype = new JvmType.Function(WHILEYRAT,T_INT,T_INT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
 					Bytecode.STATIC));
 		} else if(num.bitLength() < 64 && den.bitLength() < 64) {			
 			bytecodes.add(new Bytecode.LoadConst(num.longValue()));
 			bytecodes.add(new Bytecode.LoadConst(den.longValue()));
-			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_LONG,T_LONG);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
+			JvmType.Function ftype = new JvmType.Function(WHILEYRAT,T_LONG,T_LONG);
+			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
 					Bytecode.STATIC));
 		} else {
 			// First, do numerator bytes
 			byte[] bytes = num.toByteArray();
 			JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
 
-			bytecodes.add(new Bytecode.New(BIG_RATIONAL));		
-			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));			
+			bytecodes.add(new Bytecode.New(WHILEYRAT));		
+			bytecodes.add(new Bytecode.Dup(WHILEYRAT));			
 			bytecodes.add(new Bytecode.LoadConst(bytes.length));
 			bytecodes.add(new Bytecode.New(bat));
 			for(int i=0;i!=bytes.length;++i) {
@@ -1845,7 +1845,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 			// Finally, construct BigRational object
 			JvmType.Function ftype = new JvmType.Function(T_VOID,bat,bat);						
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "<init>", ftype,
 					Bytecode.SPECIAL));			
 		}		
 	}
@@ -2009,8 +2009,8 @@ public class Wyil2JavaBuilder implements Builder {
 		Type glb = Type.intersect(Type.T_REAL, toType);
 		if(glb == Type.T_REAL) { 
 			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+			JvmType.Function ftype = new JvmType.Function(WHILEYRAT,BIG_INTEGER);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYRAT,"valueOf",ftype,Bytecode.STATIC));
 		} else {				
 			// must be => char
 			JvmType.Function ftype = new JvmType.Function(T_INT);			
@@ -2023,8 +2023,8 @@ public class Wyil2JavaBuilder implements Builder {
 		if(!Type.isSubtype(toType,fromType)) {					
 			if(toType == Type.T_REAL) { 
 				// coercion required!
-				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);			
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+				JvmType.Function ftype = new JvmType.Function(WHILEYRAT,T_INT);			
+				bytecodes.add(new Bytecode.Invoke(WHILEYRAT,"valueOf",ftype,Bytecode.STATIC));
 			} else {
 				bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
 				JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,T_LONG);			
@@ -2670,7 +2670,7 @@ public class Wyil2JavaBuilder implements Builder {
 			"wyjc.runtime", "Actor");	
 	private final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");	
 	private final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
-	private final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");
+	private final static JvmType.Clazz WHILEYRAT = new JvmType.Clazz("wyjc.runtime","WhileyRational");
 	private static final JvmType.Clazz JAVA_LANG_CHARACTER = new JvmType.Clazz("java.lang","Character");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
@@ -2707,7 +2707,7 @@ public class Wyil2JavaBuilder implements Builder {
 		} else if(t instanceof Type.Int) {
 			return BIG_INTEGER;
 		} else if(t instanceof Type.Real) {
-			return BIG_RATIONAL;
+			return WHILEYRAT;
 		} else if(t instanceof Type.Meta) {
 			return WHILEYTYPE;
 		} else if(t instanceof Type.Strung) {
