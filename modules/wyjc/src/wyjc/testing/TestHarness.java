@@ -32,6 +32,9 @@ import java.io.*;
 import wyjc.Main;
 
 public class TestHarness {
+	private static final String WYJC_PATH="../../../modules/wyjc/src/";
+	private static final String WYRT_PATH="../../lib/wyrt-v0.3.16.jar";
+	
 	private String sourcepath;    // path to source files	
 	private String outputPath; // path to output files
 	private String outputExtension; // the extension of output files
@@ -66,7 +69,7 @@ public class TestHarness {
 	protected void runTest(String name, String... params) {						
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if (compile("-sp",sourcepath,"-wp", "lib/wyrt.jar",filename) != 0) {
+		if (compile("-sp",sourcepath,"-wp", WYRT_PATH,filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -78,7 +81,7 @@ public class TestHarness {
 	protected void verifyRunTest(String name, String... params) {						
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if (compile("-sp",sourcepath,"-wp", "lib/wyrt.jar","-X","verification:enable=true",filename) != 0) {
+		if (compile("-sp",sourcepath,"-wp", WYRT_PATH,"-X","verification:enable=true",filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -90,7 +93,7 @@ public class TestHarness {
 	protected void contextFailTest(String name) {				
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-sp",sourcepath,"-wp", "lib/wyrt.jar",name);
+		int r = compile("-sp",sourcepath,"-wp", WYRT_PATH,name);
 		
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
@@ -103,7 +106,7 @@ public class TestHarness {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-sp",sourcepath,"-wp", "lib/wyrt.jar","-X","verification:enable=true",name);
+		int r = compile("-sp",sourcepath,"-wp", WYRT_PATH,"-X","verification:enable=true",name);
 		
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
@@ -115,7 +118,7 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-sp",sourcepath,"-wp", "lib/wyrt.jar",fullName) != 0) { 
+		if(compile("-sp",sourcepath,"-wp", WYRT_PATH,fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath,name);				
@@ -132,8 +135,7 @@ public class TestHarness {
 	private static String run(String path, String name) {
 		try {
 			// We need to have
-			String classpath = "../../../" + File.pathSeparator + "."
-					+ File.pathSeparator + "../../../lib/wyrt.jar";
+			String classpath = "." + File.pathSeparator + WYJC_PATH;
 			classpath = classpath.replace('/', File.separatorChar);
 			String tmp = "java -cp " + classpath + " " + name;
 			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));

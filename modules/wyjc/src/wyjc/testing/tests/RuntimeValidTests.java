@@ -30,7 +30,7 @@ import wyjc.testing.TestHarness;
 
 public class RuntimeValidTests extends TestHarness {
  public RuntimeValidTests() {
-  super("tests/base/valid","tests/base/valid","sysout");
+  super("../../tests/base/valid","../../tests/base/valid","sysout");
  }
 
  @Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }

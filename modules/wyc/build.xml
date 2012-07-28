@@ -9,7 +9,7 @@
 
   <target name="build" depends="compile">
     <echo message="${ant.project.name}"/>
-    <jar destfile="../../lib/wyc-${version}.jar">
+    <jar destfile="../../lib/wyc-v${version}.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
   </target>
