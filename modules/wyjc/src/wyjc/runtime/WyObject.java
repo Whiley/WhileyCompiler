@@ -29,11 +29,11 @@ import java.util.*;
 import java.lang.reflect.*;
 import java.util.concurrent.ArrayBlockingQueue;
 
-public final class Actor extends Thread {
+public final class WyObject extends Thread {
 	private Object state;
 	private ArrayBlockingQueue<Message> queue = new ArrayBlockingQueue<Message>(10); 
 	
-	public Actor(Object c) {
+	public WyObject(Object c) {
 		state = c;			
 		setDaemon(true);
 	}
@@ -42,7 +42,7 @@ public final class Actor extends Thread {
 		return state;
 	}			
 	
-	public Actor setState(Object nstate) {
+	public WyObject setState(Object nstate) {
 		this.state = nstate;
 		return this;
 	}

@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 
-public final class Set extends java.util.HashSet {	
+public final class WySet extends java.util.HashSet {	
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -42,11 +42,11 @@ public final class Set extends java.util.HashSet {
 	// Generic Operations
 	// ================================================================================	 	
 		
-	public Set() {		
+	public WySet() {		
 			
 	}
 	
-	private Set(java.util.Collection items) {
+	private WySet(java.util.Collection items) {
 		super(items);
 		for(Object o : items) {
 			Util.incRefs(o);
@@ -73,15 +73,15 @@ public final class Set extends java.util.HashSet {
 	// Set Operations
 	// ================================================================================	 	
 	
-	public static boolean subset(Set lhs, Set rhs) {
+	public static boolean subset(WySet lhs, WySet rhs) {
 		return rhs.containsAll(lhs) && rhs.size() > lhs.size();
 	}
 	
-	public static boolean subsetEq(Set lhs, Set rhs) {
+	public static boolean subsetEq(WySet lhs, WySet rhs) {
 		return rhs.containsAll(lhs);
 	}
 	
-	public static Set union(Set lhs, Set rhs) {
+	public static WySet union(WySet lhs, WySet rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
 		
@@ -89,12 +89,12 @@ public final class Set extends java.util.HashSet {
 			Util.nset_inplace_updates++;						
 		} else if(rhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
-			Set tmp = rhs;
+			WySet tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.countClone(lhs);
-			lhs = new Set(lhs);
+			lhs = new WySet(lhs);
 		}		
 		lhs.addAll(rhs);
 		for(Object o : rhs) {
@@ -103,35 +103,35 @@ public final class Set extends java.util.HashSet {
 		return lhs;
 	}
 	
-	public static Set union(Set lhs, Object rhs) {
+	public static WySet union(WySet lhs, Object rhs) {
 		Util.countRefs(lhs);
 		
 		if(lhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);			
-			lhs = new Set(lhs);			
+			lhs = new WySet(lhs);			
 		}
 		lhs.add(rhs);
 		Util.incRefs(rhs);
 		return lhs;
 	}
 	
-	public static Set union(Object lhs, Set rhs) {
+	public static WySet union(Object lhs, WySet rhs) {
 		Util.countRefs(rhs);
 		
 		if(rhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(rhs);			
-			rhs = new Set(rhs);			
+			rhs = new WySet(rhs);			
 		}		
 		rhs.add(lhs);
 		Util.incRefs(lhs);
 		return rhs;
 	}
 	
-	public static Set difference(Set lhs, Set rhs) {
+	public static WySet difference(WySet lhs, WySet rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
 		
@@ -139,7 +139,7 @@ public final class Set extends java.util.HashSet {
 			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);
-			lhs = new Set(lhs);
+			lhs = new WySet(lhs);
 		}			
 		lhs.removeAll(rhs);
 		for(Object o : rhs) {
@@ -148,32 +148,32 @@ public final class Set extends java.util.HashSet {
 		return lhs;
 	}
 	
-	public static Set difference(Set lhs, Object rhs) {
+	public static WySet difference(WySet lhs, Object rhs) {
 		Util.countRefs(lhs);
 		if(lhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);
-			lhs = new Set(lhs);
+			lhs = new WySet(lhs);
 		}	
 		lhs.remove(rhs);
 		Util.decRefs(rhs); // because of constructor increment		
 		return lhs;
 	}	
 	
-	public static Set intersect(Set lhs, Set rhs) {
+	public static WySet intersect(WySet lhs, WySet rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
 		if(lhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else if(rhs.refCount == 0) {
 			Util.nset_inplace_updates++;			
-			Set tmp = rhs;
+			WySet tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.countClone(lhs);
-			lhs = new Set(lhs);
+			lhs = new WySet(lhs);
 		}	
 		lhs.retainAll(rhs);
 		for(Object o : rhs) {
@@ -184,14 +184,14 @@ public final class Set extends java.util.HashSet {
 		return lhs;
 	}
 	
-	public static Set intersect(Set lhs, Object rhs) {
+	public static WySet intersect(WySet lhs, Object rhs) {
 		Util.countRefs(lhs);
 		
 		if(lhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);
-			lhs = new Set(lhs);
+			lhs = new WySet(lhs);
 		}
 		
 		for(Object o : lhs) {
@@ -208,14 +208,14 @@ public final class Set extends java.util.HashSet {
 		return lhs;
 	}
 	
-	public static Set intersect(Object lhs, Set rhs) {		
+	public static WySet intersect(Object lhs, WySet rhs) {		
 		Util.countRefs(rhs);
 		
 		if(rhs.refCount == 0) {
 			Util.nset_inplace_updates++;						
 		} else {
 			Util.countClone(rhs);
-			rhs = new Set(rhs);
+			rhs = new WySet(rhs);
 		}
 		
 		for(Object o : rhs) {
@@ -232,7 +232,7 @@ public final class Set extends java.util.HashSet {
 		return rhs;
 	}	
 	
-	public static BigInteger length(Set set) {		
+	public static BigInteger length(WySet set) {		
 		return BigInteger.valueOf(set.size());
 	}
 	
@@ -244,7 +244,7 @@ public final class Set extends java.util.HashSet {
 	 * @param item
 	 * @return
 	 */
-	public static Set internal_add(Set lhs, Object rhs) {		
+	public static WySet internal_add(WySet lhs, Object rhs) {		
 		lhs.add(rhs);
 		return lhs;
 	}

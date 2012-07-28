@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import java.util.Random;
 import org.junit.*;
-import wyjc.runtime.WhileyRational;
+import wyjc.runtime.WyRat;
 
 /**
  * Unit tests for the BigRational class.
@@ -18,7 +18,7 @@ public class Rational {
 	 */
 	@Test public void doubleConversion() {
 		for(double v : inputs) {
-			double w = WhileyRational.valueOf(v).doubleValue(); 
+			double w = WyRat.valueOf(v).doubleValue(); 
 			if(w != v) {
 				fail("FAILED ON: " + v + " (GOT: " + w + ")");				
 			}

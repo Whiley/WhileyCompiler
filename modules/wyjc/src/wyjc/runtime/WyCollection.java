@@ -3,15 +3,15 @@ package wyjc.runtime;
 import java.math.BigInteger;
 import java.util.Map;
 
-public class Collection {
+public class WyCollection {
 
 	public static java.util.Iterator iterator(Object col) {				
 		Util.decRefs(col);
 		if(col instanceof java.util.Collection) {
 			java.util.Collection c = (java.util.Collection) col;
 			return c.iterator();
-		} else if (col instanceof Dictionary) {
-			Dictionary m = (Dictionary) col;
+		} else if (col instanceof WyMap) {
+			WyMap m = (WyMap) col;
 			return m.iterator();
 		} else {
 			String s = (String) col;
@@ -56,12 +56,12 @@ public class Collection {
 	}
 	
 	public static Object indexOf(Object col, Object key) {
-		if(col instanceof List) {
-			List l = (List) col;
+		if(col instanceof WyList) {
+			WyList l = (WyList) col;
 			BigInteger index = (BigInteger) key;
 			return l.get(index.intValue());
-		} else if(col instanceof Dictionary) {
-			Dictionary d = (Dictionary) col;			
+		} else if(col instanceof WyMap) {
+			WyMap d = (WyMap) col;			
 			return d.get(key);
 		} else {
 			String s = (String) col;

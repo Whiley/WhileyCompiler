@@ -25,10 +25,10 @@
 
 package wyjc.runtime;
 
-public final class Exception extends RuntimeException {
+public final class WyException extends RuntimeException {
 	public final Object value;
 	
-	public Exception(Object v) {		
+	public WyException(Object v) {		
 		this.value = v;
 	}
 	

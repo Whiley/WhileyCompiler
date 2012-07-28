@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Map;
 
-public final class List extends java.util.ArrayList {		
+public final class WyList extends java.util.ArrayList {		
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -42,15 +42,15 @@ public final class List extends java.util.ArrayList {
 	// Generic Operations
 	// ================================================================================	 	
 	
-	public List() {
+	public WyList() {
 		super();				
 	}
 	
-	public List(int size) {
+	public WyList(int size) {
 		super(size);			
 	}
 	
-	List(java.util.Collection items) {
+	WyList(java.util.Collection items) {
 		super(items);			
 		for(Object o : items) {
 			Util.incRefs(o);
@@ -74,17 +74,17 @@ public final class List extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================	 
 		
-	public static Object get(List list, BigInteger index) {				
+	public static Object get(WyList list, BigInteger index) {				
 		Object item = list.get(index.intValue());
 		return Util.incRefs(item);		
 	}
 			
-	public static List set(List list, final BigInteger index, final Object value) {
+	public static WyList set(WyList list, final BigInteger index, final Object value) {
 		Util.countRefs(list);
 		if(list.refCount > 0) {			
 			Util.countClone(list);			
 			// in this case, we need to clone the list in question						
-			list = new List(list);						
+			list = new WyList(list);						
 		} else {
 			Util.nlist_inplace_updates++;
 		}
@@ -94,7 +94,7 @@ public final class List extends java.util.ArrayList {
 		return list;
 	}
 	
-	public static List sublist(final List list, final BigInteger start, final BigInteger end) {
+	public static WyList sublist(final WyList list, final BigInteger start, final BigInteger end) {
 		Util.countRefs(list);
 		int st = start.intValue();
 		int en = end.intValue();	
@@ -124,16 +124,16 @@ public final class List extends java.util.ArrayList {
 				return list;
 			}
 		} else {								
-			List r;		
+			WyList r;		
 			if(st <= en) {
-				r = new List(en-st);
+				r = new WyList(en-st);
 				for (int i = st; i != en; ++i) {
 					Object item = list.get(i);
 					Util.incRefs(item);
 					r.add(item);
 				}	
 			} else {
-				r = new List(st-en);
+				r = new WyList(st-en);
 				for (int i = (st-1); i >= en; --i) {
 					Object item = list.get(i);
 					Util.incRefs(item);
@@ -145,18 +145,18 @@ public final class List extends java.util.ArrayList {
 		}							
 	}
 	
-	public static BigInteger length(List list) {						
+	public static BigInteger length(WyList list) {						
 		return BigInteger.valueOf(list.size());
 	}
 	
-	public static List append(List lhs, List rhs) {
+	public static WyList append(WyList lhs, WyList rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
 		if(lhs.refCount == 0) {
 			Util.nlist_inplace_updates++;						
 		} else {
 			Util.countClone(lhs);			
-			lhs = new List(lhs);				
+			lhs = new WyList(lhs);				
 		} 
 		
 		lhs.addAll(rhs);
@@ -168,33 +168,33 @@ public final class List extends java.util.ArrayList {
 		return lhs;
 	}
 	
-	public static List append(List list, final Object item) {
+	public static WyList append(WyList list, final Object item) {
 		Util.countRefs(list);
 		if(list.refCount == 0) {
 			Util.nlist_inplace_updates++;						
 		} else { 
 			Util.countClone(list);			 	
-			list = new List(list);
+			list = new WyList(list);
 		}
 		list.add(item);
 		Util.incRefs(item);
 		return list;
 	}
 	
-	public static List append(final Object item, List list) {
+	public static WyList append(final Object item, WyList list) {
 		Util.countRefs(list);
 		if(list.refCount == 0) {
 			Util.nlist_inplace_updates++;						
 		} else { 
 			Util.countClone(list);						 
-			list = new List(list);
+			list = new WyList(list);
 		}
 		list.add(0,item);
 		Util.incRefs(item);
 		return list;
 	}
 	
-	public static int size(final List list) {		
+	public static int size(final WyList list) {		
 		return list.size();
 	}
 	
@@ -206,7 +206,7 @@ public final class List extends java.util.ArrayList {
 	 * @param item
 	 * @return
 	 */
-	public static List internal_add(List list, final Object item) {			
+	public static WyList internal_add(WyList list, final Object item) {			
 		list.add(item);
 		return list;
 	}
@@ -219,7 +219,7 @@ public final class List extends java.util.ArrayList {
 	 * @param item
 	 * @return
 	 */
-	public static Object internal_get(List list, BigInteger index) {		
+	public static Object internal_get(WyList list, BigInteger index) {		
 		Object item = list.get(index.intValue());
 		if(list.refCount > 0) {
 			Util.incRefs(item);			
@@ -227,7 +227,7 @@ public final class List extends java.util.ArrayList {
 		return item;
 	}
 	
-	public static java.util.Iterator iterator(List list) {
+	public static java.util.Iterator iterator(WyList list) {
 		return list.iterator();
 	}		
 }

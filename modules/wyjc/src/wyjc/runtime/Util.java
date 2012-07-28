@@ -120,7 +120,7 @@ public class Util {
 	private static long nrecord_elems = 0;
 	static int nrecord_strong_updates = 0;
 
-	public static void countRefs(List l) {
+	public static void countRefs(WyList l) {
 		total_ref_count += l.refCount;		
 		total_population++;
 		if(logRefCounts) {
@@ -128,7 +128,7 @@ public class Util {
 		}
 	}
 	
-	public static void countRefs(Set l) {
+	public static void countRefs(WySet l) {
 		total_ref_count += l.refCount;		
 		total_population++;
 		if(logRefCounts) {
@@ -136,7 +136,7 @@ public class Util {
 		}
 	}
 	
-	public static void countRefs(Dictionary l) {
+	public static void countRefs(WyMap l) {
 		total_ref_count += l.refCount;		
 		total_population++;
 		if(logRefCounts) {
@@ -144,7 +144,7 @@ public class Util {
 		}
 	}
 	
-	public static void countRefs(Record l) {
+	public static void countRefs(WyRecord l) {
 		total_ref_count += l.refCount;
 		total_population++;
 		if(logRefCounts) {
@@ -152,22 +152,22 @@ public class Util {
 		}
 	}
 	
-	public static void countClone(List l) {
+	public static void countClone(WyList l) {
 		nlist_clones ++;		
 		nlist_elems += l.size();
 	}
 	
-	public static void countClone(Set l) {
+	public static void countClone(WySet l) {
 		nset_clones ++;		
 		nset_elems += l.size();
 	}
 	
-	public static void countClone(Dictionary l) {
+	public static void countClone(WyMap l) {
 		ndict_clones ++;		
 		ndict_elems += l.size();
 	}
 	
-	public static void countClone(Record l) {
+	public static void countClone(WyRecord l) {
 		nrecord_clones ++;		
 		nrecord_elems += l.size();
 	}
@@ -224,8 +224,8 @@ public class Util {
 		return (byte) ((b1&0xFF) >>> b2.intValue());		
 	}
 	
-	public static List range(BigInteger start, BigInteger end) {
-		List l = new List();
+	public static WyList range(BigInteger start, BigInteger end) {
+		WyList l = new WyList();
 		
 		long st = start.longValue();
 		long en = start.longValue();
@@ -259,8 +259,8 @@ public class Util {
 	 * @param args
 	 * @return
 	 */
-	public static List fromStringList(String[] args) {		
-		List r = new List(args.length);
+	public static WyList fromStringList(String[] args) {		
+		WyList r = new WyList(args.length);
 		for(int i=0;i!=args.length;++i) {
 			r.add(args[i]);
 		}		
@@ -272,8 +272,8 @@ public class Util {
 	 * @param str
 	 * @return
 	 */
-	public static List str2cl(String str) {
-		List r = new List(str.length());
+	public static WyList str2cl(String str) {
+		WyList r = new WyList(str.length());
 		for(int i=0;i!=str.length();++i) {
 			r.add(str.charAt(i));
 		}
@@ -285,8 +285,8 @@ public class Util {
 	 * @param str
 	 * @return
 	 */
-	public static List str2il(String str) {
-		List r = new List(str.length());
+	public static WyList str2il(String str) {
+		WyList r = new WyList(str.length());
 		for(int i=0;i!=str.length();++i) {
 			r.add(BigInteger.valueOf(str.charAt(i)));
 		}
@@ -322,46 +322,46 @@ public class Util {
 	 * one.
 	 */
 	public static Object incRefs(Object obj) {
-		if(obj instanceof List) {
-			List list = (List) obj;
+		if(obj instanceof WyList) {
+			WyList list = (WyList) obj;
 			list.refCount++;
-		} else if(obj instanceof Record) {
-			Record rec = (Record) obj;			
+		} else if(obj instanceof WyRecord) {
+			WyRecord rec = (WyRecord) obj;			
 			rec.refCount++;			
-		} else if(obj instanceof Set) {
-			Set set = (Set) obj;
+		} else if(obj instanceof WySet) {
+			WySet set = (WySet) obj;
 			set.refCount++;			
-		} else if(obj instanceof Dictionary) {
-			Dictionary dict = (Dictionary) obj;
+		} else if(obj instanceof WyMap) {
+			WyMap dict = (WyMap) obj;
 			dict.refCount++;						
-		} else if(obj instanceof Tuple) {
-			Tuple tuple = (Tuple) obj;
+		} else if(obj instanceof WyTuple) {
+			WyTuple tuple = (WyTuple) obj;
 			tuple.refCount++;			
 		}
 		return obj;
 	}
 
-	public static List incRefs(List obj) {		
+	public static WyList incRefs(WyList obj) {		
 		obj.refCount++;
 		return obj;
 	}
 	
-	public static Set incRefs(Set obj) {
+	public static WySet incRefs(WySet obj) {
 		obj.refCount++;
 		return obj;
 	}
 	
-	public static Record incRefs(Record obj) {
+	public static WyRecord incRefs(WyRecord obj) {
 		obj.refCount++;
 		return obj;
 	}
 	
-	public static Dictionary incRefs(Dictionary obj) {
+	public static WyMap incRefs(WyMap obj) {
 		obj.refCount++;
 		return obj;
 	}
 	
-	public static Tuple incRefs(Tuple obj) {
+	public static WyTuple incRefs(WyTuple obj) {
 		obj.refCount++;
 		return obj;
 	}
@@ -417,7 +417,7 @@ public class Util {
 //		} 
 	}
 
-	public static void decRefs(List list) {		
+	public static void decRefs(WyList list) {		
 //		list.refCount--;
 //		if(list.refCount == 0) {
 //			for(Object o : list) {
@@ -426,7 +426,7 @@ public class Util {
 //		}
 	}
 	
-	public static void decRefs(Set set) {
+	public static void decRefs(WySet set) {
 //		set.refCount--;
 //		if(set.refCount == 0) {
 //			for(Object o : set) {
@@ -435,7 +435,7 @@ public class Util {
 //		}
 	}
 	
-	public static void decRefs(Record rec) {
+	public static void decRefs(WyRecord rec) {
 //		rec.refCount--;
 //		if(rec.refCount == 0) {				
 //			for(Object o : rec.values()) {
@@ -444,7 +444,7 @@ public class Util {
 //		}		
 	}
 	
-	public static void decRefs(Dictionary dict) {
+	public static void decRefs(WyMap dict) {
 //		dict.refCount--;
 //		if(dict.refCount == 0) {				
 //			for(Map.Entry e : dict.entrySet()) {
@@ -454,7 +454,7 @@ public class Util {
 //		}
 	}
 	
-	public static void decRefs(Tuple tuple) {		
+	public static void decRefs(WyTuple tuple) {		
 //		tuple.refCount--;
 //		if(tuple.refCount == 0) {
 //			for(Object o : tuple) {
@@ -466,7 +466,7 @@ public class Util {
 	/**
 	 * The <code>instanceOf</code> method implements a runtime type test. 
 	 */
-	public static boolean instanceOf(Object obj, Type t) {			
+	public static boolean instanceOf(Object obj, WyType t) {			
 		switch(t.kind) {
 			case K_ANY:
 				return true;
@@ -483,18 +483,18 @@ public class Util {
 			case K_INT:
 				return obj instanceof BigInteger;
 			case K_RATIONAL:
-				return obj instanceof WhileyRational;
+				return obj instanceof WyRat;
 			case K_STRING:
 				return obj instanceof String;
 			case K_LIST:
 			{
-				if(obj instanceof List) {
-					List ol = (List) obj;
-					Type.List tl = (Type.List) t;
+				if(obj instanceof WyList) {
+					WyList ol = (WyList) obj;
+					WyType.List tl = (WyType.List) t;
 					if(tl.nonEmpty && ol.isEmpty()) {
 						return false;
 					}
-					Type el = tl.element;
+					WyType el = tl.element;
 					if(el.kind == K_ANY) {
 						return true;
 					} else if(el.kind == K_VOID) {
@@ -512,10 +512,10 @@ public class Util {
 			}
 			case K_SET:
 			{
-				if(obj instanceof Set) {
-					Set ol = (Set) obj;
-					Type.Set tl = (Type.Set) t;
-					Type el = tl.element;
+				if(obj instanceof WySet) {
+					WySet ol = (WySet) obj;
+					WyType.Set tl = (WyType.Set) t;
+					WyType el = tl.element;
 					if(el.kind == K_ANY) {
 						return true;
 					} else if(el.kind == K_VOID) {
@@ -533,10 +533,10 @@ public class Util {
 			}
 			case K_TUPLE:
 			{				
-				if(obj instanceof Tuple) {
-					Tuple ol = (Tuple) obj;
-					Type.Tuple tl = (Type.Tuple) t;
-					Type[] types = tl.types;
+				if(obj instanceof WyTuple) {
+					WyTuple ol = (WyTuple) obj;
+					WyType.Tuple tl = (WyType.Tuple) t;
+					WyType[] types = tl.types;
 					if(types.length == ol.size()) {						
 						int i=0;
 						for(Object o : ol) { 
@@ -551,11 +551,11 @@ public class Util {
 			}
 			case K_MAP:
 			{
-				if(obj instanceof Dictionary) {
-					Dictionary ol = (Dictionary) obj;
-					Type.Dictionary tl = (Type.Dictionary) t;
-					Type key = tl.key;
-					Type value = tl.value;
+				if(obj instanceof WyMap) {
+					WyMap ol = (WyMap) obj;
+					WyType.Dictionary tl = (WyType.Dictionary) t;
+					WyType key = tl.key;
+					WyType value = tl.value;
 					
 					if (key.kind == K_ANY && value.kind == K_ANY) {
 						return true;						
@@ -576,18 +576,18 @@ public class Util {
 			}
 			case K_RECORD:
 			{
-				if(obj instanceof Record) {
-					Record ol = (Record) obj;
-					Type.Record tl = (Type.Record) t;
+				if(obj instanceof WyRecord) {
+					WyRecord ol = (WyRecord) obj;
+					WyType.Record tl = (WyType.Record) t;
 					String[] names = tl.names;
-					Type[] types = tl.types;					
+					WyType[] types = tl.types;					
 					if(!tl.isOpen && names.length != ol.size()) {
 						return false;
 					}
 					for(int i=0;i!=names.length;++i) {
 						String name = names[i];
 						if(ol.containsKey(name)) {
-							Type type = types[i];
+							WyType type = types[i];
 							Object val = ol.get(name);						
 							if(!instanceOf(val,type)) {
 								return false;
@@ -602,13 +602,13 @@ public class Util {
 			}
 			case K_NEGATION:
 			{
-				Type.Negation not = (Type.Negation) t;
+				WyType.Negation not = (WyType.Negation) t;
 				return !instanceOf(obj,not.element);
 			}
 			case K_UNION:
 			{
-				Type.Union un = (Type.Union) t;
-				for(Type bound : un.bounds) {
+				WyType.Union un = (WyType.Union) t;
+				for(WyType bound : un.bounds) {
 					if(instanceOf(obj,bound)) {
 						return true;
 					}
@@ -634,10 +634,10 @@ public class Util {
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(List object, Type type) {
-		if(type instanceof Type.List) {			
-			Type.List tl = (Type.List) type;
-			Type el = tl.element;
+	public static boolean instanceOf(WyList object, WyType type) {
+		if(type instanceof WyType.List) {			
+			WyType.List tl = (WyType.List) type;
+			WyType el = tl.element;
 			if(el.kind == K_ANY) {
 				return true;
 			} else if(el.kind == K_VOID) {
@@ -670,10 +670,10 @@ public class Util {
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(Set object, Type type) {
-		if(type instanceof Type.Set) {			
-			Type.Set tl = (Type.Set) type;
-			Type el = tl.element;
+	public static boolean instanceOf(WySet object, WyType type) {
+		if(type instanceof WyType.Set) {			
+			WyType.Set tl = (WyType.Set) type;
+			WyType el = tl.element;
 			if(el.kind == K_ANY) {
 				return true;
 			} else if(el.kind == K_VOID) {
@@ -706,11 +706,11 @@ public class Util {
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(Dictionary object, Type type) {		
-		if(type instanceof Type.Dictionary) {			
-			Type.Dictionary tl = (Type.Dictionary) type;
-			Type key = tl.key;
-			Type value = tl.value;
+	public static boolean instanceOf(WyMap object, WyType type) {		
+		if(type instanceof WyType.Dictionary) {			
+			WyType.Dictionary tl = (WyType.Dictionary) type;
+			WyType key = tl.key;
+			WyType value = tl.value;
 
 			if (key.kind == K_ANY && value.kind == K_ANY) {
 				return true;						
@@ -746,18 +746,18 @@ public class Util {
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(Record object, Type type) {
-		if(type instanceof Type.Record) {			
-			Type.Record tl = (Type.Record) type;
+	public static boolean instanceOf(WyRecord object, WyType type) {
+		if(type instanceof WyType.Record) {			
+			WyType.Record tl = (WyType.Record) type;
 			String[] names = tl.names;
-			Type[] types = tl.types;
+			WyType[] types = tl.types;
 			if (!tl.isOpen && names.length != object.size()) {
 				return false;
 			}
 			for(int i=0;i!=names.length;++i) {
 				String name = names[i];
 				if(object.containsKey(name)) {
-					Type fieldType = types[i];
+					WyType fieldType = types[i];
 					Object val = object.get(name);						
 					if(!instanceOf(val,fieldType)) {
 						return false;
@@ -787,10 +787,10 @@ public class Util {
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(Tuple object, Type type) {				
-		if(type instanceof Type.Tuple) {			
-			Type.Tuple tl = (Type.Tuple) type;
-			Type[] types = tl.types;
+	public static boolean instanceOf(WyTuple object, WyType type) {				
+		if(type instanceof WyType.Tuple) {			
+			WyType.Tuple tl = (WyType.Tuple) type;
+			WyType[] types = tl.types;
 			if(types.length == object.size()) {	
 				int i=0;
 				for(Object o : object) { 
@@ -825,18 +825,18 @@ public class Util {
 			return compare((Character)o1,o2);
 		} else if(o1 instanceof BigInteger) {			
 			return compare((BigInteger)o1,o2);
-		} else if(o1 instanceof WhileyRational) {
-			return compare((WhileyRational)o1,o2);
-		} else if(o1 instanceof Set) {
-			return compare((Set)o1,o2);
-		} else if(o1 instanceof List) {
-			return compare((List)o1,o2);
-		} else if(o1 instanceof Dictionary) {
-			return compare((Dictionary)o1,o2);
-		} else if(o1 instanceof Tuple) {
-			return compare((Tuple)o1,o2);
-		} else if(o1 instanceof Record) {
-			return compare((Record)o1,o2);
+		} else if(o1 instanceof WyRat) {
+			return compare((WyRat)o1,o2);
+		} else if(o1 instanceof WySet) {
+			return compare((WySet)o1,o2);
+		} else if(o1 instanceof WyList) {
+			return compare((WyList)o1,o2);
+		} else if(o1 instanceof WyMap) {
+			return compare((WyMap)o1,o2);
+		} else if(o1 instanceof WyTuple) {
+			return compare((WyTuple)o1,o2);
+		} else if(o1 instanceof WyRecord) {
+			return compare((WyRecord)o1,o2);
 		} else {
 			throw new IllegalArgumentException("Invalid object passed to comparator: " + o1);
 		}
@@ -875,29 +875,29 @@ public class Util {
 		}
 	}
 
-	public static int compare(WhileyRational o1, Object o2) {
+	public static int compare(WyRat o1, Object o2) {
 		if(o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger) {
 			return 1;
-		} else if(o2 instanceof WhileyRational) {
-			WhileyRational b2 = (WhileyRational) o2;
+		} else if(o2 instanceof WyRat) {
+			WyRat b2 = (WyRat) o2;
 			return o1.compareTo(b2);
 		} else {
 			return -1;
 		}
 	}
 
-	public static int compare(Set o1, Object o2) {
+	public static int compare(WySet o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WhileyRational) {
+				|| o2 instanceof WyRat) {
 			return 1;
-		} else if (o2 instanceof Set) {
-			return compare(o1, (Set) o2);
+		} else if (o2 instanceof WySet) {
+			return compare(o1, (WySet) o2);
 		} else {
 			return -1;
 		}
 	}
 
-	public static int compare(Set o1, Set o2) {
+	public static int compare(WySet o1, WySet o2) {
 		int s1_size = o1.size();
 		int s2_size = o2.size();
 		if(s1_size < s2_size) {
@@ -922,18 +922,18 @@ public class Util {
 		}
 	}
 
-	public static int compare(List o1, Object o2) {
+	public static int compare(WyList o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WhileyRational || o2 instanceof Set) {
+				|| o2 instanceof WyRat || o2 instanceof WySet) {
 			return 1;
-		} else if (o2 instanceof List) {
-			return compare(o1, (List) o2);
+		} else if (o2 instanceof WyList) {
+			return compare(o1, (WyList) o2);
 		} else {
 			return -1;
 		}
 	}
 
-	public static int compare(List o1, List o2) {
+	public static int compare(WyList o1, WyList o2) {
 		int s1_size = o1.size();
 		int s2_size = o2.size();
 		if(s1_size < s2_size) {
@@ -953,19 +953,19 @@ public class Util {
 		}
 	}
 
-	public static int compare(Tuple o1, Object o2) {
+	public static int compare(WyTuple o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WhileyRational || o2 instanceof Set
-				|| o2 instanceof List) {
+				|| o2 instanceof WyRat || o2 instanceof WySet
+				|| o2 instanceof WyList) {
 			return 1;
-		} else if (o2 instanceof Tuple) {
-			return compare(o1, (Tuple) o2);
+		} else if (o2 instanceof WyTuple) {
+			return compare(o1, (WyTuple) o2);
 		} else {
 			return -1;
 		}
 	}
 
-	public static int compare(Tuple o1, Tuple o2) {
+	public static int compare(WyTuple o1, WyTuple o2) {
 		int s1_size = o1.size();
 		int s2_size = o2.size();
 		if(s1_size < s2_size) {
@@ -985,19 +985,19 @@ public class Util {
 		}
 	}
 
-	public static int compare(Record o1, Object o2) {
+	public static int compare(WyRecord o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WhileyRational || o2 instanceof Set
-				|| o2 instanceof Tuple) {
+				|| o2 instanceof WyRat || o2 instanceof WySet
+				|| o2 instanceof WyTuple) {
 			return 1;
-		} else if (o2 instanceof Record) {
-			return compare(o1, (Record) o2);
+		} else if (o2 instanceof WyRecord) {
+			return compare(o1, (WyRecord) o2);
 		} else {
 			return -1;
 		}
 	}
 
-	public static int compare(Record o1, Record o2) {
+	public static int compare(WyRecord o1, WyRecord o2) {
 		ArrayList<String> mKeys = new ArrayList<String>(o1.keySet());
 		ArrayList<String> tKeys = new ArrayList<String>(o2.keySet());
 		Collections.sort(mKeys);
@@ -1028,13 +1028,13 @@ public class Util {
 	}
 	
 
-	public static Record systemConsole(String[] args) {
+	public static WyRecord systemConsole(String[] args) {
 		// Not sure what the default value should be yet!!!
-		Actor sysout = new Actor(null);
-		Record data = new Record();
+		WyObject sysout = new WyObject(null);
+		WyRecord data = new WyRecord();
 		data.put("out", sysout);		
 		data.put("args",fromStringList(args));
-		Record console = new Record(data);
+		WyRecord console = new WyRecord(data);
 		sysout.start();		
 		return console;
 	}

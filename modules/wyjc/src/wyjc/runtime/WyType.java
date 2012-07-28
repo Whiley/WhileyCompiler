@@ -52,11 +52,11 @@ import static wyil.lang.Type.K_NEGATION;
 import static wyil.lang.Type.K_FUNCTION;
 import static wyil.lang.Type.K_NOMINAL;
 
-public abstract class Type {
+public abstract class WyType {
 	
 	public final int kind;
 	
-	private Type(int kind) {
+	private WyType(int kind) {
 		this.kind = kind;
 	}
 	
@@ -71,65 +71,65 @@ public abstract class Type {
 	public static final Rational REAL = new Rational();
 	public static final Strung STRING = new Strung();
 	
-	private static final class Void extends Type { Void() {super(K_VOID);}}
-	private static final class Any extends Type { Any() {super(K_ANY);}}
-	private static final class Meta extends Type { Meta() {super(K_META);}}
-	private static final class Null extends Type { Null() {super(K_NULL);}}
-	private static final class Bool extends Type { Bool() {super(K_BOOL);}}
-	private static final class Byte extends Type { Byte() {super(K_BYTE);}}
-	private static final class Char extends Type { Char() {super(K_CHAR);}}
-	private static final class Integer extends Type { Integer() {super(K_INT);}}
-	private static final class Rational extends Type { Rational() {super(K_RATIONAL);}}
-	private static final class Strung extends Type { Strung() {super(K_STRING);}}
+	private static final class Void extends WyType { Void() {super(K_VOID);}}
+	private static final class Any extends WyType { Any() {super(K_ANY);}}
+	private static final class Meta extends WyType { Meta() {super(K_META);}}
+	private static final class Null extends WyType { Null() {super(K_NULL);}}
+	private static final class Bool extends WyType { Bool() {super(K_BOOL);}}
+	private static final class Byte extends WyType { Byte() {super(K_BYTE);}}
+	private static final class Char extends WyType { Char() {super(K_CHAR);}}
+	private static final class Integer extends WyType { Integer() {super(K_INT);}}
+	private static final class Rational extends WyType { Rational() {super(K_RATIONAL);}}
+	private static final class Strung extends WyType { Strung() {super(K_STRING);}}
 
-	public static final class Reference extends Type {
-		public Type element;
+	public static final class Reference extends WyType {
+		public WyType element;
 		
-		public Reference(Type element) {
+		public Reference(WyType element) {
 			super(K_REFERENCE);
 			this.element = element;
 		}
 	}
 
 	
-	public static final class List extends Type {
-		public Type element;
+	public static final class List extends WyType {
+		public WyType element;
 		public final boolean nonEmpty;
 
-		public List(Type element, boolean nonEmpty) {
+		public List(WyType element, boolean nonEmpty) {
 			super(K_LIST);
 			this.element = element;
 			this.nonEmpty = nonEmpty;
 		}
 	}
 	
-	public static final class Set extends Type {
-		public Type element;
+	public static final class Set extends WyType {
+		public WyType element;
 		public final boolean nonEmpty;
 		
-		public Set(Type element, boolean nonEmpty) {
+		public Set(WyType element, boolean nonEmpty) {
 			super(K_SET);
 			this.element = element;
 			this.nonEmpty = nonEmpty;
 		}
 	}
 	
-	public static final class Dictionary extends Type {
-		public Type key;
-		public Type value;
+	public static final class Dictionary extends WyType {
+		public WyType key;
+		public WyType value;
 		
-		public Dictionary(Type key, Type value) {
+		public Dictionary(WyType key, WyType value) {
 			super(K_MAP);
 			this.key = key;
 			this.value = value;
 		}
 	}
 	
-	public static final class Record extends Type {
+	public static final class Record extends WyType {
 		public final String[] names;
-		public final Type[] types;
+		public final WyType[] types;
 		public final boolean isOpen;
-		public Record(String[] names, Type[] types, boolean open) {
+		public Record(String[] names, WyType[] types, boolean open) {
 			super(K_RECORD);
 			this.names = names;
 			this.types = types;
@@ -137,23 +137,23 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class Tuple extends Type {		
-		public final Type[] types;
-		public Tuple(Type[] types) {
+	public static final class Tuple extends WyType {		
+		public final WyType[] types;
+		public Tuple(WyType[] types) {
 			super(K_TUPLE);			
 			this.types = types;
 		}
 	}
 	
-	public static final class Union extends Type {
-		public final Type[] bounds;		
-		public Union(Type... bounds) {
+	public static final class Union extends WyType {
+		public final WyType[] bounds;		
+		public Union(WyType... bounds) {
 			super(K_UNION);
 			this.bounds = bounds;
 		}
 	}
 	
-	private static final class Nominal extends Type {
+	private static final class Nominal extends WyType {
 		public final String name;
 		public Nominal(String name) {
 			super(K_NOMINAL);
@@ -161,16 +161,16 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class Negation extends Type {
-		public Type element;
+	public static final class Negation extends WyType {
+		public WyType element;
 		
-		public Negation(Type element) {
+		public Negation(WyType element) {
 			super(K_NEGATION);
 			this.element = element;
 		}
 	}	
 	
-	public static final class Label extends Type {
+	public static final class Label extends WyType {
 		public final int label;
 		public Label(int label) {
 			super(-1);
@@ -178,10 +178,10 @@ public abstract class Type {
 		}
 	}
 	
-	public static Type valueOf(String str) throws IOException {
+	public static WyType valueOf(String str) throws IOException {
 		JavaIdentifierInputStream jin = new JavaIdentifierInputStream(str);
 		BinaryInputStream bin = new BinaryInputStream(jin);
-		ArrayList<Type> nodes = new ArrayList<Type>();
+		ArrayList<WyType> nodes = new ArrayList<WyType>();
 		int size = bin.read_uv();
 		for(int i=0;i!=size;++i) {
 			nodes.add(readNode(bin, nodes));
@@ -192,11 +192,11 @@ public abstract class Type {
 		return nodes.get(0);
 	}
 	
-	private static Type readNode(BinaryInputStream reader, ArrayList<Type> nodes) throws IOException {
+	private static WyType readNode(BinaryInputStream reader, ArrayList<WyType> nodes) throws IOException {
 		int kind = reader.read_uv();
 		boolean deterministic = reader.read_bit();
 		int nchildren = reader.read_uv();
-		Type[] children = new Type[nchildren];		
+		WyType[] children = new WyType[nchildren];		
 		for (int i=0;i!=nchildren;++i) {
 			children[i]=new Label(reader.read_uv());
 		}
@@ -256,7 +256,7 @@ public abstract class Type {
 		case K_NOMINAL: {				
 			String module = readString(reader);
 			String name = readString(reader);
-			return new Type.Nominal(module + ":" + name);
+			return new WyType.Nominal(module + ":" + name);
 		}		
 		}
 		
@@ -274,7 +274,7 @@ public abstract class Type {
 		return r;
 	}
 	
-	private static void substitute(Type type, ArrayList<Type> nodes) {
+	private static void substitute(WyType type, ArrayList<WyType> nodes) {
 		switch(type.kind) {
 		case K_VOID:			
 		case K_ANY:		
@@ -333,14 +333,14 @@ public abstract class Type {
 		throw new RuntimeException("unknow type encountered (kind: " + type.kind + ")");
 	}
 	
-	private static void substitute(Type[] types, ArrayList<Type> nodes) {
+	private static void substitute(WyType[] types, ArrayList<WyType> nodes) {
 		for(int i=0;i!=types.length;++i) {
 			Label type = (Label) types[i];
 			types[i] = nodes.get(type.label);			
 		}
 	}
 	
-	private static Type substitute(Label type, ArrayList<Type> nodes) {		
+	private static WyType substitute(Label type, ArrayList<WyType> nodes) {		
 		return nodes.get(type.label);					
 	}
 	
@@ -367,7 +367,7 @@ public abstract class Type {
 	 *            termination in the presence of cycles.
 	 * @return
 	 */
-	private static Type substitute(Type type, String label, Type root, HashSet<Type> visited) {
+	private static WyType substitute(WyType type, String label, WyType root, HashSet<WyType> visited) {
 		if(visited.contains(type)) {
 			return type;
 		} else {
@@ -383,7 +383,7 @@ public abstract class Type {
 				break;
 			case K_NOMINAL:
 			{
-				Type.Nominal leaf = (Type.Nominal) type;
+				WyType.Nominal leaf = (WyType.Nominal) type;
 				if(leaf.name.equals(label)) {
 					return root;
 				} else {
@@ -392,27 +392,27 @@ public abstract class Type {
 			}
 			case K_LIST:
 			{
-				Type.List list = (Type.List) type;
+				WyType.List list = (WyType.List) type;
 				list.element = substitute(list.element,label,root,visited); 
 				break;
 			}
 			case K_SET:
 			{
-				Type.Set set = (Type.Set) type;
+				WyType.Set set = (WyType.Set) type;
 				set.element = substitute(set.element,label,root,visited); 
 				break;
 			}
 			case K_MAP:
 			{
-				Type.Dictionary dict = (Type.Dictionary) type;
+				WyType.Dictionary dict = (WyType.Dictionary) type;
 				dict.key = substitute(dict.key,label,root,visited); 
 				dict.value = substitute(dict.value,label,root,visited);
 				break;
 			}
 			case K_RECORD:
 			{
-				Type.Record rec = (Type.Record) type;
-				Type[] types = rec.types;
+				WyType.Record rec = (WyType.Record) type;
+				WyType[] types = rec.types;
 				for(int i=0;i!=types.length;++i) {
 					types[i] = substitute(types[i],label,root,visited);
 				}
@@ -420,14 +420,14 @@ public abstract class Type {
 			}
 			case K_NEGATION:
 			{
-				Type.Negation not = (Type.Negation) type;
+				WyType.Negation not = (WyType.Negation) type;
 				not.element = substitute(not.element,label,root,visited); 
 				break;
 			}
 			case K_UNION:
 			{
-				Type.Union un = (Type.Union) type;
-				Type[] types = un.bounds;
+				WyType.Union un = (WyType.Union) type;
+				WyType[] types = un.bounds;
 				for(int i=0;i!=types.length;++i) {
 					types[i] = substitute(types[i],label,root,visited);
 				}

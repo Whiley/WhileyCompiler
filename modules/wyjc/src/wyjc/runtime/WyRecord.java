@@ -25,121 +25,75 @@
 
 package wyjc.runtime;
 
-import java.math.BigInteger;
 import java.util.*;
 
-public final class Dictionary extends java.util.HashMap<Object,Object> {	
+public final class WyRecord extends HashMap<String,Object> {	
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100;  // temporary measure
-
+	int refCount = 100; // temporary measure
+	
+	public WyRecord() {}
+	
+	WyRecord(HashMap<String,Object> r) {
+		super(r);
+		for(Object item : r.values()) {
+			Util.incRefs(item);
+		}
+	}
+	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
-	
-	public Dictionary() {
 		
-	}
-	
-	Dictionary(Dictionary dict) {
-		super(dict);
-		for(Map.Entry e : dict.entrySet()) {
-			Util.incRefs(e.getKey());
-			Util.incRefs(e.getValue());
-		}
-	}
-	
 	public String toString() {
 		String r = "{";
-		boolean firstTime=true;
-		ArrayList ss = new ArrayList(this.keySet());
-		Collections.sort(ss,Util.COMPARATOR);
+		boolean firstTime = true;
 
-		for(Object key : ss) {
-			if(!firstTime) {
-				r = r + ", ";
+		ArrayList<String> ss = new ArrayList<String>(keySet());
+		Collections.sort(ss);
+		for (String s : ss) {
+			if (!firstTime) {
+				r = r + ",";
 			}
-			firstTime=false;
-			Object val = get(key);			
-			r = r + whiley.lang.Any$native.toString(key) + "=>" + val;
+			firstTime = false;
+			r = r + s + ":" + whiley.lang.Any$native.toString(get(s));
 		}
 		return r + "}";
-	} 
-	
-	public java.util.Iterator iterator() {
-		return new Iterator(entrySet().iterator());		
 	}
-	
+		
 	// ================================================================================
-	// Dictionary Operations
+	// Record Operations
 	// ================================================================================	 	
 
-	public static Object get(Dictionary dict, Object key) {	
-		Object item = dict.get(key);		
+	public static Object get(final WyRecord record, final String field) {				
+		Object item = record.get(field);
 		Util.incRefs(item);
 		return item;
 	}
 	
-	public static Dictionary put(Dictionary dict, Object key, Object value) {
-		Util.countRefs(dict);
-		if(dict.refCount > 0) {
-			Util.countClone(dict);			
-			dict = new Dictionary(dict);			
+	public static WyRecord put(WyRecord record, final String field, final Object value) {
+		Util.countRefs(record);
+		if(record.refCount > 0) {
+			Util.countClone(record);			
+			record = new WyRecord(record);			
 		} else {
-			Util.ndict_inplace_updates++;
+			Util.nrecord_strong_updates++;
 		}
-		Object val = dict.put(key, value);
-		if(val != null) {
-			Util.decRefs(val);			
-		} else {
-			Util.incRefs(key);
-		}
-		Util.incRefs(value);		
-		return dict;
+		Object val = record.put(field, value);
+		Util.decRefs(val); // decrement overwritten value
+		Util.incRefs(value);
+		return record;
 	}
 	
-	public static BigInteger length(Dictionary dict) {		
-		return BigInteger.valueOf(dict.size());
-	}
-	
-	public static final class Iterator implements java.util.Iterator {
-		public java.util.Iterator<Map.Entry> iter;
-		
-		public Iterator(java.util.Iterator iter) {
-			this.iter = iter;
+	public static Object internal_get(final WyRecord record, final String field) {
+		Object item = record.get(field);
+		if(record.refCount > 0) {
+			Util.incRefs(item);
 		}
-		
-		public boolean hasNext() {
-			return iter.hasNext();
-		}
-		
-		public void remove(){
-			iter.remove();
-		}
-		
-		public Object next() {
-			Map.Entry e = iter.next();
-			return new Tuple(e.getKey(),e.getValue());
-		}
-	}
-	
-	/**
-	 * This method is not intended for public consumption. It is used internally
-	 * by the compiler during imperative updates only.
-	 * 
-	 * @param list
-	 * @param item
-	 * @return
-	 */
-	public static Object internal_get(Dictionary dict, Object key) {			
-		Object item = dict.get(key);
-		if(dict.refCount > 0) {
-			Util.incRefs(item);			
-		} 
-		return item;
+		return item;		
 	}
 }

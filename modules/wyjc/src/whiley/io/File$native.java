@@ -32,18 +32,18 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 
-import wyjc.runtime.Actor;
-import wyjc.runtime.List;
-import wyjc.runtime.Record;
+import wyjc.runtime.WyObject;
+import wyjc.runtime.WyList;
+import wyjc.runtime.WyRecord;
 
 public class File$native {
-	public static Actor Reader(String filename) {
-		Record r = new Record();
+	public static WyObject Reader(String filename) {
+		WyRecord r = new WyRecord();
 		try {			
 			FileInputStream fin = new FileInputStream(filename);
 			r.put("fileName", filename);
 			r.put("$fin", fin);
-			Actor p = new Actor(r);
+			WyObject p = new WyObject(r);
 			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
@@ -52,13 +52,13 @@ public class File$native {
 		return null;
 	}
 	
-	public static Actor Writer(String filename) {
-		Record r = new Record();
+	public static WyObject Writer(String filename) {
+		WyRecord r = new WyRecord();
 		try {			
 			FileOutputStream fout = new FileOutputStream(filename);
 			r.put("fileName", filename);
 			r.put("$fout", fout);			
-			Actor p = new Actor(r);
+			WyObject p = new WyObject(r);
 			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
@@ -67,7 +67,7 @@ public class File$native {
 		return null;
 	}
 	
-	public static void close(Actor p) {
+	public static void close(WyObject p) {
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");		
 		try {
@@ -83,11 +83,11 @@ public class File$native {
 		}
 	}
 	
-	public static List read(Actor p, BigInteger max) {		
+	public static WyList read(WyObject p, BigInteger max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
-		List r = new List();
+		WyList r = new WyList();
 		byte[] bytes = new byte[max.intValue()];		
 		try {
 			int nbytes = fin.read(bytes);
@@ -102,11 +102,11 @@ public class File$native {
 	}
 	
 	private static final int CHUNK_SIZE = 1024;
-	public static List read(Actor p) {		
+	public static WyList read(WyObject p) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
-		List r = new List();				
+		WyList r = new WyList();				
 		try {
 			int nbytes = 0;
 			do {
@@ -123,7 +123,7 @@ public class File$native {
 		return r;		
 	}
 	
-	public static void write(Actor p, List bytes) {
+	public static void write(WyObject p, WyList bytes) {
 		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
 				.get("$fout");
 				

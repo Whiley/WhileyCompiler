@@ -1,7 +1,7 @@
 package whiley.lang;
 
 import java.math.BigInteger;
-import wyjc.runtime.WhileyRational;
+import wyjc.runtime.WyRat;
 
 public class Math$native {
 	/**
@@ -11,14 +11,14 @@ public class Math$native {
 	 * @param err
 	 * @return
 	 */
-	public static WhileyRational sqrt(BigInteger i, WhileyRational err) {
+	public static WyRat sqrt(BigInteger i, WyRat err) {
 		int nbits = i.bitLength();
 		if(nbits < 32) {
 			// Note, need to restrict to ints, since long=>double conversion is
 			// lossy in Java. 
 			int v = i.intValue();
 			double r = Math.sqrt(v);
-			return WhileyRational.valueOf(r);
+			return WyRat.valueOf(r);
 		} else {
 			throw new RuntimeException("need to implement general sqrt");
 		}

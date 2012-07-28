@@ -25,9 +25,10 @@
 
 package wyjc.runtime;
 
-import java.util.*;
+import java.math.BigInteger;
 
-public final class Record extends HashMap<String,Object> {	
+
+public final class WyTuple extends java.util.ArrayList {		
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -36,64 +37,78 @@ public final class Record extends HashMap<String,Object> {
 	 */
 	int refCount = 100; // temporary measure
 	
-	public Record() {}
-	
-	Record(HashMap<String,Object> r) {
-		super(r);
-		for(Object item : r.values()) {
-			Util.incRefs(item);
-		}
-	}
-	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
+	
+	public WyTuple() {
+		super();				
+	}
+	
+	public WyTuple(int size) {
+		super(size);			
+	}
+	
+	WyTuple(java.util.Collection items) {
+		super(items);			
+		for(Object item : items) {
+			Util.incRefs(item);
+		}
+	}
+	
+	WyTuple(Object... items) {
+		super();
+		for(Object item : items) {
+			add(item);
+			Util.incRefs(item);
+		}
+	}	
 		
 	public String toString() {
-		String r = "{";
-		boolean firstTime = true;
-
-		ArrayList<String> ss = new ArrayList<String>(keySet());
-		Collections.sort(ss);
-		for (String s : ss) {
-			if (!firstTime) {
-				r = r + ",";
+		String r = "(";
+		boolean firstTime=true;
+		for(Object o : this) {
+			if(!firstTime) {
+				r += ",";
 			}
-			firstTime = false;
-			r = r + s + ":" + whiley.lang.Any$native.toString(get(s));
+			firstTime=false;
+			r += whiley.lang.Any$native.toString(o);
 		}
-		return r + "}";
+		return r + ")";
 	}
-		
+	
 	// ================================================================================
-	// Record Operations
-	// ================================================================================	 	
-
-	public static Object get(final Record record, final String field) {				
-		Object item = record.get(field);
+	// List Operations
+	// ================================================================================	 
+	
+	public static Object get(WyTuple tuple, int index) {		
+		Object item = tuple.get(index);
 		Util.incRefs(item);
 		return item;
 	}
-	
-	public static Record put(Record record, final String field, final Object value) {
-		Util.countRefs(record);
-		if(record.refCount > 0) {
-			Util.countClone(record);			
-			record = new Record(record);			
-		} else {
-			Util.nrecord_strong_updates++;
-		}
-		Object val = record.put(field, value);
-		Util.decRefs(val); // decrement overwritten value
-		Util.incRefs(value);
-		return record;
+		
+	public static BigInteger length(WyTuple tuple) {		
+		return BigInteger.valueOf(tuple.size());
 	}
 	
-	public static Object internal_get(final Record record, final String field) {
-		Object item = record.get(field);
-		if(record.refCount > 0) {
-			Util.incRefs(item);
-		}
-		return item;		
+	public static int size(final WyTuple list) {
+		return list.size();
+	}
+	
+	public static java.util.Iterator iterator(WyTuple list) {
+		return list.iterator();
+	}		
+	
+	/**
+	 * This method is not intended for public consumption. It is used internally
+	 * by the compiler during object construction only.
+	 * 
+	 * @param list
+	 * @param item
+	 * @return
+	 */
+	public static WyTuple internal_add(WyTuple lhs, Object rhs) {		
+		lhs.add(rhs);
+		return lhs;
 	}
 }
