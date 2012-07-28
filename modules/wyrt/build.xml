@@ -1,9 +1,9 @@
 <project name="wyrt" default="build">  
 
   <target name="compile">
-    <taskdef name="wyjc" classname="wyc.util.AntTask" classpath="../wyc/src/"/>
+    <taskdef name="wyc" classname="wyc.util.AntTask" classpath="../wyc/src/:../wyil/src/"/>
     <echo message="${ant.project.name}"/>
-    <wyjc verbose="false" srcdir="src" includes="whiley/**/*.whiley"/>
+    <wyc verbose="false" srcdir="src" includes="whiley/**/*.whiley"/>
   </target>
 
   <target name="build" depends="compile">
