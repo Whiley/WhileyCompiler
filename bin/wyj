@@ -24,6 +24,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
+LIBS="wyc*.jar wyil*.jar wyjc*.jar"
 
 # check for running under cywin
 cygwin=false
@@ -49,17 +50,25 @@ while [ $1 ];
   esac
 done
 
-##################
-# RUN APPLICATION
-##################
+######################
+# CONSTRUCT CLASSPATH
+######################
 
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
     LIBDIR=`cygpath -pw "$LIBDIR"`
-    CLASSPATH="$LIBDIR/wyrt.jar;$CLASSPATH"
+    PATHSEP=";"
 else
     # under UNIX the classpath separator must be ":"
-    CLASSPATH="$LIBDIR/wyrt.jar:$CLASSPATH"
+    PATHSEP=":"
 fi
 
-java -cp "$CLASSPATH" "$@"
+WHILEY_CLASSPATH=$CLASSPATH
+
+for lib in $LIBS
+do
+    JAR=$(ls $LIBDIR/$lib)
+    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
+done
+
+java -cp "$WHILEY_CLASSPATH" "$@"

@@ -6,7 +6,7 @@
       <src path="src"/>
     </javac>
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/:../wyil/src/:../wyc/src"/>
-    <wyjc verbose="false" srcdir="../wyrt/src" destdir="src/" includes="whiley/**/*.wyil"/>
+    <wyjc verbose="false" srcdir="../wyrt/src" destdir="src/" includes="whiley/**/*.whiley"/>
   </target>
 
   <target name="build" depends="compile">
