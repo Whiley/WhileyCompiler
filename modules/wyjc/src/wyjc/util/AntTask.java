@@ -121,8 +121,16 @@ public class AntTask extends wyc.util.AntTask {
 		super(new Registry());
 	}
 	
+	@Override
+	public void setWyildir(File wyildir) throws IOException {
+		super.setWyildir(wyildir);
+		if(classDir == null) {
+			this.classDir = new DirectoryRoot(wyildir, classFileFilter, registry);
+		}
+	}
+	
 	public void setClassdir(File classdir) throws IOException {
-		this.classDir = new DirectoryRoot(classdir, wyilFileFilter, registry);
+		this.classDir = new DirectoryRoot(classdir, classFileFilter, registry);
 	}
 	
 	@Override
@@ -229,7 +237,13 @@ public class AntTask extends wyc.util.AntTask {
 		// done
 		return sources;
 	}	
-	
+
+	@Override
+	protected void flush() throws IOException {
+		super.flush();
+		classDir.flush();
+	}
+
 	@Override
 	public void execute() throws BuildException {
         if (whileyDir == null && wyilDir == null) {

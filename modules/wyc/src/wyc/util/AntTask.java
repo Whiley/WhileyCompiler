@@ -286,7 +286,8 @@ public class AntTask extends MatchingTask {
 			
     		// finally, compile away!
     		project.build(sources);
-    		project.flush(); // force all built components to disk
+    		
+    		flush(); // force all built components to disk
     		
     		return true;
     	} catch (InternalFailure e) {
@@ -318,7 +319,9 @@ public class AntTask extends MatchingTask {
 	protected SimpleProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		
-		roots.add(whileyDir);
+		if(whileyDir != null) {
+			roots.add(whileyDir);
+		}
 		roots.add(wyilDir);
 
 		wyc.Main.initialiseBootPath(bootpath);
@@ -397,5 +400,16 @@ public class AntTask extends MatchingTask {
 			}
 		}
 		return sources;
+	}
+	
+	/**
+	 * Flush all built files to disk.
+	 */
+	protected void flush() throws IOException {
+		if(whileyDir != null) {
+			// only flush wyilDir if it could contain wyil files which were
+			// generated from whiley source files.
+			wyilDir.flush();
+		}
 	}
 }
