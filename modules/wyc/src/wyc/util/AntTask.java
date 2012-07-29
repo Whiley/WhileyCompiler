@@ -46,7 +46,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * 
  * <pre>
  * <taskdef name="wyc" classname="wyc.util.AntTask" classpath="lib/wyc.jar"/>
- * <wyc srcdir="stdlib" includes="whiley\/**\/*.whiley" excludes="whiley/io/**"/>
+ * <wyc whileydir="stdlib" includes="whiley\/**\/*.whiley" excludes="whiley/io/**"/>
  * </pre>
  * 
  * <p>

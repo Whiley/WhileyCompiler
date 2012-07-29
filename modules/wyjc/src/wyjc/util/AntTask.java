@@ -41,6 +41,26 @@ import wyjvm.lang.ClassFile;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
+/**
+ * An AntTask for compiling JVM Class files from Whiley source files or Wyil
+ * binary files. The following illustrates how this task can be used in a
+ * <code>build.xml</code> file:
+ * 
+ * <pre>
+ *  <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
+ * <wyjc verbose="true" wyildir="stdlib" classdir="src\/" includes="whiley\/**\/*.wyil"/>
+ * </pre>
+ * 
+ * <p>
+ * The first line defines the new task, and requires the <code>src/</code>
+ * directory (which contains this class) to be on the classpath; The second
+ * invokes the task to compile all wyil files rooted in the <code>stdlib/</code>
+ * directory which are in the <code>whiley/</code> package.
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class AntTask extends wyc.util.AntTask {
 	
 	public static class Registry extends wyc.util.AntTask.Registry {
@@ -114,7 +134,7 @@ public class AntTask extends wyc.util.AntTask {
     	
 		for (String s : split) {
 			if (s.endsWith(".whiley")) {
-				// in this case, we are explicitly includes some whiley source
+				// in this case, we are explicitly including some whiley source
 				// files. This implicitly means the corresponding wyil files are
 				// included.
 				String name = s.substring(0, s.length() - 7);
@@ -123,6 +143,7 @@ public class AntTask extends wyc.util.AntTask {
 				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
 						wyilFilter);
 			} else if (s.endsWith(".wyil")) {
+				// in this case, we are explicitly including some wyil files.
 				String name = s.substring(0, s.length() - 5);
 				Content.Filter<WyilFile> nf = Content.filter(name,
 						WyilFile.ContentType);
