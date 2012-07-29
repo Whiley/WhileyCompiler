@@ -216,7 +216,7 @@ public class Util {
 		return sb.toString();
 	}
 	
-	public static byte leftshift(byte b1, BigInteger b2) {		
+	public static byte leftshift(byte b1, BigInteger b2) {	
 		return (byte) ((b1&0xFF) << b2.intValue());		
 	}
 	
