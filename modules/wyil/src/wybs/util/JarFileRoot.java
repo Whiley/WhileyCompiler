@@ -41,10 +41,16 @@ import wybs.lang.Path;
  * 
  */
 public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implements Path.Root {	
-	private final String dir;
+	private final File dir;
 	private Path.Item[] jfContents;
 	
 	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
+		super(contentTypes);
+		this.dir = new File(dir);
+		refresh();
+	}
+	
+	public JarFileRoot(File dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.dir = dir;
 		refresh();
@@ -92,7 +98,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 	}
 	
 	public String toString() {
-		return dir;
+		return dir.getPath();
 	}
 	
 	

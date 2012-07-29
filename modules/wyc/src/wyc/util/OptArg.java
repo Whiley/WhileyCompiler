@@ -177,7 +177,9 @@ public final class OptArg {
 	
 	public final static STRING STRING = new STRING();
 	public final static INT INT = new INT();
-	public final static PATHLIST PATHLIST = new PATHLIST();
+	public final static FILE FILE = new FILE();
+	public final static FILEDIR FILEDIR = new FILEDIR();
+	public final static FILELIST FILELIST = new FILELIST();		
 	public final static PIPELINEAPPEND PIPELINEAPPEND = new PIPELINEAPPEND();
 	public final static PIPELINECONFIGURE PIPELINECONFIGURE = new PIPELINECONFIGURE();
 	public final static PIPELINEREMOVE PIPELINEREMOVE = new PIPELINEREMOVE();
@@ -199,17 +201,41 @@ public final class OptArg {
 			return "<int>";
 		}
 	}
-			
-	private static final class PATHLIST implements Kind {
+	
+	private static final class FILE implements Kind {
+		public void process(String arg, String option,
+				Map<String, Object> options) {
+			options.put(arg, new File(option));
+		}
+		public String toString() {
+			return "<file>";
+		}
+	}
+	
+	private static final class FILEDIR implements Kind {
+		public void process(String arg, String option,
+				Map<String, Object> options) {
+			File dir = new File(option);
+			if(!dir.isDirectory()) {
+				throw new IllegalArgumentException("invalid path --- " + arg);
+			}
+			options.put(arg, dir);
+		}
+		public String toString() {
+			return "<filedir>";
+		}
+	}
+	
+	private static final class FILELIST implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
-			ArrayList<String> rs = new ArrayList<String>();
-			for(String r : option.split(File.pathSeparator)) {
-				rs.add(r);
+			ArrayList<File> rs = new ArrayList<File>();
+			for(String r : option.split(File.pathSeparator)) {				 			
+				rs.add(new File(r));
 			}
 			options.put(arg, rs);
 		}
 		public String toString() {
-			return "<path>";
+			return "<filelist>";
 		}
 	}
 	

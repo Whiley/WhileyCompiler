@@ -5,6 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyil"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyc"/>
-	<classpathentry kind="lib" path="/Applications/eclipse/plugins/org.apache.ant_1.8.2.v20120109-1030/lib/ant.jar"/>
+	<classpathentry kind="lib" path="/usr/pkg/lib/java/ant/ant.jar"/>
 	<classpathentry kind="output" path="src"/>
 </classpath>
