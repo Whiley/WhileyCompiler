@@ -1,18 +1,19 @@
 <project name="wyil" default="build">
   <import file="../../config.xml"/>  
 
-  <target name="compile">
-    <echo message="${ant.project.name}"/>
+  <target name="compile-wyil">
     <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyil/testing/**,wyone/testing/**"> 
       <src path="src"/>
     </javac>
   </target>
 
-  <target name="build" depends="compile">
-    <echo message="${ant.project.name}"/>
+  <target name="build" depends="compile-wyil">
     <jar destfile="../../lib/wyil-v${version}.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
+    <echo message="============================================="/>
+    <echo message="BUILT: ${ant.project.name}-v${version}"/>
+    <echo message="============================================="/>
   </target>
   
   <target name="doc">
@@ -31,10 +32,12 @@
   </target>
 
  <target name="clean">
-   <echo message="${ant.project.name}"/>
    <delete includeEmptyDirs="true" failonerror="false">
      <fileset dir="." includes="**/*.class,**/*.wyil,**/*.wyasm"/>
    </delete>
+    <echo message="============================================="/>
+    <echo message="CLEANED: ${ant.project.name}"/>
+    <echo message="============================================="/>
  </target>
 
 </project>

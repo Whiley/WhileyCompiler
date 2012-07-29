@@ -1,21 +1,27 @@
 <project name="wyrt" default="build">  
   <import file="../../config.xml"/>  
 
-  <target name="compile">
+  <target name="compile-wyrt">
     <taskdef name="wyc" classname="wyc.util.AntTask" classpath="../wyc/src/:../wyil/src/"/>
     <wyc verbose="false" srcdir="src" includes="whiley/**/*.whiley"/>
   </target>
 
-  <target name="build" depends="compile">
+  <target name="build" depends="compile-wyrt">
     <jar destfile="../../lib/wyrt-v${version}.jar">
       <fileset dir="src" includes="*/**/*.wyil"/>
     </jar>
+    <echo message="============================================="/>
+    <echo message="BUILT: ${ant.project.name}-v${version}"/>
+    <echo message="============================================="/>
   </target>
 
   <target name="clean">
    <delete includeEmptyDirs="true" failonerror="false">
      <fileset dir="." includes="**/*.wyil,**/*.wyasm"/>
    </delete>
+    <echo message="============================================="/>
+    <echo message="CLEANED: ${ant.project.name}"/>
+    <echo message="============================================="/>
  </target>
 
 </project>

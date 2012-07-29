@@ -40,19 +40,28 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
 /**
- * This class implements an ant task for compiling whiley files via ant and an
- * appropriate build.xml file. The following illustrates how this task can be
- * used in a build.xml file:
+ * This class implements an baseline ant task for compiling whiley files via ant
+ * and an appropriate build.xml file. The following illustrates how this task
+ * can be used in a build.xml file:
  * 
  * <pre>
- * <taskdef name="wyc" classname="wyc.util.AntTask" classpath="lib/whiley.jar"/>
+ * <taskdef name="wyc" classname="wyc.util.AntTask" classpath="lib/wyc.jar"/>
  * <wyc srcdir="stdlib" includes="whiley\/**\/*.whiley" excludes="whiley/io/**"/>
  * </pre>
  * 
- * Here, the first line defines the new task, and requires whiley.jar (which
+ * <p>
+ * The first line defines the new task, and requires <code>wyc.jar</code> (which
  * contains this class) to be on the classpath; The second invokes the task to
- * compile all files rooted in the stdlib/ directory which in the whiley/
- * package, excluding those in whiley/io. 
+ * compile all files rooted in the <code>stdlib/</code> directory which are in
+ * the <code>whiley/</code> package, excluding those in <code>whiley/io</code>.
+ * </p>
+ * 
+ * <p>
+ * <b>NOTE:</b> this class is intended to be overriden by the compiler backends
+ * which compile Wyil bytecodes to different architectures (e.g. JVM, C,
+ * JavaScript, etc).
+ * </p>
+ * 
  * 
  * @author David J. Pearce
  * 
@@ -60,10 +69,13 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
 public class AntTask extends MatchingTask {
 	
 	/**
-	 * The master project content type registry.
+	 * Default implementation of a content registry. This associates whiley and
+	 * wyil files with their respective content types.
+	 * 
+	 * @author David J. Pearce
+	 * 
 	 */
-	public static final Content.Registry registry = new Content.Registry() {
-	
+	public static class Registry implements Content.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 			
@@ -83,15 +95,22 @@ public class AntTask extends MatchingTask {
 				return "dat";
 			}
 		}
-	};
+	}
 	
 	/**
-	 * The purpose of the source file filter is simply to ensure only source
+	 * The master project content type registry. This is needed for the build
+	 * system to determine the content type of files it finds on the file
+	 * system.
+	 */
+	public final Content.Registry registry;
+	
+	/**
+	 * The purpose of the source file filter is simply to ensure only whiley
 	 * files are loaded in a given directory root. It is not strictly necessary
 	 * for correct operation, although hopefully it offers some performance
 	 * benefits.
 	 */
-	public static final FileFilter sourceFileFilter = new FileFilter() {
+	public static final FileFilter whileyFileFilter = new FileFilter() {
 		public boolean accept(File f) {
 			String name = f.getName();
 			return name.endsWith(".whiley") || f.isDirectory();
@@ -99,87 +118,110 @@ public class AntTask extends MatchingTask {
 	};
 
 	/**
-	 * The purpose of the binary file filter is simply to ensure only binary
+	 * The purpose of the binary file filter is simply to ensure only wyil
 	 * files are loaded in a given directory root. It is not strictly necessary
 	 * for correct operation, although hopefully it offers some performance
 	 * benefits.
 	 */
-	public static final FileFilter binaryFileFilter = new FileFilter() {
+	public static final FileFilter wyilFileFilter = new FileFilter() {
 		public boolean accept(File f) {
 			String name = f.getName();
 			return name.endsWith(".wyil") || f.isDirectory();			
 		}
 	};
 	
-	ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
-	ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
-	private File srcdir;
-	private File destdir;
-	private Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
-	private Content.Filter<WhileyFile> whileyExcludes = null;
-	private Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
-	private Content.Filter<WyilFile> wyilExcludes = null;
-	private boolean verbose = false;
-		
-    public void setSrcdir (File srcdir) {
-        this.srcdir = srcdir;
-    }
+	/**
+	 * The boot path contains the location of the whiley runtime (wyrt) library.   
+	 */
+	protected ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
+	
+	/**
+	 * The whiley path identifies additional items (i.e. libraries or
+	 * directories) which the compiler uses to resolve symbols (e.g. module
+	 * names, functions, etc).
+	 */
+	protected ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
+	
+	/**
+	 * The whiley source directory is the filesystem directory from which the
+	 * compiler will look for (whiley) source files.
+	 */
+	protected DirectoryRoot whileySourceDir;
+	
+	/**
+	 * The whiley destination directory is the filesystem directory where all
+	 * binary files generated from whiley source files will be placed.
+	 */
+	protected DirectoryRoot whileyDestDir;
+	
+	/**
+	 * Identifies which whiley source files should be considered for
+	 * compilation. By default, all files reachable from srcdir are considered.
+	 */
+	protected Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
+	
+	/**
+	 * Identifies which whiley sources files should not be considered for
+	 * compilation. This overrides any identified by <code>whileyIncludes</code>
+	 * . By default, no files files reachable from srcdir are excluded.
+	 */
+	protected Content.Filter<WhileyFile> whileyExcludes = null;
 
-    public void setDestdir (File destdir) {
-        this.destdir = destdir;
+	/**
+	 * Indicates whether or the compiler should produce verbose information
+	 * during compilation. This is generally used for diagnosing bugs in the
+	 * compiler.
+	 */
+	protected boolean verbose = false;
+	
+	public AntTask() {
+		this.registry = new Registry();
+	}
+	
+	public AntTask(Content.Registry registry) {
+		this.registry = registry;
+	}
+	
+	public void setSrcdir(File srcdir) throws IOException {
+		this.whileySourceDir = new DirectoryRoot(srcdir, whileyFileFilter, registry);
+		if(whileyDestDir == null) {
+			this.whileyDestDir = new DirectoryRoot(srcdir, wyilFileFilter, registry);
+		}
+	}
+
+    public void setDestdir (File destdir) throws IOException {	
+        this.whileyDestDir = new DirectoryRoot(destdir, wyilFileFilter, registry);
     }
     
     public void setIncludes(String includes) {
     	String[] split = includes.split(",");
     	Content.Filter<WhileyFile> whileyFilter = null;
-    	Content.Filter<WyilFile> wyilFilter = null;
     	
-    	for(String s : split) {
-    		if(s.endsWith(".whiley")) {
-    			String name = s.substring(0,s.length()-7);
-    			Content.Filter<WhileyFile> f1 = Content.filter(name,WhileyFile.ContentType);
-    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);
-    			whileyFilter = whileyFilter == null ? f1 : Content.or(f1, whileyFilter); 
-    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
-    		} else if(s.endsWith(".wyil")) {    			
-    			String name = s.substring(0,s.length()-5);
-    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);    			
-    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
-    		}
-    	}
-    	
-		// FIXME: it's slightly annoying that the filter could be null here. I
-		// think this indicates a limitation with the content type system I've
-		// designed.
+		for (String s : split) {
+			if (s.endsWith(".whiley")) {
+				String name = s.substring(0, s.length() - 7);
+				Content.Filter<WhileyFile> nf = Content.filter(name,
+						WhileyFile.ContentType);
+				whileyFilter = whileyFilter == null ? nf : Content.or(nf,
+						whileyFilter);
+			}
+		}
     	
     	this.whileyIncludes = whileyFilter;
-    	this.wyilIncludes = wyilFilter;
     }
     
     public void setExcludes(String excludes) {
     	String[] split = excludes.split(",");
     	Content.Filter<WhileyFile> whileyFilter = null;
-    	Content.Filter<WyilFile> wyilFilter = null;
     	for(String s : split) {
     		if(s.endsWith(".whiley")) {
     			String name = s.substring(0,s.length()-7);
-    			Content.Filter<WhileyFile> f1 = Content.filter(name,WhileyFile.ContentType);
-    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);
-    			whileyFilter = whileyFilter == null ? f1 : Content.or(f1, whileyFilter); 
-    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
-    		} else if(s.endsWith(".wyil")) {    			
-    			String name = s.substring(0,s.length()-5);    			
-    			Content.Filter<WyilFile> f2 = Content.filter(name,WyilFile.ContentType);    			
-    			wyilFilter = wyilFilter == null ? f2 : Content.or(f2, wyilFilter);
-    		}
+    			Content.Filter<WhileyFile> nf = Content.filter(name,WhileyFile.ContentType);
+    			whileyFilter = whileyFilter == null ? nf : Content.or(nf, whileyFilter);     			
+    		} 
     	}
     	
-		// FIXME: it's slightly annoying that the filter could be null here. I
-		// think this indicates a limitation with the content type system I've
-		// designed.
-    	
     	this.whileyExcludes = whileyFilter;
-    	this.wyilExcludes = wyilFilter;
     }
     
     public void setWhileyPath (org.apache.tools.ant.types.Path path) throws IOException {
@@ -209,80 +251,38 @@ public class AntTask extends MatchingTask {
     }
     
     public void execute() throws BuildException {
-        if (srcdir == null) {
+        if (whileySourceDir == null) {
             throw new BuildException("srcdir must be specified");
         }
-        log("dir = " + srcdir, org.apache.tools.ant.Project.MSG_DEBUG);
+        log("dir = " + whileySourceDir, org.apache.tools.ant.Project.MSG_DEBUG);
 
        
         if(!compile()) {
         	throw new BuildException("compilation errors");
         }        	
                 
-        srcdir = null; // release file
+        whileySourceDir = null; // release file
     }
     	
     protected boolean compile() {
     	try {
     		// =====================================================================================
-    		// Initialise Roots
+    		// Initialise Project
     		// =====================================================================================
 
-    		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-        	DirectoryRoot source = new DirectoryRoot(srcdir,sourceFileFilter,registry); 
-    		roots.add(source);    
-        		        	
-        	DirectoryRoot target;
-        	if(destdir != null) {
-        		target = new DirectoryRoot(destdir,binaryFileFilter,registry);        	
-        		roots.add(target);
-        	} else {
-        		target = new DirectoryRoot(srcdir,binaryFileFilter,registry);        	
-        		roots.add(target);
-        	}
-        	    	       	
-        	wyc.Main.initialiseBootPath(bootpath);      	
-        	roots.addAll(whileypath);
-        	roots.addAll(bootpath);
-    		        	
-    		// second, construct the module loader    		
-    		SimpleProject project = new SimpleProject(roots);    		
-    		
-    		// third, initialise the pipeline    		    	
-    		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline);
- 
+    		SimpleProject project = initialiseProject();  		
+
+    		// =====================================================================================
+			// Initialise Build Rules
 			// =====================================================================================
-			// Whiley to Wyil Build Rule
-			// =====================================================================================
-			
-    		Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
     		
-    		if(verbose) {			
-    			builder.setLogger(new Logger.Default(System.err));
-    		}
+    		addBuildRules(project);
     		
-			StandardBuildRule rule = new StandardBuildRule(builder);			
-			rule.add(source, whileyIncludes, whileyExcludes, target,
-					WhileyFile.ContentType, WyilFile.ContentType);			
-			project.add(rule);
-    		
-			// =====================================================================================
+    		// =====================================================================================
 			// Misc
 			// =====================================================================================		
 
-			// Now, touch all source files which have modification date after
-			// their corresponding binary.	
-			ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
-			for (Path.Entry<WhileyFile> sourceFile : source.get(whileyIncludes)) {
-				Path.Entry<WyilFile> wyilBinary;
-
-				wyilBinary = target.get(sourceFile.id(), WyilFile.ContentType);
-
-				// first, check whether wyil file out-of-date with source file
-				if (wyilBinary == null || wyilBinary.lastModified() < sourceFile.lastModified()) {
-					sources.add(sourceFile);
-				} 
-			}
+    		List<Path.Entry<?>> sources = getSourceFileDelta();
 			
 			log("Compiling " + sources.size() + " source file(s)");
 			
@@ -311,4 +311,85 @@ public class AntTask extends MatchingTask {
     		return false;
     	}    	
     }
+    
+    /**
+     * 
+     * @return
+     * @throws IOException
+     */
+	protected SimpleProject initialiseProject() throws IOException {
+		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+		
+		roots.add(whileySourceDir);
+		roots.add(whileyDestDir);
+
+		wyc.Main.initialiseBootPath(bootpath);
+		roots.addAll(whileypath);
+		roots.addAll(bootpath);
+
+		// second, construct the module loader
+		return new SimpleProject(roots);
+	}
+	
+	/**
+	 * Initialise the Wyil pipeline to be used for compiling Whiley files. The
+	 * default implementation just returns <code>Pipeline.defaultPipeline</code>
+	 * .
+	 * 
+	 * @return
+	 */
+	protected Pipeline initialisePipeline() {
+		return new Pipeline(Pipeline.defaultPipeline);
+	}
+	
+	/**
+	 * Add all build rules to the project. By default, this adds a standard
+	 * build rule for compiling whiley files to wyil files using the
+	 * <code>Whiley2WyilBuilder</code>.
+	 * 
+	 * @param project
+	 */
+	protected void addBuildRules(SimpleProject project) {
+		Pipeline pipeline = initialisePipeline();    		
+				
+		Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
+		
+		if(verbose) {			
+			builder.setLogger(new Logger.Default(System.err));
+		}
+		
+		StandardBuildRule rule = new StandardBuildRule(builder);		
+		
+		rule.add(whileySourceDir, whileyIncludes, whileyExcludes, whileyDestDir,
+				WhileyFile.ContentType, WyilFile.ContentType);
+
+		project.add(rule);				
+	}
+	
+	/**
+	 * Generate the list of source files which need to be recompiled. By
+	 * default, this is done by comparing modification times of each whiley file
+	 * against its corresponding wyil file. Wyil files which are out-of-date are
+	 * scheduled to be recompiled.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	protected List<Path.Entry<?>> getSourceFileDelta() throws IOException {
+		// Now, touch all source files which have modification date after
+		// their corresponding binary.
+		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
+		for (Path.Entry<WhileyFile> sourceFile : whileySourceDir.get(whileyIncludes)) {
+			Path.Entry<WyilFile> wyilBinary;
+
+			wyilBinary = whileyDestDir.get(sourceFile.id(), WyilFile.ContentType);
+
+			// first, check whether wyil file out-of-date with source file
+			if (wyilBinary == null
+					|| wyilBinary.lastModified() < sourceFile.lastModified()) {
+				sources.add(sourceFile);
+			}
+		}
+		return sources;
+	}
 }

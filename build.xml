@@ -12,25 +12,15 @@
     </subant>
   </target>
  
-  <target name="stdlib" depends="build-all">
-    <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
-    <javac debug="true" srcdir="stdlib" includeantruntime="false" includes="whiley/**/*.java" classpath="lib/wyjc.jar"/> 
-    <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
-
-    <jar destfile="lib/wyrt.jar">
-      <fileset dir="src" includes="wyjc/runtime/**/*.class,wyjc/io/JavaIdentifierInputStream.class,wyjvm/io/BinaryInputStream.class"/>
-      <fileset dir="stdlib" includes="whiley/**/*.class"/>
-      <fileset dir="stdlib" includes="whiley/**/*.wyil"/>
-    </jar>
-  </target>
-
   <!-- Documenation --> 
 
   <target name="doc">
-    <subant failonerror="false" target="doc">
-      <property name="version" value="${version}"/>
-      <fileset dir="modules" includes="*/build.xml"/>
-    </subant>
+    <subant failonerror="true" target="doc">
+      <fileset dir="modules" includes="wyil/build.xml"/>
+      <fileset dir="modules" includes="wyc/build.xml"/>
+      <fileset dir="modules" includes="wyrt/build.xml"/>
+      <fileset dir="modules" includes="wyjc/build.xml"/>
+    </subant>    
   </target>
 
   <!-- Misc Commands -->
@@ -41,6 +31,11 @@
     </subant>
     <delete includeEmptyDirs="true" failonerror="false">
       <fileset file="*~"/>
+      <fileset dir="docs"/>
+      <fileset dir="tests">
+	<include name="**/*.class"/>
+	<include name="**/*.wyil"/>
+      </fileset>
     </delete>
   </target>
 
