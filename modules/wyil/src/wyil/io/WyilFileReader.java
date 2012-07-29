@@ -124,16 +124,13 @@ public final class WyilFileReader {
 	
 	private void readPathPool(int size) throws IOException {
 		final Path.ID[] myPathPool = new Path.ID[size];
-
-		for (int i = 0; i != size; ++i) {
+		myPathPool[0] = Trie.ROOT;
+		
+		for (int i = 1; i != size; ++i) {
 			int parent = input.read_uv();
 			int stringIndex = input.read_uv();
 			Path.ID id;
-			if (parent == 0) {
-				id = Trie.ROOT;
-			} else {
-				id = myPathPool[parent - 1];
-			}
+			id = myPathPool[parent];
 			id = id.append(stringPool[stringIndex]);
 			myPathPool[i] = id;
 		}

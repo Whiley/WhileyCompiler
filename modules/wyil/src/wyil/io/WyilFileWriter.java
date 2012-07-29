@@ -209,9 +209,9 @@ public final class WyilFileWriter {
 	}
 	
 	private void writePathPool(BinaryOutputStream output) throws IOException {
-		//System.out.println("Writing " + stringPool.size() + " path item(s).");
-		for (PATH_Item p : pathPool) {
-			output.write_uv(p.parentIndex + 1);
+		for(int i=1;i<pathPool.size();++i) {
+			PATH_Item p = pathPool.get(i);
+			output.write_uv(p.parentIndex);
 			output.write_uv(p.stringIndex);
 		}
 	}
@@ -965,6 +965,9 @@ public final class WyilFileWriter {
 		
 		pathPool.clear();
 		pathCache.clear();
+		// preload the path root
+		pathPool.add(null);
+		pathCache.put(wybs.util.Trie.ROOT,0);
 		
 		namePool.clear();
 		nameCache.clear();
@@ -1117,15 +1120,12 @@ public final class WyilFileWriter {
 	}
 	
 	private int addPathItem(Path.ID pid) {
-		if(pid.last().equals("")) {
-			return -1;
-		}
-		
 		Integer index = pathCache.get(pid);
 		if(index == null) {
+			int parent = addPathItem(pid.parent());
 			int i = pathPool.size();
+			pathPool.add(new PATH_Item(parent,addStringItem(pid.last())));
 			pathCache.put(pid, i);
-			pathPool.add(new PATH_Item(addPathItem(pid.parent()),addStringItem(pid.last())));
 			return i;
 		} else {
 			return index;
