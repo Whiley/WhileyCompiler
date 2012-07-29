@@ -1,11 +1,10 @@
 <project name="whiley" default="build-all">  
-  <property name="version" value="0.3.16"/>
+  <import file="config.xml"/>
 
   <!-- Build Commands -->
 
   <target name="compile-all">
     <subant failonerror="true" target="compile">
-      <property name="version" value="${version}"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>

@@ -1,4 +1,5 @@
 <project name="wyrt" default="build">  
+  <import file="../../config.xml"/>  
 
   <target name="compile">
     <taskdef name="wyc" classname="wyc.util.AntTask" classpath="../wyc/src/:../wyil/src/"/>

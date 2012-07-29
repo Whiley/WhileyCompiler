@@ -1,4 +1,5 @@
 <project name="wyjc" default="build">  
+  <import file="../../config.xml"/>  
 
   <target name="compile">
     <echo message="${ant.project.name}"/>

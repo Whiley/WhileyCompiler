@@ -80,10 +80,10 @@ public class TestHarness {
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void runTest(String name) {						
+	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-		
-		if (compile("-sp",sourcepath,"-wp", WYRT_PATH,filename) != 0) {
+
+		if (compile("-sp", sourcepath, "-wp", WYRT_PATH, filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -103,10 +103,11 @@ public class TestHarness {
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void verifyRunTest(String name) {						
+	protected void verifyRunTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-		
-		if (compile("-sp",sourcepath,"-wp", WYRT_PATH,"-X","verification:enable=true",filename) != 0) {
+
+		if (compile("-sp", sourcepath, "-wp", WYRT_PATH, "-X",
+				"verification:enable=true", filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -124,14 +125,14 @@ public class TestHarness {
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void contextFailTest(String name) {				
+	protected void contextFailTest(String name) {
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-sp",sourcepath,"-wp", WYRT_PATH,name);
-		
+		int r = compile("-sp", sourcepath, "-wp", WYRT_PATH, name);
+
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
-		} else if(r == Main.INTERNAL_FAILURE) {
+		} else if (r == Main.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
 	}
@@ -147,15 +148,16 @@ public class TestHarness {
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void verifyFailTest(String name) {	
+	protected void verifyFailTest(String name) {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-sp",sourcepath,"-wp", WYRT_PATH,"-X","verification:enable=true",name);
-		
+		int r = compile("-sp", sourcepath, "-wp", WYRT_PATH, "-X",
+				"verification:enable=true", name);
+
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
-		} else if(r == Main.INTERNAL_FAILURE) {
+		} else if (r == Main.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
 	}
