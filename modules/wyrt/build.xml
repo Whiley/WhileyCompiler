@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyrt">
-    <taskdef name="wyc" classname="wyc.util.AntTask" classpath="../wyc/src/:../wyil/src/"/>
+    <taskdef name="wyc" classname="wyc.util.WycAntTask" classpath="../wyc/src/:../wyil/src/"/>
     <wyc verbose="false" whileydir="src" includes="whiley/**/*.whiley"/>
   </target>
 

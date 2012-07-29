@@ -5,7 +5,7 @@
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**" classpath="../wyil/src:../wyc/src"> 
       <src path="src"/>
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/:../wyil/src/:../wyc/src"/>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
