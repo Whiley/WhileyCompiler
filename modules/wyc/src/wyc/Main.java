@@ -73,12 +73,13 @@ public class Main {
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", OptArg.FILELIST,
 					"Specify where to find whiley standard library files",
-					new ArrayList<String>()),
+					defaultBootPath()),
 			new OptArg("whileydir", "sd", OptArg.FILEDIR,
 					"Specify where to find whiley source files",
-					new ArrayList<String>()),
-			new OptArg("wyildir", "d", OptArg.FILEDIR,
-					"Specify where to place generated (wyil) binary files", null),
+					new File(".")),
+			new OptArg("wyildir", "od", OptArg.FILEDIR,
+					"Specify where to place generated (wyil) binary files",
+					new File(".")),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
 			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
@@ -182,40 +183,21 @@ public class Main {
 				
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");
-
 			if(pipelineModifiers != null) {
 				builder.setPipelineModifiers(pipelineModifiers);
 			}
-
+			
 			File whileyDir = (File) values.get("whileydir");
-
-			if(whileyDir != null) {			
-				builder.setWhileyDir(whileyDir);			
-			} else {
-				builder.setWhileyDir(new File("."));
-			}
-
+			builder.setWhileyDir(whileyDir);			
+			
 			File wyilDir = (File) values.get("wyildir");
-
-			if(wyilDir != null) {			
-				builder.setWyilDir(wyilDir);			
-			} else {
-				builder.setWyilDir(new File("."));
-			}
+			builder.setWyilDir(wyilDir);			
 
 			ArrayList<File> bootpath =  (ArrayList<File>) values.get("bootpath");
-
-			if(bootpath != null) {
-				builder.setBootPath(bootpath);
-			} else {
-				builder.setBootPath(defaultBootPath());
-			}
+			builder.setBootPath(bootpath);
 
 			ArrayList<File> whileypath = (ArrayList<File>) values.get("whileypath");
-
-			if(whileypath != null) {
-				builder.setWhileyPath(whileypath);
-			}
+			builder.setWhileyPath(whileypath);
 
 			ArrayList<File> delta = new ArrayList<File>();
 			for(String arg : args) {
