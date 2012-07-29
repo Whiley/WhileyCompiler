@@ -2003,11 +2003,17 @@ public abstract class Code {
 
 		public int opcode() {
 			if(type instanceof Type.Function) {
-				return OPCODE_indirectinvokefn;
-			} else if(type.ret() != Type.T_VOID) {
-				return OPCODE_indirectinvokemd;
+				if(type.ret() != Type.T_VOID) {
+					return OPCODE_indirectinvokefn;
+				} else {
+					return OPCODE_indirectinvokefnv;
+				}
 			} else {
-				return OPCODE_indirectinvokemdv;
+				if(type.ret() != Type.T_VOID) {
+					return OPCODE_indirectinvokemd;
+				} else {
+					return OPCODE_indirectinvokemdv;
+				}
 			}
 		}
 		
@@ -2137,11 +2143,17 @@ public abstract class Code {
 
 		public int opcode() {
 			if(type instanceof Type.Function) {
-				return OPCODE_invokefn;
-			} else if(type.ret() != Type.T_VOID) {
-				return OPCODE_invokemd;
+				if(type.ret() != Type.T_VOID) {
+					return OPCODE_invokefn;
+				} else {
+					return OPCODE_invokefnv;
+				}				
 			} else {
-				return OPCODE_invokemdv;
+				if(type.ret() != Type.T_VOID) {
+					return OPCODE_invokemd;
+				} else {
+					return OPCODE_invokemdv;
+				}
 			}
 		}
 		
@@ -4384,8 +4396,10 @@ public abstract class Code {
 	public static final int OPCODE_loop              = 0 + FMT_NARYOP;	
 	public static final int OPCODE_forall            = 1 + FMT_NARYOP;	
 	public static final int OPCODE_void              = 2 + FMT_NARYOP;
-	public static final int OPCODE_indirectinvokemdv = 3 + FMT_NARYOP;	
-	public static final int OPCODE_invokemdv         = 4 + FMT_NARYOP; // +NAMEIDX	
+	public static final int OPCODE_indirectinvokefnv = 3 + FMT_NARYOP;
+	public static final int OPCODE_indirectinvokemdv = 4 + FMT_NARYOP;
+	public static final int OPCODE_invokefnv         = 5 + FMT_NARYOP; // +NAMEIDX	
+	public static final int OPCODE_invokemdv         = 6 + FMT_NARYOP; // +NAMEIDX	
 		
 	// =========================================================================
 	// Nary Assignables

@@ -838,19 +838,21 @@ public final class WyilFileReader {
 				operands = Arrays.copyOfRange(operands, 2, operands.length);
 				return Code.ForAll((Type.EffectiveCollection) type,
 						sourceOperand, indexOperand, operands, label);
-			}
+			}			
+			case Code.OPCODE_indirectinvokefnv :
 			case Code.OPCODE_indirectinvokemdv : {
 				if (!(type instanceof Type.FunctionOrMethod)) {
-					throw new RuntimeException("expected method type");
+					throw new RuntimeException("expected function or method type");
 				}
 				int operand = operands[0];
 				operands = Arrays.copyOfRange(operands, 1, operands.length);
 				return Code.IndirectInvoke((Type.FunctionOrMethod) type,
 						Code.NULL_REG, operand, operands);
 			}
-			case Code.OPCODE_invokemdv : {
+			case Code.OPCODE_invokefnv:
+			case Code.OPCODE_invokemdv: {
 				if (!(type instanceof Type.FunctionOrMethod)) {
-					throw new RuntimeException("expected method type");
+					throw new RuntimeException("expected function or method type");
 				}
 				int nameIdx = readRest(wideRest);;
 				NameID nid = namePool[nameIdx];
