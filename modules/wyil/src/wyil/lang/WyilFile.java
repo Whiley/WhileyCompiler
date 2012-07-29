@@ -33,7 +33,6 @@ import java.util.*;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
-import wycc.io.CFileWriter;
 import wyil.util.*;
 import wyil.io.*;
 
