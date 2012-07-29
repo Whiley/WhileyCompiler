@@ -33,7 +33,20 @@ import wyjc.Main;
 
 public class TestHarness {
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
-	private static final String WYRT_PATH="../../lib/wyrt-v0.3.16.jar";
+	private static String WYRT_PATH;
+	
+	static {
+		
+		// The purpose of this is to figure out what the proper name for the
+		// wyrt file is.
+		
+		File file = new File("../../lib/");
+		for(String f : file.list()) {
+			if(f.startsWith("wyrt-v")) {
+				WYRT_PATH="../../lib/" + f;
+			}
+		}
+	}
 	
 	private String sourcepath;    // path to source files	
 	private String outputPath; // path to output files
@@ -60,13 +73,14 @@ public class TestHarness {
 	
 	/**
 	 * Compile and execute a test case, whilst comparing its output against the
-	 * sample output.
+	 * sample output. The test fails if either it does not compile, or running
+	 * it does not produce the sample output.
 	 * 
 	 * @param name
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void runTest(String name, String... params) {						
+	protected void runTest(String name) {						
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 		
 		if (compile("-sp",sourcepath,"-wp", WYRT_PATH,filename) != 0) {
@@ -78,7 +92,18 @@ public class TestHarness {
 		}
 	}
 	
-	protected void verifyRunTest(String name, String... params) {						
+	/**
+	 * Compile and execute a test case with verification enabled, whilst
+	 * comparing its output against the sample output. The test fails if either
+	 * it does not compile, or running it does not produce the sample output.
+	 * Enabling verification means that the verified must pass the given files
+	 * and, hence, this is all about testing the verifier.
+	 * 
+	 * @param name
+	 *            Name of the test to run. This must correspond to an executable
+	 *            Java file in the srcPath of the same name.
+	 */
+	protected void verifyRunTest(String name) {						
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 		
 		if (compile("-sp",sourcepath,"-wp", WYRT_PATH,"-X","verification:enable=true",filename) != 0) {
@@ -90,6 +115,15 @@ public class TestHarness {
 		}
 	}
 	
+	/**
+	 * Compile a syntactically invalid test case. The expectation is that
+	 * compilation should fail with an error and, hence, the test fails if
+	 * compilation does not.
+	 * 
+	 * @param name
+	 *            Name of the test to run. This must correspond to an executable
+	 *            Java file in the srcPath of the same name.
+	 */
 	protected void contextFailTest(String name) {				
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
@@ -102,6 +136,17 @@ public class TestHarness {
 		}
 	}
 	
+	/**
+	 * Compile a syntactically invalid test case with verification enabled. The
+	 * expectation is that compilation should fail with an error and, hence, the
+	 * test fails if compilation does not. This differs from the contextFailTest
+	 * in that the test cases are expected to fail only in the verifier, and not
+	 * the ordinary course of things.
+	 * 
+	 * @param name
+	 *            Name of the test to run. This must correspond to an executable
+	 *            Java file in the srcPath of the same name.
+	 */
 	protected void verifyFailTest(String name) {	
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".whiley";
@@ -115,6 +160,18 @@ public class TestHarness {
 		}
 	}
 	
+	/**
+	 * Compile and execute a syntactically invalid test case with verification
+	 * disabled. Since verification is disabled, runtime checks are instead
+	 * inserted to catch constraint violations (which would otherwise be caught
+	 * by the verifier). Therefore, the expectation is that it should fail at
+	 * runtime with an assertion failure and, hence, the test fails if it
+	 * doesn't do this.
+	 * 
+	 * @param name
+	 *            Name of the test to run. This must correspond to an executable
+	 *            Java file in the srcPath of the same name.
+	 */
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
