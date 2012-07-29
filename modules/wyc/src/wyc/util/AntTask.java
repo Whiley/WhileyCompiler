@@ -146,13 +146,13 @@ public class AntTask extends MatchingTask {
 	 * The whiley source directory is the filesystem directory from which the
 	 * compiler will look for (whiley) source files.
 	 */
-	protected DirectoryRoot whileySourceDir;
+	protected DirectoryRoot whileyDir;
 	
 	/**
-	 * The whiley destination directory is the filesystem directory where all
-	 * binary files generated from whiley source files will be placed.
+	 * The wyil directory is the filesystem directory where all generated wyil
+	 * files will be placed.
 	 */
-	protected DirectoryRoot whileyDestDir;
+	protected DirectoryRoot wyilDir;
 	
 	/**
 	 * Identifies which whiley source files should be considered for
@@ -182,15 +182,15 @@ public class AntTask extends MatchingTask {
 		this.registry = registry;
 	}
 	
-	public void setSrcdir(File srcdir) throws IOException {
-		this.whileySourceDir = new DirectoryRoot(srcdir, whileyFileFilter, registry);
-		if(whileyDestDir == null) {
-			this.whileyDestDir = new DirectoryRoot(srcdir, wyilFileFilter, registry);
+	public void setWhileydir(File whileydir) throws IOException {
+		this.whileyDir = new DirectoryRoot(whileydir, whileyFileFilter, registry);
+		if(wyilDir == null) {
+			this.wyilDir = new DirectoryRoot(whileydir, wyilFileFilter, registry);
 		}
 	}
 
-    public void setDestdir (File destdir) throws IOException {	
-        this.whileyDestDir = new DirectoryRoot(destdir, wyilFileFilter, registry);
+    public void setWyildir (File wyildir) throws IOException {	
+        this.wyilDir = new DirectoryRoot(wyildir, wyilFileFilter, registry);
     }
     
     public void setIncludes(String includes) {
@@ -207,7 +207,9 @@ public class AntTask extends MatchingTask {
 			}
 		}
     	
-    	this.whileyIncludes = whileyFilter;
+		if(whileyFilter != null) {
+			this.whileyIncludes = whileyFilter;
+		}
     }
     
     public void setExcludes(String excludes) {
@@ -251,17 +253,13 @@ public class AntTask extends MatchingTask {
     }
     
     public void execute() throws BuildException {
-        if (whileySourceDir == null) {
-            throw new BuildException("srcdir must be specified");
+        if (whileyDir == null) {
+            throw new BuildException("whileydir must be specified");
         }
-        log("dir = " + whileySourceDir, org.apache.tools.ant.Project.MSG_DEBUG);
-
        
         if(!compile()) {
         	throw new BuildException("compilation errors");
-        }        	
-                
-        whileySourceDir = null; // release file
+        }        	        
     }
     	
     protected boolean compile() {
@@ -320,8 +318,8 @@ public class AntTask extends MatchingTask {
 	protected SimpleProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		
-		roots.add(whileySourceDir);
-		roots.add(whileyDestDir);
+		roots.add(whileyDir);
+		roots.add(wyilDir);
 
 		wyc.Main.initialiseBootPath(bootpath);
 		roots.addAll(whileypath);
@@ -350,20 +348,24 @@ public class AntTask extends MatchingTask {
 	 * @param project
 	 */
 	protected void addBuildRules(SimpleProject project) {
-		Pipeline pipeline = initialisePipeline();    		
-				
-		Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
-		
-		if(verbose) {			
-			builder.setLogger(new Logger.Default(System.err));
-		}
-		
-		StandardBuildRule rule = new StandardBuildRule(builder);		
-		
-		rule.add(whileySourceDir, whileyIncludes, whileyExcludes, whileyDestDir,
-				WhileyFile.ContentType, WyilFile.ContentType);
+		if(whileyDir != null) {
+			// whileydir can be null if a subclass of this task doesn't
+			// necessarily require it.
+			Pipeline pipeline = initialisePipeline();    		
 
-		project.add(rule);				
+			Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
+
+			if(verbose) {			
+				builder.setLogger(new Logger.Default(System.err));
+			}
+
+			StandardBuildRule rule = new StandardBuildRule(builder);		
+
+			rule.add(whileyDir, whileyIncludes, whileyExcludes, wyilDir,
+					WhileyFile.ContentType, WyilFile.ContentType);
+
+			project.add(rule);
+		}
 	}
 	
 	/**
@@ -379,15 +381,19 @@ public class AntTask extends MatchingTask {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
 		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
-		for (Path.Entry<WhileyFile> sourceFile : whileySourceDir.get(whileyIncludes)) {
-			Path.Entry<WyilFile> wyilBinary;
+		
+		if(whileyDir != null) {
+			// whileydir can be null if a subclass of this task doesn't
+			// necessarily require it.
+			for (Path.Entry<WhileyFile> source : whileyDir.get(whileyIncludes)) {
+				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
+						WyilFile.ContentType);
 
-			wyilBinary = whileyDestDir.get(sourceFile.id(), WyilFile.ContentType);
-
-			// first, check whether wyil file out-of-date with source file
-			if (wyilBinary == null
-					|| wyilBinary.lastModified() < sourceFile.lastModified()) {
-				sources.add(sourceFile);
+				// first, check whether wyil file out-of-date with source file
+				if (binary == null
+						|| binary.lastModified() < source.lastModified()) {
+					sources.add(source);
+				}
 			}
 		}
 		return sources;

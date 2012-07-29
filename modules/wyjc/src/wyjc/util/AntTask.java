@@ -75,27 +75,19 @@ public class AntTask extends wyc.util.AntTask {
 			return name.endsWith(".class") || f.isDirectory();
 		}
 	};
-	
+		
 	/**
-	 * The wyil source directory is the filesystem directory from which the
-	 * compiler will look for (wyil) source files.
+	 * The class directory is the filesystem directory where all generated jvm
+	 * class files are stored.
 	 */
-	protected DirectoryRoot wyilSourceDir;		
+	protected DirectoryRoot classDir;
 	
 	/**
 	 * Identifies which wyil files generated from whiley source files which
 	 * should be considered for compilation. By default, all files reachable
 	 * from <code>whileyDestDir</code> are considered.
 	 */
-	protected Content.Filter<WyilFile> wyilBinaryIncludes = Content.filter("**", WyilFile.ContentType);
-	
-	/**
-	 * Identifies which standalone wyil files should be considered for
-	 * compilation. By default, all files reachable from
-	 * <code>wyilSourceDir</code> are considered.
-	 */
-	protected Content.Filter<WyilFile> wyilSourceIncludes = Content.filter("**", WyilFile.ContentType);
-	
+	protected Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
 	
 	/**
 	 * Identifies which wyil files generated from whiley source files should not
@@ -103,33 +95,22 @@ public class AntTask extends wyc.util.AntTask {
 	 * <code>wyilBinaryIncludes</code> . By default, no files files reachable from
 	 * <code>wyilDestDir</code> are excluded.
 	 */
-	protected Content.Filter<WyilFile> wyilBinaryExcludes = null;
-	
-	/**
-	 * Identifies which standalone wyil files should not be considered for
-	 * compilation. This overrides any identified by
-	 * <code>wyilSourceIncludes</code> . By default, no files files reachable
-	 * from <code>wyilSourceDir</code> are excluded.
-	 */
-	protected Content.Filter<WyilFile> wyilSourceExcludes = null;
+	protected Content.Filter<WyilFile> wyilExcludes = null;
 	
 	public AntTask() {
 		super(new Registry());
 	}
 	
-	@Override
-	public void setSrcdir(File srcdir) throws IOException {
-		super.setSrcdir(srcdir);
-		this.wyilSourceDir = new DirectoryRoot(srcdir, wyilFileFilter, registry);
+	public void setClassdir(File classdir) throws IOException {
+		this.classDir = new DirectoryRoot(classdir, wyilFileFilter, registry);
 	}
 	
 	@Override
 	public void setIncludes(String includes) {
 		super.setIncludes(includes);
 		
-    	String[] split = includes.split(",");
-    	Content.Filter<WyilFile> wyilSourceFilter = null;
-    	Content.Filter<WyilFile> wyilBinaryFilter = null;
+    	String[] split = includes.split(",");    	
+    	Content.Filter<WyilFile> wyilFilter = null;
     	
 		for (String s : split) {
 			if (s.endsWith(".whiley")) {
@@ -139,19 +120,18 @@ public class AntTask extends wyc.util.AntTask {
 				String name = s.substring(0, s.length() - 7);
 				Content.Filter<WyilFile> nf = Content.filter(name,
 						WyilFile.ContentType);
-				wyilBinaryFilter = wyilBinaryFilter == null ? nf : Content.or(nf,
-						wyilBinaryFilter);
+				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
+						wyilFilter);
 			} else if (s.endsWith(".wyil")) {
 				String name = s.substring(0, s.length() - 5);
 				Content.Filter<WyilFile> nf = Content.filter(name,
 						WyilFile.ContentType);
-				wyilSourceFilter = wyilSourceFilter == null ? nf : Content.or(
-						nf, wyilSourceFilter);
+				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
+						wyilFilter);
 			}
 		}
     	
-    	this.wyilBinaryIncludes = wyilBinaryFilter;
-       	this.wyilSourceIncludes = wyilSourceFilter;
+    	this.wyilIncludes = wyilFilter;    	
     }
     
 	@Override
@@ -159,27 +139,25 @@ public class AntTask extends wyc.util.AntTask {
     	super.setExcludes(excludes);
     	
 		String[] split = excludes.split(",");
-		Content.Filter<WyilFile> wyilBinaryFilter = null;
-		Content.Filter<WyilFile> wyilSourceFilter = null;
+		Content.Filter<WyilFile> wyilFilter = null;
 		
 		for (String s : split) {
 			if (s.endsWith(".whiley")) {
 				String name = s.substring(0, s.length() - 7);
 				Content.Filter<WyilFile> nf = Content.filter(name,
 						WyilFile.ContentType);
-				wyilBinaryFilter = wyilBinaryFilter == null ? nf : Content.or(
-						nf, wyilBinaryFilter);
+				wyilFilter = wyilFilter == null ? nf : Content.or(
+						nf, wyilFilter);
 			} else if (s.endsWith(".wyil")) {
 				String name = s.substring(0, s.length() - 5);
 				Content.Filter<WyilFile> nf = Content.filter(name,
 						WyilFile.ContentType);
-				wyilSourceFilter = wyilSourceFilter == null ? nf : Content.or(
-						nf, wyilSourceFilter);
+				wyilFilter = wyilFilter == null ? nf : Content.or(
+						nf, wyilFilter);
 			}
 		}
     	
-    	this.wyilBinaryExcludes = wyilBinaryFilter;
-    	this.wyilSourceExcludes = wyilSourceFilter;
+    	this.wyilExcludes = wyilFilter;
     }
    
 	@Override
@@ -199,12 +177,9 @@ public class AntTask extends wyc.util.AntTask {
 
 		StandardBuildRule rule = new StandardBuildRule(jbuilder);
 		
-		rule.add(whileyDestDir, wyilBinaryIncludes, wyilBinaryExcludes, whileyDestDir,
+		rule.add(wyilDir, wyilIncludes, wyilExcludes, classDir,
 				WyilFile.ContentType, ClassFile.ContentType);
-		
-		rule.add(wyilSourceDir, wyilSourceIncludes, wyilSourceExcludes, whileyDestDir,
-				WyilFile.ContentType, ClassFile.ContentType);
-				
+
 		project.add(rule);
 	}
     
@@ -217,18 +192,29 @@ public class AntTask extends wyc.util.AntTask {
 		
 		// Second, look for any wyil files which are out-of-date with their
 		// respective class file.
-		for (Path.Entry<WyilFile> sourceFile : wyilSourceDir.get(wyilBinaryIncludes)) {
-			Path.Entry<ClassFile> binary = whileyDestDir.get(sourceFile.id(),
+		for (Path.Entry<WyilFile> source : wyilDir.get(wyilIncludes)) {
+			Path.Entry<ClassFile> binary = classDir.get(source.id(),
 					ClassFile.ContentType);
 
 			// first, check whether wyil file out-of-date with source file
 			if (binary == null
-					|| binary.lastModified() < sourceFile.lastModified()) {
-				sources.add(sourceFile);
+					|| binary.lastModified() < source.lastModified()) {
+				sources.add(source);
 			}
 		}
 		
 		// done
 		return sources;
 	}	
+	
+	@Override
+	public void execute() throws BuildException {
+        if (whileyDir == null && wyilDir == null) {
+            throw new BuildException("whileydir or wyildir must be specified");
+        }
+       
+        if(!compile()) {
+        	throw new BuildException("compilation errors");
+        }        	        
+    }
 }
