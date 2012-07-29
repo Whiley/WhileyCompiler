@@ -31,6 +31,7 @@
     </subant>
     <delete includeEmptyDirs="true" failonerror="false">
       <fileset file="*~"/>
+      <fileset dir="lib"/>
       <fileset dir="docs"/>
       <fileset dir="tests">
 	<include name="**/*.class"/>
