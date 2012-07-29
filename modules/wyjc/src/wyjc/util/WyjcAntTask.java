@@ -61,7 +61,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * @author David J. Pearce
  * 
  */
-public class AntTask extends wyc.util.WycAntTask {
+public class WyjcAntTask extends wyc.util.WycAntTask {
 	
 	public static class Registry extends wyc.util.WycAntTask.Registry {
 		public void associate(Path.Entry e) {
@@ -117,7 +117,7 @@ public class AntTask extends wyc.util.WycAntTask {
 	 */
 	protected Content.Filter<WyilFile> wyilExcludes = null;
 	
-	public AntTask() {
+	public WyjcAntTask() {
 		super(new Registry());
 	}
 	

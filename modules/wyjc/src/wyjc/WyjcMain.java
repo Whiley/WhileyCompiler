@@ -52,7 +52,7 @@ import static wyc.util.OptArg.*;
  * @author David J. Pearce
  * 
  */
-public class Main {
+public class WyjcMain {
 	
 	public static PrintStream errout;
 	public static final int MAJOR_VERSION;
@@ -131,7 +131,7 @@ public class Main {
 		}
 		
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = Main.class.getPackage().getImplementationVersion();
+		String versionStr = WyjcMain.class.getPackage().getImplementationVersion();
 		if(versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
@@ -195,7 +195,7 @@ public class Main {
 				// String jarfile = Main.class.getPackage().getImplementationTitle();
 				// bootpath.add(jarfile);
 				
-				URI location = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
+				URI location = WyjcMain.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
 				if(location != null) {
 					// The following code is a hack to determine the location of
 					// the enclosing jar file.
@@ -510,6 +510,6 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {		
-		System.exit(new Main().run(args));
+		System.exit(new WyjcMain().run(args));
 	}
 }
