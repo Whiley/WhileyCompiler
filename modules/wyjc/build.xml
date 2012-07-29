@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**" classpath="../wyil/src:../wyc/src"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**" classpath="../wyil/src:../wyc/src"> 
       <src path="src"/>
     </javac>
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/:../wyil/src/:../wyc/src"/>

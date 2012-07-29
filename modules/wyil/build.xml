@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyil">
-    <javac debug="true" debuglevel="vars,lines,source" includeantruntime="true" includes="*/**" excludes="wyil/testing/**,wyone/testing/**"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" includes="*/**" excludes="wyil/testing/**,wyone/testing/**"> 
       <src path="src"/>
     </javac>
   </target>
