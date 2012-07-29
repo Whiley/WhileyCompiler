@@ -16,7 +16,7 @@
 # License along with the Whiley Development Kit. If not, see 
 # <http://www.gnu.org/licenses/>
 #
-# Copyright 2010, David James Pearce. 
+# Copyright 2012, David James Pearce. 
 
 ##################
 # CONFIGURATION
@@ -24,7 +24,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyc*.jar wyil*.jar wyjc*.jar"
+LIBS="wyil*.jar"
 
 # check for running under cywin
 cygwin=false
@@ -53,6 +53,8 @@ do
     WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
 done
 
+echo $WHILEY_CLASSPATH
+
 ######################
 # CONSTRUCT BOOTPATH
 ######################
@@ -64,4 +66,4 @@ WHILEY_BOOTPATH="$WYRT_JAR"
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyjc.Main -bp "$WHILEY_BOOTPATH" "$@"
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyil.Main "$@"

@@ -18,9 +18,9 @@
 #
 # Copyright 2010, David James Pearce. 
 
-##################
+################
 # CONFIGURATION
-##################
+################
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
@@ -31,6 +31,24 @@ cygwin=false
 case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
+
+#################################
+# PROCESS COMMAND LINE ARGUMENTS
+#################################
+
+while [ $1 ];
+  do case x"$1" in        
+        x-cp) shift
+	 CLASSPATH=$1
+	 shift ;;
+	x-classpath) shift
+	 CLASSPATH=$1
+	 shift ;;
+	x-*) echo "invalid option $1"
+	 exit 1;;
+	*) break;;
+  esac
+done
 
 ######################
 # CONSTRUCT CLASSPATH
@@ -53,15 +71,4 @@ do
     WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
 done
 
-######################
-# CONSTRUCT BOOTPATH
-######################
-
-WYRT_JAR=$(ls $LIBDIR/wyrt*.jar)
-WHILEY_BOOTPATH="$WYRT_JAR"
-
-######################
-# RUN APPLICATION
-######################
-
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyjc.Main -bp "$WHILEY_BOOTPATH" "$@"
+java -cp "$WHILEY_CLASSPATH" "$@"
