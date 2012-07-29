@@ -3,19 +3,12 @@
 
   <!-- Build Commands -->
 
-  <target name="compile-all">
-    <subant failonerror="true" target="compile">
+  <target name="build-all">
+    <subant failonerror="true" target="build">
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
       <fileset dir="modules" includes="wyjc/build.xml"/>
-    </subant>
-  </target>
-
-  <target name="build-all" depends="compile-all">
-    <subant failonerror="true" target="build">
-      <property name="version" value="${version}"/>
-      <fileset dir="modules" includes="*/build.xml"/>
     </subant>
   </target>
  
