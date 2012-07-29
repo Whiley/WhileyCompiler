@@ -68,7 +68,7 @@ wycc_obj* wycc_box_str(char* text) {
     return ans;
 }
 
-static void dealloc(void* ptr, int typ);
+static void wycc_dealloc_typ(void* ptr, int typ);
 wycc_obj* wycc_deref_box(wycc_obj* itm, int flg) {
     ;
     void* ptr;
@@ -80,15 +80,14 @@ wycc_obj* wycc_deref_box(wycc_obj* itm, int flg) {
 	typ = itm->typ;
 	free(itm);
 	if (flg != 0) {
-	    ;
-	    wycc_dealloc_typ(ptr, typ)
+	    wycc_dealloc_typ(ptr, typ);
 	}
 	return (wycc_obj *) NULL;
     }
     return itm;
 }
 
-static void dealloc(void* ptr, int typ){
+static void wycc_dealloc_typ(void* ptr, int typ){
     ;
     if (typ == 1) {
         free (ptr);

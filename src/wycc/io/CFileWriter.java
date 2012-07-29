@@ -243,8 +243,10 @@ public class CFileWriter {
 			output.println("//             target "+ targ);
 			tyc = val.type().toString();
 			if (tyc.equals("string")){
-				ctyp = "char* ";
-				assn = " = " + val  ;
+				// ctyp = "char* ";
+				// assn = " = " + val  ;
+				ctyp = "wycc_obj* ";
+				assn = " = wycc_box_str(" + val + ")" ;
 			} else {
 				output.println("// HELP needed for value type '" + tyc + "'");
 			}
@@ -254,7 +256,8 @@ public class CFileWriter {
 		} else if (cod instanceof Code.Debug){
 			Code.Debug codd = (Code.Debug) cod;
 			targ = codd.operand;
-			lin = "	wyil_debug_str(X" + targ + ");" ;
+			//lin = "	wyil_debug_str(X" + targ + ");" ;
+			lin = "	wyil_debug_obj(X" + targ + ");" ;
 			inst += lin + "\n";
 		} else if (cod instanceof Code.Return){
 			lin = "	return;" ;
