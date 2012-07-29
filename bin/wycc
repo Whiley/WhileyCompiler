@@ -17,6 +17,7 @@
 # <http://www.gnu.org/licenses/>
 #
 # Copyright 2010, David James Pearce. 
+# modified 2012,	Art Protin <protin2art@gmail.com>
 
 ################
 # CONFIGURATION
@@ -38,12 +39,70 @@ esac
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
     LIBDIR=`cygpath -pw "$LIBDIR"`
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar;$CLASSPATH"
-    WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+    SEP=';'
 else
     # under UNIX the classpath separator must be ":"
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar:$CLASSPATH"
-    WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+    SEP=':'
+fi
+WHILEY_CLASSPATH="$LIBDIR/wyjc.jar$SEP$CLASSPATH"
+WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+
+FileName=
+Other=
+Opts=
+SaveOpt="$@"
+ToO=:
+ToX=:
+ToS='-c'
+
+while [[ $# -gt 0 ]]
+do
+    case "$1" in
+    -W)		# only do whiley compilation
+	    ToO=false
+	    ;;
+    -C)		# Compile Whiley and compile c to .o file
+	    ToX=false
+	    ;;
+    -S)		# Compile Whiley and compile c to .s file
+	    ToX=false
+	    ToS='-s'
+	    ;;
+    -*)
+	    #Opts="$Opts $1"
+	    echo "unknown option '$1'"
+	    ;;
+    *)
+	    if [[ -z "$FileName" ]]
+	    then
+		FileName="$1"
+	    else
+		Other="$Other $1"
+	    fi
+    esac
+    shift
+done
+
+BaseName=${FileName%%.*}
+CName=${BaseName}.c
+echo "wjcc  filename is '$FileName', Opts is '$Opts', Other is '$Other'"
+echo "Basename is $BaseName and CName is $CName"
+
+# java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycc.Main -bp "$WHILEY_BOOTPATH" "$SaveOpt"
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycc.Main -bp "$WHILEY_BOOTPATH" "$FileName"
+
+xit=$?
+if [[ $xit != 0 ]]
+then
+    echo "wycc compiler failed"
+    exit $xit
 fi
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycc.Main -bp "$WHILEY_BOOTPATH" "$@"
+echo "wycc succeeded"
+$ToO || exit 0
+
+gcc $ToS $CName 
+
+$ToX || exit
+
+gcc -o $BaseName $BaseName.o lib/wycc_lib.o

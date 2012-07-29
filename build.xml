@@ -34,6 +34,21 @@
     <delete dir="tmp"/>
   </target>
   
+  <target name="wycc">
+    <buildnumber file="build.num"/>
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyjc.Main"/>
+      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+    </manifest>
+    <jar destfile="lib/wyjc.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="src" includes="*/**/*.class"/>
+      <fileset dir="stdlib" includes="whiley/**/*.class"/>
+    </jar>
+    <delete dir="tmp"/>
+  </target>
+  
   <target name="distjar" depends="wyjc">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
