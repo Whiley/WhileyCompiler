@@ -462,8 +462,9 @@ public final class WyilFileWriter {
 				Code.Label l = (Code.Label) code;
 				labels.put(l.label, offset);
 				nlabels++;
+			} else {
+				offset++;
 			}
-			offset++;
 		}
 		
 		output.write_uv(block.size()-nlabels); // instruction count (not same as block size!)
@@ -764,7 +765,8 @@ public final class WyilFileWriter {
 		if(wide) {
 			output.write_uv(target);
 		} else {
-			output.write_u8((target-offset) + 128);
+			target = (target-offset) + 128;
+			output.write_u8(target);
 		}
 	}
 	

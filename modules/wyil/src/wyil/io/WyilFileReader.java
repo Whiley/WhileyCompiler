@@ -493,11 +493,16 @@ public final class WyilFileReader {
 		for(int i=0;i!=nCodes;++i) {
 			Code code = readCode(i,labels);
 			//System.out.println("READ: " + code);
-			block.append(code);
+			block.append(code);		
 		}
-				
-		// FIXME: insert label opcodes.
 		
+		for(int i=0,j=0;i!=nCodes;++i,++j) {
+			String label = labels.get(i);
+			if(label != null) {
+				block.insert(j++, Code.Label(label));
+			}
+		}
+
 		input.pad_u8(); // necessary
 		
 		return block;
@@ -560,8 +565,8 @@ public final class WyilFileReader {
 			return Code.Const(target,c);
 		}
 		case Code.OPCODE_goto: {
-			int target = readRest(wideRest); 
-			String lab = findLabel(offset + target,labels);
+			int target = readTarget(wideRest,offset); 
+			String lab = findLabel(target,labels);
 			return Code.Goto(lab);
 		}			
 		case Code.OPCODE_nop:
@@ -593,13 +598,13 @@ public final class WyilFileReader {
 			return Code.Return(type, operand);
 		case Code.OPCODE_switch: {
 			ArrayList<Pair<Constant,String>> cases = new ArrayList<Pair<Constant,String>>();
-			int target = input.read_u8(); 
-			String defaultLabel = findLabel(offset + target,labels);
+			int target = readTarget(wideRest,offset); 
+			String defaultLabel = findLabel(target,labels);
 			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
 				int constIdx = readTarget(wideRest,offset);
 				Constant constant = constantPool[constIdx];
-				target = readRest(wideRest); 
+				target = readTarget(wideRest,offset); 
 				String label = findLabel(target,labels);
 				cases.add(new Pair<Constant,String>(constant,label));
 			}
@@ -816,8 +821,8 @@ public final class WyilFileReader {
 		
 		if(opcode == Code.OPCODE_loop) {
 			// special case which doesn't have a type.
-			int target = readRest(wideRest); 
-			String label = findLabel(offset + target,labels);
+			int target = readTarget(wideRest,offset); 
+			String label = findLabel(target,labels);
 			return Code.Loop(label, operands);
 		}
 		
@@ -829,8 +834,8 @@ public final class WyilFileReader {
 				if (!(type instanceof Type.EffectiveCollection)) {
 					throw new RuntimeException("expected collection type");
 				}
-				int target = readRest(wideRest);
-				String label = findLabel(offset + target, labels);
+				int target = readTarget(wideRest,offset);
+				String label = findLabel(target, labels);
 				int indexOperand = operands[0];
 				int sourceOperand = operands[1];
 				operands = Arrays.copyOfRange(operands, 2, operands.length);
@@ -996,8 +1001,8 @@ public final class WyilFileReader {
 	private int readTarget(boolean wide, int offset) throws IOException {
 		if(wide) {
 			return input.read_uv();
-		} else {
-			return input.read_u8() + offset - 128;
+		} else {			
+			return (input.read_u8() + offset) - 128;
 		}
 	}
 	

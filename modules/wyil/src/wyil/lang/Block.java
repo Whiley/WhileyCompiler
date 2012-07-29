@@ -301,6 +301,18 @@ public final class Block implements Iterable<Block.Entry> {
 	// Insert Methods
 	// ===================================================================
 	
+	/**
+	 * <p>Insert a bytecode at a given position in this block. It is assumed that
+	 * the bytecode employs the same environment as this block. The bytecode at
+	 * the given position (and any after it) are shifted one position down.</p>
+	 * 
+	 * @param index --- position to insert at.
+	 * @param code --- bytecode to insert at the given position.
+	 * @param attributes
+	 */
+	public void insert(int index, Code code, Attribute... attributes) {
+		stmts.add(index,new Entry(code,attributes));
+	}
 	
 	/**
 	 * <p>Insert a bytecode at a given position in this block. It is assumed that
