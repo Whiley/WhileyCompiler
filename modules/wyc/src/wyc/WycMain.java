@@ -51,7 +51,7 @@ import static wybs.lang.SyntaxError.*;
  * @author David J. Pearce
  * 
  */
-public class Main {
+public class WycMain {
 	
 	public static PrintStream errout;
 	public static final int MAJOR_VERSION;
@@ -98,7 +98,7 @@ public class Main {
 		}
 		
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = Main.class.getPackage().getImplementationVersion();
+		String versionStr = WycMain.class.getPackage().getImplementationVersion();
 		if(versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
@@ -138,7 +138,7 @@ public class Main {
  	// Constructors & Configuration
  	// =========================================================================
  	
-    public Main(BuildTask builder, OptArg[] options) {
+    public WycMain(BuildTask builder, OptArg[] options) {
     	this.options = options;
     	this.builder = builder;
     }
@@ -321,7 +321,7 @@ public class Main {
 			// String jarfile = Main.class.getPackage().getImplementationTitle();
 			// bootpath.add(jarfile);
 
-			URI location = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
+			URI location = WycMain.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
 			if(location != null) {
 				// The following code is a hack to determine the location of
 				// the enclosing jar file.
@@ -348,6 +348,6 @@ public class Main {
  	// =========================================================================
  	    	
 	public static void main(String[] args) {
-		System.exit(new Main(new BuildTask(), DEFAULT_OPTIONS).run(args));
+		System.exit(new WycMain(new BuildTask(), DEFAULT_OPTIONS).run(args));
 	}
 }

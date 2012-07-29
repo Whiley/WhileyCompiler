@@ -61,9 +61,9 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * @author David J. Pearce
  * 
  */
-public class AntTask extends wyc.util.AntTask {
+public class AntTask extends wyc.util.WycAntTask {
 	
-	public static class Registry extends wyc.util.AntTask.Registry {
+	public static class Registry extends wyc.util.WycAntTask.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 			

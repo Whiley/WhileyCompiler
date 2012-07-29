@@ -66,7 +66,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * @author David J. Pearce
  * 
  */
-public class AntTask extends MatchingTask {
+public class WycAntTask extends MatchingTask {
 	
 	/**
 	 * Default implementation of a content registry. This associates whiley and
@@ -174,11 +174,11 @@ public class AntTask extends MatchingTask {
 	 */
 	protected boolean verbose = false;
 	
-	public AntTask() {
+	public WycAntTask() {
 		this.registry = new Registry();
 	}
 	
-	public AntTask(Content.Registry registry) {
+	public WycAntTask(Content.Registry registry) {
 		this.registry = registry;
 	}
 	
@@ -324,7 +324,7 @@ public class AntTask extends MatchingTask {
 		}
 		roots.add(wyilDir);
 
-		wyc.Main.initialiseBootPath(bootpath);
+		wyc.WycMain.initialiseBootPath(bootpath);
 		roots.addAll(whileypath);
 		roots.addAll(bootpath);
 
