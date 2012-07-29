@@ -131,7 +131,9 @@ public class AntTask extends wyc.util.AntTask {
 			}
 		}
     	
-    	this.wyilIncludes = wyilFilter;    	
+		if(wyilFilter != null) {
+			this.wyilIncludes = wyilFilter;
+		}
     }
     
 	@Override
