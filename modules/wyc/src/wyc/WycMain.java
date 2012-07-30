@@ -74,7 +74,7 @@ public class WycMain {
 			new OptArg("bootpath", "bp", OptArg.FILELIST,
 					"Specify where to find whiley standard library files",
 					defaultBootPath()),
-			new OptArg("whileydir", "sd", OptArg.FILEDIR,
+			new OptArg("whileydir", "wd", OptArg.FILEDIR,
 					"Specify where to find whiley source files",
 					new File(".")),
 			new OptArg("wyildir", "od", OptArg.FILEDIR,
