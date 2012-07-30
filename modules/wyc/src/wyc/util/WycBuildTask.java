@@ -296,7 +296,9 @@ public class WycBuildTask {
 
 		project.build(delta);
 		
-		flush();    
+		flush();
+		
+		logout.println("Compiled " + delta.size() + " source file(s)");
 	}
 	
 	// ==========================================================================
