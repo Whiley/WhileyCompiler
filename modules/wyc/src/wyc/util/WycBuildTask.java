@@ -298,7 +298,9 @@ public class WycBuildTask {
 		
 		flush();
 		
-		logout.println("Compiled " + delta.size() + " source file(s)");
+		if(verbose) {
+			logout.println("Compiled " + delta.size() + " source file(s)");
+		}
 	}
 	
 	// ==========================================================================
@@ -384,14 +386,18 @@ public class WycBuildTask {
 					int end = whileyDirPath.length();
 					if(end > 1) {
 						end++;
-					}
+					}					
 					String module = filePath.substring(end).replace(File.separatorChar, '.');
-					module = module.substring(0,module.length()-7);						
-					Path.ID mid = Trie.fromString(module);						
-					Path.Entry<WhileyFile> e = whileyDir.get(mid,WhileyFile.ContentType);
-					if (e != null) {							
-						sources.add(e);
+					
+					if(module.endsWith(".whiley")) {
+						module = module.substring(0,module.length()-7);						
+						Path.ID mid = Trie.fromString(module);
+						Path.Entry<WhileyFile> entry = whileyDir.get(mid,WhileyFile.ContentType);
+						if (entry != null) {							
+							sources.add(entry);
+						}
 					}
+					
 				}
 			}
 		}

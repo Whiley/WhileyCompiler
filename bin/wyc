@@ -53,8 +53,6 @@ do
     WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
 done
 
-echo $WHILEY_CLASSPATH
-
 ######################
 # CONSTRUCT BOOTPATH
 ######################

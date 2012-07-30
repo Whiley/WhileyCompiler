@@ -76,10 +76,19 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	}
 	
 	@Override
-	public void setWyilDir(File wyildir) throws IOException {
-		super.setWyilDir(wyildir);
+	public void setWhileyDir(File dir) throws IOException {
+		super.setWhileyDir(dir);
 		if (classDir == null) {
-			this.classDir = new DirectoryRoot(wyildir, classFileFilter,
+			this.classDir = new DirectoryRoot(dir, classFileFilter,
+					registry);
+		}
+	}
+	
+	@Override
+	public void setWyilDir(File dir) throws IOException {
+		super.setWyilDir(dir);
+		if (classDir == null) {
+			this.classDir = new DirectoryRoot(dir, classFileFilter,
 					registry);
 		}
 	}

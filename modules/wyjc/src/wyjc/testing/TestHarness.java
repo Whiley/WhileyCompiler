@@ -29,7 +29,9 @@ import static org.junit.Assert.fail;
 
 import java.io.*;
 
+import wyc.WycMain;
 import wyjc.WyjcMain;
+import wyjc.util.WyjcBuildTask;
 
 public class TestHarness {
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
@@ -83,10 +85,11 @@ public class TestHarness {
 	 */
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-
-		if (compile("-sp", sourcepath, "-wp", WYRT_PATH, filename) != 0) {
+		System.out.println("STAGE 1");
+		if (compile("-verbose","-wd", sourcepath, "-wp", WYRT_PATH, filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
+			System.out.println("STAGE 2");
 			String output = run(sourcepath, name);
 			compare(output, outputPath + File.separatorChar + name + "."
 					+ outputExtension);
@@ -107,7 +110,7 @@ public class TestHarness {
 	protected void verifyRunTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 
-		if (compile("-sp", sourcepath, "-wp", WYRT_PATH, "-X",
+		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
 				"verification:enable=true", filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
@@ -129,11 +132,11 @@ public class TestHarness {
 	protected void contextFailTest(String name) {
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-sp", sourcepath, "-wp", WYRT_PATH, name);
+		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, name);
 
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
-		} else if (r == WyjcMain.INTERNAL_FAILURE) {
+		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
 	}
@@ -153,12 +156,12 @@ public class TestHarness {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-sp", sourcepath, "-wp", WYRT_PATH, "-X",
+		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
 				"verification:enable=true", name);
 
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
-		} else if (r == WyjcMain.INTERNAL_FAILURE) {
+		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
 	}
@@ -178,7 +181,7 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-sp",sourcepath,"-wp", WYRT_PATH,fullName) != 0) { 
+		if(compile("-wd",sourcepath,"-wp", WYRT_PATH,fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath,name);				
@@ -189,7 +192,7 @@ public class TestHarness {
 	}
 	
 	private static int compile(String... args) {
-		return new WyjcMain().run(args);
+		return new WycMain(new WyjcBuildTask(), WycMain.DEFAULT_OPTIONS).run(args);
 	}
 	
 	private static String run(String path, String name) {
