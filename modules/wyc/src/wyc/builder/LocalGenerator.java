@@ -422,7 +422,7 @@ public final class LocalGenerator {
 			blk.append(generateCondition(exitLabel, e.condition, freeRegister,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {				
-				blk.append(Code.End(labels.get(i)));
+				blk.append(Code.LoopEnd(labels.get(i)));
 			}
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
@@ -430,7 +430,7 @@ public final class LocalGenerator {
 			blk.append(generateCondition(target, e.condition, freeRegister,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
-				blk.append(Code.End(labels.get(i)));
+				blk.append(Code.LoopEnd(labels.get(i)));
 			}
 		} // ALL, LONE and ONE will be harder					
 		
@@ -890,7 +890,7 @@ public final class LocalGenerator {
 		} 
 
 		for (int i = (labels.size() - 1); i >= 0; --i) {
-			blk.append(Code.End(labels.get(i)));
+			blk.append(Code.LoopEnd(labels.get(i)));
 		}
 
 		return blk;
