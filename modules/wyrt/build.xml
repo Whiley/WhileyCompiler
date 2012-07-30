@@ -15,6 +15,10 @@
     <echo message="============================================="/>
   </target>
 
+  <target name="dist">
+    <!-- this module has no distribution -->
+  </target>
+
   <target name="clean">
    <delete includeEmptyDirs="true" failonerror="false">
      <fileset dir="." includes="**/*.wyil,**/*.wyasm"/>

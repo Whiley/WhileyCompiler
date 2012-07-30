@@ -18,6 +18,35 @@
     <echo message="============================================="/>
   </target>
   
+  <target name="dist">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyjc.WyjcMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="../wyil/src">
+	<include name="wyautl/**/*.class"/>
+	<include name="wybs/**/*.class"/>
+	<include name="wyone/**/*.class"/>
+	<include name="wyil/**/*.class"/>
+      </fileset>
+      <fileset dir="../wyc/src">
+	<include name="wyc/**/*.class"/>
+	<include name="wyjc/**/*.class"/>
+	<include name="wyjvm/**/*.class"/>
+      </fileset>
+      <fileset dir="src">
+	<include name="whiley/**/*.class"/>
+	<include name="wyjc/**/*.class"/>
+	<include name="wyjvm/**/*.class"/>
+      </fileset>
+    </jar>
+    <delete dir="tmp"/>
+  </target>
+
   <target name="doc">
     <javadoc
        packagenames="wyjc.*,wyjvm.*"
