@@ -46,21 +46,27 @@
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Main-Class" value="wyjc.Main"/>
-      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+      <attribute name="Main-Class" value="wyjc.WyjcMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
-    <jar destfile="wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src">
+    <jar destfile="dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="modules/wyil/src">
 	<include name="wyautl/**/*.class"/>
 	<include name="wybs/**/*.class"/>
+	<include name="wyone/**/*.class"/>
+	<include name="wyil/**/*.class"/>
+      </fileset>
+      <fileset dir="modules/wyc/src">
 	<include name="wyc/**/*.class"/>
 	<include name="wyjc/**/*.class"/>
-	<include name="wyil/**/*.class"/>
 	<include name="wyjvm/**/*.class"/>
-	<include name="wyone/**/*.class"/>
       </fileset>
-      <fileset dir="stdlib" includes="whiley/**/*.class"/>
+      <fileset dir="modules/wyjc/src">
+	<include name="whiley/**/*.class"/>
+	<include name="wyjc/**/*.class"/>
+	<include name="wyjvm/**/*.class"/>
+      </fileset>
     </jar>
     <delete dir="tmp"/>
   </target>
