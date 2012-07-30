@@ -254,15 +254,29 @@ public class WycBuildTask {
     }
            
 	// ==========================================================================
-	// Build Method
+	// Build Methods
 	// ==========================================================================
 
     /**
-	 * The build method is responsible for building the given source files.
+	 * Building the given source files.
 	 * 
 	 * @param _args
 	 */
-	public void build(List<File> delta) throws Exception {	
+	public void build(List<File> files) throws Exception {					
+		List<Path.Entry<?>> entries = getSourceFiles(files);
+		buildEntries(entries);    
+	}
+
+    /**
+	 * Build all source files which have been modified.
+	 * 
+	 * @param _args
+	 */
+	public void buildAll() throws Exception {
+		buildEntries(getModifiedSourceFiles());
+	}
+	
+	protected void buildEntries(List<Path.Entry<?>> delta) throws Exception {	
 		
 		// ======================================================================
 		// Initialise Project
@@ -280,8 +294,7 @@ public class WycBuildTask {
 		// Build!
 		// ======================================================================		
 
-		List<Path.Entry<?>> sources = getSourceFiles(delta);
-		project.build(sources);
+		project.build(delta);
 		
 		flush();    
 	}
@@ -381,6 +394,37 @@ public class WycBuildTask {
 			}
 		}
 		
+		return sources;
+	}
+	
+	/**
+	 * Generate the list of source files which need to be recompiled. By
+	 * default, this is done by comparing modification times of each whiley file
+	 * against its corresponding wyil file. Wyil files which are out-of-date are
+	 * scheduled to be recompiled.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	protected List<Path.Entry<?>> getModifiedSourceFiles() throws IOException {
+		// Now, touch all source files which have modification date after
+		// their corresponding binary.
+		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
+
+		if (whileyDir != null) {
+			// whileydir can be null if a subclass of this task doesn't
+			// necessarily require it.
+			for (Path.Entry<WhileyFile> source : whileyDir.get(whileyIncludes)) {
+				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
+						WyilFile.ContentType);
+
+				// first, check whether wyil file out-of-date with source file
+				if (binary == null
+						|| binary.lastModified() < source.lastModified()) {
+					sources.add(source);
+				}
+			}
+		}
 		return sources;
 	}
 	

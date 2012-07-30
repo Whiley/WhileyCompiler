@@ -33,6 +33,7 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
+import wyc.util.WycAntTask;
 import wyil.Pipeline;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
@@ -61,197 +62,15 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * @author David J. Pearce
  * 
  */
-public class WyjcAntTask extends wyc.util.WycAntTask {
+public class WyjcAntTask extends WycAntTask {
+	private final WyjcBuildTask myBuilder;
 	
-	public static class Registry extends wyc.util.WycAntTask.Registry {
-		public void associate(Path.Entry e) {
-			String suffix = e.suffix();
-			
-			if(suffix.equals("class")) {				
-				e.associate(ClassFile.ContentType, null);				
-			} else {
-				super.associate(e);
-			}
-		}
-		
-		public String suffix(Content.Type<?> t) {
-			if(t == ClassFile.ContentType) {
-				return "class";
-			} else {
-				return super.suffix(t);
-			}
-		}
+	public void setClassdir(File dir) throws IOException {
+		myBuilder.setClassDir(dir);		
 	}
-	
-	/**
-	 * The purpose of the class file filter is simply to ensure only binary
-	 * files are loaded in a given directory root. It is not strictly necessary
-	 * for correct operation, although hopefully it offers some performance
-	 * benefits.
-	 */
-	public static final FileFilter classFileFilter = new FileFilter() {
-		public boolean accept(File f) {
-			String name = f.getName();
-			return name.endsWith(".class") || f.isDirectory();
-		}
-	};
-		
-	/**
-	 * The class directory is the filesystem directory where all generated jvm
-	 * class files are stored.
-	 */
-	protected DirectoryRoot classDir;
-	
-	/**
-	 * Identifies which wyil files generated from whiley source files which
-	 * should be considered for compilation. By default, all files reachable
-	 * from <code>whileyDestDir</code> are considered.
-	 */
-	protected Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
-	
-	/**
-	 * Identifies which wyil files generated from whiley source files should not
-	 * be considered for compilation. This overrides any identified by
-	 * <code>wyilBinaryIncludes</code> . By default, no files files reachable from
-	 * <code>wyilDestDir</code> are excluded.
-	 */
-	protected Content.Filter<WyilFile> wyilExcludes = null;
 	
 	public WyjcAntTask() {
-		super(new Registry());
-	}
-	
-	@Override
-	public void setWyildir(File wyildir) throws IOException {
-		super.setWyildir(wyildir);
-		if(classDir == null) {
-			this.classDir = new DirectoryRoot(wyildir, classFileFilter, registry);
-		}
-	}
-	
-	public void setClassdir(File classdir) throws IOException {
-		this.classDir = new DirectoryRoot(classdir, classFileFilter, registry);
-	}
-	
-	@Override
-	public void setIncludes(String includes) {
-		super.setIncludes(includes);
-		
-    	String[] split = includes.split(",");    	
-    	Content.Filter<WyilFile> wyilFilter = null;
-    	
-		for (String s : split) {
-			if (s.endsWith(".whiley")) {
-				// in this case, we are explicitly including some whiley source
-				// files. This implicitly means the corresponding wyil files are
-				// included.
-				String name = s.substring(0, s.length() - 7);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
-						wyilFilter);
-			} else if (s.endsWith(".wyil")) {
-				// in this case, we are explicitly including some wyil files.
-				String name = s.substring(0, s.length() - 5);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
-						wyilFilter);
-			}
-		}
-    	
-		if(wyilFilter != null) {
-			this.wyilIncludes = wyilFilter;
-		}
-    }
-    
-	@Override
-    public void setExcludes(String excludes) {
-    	super.setExcludes(excludes);
-    	
-		String[] split = excludes.split(",");
-		Content.Filter<WyilFile> wyilFilter = null;
-		
-		for (String s : split) {
-			if (s.endsWith(".whiley")) {
-				String name = s.substring(0, s.length() - 7);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(
-						nf, wyilFilter);
-			} else if (s.endsWith(".wyil")) {
-				String name = s.substring(0, s.length() - 5);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(
-						nf, wyilFilter);
-			}
-		}
-    	
-    	this.wyilExcludes = wyilFilter;
-    }
-   
-	@Override
-	protected void addBuildRules(SimpleProject project) {
-		
-		// Add default build rule for converting whiley files into wyil files. 
-		super.addBuildRules(project);
-		
-		// Now, add build rule for converting wyil files into class files using
-		// the Wyil2JavaBuilder.
-		
-		Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder();
-
-		if (verbose) {
-			jbuilder.setLogger(new Logger.Default(System.err));
-		}
-
-		StandardBuildRule rule = new StandardBuildRule(jbuilder);
-		
-		rule.add(wyilDir, wyilIncludes, wyilExcludes, classDir,
-				WyilFile.ContentType, ClassFile.ContentType);
-
-		project.add(rule);
-	}
-    
-	@Override
-	protected List<Path.Entry<?>> getSourceFileDelta() throws IOException {
-		
-		// First, determine all whiley source files which are out-of-date with
-		// respect to their wyil files. 
-		List<Path.Entry<?>> sources = super.getSourceFileDelta();
-		
-		// Second, look for any wyil files which are out-of-date with their
-		// respective class file.
-		for (Path.Entry<WyilFile> source : wyilDir.get(wyilIncludes)) {
-			Path.Entry<ClassFile> binary = classDir.get(source.id(),
-					ClassFile.ContentType);
-
-			// first, check whether wyil file out-of-date with source file
-			if (binary == null
-					|| binary.lastModified() < source.lastModified()) {
-				sources.add(source);
-			}
-		}
-		
-		// done
-		return sources;
-	}	
-
-	@Override
-	protected void flush() throws IOException {
-		super.flush();
-		classDir.flush();
-	}
-
-	@Override
-	public void execute() throws BuildException {
-        if (whileyDir == null && wyilDir == null) {
-            throw new BuildException("whileydir or wyildir must be specified");
-        }
-       
-        if(!compile()) {
-        	throw new BuildException("compilation errors");
-        }        	        
-    }
+		super(new WyjcBuildTask());
+		this.myBuilder = (WyjcBuildTask) builder;
+	}		
 }

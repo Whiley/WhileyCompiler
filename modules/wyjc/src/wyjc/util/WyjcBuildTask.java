@@ -3,6 +3,7 @@ package wyjc.util;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.List;
 
 import wybs.lang.Content;
 import wybs.lang.Logger;
@@ -167,6 +168,28 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 				WyilFile.ContentType, ClassFile.ContentType);
 
 		project.add(rule);
+	}
+	
+	@Override
+	protected List<Path.Entry<?>> getModifiedSourceFiles() throws IOException {
+		// First, determine all whiley source files which are out-of-date with
+		// respect to their wyil files.
+		List<Path.Entry<?>> sources = super.getModifiedSourceFiles();
+
+		// Second, look for any wyil files which are out-of-date with their
+		// respective class file.
+		for (Path.Entry<WyilFile> source : wyilDir.get(wyilIncludes)) {
+			Path.Entry<ClassFile> binary = classDir.get(source.id(),
+					ClassFile.ContentType);
+
+			// first, check whether wyil file out-of-date with source file
+			if (binary == null || binary.lastModified() < source.lastModified()) {
+				sources.add(source);
+			}
+		}
+
+		// done
+		return sources;
 	}
 	
 	@Override
