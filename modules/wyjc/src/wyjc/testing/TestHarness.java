@@ -85,10 +85,11 @@ public class TestHarness {
 	 */
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != 0) {
+		System.out.println("STAGE 1");
+		if (compile("-verbose","-wd", sourcepath, "-wp", WYRT_PATH, filename) != 0) {
 			fail("couldn't compile test!");
 		} else {
+			System.out.println("STAGE 2");
 			String output = run(sourcepath, name);
 			compare(output, outputPath + File.separatorChar + name + "."
 					+ outputExtension);
