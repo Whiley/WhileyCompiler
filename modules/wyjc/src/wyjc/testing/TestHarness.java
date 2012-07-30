@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 
 import java.io.*;
 
-import wyjc.Main;
+import wyjc.WyjcMain;
 
 public class TestHarness {
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
@@ -133,7 +133,7 @@ public class TestHarness {
 
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
-		} else if (r == Main.INTERNAL_FAILURE) {
+		} else if (r == WyjcMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
 	}
@@ -158,7 +158,7 @@ public class TestHarness {
 
 		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
-		} else if (r == Main.INTERNAL_FAILURE) {
+		} else if (r == WyjcMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
 	}
@@ -189,7 +189,7 @@ public class TestHarness {
 	}
 	
 	private static int compile(String... args) {
-		return new Main().run(args);
+		return new WyjcMain().run(args);
 	}
 	
 	private static String run(String path, String name) {

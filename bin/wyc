@@ -66,4 +66,4 @@ WHILEY_BOOTPATH="$WYRT_JAR"
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyc.Main -bp "$WHILEY_BOOTPATH" "$@"
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyc.WycMain -bp "$WHILEY_BOOTPATH" "$@"

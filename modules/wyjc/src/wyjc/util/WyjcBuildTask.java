@@ -1,69 +1,23 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 package wyjc.util;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.List;
 
-import wybs.lang.*;
-import wybs.lang.SyntaxError.InternalFailure;
-import wybs.util.*;
-import wyc.builder.Whiley2WyilBuilder;
-import wyc.lang.WhileyFile;
-import wyil.Pipeline;
+import wybs.lang.Content;
+import wybs.lang.Logger;
+import wybs.lang.Path;
+import wybs.util.DirectoryRoot;
+import wybs.util.SimpleProject;
+import wybs.util.StandardBuildRule;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
 import wyjvm.lang.ClassFile;
 
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.taskdefs.MatchingTask;
-
-/**
- * An AntTask for compiling JVM Class files from Whiley source files or Wyil
- * binary files. The following illustrates how this task can be used in a
- * <code>build.xml</code> file:
- * 
- * <pre>
- *  <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="src/"/>
- * <wyjc verbose="true" wyildir="stdlib" classdir="src\/" includes="whiley\/**\/*.wyil"/>
- * </pre>
- * 
- * <p>
- * The first line defines the new task, and requires the <code>src/</code>
- * directory (which contains this class) to be on the classpath; The second
- * invokes the task to compile all wyil files rooted in the <code>stdlib/</code>
- * directory which are in the <code>whiley/</code> package.
- * </p>
- * 
- * @author David J. Pearce
- * 
- */
-public class AntTask extends wyc.util.AntTask {
+public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	
-	public static class Registry extends wyc.util.AntTask.Registry {
+	public static class Registry extends wyc.util.WycBuildTask.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 			
@@ -82,7 +36,7 @@ public class AntTask extends wyc.util.AntTask {
 			}
 		}
 	}
-	
+		
 	/**
 	 * The purpose of the class file filter is simply to ensure only binary
 	 * files are loaded in a given directory root. It is not strictly necessary
@@ -95,7 +49,7 @@ public class AntTask extends wyc.util.AntTask {
 			return name.endsWith(".class") || f.isDirectory();
 		}
 	};
-		
+	
 	/**
 	 * The class directory is the filesystem directory where all generated jvm
 	 * class files are stored.
@@ -117,20 +71,22 @@ public class AntTask extends wyc.util.AntTask {
 	 */
 	protected Content.Filter<WyilFile> wyilExcludes = null;
 	
-	public AntTask() {
+	public WyjcBuildTask() {
 		super(new Registry());
 	}
 	
 	@Override
-	public void setWyildir(File wyildir) throws IOException {
-		super.setWyildir(wyildir);
-		if(classDir == null) {
-			this.classDir = new DirectoryRoot(wyildir, classFileFilter, registry);
+	public void setWyilDir(File wyildir) throws IOException {
+		super.setWyilDir(wyildir);
+		if (classDir == null) {
+			this.classDir = new DirectoryRoot(wyildir, classFileFilter,
+					registry);
 		}
 	}
-	
-	public void setClassdir(File classdir) throws IOException {
-		this.classDir = new DirectoryRoot(classdir, classFileFilter, registry);
+
+	public void setClassDir(File classdir) throws IOException {
+		this.classDir = new DirectoryRoot(classdir, classFileFilter,
+				registry);
 	}
 	
 	@Override
@@ -190,7 +146,7 @@ public class AntTask extends wyc.util.AntTask {
     	
     	this.wyilExcludes = wyilFilter;
     }
-   
+	
 	@Override
 	protected void addBuildRules(SimpleProject project) {
 		
@@ -213,14 +169,13 @@ public class AntTask extends wyc.util.AntTask {
 
 		project.add(rule);
 	}
-    
+	
 	@Override
-	protected List<Path.Entry<?>> getSourceFileDelta() throws IOException {
-		
+	protected List<Path.Entry<?>> getModifiedSourceFiles() throws IOException {
 		// First, determine all whiley source files which are out-of-date with
-		// respect to their wyil files. 
-		List<Path.Entry<?>> sources = super.getSourceFileDelta();
-		
+		// respect to their wyil files.
+		List<Path.Entry<?>> sources = super.getModifiedSourceFiles();
+
 		// Second, look for any wyil files which are out-of-date with their
 		// respective class file.
 		for (Path.Entry<WyilFile> source : wyilDir.get(wyilIncludes)) {
@@ -228,30 +183,19 @@ public class AntTask extends wyc.util.AntTask {
 					ClassFile.ContentType);
 
 			// first, check whether wyil file out-of-date with source file
-			if (binary == null
-					|| binary.lastModified() < source.lastModified()) {
+			if (binary == null || binary.lastModified() < source.lastModified()) {
 				sources.add(source);
 			}
 		}
-		
+
 		// done
 		return sources;
-	}	
-
+	}
+	
 	@Override
 	protected void flush() throws IOException {
 		super.flush();
 		classDir.flush();
 	}
+}		
 
-	@Override
-	public void execute() throws BuildException {
-        if (whileyDir == null && wyilDir == null) {
-            throw new BuildException("whileydir or wyildir must be specified");
-        }
-       
-        if(!compile()) {
-        	throw new BuildException("compilation errors");
-        }        	        
-    }
-}
