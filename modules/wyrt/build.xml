@@ -11,7 +11,7 @@
       <fileset dir="src" includes="*/**/*.wyil"/>
     </jar>
     <echo message="============================================="/>
-    <echo message="BUILT: ${ant.project.name}-v${version}"/>
+    <echo message="BUILT: ${ant.project.name}"/>
     <echo message="============================================="/>
   </target>
 
