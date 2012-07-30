@@ -132,13 +132,13 @@ public class WycMain {
 	/**
 	 * The build-task responsible for actually compiling and building files.
 	 */
-    protected final BuildTask builder;
+    protected final WycBuildTask builder;
 		
     // =========================================================================
  	// Constructors & Configuration
  	// =========================================================================
  	
-    public WycMain(BuildTask builder, OptArg[] options) {
+    public WycMain(WycBuildTask builder, OptArg[] options) {
     	this.options = options;
     	this.builder = builder;
     }
@@ -348,6 +348,6 @@ public class WycMain {
  	// =========================================================================
  	    	
 	public static void main(String[] args) {
-		System.exit(new WycMain(new BuildTask(), DEFAULT_OPTIONS).run(args));
+		System.exit(new WycMain(new WycBuildTask(), DEFAULT_OPTIONS).run(args));
 	}
 }

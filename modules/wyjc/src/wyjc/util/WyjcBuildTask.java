@@ -7,13 +7,13 @@ import java.io.IOException;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.util.DirectoryRoot;
-import wyc.util.BuildTask.Registry;
+import wyc.util.WycBuildTask.Registry;
 import wyil.lang.WyilFile;
 import wyjvm.lang.ClassFile;
 
-public class WyjcBuildTask extends wyc.util.BuildTask {
+public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	
-	public static class Registry extends wyc.util.BuildTask.Registry {
+	public static class Registry extends wyc.util.WycBuildTask.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 			
