@@ -24,7 +24,7 @@ import wyjc.testing.TestHarness;
 
 public class ExtendedInvalidTests extends TestHarness {
  public ExtendedInvalidTests() {
-	 super("../../tests/ext/valid","../../tests/ext/valid","sysout");
+	 super("../../tests/ext/invalid","../../tests/ext/invalid","sysout");
  }
 
  @Test public void ConstrainedDictionary_Invalid_1_StaticTest() { verifyFailTest("ConstrainedDictionary_Invalid_1"); }

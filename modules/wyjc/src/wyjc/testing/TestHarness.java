@@ -72,7 +72,7 @@ public class TestHarness {
 	 */
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != 0) {
+		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -96,7 +96,7 @@ public class TestHarness {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 
 		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", filename) != 0) {
+				"verification:enable=true", filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -119,7 +119,7 @@ public class TestHarness {
 
 		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, name);
 
-		if (r == 0) {
+		if (r == WycMain.SUCCESS) {
 			fail("Test compiled when it shouldn't have!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
@@ -144,7 +144,7 @@ public class TestHarness {
 		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
 				"verification:enable=true", name);
 
-		if (r == 0) {
+		if (r == WycMain.SUCCESS) {
 			fail("Test compiled when it shouldn't have!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
@@ -166,7 +166,7 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-wd",sourcepath,"-wp", WYRT_PATH,fullName) != 0) { 
+		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, fullName) != WycMain.SUCCESS) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath,name);				

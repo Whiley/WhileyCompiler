@@ -209,7 +209,7 @@ public class WycMain {
 		// =====================================================================
 			
 			builder.build(delta);
-			
+
 		} catch (InternalFailure e) {
 			e.outputSourceError(errout);
 			if (verbose) {
