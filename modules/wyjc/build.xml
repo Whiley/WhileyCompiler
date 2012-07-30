@@ -10,11 +10,13 @@
   </target>
 
   <target name="build" depends="compile-wyjc">
-    <jar destfile="../../lib/wyjc-v${version}.jar">
+    <jar destfile="../../lib/wyjc.jar">
+      <fileset dir="../wyc/src" includes="*/**/*.class"/>
+      <fileset dir="../wyil/src" includes="*/**/*.class"/>
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
     <echo message="============================================="/>
-    <echo message="BUILT: ${ant.project.name}-v${version}"/>
+    <echo message="BUILT: ${ant.project.name}"/>
     <echo message="============================================="/>
   </target>
   

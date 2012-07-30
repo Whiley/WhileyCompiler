@@ -24,7 +24,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyil*.jar"
+LIB="wyil.jar"
 
 # check for running under cywin
 cygwin=false
@@ -45,15 +45,7 @@ else
     PATHSEP=":"
 fi
 
-WHILEY_CLASSPATH=$CLASSPATH
-
-for lib in $LIBS
-do
-    JAR=$(ls $LIBDIR/$lib)
-    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
-done
-
-echo $WHILEY_CLASSPATH
+WHILEY_CLASSPATH=$LIBDIR/$LIB$PATHSEP$CLASSPATH
 
 ######################
 # CONSTRUCT BOOTPATH

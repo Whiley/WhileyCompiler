@@ -7,7 +7,7 @@
   </target>
 
   <target name="build" depends="compile-wyrt">
-    <jar destfile="../../lib/wyrt-v${version}.jar">
+    <jar destfile="../../lib/wyrt.jar">
       <fileset dir="src" includes="*/**/*.wyil"/>
     </jar>
     <echo message="============================================="/>

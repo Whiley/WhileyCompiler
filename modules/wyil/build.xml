@@ -8,11 +8,11 @@
   </target>
 
   <target name="build" depends="compile-wyil">
-    <jar destfile="../../lib/wyil-v${version}.jar">
+    <jar destfile="../../lib/wyil.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
     <echo message="============================================="/>
-    <echo message="BUILT: ${ant.project.name}-v${version}"/>
+    <echo message="BUILT: ${ant.project.name}"/>
     <echo message="============================================="/>
   </target>
   
