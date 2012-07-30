@@ -26,18 +26,60 @@
 package wycc.lang;
 
 import java.io.*;
+import java.util.List;
 
+import wybs.lang.Builder;
+import wybs.lang.Logger;
+import wybs.lang.NameSpace;
+import wybs.lang.Path;
 import wyil.lang.WyilFile;
+import wyil.util.Pair;
 
-public class Wyil2CBuilder {
-	private final PrintStream output;
+public class Wyil2CBuilder implements Builder {
+	private Logger logger = Logger.NULL;
 	
-	public Wyil2CBuilder(OutputStream output) {
-		this.output = new PrintStream(output);
+	public void setLogger(Logger logger) {
+		this.logger = logger;
 	}
 	
-	public void write(WyilFile module) {
-		output.println("// WYIL MODULE: " + module.id());
+	public NameSpace namespace() {
+		return null; // TODO: this seems like a mistake in Builder ?
+	}
+
+	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
 		
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+	
+		// ========================================================================
+		// Translate files
+		// ========================================================================
+
+		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.second();
+			if(f.contentType() == CFile.ContentType) {
+				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
+				Path.Entry<CFile> df = (Path.Entry<CFile>) f;
+				// build the C-File
+				CFile contents = build(sf.read());								
+				// finally, write the file into its destination
+				df.write(contents);
+			}
+		}
+
+		// ========================================================================
+		// Done
+		// ========================================================================
+
+		long endTime = System.currentTimeMillis();
+		logger.logTimedMessage("Wyil => C: compiled " + delta.size()
+				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+	}	
+	
+	protected CFile build(WyilFile module) {
+		String contents = "// WYIL MODULE: " + module.id();
+		
+		return new CFile(contents);		
 	}	
 }

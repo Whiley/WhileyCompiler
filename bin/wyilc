@@ -24,7 +24,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyil*.jar"
+LIBS="wyil-v*.jar"
 
 # check for running under cywin
 cygwin=false
