@@ -8,12 +8,11 @@
   </target>
 
   <target name="build" depends="compile-wyc">
-    <jar destfile="../../lib/wyc.jar">
-      <fileset dir="../wyil/src" includes="*/**/*.class"/>
+    <jar destfile="../../lib/wyc-v${version}.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
     <echo message="============================================="/>
-    <echo message="BUILT: ${ant.project.name}"/>
+    <echo message="BUILT: ${ant.project.name}-v${version}"/>
     <echo message="============================================="/>
   </target>
   

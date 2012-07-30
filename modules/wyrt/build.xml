@@ -7,11 +7,11 @@
   </target>
 
   <target name="build" depends="compile-wyrt">
-    <jar destfile="../../lib/wyrt.jar">
+    <jar destfile="../../lib/wyrt-v${version}.jar">
       <fileset dir="src" includes="*/**/*.wyil"/>
     </jar>
     <echo message="============================================="/>
-    <echo message="BUILT: ${ant.project.name}"/>
+    <echo message="BUILT: ${ant.project.name}-v${version}"/>
     <echo message="============================================="/>
   </target>
 

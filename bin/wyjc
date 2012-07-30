@@ -24,7 +24,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIB="wyjc.jar"
+LIBS="wyjc-v*.jar wyc-v*.jar wyil-v*.jar"
 
 # check for running under cywin
 cygwin=false
@@ -45,13 +45,19 @@ else
     PATHSEP=":"
 fi
 
-WHILEY_CLASSPATH=$LIBDIR/$LIB$PATHSEP$CLASSPATH
+WHILEY_CLASSPATH=$CLASSPATH
+
+for lib in $LIBS
+do
+    JAR=$(ls $LIBDIR/$lib)
+    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
+done
 
 ######################
 # CONSTRUCT BOOTPATH
 ######################
 
-WYRT_JAR=$(ls $LIBDIR/wyrt.jar)
+WYRT_JAR=$(ls $LIBDIR/wyrt-v*.jar)
 WHILEY_BOOTPATH="$WYRT_JAR"
 
 ######################
