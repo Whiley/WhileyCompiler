@@ -5,10 +5,13 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 import wybs.lang.Content;
+import wybs.lang.Logger;
 import wybs.lang.Path;
 import wybs.util.DirectoryRoot;
-import wyc.util.WycBuildTask.Registry;
+import wybs.util.SimpleProject;
+import wybs.util.StandardBuildRule;
 import wyil.lang.WyilFile;
+import wyjc.Wyil2JavaBuilder;
 import wyjvm.lang.ClassFile;
 
 public class WyjcBuildTask extends wyc.util.WycBuildTask {
@@ -59,6 +62,14 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	 */
 	protected Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
 	
+	/**
+	 * Identifies which wyil files generated from whiley source files should not
+	 * be considered for compilation. This overrides any identified by
+	 * <code>wyilBinaryIncludes</code> . By default, no files files reachable from
+	 * <code>wyilDestDir</code> are excluded.
+	 */
+	protected Content.Filter<WyilFile> wyilExcludes = null;
+	
 	public WyjcBuildTask() {
 		super(new Registry());
 	}
@@ -75,6 +86,93 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	public void setClassDir(File classdir) throws IOException {
 		this.classDir = new DirectoryRoot(classdir, classFileFilter,
 				registry);
+	}
+	
+	@Override
+	public void setIncludes(String includes) {
+		super.setIncludes(includes);
+		
+    	String[] split = includes.split(",");    	
+    	Content.Filter<WyilFile> wyilFilter = null;
+    	
+		for (String s : split) {
+			if (s.endsWith(".whiley")) {
+				// in this case, we are explicitly including some whiley source
+				// files. This implicitly means the corresponding wyil files are
+				// included.
+				String name = s.substring(0, s.length() - 7);
+				Content.Filter<WyilFile> nf = Content.filter(name,
+						WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
+						wyilFilter);
+			} else if (s.endsWith(".wyil")) {
+				// in this case, we are explicitly including some wyil files.
+				String name = s.substring(0, s.length() - 5);
+				Content.Filter<WyilFile> nf = Content.filter(name,
+						WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
+						wyilFilter);
+			}
+		}
+    	
+		if(wyilFilter != null) {
+			this.wyilIncludes = wyilFilter;
+		}
+    }
+    
+	@Override
+    public void setExcludes(String excludes) {
+    	super.setExcludes(excludes);
+    	
+		String[] split = excludes.split(",");
+		Content.Filter<WyilFile> wyilFilter = null;
+		
+		for (String s : split) {
+			if (s.endsWith(".whiley")) {
+				String name = s.substring(0, s.length() - 7);
+				Content.Filter<WyilFile> nf = Content.filter(name,
+						WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf : Content.or(
+						nf, wyilFilter);
+			} else if (s.endsWith(".wyil")) {
+				String name = s.substring(0, s.length() - 5);
+				Content.Filter<WyilFile> nf = Content.filter(name,
+						WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf : Content.or(
+						nf, wyilFilter);
+			}
+		}
+    	
+    	this.wyilExcludes = wyilFilter;
+    }
+	
+	@Override
+	protected void addBuildRules(SimpleProject project) {
+		
+		// Add default build rule for converting whiley files into wyil files. 
+		super.addBuildRules(project);
+		
+		// Now, add build rule for converting wyil files into class files using
+		// the Wyil2JavaBuilder.
+		
+		Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder();
+
+		if (verbose) {
+			jbuilder.setLogger(new Logger.Default(System.err));
+		}
+
+		StandardBuildRule rule = new StandardBuildRule(jbuilder);
+		
+		rule.add(wyilDir, wyilIncludes, wyilExcludes, classDir,
+				WyilFile.ContentType, ClassFile.ContentType);
+
+		project.add(rule);
+	}
+	
+	@Override
+	protected void flush() throws IOException {
+		super.flush();
+		classDir.flush();
 	}
 }		
 

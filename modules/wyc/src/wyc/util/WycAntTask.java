@@ -323,8 +323,6 @@ public class WycAntTask extends MatchingTask {
 			roots.add(whileyDir);
 		}
 		roots.add(wyilDir);
-
-		wyc.WycMain.initialiseBootPath(bootpath);
 		roots.addAll(whileypath);
 		roots.addAll(bootpath);
 

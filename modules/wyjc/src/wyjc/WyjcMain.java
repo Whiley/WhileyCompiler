@@ -37,6 +37,7 @@ import wyjc.util.WyjcBuildTask;
  * 
  */
 public class WyjcMain {
+	
 	public static void main(String[] args) {
 		// FIXME: modify default options to include classdir
 		System.exit(new WycMain(new WyjcBuildTask(), WycMain.DEFAULT_OPTIONS)
