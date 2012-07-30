@@ -31,7 +31,7 @@ import wyjc.testing.TestHarness;
 
 public class StaticInvalidTests extends TestHarness {
  public StaticInvalidTests() {
-  super("tests/base/invalid","tests/base/invalid","sysout");
+	 super("../../tests/base/valid","../../tests/base/valid","sysout");
  }
 
  @Test public void Assert_CompileFail_1_StaticTest() { contextFailTest("Assert_Invalid_1"); }
