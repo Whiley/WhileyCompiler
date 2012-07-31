@@ -52,21 +52,21 @@
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
     <fileset dir=".">
-      <include name="modules/wyil/**/*.java"/>
-      <include name="modules/wyc/**/*.java"/>
-      <include name="modules/wyjc/**/*.java"/>
-      <include name="modules/wyrt/**/*.whiley"/>
-    </fileset>
-    <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
-    <fileset dir="." includes="examples/**/*.whiley"/>
-    <fileset dir=".">
+      <include name="LICENSE"/>
+      <include name="README"/>
+      <include name="CONTRIBUTORS"/>
+      <include name="build.xml"/>
+      <include name="config.xml"/>
+      <include name="modules/**/*.java"/>
+      <include name="modules/**/*.whiley"/>
+      <include name="modules/**/*.xml"/>
+      <include name="examples/**/*.whiley"/>
+      <include name="tests/**/*.whiley"/>
+      <include name="tests/**/*.sysout"/>
       <include name="bin/wyilc"/>
       <include name="bin/wyc"/>
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
-    </fileset>
-    <fileset dir="." includes="LICENSE,README,build.xml,config.xml"/>
-    <fileset dir=".">
       <include name="lib/wyil-v${version}.jar"/>
       <include name="lib/wyc-v${version}.jar"/>
       <include name="lib/wyrt-v${version}.jar"/>
@@ -74,26 +74,20 @@
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
-    <tarfileset dir="." includes="wdk-v${version}/**/*.java"/>
-    <tarfileset dir="." includes="wdk-v${version}/**/*.whiley"/>
-    <tarfileset dir="." includes="wdk-v${version}/**/*.sysout"/>
+    <tarfileset dir="." includes="wdk-v${version}/**/*"/>
     <tarfileset dir="." filemode="755">
       <include name="wdk-v${version}/bin/wyilc"/>
       <include name="wdk-v${version}/bin/wyc"/>
       <include name="wdk-v${version}/bin/wyjc"/>
       <include name="wdk-v${version}/bin/wyj"/>
     </tarfileset>
-    <tarfileset dir="." includes="wdk-v${version}/LICENSE,wdk-v${version}/README,wdk-v${version}/build.xml,wdk-v${version}/config.xml"/>
-    <tarfileset dir=".">
-      <include name="lib/wyil-v${version}.jar"/>
-      <include name="lib/wyc-v${version}.jar"/>
-      <include name="lib/wyrt-v${version}.jar"/>
-      <include name="lib/wyjc-v${version}.jar"/>
-    </tarfileset>
   </tar>
   <gzip destfile="dist/wdk-src-v${version}.tgz" src="dist/wdk-src-v${version}.tar"/>
   <delete file="dist/wdk-src-v${version}.tar"/>
   <delete dir="wdk-v${version}"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: dist/wdk-src-v${version}.tgz"/>
+    <echo message="============================================="/>
   </target>
 
   <target name="dist" depends="distsrc,distjars">

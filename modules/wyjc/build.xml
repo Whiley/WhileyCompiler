@@ -14,7 +14,7 @@
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
     <echo message="============================================="/>
-    <echo message="BUILT: ${ant.project.name}-v${version}"/>
+    <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
   
@@ -45,6 +45,9 @@
       </fileset>
     </jar>
     <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: dist/${ant.project.name}-all-v${version}.jar"/>
+    <echo message="============================================="/>
   </target>
 
   <target name="doc">
