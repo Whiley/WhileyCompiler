@@ -192,7 +192,7 @@ public abstract class Code {
 		return get(new Debug(operand));
 	}
 
-	public static LoopEnd End(String label) {
+	public static LoopEnd LoopEnd(String label) {
 		return get(new LoopEnd(label));
 	}
 
@@ -1398,7 +1398,7 @@ public abstract class Code {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return End(nlabel);
+				return LoopEnd(nlabel);
 			}
 		}
 

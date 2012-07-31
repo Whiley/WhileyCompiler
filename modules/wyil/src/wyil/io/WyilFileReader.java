@@ -485,7 +485,7 @@ public final class WyilFileReader {
 	private Block readCodeBlock(int numInputs) throws IOException {
 		Block block = new Block(numInputs);
 		int nCodes = input.read_uv();
-		HashMap<Integer,String> labels = new HashMap<Integer,String>();
+		HashMap<Integer,Code.Label> labels = new HashMap<Integer,Code.Label>();
 		
 		for(int i=0;i!=nCodes;++i) {
 			Code code = readCode(i,labels);
@@ -494,9 +494,9 @@ public final class WyilFileReader {
 		}
 		
 		for(int i=0,j=0;i!=nCodes;++i,++j) {
-			String label = labels.get(i);
+			Code.Label label = labels.get(i);
 			if(label != null) {
-				block.insert(j++, Code.Label(label));
+				block.insert(j++, label);
 			}
 		}
 
@@ -505,7 +505,7 @@ public final class WyilFileReader {
 		return block;
 	}	
 	
-	private Code readCode(int offset, HashMap<Integer,String> labels) throws IOException {
+	private Code readCode(int offset, HashMap<Integer,Code.Label> labels) throws IOException {
 		int opcode = input.read_u8();
 		boolean wideBase = false;
 		boolean wideRest = false;
@@ -553,7 +553,7 @@ public final class WyilFileReader {
 	}
 	
 	private Code readEmpty(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, String> labels) throws IOException {				
+			int offset, HashMap<Integer, Code.Label> labels) throws IOException {				
 		switch(opcode) {
 		case Code.OPCODE_const: {
 			int target = readBase(wideBase);
@@ -563,8 +563,8 @@ public final class WyilFileReader {
 		}
 		case Code.OPCODE_goto: {
 			int target = readTarget(wideRest,offset); 
-			String lab = findLabel(target,labels);
-			return Code.Goto(lab);
+			Code.Label lab = findLabel(target,labels);
+			return Code.Goto(lab.label);
 		}			
 		case Code.OPCODE_nop:
 			return Code.Nop;
@@ -575,7 +575,8 @@ public final class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readUnaryOp(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {
+	private Code readUnaryOp(int opcode, boolean wideBase, boolean wideRest,
+			int offset, HashMap<Integer, Code.Label> labels) throws IOException {
 		int operand = readBase(wideBase);
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
@@ -586,8 +587,8 @@ public final class WyilFileReader {
 			int resultIdx = readRest(wideRest);
 			Type result = typePool[resultIdx];
 			int target = readTarget(wideRest,offset);
-			String label = labels.get(target);
-			return Code.IfIs(type, operand, result, label);
+			Code.Label l = labels.get(target);
+			return Code.IfIs(type, operand, result, l.label);
 		}
 		case Code.OPCODE_throw:
 			return Code.Throw(type, operand);
@@ -596,16 +597,16 @@ public final class WyilFileReader {
 		case Code.OPCODE_switch: {
 			ArrayList<Pair<Constant,String>> cases = new ArrayList<Pair<Constant,String>>();
 			int target = readTarget(wideRest,offset); 
-			String defaultLabel = findLabel(target,labels);
+			Code.Label defaultLabel = findLabel(target,labels);
 			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
 				int constIdx = readTarget(wideRest,offset);
 				Constant constant = constantPool[constIdx];
 				target = readTarget(wideRest,offset); 
-				String label = findLabel(target,labels);
-				cases.add(new Pair<Constant,String>(constant,label));
+				Code.Label l = findLabel(target,labels);
+				cases.add(new Pair<Constant,String>(constant,l.label));
 			}
-			return Code.Switch(type,operand,defaultLabel,cases);
+			return Code.Switch(type,operand,defaultLabel.label,cases);
 		}
 		}	
 		throw new RuntimeException("unknown opcode encountered (" + opcode
@@ -682,8 +683,8 @@ public final class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readBinaryOp(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer, String> labels)
-			throws IOException {
+	private Code readBinaryOp(int opcode, boolean wideBase, boolean wideRest,
+			int offset, HashMap<Integer, Code.Label> labels) throws IOException {
 		int leftOperand = readBase(wideBase);
 		int rightOperand = readBase(wideBase);
 		int typeIdx = readRest(wideRest);
@@ -727,9 +728,9 @@ public final class WyilFileReader {
 		case Code.OPCODE_ifss:
 		case Code.OPCODE_ifse: {
 			int target = readTarget(wideRest,offset); 
-			String lab = findLabel(target,labels);
+			Code.Label l = findLabel(target,labels);
 			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_ifeq];
-			return Code.If(type, leftOperand, rightOperand, cop, lab);
+			return Code.If(type, leftOperand, rightOperand, cop, l.label);
 		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
@@ -809,7 +810,8 @@ public final class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readNaryOp(int opcode,boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {		
+	private Code readNaryOp(int opcode, boolean wideBase, boolean wideRest,
+			int offset, HashMap<Integer, Code.Label> labels) throws IOException {		
 		int nOperands = readBase(wideBase);
 		int[] operands = new int[nOperands];		
 		for(int i=0;i!=nOperands;++i) {
@@ -819,8 +821,8 @@ public final class WyilFileReader {
 		if(opcode == Code.OPCODE_loop) {
 			// special case which doesn't have a type.
 			int target = readTarget(wideRest,offset); 
-			String label = findLabel(target,labels);
-			return Code.Loop(label, operands);
+			Code.LoopEnd l = findLoopLabel(target,labels);
+			return Code.Loop(l.label, operands);
 		}
 		
 		int typeIdx = readRest(wideRest);
@@ -832,12 +834,12 @@ public final class WyilFileReader {
 					throw new RuntimeException("expected collection type");
 				}
 				int target = readTarget(wideRest,offset);
-				String label = findLabel(target, labels);
+				Code.LoopEnd l = findLoopLabel(target, labels);
 				int indexOperand = operands[0];
 				int sourceOperand = operands[1];
 				operands = Arrays.copyOfRange(operands, 2, operands.length);
 				return Code.ForAll((Type.EffectiveCollection) type,
-						sourceOperand, indexOperand, operands, label);
+						sourceOperand, indexOperand, operands, l.label);
 			}			
 			case Code.OPCODE_indirectinvokefnv :
 			case Code.OPCODE_indirectinvokemdv : {
@@ -941,21 +943,22 @@ public final class WyilFileReader {
 				+ ")");
 	}
 	
-	private Code readOther(int opcode, boolean wideBase, boolean wideRest, int offset, HashMap<Integer,String> labels) throws IOException {		
+	private Code readOther(int opcode, boolean wideBase, boolean wideRest,
+			int offset, HashMap<Integer, Code.Label> labels) throws IOException {		
 		switch (opcode) {
 			case Code.OPCODE_trycatch: {
 				int operand = readBase(wideBase);
 				int target = readTarget(wideRest, offset);
-				String label = findLabel(target, labels);
+				Code.Label l = findLabel(target, labels);
 				int nCatches = readRest(wideRest);
 				ArrayList<Pair<Type, String>> catches = new ArrayList<Pair<Type, String>>();
 				for (int i = 0; i != nCatches; ++i) {
 					Type type = typePool[readRest(wideRest)];
-					String handler = findLabel(readTarget(wideRest, offset),
+					Code.Label handler = findLabel(readTarget(wideRest, offset),
 							labels);
-					catches.add(new Pair<Type, String>(type, handler));
+					catches.add(new Pair<Type, String>(type, handler.label));
 				}
-				return Code.TryCatch(operand,label,catches);
+				return Code.TryCatch(operand,l.label,catches);
 			}
 			case Code.OPCODE_update: {
 				int target = readBase(wideBase);
@@ -1007,12 +1010,27 @@ public final class WyilFileReader {
 	
 	private static int labelCount = 0;
 
-	private static String findLabel(int target, HashMap<Integer, String> labels) {
-		String label = labels.get(target);
+	private static Code.Label findLabel(int target,
+			HashMap<Integer, Code.Label> labels) {
+		Code.Label label = labels.get(target);
 		if (label == null) {
-			label = "label" + labelCount++;
+			label = Code.Label("label" + labelCount++);
 			labels.put(target, label);
 		}
 		return label;
-	}	
+	}
+	
+	private static Code.LoopEnd findLoopLabel(int target,
+			HashMap<Integer, Code.Label> labels) {
+		Code.Label label = labels.get(target);
+		if (label == null) {
+			Code.LoopEnd end = Code.LoopEnd("label" + labelCount++);
+			labels.put(target, end);
+			return end;
+		} else {
+			Code.LoopEnd end = Code.LoopEnd(label.label);
+			labels.put(target, end);
+			return end;
+		}
+	}
 }

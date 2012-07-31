@@ -272,8 +272,10 @@ public class WycBuildTask {
 	 * 
 	 * @param _args
 	 */
-	public void buildAll() throws Exception {
-		buildEntries(getModifiedSourceFiles());
+	public int buildAll() throws Exception {
+		List<Path.Entry<?>> delta = getModifiedSourceFiles();
+		buildEntries(delta);
+		return delta.size();
 	}
 	
 	protected void buildEntries(List<Path.Entry<?>> delta) throws Exception {	
@@ -296,11 +298,7 @@ public class WycBuildTask {
 
 		project.build(delta);
 		
-		flush();
-		
-		if(verbose) {
-			logout.println("Compiled " + delta.size() + " source file(s)");
-		}
+		flush();		
 	}
 	
 	// ==========================================================================

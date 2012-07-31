@@ -116,7 +116,8 @@ public class WycAntTask extends MatchingTask {
     
     public void execute() throws BuildException { 
     	try {
-    		builder.buildAll();
+    		int count = builder.buildAll();    		
+    		log("Compiled " + count + " source file(s)");
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}

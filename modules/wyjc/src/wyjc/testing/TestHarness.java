@@ -36,20 +36,7 @@ import wyjc.util.WyjcBuildTask;
 public class TestHarness {
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
 	private static final String WYIL_PATH="../../../modules/wyil/src/";
-	private static String WYRT_PATH;
-	
-	static {
-		
-		// The purpose of this is to figure out what the proper name for the
-		// wyrt file is.
-		
-		File file = new File("../../lib/");
-		for(String f : file.list()) {
-			if(f.startsWith("wyrt-v")) {
-				WYRT_PATH="../../lib/" + f;
-			}
-		}
-	}
+	private static final String WYRT_PATH="../../lib/wyrt.jar";
 	
 	private String sourcepath;    // path to source files	
 	private String outputPath; // path to output files
@@ -85,11 +72,9 @@ public class TestHarness {
 	 */
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-		System.out.println("STAGE 1");
-		if (compile("-verbose","-wd", sourcepath, "-wp", WYRT_PATH, filename) != 0) {
+		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
-			System.out.println("STAGE 2");
 			String output = run(sourcepath, name);
 			compare(output, outputPath + File.separatorChar + name + "."
 					+ outputExtension);
@@ -111,7 +96,7 @@ public class TestHarness {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 
 		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", filename) != 0) {
+				"verification:enable=true", filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -134,7 +119,7 @@ public class TestHarness {
 
 		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, name);
 
-		if (r == 0) {
+		if (r == WycMain.SUCCESS) {
 			fail("Test compiled when it shouldn't have!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
@@ -159,7 +144,7 @@ public class TestHarness {
 		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
 				"verification:enable=true", name);
 
-		if (r == 0) {
+		if (r == WycMain.SUCCESS) {
 			fail("Test compiled when it shouldn't have!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
@@ -181,7 +166,7 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-wd",sourcepath,"-wp", WYRT_PATH,fullName) != 0) { 
+		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, fullName) != WycMain.SUCCESS) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath,name);				
