@@ -36,8 +36,20 @@ import wyjc.util.WyjcBuildTask;
 public class TestHarness {
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
 	private static final String WYIL_PATH="../../../modules/wyil/src/";
-	private static final String WYRT_PATH="../../lib/wyrt.jar";
-	
+	private static String WYRT_PATH;
+
+	static {
+
+		// The purpose of this is to figure out what the proper name for the
+		// wyrt file is.
+
+		File file = new File("../../lib/");
+		for(String f : file.list()) {
+			if(f.startsWith("wyrt-v")) {
+				WYRT_PATH="../../lib/" + f;
+			}
+		}
+	}
 	private String sourcepath;    // path to source files	
 	private String outputPath; // path to output files
 	private String outputExtension; // the extension of output files

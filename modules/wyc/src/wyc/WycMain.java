@@ -73,7 +73,7 @@ public class WycMain {
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", OptArg.FILELIST,
 					"Specify where to find whiley standard library files",
-					defaultBootPath()),
+					new ArrayList<String>()),
 			new OptArg("whileydir", "wd", OptArg.FILEDIR,
 					"Specify where to find whiley source files",
 					new File(".")),
@@ -297,52 +297,7 @@ public class WycMain {
 		}
 		return r;
 	}	
-	
-    // =========================================================================
- 	// Misc Methods
- 	// ========================================================================= 	   
-	
-	/**
-	 * In the case that no explicit bootpath has been specified on the
-	 * command-line, we need to add a default location. The challenge is that we
-	 * want to automatically put the wyrt.jar (Whiley Runtime Library) on the
-	 * bootpath. To do this, we want to try and determine the jarfile that was
-	 * used to get us to this point. Typically,
-	 * <code>"java -jar wyjc.jar file.whiley"</code>. We can use
-	 * <code>wyjc.jar</code> in place of <code>wyrt.jar</code>, as it contains
-	 * the same things.
-	 * 
-	 * @param bootpath
-	 */
-	public static List<File> defaultBootPath() {
-		ArrayList<File> bootpath = new ArrayList<File>();
-		
-		try {			
-			// String jarfile = Main.class.getPackage().getImplementationTitle();
-			// bootpath.add(jarfile);
 
-			URI location = WycMain.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
-			if(location != null) {
-				// The following code is a hack to determine the location of
-				// the enclosing jar file.
-				String jarfile = location.toURL().getFile().toString();					
-				if(!jarfile.endsWith(".jar")) {
-					// This seems to happen when calling from the ant task.
-					// For some reason, despite me asking it to use a
-					// particular jar file, it does not. Instead, it loads
-					// using the CLASSPATH environment variable, which means
-					// "."
-					jarfile += "stdlib";
-				}
-				bootpath.add(new File(jarfile));
-			}				
-		} catch(Exception e) {
-			// just ignore.
-		}		
-		
-		return bootpath;
-	}	
-	
     // =========================================================================
  	// Main Method
  	// =========================================================================
