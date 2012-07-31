@@ -1,5 +1,4 @@
 *.class
 *.wyil
+*.wyasm
 *~
-.classpath
-.project

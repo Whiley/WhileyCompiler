@@ -1,0 +1,31 @@
+<project name="wyrt" default="build">  
+  <import file="../../config.xml"/>  
+
+  <target name="compile-wyrt">
+    <taskdef name="wyc" classname="wyc.util.WycAntTask" classpath="../wyc/src/:../wyil/src/"/>
+    <wyc verbose="false" whileydir="src" includes="whiley/**/*.whiley"/>
+  </target>
+
+  <target name="build" depends="compile-wyrt">
+    <jar destfile="../../lib/wyrt-v${version}.jar">
+      <fileset dir="src" includes="*/**/*.wyil"/>
+    </jar>
+    <echo message="============================================="/>
+    <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+
+  <target name="dist">
+    <!-- this module has no distribution -->
+  </target>
+
+  <target name="clean">
+   <delete includeEmptyDirs="true" failonerror="false">
+     <fileset dir="." includes="**/*.wyil,**/*.wyasm"/>
+   </delete>
+    <echo message="============================================="/>
+    <echo message="CLEANED: ${ant.project.name}"/>
+    <echo message="============================================="/>
+ </target>
+
+</project>

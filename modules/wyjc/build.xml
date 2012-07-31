@@ -1,0 +1,88 @@
+<project name="wyjc" default="build">  
+  <import file="../../config.xml"/>  
+
+  <target name="compile-wyjc">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wyc/src"> 
+      <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="wyjc/testing/**"/> 
+      <exclude name="*/**/package-info.java"/> 
+    </javac>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src"/>
+    <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
+  </target>
+
+  <target name="build" depends="compile-wyjc">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyjc.WyjcMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="../../lib/wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="src" includes="*/**/*.class"/>
+    </jar>
+    <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+  
+  <target name="dist">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyjc.WyjcMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="../wyil/src">
+	<include name="wyautl/**/*.class"/>
+	<include name="wybs/**/*.class"/>
+	<include name="wyone/**/*.class"/>
+	<include name="wyil/**/*.class"/>
+      </fileset>
+      <fileset dir="../wyc/src">
+	<include name="wyc/**/*.class"/>
+	<include name="wyjc/**/*.class"/>
+	<include name="wyjvm/**/*.class"/>
+      </fileset>
+      <fileset dir="src">
+	<include name="whiley/**/*.class"/>
+	<include name="wyjc/**/*.class"/>
+	<include name="wyjvm/**/*.class"/>
+      </fileset>
+    </jar>
+    <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: dist/${ant.project.name}-all-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+
+  <target name="doc">
+    <javadoc
+       packagenames="wyjc.*,wyjvm.*"
+       excludepackagenames="wyjc.testing.*"
+       sourcepath="src/"
+       destdir="../../docs/wyjc/api"
+       author="true"
+       version="true"
+       use="true"
+       windowtitle="Whiley-2-Java Compiler API">
+      <doctitle><![CDATA[<h1>The Whiley-2-Java Compiler (v${version})</h1>]]></doctitle>
+      <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
+      </javadoc>
+  </target>
+
+ <target name="clean">
+   <delete includeEmptyDirs="true" failonerror="false">
+     <fileset dir="." includes="**/*.class,**/*.wyil,**/*.wyasm"/>
+   </delete>
+    <echo message="============================================="/>
+    <echo message="CLEANED: ${ant.project.name}"/>
+    <echo message="============================================="/>
+ </target>
+
+</project>
