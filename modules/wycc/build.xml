@@ -2,20 +2,60 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wycc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" includes="*/**" excludes="wyjc/testing/**" classpath="../wyil/src:../wyc/src"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wyc/src"> 
       <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="*/**/package-info.java"/> 
     </javac>
   </target>
 
   <target name="build" depends="compile-wycc">
-    <jar destfile="../../lib/wycc-v${version}.jar">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wycc.WyccMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="../../lib/wycc-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
+    <delete dir="tmp"/>
     <echo message="============================================="/>
-    <echo message="BUILT: ${ant.project.name}-v${version}"/>
+    <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
   
+  <target name="dist">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wycc.WyccMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="../../dist/wycc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="../wyil/src">
+	<include name="wyautl/**/*.class"/>
+	<include name="wybs/**/*.class"/>
+	<include name="wyone/**/*.class"/>
+	<include name="wyil/**/*.class"/>
+      </fileset>
+      <fileset dir="../wyc/src">
+	<include name="wyc/**/*.class"/>
+	<include name="wyjc/**/*.class"/>
+	<include name="wyjvm/**/*.class"/>
+      </fileset>
+      <fileset dir="src">
+	<include name="wycc/**/*.class"/>
+      </fileset>
+    </jar>
+    <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: dist/${ant.project.name}-all-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+
   <target name="doc">
     <javadoc
        packagenames="wycc.*"
