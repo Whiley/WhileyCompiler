@@ -2,15 +2,25 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wycc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" includes="*/**" classpath="../wyil/src:../wyc/src"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wyc/src"> 
       <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="*/**/package-info.java"/> 
     </javac>
   </target>
 
   <target name="build" depends="compile-wycc">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wycc.WyccMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
+    </manifest>
     <jar destfile="../../lib/wycc-v${version}.jar">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
+    <delete dir="tmp"/>
     <echo message="============================================="/>
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
