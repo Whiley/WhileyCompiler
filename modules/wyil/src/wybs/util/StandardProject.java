@@ -41,7 +41,7 @@ import wybs.lang.*;
  * 
  * @author David J. Pearce
  */
-public class SimpleProject implements NameSpace {
+public class StandardProject implements NameSpace {
 	
 	/**
 	 * The roots of all entries known to the system which form the global
@@ -57,12 +57,12 @@ public class SimpleProject implements NameSpace {
 	protected final ArrayList<BuildRule> rules;
 	
 	
-	public SimpleProject(Collection<Path.Root> roots) {
+	public StandardProject(Collection<Path.Root> roots) {
 		this.roots = new ArrayList<Path.Root>(roots);
 		this.rules = new ArrayList<BuildRule>();
 	}
 	
-	public SimpleProject(Collection<Path.Root>... roots) {
+	public StandardProject(Collection<Path.Root>... roots) {
 		this.rules = new ArrayList<BuildRule>();
 		this.roots = new ArrayList<Path.Root>();
 		for(Collection<Path.Root> root : roots) {
