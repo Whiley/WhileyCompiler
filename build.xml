@@ -49,7 +49,7 @@
     </subant>
   </target>
 
-  <target name="distsrc">
+  <target name="distsrc" depends="build-all">
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
     <fileset dir=".">
