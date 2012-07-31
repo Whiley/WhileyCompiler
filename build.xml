@@ -43,7 +43,7 @@
 
   <!-- Distributions -->
  
-  <target name="distjars">
+  <target name="distjars" depends="build-all">
     <subant failonerror="false" target="dist">
       <fileset dir="modules" includes="*/build.xml"/>
     </subant>
