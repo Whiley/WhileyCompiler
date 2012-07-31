@@ -69,19 +69,14 @@
       <include name="bin/wyc"/>
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
-      <include name="lib/wyil-v${version}.jar"/>
-      <include name="lib/wyc-v${version}.jar"/>
-      <include name="lib/wyrt-v${version}.jar"/>
-      <include name="lib/wyjc-v${version}.jar"/>
+      <include name="bin/wycc"/>
+      <include name="lib/*-v${version}.jar"/>
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
     <tarfileset dir="." includes="wdk-v${version}/**/*"/>
     <tarfileset dir="." filemode="755">
-      <include name="wdk-v${version}/bin/wyilc"/>
-      <include name="wdk-v${version}/bin/wyc"/>
-      <include name="wdk-v${version}/bin/wyjc"/>
-      <include name="wdk-v${version}/bin/wyj"/>
+      <include name="wdk-v${version}/bin/*"/>
     </tarfileset>
   </tar>
   <gzip destfile="dist/wdk-src-v${version}.tgz" src="dist/wdk-src-v${version}.tar"/>
