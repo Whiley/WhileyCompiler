@@ -10,9 +10,17 @@
   </target>
 
   <target name="build" depends="compile-wyc">
-    <jar destfile="../../lib/wyc-v${version}.jar">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyc.WycMain"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wyc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="../../lib/wyc-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
+    <delete dir="tmp"/>
     <echo message="============================================="/>
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
