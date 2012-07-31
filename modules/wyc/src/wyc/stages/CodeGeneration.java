@@ -625,7 +625,7 @@ public final class CodeGeneration {
 					environment.size(), environment));
 		}
 		
-		blk.append(Code.End(label));
+		blk.append(Code.LoopEnd(label));
 
 		return blk;
 	}
@@ -660,7 +660,7 @@ public final class CodeGeneration {
 				environment.size(), environment));
 
 		
-		blk.append(Code.End(label));
+		blk.append(Code.LoopEnd(label));
 
 		return blk;
 	}
@@ -721,7 +721,7 @@ public final class CodeGeneration {
 					"loop invariant not restored", s.invariant, false,
 					environment.size(), environment));
 		}
-		blk.append(Code.End(label), attributes(s));		
+		blk.append(Code.LoopEnd(label), attributes(s));		
 
 		return blk;
 	}

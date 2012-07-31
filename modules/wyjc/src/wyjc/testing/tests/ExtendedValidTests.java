@@ -24,7 +24,7 @@ import wyjc.testing.TestHarness;
 
 public class ExtendedValidTests extends TestHarness {
  public ExtendedValidTests() {
-  super("tests/ext/valid","tests/ext/valid","sysout");
+	 super("../../tests/ext/valid","../../tests/ext/valid","sysout");
  }
 
  @Test public void BoolAssign_Valid_3_RuntimeTest() { runTest("BoolAssign_Valid_3"); }

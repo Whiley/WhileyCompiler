@@ -53,11 +53,10 @@ command to compile Whiley programs as follows:
 
 At this point, you can run the program using the whiley command:
 
-% whiley hello-world
+% wyj hello-world
 Hello World
 
-(note: the whiley command is just a wrapper for java -cp
-lib/wyrt.jar).
+(note: the wyj command is just a wrapper for java -cp lib/wyrt.jar).
 
 ======================================================================
 Executable Jar
@@ -68,11 +67,13 @@ trouble getting the wyjc scripts to work, then a useful alternative is
 to run the jar file directly.  You can do this as follows:
 
 % cd examples
-% java -jar ../lib/wyjc.jar -bp ../lib/wyrt.jar hello-world.whiley
+% java -jar ../lib/wyjc-vX.Y.Z.jar -bp ../lib/wyrt-vX.Y.Z.jar hello-world.whiley
+
+(here, vX.Y.Z is the version number of the distribution)
 
 Then, to run the program you would do this:
 
-% java -cp "../lib/wyrt.jar;." hello-world
+% java -cp "../lib/wyrt-vX.Y.Z.jar;." hello-world
 Hello World
 
 (note: under UNIX you will want to replace the ';' with a ':')

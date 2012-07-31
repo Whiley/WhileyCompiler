@@ -138,7 +138,7 @@ public class GlobalGenerator {
 						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
 						t.attributes());
 				nblk.append(shiftBlock(1, blk));
-				nblk.append(Code.End(label));
+				nblk.append(Code.LoopEnd(label));
 				blk = nblk;
 			}
 			return blk;
@@ -152,7 +152,7 @@ public class GlobalGenerator {
 						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
 						t.attributes());
 				nblk.append(shiftBlock(1, blk));
-				nblk.append(Code.End(label));
+				nblk.append(Code.LoopEnd(label));
 				blk = nblk;
 			}
 			return blk;

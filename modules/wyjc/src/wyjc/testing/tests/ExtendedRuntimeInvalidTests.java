@@ -24,7 +24,7 @@ import wyjc.testing.TestHarness;
 
 public class ExtendedRuntimeInvalidTests extends TestHarness {
  public ExtendedRuntimeInvalidTests() {
-  super("tests/ext/invalid","tests/ext/invalid","sysout");
+	 super("../../tests/ext/invalid","../../tests/ext/invalid","sysout");
  }
 
  @Ignore("Known Issue") @Test public void ConstrainedDictionary_Invalid_1_RuntimeTest() { runtimeFailTest("ConstrainedDictionary_Invalid_1"); }

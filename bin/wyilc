@@ -53,13 +53,11 @@ do
     WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
 done
 
-echo $WHILEY_CLASSPATH
-
 ######################
 # CONSTRUCT BOOTPATH
 ######################
 
-WYRT_JAR=$(ls $LIBDIR/wyrt*.jar)
+WYRT_JAR=$(ls $LIBDIR/wyrt-v*.jar)
 WHILEY_BOOTPATH="$WYRT_JAR"
 
 ######################
