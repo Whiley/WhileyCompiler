@@ -53,6 +53,12 @@ import wyil.lang.WyilFile.TypeDeclaration;
 
 public class Wyil2CBuilder implements Builder {
 	private Logger logger = Logger.NULL;
+	// private final PrintStream output = null;
+	private final String defaultManglePrefix = "wycc_";
+	private final String includeFile = "#include \"lib/wycc_lib.h\"\n";
+	private String manglePrefix = null;
+	private int initor_flg = 1;
+	private String name;
 	
 	public void setLogger(Logger logger) {
 		this.logger = logger;
@@ -93,18 +99,6 @@ public class Wyil2CBuilder implements Builder {
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
 	}	
 	
-	protected CFile build(WyilFile module) {		
-		String contents = "// WYIL MODULE: " + module.id();
-		
-		return new CFile(contents);		
-	}
-
-	private final PrintStream output = null;
-	private final String defaultManglePrefix = "wycc_";
-	private final String includeFile = "#include \"lib/wycc_lib.h\"";
-	private String manglePrefix = null;
-	private int initor_flg = 1;
-	private String name;
 
 	public void setManglePrefix(String str) {
 		this.manglePrefix = str;
@@ -116,31 +110,36 @@ public class Wyil2CBuilder implements Builder {
 		}
 		return this.manglePrefix;
 	}
-
-	public void write(WyilFile module) {
+	
+	/*
+	 * convert contents of a wyil file to contents of a C file
+	 */
+	protected CFile build(WyilFile module) {		
+		//String contents = "// WYIL MODULE: " + module.id();
+		String contents = "";
 		int cnt;
 		List<Method> mets = new ArrayList<Method>();
-
+		
 		this.name = module.id().toString();
-		this.writePreamble(module);
-
+		contents += this.writePreamble(module);
+		
 		Collection<TypeDeclaration> typCol = module.types();
 		Collection<ConstantDeclaration> conCol = module.constants();
 		Collection<MethodDeclaration> modCol = module.methods();
-		output.println("// WYIL module count of types: " + typCol.size());
-		output.println("// WYIL module count of constants: " + conCol.size());
-		output.println("// WYIL module count of methods: " + modCol.size());
+		contents += "// WYIL module count of types: " + typCol.size() + "\n";
+		contents += "// WYIL module count of constants: " + conCol.size() + "\n";
+		contents += "// WYIL module count of methods: " + modCol.size() + "\n";
 
 		cnt = 0;
 		for (TypeDeclaration td : typCol) {
 			cnt += 1;
-			this.writeType(td, cnt);
+			contents += this.writeType(td, cnt);
 		}
 
 		cnt = 0;
 		for (ConstantDeclaration cd : conCol) {
 			cnt += 1;
-			this.writeConstant(cd, cnt);
+			contents += this.writeConstant(cd, cnt);
 		}
 
 		cnt = 0;
@@ -148,49 +147,58 @@ public class Wyil2CBuilder implements Builder {
 			cnt += 1;
 			// this.writeMethod(md, cnt);
 			Method met = new Method(md, cnt);
+			contents += met.writeComments();
 			mets.add(met);
 		}
 
 		for (Method met : mets) {
-			met.write();
+			contents += met.write();
 		}
-		this.writePostamble();
+		contents += this.writePostamble();
+
+		return new CFile(contents);		
 	}
 
-	private void writePreamble(WyilFile module) {
-		output.println("#line 0 \"" + module.id() + ".whiley\"");
-		output.println("// WYIL Module: " + name);
-		output.println("// WYIL Filename: " + module.filename());
+	private String writePreamble(WyilFile module) {
+		String ans = "";
+		
+		ans += "#line 0 \"" + module.id() + ".whiley\"" + "\n";
+		ans += "// WYIL Module: " + name + "\n";
+		ans += "// WYIL Filename: " + module.filename() + "\n";
 
-		output.println(this.includeFile);
+		ans += this.includeFile;
+		return ans;
 
 	}
 
-	private void writePostamble() {
-		if (this.initor_flg != 0) {
-			output.println("static void __initor_b() {");
-			output.println("	if (wycc_debug_flag != 0)");
-			output.println("		wyil_debug_str(\"initialization for " + this.name
-					+ "\");");
-			output.println("	return;");
-			output.println("}");
-			output.println("");
-			output.println("static wycc_initor __initor_c;");
-			output.println("__attribute__ ((constructor)) static void __initor_a(){");
-			output.println("	__initor_c.nxt = wycc_init_chain;");
-			output.println("	__initor_c.function = __initor_b;");
-			output.println("	wycc_init_chain = &__initor_c;");
-			output.println("	return;");
-			output.println("}");
+	private String writePostamble() {
+		String ans = "";
+		
+		if (this.initor_flg == 0) {
+			return ans;
 		}
-
+		ans += 	"static void __initor_b() {\n";
+		ans += 	"	if (wycc_debug_flag != 0)\n";
+		ans += 	"		wyil_debug_str(\"initialization for " + this.name
+					+ "\");\n";
+		ans += 	"	return;\n";
+		ans += 		"}\n";
+		ans += 		"\n";
+		ans += 		"static wycc_initor __initor_c;\n";
+		ans += 		"__attribute__ ((constructor)) static void __initor_a(){\n";
+		ans += 		"	__initor_c.nxt = wycc_init_chain;\n";
+		ans += 		"	__initor_c.function = __initor_b;\n";
+		ans += 		"	wycc_init_chain = &__initor_c;\n";
+		ans += 		"	return;\n";
+		ans += 		"}\n";
+		
+		return ans;
 	}
 
-	public void writeType(TypeDeclaration typDe, int idx) {
-		// int cnt;
+	public String writeType(TypeDeclaration typDe, int idx) {
 		String lin;
+		String ans = "";
 
-		// output.println("// **** Need help with type declaration #" + idx);
 		Block strain = typDe.constraint();
 		List<Modifier> mods = typDe.modifiers();
 		Type typ = typDe.type();
@@ -199,24 +207,24 @@ public class Wyil2CBuilder implements Builder {
 		lin = "#" + idx;
 		lin += "(" + atts.size() + ":" + mods.size() + ")";
 		lin += " is named " + typDe.name();
-		output.println("// WYIL type declaration " + lin);
+		ans += "// WYIL type declaration " + lin;
 		if (typDe.isProtected()) {
-			output.println("//                 is Protected");
+			ans += "//                 is Protected\n";
 		}
 		if (typDe.isPublic()) {
-			output.println("//                 is Public");
+			ans += "//                 is Public\n";
 		}
 		if (strain != null) {
-			output.println("//                 with constraints");
+			ans += "//                 with constraints\n";
 		}
 		if (typ != null) {
-			output.println("//                 with a type");
+			ans += "//                 with a type\n";
 		}
-
+		return ans;
 	}
 
-	public void writeConstant(ConstantDeclaration conDe, int idx) {
-		output.println("// **** Need help with constant decalaration #" + idx);
+	public String writeConstant(ConstantDeclaration conDe, int idx) {
+		return "// **** Need help with constant decalaration #" + idx + "\n";
 	}
 
 	public class Method {
@@ -236,6 +244,7 @@ public class Wyil2CBuilder implements Builder {
 		private List<Modifier> mods;
 		private List<Case> cas;
 		private List<Attribute> atts;
+		private String comments;
 
 		public Method(MethodDeclaration metDe, int idx) {
 			String lin;
@@ -255,6 +264,7 @@ public class Wyil2CBuilder implements Builder {
 			mods = declaration.modifiers();
 			cas = declaration.cases();
 			atts = declaration.attributes();
+			comments = "";
 
 			lin = "#" + index + " (";
 			lin += atts.size();
@@ -269,54 +279,56 @@ public class Wyil2CBuilder implements Builder {
 			lin += ":";
 			lin += cas.size();
 			lin += ") is named " + name;
-			output.println("// WYIL method declaration " + lin);
+			comments += "// WYIL method declaration " + lin + "\n";
 			if (declaration.isMethod()) {
-				output.println("//   is method.");
+				comments += "//   is method.\n";
 			}
 			if (declaration.isFunction()) {
-				output.println("//   is function.");
+				comments += "//   is function.\n";
 			}
 			cnt = 0;
 			for (Modifier mo : mods) {
 				cnt += 1;
-				this.checkModifier(mo, cnt);
+				comments += this.checkModifier(mo, cnt);
 			}
 			cnt = 0;
 			for (Case ci : cas) {
 				cnt += 1;
-				this.checkCase(ci, cnt);
+				comments += this.checkCase(ci, cnt);
 			}
 		}
-
-		public void write() {
+		
+		public String writeComments() {
+			return comments;
+		}
+		
+		public String write() {
+			String ans = "";
 			int cnt;
 			String lin;
 
 			cnt = 0;
 			for (Case ci : cas) {
 				cnt += 1;
-				this.writeCase(ci, cnt);
+				ans += this.writeCase(ci, cnt);
 			}
 			if (error != "") {
-				output.println("ERROR in " + name);
-				output.println(error);
-				return;
+				ans += "ERROR in " + name;
+				ans += error;
+				return ans;
 			}
 			if (isNative) {
-				return;
+				return ans;
 			}
-			lin = "void " + mungName(name) + "() {";
-			output.println(lin);
-			output.println(writeDecls());
-			output.println(body);
-			output.println("}");
-
+			ans += "void " + mungName(name) + "() {\n";
+			ans += writeDecls();
+			ans += body;
+			ans += "}\n";
+			return ans;
 		}
 
 		private String writeDecls() {
 			String ans = "";
-			// Integer idx;
-			// for (lin : this.decls.values()){
 			for (Map.Entry<Integer, String> e : decls.entrySet()) {
 				ans += indent + e.getValue() + "\n";
 			}
@@ -327,16 +339,16 @@ public class Wyil2CBuilder implements Builder {
 			Integer tgt = target;
 			String tst = decls.get(tgt);
 			if (tst != null) {
-				error += "multiple decalrations for X" + target + "\n";
+				error += "multiple declarations for X" + target + "\n";
 			} else {
 				decls.put(tgt, lin);
 			}
 
 		}
 
-		public void checkModifier(Modifier mod, int idx) {
+		public String checkModifier(Modifier mod, int idx) {
 			String tag = "Unknown";
-			// output.println("// **** Need help with modifier #" + idx);
+
 			if (mod instanceof Modifier.Export) {
 				tag = "Export";
 				this.isExport = true;
@@ -353,10 +365,11 @@ public class Wyil2CBuilder implements Builder {
 				tag = "Public";
 				this.isPublic = true;
 			}
-			output.println("// modifier #" + idx + " is " + tag);
+			return "// modifier #" + idx + " is " + tag + "\n";
 		}
 
-		public void checkCase(Case casIn, int idx) {
+		public String checkCase(Case casIn, int idx) {
+			String ans = "";
 			int cnt = -1;
 			List<Attribute> attCol = casIn.attributes();
 			Block bod = casIn.body();
@@ -365,36 +378,36 @@ public class Wyil2CBuilder implements Builder {
 			List<String> locals = casIn.locals();
 
 			if (attCol == null) {
-				output.println("//           " + " no attributes");
+				ans += "//           " + " no attributes\n";
 			} else {
 				cnt = attCol.size();
-				output.println("//           " + " with " + cnt + " attributes");
+				ans += "//           " + " with " + cnt + " attributes\n";
 			}
 			if (prec == null) {
-				output.println("//           " + " no precondition");
+				ans += "//           " + " no precondition\n";
 			} else {
 				cnt = prec.size();
-				output.println("//           " + " precondition of size " + cnt);
+				ans += "//           " + " precondition of size " + cnt + "\n";
 			}
 			if (posc == null) {
-				output.println("//           " + " no postcondition");
+				ans += "//           " + " no postcondition\n";
 			} else {
 				cnt = posc.size();
-				output.println("//           " + " postcondition of size "
-						+ cnt);
+				ans += "//           " + " postcondition of size " + cnt + "\n";
 			}
 			cnt = locals.size();
-			output.println("//           " + " with " + cnt + " locals");
+			ans += "//           " + " with " + cnt + " locals\n";
 			if (cnt < 1) {
-				return;
+				return ans;
 			}
 			cnt = 1;
 			for (String nam : locals) {
-				output.println("//           " + cnt + " '" + nam + "'");
+				ans += "//           " + cnt + " '" + nam + "'\n";
 			}
+			return ans;
 		}
 
-		public void writeCase(Case casIn, int idx) {
+		public String writeCase(Case casIn, int idx) {
 			int cnt = -1;
 			// List<Attribute> attCol = casIn.attributes();
 			Block bod = casIn.body();
@@ -404,28 +417,29 @@ public class Wyil2CBuilder implements Builder {
 
 			// output.println("//           " + " with " + cnt + " locals");
 			// if (! isNative) {
-			this.writeBody(bod, idx);
+			return this.writeBody(bod, idx);
 			// }
 
 		}
 
-		public void writeBody(Block bodIn, int idx) {
+		public String writeBody(Block bodIn, int idx) {
+			String ans = "";
 			int cnt = -1;
 
 			if (bodIn == null) {
-				output.println("// block #" + idx + " is null ");
-				return;
+				ans += "// block #" + idx + " is null\n";
+				return ans;
 			}
 			cnt = bodIn.size();
-			output.println("// block #" + idx + " is of seizes " + cnt);
+			ans += "// block #" + idx + " is of seizes " + cnt + "\n";
 			cnt = 0;
 			for (Block.Entry be : bodIn) {
-				this.writeBlockEntry(be, cnt);
+				ans += this.writeBlockEntry(be, cnt);
 				cnt += 1;
 			}
-
+			return ans;
 		}
-
+		
 		//
 		// convert a block entry code into some lines of C code to put in the
 		// file
@@ -434,52 +448,36 @@ public class Wyil2CBuilder implements Builder {
 		// * code for variable destruction
 		// * even a subclass for routines
 		//
-		public void writeBlockEntry(Block.Entry blkIn, int idx) {
+		public String writeBlockEntry(Block.Entry blkIn, int idx) {
+			String ans = "";
 			int targ, lhs, rhs;
-			Constant val;
-			String tyc;
+			//Constant val;
+			//String tyc;
 			String lin;
-			String ctyp = "void";
-			String assn = "";
+			//String ctyp = "void";
+			//String assn = "";
 			String sep;
+			String tag = "/* entry# " + idx + "*/";
 
-			output.println("// block.entry #" + idx);
+			ans += "// block.entry #" + idx + "\n";
 
 			Code cod = blkIn.code;
 			String temp = cod.toString();
-			output.println("//             Looks like " + temp);
+			ans += "//             Looks like " + temp + "\n";
 			String[] frags = temp.split(" ", 4);
 			String opc = frags[0];
 
 			if (cod instanceof Code.Const) {
-
-				Code.Const codc = (Const) cod;
-				targ = codc.target;
-				val = codc.constant;
-				output.println("//             target " + targ);
-				tyc = val.type().toString();
-				if (tyc.equals("string")) {
-					ctyp = "wycc_obj* ";
-					assn = " = wycc_box_str(" + val + ")";
-				} else if (tyc.equals("int")) {
-					ctyp = "wycc_obj* ";
-					assn = " = wycc_box_int(" + val + ")";
-				} else {
-					output.println("// HELP needed for value type '" + tyc
-							+ "'");
-				}
-				lin = ctyp + " X" + targ + assn + ";";
-				this.addDecl(targ, lin);
+				ans += this.writeCodeConstant(cod, tag);
 			} else if (cod instanceof Code.Debug) {
 				Code.Debug codd = (Code.Debug) cod;
 				targ = codd.operand;
-				lin = "	wyil_debug_obj(X" + targ + ");";
+				lin = "	wyil_debug_obj(X" + targ + ");" + tag;
 				this.body += lin + "\n";
 			} else if (cod instanceof Code.Return) {
-				lin = "	return;";
+				lin = "	return;" + tag;
 				this.body += lin + "\n";
 			} else if (cod instanceof Code.BinStringOp) {
-				// output.println("// HELP needed 4 opcode '" + opc + "'");
 				Code.BinStringOp cods = (Code.BinStringOp) cod;
 				Code.BinStringKind opr = cods.kind;
 				// if (opr != Code.StringOperation APPEND){
@@ -490,7 +488,7 @@ public class Wyil2CBuilder implements Builder {
 				lhs = cods.leftOperand;
 				rhs = cods.rightOperand;
 				lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs
-						+ ");";
+						+ ");" + tag;
 				this.body += "	" + lin + "\n";
 				lin = "wycc_obj* X" + targ + ";";
 				this.addDecl(targ, lin);
@@ -499,7 +497,7 @@ public class Wyil2CBuilder implements Builder {
 				targ = coda.target;
 				rhs = coda.operand;
 				// **** should check that types match
-				lin = "X" + targ + " = X" + rhs + ";";
+				lin = "X" + targ + " = X" + rhs + ";" + tag;
 				this.body += "	" + lin + "\n";
 			} else if (cod instanceof Code.Invoke) {
 				Code.Invoke codi = (Code.Invoke) cod;
@@ -507,19 +505,57 @@ public class Wyil2CBuilder implements Builder {
 				NameID nid = codi.name;
 				Path.ID pat = nid.module();
 				String nam = nid.name();
-				output.println("// HELP for NameID '" + nam + "' with" + pat);
+				ans += "// HELP for NameID '" + nam + "' with" + pat + "\n";
 				lin = "X" + targ + " = " + nam + "(";
 				sep = "";
 				for (int itm : codi.operands) {
 					lin += sep + "X" + itm;
 					sep = ", ";
 				}
-				lin += ");";
+				lin += ");" + tag;
 				this.body += "	" + lin + "\n";
+			} else if (cod instanceof Code.BinArithOp) {
+				Code.BinArithOp codb = (Code.BinArithOp) cod;
+				Code.BinArithKind opr = codb.kind;
+				targ = codb.target;
+				lhs = codb.leftOperand;
+				rhs = codb.rightOperand;
+				ans += "// HELP needed for binArithOp '" + opr + "'\n";
 			} else {
-				output.println("// HELP needed for opcode '" + opc + "'");
+				ans += "// HELP needed for opcode '" + opc + "'\n";
 			}
+			return ans;
 		}
+		
+		public String writeCodeConstant(Code codIn, String tag){
+			String ans = "";
+			int targ;
+			Constant val;
+			String tyc;
+			String assn = "";
+			String ctyp = "void";
+			String lin;
+
+			Code.Const cod = (Const) codIn;
+			targ = cod.target;
+			val = cod.constant;
+			ans += "//             target " + targ + "\n";
+			tyc = val.type().toString();
+			if (tyc.equals("string")) {
+				ctyp = "wycc_obj* ";
+				assn = " = wycc_box_str(" + val + ")";
+			} else if (tyc.equals("int")) {
+				ctyp = "wycc_obj* ";
+				assn = " = wycc_box_int(" + val + ")";
+			} else {
+				ans += "// HELP needed for value type '" + tyc + "'\n";
+			}
+			lin = ctyp + " X" + targ + assn + ";" + tag;
+			this.addDecl(targ, lin);
+
+			return ans;
+		}
+		
 	}
 
 	private String mungName(String nam) {
