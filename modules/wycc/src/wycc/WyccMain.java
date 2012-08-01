@@ -25,7 +25,12 @@
 
 package wycc;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
+
 import wyc.WycMain;
+import wyc.util.OptArg;
 import wycc.util.WyccBuildTask;
 
 /**
@@ -38,9 +43,21 @@ import wycc.util.WyccBuildTask;
  */
 public class WyccMain {
 	
-	public static void main(String[] args) {	
+	public static final OptArg[] WYCC_OPTIONS = new OptArg[]{
+		new OptArg("debug", "Include debug information in generated C files.")
+	};
+	
+	public static void main(String[] _args) {	
+		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
+		Map<String, Object> values = OptArg.parseOptions(args, WYCC_OPTIONS);
+		
+		boolean debug = values.containsKey("debug");
+		if(debug) {
+			System.out.println("GOT DEBUG!");
+		}
+		
 		// FIXME: modify default options to include cdir
 		System.exit(new WycMain(new WyccBuildTask(), WycMain.DEFAULT_OPTIONS)
-		.run(args));
+				.run(args.toArray(new String[args.size()])));
 	}
 }

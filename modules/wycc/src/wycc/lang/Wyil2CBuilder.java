@@ -232,7 +232,9 @@ public class Wyil2CBuilder implements Builder {
 		private int index;
 		private String body;
 		private String delt; // the deconstructors
-		private Map<Integer, String> decls;
+		private Map<Integer, String> declsT;
+		private Map<Integer, String> declsI;
+
 		private String name;
 		private String indent;
 		private String error;
@@ -253,7 +255,9 @@ public class Wyil2CBuilder implements Builder {
 			index = idx;
 			name = metDe.name();
 			indent = "	";
-			decls = new HashMap<Integer, String>();
+			declsT = new HashMap<Integer, String>();
+			declsI = new HashMap<Integer, String>();
+
 			error = "";
 			body = "";
 			isNative = false;
@@ -313,7 +317,7 @@ public class Wyil2CBuilder implements Builder {
 				ans += this.writeCase(ci, cnt);
 			}
 			if (error != "") {
-				ans += "ERROR in " + name;
+				ans += "ERROR in " + name + ": ";
 				ans += error;
 				return ans;
 			}
@@ -329,19 +333,40 @@ public class Wyil2CBuilder implements Builder {
 
 		private String writeDecls() {
 			String ans = "";
-			for (Map.Entry<Integer, String> e : decls.entrySet()) {
-				ans += indent + e.getValue() + "\n";
+			Integer k;
+			for (Map.Entry<Integer, String> e : declsT.entrySet()) {
+				k = e.getKey();
+				ans += indent;
+				ans += e.getValue();
+				ans += " X" + k;
+				if (declsI.containsKey(k)){
+					ans += " = ";
+					ans += declsI.get(k);
+				}
+				ans += ";\n";
+
 			}
 			return ans;
 		}
 
-		private void addDecl(int target, String lin) {
+		private void addDecl(int target, String typ, String init) {
 			Integer tgt = target;
-			String tst = decls.get(tgt);
-			if (tst != null) {
-				error += "multiple declarations for X" + target + "\n";
-			} else {
-				decls.put(tgt, lin);
+			String tst1 = declsT.get(tgt);
+			String tst2 = declsI.get(tgt);
+			if (tst1 == null) {
+				declsT.put(tgt, typ);
+			} else if (tst1.equals(typ)){
+				
+			} else {	
+				error += "multiple type declarations for X" + target + "\n";
+			}
+			if (tst2 == null) {
+				if (init != null) {
+					declsI.put(tgt, init);
+				}
+			} else if (init != null) {
+				error += "multiple init declarations for X" + target + "\n";
+				error += "";
 			}
 
 		}
@@ -457,7 +482,8 @@ public class Wyil2CBuilder implements Builder {
 			//String ctyp = "void";
 			//String assn = "";
 			String sep;
-			String tag = "/* entry# " + idx + "*/";
+			String rtn;
+			String tag = "\t/* entry# " + idx + "*/";
 
 			ans += "// block.entry #" + idx + "\n";
 
@@ -483,20 +509,23 @@ public class Wyil2CBuilder implements Builder {
 				// if (opr != Code.StringOperation APPEND){
 				//
 				// }
-				String rtn = "wyil_strappend";
+				//String rtn = "wyil_strappend";
+				rtn = "wyil_strappend";
 				targ = cods.target;
 				lhs = cods.leftOperand;
 				rhs = cods.rightOperand;
 				lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs
 						+ ");" + tag;
 				this.body += "	" + lin + "\n";
-				lin = "wycc_obj* X" + targ + ";";
-				this.addDecl(targ, lin);
+				lin = "wycc_obj* X" + targ + ";" + tag;
+
+				this.addDecl(targ, "wycc_obj*", null);
 			} else if (cod instanceof Code.Assign) {
 				Code.Assign coda = (Code.Assign) cod;
 				targ = coda.target;
 				rhs = coda.operand;
 				// **** should check that types match
+				this.addDecl(targ, "wycc_obj*", null);
 				lin = "X" + targ + " = X" + rhs + ";" + tag;
 				this.body += "	" + lin + "\n";
 			} else if (cod instanceof Code.Invoke) {
@@ -521,6 +550,15 @@ public class Wyil2CBuilder implements Builder {
 				lhs = codb.leftOperand;
 				rhs = codb.rightOperand;
 				ans += "// HELP needed for binArithOp '" + opr + "'\n";
+				if (opr == Code.BinArithKind.ADD) {
+					rtn = "wyil_add";
+				} else {
+					return ans;
+				}
+				lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs
+						+ ");" + tag;
+				this.body += indent + lin + "\n";
+
 			} else {
 				ans += "// HELP needed for opcode '" + opc + "'\n";
 			}
@@ -532,8 +570,10 @@ public class Wyil2CBuilder implements Builder {
 			int targ;
 			Constant val;
 			String tyc;
-			String assn = "";
-			String ctyp = "void";
+			//String assn = "";
+			//String assn = null;
+			String assn;
+			//String ctyp = "void";
 			String lin;
 
 			Code.Const cod = (Const) codIn;
@@ -542,17 +582,16 @@ public class Wyil2CBuilder implements Builder {
 			ans += "//             target " + targ + "\n";
 			tyc = val.type().toString();
 			if (tyc.equals("string")) {
-				ctyp = "wycc_obj* ";
-				assn = " = wycc_box_str(" + val + ")";
+				assn = "wycc_box_str(" + val + ")";
+				this.addDecl(targ, "wycc_obj*", assn);				
 			} else if (tyc.equals("int")) {
-				ctyp = "wycc_obj* ";
-				assn = " = wycc_box_int(" + val + ")";
+				assn = "wycc_box_int(" + val + ")";
+				this.addDecl(targ, "wycc_obj*", assn);
 			} else {
 				ans += "// HELP needed for value type '" + tyc + "'\n";
 			}
-			lin = ctyp + " X" + targ + assn + ";" + tag;
-			this.addDecl(targ, lin);
-
+			// lin = ctyp + " X" + targ + assn + ";" + tag;
+			// this.addDecl(targ, lin);
 			return ans;
 		}
 		

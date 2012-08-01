@@ -119,6 +119,20 @@ wycc_obj* wycc_box_int(int x) {
 }
 
 /*
+ * given an long (64 bits), box it in a wycc_obj
+ */
+wycc_obj* wycc_box_long(long x) {
+    wycc_obj* ans;
+
+    ans = (wycc_obj*) malloc(sizeof(wycc_obj));
+    /* ans->typ = 2; */
+    ans->typ = Wy_Int;
+    ans->cnt = 0;
+    ans->ptr = (void*) x;	/* **** kludge */
+    return ans;
+}
+
+/*
  * given a wycc_obj, reduce the reference count.
  * when there are no more references reclaim the box.
  * if the flag is set (not zero), reclaim the underlying data.
@@ -142,7 +156,8 @@ wycc_obj* wycc_deref_box(wycc_obj* itm, int flg) {
 }
 
 static void wycc_dealloc_typ(void* ptr, int typ){
-    if (typ == 1) {
+    /* if (typ == 1) { */
+    if (typ == Wy_String) {
         free (ptr);
     } else {
 	fprintf(stderr, "ERROR: unrecognized type (%d) in dealloc\n", typ);
@@ -171,7 +186,8 @@ void wyil_debug_str(char* mesg) {
  */
 void wyil_debug_obj(wycc_obj* ptr1) {
     char* mesg;
-    if (ptr1->typ == 1) {
+    /* if (ptr1->typ == 1) { */
+    if (ptr1->typ == Wy_String) {
 	fprintf(stderr, "%s\n", ptr1->ptr);
     } else {
 	fprintf(stderr, "Help needed in Debug for type %d\n", ptr1->typ);
@@ -184,11 +200,13 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     char* rslt;
     wycc_obj* ans;
 
-    if (lhs->typ != 1) {
+    /* if (lhs->typ != 1) { */
+    if (lhs->typ != Wy_String) {
 	fprintf(stderr, "Help needed in strappend for type %d\n", lhs->typ);
 	exit(-3);
     };
-    if (rhs->typ != 1) {
+    /* if (rhs->typ != 1) { */
+    if (rhs->typ != Wy_String) {
 	fprintf(stderr, "Help needed in strappend for type %d\n", rhs->typ);
 	exit(-3);
     };
@@ -199,6 +217,22 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     strncpy(rslt, lhs->ptr, sizl);
     strncpy(rslt+sizl, rhs->ptr, sizr+1);
     return wycc_box_str(rslt);
+}
+
+wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    wycc_obj* ans;
+
+    if (lhs->typ != Wy_Int) {
+	fprintf(stderr, "Help needed in add for type %d\n", lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Int) {
+	fprintf(stderr, "Help needed in add for type %d\n", rhs->typ);
+	exit(-3);
+    };
+    rslt = ((long) rhs->ptr) + ((long)lhs->ptr); 
+    return wycc_box_long(rslt);
 }
 
 /*
