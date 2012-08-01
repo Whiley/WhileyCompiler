@@ -189,14 +189,15 @@ public class StandardProject implements NameSpace {
 	 * @param allTargets
 	 * @throws IOException
 	 */
-	private void addVerticalDeps(HashSet<Path.Entry<?>> allTargets) throws IOException {
+	private void addVerticalDeps(HashSet<Path.Entry<?>> allTargets)
+			throws IOException {
 		HashSet<Path.Entry<?>> delta = new HashSet();
 		for (BuildRule r : rules) {
 			for (Path.Entry<?> target : allTargets) {
 				delta.addAll(r.dependentsOf(target));
 			}
 		}
-		allTargets.addAll(delta);			
+		allTargets.addAll(delta);
 	}
 	
 	/**
