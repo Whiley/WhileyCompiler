@@ -23,25 +23,39 @@
  */
 
 typedef struct Wycc_object {
-    ;
     int typ;
     int cnt;
     void* ptr;
 } wycc_obj;
 
+typedef struct Wycc_Init_Routine_Link {
+    void (*function)();
+    //wycc_initor* nxt;
+    struct Wycc_Init_Routine_Link* nxt;
+} wycc_initor;
+
+wycc_initor* wycc_init_chain;
+int	wycc_debug_flag;
+
 /*
  * routines used by wycc for structure and bookkeeping
  */
 void wycc_main();
-// wycc_obj* wyil_obj_str(char* text);
 wycc_obj* wycc_deref_box(wycc_obj* itm, int flg);
 wycc_obj* wycc_box_str(char* text);
+wycc_obj* wycc_box_int(int x);
 
 /*
  * routines to implement wyil operations
  */
 void wyil_debug_str(char* mesg);
-void wyil_debug_obj(wycc_obj *ptr);
+void wyil_debug_obj(wycc_obj* ptr);
+wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs);
+
+/*
+ * routines to implement whiley standard library
+ */
+wycc_obj* toString(wycc_obj* itm);
 
 /*
 ;;; Local Variables: ***
