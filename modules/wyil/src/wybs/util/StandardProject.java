@@ -25,6 +25,7 @@
 
 package wybs.util;
 
+import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.*;
@@ -159,16 +160,11 @@ public class StandardProject implements NameSpace {
 		// Secondly, add all dependents on those being rebuilt.
 		int oldSize;
 		do {
-			oldSize = allTargets.size();
-			HashSet<Path.Entry<?>> delta = new HashSet();
-			for (BuildRule r : rules) {
-				for (Path.Entry<?> target : allTargets) {
-					delta.addAll(r.dependentsOf(target));
-				}
-			}
-			allTargets.addAll(delta);
+			oldSize = allTargets.size();		
+			addVerticalDeps(allTargets);
+			addHorizontalDeps(allTargets);			
 		} while (allTargets.size() != oldSize);
-
+		
 		// Finally, build all identified targets!
 		do {
 			oldSize = allTargets.size();
@@ -183,5 +179,37 @@ public class StandardProject implements NameSpace {
 			// FIXME: to something proper here.
 			System.out.println("Cyclic dependency!");
 		}
+	}
+	
+	/**
+	 * Vertical dependencies are those between files of differing content type.
+	 * For example, a file such as Test.wyil depends vertically on the file
+	 * Test.whiley if there is a build rule where Test.whiley => Test.class 
+	 * 
+	 * @param allTargets
+	 * @throws IOException
+	 */
+	private void addVerticalDeps(HashSet<Path.Entry<?>> allTargets) throws IOException {
+		HashSet<Path.Entry<?>> delta = new HashSet();
+		for (BuildRule r : rules) {
+			for (Path.Entry<?> target : allTargets) {
+				delta.addAll(r.dependentsOf(target));
+			}
+		}
+		allTargets.addAll(delta);			
+	}
+	
+	/**
+	 * Horizontal dependencies are those between files of the same content type.
+	 * These are trickier to identify as we need to maintain dependence
+	 * information between them. For example, Test1.wyil will depende
+	 * horizontally on Test2.wyil if Test1.wyil uses something defined in
+	 * Test2.wyil.
+	 * 
+	 * @param allTargets
+	 * @throws IOException
+	 */
+	private void addHorizontalDeps(HashSet<Path.Entry<?>> allTargets) throws IOException {
+		
 	}
 }
