@@ -18,12 +18,13 @@
 #
 # Copyright 2010, David James Pearce. 
 
-################
+##################
 # CONFIGURATION
-################
+##################
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
+LIBS="wyjc-v*.jar wyc-v*.jar wyil-v*.jar"
 
 # check for running under cywin
 cygwin=false
@@ -31,19 +32,36 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
-##################
-# RUN APPLICATION
-##################
+######################
+# CONSTRUCT CLASSPATH
+######################
 
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
     LIBDIR=`cygpath -pw "$LIBDIR"`
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar;$CLASSPATH"
-    WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+    PATHSEP=";"
 else
     # under UNIX the classpath separator must be ":"
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar:$CLASSPATH"
-    WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+    PATHSEP=":"
 fi
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyjc.Main -bp "$WHILEY_BOOTPATH" "$@"
+WHILEY_CLASSPATH=$CLASSPATH
+
+for lib in $LIBS
+do
+    JAR=$(ls $LIBDIR/$lib)
+    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
+done
+
+######################
+# CONSTRUCT BOOTPATH
+######################
+
+WYRT_JAR=$(ls $LIBDIR/wyrt-v*.jar)
+WHILEY_BOOTPATH="$WYRT_JAR"
+
+######################
+# RUN APPLICATION
+######################
+
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyjc.WyjcMain -bp "$WHILEY_BOOTPATH" "$@"

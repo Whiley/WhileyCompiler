@@ -1,0 +1,28 @@
+======================================================================
+Package Summary
+======================================================================
+
+wyc/ ---- The compiler front-end, including all code for the lexer,
+          the parser, the raw AST, and various tools for instantiating
+          and configuring a Whiley Compiler.
+
+wyil/ --- The Whiley Intermediate Language (wyil).  The Whiley
+          Compiler (wyc) converts Whiley programs into this
+          intermediate language, and then various transforms are
+          applied.  The wyil constitutes a bytecode (similar, in some
+          ways, to Java Bytecode) which can be interpreted and
+          executed on its own (if desired).  This package includes
+          code for performing type checking, constant propagation, and
+          various other manipulations.  Furthermore, all the necessary
+          code for manipulating structural types in Whiley is included
+          here.  In short, this package constitutes the bulk of the
+          compiler.
+
+wyjc/ --- The Whiley-to-Java Compiler.  This extends the Whiley
+          Compiler (wyc) with additional transforms for converting
+          wyil code into Java bytecode.
+
+wyrt/ --- The Whiley Standard Library.  This provides the core
+          implementation for the standard library.  All architecture
+          specific code is omitted and, instead, is stored within the
+          respective back-end module (e.g. wyjc).
