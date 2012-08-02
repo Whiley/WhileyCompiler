@@ -53,6 +53,14 @@ void wyil_debug_str(char* mesg);
 void wyil_debug_obj(wycc_obj* ptr);
 wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_shift_up(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs);
 
 /*
  * routines to implement whiley standard library

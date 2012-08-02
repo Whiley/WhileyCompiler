@@ -49,6 +49,8 @@ static char* wy_type_names[] = {
     "string",
 #define Wy_Int		2
     "int",
+#define Wy_WInt		3
+    "wint",
     (char *) NULL
 };
 
@@ -219,21 +221,217 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     return wycc_box_str(rslt);
 }
 
+/*
+ * given a numeric object return the size of the number
+ * (how many longs it takes to represent it)
+ */
+static int wycc_wint_size(wycc_obj *itm) {
+    if (itm->typ == Wy_Int) {
+	return (size_t) 1;
+    };
+    fprintf(stderr, "Help needed in add for type %d\n", itm->typ);
+    exit(-3);
+}
+
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
     long rslt;
-    wycc_obj* ans;
+    int lc, rc, ac;
 
-    if (lhs->typ != Wy_Int) {
-	fprintf(stderr, "Help needed in add for type %d\n", lhs->typ);
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac < 2) {
+	rslt = ((long) lhs->ptr) + ((long)rhs->ptr); 
+	return wycc_box_long(rslt);
+    };
+    fprintf(stderr, "Help needed in add for wide ints (%d)\n", ac);
+    exit(-3);
+}
+
+wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc, ac;
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac < 2) {
+	rslt = ((long) lhs->ptr) - ((long)rhs->ptr); 
+	return wycc_box_long(rslt);
+    };
+    fprintf(stderr, "Help needed in add for wide ints (%d)\n", ac);
+    exit(-3);
+}
+
+wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc, ac;
+    /* wycc_obj* ans;*/
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac < 2) {
+	rslt = ((long) lhs->ptr) & ((long)rhs->ptr); 
+	return wycc_box_long(rslt);
+    };
+    fprintf(stderr, "Help needed in bit_and for wide ints (%d)\n", ac);
+    exit(-3);
+}
+
+wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc, ac;
+    /* wycc_obj* ans;*/
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac < 2) {
+	rslt = ((long) lhs->ptr) | ((long)rhs->ptr); 
+	return wycc_box_long(rslt);
+    };
+    fprintf(stderr, "Help needed in bit_or for wide ints (%d)\n", ac);
+    exit(-3);
+}
+
+wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc, ac;
+    /* wycc_obj* ans;*/
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac < 2) {
+	rslt = ((long) lhs->ptr) ^ ((long)rhs->ptr); 
+	return wycc_box_long(rslt);
+    };
+    fprintf(stderr, "Help needed in bit_xor for wide ints (%d)\n", ac);
+    exit(-3);
+}
+
+wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc, ac;
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac < 2) {
+	rslt = ((long) lhs->ptr) / ((long)rhs->ptr); 
+	return wycc_box_long(rslt);
+    };
+    fprintf(stderr, "Help needed in div for wide ints (%d)\n", ac);
+    exit(-3);
+}
+
+wycc_obj* wyil_mod(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc, ac;
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac < 2) {
+	rslt = ((long) lhs->ptr) % ((long)rhs->ptr); 
+	return wycc_box_long(rslt);
+    };
+    fprintf(stderr, "Help needed in div for wide ints (%d)\n", ac);
+    exit(-3);
+}
+
+static int wycc_ilog2(long itm){
+    int ans = 0;
+
+    if (itm < 0) {
+	itm *= -1;
+    };
+    while (itm > 0) {
+	ans++;
+	itm >>= 1;
+    }
+    return ans;
+}
+
+wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc, ac;
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    ac = (lc > rc) ? lc : rc;
+    if (ac > 1) {
+	fprintf(stderr, "Help needed in mul for wide ints (%d)\n", ac);
 	exit(-3);
     };
-    if (rhs->typ != Wy_Int) {
-	fprintf(stderr, "Help needed in add for type %d\n", rhs->typ);
+    rslt = (long) lhs->ptr;
+    lc = wycc_ilog2(rslt);
+    rc = wycc_ilog2((long) rhs->ptr);
+    if ((lc + rc) > 62) {
+	fprintf(stderr, "Help needed in mul for wide ints (2)\n");
 	exit(-3);
     };
-    rslt = ((long) rhs->ptr) + ((long)lhs->ptr); 
+    rslt *= (long)rhs->ptr; 
     return wycc_box_long(rslt);
 }
+
+wycc_obj* wyil_shift_up(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc;
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    if (rc > 1) {
+	fprintf(stderr, "ERROR shift to exceed memory\n");
+	exit(-4);
+    }
+    if (lc > 1) {
+	fprintf(stderr, "Help needed in shift_up for wide ints (%d)\n", lc);
+	exit(-3);
+    }
+    rslt = (long) rhs->ptr;
+    if (rslt > 60*8) {
+	fprintf(stderr, "ERROR shift to exceed memory\n");
+	exit(-4);
+    }
+    if (rslt > 60) {
+	rslt += 63;
+	rslt /= 64;
+	fprintf(stderr, "Help needed in shift_up for wide ints (%d)\n", rslt);
+	exit(-3);
+    }
+    rc = rslt;
+    rslt = (long) lhs->ptr;
+    rslt <<= rc;
+    return wycc_box_long(rslt);
+}
+
+wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs){
+    long rslt;
+    int lc, rc;
+
+    lc = wycc_wint_size(lhs);
+    rc = wycc_wint_size(rhs);
+    if (rc > 1) {
+	rslt = 0;
+	return wycc_box_long(rslt);
+    }
+    if (lc > 1) {
+	fprintf(stderr, "Help needed in shift_up for wide ints (%d)\n", lc);
+	exit(-3);
+    }
+    rslt = (long) rhs->ptr;
+    if (rslt > 64) {
+	rslt = 0;
+	return wycc_box_long(rslt);
+    }
+    rc = rslt;
+    rslt = (long) lhs->ptr;
+    rslt >>= rc;
+    return wycc_box_long(rslt);
+}
+
 
 /*
  * ******************************
