@@ -543,21 +543,6 @@ public class Wyil2CBuilder implements Builder {
 
 			Code cod = blkIn.code;
 			ans += this.writeSourceLineID(blkIn);
-			List<Attribute> attCol = blkIn.attributes();
-			if (attCol == null) {
-				ans += "//           " + " no attributes\n";
-			} else {
-				cnt = attCol.size();
-				ans += "//           " + " with " + cnt + " attributes\n";
-				Attribute att = attCol.get(0);
-				if (att instanceof Attribute.Source) {
-					Attribute.Source attis = (Attribute.Source) att;
-					ans += "//           " + " [0] is " + attis.line + "\n";
-				} else {
-					ans += "//           " + " [0] is " + att+ "\n";
-				}
-				
-			}
 
 			String temp = cod.toString();
 			ans += "//             Looks like " + temp + "\n";
@@ -593,43 +578,96 @@ public class Wyil2CBuilder implements Builder {
 
 				this.addDecl(targ, "wycc_obj*");
 			} else if (cod instanceof Code.Assign) {
-				Code.Assign coda = (Code.Assign) cod;
-				targ = coda.target;
-				rhs = coda.operand;
-				ans += writeClearTarget(targ, tag);
-				// **** should check that types match
-				this.addDecl(targ, "wycc_obj*");
-				lin = "X" + targ + " = X" + rhs + ";" + tag;
-				this.body += indent + lin + "\n";
-				lin = "X" + rhs + "->cnt++;" + tag;
-				this.body += indent + lin + "\n";
-
+				ans += this.writeCodeAssign(cod, tag);
 			} else if (cod instanceof Code.Invoke) {
-				Code.Invoke codi = (Code.Invoke) cod;
-				targ = codi.target;
-				NameID nid = codi.name;
-				Path.ID pat = nid.module();
-				String nam = nid.name();
-				ans += "// HELP for NameID '" + nam + "' with" + pat + "\n";
-				ans += writeClearTarget(targ, tag);
-				lin = "X" + targ + " = " + nam + "(";
-				sep = "";
-				for (int itm : codi.operands) {
-					lin += sep + "X" + itm;
-					sep = ", ";
-				}
-				lin += ");" + tag;
-				this.body += "	" + lin + "\n";
+				ans += this.writeCodeInvoke(cod, tag);
 			} else if (cod instanceof Code.BinArithOp) {
 				ans += this.writeCodeBinArithOp(cod, tag);
-
+			} else if (cod instanceof Code.NewList) {
+				ans += this.writeCodeNewList(cod, tag);
 
 			} else {
 				ans += "// HELP needed for opcode '" + opc + "'\n";
 			}
 			return ans;
 		}
+		
+		public String writeCodeNewList(Code codIn, String tag){
+			String ans = "";
+			int cnt;
+			int targ;
+			String lin;
 
+			Code.NewList cod = (Code.NewList) codIn;
+			targ = cod.target;
+			cnt = cod.operands.length;
+			ans += writeClearTarget(targ, tag);
+			this.addDecl(targ, "wycc_obj*");
+			lin = "X" + targ + " = wycc_list_new(" + cnt + ");" + tag;
+			this.body += indent + lin + "\n";
+
+			for (int itm : cod.operands) {
+				lin = "wycc_list_add(X" + targ + ", X" + itm + ");" + tag;
+				this.body += indent + lin + "\n";
+			}
+
+			return ans;
+		}
+		
+		public String writeCodeAssign(Code codIn, String tag){
+			String ans = "";
+			int targ, rhs;
+			String lin;
+
+			Code.Assign cod = (Code.Assign) codIn;
+			targ = cod.target;
+			rhs = cod.operand;
+			ans += writeClearTarget(targ, tag);
+			// **** should check that types match
+			this.addDecl(targ, "wycc_obj*");
+			lin = "X" + targ + " = X" + rhs + ";" + tag;
+			this.body += indent + lin + "\n";
+			lin = "X" + rhs + "->cnt++;" + tag;
+			this.body += indent + lin + "\n";
+
+			return ans;
+		}
+		
+
+		
+		public String writeCodeConvert(Code codIn, String tag){
+			String ans = "";
+
+			Code.Convert cod = (Code.Convert) codIn;
+			ans += "//           ignoring convert operation \n";
+			return ans;
+		}
+		
+
+		public String writeCodeInvoke(Code codIn, String tag){
+			String ans = "";
+			int targ;
+			String lin, sep;
+			
+			Code.Invoke cod = (Code.Invoke) codIn;
+			targ = cod.target;
+			NameID nid = cod.name;
+			Path.ID pat = nid.module();
+			String nam = nid.name();
+			ans += "// HELP for NameID '" + nam + "' with" + pat + "\n";
+			ans += writeClearTarget(targ, tag);
+			lin = "X" + targ + " = " + nam + "(";
+			sep = "";
+			for (int itm : cod.operands) {
+				lin += sep + "X" + itm;
+				sep = ", ";
+			}
+			lin += ");" + tag;
+			this.body += indent + lin + "\n";
+
+			return ans;
+		}
+		
 		public String writeClearTarget(int target, String tag){
 			Integer tgt = target;
 			//String ans = "";

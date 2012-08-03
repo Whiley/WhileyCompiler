@@ -45,6 +45,9 @@ wycc_obj* wycc_deref_box(wycc_obj* itm, int flg);
 wycc_obj* wycc_box_str(char* text);
 wycc_obj* wycc_box_int(int x);
 wycc_obj* wycc_box_long(long x);
+wycc_obj* wycc_list_new(long siz);
+wycc_obj* wycc_list_get(wycc_obj* lst, long at);
+void wycc_list_add(wycc_obj* lst, wycc_obj* itm);
 
 /*
  * routines to implement wyil operations

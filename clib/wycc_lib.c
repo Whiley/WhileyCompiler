@@ -45,12 +45,18 @@ static char**	orig_envp;
  */
 
 static char* wy_type_names[] = {
+    /* primative string, ie. array of unboxed bytes*/
 #define Wy_String	1
     "string",
+    /* primative integer, it a long instead of pointer */
 #define Wy_Int		2
     "int",
+    /* a wide integer - unbounded */
 #define Wy_WInt		3
     "wint",
+    /* a primative list, ie. array of (boxed) objs */
+#define Wy_List		4
+    "list",
     (char *) NULL
 };
 
@@ -101,7 +107,7 @@ wycc_obj* wycc_box_str(char* text) {
     ans = (wycc_obj*) malloc(sizeof(wycc_obj));
     /* ans->typ = 1; */
     ans->typ = Wy_String;
-    ans->cnt = 0;
+    ans->cnt = 1;
     ans->ptr = (void*) text;
     return ans;
 }
@@ -115,7 +121,7 @@ wycc_obj* wycc_box_int(int x) {
     ans = (wycc_obj*) malloc(sizeof(wycc_obj));
     /* ans->typ = 2; */
     ans->typ = Wy_Int;
-    ans->cnt = 0;
+    ans->cnt = 1;
     ans->ptr = (void*) x;	/* **** kludge */
     return ans;
 }
@@ -127,11 +133,76 @@ wycc_obj* wycc_box_long(long x) {
     wycc_obj* ans;
 
     ans = (wycc_obj*) malloc(sizeof(wycc_obj));
-    /* ans->typ = 2; */
     ans->typ = Wy_Int;
     ans->cnt = 0;
     ans->ptr = (void*) x;	/* **** kludge */
     return ans;
+}
+
+static wycc_high_bit(long itm) {
+    int tmpa, tmpb;
+
+    tmpb = 0;
+    for (tmpa= itm; tmpa > 0; tmpa &= (tmpa-1)) {
+	tmpb = tmpa;
+    }
+    if (wycc_debug_flag) {
+	fprintf(stderr, "wycc_high_bit(%d) => %d\n", itm, tmpb);
+    }
+    return tmpb;
+}
+
+/*
+ * given a count, setup a list object big enough to accept them.
+ * 
+ */
+wycc_obj* wycc_list_new(long siz) {
+    wycc_obj* ans;
+    long tmp;
+    size_t raw;
+    void** p;
+
+    ans = (wycc_obj*) malloc(sizeof(wycc_obj));
+    ans->typ = Wy_List;
+    tmp = 2 * wycc_high_bit(siz+2);
+    raw = tmp * sizeof(void *);
+    p = (void**) malloc(raw);
+    p[0] = (void *) 0;
+    p[1] = (void *) raw;
+    ans->ptr = (void *) p;
+    ans->cnt = 1;
+    return ans;
+}
+
+wycc_obj* wycc_list_get(wycc_obj* lst, long at) {
+    void** p = lst->ptr;
+
+    if (at >= (long) p[0]) {
+	return NULL;
+    };
+    return (wycc_obj*) p[2+at];
+}
+
+void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
+    void** p = lst->ptr;
+    int at;
+    size_t raw;
+
+    raw = (size_t) p[1];
+    at = ((long) p[0]) + 1;
+    if ((at+2) >= raw) {
+	raw *= 2;
+	p = (void **) realloc(p, raw);
+	if (p == NULL) {
+	    fprintf(stderr, "ERROR: realloc failed\n");
+	    exit(-4);
+	};
+	p[1] = (void *) raw;
+	lst->ptr = p;
+    };
+    p[2 + at] = (void *) itm;
+    itm->cnt++;
+    return;
 }
 
 /*
@@ -148,10 +219,13 @@ wycc_obj* wycc_deref_box(wycc_obj* itm, int flg) {
     if (--itm->cnt <= 0) {
 	ptr = itm->ptr;
 	typ = itm->typ;
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "note: deallocing box for typ %d\n", typ);
+	};
 	free(itm);
 	if (flg != 0) {
 	    wycc_dealloc_typ(ptr, typ);
-	}
+	};
 	return (wycc_obj *) NULL;
     }
     return itm;
