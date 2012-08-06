@@ -61,6 +61,8 @@ public class Wyil2CBuilder implements Builder {
 	private String name;
 	private boolean debugFlag;
 	private boolean lineNumFlag;
+	private final int wyccTypeAny = 0;
+	private final int wyccTypeNone = -1;
 	
 	public Wyil2CBuilder() {
 		this.debugFlag = true;
@@ -535,8 +537,6 @@ public class Wyil2CBuilder implements Builder {
 			String lin;
 			//String ctyp = "void";
 			//String assn = "";
-			String sep;
-			String rtn;
 			String tag = "\t/* entry# " + idx + "*/";
 
 			ans += "// block.entry #" + idx + "\n";
@@ -560,23 +560,8 @@ public class Wyil2CBuilder implements Builder {
 				lin = "	return;" + tag;
 				this.body += lin + "\n";
 			} else if (cod instanceof Code.BinStringOp) {
-				Code.BinStringOp cods = (Code.BinStringOp) cod;
-				Code.BinStringKind opr = cods.kind;
-				// if (opr != Code.StringOperation APPEND){
-				//
-				// }
-				//String rtn = "wyil_strappend";
-				rtn = "wyil_strappend";
-				targ = cods.target;
-				lhs = cods.leftOperand;
-				rhs = cods.rightOperand;
-				ans += writeClearTarget(targ, tag);
-				lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs
-						+ ");" + tag;
-				this.body += "	" + lin + "\n";
-				lin = "wycc_obj* X" + targ + ";" + tag;
+				ans += this.writeCodeBinStringOp(cod, tag);
 
-				this.addDecl(targ, "wycc_obj*");
 			} else if (cod instanceof Code.Assign) {
 				ans += this.writeCodeAssign(cod, tag);
 			} else if (cod instanceof Code.Invoke) {
@@ -585,10 +570,176 @@ public class Wyil2CBuilder implements Builder {
 				ans += this.writeCodeBinArithOp(cod, tag);
 			} else if (cod instanceof Code.NewList) {
 				ans += this.writeCodeNewList(cod, tag);
+			} else if (cod instanceof Code.NewSet) {
+				ans += this.writeCodeNewSet(cod, tag);
+				
+			} else if (cod instanceof Code.BinListOp) {
+				ans += this.writeCodeBinListOp(cod, tag);
+			} else if (cod instanceof Code.BinSetOp) {
+				ans += this.writeCodeBinSetOp(cod, tag);
+			} else if (cod instanceof Code.Void) {
+				ans += this.writeCodeVoid(cod, tag);
+			} else if (cod instanceof Code.Update) {
+				ans += this.writeCodeUpdate(cod, tag);
+			} else if (cod instanceof Code.UnArithOp) {
+				ans += this.writeCodeUnArithOp(cod, tag);
+			} else if (cod instanceof Code.TupleLoad) {
+				ans += this.writeCodeTupleLoad(cod, tag);
+			} else if (cod instanceof Code.TryEnd) {
+				ans += this.writeCodeTryEnd(cod, tag);
+			} else if (cod instanceof Code.TryCatch) {
+				ans += this.writeCodeTryCatch(cod, tag);
+			} else if (cod instanceof Code.Throw) {
+				ans += this.writeCodeThrow(cod, tag);
+
+			} else if (cod instanceof Code.Switch) {
+				ans += this.writeCodeSwitch(cod, tag);
+
+			} else if (cod instanceof Code.Void) {
+				ans += this.writeCodeVoid(cod, tag);
+
+			} else if (cod instanceof Code.Void) {
+				ans += this.writeCodeVoid(cod, tag);
 
 			} else {
 				ans += "// HELP needed for opcode '" + opc + "'\n";
 			}
+			return ans;
+		}
+	
+		public String writeCodefoo(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for \n";
+			Code.BinSetOp cod = (Code.BinSetOp) codIn;
+			return ans;
+		}
+		
+		public String writeCodeSwitch(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for Switch\n";
+			Code.Switch cod = (Code.Switch) codIn;
+			return ans;
+		}
+		
+		public String writeCodeThrow(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for Throw\n";
+			Code.Throw cod = (Code.Throw) codIn;
+			return ans;
+		}
+		
+		public String writeCodeTryCatch(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for TryCatch\n";
+			Code.TryCatch cod = (Code.TryCatch) codIn;
+			return ans;
+		}
+		
+		public String writeCodeTryEnd(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for TryEnd\n";
+			Code.TryEnd cod = (Code.TryEnd) codIn;
+			return ans;
+		}
+		
+		public String writeCodeTupleLoad(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for TupleLoad\n";
+			Code.TupleLoad cod = (Code.TupleLoad) codIn;
+			return ans;
+		}
+		
+		public String writeCodeUnArithOp(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for \n";
+			Code.UnArithOp cod = (Code.UnArithOp) codIn;
+			return ans;
+		}
+		
+		public String writeCodeUpdate(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for Update\n";
+			Code.Update cod = (Code.Update) codIn;
+			return ans;
+		}
+		
+		public String writeCodeVoid(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for Void\n";
+			Code.Void cod = (Code.Void) codIn;
+			return ans;
+		}
+		
+		public String writeCodeBinSetOp(Code codIn, String tag){
+			String ans = "";
+			
+			ans += "// HELP needed for BinSetOp\n";
+			Code.BinSetOp cod = (Code.BinSetOp) codIn;
+			return ans;
+		}
+
+		public String writeCodeBinListOp(Code codIn, String tag){
+			String ans = "";
+
+			ans += "// HELP needed for BinListOp\n";
+			Code.BinListOp cod = (Code.BinListOp) codIn;
+			return ans;
+		}
+
+		public String writeCodeNewSet(Code codIn, String tag){
+			String ans = "";
+			int cnt;
+			int targ;
+			String lin;
+
+			Code.NewSet cod = (Code.NewSet) codIn;
+			targ = cod.target;
+			cnt = cod.operands.length;
+			ans += writeClearTarget(targ, tag);
+			this.addDecl(targ, "wycc_obj*");
+			lin = "X" + targ + " = wycc_set_new(" + wyccTypeNone + ");" + tag;
+			this.body += indent + lin + "\n";
+
+			for (int itm : cod.operands) {
+				lin = "wycc_set_add(X" + targ + ", X" + itm + ");" + tag;
+				this.body += indent + lin + "\n";
+			}
+
+			return ans;
+		}
+		
+		public String writeCodeBinStringOp(Code codIn, String tag){
+			String ans = "";
+			String rtn;
+			int targ, lhs, rhs;
+			String lin;
+			
+			Code.BinStringOp cods = (Code.BinStringOp) codIn;
+			Code.BinStringKind opr = cods.kind;
+			// if (opr != Code.StringOperation APPEND){
+			//
+			// }
+			//String rtn = "wyil_strappend";
+			rtn = "wyil_strappend";
+			targ = cods.target;
+			lhs = cods.leftOperand;
+			rhs = cods.rightOperand;
+			ans += writeClearTarget(targ, tag);
+			lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs + ");" + tag;
+			this.body += "	" + lin + "\n";
+			lin = "wycc_obj* X" + targ + ";" + tag;
+
+			this.addDecl(targ, "wycc_obj*");
+			
 			return ans;
 		}
 		
@@ -737,14 +888,18 @@ public class Wyil2CBuilder implements Builder {
 			ans += "//             target " + targ + "\n";
 			tyc = val.type().toString();
 			if (tyc.equals("string")) {
-				assn = "wycc_box_str(" + val + ")";
+				assn = "wycc_box_str";
 				this.addDecl(targ, "wycc_obj*");				
 			} else if (tyc.equals("int")) {
-				assn = "wycc_box_int(" + val + ")";
+				assn = "wycc_box_int";
 				this.addDecl(targ, "wycc_obj*");
 			} else {
 				ans += "// HELP needed for value type '" + tyc + "'\n";
+				return ans;
 			}
+			ans += writeClearTarget(targ, tag);
+			assn += "(" + val + ")";
+			this.addDecl(targ, "wycc_obj*");
 			// lin = ctyp + " X" + targ + assn + ";" + tag;
 			// this.addDecl(targ, lin);
 			if (assn != null) {
