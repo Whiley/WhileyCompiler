@@ -13,23 +13,20 @@
 // You should have received a copy of the GNU General Public 
 // License along with Wyone. If not, see <http://www.gnu.org/licenses/>
 //
-// Copyright 2010, David James Pearce. 
+// Copyright 2010, David James Pearce.
+// Munged 2012 by Art Protin
 
 package wyone;
 
 import java.io.*;
 import java.util.*;
 
-import wyone.core.*;
-import wyone.theory.congruence.*;
-import wyone.theory.logic.*;
-import wyone.theory.numeric.*;
-import wyone.theory.tuple.*;
-import wyone.theory.quantifier.*;
-import wyone.theory.list.*;
-import wyone.theory.set.*;
-import wyone.theory.type.*;
+// import wyone.util.SyntaxError;
 import wyone.util.*;
+import wyone.core.*;
+//import wyone.core.SpecFile.TypeDecl;
+import wyone.core.SpecFile.*;
+import wyone.io.*;
 
 /**
  * This class provides a simple text interface to the Solver, allowing simple
@@ -39,118 +36,135 @@ import wyone.util.*;
  * 
  */
 public class Main {
-	
-	public static final CompoundHeuristic heuristic = new CompoundHeuristic(
-			new NotEqualsHeuristic(), 
-			new DisjunctHeuristic(),
-			new BoundedNumberHeuristic(true, true), 			
-			new BoundedSetHeuristic(),			
-			new BoundedNumberHeuristic(true, false)
-			//new UnboundedNumberHeuristic(true),
-			//new UnboundedNumberHeuristic(false)		
-	);
 
-	public static final InferenceRule[] theories = {		
-			new FourierMotzkinSolver(), 
-			new CongruenceClosure(),
-			new DisjunctInference(),
-			new TypeClosure(), 
-			new TupleClosure(), 
-			new SubsetClosure(),
-			new BoundedForallClosure(), 
-			new ListForallClosure(),
-			new ListLengthClosure(), 
-			new LengthOfClosure() 
-		};
-
-	public static boolean checkUnsat(String input) {		
-		Parser parser = new Parser(input);
-		WFormula f = parser.parseInput();		
-		Proof r = Solver.checkUnsatisfiable(500, f,
-				heuristic, theories);		
-		return r instanceof Proof.Unsat;
+	private static Map<String, String> optionTags;
+	private static Map<String, String> optionStuff;
+	static {
+		optionTags = new HashMap<String, String>();
+		optionStuff = new HashMap<String, String>();
+		optionTags.put("-verbose", "false");
+		optionStuff.put("-verbose", "");
+		optionTags.put("-debug", "false");
+		optionStuff.put("-debug", "");
+		optionTags.put("-pkg", "true");
+		optionStuff.put("-pkg", "");
+		optionTags.put("-out", "true");
+		optionStuff.put("-out", "");
 	}
-	
-	public static boolean checkSat(String input) {		
-		Parser parser = new Parser(input);
-		WFormula f = parser.parseInput();
-		Proof r = Solver.checkUnsatisfiable(500, f,
-				heuristic, theories);
-		return !(r instanceof Proof.Unsat);
-	}
-	
-	public static void main(String[] args) {	
-		try {
-			try {
-				if(args.length == 0) {
-					System.out.println("usage: java Solve <input-file>");
-					System.exit(1);
-				} 				
-				
-				int timeout = 500; 
-				boolean proof = false;				
-				
-				int fileArgsBegin = 0;
-				for (int i = 0; i != args.length; ++i) {
-					if (args[i].startsWith("-")) {
-						String arg = args[i];
-						if(arg.equals("-timeout")) {
-							timeout = Integer.parseInt(args[++i]);
-						} else if (arg.equals("-proof")) {
-							proof = true;
-						} else if (arg.equals("-debug")) {
-							Solver.debug = true;
-						} else {
-							throw new RuntimeException("Unknown option: " + args[i]);
-						}
 
-						fileArgsBegin = i + 1;
-					}
-				}
-				
-				long start = System.currentTimeMillis();
-				
-				Parser parser = new Parser(new File(args[fileArgsBegin]));
-				WFormula f = parser.parseInput();								
-				System.out.println("Parsed: " + f);				
-				Proof r = Solver.checkUnsatisfiable(timeout, f,
-						heuristic, theories);
-				
-				if(r instanceof Proof.Unsat) {
-					System.out.println("Unsatisfiable");
-				} else if(r instanceof Proof.Sat) {
-					Proof.Sat satp = (Proof.Sat) r;
-					System.out.println("Satisfiable: " + satp.model());
+	private static boolean optBool(String nam) {
+		if (! optionStuff.containsKey(nam)) {
+			return false;
+		}
+		String val = optionStuff.get(nam);
+		if ((val != null) && (val != "")) {
+			return true;
+		}
+		return false;
+	}
+
+	private static String optString(String nam) {
+		if (! optionStuff.containsKey(nam)) {
+			return null;
+		}
+		return optionStuff.get(nam);
+	}
+
+	public static void main(String[] args) {
+		String arg;
+		if(args.length == 0) {
+			System.out.println("usage: java wyone.Main <options> <spec-file>");
+			System.exit(1);
+		} 				
+		LinkedList<String> waitParm = new LinkedList<String>();
+		LinkedList<String> waitFileName = new LinkedList<String>();
+		for (int i = 0; i < args.length; ++i) {
+			arg = args[i];
+			if (optionTags.containsKey(arg)) {
+				if (optionTags.get(arg) != "false") {
+					waitParm.add(arg);
 				} else {
-					System.out.println("Satisfiability Unknown");
-				}												
-				
-				start = System.currentTimeMillis() - start;
-				System.out.println("Time: " + start + "ms");				
-				
-			} catch(SyntaxError e) {				
-				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
+					optionStuff.put(arg, "true");
+				}
+				continue;
 			}
-		} catch(IOException e) {
-			System.err.println("i/o error: " + e.getMessage());
+			if (arg.startsWith("-")) {
+				throw new RuntimeException("Unknown option: " + arg);
+			}
+			if (waitParm.size() > 0) {
+				optionStuff.put(waitParm.remove(), arg);
+			} else {
+				waitFileName.add(arg);
+			}
 		}
-	}	
+		if (waitFileName.size() <= 0) {
+			throw new RuntimeException("No filenames given");
+		}
+		digestAll(waitFileName);
+	}
+
+	private static void digestAll(LinkedList<String> names) {
+		ArrayList<Decl> spDecl = new ArrayList(1000);
+		SpecFile spec = null;
+		PrintStream oFile = null;
+		String oName = optString("-out");
+		String pkg = optString("-pkg");
+		String cls = "prover";
+
+		if (oName.length() > 0) {
+			;
+			try {
+				oFile = new PrintStream(oName);
+			} catch(IOException e) {
+				System.err.println("i/o error: " + e.getMessage());
+			}
+		}
+		if (oFile == null) {
+			oFile = System.out;
+		}
+		long start = System.currentTimeMillis();
+		while (names.size() > 0) {
+			String specfile = names.remove();
+			try {
+				spec = digestOne(specfile);
+				spDecl.addAll(spec.declarations);
+			} catch(IOException e) {
+				System.err.println("i/o error: " + e.getMessage());
+			}
+		}
+		// if (spec != null) {
+		if (! spDecl.isEmpty()) {
+			// try {
+				;
+				// new JavaFileWriter(System.out).write(spec, optString("-pkg"));
+				new JavaFileWriter(oFile).write(spDecl, pkg, cls);
+			//} catch(IOException e) {
+			//	System.err.println("i/o error: " + e.getMessage());
+			//}
+		}
+		start = System.currentTimeMillis() - start;
+		System.err.println("Time: " + start + "ms");
+	}
+
+	private static SpecFile digestOne(String nam) throws IOException {
+		SpecFile ans = null;
+		try {
 			
-	public static void printLine(int indent, int width) {
-		indent(indent);
-		
-		for(int i=indent;i<width;++i) {
-			System.out.print("=");
+			SpecLexer lexer = new SpecLexer(nam);
+			SpecParser parser = new SpecParser(nam, lexer.scan());
+			ans = parser.parse();
+			new TypeChecker().check(ans);
+			
+			
+		} catch(SyntaxError e) {
+			outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
+				
+			if(optBool("-verbose")) {
+				e.printStackTrace(System.err);
+			}
 		}
-		
-		System.out.println();
-	}
-	
-	public static void indent(int indent) {
-		for(int i=0;i!=indent;++i) {
-			System.out.print(" ");
-		}
-	}
+		return ans;
+	}					
 	
 	/**
 	 * This method simply reads in the input file, and prints out a
