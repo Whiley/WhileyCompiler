@@ -28,8 +28,6 @@ package wyjc.testing.tests;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import wyc.testing.tests.StaticInvalidTests;
-
 @RunWith(Suite.class)
 @Suite.SuiteClasses( { RuntimeValidTests.class, ExtendedValidTests.class, ExtendedRuntimeInvalidTests.class })
 public class AllTests {
