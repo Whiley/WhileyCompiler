@@ -58,7 +58,6 @@ public class JavaFileWriter {
 		optStatics();
 		optCheckers();
 		myOut(1, "public interface Constructor {}\n");
-		writeVarClass();
 		HashMap<String,Set<String>> hierarhcy = new HashMap<String,Set<String>>();
 		HashSet<String> used = new HashSet<String>();
 		HashMap<String,List<RewriteDecl>> dispatchTable = new HashMap();
@@ -106,50 +105,6 @@ public class JavaFileWriter {
 		out.flush();
 	}
 	
-	// support for variables is not optional.
-	// maybe Term should also be built in.
-	protected void writeVarClass() {
-		String lin;
-		lin = "// Var(Type, Identifier)";
-		myOut(1, lin);
-		myOut(1, "public final static class Var implements Constructor, Term {");
-		myOut(2, "public final String c0;");
-		myOut(2, "public final String c1;");
-		myOut(2, "private Var(String c0, String c1) {");
-		myOut(3, "this.c0=c0;\t// type");
-		myOut(3, "this.c1=c1;\t// name");
-		myOut(2, "}");
-		// now write the equals method
-		myOut(2, "public boolean equals(Object o) {");
-		myOut(3, "if(o instanceof Var) {");
-		lin = "Var v = (Var) o;";
-		myOut(4, lin);
-		lin = "return c0.equals(v.c0)";
-		myOut(4, lin);
-		lin = "    && c1.equals(v.c1)";
-		myOut(4, lin + ";");
-		myOut(3, "}");
-		myOut(3, "return false;");
-		myOut(2, "}");
-		// now write the hashCode method
-		myOut(2, "public int hashCode() {");
-		lin = "return 85767";
-		myOut(3, lin);
-		lin = "    + c0.hashCode()";
-		myOut(3, lin + ";");				
-		myOut(2, "}");		
-		// now write the toString method
-		myOut(2, "public String toString() {");
-		indent(3);out.print("return \"Var\"");
-		myOut(" + \"(\" + c0 + \")\";");
-		myOut(2, "}");
-		myOut(1, "}\n");
-		// now write the generator method
-		myOut(1, "public static Var Var(String c0, String c1) {");
-		myOut(2, "return get(new Var(c0, c1));");
-		myOut(1, "}\n");
-	}
-
 	public void write(TermDecl decl, HashMap<String,Set<String>> hierarchy) {
 		String lin;
 		String linN, linV, linT, linQ;
@@ -942,7 +897,6 @@ public class JavaFileWriter {
 		writeParserStatics();
 		writeParserConstructor();
 		writeParseTop();
-		writeParseVar();
 		writeParseTerm();
 		writeParseSet();
 		writeParseNumber();		
@@ -957,14 +911,12 @@ public class JavaFileWriter {
 	protected void writeParserStatics() {
 		myOut(2, "private final String input;");
 		myOut(2, "private int pos;");
-		myOut(2, "private Map<String, Var> declaredVariables;");
 	}
 
 	protected void writeParserConstructor() {
 		myOut(2, "public Parser(String input) {");
 		myOut(3, "this.input = input;");
 		myOut(3, "this.pos = 0;");
-		myOut(3, "this.declaredVariables = new HashMap<String, Var>();");
 		myOut(2, "}");
 	}
 	
@@ -972,100 +924,17 @@ public class JavaFileWriter {
 	
 	protected void writeParseTop() {
 		myOut(2, "protected Constructor parseTop() {");
-		myOut(3, "parsePreamble();");
 		myOut(3, "return parseTerm();");
 		myOut(2, "}");
-		myOut();
-		myOut(2, "protected void parsePreamble() {");
-		myOut(3, "String token;");
-		myOut(3, "int withs = 0;");
-		myOut(3, "int start;");
-		myOut(3, "while (pos < input.length()) {");
-		myOut(4, "skipWhiteSpace();");
-		myOut(4, "start = pos;");
-		myOut(4, "token = parseIdentifier();");
-		myOut(4, "if (token.equals(\"With\") ) {");
-		myOut(5, "withs += 1;");
-		myOut(5, "continue;");
-		myOut(4, "}");
-		myOut(4, "if (token.equals(\"Check\") ) {");
-		myOut(5, "break;");
-		myOut(4, "}");
-		myOut(4, "parseVariableDeclaration(token);");
-		myOut(3, "}");
-		myOut(3, "if (withs < 1) {");
-		myOut(4, "throw new SyntaxError(\"Preamble must begin with With\",0,0);");
-		myOut(3, "}");
-		myOut(3, "if (withs > 1) {");
-		myOut(4, "throw new SyntaxError(\"Preamble has more than one With\",0,0);");
-		myOut(3, "}");
-		myOut(3, "if (pos >= input.length()) {");
-		myOut(4, "throw new SyntaxError(\"Nothing after preamble\",pos,pos);");
-		myOut(3, "}");
-		myOut(3, "if (declaredVariables.isEmpty()) {");
-		myOut(4, "throw new SyntaxError(\"No variables declared in preamble\",pos,pos);");
-		myOut(3, "}");
-		myOut(3, "return;");
-		myOut(2, "}");
-		myOut();
-		myOut(2, "protected void parseVariableDeclaration(String token) {");
-		myOut(3, "if (!(");
-		String pad = "      ";
-		for (String itm : classSet) {
-			;
-			myOut(3, pad + "token.equals(\"" + itm + "\")");
-			pad = "   || ";
-		}
-		myOut(3, "    )) {");
-		myOut(4, "throw new SyntaxError(\"Variable type '\" + token + \"' not recognised\",pos,pos);");
-		myOut(3, "}");
-		myOut(3, "parseVariableList(token);");
-		myOut(2, "}");
-		myOut();
-		myOut(2, "protected void parseVariableList(String cls) {");
-		myOut(3, "String token;");
-		myOut(3, "int start;");
-		myOut(3, "Var v;");
-		myOut(3, "char c;");
-		myOut(3, "boolean firstTime = true;");
-		myOut(3, "while (pos < input.length()) {");
-		myOut(4, "if (! firstTime) {");
-		myOut(5, "c = input.charAt(pos);");
-		myOut(5, "if (c == ';') {");
-		myOut(6, "pos += 1;");
-		myOut(6, "return;");
-		myOut(5, "}");
-		myOut(5, "match(\",\");");
-		myOut(4, "}");
-		myOut(4, "skipWhiteSpace();");
-		myOut(4, "start = pos;");
-		myOut(4, "firstTime = false;");
-		myOut(4, "token = parseIdentifier();");
-		myOut(4, "v = new Var(cls, token);");
-		myOut(4, "declaredVariables.put(token, v);");
-		myOut(3, "}");
-		myOut(2, "}");
+		myOut();				
 	}
 	
 	
 	protected void writeParseStatics() {
 		myOut(2, "private final String input;");
 		myOut(2, "private int pos;");
-		myOut(2, "private Map<String, Var> declaredVariables;");
 	}
-	
-	protected void writeParseVar() {
-		myOut(2, "protected Var parseVar() {");
-		myOut(3, "match(\"(\");");
-		myOut(3, "int start = pos;");
-		myOut(3, "String name = parseIdentifier();");
-		myOut(3, "match(\")\");");
-		myOut(3, "if (! declaredVariables.containsKey(name)) {");
-		myOut(4, "throw new SyntaxError(\"Undeclared variable\",start,pos);");
-		myOut(3, "}");
-		myOut(3, "return declaredVariables.get(name);");
-		myOut(2, "}");
-	}
+		
 	protected void writeParseSet() {
 		myOut(2, "protected HashSet parseSet() {");
 		myOut(3, "HashSet r = new HashSet();");
@@ -1151,7 +1020,6 @@ public class JavaFileWriter {
 		myOut(3, "skipWhiteSpace();");
 		myOut(3, "int start = pos;");
 		myOut(3, "String name = parseIdentifier();");
-		myOut(3, "if(name.equals(\"Var\")) { return parseVar(); }");
 		for(Decl d : declLst) {
 			if(d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
