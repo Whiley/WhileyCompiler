@@ -118,52 +118,6 @@ public class TestHarness {
 	}
 	
 	/**
-	 * Compile a syntactically invalid test case. The expectation is that
-	 * compilation should fail with an error and, hence, the test fails if
-	 * compilation does not.
-	 * 
-	 * @param name
-	 *            Name of the test to run. This must correspond to an executable
-	 *            Java file in the srcPath of the same name.
-	 */
-	protected void contextFailTest(String name) {
-		name = sourcepath + File.separatorChar + name + ".whiley";
-
-		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, name);
-
-		if (r == WycMain.SUCCESS) {
-			fail("Test compiled when it shouldn't have!");
-		} else if (r == WycMain.INTERNAL_FAILURE) {
-			fail("Test caused internal failure!");
-		}
-	}
-	
-	/**
-	 * Compile a syntactically invalid test case with verification enabled. The
-	 * expectation is that compilation should fail with an error and, hence, the
-	 * test fails if compilation does not. This differs from the contextFailTest
-	 * in that the test cases are expected to fail only in the verifier, and not
-	 * the ordinary course of things.
-	 * 
-	 * @param name
-	 *            Name of the test to run. This must correspond to an executable
-	 *            Java file in the srcPath of the same name.
-	 */
-	protected void verifyFailTest(String name) {
-		// this will need to turn on verification at some point.
-		name = sourcepath + File.separatorChar + name + ".whiley";
-
-		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", name);
-
-		if (r == WycMain.SUCCESS) {
-			fail("Test compiled when it shouldn't have!");
-		} else if (r == WycMain.INTERNAL_FAILURE) {
-			fail("Test caused internal failure!");
-		}
-	}
-	
-	/**
 	 * Compile and execute a syntactically invalid test case with verification
 	 * disabled. Since verification is disabled, runtime checks are instead
 	 * inserted to catch constraint violations (which would otherwise be caught
