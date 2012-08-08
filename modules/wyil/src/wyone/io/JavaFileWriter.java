@@ -95,9 +95,6 @@ public class JavaFileWriter {
 		write(dispatchTable);
 		writeTypeTests(hierarchy);
 		writeSchema();
-		//writeParser();
-		optStatics();
-		optCheckers();				
 		writeMainMethod();
 		myOut("}");
 		out.flush();
@@ -239,7 +236,7 @@ public class JavaFileWriter {
 		
 		// Second, write outermost dispatch
 		myOut(1, "// =========================================================================");
-		myOut(1, "// Rewrite Dispatchers");
+		myOut(1, "// Rewrite Dispatcher");
 		myOut(1, "// =========================================================================");		
 		myOut();
 		myOut(1, "public static boolean rewrite(int index, Automaton automaton) {");		
@@ -273,7 +270,7 @@ public class JavaFileWriter {
 			}
 		}
 		myOut(1, "// Rewrite dispatcher for " + name);
-		myOut(1, "public static boolean rewrite_" + name + "(int index, Automaton automaton) {");
+		myOut(1, "private static boolean rewrite_" + name + "(int index, Automaton automaton) {");
 		myOut(2, "boolean changed = false;\n");
 		myOut(2, "Automaton.State state = automaton.states[index];");
 		myOut(2, "int[] children = state.children;\n");
@@ -650,7 +647,7 @@ public class JavaFileWriter {
 	protected void writeTypeTest(Type type, HashSet<Type> worklist,HashMap<String,Set<String>> hierarchy) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
-		myOut(1, "protected static boolean typeof_" + mangle + "(int index, Automaton automaton) {");
+		myOut(1, "private static boolean typeof_" + mangle + "(int index, Automaton automaton) {");
 		myOut(2, "Automaton.State state = automaton.states[index];");
 		myOut(3, "int[] children = state.children;");
 		
@@ -746,80 +743,8 @@ public class JavaFileWriter {
 		myOut(1, "// =========================================================================");
 		myOut(1, "// Main Method");
 		myOut(1, "// =========================================================================");		
-		myOut();
-		
-		myOut(1, "private static void getIn(String fName, StringBuffer place)");
-		myOut(1, "    throws IOException {");
-		myOut(2, "BufferedReader in = new BufferedReader(new FileReader(fName));");
-		myOut(2, "while (in.ready()) {");
-		myOut(3, "place.append(in.readLine());");
-		myOut(3, "place.append(\"\\n\");");
-		myOut(2, "}");
-		myOut(1, "}");
-		myOut();
-		myOut(1, "private static void getStdIn(StringBuffer place)");
-		myOut(1, "    throws IOException {");
-		myOut(2, "BufferedReader in = new BufferedReader(new InputStreamReader(System.in));");
-		myOut(2, "while (in.ready()) {");
-		myOut(3, "place.append(in.readLine());");
-		myOut(3, "place.append(\"\\n\");");
-		myOut(2, "}");
-		myOut(1, "}");
-		myOut();
-		myOut(1, "private static boolean logCheck(String tags) {");
-		myOut(2, "if (tags.length() <= 0){");
-		myOut(3, "return true;");
-		myOut(2, "}");
-		myOut(2, "String[] tLst = tags.split(\":\");");
-		myOut(2, "for (String itm : tLst) {");
-		myOut(3, "if (logTypes.containsKey(itm)){");
-		myOut(4, "return true;");
-		myOut(3, "}");
-		myOut(2, "}");
-		myOut(2, "return false;");
-		myOut(1, "}");
-		myOut();
+		myOut();						
 		myOut(1, "public static void main(String[] args) throws IOException {");
-		myOut(2, "StringBuffer text = new StringBuffer();");
-		myOut(2, "LinkedList<String> waitParm = new LinkedList<String>();");
-		myOut(2, "for (int i = 0; i < args.length; ++i) {");
-		myOut(3, "String arg = args[i];");
-		myOut(3, "if (optionTags.containsKey(arg)) {");
-		myOut(4, "if (optionTags.get(arg) != \"false\") {");
-		myOut(5, "waitParm.add(arg);");
-		myOut(4, "} else {");
-		myOut(5, "optionStuff.put(arg, \"true\");");
-		myOut(4, "}");
-		myOut(4, "continue;");
-		myOut(3, "}");
-		myOut(3, "if (arg.startsWith(\"-\")) {");
-		myOut(4, "throw new RuntimeException(\"Unknown option: \" + arg);");
-		myOut(3, "}");
-
-		myOut(3, "if (waitParm.size() > 0) {");
-		myOut(4, "optionStuff.put(waitParm.remove(), arg);");
-		myOut(3, "} else {");
-		myOut(4, "getIn(arg, text);");
-		myOut(3, "}");
-		myOut(2, "}");
-		myOut(2, "if (optBool(\"-stdin\")){");
-		myOut(3, "getStdIn(text);");
-		myOut(2, "}");
-		myOut(2, "String tmp;");
-		myOut(2, "tmp = optString(\"-logtypes\");");
-		myOut(2, "if (tmp.length() > 0){");
-		myOut(3, "optionStuff.put(\"-debug\", \"true\");");
-		myOut(3, "String[] tmpLst = tmp.split(\":\");");
-		myOut(3, "for (String tag : tmpLst) {");
-		myOut(4, "logTypes.put(tag, \"true\");");
-		myOut(3, "}");
-		myOut(2, "}");
-		myOut(2, "tmp = optString(\"-logfile\");");
-		myOut(2, "if (tmp.length() > 0){");
-		myOut(3, "logOut = new PrintStream(tmp);");
-		myOut(2, "} else {");
-		myOut(3, "logOut = System.err;");
-		myOut(2, "}");		
 		myOut(2, "try {");		
 		myOut(3, "PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA);");
 		myOut(3, "Automaton a = reader.read();");
@@ -837,298 +762,6 @@ public class JavaFileWriter {
 		myOut(1, "}");
 	}
 	
-	protected void writeParser() {
-		myOut(1, "// =========================================================================");
-		myOut(1, "// Parser");
-		myOut(1, "// =========================================================================");		
-		myOut();		
-		myOut(1, "public static final class Parser {");
-		writeParserStatics();
-		writeParserConstructor();
-		writeParseTop();
-		writeParseTerm();
-		//writeParseSet();
-		//writeParseNumber();		
-		//writeParseStrung();
-		writeParseIdentifier();
-		writeMatch();
-		writeSkipWhiteSpace();
-		myOut(1, "}");
-		writeSyntaxError();
-	}
-	
-	protected void writeParserStatics() {
-		myOut(2, "private final String input;");
-		myOut(2, "private int pos;");
-	}
-
-	protected void writeParserConstructor() {
-		myOut(2, "public Parser(String input) {");
-		myOut(3, "this.input = input;");
-		myOut(3, "this.pos = 0;");
-		myOut(2, "}");
-	}
-	
-	
-	
-	protected void writeParseTop() {
-		myOut(2, "protected Automaton parseTop() {");
-		myOut(3, "ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();");
-		myOut(3, "parseTerm(states);");
-		myOut(3, "return new Automaton(states);");
-		myOut(2, "}");
-		myOut();				
-	}
-	
-	
-	protected void writeParseStatics() {
-		myOut(2, "private final String input;");
-		myOut(2, "private int pos;");
-	}
-		
-	protected void writeParseSet() {
-		myOut(2, "protected HashSet parseSet() {");
-		myOut(3, "HashSet r = new HashSet();");
-		myOut(3, "match(\"{\");");
-		myOut(3, "skipWhiteSpace();");
-		myOut(3, "boolean firstTime=true;");
-		myOut(3, "while(pos < input.length() && input.charAt(pos) != '}') {");
-		myOut(4, "if(!firstTime) {");
-		myOut(5, "match(\",\");");
-		myOut(4, "skipWhiteSpace();");
-		myOut(4, "}");
-		myOut(4, "firstTime=false;");
-		myOut(4, "r.add(parseTerm());");
-		myOut(3, "skipWhiteSpace();");
-		myOut(3, "}");
-		myOut(3, "match(\"}\");");
-		myOut(3, "return r;");
-		myOut(2, "}");
-	}
-	
-	protected void writeParseNumber() {
-		myOut(2, "protected BigInteger parseNumber() {");		
-		myOut(3, "int start = pos;");
-		myOut(3, "while (pos < input.length() && Character.isDigit(input.charAt(pos))) {");
-		myOut(4, "pos = pos + 1;");
-		myOut(3, "}");		
-		myOut(3, "return new BigInteger(input.substring(start, pos));");								
-		myOut(2, "}");		
-	}
-	
-	protected void writeParseStrung() {
-		myOut(2, "protected String parseStrung() {");
-		myOut(3, "match(\"\\\"\");");
-		myOut(3, "String r = \"\";");
-		myOut(3, "while(pos < input.length() && input.charAt(pos) != \'\\\"\') {");
-		myOut(4, "if (input.charAt(pos) == '\\\\') {");
-		myOut(6, "pos=pos+1;");
-		myOut(6, "switch (input.charAt(pos)) {");
-		myOut(6, "case 'b' :");
-		myOut(7, "r = r + '\\b';");
-		myOut(7, "break;");
-		myOut(6, "case 't' :");
-		myOut(7, "r = r + '\\t';");
-		myOut(7, "break;");
-		myOut(6, "case 'n' :");
-		myOut(7, "r = r + '\\n';");
-		myOut(7, "break;");
-		myOut(6, "case 'f' :");
-		myOut(7, "r = r + '\\f';");
-		myOut(7, "break;");
-		myOut(6, "case 'r' :");
-		myOut(7, "r = r + '\\r';");
-		myOut(7, "break;");
-		myOut(6, "case '\"' :");
-		myOut(7, "r = r + '\\\"';");
-		myOut(7, "break;");
-		myOut(6, "case '\\\'' :");
-		myOut(7, "r = r + '\\'';");
-		myOut(7, "break;");
-		myOut(6, "case '\\\\' :");
-		myOut(7, "r = r + '\\\\';");
-		myOut(7, "break;");
-		myOut(6, "default :");
-		myOut(7, "throw new SyntaxError(\"unknown escape character\",pos,pos);");							
-		myOut(6, "}");
-		myOut(5, "} else {");
-		myOut(6, "r = r + input.charAt(pos);");
-		myOut(4, "}");
-		myOut(4, "pos=pos+1;");
-		myOut(3, "}");
-		myOut(3, "pos=pos+1;");
-		myOut(3, "return r;");
-		myOut(2, "}");
-	}
-	
-	protected void writeParseTerm() {
-		;
-		writeParseTerm(spDecl);
-	}
-	
-	protected void writeParseTerm(ArrayList<Decl> declLst) {
-		myOut(2, "protected int parseTerm(ArrayList<Automaton.State> states) {");
-		myOut(3, "skipWhiteSpace();");
-		myOut(3, "int start = pos;");
-		myOut(3, "String name = parseIdentifier();");
-		for(Decl d : declLst) {
-			if(d instanceof TermDecl) {
-				TermDecl td = (TermDecl) d;
-				myOut(3, "if(name.equals(\"" + td.name + "\")) { return parse" + td.name + "(states); }");
-			}
-		}
-		myOut(3, "throw new SyntaxError(\"unrecognised term: \" + name,start,pos);");
-		myOut(2, "}");
-		for(Decl d : declLst) {
-			if(d instanceof TermDecl) {				
-				writeParseTerm((TermDecl) d);
-			}
-		}
-	}
-	
-	protected void writeParseTerm(TermDecl term) {
-		myOut(2, "public int parse" + term.name + "(ArrayList<Automaton.State> states) {");
-		myOut(3, "int index = states.size();");
-		if(term.params.isEmpty()) {
-			myOut(3, "states.add(new Automaton.State(K_" + term.name + "));");
-			
-		} else {			
-			myOut(3, "states.add(null); // reserve a slot");			
-			myOut(3, "match(\"(\");");
-			int idx=0;
-			boolean firstTime=true;
-			for(Type t : term.params) {
-				if(!firstTime) {
-					myOut(3, "match(\",\");");
-				}
-				firstTime=false;
-				indent(3);out.print("int t" + idx++ + " = ");
-				writeTypeDispatch(t);
-				myOut(";");				
-			}
-			myOut(3, "match(\")\");");
-			indent(3);out.print("states.set(index,new Automaton.State(K_" + term.name);		
-			for(int i=0;i!=term.params.size();i++) {				
-				out.print(", ");				
-				out.print("t" + i);
-			}
-			myOut("));");
-		}	
-		myOut(3, "return index;");
-		myOut(2, "}");
-	}
-	
-	public void writeTypeDispatch(Type t) {
-		if(t instanceof Type.Set) {
-			out.print("parseSet()");
-		} else if(t instanceof Type.Int) {
-			out.print("parseNumber()");
-		} else if(t instanceof Type.Strung) {
-			out.print("parseStrung()");
-		} else 	{				
-			out.print("parseTerm(states)");
-		}
-	}
-	
-	public void writeParseIdentifier() {
-		myOut(2, "protected String parseIdentifier() {");
-		myOut(3, "int start = pos;");		
-		myOut(3, "while (pos < input.length() &&");
-		myOut(4, "Character.isJavaIdentifierPart(input.charAt(pos))) {");
-		myOut(4, "pos++;");								
-		myOut(3, "}");		
-		myOut(3, "return input.substring(start,pos);");
-		myOut(2, "}");
-	}	
-	protected void writeMatch() {
-		myOut(2, "protected void match(String x) {");
-		myOut(3, "skipWhiteSpace();");
-		myOut(3, "if((input.length()-pos) < x.length()) {");
-		myOut(4, "throw new SyntaxError(\"expecting \" + x,pos,pos);");
-		myOut(3, "}");
-		myOut(3, "if(!input.substring(pos,pos+x.length()).equals(x)) {");
-		myOut(4, "throw new SyntaxError(\"expecting \" + x,pos,pos);");
-		myOut(3, "}");
-		myOut(3, "pos += x.length();");
-		myOut(2, "}");
-	}
-	
-	protected void writeSkipWhiteSpace() {
-		myOut(2, "protected void skipWhiteSpace() {");
-		myOut(3, "while (pos < input.length() && Character.isWhitespace(input.charAt(pos))) {");			
-		myOut(4, "pos = pos + 1;");
-		myOut(3, "}");
-		myOut(2, "}");		
-	}
-	
-	protected void writeSyntaxError() {
-		myOut(1, "public static final class SyntaxError extends RuntimeException {");				
-		myOut(2, "public final int start;");
-		myOut(2, "public final int end;");		
-			
-		myOut(2, "public SyntaxError(String msg, int start, int end) {");
-		myOut(3, "super(msg);");		
-		myOut(3, "this.start=start;");		
-		myOut(3, "this.end=end;");		
-		myOut(2, "}");
-		myOut(1, "}");
-	}
-
-	// no assumption of .*
-	// initial - to mark flag, initial + to mark parameter
-	private static String[] parserOpts = {
-		"-verbose",
-		"-debug",
-		"-stdin",
-		"+logfile",
-		"+logtypes"
-	};	
-	
-	protected void optCheckers()  {
-		myOut();
-		myOut(1, "private static boolean optBool(String nam) {");
-		myOut(2, "if (! optionStuff.containsKey(nam)) {");
-		myOut(3, "return false;");
-		myOut(2, "}");
-		myOut(2, "String val = optionStuff.get(nam);");
-		myOut(2, "if ((val != null) && (val != \"\")) {");
-		myOut(3, "return true;");
-		myOut(2, "}");
-		myOut(2, "return false;");
-		myOut(1, "}");
-		myOut(1, "private static String optString(String nam) {");
-		myOut(2, "if (! optionStuff.containsKey(nam)) {");
-		myOut(3, "return null;");
-		myOut(2, "}");
-		myOut(2, "return optionStuff.get(nam);");
-		myOut(1, "}");
-	}
-	protected void optStatics()  {
-		myOut(1, "// =========================================================================");
-		myOut(1, "// Command-Line Argument Processing");
-		myOut(1, "// =========================================================================");		
-		myOut();
-
-		myOut(1, "private static Map<String, String> optionTags;");
-		myOut(1, "private static Map<String, String> optionStuff;");
-		myOut(1, "private static Map<String, String> logTypes;");
-		myOut(1, "private static PrintStream logOut;");
-		myOut(1, "static {");
-		myOut(2, "optionTags = new HashMap<String, String>();");
-		myOut(2, "optionStuff = new HashMap<String, String>();");
-		myOut(2, "logTypes = new HashMap<String, String>();");
-		for (int i=0; i < parserOpts.length; i++) {
-			String tag = parserOpts[i];
-			String name = tag.substring(1);
-			String val = "true";
-			if (tag.startsWith("-")) {
-				val = "false";
-			}
-			myOut(2, "optionTags.put(\"-" + name + "\", \"" + val + "\");");
-			myOut(2, "optionStuff.put(\"-" + name + "\", \"\");");
-		}
-		myOut(1, "}");
-	}
 	protected List<String> concat(List<String> xs, List<String> ys) {
 		ArrayList<String> zs = new ArrayList<String>();
 		zs.addAll(xs);
