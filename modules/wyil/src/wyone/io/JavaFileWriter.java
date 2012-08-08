@@ -105,6 +105,8 @@ public class JavaFileWriter {
 	protected void writeImports()  {		
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");
+		myOut("import java.math.BigInteger;");
+		myOut("import wyautl.io.PrettyAutomataWriter;");
 		myOut("import wyautl.lang.Automaton;");
 		myOut();
 	}
@@ -795,11 +797,17 @@ public class JavaFileWriter {
 		myOut(2, "} else {");
 		myOut(3, "logOut = System.err;");
 		myOut(2, "}");		
-		myOut(2, "try {");
+		myOut(2, "try {");		
 		myOut(3, "Parser parser = new Parser(text.toString());");
-		myOut(3, "Constructor c = parser.parseTop();");
-		myOut(3, "System.out.println(\"PARSED: \" + c);");
-		myOut(3, "System.out.println(\"REWROTE: \" + rewrite(c));");
+		myOut(3, "Automaton a = parser.parseTop();");
+		myOut(3, "PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out);");
+		myOut(3, "System.out.print(\"PARSED: \");");
+		myOut(3, "writer.write(a);");
+		myOut(3, "System.out.println();");
+		myOut(3, "rewrite(0,a);");
+		myOut(3, "System.out.print(\"REWROTE: \");");
+		myOut(3, "writer.write(a);");
+		myOut(3, "System.out.println();");
 		myOut(2, "} catch(SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");
@@ -816,9 +824,9 @@ public class JavaFileWriter {
 		writeParserConstructor();
 		writeParseTop();
 		writeParseTerm();
-		writeParseSet();
-		writeParseNumber();		
-		writeParseStrung();
+		//writeParseSet();
+		//writeParseNumber();		
+		//writeParseStrung();
 		writeParseIdentifier();
 		writeMatch();
 		writeSkipWhiteSpace();

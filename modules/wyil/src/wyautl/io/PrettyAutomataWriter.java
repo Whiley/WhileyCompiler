@@ -49,19 +49,35 @@ import wyautl.lang.*;
  * @author David J. Pearce
  * 
  */
-public class TextAutomataWriter implements GenericWriter<Automaton> {
+public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 	private final PrintStream writer;	
 	
-	public TextAutomataWriter(PrintStream stream) {
+	public PrettyAutomataWriter(PrintStream stream) {
 		this.writer = stream;
 	}
 	
-	public TextAutomataWriter(OutputStream stream) {
+	public PrettyAutomataWriter(OutputStream stream) {
 		this.writer = new PrintStream(stream);
 	}
 	
 	public void write(Automaton automaton) throws IOException {	
-		writer.println(automaton);
+		write(0,automaton);
+	}
+	
+	protected void write(int index, Automaton automaton) throws IOException {
+		Automaton.State state = automaton.states[index];
+		int[] children = state.children;
+		writer.print(index + "(");
+		for(int i=0;i!=children.length;++i) {
+			if(i != 0) {
+				writer.print(",");
+			}
+			write(children[i],automaton);
+		}
+		if(state.data != null) {
+			writer.print(":" + state.data);
+		}
+		writer.print(")");
 	}
 	
 	public void close() throws IOException {
