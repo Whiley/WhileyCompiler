@@ -236,18 +236,21 @@ public class JavaFileWriter {
 		myOut(1, "// Rewrite Dispatchers");
 		myOut(1, "// =========================================================================");		
 		myOut();
-		myOut(1, "public static void rewrite(int index, Automaton automaton) {");		
-		myOut(2, "boolean changed;");
+		myOut(1, "public static boolean rewrite(int index, Automaton automaton) {");		
+		myOut(2, "boolean changed = false;");
+		myOut(2, "boolean lchanged;");
 		myOut(2, "do {");
-		myOut(3, "changed = false;");
+		myOut(3, "lchanged = false;");
 		myOut(3, "Automaton.State state = automaton.states[index];");		
 		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			String name = e.getKey();			
 			myOut(3, "if(state.kind == K_" + name + ") {");
-			myOut(4, "changed |= rewrite_" + name + "(index,automaton);");							
+			myOut(4, "lchanged |= rewrite_" + name + "(index,automaton);");			
 			myOut(3, "}");
 		}
-		myOut(2, "} while(changed);");		
+		myOut(3, "changed |= lchanged;");
+		myOut(2, "} while(lchanged);");
+		myOut(2, "return changed;");
 		myOut(1, "}\n");
 		
 	}
@@ -267,7 +270,7 @@ public class JavaFileWriter {
 		myOut(1, "public static boolean rewrite_" + name + "(int index, Automaton automaton) {");
 		myOut(2, "boolean changed = false;\n");
 		myOut(2, "// Recursively rewrite children");
-		myOut(2, "Automaton.State state = automaton.children[index];");
+		myOut(2, "Automaton.State state = automaton.states[index];");
 		myOut(3, "int[] children = state.children;");
 		myOut(2,"for(int i=0;i!=children.length;++i) {");
 		myOut(3,"changed |= rewrite(children[i],automaton);");
@@ -641,7 +644,7 @@ public class JavaFileWriter {
 			for(int i=0;i!=tt.params.size();++i) {			
 				Type pt = tt.params.get(i);
 				String pt_mangle = type2HexStr(pt);
-				myOut(3, "if(!typeof_" + pt_mangle + "(children[" + i +"])) { return false; }");								
+				myOut(3, "if(!typeof_" + pt_mangle + "(children[" + i +"],automaton)) { return false; }");								
 				if(typeTests.add(pt)) {				
 					worklist.add(pt);
 				}
