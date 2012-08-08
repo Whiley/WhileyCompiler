@@ -54,7 +54,7 @@ public class JavaFileWriter {
 		pkgName = pkgNam;
 		writeImports();		
 		myOut("public final class " + clsNam + " {");
-		HashMap<String,Set<String>> hierarhcy = new HashMap<String,Set<String>>();
+		HashMap<String,Set<String>> hierarchy = new HashMap<String,Set<String>>();
 		HashSet<String> used = new HashSet<String>();
 		HashMap<String,List<RewriteDecl>> dispatchTable = new HashMap();
 		for(Decl d : spDecl) {
@@ -62,10 +62,10 @@ public class JavaFileWriter {
 				ClassDecl cd = (ClassDecl) d;
 				classSet.add(cd.name);
 				for(String child : cd.children) {
-					Set<String> parents = hierarhcy.get(child);
+					Set<String> parents = hierarchy.get(child);
 					if(parents == null) {
 						parents = new HashSet<String>();
-						hierarhcy.put(child,parents);
+						hierarchy.put(child,parents);
 					}
 					parents.add(cd.name);
 				}
@@ -74,9 +74,9 @@ public class JavaFileWriter {
 					
 		for (Decl d : spDecl) {
 			if(d instanceof TermDecl) {
-				write((TermDecl) d, hierarhcy);
+				write((TermDecl) d, hierarchy);
 			} else if(d instanceof ClassDecl) {
-				write((ClassDecl) d, hierarhcy);
+				write((ClassDecl) d, hierarchy);
 			} else if(d instanceof RewriteDecl) {
 				write((RewriteDecl) d, used);
 			}
@@ -93,11 +93,11 @@ public class JavaFileWriter {
 			}
 		}
 		write(dispatchTable);
-		writeTypeTests();		
-		//writeParser();
-		//optStatics();
-		//optCheckers();				
-		//writeMainMethod();
+		writeTypeTests(hierarchy);		
+		writeParser();
+		optStatics();
+		optCheckers();				
+		writeMainMethod();
 		myOut("}");
 		out.flush();
 	}
@@ -143,8 +143,10 @@ public class JavaFileWriter {
 			lin += "(" + linN + ")";
 		}
 		myOut(1, lin);		
-		myOut(1, "public final static int K_" + decl.name + " = 0;\n");		
+		myOut(1, "public final static int K_" + decl.name + " = " + termCounter++ + ";\n");		
 	}
+	
+	private static int termCounter = 0;
 	
 	public void write(ClassDecl decl, HashMap<String,Set<String>> hierarchy) {
 		String lin = "// " + decl.name + " as ";
@@ -156,7 +158,7 @@ public class JavaFileWriter {
 			lin += child;
 		}
 		myOut(1,lin);
-		myOut(1, "public final static int K_" + decl.name + " = 0;\n");		
+		myOut();
 	}
 	
 	public void write(RewriteDecl decl, HashSet<String> used) {
@@ -606,7 +608,7 @@ public class JavaFileWriter {
 		return mangle;
 	}	
 	
-	protected void writeTypeTests() {
+	protected void writeTypeTests(HashMap<String,Set<String>> hierarchy) {
 		myOut(1, "// =========================================================================");
 		myOut(1, "// Type Tests");
 		myOut(1, "// =========================================================================");		
@@ -616,11 +618,11 @@ public class JavaFileWriter {
 		while(!worklist.isEmpty()) {			
 			Type t = worklist.iterator().next();
 			worklist.remove(t);
-			writeTypeTest(t,worklist);
+			writeTypeTest(t,worklist,hierarchy);
 		}
 	}
 	
-	protected void writeTypeTest(Type type, HashSet<Type> worklist) {
+	protected void writeTypeTest(Type type, HashSet<Type> worklist,HashMap<String,Set<String>> hierarchy) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "protected static boolean typeof_" + mangle + "(int index, Automaton automaton) {");
@@ -631,9 +633,22 @@ public class JavaFileWriter {
 			myOut(2, "return true;");
 		} else if(type instanceof Type.Term) {
 			Type.Term tt = (Type.Term) type;
-			myOut(2, "if(state.kind == K_" + tt.name + ") {");
+			HashSet<String> expanded = new HashSet<String>(); 
+			expand(tt.name,hierarchy,expanded);					
+			indent(2);out.print("if(");
+			boolean firstTime=true;
+			for(String n : expanded) {
+				if(!firstTime) {
+					myOut();
+					indent(2);out.print("   || state.kind == K_" + n);
+				} else {
+					firstTime=false;
+					out.print("state.kind == K_" + n);
+				}
+			}			
+			myOut(") {");
 			for(int i=0;i!=tt.params.size();++i) {			
-				Type pt = tt.params.get(i);
+				Type pt = tt.params.get(i);				
 				String pt_mangle = type2HexStr(pt);
 				myOut(3, "if(!typeof_" + pt_mangle + "(children[" + i +"],automaton)) { return false; }");								
 				if(typeTests.add(pt)) {				
@@ -675,9 +690,39 @@ public class JavaFileWriter {
 			throw new RuntimeException("internal failure --- type test not implemented (" + type + ")");
 		}		
 		myOut(1, "}");
+		myOut();
+	}
+	
+	protected void expand(String name, HashMap<String,Set<String>> hierarchy, HashSet<String> result) {
+		//
+		// FIXME: this could be made more efficient by not expanding things
+		// which are already expanded!
+		//
+		ArrayList<String> worklist = new ArrayList<String>();
+		worklist.add(name);
+		while(!worklist.isEmpty()) {
+			String n = worklist.get(0);
+			worklist.remove(0);
+			boolean matched=false;
+			for(Map.Entry<String,Set<String>> e : hierarchy.entrySet()) {
+				Set<String> parents = e.getValue();
+				if(parents.contains(n)) {
+					worklist.add(e.getKey());
+					matched=true;
+				} 
+			}
+			if(!matched) {
+				result.add(n);
+			}
+		}
 	}
 	
 	protected void writeMainMethod() {
+		myOut(1, "// =========================================================================");
+		myOut(1, "// Main Method");
+		myOut(1, "// =========================================================================");		
+		myOut();
+		
 		myOut(1, "private static void getIn(String fName, StringBuffer place)");
 		myOut(1, "    throws IOException {");
 		myOut(2, "BufferedReader in = new BufferedReader(new FileReader(fName));");
@@ -762,6 +807,10 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeParser() {
+		myOut(1, "// =========================================================================");
+		myOut(1, "// Parser");
+		myOut(1, "// =========================================================================");		
+		myOut();		
 		myOut(1, "public static final class Parser {");
 		writeParserStatics();
 		writeParserConstructor();
@@ -792,8 +841,10 @@ public class JavaFileWriter {
 	
 	
 	protected void writeParseTop() {
-		myOut(2, "protected Constructor parseTop() {");
-		myOut(3, "return parseTerm();");
+		myOut(2, "protected Automaton parseTop() {");
+		myOut(3, "ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();");
+		myOut(3, "parseTerm(states);");
+		myOut(3, "return new Automaton(states);");
 		myOut(2, "}");
 		myOut();				
 	}
@@ -885,14 +936,14 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeParseTerm(ArrayList<Decl> declLst) {
-		myOut(2, "protected Constructor parseTerm() {");
+		myOut(2, "protected int parseTerm(ArrayList<Automaton.State> states) {");
 		myOut(3, "skipWhiteSpace();");
 		myOut(3, "int start = pos;");
 		myOut(3, "String name = parseIdentifier();");
 		for(Decl d : declLst) {
 			if(d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
-				myOut(3, "if(name.equals(\"" + td.name + "\")) { return parse" + td.name + "(); }");
+				myOut(3, "if(name.equals(\"" + td.name + "\")) { return parse" + td.name + "(states); }");
 			}
 		}
 		myOut(3, "throw new SyntaxError(\"unrecognised term: \" + name,start,pos);");
@@ -905,10 +956,13 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeParseTerm(TermDecl term) {
-		myOut(2, "public " + term.name +" parse" + term.name + "() {");
+		myOut(2, "public int parse" + term.name + "(ArrayList<Automaton.State> states) {");
+		myOut(3, "int index = states.size();");
 		if(term.params.isEmpty()) {
-			myOut(3, "return " + term.name + ";");
-		} else {
+			myOut(3, "states.add(new Automaton.State(K_" + term.name + "));");
+			
+		} else {			
+			myOut(3, "states.add(null); // reserve a slot");			
 			myOut(3, "match(\"(\");");
 			int idx=0;
 			boolean firstTime=true;
@@ -917,20 +971,19 @@ public class JavaFileWriter {
 					myOut(3, "match(\",\");");
 				}
 				firstTime=false;
-				indent(3);write(t);out.print(" e" + idx++ + " = ");
+				indent(3);out.print("int t" + idx++ + " = ");
 				writeTypeDispatch(t);
 				myOut(";");				
 			}
 			myOut(3, "match(\")\");");
-			indent(3);out.print("return " + term.name + "(");		
-			for(int i=0;i!=term.params.size();i++) {
-				if(i != 0) {
-					out.print(", ");
-				}
-				out.print("e" + i);
+			indent(3);out.print("states.set(index,new Automaton.State(K_" + term.name);		
+			for(int i=0;i!=term.params.size();i++) {				
+				out.print(", ");				
+				out.print("t" + i);
 			}
-			myOut(");");
+			myOut("));");
 		}	
+		myOut(3, "return index;");
 		myOut(2, "}");
 	}
 	
@@ -941,9 +994,8 @@ public class JavaFileWriter {
 			out.print("parseNumber()");
 		} else if(t instanceof Type.Strung) {
 			out.print("parseStrung()");
-		} else 	{	
-			Type.Term tn = (Type.Term) t;
-			out.print("(" + tn.name + ") parseTerm()");
+		} else 	{				
+			out.print("parseTerm(states)");
 		}
 	}
 	
@@ -1021,6 +1073,11 @@ public class JavaFileWriter {
 		myOut(1, "}");
 	}
 	protected void optStatics()  {
+		myOut(1, "// =========================================================================");
+		myOut(1, "// Command-Line Argument Processing");
+		myOut(1, "// =========================================================================");		
+		myOut();
+
 		myOut(1, "private static Map<String, String> optionTags;");
 		myOut(1, "private static Map<String, String> optionStuff;");
 		myOut(1, "private static Map<String, String> logTypes;");
