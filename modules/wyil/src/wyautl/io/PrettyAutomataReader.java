@@ -62,9 +62,10 @@ public class PrettyAutomataReader {
 		if(lookahead != -1) {
 			sb.append((char)lookahead);
 		}		
-		while ((lookahead = input.read()) != -1 && Character.isJavaIdentifierPart((char)lookahead)) {
+		while ((lookahead = input.read()) != -1 && Character.isJavaIdentifierPart((char)lookahead)) {			
 			sb.append((char) lookahead);
 		}
+		System.out.println()
 		return sb.toString();
 	}
 	
