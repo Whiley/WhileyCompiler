@@ -27,27 +27,48 @@ public class PrettyAutomataReader {
 
 	protected int parseTerm(ArrayList<Automaton.State> states, int lookahead)
 			throws IOException, SyntaxError {
-		skipWhiteSpace();
+		lookahead = skipWhiteSpace(lookahead);
 		int index = states.size();
 		states.add(null);
-		String name = parseIdentifier(lookahead);
-		System.out.println("READ: " + name);
+		
+		// ======== parse identifier ===========
+		StringBuffer sb = new StringBuffer();
+		if(lookahead != -1) {
+			sb.append((char)lookahead);
+		}		
+		while ((lookahead = input.read()) != -1
+				&& Character.isJavaIdentifierPart((char) lookahead)) {
+			sb.append((char) lookahead);
+		}	
+		String name = sb.toString();
 		Integer kind = rSchema.get(name);
-		if(kind == null) {
-			throw new SyntaxError("unrecognised term encountered (" + name + ")",pos,pos);
+		if (kind == null) {
+			throw new SyntaxError("unrecognised term encountered (" + name
+					+ ")", pos, pos);
+		} else if (lookahead == -1 || lookahead != '(') {
+			throw new SyntaxError("expecting ')'", pos, pos);
 		}
-		match("(");		
+		
+		// ======== parse terms ===========
 		boolean firstTime = true;
 		ArrayList<Integer> children = new ArrayList<Integer>();
 		while ((lookahead = input.read()) != -1 && lookahead != ')') {
 			if (!firstTime) {
-				match(",");
+				if(lookahead != ',') {
+					throw new SyntaxError("expecting ','",pos,pos);
+				}
+				lookahead = -1;
+			} else {
+				firstTime=false;
 			}
-			children.add(parseTerm(states,lookahead));
+			children.add(parseTerm(states, lookahead));
 		}
-		if (lookahead == -1) {
+		if (lookahead == -1 || lookahead != ')') {
 			throw new SyntaxError("expecting ')'", pos, pos);
 		}
+		// ======== parse supplementary data ===========
+
+		// ======== create automaton state ===========
 		int[] nchildren = new int[children.size()];
 		for (int i = 0; i != children.size(); ++i) {
 			nchildren[i] = children.get(i);
@@ -57,34 +78,14 @@ public class PrettyAutomataReader {
 
 	}
 	
-	protected String parseIdentifier(int lookahead) throws IOException {
-		StringBuffer sb = new StringBuffer();
-		if(lookahead != -1) {
-			sb.append((char)lookahead);
-		}		
-		while ((lookahead = input.read()) != -1 && Character.isJavaIdentifierPart((char)lookahead)) {			
-			sb.append((char) lookahead);
+	protected int skipWhiteSpace(int lookahead) throws IOException {
+		if(lookahead != -1 && !Character.isWhitespace(lookahead)) {
+			return lookahead;
 		}
-		System.out.println()
-		return sb.toString();
-	}
-	
-	protected void match(String x) throws IOException,SyntaxError {
-		skipWhiteSpace();
-		for(int i=0;i!=x.length();++i) {
-			char e = x.charAt(i);
-			int c = input.read();
-			if(c == -1 || ((char)c) != e) {
-				throw new SyntaxError("expecting " + e,pos,pos);	
-			}
-			pos = pos + 1;
-		}		
-	}
-	protected void skipWhiteSpace() throws IOException {
-		int c;
-		while ((c = input.read()) != -1 && Character.isWhitespace(c)) {
+		while ((lookahead = input.read()) != -1 && Character.isWhitespace(lookahead)) {
 			pos = pos + 1;
 		}
+		return lookahead;
 	}
 		
 	public static final class SyntaxError extends Exception {
