@@ -50,14 +50,17 @@ import wyautl.lang.*;
  * 
  */
 public class PrettyAutomataWriter implements GenericWriter<Automaton> {
-	private final PrintStream writer;	
+	private final PrintStream writer;
+	private final String[] schema;
 	
-	public PrettyAutomataWriter(PrintStream stream) {
+	public PrettyAutomataWriter(PrintStream stream, String... terms) {
 		this.writer = stream;
+		this.schema = terms;
 	}
 	
-	public PrettyAutomataWriter(OutputStream stream) {
+	public PrettyAutomataWriter(OutputStream stream, String... terms) {
 		this.writer = new PrintStream(stream);
+		this.schema = terms;
 	}
 	
 	public void write(Automaton automaton) throws IOException {	
@@ -67,7 +70,7 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 	protected void write(int index, Automaton automaton) throws IOException {
 		Automaton.State state = automaton.states[index];
 		int[] children = state.children;
-		writer.print(index + "(");
+		writer.print(schema[state.kind] + "(");
 		for(int i=0;i!=children.length;++i) {
 			if(i != 0) {
 				writer.print(",");

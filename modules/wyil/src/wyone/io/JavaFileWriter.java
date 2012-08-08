@@ -93,7 +93,8 @@ public class JavaFileWriter {
 			}
 		}
 		write(dispatchTable);
-		writeTypeTests(hierarchy);		
+		writeTypeTests(hierarchy);
+		writeSchema();
 		writeParser();
 		optStatics();
 		optCheckers();				
@@ -309,6 +310,27 @@ public class JavaFileWriter {
 		for(String s : inserts) {
 			myOut(level, s);
 		}
+	}
+	
+	public void writeSchema() {
+		myOut(1, "// =========================================================================");
+		myOut(1, "// Schema");
+		myOut(1, "// =========================================================================");		
+		myOut();
+		myOut(1,"public static final String[] SCHEMA = new String[]{");
+		for(int i=0,j=0;i!=spDecl.size();++i) {
+			Decl d = spDecl.get(i);
+			if(d instanceof TermDecl) {
+				TermDecl td = (TermDecl) d;
+				if(j++ != 0) {
+					myOut(",");
+				}
+				indent(2);out.print("\"" + td.name + "\"");
+			}
+		}
+		myOut();
+		myOut(1,"};");
+		myOut();
 	}
 	
 	public Pair<List<String>,String> translate(Expr expr, HashMap<String,Type> environment) {
@@ -800,7 +822,7 @@ public class JavaFileWriter {
 		myOut(2, "try {");		
 		myOut(3, "Parser parser = new Parser(text.toString());");
 		myOut(3, "Automaton a = parser.parseTop();");
-		myOut(3, "PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out);");
+		myOut(3, "PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
