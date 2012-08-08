@@ -269,9 +269,9 @@ public class JavaFileWriter {
 		myOut(1, "// Rewrite dispatcher for " + name);
 		myOut(1, "public static boolean rewrite_" + name + "(int index, Automaton automaton) {");
 		myOut(2, "boolean changed = false;\n");
-		myOut(2, "// Recursively rewrite children");
 		myOut(2, "Automaton.State state = automaton.states[index];");
-		myOut(3, "int[] children = state.children;");
+		myOut(2, "int[] children = state.children;\n");
+		myOut(2, "// Recursively rewrite children");		
 		myOut(2,"for(int i=0;i!=children.length;++i) {");
 		myOut(3,"changed |= rewrite(children[i],automaton);");
 		myOut(2,"}\n");
@@ -289,19 +289,10 @@ public class JavaFileWriter {
 				}
 				firstTime=false;				
 				typeTests.add(t.first().type);
-				out.print("typeof_" + type2HexStr(t.first().type) + "(target.c" + idx++ + ")");							
+				out.print("typeof_" + type2HexStr(t.first().type) + "(children[" + idx++ + "],automaton)");							
 			}
 			myOut(") {");
-			indent(3);out.print("changed |= rewrite" + mangle + "(target");			
-			idx=0;			
-			for(Pair<TypeDecl,String> t : r.types) {				
-				out.print(", ");				
-				firstTime=false;
-				out.print("(");
-				write(t.first().type);
-				out.print(") target.c" + idx++);				
-			}
-			myOut(");");			
+			myOut(3,"changed |= rewrite" + mangle + "(index,automaton);");								
 			myOut(2, "}");
 		}
 		myOut(2, "");
