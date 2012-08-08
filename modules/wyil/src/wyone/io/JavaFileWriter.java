@@ -95,7 +95,7 @@ public class JavaFileWriter {
 		write(dispatchTable);
 		writeTypeTests(hierarchy);
 		writeSchema();
-		writeParser();
+		//writeParser();
 		optStatics();
 		optCheckers();				
 		writeMainMethod();
@@ -107,6 +107,7 @@ public class JavaFileWriter {
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");
 		myOut("import java.math.BigInteger;");
+		myOut("import wyautl.io.PrettyAutomataReader;");
 		myOut("import wyautl.io.PrettyAutomataWriter;");
 		myOut("import wyautl.lang.Automaton;");
 		myOut();
@@ -820,8 +821,8 @@ public class JavaFileWriter {
 		myOut(3, "logOut = System.err;");
 		myOut(2, "}");		
 		myOut(2, "try {");		
-		myOut(3, "Parser parser = new Parser(text.toString());");
-		myOut(3, "Automaton a = parser.parseTop();");
+		myOut(3, "PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA);");
+		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(a);");
@@ -830,7 +831,7 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
-		myOut(2, "} catch(SyntaxError ex) {");
+		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");
 		myOut(1, "}");

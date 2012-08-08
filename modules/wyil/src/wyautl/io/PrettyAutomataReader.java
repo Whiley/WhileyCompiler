@@ -1,16 +1,22 @@
 package wyautl.io;
 
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.util.*;
 import wyautl.lang.*;
 
-public class PrettyAutomataReader {
-	private final Reader reader;
+public class PrettyAutomataReader {	
+	private final InputStream input;
+	private final String[] schema;
+	private final HashMap<String,Integer> rSchema;
 	private int pos;
 	
-	public PrettyAutomataReader(Reader reader) {
-		this.reader = reader;		
+	public PrettyAutomataReader(InputStream reader, String[] schema) {
+		this.input = reader;		
+		this.schema = schema;
+		this.rSchema = new HashMap<String,Integer>();
+		for(int i=0;i!=schema.length;++i) {
+			rSchema.put(schema[i], i);
+		}
 	}
 	
 	public Automaton read() throws IOException,SyntaxError {
@@ -25,10 +31,15 @@ public class PrettyAutomataReader {
 		int index = states.size();
 		states.add(null);
 		String name = parseIdentifier(lookahead);
+		System.out.println("READ: " + name);
+		Integer kind = rSchema.get(name);
+		if(kind == null) {
+			throw new SyntaxError("unrecognised term encountered (" + name + ")",pos,pos);
+		}
 		match("(");		
 		boolean firstTime = true;
 		ArrayList<Integer> children = new ArrayList<Integer>();
-		while ((lookahead = reader.read()) != -1 && lookahead != ')') {
+		while ((lookahead = input.read()) != -1 && lookahead != ')') {
 			if (!firstTime) {
 				match(",");
 			}
@@ -40,8 +51,8 @@ public class PrettyAutomataReader {
 		int[] nchildren = new int[children.size()];
 		for (int i = 0; i != children.size(); ++i) {
 			nchildren[i] = children.get(i);
-		}
-		states.set(index, new Automaton.State(0, nchildren));
+		}		
+		states.set(index, new Automaton.State(kind, nchildren));
 		return index;
 
 	}
@@ -50,10 +61,9 @@ public class PrettyAutomataReader {
 		StringBuffer sb = new StringBuffer();
 		if(lookahead != -1) {
 			sb.append((char)lookahead);
-		}
-		int c;
-		while ((c = reader.read()) != -1 && Character.isJavaIdentifierPart(c)) {
-			sb.append((char) c);
+		}		
+		while ((lookahead = input.read()) != -1 && Character.isJavaIdentifierPart((char)lookahead)) {
+			sb.append((char) lookahead);
 		}
 		return sb.toString();
 	}
@@ -62,7 +72,7 @@ public class PrettyAutomataReader {
 		skipWhiteSpace();
 		for(int i=0;i!=x.length();++i) {
 			char e = x.charAt(i);
-			int c = reader.read();
+			int c = input.read();
 			if(c == -1 || ((char)c) != e) {
 				throw new SyntaxError("expecting " + e,pos,pos);	
 			}
@@ -71,7 +81,7 @@ public class PrettyAutomataReader {
 	}
 	protected void skipWhiteSpace() throws IOException {
 		int c;
-		while ((c = reader.read()) != -1 && Character.isWhitespace(c)) {
+		while ((c = input.read()) != -1 && Character.isWhitespace(c)) {
 			pos = pos + 1;
 		}
 	}
