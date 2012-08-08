@@ -32,7 +32,7 @@ public class JavaFileWriter {
 		write(spec, null);
 	}
 
-	public void write(SpecFile spec, String pkgNam) {
+	public void write(SpecFile spec, String pkgNam) {		
 		int lindex = spec.filename.lastIndexOf('.');
 		String className = spec.filename.substring(0,lindex);
 		int clipSpot = className.indexOf('/');
@@ -45,19 +45,15 @@ public class JavaFileWriter {
 		write(spec.declarations, pkgNam, className);
 	}
 
-	public void write(ArrayList<Decl> spDe, String pkgNam, String clsNam) {
+	public void write(ArrayList<Decl> spDe, String pkgNam, String clsNam) {	
 		spDecl = spDe;
 		if (pkgNam != null) {
 			myOut("package " + pkgNam + ";");
 			myOut("");
 		}
 		pkgName = pkgNam;
-		stdImports();
-		prjImports();
+		writeImports();		
 		myOut("public final class " + clsNam + " {");
-		optStatics();
-		optCheckers();
-		myOut(1, "public interface Constructor {}\n");
 		HashMap<String,Set<String>> hierarhcy = new HashMap<String,Set<String>>();
 		HashSet<String> used = new HashSet<String>();
 		HashMap<String,List<RewriteDecl>> dispatchTable = new HashMap();
@@ -75,7 +71,7 @@ public class JavaFileWriter {
 				}
 			}
 		}
-		
+					
 		for (Decl d : spDecl) {
 			if(d instanceof TermDecl) {
 				write((TermDecl) d, hierarhcy);
@@ -97,12 +93,20 @@ public class JavaFileWriter {
 			}
 		}
 		write(dispatchTable);
-		writeTypeTests();
-		writeCache();
-		writeParser();
-		writeMainMethod();
+		writeTypeTests();		
+		//writeParser();
+		//optStatics();
+		//optCheckers();				
+		//writeMainMethod();
 		myOut("}");
 		out.flush();
+	}
+	
+	protected void writeImports()  {		
+		myOut("import java.io.*;");
+		myOut("import java.util.*;");
+		myOut("import wyautl.lang.Automaton;");
+		myOut();
 	}
 	
 	public void write(TermDecl decl, HashMap<String,Set<String>> hierarchy) {
@@ -138,98 +142,23 @@ public class JavaFileWriter {
 		if (!decl.params.isEmpty()) {
 			lin += "(" + linN + ")";
 		}
-		myOut(1, lin);
-		String myParents = stringSet(hierarchy.get(decl.name));
-		myOut(1, "public final static class " + decl.name + " implements Constructor" + myParents + " {");
-		int idx=0;
-		for(Type t : decl.params) {
-			indent(2);out.print("public final ");
-			write(t);
-			myOut(" c" + idx++ + ";");
-		}
-		myOut(2, "private " + decl.name + "(" + linT + ") {");
-		idx = 0;
-		for(Type t : decl.params) {
-			myOut(3, "this.c" + idx + "=c" + idx++ + ";");
-		}
-		myOut(2, "}");
-		// now write the equals method
-		myOut(2, "public boolean equals(Object o) {");
-		myOut(3, "if(o instanceof " + decl.name + ") {");
-		if (decl.params.isEmpty()) {
-			myOut(4, "return true;");
-		} else {
-			idx = 0;
-			// construct a multi-line return statement
-			// that ands comparisons of the members
-			// output is skewed one line (starting the loop with
-			// the recast) so only the last line of the statement
-			// has a semi-colon
-			lin = decl.name + " v = (" + decl.name + ") o;";
-			String sep = "return ";
-			for(Type t : decl.params) {
-				;
-				myOut(4, lin);
-				String mbr = "c" + idx++;
-				lin = sep + mbr + ".equals(v." + mbr + ")";
-				sep = "    && ";
-			}
-			myOut(4, lin + ";");
-		}
-		myOut(3, "}");
-		myOut(3, "return false;");
-		myOut(2, "}");
-		// now write the hashCode method
-		myOut(2, "public int hashCode() {");
-		lin = "return " + decl.name.hashCode();
-		idx = 0;		
-		for(Type t : decl.params) {
-			myOut(3, lin);
-			lin = "    + c" + idx++ + ".hashCode()";
-		}
-		myOut(3, lin + ";");				
-		myOut(2, "}");		
-		// now write the toString method
-		myOut(2, "public String toString() {");
-		indent(3);out.print("return \"" + decl.name + "\"");
-		if(decl.params.isEmpty()) {		
-			myOut(";");
-		} else {
-			myOut(" + \"(\"" + linQ +" + \")\";");
-		}
-		myOut(2, "}");
-		myOut(1, "}\n");
-		// now write the generator method
-		if(decl.params.isEmpty()) {
-			myOut(1, "public static final " + decl.name + " " + decl.name + " = new " + decl.name + "();\n");
-		} else {
-			myOut(1, "public static " + decl.name + " " + decl.name + "(" + linT + ") {");
-			myOut(2, "return get(new " + decl.name + "(" + linV + "));");
-			myOut(1, "}\n");
-		}
+		myOut(1, lin);		
+		myOut(1, "public final static int K_" + decl.name + " = 0;\n");		
 	}
 	
 	public void write(ClassDecl decl, HashMap<String,Set<String>> hierarchy) {
-		String myParents = stringSet(hierarchy.get(decl.name));
-		myOut(1, "public static interface " + decl.name + " extends Constructor" + myParents + " {");
-		// will need more here
-		myOut(1, "}\n");
+		String lin = "// " + decl.name + " as ";
+		for(int i=0;i!=decl.children.size();++i) {
+			String child = decl.children.get(i);
+			if(i != 0) {
+				lin += " | ";
+			}
+			lin += child;
+		}
+		myOut(1,lin);
+		myOut(1, "public final static int K_" + decl.name + " = 0;\n");		
 	}
 	
-	private String stringSet(Set<String> used) {
-		String ans = "";
-		if (used == null) {
-			;
-			return ans;
-		}
-		for(String itm : used) {
-			// if all our users did not need the leading comma
-			// we would need an if (!firstTime) construct
-			ans += "," + itm;
-		}
-		return ans;
-	}
-
 	public void write(RewriteDecl decl, HashSet<String> used) {
 		// FIRST COMMENT CODE FROM SPEC FILE
 		indent(1);out.print("// rewrite " + decl.name + "(");
@@ -253,102 +182,74 @@ public class JavaFileWriter {
 		
 		// NOW PRINT REAL CODE				
 		String mangle = nameMangle(decl.types, used, decl.name);
-		indent(1);out.print("public static Constructor rewrite" + mangle + "(final " + decl.name + " target");
-		if(!decl.types.isEmpty()) {
-			out.print(", ");
-		}
-		boolean firstTime=true;
-		for(Pair<TypeDecl,String> td : decl.types){
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			out.print("final ");
-			write(td.first().type);
-			out.print(" ");
-			out.print(td.second());
-		}
-		myOut(") {");
+		myOut(1,"public static boolean rewrite" + mangle + "(final int index, final Automaton automaton) {");
+		myOut(2,"boolean changed = false;");
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		for(Pair<TypeDecl,String> td : decl.types){			
 			environment.put(td.second(), td.first().type);
 		}
-		myOut(2, "logNote(\"RwE\", \"Entering " + decl.name + mangle + "\");");
 		boolean defCase = false;
 		int casNo = 1;
-		for(RuleDecl rd : decl.rules) {
-			for(Pair<String,Expr> p : rd.lets) {				
-				Pair<List<String>,String> r = translate(p.second(),environment);
-				write(r.first(),2);
-				indent(2);
-				Type t = p.second().attribute(TypeAttr.class).type;
-				environment.put(p.first(), t);
-				out.print("final ");
-				write(t);
-				myOut(" " + p.first() + " = " + r.second() + ";");								
-			}
-			myOut(2, "logNote(\"RwC\", \"in " + decl.name + mangle + " case " + casNo++ + "\");");
-			if(rd.condition != null && defCase) {
-				// this indicates a syntax error since it means we've got a
-				// default case before a conditional case.
-				// syntaxError("case cannot be reached",specfile.filename,rd);
-				throw new RuntimeException("Unreachable condition in " + decl.name);
-			} else if(rd.condition != null) {
-				Pair<List<String>,String> r = translate(rd.condition, environment);
-				write(r.first(),2);
-				myOut(2, "if(" + r.second() + ") {");
-				r = translate(rd.result, environment);
-				write(r.first(),3);
-				myOut(3, "return " + r.second() + ";");				
-				myOut(2, "}");
-			} else {
-				defCase = true;				
-				Pair<List<String>,String> r = translate(rd.result, environment);
-				write(r.first(),2);
-				myOut(2, "return " + r.second() + ";");				
-			}
-		}
-		if(!defCase) {
-			myOut(2, "return target;");
-		}
+//		for(RuleDecl rd : decl.rules) {
+//			for(Pair<String,Expr> p : rd.lets) {				
+//				Pair<List<String>,String> r = translate(p.second(),environment);
+//				write(r.first(),2);
+//				indent(2);
+//				Type t = p.second().attribute(TypeAttr.class).type;
+//				environment.put(p.first(), t);
+//				out.print("final ");
+//				write(t);
+//				myOut(" " + p.first() + " = " + r.second() + ";");								
+//			}
+//			if(rd.condition != null && defCase) {
+//				// this indicates a syntax error since it means we've got a
+//				// default case before a conditional case.
+//				// syntaxError("case cannot be reached",specfile.filename,rd);
+//				throw new RuntimeException("Unreachable condition in " + decl.name);
+//			} else if(rd.condition != null) {
+//				Pair<List<String>,String> r = translate(rd.condition, environment);
+//				write(r.first(),2);
+//				myOut(2, "if(" + r.second() + ") {");
+//				r = translate(rd.result, environment);
+//				write(r.first(),3);
+//				myOut(3, "return " + r.second() + ";");				
+//				myOut(2, "}");
+//			} else {
+//				defCase = true;				
+//				Pair<List<String>,String> r = translate(rd.result, environment);
+//				write(r.first(),2);
+//				myOut(2, "return " + r.second() + ";");				
+//			}
+//		}		
+		myOut(2, "return changed;");
 		myOut(1, "}\n");
 	}
 	
 	public void write(HashMap<String,List<RewriteDecl>> dispatchTable) {
-		// First, write outermost dispatch
-		;
-		myOut(1, "// uber dispatcher");
-		myOut(1, "public static Constructor rewrite(Constructor target) {");
-		myOut(2, "logNote(\"RwD\", \"Toplevel Rewrite Dispatch\");");
-		myOut(2, "Constructor otarget;");
-		myOut(2, "do {");
-		myOut(3, "otarget = target;");		
-		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
-			String name = e.getKey();			
-			myOut(3, "if(target instanceof " + name + ") {");
-			myOut(4, "target = rewrite((" + name + ") target);");							
-			myOut(3, "}");
-		}
-		myOut(2, "} while(target != otarget);");
-		myOut(2, "return target;");
-		myOut(1, "}\n");
-		
+		// First, write individual dispatches		
 		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			write(e.getKey(),e.getValue());
 		}
 		
-		writeRewriteSet();		
-	}
-	
-	public void writeRewriteSet() {
-		myOut(1, "public static HashSet rewrite(HashSet os) {");
-		myOut(2, "HashSet rs = new HashSet();");
-		myOut(2, "for(Object o : os) {");
-		// FIXME: the following line is broken
-		myOut(3, "rs.add(rewrite((Constructor) o));");
-		myOut(2, "}");
-		myOut(2, "return rs;");
-		myOut(1, "}");
+		// Second, write outermost dispatch
+		myOut(1, "// =========================================================================");
+		myOut(1, "// Rewrite Dispatchers");
+		myOut(1, "// =========================================================================");		
+		myOut();
+		myOut(1, "public static void rewrite(int index, Automaton automaton) {");		
+		myOut(2, "boolean changed;");
+		myOut(2, "do {");
+		myOut(3, "changed = false;");
+		myOut(3, "Automaton.State state = automaton.states[index];");		
+		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
+			String name = e.getKey();			
+			myOut(3, "if(state.kind == K_" + name + ") {");
+			myOut(4, "changed |= rewrite_" + name + "(index,automaton);");							
+			myOut(3, "}");
+		}
+		myOut(2, "} while(changed);");		
+		myOut(1, "}\n");
+		
 	}
 	
 	public void write(String name, List<RewriteDecl> rules) {
@@ -363,18 +264,16 @@ public class JavaFileWriter {
 			}
 		}
 		myOut(1, "// Rewrite dispatcher for " + name);
-		myOut(1, "public static Constructor rewrite(" + name + " target) {");
-		myOut(2, "logNote(\"RwD\", \"Rewrite Dispatch for " + name + "\");");
-		indent(2);out.print("target = " + name + "(");
-		for(int i=0;i!=params.size();++i) {
-			Type t= params.get(i);
-			if(i != 0) {
-				out.print(", ");
-			}
-			out.print("(");write(t);out.print(")");			
-			out.print("rewrite(target.c" + i + ")");
-		}
-		myOut(");");
+		myOut(1, "public static boolean rewrite_" + name + "(int index, Automaton automaton) {");
+		myOut(2, "boolean changed = false;\n");
+		myOut(2, "// Recursively rewrite children");
+		myOut(2, "Automaton.State state = automaton.children[index];");
+		myOut(3, "int[] children = state.children;");
+		myOut(2,"for(int i=0;i!=children.length;++i) {");
+		myOut(3,"changed |= rewrite(children[i],automaton);");
+		myOut(2,"}\n");
+		
+		myOut(2, "// Now rewrite me");
 		HashSet<String> used = new HashSet<String>();
 		for(RewriteDecl r : rules) {
 			String mangle = nameMangle(r.types, used, r.name);
@@ -390,7 +289,7 @@ public class JavaFileWriter {
 				out.print("typeof_" + type2HexStr(t.first().type) + "(target.c" + idx++ + ")");							
 			}
 			myOut(") {");
-			indent(3);out.print("Constructor tmp = rewrite" + mangle + "(target");			
+			indent(3);out.print("changed |= rewrite" + mangle + "(target");			
 			idx=0;			
 			for(Pair<TypeDecl,String> t : r.types) {				
 				out.print(", ");				
@@ -399,11 +298,12 @@ public class JavaFileWriter {
 				write(t.first().type);
 				out.print(") target.c" + idx++);				
 			}
-			myOut(");");
-			myOut(3, "if(tmp != target) { return tmp; }");
+			myOut(");");			
 			myOut(2, "}");
 		}
-		myOut(2, "return target;");
+		myOut(2, "");
+		myOut(2, "// done");
+		myOut(2, "return changed;");
 		myOut(1, "}\n");
 	}
 	
@@ -713,6 +613,11 @@ public class JavaFileWriter {
 	}	
 	
 	protected void writeTypeTests() {
+		myOut(1, "// =========================================================================");
+		myOut(1, "// Type Tests");
+		myOut(1, "// =========================================================================");		
+		myOut();
+		
 		HashSet<Type> worklist = new HashSet<Type>(typeTests);
 		while(!worklist.isEmpty()) {			
 			Type t = worklist.iterator().next();
@@ -724,23 +629,19 @@ public class JavaFileWriter {
 	protected void writeTypeTest(Type type, HashSet<Type> worklist) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
-		myOut(1, "protected static boolean typeof_" + mangle + "(Object value) {");
+		myOut(1, "protected static boolean typeof_" + mangle + "(int index, Automaton automaton) {");
+		myOut(2, "Automaton.State state = automaton.states[index];");
+		myOut(3, "int[] children = state.children;");
+		
 		if(type instanceof Type.Any) {
 			myOut(2, "return true;");
-		} else if(type instanceof Type.Int) {
-			myOut(2, "return (value instanceof BigInteger);");
-		} else if(type instanceof Type.Bool) {
-			myOut(2, "return (value instanceof Boolean);");			
-		} else if(type instanceof Type.Strung) {
-			myOut(2, "return (value instanceof String);");			
 		} else if(type instanceof Type.Term) {
 			Type.Term tt = (Type.Term) type;
-			myOut(2, "if(value instanceof " + tt.name + ") {");
-			myOut(3, tt.name + " term = (" + tt.name + ") value;");
+			myOut(2, "if(state.kind == K_" + tt.name + ") {");
 			for(int i=0;i!=tt.params.size();++i) {			
 				Type pt = tt.params.get(i);
 				String pt_mangle = type2HexStr(pt);
-				myOut(3, "if(!typeof_" + pt_mangle + "(term.c" + i +")) { return false; }");								
+				myOut(3, "if(!typeof_" + pt_mangle + "(children[" + i +"])) { return false; }");								
 				if(typeTests.add(pt)) {				
 					worklist.add(pt);
 				}
@@ -782,21 +683,6 @@ public class JavaFileWriter {
 		myOut(1, "}");
 	}
 	
-	protected void writeCache() {
-		myOut(1, "private static final ArrayList<Object> items = new ArrayList<Object>();");
-		myOut(1, "private static final HashMap<Object,Integer> cache = new HashMap<Object,Integer>();");
-		myOut(1, "private static <T> T get(T obj) {");
-		myOut(2, "Integer idx = cache.get(obj);");
-		myOut(2, "if(idx != null) {");
-		myOut(3, "return (T) items.get(idx);");
-		myOut(2, "} else {");				
-		myOut(3, "cache.put(obj, items.size());");
-		myOut(3, "items.add(obj);");	
-		myOut(3, "return obj;");
-		myOut(2, "}");
-		myOut(1, "}");	
-	}
-	
 	protected void writeMainMethod() {
 		myOut(1, "private static void getIn(String fName, StringBuffer place)");
 		myOut(1, "    throws IOException {");
@@ -827,16 +713,6 @@ public class JavaFileWriter {
 		myOut(3, "}");
 		myOut(2, "}");
 		myOut(2, "return false;");
-		myOut(1, "}");
-		myOut();
-		myOut(1, "private static void logNote(String tags, String note) {");
-		myOut(2, "if (! optBool(\"-debug\")){");
-		myOut(3, "return;");
-		myOut(2, "}");
-		myOut(2, "if (! logCheck(tags)){");
-		myOut(3, "return;");
-		myOut(2, "}");
-		myOut(3, "logOut.println(note);");
 		myOut(1, "}");
 		myOut();
 		myOut(1, "public static void main(String[] args) throws IOException {");
@@ -879,8 +755,7 @@ public class JavaFileWriter {
 		myOut(3, "logOut = new PrintStream(tmp);");
 		myOut(2, "} else {");
 		myOut(3, "logOut = System.err;");
-		myOut(2, "}");
-		myOut(2, "logNote(\"\",\"About to start parsing input\");");
+		myOut(2, "}");		
 		myOut(2, "try {");
 		myOut(3, "Parser parser = new Parser(text.toString());");
 		myOut(3, "Constructor c = parser.parseTop();");
@@ -1123,14 +998,6 @@ public class JavaFileWriter {
 	}
 
 	// no assumption of .*
-	private static String[] prjImportNames = {
-	};
-	// assumes .*
-	private static String[] stdImportNames = {
-		"io",
-		"util",
-		"math"
-	};
 	// initial - to mark flag, initial + to mark parameter
 	private static String[] parserOpts = {
 		"-verbose",
@@ -1138,22 +1005,8 @@ public class JavaFileWriter {
 		"-stdin",
 		"+logfile",
 		"+logtypes"
-	};
+	};	
 	
-	protected void stdImports()  {
-		for (int i=0; i < stdImportNames.length; i++) {
-			;
-			myOut("import java." + stdImportNames[i] + ".*;");
-		}
-		myOut();
-	}
-	protected void prjImports()  {
-		for (int i=0; i < prjImportNames.length; i++) {
-			;
-			myOut("import " + pkgName + "." + prjImportNames[i] + ";");
-		}
-		myOut();
-	}
 	protected void optCheckers()  {
 		myOut();
 		myOut(1, "private static boolean optBool(String nam) {");

@@ -103,13 +103,10 @@ public class Main {
 		digestAll(waitFileName);
 	}
 
-	private static void digestAll(LinkedList<String> names) {
-		ArrayList<Decl> spDecl = new ArrayList(1000);
+	private static void digestAll(LinkedList<String> names) {		
 		SpecFile spec = null;
 		PrintStream oFile = null;
-		String oName = optString("-out");
-		String pkg = optString("-pkg");
-		String cls = "prover";
+		String oName = optString("-out");		
 
 		if (oName.length() > 0) {
 			;
@@ -126,32 +123,23 @@ public class Main {
 		while (names.size() > 0) {
 			String specfile = names.remove();
 			try {
-				spec = digestOne(specfile);
-				spDecl.addAll(spec.declarations);
+				spec = digestOne(specfile);				
+				new JavaFileWriter(oFile).write(spec);
 			} catch(IOException e) {
 				System.err.println("i/o error: " + e.getMessage());
 			}
 		}
-		// if (spec != null) {
-		if (! spDecl.isEmpty()) {
-			// try {
-				;
-				// new JavaFileWriter(System.out).write(spec, optString("-pkg"));
-				new JavaFileWriter(oFile).write(spDecl, pkg, cls);
-			//} catch(IOException e) {
-			//	System.err.println("i/o error: " + e.getMessage());
-			//}
-		}
+								
 		start = System.currentTimeMillis() - start;
 		System.err.println("Time: " + start + "ms");
 	}
 
-	private static SpecFile digestOne(String nam) throws IOException {
+	private static SpecFile digestOne(String filename) throws IOException {
 		SpecFile ans = null;
 		try {
 			
-			SpecLexer lexer = new SpecLexer(nam);
-			SpecParser parser = new SpecParser(nam, lexer.scan());
+			SpecLexer lexer = new SpecLexer(filename);
+			SpecParser parser = new SpecParser(filename, lexer.scan());
 			ans = parser.parse();
 			new TypeChecker().check(ans);
 			
