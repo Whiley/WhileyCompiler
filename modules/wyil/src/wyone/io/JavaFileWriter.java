@@ -184,8 +184,26 @@ public class JavaFileWriter {
 		// NOW PRINT REAL CODE				
 		String mangle = nameMangle(decl.pattern, used);
 		myOut(1,"public static boolean rewrite" + mangle + "(final int index, final Automaton automaton) {");
-		HashMap<String,Type> environment = new HashMap<String,Type>();
-		decl.pattern.buildEnvironment(environment);		
+		myOut(2,"Automaton.State[] states = automaton.states;");
+		myOut(2,"Automaton.State state = states[index];");
+		HashMap<String,Type> environment = decl.pattern.environment();
+		HashMap<String,int[]> routes = decl.pattern.routes();
+		for(Map.Entry<String,int[]> e : routes.entrySet()) {
+			int[] route = e.getValue();
+			String last = "state";
+			for(int i=0;i!=route.length;++i) {
+				String c = e.getKey() + "_" + i;
+				if((i+1) == route.length) {
+					c = e.getKey();
+				}
+				myOut(2,"Automaton.State " + c
+						+ " = states[" + last + ".children[" + route[i] + "]];");
+				last = c;
+			}
+			
+			myOut();
+		}
+		
 		boolean defCase = false;
 		int casNo = 1;
 		for(RuleDecl rd : decl.rules) {
@@ -373,15 +391,7 @@ public class JavaFileWriter {
 	}
 	
 	public Pair<List<String>,String> translate(Variable v, HashMap<String,Type> environment) {
-		Type actual = v.attribute(TypeAttr.class).type;
-		Type declared = environment.get(v.var);
-		if(actual != declared) {
-			// the need to insert this case arises from the possibility of type
-			// inference resulting in the type of a variable being updated.
-			return new Pair(Collections.EMPTY_LIST,"((" + typeStr(actual) + ") " + v.var + ")");
-		} else {
-			return new Pair(Collections.EMPTY_LIST,v.var);
-		}
+		return new Pair(Collections.EMPTY_LIST,v.var);
 	}
 	
 	public Pair<List<String>,String> translate(UnOp uop, HashMap<String,Type> environment) {

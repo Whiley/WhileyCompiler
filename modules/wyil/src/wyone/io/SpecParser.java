@@ -118,26 +118,30 @@ public class SpecParser {
 	public Pattern.Term parsePatternTerm() {
 		int start = index;
 		String name = matchIdentifier().text;
-		ArrayList<Pair<Pattern, String>> params = new ArrayList();
-		match(LeftBrace.class);
-		boolean firstTime = true;
-		while (index < tokens.size()
-				&& !(tokens.get(index) instanceof RightBrace)) {
-			if (!firstTime) {
-				match(Comma.class);
+		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			ArrayList<Pair<Pattern, String>> params = new ArrayList();
+			match(LeftBrace.class);
+			boolean firstTime = true;
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (!firstTime) {
+					match(Comma.class);
+				}
+				firstTime = false;
+				Pattern p = parsePattern();
+				String n = null;
+				if (index < tokens.size()
+						&& tokens.get(index) instanceof Identifier) {
+					n = matchIdentifier().text;
+				}
+				params.add(new Pair<Pattern, String>(p, n));
 			}
-			firstTime = false;
-			Pattern p = parsePattern();
-			String n = null;
-			if (index < tokens.size()
-					&& tokens.get(index) instanceof Identifier) {
-				n = matchIdentifier().text;
-			}
-			params.add(new Pair<Pattern, String>(p, n));
-		}
-		match(RightBrace.class);
+			match(RightBrace.class);
 
-		return new Pattern.Term(name, params, sourceAttr(start, index - 1));
+			return new Pattern.Term(name, params, sourceAttr(start, index - 1));
+		} else {
+			return new Pattern.Term(name,Collections.EMPTY_LIST, sourceAttr(start, index - 1));
+		}
 	}
 	
 	public List<RuleDecl> parseRuleBlock(int indent) {

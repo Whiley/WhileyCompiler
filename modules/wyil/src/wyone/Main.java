@@ -124,7 +124,9 @@ public class Main {
 			String specfile = names.remove();
 			try {
 				spec = digestOne(specfile);				
-				new JavaFileWriter(oFile).write(spec);
+				if(spec != null) {
+					new JavaFileWriter(oFile).write(spec);
+				}
 			} catch(IOException e) {
 				System.err.println("i/o error: " + e.getMessage());
 			}

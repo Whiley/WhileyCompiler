@@ -2,6 +2,7 @@ package wyone.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import wyone.util.Pair;
@@ -13,7 +14,21 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
-	public abstract void buildEnvironment(Map<String,Type> environment);
+	public HashMap<String,Type> environment() {
+		HashMap<String,Type> env = new HashMap<String,Type>();
+		buildEnvironment(env);
+		return env;
+	}
+	
+	public HashMap<String,int[]> routes() {
+		HashMap<String,int[]> env = new HashMap<String,int[]>();
+		buildRoutes(new ArrayList<Integer>(),env);
+		return env;
+	}
+	
+	protected abstract void buildRoutes(ArrayList<Integer> route, HashMap<String,int[]> environment);	
+	protected abstract void buildEnvironment(HashMap<String,Type> environment);
+	
 	
 	public abstract Type type();
 	
@@ -26,8 +41,13 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		public Type type() {
 			return type;
 		}
-		public void buildEnvironment(Map<String,Type> environment) {
+		protected void buildEnvironment(HashMap<String,Type> environment) {
 			
+		}
+
+		protected void buildRoutes(ArrayList<Integer> route,
+				HashMap<String, int[]> environment) {
+
 		}
 		public String toString() {
 			return type.toString();
@@ -45,7 +65,23 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.params = new ArrayList<Pair<Pattern, String>>(params);
 		}
 		
-		public void buildEnvironment(Map<String,Type> environment) {
+		protected void buildRoutes(ArrayList<Integer> route,
+				HashMap<String, int[]> environment) {
+			int i=0;
+			for(Pair<Pattern,String> p : params) {
+				Pattern pattern = p.first();
+				String var = p.second();
+				route.add(i);
+				pattern.buildRoutes(route, environment);
+				if(var != null) {
+					environment.put(var, toIntArray(route));
+				}
+				route.remove(route.size()-1);
+				i=i+1;
+			}
+		}
+		
+		protected void buildEnvironment(HashMap<String,Type> environment) {
 			for(Pair<Pattern,String> p : params) {
 				Pattern pattern = p.first();
 				pattern.buildEnvironment(environment);
@@ -85,5 +121,13 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				return r + ")";
 			}			
 		}
+	}
+	
+	private static int[] toIntArray(ArrayList<Integer> items) {
+		int[] r = new int[items.size()];
+		for(int i=0;i!=r.length;++i) {
+			r[i] = items.get(i);
+		}
+		return r;
 	}
 }
