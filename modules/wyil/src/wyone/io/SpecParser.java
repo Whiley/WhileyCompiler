@@ -259,7 +259,7 @@ public class SpecParser {
 			
 			Expr rhs = parseAddSubExpression();			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.TypeEquals) {
+		} else if (index < tokens.size() && tokens.get(index).text.equals("is")) {
 			return parseTypeEquals(lhs,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.BitwiseAnd) {
 			match(SpecLexer.BitwiseAnd.class);			
@@ -290,7 +290,7 @@ public class SpecParser {
 	}
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
-		match(SpecLexer.TypeEquals.class);			
+		matchKeyword("is");			
 		skipWhiteSpace();
 		
 		Type type = parseType();

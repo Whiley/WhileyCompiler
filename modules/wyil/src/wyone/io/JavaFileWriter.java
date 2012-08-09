@@ -144,7 +144,12 @@ public class JavaFileWriter {
 			lin += "(" + linN + ")";
 		}
 		myOut(1, lin);		
-		myOut(1, "public final static int K_" + decl.name + " = " + termCounter++ + ";\n");		
+		myOut(1, "public final static int K_" + decl.name + " = " + termCounter++ + ";");	
+		if(decl.params.isEmpty()) {
+			myOut(1, "public final static Automaton.State " + decl.name
+					+ " = new Automaton.State(K_" + decl.name + ");");
+		}
+		myOut();
 	}
 	
 	private static int termCounter = 0;
@@ -186,45 +191,48 @@ public class JavaFileWriter {
 		// NOW PRINT REAL CODE				
 		String mangle = nameMangle(decl.types, used, decl.name);
 		myOut(1,"public static boolean rewrite" + mangle + "(final int index, final Automaton automaton) {");
-		myOut(2,"boolean changed = false;");
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		for(Pair<TypeDecl,String> td : decl.types){			
 			environment.put(td.second(), td.first().type);
 		}
 		boolean defCase = false;
 		int casNo = 1;
-//		for(RuleDecl rd : decl.rules) {
-//			for(Pair<String,Expr> p : rd.lets) {				
-//				Pair<List<String>,String> r = translate(p.second(),environment);
-//				write(r.first(),2);
-//				indent(2);
-//				Type t = p.second().attribute(TypeAttr.class).type;
-//				environment.put(p.first(), t);
-//				out.print("final ");
-//				write(t);
-//				myOut(" " + p.first() + " = " + r.second() + ";");								
-//			}
-//			if(rd.condition != null && defCase) {
-//				// this indicates a syntax error since it means we've got a
-//				// default case before a conditional case.
-//				// syntaxError("case cannot be reached",specfile.filename,rd);
-//				throw new RuntimeException("Unreachable condition in " + decl.name);
-//			} else if(rd.condition != null) {
-//				Pair<List<String>,String> r = translate(rd.condition, environment);
-//				write(r.first(),2);
-//				myOut(2, "if(" + r.second() + ") {");
-//				r = translate(rd.result, environment);
-//				write(r.first(),3);
-//				myOut(3, "return " + r.second() + ";");				
-//				myOut(2, "}");
-//			} else {
-//				defCase = true;				
-//				Pair<List<String>,String> r = translate(rd.result, environment);
-//				write(r.first(),2);
-//				myOut(2, "return " + r.second() + ";");				
-//			}
-//		}		
-		myOut(2, "return changed;");
+		for(RuleDecl rd : decl.rules) {
+			for(Pair<String,Expr> p : rd.lets) {				
+				Pair<List<String>,String> r = translate(p.second(),environment);
+				write(r.first(),2);
+				indent(2);
+				Type t = p.second().attribute(TypeAttr.class).type;
+				environment.put(p.first(), t);
+				out.print("final ");
+				write(t);
+				myOut(" " + p.first() + " = " + r.second() + ";");								
+			}
+			if(rd.condition != null && defCase) {
+				// this indicates a syntax error since it means we've got a
+				// default case before a conditional case.
+				// syntaxError("case cannot be reached",specfile.filename,rd);
+				throw new RuntimeException("Unreachable condition in " + decl.name);
+			} else if(rd.condition != null) {
+				Pair<List<String>,String> r = translate(rd.condition, environment);
+				write(r.first(),2);
+				myOut(2, "if(" + r.second() + ") {");
+				r = translate(rd.result, environment);
+				write(r.first(),3);
+				myOut(3, "automaton.states[index] = " + r.second() + ";");
+				myOut(3, "return true;");
+				myOut(2, "}");
+			} else {
+				defCase = true;				
+				Pair<List<String>,String> r = translate(rd.result, environment);
+				write(r.first(),2);
+				myOut(2, "automaton.states[index] = " + r.second() + ";");
+				myOut(2, "return true;");		
+			}
+		}		
+		if(!defCase) {
+			myOut(2, "return false;");
+		}
 		myOut(1, "}\n");
 	}
 	
@@ -747,8 +755,8 @@ public class JavaFileWriter {
 		myOut(1, "public static void main(String[] args) throws IOException {");
 		myOut(2, "try {");		
 		myOut(3, "PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA);");
-		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
+		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");

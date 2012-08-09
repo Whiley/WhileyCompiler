@@ -150,10 +150,7 @@ public interface Expr extends SyntacticElement {
 			public String toString() { return ".."; }
 		},
 		TYPEEQ{
-			public String toString() { return "~=="; }
-		},
-		TYPEIMPLIES {
-			public String toString() { return "~=>"; }
+			public String toString() { return "is"; }
 		}
 	};
 	

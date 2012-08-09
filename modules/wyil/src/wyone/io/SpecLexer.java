@@ -379,10 +379,6 @@ public class SpecLexer {
 			} else {
 				return new RightAngle(pos++);
 			}
-		} else if (c == '~' && (pos + 1) < input.length()
-				&& input.charAt(pos + 1) == '=') {
-			pos += 2;
-			return new TypeEquals(pos - 2);
 		} else if(c == UC_LESSEQUALS) {
 			return new LessEquals(""+UC_LESSEQUALS,pos++);
 		} else if(c == UC_GREATEREQUALS) {
@@ -426,7 +422,8 @@ public class SpecLexer {
 		"bool",			
 		"string",
 		"void",			
-		"if",		
+		"if",
+		"is",
 		"as",
 		"term",
 		"terms",
@@ -631,9 +628,6 @@ public class SpecLexer {
 	}
 	public static class GreaterEquals extends Token {
 		public GreaterEquals(String text, int pos) { super(text,pos);	}
-	}
-	public static class TypeEquals extends Token {
-		public TypeEquals(int pos) { super("~=",pos);	}
 	}
 	public static class None extends Token {
 		public None(String text, int pos) { super(text,pos);	}
