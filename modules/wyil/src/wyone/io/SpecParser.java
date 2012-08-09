@@ -486,7 +486,7 @@ public class SpecParser {
 				&& token instanceof Identifier
 				&& tokens.get(index + 1) instanceof LeftBrace) {				
 			// must be a method invocation			
-			return parseInvokeExpr();
+			return parseConstructorExpr();
 		} else if (token.text.equals("null")) {
 			matchKeyword("null");			
 			return new Expr.Constant(null,
@@ -790,7 +790,7 @@ public class SpecParser {
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
-	private Expr.Invoke parseInvokeExpr() {		
+	private Expr.Constructor parseConstructorExpr() {		
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
@@ -810,7 +810,7 @@ public class SpecParser {
 			args.add(e);		
 		}
 		match(RightBrace.class);		
-		return new Expr.Invoke(name.text, args, sourceAttr(start,index-1));
+		return new Expr.Constructor(name.text, args, sourceAttr(start,index-1));
 	}
 	
 	private Expr parseString() {

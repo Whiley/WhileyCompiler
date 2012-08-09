@@ -16,7 +16,7 @@ public class TypeChecker {
 	private final HashMap<String,Type.Fun> functions = new HashMap<String,Type.Fun>();
 	
 	// globals contains the list of global variables
-	private final HashMap<String,Type> globals = new HashMap();
+	//private final HashMap<String,Type> globals = new HashMap();
 	
 	public void check(SpecFile spec) {
 		filename = spec.filename;
@@ -29,12 +29,8 @@ public class TypeChecker {
 				hierarchy.put(cd.name,new HashSet<String>(children));
 			} else if(d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
-				if(td.params.isEmpty()) {
-					globals.put(td.name, Type.T_TERM(td.name));
-				} else {
-					Type.Fun ft = Type.T_FUN(Type.T_TERM(td.name),td.params);
-					functions.put(td.name, ft);
-				}
+				Type.Fun ft = Type.T_FUN(Type.T_TERM(td.name),td.params);
+				functions.put(td.name, ft);
 			}
 		}
 		
@@ -72,8 +68,8 @@ public class TypeChecker {
 	        type = resolve((Variable) e, environment);
 	      } else if (e instanceof UnOp) {
 	        type = resolve((UnOp) e, environment);
-	      } else if (e instanceof Invoke) {
-	        type = resolve((Invoke) e, environment);
+	      } else if (e instanceof Constructor) {
+	        type = resolve((Constructor) e, environment);
 	      } else if(e instanceof TypeConst) {
 	    	type = resolve((TypeConst)e, environment);  
 	      } else if (e instanceof BinOp) {
@@ -123,14 +119,12 @@ public class TypeChecker {
 
 	  protected Type resolve(Variable v, HashMap<String,Type> environment) {
 	    Type v_t = environment.get(v.var);
-	    if (v_t != null) { return v_t; }
-	    v_t = globals.get(v.var);
-	    if (v_t != null) { return v_t; }
+	    if (v_t != null) { return v_t; }	    
 	    syntaxError("variable not defined", filename, v);
 	    return null;
 	  }
 
-	  protected Type resolve(Invoke ivk, HashMap<String,Type> environment) {
+	  protected Type resolve(Constructor ivk, HashMap<String,Type> environment) {
 	    
 		  ArrayList<Type> types = new ArrayList<Type>();
 

@@ -107,6 +107,7 @@ public class JavaFileWriter {
 		myOut("import wyautl.io.PrettyAutomataReader;");
 		myOut("import wyautl.io.PrettyAutomataWriter;");
 		myOut("import wyautl.lang.Automaton;");
+		myOut("import static wyautl.lang.Automata.*;");
 		myOut();
 	}
 	
@@ -194,11 +195,13 @@ public class JavaFileWriter {
 			for(int i=0;i!=route.length;++i) {
 				String c = e.getKey() + "_" + i;
 				if((i+1) == route.length) {
-					c = e.getKey();
-				}
-				myOut(2,"Automaton.State " + c
+					myOut(2,"int " + e.getKey()
+							+ " = " + last + ".children[" + route[i] + "];");
+				} else {
+					myOut(2,"Automaton.State " + c
 						+ " = states[" + last + ".children[" + route[i] + "]];");
-				last = c;
+					last = c;
+				}
 			}
 			
 			myOut();
@@ -228,14 +231,16 @@ public class JavaFileWriter {
 				myOut(2, "if(" + r.second() + ") {");
 				r = translate(rd.result, environment);
 				write(r.first(),3);
-				myOut(3, "automaton.states[index] = " + r.second() + ";");
+				myOut(2, "int idx = " + r.second() + ";");
+				myOut(2, "automaton.states[index] = automaton.states[idx];");				
 				myOut(3, "return true;");
 				myOut(2, "}");
 			} else {
 				defCase = true;				
 				Pair<List<String>,String> r = translate(rd.result, environment);
 				write(r.first(),2);
-				myOut(2, "automaton.states[index] = " + r.second() + ";");
+				myOut(2, "int idx = " + r.second() + ";");
+				myOut(2, "automaton.states[index] = automaton.states[idx];");
 				myOut(2, "return true;");		
 			}
 		}		
@@ -342,6 +347,7 @@ public class JavaFileWriter {
 	}
 	
 	public Pair<List<String>,String> translate(Expr expr, HashMap<String,Type> environment) {
+		System.err.println("TRANSLATING: " + expr + " (" + expr.getClass().getName() + ")");
 		if(expr instanceof Constant) {
 			return translate((Constant)expr);			
 		} else if(expr instanceof Variable) {
@@ -354,8 +360,8 @@ public class JavaFileWriter {
 			return translate((NaryOp)expr, environment);
 		} else if(expr instanceof Comprehension) {
 			return translate((Comprehension)expr, environment);
-		} else if(expr instanceof Invoke) {
-			return translate((Invoke)expr, environment);
+		} else if(expr instanceof Constructor) {
+			return translate((Constructor)expr, environment);
 		} else if(expr instanceof TermAccess) {
 			return translate((TermAccess)expr, environment);
 		} else {		
@@ -455,7 +461,7 @@ public class JavaFileWriter {
 		Pair<List<String>,String> lhs = translate(src, environment);
 		String mangle = type2HexStr(rhs);
 		typeTests.add(rhs);
-		return new Pair(lhs.first(),"typeof_" + mangle + "(" + lhs.second() +")");		
+		return new Pair(lhs.first(),"typeof_" + mangle + "(" + lhs.second() +",automaton)");		
 	}
 	
 	public Pair<List<String>,String> translate(NaryOp nop, HashMap<String,Type> environment) {				
@@ -487,9 +493,9 @@ public class JavaFileWriter {
 		return new Pair(inserts,r);
 	}
 	
-	public  Pair<List<String>,String> translate(Invoke ivk, HashMap<String,Type> environment) {
+	public  Pair<List<String>,String> translate(Constructor ivk, HashMap<String,Type> environment) {
+		String r = "inplaceAppend(automaton,new Automaton.State(K_" + ivk.name;
 		List<String> inserts = Collections.EMPTY_LIST;
-		String r = ivk.name + "(";
 		boolean firstTime=true;
 		for(Expr e : ivk.arguments) {
 			Pair<List<String>,String> es = translate(e, environment);
@@ -501,7 +507,7 @@ public class JavaFileWriter {
 			r += es.second();
 		}
 		
-		return new Pair(inserts,r + ")");
+		return new Pair(inserts,r + "))");
 	}
 	
 	public  Pair<List<String>,String> translate(Comprehension c, HashMap<String,Type> environment) {

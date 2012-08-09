@@ -803,6 +803,21 @@ public final class Automata {
 	 * @param automaton
 	 * @param states
 	 */
+	public static int inplaceAppend(Automaton automaton, State state) {
+		State[] ostates = automaton.states;
+		State[] nstates = new State[ostates.length+1];
+		System.arraycopy(ostates,0,nstates,0,ostates.length);
+		nstates[ostates.length] = state;
+		automaton.states = nstates;
+		return ostates.length;	
+	}
+	
+	/**
+	 * Append all given states in place onto the given automaton.
+	 * 
+	 * @param automaton
+	 * @param states
+	 */
 	public static void inplaceAppendAll(Automaton automaton, State... states) {
 		State[] ostates = automaton.states;
 		State[] nstates = new State[ostates.length+states.length];

@@ -44,7 +44,7 @@ rewrite Or({Term} xs):
     => let ys = { x | x in xs, x ~= Or({*}) },
            zs = { z | y in ys, z in y#0 }
        in Or(((xs - ys) - {False}) + zs)
-	
+
 class Term as Bool | And | Or | Not
 
 

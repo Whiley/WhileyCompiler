@@ -273,11 +273,11 @@ public interface Expr extends SyntacticElement {
 		SUBLIST					
 	}
 	
-	public static class Invoke extends SyntacticElement.Impl implements Expr {
+	public static class Constructor extends SyntacticElement.Impl implements Expr {
 		public final String name;		
 		public final List<Expr> arguments;
 		
-		public Invoke(String name, List<Expr> arguments,
+		public Constructor(String name, List<Expr> arguments,
 				Attribute... attributes) {
 			super(attributes);
 			this.name = name;			
