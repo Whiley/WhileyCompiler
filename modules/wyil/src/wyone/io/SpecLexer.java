@@ -291,14 +291,20 @@ public class SpecLexer {
 	}
 	
 	public Token scanOperator() {		
-		char c = input.charAt(pos);
 		
-		if(c == '.') {
-			if((pos+1) < input.length() && input.charAt(pos+1) == '.') {
-				pos += 2;
+		char c = input.charAt(pos);
+
+		if(c == '.') {			
+			pos++;
+			if(pos < input.length() && input.charAt(pos) == '.') {
+				pos++;
+				if(pos < input.length() && input.charAt(pos) == '.') {
+					pos++;
+					return new DotDotDot(pos-3);
+				}
 				return new DotDot(pos-2);
 			} else {
-				return new Dot(pos++);
+				return new Dot(pos-1);
 			}
 		} else if(c == ',') {
 			return new Comma(pos++);
@@ -550,6 +556,9 @@ public class SpecLexer {
 	}
 	public static class Comma extends Token {
 		public Comma(int pos) { super(",",pos);	}
+	}
+	public static class DotDotDot extends Token {
+		public DotDotDot(int pos) { super("...",pos);	}
 	}
 	public static class Colon extends Token {
 		public Colon(int pos) { super(":",pos);	}

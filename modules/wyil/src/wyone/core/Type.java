@@ -22,7 +22,7 @@ import java.util.*;
 
 public abstract class Type {
 
-	public static final Any T_ANY = new Any();
+	public static final AnyTerm T_ANYTERM = new AnyTerm();
 	public static final Void T_VOID = new Void();
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
@@ -37,12 +37,12 @@ public abstract class Type {
 		return get(new List(element));
 	}
 	
-	public static Term T_TERM(String name, Type... params) {
-		return get(new Term(name,params));
+	public static Term T_TERM(String name, boolean unbounded, Reference... params) {
+		return get(new Term(name,unbounded,params));
 	}
 	
-	public static Term T_TERM(String name, Collection<Type> params) {
-		return get(new Term(name,params));
+	public static Term T_TERM(String name, boolean unbounded, Collection<Reference> params) {
+		return get(new Term(name,unbounded,params));
 	}
 	
 	public static Record T_RECORD(Map<String,Type> types) {
@@ -68,7 +68,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static boolean isSubtype(Type t1, Type t2, Map<String,java.util.Set<String>> hierarchy) {
-		if (t1 == t2 || (t2 instanceof Void) || (t1 instanceof Any)
+		if (t1 == t2 || (t2 instanceof Void) || (t1 instanceof AnyTerm && t2 instanceof Reference)
 				|| (t1 instanceof Real && t2 instanceof Int)) {
 			return true;
 		} else if (t1 instanceof List && t2 instanceof List) {
@@ -114,13 +114,14 @@ public abstract class Type {
 				return true;
 			} else {
 				java.util.Set<String> children = hierarchy.get(n1.name);
-				if(children != null) {
-					for (String n1child : children) {
-						if (isSubtype(Type.T_TERM(n1child), n2, hierarchy)) {
-							return true;
-						}
-					}
-				}
+				return true; // TODO: need to do this properly
+//				if(children != null) {
+//					for (String n1child : children) {
+//						if (isSubtype(Type.T_TERM(n1child), n2, hierarchy)) {
+//							return true;
+//						}
+//					}
+//				}
 			}
 		} 
 
@@ -164,16 +165,9 @@ public abstract class Type {
 
 		// FIXME: we can do better for named types by searching the hierarchy!
 		
-		return T_ANY;
+		return T_ANYTERM;
 	}
 	
-	public static final class Any  extends Type {
-		private Any() {			
-		}		
-		public String toString() {
-			return "*";
-		}
-	}
 	public static final class Void  extends Type {
 		private Void() {}
 		public String toString() {
@@ -204,19 +198,35 @@ public abstract class Type {
 			return "string";
 		}
 	}
-	public static final class Term  extends Type {		
-		public final String name;
-		public final ArrayList<Type> params;
-		private Term(String name, Collection<Type> params) {			
-			this.name = name;
-			this.params = new ArrayList<Type>(params);
+
+	public static abstract class Reference extends Type {}
+	
+	public static final class AnyTerm  extends Reference {
+		private AnyTerm() {			
+		}		
+		public String toString() {
+			return "*";
 		}
-		private Term(String name, Type... params) {			
+	}
+	
+	public static final class Term  extends Reference {		
+		public final String name;
+		public final ArrayList<Reference> params;
+		public final boolean unbounded;
+		
+		private Term(String name, boolean unbounded,
+				Collection<Reference> params) {			
 			this.name = name;
-			this.params = new ArrayList<Type>();
-			for(Type t : params) {
+			this.params = new ArrayList<Reference>(params);
+			this.unbounded = unbounded;
+		}
+		private Term(String name, boolean unbounded, Reference... params) {			
+			this.name = name;
+			this.params = new ArrayList<Reference>();
+			for(Reference t : params) {
 				this.params.add(t);
 			}
+			this.unbounded = unbounded;
 		}		
 		public int hashCode() {
 			return name.hashCode() + params.hashCode();
@@ -224,7 +234,7 @@ public abstract class Type {
 		public boolean equals(Object o) {
 			if(o instanceof Term) {
 				Term t = (Term) o;
-				return t.name.equals(name) && params.equals(t.params);
+				return t.name.equals(name) && params.equals(t.params) && unbounded == t.unbounded;
 			}
 			return false;
 		}
@@ -240,6 +250,9 @@ public abstract class Type {
 					}
 					firstTime=false;
 					r += t;
+				}
+				if(unbounded) {
+					r += "...";
 				}
 				return r + ")";
 			}			
@@ -376,7 +389,7 @@ public abstract class Type {
 	}
 	
 	public static String type2str(Type t) {
-		if(t instanceof Any) {
+		if(t instanceof AnyTerm) {
 			return "*";
 		} else if(t instanceof Void) {
 			return "V";

@@ -30,15 +30,15 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	protected abstract void buildEnvironment(HashMap<String,Type> environment);
 	
 	
-	public abstract Type type();
+	public abstract Type.Reference type();
 	
 	public static final class Leaf extends Pattern {
-		public final Type type;
+		public final Type.Reference type;
 		
-		public Leaf(Type type) {
+		public Leaf(Type.Reference type) {
 			this.type = type;
 		}
-		public Type type() {
+		public Type.Reference type() {
 			return type;
 		}
 		protected void buildEnvironment(HashMap<String,Type> environment) {
@@ -92,12 +92,12 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}
 		}
 		
-		public Type type() {
-			Type[] ps = new Type[params.size()];
+		public Type.Reference type() {
+			Type.Reference[] ps = new Type.Reference[params.size()];
 			for (int i = 0; i != ps.length; ++i) {
 				ps[i] = params.get(i).first().type();
 			}
-			return Type.T_TERM(name, ps);
+			return Type.T_TERM(name, false, ps);
 		}
 		
 		public String toString() {			

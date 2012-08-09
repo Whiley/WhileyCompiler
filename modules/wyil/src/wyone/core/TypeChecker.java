@@ -12,8 +12,8 @@ public class TypeChecker {
 	// The hierarchy holds, for each type, the set of its children
 	private final HashMap<String,Set<String>> hierarchy = new HashMap<String,Set<String>>();
 	
-	// functions map function names to their function types.
-	private final HashMap<String,Type.Fun> functions = new HashMap<String,Type.Fun>();
+	// maps constructor names to their declared types.
+	private final HashMap<String,Type.Term> constructors = new HashMap<String,Type.Term>();
 	
 	// globals contains the list of global variables
 	//private final HashMap<String,Type> globals = new HashMap();
@@ -29,8 +29,7 @@ public class TypeChecker {
 				hierarchy.put(cd.name,new HashSet<String>(children));
 			} else if(d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
-				Type.Fun ft = Type.T_FUN(Type.T_TERM(td.name),td.params);
-				functions.put(td.name, ft);
+				constructors.put(td.name, Type.T_TERM(td.name,td.unbounded,td.params));
 			}
 		}
 		
@@ -136,11 +135,13 @@ public class TypeChecker {
 		  // Second, we assume it's not a local variable and look outside the
 		  // scope.
 		  
-		  Type.Fun funtype = functions.get(ivk.name);
-		  if(funtype == null) {
+		  // TODO: type check parameter arguments
+		  
+		  Type.Term type = constructors.get(ivk.name);
+		  if(type == null) {
 			  syntaxError("function not declared",filename,ivk);
 		  }
-		  return funtype.ret;
+		  return type;
 	  }
 	 
 	  protected Type resolve(TypeConst tc, HashMap<String,Type> environment)  {
@@ -157,7 +158,7 @@ public class TypeChecker {
 		Type t = resolve(uop.mhs, environment);
 	    switch (uop.op) {
 	    case LENGTHOF:
-	      checkSubtype(Type.T_SET(Type.T_ANY), t, uop.mhs);
+	      checkSubtype(Type.T_SET(Type.T_ANYTERM), t, uop.mhs);
 	      Type.SetList sl = (Type.SetList) t;
 	      return sl.element();
 	    case NEG:
@@ -186,10 +187,10 @@ public class TypeChecker {
 
 	    switch (bop.op) {
 	    case ADD: {
-	      if (Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t, hierarchy)
-	          || Type.isSubtype(Type.T_SET(Type.T_ANY), rhs_t, hierarchy)) {
-	        checkSubtype(Type.T_SET(Type.T_ANY), lhs_t, bop.lhs);
-	        checkSubtype(Type.T_SET(Type.T_ANY), rhs_t, bop.rhs);
+	      if (Type.isSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, hierarchy)
+	          || Type.isSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, hierarchy)) {
+	        checkSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, bop.lhs);
+	        checkSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, bop.rhs);
 	        // need to update operation
 	        bop.op = BOp.UNION;
 	        return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
@@ -199,10 +200,10 @@ public class TypeChecker {
 	      return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 	    }
 	    case SUB: {
-	    	if (Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t, hierarchy)
-	    			|| Type.isSubtype(Type.T_SET(Type.T_ANY), rhs_t, hierarchy)) {
-	    		checkSubtype(Type.T_SET(Type.T_ANY), lhs_t, bop.lhs);
-	    		checkSubtype(Type.T_SET(Type.T_ANY), rhs_t, bop.rhs);
+	    	if (Type.isSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, hierarchy)
+	    			|| Type.isSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, hierarchy)) {
+	    		checkSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, bop.lhs);
+	    		checkSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, bop.rhs);
 	    		// need to update operation
 	    		bop.op = BOp.DIFFERENCE;
 	    		return lhs_t;
@@ -236,13 +237,13 @@ public class TypeChecker {
 	      return Type.T_BOOL;
 	    }
 	    case ELEMENTOF:
-	    	 checkSubtype(Type.T_SET(Type.T_ANY),rhs_t,bop.rhs);
+	    	 checkSubtype(Type.T_SET(Type.T_ANYTERM),rhs_t,bop.rhs);
 	    	 Type element = ((Type.SetList)rhs_t).element();
 	    	 checkSubtype(element,lhs_t,bop.lhs);
 	    	 return Type.T_BOOL;	    
 	    case INTERSECTION : {				
-				checkSubtype(Type.T_SET(Type.T_ANY), lhs_t, bop.lhs);
-				checkSubtype(Type.T_SET(Type.T_ANY), rhs_t, bop.rhs);
+				checkSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, bop.lhs);
+				checkSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, bop.rhs);
 				// FIXME: should really determine glb of lhs and rhs
 				return lhs_t;				
 			}
@@ -270,7 +271,7 @@ public class TypeChecker {
 	      Type src_t = resolve(src, environment);
 	      Type start_t = resolve(start, environment);
 	      Type end_t = resolve(end, environment);
-	      checkSubtype(Type.T_LIST(Type.T_ANY), src_t, src);
+	      checkSubtype(Type.T_LIST(Type.T_ANYTERM), src_t, src);
 	      checkSubtype(Type.T_INT, start_t, start);
 	      checkSubtype(Type.T_INT, end_t, end);
 	      return src_t;
@@ -297,7 +298,7 @@ public class TypeChecker {
 				  syntaxError("variable " + src.first() + " already declared",filename,comp);
 			  }
 			  Type t = resolve(src.second(),nenv);
-			  checkSubtype(Type.T_SET(Type.T_ANY),t, src.second());
+			  checkSubtype(Type.T_SET(Type.T_ANYTERM),t, src.second());
 			  Type.SetList sl = (Type.SetList) t;
 			  nenv.put(src.first(), sl.element());
 		  }

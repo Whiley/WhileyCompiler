@@ -55,23 +55,41 @@ public class SpecParser {
 		int start = index;
 		matchKeyword("term");
 		String name = matchIdentifier().text;
-		ArrayList<Type> params = new ArrayList<Type>();
-		
-		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			match(LeftBrace.class);
+		ArrayList<Type.Reference> params = new ArrayList<Type.Reference>();
+		boolean sequential = true;
+		boolean unbounded = false;
+		if (index < tokens.size()
+				&& (tokens.get(index) instanceof LeftBrace || tokens.get(index) instanceof LeftCurly)) {
+			if(tokens.get(index) instanceof LeftBrace) {
+				match(LeftBrace.class);
+			} else {
+				match(LeftCurly.class);
+				sequential=false;
+			}
 			boolean firstTime=true;
-			while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace || tokens
+							.get(index) instanceof RightCurly || tokens
+							.get(index) instanceof DotDotDot)) {
 				if(!firstTime) {
 					match(Comma.class);						
 				}
 				firstTime=false;							
-				params.add(parseType());
+				params.add(parseReferenceType());
 			}
-			match(RightBrace.class);
+			if (index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
+				match(DotDotDot.class);
+				unbounded = true;
+			}
+			if(sequential) {
+				match(RightBrace.class);
+			} else {
+				match(RightCurly.class);
+			}
 		}
 		
 		matchEndLine();
-		return new TermDecl(name, params, sourceAttr(start,index-1));
+		return new TermDecl(name, sequential, unbounded, params, sourceAttr(start,index-1));
 	}
 		
 	private Decl parseClassDecl() {
@@ -109,7 +127,7 @@ public class SpecParser {
 		
 		if (token instanceof Star) {
 			match(Star.class);
-			return new Pattern.Leaf(Type.T_ANY);
+			return new Pattern.Leaf(Type.T_ANYTERM);
 		} else {
 			return parsePatternTerm();
 		}
@@ -827,10 +845,7 @@ public class SpecParser {
 		Token token = tokens.get(index);
 		Type t;
 		
-		if(token instanceof Star) {
-			match(Star.class);
-			t = Type.T_ANY;
-		} else if(token.text.equals("int")) {
+		if(token.text.equals("int")) {
 			matchKeyword("int");			
 			t = Type.T_INT;
 		} else if(token.text.equals("real")) {
@@ -911,23 +926,43 @@ public class SpecParser {
 			skipWhiteSpace();
 			match(RightSquare.class);
 			t = Type.T_LIST(t);
-		} else {		
-			Identifier id = matchIdentifier();
-			ArrayList<Type> types = new ArrayList<Type>();
-			if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-				match(LeftBrace.class);				
-				types.add(parseType());
-				while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
-					match(Comma.class);
-					types.add(parseType());
-				}
-				match(RightBrace.class);
-			}
-			t = Type.T_TERM(id.text,types);	
-		}		
+		} else {
+			t = parseReferenceType();
+		}
 		
 		return t;
 	}		
+	
+	private Type.Reference parseReferenceType() {
+
+		skipWhiteSpace();
+		checkNotEof();
+		int start = index;
+		Token token = tokens.get(index);		
+
+		if(token instanceof Star) {
+			match(Star.class);
+			return Type.T_ANYTERM;
+		} else {		
+			Identifier id = matchIdentifier();
+			ArrayList<Type.Reference> types = new ArrayList<Type.Reference>();
+			boolean unbounded=false;
+			if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+				match(LeftBrace.class);				
+				types.add(parseReferenceType());
+				while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+					match(Comma.class);
+					types.add(parseReferenceType());
+				}
+				if(index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
+					match(DotDotDot.class);
+					unbounded=true;
+				}
+				match(RightBrace.class);
+			}
+			return Type.T_TERM(id.text,unbounded,types);	
+		}		
+	}
 	
 	private boolean isTypeStart() {
 		checkNotEof();

@@ -801,7 +801,7 @@ public final class Automata {
 	 * Append all given states in place onto the given automaton.
 	 * 
 	 * @param automaton
-	 * @param states
+	 * @param states	
 	 */
 	public static int inplaceAppend(Automaton automaton, State state) {
 		State[] ostates = automaton.states;

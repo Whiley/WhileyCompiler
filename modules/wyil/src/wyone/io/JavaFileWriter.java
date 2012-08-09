@@ -281,7 +281,7 @@ public class JavaFileWriter {
 	}
 	
 	public void write(String name, List<RewriteDecl> rules) {
-		List<Type> params = null;
+		List<Type.Reference> params = null;
 		// FIXME: this is a hack
 		for (Decl d : spDecl) {
 			if(d instanceof TermDecl) {
@@ -588,7 +588,7 @@ public class JavaFileWriter {
 	}
 	
 	public String typeStr(Type type) {
-		if (type instanceof Type.Any || type instanceof Type.Term) {
+		if (type instanceof Type.AnyTerm || type instanceof Type.Term) {
 			return "int";
 		} else if(type instanceof Type.Int) {
 			return "BigInteger";
@@ -646,7 +646,7 @@ public class JavaFileWriter {
 		myOut(2, "Automaton.State state = automaton.states[index];");
 		myOut(3, "int[] children = state.children;");
 		
-		if(type instanceof Type.Any) {
+		if(type instanceof Type.AnyTerm) {
 			myOut(2, "return true;");
 		} else if(type instanceof Type.Term) {
 			Type.Term tt = (Type.Term) type;
