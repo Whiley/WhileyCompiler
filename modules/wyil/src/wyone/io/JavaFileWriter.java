@@ -231,15 +231,15 @@ public class JavaFileWriter {
 				myOut(2, "if(" + r.second() + ") {");
 				r = translate(rd.result, environment);
 				write(r.first(),3);
-				myOut(2, "int idx = " + r.second() + ";");
-				myOut(2, "automaton.states[index] = automaton.states[idx];");				
+				myOut(3, "final int idx = " + r.second() + ";");
+				myOut(3, "automaton.states[index] = automaton.states[idx];");				
 				myOut(3, "return true;");
 				myOut(2, "}");
 			} else {
 				defCase = true;				
 				Pair<List<String>,String> r = translate(rd.result, environment);
 				write(r.first(),2);
-				myOut(2, "int idx = " + r.second() + ";");
+				myOut(2, "final int idx = " + r.second() + ";");
 				myOut(2, "automaton.states[index] = automaton.states[idx];");
 				myOut(2, "return true;");		
 			}
@@ -496,14 +496,10 @@ public class JavaFileWriter {
 	public  Pair<List<String>,String> translate(Constructor ivk, HashMap<String,Type> environment) {
 		String r = "inplaceAppend(automaton,new Automaton.State(K_" + ivk.name;
 		List<String> inserts = Collections.EMPTY_LIST;
-		boolean firstTime=true;
 		for(Expr e : ivk.arguments) {
 			Pair<List<String>,String> es = translate(e, environment);
-			inserts = concat(inserts,es.first());
-			if(!firstTime) {
-				r += ", ";
-			}
-			firstTime=false;
+			inserts = concat(inserts,es.first());			
+			r += ", ";			
 			r += es.second();
 		}
 		
@@ -592,16 +588,14 @@ public class JavaFileWriter {
 	}
 	
 	public String typeStr(Type type) {
-		if(type instanceof Type.Any) {
-			return "Object";
+		if (type instanceof Type.Any || type instanceof Type.Term) {
+			return "int";
 		} else if(type instanceof Type.Int) {
 			return "BigInteger";
 		} else if(type instanceof Type.Bool) {
 			return "boolean";
 		} else if(type instanceof Type.Strung) {
 			return "String";
-		} else if(type instanceof Type.Term) {
-			return ((Type.Term)type).name;
 		} else if(type instanceof Type.List){
 			return "ArrayList";
 		} else if(type instanceof Type.Set){
