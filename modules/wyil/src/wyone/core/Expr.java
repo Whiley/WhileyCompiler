@@ -362,5 +362,5 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
 		}
-	}			
+	}		
 }

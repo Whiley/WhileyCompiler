@@ -170,7 +170,7 @@ public class JavaFileWriter {
 	public void write(RewriteDecl decl, HashSet<String> used) {
 		// FIRST COMMENT CODE FROM SPEC FILE
 		indent(1);out.print("// rewrite " + decl.name + "(");
-		for(Pair<TypeDecl,String> td : decl.types){
+		for(Pair<TypeDecl,String> td : decl.patterns){
 			// why doesn't this loop have a firsttime flag
 			// and a separator string
 			out.print(td.first().type);
@@ -189,10 +189,10 @@ public class JavaFileWriter {
 		}
 		
 		// NOW PRINT REAL CODE				
-		String mangle = nameMangle(decl.types, used, decl.name);
+		String mangle = nameMangle(decl.patterns, used, decl.name);
 		myOut(1,"public static boolean rewrite" + mangle + "(final int index, final Automaton automaton) {");
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		for(Pair<TypeDecl,String> td : decl.types){			
+		for(Pair<TypeDecl,String> td : decl.patterns){			
 			environment.put(td.second(), td.first().type);
 		}
 		boolean defCase = false;
@@ -290,11 +290,11 @@ public class JavaFileWriter {
 		myOut(2, "// Now rewrite me");
 		HashSet<String> used = new HashSet<String>();
 		for(RewriteDecl r : rules) {
-			String mangle = nameMangle(r.types, used, r.name);
+			String mangle = nameMangle(r.patterns, used, r.name);
 			indent(2);out.print("if(");
 			int idx=0;
 			boolean firstTime=true;
-			for(Pair<TypeDecl,String> t : r.types) {
+			for(Pair<TypeDecl,String> t : r.patterns) {
 				if(!firstTime) {
 					out.print(" && ");
 				}

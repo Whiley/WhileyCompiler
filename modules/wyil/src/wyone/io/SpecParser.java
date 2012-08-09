@@ -96,24 +96,31 @@ public class SpecParser {
 		int start = index;
 		matchKeyword("rewrite");
 		String name = matchIdentifier().text;
-		ArrayList<Pair<TypeDecl,String>> params = new ArrayList();
+		ArrayList<Pattern> params = new ArrayList();
 		match(LeftBrace.class);
 		boolean firstTime=true;
 		while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
 			if(!firstTime) {
 				match(Comma.class);
 			}
-			int pstart = index;
 			firstTime=false;
-			Type type = parseType();
-			String param = matchIdentifier().text;
-			params.add(new Pair<TypeDecl,String>(new TypeDecl(type,sourceAttr(pstart,index-1)),param));
+			params.add(parsePatternMatch());
 		}
 		match(RightBrace.class);
 		match(Colon.class);
 		matchEndLine();
 		List<RuleDecl> rules = parseRuleBlock(1);
 		return new RewriteDecl(name,params,rules,sourceAttr(start,index-1));
+	}
+	
+	public Pattern parsePatternMatch() {
+		int pstart = index;
+		Type type = parseType();
+		if (index < tokens.size() && tokens.get(index) instanceof Identifier) {
+			// FIXME: add route
+			String param = matchIdentifier().text;
+		}
+		return new TypeDecl(type, sourceAttr(pstart, index - 1));
 	}
 	
 	public List<RuleDecl> parseRuleBlock(int indent) {

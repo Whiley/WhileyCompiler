@@ -38,14 +38,14 @@ public class SpecFile {
 	
 	public static class RewriteDecl extends SyntacticElement.Impl implements Decl {
 		public final String name;		
-		public final ArrayList<Pair<TypeDecl,String>> types;
+		public final ArrayList<Pattern> patterns;
 		public final ArrayList<RuleDecl> rules;
-		public RewriteDecl(String n, Collection<Pair<TypeDecl,String>> types, 
+		public RewriteDecl(String n, Collection<Pattern> types, 
 				Collection<RuleDecl> rules,
 				Attribute... attributes) {
 			super(attributes);
 			this.name = n;
-			this.types = new ArrayList(types);
+			this.patterns = new ArrayList(types);
 			this.rules = new ArrayList<RuleDecl>(rules);
 		}		
 	}		
