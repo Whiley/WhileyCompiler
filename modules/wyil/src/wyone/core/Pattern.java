@@ -2,29 +2,66 @@ package wyone.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import wyone.util.Pair;
 import wyone.util.SyntacticElement;
 
-public class Pattern extends SyntacticElement.Impl {
+public abstract class Pattern extends SyntacticElement.Impl {
 	
-	public static final Any T_ANY = new Any();	
+	public Pattern(Attribute... attributes) {
+		super(attributes);
+	}
+	
+	public abstract void buildEnvironment(Map<String,Type> environment);
+	
+	public abstract Type type();
+	
+	public static final class Leaf extends Pattern {
+		public final Type type;
 		
-	public static final class Any extends Pattern {
-		private Any() {			
-		}		
-		public String toString() {
-			return "*";
+		public Leaf(Type type) {
+			this.type = type;
 		}
+		public Type type() {
+			return type;
+		}
+		public void buildEnvironment(Map<String,Type> environment) {
+			
+		}
+		public String toString() {
+			return type.toString();
+		}		
 	}
 	
 	public static final class Term  extends Pattern {		
 		public final String name;
 		public final ArrayList<Pair<Pattern,String>> params;
 
-		private Term(String name, Collection<Pair<Pattern,String>> params) {			
+		public Term(String name, Collection<Pair<Pattern, String>> params,
+				Attribute... attributes) {
+			super(attributes);
 			this.name = name;
-			this.params = new ArrayList<Pair<Pattern,String>>(params);
+			this.params = new ArrayList<Pair<Pattern, String>>(params);
+		}
+		
+		public void buildEnvironment(Map<String,Type> environment) {
+			for(Pair<Pattern,String> p : params) {
+				Pattern pattern = p.first();
+				pattern.buildEnvironment(environment);
+				String var = p.second();
+				if(var != null) {
+					environment.put(var,pattern.type());
+				}
+			}
+		}
+		
+		public Type type() {
+			Type[] ps = new Type[params.size()];
+			for (int i = 0; i != ps.length; ++i) {
+				ps[i] = params.get(i).first().type();
+			}
+			return Type.T_TERM(name, ps);
 		}
 		
 		public String toString() {			

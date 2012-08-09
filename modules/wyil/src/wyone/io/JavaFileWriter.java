@@ -84,10 +84,10 @@ public class JavaFileWriter {
 		for (Decl d : spDecl) {
 			if(d instanceof RewriteDecl) {
 				RewriteDecl rd = (RewriteDecl) d;
-				List<RewriteDecl> ls = dispatchTable.get(rd.name);
+				List<RewriteDecl> ls = dispatchTable.get(rd.pattern.name);
 				if(ls == null) {
 					ls =  new ArrayList<RewriteDecl>();
-					dispatchTable.put(rd.name, ls);	
+					dispatchTable.put(rd.pattern.name, ls);	
 				}
 				ls.add(rd);				
 			}
@@ -169,14 +169,7 @@ public class JavaFileWriter {
 	
 	public void write(RewriteDecl decl, HashSet<String> used) {
 		// FIRST COMMENT CODE FROM SPEC FILE
-		indent(1);out.print("// rewrite " + decl.name + "(");
-		for(Pair<TypeDecl,String> td : decl.patterns){
-			// why doesn't this loop have a firsttime flag
-			// and a separator string
-			out.print(td.first().type);
-			out.print(" ");
-			out.print(td.second());
-		}
+		indent(1);out.print("// rewrite " + decl.pattern);
 		myOut("):");
 		String lin;
 		for(RuleDecl rd : decl.rules) {
@@ -189,12 +182,10 @@ public class JavaFileWriter {
 		}
 		
 		// NOW PRINT REAL CODE				
-		String mangle = nameMangle(decl.patterns, used, decl.name);
+		String mangle = nameMangle(decl.pattern, used);
 		myOut(1,"public static boolean rewrite" + mangle + "(final int index, final Automaton automaton) {");
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		for(Pair<TypeDecl,String> td : decl.patterns){			
-			environment.put(td.second(), td.first().type);
-		}
+		decl.pattern.buildEnvironment(environment);		
 		boolean defCase = false;
 		int casNo = 1;
 		for(RuleDecl rd : decl.rules) {
@@ -212,7 +203,7 @@ public class JavaFileWriter {
 				// this indicates a syntax error since it means we've got a
 				// default case before a conditional case.
 				// syntaxError("case cannot be reached",specfile.filename,rd);
-				throw new RuntimeException("Unreachable condition in " + decl.name);
+				throw new RuntimeException("Unreachable condition in " + decl.pattern.name);
 			} else if(rd.condition != null) {
 				Pair<List<String>,String> r = translate(rd.condition, environment);
 				write(r.first(),2);
@@ -289,21 +280,14 @@ public class JavaFileWriter {
 		
 		myOut(2, "// Now rewrite me");
 		HashSet<String> used = new HashSet<String>();
-		for(RewriteDecl r : rules) {
-			String mangle = nameMangle(r.patterns, used, r.name);
-			indent(2);out.print("if(");
-			int idx=0;
-			boolean firstTime=true;
-			for(Pair<TypeDecl,String> t : r.patterns) {
-				if(!firstTime) {
-					out.print(" && ");
-				}
-				firstTime=false;				
-				typeTests.add(t.first().type);
-				out.print("typeof_" + type2HexStr(t.first().type) + "(children[" + idx++ + "],automaton)");							
-			}
+		for (RewriteDecl r : rules) {
+			Type type = r.pattern.type();
+			String mangle = nameMangle(r.pattern, used);
+			indent(2);
+			out.print("if(typeof_" + type2HexStr(type) + "(index,automaton)");
+			typeTests.add(type);
 			myOut(") {");
-			myOut(3,"changed |= rewrite" + mangle + "(index,automaton);");								
+			myOut(3, "changed |= rewrite" + mangle + "(index,automaton);");
 			myOut(2, "}");
 		}
 		myOut(2, "");
@@ -610,21 +594,14 @@ public class JavaFileWriter {
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
 	
-	protected String nameMangle(Collection<Pair<TypeDecl,String>> types, HashSet<String> used, String name) {
+	protected String nameMangle(Pattern pattern, HashSet<String> used) {
 		String mangle = null;
-		String _mangle = nameMangle(types);
+		String _mangle = type2HexStr(pattern.type());
 		int i=0;
 		do {			
 			mangle = _mangle + "_" + i++;
-		} while(used.contains(name + mangle));
-		used.add(name + mangle);
-		return mangle;
-	}
-	protected String nameMangle(Collection<Pair<TypeDecl,String>> types) {
-		String mangle = "_";
-		for(Pair<TypeDecl,String> td : types) {	
-			mangle = mangle + type2HexStr(td.first().type);			
-		}		
+		} while(used.contains(mangle));
+		used.add(mangle);
 		return mangle;
 	}
 	

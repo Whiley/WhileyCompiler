@@ -36,19 +36,18 @@ public class SpecFile {
 		}				
 	}
 	
-	public static class RewriteDecl extends SyntacticElement.Impl implements Decl {
-		public final String name;		
-		public final ArrayList<Pattern> patterns;
+	public static class RewriteDecl extends SyntacticElement.Impl implements
+			Decl {
+		public final Pattern.Term pattern;
 		public final ArrayList<RuleDecl> rules;
-		public RewriteDecl(String n, Collection<Pattern> types, 
-				Collection<RuleDecl> rules,
+
+		public RewriteDecl(Pattern.Term pattern, Collection<RuleDecl> rules,
 				Attribute... attributes) {
 			super(attributes);
-			this.name = n;
-			this.patterns = new ArrayList(types);
+			this.pattern = pattern;
 			this.rules = new ArrayList<RuleDecl>(rules);
-		}		
-	}		
+		}
+	}
 	
 	public static class RuleDecl extends SyntacticElement.Impl implements SyntacticElement {
 		public final ArrayList<Pair<String,Expr>> lets;

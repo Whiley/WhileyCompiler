@@ -47,9 +47,7 @@ public class TypeChecker {
 	
 	public void check(RewriteDecl rd) {			
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		for(Pair<TypeDecl,String> td : rd.patterns){			
-			environment.put(td.second(), td.first().type);
-		}
+		rd.pattern.buildEnvironment(environment);
 		
 		for(RuleDecl rule : rd.rules) {
 			check(rule,environment);

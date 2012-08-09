@@ -95,32 +95,49 @@ public class SpecParser {
 	private Decl parseRewriteDecl() {
 		int start = index;
 		matchKeyword("rewrite");
-		String name = matchIdentifier().text;
-		ArrayList<Pattern> params = new ArrayList();
-		match(LeftBrace.class);
-		boolean firstTime=true;
-		while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
-			if(!firstTime) {
-				match(Comma.class);
-			}
-			firstTime=false;
-			params.add(parsePatternMatch());
-		}
-		match(RightBrace.class);
+		Pattern.Term pattern = parsePatternTerm();
 		match(Colon.class);
 		matchEndLine();
 		List<RuleDecl> rules = parseRuleBlock(1);
-		return new RewriteDecl(name,params,rules,sourceAttr(start,index-1));
+		return new RewriteDecl(pattern,rules,sourceAttr(start,index-1));
 	}
 	
-	public Pattern parsePatternMatch() {
-		int pstart = index;
-		Type type = parseType();
-		if (index < tokens.size() && tokens.get(index) instanceof Identifier) {
-			// FIXME: add route
-			String param = matchIdentifier().text;
+	public Pattern parsePattern() {
+		skipWhiteSpace();
+		checkNotEof();
+		Token token = tokens.get(index);
+		
+		if (token instanceof Star) {
+			match(Star.class);
+			return new Pattern.Leaf(Type.T_ANY);
+		} else {
+			return parsePatternTerm();
 		}
-		return new TypeDecl(type, sourceAttr(pstart, index - 1));
+	}
+	
+	public Pattern.Term parsePatternTerm() {
+		int start = index;
+		String name = matchIdentifier().text;
+		ArrayList<Pair<Pattern, String>> params = new ArrayList();
+		match(LeftBrace.class);
+		boolean firstTime = true;
+		while (index < tokens.size()
+				&& !(tokens.get(index) instanceof RightBrace)) {
+			if (!firstTime) {
+				match(Comma.class);
+			}
+			firstTime = false;
+			Pattern p = parsePattern();
+			String n = null;
+			if (index < tokens.size()
+					&& tokens.get(index) instanceof Identifier) {
+				n = matchIdentifier().text;
+			}
+			params.add(new Pair<Pattern, String>(p, n));
+		}
+		match(RightBrace.class);
+
+		return new Pattern.Term(name, params, sourceAttr(start, index - 1));
 	}
 	
 	public List<RuleDecl> parseRuleBlock(int indent) {
