@@ -414,6 +414,8 @@ public class JavaFileWriter {
 	public Pair<List<String>,String> translate(UnOp uop, HashMap<String,Type> environment) {
 		Pair<List<String>,String> mhs = translate(uop.mhs, environment);
 		switch(uop.op) {
+		case LENGTHOF:
+			return new Pair(mhs.first(), "BigInteger.valueOf(" + mhs.second()+ ".length)");
 		case NEG:
 			return new Pair(mhs.first(), mhs.second()+ ".negate()");
 		case NOT:
