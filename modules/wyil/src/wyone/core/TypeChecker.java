@@ -151,8 +151,7 @@ public class TypeChecker {
 	    switch (uop.op) {
 	    case LENGTHOF:
 	      checkSubtype(Type.T_LISTANY, t, uop.mhs);
-	      Type.SetList sl = (Type.SetList) t;
-	      return sl.element();
+	      return Type.T_INT;
 	    case NEG:
 	      checkSubtype(Type.T_REAL, t, uop.mhs);
 	      return t;

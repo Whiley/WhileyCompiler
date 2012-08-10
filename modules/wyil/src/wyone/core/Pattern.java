@@ -88,12 +88,17 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 		
 		protected void buildEnvironment(HashMap<String,Type> environment) {
-			for(Pair<Pattern,String> p : params) {
+			for(int i=0;i!=params.size();++i) {
+				Pair<Pattern,String> p = params.get(i);
 				Pattern pattern = p.first();
 				pattern.buildEnvironment(environment);
 				String var = p.second();
 				if(var != null) {
-					environment.put(var,pattern.type());
+					if(unbound && (i+1) == params.size()) {
+						environment.put(var,Type.T_LIST(pattern.type()));
+					} else {
+						environment.put(var,pattern.type());	
+					}
 				}
 			}
 		}

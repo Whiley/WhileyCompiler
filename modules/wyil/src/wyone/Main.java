@@ -145,6 +145,7 @@ public class Main {
 			ans = parser.parse();
 			new TypeChecker().check(ans);
 			
+			return ans;	
 			
 		} catch(SyntaxError e) {
 			outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
@@ -152,8 +153,9 @@ public class Main {
 			if(optBool("-verbose")) {
 				e.printStackTrace(System.err);
 			}
+			
+			return null;
 		}
-		return ans;
 	}					
 	
 	/**
