@@ -325,7 +325,12 @@ public class SpecLexer {
 		} else if(c == '}') {
 			return new RightCurly(pos++);
 		} else if(c == '+') {
-			return new Plus(pos++);
+			pos++;
+			if(pos < input.length() && input.charAt(pos) == '+') {
+				return new PlusPlus(pos++);
+			} else {
+				return new Plus(pos-1);
+			}
 		} else if(c == '-') {			
 			return new Minus(pos++);									
 		} else if(c == '#') {
@@ -592,6 +597,9 @@ public class SpecLexer {
 	}
 	public static class Plus extends Token {
 		public Plus(int pos) { super("+",pos);	}
+	}
+	public static class PlusPlus extends Token {
+		public PlusPlus(int pos) { super("++",pos);	}
 	}
 	public static class Minus extends Token {
 		public Minus(int pos) { super("-",pos);	}

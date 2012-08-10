@@ -254,6 +254,9 @@ public abstract class Type {
 			for(Type p : st.params){
 				r += type2str(p);
 			}
+			if(st.unbound) {
+				r += ".";
+			}
 			return r;
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);

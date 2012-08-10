@@ -108,6 +108,7 @@ public class JavaFileWriter {
 		myOut("import wyautl.io.PrettyAutomataWriter;");
 		myOut("import wyautl.lang.Automaton;");
 		myOut("import static wyautl.lang.Automata.*;");
+		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
 	
@@ -458,7 +459,9 @@ public class JavaFileWriter {
 		case GT:
 			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>0");			
 		case GTEQ:
-			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>=0");			
+			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>=0");
+		case APPEND:
+			return new Pair(inserts,"append(" + lhs.second()+ "," + rhs.second() + ")");
 //		case ELEMENTOF:
 //			return new Pair(inserts,rhs.second() + ".contains(" + lhs.second() + ")");			
 //		case UNION:
@@ -502,11 +505,20 @@ public class JavaFileWriter {
 	public  Pair<List<String>,String> translate(Constructor ivk, HashMap<String,Type> environment) {
 		String r = "inplaceAppend(automaton,new Automaton.State(K_" + ivk.name;
 		List<String> inserts = Collections.EMPTY_LIST;
-		for(Expr e : ivk.arguments) {
-			Pair<List<String>,String> es = translate(e, environment);
-			inserts = concat(inserts,es.first());			
-			r += ", ";			
-			r += es.second();
+		if(!ivk.arguments.isEmpty()) {
+			r += ", append(";
+			boolean firstTime=true;
+			for(Expr e : ivk.arguments) {
+				Pair<List<String>,String> es = translate(e, environment);
+				inserts = concat(inserts,es.first());			
+				if(!firstTime) {
+					r += ", ";
+				} else {
+					firstTime=false;
+				}
+				r += es.second();
+			}
+			r += ")";
 		}
 		
 		return new Pair(inserts,r + "))");

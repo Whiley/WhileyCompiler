@@ -17,8 +17,8 @@ rewrite And{Bool b, Term... xs}:
     => False(), if b is False
     => And(xs)
 
-//rewrite And{And{Term...xs}, Term... ys}:
-//    => And(xs ++ ys)
+rewrite And{And{Term...xs}, Term... ys}:
+    => And(xs ++ ys)
 
 rewrite And(Term t):
     => t

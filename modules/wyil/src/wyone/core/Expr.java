@@ -127,8 +127,11 @@ public interface Expr extends SyntacticElement {
 		},
 		GTEQ{
 			public String toString() { return ">="; }
-		},		
-		LISTRANGE{
+		},
+		APPEND{
+			public String toString() { return "++"; }
+		},
+		RANGE{
 			public String toString() { return ".."; }
 		},
 		TYPEEQ{

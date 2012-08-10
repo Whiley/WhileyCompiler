@@ -344,6 +344,14 @@ public class SpecParser {
 			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
+		} else if (index < tokens.size() && tokens.get(index) instanceof PlusPlus) {
+			// wrong precidence
+			match(PlusPlus.class);
+			skipWhiteSpace();
+			
+			Expr rhs = parseAddSubExpression();
+			return new Expr.BinOp(Expr.BOp.APPEND, lhs, rhs, sourceAttr(start,
+					index - 1));
 		} 	
 		
 		return lhs;

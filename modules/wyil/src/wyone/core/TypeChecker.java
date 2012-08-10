@@ -205,7 +205,12 @@ public class TypeChecker {
 	      checkSubtype(Type.T_BOOL, lhs_t, bop.lhs);
 	      checkSubtype(Type.T_BOOL, rhs_t, bop.rhs);
 	      return Type.T_BOOL;
-	    }	   
+	    }	  
+	    case APPEND: {
+	    	checkSubtype(Type.T_LISTANY, lhs_t, bop.lhs);
+		    checkSubtype(Type.T_LISTANY, rhs_t, bop.rhs);
+		    return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+	    }
 	    case TYPEEQ:{
 	    	checkSubtype(lhs_t, rhs_t, bop.lhs);
 	    	if(bop.lhs instanceof Variable) {
