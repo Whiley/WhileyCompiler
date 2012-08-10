@@ -1,0 +1,85 @@
+// ==================================================
+// Theory of Values
+// ==================================================
+
+term True
+term False
+class Bool as True | False
+
+// ==================================================
+// Theory of Logical Connectives
+// ==================================================
+
+// --- Logical And ---
+term And{Term...}
+
+rewrite And{Bool b, Term... xs}:
+    => False(), if b is False
+    => And(xs)
+
+rewrite And(Term t):
+    => t
+
+rewrite And():
+    => True()
+
+// --- Logical Or ---
+term Or{Term...}
+
+rewrite Or{Bool b, Term... xs}:
+    => True(), if b is True
+    => Or(xs)
+
+rewrite Or(Term t):
+    => t
+
+rewrite Or():
+    => False()
+
+// --- Logical Not ---
+term Not(Term)
+
+rewrite Not(Bool b):
+    => True(), if b is False
+    => False()
+
+rewrite Not(Not(* x)):
+    => x
+
+// rewrite Not(And(Term... xs)):
+
+// rewrite Not(Or(Term... xs)):
+
+// ==================================================
+// Theory of Equality
+// ==================================================
+
+term Num
+term Eq{Expr,Expr}
+term Ne{Expr,Expr}
+
+rewrite Not(Eq{Expr x,Expr y}):
+    => Ne(x,y)
+
+rewrite Not(Ne{Expr x,Expr y}):
+    => Eq(x,y)
+
+// ==================================================
+// Theory of Inequality
+// ==================================================
+
+term Le(Expr,Expr)
+term Lt(Expr,Expr)
+
+rewrite Not(Le(Expr x,Expr y)):
+    => Lt(y,x)
+
+rewrite Not(Lt(Expr x,Expr y)):
+    => Le(y,x)
+
+// ==================================================
+// Combinator
+// ==================================================
+
+class Term as Bool | And | Or | Not | Eq | Ne | Le | Lt
+class Expr as Num

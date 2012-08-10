@@ -359,7 +359,6 @@ public class JavaFileWriter {
 	}
 	
 	public Pair<List<String>,String> translate(Expr expr, HashMap<String,Type> environment) {
-		System.err.println("TRANSLATING: " + expr + " (" + expr.getClass().getName() + ")");
 		if(expr instanceof Constant) {
 			return translate((Constant)expr);			
 		} else if(expr instanceof Variable) {
@@ -630,49 +629,66 @@ public class JavaFileWriter {
 		}
 	}
 	
-	protected void writeTypeTest(Type type, HashSet<Type> worklist,HashMap<String,Set<String>> hierarchy) {
+	protected void writeTypeTest(Type type, HashSet<Type> worklist,
+			HashMap<String, Set<String>> hierarchy) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle + "(int index, Automaton automaton) {");
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(int index, Automaton automaton) {");
 		myOut(2, "Automaton.State state = automaton.states[index];");
 		myOut(2, "int[] children = state.children;");
-		
-		if(type instanceof Type.AnyTerm) {
+
+		if (type instanceof Type.AnyTerm) {
 			myOut(2, "return true;");
-		} else if(type instanceof Type.Term) {
+		} else if (type instanceof Type.Term) {
 			Type.Term tt = (Type.Term) type;
-			HashSet<String> expanded = new HashSet<String>(); 
-			expand(tt.name,hierarchy,expanded);					
-			indent(2);out.print("if(");
-			boolean firstTime=true;
-			for(String n : expanded) {
-				if(!firstTime) {
+			HashSet<String> expanded = new HashSet<String>();
+			expand(tt.name, hierarchy, expanded);
+			indent(2);
+			out.print("if(");
+			boolean firstTime = true;
+			for (String n : expanded) {
+				if (!firstTime) {
 					myOut();
-					indent(2);out.print("   || state.kind == K_" + n);
+					indent(2);
+					out.print("   || state.kind == K_" + n);
 				} else {
-					firstTime=false;
+					firstTime = false;
 					out.print("state.kind == K_" + n);
 				}
-			}			
+			}
 			myOut(") {");
-			for(int i=0;i!=tt.params.size();++i) {
-				Type pt = tt.params.get(i);				
+			int min = tt.params.size();
+			if (tt.unbound) {
+				myOut(3, "if(children.length < " + (min - 1)
+						+ ") { return false; }");
+			} else {
+				myOut(3, "if(children.length != " + min + ") { return false; }");
+			}
+			for (int i = 0; i != tt.params.size(); ++i) {
+				Type pt = tt.params.get(i);
 				String pt_mangle = type2HexStr(pt);
-				if(tt.unbound && (i+1) == tt.params.size()) {
+				if (tt.unbound && (i + 1) == tt.params.size()) {
 					myOut(3, "for(int i=" + i + ";i!=children.length;++i) {");
-					myOut(4, "if(!typeof_" + pt_mangle + "(children[i],automaton)) { return false; }");
+					myOut(4, "if(!typeof_" + pt_mangle
+							+ "(children[i],automaton)) { return false; }");
 					myOut(3, "}");
 				} else {
-					myOut(3, "if(children.length <= " + i + " || !typeof_" + pt_mangle + "(children[" + i +"],automaton)) { return false; }");													
+					myOut(3, "if(!typeof_" + pt_mangle + "(children[" + i
+							+ "],automaton)) { return false; }");
 				}
-				if(typeTests.add(pt)) {	worklist.add(pt); }
+				if (typeTests.add(pt)) {
+					worklist.add(pt);
+				}
 			}
 			myOut(3, "return true;");
 			myOut(2, "}");
-			myOut(2, "return false;");											
+			myOut(2, "return false;");
 		} else {
-			throw new RuntimeException("internal failure --- type test not implemented (" + type + ")");
-		}		
+			throw new RuntimeException(
+					"internal failure --- type test not implemented (" + type
+							+ ")");
+		}
 		myOut(1, "}");
 		myOut();
 	}

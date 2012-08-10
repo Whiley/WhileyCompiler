@@ -137,7 +137,8 @@ public class SpecParser {
 		int start = index;
 		String name = matchIdentifier().text;
 		boolean sequential = true;
-		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+		if (index < tokens.size()
+				&& (tokens.get(index) instanceof LeftBrace || tokens.get(index) instanceof LeftCurly)) {
 			ArrayList<Pair<Pattern, String>> params = new ArrayList();
 			if(tokens.get(index) instanceof LeftBrace) {
 				match(LeftBrace.class);
@@ -148,7 +149,8 @@ public class SpecParser {
 			boolean firstTime = true;
 			boolean unbound = false;
 			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace)) {
+					&& !(tokens.get(index) instanceof RightBrace)
+					&& !(tokens.get(index) instanceof RightCurly)) {
 				if (unbound) {
 					syntaxError("... must be last match", tokens.get(index));
 				}
