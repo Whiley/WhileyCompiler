@@ -64,11 +64,11 @@ term Num
 term Equal{Expr,Expr}
 term NotEqual{Expr,Expr}
 
-//rewrite Equal(Expr x, Expr y):
-//    => True(), if x == y
+rewrite Equal(Expr x, Expr y):
+    => True(), if x == y
 
-//rewrite NotEqual(Expr x, Expr y):
-//    => False(), if x == y
+rewrite NotEqual(Expr x, Expr y):
+    => False(), if x == y
 
 rewrite Not(Equal{Expr x,Expr y}):
     => NotEqual(x,y)
@@ -83,23 +83,23 @@ rewrite Not(NotEqual{Expr x,Expr y}):
 term LessThan(Expr,Expr)
 term LessThanEq(Expr,Expr)
 
-//rewrite LessThan(Expr x, Expr y):
-//    => False(), if x == y
+rewrite LessThan(Expr x, Expr y):
+    => False(), if x == y
 
-//rewrite And{LessThanEq(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
-//    => And{Equal(Expr x, Expr y),xs}, if x == y && y == v
+rewrite And{LessThanEq(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
+    => And(Equal(x,y),xs), if x == y && y == v
 
-//rewrite And{LessThanEq(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
-//    => And{LessThanEq(Expr x, Expr v),xs}, if y == u
+rewrite And{LessThanEq(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
+    => And(LessThanEq(x,v),xs), if y == u
 
-//rewrite And{LessThan(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
-//    => And{LessThan(Expr x, Expr v),xs}, if y == u
+rewrite And{LessThan(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
+    => And(LessThan(x,v),xs), if y == u
 
-//rewrite And{LessThanEq(Expr x, Expr y), LessThan(Expr u, Expr v),Term... xs}:
-//    => And{LessThan(Expr x, Expr v),xs}, if y == u
+rewrite And{LessThanEq(Expr x, Expr y), LessThan(Expr u, Expr v),Term... xs}:
+    => And(LessThan(x,v),xs), if y == u
 
-//rewrite And{LessThan(Expr x, Expr y), LessThan(Expr u, Expr v),Term... xs}:
-//    => And{LessThan(Expr x, Expr v),xs}, if y == u
+rewrite And{LessThan(Expr x, Expr y), LessThan(Expr u, Expr v),Term... xs}:
+    => And(LessThan(x,v),xs), if y == u
 
 rewrite Not(LessThanEq(Expr x,Expr y)):
     => LessThan(y,x)
@@ -149,8 +149,8 @@ term SubSet(Expr,Expr)
 term SubSetEq(Expr,Expr)
 term SizeOf(Set)
 
-//rewrite SubSet(Set(Expr... xs),Set(Expr... ys)):
-//    => False(), if |xs| >= |ys|
+rewrite SubSet(Set(Expr... xs),Set(Expr... ys)):
+    => False(), if |xs| >= |ys|
 
 //rewrite SubSetEq(Set(Expr... xs),Set(Expr... ys)):
 //    => False(), if |xs| > |ys|

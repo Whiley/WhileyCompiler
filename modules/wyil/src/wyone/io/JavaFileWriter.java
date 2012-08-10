@@ -444,9 +444,11 @@ public class JavaFileWriter {
 		case OR:
 			return new Pair(inserts,lhs.second() + " || " + rhs.second() + "");
 		case EQ:
-			return new Pair(inserts,lhs.second() + ".equals(" + rhs.second() + ")");						
+			// FIXME: support lists as well!
+			return new Pair(inserts,lhs.second() + " == " + rhs.second());						
 		case NEQ:
-			return new Pair(inserts,"!" + lhs.second() + ".equals(" + rhs.second() + ")");			
+			// FIXME: support lists as well!
+			return new Pair(inserts,lhs.second() + " != " + rhs.second());			
 		case LT:
 			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")<0");			
 		case LTEQ:
