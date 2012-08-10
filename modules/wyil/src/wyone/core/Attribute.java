@@ -22,13 +22,5 @@ public interface Attribute {
 		public TypeAttr(Type type) {
 			this.type = type;
 		}
-	}
-	
-	public static final class FunAttr implements Attribute {
-		public final Type.Fun type;
-
-		public FunAttr(Type.Fun type) {
-			this.type = type;
-		}
-	}
+	}	
 }

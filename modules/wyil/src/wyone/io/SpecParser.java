@@ -136,17 +136,32 @@ public class SpecParser {
 	public Pattern.Term parsePatternTerm() {
 		int start = index;
 		String name = matchIdentifier().text;
+		boolean sequential = true;
 		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 			ArrayList<Pair<Pattern, String>> params = new ArrayList();
-			match(LeftBrace.class);
+			if(tokens.get(index) instanceof LeftBrace) {
+				match(LeftBrace.class);
+			} else {
+				match(LeftCurly.class);
+				sequential=false;
+			}						
 			boolean firstTime = true;
+			boolean unbound = true;
 			while (index < tokens.size()
 					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (unbound) {
+					syntaxError("... must be last match", tokens.get(index));
+				}
 				if (!firstTime) {
 					match(Comma.class);
-				}
+				}				
 				firstTime = false;
 				Pattern p = parsePattern();
+				if (index < tokens.size()
+						&& tokens.get(index) instanceof DotDotDot) {
+					match(DotDotDot.class);
+					unbound = true;
+				}
 				String n = null;
 				if (index < tokens.size()
 						&& tokens.get(index) instanceof Identifier) {
@@ -154,11 +169,15 @@ public class SpecParser {
 				}
 				params.add(new Pair<Pattern, String>(p, n));
 			}
-			match(RightBrace.class);
+			if(sequential) {
+				match(RightBrace.class);
+			} else {
+				match(RightCurly.class);
+			}
 
-			return new Pattern.Term(name, params, sourceAttr(start, index - 1));
+			return new Pattern.Term(name, sequential, params, unbound, sourceAttr(start, index - 1));
 		} else {
-			return new Pattern.Term(name,Collections.EMPTY_LIST, sourceAttr(start, index - 1));
+			return new Pattern.Term(name, sequential, Collections.EMPTY_LIST, false, sourceAttr(start, index - 1));
 		}
 	}
 	
@@ -860,65 +879,6 @@ public class SpecParser {
 		} else if(token.text.equals("string")) {
 			matchKeyword("string");
 			t = Type.T_STRING;
-		} else if(token instanceof LeftBrace) {
-			match(LeftBrace.class);
-			skipWhiteSpace();
-			ArrayList<Type> types = new ArrayList<Type>();
-			types.add(parseType());
-			match(Comma.class);
-			skipWhiteSpace();
-			types.add(parseType());
-			checkNotEof();
-			token = tokens.get(index);
-			while(!(token instanceof RightBrace)) {
-				match(Comma.class);
-				skipWhiteSpace();
-				types.add(parseType());
-				checkNotEof();
-				token = tokens.get(index);
-			}
-			match(RightBrace.class);
-			return Type.T_TUPLE(types);
-		} else if(token instanceof LeftCurly) {		
-			match(LeftCurly.class);
-			skipWhiteSpace();
-			t = parseType();			
-			skipWhiteSpace();
-			checkNotEof();
-			if(tokens.get(index) instanceof RightCurly) {
-				// set type
-				match(RightCurly.class);
-				t = Type.T_SET(t);
-			} else {				
-				// record type
-				HashMap<String,Type> types = new HashMap<String,Type>();
-				Token n = matchIdentifier();				
-				if(types.containsKey(n)) {
-					syntaxError("duplicate tuple key",n);
-				}
-				types.put(n.text, t);
-				skipWhiteSpace();
-				checkNotEof();
-				token = tokens.get(index);
-				while(!(token instanceof RightCurly)) {
-					match(Comma.class);
-					skipWhiteSpace();
-					checkNotEof();
-					token = tokens.get(index);
-					Type tmp = parseType();
-					skipWhiteSpace();
-					n = matchIdentifier();
-					skipWhiteSpace();
-					if(types.containsKey(n)) {
-						syntaxError("duplicate tuple key",n);
-					}								
-					types.put(n.text, tmp);					
-					checkNotEof();
-					token = tokens.get(index);								
-				}				
-				match(RightCurly.class);
-				t = Type.T_RECORD(types);				
-			} 
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);
 			skipWhiteSpace();

@@ -22,16 +22,12 @@ import java.util.*;
 
 public abstract class Type {
 
-	public static final AnyTerm T_ANYTERM = new AnyTerm();
 	public static final Void T_VOID = new Void();
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();
-	
-	public static Set T_SET(Type element) {
-		return get(new Set(element));
-	}
+	public static final AnyTerm T_ANYTERM = new AnyTerm();
 	
 	public static List T_LIST(Type element) {
 		return get(new List(element));
@@ -43,18 +39,6 @@ public abstract class Type {
 	
 	public static Term T_TERM(String name, boolean unbounded, Collection<Reference> params) {
 		return get(new Term(name,unbounded,params));
-	}
-	
-	public static Record T_RECORD(Map<String,Type> types) {
-		return get(new Record(types));
-	}
-	
-	public static Tuple T_TUPLE(Collection<Type> types) {
-		return get(new Tuple(types));
-	}
-
-	public static Fun T_FUN(Type ret, Collection<Type> types) {
-		return get(new Fun(ret,types));
 	}
 	
 	/**
@@ -76,37 +60,6 @@ public abstract class Type {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
 			return isSubtype(l1.element, l2.element,hierarchy);
-		} else if (t1 instanceof Set && t2 instanceof Set) {
-			// RULE: S-SET
-			Set l1 = (Set) t1;
-			Set l2 = (Set) t2;
-			return isSubtype(l1.element, l2.element,hierarchy);
-		} else if (t1 instanceof Set && t2 instanceof List) {
-			// This rule surely should not be here
-			Set l1 = (Set) t1;
-			List l2 = (List) t2;
-			HashMap<String, Type> types = new HashMap<String, Type>();
-			types.put("key", Type.T_INT);
-			types.put("value", l2.element);
-			return isSubtype(l1.element, Type.T_RECORD(types),hierarchy);
-		} else if (t1 instanceof Record && t2 instanceof Record) {
-			// RULE: S-DEPTH
-			Record tt1 = (Record) t1;
-			Record tt2 = (Record) t2;
-
-			if (!tt1.types.keySet().equals(tt2.types.keySet())) {
-				// this won't be sufficient in the case of open records.
-				return false;
-			}
-
-			for (Map.Entry<String, Type> e : tt1.types.entrySet()) {
-				Type t = tt2.types.get(e.getKey());
-				if (!isSubtype(e.getValue(), t, hierarchy)) {
-					return false;
-				}
-			}
-
-			return true;
 		} else if (t1 instanceof Term && t2 instanceof Term) {			
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
@@ -147,20 +100,6 @@ public abstract class Type {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
 			return T_LIST(leastUpperBound(l1.element, l2.element, hierarchy));
-		} else if (t1 instanceof Record && t2 instanceof Record) {
-			Record r1 = (Record) t1;
-			Record r2 = (Record) t2;
-
-			if (r1.types.keySet().equals(r2.types.keySet())) {
-				HashMap<String, Type> types = new HashMap<String, Type>();
-				for (Map.Entry<String, Type> e : r2.types.entrySet()) {
-					String key = e.getKey();
-					Type rt2 = e.getValue();
-					Type rt1 = r1.types.get(key);
-					types.put(key, leastUpperBound(rt1, rt2, hierarchy));
-				}
-				return T_RECORD(types);
-			}
 		} 
 
 		// FIXME: we can do better for named types by searching the hierarchy!
@@ -218,7 +157,7 @@ public abstract class Type {
 				Collection<Reference> params) {			
 			this.name = name;
 			this.params = new ArrayList<Reference>(params);
-			this.unbounded = unbounded;
+			this.unbounded = unbounded;			
 		}
 		private Term(String name, boolean unbounded, Reference... params) {			
 			this.name = name;
@@ -285,109 +224,7 @@ public abstract class Type {
 			return "[" + element + "]";			
 		}
 	}
-	public static final class Set extends Type implements SetList {
-		public final Type element;
-		private Set(Type element) {			
-			this.element = element;
-		}
-		public Type element() {
-			return element;
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Set) {
-				Set l = (Set) o;
-				return element.equals(l.element);				
-			}
-			return false;
-		}
-		public int hashCode() {
-			return element.hashCode() * element.hashCode();
-		}
-		public String toString() {
-			return "{" + element + "}";			
-		}
-	}	
-	public static final class Record  extends Type {
-		public final HashMap<String,Type> types;
-		private Record(Map<String,Type> types) {			
-			if(types.size() == 0) {
-				throw new IllegalArgumentException(
-						"Cannot create type tuple with no fields");
-			}
-			this.types = new HashMap<String,Type>(types);
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Record) {
-				Record l = (Record) o;
-				return types.equals(l.types);				
-			}
-			return false;
-		}
-		public int hashCode() {
-			return types.hashCode();
-		}
-	}
-	public static final class Tuple  extends Type {
-		public final ArrayList<Type> types;
-		private Tuple(Collection<Type> types) {			
-			if(types.size() == 0) {
-				throw new IllegalArgumentException(
-						"Cannot create type tuple with no fields");
-			}
-			this.types = new ArrayList<Type>(types);
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Tuple) {
-				Tuple l = (Tuple) o;
-				return types.equals(l.types);				
-			}
-			return false;
-		}
-		public int hashCode() {
-			return types.hashCode();
-		}
-	}	
-	
-	public static final class Fun extends Type {		
-		public final Type ret;
-		public final ArrayList<Type> params;
 		
-		private Fun(Type ret, Type... parameters) {
-			this.ret = ret;			
-			this.params = new ArrayList<Type>();
-			for(Type t : parameters) {
-				this.params.add(t);
-			}
-		}
-		private Fun(Type ret, Collection<Type> parameters) {
-			this.ret = ret;			
-			this.params = new ArrayList<Type>(parameters);			
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Fun) {
-				Fun fun = (Fun) o;				
-				return ret.equals(fun.ret) && params.equals(fun.params);								
-			}
-			return false;
-		}
-		public int hashCode() {
-			return ret.hashCode() + params.hashCode();
-		}
-		public String toString() {
-			String r = "";			
-			r += "(";
-			boolean firstTime=true;
-			for(Type p : params) {
-				if(!firstTime) {
-					r +=",";
-				}
-				firstTime=false;
-				r += p;
-			}
-			return r + ")" + ret;
-		}
-	}
-	
 	public static String type2str(Type t) {
 		if(t instanceof AnyTerm) {
 			return "*";
@@ -402,19 +239,6 @@ public abstract class Type {
 		} else if(t instanceof Type.List) {
 			Type.List st = (Type.List) t;
 			return "[" + type2str(st.element) + "]";
-		} else if(t instanceof Type.Set) {
-			Type.Set st = (Type.Set) t;
-			return "{" + type2str(st.element) + "}";
-		} else if(t instanceof Type.Record) {
-			Type.Record st = (Type.Record) t;
-			ArrayList<String> keys = new ArrayList<String>(st.types.keySet());
-			Collections.sort(keys);
-			String r="(";
-			for(String k : keys) {
-				Type kt = st.types.get(k);
-				r += k + ":" + type2str(kt);
-			}			
-			return r + ")";
 		} else if(t instanceof Type.Term) {
 			Type.Term st = (Type.Term) t;
 			String r = "T" + st.name;

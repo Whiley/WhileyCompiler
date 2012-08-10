@@ -57,12 +57,17 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	public static final class Term  extends Pattern {		
 		public final String name;
 		public final ArrayList<Pair<Pattern,String>> params;
+		public final boolean unbound;
+		public final boolean sequential;
 
-		public Term(String name, Collection<Pair<Pattern, String>> params,
+		public Term(String name, boolean sequential,
+				Collection<Pair<Pattern, String>> params, boolean unbound,
 				Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.params = new ArrayList<Pair<Pattern, String>>(params);
+			this.unbound = unbound;
+			this.sequential = sequential;
 		}
 		
 		protected void buildRoutes(ArrayList<Integer> route,
@@ -97,28 +102,42 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			for (int i = 0; i != ps.length; ++i) {
 				ps[i] = params.get(i).first().type();
 			}
-			return Type.T_TERM(name, false, ps);
+			return Type.T_TERM(name, unbound, ps);
 		}
 		
 		public String toString() {			
 			if(params.isEmpty()) {
 				return name;
 			} else {
-				String r = name + "(";
+				String r = name;
+				if(sequential) {
+					r += "(";
+				} else {
+					r += "{";
+				}
 				boolean firstTime=true;
-				for(Pair<Pattern,String> p : params) {
+				for(int i=0;i!=params.size();++i) {
+					Pair<Pattern,String> p = params.get(i);
 					if(!firstTime) {
 						r += ",";
 					}
 					firstTime=false;
-					String var = p.second();
-					if(var != null) {
-						r += p.first() + " " + var;
-					} else {
-						r += p.first();
+					String var = p.second();					
+					r += p.first();
+					
+					if(unbound) {
+						r += "...";
 					}
+					if(var != null) {
+						r += " " + var;
+					} 				
 				}
-				return r + ")";
+				if(sequential) {
+					r += ")";
+				} else {
+					r += "}";
+				}
+				return r;
 			}			
 		}
 	}
