@@ -58,6 +58,12 @@ term Num
 term Eq{Expr,Expr}
 term Ne{Expr,Expr}
 
+//rewrite Eq(Expr x, Expr y):
+//    => True(), if x == y
+
+//rewrite Ne(Expr x, Expr y):
+//    => False(), if x == y
+
 rewrite Not(Eq{Expr x,Expr y}):
     => Ne(x,y)
 
@@ -71,6 +77,24 @@ rewrite Not(Ne{Expr x,Expr y}):
 term Le(Expr,Expr)
 term Lt(Expr,Expr)
 
+//rewrite Lt(Expr x, Expr y):
+//    => False(), if x == y
+
+//rewrite And{Le(Expr x, Expr y), Le(Expr u, Expr v),Term... xs}:
+//    => And{Eq(Expr x, Expr y),xs}, if x == y && y == v
+
+//rewrite And{Le(Expr x, Expr y), Le(Expr u, Expr v),Term... xs}:
+//    => And{Le(Expr x, Expr v),xs}, if y == u
+
+//rewrite And{Lt(Expr x, Expr y), Le(Expr u, Expr v),Term... xs}:
+//    => And{Lt(Expr x, Expr v),xs}, if y == u
+
+//rewrite And{Le(Expr x, Expr y), Lt(Expr u, Expr v),Term... xs}:
+//    => And{Lt(Expr x, Expr v),xs}, if y == u
+
+//rewrite And{Lt(Expr x, Expr y), Lt(Expr u, Expr v),Term... xs}:
+//    => And{Lt(Expr x, Expr v),xs}, if y == u
+
 rewrite Not(Le(Expr x,Expr y)):
     => Lt(y,x)
 
@@ -78,7 +102,7 @@ rewrite Not(Lt(Expr x,Expr y)):
     => Le(y,x)
 
 // ==================================================
-// Combinator
+// Combined Theories
 // ==================================================
 
 class Term as Bool | And | Or | Not | Eq | Ne | Le | Lt
