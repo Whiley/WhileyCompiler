@@ -192,16 +192,28 @@ public class JavaFileWriter {
 		for(Map.Entry<String,int[]> e : routes.entrySet()) {
 			int[] route = e.getValue();
 			String last = "state";
+			Pattern p = decl.pattern;
 			for(int i=0;i!=route.length;++i) {
+				Pattern.Term t = (Pattern.Term) p;
+				int child = route[i];
+				
 				String c = e.getKey() + "_" + i;
 				if((i+1) == route.length) {
-					myOut(2,"int " + e.getKey()
-							+ " = " + last + ".children[" + route[i] + "];");
+					// last one
+					if(t.isUnbounded(child)) {
+						myOut(2,"int[] " + e.getKey()
+								+ " = Arrays.copyOfRange(" + last + ".children," + child + "," + last + ".children.length);");
+					} else {
+						myOut(2,"int " + e.getKey()
+								+ " = " + last + ".children[" + child + "];");
+					}
 				} else {
 					myOut(2,"Automaton.State " + c
-						+ " = states[" + last + ".children[" + route[i] + "]];");
+						+ " = states[" + last + ".children[" + child + "]];");
 					last = c;
 				}
+				
+				p = t.route(child);
 			}
 			
 			myOut();
@@ -243,7 +255,7 @@ public class JavaFileWriter {
 				myOut(2, "automaton.states[index] = automaton.states[idx];");
 				myOut(2, "return true;");		
 			}
-		}		
+		}				
 		if(!defCase) {
 			myOut(2, "return false;");
 		}
@@ -444,14 +456,14 @@ public class JavaFileWriter {
 			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>0");			
 		case GTEQ:
 			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>=0");			
-		case ELEMENTOF:
-			return new Pair(inserts,rhs.second() + ".contains(" + lhs.second() + ")");			
-		case UNION:
-			return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() + ");addAll(" + rhs.second() + ");}}");
-		case DIFFERENCE:
-			return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() + ");removeAll(" + rhs.second() + ");}}");			
-		case INTERSECTION:
-			return new Pair(inserts,"new HashSet(){{for(Object o : " + lhs.second() + "){if(" + rhs.second() + ".contains(o)){add(o);}}}}");		
+//		case ELEMENTOF:
+//			return new Pair(inserts,rhs.second() + ".contains(" + lhs.second() + ")");			
+//		case UNION:
+//			return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() + ");addAll(" + rhs.second() + ");}}");
+//		case DIFFERENCE:
+//			return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() + ");removeAll(" + rhs.second() + ");}}");			
+//		case INTERSECTION:
+//			return new Pair(inserts,"new HashSet(){{for(Object o : " + lhs.second() + "){if(" + rhs.second() + ".contains(o)){add(o);}}}}");		
 		default:
 			throw new RuntimeException("unknown binary operator encountered: " + bop);
 		}		
@@ -467,16 +479,7 @@ public class JavaFileWriter {
 	public Pair<List<String>,String> translate(NaryOp nop, HashMap<String,Type> environment) {				
 		List<String> inserts = Collections.EMPTY_LIST;
 		String r = null;
-		switch(nop.op) {
-		case SETGEN:
-			r="new HashSet(){{";
-			for(Expr e : nop.arguments) {
-				Pair<List<String>,String> p = translate(e, environment);
-				inserts = concat(inserts,p.first());
-				r = r + "add(" + p.second() + ");";								
-			}
-			r = r + "}}";
-			break;
+		switch(nop.op) {		
 		case LISTGEN:
 			r="new ArrayList(){{";
 			for(Expr e : nop.arguments) {
@@ -506,77 +509,67 @@ public class JavaFileWriter {
 		return new Pair(inserts,r + "))");
 	}
 	
-	public  Pair<List<String>,String> translate(Comprehension c, HashMap<String,Type> environment) {
-		if(c.cop == COp.SOME) {
-			return translateSome(c, environment);
-		} else if(c.cop == COp.SETCOMP){
-			return translateSetComp(c, environment);
-		} else {
-			return null;
-		}
-	}
+//	public Pair<List<String>,String> translateSome(Comprehension c, HashMap<String,Type> environment) {		
+//		ArrayList<String> inserts = new ArrayList<String>();		
+//		String tmp = freshVar();
+//		inserts.add("boolean " + tmp + " = false;");
+//		int l=0;
+//		for(Pair<String,Expr> src : c.sources) {
+//			Pair<List<String>,String> r = translate(src.second(), environment);
+//			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
+//			for(String i : r.first()) {
+//				inserts.add(indentStr(l) + i);
+//			}			
+//			inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
+//					+ src.first() + " : (HashSet<" + typeStr(type.element)
+//					+ ">) " + r.second() + ") {");			
+//		}
+//		Pair<List<String>,String> r = translate(c.condition, environment);
+//		for(String i : r.first()) {
+//			inserts.add(indentStr(l) + i);
+//		}
+//		inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + " = true; break; }");
+//		
+//		for(Pair<String,Expr> src : c.sources) {
+//			inserts.add(indentStr(--l) + "}");
+//		}
+//		return new Pair(inserts,tmp);
+//	}
 	
-	public Pair<List<String>,String> translateSome(Comprehension c, HashMap<String,Type> environment) {		
-		ArrayList<String> inserts = new ArrayList<String>();		
-		String tmp = freshVar();
-		inserts.add("boolean " + tmp + " = false;");
-		int l=0;
-		for(Pair<String,Expr> src : c.sources) {
-			Pair<List<String>,String> r = translate(src.second(), environment);
-			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
-			for(String i : r.first()) {
-				inserts.add(indentStr(l) + i);
-			}			
-			inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
-					+ src.first() + " : (HashSet<" + typeStr(type.element)
-					+ ">) " + r.second() + ") {");			
-		}
-		Pair<List<String>,String> r = translate(c.condition, environment);
-		for(String i : r.first()) {
-			inserts.add(indentStr(l) + i);
-		}
-		inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + " = true; break; }");
-		
-		for(Pair<String,Expr> src : c.sources) {
-			inserts.add(indentStr(--l) + "}");
-		}
-		return new Pair(inserts,tmp);
-	}
-	
-	public Pair<List<String>,String> translateSetComp(Comprehension c, HashMap<String,Type> environment) {
-		ArrayList<String> inserts = new ArrayList<String>();		
-		String tmp = freshVar();
-		inserts.add("HashSet " + tmp + " = new HashSet();");
-		int l=0;
-		for(Pair<String,Expr> src : c.sources) {
-			Pair<List<String>,String> r = translate(src.second(), environment);
-			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
-			for(String i : r.first()) {
-				inserts.add(indentStr(l) + i);
-			}			
-			inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
-					+ src.first() + " : (HashSet<" + typeStr(type.element)
-					+ ">) " + r.second() + ") {");			
-		}
-		Pair<List<String>,String> val = translate(c.value, environment);
-		for(String i : val.first()) {
-			inserts.add(indentStr(l) + i);
-		}
-		if(c.condition != null) {
-			Pair<List<String>,String> r = translate(c.condition, environment);
-			for(String i : r.first()) {
-				inserts.add(indentStr(l) + i);
-			}
-			inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + ".add(" + val.second() + ");}");
-		} else {
-			inserts.add(indentStr(l) + tmp + ".add(" + val.second() + ");");
-		}
-		
-		for(Pair<String,Expr> src : c.sources) {
-			inserts.add(indentStr(--l) + "}");
-		}
-		return new Pair(inserts,tmp);
-	}
+//	public Pair<List<String>,String> translateSetComp(Comprehension c, HashMap<String,Type> environment) {
+//		ArrayList<String> inserts = new ArrayList<String>();		
+//		String tmp = freshVar();
+//		inserts.add("HashSet " + tmp + " = new HashSet();");
+//		int l=0;
+//		for(Pair<String,Expr> src : c.sources) {
+//			Pair<List<String>,String> r = translate(src.second(), environment);
+//			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
+//			for(String i : r.first()) {
+//				inserts.add(indentStr(l) + i);
+//			}			
+//			inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
+//					+ src.first() + " : (HashSet<" + typeStr(type.element)
+//					+ ">) " + r.second() + ") {");			
+//		}
+//		Pair<List<String>,String> val = translate(c.value, environment);
+//		for(String i : val.first()) {
+//			inserts.add(indentStr(l) + i);
+//		}
+//		if(c.condition != null) {
+//			Pair<List<String>,String> r = translate(c.condition, environment);
+//			for(String i : r.first()) {
+//				inserts.add(indentStr(l) + i);
+//			}
+//			inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + ".add(" + val.second() + ");}");
+//		} else {
+//			inserts.add(indentStr(l) + tmp + ".add(" + val.second() + ");");
+//		}
+//		
+//		for(Pair<String,Expr> src : c.sources) {
+//			inserts.add(indentStr(--l) + "}");
+//		}
+//		return new Pair(inserts,tmp);
+//	}
 	
 	public Pair<List<String>,String> translate(TermAccess ta, HashMap<String,Type> environment) {
 		Pair<List<String>,String> src = translate(ta.src, environment);
@@ -598,8 +591,6 @@ public class JavaFileWriter {
 			return "String";
 		} else if(type instanceof Type.List){
 			return "ArrayList";
-		} else if(type instanceof Type.Set){
-			return "HashSet";
 		} 
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
@@ -644,7 +635,7 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle + "(int index, Automaton automaton) {");
 		myOut(2, "Automaton.State state = automaton.states[index];");
-		myOut(3, "int[] children = state.children;");
+		myOut(2, "int[] children = state.children;");
 		
 		if(type instanceof Type.AnyTerm) {
 			myOut(2, "return true;");
@@ -664,45 +655,21 @@ public class JavaFileWriter {
 				}
 			}			
 			myOut(") {");
-			for(int i=0;i!=tt.params.size();++i) {			
+			for(int i=0;i!=tt.params.size();++i) {
 				Type pt = tt.params.get(i);				
 				String pt_mangle = type2HexStr(pt);
-				myOut(3, "if(!typeof_" + pt_mangle + "(children[" + i +"],automaton)) { return false; }");								
-				if(typeTests.add(pt)) {				
-					worklist.add(pt);
+				if(tt.unbound && (i+1) == tt.params.size()) {
+					myOut(3, "for(int i=" + i + ";i!=children.length;++i) {");
+					myOut(4, "if(!typeof_" + pt_mangle + "(children[i],automaton)) { return false; }");
+					myOut(3, "}");
+				} else {
+					myOut(3, "if(children.length <= " + i + " || !typeof_" + pt_mangle + "(children[" + i +"],automaton)) { return false; }");													
 				}
+				if(typeTests.add(pt)) {	worklist.add(pt); }
 			}
 			myOut(3, "return true;");
 			myOut(2, "}");
 			myOut(2, "return false;");											
-		} else if(type instanceof Type.List){
-			Type.List tl = (Type.List) type;
-			mangle = type2HexStr(tl.element());
-			myOut(2, "if(value instanceof ArrayList) {");
-			myOut(3, "ArrayList ls = (ArrayList) value;");
-			myOut(3, "for(Object o : ls) {");
-			myOut(4, "if(!typeof_" + mangle + "(o)) { return false; }");
-			myOut(3, "}");
-			myOut(3, "return true;");
-			myOut(2, "}");
-			myOut(2, "return false;");		
-			if(typeTests.add(tl.element)) {				
-				worklist.add(tl.element);
-			}
-		} else if(type instanceof Type.Set){
-			Type.Set tl = (Type.Set) type;
-			mangle = type2HexStr(tl.element());
-			myOut(2, "if(value instanceof HashSet) {");
-			myOut(3, "HashSet ls = (HashSet) value;");
-			myOut(3, "for(Object o : ls) {");
-			myOut(4, "if(!typeof_" + mangle + "(o)) { return false; }");
-			myOut(3, "}");
-			myOut(3, "return true;");
-			myOut(2, "}");
-			myOut(2, "return false;");
-			if(typeTests.add(tl.element)) {				
-				worklist.add(tl.element);
-			}
 		} else {
 			throw new RuntimeException("internal failure --- type test not implemented (" + type + ")");
 		}		

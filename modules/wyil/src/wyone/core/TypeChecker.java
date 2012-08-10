@@ -76,19 +76,11 @@ public class TypeChecker {
 	      } else if (e instanceof NaryOp) {
 	        type = resolve((NaryOp) e, environment);
 	      } else if(e instanceof Comprehension) {
-	    	type = resolve((Comprehension) e,environment);  
-	      } else if (e instanceof RecordGen) {
-	        type = resolve((RecordGen) e, environment);
-	      } else if (e instanceof RecordAccess) {
-	        type = resolve((RecordAccess) e, environment);
+	    	type = resolve((Comprehension) e,environment);  	      
 	      } else if (e instanceof ListAccess) {
 	        type = resolve((ListAccess) e, environment);
 	      } else if (e instanceof TermAccess) {
 	        type = resolve((TermAccess) e, environment);
-	      } else if (e instanceof DictionaryGen) {
-	        type = resolve((DictionaryGen) e, environment);
-	      } else if (e instanceof TupleGen) {
-	        type = resolve((TupleGen) e, environment);
 	      } else {
 	        syntaxError("unknown expression encountered", filename, e);
 	      }
@@ -158,7 +150,7 @@ public class TypeChecker {
 		Type t = resolve(uop.mhs, environment);
 	    switch (uop.op) {
 	    case LENGTHOF:
-	      checkSubtype(Type.T_SET(Type.T_ANYTERM), t, uop.mhs);
+	      checkSubtype(Type.T_LISTANY, t, uop.mhs);
 	      Type.SetList sl = (Type.SetList) t;
 	      return sl.element();
 	    case NEG:
@@ -186,32 +178,11 @@ public class TypeChecker {
 	    // FIXME: really need to add coercions somehow
 
 	    switch (bop.op) {
-	    case ADD: {
-	      if (Type.isSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, hierarchy)
-	          || Type.isSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, hierarchy)) {
-	        checkSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, bop.lhs);
-	        checkSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, bop.rhs);
-	        // need to update operation
-	        bop.op = BOp.UNION;
-	        return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
-	      }
+	    case ADD: {	     
 	      checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
 	      checkSubtype(Type.T_REAL, rhs_t, bop.rhs);
 	      return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
-	    }
-	    case SUB: {
-	    	if (Type.isSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, hierarchy)
-	    			|| Type.isSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, hierarchy)) {
-	    		checkSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, bop.lhs);
-	    		checkSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, bop.rhs);
-	    		// need to update operation
-	    		bop.op = BOp.DIFFERENCE;
-	    		return lhs_t;
-	    	}
-	    	checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
-	    	checkSubtype(Type.T_REAL, rhs_t, bop.rhs);
-	    	return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
-	    }
+	    }	    
 	    case DIV:
 	    case MUL: {
 	      checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
@@ -235,18 +206,7 @@ public class TypeChecker {
 	      checkSubtype(Type.T_BOOL, lhs_t, bop.lhs);
 	      checkSubtype(Type.T_BOOL, rhs_t, bop.rhs);
 	      return Type.T_BOOL;
-	    }
-	    case ELEMENTOF:
-	    	 checkSubtype(Type.T_SET(Type.T_ANYTERM),rhs_t,bop.rhs);
-	    	 Type element = ((Type.SetList)rhs_t).element();
-	    	 checkSubtype(element,lhs_t,bop.lhs);
-	    	 return Type.T_BOOL;	    
-	    case INTERSECTION : {				
-				checkSubtype(Type.T_SET(Type.T_ANYTERM), lhs_t, bop.lhs);
-				checkSubtype(Type.T_SET(Type.T_ANYTERM), rhs_t, bop.rhs);
-				// FIXME: should really determine glb of lhs and rhs
-				return lhs_t;				
-			}
+	    }	   
 	    case TYPEEQ:{
 	    	checkSubtype(lhs_t, rhs_t, bop.lhs);
 	    	if(bop.lhs instanceof Variable) {
@@ -264,32 +224,28 @@ public class TypeChecker {
 	  }
 
 	  protected Type resolve(NaryOp nop, HashMap<String,Type> environment) {
-	    if (nop.op == NOp.SUBLIST) {
-	      Expr src = nop.arguments.get(0);
-	      Expr start = nop.arguments.get(1);
-	      Expr end = nop.arguments.get(2);
-	      Type src_t = resolve(src, environment);
-	      Type start_t = resolve(start, environment);
-	      Type end_t = resolve(end, environment);
-	      checkSubtype(Type.T_LIST(Type.T_ANYTERM), src_t, src);
-	      checkSubtype(Type.T_INT, start_t, start);
-	      checkSubtype(Type.T_INT, end_t, end);
-	      return src_t;
-	    } else {
-	      // Must be a set or list generator
-	      Type lub = Type.T_VOID;
-	      for (Expr e : nop.arguments) {
-	        Type t = resolve(e, environment);
-	        lub = Type.leastUpperBound(lub, t, hierarchy);
-	      }
+		if (nop.op == NOp.SUBLIST) {
+			Expr src = nop.arguments.get(0);
+			Expr start = nop.arguments.get(1);
+			Expr end = nop.arguments.get(2);
+			Type src_t = resolve(src, environment);
+			Type start_t = resolve(start, environment);
+			Type end_t = resolve(end, environment);
+			checkSubtype(Type.T_LIST(Type.T_ANYTERM), src_t, src);
+			checkSubtype(Type.T_INT, start_t, start);
+			checkSubtype(Type.T_INT, end_t, end);
+			return src_t;
+		} else {
+			// Must be a set or list generator
+			Type lub = Type.T_VOID;
+			for (Expr e : nop.arguments) {
+				Type t = resolve(e, environment);
+				lub = Type.leastUpperBound(lub, t, hierarchy);
+			}
 
-	      if (nop.op == NOp.SETGEN) {
-	        return Type.T_SET(lub);
-	      } else {
-	        return Type.T_LIST(lub);
-	      }
-	    }
-	  }
+			return Type.T_LIST(lub);
+		}
+	}
 
 	  protected Type resolve(Comprehension comp, HashMap<String,Type> environment) {
 		  HashMap<String,Type> nenv = new HashMap(environment);
@@ -298,44 +254,20 @@ public class TypeChecker {
 				  syntaxError("variable " + src.first() + " already declared",filename,comp);
 			  }
 			  Type t = resolve(src.second(),nenv);
-			  checkSubtype(Type.T_SET(Type.T_ANYTERM),t, src.second());
+			  checkSubtype(Type.T_LIST(Type.T_ANYTERM),t, src.second());
 			  Type.SetList sl = (Type.SetList) t;
 			  nenv.put(src.first(), sl.element());
 		  }
 		  if(comp.condition != null) {
 			  resolve(comp.condition,nenv);
 		  }
-		  if(comp.cop == COp.SETCOMP || comp.cop == COp.LISTCOMP) {
+		  if(comp.cop == COp.LISTCOMP) {
 			  Type r_t = resolve(comp.value,nenv);
-			  return Type.T_SET(r_t);
+			  return Type.T_LIST(r_t);
 		  }
 		  return Type.T_BOOL;
 	  }
-	  
-	  protected Type resolve(RecordGen rg, HashMap<String,Type> environment) {
-	    HashMap<String, Type> types = new HashMap<String, Type>();
-
-	    for (Map.Entry<String, Expr> f : rg.fields.entrySet()) {
-	      Type t = resolve(f.getValue(), environment);
-	      types.put(f.getKey(), t);
-	    }
-
-	    return Type.T_RECORD(types);
-	  }
-
-	  protected Type resolve(RecordAccess ra, HashMap<String,Type> environment) {
-	    Type src = resolve(ra.lhs, environment);
-	    if(!(src instanceof Type.Record)) {
-	    	syntaxError("expected record type, got " + src, filename, ra.lhs);
-	    }
-	    Type.Record ert = (Type.Record)src; 	    
-	    Type t = ert.types.get(ra.name);
-	    if (t == null) {
-	      syntaxError("no such field in type: " + ert, filename, ra);
-	    }
-	    return t;
-	  }
-
+	
 	  protected Type resolve(ListAccess ra, HashMap<String,Type> environment) {
 		  Type src_t = resolve(ra.src, environment);
 		  Type idx_t = resolve(ra.index, environment);
@@ -358,17 +290,7 @@ public class TypeChecker {
 		  }		  	   
 		  return tt.params.get(ra.index);
 	  }
-	  
-	  protected Type resolve(TupleGen rg, HashMap<String,Type> environment) {
-	    HashMap<String, Type> types = new HashMap<String, Type>();
-	    // FIXME: add proper support for tuple types.
-	    int idx = 0;
-	    for (Expr e : rg.fields) {
-	      Type t = resolve(e, environment);
-	      types.put("$" + idx++, t);
-	    }
-	    return Type.T_RECORD(types);
-	  }
+	  	 
 
 	   /**
 	   * Check whether t1 :> t2; that is, whether t2 is a subtype of t1.

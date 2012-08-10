@@ -109,16 +109,7 @@ public interface Expr extends SyntacticElement {
 		},
 		DIV{
 			public String toString() { return "/"; }
-		},		
-		UNION{
-			public String toString() { return "+"; }
-		},
-		INTERSECTION{
-			public String toString() { return "&"; }
-		},
-		DIFFERENCE{
-			public String toString() { return "-"; }
-		},
+		},				
 		EQ{
 			public String toString() { return "=="; }
 		},
@@ -136,15 +127,6 @@ public interface Expr extends SyntacticElement {
 		},
 		GTEQ{
 			public String toString() { return ">="; }
-		},
-		SUBSET{
-			public String toString() { return "<"; }
-		},
-		SUBSETEQ{
-			public String toString() { return "<="; }
-		},
-		ELEMENTOF{
-			public String toString() { return "in"; }
 		},		
 		LISTRANGE{
 			public String toString() { return ".."; }
@@ -244,7 +226,7 @@ public interface Expr extends SyntacticElement {
 		}
 		public String toString() {
 			switch(op) {
-				case SETGEN:					 
+				 
 				case LISTGEN:
 				{
 					String args = "";
@@ -255,11 +237,7 @@ public interface Expr extends SyntacticElement {
 						}
 						args += e;
 					}
-					if(op == NOp.SETGEN) {
-						return "{" + args + "}";
-					} else {
-						return "[" + args + "]";
-					}
+					return "[" + args + "]";
 				}	
 				default:
 					return arguments.get(0) + "[" + arguments.get(1) + ".." + arguments.get(2) + "]";
@@ -268,7 +246,6 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public enum NOp {
-		SETGEN,
 		LISTGEN,
 		SUBLIST					
 	}
@@ -315,52 +292,8 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public enum COp {
-		SETCOMP,
 		LISTCOMP,
 		NONE, // implies value == null					
 		SOME, // implies value == null
-	}
-	
-	public static class RecordAccess extends SyntacticElement.Impl implements
-			LVal {
-		public final Expr lhs;
-		public final String name;
-
-		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
-			super(attributes);
-			this.lhs = lhs;
-			this.name = name;
-		}
-		
-		public String toString() {
-			return lhs + "." + name;
-		}
-	}		
-
-	public static class DictionaryGen extends SyntacticElement.Impl implements Expr {
-		public final ArrayList<Pair<Expr,Expr>> pairs;		
-		
-		public DictionaryGen(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
-			super(attributes);
-			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
-		}
-	}
-	
-	public static class RecordGen extends SyntacticElement.Impl implements Expr {
-		public final HashMap<String,Expr> fields;		
-		
-		public RecordGen(Map<String, Expr> fields, Attribute... attributes) {
-			super(attributes);
-			this.fields = new HashMap<String, Expr>(fields);
-		}
-	}
-	
-	public static class TupleGen extends SyntacticElement.Impl implements LVal {
-		public final ArrayList<Expr> fields;		
-		
-		public TupleGen(Collection<Expr> fields, Attribute... attributes) {
-			super(attributes);
-			this.fields = new ArrayList<Expr>(fields);
-		}
-	}		
+	}				
 }

@@ -24,10 +24,11 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		HashMap<String,int[]> env = new HashMap<String,int[]>();
 		buildRoutes(new ArrayList<Integer>(),env);
 		return env;
-	}
+	}	
 	
 	protected abstract void buildRoutes(ArrayList<Integer> route, HashMap<String,int[]> environment);	
 	protected abstract void buildEnvironment(HashMap<String,Type> environment);
+	
 	
 	
 	public abstract Type.Reference type();
@@ -97,6 +98,14 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}
 		}
 		
+		public Pattern route(int route) {
+			return params.get(route).first();
+		}
+		
+		public boolean isUnbounded(int child) {
+			return unbound && child + 1 == params.size();
+		}
+		
 		public Type.Reference type() {
 			Type.Reference[] ps = new Type.Reference[params.size()];
 			for (int i = 0; i != ps.length; ++i) {
@@ -141,7 +150,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}			
 		}
 	}
-	
+		
 	private static int[] toIntArray(ArrayList<Integer> items) {
 		int[] r = new int[items.size()];
 		for(int i=0;i!=r.length;++i) {

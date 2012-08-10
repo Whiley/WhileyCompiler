@@ -146,7 +146,7 @@ public class SpecParser {
 				sequential=false;
 			}						
 			boolean firstTime = true;
-			boolean unbound = true;
+			boolean unbound = false;
 			while (index < tokens.size()
 					&& !(tokens.get(index) instanceof RightBrace)) {
 				if (unbound) {
@@ -268,25 +268,7 @@ public class SpecParser {
 		
 	private Expr parseConditionExpression() {		
 		int start = index;
-		
-		if (index < tokens.size()
-				&& tokens.get(index) instanceof SpecLexer.None) {
-			match(SpecLexer.None.class);
-			skipWhiteSpace();
-			
-			Expr.Comprehension sc = parseQuantifierSet();
-			return new Expr.Comprehension(Expr.COp.NONE, null, sc.sources,
-					sc.condition, sourceAttr(start, index - 1));
-		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof SpecLexer.Some) {
-			match(SpecLexer.Some.class);
-			skipWhiteSpace();
-			
-			Expr.Comprehension sc = parseQuantifierSet();			
-			return new Expr.Comprehension(Expr.COp.SOME, null, sc.sources,
-					sc.condition, sourceAttr(start, index - 1));			
-		} // should do FOR here;  could also do lone and one
-		
+				
 		Expr lhs = parseAddSubExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
@@ -326,29 +308,6 @@ public class SpecParser {
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index).text.equals("is")) {
 			return parseTypeEquals(lhs,start);			
-		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.BitwiseAnd) {
-			match(SpecLexer.BitwiseAnd.class);			
-			skipWhiteSpace();			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.INTERSECTION,lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.ElemOf) {
-			match(SpecLexer.ElemOf.class);			
-			skipWhiteSpace();
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.SubsetEquals) {
-			match(SpecLexer.SubsetEquals.class);			
-			skipWhiteSpace();
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.Subset) {
-			match(SpecLexer.Subset.class);			
-			skipWhiteSpace();
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
 		}	
@@ -383,22 +342,7 @@ public class SpecParser {
 			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof Union) {
-			match(Union.class);
-			skipWhiteSpace();
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.UNION, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof Intersection) {
-			match(Intersection.class);
-			skipWhiteSpace();
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.INTERSECTION, lhs, rhs, sourceAttr(
-					start, index - 1));
-		}	
+		} 	
 		
 		return lhs;
 	}
@@ -488,11 +432,7 @@ public class SpecParser {
 				BigInteger x = match(Int.class).value;		
 				// FIXME: should check size here
 				lhs = new Expr.TermAccess(lhs, x.intValue(), sourceAttr(start,index - 1));
-			} else {				
-				match(Dot.class);
-				String name = matchIdentifier().text;				
-				lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
-			}
+			} 
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
 			} else {
@@ -513,7 +453,7 @@ public class SpecParser {
 			match(LeftBrace.class);
 			skipWhiteSpace();
 			checkNotEof();			
-			Expr v = parseTupleExpression();			
+			Expr v = parseCondition();			
 			skipWhiteSpace();
 			checkNotEof();
 			token = tokens.get(index);			
@@ -569,23 +509,6 @@ public class SpecParser {
 		return null;		
 	}
 	
-	private Expr parseTupleExpression() {
-		Expr e = parseCondition();		
-		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
-			// this is a tuple constructor
-			ArrayList<Expr> exprs = new ArrayList<Expr>();
-			exprs.add(e);
-			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
-				match(Comma.class);
-				exprs.add(parseCondition());
-				checkNotEof();
-			}
-			return new Expr.TupleGen(exprs);
-		} else {
-			return e;
-		}
-	}
-		
 	private Expr parseListVal() {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -608,49 +531,6 @@ public class SpecParser {
 		match(RightSquare.class);
 		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(start,
 				index - 1));
-	}
-	
-	private Expr.Comprehension parseQuantifierSet() {
-		int start = index;		
-		match(LeftCurly.class);
-		skipWhiteSpace();
-		Token token = tokens.get(index);			
-		boolean firstTime = true;						
-		List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
-		HashSet<String> vars = new HashSet<String>();
-		while(!(token instanceof Bar)) {						
-			if(!firstTime) {
-				match(Comma.class);
-				skipWhiteSpace();
-			}
-			firstTime=false;
-			Identifier id = matchIdentifier();
-			skipWhiteSpace();
-			String var = id.text;
-			if(vars.contains(var)) {
-				syntaxError(
-						"variable "
-								+ var
-								+ " cannot have multiple source collections",
-						id);
-			} else {
-				vars.add(var);
-			}
-			match(SpecLexer.ElemOf.class);
-			skipWhiteSpace();
-			Expr src = parseConditionExpression();			
-			srcs.add(new Pair(var,src));
-			skipWhiteSpace();
-			checkNotEof();
-			token = tokens.get(index);
-		}
-		match(Bar.class);
-		skipWhiteSpace();
-		Expr condition = parseCondition();
-		skipWhiteSpace();
-		match(RightCurly.class);
-		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
-				sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseSetVal() {
@@ -678,15 +558,7 @@ public class SpecParser {
 			setComp=true;
 			match(Bar.class);
 			firstTime=true;
-		} else if(index < tokens.size() && tokens.get(index) instanceof Arrow) {
-			// this is a dictionary constructor					
-			return parseDictionaryVal(start,exprs.get(0));
-		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
-				&& exprs.get(0) instanceof Expr.Variable) {
-			// this is a record constructor
-			Expr.Variable v = (Expr.Variable)exprs.get(0); 
-			return parseRecordVal(start,v.var);
-		}
+		} 
 		
 		checkNotEof();
 		token = tokens.get(index);
@@ -703,102 +575,44 @@ public class SpecParser {
 		}
 		match(RightCurly.class);
 		
-		if(setComp) {
-			Expr value = exprs.get(0);
-			List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
-			HashSet<String> vars = new HashSet<String>();
-			Expr condition = null;			
-			
-			for(int i=1;i!=exprs.size();++i) {
-				Expr v = exprs.get(i);				
-				if(v instanceof Expr.BinOp) {
-					Expr.BinOp eof = (Expr.BinOp) v;					
-					if (eof.op == Expr.BOp.ELEMENTOF
-							&& eof.lhs instanceof Expr.Variable) {
-						String var = ((Expr.Variable) eof.lhs).var;
-						if (vars.contains(var)) {
-							syntaxError(
-									"variable "
-											+ var
-											+ " cannot have multiple source collections",
-									v);
-						}
-						vars.add(var);
-						srcs.add(new Pair<String,Expr>(var,  eof.rhs));
-						continue;
-					} 					
-				} 
-				
-				if((i+1) == exprs.size()) {
-					condition = v;					
-				} else {
-					syntaxError("condition expected",v);
-				}
-			}			
-			return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs,
-					condition, sourceAttr(start, index - 1));
-		} else {	
-			return new Expr.NaryOp(Expr.NOp.SETGEN, exprs, sourceAttr(
-					start, index - 1));
-		}
+//		if(setComp) {
+//			Expr value = exprs.get(0);
+//			List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
+//			HashSet<String> vars = new HashSet<String>();
+//			Expr condition = null;			
+//			
+//			for(int i=1;i!=exprs.size();++i) {
+//				Expr v = exprs.get(i);				
+//				if(v instanceof Expr.BinOp) {
+//					Expr.BinOp eof = (Expr.BinOp) v;					
+//					if (eof.op == Expr.BOp.ELEMENTOF
+//							&& eof.lhs instanceof Expr.Variable) {
+//						String var = ((Expr.Variable) eof.lhs).var;
+//						if (vars.contains(var)) {
+//							syntaxError(
+//									"variable "
+//											+ var
+//											+ " cannot have multiple source collections",
+//									v);
+//						}
+//						vars.add(var);
+//						srcs.add(new Pair<String,Expr>(var,  eof.rhs));
+//						continue;
+//					} 					
+//				} 
+//				
+//				if((i+1) == exprs.size()) {
+//					condition = v;					
+//				} else {
+//					syntaxError("condition expected",v);
+//				}
+//			}			
+//			return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs,
+//					condition, sourceAttr(start, index - 1));
+//		} else {	
+		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(
+				start, index - 1));		
 	}
-	
-	private Expr parseDictionaryVal(int start, Expr key) {
-		ArrayList<Pair<Expr,Expr>> pairs = new ArrayList<Pair<Expr,Expr>>();		
-		match(Arrow.class);
-		Expr value = parseCondition();	
-		pairs.add(new Pair<Expr,Expr>(key,value));
-		skipWhiteSpace();
-		Token token = tokens.get(index);		
-		while(!(token instanceof RightCurly)) {									
-			match(Comma.class);
-			skipWhiteSpace();
-			key = parseCondition();
-			match(Arrow.class);
-			value = parseCondition();
-			pairs.add(new Pair<Expr,Expr>(key,value));
-			skipWhiteSpace();
-			checkNotEof();
-			token = tokens.get(index);
-		}
-		match(RightCurly.class);
-		return new Expr.DictionaryGen(pairs,sourceAttr(start, index - 1));
-	}
-	
-	private Expr parseRecordVal(int start, String ident) {
-
-		// this indicates a record value.				
-		match(Colon.class);
-		skipWhiteSpace();
-		Expr e = parseAddSubExpression();
-		skipWhiteSpace();
-		
-		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
-		exprs.put(ident, e);
-		checkNotEof();
-		Token token = tokens.get(index);
-		while(!(token instanceof RightCurly)) {			
-			match(Comma.class);
-			skipWhiteSpace();
-			checkNotEof();
-			token = tokens.get(index);			
-			Identifier n = matchIdentifier();
-
-			if(exprs.containsKey(n.text)) {
-				syntaxError("duplicate tuple key",n);
-			}
-
-			match(Colon.class);
-			skipWhiteSpace();
-			e = parseAddSubExpression();				
-			exprs.put(n.text,e);
-			checkNotEof();
-			token = tokens.get(index);					
-		} 
-		match(RightCurly.class);
-
-		return new Expr.RecordGen(exprs,sourceAttr(start, index - 1));
-	} 
 	
 	private Expr parseLengthOf() {
 		int start = index;

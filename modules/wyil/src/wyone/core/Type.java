@@ -22,11 +22,13 @@ import java.util.*;
 
 public abstract class Type {
 
+	public static final Any T_ANY = new Any();
 	public static final Void T_VOID = new Void();
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();
+	public static final List T_LISTANY = new List(T_ANY);
 	public static final AnyTerm T_ANYTERM = new AnyTerm();
 	
 	public static List T_LIST(Type element) {
@@ -52,7 +54,8 @@ public abstract class Type {
 	 * @return
 	 */
 	public static boolean isSubtype(Type t1, Type t2, Map<String,java.util.Set<String>> hierarchy) {
-		if (t1 == t2 || (t2 instanceof Void) || (t1 instanceof AnyTerm && t2 instanceof Reference)
+		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any
+				|| (t1 instanceof AnyTerm && t2 instanceof Reference)
 				|| (t1 instanceof Real && t2 instanceof Int)) {
 			return true;
 		} else if (t1 instanceof List && t2 instanceof List) {
@@ -107,6 +110,12 @@ public abstract class Type {
 		return T_ANYTERM;
 	}
 	
+	public static final class Any  extends Type {
+		private Any() {}
+		public String toString() {
+			return "any";
+		}
+	}	
 	public static final class Void  extends Type {
 		private Void() {}
 		public String toString() {
@@ -151,13 +160,13 @@ public abstract class Type {
 	public static final class Term  extends Reference {		
 		public final String name;
 		public final ArrayList<Reference> params;
-		public final boolean unbounded;
+		public final boolean unbound;
 		
 		private Term(String name, boolean unbounded,
 				Collection<Reference> params) {			
 			this.name = name;
 			this.params = new ArrayList<Reference>(params);
-			this.unbounded = unbounded;			
+			this.unbound = unbounded;			
 		}
 		private Term(String name, boolean unbounded, Reference... params) {			
 			this.name = name;
@@ -165,7 +174,7 @@ public abstract class Type {
 			for(Reference t : params) {
 				this.params.add(t);
 			}
-			this.unbounded = unbounded;
+			this.unbound = unbounded;
 		}		
 		public int hashCode() {
 			return name.hashCode() + params.hashCode();
@@ -173,7 +182,7 @@ public abstract class Type {
 		public boolean equals(Object o) {
 			if(o instanceof Term) {
 				Term t = (Term) o;
-				return t.name.equals(name) && params.equals(t.params) && unbounded == t.unbounded;
+				return t.name.equals(name) && params.equals(t.params) && unbound == t.unbound;
 			}
 			return false;
 		}
@@ -190,7 +199,7 @@ public abstract class Type {
 					firstTime=false;
 					r += t;
 				}
-				if(unbounded) {
+				if(unbound) {
 					r += "...";
 				}
 				return r + ")";
