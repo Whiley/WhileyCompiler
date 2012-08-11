@@ -45,14 +45,16 @@ public class PrettyAutomataReader {
 		if (kind == null) {
 			throw new SyntaxError("unrecognised term encountered (" + name
 					+ ")", pos, pos);
-		} else if (lookahead == -1 || lookahead != '(') {
+		} else if (lookahead == -1 || (lookahead != '(' && lookahead != '{')) {
 			throw new SyntaxError("expecting ')'", pos, pos);
 		}
+		
+		boolean sequential = lookahead == '(';
 		
 		// ======== parse terms ===========
 		boolean firstTime = true;
 		ArrayList<Integer> children = new ArrayList<Integer>();
-		while ((lookahead = input.read()) != -1 && lookahead != ')') {
+		while ((lookahead = input.read()) != -1 && lookahead != ')' && lookahead != '}') {
 			if (!firstTime) {
 				if(lookahead != ',') {
 					throw new SyntaxError("expecting ','",pos,pos);
@@ -63,8 +65,10 @@ public class PrettyAutomataReader {
 			}
 			children.add(parseTerm(states, lookahead));
 		}
-		if (lookahead == -1 || lookahead != ')') {
+		if (lookahead == -1 || (sequential && lookahead != ')')) {
 			throw new SyntaxError("expecting ')'", pos, pos);
+		} else if(!sequential && lookahead != '}') {
+			throw new SyntaxError("expecting '}'", pos, pos);
 		}
 		// ======== parse supplementary data ===========
 
@@ -73,7 +77,7 @@ public class PrettyAutomataReader {
 		for (int i = 0; i != children.size(); ++i) {
 			nchildren[i] = children.get(i);
 		}		
-		states.set(index, new Automaton.State(kind, nchildren));
+		states.set(index, new Automaton.State(kind, sequential, nchildren));
 		return index;
 
 	}

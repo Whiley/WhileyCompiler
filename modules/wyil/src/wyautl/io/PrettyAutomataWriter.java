@@ -70,7 +70,12 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 	protected void write(int index, Automaton automaton) throws IOException {
 		Automaton.State state = automaton.states[index];
 		int[] children = state.children;
-		writer.print(schema[state.kind] + "(");
+		writer.print(schema[state.kind]);
+		if(state.deterministic) { 
+			writer.print("(");
+		} else {
+			writer.print("{");
+		}
 		for(int i=0;i!=children.length;++i) {
 			if(i != 0) {
 				writer.print(",");
@@ -80,7 +85,11 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 		if(state.data != null) {
 			writer.print(":" + state.data);
 		}
-		writer.print(")");
+		if(state.deterministic) {
+			writer.print(")");
+		} else {
+			writer.print("}");
+		}
 	}
 	
 	public void close() throws IOException {

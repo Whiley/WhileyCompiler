@@ -106,7 +106,7 @@ public class JavaFileWriter {
 		myOut("import java.math.BigInteger;");
 		myOut("import wyautl.io.PrettyAutomataReader;");
 		myOut("import wyautl.io.PrettyAutomataWriter;");
-		myOut("import wyautl.lang.Automaton;");
+		myOut("import wyautl.lang.*;");
 		myOut("import static wyautl.lang.Automata.*;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
@@ -746,6 +746,10 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
+		myOut(3, "System.out.print(\"MINIMISED: \");");
+		myOut(3, "a = Automata.minimise(a);");
+		myOut(3, "writer.write(a);");
+		myOut(3, "System.out.println();");		
 		myOut(3, "rewrite(0,a);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(a);");
