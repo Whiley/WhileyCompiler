@@ -274,21 +274,28 @@ public class JavaFileWriter {
 		myOut(1, "// Rewrite Dispatcher");
 		myOut(1, "// =========================================================================");		
 		myOut();
-		myOut(1, "public static boolean rewrite(int index, Automaton automaton) {");		
-		myOut(2, "boolean changed = false;");
-		myOut(2, "boolean lchanged;");
+		myOut(1, "public static Automaton rewrite(Automaton automaton) {");		
+		myOut(2, "boolean changed;");
+		myOut(2, "automaton = Automata.minimise(automaton);");
 		myOut(2, "do {");
-		myOut(3, "lchanged = false;");
-		myOut(3, "Automaton.State state = automaton.states[index];");		
+		myOut(3, "changed = false;");
+		myOut(3, "for(int index=0;index!=automaton.states.length;++index) {");
+		myOut(4, "Automaton.State state = automaton.states[index];");
+		myOut(4, "switch(state.kind) {");
 		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			String name = e.getKey();			
-			myOut(3, "if(state.kind == K_" + name + ") {");
-			myOut(4, "lchanged |= rewrite_" + name + "(index,automaton);");			
-			myOut(3, "}");
+			myOut(4, "case K_" + name + ": {");
+			myOut(5, "changed |= rewrite_" + name + "(index,automaton);");			
+			myOut(5, "break;");
+			myOut(4, "}");
 		}
-		myOut(3, "changed |= lchanged;");
-		myOut(2, "} while(lchanged);");
-		myOut(2, "return changed;");
+		myOut(4, "}");
+		myOut(3, "}");
+		myOut(2, "Automaton old = automaton;");
+		myOut(2, "automaton = Automata.minimise(automaton);");
+		myOut(2, "changed |= !automaton.equals(old);");
+		myOut(2, "} while(changed);");
+		myOut(2, "return automaton;");
 		myOut(1, "}\n");
 		
 	}
@@ -307,12 +314,6 @@ public class JavaFileWriter {
 		myOut(1, "// Rewrite dispatcher for " + name);
 		myOut(1, "private static boolean rewrite_" + name + "(int index, Automaton automaton) {");
 		myOut(2, "boolean changed = false;\n");
-		myOut(2, "Automaton.State state = automaton.states[index];");
-		myOut(2, "int[] children = state.children;\n");
-		myOut(2, "// Recursively rewrite children");		
-		myOut(2,"for(int i=0;i!=children.length;++i) {");
-		myOut(3,"changed |= rewrite(children[i],automaton);");
-		myOut(2,"}\n");
 		
 		myOut(2, "// Now rewrite me");
 		HashSet<String> used = new HashSet<String>();
@@ -745,14 +746,12 @@ public class JavaFileWriter {
 		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(a);");
-		myOut(3, "System.out.println();");
-		myOut(3, "System.out.print(\"MINIMISED: \");");
-		myOut(3, "a = Automata.minimise(a);");
-		myOut(3, "writer.write(a);");
-		myOut(3, "System.out.println();");		
-		myOut(3, "rewrite(0,a);");
+		myOut(3, "System.out.println();");	
+		myOut(3, "a = rewrite(a);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(a);");
+		myOut(3, "System.out.println();");
+		myOut(3, "System.out.println(a);");
 		myOut(3, "System.out.println();");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");

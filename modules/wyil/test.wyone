@@ -64,11 +64,11 @@ term Num
 term Equal{Expr,Expr}
 term NotEqual{Expr,Expr}
 
-rewrite Equal(Expr x, Expr y):
-    => True(), if x == y
+rewrite Equal(Expr x):
+    => True()
 
-rewrite NotEqual(Expr x, Expr y):
-    => False(), if x == y
+rewrite NotEqual(Expr x):
+    => False()
 
 rewrite Not(Equal{Expr x,Expr y}):
     => NotEqual(x,y)
