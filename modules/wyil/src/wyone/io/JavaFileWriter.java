@@ -751,8 +751,6 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
-		myOut(3, "System.out.println(a);");
-		myOut(3, "System.out.println();");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");

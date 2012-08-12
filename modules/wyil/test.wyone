@@ -130,8 +130,11 @@ rewrite Mul(Expr e):
 // rewrite Neg(Mul{Expr... xs}):
 //    => ?
 
-//rewrite Sum{Sum{Expr... xs}, Expr... ys}:
-//    => Expr(xs ++ ys)
+rewrite Sum{Sum{Expr... xs}, Expr... ys}:
+    => Sum(xs,ys)
+
+rewrite Mul{Mul{Expr... xs}, Expr... ys}:
+    => Mul(xs,ys)
 
 //rewrite Sum{Num x, Num y, Num... rs}:
 //    => Sum{ Num(x+y) ++ rs}
@@ -152,23 +155,23 @@ term SizeOf(Set)
 rewrite SubSet(Set(Expr... xs),Set(Expr... ys)):
     => False(), if |xs| >= |ys|
 
-//rewrite SubSetEq(Set(Expr... xs),Set(Expr... ys)):
-//    => False(), if |xs| > |ys|
+rewrite SubSetEq(Set(Expr... xs),Set(Expr... ys)):
+    => False(), if |xs| > |ys|
 
-//rewrite And{SubSetEq(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
-//    => And{Equal(Expr x, Expr y),xs}, if x == y && y == v
+rewrite And{SubSetEq(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
+    => And(Equal(x,y),xs), if x == u && y == v
 
-//rewrite And{SubSetEq(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
-//    => And{SubSetEq(Expr x, Expr v),xs}, if y == u
+rewrite And{SubSetEq(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
+    => And(SubSetEq(x,v),xs), if y == u
 
-//rewrite And{SubSet(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
-//    => And{SubSet(Expr x, Expr v),xs}, if y == u
+rewrite And{SubSet(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
+    => And(SubSet(x,v),xs), if y == u
 
-//rewrite And{SubSetEq(Expr x, Expr y), SubSet(Expr u, Expr v),Term... xs}:
-//    => And{SubSet(Expr x, Expr v),xs}, if y == u
+rewrite And{SubSetEq(Expr x, Expr y), SubSet(Expr u, Expr v),Term... xs}:
+    => And(SubSet(x,v),xs), if y == u
 
-//rewrite And{SubSet(Expr x, Expr y), SubSet(Expr u, Expr v),Term... xs}:
-//    => And{SubSet(Expr x, Expr v),xs}, if y == u
+rewrite And{SubSet(Expr x, Expr y), SubSet(Expr u, Expr v),Term... xs}:
+    => And(SubSet(x,v),xs), if y == u
 
 // ==================================================
 // Combined Theories
