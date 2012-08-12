@@ -9,34 +9,30 @@ import static wyone.util.SyntaxError.*;
 
 public class TypeChecker {
 	private String filename;
-	// The hierarchy holds, for each type, the set of its children
-	private final HashMap<String,Set<String>> hierarchy = new HashMap<String,Set<String>>();
 	
 	// maps constructor names to their declared types.
-	private final HashMap<String,Type.Term> constructors = new HashMap<String,Type.Term>();
+	private final HashMap<String,Type.Term> terms = new HashMap<String,Type.Term>();
 	
 	// globals contains the list of global variables
 	//private final HashMap<String,Type> globals = new HashMap();
 	
 	public void check(SpecFile spec) {
 		filename = spec.filename;
-		hierarchy.clear();
-				
+		
 		for (Decl d : spec.declarations) {
 			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
-				List<String> children = cd.children;
-				hierarchy.put(cd.name, new HashSet<String>(children));
+				terms.put(cd.name, Type.T_TERM(cd.name, false, Type.T_VOID));
 			} else if (d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
-				constructors.put(td.name,
+				terms.put(td.name,
 						Type.T_TERM(td.name, td.unbounded, td.data, td.params));
 			}
 		}
-		
-		for(Decl d : spec.declarations) {
-			if(d instanceof RewriteDecl) {
-				check((RewriteDecl)d);
+
+		for (Decl d : spec.declarations) {
+			if (d instanceof RewriteDecl) {
+				check((RewriteDecl) d);
 			}
 		}
 	}
@@ -82,7 +78,7 @@ public class TypeChecker {
 			}
 		}
 
-		Type.Term declared = constructors.get(pt.name);
+		Type.Term declared = terms.get(pt.name);
 		if(declared == null) {
 			syntaxError("unknown term encountered",filename,pt);
 		}
@@ -90,7 +86,7 @@ public class TypeChecker {
 		// FIXME: intersect parameter types with actual types
 		Type.Term type = Type.T_TERM(pt.name, pt.unbound, declared.data, ps);
 		
-		if(!Type.isSubtype(type, declared, hierarchy)) {
+		if(!Type.isSubtype(type, declared)) {
 			syntaxError("invalid usage of term",filename,pt);
 		}
 		
@@ -180,7 +176,7 @@ public class TypeChecker {
 		  
 		  // TODO: type check parameter arguments
 		  
-		  Type.Term type = constructors.get(ivk.name);
+		  Type.Term type = terms.get(ivk.name);
 		  if(type == null) {
 			  syntaxError("function not declared",filename,ivk);
 		  }
@@ -231,13 +227,13 @@ public class TypeChecker {
 	    case ADD: {	     
 	      checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
 	      checkSubtype(Type.T_REAL, rhs_t, bop.rhs);
-	      return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+	      return Type.leastUpperBound(lhs_t, rhs_t);
 	    }	    
 	    case DIV:
 	    case MUL: {
 	      checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
 	      checkSubtype(Type.T_REAL, rhs_t, bop.rhs);
-	      return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+	      return Type.leastUpperBound(lhs_t, rhs_t);
 	    }    
 	    case EQ:
 	    case NEQ: {	    	
@@ -260,7 +256,7 @@ public class TypeChecker {
 	    case APPEND: {
 	    	checkSubtype(Type.T_LISTANY, lhs_t, bop.lhs);
 		    checkSubtype(Type.T_LISTANY, rhs_t, bop.rhs);
-		    return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+		    return Type.leastUpperBound(lhs_t, rhs_t);
 	    }
 	    case TYPEEQ:{
 	    	checkSubtype(lhs_t, rhs_t, bop.lhs);
@@ -295,7 +291,7 @@ public class TypeChecker {
 			Type lub = Type.T_VOID;
 			for (Expr e : nop.arguments) {
 				Type t = resolve(e, environment);
-				lub = Type.leastUpperBound(lub, t, hierarchy);
+				lub = Type.leastUpperBound(lub, t);
 			}
 
 			return Type.T_LIST(lub);
@@ -359,7 +355,7 @@ public class TypeChecker {
 	   * @param elem
 	   */
 	  public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {		  
-	    if (!Type.isSubtype(t1, t2, hierarchy)) {
+	    if (!Type.isSubtype(t1, t2)) {
 	      syntaxError("expecting type " + t1 + ", got type " + t2, filename, elem);
 	    }
 	  }

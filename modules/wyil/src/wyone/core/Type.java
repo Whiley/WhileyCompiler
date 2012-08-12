@@ -43,17 +43,19 @@ public abstract class Type {
 		return get(new Term(name,unbounded,data,params));
 	}
 	
+	public static Union<Type> T_UNION(Collection<Type> bounds) {
+		return get(new Union<Type>(bounds));
+	}
+	
 	/**
 	 * Return true if t2 is a subtype of t1 in the context of the given type
-	 * hierarchy. The type hierarchy maps a given type to its parents (which are
-	 * explicitly declared in the wyone specification language).  
+	 * hierarchy.  
 	 * 
 	 * @param t1
 	 * @param t2
-	 * @param hierarchy
 	 * @return
 	 */
-	public static boolean isSubtype(Type t1, Type t2, Map<String,java.util.Set<String>> hierarchy) {
+	public static boolean isSubtype(Type t1, Type t2) {
 		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any
 				|| (t1 instanceof AnyTerm && t2 instanceof Reference)
 				|| (t1 instanceof Real && t2 instanceof Int)) {
@@ -62,14 +64,13 @@ public abstract class Type {
 			// RULE: S-LIST
 			List l1 = (List) t1;
 			List l2 = (List) t2;
-			return isSubtype(l1.element, l2.element,hierarchy);
+			return isSubtype(l1.element, l2.element);
 		} else if (t1 instanceof Term && t2 instanceof Term) {			
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
 			if(n1.name.equals(n2.name)) {
 				return true;
-			} else {
-				java.util.Set<String> children = hierarchy.get(n1.name);
+			} else {				
 				return true; // TODO: need to do this properly
 //				if(children != null) {
 //					for (String n1child : children) {
@@ -94,15 +95,15 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type leastUpperBound(Type t1, Type t2, Map<String,java.util.Set<String>> hierarchy) {
-		if (isSubtype(t1, t2, hierarchy)) {
+	public static Type leastUpperBound(Type t1, Type t2) {
+		if (isSubtype(t1, t2)) {
 			return t1;
-		} else if (isSubtype(t2, t1, hierarchy)) {
+		} else if (isSubtype(t2, t1)) {
 			return t2;
 		} else if (t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
-			return T_LIST(leastUpperBound(l1.element, l2.element, hierarchy));
+			return T_LIST(leastUpperBound(l1.element, l2.element));
 		} 
 
 		// FIXME: we can do better for named types by searching the hierarchy!
@@ -249,6 +250,38 @@ public abstract class Type {
 		}
 	}
 		
+	public static class Union<T extends Type> extends Type {
+		public final HashSet<T> bounds;
+
+		public Union(Collection<T> bounds) {
+			this.bounds = new HashSet<T>();
+		}
+
+		public int hashCode() {
+			return bounds.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Union) {
+				Union u = (Union) o;
+				return bounds.equals(u.bounds);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			String r = "";
+			boolean firstTime = true;
+			for(T t : bounds) {
+				if(!firstTime) {
+					r += ",";
+				}
+				r += t;
+			}
+			return r;
+		}
+	}
+	
 	public static String type2str(Type t) {
 		if(t instanceof AnyTerm) {
 			return "*";
@@ -277,7 +310,7 @@ public abstract class Type {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}
 	}
-
+	
 	private static final ArrayList<Type> types = new ArrayList<Type>();
 	private static final HashMap<Type,Integer> cache = new HashMap<Type,Integer>();
 
