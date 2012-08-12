@@ -22,14 +22,15 @@ public class TypeChecker {
 		filename = spec.filename;
 		hierarchy.clear();
 				
-		for(Decl d : spec.declarations) {
-			if(d instanceof ClassDecl) {
+		for (Decl d : spec.declarations) {
+			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
 				List<String> children = cd.children;
-				hierarchy.put(cd.name,new HashSet<String>(children));
-			} else if(d instanceof TermDecl) {
+				hierarchy.put(cd.name, new HashSet<String>(children));
+			} else if (d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
-				constructors.put(td.name, Type.T_TERM(td.name,td.unbounded,td.params));
+				constructors.put(td.name,
+						Type.T_TERM(td.name, td.unbounded, td.data, td.params));
 			}
 		}
 		
@@ -41,11 +42,61 @@ public class TypeChecker {
 	}
 	
 	public void check(RewriteDecl rd) {			
-		HashMap<String,Type> environment = rd.pattern.environment();
+		HashMap<String,Type> environment = new HashMap<String,Type>();
+		resolve(rd.pattern,environment);
 		
 		for(RuleDecl rule : rd.rules) {
 			check(rule,environment);
 		}
+	}
+	
+	protected Type.Reference resolve(Pattern pattern,
+			HashMap<String, Type> environment) {
+		Type.Reference type;
+		if (pattern instanceof Pattern.Term) {
+			Pattern.Term pt = (Pattern.Term) pattern;
+			type = resolve(pt, environment);
+		} else {
+			Pattern.Leaf l = (Pattern.Leaf) pattern;
+			type = l.type;
+			pattern.attributes().add(new Attribute.TypeAttr(type));
+		}
+		return type;
+	}
+	
+	protected Type.Reference resolve(Pattern.Term pt,
+			HashMap<String, Type> environment) {
+
+		Type.Reference[] ps = new Type.Reference[pt.params.size()];
+		for (int i = 0; i != pt.params.size(); ++i) {
+			Pair<Pattern, String> p = pt.params.get(i);
+			Pattern pattern = p.first();
+			ps[i] = resolve(pattern, environment);
+			String var = p.second();
+			if (var != null) {
+				if (pt.unbound && (i + 1) == pt.params.size()) {
+					environment.put(var, Type.T_LIST(ps[i]));
+				} else {
+					environment.put(var, ps[i]);
+				}
+			}
+		}
+
+		Type.Term declared = constructors.get(pt.name);
+		if(declared == null) {
+			syntaxError("unknown term encountered",filename,pt);
+		}
+		
+		// FIXME: intersect parameter types with actual types
+		Type.Term type = Type.T_TERM(pt.name, pt.unbound, declared.data, ps);
+		
+		if(!Type.isSubtype(type, declared, hierarchy)) {
+			syntaxError("invalid usage of term",filename,pt);
+		}
+		
+		pt.attributes().add(new Attribute.TypeAttr(type));
+		
+		return type;
 	}
 	
 	public void check(RuleDecl rule, HashMap<String,Type> environment) {
@@ -57,7 +108,7 @@ public class TypeChecker {
 		}
 		resolve(rule.result,environment);
 	}
-		
+	
 	protected Type resolve(Expr e, HashMap<String,Type> environment) {
 	    Type type = null;
 		try {
@@ -291,8 +342,12 @@ public class TypeChecker {
 		  Type.Term tt = (Type.Term) src_t;		  		  
 		  if(ra.index >= tt.params.size()) {
 			  syntaxError("term index out-of-bounds", filename, ra);
-		  }		  	   
-		  return tt.params.get(ra.index);
+		  }	
+		  if(ra.index >= 0) {
+			  return tt.params.get(ra.index);
+		  } else {
+			  return tt.data;
+		  }
 	  }
 	  	 
 

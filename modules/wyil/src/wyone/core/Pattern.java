@@ -14,12 +14,6 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
-	public HashMap<String,Type> environment() {
-		HashMap<String,Type> env = new HashMap<String,Type>();
-		buildEnvironment(env);
-		return env;
-	}
-	
 	public HashMap<String,int[]> routes() {
 		HashMap<String,int[]> env = new HashMap<String,int[]>();
 		buildRoutes(new ArrayList<Integer>(),env);
@@ -27,25 +21,14 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	}	
 	
 	protected abstract void buildRoutes(ArrayList<Integer> route, HashMap<String,int[]> environment);	
-	protected abstract void buildEnvironment(HashMap<String,Type> environment);
-	
-	
-	
-	public abstract Type.Reference type();
-	
+			
 	public static final class Leaf extends Pattern {
-		public final Type.Reference type;
+		public Type.Reference type;
 		
 		public Leaf(Type.Reference type) {
 			this.type = type;
 		}
-		public Type.Reference type() {
-			return type;
-		}
-		protected void buildEnvironment(HashMap<String,Type> environment) {
-			
-		}
-
+		
 		protected void buildRoutes(ArrayList<Integer> route,
 				HashMap<String, int[]> environment) {
 
@@ -85,23 +68,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				route.remove(route.size()-1);
 				i=i+1;
 			}
-		}
-		
-		protected void buildEnvironment(HashMap<String,Type> environment) {
-			for(int i=0;i!=params.size();++i) {
-				Pair<Pattern,String> p = params.get(i);
-				Pattern pattern = p.first();
-				pattern.buildEnvironment(environment);
-				String var = p.second();
-				if(var != null) {
-					if(unbound && (i+1) == params.size()) {
-						environment.put(var,Type.T_LIST(pattern.type()));
-					} else {
-						environment.put(var,pattern.type());	
-					}
-				}
-			}
-		}
+		}		
 		
 		public Pattern route(int route) {
 			return params.get(route).first();
@@ -109,14 +76,6 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		
 		public boolean isUnbounded(int child) {
 			return unbound && child + 1 == params.size();
-		}
-		
-		public Type.Reference type() {
-			Type.Reference[] ps = new Type.Reference[params.size()];
-			for (int i = 0; i != ps.length; ++i) {
-				ps[i] = params.get(i).first().type();
-			}
-			return Type.T_TERM(name, unbound, ps);
 		}
 		
 		public String toString() {			

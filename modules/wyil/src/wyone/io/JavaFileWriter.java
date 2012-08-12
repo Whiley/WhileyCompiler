@@ -188,7 +188,6 @@ public class JavaFileWriter {
 		myOut(1,"public static boolean rewrite" + mangle + "(final int index, final Automaton automaton) {");
 		myOut(2,"Automaton.State[] states = automaton.states;");
 		myOut(2,"Automaton.State state = states[index];");
-		HashMap<String,Type> environment = decl.pattern.environment();
 		HashMap<String,int[]> routes = decl.pattern.routes();
 		for(Map.Entry<String,int[]> e : routes.entrySet()) {
 			int[] route = e.getValue();
@@ -224,11 +223,10 @@ public class JavaFileWriter {
 		int casNo = 1;
 		for(RuleDecl rd : decl.rules) {
 			for(Pair<String,Expr> p : rd.lets) {				
-				Pair<List<String>,String> r = translate(p.second(),environment);
+				Pair<List<String>,String> r = translate(p.second());
 				write(r.first(),2);
 				indent(2);
 				Type t = p.second().attribute(TypeAttr.class).type;
-				environment.put(p.first(), t);
 				out.print("final ");
 				write(t);
 				myOut(" " + p.first() + " = " + r.second() + ";");								
@@ -239,10 +237,10 @@ public class JavaFileWriter {
 				// syntaxError("case cannot be reached",specfile.filename,rd);
 				throw new RuntimeException("Unreachable condition in " + decl.pattern.name);
 			} else if(rd.condition != null) {
-				Pair<List<String>,String> r = translate(rd.condition, environment);
+				Pair<List<String>,String> r = translate(rd.condition);
 				write(r.first(),2);
 				myOut(2, "if(" + r.second() + ") {");
-				r = translate(rd.result, environment);
+				r = translate(rd.result);
 				write(r.first(),3);
 				myOut(3, "final int idx = " + r.second() + ";");
 				myOut(3, "automaton.states[index] = automaton.states[idx];");				
@@ -250,7 +248,7 @@ public class JavaFileWriter {
 				myOut(2, "}");
 			} else {
 				defCase = true;				
-				Pair<List<String>,String> r = translate(rd.result, environment);
+				Pair<List<String>,String> r = translate(rd.result);
 				write(r.first(),2);
 				myOut(2, "final int idx = " + r.second() + ";");
 				myOut(2, "automaton.states[index] = automaton.states[idx];");
@@ -317,7 +315,7 @@ public class JavaFileWriter {
 		myOut(2, "// Now rewrite me");
 		HashSet<String> used = new HashSet<String>();
 		for (RewriteDecl r : rules) {
-			Type type = r.pattern.type();
+			Type type = r.pattern.attribute(TypeAttr.class).type;
 			String mangle = nameMangle(r.pattern, used);
 			indent(2);
 			out.print("if(typeof_" + type2HexStr(type) + "(index,automaton)");
@@ -359,23 +357,23 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	public Pair<List<String>,String> translate(Expr expr, HashMap<String,Type> environment) {
+	public Pair<List<String>,String> translate(Expr expr) {
 		if(expr instanceof Constant) {
 			return translate((Constant)expr);			
 		} else if(expr instanceof Variable) {
-			return translate((Variable)expr, environment);
+			return translate((Variable)expr);
 		} else if(expr instanceof UnOp) {
-			return translate((UnOp)expr, environment);
+			return translate((UnOp)expr);
 		} else if(expr instanceof BinOp) {
-			return translate((BinOp)expr, environment);
+			return translate((BinOp)expr);
 		} else if(expr instanceof NaryOp) {
-			return translate((NaryOp)expr, environment);
+			return translate((NaryOp)expr);
 		} else if(expr instanceof Comprehension) {
-			return translate((Comprehension)expr, environment);
+			return translate((Comprehension)expr);
 		} else if(expr instanceof Constructor) {
-			return translate((Constructor)expr, environment);
+			return translate((Constructor)expr);
 		} else if(expr instanceof TermAccess) {
-			return translate((TermAccess)expr, environment);
+			return translate((TermAccess)expr);
 		} else {		
 			throw new RuntimeException("unknown expression encountered");
 		}
@@ -408,12 +406,12 @@ public class JavaFileWriter {
 		return new Pair(inserts,r);
 	}
 	
-	public Pair<List<String>,String> translate(Variable v, HashMap<String,Type> environment) {
+	public Pair<List<String>,String> translate(Variable v) {
 		return new Pair(Collections.EMPTY_LIST,v.var);
 	}
 	
-	public Pair<List<String>,String> translate(UnOp uop, HashMap<String,Type> environment) {
-		Pair<List<String>,String> mhs = translate(uop.mhs, environment);
+	public Pair<List<String>,String> translate(UnOp uop) {
+		Pair<List<String>,String> mhs = translate(uop.mhs);
 		switch(uop.op) {
 		case LENGTHOF:
 			return new Pair(mhs.first(), "BigInteger.valueOf(" + mhs.second()+ ".length)");
@@ -426,12 +424,12 @@ public class JavaFileWriter {
 		}
 	}
 	
-	public Pair<List<String>,String> translate(BinOp bop, HashMap<String,Type> environment) {
+	public Pair<List<String>,String> translate(BinOp bop) {
 		if(bop.op == BOp.TYPEEQ) {			
-			return translateTypeEquals(bop.lhs,bop.rhs.attribute(TypeAttr.class).type, environment);
+			return translateTypeEquals(bop.lhs,bop.rhs.attribute(TypeAttr.class).type);
 		}
-		Pair<List<String>,String> lhs = translate(bop.lhs, environment);
-		Pair<List<String>,String> rhs = translate(bop.rhs, environment);
+		Pair<List<String>,String> lhs = translate(bop.lhs);
+		Pair<List<String>,String> rhs = translate(bop.rhs);
 		List<String> inserts = concat(lhs.first(),rhs.first());
 		switch(bop.op) {
 		case ADD:						
@@ -475,21 +473,21 @@ public class JavaFileWriter {
 		}		
 	}
 	
-	public Pair<List<String>,String> translateTypeEquals(Expr src, Type rhs, HashMap<String,Type> environment) {
-		Pair<List<String>,String> lhs = translate(src, environment);
+	public Pair<List<String>,String> translateTypeEquals(Expr src, Type rhs) {
+		Pair<List<String>,String> lhs = translate(src);
 		String mangle = type2HexStr(rhs);
 		typeTests.add(rhs);
 		return new Pair(lhs.first(),"typeof_" + mangle + "(" + lhs.second() +",automaton)");		
 	}
 	
-	public Pair<List<String>,String> translate(NaryOp nop, HashMap<String,Type> environment) {				
+	public Pair<List<String>,String> translate(NaryOp nop) {				
 		List<String> inserts = Collections.EMPTY_LIST;
 		String r = null;
 		switch(nop.op) {		
 		case LISTGEN:
 			r="new ArrayList(){{";
 			for(Expr e : nop.arguments) {
-				Pair<List<String>,String> p = translate(e, environment);
+				Pair<List<String>,String> p = translate(e);
 				inserts = concat(inserts,p.first());
 				r = r + "add(" + p.second() + ");";								
 			}
@@ -502,14 +500,14 @@ public class JavaFileWriter {
 		return new Pair(inserts,r);
 	}
 	
-	public  Pair<List<String>,String> translate(Constructor ivk, HashMap<String,Type> environment) {
+	public  Pair<List<String>,String> translate(Constructor ivk) {
 		String r = "inplaceAppend(automaton,new Automaton.State(K_" + ivk.name;
 		List<String> inserts = Collections.EMPTY_LIST;
 		if(!ivk.arguments.isEmpty()) {
 			r += ", append(";
 			boolean firstTime=true;
 			for(Expr e : ivk.arguments) {
-				Pair<List<String>,String> es = translate(e, environment);
+				Pair<List<String>,String> es = translate(e);
 				inserts = concat(inserts,es.first());			
 				if(!firstTime) {
 					r += ", ";
@@ -586,8 +584,8 @@ public class JavaFileWriter {
 //		return new Pair(inserts,tmp);
 //	}
 	
-	public Pair<List<String>,String> translate(TermAccess ta, HashMap<String,Type> environment) {
-		Pair<List<String>,String> src = translate(ta.src, environment);
+	public Pair<List<String>,String> translate(TermAccess ta) {
+		Pair<List<String>,String> src = translate(ta.src);
 		return new Pair(src.first(),src.second() + ".c" + ta.index);
 	}
 	
@@ -612,7 +610,7 @@ public class JavaFileWriter {
 	
 	protected String nameMangle(Pattern pattern, HashSet<String> used) {
 		String mangle = null;
-		String _mangle = type2HexStr(pattern.type());
+		String _mangle = type2HexStr(pattern.attribute(TypeAttr.class).type);
 		int i=0;
 		do {			
 			mangle = _mangle + "_" + i++;

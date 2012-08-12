@@ -18,13 +18,16 @@ public class SpecFile {
 		public final String name;
 		public final boolean sequential;
 		public final boolean unbounded;
+		public final Type data;
 		public final ArrayList<Type.Reference> params;
 		
 		public TermDecl(String n, boolean sequential, boolean unbounded,
-				Collection<Type.Reference> params, Attribute... attributes) {
+				Type data, Collection<Type.Reference> params,
+				Attribute... attributes) {
 			super(attributes);
 			this.name = n;
 			this.params = new ArrayList<Type.Reference>(params);
+			this.data = data;
 			this.sequential = sequential;
 			this.unbounded = unbounded;
 		}		

@@ -35,12 +35,12 @@ public abstract class Type {
 		return get(new List(element));
 	}
 	
-	public static Term T_TERM(String name, boolean unbounded, Reference... params) {
-		return get(new Term(name,unbounded,params));
+	public static Term T_TERM(String name, boolean unbounded, Type data, Reference... params) {
+		return get(new Term(name,unbounded,data,params));
 	}
 	
-	public static Term T_TERM(String name, boolean unbounded, Collection<Reference> params) {
-		return get(new Term(name,unbounded,params));
+	public static Term T_TERM(String name, boolean unbounded, Type data, Collection<Reference> params) {
+		return get(new Term(name,unbounded,data,params));
 	}
 	
 	/**
@@ -159,17 +159,23 @@ public abstract class Type {
 	
 	public static final class Term  extends Reference {		
 		public final String name;
+		public final Type data;
 		public final ArrayList<Reference> params;
 		public final boolean unbound;
 		
 		private Term(String name, boolean unbounded,
+				Type data,
 				Collection<Reference> params) {			
 			this.name = name;
+			this.data = data;
 			this.params = new ArrayList<Reference>(params);
 			this.unbound = unbounded;			
 		}
-		private Term(String name, boolean unbounded, Reference... params) {			
+
+		private Term(String name, boolean unbounded, Type data,
+				Reference... params) {			
 			this.name = name;
+			this.data = data;
 			this.params = new ArrayList<Reference>();
 			for(Reference t : params) {
 				this.params.add(t);
@@ -182,13 +188,18 @@ public abstract class Type {
 		public boolean equals(Object o) {
 			if(o instanceof Term) {
 				Term t = (Term) o;
-				return t.name.equals(name) && params.equals(t.params) && unbound == t.unbound;
+				return t.name.equals(name) && data.equals(t.data)
+						&& params.equals(t.params) && unbound == t.unbound;
 			}
 			return false;
 		}
 		public String toString() {			
 			if(params.isEmpty()) {
-				return name;
+				if(data != T_VOID) {
+					return name +  "[" + data + "]";
+				} else {
+					return name;
+				}
 			} else {
 				String r = name + "(";
 				boolean firstTime=true;
@@ -202,7 +213,11 @@ public abstract class Type {
 				if(unbound) {
 					r += "...";
 				}
-				return r + ")";
+				if(data == T_VOID) {
+					return r + ")";
+				} else {
+					return r + ")[" + data + "]";
+				}
 			}			
 		}
 	}
