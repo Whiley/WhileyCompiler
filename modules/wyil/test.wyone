@@ -178,4 +178,4 @@ rewrite And{SubSet(Expr x, Expr y), SubSet(Expr u, Expr v),Term... xs}:
 // ==================================================
 
 class Term as Bool | And | Or | Not | Equal | NotEqual | LessThanEq | LessThan
-class Expr as Num | Sum | Mul | Neg | Set
+class Expr as Num | Bool | Sum | Mul | Neg | Set

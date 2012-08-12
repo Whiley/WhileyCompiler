@@ -275,10 +275,11 @@ public class JavaFileWriter {
 		myOut(1, "// =========================================================================");		
 		myOut();
 		myOut(1, "public static Automaton rewrite(Automaton automaton) {");		
-		myOut(2, "boolean changed;");
+		myOut(2, "Automaton old;");
 		myOut(2, "automaton = Automata.minimise(automaton);");
 		myOut(2, "do {");
-		myOut(3, "changed = false;");
+		myOut(2, "old = automaton;");
+		myOut(2, "boolean changed = false;");
 		myOut(3, "for(int index=0;index!=automaton.states.length;++index) {");
 		myOut(4, "Automaton.State state = automaton.states[index];");
 		myOut(4, "switch(state.kind) {");
@@ -291,10 +292,8 @@ public class JavaFileWriter {
 		}
 		myOut(4, "}");
 		myOut(3, "}");
-		myOut(2, "Automaton old = automaton;");
-		myOut(2, "automaton = Automata.minimise(automaton);");
-		myOut(2, "changed |= !automaton.equals(old);");
-		myOut(2, "} while(changed);");
+		myOut(2, "if(changed) { automaton = Automata.minimise(automaton); }");
+		myOut(2, "} while(!automaton.equals(old));");
 		myOut(2, "return automaton;");
 		myOut(1, "}\n");
 		
