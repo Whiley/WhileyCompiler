@@ -504,9 +504,17 @@ public class JavaFileWriter {
 		String r = "inplaceAppend(automaton,new Automaton.State(K_" + ivk.name;
 		List<String> inserts = Collections.EMPTY_LIST;
 		if(!ivk.arguments.isEmpty()) {
-			r += ", append(";
 			boolean firstTime=true;
-			for(Expr e : ivk.arguments) {
+			Type.Term type = (Type.Term) ivk.attribute(TypeAttr.class).type; 
+			List<Expr> arguments = ivk.arguments;
+			int end = arguments.size();			
+			if(type.data != Type.T_VOID) {
+				end = end - 1;
+				r += ", " + arguments.get(end);
+			}			
+			r += ", true, append(";
+			for(int i=0;i!=end;++i) {
+				Expr e = arguments.get(i);
 				Pair<List<String>,String> es = translate(e);
 				inserts = concat(inserts,es.first());			
 				if(!firstTime) {
@@ -586,7 +594,13 @@ public class JavaFileWriter {
 	
 	public Pair<List<String>,String> translate(TermAccess ta) {
 		Pair<List<String>,String> src = translate(ta.src);
-		return new Pair(src.first(),src.second() + ".c" + ta.index);
+		Type.Term srcType = (Type.Term) ta.src.attribute(TypeAttr.class).type;
+		if(ta.index >= 0) {
+			return new Pair(src.first(), "automaton.states[" + src.second() + "].children[" + ta.index + "]");
+		} else {
+			return new Pair(src.first(), "((" + typeStr(srcType.data)
+					+ ") automaton.states[" + src.second() + "].data)");
+		}
 	}
 	
 	public void write(Type type) {
