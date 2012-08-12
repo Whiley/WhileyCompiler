@@ -592,11 +592,12 @@ public class JavaFileWriter {
 //		return new Pair(inserts,tmp);
 //	}
 	
-	public Pair<List<String>,String> translate(TermAccess ta) {
-		Pair<List<String>,String> src = translate(ta.src);
+	public Pair<List<String>, String> translate(TermAccess ta) {
+		Pair<List<String>, String> src = translate(ta.src);
 		Type.Term srcType = (Type.Term) ta.src.attribute(TypeAttr.class).type;
-		if(ta.index >= 0) {
-			return new Pair(src.first(), "automaton.states[" + src.second() + "].children[" + ta.index + "]");
+		if (ta.index >= 0) {
+			return new Pair(src.first(), "automaton.states[" + src.second()
+					+ "].children[" + ta.index + "]");
 		} else {
 			return new Pair(src.first(), "((" + typeStr(srcType.data)
 					+ ") automaton.states[" + src.second() + "].data)");

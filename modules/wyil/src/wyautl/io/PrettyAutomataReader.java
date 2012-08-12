@@ -54,7 +54,7 @@ public class PrettyAutomataReader {
 		// ======== parse terms ===========
 		boolean firstTime = true;
 		ArrayList<Integer> children = new ArrayList<Integer>();
-		while ((lookahead = input.read()) != -1 && lookahead != ')' && lookahead != '}') {
+		while ((lookahead = input.read()) != -1 && lookahead != ')' && lookahead != '}' && lookahead != ':') {
 			if (!firstTime) {
 				if(lookahead != ',') {
 					throw new SyntaxError("expecting ','",pos,pos);
@@ -64,6 +64,14 @@ public class PrettyAutomataReader {
 				firstTime=false;
 			}
 			children.add(parseTerm(states, lookahead));
+		}
+		Object data = null;
+		if(lookahead == ':') {
+			String str = "";
+			while ((lookahead = input.read()) != -1 && lookahead != ')' && lookahead != '}') {
+				str += (char) lookahead;
+			}
+			data = parseData(kind,str);
 		}
 		if (lookahead == -1 || (sequential && lookahead != ')')) {
 			throw new SyntaxError("expecting ')'", pos, pos);
@@ -77,9 +85,14 @@ public class PrettyAutomataReader {
 		for (int i = 0; i != children.size(); ++i) {
 			nchildren[i] = children.get(i);
 		}		
-		states.set(index, new Automaton.State(kind, sequential, nchildren));
+		states.set(index, new Automaton.State(kind, data, sequential, nchildren));
 		return index;
 
+	}
+	
+	protected Object parseData(int kind, String data) {
+		System.out.println("GOT: " + data);
+		return null;
 	}
 	
 	protected int skipWhiteSpace(int lookahead) throws IOException {
