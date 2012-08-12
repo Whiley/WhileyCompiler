@@ -105,6 +105,7 @@ public class JavaFileWriter {
 		myOut("import java.util.*;");
 		myOut("import java.math.BigInteger;");
 		myOut("import wyautl.io.PrettyAutomataReader;");
+		myOut("import wyautl.io.PrettyAutomataReader.DataReader;");
 		myOut("import wyautl.io.PrettyAutomataWriter;");
 		myOut("import wyautl.lang.*;");
 		myOut("import static wyautl.lang.Automata.*;");
@@ -350,6 +351,24 @@ public class JavaFileWriter {
 					myOut(",");
 				}
 				indent(2);out.print("\"" + td.name + "\"");
+			}
+		}
+		myOut();
+		myOut(1,"};");
+		myOut();		
+		myOut(1, "// =========================================================================");
+		myOut(1, "// Readers");
+		myOut(1, "// =========================================================================");		
+		myOut();
+		myOut(1,"public static final DataReader[] READERS = new DataReader[]{");
+		for(int i=0,j=0;i!=spDecl.size();++i) {
+			Decl d = spDecl.get(i);
+			if(d instanceof TermDecl) {
+				TermDecl td = (TermDecl) d;
+				if(j++ != 0) {
+					myOut(",");
+				}
+				indent(2);out.print(readerStr(td.data));
 			}
 		}
 		myOut();
@@ -623,6 +642,19 @@ public class JavaFileWriter {
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
 	
+	public String readerStr(Type type) {
+		if(type instanceof Type.Int) {
+			return "INT_READER";
+		} else if(type instanceof Type.Bool) {
+			return "BOOL_READER";
+		} else if(type instanceof Type.Strung) {
+			return "STRING_READER";
+		} else if(type instanceof Type.List){
+			return "LIST_READER";
+		} 
+		return "null";
+	}
+	
 	protected String nameMangle(Pattern pattern, HashSet<String> used) {
 		String mangle = null;
 		String _mangle = type2HexStr(pattern.attribute(TypeAttr.class).type);
@@ -753,7 +785,7 @@ public class JavaFileWriter {
 		myOut();						
 		myOut(1, "public static void main(String[] args) throws IOException {");
 		myOut(2, "try {");		
-		myOut(3, "PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA);");
+		myOut(3, "PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA,READERS);");
 		myOut(3, "PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");

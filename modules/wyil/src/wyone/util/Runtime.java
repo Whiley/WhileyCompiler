@@ -1,5 +1,9 @@
 package wyone.util;
 
+import java.math.BigInteger;
+
+import wyautl.io.PrettyAutomataReader.DataReader;
+
 public class Runtime {
 	public static int[] append(int... xs) {
 		return xs;
@@ -18,4 +22,17 @@ public class Runtime {
 		System.arraycopy(y, 0, r, x.length, y.length);
 		return r;
 	}
+	
+	public static final DataReader INT_READER = new DataReader() {
+		public Object parseData(int kind,String text) {
+			return BigInteger.valueOf(Long.parseLong(text));
+		}
+	};
+	
+	public static final DataReader STRING_READER = new DataReader() {
+		public Object parseData(int kind,String text) {
+			// drop beginning and end quotes
+			return text.substring(1,text.length()-1);
+		}
+	};
 }

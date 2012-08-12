@@ -7,12 +7,14 @@ import wyautl.lang.*;
 public class PrettyAutomataReader {	
 	private final InputStream input;
 	private final String[] schema;
+	private final DataReader[] readers;
 	private final HashMap<String,Integer> rSchema;
 	private int pos;
 	
-	public PrettyAutomataReader(InputStream reader, String[] schema) {
+	public PrettyAutomataReader(InputStream reader, String[] schema, DataReader[] readers) {
 		this.input = reader;		
 		this.schema = schema;
+		this.readers = readers;
 		this.rSchema = new HashMap<String,Integer>();
 		for(int i=0;i!=schema.length;++i) {
 			rSchema.put(schema[i], i);
@@ -66,12 +68,22 @@ public class PrettyAutomataReader {
 			children.add(parseTerm(states, lookahead));
 		}
 		Object data = null;
-		if(lookahead == ':') {
+		if (lookahead == ':') {
 			String str = "";
-			while ((lookahead = input.read()) != -1 && lookahead != ')' && lookahead != '}') {
+			while ((lookahead = input.read()) != -1 && lookahead != ')'
+					&& lookahead != '}') {
 				str += (char) lookahead;
 			}
-			data = parseData(kind,str);
+			if (readers == null || kind >= readers.length) {
+				throw new SyntaxError("data reader for \"" + name
+						+ "\" required", pos, pos);
+			}
+			DataReader reader = readers[kind];
+			if (reader == null) {
+				throw new SyntaxError("data reader for \"" + name
+						+ "\" required", pos, pos);
+			}
+			data = reader.parseData(kind, str);
 		}
 		if (lookahead == -1 || (sequential && lookahead != ')')) {
 			throw new SyntaxError("expecting ')'", pos, pos);
@@ -90,11 +102,6 @@ public class PrettyAutomataReader {
 
 	}
 	
-	protected Object parseData(int kind, String data) {
-		System.out.println("GOT: " + data);
-		return null;
-	}
-	
 	protected int skipWhiteSpace(int lookahead) throws IOException {
 		if(lookahead != -1 && !Character.isWhitespace(lookahead)) {
 			return lookahead;
@@ -103,6 +110,10 @@ public class PrettyAutomataReader {
 			pos = pos + 1;
 		}
 		return lookahead;
+	}
+	
+	public static interface DataReader {
+		public Object parseData(int kind, String text);
 	}
 		
 	public static final class SyntaxError extends Exception {
