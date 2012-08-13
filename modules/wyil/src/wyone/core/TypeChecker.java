@@ -22,11 +22,10 @@ public class TypeChecker {
 		for (Decl d : spec.declarations) {
 			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
-				terms.put(cd.name, Type.T_TERM(cd.name, false, Type.T_VOID));
+				terms.put(cd.name, Type.T_TERM(cd.name, Type.T_VOID));
 			} else if (d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
-				terms.put(td.name,
-						Type.T_TERM(td.name, td.unbounded, td.data, td.params));
+				terms.put(td.name, Type.T_TERM(td.name, td.data));
 			}
 		}
 
@@ -46,11 +45,14 @@ public class TypeChecker {
 		}
 	}
 	
-	protected Type.Reference resolve(Pattern pattern,
+	protected Type resolve(Pattern pattern,
 			HashMap<String, Type> environment) {
-		Type.Reference type;
+		Type type;
 		if (pattern instanceof Pattern.Term) {
 			Pattern.Term pt = (Pattern.Term) pattern;
+			type = resolve(pt, environment);
+		} else if (pattern instanceof Pattern.Compound) {
+			Pattern.Compound pt = (Pattern.Compound) pattern;
 			type = resolve(pt, environment);
 		} else {
 			Pattern.Leaf l = (Pattern.Leaf) pattern;
@@ -62,22 +64,6 @@ public class TypeChecker {
 	
 	protected Type.Reference resolve(Pattern.Term pt,
 			HashMap<String, Type> environment) {
-
-		Type.Reference[] ps = new Type.Reference[pt.params.size()];
-		for (int i = 0; i != pt.params.size(); ++i) {
-			Pair<Pattern, String> p = pt.params.get(i);
-			Pattern pattern = p.first();
-			ps[i] = resolve(pattern, environment);
-			String var = p.second();
-			if (var != null) {
-				if (pt.unbound && (i + 1) == pt.params.size()) {
-					environment.put(var, Type.T_LIST(ps[i]));
-				} else {
-					environment.put(var, ps[i]);
-				}
-			}
-		}
-
 		Type.Term declared = terms.get(pt.name);
 		if(declared == null) {
 			syntaxError("unknown term encountered",filename,pt);
@@ -89,6 +75,27 @@ public class TypeChecker {
 		if(!Type.isSubtype(type, declared)) {
 			syntaxError("invalid usage of term",filename,pt);
 		}
+	}
+	
+	protected Type resolve(Pattern.Compound pt,
+			HashMap<String, Type> environment) {
+
+		Type[] ps = new Type[pt.elements.size()];
+		for (int i = 0; i != pt.elements.size(); ++i) {
+			Pair<Pattern, String> p = pt.elements.get(i);
+			Pattern pattern = p.first();
+			ps[i] = resolve(pattern, environment);
+			String var = p.second();
+			if (var != null) {
+				if (pt.unbounded && (i + 1) == pt.elements.size()) {
+					environment.put(var, Type.T_COMPOUND(pt.kind, true, ps[i]));
+				} else {
+					environment.put(var, ps[i]);
+				}
+			}
+		}
+		
+		Type.Compound type = Type.T_COMPOUND(pt.kind,pt.unbounded,ps);
 		
 		pt.attributes().add(new Attribute.TypeAttr(type));
 		
@@ -197,7 +204,7 @@ public class TypeChecker {
 		Type t = resolve(uop.mhs, environment);
 	    switch (uop.op) {
 	    case LENGTHOF:
-	      checkSubtype(Type.T_LISTANY, t, uop.mhs);
+	      checkSubtype(Type.T_COMPOUNDANY, t, uop.mhs);
 	      return Type.T_INT;
 	    case NEG:
 	      checkSubtype(Type.T_REAL, t, uop.mhs);
@@ -254,8 +261,8 @@ public class TypeChecker {
 	      return Type.T_BOOL;
 	    }	  
 	    case APPEND: {
-	    	checkSubtype(Type.T_LISTANY, lhs_t, bop.lhs);
-		    checkSubtype(Type.T_LISTANY, rhs_t, bop.rhs);
+	    	checkSubtype(Type.T_COMPOUNDANY, lhs_t, bop.lhs);
+		    checkSubtype(Type.T_COMPOUNDANY, rhs_t, bop.rhs);
 		    return Type.leastUpperBound(lhs_t, rhs_t);
 	    }
 	    case TYPEEQ:{
@@ -322,11 +329,12 @@ public class TypeChecker {
 	  protected Type resolve(ListAccess ra, HashMap<String,Type> environment) {
 		  Type src_t = resolve(ra.src, environment);
 		  Type idx_t = resolve(ra.index, environment);
-		  if(!(src_t instanceof Type.List)) {
-			  syntaxError("expected list of term type, got " + src_t, filename, ra.src);
+		  if (!(src_t instanceof Type.Compound)) {
+			  syntaxError("expected list of term type, got " + src_t, filename,
+					  ra.src);
 		  }
-		  checkSubtype(Type.T_INT,idx_t,ra.index);
-		  Type.List rt = (Type.List)src_t; 	    		    
+		  checkSubtype(Type.T_INT, idx_t, ra.index);
+		  Type.Compound rt = (Type.Compound) src_t;	    		    
 		  return rt.element;
 	  }
 	  

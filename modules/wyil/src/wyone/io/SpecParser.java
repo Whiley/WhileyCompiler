@@ -46,46 +46,9 @@ public class SpecParser {
 		int start = index;
 		matchKeyword("term");
 		String name = matchIdentifier().text;
-		ArrayList<Type.Reference> params = new ArrayList<Type.Reference>();
-		boolean sequential = true;
-		boolean unbounded = false;
-		if (index < tokens.size()
-				&& (tokens.get(index) instanceof LeftBrace || tokens.get(index) instanceof LeftCurly)) {
-			if (tokens.get(index) instanceof LeftBrace) {
-				match(LeftBrace.class);
-			} else {
-				match(LeftCurly.class);
-				sequential = false;
-			}
-			boolean firstTime = true;
-			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace
-							|| tokens.get(index) instanceof RightCurly || tokens
-								.get(index) instanceof DotDotDot)) {
-				if (!firstTime) {
-					match(Comma.class);
-				}
-				firstTime = false;
-				params.add(parseReferenceType());
-			}
-			if (index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
-				match(DotDotDot.class);
-				unbounded = true;
-			}
-			if (sequential) {
-				match(RightBrace.class);
-			} else {
-				match(RightCurly.class);
-			}
-		}
-		skipWhiteSpace(false);
-		Type data = Type.T_VOID;
-		if (index < tokens.size() && tokens.get(index) instanceof Colon) {
-			match(Colon.class);
-			data = parseType();
-		}
+		Type data = parseType();
 		matchEndLine();		
-		return new TermDecl(name, sequential, unbounded, data, params, sourceAttr(start,index-1));
+		return new TermDecl(name, data, sourceAttr(start,index-1));
 	}
 		
 	private Decl parseClassDecl() {
@@ -123,7 +86,10 @@ public class SpecParser {
 		
 		if (token instanceof Star) {
 			match(Star.class);
-			return new Pattern.Leaf(Type.T_ANYTERM);
+			return new Pattern.Leaf(Type.T_ANY);
+		} else if (token instanceof LeftBrace || token instanceof LeftCurly
+				|| token instanceof LeftSquare) {
+			return parsePatternCompound();
 		} else {
 			return parsePatternTerm();
 		}
@@ -132,53 +98,56 @@ public class SpecParser {
 	public Pattern.Term parsePatternTerm() {
 		int start = index;
 		String name = matchIdentifier().text;
-		boolean sequential = true;
-		if (index < tokens.size()
-				&& (tokens.get(index) instanceof LeftBrace || tokens.get(index) instanceof LeftCurly)) {
-			ArrayList<Pair<Pattern, String>> params = new ArrayList();
-			if (tokens.get(index) instanceof LeftBrace) {
-				match(LeftBrace.class);
-			} else {
-				match(LeftCurly.class);
-				sequential = false;
-			}
-			boolean firstTime = true;
-			boolean unbound = false;
-			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace)
-					&& !(tokens.get(index) instanceof RightCurly)) {
-				if (unbound) {
-					syntaxError("... must be last match", tokens.get(index));
-				}
-				if (!firstTime) {
-					match(Comma.class);
-				}
-				firstTime = false;
-				Pattern p = parsePattern();
-				if (index < tokens.size()
-						&& tokens.get(index) instanceof DotDotDot) {
-					match(DotDotDot.class);
-					unbound = true;
-				}
-				String n = null;
-				if (index < tokens.size()
-						&& tokens.get(index) instanceof Identifier) {
-					n = matchIdentifier().text;
-				}
-				params.add(new Pair<Pattern, String>(p, n));
-			}
-			if (sequential) {
-				match(RightBrace.class);
-			} else {
-				match(RightCurly.class);
-			}
-
-			return new Pattern.Term(name, sequential, params, unbound,
-					sourceAttr(start, index - 1));
+		Pattern p = parsePattern();
+		return new Pattern.Term(name,p,sourceAttr(start, index - 1));
+	}
+	
+	public Pattern.Compound parsePatternCompound() {
+		int start = index;		
+		Type.Compound.Kind kind;
+		ArrayList<Pair<Pattern, String>> params = new ArrayList();
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			match(LeftBrace.class);
+			kind = Type.Compound.Kind.LIST;
 		} else {
-			return new Pattern.Term(name, sequential, Collections.EMPTY_LIST,
-					false, sourceAttr(start, index - 1));
+			match(LeftCurly.class);
+			kind = Type.Compound.Kind.SET;
 		}
+		boolean firstTime = true;
+		boolean unbound = false;
+		while (index < tokens.size()
+				&& !(tokens.get(index) instanceof RightBrace)
+				&& !(tokens.get(index) instanceof RightCurly)) {
+			if (unbound) {
+				syntaxError("... must be last match", tokens.get(index));
+			}
+			if (!firstTime) {
+				match(Comma.class);
+			}
+			firstTime = false;
+			Pattern p = parsePattern();
+			if (index < tokens.size()
+					&& tokens.get(index) instanceof DotDotDot) {
+				match(DotDotDot.class);
+				unbound = true;
+			}
+			String n = null;
+			if (index < tokens.size()
+					&& tokens.get(index) instanceof Identifier) {
+				n = matchIdentifier().text;
+			}
+			params.add(new Pair<Pattern, String>(p, n));
+		}
+		switch (kind) {
+		case LIST:
+			match(RightBrace.class);
+			break;
+		case SET:
+			match(RightCurly.class);
+		}
+		
+		return new Pattern.Compound(kind, unbound, params, 
+				sourceAttr(start, index - 1));		
 	}
 	
 	public List<RuleDecl> parseRuleBlock(int indent) {
@@ -504,10 +473,8 @@ public class SpecParser {
 			return parseNegation();
 		} else if (token instanceof Bar) {
 			return parseLengthOf();
-		} else if (token instanceof LeftSquare) {
-			return parseListVal();
-		} else if (token instanceof LeftCurly) {
-			return parseSetVal();
+		} else if (token instanceof LeftSquare || token instanceof LeftCurly) {
+			return parseCompoundVal();
 		} else if (token instanceof EmptySet) {
 			match(EmptySet.class);
 			return new Expr.Constant(new HashSet(),
@@ -521,7 +488,7 @@ public class SpecParser {
 		return null;		
 	}
 	
-	private Expr parseListVal() {
+	private Expr parseCompoundVal() {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match(LeftSquare.class);
@@ -544,88 +511,7 @@ public class SpecParser {
 		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(start,
 				index - 1));
 	}
-	
-	private Expr parseSetVal() {
-		int start = index;		
-		match(LeftCurly.class);
-		skipWhiteSpace(true);
-		ArrayList<Expr> exprs = new ArrayList<Expr>();	
-		Token token = tokens.get(index);
-		
-		if(token instanceof RightCurly) {
-			match(RightCurly.class);			
-			// empty set definition			
-			return new Expr.Constant(new HashSet(), sourceAttr(start, index - 1));
-		}
-		
-		// NOTE: in the following, dictionaryStart must be true as this could be
-		// the start of a dictionary constructor.
-		exprs.add(parseCondition()); 
-		skipWhiteSpace(true);
-		
-		boolean setComp = false;
-		boolean firstTime = false;
-		if (index < tokens.size() && tokens.get(index) instanceof Bar) { 
-			// this is a set comprehension
-			setComp=true;
-			match(Bar.class);
-			firstTime=true;
-		} 
-		
-		checkNotEof();
-		token = tokens.get(index);
-		while(!(token instanceof RightCurly)) {						
-			if(!firstTime) {
-				match(Comma.class);
-				skipWhiteSpace(true);
-			}
-			firstTime=false;
-			exprs.add(parseCondition());
-			skipWhiteSpace(true);
-			checkNotEof();
-			token = tokens.get(index);
-		}
-		match(RightCurly.class);
-		
-//		if(setComp) {
-//			Expr value = exprs.get(0);
-//			List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
-//			HashSet<String> vars = new HashSet<String>();
-//			Expr condition = null;			
-//			
-//			for(int i=1;i!=exprs.size();++i) {
-//				Expr v = exprs.get(i);				
-//				if(v instanceof Expr.BinOp) {
-//					Expr.BinOp eof = (Expr.BinOp) v;					
-//					if (eof.op == Expr.BOp.ELEMENTOF
-//							&& eof.lhs instanceof Expr.Variable) {
-//						String var = ((Expr.Variable) eof.lhs).var;
-//						if (vars.contains(var)) {
-//							syntaxError(
-//									"variable "
-//											+ var
-//											+ " cannot have multiple source collections",
-//									v);
-//						}
-//						vars.add(var);
-//						srcs.add(new Pair<String,Expr>(var,  eof.rhs));
-//						continue;
-//					} 					
-//				} 
-//				
-//				if((i+1) == exprs.size()) {
-//					condition = v;					
-//				} else {
-//					syntaxError("condition expected",v);
-//				}
-//			}			
-//			return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs,
-//					condition, sourceAttr(start, index - 1));
-//		} else {	
-		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(
-				start, index - 1));		
-	}
-	
+			
 	private Expr parseLengthOf() {
 		int start = index;
 		match(Bar.class);
@@ -655,7 +541,8 @@ public class SpecParser {
 
 	private Expr.Constructor parseConstructorExpr() {		
 		int start = index;
-		Identifier name = matchIdentifier();		
+		Identifier name = matchIdentifier();
+		
 		match(LeftBrace.class);
 		skipWhiteSpace(true);
 		boolean firstTime=true;
@@ -690,7 +577,10 @@ public class SpecParser {
 		Token token = tokens.get(index);
 		Type t;
 		
-		if(token.text.equals("int")) {
+		if(token instanceof Star) {
+			match(Star.class);
+			t = Type.T_ANY;
+		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
 			t = Type.T_INT;
 		} else if(token.text.equals("real")) {
@@ -705,54 +595,54 @@ public class SpecParser {
 		} else if(token.text.equals("string")) {
 			matchKeyword("string");
 			t = Type.T_STRING;
-		} else if(token instanceof LeftSquare) {
-			match(LeftSquare.class);
-			skipWhiteSpace(true);
-			t = parseType();
-			skipWhiteSpace(true);
-			match(RightSquare.class);
-			t = Type.T_LIST(t);
+		} else if (token instanceof LeftBrace || token instanceof LeftCurly
+				|| token instanceof LeftSquare) {
+			return parseCompoundType();
 		} else {
-			t = parseReferenceType();
+			Identifier id = matchIdentifier();
+			Type data = parseType();
+			t = Type.T_TERM(id.text,data);
 		}
 		
 		return t;
 	}		
 	
-	private Type.Reference parseReferenceType() {
-
-		skipWhiteSpace(true);
-		checkNotEof();
-		int start = index;
-		Token token = tokens.get(index);		
-
-		if(token instanceof Star) {
-			match(Star.class);
-			return Type.T_ANYTERM;
-		} else {		
-			Identifier id = matchIdentifier();
-			ArrayList<Type.Reference> types = new ArrayList<Type.Reference>();
-			boolean unbounded=false;
-			if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-				match(LeftBrace.class);				
-				types.add(parseReferenceType());
-				while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
-					match(Comma.class);
-					types.add(parseReferenceType());
-				}
-				if(index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
-					match(DotDotDot.class);
-					unbounded=true;
-				}
-				match(RightBrace.class);
+	private Type.Compound parseCompoundType() {
+		Type.Compound.Kind kind;
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			match(LeftBrace.class);
+			kind = Type.Compound.Kind.LIST;
+		} else {
+			match(LeftCurly.class);
+			kind = Type.Compound.Kind.SET;
+		}
+		ArrayList<Type> types = new ArrayList<Type>();
+		boolean firstTime = true;
+		while (index < tokens.size()
+				&& !(tokens.get(index) instanceof RightBrace
+						|| tokens.get(index) instanceof RightCurly || tokens
+							.get(index) instanceof DotDotDot)) {
+			if (!firstTime) {
+				match(Comma.class);
 			}
-			Type data = Type.T_VOID;
-			if(index < tokens.size() && tokens.get(index) instanceof Colon) {
-				match(Colon.class);
-				data = parseType();
-			}
-			return Type.T_TERM(id.text,unbounded,data,types);	
-		}		
+			firstTime = false;
+			types.add(parseType());
+		}
+		boolean unbounded = false;
+		if (index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
+			match(DotDotDot.class);
+			unbounded = true;
+		}
+		switch (kind) {
+		case LIST:
+			match(RightBrace.class);
+			break;
+		case SET:
+			match(RightCurly.class);
+		}
+		
+		return Type.T_COMPOUND(kind, unbounded,
+				types.toArray(new Type[types.size()]));
 	}
 	
 	private boolean isTypeStart() {

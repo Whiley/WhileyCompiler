@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import wyone.core.Type.Compound.Kind;
 import wyone.util.Pair;
 import wyone.util.SyntacticElement;
 
@@ -23,9 +24,9 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	protected abstract void buildRoutes(ArrayList<Integer> route, HashMap<String,int[]> environment);	
 			
 	public static final class Leaf extends Pattern {
-		public Type.Reference type;
+		public Type type;
 		
-		public Leaf(Type.Reference type) {
+		public Leaf(Type type) {
 			this.type = type;
 		}
 		
@@ -38,26 +39,24 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}		
 	}
 	
-	public static final class Term  extends Pattern {		
-		public final String name;
-		public final ArrayList<Pair<Pattern,String>> params;
-		public final boolean unbound;
-		public final boolean sequential;
+	public static final class Compound extends Pattern {
+		public final Kind kind;
+		public final ArrayList<Pair<Pattern, String>> elements;
+		public final boolean unbounded;
 
-		public Term(String name, boolean sequential,
-				Collection<Pair<Pattern, String>> params, boolean unbound,
+		public Compound(Type.Compound.Kind kind, boolean unbound,
+				Collection<Pair<Pattern, String>> params,
 				Attribute... attributes) {
 			super(attributes);
-			this.name = name;
-			this.params = new ArrayList<Pair<Pattern, String>>(params);
-			this.unbound = unbound;
-			this.sequential = sequential;
+			this.kind = kind;
+			this.elements = new ArrayList<Pair<Pattern, String>>(params);
+			this.unbounded = unbound;			
 		}
 		
 		protected void buildRoutes(ArrayList<Integer> route,
 				HashMap<String, int[]> environment) {
 			int i=0;
-			for(Pair<Pattern,String> p : params) {
+			for(Pair<Pattern,String> p : elements) {
 				Pattern pattern = p.first();
 				String var = p.second();
 				route.add(i);
@@ -68,51 +67,36 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				route.remove(route.size()-1);
 				i=i+1;
 			}
-		}		
+		}	
 		
 		public Pattern route(int route) {
-			return params.get(route).first();
+			return elements.get(route).first();
 		}
 		
 		public boolean isUnbounded(int child) {
-			return unbound && child + 1 == params.size();
+			return unbounded && child + 1 == elements.size();
 		}
+	}
+	
+	public static final class Term extends Pattern {		
+		public final String name;
+		public final Pattern data;
 		
-		public String toString() {			
-			if(params.isEmpty()) {
-				return name;
-			} else {
-				String r = name;
-				if(sequential) {
-					r += "(";
-				} else {
-					r += "{";
-				}
-				boolean firstTime=true;
-				for(int i=0;i!=params.size();++i) {
-					Pair<Pattern,String> p = params.get(i);
-					if(!firstTime) {
-						r += ",";
-					}
-					firstTime=false;
-					String var = p.second();					
-					r += p.first();
-					
-					if(unbound) {
-						r += "...";
-					}
-					if(var != null) {
-						r += " " + var;
-					} 				
-				}
-				if(sequential) {
-					r += ")";
-				} else {
-					r += "}";
-				}
-				return r;
-			}			
+		public Term(String name, Pattern data,
+				Attribute... attributes) {
+			super(attributes);
+			this.name = name;	
+			this.data = data;
 		}
+				
+		protected void buildRoutes(ArrayList<Integer> route,
+				HashMap<String, int[]> environment) {
+			data.buildRoutes(route,environment);
+		}
+				
+		public String toString() {			
+			return name + " " + data;
+		}			
 	}
 		
 	private static int[] toIntArray(ArrayList<Integer> items) {

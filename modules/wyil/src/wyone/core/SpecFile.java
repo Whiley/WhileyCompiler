@@ -16,20 +16,12 @@ public class SpecFile {
 	
 	public static class TermDecl extends SyntacticElement.Impl implements Decl {
 		public final String name;
-		public final boolean sequential;
-		public final boolean unbounded;
 		public final Type data;
-		public final ArrayList<Type.Reference> params;
 		
-		public TermDecl(String n, boolean sequential, boolean unbounded,
-				Type data, Collection<Type.Reference> params,
-				Attribute... attributes) {
+		public TermDecl(String n, Type data, Attribute... attributes) {
 			super(attributes);
 			this.name = n;
-			this.params = new ArrayList<Type.Reference>(params);
 			this.data = data;
-			this.sequential = sequential;
-			this.unbounded = unbounded;
 		}		
 	}
 	
