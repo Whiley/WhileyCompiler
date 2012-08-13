@@ -21,6 +21,16 @@
  * <http://www.gnu.org/licenses/>
  */
 
+/*
+ * to do:
+ * * set up a function to return the appropriate comparator function for a type
+ * * switch set subtypes to be the comparator function
+ *	all items that use the same comparator function go in the same subset
+ * * set a map type to use the same code as the set (parameterize it).
+ * * set up main method registry so that there can be multiples
+ * * set up type registry routines.
+ */
+
 #include "../lib/wycc_lib.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -70,7 +80,16 @@ static char* wy_type_names[] = {
     /* a set */
 #define Wy_Set		5
     "set",
-#define Wy_Type_Max	5
+    /* a map */
+#define Wy_Map		6
+    "map",
+    /* a record */
+#define Wy_Record	7
+    "record",
+    /*the field names of a record */
+#define Wy_Fields	8
+    "fields",
+#define Wy_Type_Max	8
     (char *) NULL
 };
 
@@ -109,8 +128,11 @@ static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs);
 
+typedef int (*Wycc_Comp_Ptr)(wycc_obj* lhs, wycc_obj* rhs);
+
 /* typedef int */
-static int (*wy_comp_func[])(wycc_obj* lhs, wycc_obj* rhs) = {
+/* static int (*wy_comp_func[])(wycc_obj* lhs, wycc_obj* rhs) = { */
+Wycc_Comp_Ptr wy_comp_func[] = {
     wycc_comp_obj,	/* any */
     wycc_comp_str,	/* string */
     wycc_comp_int,	/* int */
@@ -120,7 +142,17 @@ static int (*wy_comp_func[])(wycc_obj* lhs, wycc_obj* rhs) = {
     NULL
 };
 
+static Wycc_Comp_Ptr wycc_get_comparator(int typ){
+    int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
+
+    compar = wy_comp_func[typ];		/* change to a getter function */
+    return compar;
+}
+
+
 wycc_initor* wycc_init_chain = NULL;
+
+static void* wycc_fields_master = NULL;
 
 void wycc_chunk_rebal(int payl, void** p, void** chunk, long at, long deep);
 
@@ -136,6 +168,7 @@ int main(int argc, char** argv, char** envp) {
     int idx;
     char* argp;
     wycc_initor* ini;
+    wycc_obj* sys;
 
     orig_argc = argc;
     orig_argv = argv;
@@ -156,11 +189,34 @@ int main(int argc, char** argv, char** envp) {
 	ini->function();
 	ini = (wycc_initor*)ini->nxt;
     };
-    wycc_main();
+    sys = wycc_box_int(1);	/* **** KLUDGE **** */
+    wycc_main(sys);
     return 0;
 }
 
-/*
+/* -------------------------------
+ *  internal routines
+ * -------------------------------
+ *
+ * given a long mask it down to its most significant bit
+ */
+static wycc_high_bit(long itm) {
+    int tmpa, tmpb;
+
+    tmpb = 0;
+    for (tmpa= itm; tmpa > 0; tmpa &= (tmpa-1)) {
+	tmpb = tmpa;
+    }
+    if (wycc_debug_flag) {
+	fprintf(stderr, "wycc_high_bit(%d) => %d\n", itm, tmpb);
+    }
+    return tmpb;
+}
+
+/* -------------------------------
+ *  Routines for basic support of typed objects
+ * -------------------------------
+ *
  * given a text string, box it in a wycc_obj
  */
 wycc_obj* wycc_box_str(char* text) {
@@ -199,19 +255,6 @@ wycc_obj* wycc_box_long(long x) {
     ans->cnt = 0;
     ans->ptr = (void*) x;	/* **** kludge */
     return ans;
-}
-
-static wycc_high_bit(long itm) {
-    int tmpa, tmpb;
-
-    tmpb = 0;
-    for (tmpa= itm; tmpa > 0; tmpa &= (tmpa-1)) {
-	tmpb = tmpa;
-    }
-    if (wycc_debug_flag) {
-	fprintf(stderr, "wycc_high_bit(%d) => %d\n", itm, tmpb);
-    }
-    return tmpb;
 }
 
 /*
@@ -258,7 +301,8 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
 	exit(-3);
     };
     tmp = (long) p[1];
-    at = ((long) p[0]) + 1;
+    at = ((long) p[0]) +1;
+    p[0] = (void *) at;
     if ((at+2) >= tmp) {
 	tmp *= 2;
         raw = tmp * sizeof(void *);
@@ -330,11 +374,14 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	/* add first member to empty set */
 	chunk[0] = (void *) 0;
 	chunk[1] = (void *) itm;
+	itm->cnt++;
 	p[1] = (void *) 1;
 	return;
     }
     deep = 0;
-    compar = wy_comp_func[typ];		/* **** change to a getter function */
+    /* compar = wy_comp_func[typ];		/* **** change to a getter function */
+    compar = wycc_get_comparator(typ);
+
     /*
      * sequencial search within the chunk
      */
@@ -355,12 +402,13 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     };
     at *= 2;		/* 2 ::= sizeof branch pair */
     /* at -= 1;		/* but not looking at pairs anymore */
-    at += 1;		/* but not looking at pairs anymore */
+    /*at += 1;		/* but not looking at pairs anymore */
     while (at < (WYCC_SET_CHUNK -1)) {
 	at++;
 	tst = (wycc_obj *) chunk[at];
 	if (tst == (wycc_obj *) NULL) {
 	    chunk[at] = (void *) itm;
+	    itm->cnt++;
 	    p[1]++;
 	    wycc_chunk_rebal(0, p, chunk, at, deep);
 	    return;
@@ -369,13 +417,16 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	if (end == 0) {
 	    return;	/* key match == done */
 	};
-	if (end > 0) {
+	if (end < 0) {
 	    break;
 	};
     };
     if (end < 0) {
 	at++;
     };
+    /* this is a definite add */
+    p[1]++;
+    itm->cnt++;
     /*    if (at == (WYCC_SET_CHUNK -2)) {
 	/* Need to insert just before or just after the end of a full chunk */
     tst = chunk[WYCC_SET_CHUNK -2];
@@ -444,6 +495,200 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	chunk[idx] = chunk[idx - 1];
     }
     chunk[at] = itm;
+    /**** rebalance tree */
+    return;
+}
+
+/*
+ * given a simple type, setup an empty map object
+ * 
+ */
+#define WYCC_MAP_CHUNK 8*3
+wycc_obj* wycc_map_new(int typ) {
+    wycc_obj* ans;
+    long tmp;
+    void** p;
+
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_Map;
+    tmp = WYCC_MAP_CHUNK + 2;
+    p = (void**) calloc(tmp, sizeof(void *));
+    p[0] = (void *) typ;
+    p[1] = (void *) 0;
+    ans->ptr = (void *) p;
+    ans->cnt = 1;
+    return ans;
+}
+
+void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
+    void** p = lst->ptr;
+    void** chunk;
+    void** new;
+    long at, typ, cnt, deep, idx, cp;
+    size_t raw;
+    wycc_obj* tst;
+    int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
+    int end;
+
+    if (lst->typ != Wy_Map) {
+	fprintf(stderr, "Help needed in wycc_map_add for type %d\n", lst->typ);
+	exit(-3);
+    };
+    typ = (long) p[0];
+    if (typ == Wy_None) {
+	typ = key->typ;
+	p[0] = (void *) typ;
+    } else if (typ != key->typ) {
+	fprintf(stderr, "Help needed in wycc_map_add for multi-types \n");
+	exit(-3);
+    };
+    if ((typ < 0) || (typ > Wy_Type_Max)){
+	fprintf(stderr, "Help needed in wycc_map_add for types %d\n", typ);
+	exit(-3);
+    };
+    at = 0;
+    chunk = &(p[2]);
+    if (((long) p[1]) <1) {
+	/* add first member to empty map */
+	chunk[0] = (void *) 0;
+	chunk[1] = (void *) itm;
+	chunk[2] = (void *) key;
+	itm->cnt++;
+	key->cnt++;
+	p[1] = (void *) 1;
+	return;
+    }
+    compar = wycc_get_comparator(typ);
+    /*
+     * sequencial search within the chunk
+     */
+    while (at < ((long) chunk[0])) {
+	at++;
+	tst = (wycc_obj *) chunk[3*at];
+	end = compar(key, tst);
+	if (end == 0) {
+	    /* key match == done ; swap the value stored */
+	    tst = (wycc_obj *) chunk[(3*at) -1];
+	    chunk[(3*at) -1] = (void *) itm;
+	    wycc_deref_box(tst, 1);
+	    return;
+	};
+	if (end < 0) {
+	    continue;
+	};
+	/* the item in question goes before here; ergo down a chunk */
+	chunk = chunk[(3*at) - 2];
+	at = 0;
+	deep++;
+    };
+    at *= 3;		/* 3 ::= sizeof branch value key triplet */
+    while (at < (WYCC_MAP_CHUNK -2)) {
+	at += 2;
+	tst = (wycc_obj *) chunk[at];
+	if (tst == (wycc_obj *) NULL) {
+	    chunk[at]    = (void *) key;
+	    chunk[at -1] = (void *) itm;
+	    itm->cnt++;
+	    key->cnt++;
+	    p[1]++;
+	    wycc_chunk_rebal(0, p, chunk, at, deep);
+	    return;
+	}
+	end = compar(key, tst);
+	if (end == 0) {
+	    /* key match == done ; swap the value stored */
+	    tst = (wycc_obj *) chunk[at -1];
+	    chunk[at -1] = (void *) itm;
+	    wycc_deref_box(tst, 1);
+	    return;	/* key match == done */
+	};
+	if (end < 0) {
+	    break;
+	};
+    };
+    if (end < 0) {
+	at += 2;
+    };
+    /* this is a definite add */
+    p[1]++;
+    itm->cnt++;
+    key->cnt++;
+	/* Need to insert just before or just after the end of a full chunk */
+    tst = chunk[WYCC_MAP_CHUNK -3];
+    if (tst != (void *) NULL) {
+	/* need to insert in a full chunk (noo room for more) */
+	/* split chunk into 2, expanding down deeper */
+	new = (void**) calloc(WYCC_MAP_CHUNK, sizeof(void *));
+	if (new == (void **) NULL) {
+	    fprintf(stderr, "ERROR: calloc failed new chunk\n");
+	    exit(-4);
+	};
+	cnt = 3 * (long) chunk[0];
+	/* push the bigger section down */
+	if (cnt > (WYCC_MAP_CHUNK /2)) {
+	    /* the bigger is the branch section */
+	    cnt += 1;	/* include the branch counter */
+	    for (idx= 0; idx < cnt ;idx++) {
+		new[idx] = chunk[idx];
+	    };
+	    /* we are forming a branch out of all the branch triples */
+	    /* but that branch pairs up with the first leaf */
+	    chunk[0] = (void *) 1;
+	    chunk[1] = (void *) new;
+	    cp = 2;
+	    for (; idx < (WYCC_SET_CHUNK - 2); ) {
+		if (idx == at-1) {
+		    chunk[cp++] = itm;
+		    chunk[cp++] = key;
+		};
+		chunk[cp++] = chunk[idx++];
+		chunk[cp++] = chunk[idx++];
+	    };
+	    /* we have to special special case an insert after the end */
+	    if (idx == at-1) {
+		chunk[cp++] = itm;
+		chunk[cp++] = key;
+	    };
+	    for (; cp < (WYCC_SET_CHUNK - 1); cp++) {
+		chunk[cp++] = (void *) NULL;
+	    };
+	} else {
+	    /* bigger is the leaf section */
+	    cnt+= 1;	/* adjust for the branch counter */
+	    new[0] = 0;
+	    cp = 1;
+	    for (idx= cnt; idx < (WYCC_SET_CHUNK - 2); ) {
+		if (idx == at-1) {
+		    new[cp++] = itm;
+		    new[cp++] = key;
+		};
+		new[cp++] = chunk[idx];
+		chunk[idx++] = (void *) NULL;
+		new[cp++] = chunk[idx];
+		chunk[idx++] = (void *) NULL;
+	    };
+	    /* we have to special special case an insert after the end */
+	    if (idx == at-1) {
+		new[cp++] = itm;
+		new[cp++] = key;
+	    };
+	    /* now steal back the last leaf to use in a new branch pair */
+	    chunk[cnt++] = (void *) new;
+	    chunk[cnt++] = new[cp-2];	/* last value becomes branch pair */
+	    chunk[cnt++] = new[cp-1];	/* last value becomes branch pair */
+	    new[cp-2] = (void *) NULL;
+	    new[cp-1] = (void *) NULL;
+	};
+	/**** rebalance tree */
+	return;
+    };
+    /* need to insert item before at and we have room for it. */
+    /* it is a leaf */
+    for (idx= (WYCC_MAP_CHUNK - 1); idx > (at-1) ; idx--) {
+	chunk[idx] = chunk[idx - 1];
+    }
+    chunk[at--] = key;
+    chunk[at]   = itm;
     /**** rebalance tree */
     return;
 }
@@ -564,13 +809,91 @@ static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs){
     return 0;
 }
 
+/*
+ * given a numeric object return the size of the number
+ * (how many longs it takes to represent it)
+ */
+static int wycc_wint_size(wycc_obj *itm) {
+    if (itm->typ == Wy_Int) {
+	return (size_t) 1;
+    };
+    fprintf(stderr, "Help needed in add for type %d\n", itm->typ);
+    exit(-3);
+}
 
+int wycc_length_of_list(wycc_obj* itm) {
+    void** p = itm->ptr;
+
+    if (itm->typ != Wy_List) {
+	fprintf(stderr, "Help length_of_list called for type %d\n", itm->typ);
+	exit(-3);
+    }
+    return (int) p[0];
+}
+
+int wycc_length_of_set(wycc_obj* itm) {
+    void** p = itm->ptr;
+    int rslt;
+
+    if (itm->typ != Wy_Set) {
+	fprintf(stderr, "Help length_of_set called for type %d\n", itm->typ);
+	exit(-3);
+    };
+    if (((long) p[0]) == Wy_None) {
+	return 0;
+    };
+    if (((long) p[0]) == Wy_Any) {
+	/*
+	 * need to loop over the subsets (each of a single type - comparator)
+	 */
+	fprintf(stderr, "Help length_of_set called for type %d\n", itm->typ);
+	exit(-3);
+    };
+    return (int) p[1];
+}
+
+int wycc_length_of_raw_set(void** chunk) {
+    int rslt;
+
+    
+	fprintf(stderr, "Help length_of_raw_set called \n");
+	exit(-3);
+    
+    
+    return (int) chunk[0];
+
+}
+
+int wycc_length_of_map(wycc_obj* itm) {
+	fprintf(stderr, "Help length_of_map called \n");
+	exit(-3);
+}
 
 /*
  * ******************************
  * wyil opcode implementations
  * ******************************
  */
+
+/*
+ * given a wycc obj return an object that represents the length
+ */
+wycc_obj* wyil_length_of(wycc_obj* itm) {
+    long typ = itm->typ;
+    int rslt = 0;
+
+    if (typ == Wy_List) {
+	rslt = wycc_length_of_list(itm);
+    } else if (typ == Wy_Set) {
+	rslt = wycc_length_of_set(itm);
+    } else if (typ == Wy_Map) {
+	rslt = wycc_length_of_map(itm);
+    } else {
+	fprintf(stderr, "Help needed in lengthOf for type %d\n", itm->typ);
+	exit(-3);
+    };
+    return wycc_box_int(rslt);
+}
 
 /*
  * debug using an unboxed string
@@ -615,18 +938,6 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     strncpy(rslt, lhs->ptr, sizl);
     strncpy(rslt+sizl, rhs->ptr, sizr+1);
     return wycc_box_str(rslt);
-}
-
-/*
- * given a numeric object return the size of the number
- * (how many longs it takes to represent it)
- */
-static int wycc_wint_size(wycc_obj *itm) {
-    if (itm->typ == Wy_Int) {
-	return (size_t) 1;
-    };
-    fprintf(stderr, "Help needed in add for type %d\n", itm->typ);
-    exit(-3);
 }
 
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
@@ -828,12 +1139,61 @@ wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs){
     return wycc_box_long(rslt);
 }
 
+static wycc_obj* wyil_index_of_list(wycc_obj* lhs, wycc_obj* rhs){
+    void** p = lhs->ptr;
+    wycc_obj* ans;
+    long idx;
+
+    if (rhs->typ != Wy_Int) {
+	fprintf(stderr, "Help needed in wyil_index_of_list for type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    idx = (long) rhs->ptr;
+    if (idx < 0) {
+	fprintf(stderr, "ERROR: IndexOf under range for list (%d)", idx);
+	exit(-4);
+    };
+    if (idx >= (long) p[0]) {
+	fprintf(stderr, "ERROR: IndexOf over range for list (%d)", idx);
+	exit(-4);
+    };
+    ans = (wycc_obj*) p[2+idx];
+    ans->cnt++;
+    return ans;
+}
+
+wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
+    wycc_obj* ans;
+
+    if (lhs->typ == Wy_List) {
+	return wyil_index_of_list(lhs, rhs);
+    };
+	fprintf(stderr, "Help needed in wyil_index_of for type %d\n", lhs->typ);
+	exit(-3);
+}
 
 /*
  * ******************************
  * whiley standard library ie., native methods
  * ******************************
  */
+
+/*
+ * given a System object, write a line to the file referred to by out
+ */
+void wycc_println(wycc_obj* sys, wycc_obj* itm) {
+    wycc_obj* alt;
+
+    if (itm->typ == Wy_String) {
+	printf("%s\n", itm->ptr);
+	return;
+    };
+    alt = toString(itm);
+    printf("%s\n", alt->ptr);
+    wycc_deref_box(alt, 1);
+}
+
 wycc_obj* toString(wycc_obj* itm) {
     size_t siz;
     int tmp;
