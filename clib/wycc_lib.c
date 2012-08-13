@@ -1163,11 +1163,82 @@ static wycc_obj* wyil_index_of_list(wycc_obj* lhs, wycc_obj* rhs){
     return ans;
 }
 
+static wycc_obj* wyil_index_of_map(wycc_obj* map, wycc_obj* key){
+    void** p = map->ptr;
+    void** chunk;
+    wycc_obj* ans;
+    wycc_obj* tst;
+    long at, typ, cnt;
+    int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
+    int end;
+
+    typ = (long) p[0];
+    if (typ == Wy_None) {
+	fprintf(stderr, "ERROR: IndexOf for empty map \n");
+	exit(-4);
+    } else if (typ != key->typ) {
+	fprintf(stderr, "ERROR: type mismatch IndexOf map \n");
+	exit(-4);
+    };
+    at = 0;
+    chunk = &(p[2]);
+    if (((long) p[1]) <1) {
+	fprintf(stderr, "ERROR: IndexOf for empty map \n");
+	exit(-4);
+    }
+    compar = wycc_get_comparator(typ);
+    /*
+     * sequencial search within the chunk
+     */
+    while (at < ((long) chunk[0])) {
+	at++;
+	tst = (wycc_obj *) chunk[3*at];
+	end = compar(key, tst);
+	if (end == 0) {
+	    /* key match == done ; swap the value stored */
+	    ans = (wycc_obj *) chunk[(3*at) -1];
+	    ans->cnt++;
+	    return ans;
+	};
+	if (end < 0) {
+	    continue;
+	};
+	/* the item in question goes before here; ergo down a chunk */
+	chunk = chunk[(3*at) - 2];
+	at = 0;
+    };
+    at *= 3;		/* 3 ::= sizeof branch value key triplet */
+    while (at < (WYCC_MAP_CHUNK -2)) {
+	at += 2;
+	tst = (wycc_obj *) chunk[at];
+	if (tst == (wycc_obj *) NULL) {
+	    fprintf(stderr, "ERROR: key not found IndexOf map \n");
+	    exit(-4);
+	}
+	end = compar(key, tst);
+	if (end == 0) {
+	    /* key match == done ; swap the value stored */
+	    ans = (wycc_obj *) chunk[at -1];
+	    ans->cnt++;
+	    return ans;
+	};
+	if (end < 0) {
+	    break;
+	};
+    };
+    fprintf(stderr, "ERROR: key not found IndexOf map \n");
+    exit(-4);
+
+}
+
 wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
     wycc_obj* ans;
 
     if (lhs->typ == Wy_List) {
 	return wyil_index_of_list(lhs, rhs);
+    };
+    if (lhs->typ == Wy_Map) {
+	return wyil_index_of_map(lhs, rhs);
     };
 	fprintf(stderr, "Help needed in wyil_index_of for type %d\n", lhs->typ);
 	exit(-3);
