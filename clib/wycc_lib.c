@@ -89,7 +89,10 @@ static char* wy_type_names[] = {
     /*the field names of a record */
 #define Wy_Fields	8
     "fields",
-#define Wy_Type_Max	8
+    /* primative integer, it a long instead of pointer */
+#define Wy_CString	9
+    "string",
+#define Wy_Type_Max	9
     (char *) NULL
 };
 
@@ -154,7 +157,9 @@ Wycc_Comp_Ptr wy_comp_func[] = {
     wycc_comp_int,	/* int */
     wycc_comp_obj,	/* wint */
     wycc_comp_obj,	/* list */
-    wycc_comp_obj,	/* set */
+    wycc_comp_obj,	/* map */
+    wycc_comp_obj,	/* record */
+    wycc_comp_str,	/* cstring */
     NULL
 };
 
@@ -239,8 +244,20 @@ wycc_obj* wycc_box_str(char* text) {
     wycc_obj* ans;
 
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
-    /* ans->typ = 1; */
     ans->typ = Wy_String;
+    ans->cnt = 1;
+    ans->ptr = (void*) text;
+    return ans;
+}
+
+/*
+ * given a text string, box it in a wycc_obj
+ */
+wycc_obj* wycc_box_cstr(char* text) {
+    wycc_obj* ans;
+
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_CString;
     ans->cnt = 1;
     ans->ptr = (void*) text;
     return ans;
@@ -253,7 +270,6 @@ wycc_obj* wycc_box_int(int x) {
     wycc_obj* ans;
 
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
-    /* ans->typ = 2; */
     ans->typ = Wy_Int;
     ans->cnt = 1;
     ans->ptr = (void*) x;	/* **** kludge */
@@ -304,6 +320,7 @@ wycc_obj* wycc_list_get(wycc_obj* lst, long at) {
     if (at >= (long) p[0]) {
 	return NULL;
     };
+    /* **** Does this need to inc the ref count */
     return (wycc_obj*) p[2+at];
 }
 
@@ -586,7 +603,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    /* key match == done ; swap the value stored */
 	    tst = (wycc_obj *) chunk[(3*at) -1];
 	    chunk[(3*at) -1] = (void *) itm;
-	    wycc_deref_box(tst, 1);
+	    wycc_deref_box(tst);
 	    return;
 	};
 	if (end < 0) {
@@ -615,7 +632,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    /* key match == done ; swap the value stored */
 	    tst = (wycc_obj *) chunk[at -1];
 	    chunk[at -1] = (void *) itm;
-	    wycc_deref_box(tst, 1);
+	    wycc_deref_box(tst);
 	    return;	/* key match == done */
 	};
 	if (end < 0) {
@@ -724,33 +741,49 @@ void wycc_chunk_rebal(int payl, void** p, void** chunk, long at, long deep){
  */
 
 static void wycc_dealloc_typ(void* ptr, int typ);
-wycc_obj* wycc_deref_box(wycc_obj* itm, int flg) {
+wycc_obj* wycc_deref_box(wycc_obj* itm) {
     void* ptr;
     int typ;
 
-    if (--itm->cnt <= 0) {
-	ptr = itm->ptr;
-	typ = itm->typ;
-	if (wycc_debug_flag) {
-	    fprintf(stderr, "note: deallocing box for typ %d\n", typ);
-	};
-	free(itm);
-	if (flg != 0) {
-	    wycc_dealloc_typ(ptr, typ);
-	};
+    if (--itm->cnt > 0) {
+	return itm;
+    };
+    ptr = itm->ptr;
+    typ = itm->typ;
+    if (wycc_debug_flag) {
+	fprintf(stderr, "note: deallocing box for typ %d\n", typ);
+    };
+    free(itm);
+    if (typ == Wy_Int) {
 	return (wycc_obj *) NULL;
     }
-    return itm;
+    if (typ == Wy_CString) {
+	return (wycc_obj *) NULL;
+    }
+    wycc_dealloc_typ(ptr, typ);
+    return (wycc_obj *) NULL;
 }
 
 static void wycc_dealloc_typ(void* ptr, int typ){
-    /* if (typ == 1) { */
+    long siz, idx;
+    void** p = (void**) ptr;
+    wycc_obj* itm;
+
     if (typ == Wy_String) {
-        free (ptr);
-    } else {
-	fprintf(stderr, "ERROR: unrecognized type (%d) in dealloc\n", typ);
-	exit(-3);
-    }
+        free(ptr);
+	return;
+    };
+    if (typ == Wy_List) {
+	siz = (long) p[0];
+	for (idx= 0; idx < siz; idx++) {
+	    itm = (wycc_obj*) p[2+ idx]; 
+	    wycc_deref_box(itm);
+	}
+        free(ptr);
+	return;
+    };
+    fprintf(stderr, "ERROR: unrecognized type (%d) in dealloc\n", typ);
+    exit(-3);
 }
 
 /*
@@ -766,11 +799,11 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
     char *lp, *rp;
     int ans;
 
-    if (lhs->typ != Wy_String) {
+    if ((lhs->typ != Wy_String) && (lhs->typ != Wy_CString)) {
 	fprintf(stderr, "Help needed in wycc_comp_str for type %d\n", lhs->typ);
 	exit(-3);
     };
-    if (rhs->typ != Wy_String) {
+    if ((rhs->typ != Wy_String) && (rhs->typ != Wy_CString)) {
 	fprintf(stderr, "Help needed in wycc_comp_str for type %d\n", rhs->typ);
 	exit(-3);
     };
@@ -905,7 +938,7 @@ int wycc_length_of_string(wycc_obj* itm) {
     char* p = (char *) itm->ptr;
     int rslt;
 
-    if (itm->typ != Wy_String) {
+    if ((itm->typ != Wy_String) && (itm->typ != Wy_CString)) {
 	fprintf(stderr, "Help length_of_string called for type %d\n", itm->typ);
 	exit(-3);
     };
@@ -918,6 +951,70 @@ int wycc_length_of_string(wycc_obj* itm) {
  * wyil opcode implementations
  * ******************************
  */
+
+/*
+ * update an element of a list
+ */
+void wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs){
+    void** p = lst->ptr;
+    wycc_obj* itm;
+    long lsiz, idx;
+
+    if (lst->typ != Wy_List) {
+	fprintf(stderr, "ERROR: list in wyil_update_list is type %d\n"
+		, lst->typ);
+	exit(-3);
+    };
+    if (osv->typ != Wy_Int) {
+	fprintf(stderr, "ERROR: offset  value in wyil_update_list is type %d\n"
+		, osv->typ);
+	exit(-3);
+    };
+    lsiz = wycc_length_of_list(lst);
+    idx = (long) osv->ptr;
+    if ((idx < 0) || (idx >= lsiz)) {
+	fprintf(stderr
+		, "ERROR: out of bounds offset value in wyil_update_list\n");
+	exit(-3);
+    };
+    itm = p[2+idx];
+    p[2+idx] = rhs;
+    wycc_deref_box(itm);
+}
+
+/*
+ * create a list that combines two lists
+ */
+wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs){
+    wycc_obj* ans;
+    wycc_obj* itm;
+    long lsiz, rsiz, idx, siz;
+
+    if (lhs->typ != Wy_List) {
+	fprintf(stderr, "ERROR: lhs in wyil_list_comb is type %d\n", lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_List) {
+	fprintf(stderr, "ERROR: rhs in wyil_list_comb is type %d\n", rhs->typ);
+	exit(-3);
+    };
+    lsiz = wycc_length_of_list(lhs);
+    rsiz = wycc_length_of_list(rhs);
+    siz = lsiz + rsiz;
+    siz += 2;	/* pad it a lttle */
+    ans = wycc_list_new(siz);
+    for (idx=0 ; idx < lsiz; idx++) {
+	itm = wycc_list_get(lhs, idx);
+	itm->cnt++;
+	wycc_list_add(ans, itm);
+    }
+    for (idx=0 ; idx < rsiz; idx++) {
+	itm = wycc_list_get(rhs, idx);
+	itm->cnt++;
+	wycc_list_add(ans, itm);
+    }
+    return ans;
+}
 
 /*
  * given a wycc obj return an object that represents the length
@@ -933,6 +1030,8 @@ wycc_obj* wyil_length_of(wycc_obj* itm) {
     } else if (typ == Wy_Map) {
 	rslt = wycc_length_of_map(itm);
     } else if (typ == Wy_String) {
+	rslt = wycc_length_of_string(itm);
+    } else if (typ == Wy_CString) {
 	rslt = wycc_length_of_string(itm);
     } else {
 	fprintf(stderr, "Help needed in lengthOf for type %d\n", itm->typ);
@@ -958,6 +1057,8 @@ void wyil_debug_obj(wycc_obj* ptr1) {
     /* if (ptr1->typ == 1) { */
     if (ptr1->typ == Wy_String) {
 	fprintf(stderr, "%s\n", ptr1->ptr);
+    } else if (ptr1->typ == Wy_CString) {
+	fprintf(stderr, "%s\n", ptr1->ptr);
     } else {
 	fprintf(stderr, "Help needed in Debug for type %d\n", ptr1->typ);
     };
@@ -969,11 +1070,11 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     char* rslt;
     wycc_obj* ans;
 
-    if (lhs->typ != Wy_String) {
+    if ((lhs->typ != Wy_String) && (lhs->typ != Wy_CString)) {
 	fprintf(stderr, "Help needed in strappend for type %d\n", lhs->typ);
 	exit(-3);
     };
-    if (rhs->typ != Wy_String) {
+    if ((rhs->typ != Wy_String) && (rhs->typ != Wy_CString)) {
 	fprintf(stderr, "Help needed in strappend for type %d\n", rhs->typ);
 	exit(-3);
     };
@@ -1309,27 +1410,71 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
 	printf("%s\n", itm->ptr);
 	return;
     };
+    if (itm->typ == Wy_CString) {
+	printf("%s\n", itm->ptr);
+	return;
+    };
     alt = wycc__toString(itm);
     printf("%s\n", alt->ptr);
-    wycc_deref_box(alt, 1);
+    wycc_deref_box(alt);
 }
 
 wycc_obj* wycc__toString(wycc_obj* itm) {
     size_t siz;
-    int tmp;
+    long tmp;
+    long cnt, idx, at;
     char *buf;
+    char *part;
+    char *ptr;
+    wycc_obj* nxt;
 
-    if (itm->typ == 1) {
+    if (itm->typ == Wy_String) {
 	itm->cnt++;
 	return itm;
-    }
-    if (itm->typ != 2) {
-	return wycc_box_str("Unknown");
-    }
-    tmp = (int) itm->ptr;
-    buf = (char *) malloc(16);
-    sprintf(buf, "%-.1d", tmp);
-    return wycc_box_str(buf);
+    };
+    if (itm->typ == Wy_CString) {
+	itm->cnt++;
+	return itm;
+    };
+    if (itm->typ == Wy_Int) {
+	tmp = (int) itm->ptr;
+	buf = (char *) malloc(16);
+	sprintf(buf, "%-.1d", tmp);
+	return wycc_box_str(buf);
+    };
+    if (itm->typ == Wy_Int) {
+	tmp = (int) itm->ptr;
+	buf = (char *) malloc(16);
+	sprintf(buf, "%-.1d", tmp);
+	return wycc_box_str(buf);
+    };
+    if (itm->typ == Wy_List) {
+	cnt = wycc_length_of_list(itm);
+	siz = 3 + (cnt * 4);	/* minimalist approx. */
+	buf = (char *) malloc(siz);
+	buf[0] = '\0';
+	strncat(buf, "[", siz);
+	at = 1;
+	for (idx=0 ; idx < cnt; idx++) {
+	    nxt = wycc_list_get(itm, idx);
+	    nxt = wycc__toString(nxt);
+	    tmp = strlen(nxt->ptr);
+	    if (siz <= (at+tmp+3)) {
+		siz += (cnt - idx) * 4;
+		buf = (char*) realloc((void*)buf, siz);
+	    };
+	    if (idx > 0) {
+		strcpy((buf+at), ", ");
+		at += 2;
+	    };
+	    strcpy((buf+at), nxt->ptr);
+	    at += tmp;
+	    wycc_deref_box(nxt);
+	}
+	strcpy((buf+at), "]");
+	return wycc_box_str(buf);
+    };
+    return wycc_box_cstr("Unknown");
 }
 
 

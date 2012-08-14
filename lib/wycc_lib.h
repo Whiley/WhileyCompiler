@@ -42,8 +42,9 @@ int	wycc_debug_flag;
  */
 /* void wycc_main(); */
 void wycc__main(wycc_obj* sys);
-wycc_obj* wycc_deref_box(wycc_obj* itm, int flg);
+wycc_obj* wycc_deref_box(wycc_obj* itm);
 wycc_obj* wycc_box_str(char* text);
+wycc_obj* wycc_box_cstr(char* text);
 wycc_obj* wycc_box_int(int x);
 wycc_obj* wycc_box_long(long x);
 wycc_obj* wycc_list_new(long siz);
@@ -71,7 +72,8 @@ wycc_obj* wyil_shift_up(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_length_of(wycc_obj* itm);
 wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs);
-
+wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs);
+void wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 
 /*
  * routines to implement whiley standard library

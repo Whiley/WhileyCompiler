@@ -523,11 +523,13 @@ public class Wyil2CBuilder implements Builder {
 				ans += "//           " + " no attributes\n";
 			} else {
 				cnt = attCol.size();
-				ans += "//           " + " with " + cnt + " attributes\n";
+				if (cnt != 1) {
+					ans += "//           " + " with " + cnt + " attributes\n";
+				}
 				Attribute att = attCol.get(0);
 				if (att instanceof Attribute.Source) {
 					Attribute.Source attis = (Attribute.Source) att;
-					ans += "//           " + " [0] is " + attis.line + "\n";
+					// ans += "//           " + " [0] is " + attis.line + "\n";
 					if (lineNumFlag) {
 						this.body += "#line " + attis.line + "\n";
 					}
@@ -797,9 +799,36 @@ public class Wyil2CBuilder implements Builder {
 		
 		public String writeCodeUpdate(Code codIn, String tag){
 			String ans = "";
+			int targ, rhs, ofs;
+			int cnt;
+			Type typ;
+			String lin;
 			
 			ans += "// HELP needed for Update\n";
 			Code.Update cod = (Code.Update) codIn;
+			targ = cod.target;
+			ans += "//             target is " + targ + "\n";
+			cnt = 0;
+			ofs = -1;
+			for (int itm : cod.operands) {
+				cnt += 1;
+				ans += "//             operand " + cnt + " is " + itm + "\n";
+				ofs = itm;
+			}
+			rhs = cod.operand;
+			ans += "//             rhs is " + rhs + "\n";
+			typ = cod.type;
+			ans += "//             type is " + typ + "\n";
+
+			if (typ instanceof Type.List) {
+				if (cnt != 1){
+					error += "ERROR bad argument count for list update (" + cnt + ")\n";
+				}
+				lin = "wyil_update_list(X" + targ + ", X" + ofs + ", X" + rhs + ");";
+				this.body += indent + lin + tag + "\n";
+			} else {
+				error += "ERROR cannot yet do updates for type " + typ + "\n";
+			}
 			return ans;
 		}
 		
@@ -821,9 +850,33 @@ public class Wyil2CBuilder implements Builder {
 
 		public String writeCodeBinListOp(Code codIn, String tag){
 			String ans = "";
+			int targ, lhs, rhs;
+			String rtn, lin;
 
 			ans += "// HELP needed for BinListOp\n";
 			Code.BinListOp cod = (Code.BinListOp) codIn;
+			Code.BinListKind opr = cod.kind;
+			targ = cod.target;
+			ans += writeClearTarget(targ, tag);
+			this.addDecl(targ, "wycc_obj*");
+			lhs = cod.leftOperand;
+			rhs = cod.rightOperand;
+			if (opr == Code.BinListKind.APPEND) {
+				rtn = "wyil_list_comb";
+			} else if (opr == Code.BinListKind.LEFT_APPEND){
+				rtn = "wyil_list_comb";
+				error += "BinListOp ill-defined\n";
+			} else if (opr == Code.BinListKind.RIGHT_APPEND){
+				rtn = "wyil_list_comb";
+				error += "BinListOp ill-defined\n";
+			} else {
+				error += "BinListOp un-defined\n";
+				ans += "// HELP needed for binListOp '" + opr + "'\n";
+				return ans;
+			}
+			lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs + ");" + tag;
+			this.body += indent + lin + "\n";
+
 			return ans;
 		}
 
@@ -852,7 +905,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, rhs;
 			String lin;
 			
-			ans += "// HELP needed for LengthOf\n";
+			// ans += "// HELP needed for LengthOf\n";
 			Code.LengthOf cod = (Code.LengthOf) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
@@ -1036,17 +1089,6 @@ public class Wyil2CBuilder implements Builder {
 			return ans;
 		}
 		
-		public String writeClearTarget(int target, String tag){
-			Integer tgt = target;
-			//String ans = "";
-
-			if (declsU.contains(tgt)) {
-				this.body += indent + "wycc_deref_box(X" + target + ", 0);" + tag + "\n";
-			}
-			declsU.add(tgt);
-			return "";
-		}
-		
 		public String writeCodeBinArithOp(Code codIn, String tag){
 			String ans = "";
 			int targ, lhs, rhs;
@@ -1106,7 +1148,7 @@ public class Wyil2CBuilder implements Builder {
 			ans += "//             target " + targ + "\n";
 			tyc = val.type().toString();
 			if (tyc.equals("string")) {
-				assn = "wycc_box_str";
+				assn = "wycc_box_cstr";
 				this.addDecl(targ, "wycc_obj*");				
 			} else if (tyc.equals("int")) {
 				assn = "wycc_box_int";
@@ -1124,6 +1166,17 @@ public class Wyil2CBuilder implements Builder {
 				this.body += indent + "X" + targ + " = " + assn + ";" + tag + "\n";
 			}
 			return ans;
+		}
+		
+		public String writeClearTarget(int target, String tag){
+			Integer tgt = target;
+			//String ans = "";
+
+			if (declsU.contains(tgt)) {
+				this.body += indent + "wycc_deref_box(X" + target + ");" + tag + "\n";
+			}
+			declsU.add(tgt);
+			return "";
 		}
 		
 	}
