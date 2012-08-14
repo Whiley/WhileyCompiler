@@ -54,7 +54,7 @@ import wyil.lang.WyilFile.TypeDeclaration;
 public class Wyil2CBuilder implements Builder {
 	private Logger logger = Logger.NULL;
 	// private final PrintStream output = null;
-	private final String defaultManglePrefix = "wycc_";
+	private final String defaultManglePrefix = "wycc__";
 	private final String includeFile = "#include \"wycc_lib.h\"\n";
 	private String manglePrefix = null;
 	private int initor_flg = 1;
@@ -238,7 +238,7 @@ public class Wyil2CBuilder implements Builder {
 		lin = "#" + idx;
 		lin += "(" + atts.size() + ":" + mods.size() + ")";
 		lin += " is named " + typDe.name();
-		ans += "// WYIL type declaration " + lin;
+		ans += "// WYIL type declaration " + lin + "\n";
 		if (typDe.isProtected()) {
 			ans += "//                 is Protected\n";
 		}
@@ -599,6 +599,9 @@ public class Wyil2CBuilder implements Builder {
 			} else if (cod instanceof Code.NewRecord) {
 				ans += this.writeCodeNewRecord(cod, tag);
 
+			} else if (cod instanceof Code.IndexOf) {
+				ans += this.writeCodeIndexOf(cod, tag);
+
 				
 			} else if (cod instanceof Code.BinListOp) {
 				ans += this.writeCodeBinListOp(cod, tag);
@@ -631,8 +634,11 @@ public class Wyil2CBuilder implements Builder {
 			} else if (cod instanceof Code.LoopEnd) {
 				ans += this.writeCodeLoopEnd(cod, tag);
 
-			} else if (cod instanceof Code.IndexOf) {
-				ans += this.writeCodeIndexOf(cod, tag);
+			} else if (cod instanceof Code.Assert) {
+				ans += this.writeCodeAssert(cod, tag);
+
+			} else if (cod instanceof Code.Void) {
+				ans += this.writeCodeVoid(cod, tag);
 
 			} else if (cod instanceof Code.Void) {
 				ans += this.writeCodeVoid(cod, tag);
@@ -650,24 +656,12 @@ public class Wyil2CBuilder implements Builder {
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
 			return ans;
 		}
-
-		//
-		// do a lookup given a key (in a map) or an int (in a list)
-		public String writeCodeIndexOf(Code codIn, String tag){
+		
+		public String writeCodeAssert(Code codIn, String tag){
 			String ans = "";
-			int targ, lhs, rhs;
-			String lin;
 			
-			ans += "// HELP needed for IndexOf\n";
-			Code.IndexOf cod = (Code.IndexOf) codIn;
-			targ = cod.target;
-			lhs = cod.leftOperand;
-			rhs = cod.rightOperand;
-			
-			ans += writeClearTarget(targ, tag);
-			this.addDecl(targ, "wycc_obj*");
-			lin = "X" + targ + " = wyil_index_of(X" + lhs + ", X" + rhs + ");" + tag;
-			this.body += indent + lin + "\n";
+			ans += "// HELP needed for Assert\n";
+			Code.Assert cod = (Code.Assert) codIn;
 			return ans;
 		}
 		
@@ -832,6 +826,26 @@ public class Wyil2CBuilder implements Builder {
 			Code.BinListOp cod = (Code.BinListOp) codIn;
 			return ans;
 		}
+
+		//
+		// do a lookup given a key (in a map) or an int (in a list)
+		public String writeCodeIndexOf(Code codIn, String tag){
+			String ans = "";
+			int targ, lhs, rhs;
+			String lin;
+			
+			// ans += "// HELP needed for IndexOf\n";
+			Code.IndexOf cod = (Code.IndexOf) codIn;
+			targ = cod.target;
+			lhs = cod.leftOperand;
+			rhs = cod.rightOperand;
+			
+			ans += writeClearTarget(targ, tag);
+			this.addDecl(targ, "wycc_obj*");
+			lin = "X" + targ + " = wyil_index_of(X" + lhs + ", X" + rhs + ");" + tag;
+			this.body += indent + lin + "\n";
+			return ans;
+		}
 		
 		public String writeCodeLengthOf(Code codIn, String tag){
 			String ans = "";
@@ -872,7 +886,7 @@ public class Wyil2CBuilder implements Builder {
 			String lin;
 			boolean flg;
 			
-			ans += "// HELP needed for NewMap\n";
+			// ans += "// HELP needed for NewMap\n";
 			Code.NewMap cod = (Code.NewMap) codIn;
 			targ = cod.target;
 			ans += writeClearTarget(targ, tag);
@@ -994,20 +1008,23 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeInvoke(Code codIn, String tag){
 			String ans = "";
 			int targ;
-			String lin, sep;
+			String sep, mnam;
+			String lin = "";
 			
 			Code.Invoke cod = (Code.Invoke) codIn;
 			targ = cod.target;
 			NameID nid = cod.name;
 			Path.ID pat = nid.module();
 			String nam = nid.name();
+			mnam = defaultManglePrefix + nam;
 			// ans += "// HELP for NameID '" + nam + "' within " + pat + "\n";
-			if (targ < 0) {
-				lin = "wycc_" + nam + "(";
-			} else{
+			if (targ >= 0) {
 				ans += writeClearTarget(targ, tag);
-				lin = "X" + targ + " = wycc_" + nam + "(";
+				this.addDecl(targ, "wycc_obj*");
+				lin = "X" + targ + " = ";
 			}
+			lin += mnam + "(";
+
 			sep = "";
 			for (int itm : cod.operands) {
 				lin += sep + "X" + itm;
@@ -1039,6 +1056,7 @@ public class Wyil2CBuilder implements Builder {
 			Code.BinArithKind opr = cod.kind;
 			targ = cod.target;
 			ans += writeClearTarget(targ, tag);
+			this.addDecl(targ, "wycc_obj*");
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 			// ans += "// HELP needed for binArithOp '" + opr + "'\n";

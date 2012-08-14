@@ -41,7 +41,7 @@ int	wycc_debug_flag;
  * routines used by wycc for structure and bookkeeping
  */
 /* void wycc_main(); */
-void wycc_main(wycc_obj* sys);
+void wycc__main(wycc_obj* sys);
 wycc_obj* wycc_deref_box(wycc_obj* itm, int flg);
 wycc_obj* wycc_box_str(char* text);
 wycc_obj* wycc_box_int(int x);
@@ -76,8 +76,8 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs);
 /*
  * routines to implement whiley standard library
  */
-wycc_obj* toString(wycc_obj* itm);
-void wycc_println(wycc_obj* sys, wycc_obj* itm);
+wycc_obj* wycc__toString(wycc_obj* itm);
+void wycc__println(wycc_obj* sys, wycc_obj* itm);
 
 /*
 ;;; Local Variables: ***

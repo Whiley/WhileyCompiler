@@ -118,6 +118,22 @@ static char* wy_type_names[] = {
  *			}
  *			value ...
  *			level_chunk link
+ * Wy_Map	ptr to block:
+ *		member type
+ *		member count
+ *		chunk:
+ *			branch count
+ *			* {
+ *				branch link
+ *				value
+ *				key
+ *			}
+ *			{
+ *				value
+ *				key
+ *			} ...
+ *			level_chunk link
+ *
  *
  */
 /*
@@ -190,7 +206,7 @@ int main(int argc, char** argv, char** envp) {
 	ini = (wycc_initor*)ini->nxt;
     };
     sys = wycc_box_int(1);	/* **** KLUDGE **** */
-    wycc_main(sys);
+    wycc__main(sys);
     return 0;
 }
 
@@ -314,7 +330,7 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
 	p[1] = (void *) tmp;
 	lst->ptr = p;
     };
-    p[2 + at] = (void *) itm;
+    p[1 + at] = (void *) itm;
     itm->cnt++;
     return;
 }
@@ -865,8 +881,36 @@ int wycc_length_of_raw_set(void** chunk) {
 }
 
 int wycc_length_of_map(wycc_obj* itm) {
-	fprintf(stderr, "Help length_of_map called \n");
+    void** p = itm->ptr;
+    int rslt;
+
+    if (itm->typ != Wy_Map) {
+	fprintf(stderr, "Help length_of_map called for type %d\n", itm->typ);
 	exit(-3);
+    };
+    if (((long) p[0]) == Wy_None) {
+	return 0;
+    };
+    if (((long) p[0]) == Wy_Any) {
+	/*
+	 * need to loop over the subsets (each of a single type - comparator)
+	 */
+	fprintf(stderr, "Help length_of_map called for type %d\n", itm->typ);
+	exit(-3);
+    };
+    return (int) p[1];
+}
+
+int wycc_length_of_string(wycc_obj* itm) {
+    char* p = (char *) itm->ptr;
+    int rslt;
+
+    if (itm->typ != Wy_String) {
+	fprintf(stderr, "Help length_of_string called for type %d\n", itm->typ);
+	exit(-3);
+    };
+    rslt = strlen(p);
+    return rslt;
 }
 
 /*
@@ -888,6 +932,8 @@ wycc_obj* wyil_length_of(wycc_obj* itm) {
 	rslt = wycc_length_of_set(itm);
     } else if (typ == Wy_Map) {
 	rslt = wycc_length_of_map(itm);
+    } else if (typ == Wy_String) {
+	rslt = wycc_length_of_string(itm);
     } else {
 	fprintf(stderr, "Help needed in lengthOf for type %d\n", itm->typ);
 	exit(-3);
@@ -1248,24 +1294,27 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
  * ******************************
  * whiley standard library ie., native methods
  * ******************************
+ *
+ * Note: there is a double underscore (__) following the "wycc"
+ * in these names.
  */
 
 /*
  * given a System object, write a line to the file referred to by out
  */
-void wycc_println(wycc_obj* sys, wycc_obj* itm) {
+void wycc__println(wycc_obj* sys, wycc_obj* itm) {
     wycc_obj* alt;
 
     if (itm->typ == Wy_String) {
 	printf("%s\n", itm->ptr);
 	return;
     };
-    alt = toString(itm);
+    alt = wycc__toString(itm);
     printf("%s\n", alt->ptr);
     wycc_deref_box(alt, 1);
 }
 
-wycc_obj* toString(wycc_obj* itm) {
+wycc_obj* wycc__toString(wycc_obj* itm) {
     size_t siz;
     int tmp;
     char *buf;
@@ -1279,7 +1328,7 @@ wycc_obj* toString(wycc_obj* itm) {
     }
     tmp = (int) itm->ptr;
     buf = (char *) malloc(16);
-    sprintf(buf, "%-14.1d", tmp);
+    sprintf(buf, "%-.1d", tmp);
     return wycc_box_str(buf);
 }
 
