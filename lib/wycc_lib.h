@@ -54,6 +54,8 @@ wycc_obj* wycc_set_new(int typ);
 void wycc_set_add(wycc_obj* lst, wycc_obj* itm);
 wycc_obj* wycc_map_new(int typ);
 void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm);
+wycc_obj* wycc_cow_list(wycc_obj* lst);
+
 
 /*
  * routines to implement wyil operations
@@ -83,7 +85,7 @@ wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_length_of(wycc_obj* itm);
 wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs);
-void wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
+wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 
 /*
  * routines to implement whiley standard library

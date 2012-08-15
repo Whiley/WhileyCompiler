@@ -981,6 +981,33 @@ int wycc_length_of_string(wycc_obj* itm) {
     return rslt;
 }
 
+wycc_obj* wycc_cow_list(wycc_obj* lst) {
+    wycc_obj* ans;
+    wycc_obj* nxt;
+    void** p = lst->ptr;
+    long at, tmp;
+    void** new;
+
+    if (lst->typ != Wy_List) {
+	fprintf(stderr, "Help needed in wycc_cow_list for type %d\n", lst->typ);
+	exit(-3);
+    };
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_List;
+    tmp = (long) p[1];
+    new = (void**) calloc(tmp, sizeof(void *));
+    tmp = (long) p[0];
+    for (at= 0; at < tmp ; at++) {
+	nxt = (wycc_obj*) p[2+at];
+	nxt->cnt++;
+	new[2+at] = (void *) nxt;
+    }
+    new[0] = (void *) tmp;
+    ans->ptr = (void *) new;
+    ans->cnt = 1;
+    return ans;
+}
+
 /*
  * ******************************
  * wyil opcode implementations
@@ -1038,7 +1065,7 @@ void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
 /*
  * update an element of a list
  */
-void wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs){
+wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs){
     void** p = lst->ptr;
     wycc_obj* itm;
     long lsiz, idx;
@@ -1060,9 +1087,15 @@ void wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs){
 		, "ERROR: out of bounds offset value in wyil_update_list\n");
 	exit(-3);
     };
+    if (lst->cnt > 1) {
+	lst = wycc_cow_list(lst);
+	p = lst->ptr;
+    };
     itm = p[2+idx];
     p[2+idx] = rhs;
+    rhs->cnt++;
     wycc_deref_box(itm);
+    return lst;
 }
 
 /*

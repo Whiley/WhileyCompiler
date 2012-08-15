@@ -871,7 +871,7 @@ public class Wyil2CBuilder implements Builder {
 				if (cnt != 1){
 					error += "ERROR bad argument count for list update (" + cnt + ")\n";
 				}
-				lin = "wyil_update_list(X" + targ + ", X" + ofs + ", X" + rhs + ");";
+				lin = "X" + targ + " = wyil_update_list(X" + targ + ", X" + ofs + ", X" + rhs + ");";
 				this.body += indent + lin + tag + "\n";
 			} else {
 				error += "ERROR cannot yet do updates for type " + typ + "\n";
