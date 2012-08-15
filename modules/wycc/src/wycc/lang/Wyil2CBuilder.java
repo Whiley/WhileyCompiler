@@ -56,6 +56,7 @@ public class Wyil2CBuilder implements Builder {
 	// private final PrintStream output = null;
 	private final String defaultManglePrefix = "wycc__";
 	private final String includeFile = "#include \"wycc_lib.h\"\n";
+	private String optIncludeFile = "";
 	private String manglePrefix = null;
 	private int initor_flg = 1;
 	private String name;
@@ -63,6 +64,7 @@ public class Wyil2CBuilder implements Builder {
 	private boolean lineNumFlag;
 	private final int wyccTypeAny = 0;
 	private final int wyccTypeNone = -1;
+	private final String exit_fail = "exit(-4);";
 	
 	public Wyil2CBuilder() {
 		this.debugFlag = true;
@@ -82,6 +84,11 @@ public class Wyil2CBuilder implements Builder {
 		return null; // TODO: this seems like a mistake in Builder ?
 	}
 
+	private void addIncludeFail(){
+		this.optIncludeFile += "#include <stdlib.h>\n";
+		this.optIncludeFile += "#include <stdio.h>\n";
+	}
+	
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
 		
 		Runtime runtime = Runtime.getRuntime();
@@ -181,7 +188,7 @@ public class Wyil2CBuilder implements Builder {
 				contents += tmp;
 			}
 		}
-
+		contents += this.optIncludeFile;
 		for (Method met : mets) {
 			contents += met.write();
 		}
@@ -661,9 +668,49 @@ public class Wyil2CBuilder implements Builder {
 		
 		public String writeCodeAssert(Code codIn, String tag){
 			String ans = "";
+			int lhs, rhs;
+			String lin;
+			String cmp = "";
+			
 			
 			ans += "// HELP needed for Assert\n";
 			Code.Assert cod = (Code.Assert) codIn;
+			Code.Comparator opr = cod.op;
+			lhs = cod.leftOperand;
+			rhs = cod.rightOperand;
+			ans += "//             with " + opr + " and '" + cod.msg + "'\n";
+			if (opr == Code.Comparator.ELEMOF) {
+				cmp = "Wyil_Relation_Mo";
+			} else if (opr == Code.Comparator.EQ){
+				cmp = "Wyil_Relation_Eq";
+			} else if (opr == Code.Comparator.GT){
+				cmp = "Wyil_Relation_Gt";
+			} else if (opr == Code.Comparator.GTEQ){
+				cmp = "Wyil_Relation_Ge";
+			} else if (opr == Code.Comparator.LT){
+				cmp = "Wyil_Relation_Lt";
+			} else if (opr == Code.Comparator.LTEQ){
+				cmp = "Wyil_Relation_Le";
+			} else if (opr == Code.Comparator.NEQ){
+				cmp = "Wyil_Relation_Ne";
+
+			} else if (opr == Code.Comparator.SUBSET){
+				cmp = "Wyil_Relation_Ss";
+			} else if (opr == Code.Comparator.SUBSETEQ){
+				cmp = "Wyil_Relation_Se";
+
+			} else {
+				error += "Assert operation un-defined\n";
+				ans += "// HELP needed for binListOp '" + opr + "'\n";
+				return ans;
+			}
+			lin = "wyil_assert(X" + lhs + ", X" + rhs + ", " + cmp + ", \"" + cod.msg + "\\n\");";
+			//lin = "if (X" + lhs + cmp + "X" + rhs + ") {\n";
+			//lin += indent + indent + "fprintf(stderr, \"" + cod.msg + "\");\n";
+			//lin += indent + indent + exit_fail;
+			//lin += "};";
+			this.body += indent + lin + tag + "\n";
+			// addIncludeFail();
 			return ans;
 		}
 		

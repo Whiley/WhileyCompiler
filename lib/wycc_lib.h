@@ -58,6 +58,16 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm);
 /*
  * routines to implement wyil operations
  */
+#define Wyil_Relation_Eq	1
+#define Wyil_Relation_Gt	2
+#define Wyil_Relation_Ge	3
+#define Wyil_Relation_Lt	4
+#define Wyil_Relation_Le	5
+#define Wyil_Relation_Ne	6
+#define Wyil_Relation_Mo	7
+#define Wyil_Relation_Ss	8
+#define Wyil_Relation_Se	9
+void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg);
 void wyil_debug_str(char* mesg);
 void wyil_debug_obj(wycc_obj* ptr);
 wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs);

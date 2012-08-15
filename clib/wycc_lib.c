@@ -142,6 +142,7 @@ static char* wy_type_names[] = {
 /*
  * we need comparitor functions for all object types
  */
+static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
@@ -380,7 +381,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     long at, typ, cnt, deep, idx, cp;
     size_t raw;
     wycc_obj* tst;
-    int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
+    // int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
     int end;
 
     if (lst->typ != Wy_Set) {
@@ -392,9 +393,11 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     if (typ == Wy_None) {
 	typ = itm->typ;
 	p[0] = (void *) typ;
+    } else if (typ == Wy_Any) {
     } else if (typ != itm->typ) {
-	fprintf(stderr, "Help needed in wycc_set_add for multi-types \n");
-	exit(-3);
+	//fprintf(stderr, "Help needed in wycc_set_add for multi-types \n");
+	//exit(-3);
+	p[0] = (void *) Wy_Any;
     };
     if ((typ < 0) || (typ > Wy_Type_Max)){
 	fprintf(stderr, "Help needed in wycc_set_add for types %d\n", typ);
@@ -413,7 +416,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     }
     deep = 0;
     /* compar = wy_comp_func[typ];		/* **** change to a getter function */
-    compar = wycc_get_comparator(typ);
+    // compar = wycc_get_comparator(typ);
 
     /*
      * sequencial search within the chunk
@@ -421,7 +424,8 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     while (at < ((long) chunk[0])) {
 	at++;
 	tst = (wycc_obj *) chunk[2*at];
-	end = compar(itm, tst);
+	// end = compar(itm, tst);
+	end = wycc_comp_gen(itm, tst);
 	if (end == 0) {
 	    return;	/* key match == done */
 	};
@@ -446,7 +450,8 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	    wycc_chunk_rebal(0, p, chunk, at, deep);
 	    return;
 	}
-	end = compar(itm, tst);
+	// end = compar(itm, tst);
+	end = wycc_comp_gen(itm, tst);
 	if (end == 0) {
 	    return;	/* key match == done */
 	};
@@ -560,7 +565,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
     long at, typ, cnt, deep, idx, cp;
     size_t raw;
     wycc_obj* tst;
-    int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
+    // int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
     int end;
 
     if (lst->typ != Wy_Map) {
@@ -571,9 +576,11 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
     if (typ == Wy_None) {
 	typ = key->typ;
 	p[0] = (void *) typ;
-    } else if (typ != key->typ) {
-	fprintf(stderr, "Help needed in wycc_map_add for multi-types \n");
-	exit(-3);
+    } else if (typ == Wy_Any) {
+    } else if (typ != itm->typ) {
+	//fprintf(stderr, "Help needed in wycc_map_add for multi-types \n");
+	//exit(-3);
+	p[0] = (void *) Wy_Any;
     };
     if ((typ < 0) || (typ > Wy_Type_Max)){
 	fprintf(stderr, "Help needed in wycc_map_add for types %d\n", typ);
@@ -591,14 +598,15 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	p[1] = (void *) 1;
 	return;
     }
-    compar = wycc_get_comparator(typ);
+    // compar = wycc_get_comparator(typ);
     /*
      * sequencial search within the chunk
      */
     while (at < ((long) chunk[0])) {
 	at++;
 	tst = (wycc_obj *) chunk[3*at];
-	end = compar(key, tst);
+	// end = compar(key, tst);
+	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
 	    tst = (wycc_obj *) chunk[(3*at) -1];
@@ -627,7 +635,8 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    wycc_chunk_rebal(0, p, chunk, at, deep);
 	    return;
 	}
-	end = compar(key, tst);
+	// end = compar(key, tst);
+	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
 	    tst = (wycc_obj *) chunk[at -1];
@@ -795,6 +804,32 @@ static void wycc_dealloc_typ(void* ptr, int typ){
  * ------------------------------
  */
 
+static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
+    int lt = lhs->typ;
+    int rt = rhs->typ;
+
+    if (lt == Wy_CString) {
+	lt = Wy_String;
+    };
+    if (rt == Wy_CString) {
+	rt = Wy_String;
+    };
+    if (lt < rt) {
+	return -1;
+    };
+    if (lt > rt) {
+	return 11;
+    };
+    if (lt == Wy_String) {
+	return wycc_comp_str(lhs, rhs);
+    };
+    if (lt == Wy_Int) {
+	return wycc_comp_int(lhs, rhs);
+    };
+    fprintf(stderr, "Help needed in wycc_comp_gen for type %d\n", lt);
+    exit(-3);
+}
+
 static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
     char *lp, *rp;
     int ans;
@@ -951,6 +986,54 @@ int wycc_length_of_string(wycc_obj* itm) {
  * wyil opcode implementations
  * ******************************
  */
+
+/*
+ * given two operands, a relationship, and a text line
+ * returnn if the relationship holds, else print the text and exit.
+ */
+void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
+    int end;
+
+    if (rel >= Wyil_Relation_Mo) {
+	fprintf(stderr, "Failure: wyil_assert with relation %d\n"
+		, rel);
+	exit(-3);
+    };
+    end = wycc_comp_gen(lhs, rhs);
+    if (end < 0) {
+	if (rel == Wyil_Relation_Lt) {
+	    return;
+	};
+	if (rel == Wyil_Relation_Le) {
+	    return;
+	};
+	if (rel == Wyil_Relation_Ne) {
+	    return;
+	};
+    } else if (end > 0) {
+	if (rel == Wyil_Relation_Gt) {
+	    return;
+	};
+	if (rel == Wyil_Relation_Ge) {
+	    return;
+	};
+	if (rel == Wyil_Relation_Ne) {
+	    return;
+	};
+    } else {
+	if (rel == Wyil_Relation_Eq) {
+	    return;
+	};
+	if (rel == Wyil_Relation_Le) {
+	    return;
+	};
+	if (rel == Wyil_Relation_Ge) {
+	    return;
+	};
+    };
+    fprintf(stderr, msg);
+    exit(-4);
+}
 
 /*
  * update an element of a list
@@ -1419,6 +1502,50 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
     wycc_deref_box(alt);
 }
 
+static char *wycc__toString_set(void **chunk, char* buf, size_t *isiz) {
+    int cnt;
+    int idx;
+    long tmp;
+    wycc_obj* nxt;
+
+    size_t siz = *isiz;
+    long at = strlen(buf);
+
+    cnt = ((long) chunk[0]) * 2;
+    for (idx = 1; idx < WYCC_SET_CHUNK ; idx++) {
+	nxt = (wycc_obj*) chunk[idx];
+	if (nxt == NULL) {
+	    break;
+	};
+	if ((idx < cnt) && ((idx % 2) != 0)) {
+	    buf = wycc__toString_set((void**) nxt, buf, isiz);
+	    at = strlen(buf);
+	    continue;
+	};
+	nxt = wycc__toString(nxt);
+	tmp = strlen(nxt->ptr);
+	if (siz <= (at+tmp+3)) {
+	    if (siz > 512) {
+		siz += 1024;
+		siz -= 1;
+		siz - (siz % 512);
+	    } else {
+		siz += siz/2;
+	    }
+	    buf = (char*) realloc((void*)buf, siz);
+	};
+	if (at > 1) {
+	    strcpy((buf+at), ", ");
+	    at += 2;
+	};
+	strcpy((buf+at), nxt->ptr);
+	at += tmp;
+	wycc_deref_box(nxt);
+    }
+    *isiz = siz;
+    return buf;
+}
+
 wycc_obj* wycc__toString(wycc_obj* itm) {
     size_t siz;
     long tmp;
@@ -1473,6 +1600,23 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	}
 	strcpy((buf+at), "]");
 	return wycc_box_str(buf);
+    };
+    if (itm->typ == Wy_Set) {
+	//return wycc_box_cstr("Set");
+	cnt = wycc_length_of_set(itm);
+	siz = 3 + (cnt * 4);	/* minimalist approx. */
+	buf = (char *) malloc(siz);
+	buf[0] = '\0';
+	strncat(buf, "{", siz);
+	at = 1;
+	void **p = itm->ptr;
+	buf = wycc__toString_set((void**)&(p[2]), buf, &siz);
+	at = strlen(buf);
+	strcpy((buf+at), "}");
+	return wycc_box_str(buf);
+    };
+    if (itm->typ == Wy_Map) {
+	return wycc_box_cstr("Map");
     };
     return wycc_box_cstr("Unknown");
 }
