@@ -1432,15 +1432,12 @@ static wycc_obj* wyil_index_of_map(wycc_obj* map, wycc_obj* key){
     wycc_obj* ans;
     wycc_obj* tst;
     long at, typ, cnt;
-    int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
+    // int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
     int end;
 
     typ = (long) p[0];
     if (typ == Wy_None) {
 	fprintf(stderr, "ERROR: IndexOf for empty map \n");
-	exit(-4);
-    } else if (typ != key->typ) {
-	fprintf(stderr, "ERROR: type mismatch IndexOf map \n");
 	exit(-4);
     };
     at = 0;
@@ -1449,14 +1446,15 @@ static wycc_obj* wyil_index_of_map(wycc_obj* map, wycc_obj* key){
 	fprintf(stderr, "ERROR: IndexOf for empty map \n");
 	exit(-4);
     }
-    compar = wycc_get_comparator(typ);
+    // compar = wycc_get_comparator(typ);
     /*
      * sequencial search within the chunk
      */
     while (at < ((long) chunk[0])) {
 	at++;
 	tst = (wycc_obj *) chunk[3*at];
-	end = compar(key, tst);
+	// end = compar(key, tst);
+	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
 	    ans = (wycc_obj *) chunk[(3*at) -1];
@@ -1478,7 +1476,8 @@ static wycc_obj* wyil_index_of_map(wycc_obj* map, wycc_obj* key){
 	    fprintf(stderr, "ERROR: key not found IndexOf map \n");
 	    exit(-4);
 	}
-	end = compar(key, tst);
+	// end = compar(key, tst);
+	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
 	    ans = (wycc_obj *) chunk[at -1];
