@@ -1671,6 +1671,9 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
     wycc_deref_box(alt);
 }
 
+/*
+ * given a chunk of a set, step thru every slot, digressing as needed
+ */
 static char *wycc__toString_set(void **chunk, char* buf, size_t *isiz) {
     int cnt;
     int idx;
@@ -1710,6 +1713,69 @@ static char *wycc__toString_set(void **chunk, char* buf, size_t *isiz) {
 	strcpy((buf+at), nxt->ptr);
 	at += tmp;
 	wycc_deref_box(nxt);
+    }
+    *isiz = siz;
+    return buf;
+}
+
+/*
+ * given a chunk of a map, step thru every slot, digressing as needed
+ */
+static char *wycc__toString_map(void **chunk, char* buf, size_t *isiz) {
+    int cnt;
+    int idx;
+    int flip;
+    long tmpa, tmpb;
+    wycc_obj* nxt;
+    wycc_obj* savo;
+    char *sav;
+
+    size_t siz = *isiz;
+    long at = strlen(buf);
+
+    cnt = ((long) chunk[0]) * 3;
+    flip = 0;
+    for (idx = 1; idx < WYCC_SET_CHUNK ; idx++) {
+	nxt = (wycc_obj*) chunk[idx];
+	if (nxt == NULL) {
+	    break;
+	};
+	if ((idx < cnt) && ((idx % 3) == 1)) {
+	    buf = wycc__toString_map((void**) nxt, buf, isiz);
+	    at = strlen(buf);
+	    continue;
+	};
+	nxt = wycc__toString(nxt);
+	flip++;
+	if (1 == (flip%2)) {
+	    sav = nxt->ptr;
+	    savo = nxt;
+	    tmpb = strlen(sav);
+	    continue;
+	};
+	tmpa = strlen(nxt->ptr);
+	if (siz <= (at+tmpa+tmpb+4)) {
+	    if (siz > 512) {
+		siz += 1024;
+		siz -= 1;
+		siz - (siz % 512);
+	    } else {
+		siz += siz/2;
+	    }
+	    buf = (char*) realloc((void*)buf, siz);
+	};
+	if (at > 1) {
+	    strcpy((buf+at), ", ");
+	    at += 2;
+	};
+	strcpy((buf+at), nxt->ptr);
+	wycc_deref_box(nxt);
+	at += tmpa;
+	strcpy((buf+at), "=>");
+	at += 2;
+	strcpy((buf+at), sav);
+	at += tmpb;
+	wycc_deref_box(savo);
     }
     *isiz = siz;
     return buf;
@@ -1785,7 +1851,18 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	return wycc_box_str(buf);
     };
     if (itm->typ == Wy_Map) {
-	return wycc_box_cstr("Map");
+	// return wycc_box_cstr("Map");
+	cnt = wycc_length_of_map(itm);
+	siz = 3 + (cnt * 6);	/* minimalist approx. */
+	buf = (char *) malloc(siz);
+	buf[0] = '\0';
+	strncat(buf, "{", siz);
+	at = 1;
+	void **p = itm->ptr;
+	buf = wycc__toString_map((void**)&(p[2]), buf, &siz);
+	at = strlen(buf);
+	strcpy((buf+at), "}");
+	return wycc_box_str(buf);
     };
     return wycc_box_cstr("Unknown");
 }
