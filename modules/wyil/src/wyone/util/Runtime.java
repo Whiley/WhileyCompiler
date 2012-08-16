@@ -2,7 +2,7 @@ package wyone.util;
 
 import java.math.BigInteger;
 
-import wyautl.io.PrettyAutomataReader.DataReader;
+import wyone.io.PrettyAutomataReader.DataReader;
 
 public class Runtime {
 	public static int[] append(int... xs) {

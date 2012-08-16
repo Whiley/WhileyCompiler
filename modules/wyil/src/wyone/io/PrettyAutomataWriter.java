@@ -23,11 +23,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.io;
+package wyone.io;
 
 import java.io.*;
 
-import wyautl.lang.*;
+import wyautl.io.GenericWriter;
+import wyone.core.*;
 
 /**
  * <p>

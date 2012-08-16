@@ -1,8 +1,8 @@
-package wyautl.io;
+package wyone.io;
 
 import java.io.*;
 import java.util.*;
-import wyautl.lang.*;
+import wyone.core.*;
 
 public class PrettyAutomataReader {	
 	private final InputStream input;

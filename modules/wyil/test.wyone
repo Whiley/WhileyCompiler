@@ -2,7 +2,7 @@ term True
 term False
 class Bool as True | False
 
-term Var
+term Var(string)
 
 // ==================================================
 // Theory of Logical Connectives
