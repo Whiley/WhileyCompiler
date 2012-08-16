@@ -45,10 +45,9 @@ public class SpecParser {
 	private Decl parseTermDecl() {
 		int start = index;
 		matchKeyword("term");
-		String name = matchIdentifier().text;
-		Type data = parseType();
+		Type.Term data = parseTermType();
 		matchEndLine();		
-		return new TermDecl(name, data, sourceAttr(start,index-1));
+		return new TermDecl(data, sourceAttr(start,index-1));
 	}
 		
 	private Decl parseClassDecl() {
@@ -599,13 +598,26 @@ public class SpecParser {
 				|| token instanceof LeftSquare) {
 			return parseCompoundType();
 		} else {
-			Identifier id = matchIdentifier();
-			Type data = parseType();
-			t = Type.T_TERM(id.text,data);
+			return parseTermType();
 		}
 		
 		return t;
 	}		
+	
+	private Type.Term parseTermType() {
+		skipWhiteSpace(false);
+		checkNotEof();
+		Identifier id = matchIdentifier();
+		Type data = Type.T_VOID;
+		if(index < tokens.size()) {
+			Token token = tokens.get(index);
+			if (token instanceof LeftBrace || token instanceof LeftCurly
+					|| token instanceof LeftSquare) {
+				data = parseCompoundType();
+			}
+		}
+		return Type.T_TERM(id.text,data);
+	}
 	
 	private Type.Compound parseCompoundType() {
 		Type.Compound.Kind kind;

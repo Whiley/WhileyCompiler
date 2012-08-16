@@ -29,7 +29,15 @@ public abstract class Type {
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();
 	public static final Compound T_COMPOUNDANY = new Compound(Compound.Kind.LIST,true,T_ANY);
-	public static final AnyTerm T_ANYTERM = new AnyTerm();
+	
+	public static Compound T_COMPOUND(Compound.Kind kind, boolean unbounded, Collection<Type> elements) {
+		Type[] es = new Type[elements.size()];
+		int i =0;
+		for(Type t : elements) {
+			es[i++] = t;
+		}
+		return get(new Compound(kind,unbounded,es));
+	}
 	
 	public static Compound T_COMPOUND(Compound.Kind kind, boolean unbounded, Type... elements) {
 		return get(new Compound(kind,unbounded,elements));
@@ -49,14 +57,34 @@ public abstract class Type {
 	 */
 	public static boolean isSubtype(Type t1, Type t2) {
 		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any
-				|| (t1 instanceof AnyTerm && t2 instanceof Reference)
 				|| (t1 instanceof Real && t2 instanceof Int)) {
 			return true;
 		} else if (t1 instanceof Compound && t2 instanceof Compound) {
 			// RULE: S-LIST
 			Compound l1 = (Compound) t1;
 			Compound l2 = (Compound) t2;
-			return isSubtype(l1.element, l2.element);
+			Type[] l1_elements = l1.elements;
+			Type[] l2_elements = l2.elements;
+			if (l1_elements.length != l2_elements.length && !l2.unbounded) {
+				return false;
+			} else if (l1.unbounded && !l2.unbounded) {
+				return false;
+			} else if(l1.elements.length < l2.elements.length-1) {
+				return false;
+			}
+			int min_len = Math.min(l1_elements.length, l2_elements.length);
+			for (int i = 0; i != min_len; ++i) {
+				if (!isSubtype(l1_elements[i], l2_elements[i])) {
+					return false;
+				}
+			}
+			Type l2_last = l2_elements[l2_elements.length-1];
+			for (int i = min_len; i != l1_elements.length; ++i) {
+				if (!isSubtype(l1_elements[i], l2_last)) {
+					return false;
+				}
+			}
+			return true;
 		} else if (t1 instanceof Term && t2 instanceof Term) {			
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
@@ -95,12 +123,12 @@ public abstract class Type {
 		} else if (t1 instanceof Compound && t2 instanceof Compound) {
 			Compound l1 = (Compound) t1;
 			Compound l2 = (Compound) t2;
-			return T_LIST(leastUpperBound(l1.element, l2.element));
+			// TODO: could do better here!
 		} 
 
 		// FIXME: we can do better for named types by searching the hierarchy!
 		
-		return T_ANYTERM;
+		return T_ANY;
 	}
 	
 	public static final class Any  extends Type {
@@ -139,18 +167,8 @@ public abstract class Type {
 			return "string";
 		}
 	}
-
-	public static abstract class Reference extends Type {}
 	
-	public static final class AnyTerm  extends Reference {
-		private AnyTerm() {			
-		}		
-		public String toString() {
-			return "*";
-		}
-	}
-	
-	public static final class Term extends Reference {		
+	public static final class Term extends Type {		
 		public final String name;
 		public final Type data;
 		
@@ -190,7 +208,15 @@ public abstract class Type {
 			this.kind = kind;
 			this.unbounded = unbounded;
 		}
-				
+		
+		public Type element() {
+			Type r = Type.T_VOID;
+			for(Type t : elements) {
+				r = Type.leastUpperBound(r, t);
+			}
+			return r;
+		}
+		
 		public boolean equals(Object o) {
 			if(o instanceof Compound) {
 				Compound l = (Compound) o;
@@ -225,7 +251,7 @@ public abstract class Type {
 	}
 		
 	public static String type2str(Type t) {
-		if(t instanceof AnyTerm) {
+		if(t instanceof Any) {
 			return "*";
 		} else if(t instanceof Void) {
 			return "V";
