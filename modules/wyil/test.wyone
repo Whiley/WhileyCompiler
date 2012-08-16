@@ -1,8 +1,38 @@
 term True
 term False
-term And(Term...)
+class Bool as True | False
+
+term Var
+term Not(Term)
+term And{Term...}
+term Or{Term...}
+
+rewrite Not(Bool b):
+    => False, if b is True
+    => True
 
 rewrite And{True b,Term... xs}:
     => And(xs)
 
-class Term as True | False | And
+rewrite And{False b,Term... xs}:
+    => False
+
+rewrite And{Term x}:
+    => x
+
+rewrite And{}:
+    => True
+
+rewrite Or{True b,Term... xs}:
+    => True
+
+rewrite Or{False b,Term... xs}:
+    => Or(xs)
+
+rewrite Or{Term x}:
+    => x
+
+rewrite Or{}:
+    => False
+
+class Term as Bool | Var | Not | And | Or
