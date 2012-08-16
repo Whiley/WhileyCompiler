@@ -23,10 +23,6 @@
 
 /*
  * to do:
- * * set up a function to return the appropriate comparator function for a type
- * * switch set subtypes to be the comparator function
- *	all items that use the same comparator function go in the same subset
- * * set a map type to use the same code as the set (parameterize it).
  * * set up main method registry so that there can be multiples
  * * set up type registry routines.
  */
@@ -89,10 +85,13 @@ static char* wy_type_names[] = {
     /*the field names of a record */
 #define Wy_Fields	8
     "fields",
-    /* primative integer, it a long instead of pointer */
+    /* a constant string (in code space, not heap */
 #define Wy_CString	9
     "string",
-#define Wy_Type_Max	9
+    /* a single character */
+#define Wy_Char		10
+    "char",
+#define Wy_Type_Max	10
     (char *) NULL
 };
 
@@ -103,8 +102,10 @@ static char* wy_type_names[] = {
  *
  * Wy_None	ptr must be void
  * Wy_Any	ptr must be void
+ * Wy_CString
  * Wy_String	ptr to null terminated char[].
- * Wy_Int	ptr to long
+ * Wy_Char	ptr is char
+ * Wy_Int	ptr is long
  * Wy_WInt	TBD
  * Wy_List	ptr to block:
  *		member count
@@ -149,28 +150,6 @@ static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs);
 
 typedef int (*Wycc_Comp_Ptr)(wycc_obj* lhs, wycc_obj* rhs);
-
-/* typedef int */
-/* static int (*wy_comp_func[])(wycc_obj* lhs, wycc_obj* rhs) = { */
-Wycc_Comp_Ptr wy_comp_func[] = {
-    wycc_comp_obj,	/* any */
-    wycc_comp_str,	/* string */
-    wycc_comp_int,	/* int */
-    wycc_comp_obj,	/* wint */
-    wycc_comp_obj,	/* list */
-    wycc_comp_obj,	/* map */
-    wycc_comp_obj,	/* record */
-    wycc_comp_str,	/* cstring */
-    NULL
-};
-
-static Wycc_Comp_Ptr wycc_get_comparator(int typ){
-    int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
-
-    compar = wy_comp_func[typ];		/* change to a getter function */
-    return compar;
-}
-
 
 wycc_initor* wycc_init_chain = NULL;
 
@@ -261,6 +240,21 @@ wycc_obj* wycc_box_cstr(char* text) {
     ans->typ = Wy_CString;
     ans->cnt = 1;
     ans->ptr = (void*) text;
+    return ans;
+}
+
+/*
+ * given an char, box it in a wycc_obj
+ */
+wycc_obj* wycc_box_char(char x) {
+    wycc_obj* ans;
+    int tmp;
+
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_Char;
+    ans->cnt = 1;
+    tmp = (int) x;	/* **** kludge */
+    ans->ptr = (void *) tmp;	/* **** kludge */
     return ans;
 }
 
@@ -381,7 +375,6 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     long at, typ, cnt, deep, idx, cp;
     size_t raw;
     wycc_obj* tst;
-    // int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
     int end;
 
     if (lst->typ != Wy_Set) {
@@ -415,16 +408,12 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	return;
     }
     deep = 0;
-    /* compar = wy_comp_func[typ];		/* **** change to a getter function */
-    // compar = wycc_get_comparator(typ);
-
     /*
      * sequencial search within the chunk
      */
     while (at < ((long) chunk[0])) {
 	at++;
 	tst = (wycc_obj *) chunk[2*at];
-	// end = compar(itm, tst);
 	end = wycc_comp_gen(itm, tst);
 	if (end == 0) {
 	    return;	/* key match == done */
@@ -450,7 +439,6 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	    wycc_chunk_rebal(0, p, chunk, at, deep);
 	    return;
 	}
-	// end = compar(itm, tst);
 	end = wycc_comp_gen(itm, tst);
 	if (end == 0) {
 	    return;	/* key match == done */
@@ -565,7 +553,6 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
     long at, typ, cnt, deep, idx, cp;
     size_t raw;
     wycc_obj* tst;
-    // int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
     int end;
 
     if (lst->typ != Wy_Map) {
@@ -598,14 +585,12 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	p[1] = (void *) 1;
 	return;
     }
-    // compar = wycc_get_comparator(typ);
     /*
      * sequencial search within the chunk
      */
     while (at < ((long) chunk[0])) {
 	at++;
 	tst = (wycc_obj *) chunk[3*at];
-	// end = compar(key, tst);
 	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
@@ -765,12 +750,20 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     free(itm);
     if (typ == Wy_Int) {
 	return (wycc_obj *) NULL;
-    }
+    };
     if (typ == Wy_CString) {
 	return (wycc_obj *) NULL;
-    }
+    };
+    if (typ == Wy_Char) {
+	return (wycc_obj *) NULL;
+    };
     wycc_dealloc_typ(ptr, typ);
     return (wycc_obj *) NULL;
+}
+
+static void wycc_dealloc_set_chunk(void** chunk) {
+    fprintf(stderr, "deallocating chunk of set\n");
+    return;
 }
 
 static void wycc_dealloc_typ(void* ptr, int typ){
@@ -791,6 +784,20 @@ static void wycc_dealloc_typ(void* ptr, int typ){
         free(ptr);
 	return;
     };
+    if (typ == Wy_Set) {
+	void** chunk = &(p[2]);
+	wycc_dealloc_set_chunk(chunk);
+	fprintf(stderr, "Fail: no support for set in dealloc\n");
+	exit(-3);
+    }
+    if (typ == Wy_Map) {
+	fprintf(stderr, "Fail: no support for map in dealloc\n");
+	exit(-3);
+    }
+    if (typ == Wy_Record) {
+	fprintf(stderr, "Fail: no support for record in dealloc\n");
+	exit(-3);
+    }
     fprintf(stderr, "ERROR: unrecognized type (%d) in dealloc\n", typ);
     exit(-3);
 }
@@ -818,12 +825,15 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
 	return -1;
     };
     if (lt > rt) {
-	return 11;
+	return 1;
     };
     if (lt == Wy_String) {
 	return wycc_comp_str(lhs, rhs);
     };
     if (lt == Wy_Int) {
+	return wycc_comp_int(lhs, rhs);
+    };
+    if (lt == Wy_Char) {
 	return wycc_comp_int(lhs, rhs);
     };
     fprintf(stderr, "Help needed in wycc_comp_gen for type %d\n", lt);
@@ -885,6 +895,7 @@ static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs){
  * in memory.
  */
 static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Warning: wycc_comp_obj is deprecated.\n");
     if (lhs < rhs) {
 	return -1;
     } else if (lhs > rhs) {
@@ -926,26 +937,7 @@ int wycc_length_of_set(wycc_obj* itm) {
     if (((long) p[0]) == Wy_None) {
 	return 0;
     };
-    if (((long) p[0]) == Wy_Any) {
-	/*
-	 * need to loop over the subsets (each of a single type - comparator)
-	 */
-	fprintf(stderr, "Help length_of_set called for type %d\n", itm->typ);
-	exit(-3);
-    };
     return (int) p[1];
-}
-
-int wycc_length_of_raw_set(void** chunk) {
-    int rslt;
-
-    
-	fprintf(stderr, "Help length_of_raw_set called \n");
-	exit(-3);
-    
-    
-    return (int) chunk[0];
-
 }
 
 int wycc_length_of_map(wycc_obj* itm) {
@@ -958,13 +950,6 @@ int wycc_length_of_map(wycc_obj* itm) {
     };
     if (((long) p[0]) == Wy_None) {
 	return 0;
-    };
-    if (((long) p[0]) == Wy_Any) {
-	/*
-	 * need to loop over the subsets (each of a single type - comparator)
-	 */
-	fprintf(stderr, "Help length_of_map called for type %d\n", itm->typ);
-	exit(-3);
     };
     return (int) p[1];
 }
@@ -981,6 +966,18 @@ int wycc_length_of_string(wycc_obj* itm) {
     return rslt;
 }
 
+/*
+ * some operation need to change an object that is currently being shared
+ */
+wycc_obj* wycc_cow_string(wycc_obj* str) {
+    fprintf(stderr, "Fail: wycc_cow_string not written yet.\n");
+    exit(-3);
+
+}
+
+/*
+ * some operation need to change an object that is currently being shared
+ */
 wycc_obj* wycc_cow_list(wycc_obj* lst) {
     wycc_obj* ans;
     wycc_obj* nxt;
@@ -1021,7 +1018,7 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
 void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
     int end;
 
-    if (rel >= Wyil_Relation_Mo) {
+    if ((rel < 0) || (rel >= Wyil_Relation_Mo)) {
 	fprintf(stderr, "Failure: wyil_assert with relation %d\n"
 		, rel);
 	exit(-3);
@@ -1060,6 +1057,47 @@ void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
     };
     fprintf(stderr, msg);
     exit(-4);
+}
+
+/*
+ * update an element of a string
+ */
+wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
+    char *txt;
+    long lsiz, idx;
+    int tmp;
+
+    if (str->typ != Wy_String) {
+	fprintf(stderr, "ERROR: string in wyil_update_string is type %d\n"
+		, str->typ);
+	exit(-3);
+    };
+    if (osv->typ != Wy_Int) {
+	fprintf(stderr
+		, "ERROR: offset  value in wyil_update_string is type %d\n"
+		, osv->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Char) {
+	fprintf(stderr
+		, "ERROR: replacement value in wyil_update_string is type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    txt = str->ptr;
+    lsiz = strlen(txt);
+    idx = (long) osv->ptr;
+    if ((idx < 0) || (idx >= lsiz)) {
+	fprintf(stderr
+		, "ERROR: out of bounds offset value in wyil_update_string\n");
+	exit(-4);
+    };
+    if (str->cnt > 1) {
+	str = wycc_cow_string(str);
+    };
+    tmp = (int) rhs->ptr;
+    txt[idx] = (char) tmp;
+    return str;
 }
 
 /*
@@ -1181,11 +1219,15 @@ void wyil_debug_obj(wycc_obj* ptr1) {
     return;
 }
 
+/*
+ * given two strings, return their concatination
+ */
 wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     size_t siz, sizl, sizr;
     char* rslt;
     wycc_obj* ans;
 
+    /* **** do we need to support Wy_Char ? */
     if ((lhs->typ != Wy_String) && (lhs->typ != Wy_CString)) {
 	fprintf(stderr, "Help needed in strappend for type %d\n", lhs->typ);
 	exit(-3);
@@ -1493,6 +1535,30 @@ static wycc_obj* wyil_index_of_map(wycc_obj* map, wycc_obj* key){
 
 }
 
+static wycc_obj* wyil_index_of_string(wycc_obj* str, wycc_obj* index){
+    char *txt;
+    long idx;
+    char rslt;
+
+    if (index->typ != Wy_Int) {
+	fprintf(stderr, "Help needed in wyil_index_of_string for type %d\n"
+		, index->typ);
+	exit(-3);
+    };
+    idx = (long) index->ptr;
+    if (idx < 0) {
+	fprintf(stderr, "ERROR: IndexOf under range for string (%d)", idx);
+	exit(-4);
+    };
+    txt = str->ptr;
+    if (idx >= strlen(txt)) {
+	fprintf(stderr, "ERROR: IndexOf over range for string (%d)", idx);
+	exit(-4);
+    };
+    rslt = txt[idx];
+    return wycc_box_char(rslt);
+}
+
 wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
     wycc_obj* ans;
 
@@ -1501,6 +1567,12 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
     };
     if (lhs->typ == Wy_Map) {
 	return wyil_index_of_map(lhs, rhs);
+    };
+    if (lhs->typ == Wy_String) {
+	return wyil_index_of_string(lhs, rhs);
+    };
+    if (lhs->typ == Wy_CString) {
+	return wyil_index_of_string(lhs, rhs);
     };
 	fprintf(stderr, "Help needed in wyil_index_of for type %d\n", lhs->typ);
 	exit(-3);
@@ -1520,13 +1592,23 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
  */
 void wycc__println(wycc_obj* sys, wycc_obj* itm) {
     wycc_obj* alt;
+    int tmp;
 
     if (itm->typ == Wy_String) {
-	printf("%s\n", itm->ptr);
+	printf("%s\n", (char *) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_CString) {
-	printf("%s\n", itm->ptr);
+	printf("%s\n", (char *) itm->ptr);
+	return;
+    };
+    if (itm->typ == Wy_Char) {
+	tmp = (int) itm->ptr;
+	printf("'%c'\n", (char) tmp);
+	return;
+    };
+    if (itm->typ == Wy_Int) {
+	printf("%-.1d\n", (long) itm->ptr);
 	return;
     };
     alt = wycc__toString(itm);
