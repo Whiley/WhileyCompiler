@@ -91,7 +91,10 @@ static char* wy_type_names[] = {
     /* a single character */
 #define Wy_Char		10
     "char",
-#define Wy_Type_Max	10
+    /* a boolean value */
+#define Wy_Bool		11
+    "bool",
+#define Wy_Type_Max	11
     (char *) NULL
 };
 
@@ -100,11 +103,12 @@ static char* wy_type_names[] = {
  *
  * ie, what does obj->ptr really point to.
  *
- * Wy_None	ptr must be void
+ * Wy_None	
  * Wy_Any	ptr must be void
  * Wy_CString
  * Wy_String	ptr to null terminated char[].
  * Wy_Char	ptr is char
+ * Wy_Bool
  * Wy_Int	ptr is long
  * Wy_WInt	TBD
  * Wy_List	ptr to block:
@@ -140,6 +144,7 @@ static char* wy_type_names[] = {
  *
  *
  */
+
 /*
  * we need comparitor functions for all object types
  */
@@ -255,6 +260,19 @@ wycc_obj* wycc_box_char(char x) {
     ans->cnt = 1;
     tmp = (int) x;	/* **** kludge */
     ans->ptr = (void *) tmp;	/* **** kludge */
+    return ans;
+}
+
+/*
+ * given a boolean, box it in a wycc_obj
+ */
+wycc_obj* wycc_box_bool(int x) {
+    wycc_obj* ans;
+
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_Bool;
+    ans->cnt = 1;
+    ans->ptr = (void *) x;	/* **** kludge */
     return ans;
 }
 
@@ -757,6 +775,9 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     if (typ == Wy_Char) {
 	return (wycc_obj *) NULL;
     };
+    if (typ == Wy_Bool) {
+	return (wycc_obj *) NULL;
+    };
     wycc_dealloc_typ(ptr, typ);
     return (wycc_obj *) NULL;
 }
@@ -811,8 +832,6 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	void** chunk = &(p[2]);
 	wycc_dealloc_set_chunk(chunk);
 	free(ptr);
-	// fprintf(stderr, "Fail: no support for set in dealloc\n");
-	// exit(-3);
 	return;
     }
     if (typ == Wy_Map) {
@@ -859,6 +878,9 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
 	return wycc_comp_int(lhs, rhs);
     };
     if (lt == Wy_Char) {
+	return wycc_comp_int(lhs, rhs);
+    };
+    if (lt == Wy_Bool) {
 	return wycc_comp_int(lhs, rhs);
     };
     fprintf(stderr, "Help needed in wycc_comp_gen for type %d\n", lt);
@@ -1636,6 +1658,14 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
 	printf("%-.1d\n", (long) itm->ptr);
 	return;
     };
+    if (itm->typ == Wy_Bool) {
+	if (itm->ptr == NULL) {
+	    printf("false\n");
+	} else {
+	    printf("true\n");
+	}
+	return;
+    };
     alt = wycc__toString(itm);
     printf("%s\n", alt->ptr);
     wycc_deref_box(alt);
@@ -1708,11 +1738,11 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	sprintf(buf, "%-.1d", tmp);
 	return wycc_box_str(buf);
     };
-    if (itm->typ == Wy_Int) {
-	tmp = (int) itm->ptr;
-	buf = (char *) malloc(16);
-	sprintf(buf, "%-.1d", tmp);
-	return wycc_box_str(buf);
+    if (itm->typ == Wy_Bool) {
+	if (itm->ptr == NULL) {
+	    return wycc_box_cstr("false");
+	}
+	return wycc_box_cstr("true");
     };
     if (itm->typ == Wy_List) {
 	cnt = wycc_length_of_list(itm);

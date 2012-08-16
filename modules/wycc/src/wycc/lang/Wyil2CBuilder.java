@@ -41,6 +41,7 @@ import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Code.Const;
 import wyil.lang.Code.BinStringKind;
+import wyil.lang.Constant.Bool;
 import wyil.lang.Modifier;
 import wyil.lang.NameID;
 import wyil.lang.Type;
@@ -1183,9 +1184,9 @@ public class Wyil2CBuilder implements Builder {
 			int targ;
 			Constant val;
 			String tyc;
-			//String assn = "";
+			String rval;
 			String assn = null;
-			//String assn;
+			
 			//String ctyp = "void";
 			//String lin;
 
@@ -1194,18 +1195,25 @@ public class Wyil2CBuilder implements Builder {
 			val = cod.constant;
 			ans += "//             target " + targ + "\n";
 			tyc = val.type().toString();
+			rval = val.toString();
 			if (tyc.equals("string")) {
-				assn = "wycc_box_cstr";
-				this.addDecl(targ, "wycc_obj*");				
+				assn = "wycc_box_cstr";								
 			} else if (tyc.equals("int")) {
 				assn = "wycc_box_int";
-				this.addDecl(targ, "wycc_obj*");
+			} else if (tyc.equals("bool")) {
+				assn = "wycc_box_bool";
+				if (rval.equals("true")) {
+					rval = "1";
+				} else {
+					rval = "0";
+				}
 			} else {
 				ans += "// HELP needed for value type '" + tyc + "'\n";
 				return ans;
 			}
+			this.addDecl(targ, "wycc_obj*");
 			ans += writeClearTarget(targ, tag);
-			assn += "(" + val + ")";
+			assn += "(" + rval + ")";
 			this.addDecl(targ, "wycc_obj*");
 			// lin = ctyp + " X" + targ + assn + ";" + tag;
 			// this.addDecl(targ, lin);
