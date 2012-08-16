@@ -2,7 +2,7 @@ term True
 term False
 term Not(Term)
 
-rewrite Not(True() b):
+rewrite Not(True b):
     => True(), if b is False()
     => False()
 

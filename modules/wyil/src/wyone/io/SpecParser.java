@@ -97,8 +97,15 @@ public class SpecParser {
 	public Pattern.Term parsePatternTerm() {
 		int start = index;
 		String name = matchIdentifier().text;
-		Pattern p = parsePattern();
-		return new Pattern.Term(name,p,sourceAttr(start, index - 1));
+		Token token = tokens.get(index);
+		Pattern p;
+		if (token instanceof LeftBrace || token instanceof LeftCurly
+				|| token instanceof LeftSquare) {
+			p = parsePatternCompound();
+		} else {
+			p = new Pattern.Leaf(Type.T_VOID);
+		}
+		return new Pattern.Term(name, p, sourceAttr(start, index - 1));
 	}
 	
 	public Pattern.Compound parsePatternCompound() {

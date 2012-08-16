@@ -722,15 +722,18 @@ public class JavaFileWriter {
 					out.print("state.kind == K_" + n);
 				}
 			}
-			// FIXME: there is definitely a bug here since we need the offset within the automaton state 
-			out.print(" && typeof_" + type2HexStr(tt.data) + "(index,automaton)");
+			// FIXME: there is definitely a bug here since we need the offset within the automaton state
+			if (tt.data != Type.T_VOID) {
+				out.print(" && typeof_" + type2HexStr(tt.data) + "(index,automaton)");
+				if (typeTests.add(tt.data)) {
+					worklist.add(tt.data);
+				}
+			}
 			myOut(") {");
 			myOut(3, "return true;");
 			myOut(2, "}");
 			myOut(2, "return false;");
-			if (typeTests.add(tt.data)) {
-				worklist.add(tt.data);
-			}
+			
 		} else if (type instanceof Type.Compound) {
 			Type.Compound tt = (Type.Compound) type;
 			Type[] tt_elements = tt.elements;
