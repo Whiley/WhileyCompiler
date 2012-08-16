@@ -14,12 +14,18 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	public Pattern(Attribute... attributes) {
 		super(attributes);
 	}	
+	
+	public abstract Type type();
 		
 	public static final class Leaf extends Pattern {
 		public Type type;
 		
 		public Leaf(Type type) {
 			this.type = type;
+		}
+		
+		public Type type() {
+			return type;
 		}
 		
 		public String toString() {
@@ -39,6 +45,14 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.kind = kind;
 			this.elements = new ArrayList<Pair<Pattern, String>>(params);
 			this.unbounded = unbound;			
+		}
+		
+		public Type.Compound type() {
+			Type[] types = new Type[elements.size()];
+			for(int i=0;i!=types.length;++i) {
+				types[i] = elements.get(i).first().type();
+			}
+			return Type.T_COMPOUND(kind,unbounded,types);
 		}
 		
 		public String toString() {
@@ -91,6 +105,10 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			super(attributes);
 			this.name = name;	
 			this.data = data;
+		}
+		
+		public Type.Term type() {
+			return Type.T_TERM(name,data.type());
 		}
 						
 		public String toString() {

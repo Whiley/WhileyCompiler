@@ -20,7 +20,7 @@ rewrite And{False b,Term... xs}:
 rewrite And{Term x}:
     => x
 
-rewrite And{}:
+rewrite And():
     => True
 
 rewrite Or{True b,Term... xs}:
@@ -32,7 +32,7 @@ rewrite Or{False b,Term... xs}:
 rewrite Or{Term x}:
     => x
 
-rewrite Or{}:
+rewrite Or():
     => False
 
 class Term as Bool | Var | Not | And | Or

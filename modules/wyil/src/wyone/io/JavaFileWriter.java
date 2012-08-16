@@ -156,7 +156,7 @@ public class JavaFileWriter {
 
 		// NOW PRINT REAL CODE
 		String mangle = nameMangle(decl.pattern, used);
-		myOut(1, "public static boolean rewrite" + mangle
+		myOut(1, "private static boolean rewrite" + mangle
 				+ "(final int index, final Automaton automaton) {");
 		myOut(2, "final Automaton.State[] states = automaton.states;");
 		myOut(2, "final Automaton.State state = states[index];");
@@ -220,33 +220,95 @@ public class JavaFileWriter {
 			Pattern.Term term = (Pattern.Term) pattern;			
 			write(term.data,root);
 		} else if (pattern instanceof Pattern.Compound) {
-			Pattern.Compound compound = (Pattern.Compound) pattern;
-			int i = 0;
-			for (Pair<Pattern, String> p : compound.elements) {
-				String name = root + "_" + i;
-				if(compound.unbounded && (i+1) == compound.elements.size()) {
-					// do nothing
-				} else {
-					myOut(2, "final Automaton.State " + name + " = states[" + root + ".children[" + i + "]];");
-					write(p.first(), name);
+			write((Pattern.Compound)pattern,root);
+		}
+	}
+	
+	public void write(Pattern.Compound pattern, String root) {
+		myOut(2,"int[] " + root + "_children = " + root + ".children;");
+		// handle non-sequential match
+		
+		if(pattern.kind != Type.Compound.Kind.LIST) { 
+			int level = 1;
+			for (int i = 0; i != pattern.elements.size(); ++i) {
+				Pattern element = pattern.elements.get(i).first();
+				if(!pattern.unbounded || i+1 < pattern.elements.size()) {
+					String idx = "s" + i;
+					myOut(2+i, "for(int " + idx + "=0;" + idx + " < " + root + "_children.length;++" + idx + ") {");
+					if(i > 0) {
+						indent(3+i);out.print("if(");
+						for(int j=0;j<i;++j) {
+							if(j != 0) {
+								out.print(" || ");
+							}
+							out.print(idx  + "==s" + j);
+						}
+						out.println(") { continue; }");
+					}
+					Type type = element.type();
+					myOut(level+2, "if(!typeof_" + type2HexStr(type)
+							+ "(" + root + "_children[" + idx + "],automaton)) { continue; }");
 				}
-				i = i + 1;
+				level++;
 			}
-			i = 0;
-			for (Pair<Pattern, String> p : compound.elements) {				
-				String var = p.second();
-				if(var != null) {
-					String name = root + "_" + i;
-					if(compound.unbounded && (i+1) == compound.elements.size()) {
-						myOut(2, "final int[] " + var + " = Arrays.copyOfRange("
-								+ root + ".children," + i + "," + root
-								+ ".children.length);");
-					} else {
-						myOut(2, "final int " + var + " = " + root + ".children[" + i + "];" );
+			myOut(level,"int[] n" + root + "_children = new int[" + root + "_children.length];");
+			for (int i = 0; i != pattern.elements.size(); ++i) {
+				if(!pattern.unbounded || i+1 < pattern.elements.size()) {
+					myOut(level,"n" + root + "_children[" + i + "]=" + root + "_children[s" + i + "];");
+				}
+			}
+			if(pattern.unbounded) {
+				myOut(level,"int j = " + (pattern.elements.size()-1) + ";");
+				myOut(level, "for(int i=0;i < " + root + "_children.length;++i) {");
+				indent(level+1);out.print("if(");
+				for (int i = 0; i != pattern.elements.size(); ++i) {
+					if(!pattern.unbounded || i+1 < pattern.elements.size()) {
+						if(i!=0) { out.print(" && "); }
+						out.print("i!=s" + i);
 					}
 				}
-				i = i + 1;
+				out.print(") { n" + root + "_children[j++] = " + root + "_children[i]; }");
+				myOut();
+				myOut(level,"}");
 			}
+			myOut(level,root + "_children = n" + root + "_children;");
+			myOut(level,"break;");
+			for (int i = 0; i != pattern.elements.size(); ++i) {
+				if(!pattern.unbounded || i+1 < pattern.elements.size()) {
+					myOut(level - (i+1),"}");
+				}
+			}	
+		}
+		
+		
+		// proceed with the matched children
+		int i = 0;
+		for (Pair<Pattern, String> p : pattern.elements) {
+			String name = root + "_" + i;
+			if (pattern.unbounded && (i + 1) == pattern.elements.size()) {
+				// do nothing
+			} else {
+				myOut(2, "final Automaton.State " + name + " = states[" + root
+						+ "_children[" + i + "]];");
+				write(p.first(), name);
+			}
+			i = i + 1;
+		}
+		i = 0;
+		for (Pair<Pattern, String> p : pattern.elements) {
+			String var = p.second();
+			if (var != null) {
+				String name = root + "_" + i;
+				if (pattern.unbounded && (i + 1) == pattern.elements.size()) {
+					myOut(2, "final int[] " + var + " = Arrays.copyOfRange("
+							+ root + "_children," + i + "," + root
+							+ "_children.length);");
+				} else {
+					myOut(2, "final int " + var + " = " + root + "_children["
+							+ i + "];");
+				}
+			}
+			i = i + 1;
 		}
 	}
 
@@ -267,8 +329,8 @@ public class JavaFileWriter {
 		myOut(2, "Automaton old;");
 		myOut(2, "automaton = Automata.minimise(automaton);");
 		myOut(2, "do {");
-		myOut(2, "old = automaton;");
-		myOut(2, "boolean changed = false;");
+		myOut(3, "old = automaton;");
+		myOut(3, "boolean changed = false;");
 		myOut(3, "for(int index=0;index!=automaton.states.length;++index) {");
 		myOut(4, "Automaton.State state = automaton.states[index];");
 		myOut(4, "switch(state.kind) {");
@@ -281,7 +343,7 @@ public class JavaFileWriter {
 		}
 		myOut(4, "}");
 		myOut(3, "}");
-		myOut(2, "if(changed) { automaton = Automata.minimise(automaton); }");
+		myOut(3, "if(changed) { automaton = Automata.minimise(automaton); }");
 		myOut(2, "} while(!automaton.equals(old));");
 		myOut(2, "return automaton;");
 		myOut(1, "}\n");
@@ -706,76 +768,143 @@ public class JavaFileWriter {
 
 	protected void writeTypeTest(Type type, HashSet<Type> worklist,
 			HashMap<String, Set<String>> hierarchy) {
+		
+		if (type instanceof Type.Any) {
+			writeTypeTest((Type.Any)type,worklist,hierarchy);
+		} else if (type instanceof Type.Term) {
+			writeTypeTest((Type.Term)type,worklist,hierarchy);
+		} else if (type instanceof Type.Compound) {
+			writeTypeTest((Type.Compound)type,worklist,hierarchy);							
+		} else {
+			throw new RuntimeException(
+					"internal failure --- type test not implemented (" + type
+							+ ")");
+		}		
+	}
+	
+	protected void writeTypeTest(Type.Any type, HashSet<Type> worklist,
+			HashMap<String, Set<String>> hierarchy) {
+		String mangle = type2HexStr(type);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(int index, Automaton automaton) {");		
+		myOut(2, "return true;");
+		myOut(1, "}");
+		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Term type, HashSet<Type> worklist,
+			HashMap<String, Set<String>> hierarchy) {
+		String mangle = type2HexStr(type);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(int index, Automaton automaton) {");
+		myOut(2, "Automaton.State state = automaton.states[index];");
+		
+		HashSet<String> expanded = new HashSet<String>();
+		expand(type.name, hierarchy, expanded);
+		indent(2);
+		out.print("if(");
+		boolean firstTime = true;
+		for (String n : expanded) {
+			if (!firstTime) {
+				myOut();
+				indent(2);
+				out.print("   || state.kind == K_" + n);
+			} else {
+				firstTime = false;
+				out.print("state.kind == K_" + n);
+			}
+		}
+		// FIXME: there is definitely a bug here since we need the offset within the automaton state
+		if (type.data != Type.T_VOID) {
+			out.print(" && typeof_" + type2HexStr(type.data) + "(index,automaton)");
+			if (typeTests.add(type.data)) {
+				worklist.add(type.data);
+			}
+		}
+		myOut(") {");
+		myOut(3, "return true;");
+		myOut(2, "}");
+		myOut(2, "return false;");		
+		myOut(1, "}");
+		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Compound type, HashSet<Type> worklist,
+			HashMap<String, Set<String>> hierarchy) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");
 		myOut(2, "Automaton.State state = automaton.states[index];");
 		myOut(2, "int[] children = state.children;");
-
-		if (type instanceof Type.Any) {
-			myOut(2, "return true;");
-		} else if (type instanceof Type.Term) {
-			Type.Term tt = (Type.Term) type;
-			HashSet<String> expanded = new HashSet<String>();
-			expand(tt.name, hierarchy, expanded);
-			indent(2);
-			out.print("if(");
-			boolean firstTime = true;
-			for (String n : expanded) {
-				if (!firstTime) {
-					myOut();
-					indent(2);
-					out.print("   || state.kind == K_" + n);
-				} else {
-					firstTime = false;
-					out.print("state.kind == K_" + n);
-				}
-			}
-			// FIXME: there is definitely a bug here since we need the offset within the automaton state
-			if (tt.data != Type.T_VOID) {
-				out.print(" && typeof_" + type2HexStr(tt.data) + "(index,automaton)");
-				if (typeTests.add(tt.data)) {
-					worklist.add(tt.data);
-				}
-			}
-			myOut(") {");
-			myOut(3, "return true;");
-			myOut(2, "}");
-			myOut(2, "return false;");
-			
-		} else if (type instanceof Type.Compound) {
-			Type.Compound tt = (Type.Compound) type;
-			Type[] tt_elements = tt.elements;
-			int min = tt_elements.length;
-			if (tt.unbounded) {
-				myOut(2, "if(children.length < " + (min - 1)
-						+ ") { return false; }");
-			} else {
-				myOut(2, "if(children.length != " + min + ") { return false; }");
-			}
-			for (int i = 0; i != tt_elements.length; ++i) {
-				Type pt = tt_elements[i];
-				String pt_mangle = type2HexStr(pt);
-				if (tt.unbounded && (i + 1) == tt_elements.length) {
-					myOut(2, "for(int i=" + i + ";i!=children.length;++i) {");
-					myOut(3, "if(!typeof_" + pt_mangle
-							+ "(children[i],automaton)) { return false; }");
-					myOut(2, "}");
-				} else {
-					myOut(2, "if(!typeof_" + pt_mangle + "(children[" + i
-							+ "],automaton)) { return false; }");
-				}
-				if (typeTests.add(pt)) {
-					worklist.add(pt); 
-				}
-			}
-			myOut(2,"return true;");							
+		
+		Type[] tt_elements = type.elements;
+		int min = tt_elements.length;
+		if (type.unbounded) {
+			myOut(2, "if(children.length < " + (min - 1)
+					+ ") { return false; }");
 		} else {
-			throw new RuntimeException(
-					"internal failure --- type test not implemented (" + type
-							+ ")");
+			myOut(2, "if(children.length != " + min + ") { return false; }");
 		}
+		
+		int level = 2;
+		if(type.kind == Type.Compound.Kind.LIST) {
+			// easy, sequential match case
+			for (int i = 0; i != tt_elements.length; ++i) {
+				myOut(2, "int s" + i + " = " + i + ";");				
+			}
+		} else {
+			for (int i = 0; i != tt_elements.length; ++i) {
+				if(!type.unbounded || i+1 < tt_elements.length) {
+					String idx = "s" + i;
+					myOut(2+i, "for(int " + idx + "=0;" + idx + " < children.length;++" + idx + ") {");
+					if(i > 0) {
+						indent(3+i);out.print("if(");
+						for(int j=0;j<i;++j) {
+							if(j != 0) {
+								out.print(" || ");
+							}
+							out.print(idx  + "==s" + j);
+						}
+						out.println(") { continue; }");
+					}
+					level++;
+				}
+			}			
+		}
+		
+		myOut(level, "boolean result=true;");
+		myOut(level, "for(int i=0;i!=children.length;++i) {");
+		for (int i = 0; i != tt_elements.length; ++i) {
+			Type pt = tt_elements[i];
+			String pt_mangle = type2HexStr(pt);
+			if (type.unbounded && (i + 1) == tt_elements.length) {				
+				myOut(level+1, "else {");
+			} else if(i == 0){
+				myOut(level+1, "if(i == s" + i + ") {");
+			} else {
+				myOut(level+1, "else if(i == s" + i + ") {");
+			}
+			myOut(level+2, "if(!typeof_" + pt_mangle
+					+ "(children[i],automaton)) { result=false; break; }");
+			myOut(level+1, "}");
+			if (typeTests.add(pt)) {
+				worklist.add(pt); 
+			}
+		}
+		
+		myOut(level,"}");
+		myOut(level,"if(result) { return true; } // found match");
+		if(type.kind != Type.Compound.Kind.LIST) {
+			for (int i = 0; i != tt_elements.length; ++i) {
+				if(!type.unbounded || i+1 < tt_elements.length) {
+					myOut(level - (i+1),"}");
+				}
+			}
+		}
+		myOut(2,"return false;");
 		myOut(1, "}");
 		myOut();
 	}
