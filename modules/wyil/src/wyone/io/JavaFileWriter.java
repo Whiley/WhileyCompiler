@@ -225,8 +225,10 @@ public class JavaFileWriter {
 	}
 	
 	public void write(Pattern.Compound pattern, String root) {
+		
+		// good luck figuring this out ... ;)
+		
 		myOut(2,"int[] " + root + "_children = " + root + ".children;");
-		// handle non-sequential match
 		
 		if(pattern.kind != Type.Compound.Kind.LIST) { 
 			int level = 1;
@@ -279,7 +281,6 @@ public class JavaFileWriter {
 				}
 			}	
 		}
-		
 		
 		// proceed with the matched children
 		int i = 0;

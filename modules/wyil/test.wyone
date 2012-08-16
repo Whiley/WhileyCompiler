@@ -3,36 +3,55 @@ term False
 class Bool as True | False
 
 term Var
-term Not(Term)
+
+// ==================================================
+// Theory of Logical Connectives
+// ==================================================
+
+// --- Logical And ---
 term And{Term...}
-term Or{Term...}
 
-rewrite Not(Bool b):
-    => False, if b is True
-    => True
-
-rewrite And{True b,Term... xs}:
+rewrite And{Bool b, Term... xs}:
+    => False(), if b is False
     => And(xs)
 
-rewrite And{False b,Term... xs}:
-    => False
+//rewrite And{And(Term...xs), Term... ys}:
+//    => And(xs ++ ys)
 
-rewrite And{Term x}:
-    => x
+rewrite And(Term t):
+    => t
 
 rewrite And():
-    => True
+    => True()
 
-rewrite Or{True b,Term... xs}:
-    => True
+// --- Logical Or ---
+term Or{Term...}
 
-rewrite Or{False b,Term... xs}:
+rewrite Or{Bool b, Term... xs}:
+    => True(), if b is True
     => Or(xs)
 
-rewrite Or{Term x}:
-    => x
+//rewrite Or{Or{Term...xs}, Term... ys}:
+//    => Or(xs ++ ys)
+
+rewrite Or(Term t):
+    => t
 
 rewrite Or():
-    => False
+    => False()
+
+// --- Logical Not ---
+term Not(Term)
+
+rewrite Not(Bool b):
+    => True(), if b is False
+    => False()
+
+rewrite Not(Not(* x)):
+    => x
+
+// rewrite Not(And(Term... xs)):
+
+// rewrite Not(Or(Term... xs)):
 
 class Term as Bool | Var | Not | And | Or
