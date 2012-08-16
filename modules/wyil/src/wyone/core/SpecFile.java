@@ -15,11 +15,11 @@ public class SpecFile {
 	public interface Decl extends SyntacticElement {}
 	
 	public static class TermDecl extends SyntacticElement.Impl implements Decl {
-		public final Type.Term data;
+		public final Type.Term type;
 		
 		public TermDecl(Type.Term data, Attribute... attributes) {
 			super(attributes);
-			this.data = data;
+			this.type = data;
 		}		
 	}
 	

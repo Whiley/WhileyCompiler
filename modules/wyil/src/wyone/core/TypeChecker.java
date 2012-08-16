@@ -25,7 +25,7 @@ public class TypeChecker {
 				terms.put(cd.name, Type.T_TERM(cd.name, Type.T_VOID));
 			} else if (d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
-				terms.put(td.name, Type.T_TERM(td.name, td.data));
+				terms.put(td.type.name, td.type);
 			}
 		}
 

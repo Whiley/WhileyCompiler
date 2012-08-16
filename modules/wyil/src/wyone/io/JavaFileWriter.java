@@ -368,7 +368,7 @@ public class JavaFileWriter {
 				if(j++ != 0) {
 					myOut(",");
 				}
-				indent(2);out.print(readerStr(td.data));
+				indent(2);out.print(readerStr(td.type));
 			}
 		}
 		myOut();
