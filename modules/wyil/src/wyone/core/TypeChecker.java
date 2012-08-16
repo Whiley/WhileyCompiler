@@ -75,6 +75,8 @@ public class TypeChecker {
 			syntaxError("invalid usage of term", filename, pt);
 		}
 		
+		pt.attributes().add(new Attribute.TypeAttr(type));
+		
 		return type;
 	}
 

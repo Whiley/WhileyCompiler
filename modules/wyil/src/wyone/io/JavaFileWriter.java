@@ -143,7 +143,7 @@ public class JavaFileWriter {
 		// FIRST COMMENT CODE FROM SPEC FILE
 		indent(1);
 		out.print("// rewrite " + decl.pattern);
-		myOut("):");
+		myOut(":");
 		String lin;
 		for (RuleDecl rd : decl.rules) {
 			lin = "// => " + rd.result;
@@ -218,14 +218,24 @@ public class JavaFileWriter {
 			// nothing to do
 		} else if (pattern instanceof Pattern.Term) {
 			Pattern.Term term = (Pattern.Term) pattern;
+			write(term.data,root);
 		} else if (pattern instanceof Pattern.Compound) {
 			Pattern.Compound compound = (Pattern.Compound) pattern;
 			int i = 0;
 			for (Pair<Pattern, String> p : compound.elements) {
 				String name = root + "_" + i;
 				// FIXME: problem with unbound compounds.
-				myOut(2, "int " + name + " = " + root + ".children[" + i + "];");
-				write(p.first(), name);
+				myOut(2, "final int " + name + " = " + root + ".children[" + i + "];");
+				write(p.first(), name);				
+				i = i + 1;
+			}
+			i = 0;
+			for (Pair<Pattern, String> p : compound.elements) {				
+				String var = p.second();
+				if(var != null) {
+					String name = root + "_" + i;
+					myOut(2, "final int " + var + " = " + name + ";");								
+				}
 				i = i + 1;
 			}
 		}
@@ -712,37 +722,40 @@ public class JavaFileWriter {
 					out.print("state.kind == K_" + n);
 				}
 			}
+			// FIXME: there is definitely a bug here since we need the offset within the automaton state 
+			out.print(" && typeof_" + type2HexStr(tt.data) + "(index,automaton)");
 			myOut(") {");
-			writeTypeTest(tt.data, worklist, hierarchy);
 			myOut(3, "return true;");
 			myOut(2, "}");
 			myOut(2, "return false;");
+			if (typeTests.add(tt.data)) {
+				worklist.add(tt.data);
+			}
 		} else if (type instanceof Type.Compound) {
 			Type.Compound tt = (Type.Compound) type;
 			Type[] tt_elements = tt.elements;
 			int min = tt_elements.length;
 			if (tt.unbounded) {
-				myOut(3, "if(children.length < " + (min - 1)
+				myOut(2, "if(children.length < " + (min - 1)
 						+ ") { return false; }");
 			} else {
-				myOut(3, "if(children.length != " + min + ") { return false; }");
+				myOut(2, "if(children.length != " + min + ") { return false; }");
 			}
 			for (int i = 0; i != tt_elements.length; ++i) {
 				Type pt = tt_elements[i];
 				String pt_mangle = type2HexStr(pt);
 				if (tt.unbounded && (i + 1) == tt_elements.length) {
-					myOut(3, "for(int i=" + i + ";i!=children.length;++i) {");
-					myOut(4, "if(!typeof_" + pt_mangle
+					myOut(2, "for(int i=" + i + ";i!=children.length;++i) {");
+					myOut(3, "if(!typeof_" + pt_mangle
 							+ "(children[i],automaton)) { return false; }");
-					myOut(3, "}");
+					myOut(2, "}");
 				} else {
-					myOut(3, "if(!typeof_" + pt_mangle + "(children[" + i
+					myOut(2, "if(!typeof_" + pt_mangle + "(children[" + i
 							+ "],automaton)) { return false; }");
 				}
-				if (typeTests.add(pt)) {
-					worklist.add(pt);
-				}
+				if (typeTests.add(pt)) { worklist.add(pt); }
 			}
+			myOut(2,"return true;");							
 		} else {
 			throw new RuntimeException(
 					"internal failure --- type test not implemented (" + type

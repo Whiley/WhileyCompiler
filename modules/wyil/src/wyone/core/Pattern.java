@@ -13,16 +13,8 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	
 	public Pattern(Attribute... attributes) {
 		super(attributes);
-	}
-	
-	public HashMap<String,int[]> routes() {
-		HashMap<String,int[]> env = new HashMap<String,int[]>();
-		buildRoutes(new ArrayList<Integer>(),env);
-		return env;
 	}	
-	
-	protected abstract void buildRoutes(ArrayList<Integer> route, HashMap<String,int[]> environment);	
-			
+		
 	public static final class Leaf extends Pattern {
 		public Type type;
 		
@@ -30,10 +22,6 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.type = type;
 		}
 		
-		protected void buildRoutes(ArrayList<Integer> route,
-				HashMap<String, int[]> environment) {
-
-		}
 		public String toString() {
 			return type.toString();
 		}		
@@ -53,28 +41,40 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.unbounded = unbound;			
 		}
 		
-		protected void buildRoutes(ArrayList<Integer> route,
-				HashMap<String, int[]> environment) {
-			int i=0;
-			for(Pair<Pattern,String> p : elements) {
-				Pattern pattern = p.first();
-				String var = p.second();
-				route.add(i);
-				pattern.buildRoutes(route, environment);
-				if(var != null) {
-					environment.put(var, toIntArray(route));
-				}
-				route.remove(route.size()-1);
-				i=i+1;
+		public String toString() {
+			String r = "";
+			switch(kind) {
+			case LIST:
+				r += "(";
+				break;
+			case SET:
+				r += "{";
+				break;
+			case BAG:
+				r += "[";
+				break;
 			}
-		}	
-		
-		public Pattern route(int route) {
-			return elements.get(route).first();
-		}
-		
-		public boolean isUnbounded(int child) {
-			return unbounded && child + 1 == elements.size();
+			for(Pair<Pattern,String> p : elements) {
+				Pattern pt = p.first();
+				String var = p.second();
+				r += pt.toString();
+				if(var != null) {
+					r += " " + var;
+				}
+				
+			}
+			switch(kind) {
+			case LIST:
+				r += ")";
+				break;
+			case SET:
+				r += "}";
+				break;
+			case BAG:
+				r += "]";
+				break;
+			}
+			return r;
 		}
 	}
 	
@@ -88,14 +88,9 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.name = name;	
 			this.data = data;
 		}
-				
-		protected void buildRoutes(ArrayList<Integer> route,
-				HashMap<String, int[]> environment) {
-			data.buildRoutes(route,environment);
-		}
-				
-		public String toString() {			
-			return name + " " + data;
+						
+		public String toString() {
+			return name + data;
 		}			
 	}
 		

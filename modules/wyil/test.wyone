@@ -1,3 +1,9 @@
 term True
 term False
-class Bool as True | False
+term Not(Term)
+
+rewrite Not(True() b):
+    => True(), if b is False()
+    => False()
+
+class Term as True | False | Not

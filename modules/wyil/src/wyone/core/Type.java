@@ -187,8 +187,12 @@ public abstract class Type {
 			}
 			return false;
 		}
-		public String toString() {					
-			return name + data;					
+		public String toString() {	
+			if(data != T_VOID) {
+				return name + data;
+			} else {
+				return name;
+			}
 		}
 	}
 	
