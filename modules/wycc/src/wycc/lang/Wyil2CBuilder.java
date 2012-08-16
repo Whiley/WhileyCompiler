@@ -142,10 +142,10 @@ public class Wyil2CBuilder implements Builder {
 		String tmp;
 		int cnt;
 		List<Method> mets = new ArrayList<Method>();
-		
+		//System.err.println("Got to my code.");
 		this.name = module.id().toString();
 		contents += this.writePreamble(module);
-		
+		//System.err.println("milestone 1.");
 		Collection<TypeDeclaration> typCol = module.types();
 		Collection<ConstantDeclaration> conCol = module.constants();
 		Collection<MethodDeclaration> modCol = module.methods();
@@ -154,6 +154,7 @@ public class Wyil2CBuilder implements Builder {
 			contents += "// WYIL module count of constants: " + conCol.size() + "\n";
 			contents += "// WYIL module count of methods: " + modCol.size() + "\n";
 		}
+		//System.err.println("milestone 2.");
 		cnt = 0;
 		for (TypeDeclaration td : typCol) {
 			cnt += 1;
@@ -164,7 +165,7 @@ public class Wyil2CBuilder implements Builder {
 			contents += this.writeTypeCode(td, cnt);
 
 		}
-
+		//System.err.println("milestone 3.");
 		cnt = 0;
 		for (ConstantDeclaration cd : conCol) {
 			cnt += 1;
@@ -176,7 +177,7 @@ public class Wyil2CBuilder implements Builder {
 			contents += this.writeConstantCode(cd, cnt);
 
 		}
-
+		//System.err.println("milestone 4.");
 		cnt = 0;
 		for (MethodDeclaration md : modCol) {
 			cnt += 1;
@@ -189,12 +190,14 @@ public class Wyil2CBuilder implements Builder {
 				contents += tmp;
 			}
 		}
+		//System.err.println("milestone 5.");
 		contents += this.optIncludeFile;
 		for (Method met : mets) {
 			contents += met.write();
 		}
+		//System.err.println("milestone 6.");
 		contents += this.writePostamble();
-
+		//System.err.println("Got to end of my code.");
 		return new CFile(contents);		
 	}
 
@@ -310,7 +313,8 @@ public class Wyil2CBuilder implements Builder {
 			declsI = new HashMap<Integer, String>();
 			declsU = new HashSet();
 			Type.FunctionOrMethod rtnTyp;
-
+			//System.err.println("milestone 5.1");
+			
 			error = "";
 			body = "";
 			isNative = false;
@@ -340,6 +344,7 @@ public class Wyil2CBuilder implements Builder {
 			if (declaration.isFunction()) {
 				comments += "//   is function.\n";
 			}
+			//System.err.println("milestone 5.2");
 			cnt = 0;
 			for (Modifier mo : mods) {
 				cnt += 1;
@@ -375,12 +380,13 @@ public class Wyil2CBuilder implements Builder {
 			int cnt;
 			String sep;
 			String argl = "";
-
+			//System.err.println("milestone 5.3.1");
 			cnt = 0;
 			for (Case ci : cas) {
 				cnt += 1;
 				ans += this.writeCase(ci, cnt);
 			}
+			//System.err.println("milestone 5.3.12");
 			if (error != "") {
 				ans += "ERROR in " + name + ": ";
 				ans += error;
@@ -397,15 +403,18 @@ public class Wyil2CBuilder implements Builder {
 			}
 			sep = "";
 			cnt = 0;
+			//System.err.println("milestone 5.3.3");
 			for (Type tp : params){
 				argl += sep + "wycc_obj* X" + cnt ;
 				cnt += 1;
 				sep = ", ";
 			}
 			ans += mungName(name) + "(" + argl + ") {\n";
+			//System.err.println("milestone 5.3.4");
 			ans += writeDecls();
 			ans += body;
 			ans += "}\n";
+			//System.err.println("milestone 5.3.5");
 			return ans;
 		}
 
@@ -514,38 +523,53 @@ public class Wyil2CBuilder implements Builder {
 			}
 			cnt = bodIn.size();
 			ans += "// block #" + idx + " is of seizes " + cnt + "\n";
-			cnt = 0;
+
+			//System.err.println("milestone 5.3.1.1 - " + cnt);
+			cnt = 0;			
 			for (Block.Entry be : bodIn) {
+				//System.err.println("milestone 5.3.1.1a : " + cnt);
 				ans += this.writeBlockEntry(be, cnt);
 				cnt += 1;
 			}
+			//System.err.println("milestone 5.3.1.9");
 			return ans;
 		}
 
 		public String writeSourceLineID(Block.Entry blkIn){
 			String ans = "";
 			int cnt;
-
+			
+			// System.err.println("milestone 5.3.1.2a");
 			List<Attribute> attCol = blkIn.attributes();
 			if (attCol == null) {
-				ans += "//           " + " no attributes\n";
-			} else {
-				cnt = attCol.size();
-				if (cnt != 1) {
-					ans += "//           " + " with " + cnt + " attributes\n";
-				}
-				Attribute att = attCol.get(0);
-				if (att instanceof Attribute.Source) {
-					Attribute.Source attis = (Attribute.Source) att;
-					// ans += "//           " + " [0] is " + attis.line + "\n";
-					if (lineNumFlag) {
-						this.body += "#line " + attis.line + "\n";
-					}
-				} else {
-					ans += "//           " + " [0] is " + att+ "\n";
-				}
+				// System.err.println("milestone 5.3.1.2b");
+				return "//           " + " no attributes\n";
 			}
-			
+			cnt = attCol.size();
+			if (cnt < 1) {
+				return "//           " + " 0 attributes\n";
+			}
+			if (cnt != 1) {
+				ans += "//           " + " with " + cnt + " attributes\n";
+			}
+			// System.err.println("milestone 5.3.1.2c - " + cnt);
+			Attribute att = attCol.get(0);
+			// System.err.println("milestone 5.3.1.2d");
+			if (att instanceof Attribute.Source) {
+				// System.err.println("milestone 5.3.1.2g");
+				Attribute.Source attis = (Attribute.Source) att;
+				// ans += "//           " + " [0] is " + attis.line + "\n";
+				if (lineNumFlag) {
+					// System.err.println("milestone 5.3.1.2m");
+					this.body += "#line " + attis.line + "\n";
+				}
+				// System.err.println("milestone 5.3.1.2w");
+			} else {
+				// System.err.println("milestone 5.3.1.2x");
+				ans += "//           " + " [0] is " + att+ "\n";
+			}
+
+			// System.err.println("milestone 5.3.1.2z");
 			return ans;
 		}
 
@@ -565,7 +589,7 @@ public class Wyil2CBuilder implements Builder {
 			String tag = "\t/* entry# " + idx + "*/";
 
 			ans += "// block.entry #" + idx + "\n";
-
+			//System.err.println("milestone 5.3.1.2");
 			Code cod = blkIn.code;
 			ans += this.writeSourceLineID(blkIn);
 
@@ -573,7 +597,7 @@ public class Wyil2CBuilder implements Builder {
 			ans += "//             Looks like " + temp + "\n";
 			String[] frags = temp.split(" ", 4);
 			String opc = frags[0];
-
+			//System.err.println("milestone 5.3.1.3");
 			if (cod instanceof Code.Const) {
 				ans += this.writeCodeConstant(cod, tag);
 			} else if (cod instanceof Code.Debug) {
@@ -656,6 +680,7 @@ public class Wyil2CBuilder implements Builder {
 			} else {
 				ans += "// HELP needed for opcode '" + opc + "'\n";
 			}
+			//System.err.println("milestone 5.3.1.8");
 			return ans;
 		}
 	

@@ -1775,7 +1775,7 @@ static char *wycc__toString_map(void **chunk, char* buf, size_t *isiz) {
 	at += 2;
 	strcpy((buf+at), sav);
 	at += tmpb;
-	wycc_deref_box(savo);
+	wycc_deref_box(savo);	/* if we reref sooner the text vanishes */
     }
     *isiz = siz;
     return buf;
