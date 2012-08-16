@@ -170,6 +170,11 @@ public class TypeChecker {
 		Type v_t = environment.get(v.var);
 		if (v_t != null) {
 			return v_t;
+		} 
+		Type.Term type = terms.get(v.var);
+		if(type != null && type.data == Type.T_VOID) {
+			v.isConstructor = true;
+			return type;
 		}
 		syntaxError("variable not defined", filename, v);
 		return null;

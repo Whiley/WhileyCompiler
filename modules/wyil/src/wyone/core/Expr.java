@@ -28,6 +28,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Variable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;
+		public boolean isConstructor = false; 
 
 		public Variable(String var, Attribute... attributes) {
 			super(attributes);

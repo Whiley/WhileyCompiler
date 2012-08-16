@@ -406,7 +406,12 @@ public class JavaFileWriter {
 	}
 
 	public Pair<List<String>, String> translate(Variable v) {
-		return new Pair(Collections.EMPTY_LIST, v.var);
+		if(v.isConstructor) {
+			String r = "inplaceAppend(automaton,new Automaton.State(K_" + v.var;
+			return new Pair(Collections.EMPTY_LIST, r + "))");	
+		} else {
+			return new Pair(Collections.EMPTY_LIST, v.var);
+		}
 	}
 
 	public Pair<List<String>, String> translate(UnOp uop) {
