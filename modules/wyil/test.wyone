@@ -2,7 +2,7 @@ term True
 term False
 term And(Term...)
 
-rewrite And(True b,Term... xs):
+rewrite And{True b,Term... xs}:
     => And(xs)
 
 class Term as True | False | And
