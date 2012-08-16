@@ -1,9 +1,11 @@
 term True
 term False
-term Not(Term)
+term And(Term...)
 
-rewrite Not(True b):
-    => True, if b is False()
-    => False()
+rewrite And(True b,Term... xs):
+    => False
 
-class Term as True | False | Not
+rewrite And(And(True b)):
+    => False
+
+class Term as True | False | And

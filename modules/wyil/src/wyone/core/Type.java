@@ -284,9 +284,8 @@ public abstract class Type {
 			}	
 		} else if(t instanceof Type.Term) {
 			Type.Term st = (Type.Term) t;
-			String r = "T" + st.name;
-			
-			return r;
+			String r = "T" + st.name;			
+			return r + type2str(st.data);
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}

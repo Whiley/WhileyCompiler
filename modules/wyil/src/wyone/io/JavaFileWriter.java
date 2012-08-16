@@ -158,8 +158,8 @@ public class JavaFileWriter {
 		String mangle = nameMangle(decl.pattern, used);
 		myOut(1, "public static boolean rewrite" + mangle
 				+ "(final int index, final Automaton automaton) {");
-		myOut(2, "Automaton.State[] states = automaton.states;");
-		myOut(2, "Automaton.State state = states[index];");
+		myOut(2, "final Automaton.State[] states = automaton.states;");
+		myOut(2, "final Automaton.State state = states[index];");
 		
 		write(decl.pattern,"state");
 		
@@ -217,16 +217,19 @@ public class JavaFileWriter {
 		if (pattern instanceof Pattern.Leaf) {
 			// nothing to do
 		} else if (pattern instanceof Pattern.Term) {
-			Pattern.Term term = (Pattern.Term) pattern;
+			Pattern.Term term = (Pattern.Term) pattern;			
 			write(term.data,root);
 		} else if (pattern instanceof Pattern.Compound) {
 			Pattern.Compound compound = (Pattern.Compound) pattern;
 			int i = 0;
 			for (Pair<Pattern, String> p : compound.elements) {
 				String name = root + "_" + i;
-				// FIXME: problem with unbound compounds.
-				myOut(2, "final int " + name + " = " + root + ".children[" + i + "];");
-				write(p.first(), name);				
+				if(compound.unbounded && (i+1) == compound.elements.size()) {
+					// do nothing
+				} else {
+					myOut(2, "final Automaton.State " + name + " = states[" + root + ".children[" + i + "]];");
+					write(p.first(), name);
+				}
 				i = i + 1;
 			}
 			i = 0;
@@ -234,7 +237,13 @@ public class JavaFileWriter {
 				String var = p.second();
 				if(var != null) {
 					String name = root + "_" + i;
-					myOut(2, "final int " + var + " = " + name + ";");								
+					if(compound.unbounded && (i+1) == compound.elements.size()) {
+						myOut(2, "final int[] " + var + " = Arrays.copyOfRange("
+								+ root + ".children," + i + "," + root
+								+ ".children.length);");
+					} else {
+						myOut(2, "final int " + var + " = " + root + ".children[" + i + "];" );
+					}
 				}
 				i = i + 1;
 			}
@@ -406,9 +415,9 @@ public class JavaFileWriter {
 	}
 
 	public Pair<List<String>, String> translate(Variable v) {
-		if(v.isConstructor) {
+		if (v.isConstructor) {
 			String r = "inplaceAppend(automaton,new Automaton.State(K_" + v.var;
-			return new Pair(Collections.EMPTY_LIST, r + "))");	
+			return new Pair(Collections.EMPTY_LIST, r + "))");
 		} else {
 			return new Pair(Collections.EMPTY_LIST, v.var);
 		}
@@ -675,7 +684,7 @@ public class JavaFileWriter {
 
 	public String type2HexStr(Type t) {
 		String mangle = "";
-		String str = Type.type2str(t);
+		String str = Type.type2str(t);		
 		for (int i = 0; i != str.length(); ++i) {
 			char c = str.charAt(i);
 			mangle = mangle + Integer.toHexString(c);
@@ -761,7 +770,9 @@ public class JavaFileWriter {
 					myOut(2, "if(!typeof_" + pt_mangle + "(children[" + i
 							+ "],automaton)) { return false; }");
 				}
-				if (typeTests.add(pt)) { worklist.add(pt); }
+				if (typeTests.add(pt)) {
+					worklist.add(pt); 
+				}
 			}
 			myOut(2,"return true;");							
 		} else {

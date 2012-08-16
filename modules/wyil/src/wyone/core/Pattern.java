@@ -54,14 +54,18 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				r += "[";
 				break;
 			}
+			boolean firstTime = true;
 			for(Pair<Pattern,String> p : elements) {
+				if(!firstTime) {
+					r +=", ";
+				}
+				firstTime=false;
 				Pattern pt = p.first();
 				String var = p.second();
 				r += pt.toString();
 				if(var != null) {
 					r += " " + var;
-				}
-				
+				}				
 			}
 			switch(kind) {
 			case LIST:
@@ -90,6 +94,14 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 						
 		public String toString() {
+			if(data instanceof Leaf) {
+				Leaf l = (Leaf) data;
+				if(l.type == Type.T_VOID) {
+					return name;
+				} else {
+					return name + " " + data;
+				}
+			}
 			return name + data;
 		}			
 	}
