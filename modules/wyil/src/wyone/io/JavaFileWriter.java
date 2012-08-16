@@ -538,11 +538,7 @@ public class JavaFileWriter {
 			boolean firstTime = true;
 			Type.Term type = (Type.Term) ivk.attribute(TypeAttr.class).type;
 			List<Expr> arguments = ivk.arguments;
-			int end = arguments.size();
-			if (type.data != Type.T_VOID) {
-				end = end - 1;
-				r += ", " + arguments.get(end);
-			}
+			int end = arguments.size();			
 			r += ", true, append(";
 			for (int i = 0; i != end; ++i) {
 				Expr e = arguments.get(i);

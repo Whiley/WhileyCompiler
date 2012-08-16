@@ -3,9 +3,6 @@ term False
 term And(Term...)
 
 rewrite And(True b,Term... xs):
-    => False
-
-rewrite And(And(True b)):
-    => False
+    => And(xs)
 
 class Term as True | False | And
