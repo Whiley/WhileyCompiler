@@ -157,7 +157,7 @@ public final class Automaton {
 			r = r + i;
 			if (state instanceof Term) {
 				Term t = (Term) state;
-				r = r + schema[t.kind - K_FREE].name + "(" + t.contents + ")";
+				r = r + schema[t.kind].name + "(" + t.contents + ")";
 			} else {
 				r = r + state.toString();
 			}
@@ -295,6 +295,18 @@ public final class Automaton {
 			}
 			this.children = children;
 		}
+		
+		public Compound(int kind, List<Integer> children) {
+			super(kind);
+			if(kind != K_LIST || kind != K_SET || kind != K_BAG) {
+				throw new IllegalArgumentException("invalid compound kind");
+			}
+			int[] nchildren = new int[children.size()];
+			for (int i = 0; i != children.size(); ++i) {
+				nchildren[i] = children.get(i);
+			}
+			this.children = nchildren;			
+		}
 
 		public Compound clone() {
 			return new Compound(kind, Arrays.copyOf(children,children.length));
@@ -353,11 +365,9 @@ public final class Automaton {
 	 */
 	public static final int[] NOCHILDREN = new int[0];
 
-	public static final int K_INT = 0;
-	public static final int K_STRING = 1;
-	public static final int K_LIST = 2;
-	public static final int K_SET = 3;
-	public static final int K_BAG = 4;
-	
-	public static final int K_FREE = 10;
+	public static final int K_INT = -1;
+	public static final int K_STRING = -2;
+	public static final int K_LIST = -3;
+	public static final int K_SET = -4;
+	public static final int K_BAG = -5;	
 }

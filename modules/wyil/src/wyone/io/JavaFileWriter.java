@@ -104,10 +104,9 @@ public class JavaFileWriter {
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");
 		myOut("import java.math.BigInteger;");
-		myOut("import wyautl.io.PrettyAutomataReader;");
-		myOut("import wyautl.io.PrettyAutomataReader.DataReader;");
+		myOut("import wyone.io.PrettyAutomataReader;");
 		myOut("import wyautl.io.PrettyAutomataWriter;");
-		myOut("import wyautl.lang.*;");
+		myOut("import wyone.core.*;");
 		myOut("import static wyautl.lang.Automata.*;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
@@ -388,7 +387,7 @@ public class JavaFileWriter {
 		myOut(1,
 				"// =========================================================================");
 		myOut();
-		myOut(1, "public static final String[] SCHEMA = new String[]{");
+		myOut(1, "public static final Type.Term[] SCHEMA = new Type.Term[]{");
 		for (int i = 0, j = 0; i != spDecl.size(); ++i) {
 			Decl d = spDecl.get(i);
 			if (d instanceof TermDecl) {
@@ -397,33 +396,55 @@ public class JavaFileWriter {
 					myOut(",");
 				}
 				indent(2);
-				out.print("\"" + td.type.name + "\"");
+				writeTypeSchema(td.type);				
 			}
 		}
 		myOut();
-		myOut(1, "};");
-		myOut();
-		myOut(1,
-				"// =========================================================================");
-		myOut(1, "// Readers");
-		myOut(1,
-				"// =========================================================================");
-		myOut();
-		myOut(1, "public static final DataReader[] READERS = new DataReader[]{");
-		for (int i = 0, j = 0; i != spDecl.size(); ++i) {
-			Decl d = spDecl.get(i);
-			if (d instanceof TermDecl) {
-				TermDecl td = (TermDecl) d;
-				if (j++ != 0) {
-					myOut(",");
-				}
-				indent(2);
-				out.print(readerStr(td.type));
+		myOut(1, "};");		
+	}
+	
+	public void writeTypeSchema(Type t) {
+		if(t instanceof Type.Int) {
+			out.print("Type.T_INT");
+		} else if(t instanceof Type.Real) {
+			out.print("Type.T_REAL");
+		} else if(t instanceof Type.Strung) {
+			out.print("Type.T_STRING");
+		} else if(t instanceof Type.Any) {
+			out.print("Type.T_ANY");
+		} else if(t instanceof Type.Void) {
+			out.print("Type.T_VOID");
+		} else if(t instanceof Type.Compound) {
+			Type.Compound compound = (Type.Compound) t;
+			out.print("Type.T_COMPOUND(");
+			switch(compound.kind) {
+				case LIST:
+					out.print("Type.Compound.Kind.LIST");
+					break;
+				case SET:
+					out.print("Type.Compound.Kind.SET");
+					break;
+				case BAG:
+					out.print("Type.Compound.Kind.BAG");
+					break;
 			}
+			if(compound.unbounded) {
+				out.print(",true");
+			} else {
+				out.print(",false");
+			}
+			Type[] elements = compound.elements;
+			for(int i=0;i!=elements.length;++i) {
+				out.print(",");
+				writeTypeSchema(elements[i]);
+			}
+			out.print(")");
+		} else {
+			Type.Term term = (Type.Term) t;
+			out.print("Type.T_TERM(\"" + term.name + "\",");
+			writeTypeSchema(term.data);
+			out.print(")");
 		}
-		myOut();
-		myOut(1, "};");
-		myOut();
 	}
 
 	public Pair<List<String>, String> translate(Expr expr) {
@@ -945,16 +966,17 @@ public class JavaFileWriter {
 		myOut(1, "public static void main(String[] args) throws IOException {");
 		myOut(2, "try {");
 		myOut(3,
-				"PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA,READERS);");
-		myOut(3,
-				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
+				"PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA);");
+//		myOut(3,
+//				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
-		myOut(3, "writer.write(a);");
+		myOut(3, "System.out.print(a.toString());");
+//		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
-		myOut(3, "a = rewrite(a);");
+//		myOut(3, "a = rewrite(a);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
-		myOut(3, "writer.write(a);");
+//		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
