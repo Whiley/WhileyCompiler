@@ -183,17 +183,13 @@ public class JavaFileWriter {
 				myOut(2, "if(" + r.second() + ") {");
 				r = translate(rd.result);
 				write(r.first(), 3);
-				myOut(3, "final int idx = " + r.second() + ";");
-				myOut(3, "automaton.states[index] = automaton.states[idx];");
-				myOut(3, "return true;");
+				myOut(2, "return automaton.rewrite(index," + r.second() + ");");
 				myOut(2, "}");
 			} else {
 				defCase = true;
 				Pair<List<String>, String> r = translate(rd.result);
 				write(r.first(), 2);
-				myOut(2, "final int idx = " + r.second() + ";");
-				myOut(2, "automaton.states[index] = automaton.states[idx];");
-				myOut(2, "return true;");
+				myOut(2, "return automaton.rewrite(index," + r.second() + ");");
 			}
 		}
 		if (!defCase) {

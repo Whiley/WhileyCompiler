@@ -184,6 +184,43 @@ public final class Automaton {
 	}
 	
 	/**
+	 * Rewrite one node into another.
+	 * 
+	 * @param from
+	 *            --- state being destroyed
+	 * @param to
+	 *            --- state being rewritten
+	 * @return
+	 */
+	public boolean rewrite(int to, int from) {
+		if(from < 0) {
+			for(int i=0;i!=nStates;++i) {
+				states[i].remap(to,from);
+			}
+			for(int i=0;i!=nRoots;++i) {
+				if(roots[i] == to) {
+					roots[i] = from;
+				}
+			}
+			return true;
+		} else {
+			State os = states[to];
+			State ns = states[from];
+			states[to] = ns;
+			for(int i=0;i!=nStates;++i) {
+				states[i].remap(from,to);
+			}
+			for(int i=0;i!=nRoots;++i) {
+				if(roots[i] == from) {
+					roots[i] = to;
+				}
+			}
+			// to is now free to be garbage collected
+			return !os.equals(ns);
+		}
+	}
+	
+	/**
 	 * Mark a state as a "root". This means it is treated specially, and will
 	 * never be deleted from the automaton as a result of garbage collection.
 	 * 
@@ -296,6 +333,8 @@ public final class Automaton {
 		
 		public abstract State clone();
 		
+		public abstract void remap(int from, int to);
+		
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
 				State c = (State) o;
@@ -320,7 +359,7 @@ public final class Automaton {
 	 * 
 	 */
 	public static final class Term extends State {
-		public final int contents;
+		public int contents;
 		
 		public Term(int kind) {
 			super(kind);
@@ -334,6 +373,12 @@ public final class Automaton {
 		
 		public Term clone() {
 			return new Term(kind,contents);
+		}
+		
+		public void remap(int from, int to) {
+			if(contents == from) {
+				contents = to;
+			}
 		}
 		
 		public boolean equals(final Object o) {
@@ -373,6 +418,10 @@ public final class Automaton {
 			return new Item(kind, payload);
 		}
 
+		public void remap(int from, int to) {
+			// nothing to do
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Item) {
 				Item t = (Item) o;
@@ -423,6 +472,17 @@ public final class Automaton {
 				Arrays.sort(nchildren);
 			}
 			this.children = nchildren;			
+		}
+		
+		public void remap(int from, int to) {
+			for(int i=0;i!=children.length;++i) {
+				if(children[i] == from) {
+					children[i] = to;
+				}
+			}
+			if(kind == K_SET) {
+				Arrays.sort(children);
+			}
 		}
 
 		public Compound clone() {
