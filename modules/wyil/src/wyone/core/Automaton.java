@@ -112,11 +112,11 @@ public final class Automaton {
 		this.schema = automaton.schema;
 	}
 	
-	public int numStates() {
+	public int nStates() {
 		return nStates;
 	}
 	
-	public int numRoots() {
+	public int nRoots() {
 		return nRoots;
 	}
 	
@@ -321,6 +321,11 @@ public final class Automaton {
 	 */
 	public static final class Term extends State {
 		public final int contents;
+		
+		public Term(int kind) {
+			super(kind);
+			this.contents = K_VOID;
+		}
 		
 		public Term(int kind, int data) {
 			super(kind);

@@ -117,7 +117,7 @@ public class JavaFileWriter {
 				+ termCounter++ + ";");
 		if (decl.type.data instanceof Type.Void) {
 			myOut(1, "public final static Automaton.State " + decl.type.name
-					+ " = new Automaton.State(K_" + decl.type.name + ");");
+					+ " = new Automaton.Term(K_" + decl.type.name + ");");
 		}
 		myOut();
 	}
@@ -329,8 +329,8 @@ public class JavaFileWriter {
 		myOut(2, "do {");
 		myOut(3, "old = automaton;");
 		myOut(3, "boolean changed = false;");
-		myOut(3, "for(int index=0;index!=automaton.states.length;++index) {");
-		myOut(4, "Automaton.State state = automaton.states[index];");
+		myOut(3, "for(int index=0;index!=automaton.nStates();++index) {");
+		myOut(4, "Automaton.State state = automaton.get(index);");
 		myOut(4, "switch(state.kind) {");
 		for (Map.Entry<String, List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			String name = e.getKey();
@@ -968,10 +968,9 @@ public class JavaFileWriter {
 				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
-		myOut(3, "System.out.print(a.toString());");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
-//		myOut(3, "a = rewrite(a);");
+		myOut(3, "a = rewrite(a);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");

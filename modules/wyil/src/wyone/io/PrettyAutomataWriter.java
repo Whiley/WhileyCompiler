@@ -65,7 +65,7 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 	}
 	
 	public void write(Automaton automaton) throws IOException {	
-		for(int i=0;i!=automaton.numRoots();++i) {
+		for(int i=0;i!=automaton.nRoots();++i) {
 			write(automaton.root(i),automaton);
 		}
 	}
