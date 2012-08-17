@@ -155,9 +155,7 @@ public class JavaFileWriter {
 		// NOW PRINT REAL CODE
 		String mangle = nameMangle(decl.pattern, used);
 		myOut(1, "private static boolean rewrite" + mangle
-				+ "(final int index, final Automaton automaton) {");
-		myOut(2, "final Automaton.State[] states = automaton.states;");
-		myOut(2, "final Automaton.State state = states[index];");
+				+ "(final int index, final Automaton.Term state, final Automaton automaton) {");
 		
 		write(decl.pattern,"state");
 		
@@ -215,11 +213,18 @@ public class JavaFileWriter {
 		if (pattern instanceof Pattern.Leaf) {
 			// nothing to do
 		} else if (pattern instanceof Pattern.Term) {
-			Pattern.Term term = (Pattern.Term) pattern;			
-			write(term.data,root);
+			Pattern.Term term = (Pattern.Term) pattern;
+			write((Pattern.Term)pattern,root);			
 		} else if (pattern instanceof Pattern.Compound) {
 			write((Pattern.Compound)pattern,root);
 		}
+	}
+	
+	public void write(Pattern.Term pattern, String root) {
+		String name = root + "_" + 0;
+		indent(2);writePatternDecl(name,pattern.data);				
+		myOut("automaton.get(" + root + ".contents);");
+		write(pattern.data,name);
 	}
 	
 	public void write(Pattern.Compound pattern, String root) {
@@ -287,8 +292,9 @@ public class JavaFileWriter {
 			if (pattern.unbounded && (i + 1) == pattern.elements.size()) {
 				// do nothing
 			} else {
-				myOut(2, "final Automaton.State " + name + " = states[" + root
-						+ "_children[" + i + "]];");
+				indent(2);writePatternDecl(name,p.first());
+				out.println("automaton.get(" + root
+						+ "_children[" + i + "]);");
 				write(p.first(), name);
 			}
 			i = i + 1;
@@ -311,6 +317,16 @@ public class JavaFileWriter {
 		}
 	}
 
+	public void writePatternDecl(String name, Pattern pattern) {
+		if(pattern instanceof Pattern.Leaf) {
+			out.print("Automaton.State " + name + " = ");
+		} else if(pattern instanceof Pattern.Term) {
+			out.print("Automaton.Term " + name + " = (Automaton.Term) ");	
+		} else if(pattern instanceof Pattern.Compound) {
+			out.print("Automaton.Compound "+ name + " = (Automaton.Compound) ");
+		}
+	}
+	
 	public void write(HashMap<String, List<RewriteDecl>> dispatchTable) {
 		// First, write individual dispatches
 		for (Map.Entry<String, List<RewriteDecl>> e : dispatchTable.entrySet()) {
@@ -335,7 +351,7 @@ public class JavaFileWriter {
 		for (Map.Entry<String, List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			String name = e.getKey();
 			myOut(4, "case K_" + name + ": {");
-			myOut(5, "changed |= rewrite_" + name + "(index,automaton);");
+			myOut(5, "changed |= rewrite_" + name + "(index,(Automaton.Term) state,automaton);");
 			myOut(5, "break;");
 			myOut(4, "}");
 		}
@@ -350,7 +366,7 @@ public class JavaFileWriter {
 	public void write(String name, List<RewriteDecl> rules) {
 		myOut(1, "// Rewrite dispatcher for " + name);
 		myOut(1, "private static boolean rewrite_" + name
-				+ "(int index, Automaton automaton) {");
+				+ "(int index, Automaton.Term state, Automaton automaton) {");
 		myOut(2, "boolean changed = false;\n");
 
 		myOut(2, "// Now rewrite me");
@@ -359,10 +375,10 @@ public class JavaFileWriter {
 			Type type = r.pattern.attribute(TypeAttr.class).type;
 			String mangle = nameMangle(r.pattern, used);
 			indent(2);
-			out.print("if(typeof_" + type2HexStr(type) + "(index,automaton)");
+			out.print("if(typeof_" + type2HexStr(type) + "(state,automaton)");
 			typeTests.add(type);
 			myOut(") {");
-			myOut(3, "changed |= rewrite" + mangle + "(index,automaton);");
+			myOut(3, "changed |= rewrite" + mangle + "(index,state,automaton);");
 			myOut(2, "}");
 		}
 		myOut(2, "");
@@ -806,7 +822,7 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");		
+				+ "(Automaton.State state, Automaton automaton) {");		
 		myOut(2, "return true;");
 		myOut(1, "}");
 		myOut();
@@ -817,33 +833,28 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");
-		myOut(2, "Automaton.State state = automaton.states[index];");
+				+ "(Automaton.State state, Automaton automaton) {");
 		
 		HashSet<String> expanded = new HashSet<String>();
 		expand(type.name, hierarchy, expanded);
 		indent(2);
-		out.print("if(");
-		boolean firstTime = true;
-		for (String n : expanded) {
-			if (!firstTime) {
-				myOut();
-				indent(2);
-				out.print("   || state.kind == K_" + n);
-			} else {
-				firstTime = false;
-				out.print("state.kind == K_" + n);
-			}
+		out.print("if(state instanceof Automaton.Term");
+		for (String n : expanded) {			
+			myOut();
+			indent(2);
+			out.print("   || state.kind == K_" + n);
 		}
+		myOut(") {");
 		// FIXME: there is definitely a bug here since we need the offset within the automaton state
 		if (type.data != Type.T_VOID) {
-			out.print(" && typeof_" + type2HexStr(type.data) + "(index,automaton)");
+			myOut(3,"Automaton.State data = automaton.get(((Automaton.Term)state).contents);");
+			myOut(3,"if(typeof_" + type2HexStr(type.data) + "(data,automaton)) { return true; }");
 			if (typeTests.add(type.data)) {
 				worklist.add(type.data);
 			}
-		}
-		myOut(") {");
-		myOut(3, "return true;");
+		} else {
+			myOut(3, "return true;");
+		}		
 		myOut(2, "}");
 		myOut(2, "return false;");		
 		myOut(1, "}");
@@ -855,30 +866,31 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");
-		myOut(2, "Automaton.State state = automaton.states[index];");
-		myOut(2, "int[] children = state.children;");
+				+ "(Automaton.State _state, Automaton automaton) {");
+		myOut(2, "if(_state instanceof Automaton.Compound) {");
+		myOut(3, "Automaton.Compound state = (Automaton.Compound) _state;");
+		myOut(3, "int[] children = state.children;");
 		
 		Type[] tt_elements = type.elements;
 		int min = tt_elements.length;
 		if (type.unbounded) {
-			myOut(2, "if(children.length < " + (min - 1)
+			myOut(3, "if(children.length < " + (min - 1)
 					+ ") { return false; }");
 		} else {
-			myOut(2, "if(children.length != " + min + ") { return false; }");
+			myOut(3, "if(children.length != " + min + ") { return false; }");
 		}
 		
-		int level = 2;
+		int level = 3;
 		if(type.kind == Type.Compound.Kind.LIST) {
 			// easy, sequential match case
 			for (int i = 0; i != tt_elements.length; ++i) {
-				myOut(2, "int s" + i + " = " + i + ";");				
+				myOut(3, "int s" + i + " = " + i + ";");				
 			}
 		} else {
 			for (int i = 0; i != tt_elements.length; ++i) {
 				if(!type.unbounded || i+1 < tt_elements.length) {
 					String idx = "s" + i;
-					myOut(2+i, "for(int " + idx + "=0;" + idx + " < children.length;++" + idx + ") {");
+					myOut(3+i, "for(int " + idx + "=0;" + idx + " < children.length;++" + idx + ") {");
 					if(i > 0) {
 						indent(3+i);out.print("if(");
 						for(int j=0;j<i;++j) {
@@ -896,6 +908,7 @@ public class JavaFileWriter {
 		
 		myOut(level, "boolean result=true;");
 		myOut(level, "for(int i=0;i!=children.length;++i) {");
+		myOut(level+1, "Automaton.State child = automaton.get(children[i]);");
 		for (int i = 0; i != tt_elements.length; ++i) {
 			Type pt = tt_elements[i];
 			String pt_mangle = type2HexStr(pt);
@@ -907,7 +920,7 @@ public class JavaFileWriter {
 				myOut(level+1, "else if(i == s" + i + ") {");
 			}
 			myOut(level+2, "if(!typeof_" + pt_mangle
-					+ "(children[i],automaton)) { result=false; break; }");
+					+ "(child,automaton)) { result=false; break; }");
 			myOut(level+1, "}");
 			if (typeTests.add(pt)) {
 				worklist.add(pt); 
@@ -923,8 +936,10 @@ public class JavaFileWriter {
 				}
 			}
 		}
+
+		myOut(2, "}");
 		myOut(2,"return false;");
-		myOut(1, "}");
+		myOut(1, "}");		
 		myOut();
 	}
 
