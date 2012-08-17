@@ -66,7 +66,7 @@ public class Wyil2CBuilder implements Builder {
 	private final int wyccTypeAny = 0;
 	private final int wyccTypeNone = -1;
 	private final String exit_fail = "exit(-4);";
-	private List<String> body;
+	private List<String> fileBody;
 	
 	public Wyil2CBuilder() {
 		this.debugFlag = true;
@@ -125,15 +125,23 @@ public class Wyil2CBuilder implements Builder {
 	public int bodyAddLine(String lin){
 		int ans;
 		
-		ans = this.body.size();
-		this.body.add(lin);
+		ans = this.fileBody.size();
+		this.fileBody.add(lin);
+		return ans;
+	}
+
+	public int bodyAddBlock(List<String> lins){
+		int ans;
+		
+		ans = this.fileBody.size();
+		this.fileBody.addAll(lins);
 		return ans;
 	}
 
 	public String bodyRender(){
 		String ans = "";
 
-		for (String itm : this.body) {
+		for (String itm : this.fileBody) {
 			ans += itm;
 		}
 		return ans;
@@ -154,17 +162,15 @@ public class Wyil2CBuilder implements Builder {
 	 * convert contents of a wyil file to contents of a C file
 	 */
 	protected CFile build(WyilFile module) {		
-		//String contents = "// WYIL MODULE: " + module.id();
-		//String contents = "";
 		String tmp;
 		int cnt, ign;
 		
-		this.body = new ArrayList<String>();
+		this.fileBody = new ArrayList<String>();
 		List<Method> mets = new ArrayList<Method>();
 		//System.err.println("Got to my code.");
 		this.name = module.id().toString();
 		this.writePreamble(module);
-		//ign = bodyAddLine(tmp);
+		
 		//System.err.println("milestone 1.");
 		Collection<TypeDeclaration> typCol = module.types();
 		Collection<ConstantDeclaration> conCol = module.constants();
@@ -182,13 +188,7 @@ public class Wyil2CBuilder implements Builder {
 		cnt = 0;
 		for (TypeDeclaration td : typCol) {
 			cnt += 1;
-			//tmp = this.writeTypeComments(td, cnt);
 			this.writeTypeComments(td, cnt);
-			//if (this.debugFlag) {
-			//	//contents += tmp;
-			//	ign = bodyAddLine(tmp);
-			//}
-			//contents += this.writeTypeCode(td, cnt);
 			this.writeTypeCode(td, cnt);
 
 		}
@@ -202,34 +202,22 @@ public class Wyil2CBuilder implements Builder {
 		cnt = 0;
 		for (MethodDeclaration md : modCol) {
 			cnt += 1;
-			// this.writeMethod(md, cnt);
 			Method met = new Method(md, cnt);
-			//contents += met.writeComments();
-			//tmp = met.writeComments();
 			met.writeComments();
 			mets.add(met);
 		}
 		System.err.println("milestone 5.");
-		// contents += this.optIncludeFile;
-		tmp = this.optIncludeFile;
-		ign = bodyAddLine(tmp);
+
+		ign = bodyAddLine(this.optIncludeFile);
 		for (Method met : mets) {
-			//contents += met.write();
-			//tmp = met.write();
 			met.write();
-			//ign = bodyAddLine(tmp);
 		}
 		System.err.println("milestone 6.");
-		//contents += this.writePostamble();
-		//tmp = this.writePostamble();
 		this.writePostamble();
-		// ign = bodyAddLine(tmp);
-		System.err.println("Got to end of my code.");
-		//return new CFile(contents);	
+		System.err.println("Got to end of my code.");	
 		return new CFile(this.bodyRender());
 	}
 
-	//private String writePreamble(WyilFile module) {
 	private void writePreamble(WyilFile module) {	
 		int ign;
 		String tmp;
@@ -251,7 +239,6 @@ public class Wyil2CBuilder implements Builder {
 		return;
 	} 
 
-	// private String writePostamble() {
 	private void writePostamble() {
 		int ign;
 		String ans = "";
@@ -279,7 +266,6 @@ public class Wyil2CBuilder implements Builder {
 		return;
 	}
 
-	//public String writeTypeComments(TypeDeclaration typDe, int idx) {
 	public void writeTypeComments(TypeDeclaration typDe, int idx) {
 		String lin;
 		int ign;
@@ -315,14 +301,12 @@ public class Wyil2CBuilder implements Builder {
 	}
 
 	// process the file wide Type declaration
-	// public String writeTypeCode(TypeDeclaration typDe, int idx) {
 	public void writeTypeCode(TypeDeclaration typDe, int idx) {
 		//return "";
 		return;
 	}
 
 	// process the file wide Constant declaration in pass 1 comments
-	//public String writeConstantComments(ConstantDeclaration conDe, int idx) {
 	public void writeConstant(ConstantDeclaration conDe, int idx) {
 		String tmp;
 		int ign;
@@ -344,6 +328,7 @@ public class Wyil2CBuilder implements Builder {
 		private MethodDeclaration declaration;
 		private int index;
 		private String body;
+		private String comments;
 		private String delt; // the deconstructors
 		private Map<Integer, String> declsT;
 		private Map<Integer, String> declsI;
@@ -360,7 +345,6 @@ public class Wyil2CBuilder implements Builder {
 		private List<Modifier> mods;
 		private List<Case> cas;
 		private List<Attribute> atts;
-		private String comments;
 		private ArrayList<Type> params;
 		private Type retType;
 
@@ -399,7 +383,8 @@ public class Wyil2CBuilder implements Builder {
 			lin += ") is named " + name;
 			comments += "// WYIL method declaration " + lin + "\n";
 			comments += "//               with type = '"+ rtnTyp +"'\n";
-			comments += typeParse(rtnTyp);
+			//comments += typeParse(rtnTyp);
+			typeParse(rtnTyp);
 			if (declaration.isMethod()) {
 				comments += "//   is method.\n";
 			}
@@ -410,12 +395,14 @@ public class Wyil2CBuilder implements Builder {
 			cnt = 0;
 			for (Modifier mo : mods) {
 				cnt += 1;
-				comments += this.checkModifier(mo, cnt);
+				//comments += this.checkModifier(mo, cnt);
+				this.checkModifier(mo, cnt);
 			}
 			cnt = 0;
 			for (Case ci : cas) {
 				cnt += 1;
-				comments += this.checkCase(ci, cnt);
+				//comments += this.checkCase(ci, cnt);
+				this.checkCase(ci, cnt);
 			}
 		}
 
@@ -435,10 +422,9 @@ public class Wyil2CBuilder implements Builder {
 			//return comments;
 			return;
 		}
-		
-		public String typeParse(Type.FunctionOrMethod typ) {
 
-
+		//public String typeParse(Type.FunctionOrMethod typ) {
+		public void typeParse(Type.FunctionOrMethod typ) {
 			int cnt;
 			String ans = "";
 			
@@ -447,7 +433,9 @@ public class Wyil2CBuilder implements Builder {
 			retType = typ.ret();
 			ans += "//              return type = '" + retType+ "'\n";
 			ans += "//              using '" + cnt + " parameters\n";
-			return ans;
+			//return ans;
+			this.comments += ans;
+			return;
 		}
 
 		//
@@ -465,8 +453,9 @@ public class Wyil2CBuilder implements Builder {
 			for (Case ci : cas) {
 				cnt += 1;
 				//ans += this.writeCase(ci, cnt);
-				tmp = this.writeCase(ci, cnt);
-				ign = bodyAddLine(tmp);
+				//tmp = this.writeCase(ci, cnt);
+				//ign = bodyAddLine(tmp);
+				this.writeCase(ci, cnt);
 			}
 			//System.err.println("milestone 5.3.2");
 			if (error != "") {
@@ -536,7 +525,8 @@ public class Wyil2CBuilder implements Builder {
 		}
 
 		// examine routine modifier, set bool variables, inject comment
-		public String checkModifier(Modifier mod, int idx) {
+		//public String checkModifier(Modifier mod, int idx) {
+		public void checkModifier(Modifier mod, int idx) {
 			String tag = "Unknown";
 
 			if (mod instanceof Modifier.Export) {
@@ -555,12 +545,15 @@ public class Wyil2CBuilder implements Builder {
 				tag = "Public";
 				this.isPublic = true;
 			}
-			return "// modifier #" + idx + " is " + tag + "\n";
+			// return "// modifier #" + idx + " is " + tag + "\n";
+			this.comments += "// modifier #" + idx + " is " + tag + "\n";
+			return;
 		}
 
 		// initial examination of properties of routines
 		// currently only effect is comment injection
-		public String checkCase(Case casIn, int idx) {
+		//public String checkCase(Case casIn, int idx) {
+		public void checkCase(Case casIn, int idx) {
 			String ans = "";
 			int cnt = -1;
 			List<Attribute> attCol = casIn.attributes();
@@ -589,44 +582,64 @@ public class Wyil2CBuilder implements Builder {
 			}
 			cnt = locals.size();
 			ans += "//           " + " with " + cnt + " locals\n";
+			this.comments += ans;
 			if (cnt < 1) {
-				return ans;
+				//return ans;
+				return;
+
 			}
+			// ans = "";
 			cnt = 1;
 			for (String nam : locals) {
-				ans += "//           " + cnt + " '" + nam + "'\n";
+				//ans += "//           " + cnt + " '" + nam + "'\n";
+				this.comments += "//           " + cnt + " '" + nam + "'\n";
 				cnt += 1;
 			}
-			return ans;
+			// this.comments += ans;
+			//return ans;
+			return;
 		}
 
 		// write case delegates to write Body
-		public String writeCase(Case casIn, int idx) {
+		//public String writeCase(Case casIn, int idx) {
+		public void writeCase(Case casIn, int idx) {
 			Block bod = casIn.body();
-			return this.writeBody(bod, idx);
+			// return this.writeBody(bod, idx);
+			this.writeBody(bod, idx);
+			return;
 		}
 
 		// generate C code for the wyil sequence, each wyil byte goes to writeBlockEntry
-		public String writeBody(Block bodIn, int idx) {
+		//public String writeBody(Block bodIn, int idx) {
+		public void writeBody(Block bodIn, int idx) {
+			int ign;
+			String tmp;
 			String ans = "";
 			int cnt = -1;
 
 			if (bodIn == null) {
-				ans += "// block #" + idx + " is null\n";
-				return ans;
+				tmp = "// block #" + idx + " is null\n";
+				//return ans;
+				ign = bodyAddLine(tmp);
+				return;
 			}
 			cnt = bodIn.size();
-			ans += "// block #" + idx + " is of seizes " + cnt + "\n";
-
+			//ans += "// block #" + idx + " is of seizes " + cnt + "\n";
+			tmp = "// block #" + idx + " is of seizes " + cnt + "\n";
+			ign = bodyAddLine(tmp);
+			
 			//System.err.println("milestone 5.3.1.1 - " + cnt);
 			cnt = 0;			
 			for (Block.Entry be : bodIn) {
 				//System.err.println("milestone 5.3.1.1a : " + cnt);
-				ans += this.writeBlockEntry(be, cnt);
+				//ans += this.writeBlockEntry(be, cnt);
+				this.writeBlockEntry(be, cnt);
 				cnt += 1;
 			}
 			//System.err.println("milestone 5.3.1.9");
-			return ans;
+			//return ans;
+			ign = bodyAddLine(ans);
+			return;
 		}
 
 		public String writeSourceLineID(Block.Entry blkIn){
@@ -677,19 +690,30 @@ public class Wyil2CBuilder implements Builder {
 		// ! code for variable destruction
 		// * even a subclass for routines
 		//
-		public String writeBlockEntry(Block.Entry blkIn, int idx) {
+		//public String writeBlockEntry(Block.Entry blkIn, int idx) {
+		public void writeBlockEntry(Block.Entry blkIn, int idx) {
+			int ign;
+			String tmp;
+
 			String ans = "";
 			int targ;
 			String lin;
 			String tag = "\t/* entry# " + idx + "*/";
 
-			ans += "// block.entry #" + idx + "\n";
+			// ans += "// block.entry #" + idx + "\n";
+			tmp = "// block.entry #" + idx + "\n";
+			ign = bodyAddLine(tmp);
 			//System.err.println("milestone 5.3.1.2");
 			Code cod = blkIn.code;
-			ans += this.writeSourceLineID(blkIn);
-
+			//ans += this.writeSourceLineID(blkIn);
+			tmp = this.writeSourceLineID(blkIn);
+			ign = bodyAddLine(tmp);
+			
 			String temp = cod.toString();
-			ans += "//             Looks like " + temp + "\n";
+			//ans += "//             Looks like " + temp + "\n";
+			tmp = "//             Looks like " + temp + "\n";
+			ign = bodyAddLine(tmp);
+			
 			String[] frags = temp.split(" ", 4);
 			String opc = frags[0];
 			//System.err.println("milestone 5.3.1.3");
@@ -774,7 +798,9 @@ public class Wyil2CBuilder implements Builder {
 				ans += "// HELP needed for opcode '" + opc + "'\n";
 			}
 			//System.err.println("milestone 5.3.1.8");
-			return ans;
+			// return ans;
+			ign = bodyAddLine(ans);
+			return;
 		}
 	
 		public String writeCodefoo(Code codIn, String tag){
