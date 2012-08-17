@@ -105,9 +105,8 @@ public class JavaFileWriter {
 		myOut("import java.util.*;");
 		myOut("import java.math.BigInteger;");
 		myOut("import wyone.io.PrettyAutomataReader;");
-		myOut("import wyautl.io.PrettyAutomataWriter;");
+		myOut("import wyone.io.PrettyAutomataWriter;");
 		myOut("import wyone.core.*;");
-		myOut("import static wyautl.lang.Automata.*;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
@@ -327,7 +326,6 @@ public class JavaFileWriter {
 		myOut();
 		myOut(1, "public static Automaton rewrite(Automaton automaton) {");
 		myOut(2, "Automaton old;");
-		myOut(2, "automaton = Automata.minimise(automaton);");
 		myOut(2, "do {");
 		myOut(3, "old = automaton;");
 		myOut(3, "boolean changed = false;");
@@ -343,7 +341,6 @@ public class JavaFileWriter {
 		}
 		myOut(4, "}");
 		myOut(3, "}");
-		myOut(3, "if(changed) { automaton = Automata.minimise(automaton); }");
 		myOut(2, "} while(!automaton.equals(old));");
 		myOut(2, "return automaton;");
 		myOut(1, "}\n");
@@ -967,16 +964,16 @@ public class JavaFileWriter {
 		myOut(2, "try {");
 		myOut(3,
 				"PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA);");
-//		myOut(3,
-//				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
+		myOut(3,
+				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "Automaton a = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "System.out.print(a.toString());");
-//		myOut(3, "writer.write(a);");
+		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
 //		myOut(3, "a = rewrite(a);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
-//		myOut(3, "writer.write(a);");
+		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
