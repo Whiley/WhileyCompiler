@@ -153,11 +153,14 @@ public final class Automaton {
 				r = r + ", ";
 			}
 			Automaton.State state = states[i];
-			r = r + "#";
-			r = r + i;
+			r = r + "#" + i + " ";
 			if (state instanceof Term) {
 				Term t = (Term) state;
-				r = r + schema[t.kind].name + "(" + t.contents + ")";
+				if(t.contents == K_VOID) {
+					r = r + schema[t.kind].name;
+				} else {
+					r = r + schema[t.kind].name + "(" + t.contents + ")";
+				}
 			} else {
 				r = r + state.toString();
 			}
@@ -290,7 +293,7 @@ public final class Automaton {
 
 		public Compound(int kind, int...children) {
 			super(kind);
-			if(kind != K_LIST || kind != K_SET || kind != K_BAG) {
+			if(kind != K_LIST && kind != K_SET && kind != K_BAG) {
 				throw new IllegalArgumentException("invalid compound kind");
 			}
 			this.children = children;
@@ -298,7 +301,7 @@ public final class Automaton {
 		
 		public Compound(int kind, List<Integer> children) {
 			super(kind);
-			if(kind != K_LIST || kind != K_SET || kind != K_BAG) {
+			if(kind != K_LIST && kind != K_SET && kind != K_BAG) {
 				throw new IllegalArgumentException("invalid compound kind");
 			}
 			int[] nchildren = new int[children.size()];
@@ -345,13 +348,13 @@ public final class Automaton {
 			
 			switch(kind) {
 				case K_LIST:
-					r = ")";
+					r += ")";
 					break;
 				case K_SET:
-					r = "}";
+					r += "}";
 					break;
 				case K_BAG:
-					r = "]";
+					r += "]";
 					break;
 			}
 			
@@ -365,9 +368,10 @@ public final class Automaton {
 	 */
 	public static final int[] NOCHILDREN = new int[0];
 
-	public static final int K_INT = -1;
-	public static final int K_STRING = -2;
-	public static final int K_LIST = -3;
-	public static final int K_SET = -4;
-	public static final int K_BAG = -5;	
+	public static final int K_VOID = -1;
+	public static final int K_INT = -2;
+	public static final int K_STRING = -3;
+	public static final int K_LIST = -4;
+	public static final int K_SET = -5;
+	public static final int K_BAG = -6;	
 }

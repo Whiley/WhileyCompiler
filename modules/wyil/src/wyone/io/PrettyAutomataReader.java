@@ -20,12 +20,12 @@ public class PrettyAutomataReader {
 		for(int i=0;i!=schema.length;++i) {
 			rSchema.put(schema[i].name, i);
 		}
-		this.lookaheads = new int[1];		
+		this.lookaheads = new int[2];		
 	}
 	
 	public Automaton read() throws IOException,SyntaxError {
 		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-		parseTerm(states);
+		parseState(states);
 		return new Automaton(schema,states);
 	}
 
@@ -65,13 +65,12 @@ public class PrettyAutomataReader {
 		// ======== parse identifier ===========
 		StringBuffer sb = new StringBuffer();
 		int lookahead;
-		while ((lookahead = next()) != -1
+		while ((lookahead = lookahead()) != -1
 				&& Character.isJavaIdentifierPart((char) lookahead)) {
-			sb.append((char) lookahead);
-		}
-		push(lookahead);
-		
+			sb.append((char) next());
+		}				
 		String name = sb.toString();
+		
 		Integer kind = rSchema.get(name);
 		if (kind == null) {
 			throw new SyntaxError("unrecognised term encountered (" + name
@@ -79,7 +78,7 @@ public class PrettyAutomataReader {
 		} 
 		Type.Term type = schema[kind];
 		int data = -1;
-		if(type.data != null) {
+		if(type.data != Type.T_VOID) {			
 			data = parseState(states);
 		}
 		
@@ -95,11 +94,10 @@ public class PrettyAutomataReader {
 
 		StringBuffer sb = new StringBuffer();		
 		int lookahead;
-		while ((lookahead = next()) != -1
+		while ((lookahead = lookahead()) != -1
 				&& Character.isDigit((char) lookahead)) {
-			sb.append((char) lookahead);
+			sb.append((char) next());
 		}
-		push(lookahead);
 		
 		// FIXME: should support arbitrary sized ints
 		int val = Integer.parseInt(sb.toString());
@@ -153,20 +151,40 @@ public class PrettyAutomataReader {
 		boolean firstTime = true;
 		ArrayList<Integer> children = new ArrayList<Integer>();
 		
-		while ((lookahead = next()) != -1 && lookahead != ')'
-				&& lookahead != '}' && lookahead != ':') {
+		while ((lookahead = lookahead()) != -1 && lookahead != ')'
+				&& lookahead != '}' && lookahead != ']') {
 			if (!firstTime) {
 				if (lookahead != ',') {
 					throw new SyntaxError("expecting ','", pos, pos);
 				}
-				lookahead = next();
+				next();
 			} else {
 				firstTime = false;
 			}
 			children.add(parseState(states));
 		}
 		
+		switch(kind) {
+			case Automaton.K_LIST:
+				if(lookahead != ')') {
+					throw new SyntaxError("expecting ')' --- found '" + (char) lookahead +"\'", pos, pos);
+				}				
+				break;
+			case Automaton.K_SET:
+				kind = Automaton.K_SET;
+				if(lookahead != '}') {
+					throw new SyntaxError("expecting '}' --- found '" + (char) lookahead +"\'", pos, pos);
+				}
+				break;
+			case Automaton.K_BAG:
+				kind = Automaton.K_BAG;
+				if(lookahead != ']') {
+					throw new SyntaxError("expecting ']' --- found '" + (char) lookahead +"\'", pos, pos);
+				}
+				break;
+		}
 		
+		next(); // matched
 		// ======== create automaton state ===========
 		
 		states.set(index, new Automaton.Compound(kind,children));
@@ -196,20 +214,13 @@ public class PrettyAutomataReader {
 		return lookahead;
 	}
 	
-	protected void push(int item) {
-		if(item != -1) {
-			lookaheads[end] = item;
-			end = (end + 1) % lookaheads.length;
-		}
-	}
-	
 	protected void skipWhiteSpace() throws IOException {
 		int lookahead;
-		while ((lookahead = input.read()) != -1
+		while ((lookahead = lookahead()) != -1
 				&& Character.isWhitespace(lookahead)) {
+			next(); // dummy
 			pos = pos + 1;
-		}
-		push(lookahead);
+		}		
 	}
 		
 	public static final class SyntaxError extends Exception {
