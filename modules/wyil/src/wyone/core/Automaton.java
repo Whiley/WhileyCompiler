@@ -184,35 +184,36 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Rewrite one node into another.
+	 * Rewrite one state into another.
 	 * 
-	 * @param from
-	 *            --- state being destroyed
-	 * @param to
-	 *            --- state being rewritten
+	 * @param src
+	 *            --- state being rewritten to look like target.
+	 * @param target
+	 *            --- src is rewritten to look like target, which is then
+	 *            destroyed.
 	 * @return
 	 */
-	public boolean rewrite(int to, int from) {
-		if(from < 0) {
+	public boolean rewrite(int src, int target) {
+		if(target < 0) {
 			for(int i=0;i!=nStates;++i) {
-				states[i].remap(to,from);
+				states[i].remap(src,target);
 			}
 			for(int i=0;i!=nRoots;++i) {
-				if(roots[i] == to) {
-					roots[i] = from;
+				if(roots[i] == src) {
+					roots[i] = target;
 				}
 			}
 			return true;
 		} else {
-			State os = states[to];
-			State ns = states[from];
-			states[to] = ns;
+			State os = states[src];
+			State ns = states[target];
+			states[src] = ns;
 			for(int i=0;i!=nStates;++i) {
-				states[i].remap(from,to);
+				states[i].remap(target,src);
 			}
 			for(int i=0;i!=nRoots;++i) {
-				if(roots[i] == from) {
-					roots[i] = to;
+				if(roots[i] == target) {
+					roots[i] = src;
 				}
 			}
 			// to is now free to be garbage collected

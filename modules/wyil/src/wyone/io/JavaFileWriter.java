@@ -508,9 +508,8 @@ public class JavaFileWriter {
 	}
 
 	public Pair<List<String>, String> translate(Variable v) {
-		if (v.isConstructor) {
-			String r = "inplaceAppend(automaton,new Automaton.State(K_" + v.var;
-			return new Pair(Collections.EMPTY_LIST, r + "))");
+		if (v.isConstructor) {			
+			return new Pair(Collections.EMPTY_LIST, "(Automaton.K_FREE-K_" + v.var + ")");
 		} else {
 			return new Pair(Collections.EMPTY_LIST, v.var);
 		}
