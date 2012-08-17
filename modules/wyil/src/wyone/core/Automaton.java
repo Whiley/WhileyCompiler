@@ -66,48 +66,151 @@ import java.util.*;
  */
 public final class Automaton {	
 	
+	public static final int DEFAULT_NUM_STATES = 4;
+	
+	public static final int DEFAULT_NUM_ROOTS = 1;
+	
 	/**
 	 * The number of used slots in the states array.
 	 */
-	private int length;
-	
+	private int nStates;
+		
 	/**
 	 * The array of automaton states
 	 */
 	private State[] states;	// should not be public!
 	
 	/**
+	 * The array of automaton roots.
+	 */
+	public int[] roots;
+
+	/**
+	 * The number of used slots in the roots array
+	 */
+	public int nRoots;
+	
+	/**
 	 * Describes the possible layouts of the used-defined states.
 	 */
 	private final Type.Term[] schema;
 	
-	public Automaton(Type.Term[] schema, State... states) {
-		this.states = states;
-		this.length = states.length;
+	public Automaton(Type.Term[] schema) {
+		this.states = new Automaton.State[DEFAULT_NUM_STATES];
+		this.roots = new int[DEFAULT_NUM_ROOTS];
 		this.schema = schema;
 	}
-
-	public Automaton(Type.Term[] schema, List<State> states) {
-		int statesSize = states.size();
-		this.states = new State[statesSize];
-		for(int i=0;i!=statesSize;++i) {
-			this.states[i] = states.get(i);
-		}
-		this.length = states.size();
-		this.schema = schema;
-	}
-	
+			
 	public Automaton(Automaton automaton) {
-		this.length = automaton.length;
+		this.nStates = automaton.nStates;
 		this.states = new State[automaton.states.length];
 		for(int i=0;i!=states.length;++i) {
 			states[i] = automaton.states[i].clone();			
 		}
+		this.nRoots = automaton.nRoots;
+		this.roots = Arrays.copyOf(automaton.roots, nRoots);		
 		this.schema = automaton.schema;
 	}
 	
-	public int size() {
-		return length;
+	public int numStates() {
+		return nStates;
+	}
+	
+	public int numRoots() {
+		return nRoots;
+	}
+	
+	public State get(int index) {
+		if(index < 0) {
+			switch(index) {				
+				case K_LIST:
+					return EMPTY_LIST;
+				case K_SET:
+					return EMPTY_SET;
+				default:
+					return new Term(-index + K_FREE,K_VOID);
+			}
+		} 
+		
+		return states[index];		
+	}
+	
+	/**
+	 * Add a new state into the automaton. If there is already an equivalent
+	 * state, then its index is returned. Or, if the state can be represented
+	 * "virtually", then a negative (but still valid) index will be returned.
+	 * Otherwise, the state is added onto the end of the states array and its
+	 * index is returned.
+	 * 
+	 * @param state
+	 * @return
+	 */
+	public int add(Automaton.State state) {
+		
+		// First, check to see whether this state is uniquely identified by its
+		// kind.
+		if(state instanceof Term) {
+			Term term = (Term) state;
+			if(term.contents == Automaton.K_VOID) {
+				return K_FREE - term.kind;
+			}
+		} else if(state instanceof Compound) {
+			Compound compound = (Compound) state;
+			if(compound.children.length == 0) {
+				return compound.kind;
+			}
+		}
+		
+		// Second, check to see whether there already exists an equivalent
+		// state. 
+		for(int i=0;i!=nStates;++i) {
+			if(states[i].equals(state)) {
+				return i; // match
+			}
+		}
+		
+		// Third, allocate a new state!
+		if(nStates == states.length) {
+			// oh dear, need to increase space
+			State[] nstates = nStates == 0
+					? new State[DEFAULT_NUM_STATES]
+					: new State[nStates * 2];
+			System.arraycopy(states,0,nstates,0,nStates);
+			states = nstates;
+		}
+		
+		states[nStates] = state;
+		return nStates++;
+	}
+	
+	/**
+	 * Mark a state as a "root". This means it is treated specially, and will
+	 * never be deleted from the automaton as a result of garbage collection.
+	 * 
+	 * @param root
+	 * @return 
+	 */
+	public int mark(int root) {
+		// First, check whether this root was already marked
+		for(int i=0;i!=nRoots;++i) {
+			if(roots[i] == root) {
+				return i; // match
+			}
+		}
+		// Second, create a new root
+		if(nRoots == roots.length) {
+			int[] nroots = nRoots == 0
+					? new int[DEFAULT_NUM_ROOTS]
+					: new int[nRoots * 2];
+			System.arraycopy(roots,0,nroots,0,nRoots);
+			roots = nroots;
+		}		
+		roots[nRoots] = root;
+		return nRoots++;
+	}
+	
+	public int root(int index) {
+		return roots[index];
 	}
 	
 	/**
@@ -115,7 +218,7 @@ public final class Automaton {
 	 */
 	public int hashCode() {
 		int r = 0;
-		for (int i = 0; i != length; ++i) {
+		for (int i = 0; i != nStates; ++i) {
 			r = r + states[i].hashCode();
 		}
 		return r;
@@ -133,10 +236,10 @@ public final class Automaton {
 		if(o instanceof Automaton) {
 			Automaton a = (Automaton) o;
 			State[] cs = a.states;
-			if(a.length != length) {
+			if(a.nStates != nStates) {
 				return false;
 			}
-			for(int i=0;i!=length;++i) {
+			for(int i=0;i!=nStates;++i) {
 				if(!states[i].equals(cs[i])) {
 					return false;
 				}
@@ -148,7 +251,7 @@ public final class Automaton {
 	
 	public String toString() {
 		String r = "";
-		for (int i = 0; i != length; ++i) {
+		for (int i = 0; i != nStates; ++i) {
 			if (i != 0) {
 				r = r + ", ";
 			}
@@ -293,20 +396,26 @@ public final class Automaton {
 
 		public Compound(int kind, int...children) {
 			super(kind);
-			if(kind != K_LIST && kind != K_SET && kind != K_BAG) {
+			if(kind != K_LIST && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
+			} else if(kind == K_SET) {
+				Arrays.sort(children);
 			}
+			
 			this.children = children;
 		}
 		
 		public Compound(int kind, List<Integer> children) {
 			super(kind);
-			if(kind != K_LIST && kind != K_SET && kind != K_BAG) {
+			if(kind != K_LIST && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
 			}
 			int[] nchildren = new int[children.size()];
 			for (int i = 0; i != children.size(); ++i) {
 				nchildren[i] = children.get(i);
+			}
+			if(kind == K_SET) {
+				Arrays.sort(nchildren);
 			}
 			this.children = nchildren;			
 		}
@@ -318,7 +427,8 @@ public final class Automaton {
 		public boolean equals(final Object o) {
 			if (o instanceof Compound) {
 				Compound t = (Compound) o;
-				return kind == t.kind && Arrays.equals(children,t.children);
+				int[] t_children = t.children;
+				return kind == t.kind && Arrays.equals(children,t_children);							
 			}
 			return false;
 		}
@@ -336,9 +446,6 @@ public final class Automaton {
 				case K_SET:
 					r = "{";
 					break;
-				case K_BAG:
-					r = "[";
-					break;
 			}
 			
 			for(int i=0;i!=children.length;++i) {
@@ -353,25 +460,25 @@ public final class Automaton {
 				case K_SET:
 					r += "}";
 					break;
-				case K_BAG:
-					r += "]";
-					break;
 			}
 			
 			return r;
 		}
 	}
 	
-	/**
-	 * The following constant is used simply to prevent unnecessary memory
-	 * allocations.
-	 */
-	public static final int[] NOCHILDREN = new int[0];
-
 	public static final int K_VOID = -1;
 	public static final int K_INT = -2;
 	public static final int K_STRING = -3;
 	public static final int K_LIST = -4;
 	public static final int K_SET = -5;
-	public static final int K_BAG = -6;	
+	public static final int K_FREE = -6;
+	
+	
+	/**
+	 * The following constant is used simply to prevent unnecessary memory
+	 * allocations.
+	 */
+	public static final int[] NOCHILDREN = new int[0];
+	public static final Compound EMPTY_LIST = new Compound(K_LIST,NOCHILDREN);
+	public static final Compound EMPTY_SET = new Compound(K_SET,NOCHILDREN);
 }

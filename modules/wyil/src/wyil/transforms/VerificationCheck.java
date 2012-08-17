@@ -135,7 +135,7 @@ public class VerificationCheck implements Transform {
 		// add type information available from parameters
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
-		for(int i=paramStart;i!=fmm.params().size();++i) {
+		for(int i=paramStart;i!=fmm.params().numState();++i) {
 			Type paramType = fmm.params().get(i); 
 			WVariable pv = new WVariable(i + "$" + 0);
 			constraint = WFormulas.and(constraint,

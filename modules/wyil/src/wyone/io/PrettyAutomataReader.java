@@ -24,20 +24,20 @@ public class PrettyAutomataReader {
 	}
 	
 	public Automaton read() throws IOException,SyntaxError {
-		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-		parseState(states);
-		return new Automaton(schema,states);
+		Automaton automaton = new Automaton(schema);
+		int root = parseState(automaton);
+		automaton.mark(root);
+		return automaton;
 	}
 
-	protected int parseState(ArrayList<Automaton.State> states) throws IOException, SyntaxError {
+	protected int parseState(Automaton automaton) throws IOException, SyntaxError {
 		skipWhiteSpace();
 		int lookahead = lookahead();
 		
 		switch(lookahead) {
 			case '(':
 			case '{':
-			case '[':
-				return parseCompound(states);
+				return parseCompound(automaton);
 			case '0':
 			case '1':
 			case '2':
@@ -48,20 +48,17 @@ public class PrettyAutomataReader {
 			case '7':
 			case '8':
 			case '9':
-				return parseInteger(states);
+				return parseInteger(automaton);
 			case '\"':
-				return parseString(states);
+				return parseString(automaton);
 			default:
-				return parseTerm(states);				
+				return parseTerm(automaton);				
 		}		
 	}
 	
-	protected int parseTerm(ArrayList<Automaton.State> states)
+	protected int parseTerm(Automaton automaton)
 			throws IOException, SyntaxError {
-		
-		int index = states.size();
-		states.add(null);
-		
+			
 		// ======== parse identifier ===========
 		StringBuffer sb = new StringBuffer();
 		int lookahead;
@@ -79,18 +76,14 @@ public class PrettyAutomataReader {
 		Type.Term type = schema[kind];
 		int data = -1;
 		if(type.data != Type.T_VOID) {			
-			data = parseState(states);
+			data = parseState(automaton);
 		}
 		
-		states.set(index, new Automaton.Term(kind, data));
-		return index;
-
+		return automaton.add(new Automaton.Term(kind, data));
 	}
 	
-	protected int parseInteger(ArrayList<Automaton.State> states)
+	protected int parseInteger(Automaton automaton)
 			throws IOException, SyntaxError {		
-		int index = states.size();
-		states.add(null);
 
 		StringBuffer sb = new StringBuffer();		
 		int lookahead;
@@ -101,16 +94,13 @@ public class PrettyAutomataReader {
 		
 		// FIXME: should support arbitrary sized ints
 		int val = Integer.parseInt(sb.toString());
-		states.set(index, new Automaton.Item(Automaton.K_INT,
+	
+		return automaton.add(new Automaton.Item(Automaton.K_INT,
 				BigInteger.valueOf(val)));
-		
-		return index;
 	}
 	
-	protected int parseString(ArrayList<Automaton.State> states)
+	protected int parseString(Automaton automaton)
 			throws IOException, SyntaxError {		
-		int index = states.size();
-		states.add(null);
 		StringBuffer sb = new StringBuffer();
 		int lookahead = next(); // skip starting '\"'
 		
@@ -118,18 +108,13 @@ public class PrettyAutomataReader {
 				&& ((char)lookahead) != '\"') {
 			sb.append((char) lookahead);
 		}
-		// no need to push here.
 
-		states.set(index, new Automaton.Item(Automaton.K_STRING,
+		return automaton.add(new Automaton.Item(Automaton.K_STRING,
 				sb.toString()));
-		
-		return index;
 	}
 	
-	protected int parseCompound(ArrayList<Automaton.State> states)
+	protected int parseCompound(Automaton automaton)
 			throws IOException, SyntaxError {
-		int index = states.size();
-		states.add(null);
 		int lookahead = next(); // skip opening brace
 		
 		int kind;
@@ -141,9 +126,6 @@ public class PrettyAutomataReader {
 			case '{':
 				kind = Automaton.K_SET;
 				break;
-			case '[':
-				kind = Automaton.K_BAG;
-				break;
 			default:
 				throw new IllegalArgumentException("invalid compound start");
 		}
@@ -152,7 +134,7 @@ public class PrettyAutomataReader {
 		ArrayList<Integer> children = new ArrayList<Integer>();
 		
 		while ((lookahead = lookahead()) != -1 && lookahead != ')'
-				&& lookahead != '}' && lookahead != ']') {
+				&& lookahead != '}') {
 			if (!firstTime) {
 				if (lookahead != ',') {
 					throw new SyntaxError("expecting ','", pos, pos);
@@ -161,7 +143,7 @@ public class PrettyAutomataReader {
 			} else {
 				firstTime = false;
 			}
-			children.add(parseState(states));
+			children.add(parseState(automaton));
 		}
 		
 		switch(kind) {
@@ -176,19 +158,11 @@ public class PrettyAutomataReader {
 					throw new SyntaxError("expecting '}' --- found '" + (char) lookahead +"\'", pos, pos);
 				}
 				break;
-			case Automaton.K_BAG:
-				kind = Automaton.K_BAG;
-				if(lookahead != ']') {
-					throw new SyntaxError("expecting ']' --- found '" + (char) lookahead +"\'", pos, pos);
-				}
-				break;
 		}
 		
-		next(); // matched
-		// ======== create automaton state ===========
+		next(); // match right brace
 		
-		states.set(index, new Automaton.Compound(kind,children));
-		return index;
+		return automaton.add(new Automaton.Compound(kind,children));
 	}
 	
 	protected int next() throws IOException {

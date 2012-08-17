@@ -52,44 +52,76 @@ import wyone.core.*;
  */
 public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 	private final PrintStream writer;
-	private final String[] schema;
+	private final Type.Term[] schema;
 	
-	public PrettyAutomataWriter(PrintStream stream, String... terms) {
+	public PrettyAutomataWriter(PrintStream stream, Type.Term[] schema) {
 		this.writer = stream;
-		this.schema = terms;
+		this.schema = schema;
 	}
 	
-	public PrettyAutomataWriter(OutputStream stream, String... terms) {
+	public PrettyAutomataWriter(OutputStream stream, Type.Term[] schema) {
 		this.writer = new PrintStream(stream);
-		this.schema = terms;
+		this.schema = schema;
 	}
 	
 	public void write(Automaton automaton) throws IOException {	
-		write(0,automaton);
+		for(int i=0;i!=automaton.numRoots();++i) {
+			write(automaton.root(i),automaton);
+		}
 	}
 	
 	protected void write(int index, Automaton automaton) throws IOException {
-		Automaton.State state = automaton.states[index];
-		int[] children = state.children;
-		writer.print(schema[state.kind]);
-		if(state.deterministic) { 
-			writer.print("(");
+		Automaton.State state = automaton.get(index);
+		if(state instanceof Automaton.Item) {
+			write((Automaton.Item)state,automaton);
+		} else if(state instanceof Automaton.Term) {
+			write((Automaton.Term)state,automaton);
 		} else {
-			writer.print("{");
+			write((Automaton.Compound)state,automaton);
 		}
+		
+	}
+	
+	protected void write(Automaton.Item item, Automaton automaton) throws IOException {
+		Object payload = item.payload;
+		if (payload instanceof String) {
+			writer.print("\"" + payload.toString() + "\"");
+		} else {
+			// default
+			writer.print(payload.toString());
+		}
+	}
+
+	protected void write(Automaton.Term term, Automaton automaton) throws IOException {
+		writer.print(schema[term.kind].name);
+		if(schema[term.kind].data != Type.T_VOID) {
+			write(term.contents,automaton);
+		}
+	}
+	
+	protected void write(Automaton.Compound state, Automaton automaton) throws IOException {
+		int[] children = state.children;
+		switch(state.kind) {
+			case Automaton.K_LIST:
+				writer.print("(");
+				break;
+			case Automaton.K_SET:
+				writer.print("{");
+				break;
+		}		
 		for(int i=0;i!=children.length;++i) {
 			if(i != 0) {
 				writer.print(",");
 			}
 			write(children[i],automaton);
 		}
-		if(state.data != null) {
-			writer.print(":" + state.data);
-		}
-		if(state.deterministic) {
-			writer.print(")");
-		} else {
-			writer.print("}");
+		switch(state.kind) {
+			case Automaton.K_LIST:
+				writer.print(")");
+				break;
+			case Automaton.K_SET:
+				writer.print("}");
+				break;
 		}
 	}
 	
