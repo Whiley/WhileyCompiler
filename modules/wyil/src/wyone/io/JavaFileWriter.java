@@ -183,7 +183,7 @@ public class JavaFileWriter {
 				myOut(2, "if(" + r.second() + ") {");
 				r = translate(rd.result);
 				write(r.first(), 3);
-				myOut(2, "return automaton.rewrite(index," + r.second() + ");");
+				myOut(3, "return automaton.rewrite(index," + r.second() + ");");
 				myOut(2, "}");
 			} else {
 				defCase = true;
@@ -834,13 +834,20 @@ public class JavaFileWriter {
 		HashSet<String> expanded = new HashSet<String>();
 		expand(type.name, hierarchy, expanded);
 		indent(2);
-		out.print("if(state instanceof Automaton.Term");
+		out.print("if(state instanceof Automaton.Term && (");
+		boolean firstTime = true;
 		for (String n : expanded) {			
 			myOut();
 			indent(2);
-			out.print("   || state.kind == K_" + n);
+			if(!firstTime) {
+				out.print("   || state.kind == K_" + n);
+			} else {
+				firstTime=false;
+				out.print(" state.kind == K_" + n);
+			}
+			
 		}
-		myOut(") {");
+		myOut(")) {");
 		// FIXME: there is definitely a bug here since we need the offset within the automaton state
 		if (type.data != Type.T_VOID) {
 			myOut(3,"int data = ((Automaton.Term)state).contents;");
