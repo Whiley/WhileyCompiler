@@ -8,38 +8,6 @@ term Var(string)
 // Theory of Logical Connectives
 // ==================================================
 
-// --- Logical And ---
-term And{Term...}
-
-rewrite And{Bool b, Term... xs}:
-    => False(), if b is False
-    => And(xs)
-
-//rewrite And{And(Term...xs), Term... ys}:
-//    => And(xs ++ ys)
-
-rewrite And(Term t):
-    => t
-
-rewrite And():
-    => True()
-
-// --- Logical Or ---
-term Or{Term...}
-
-rewrite Or{Bool b, Term... xs}:
-    => True(), if b is True
-    => Or(xs)
-
-//rewrite Or{Or{Term...xs}, Term... ys}:
-//    => Or(xs ++ ys)
-
-rewrite Or(Term t):
-    => t
-
-rewrite Or():
-    => False()
-
 // --- Logical Not ---
 term Not(Term)
 
@@ -54,4 +22,4 @@ rewrite Not(Not(* x)):
 
 // rewrite Not(Or(Term... xs)):
 
-class Term as Bool | Var | Not | And | Or
+class Term as Bool | Var | Not
