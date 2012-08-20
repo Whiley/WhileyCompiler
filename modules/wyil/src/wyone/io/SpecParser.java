@@ -545,28 +545,17 @@ public class SpecParser {
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
-	private Expr.Constructor parseConstructorExpr() {		
+	private Expr.Constructor parseConstructorExpr() {
 		int start = index;
 		Identifier name = matchIdentifier();
-		
+
 		match(LeftBrace.class);
 		skipWhiteSpace(true);
-		boolean firstTime=true;
-		ArrayList<Expr> args = new ArrayList<Expr>();
-		while (index < tokens.size()
-				&& !(tokens.get(index) instanceof RightBrace)) {
-			if(!firstTime) {
-				match(Comma.class);
-				skipWhiteSpace(true);
-			} else {
-				firstTime=false;
-			}			
-			Expr e = parseConditionExpression();
-			skipWhiteSpace(true);
-			args.add(e);		
-		}
-		match(RightBrace.class);		
-		return new Expr.Constructor(name.text, args, sourceAttr(start,index-1));
+		Expr argument = parseConditionExpression();
+		skipWhiteSpace(true);
+		match(RightBrace.class);
+		return new Expr.Constructor(name.text, argument, sourceAttr(start,
+				index - 1));
 	}
 	
 	private Expr parseString() {

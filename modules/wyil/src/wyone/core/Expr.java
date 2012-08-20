@@ -256,25 +256,17 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Constructor extends SyntacticElement.Impl implements Expr {
 		public final String name;		
-		public final List<Expr> arguments;
+		public final Expr argument;
 		
-		public Constructor(String name, List<Expr> arguments,
+		public Constructor(String name, Expr argument,
 				Attribute... attributes) {
 			super(attributes);
 			this.name = name;			
-			this.arguments = arguments;
+			this.argument = argument;
 		}
 		
 		public String toString() {
-			String r = name + "(";
-			boolean firstTime=true;
-			for(Expr e : arguments) {
-				if(!firstTime) {
-					r += ",";
-				}
-				r += e;
-			}
-			return r + ")";
+			return name + "(" + argument + ")";			
 		}
 	}
 	

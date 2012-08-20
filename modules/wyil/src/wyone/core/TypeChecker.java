@@ -181,18 +181,13 @@ public class TypeChecker {
 	}
 
 	protected Type resolve(Constructor ivk, HashMap<String, Type> environment) {
-
-		ArrayList<Type> types = new ArrayList<Type>();
-
-		for (Expr arg : ivk.arguments) {
-			Type arg_t = resolve(arg, environment);
-			types.add(arg_t);
-		}
+	
+		Type arg_t = resolve(ivk.argument, environment);			
 
 		// Second, we assume it's not a local variable and look outside the
 		// scope.
 
-		// TODO: type check parameter arguments
+		// TODO: type check parameter argument
 
 		Type.Term type = terms.get(ivk.name);
 		if (type == null) {

@@ -623,30 +623,29 @@ public class JavaFileWriter {
 		return new Pair(inserts, r);
 	}
 
-	public Pair<List<String>, String> translate(Constructor ivk) {
-		String r = "automaton.add(new Automaton.Term(K_" + ivk.name;
-		List<String> inserts = Collections.EMPTY_LIST;
-		if (!ivk.arguments.isEmpty()) {
-			boolean firstTime = true;
-			Type.Term type = (Type.Term) ivk.attribute(TypeAttr.class).type;
-			List<Expr> arguments = ivk.arguments;
-			int end = arguments.size();
-			r += ", true, append(";
-			for (int i = 0; i != end; ++i) {
-				Expr e = arguments.get(i);
-				Pair<List<String>, String> es = translate(e);
-				inserts = concat(inserts, es.first());
-				if (!firstTime) {
-					r += ", ";
-				} else {
-					firstTime = false;
-				}
-				r += es.second();
+	public Pair<List<String>, String> translate(Constructor ivk) {				
+		Expr arg = ivk.argument;
+		Type arg_t = arg.attribute(TypeAttr.class).type;
+		Pair<List<String>, String> es = translate(arg);		
+		String contents = es.second();
+		
+		if(arg_t instanceof Type.Int) {
+			contents = "automaton.add(new Automaton.Item(Automaton.K_INT," + contents + "))";
+		} else if(arg_t instanceof Type.Strung) {
+			contents = "automaton.add(new Automaton.Item(Automaton.K_STRING," + contents + "))";
+		} else if(arg_t instanceof Type.Compound) {
+			Type.Compound tc = (Type.Compound) arg_t;
+			String kind;
+			if(tc.kind == Type.Compound.Kind.LIST) {
+				kind = "Automaton.K_LIST";
+			} else {
+				kind = "Automaton.K_SET";
 			}
-			r += ")";
+			contents = "automaton.add(new Automaton.Compound(" + kind + "," + contents + "))";
 		}
-
-		return new Pair(inserts, r + "))");
+		
+		String r = "automaton.add(new Automaton.Term(K_" + ivk.name + "," + contents + "))";		
+		return new Pair(es.first(), r);
 	}
 
 	// public Pair<List<String>,String> translateSome(Comprehension c,
