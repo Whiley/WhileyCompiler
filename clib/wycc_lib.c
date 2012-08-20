@@ -1056,14 +1056,73 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
     return ans;
 }
 
+/*
+ * if lhs contains rhs return 1;
+ * else return 0
+ */
+static wycc_compare_member_of(wycc_obj* lhs, wycc_obj* rhs) {
+    fprintf(stderr, "Failure: wcc_compare_member_of\n");
+    exit(-3);
+}
+
+/*
+ * if lhs is a subset of rhs, return 1;
+ * if lhs == rhs and flg, return 1;
+ * else return 0
+ */
+static wycc_compare_subset(wycc_obj* lhs, wycc_obj* rhs, int flg) {
+    void** lp = lhs->ptr;
+    void** lch;
+    void** rp = rhs->ptr;
+    void** rch;
+    int lcnt;
+    int rcnt;
+    int dif;
+
+    if (lhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wycc_compare_subset for type %d\n"
+		, lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wycc_compare_subset for type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    lcnt = (int) lp[1];
+    rcnt = (int) rp[1];
+    if (lcnt > rcnt) {
+	return 0;
+    };
+    dif = 0;
+    lch = &(lp[2]);
+    rch = &(rp[2]);
+    fprintf(stderr, "Failure: wycc_compare_subset\n");
+    exit(-3);
+}
+
+/*
+ * if relationship rel holds between lhs & rhs, return 1
+ * else return 0
+ */
 int wycc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel){
     int end;
 
-    if ((rel < 0) || (rel >= Wyil_Relation_Mo)) {
-	fprintf(stderr, "Failure: wcc_compare with relation %d\n"
+    if ((rel < 0) || (rel > Wyil_Relation_Se)) {
+	fprintf(stderr, "Failure: wycc_compare with relation %d\n"
 		, rel);
 	exit(-3);
     };
+    if (rel == Wyil_Relation_Mo) {
+	return wycc_compare_member_of(lhs, rhs);
+    };
+    if (rel == Wyil_Relation_Ss) {
+	return wycc_compare_subset(lhs, rhs, 0);
+    };
+    if (rel == Wyil_Relation_Se) {
+	return wycc_compare_subset(lhs, rhs, 1);
+    };
+
     end = wycc_comp_gen(lhs, rhs);
     if (end < 0) {
 	if (rel == Wyil_Relation_Lt) {
@@ -1116,6 +1175,70 @@ void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
     };
     fprintf(stderr, msg);
     exit(-4);
+}
+
+/*
+ * return a set that is the difference between lhs and rhs
+ */
+wycc_obj* wyil_set_diff(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_diff\n");
+    exit(-3);
+}
+
+/*
+ * return a set that is the intersection between lhs and rhs
+ */
+wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_insect\n");
+    exit(-3);
+}
+
+/*
+ * return a set that is the union of lhs and rhs
+ */
+wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_union\n");
+    exit(-3);
+}
+
+/*
+ * return a set that is the union of lhs and rhs
+ */
+wycc_obj* wyil_set_union_left(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_union_left\n");
+    exit(-3);
+}
+
+/*
+ * return a set that is the union of lhs and rhs
+ */
+wycc_obj* wyil_set_union_right(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_union_right\n");
+    exit(-3);
+}
+
+/*
+ * return a set that is the intersection between lhs and rhs
+ */
+wycc_obj* wyil_set_insect_left(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_insect_left\n");
+    exit(-3);
+}
+
+/*
+ * return a set that is the intersection between lhs and rhs
+ */
+wycc_obj* wyil_set_insect_right(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_insect_right\n");
+    exit(-3);
+}
+
+/*
+ * return a set that is the difference between the lhs and rhs
+ */
+wycc_obj* wyil_set_diff_left(wycc_obj* lhs, wycc_obj* rhs){
+    fprintf(stderr, "Failure: wyil_set_diff_left\n");
+    exit(-3);
 }
 
 /*
