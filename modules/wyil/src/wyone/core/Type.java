@@ -199,8 +199,7 @@ public abstract class Type {
 	public static final class Compound extends Type {
 		public enum Kind {
 			LIST,
-			SET,
-			BAG
+			SET
 		}
 		
 		public final Kind kind;
@@ -245,11 +244,9 @@ public abstract class Type {
 			}
 			switch(kind) {
 			case LIST:
-				return "(" + r + ")";
-			case SET:
-				return "{" + r + "}";
-			default:
 				return "[" + r + "]";
+			default:
+				return "{" + r + "}";			
 			}			
 		}
 	}

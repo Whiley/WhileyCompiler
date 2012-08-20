@@ -59,14 +59,11 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			String r = "";
 			switch(kind) {
 			case LIST:
-				r += "(";
+				r += "[";
 				break;
 			case SET:
 				r += "{";
-				break;
-			case BAG:
-				r += "[";
-				break;
+				break;			
 			}
 			boolean firstTime = true;
 			for(Pair<Pattern,String> p : elements) {
@@ -83,14 +80,11 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}
 			switch(kind) {
 			case LIST:
-				r += ")";
+				r += "]";
 				break;
 			case SET:
 				r += "}";
-				break;
-			case BAG:
-				r += "]";
-				break;
+				break;			
 			}
 			return r;
 		}

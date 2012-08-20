@@ -86,12 +86,17 @@ public class SpecParser {
 		if (token instanceof Star) {
 			match(Star.class);
 			return new Pattern.Leaf(Type.T_ANY);
-		} else if (token instanceof LeftBrace || token instanceof LeftCurly
+		} else if (token instanceof LeftCurly
 				|| token instanceof LeftSquare) {
 			return parsePatternCompound();
+		} else if (token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			Pattern r = parsePattern();
+			match(RightBrace.class);
+			return r;
 		} else {
 			return parsePatternTerm();
-		}
+		} 
 	}
 	
 	public Pattern.Term parsePatternTerm() {
@@ -99,12 +104,12 @@ public class SpecParser {
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);
 		Pattern p;
-		if (token instanceof LeftBrace || token instanceof LeftCurly
-				|| token instanceof LeftSquare) {
-			p = parsePatternCompound();
-		} else {
+		if(token instanceof LeftBrace || token instanceof LeftCurly || token instanceof LeftSquare) {
+			p = parsePattern();
+		} else {			
 			p = new Pattern.Leaf(Type.T_VOID);
 		}
+		 	
 		return new Pattern.Term(name, p, sourceAttr(start, index - 1));
 	}
 	
@@ -112,8 +117,8 @@ public class SpecParser {
 		int start = index;		
 		Type.Compound.Kind kind;
 		ArrayList<Pair<Pattern, String>> params = new ArrayList();
-		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			match(LeftBrace.class);
+		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
+			match(LeftSquare.class);
 			kind = Type.Compound.Kind.LIST;
 		} else {
 			match(LeftCurly.class);
@@ -122,7 +127,7 @@ public class SpecParser {
 		boolean firstTime = true;
 		boolean unbound = false;
 		while (index < tokens.size()
-				&& !(tokens.get(index) instanceof RightBrace)
+				&& !(tokens.get(index) instanceof RightSquare)
 				&& !(tokens.get(index) instanceof RightCurly)) {
 			if (unbound) {
 				syntaxError("... must be last match", tokens.get(index));
@@ -146,7 +151,7 @@ public class SpecParser {
 		}
 		switch (kind) {
 		case LIST:
-			match(RightBrace.class);
+			match(RightSquare.class);
 			break;
 		case SET:
 			match(RightCurly.class);
@@ -590,8 +595,11 @@ public class SpecParser {
 		} else if(token.text.equals("string")) {
 			matchKeyword("string");
 			t = Type.T_STRING;
-		} else if (token instanceof LeftBrace || token instanceof LeftCurly
-				|| token instanceof LeftSquare) {
+		} else if (token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			t = parseType();
+			match(RightBrace.class);
+		} else if (token instanceof LeftCurly || token instanceof LeftSquare) {		
 			return parseCompoundType();
 		} else {
 			return parseTermType();
@@ -603,13 +611,13 @@ public class SpecParser {
 	private Type.Term parseTermType() {
 		skipWhiteSpace(false);
 		checkNotEof();
-		Identifier id = matchIdentifier();
+		Identifier id = matchIdentifier();		
 		Type data = Type.T_VOID;
 		if(index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token instanceof LeftBrace || token instanceof LeftCurly
 					|| token instanceof LeftSquare) {
-				data = parseCompoundType();
+				data = parseType();
 			}
 		}
 		return Type.T_TERM(id.text,data);

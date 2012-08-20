@@ -433,10 +433,7 @@ public class JavaFileWriter {
 					break;
 				case SET:
 					out.print("Type.Compound.Kind.SET");
-					break;
-				case BAG:
-					out.print("Type.Compound.Kind.BAG");
-					break;
+					break;			
 			}
 			if(compound.unbounded) {
 				out.print(",true");
