@@ -221,6 +221,11 @@ public class JavaFileWriter {
 		indent(2);writePatternDecl(name,pattern.data);				
 		myOut("automaton.get(" + root + ".contents);");
 		write(pattern.data,name);
+		if(pattern.var != null) {
+			Type.Term type = (Type.Term) pattern.attribute(TypeAttr.class).type;
+			indent(2);out.print(unboxedType(type.data));
+			out.println(" " + pattern.var + " = " + unbox(type.data,root + ".contents") + ";");
+		}
 	}
 	
 	public void write(Pattern.Compound pattern, String root) {
@@ -798,6 +803,10 @@ public class JavaFileWriter {
 		
 		if (type instanceof Type.Any) {
 			writeTypeTest((Type.Any)type,worklist,hierarchy);
+		} else if (type instanceof Type.Int) {
+			writeTypeTest((Type.Int)type,worklist,hierarchy);
+		} else if (type instanceof Type.Strung) {
+			writeTypeTest((Type.Strung)type,worklist,hierarchy);
 		} else if (type instanceof Type.Term) {
 			writeTypeTest((Type.Term)type,worklist,hierarchy);
 		} else if (type instanceof Type.Compound) {
@@ -816,6 +825,28 @@ public class JavaFileWriter {
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");		
 		myOut(2, "return true;");
+		myOut(1, "}");
+		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Int type, HashSet<Type> worklist,
+			HashMap<String, Set<String>> hierarchy) {
+		String mangle = type2HexStr(type);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(int index, Automaton automaton) {");		
+		myOut(2, "return automaton.get(index).kind == Automaton.K_INT;");
+		myOut(1, "}");
+		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Strung type, HashSet<Type> worklist,
+			HashMap<String, Set<String>> hierarchy) {
+		String mangle = type2HexStr(type);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(int index, Automaton automaton) {");		
+		myOut(2, "return automaton.get(index).kind == Automaton.K_STRING;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -1000,6 +1031,28 @@ public class JavaFileWriter {
 		myOut(1, "}");
 	}
 
+	public String unboxedType(Type t) {
+		if(t instanceof Type.Int) {
+			return "BigInteger";
+		} else if(t instanceof Type.Strung) {
+			return "String";
+		} else {
+			// TODO: what should I do here?
+			return null;
+		}
+	}
+	
+	public String unbox(Type t, String src) {
+		if(t instanceof Type.Int) {
+			return "(BigInteger) ((Automaton.Item) automaton.get(" + src + ")).payload";
+		} else if(t instanceof Type.Strung) {
+			return "(String) ((Automaton.Item) automaton.get(" + src + ")).payload";
+		} else {
+			// TODO: what should I do here?
+			return null;
+		}
+	}
+	
 	protected List<String> concat(List<String> xs, List<String> ys) {
 		ArrayList<String> zs = new ArrayList<String>();
 		zs.addAll(xs);

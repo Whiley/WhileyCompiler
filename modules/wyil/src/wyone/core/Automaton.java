@@ -507,7 +507,7 @@ public final class Automaton {
 			String r = "";
 			switch(kind) {
 				case K_LIST:
-					r = "(";
+					r = "[";
 					break;
 				case K_SET:
 					r = "{";
@@ -521,7 +521,7 @@ public final class Automaton {
 			
 			switch(kind) {
 				case K_LIST:
-					r += ")";
+					r += "]";
 					break;
 				case K_SET:
 					r += "}";

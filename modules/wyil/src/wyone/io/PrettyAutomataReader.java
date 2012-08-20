@@ -36,6 +36,8 @@ public class PrettyAutomataReader {
 		
 		switch(lookahead) {
 			case '(':
+				return parseBracketed(automaton);
+			case '[':
 			case '{':
 				return parseCompound(automaton);
 			case '0':
@@ -82,6 +84,13 @@ public class PrettyAutomataReader {
 		return automaton.add(new Automaton.Term(kind, data));
 	}
 	
+	protected int parseBracketed(Automaton automaton) throws IOException, SyntaxError {
+		match('(');
+		int r = parseState(automaton);
+		match(')');
+		return r;
+	}
+	
 	protected int parseInteger(Automaton automaton)
 			throws IOException, SyntaxError {		
 
@@ -120,7 +129,7 @@ public class PrettyAutomataReader {
 		int kind;
 		
 		switch(lookahead) {
-			case '(':
+			case '[':
 				kind = Automaton.K_LIST;
 				break;
 			case '{':
@@ -133,7 +142,7 @@ public class PrettyAutomataReader {
 		boolean firstTime = true;
 		ArrayList<Integer> children = new ArrayList<Integer>();
 		
-		while ((lookahead = lookahead()) != -1 && lookahead != ')'
+		while ((lookahead = lookahead()) != -1 && lookahead != ']'
 				&& lookahead != '}') {
 			if (!firstTime) {
 				if (lookahead != ',') {
@@ -148,15 +157,10 @@ public class PrettyAutomataReader {
 		
 		switch(kind) {
 			case Automaton.K_LIST:
-				if(lookahead != ')') {
-					throw new SyntaxError("expecting ')' --- found '" + (char) lookahead +"\'", pos, pos);
-				}				
+				match(']');	
 				break;
 			case Automaton.K_SET:
-				kind = Automaton.K_SET;
-				if(lookahead != '}') {
-					throw new SyntaxError("expecting '}' --- found '" + (char) lookahead +"\'", pos, pos);
-				}
+				match('}');				
 				break;
 		}
 		
@@ -186,6 +190,14 @@ public class PrettyAutomataReader {
 			end = (end + 1) % lookaheads.length;
 		}
 		return lookahead;
+	}
+	
+	protected void match(char c) throws IOException, SyntaxError {
+		int lookahead = next();
+		if (lookahead != c) {
+			throw new SyntaxError("expecting '" + c + "' --- found '"
+					+ (char) lookahead + "\'", pos, pos);
+		}
 	}
 	
 	protected void skipWhiteSpace() throws IOException {
