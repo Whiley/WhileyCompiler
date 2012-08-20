@@ -56,7 +56,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm);
 wycc_obj* wycc_map_new(int typ);
 void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm);
 wycc_obj* wycc_cow_list(wycc_obj* lst);
-
+int ywcc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel);
 
 /*
  * routines to implement wyil operations

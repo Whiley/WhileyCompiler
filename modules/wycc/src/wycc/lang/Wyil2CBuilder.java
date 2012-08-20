@@ -206,15 +206,15 @@ public class Wyil2CBuilder implements Builder {
 			met.writeComments();
 			mets.add(met);
 		}
-		System.err.println("milestone 5.");
+		//System.err.println("milestone 5.");
 
 		ign = bodyAddLine(this.optIncludeFile);
 		for (Method met : mets) {
 			met.write();
 		}
-		System.err.println("milestone 6.");
+		//System.err.println("milestone 6.");
 		this.writePostamble();
-		System.err.println("Got to end of my code.");	
+		//System.err.println("Got to end of my code.");	
 		return new CFile(this.bodyRender());
 	}
 
@@ -312,7 +312,7 @@ public class Wyil2CBuilder implements Builder {
 		int ign;
 		
 		if (this.debugFlag) {
-			tmp = "// **** Need help with constant declaaration #" + idx + "\n";
+			tmp = "// **** Need help with constant declaration #" + idx + "\n";
 			ign = bodyAddLine(tmp);
 		}		
 
@@ -332,7 +332,9 @@ public class Wyil2CBuilder implements Builder {
 		private Map<Integer, String> declsT;
 		private Map<Integer, String> declsI;
 		private Set<Integer> declsU;
-
+		private List<List> bStack;
+		private List<String> nStack;
+		
 		private String name;
 		private String indent;
 		private String error;
@@ -358,6 +360,8 @@ public class Wyil2CBuilder implements Builder {
 			declsI = new HashMap<Integer, String>();
 			declsU = new HashSet();
 			this.body = new ArrayList<String>();
+			this.bStack = new ArrayList<List>();
+			this.nStack = new ArrayList<String>();
 			
 			Type.FunctionOrMethod rtnTyp;
 			//System.err.println("milestone 5.1");
@@ -419,6 +423,38 @@ public class Wyil2CBuilder implements Builder {
 			ans = this.body.size();
 			this.body.addAll(lins);
 			return ans;
+		}
+
+		public void mbodyPush(String nam) {
+			this.bStack.add(this.body);
+			this.body = new ArrayList<String>();
+			this.nStack.add(nam);
+		}
+
+		public void mbodyPop(String nam) {
+			int idx = this.bStack.size();
+			String tgt;
+			List<String> blk;
+			
+			if (idx != this.nStack.size()){
+				this.error += "name stack out-of-sync with block stack\n";
+			}
+			idx -= 1;
+			tgt = this.nStack.remove(idx);
+			blk = this.bStack.remove(idx);
+			if (tgt.equals(nam)){
+				
+			} else {
+				this.error += "target name stack mismatch\n";
+			}
+			for (String itm:this.body){
+				if (itm.startsWith("#")) {
+					blk.add(itm);
+				} else {
+					blk.add(indent + itm);
+				}
+			}
+			this.body = blk;
 		}
 
 		public String mbodyRender(){
@@ -500,8 +536,9 @@ public class Wyil2CBuilder implements Builder {
 			ign = bodyAddLine(ans);
 			//System.err.println("milestone 5.3.6");
 			// ans += writeDecls();
-			tmp = writeDecls();
-			ign = bodyAddLine(tmp);
+			//tmp = writeDecls();
+			writeDecls();
+			//ign = bodyAddLine(tmp);
 			//ans += body;
 			//ign = bodyAddLine(body);
 			ign = bodyAddBlock(body);
@@ -513,19 +550,26 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 
-		private String writeDecls() {
+		// private String writeDecls() {
+		private void writeDecls() {
 			String ans = "";
 			Integer k;
+			String typ;
+			int ign;
 			//private Map<String, String> decl;
 
 			for (Map.Entry<Integer, String> e : declsT.entrySet()) {
 				k = e.getKey();
+				typ = e.getValue();
 				ans += indent;
-				ans += e.getValue();
+				ans += typ;
 				ans += " X" + k;
-				ans += ";\n";
+				// ans += ";\n";
+				ans += " = (" + typ + ")0;\n";
 			}
-			return ans;
+			ign = bodyAddLine(ans);
+			// return ans;
+			return;
 		}
 
 		private void addDecl(int target, String typ) {
@@ -536,7 +580,7 @@ public class Wyil2CBuilder implements Builder {
 			} else if (tst1.equals(typ)){
 				
 			} else {	
-				error += "multiple type declarations for X" + target + "\n";
+				this.error += "multiple type declarations for X" + target + "\n";
 				
 			}
 		}
@@ -760,8 +804,10 @@ public class Wyil2CBuilder implements Builder {
 				ans += this.writeCodeLengthOf(cod, tag);
 			} else if (cod instanceof Code.IndexOf) {
 				ans += this.writeCodeIndexOf(cod, tag);
-				
-				
+			} else if (cod instanceof Code.Assert) {
+				ans += this.writeCodeAssert(cod, tag);
+
+	
 			} else if (cod instanceof Code.FieldLoad) {
 				ans += this.writeCodeFieldLoad(cod, tag);
 
@@ -800,8 +846,12 @@ public class Wyil2CBuilder implements Builder {
 			} else if (cod instanceof Code.LoopEnd) {
 				ans += this.writeCodeLoopEnd(cod, tag);
 
-			} else if (cod instanceof Code.Assert) {
-				ans += this.writeCodeAssert(cod, tag);
+
+			} else if (cod instanceof Code.Label) {
+				ans += this.writeCodeLabel(cod, tag);
+
+			} else if (cod instanceof Code.Void) {
+				ans += this.writeCodeVoid(cod, tag);
 
 			} else if (cod instanceof Code.Void) {
 				ans += this.writeCodeVoid(cod, tag);
@@ -826,45 +876,45 @@ public class Wyil2CBuilder implements Builder {
 			return ans;
 		}
 		
+		public String writeCodeLabel(Code codIn, String tag){
+			int ign;
+			String tmp;
+			String nam;
+
+			//String ans = "";
+			
+			tmp = "// HELP needed for Label\n";
+			ign = bodyAddLine(tmp);
+			Code.Label cod = (Code.Label) codIn;
+			nam = cod.label;
+			tmp = "//             called " + nam + "\n";
+			ign = bodyAddLine(tmp);
+			this.mbodyPop(nam);
+			tmp = indent + "};\n";
+			ign = this.mbodyAddLine(tmp);
+			return "";
+		}
+		
 		public String writeCodeAssert(Code codIn, String tag){
 			int ign;
 			String tmp;
 			String ans = "";
 			int lhs, rhs;
 			String lin;
-			String cmp = "";
+			String cmp;
 			
 			
-			ans += "// HELP needed for Assert\n";
+			// ans += "// HELP needed for Assert\n";
 			Code.Assert cod = (Code.Assert) codIn;
 			Code.Comparator opr = cod.op;
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
-			ans += "//             with " + opr + " and '" + cod.msg + "'\n";
-			if (opr == Code.Comparator.ELEMOF) {
-				cmp = "Wyil_Relation_Mo";
-			} else if (opr == Code.Comparator.EQ){
-				cmp = "Wyil_Relation_Eq";
-			} else if (opr == Code.Comparator.GT){
-				cmp = "Wyil_Relation_Gt";
-			} else if (opr == Code.Comparator.GTEQ){
-				cmp = "Wyil_Relation_Ge";
-			} else if (opr == Code.Comparator.LT){
-				cmp = "Wyil_Relation_Lt";
-			} else if (opr == Code.Comparator.LTEQ){
-				cmp = "Wyil_Relation_Le";
-			} else if (opr == Code.Comparator.NEQ){
-				cmp = "Wyil_Relation_Ne";
-
-			} else if (opr == Code.Comparator.SUBSET){
-				cmp = "Wyil_Relation_Ss";
-			} else if (opr == Code.Comparator.SUBSETEQ){
-				cmp = "Wyil_Relation_Se";
-
-			} else {
+			// ans += "//             with " + opr + " and '" + cod.msg + "'\n";
+			cmp = mapComparator(opr, false);
+			if (cmp == null) {
 				error += "Assert operation un-defined\n";
 				ans += "// HELP needed for binListOp '" + opr + "'\n";
-				return ans;
+				return ans;				
 			}
 			lin = "wyil_assert(X" + lhs + ", X" + rhs + ", " + cmp + ", \"" + cod.msg + "\\n\");";
 			//lin = "if (X" + lhs + cmp + "X" + rhs + ") {\n";
@@ -878,12 +928,67 @@ public class Wyil2CBuilder implements Builder {
 			return ans;
 		}
 
-		public String writeCodeIf(Code codIn, String tag){
-			String ans = "";
+		private String mapComparator(Code.Comparator opr, boolean flg) {
 			
-			ans += "// HELP needed for If\n";
+			if (opr == Code.Comparator.ELEMOF) {
+				return "Wyil_Relation_Mo";
+			} else if (opr == Code.Comparator.EQ){
+				return "Wyil_Relation_Eq";
+			} else if (opr == Code.Comparator.GT){
+				return "Wyil_Relation_Gt";
+			} else if (opr == Code.Comparator.GTEQ){
+				return "Wyil_Relation_Ge";
+			} else if (opr == Code.Comparator.LT){
+				return "Wyil_Relation_Lt";
+			} else if (opr == Code.Comparator.LTEQ){
+				return "Wyil_Relation_Le";
+			} else if (opr == Code.Comparator.NEQ){
+				return "Wyil_Relation_Ne";
+			}
+			if (flg) {
+				return null;
+			} 
+			if (opr == Code.Comparator.SUBSET){
+				return "Wyil_Relation_Ss";
+			} else if (opr == Code.Comparator.SUBSETEQ){
+				return "Wyil_Relation_Se";
+
+			} 
+			return null;
+		}
+		
+		public String writeCodeIf(Code codIn, String tag){
+			int ign;
+			String tmp;
+			int lhs, rhs;
+			String cmp;
+			String target;
+			
+			// ans += "// HELP needed for If\n";
+			tmp = "// HELP needed for If\n";
+			ign = bodyAddLine(tmp);
 			Code.If cod = (Code.If) codIn;
-			return ans;
+			lhs = cod.leftOperand;
+			rhs = cod.rightOperand;
+			Code.Comparator opr = cod.op;
+			target = cod.target;
+			cmp = mapComparator(opr, true);
+			if (cmp == null) {
+				error += "Assert operation un-defined\n";
+				tmp = "// HELP needed for binListOp '" + opr + "'\n";
+				ign = bodyAddLine(tmp);
+				return "";				
+			}
+
+			tmp = "//             comparing X" + lhs + " " + opr + " X" + rhs + "\n";
+			ign = bodyAddLine(tmp);
+			tmp = "//             going to " + target + "\n";
+			ign = bodyAddLine(tmp);
+			
+			tmp = indent + "if(!wycc_compare(X" + lhs + ", X" + rhs + ", " + cmp + ")){\n";
+			ign = this.mbodyAddLine(tmp);
+			this.mbodyPush(target);
+			return "";
 		}
 		
 		public String writeCodeNewRecord(Code codIn, String tag){

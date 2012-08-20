@@ -1,3 +1,4 @@
+#!/bin/bash
 #!/bin/sh
 
 # This file is part of the Whiley Development Kit (WDK).
@@ -141,7 +142,11 @@ do
 	    ;;
     -q)		# quiet the whole process
 	    Necho=:
-	    
+	    ;;
+    -g)		# we want debugging info
+	    Necho=:
+	    # WYCC_GCC_OPTS="-fbounds-checking $WYCC_GCC_OPTS"
+	    WYCC_GCC_OPTS="-ggdb $WYCC_GCC_OPTS"
 	    ;;
     -E)		# Give the usage message
 	    ToX=:

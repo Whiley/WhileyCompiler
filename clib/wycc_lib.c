@@ -197,6 +197,7 @@ int main(int argc, char** argv, char** envp) {
     };
     sys = wycc_box_int(1);	/* **** KLUDGE **** */
     wycc__main(sys);
+    exit(0);
     return 0;
 }
 
@@ -757,7 +758,10 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     void* ptr;
     int typ;
 
-    if (--itm->cnt > 0) {
+    if (itm == NULL) {
+	return NULL;
+    };
+    if (itm->cnt-- > 1) {
 	return itm;
     };
     ptr = itm->ptr;
@@ -1052,6 +1056,49 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
     return ans;
 }
 
+int wycc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel){
+    int end;
+
+    if ((rel < 0) || (rel >= Wyil_Relation_Mo)) {
+	fprintf(stderr, "Failure: wcc_compare with relation %d\n"
+		, rel);
+	exit(-3);
+    };
+    end = wycc_comp_gen(lhs, rhs);
+    if (end < 0) {
+	if (rel == Wyil_Relation_Lt) {
+	    return 1;
+	};
+	if (rel == Wyil_Relation_Le) {
+	    return 1;
+	};
+	if (rel == Wyil_Relation_Ne) {
+	    return 1;
+	};
+    } else if (end > 0) {
+	if (rel == Wyil_Relation_Gt) {
+	    return 1;
+	};
+	if (rel == Wyil_Relation_Ge) {
+	    return 1;
+	};
+	if (rel == Wyil_Relation_Ne) {
+	    return 1;
+	};
+    } else {
+	if (rel == Wyil_Relation_Eq) {
+	    return 1;
+	};
+	if (rel == Wyil_Relation_Le) {
+	    return 1;
+	};
+	if (rel == Wyil_Relation_Ge) {
+	    return 1;
+	};
+    };
+    return 0;
+}
+
 /*
  * ******************************
  * wyil opcode implementations
@@ -1063,44 +1110,9 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
  * returnn if the relationship holds, else print the text and exit.
  */
 void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
-    int end;
 
-    if ((rel < 0) || (rel >= Wyil_Relation_Mo)) {
-	fprintf(stderr, "Failure: wyil_assert with relation %d\n"
-		, rel);
-	exit(-3);
-    };
-    end = wycc_comp_gen(lhs, rhs);
-    if (end < 0) {
-	if (rel == Wyil_Relation_Lt) {
-	    return;
-	};
-	if (rel == Wyil_Relation_Le) {
-	    return;
-	};
-	if (rel == Wyil_Relation_Ne) {
-	    return;
-	};
-    } else if (end > 0) {
-	if (rel == Wyil_Relation_Gt) {
-	    return;
-	};
-	if (rel == Wyil_Relation_Ge) {
-	    return;
-	};
-	if (rel == Wyil_Relation_Ne) {
-	    return;
-	};
-    } else {
-	if (rel == Wyil_Relation_Eq) {
-	    return;
-	};
-	if (rel == Wyil_Relation_Le) {
-	    return;
-	};
-	if (rel == Wyil_Relation_Ge) {
-	    return;
-	};
+    if (wycc_compare(lhs, rhs, rel)) {
+	return;
     };
     fprintf(stderr, msg);
     exit(-4);
