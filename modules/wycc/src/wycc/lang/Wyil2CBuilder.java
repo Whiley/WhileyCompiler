@@ -436,17 +436,26 @@ public class Wyil2CBuilder implements Builder {
 			String tgt;
 			List<String> blk;
 			
+			System.err.println("milestone 5.3.1.7A1");
 			if (idx != this.nStack.size()){
 				this.error += "name stack out-of-sync with block stack\n";
 			}
 			idx -= 1;
+			if (idx < 0) {
+				System.err.println("ERROR: popping beyond the push.");
+				return;
+			}
 			tgt = this.nStack.remove(idx);
-			blk = this.bStack.remove(idx);
+			
 			if (tgt.equals(nam)){
 				
 			} else {
-				this.error += "target name stack mismatch\n";
+				//this.error += "target name stack mismatch: " + tgt + "!=" + nam +"\n";
+				this.nStack.add(tgt);
+				this.comments += "// target name stack mismatch: " + tgt + "!=" + nam +"\n";
+				return;
 			}
+			blk = this.bStack.remove(idx);
 			for (String itm:this.body){
 				if (itm.startsWith("#")) {
 					blk.add(itm);
@@ -708,13 +717,17 @@ public class Wyil2CBuilder implements Builder {
 				//System.err.println("milestone 5.3.1.2b");
 				return "//           " + " no attributes\n";
 			}
+			//System.err.println("milestone 5.3.1.2c  : " + attCol);
 			cnt = attCol.size();
+			//System.err.println("milestone 5.3.1.2c1");
 			if (cnt < 1) {
+				//System.err.println("milestone 5.3.1.2c2");
 				return "//           " + "  0 attributes\n";
 			}
 			if (cnt != 1) {
 				ans += "//           " + " with " + cnt + " attributes\n";
 			}
+			//System.err.println("milestone 5.3.1.2d");
 			idx = 0;
 			while (idx < cnt) {
 				Attribute att = attCol.get(idx);
@@ -723,19 +736,19 @@ public class Wyil2CBuilder implements Builder {
 					Attribute.Source attis = (Attribute.Source) att;
 					// ans += "//           " + " [0] is " + attis.line + "\n";
 					if (lineNumFlag) {
-						// System.err.println("milestone 5.3.1.2m");
+						//System.err.println("milestone 5.3.1.2m");
 						//this.body += "#line " + attis.line + "\n";
 						tmp = "#line " + attis.line + "\n";
 						ign = this.mbodyAddLine(tmp);
 					}
-					// System.err.println("milestone 5.3.1.2w");
+					//System.err.println("milestone 5.3.1.2w");
 				} else {
-					// System.err.println("milestone 5.3.1.2x");
+					//System.err.println("milestone 5.3.1.2x");
 					ans += "//           " + " [0] is " + att+ "\n";
 				}
 				idx++;
 			}
-			// System.err.println("milestone 5.3.1.2z");
+			//System.err.println("milestone 5.3.1.2z");
 			return ans;
 		}
 
@@ -773,7 +786,7 @@ public class Wyil2CBuilder implements Builder {
 			
 			String[] frags = temp.split(" ", 4);
 			String opc = frags[0];
-			//System.err.println("milestone 5.3.1.3");
+			//System.err.println("milestone 5.3.1.3 + " + temp);
 			if (cod instanceof Code.Const) {
 				ans += this.writeCodeConstant(cod, tag);
 			} else if (cod instanceof Code.Debug) {
@@ -806,7 +819,8 @@ public class Wyil2CBuilder implements Builder {
 				ans += this.writeCodeIndexOf(cod, tag);
 			} else if (cod instanceof Code.Assert) {
 				ans += this.writeCodeAssert(cod, tag);
-
+			} else if (cod instanceof Code.Label) {
+				ans += this.writeCodeLabel(cod, tag);
 	
 			} else if (cod instanceof Code.FieldLoad) {
 				ans += this.writeCodeFieldLoad(cod, tag);
@@ -815,7 +829,6 @@ public class Wyil2CBuilder implements Builder {
 				ans += this.writeCodeNewRecord(cod, tag);
 			} else if (cod instanceof Code.If) {
 				ans += this.writeCodeIf(cod, tag);
-
 
 			} else if (cod instanceof Code.BinListOp) {
 				ans += this.writeCodeBinListOp(cod, tag);
@@ -847,11 +860,8 @@ public class Wyil2CBuilder implements Builder {
 				ans += this.writeCodeLoopEnd(cod, tag);
 
 
-			} else if (cod instanceof Code.Label) {
-				ans += this.writeCodeLabel(cod, tag);
-
-			} else if (cod instanceof Code.Void) {
-				ans += this.writeCodeVoid(cod, tag);
+			} else if (cod instanceof Code.Goto) {
+				ans += this.writeCode(cod, tag);
 
 			} else if (cod instanceof Code.Void) {
 				ans += this.writeCodeVoid(cod, tag);
@@ -876,21 +886,39 @@ public class Wyil2CBuilder implements Builder {
 			return ans;
 		}
 		
+		public String writeCode(Code codIn, String tag){
+			String ans = "";
+			int ign;
+			String tmp;
+			String target;
+			
+			ans += "// HELP needed for Goto\n";
+			Code.Goto cod = (Code.Goto) codIn;
+			target = cod.target;
+			tmp = "//             going to " + target + "\n";
+			ign = bodyAddLine(tmp);
+			tmp = indent + "goto " + target + ";\n";
+			ign = this.mbodyAddLine(tmp);
+
+			return ans;
+		}
+		
 		public String writeCodeLabel(Code codIn, String tag){
 			int ign;
 			String tmp;
 			String nam;
 
 			//String ans = "";
-			
+			//System.err.println("milestone 5.3.1.7.1");
 			tmp = "// HELP needed for Label\n";
 			ign = bodyAddLine(tmp);
 			Code.Label cod = (Code.Label) codIn;
 			nam = cod.label;
 			tmp = "//             called " + nam + "\n";
 			ign = bodyAddLine(tmp);
-			this.mbodyPop(nam);
-			tmp = indent + "};\n";
+			//this.mbodyPop(nam);
+			//tmp = indent + "};\n";
+			tmp = nam + ":\n";
 			ign = this.mbodyAddLine(tmp);
 			return "";
 		}
@@ -928,6 +956,44 @@ public class Wyil2CBuilder implements Builder {
 			return ans;
 		}
 
+		public String writeCodeIf(Code codIn, String tag){
+			int ign;
+			String tmp;
+			int lhs, rhs;
+			String cmp;
+			String target;
+			
+			// ans += "// HELP needed for If\n";
+			tmp = "// HELP needed for If\n";
+			ign = bodyAddLine(tmp);
+			Code.If cod = (Code.If) codIn;
+			lhs = cod.leftOperand;
+			rhs = cod.rightOperand;
+			Code.Comparator opr = cod.op;
+			target = cod.target;
+			cmp = mapComparator(opr, true);
+			if (cmp == null) {
+				error += "Assert operation un-defined\n";
+				tmp = "// HELP needed for binListOp '" + opr + "'\n";
+				ign = bodyAddLine(tmp);
+				return "";				
+			}
+
+			tmp = "//             comparing X" + lhs + " " + opr + " X" + rhs + "\n";
+			ign = bodyAddLine(tmp);
+			tmp = "//             going to " + target + "\n";
+			ign = bodyAddLine(tmp);
+			
+			tmp = indent + "if(wycc_compare(X" + lhs + ", X" + rhs + ", " + cmp + ")){\n";
+			ign = this.mbodyAddLine(tmp);
+			tmp = indent + indent + "goto " + target + ";\n";
+			ign = this.mbodyAddLine(tmp);
+			tmp = indent + "};\n";
+			ign = this.mbodyAddLine(tmp);
+			//this.mbodyPush(target);
+			return "";
+		}
+
 		private String mapComparator(Code.Comparator opr, boolean flg) {
 			
 			if (opr == Code.Comparator.ELEMOF) {
@@ -957,39 +1023,6 @@ public class Wyil2CBuilder implements Builder {
 			return null;
 		}
 		
-		public String writeCodeIf(Code codIn, String tag){
-			int ign;
-			String tmp;
-			int lhs, rhs;
-			String cmp;
-			String target;
-			
-			// ans += "// HELP needed for If\n";
-			tmp = "// HELP needed for If\n";
-			ign = bodyAddLine(tmp);
-			Code.If cod = (Code.If) codIn;
-			lhs = cod.leftOperand;
-			rhs = cod.rightOperand;
-			Code.Comparator opr = cod.op;
-			target = cod.target;
-			cmp = mapComparator(opr, true);
-			if (cmp == null) {
-				error += "Assert operation un-defined\n";
-				tmp = "// HELP needed for binListOp '" + opr + "'\n";
-				ign = bodyAddLine(tmp);
-				return "";				
-			}
-
-			tmp = "//             comparing X" + lhs + " " + opr + " X" + rhs + "\n";
-			ign = bodyAddLine(tmp);
-			tmp = "//             going to " + target + "\n";
-			ign = bodyAddLine(tmp);
-			
-			tmp = indent + "if(!wycc_compare(X" + lhs + ", X" + rhs + ", " + cmp + ")){\n";
-			ign = this.mbodyAddLine(tmp);
-			this.mbodyPush(target);
-			return "";
-		}
 		
 		public String writeCodeNewRecord(Code codIn, String tag){
 			String ans = "";

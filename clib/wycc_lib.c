@@ -917,14 +917,14 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs){
     int lhv, rhv;
 
-    if (lhs->typ != Wy_Int) {
-	fprintf(stderr, "Help needed in wycc_comp_int for type %d\n", lhs->typ);
-	exit(-3);
-    };
-    if (rhs->typ != Wy_Int) {
-	fprintf(stderr, "Help needed in wycc_comp_int for type %d\n", rhs->typ);
-	exit(-3);
-    };
+    //if (lhs->typ != Wy_Int) {
+    //	fprintf(stderr, "Help needed in wycc_comp_int for type %d\n", lhs->typ);
+    //	exit(-3);
+    //};
+    //if (rhs->typ != Wy_Int) {
+    //	fprintf(stderr, "Help needed in wycc_comp_int for type %d\n", rhs->typ);
+    //	exit(-3);
+    //};
     lhv = (long) lhs->ptr;
     rhv = (long) rhs->ptr;
     if (lhv < rhv) {
