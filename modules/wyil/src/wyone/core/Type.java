@@ -65,11 +65,11 @@ public abstract class Type {
 			Compound l2 = (Compound) t2;
 			Type[] l1_elements = l1.elements;
 			Type[] l2_elements = l2.elements;
-			if (l1_elements.length != l2_elements.length && !l2.unbounded) {
+			if (l1_elements.length != l2_elements.length && !l1.unbounded) {
 				return false;
-			} else if (l1.unbounded && !l2.unbounded) {
+			} else if (l2.unbounded && !l1.unbounded) {
 				return false;
-			} else if(l1.elements.length < l2.elements.length-1) {
+			} else if(l2.elements.length < l1.elements.length-1) {
 				return false;
 			}
 			int min_len = Math.min(l1_elements.length, l2_elements.length);
@@ -78,9 +78,9 @@ public abstract class Type {
 					return false;
 				}
 			}
-			Type l2_last = l2_elements[l2_elements.length-1];
-			for (int i = min_len; i != l1_elements.length; ++i) {
-				if (!isSubtype(l1_elements[i], l2_last)) {
+			Type l1_last = l1_elements[l1_elements.length-1];
+			for (int i = min_len; i != l2_elements.length; ++i) {
+				if (!isSubtype(l1_last,l2_elements[i])) {
 					return false;
 				}
 			}
@@ -92,13 +92,6 @@ public abstract class Type {
 				return true;
 			} else {				
 				return true; // TODO: need to do this properly
-//				if(children != null) {
-//					for (String n1child : children) {
-//						if (isSubtype(Type.T_TERM(n1child), n2, hierarchy)) {
-//							return true;
-//						}
-//					}
-//				}
 			}
 		} 
 

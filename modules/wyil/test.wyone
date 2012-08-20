@@ -3,16 +3,11 @@ term False
 class Bool as True | False
 
 term Var(string)
+term Not(Term)
+term Or{Term...}
+term Equal[Term,Term]
 
-// ==================================================
-// Theory of Equality
-// ==================================================
+rewrite Or{Term x, Term y, Term... ys}:
+    => Or([Equal[x,y]] ++ ys), if x == y
 
-term Num(int)
-term Equals {Expr,Expr}
-
-rewrite Equals [Num(int x), Num(int y)]:
-    => True, if x == y
-    => False
-
-class Expr as Bool | Var | Num | LessThan
+class Term as Bool | Var | Not | Or

@@ -463,7 +463,9 @@ public class SpecParser {
 			return v;			 		
 		} else if ((index + 1) < tokens.size()
 				&& token instanceof Identifier
-				&& tokens.get(index + 1) instanceof LeftBrace) {				
+				&& (tokens.get(index + 1) instanceof LeftBrace
+						|| tokens.get(index + 1) instanceof LeftSquare || tokens
+							.get(index + 1) instanceof LeftCurly)) {				
 			// must be a method invocation			
 			return parseConstructorExpr();
 		} else if (token.text.equals("null")) {
@@ -563,12 +565,18 @@ public class SpecParser {
 	private Expr.Constructor parseConstructorExpr() {
 		int start = index;
 		Identifier name = matchIdentifier();
-
-		match(LeftBrace.class);
 		skipWhiteSpace(true);
-		Expr argument = parseConditionExpression();
-		skipWhiteSpace(true);
-		match(RightBrace.class);
+		checkNotEof();
+		Token token = tokens.get(index);
+		Expr argument;
+		if(token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			argument = parseConditionExpression();
+			match(RightBrace.class);
+		} else {
+			argument = parseCompoundVal();
+		}		 					
+		
 		return new Expr.Constructor(name.text, argument, sourceAttr(start,
 				index - 1));
 	}
@@ -721,6 +729,19 @@ public class SpecParser {
 		}
 		index = index + 1;
 		return (T) t;
+	}
+	
+	private Token matchAll(Class<? extends Token>... cs) {
+		checkNotEof();
+		Token t = tokens.get(index);
+		for(Class<? extends Token> c : cs) {
+			if (c.isInstance(t)) {			
+				index = index + 1;
+				return t;
+			}
+		}
+		syntaxError("syntax error" , t);
+		return null;
 	}
 	
 	private Identifier matchIdentifier() {
