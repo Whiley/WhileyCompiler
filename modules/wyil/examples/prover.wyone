@@ -14,7 +14,7 @@ class Bool as True | False
 term And{Term...}
 
 rewrite And{Bool b, Term... xs}:
-    => False(), if b is False
+    => False, if b is False
     => And(xs)
 
 rewrite And{And{Term...xs}, Term... ys}:
@@ -23,31 +23,31 @@ rewrite And{And{Term...xs}, Term... ys}:
 rewrite And(Term t):
     => t
 
-rewrite And():
-    => True()
+rewrite And[]:
+    => True
 
 // --- Logical Or ---
 term Or{Term...}
 
 rewrite Or{Bool b, Term... xs}:
-    => True(), if b is True
+    => True, if b is True
     => Or(xs)
 
-//rewrite Or{Or{Term...xs}, Term... ys}:
-//    => Or(xs ++ ys)
+rewrite Or{Or{Term...xs}, Term... ys}:
+    => Or(xs ++ ys)
 
 rewrite Or(Term t):
     => t
 
-rewrite Or():
-    => False()
+rewrite Or[]:
+    => False
 
 // --- Logical Not ---
 term Not(Term)
 
 rewrite Not(Bool b):
-    => True(), if b is False
-    => False()
+    => True, if b is False
+    => False
 
 rewrite Not(Not(* x)):
     => x
@@ -60,121 +60,86 @@ rewrite Not(Not(* x)):
 // Theory of Equality
 // ==================================================
 
-term Num
+term Num(int)
 term Equal{Expr,Expr}
 term NotEqual{Expr,Expr}
 
-rewrite Equal(Expr x):
-    => True()
+rewrite Equal[Expr x,Expr y]:
+    => True, if x == y
 
-rewrite NotEqual(Expr x):
-    => False()
+rewrite NotEqual[Expr x, Expr y]:
+    => False, if x == y
 
-rewrite Not(Equal{Expr x,Expr y}):
-    => NotEqual(x,y)
+rewrite Not(Equal[Expr x,Expr y]):
+    => NotEqual([x,y])
 
-rewrite Not(NotEqual{Expr x,Expr y}):
-    => Equal(x,y)
+rewrite Not(NotEqual[Expr x,Expr y]):
+    => Equal([x,y])
 
 // ==================================================
 // Theory of Inequality
 // ==================================================
 
-term LessThan(Expr,Expr)
-term LessThanEq(Expr,Expr)
+term LessThan[Expr,Expr]
+term LessThanEq[Expr,Expr]
 
-rewrite LessThan(Expr x, Expr y):
-    => False(), if x == y
+rewrite LessThan[Expr x, Expr y]:
+    => False, if x == y
 
-rewrite And{LessThanEq(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
-    => And(Equal(x,y),xs), if x == y && y == v
+rewrite And{LessThanEq[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
+    => And(Equal({x,y}) ++ xs), if x == y && y == v
 
-rewrite And{LessThanEq(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
-    => And(LessThanEq(x,v),xs), if y == u
+rewrite And{LessThanEq[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
+    => And(LessThanEq([x,v]) ++ xs), if y == u
 
-rewrite And{LessThan(Expr x, Expr y), LessThanEq(Expr u, Expr v),Term... xs}:
-    => And(LessThan(x,v),xs), if y == u
+rewrite And{LessThan[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
+    => And(LessThan([x,v]) ++ xs), if y == u
 
-rewrite And{LessThanEq(Expr x, Expr y), LessThan(Expr u, Expr v),Term... xs}:
-    => And(LessThan(x,v),xs), if y == u
+rewrite And{LessThanEq[Expr x, Expr y], LessThan[Expr u, Expr v], Term... xs}:
+    => And(LessThan([x,v]) ++ xs), if y == u
 
-rewrite And{LessThan(Expr x, Expr y), LessThan(Expr u, Expr v),Term... xs}:
-    => And(LessThan(x,v),xs), if y == u
+rewrite And{LessThan[Expr x, Expr y], LessThan[Expr u, Expr v],Term... xs}:
+    => And(LessThan([x,v]) ++ xs), if y == u
 
-rewrite Not(LessThanEq(Expr x,Expr y)):
-    => LessThan(y,x)
+rewrite Not(LessThanEq[Expr x,Expr y]):
+    => LessThan([y,x])
 
-rewrite Not(LessThan(Expr x,Expr y)):
-    => LessThanEq(y,x)
-
-// ==================================================
-// Theory of Arithmetic
-// ==================================================
-
-term Sum(Expr...)
-term Neg(Expr)
-term Mul(Expr...)
-
-rewrite Sum(Expr e):
-    => e
-
-rewrite Mul(Expr e):
-    => e
-
-// rewrite Neg(Num n):
-//    => return -n
-
-// rewrite Neg(Sum{Expr... xs}):
-//    => ?
-
-// rewrite Neg(Mul{Expr... xs}):
-//    => ?
-
-rewrite Sum{Sum{Expr... xs}, Expr... ys}:
-    => Sum(xs,ys)
-
-rewrite Mul{Mul{Expr... xs}, Expr... ys}:
-    => Mul(xs,ys)
-
-//rewrite Sum{Num x, Num y, Num... rs}:
-//    => Sum{ Num(x+y) ++ rs}
-
-//rewrite Mul{Num x, Num y, Num... rs}:
-//    => Mul{ Num(x*y) ++ rs}
+rewrite Not(LessThan[Expr x,Expr y]):
+    => LessThanEq([y,x])
 
 // ==================================================
 // Theory of Sets
 // ==================================================
 
 term Set{Expr...}
-term SubSet(Expr,Expr)
-term SubSetEq(Expr,Expr)
+term SubSet[Expr,Expr]
+term SubSetEq[Expr,Expr]
 term SizeOf(Set)
 
-rewrite SubSet(Set(Expr... xs),Set(Expr... ys)):
-    => False(), if |xs| >= |ys|
+rewrite SubSet[Set[Expr... xs],Set[Expr... ys]]:
+    => False, if |xs| >= |ys|
 
-rewrite SubSetEq(Set(Expr... xs),Set(Expr... ys)):
-    => False(), if |xs| > |ys|
+rewrite SubSetEq[Set[Expr... xs],Set[Expr... ys]]:
+    => False, if |xs| > |ys|
 
-rewrite And{SubSetEq(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
-    => And(Equal(x,y),xs), if x == u && y == v
+rewrite And{SubSetEq[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
+    => And(Equal([x,y]) ++ xs), if x == u && y == v
 
-rewrite And{SubSetEq(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
-    => And(SubSetEq(x,v),xs), if y == u
+rewrite And{SubSetEq[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
+    => And(SubSetEq([x,v]) ++ xs), if y == u
 
-rewrite And{SubSet(Expr x, Expr y), SubSetEq(Expr u, Expr v),Term... xs}:
-    => And(SubSet(x,v),xs), if y == u
+rewrite And{SubSet[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
+    => And(SubSet([x,v]) ++ xs), if y == u
 
-rewrite And{SubSetEq(Expr x, Expr y), SubSet(Expr u, Expr v),Term... xs}:
-    => And(SubSet(x,v),xs), if y == u
+rewrite And{SubSetEq[Expr x, Expr y], SubSet[Expr u, Expr v], Term... xs}:
+    => And(SubSet([x,v]) ++ xs), if y == u
 
-rewrite And{SubSet(Expr x, Expr y), SubSet(Expr u, Expr v),Term... xs}:
-    => And(SubSet(x,v),xs), if y == u
+rewrite And{SubSet[Expr x, Expr y], SubSet[Expr u, Expr v], Term... xs}:
+    => And(SubSet([x,v]) ++ xs), if y == u
 
 // ==================================================
 // Combined Theories
 // ==================================================
 
 class Term as Bool | And | Or | Not | Equal | NotEqual | LessThanEq | LessThan
-class Expr as Num | Bool | Sum | Mul | Neg | Set
+class Expr as Num | Bool | Set

@@ -9,9 +9,10 @@ term Var(string)
 // ==================================================
 
 term Num(int)
-term LessThan [Expr,Expr]
+term Equals {Expr,Expr}
 
-rewrite LessThan [Num(int x), Num(int y)]:
-    => True, if x < y
+rewrite Equals [Num(int x), Num(int y)]:
+    => True, if x == y
+    => False
 
 class Expr as Bool | Var | Num | LessThan
