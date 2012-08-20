@@ -94,8 +94,13 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 
 	protected void write(Automaton.Term term, Automaton automaton) throws IOException {
 		writer.print(schema[term.kind].name);
-		if(schema[term.kind].data != Type.T_VOID) {
+		Type type = schema[term.kind].data;
+		if(type instanceof Type.Compound) {			
 			write(term.contents,automaton);
+		} else if(type != Type.T_VOID) {
+			writer.print("(");
+			write(term.contents,automaton);
+			writer.print(")");
 		}
 	}
 	
@@ -103,7 +108,7 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 		int[] children = state.children;
 		switch(state.kind) {
 			case Automaton.K_LIST:
-				writer.print("(");
+				writer.print("[");
 				break;
 			case Automaton.K_SET:
 				writer.print("{");
@@ -117,7 +122,7 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 		}
 		switch(state.kind) {
 			case Automaton.K_LIST:
-				writer.print(")");
+				writer.print("]");
 				break;
 			case Automaton.K_SET:
 				writer.print("}");
