@@ -77,6 +77,10 @@ public class TypeChecker {
 		
 		pt.attributes().add(new Attribute.TypeAttr(type));
 		
+		if(pt.var != null) {
+			environment.put(pt.var, type.data);
+		}
+		
 		return type;
 	}
 

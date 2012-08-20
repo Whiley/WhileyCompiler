@@ -93,12 +93,14 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	public static final class Term extends Pattern {		
 		public final String name;
 		public final Pattern data;
+		public final String var;
 		
-		public Term(String name, Pattern data,
+		public Term(String name, Pattern data, String var,
 				Attribute... attributes) {
 			super(attributes);
 			this.name = name;	
 			this.data = data;
+			this.var = var;
 		}
 		
 		public Type.Term type() {
@@ -110,6 +112,8 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				Leaf l = (Leaf) data;
 				if(l.type == Type.T_VOID) {
 					return name;
+				} else if(var != null){
+					return name + "(" + data + " " + var + ")";
 				} else {
 					return name + " " + data;
 				}

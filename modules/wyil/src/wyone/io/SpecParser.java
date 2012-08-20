@@ -89,28 +89,38 @@ public class SpecParser {
 		} else if (token instanceof LeftCurly
 				|| token instanceof LeftSquare) {
 			return parsePatternCompound();
-		} else if (token instanceof LeftBrace) {
-			match(LeftBrace.class);
-			Pattern r = parsePattern();
-			match(RightBrace.class);
+		} else if (token instanceof LeftBrace) {			
+			Pattern r = parsePattern();			
 			return r;
-		} else {
+		} else if(token instanceof Identifier){
 			return parsePatternTerm();
-		} 
+		} else {
+			return new Pattern.Leaf(parseType());
+		}
 	}
 	
 	public Pattern.Term parsePatternTerm() {
 		int start = index;
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);
+		String var = null;
 		Pattern p;
-		if(token instanceof LeftBrace || token instanceof LeftCurly || token instanceof LeftSquare) {
-			p = parsePattern();
-		} else {			
+		if (token instanceof LeftCurly
+				|| token instanceof LeftSquare) {
+			p = parsePatternCompound();
+		} else if(token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			p = parsePattern();					
+			if (index < tokens.size()
+					&& tokens.get(index) instanceof Identifier) {
+				var = matchIdentifier().text;
+			}
+			match(RightBrace.class);
+		} else {
 			p = new Pattern.Leaf(Type.T_VOID);
 		}
 		 	
-		return new Pattern.Term(name, p, sourceAttr(start, index - 1));
+		return new Pattern.Term(name, p, var, sourceAttr(start, index - 1));
 	}
 	
 	public Pattern.Compound parsePatternCompound() {
@@ -625,8 +635,8 @@ public class SpecParser {
 	
 	private Type.Compound parseCompoundType() {
 		Type.Compound.Kind kind;
-		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			match(LeftBrace.class);
+		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
+			match(LeftSquare.class);
 			kind = Type.Compound.Kind.LIST;
 		} else {
 			match(LeftCurly.class);
@@ -635,7 +645,7 @@ public class SpecParser {
 		ArrayList<Type> types = new ArrayList<Type>();
 		boolean firstTime = true;
 		while (index < tokens.size()
-				&& !(tokens.get(index) instanceof RightBrace
+				&& !(tokens.get(index) instanceof RightSquare
 						|| tokens.get(index) instanceof RightCurly || tokens
 							.get(index) instanceof DotDotDot)) {
 			if (!firstTime) {
@@ -651,7 +661,7 @@ public class SpecParser {
 		}
 		switch (kind) {
 		case LIST:
-			match(RightBrace.class);
+			match(RightSquare.class);
 			break;
 		case SET:
 			match(RightCurly.class);

@@ -188,8 +188,10 @@ public abstract class Type {
 			return false;
 		}
 		public String toString() {	
-			if(data != T_VOID) {
+			if(data instanceof Type.Compound) {
 				return name + data;
+			} else if(data != T_VOID) {
+				return name + "(" + data + ")";
 			} else {
 				return name;
 			}
