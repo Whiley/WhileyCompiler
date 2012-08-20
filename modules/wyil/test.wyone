@@ -15,8 +15,8 @@ rewrite And{Bool b, Term... xs}:
     => False, if b is False
     => And(xs)
 
-//rewrite And{And(Term...xs), Term... ys}:
-//    => And(xs ++ ys)
+rewrite And{And(Term...xs), Term... ys}:
+    => And(xs ++ ys)
 
 rewrite And(Term t):
     => t
@@ -31,8 +31,8 @@ rewrite Or{Bool b, Term... xs}:
     => True, if b is True
     => Or(xs)
 
-//rewrite Or{Or{Term...xs}, Term... ys}:
-//    => Or(xs ++ ys)
+rewrite Or{Or{Term...xs}, Term... ys}:
+    => Or(xs ++ ys)
 
 rewrite Or(Term t):
     => t

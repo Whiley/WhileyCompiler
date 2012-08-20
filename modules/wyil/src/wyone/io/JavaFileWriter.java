@@ -229,7 +229,7 @@ public class JavaFileWriter {
 		
 		myOut(2,"int[] " + root + "_children = " + root + ".children;");
 		
-		if(pattern.kind != Type.Compound.Kind.LIST) { 
+		if(pattern.kind != Type.Compound.Kind.LIST && pattern.elements.size() > 1) { 
 			int level = 1;
 			for (int i = 0; i != pattern.elements.size(); ++i) {
 				Pattern element = pattern.elements.get(i).first();
@@ -261,7 +261,8 @@ public class JavaFileWriter {
 			if(pattern.unbounded) {
 				myOut(level,"int j = " + (pattern.elements.size()-1) + ";");
 				myOut(level, "for(int i=0;i < " + root + "_children.length;++i) {");
-				indent(level+1);out.print("if(");
+				indent(level+1);				
+				out.print("if(");
 				for (int i = 0; i != pattern.elements.size(); ++i) {
 					if(!pattern.unbounded || i+1 < pattern.elements.size()) {
 						if(i!=0) { out.print(" && "); }
@@ -915,8 +916,12 @@ public class JavaFileWriter {
 		for (int i = 0; i != tt_elements.length; ++i) {
 			Type pt = tt_elements[i];
 			String pt_mangle = type2HexStr(pt);
-			if (type.unbounded && (i + 1) == tt_elements.length) {				
-				myOut(level+1, "else {");
+			if (type.unbounded && (i + 1) == tt_elements.length) {
+				if(i == 0) {
+					myOut(level+1, "{");
+				} else {
+					myOut(level+1, "else {");
+				}
 			} else if(i == 0){
 				myOut(level+1, "if(i == s" + i + ") {");
 			} else {
