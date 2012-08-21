@@ -74,10 +74,11 @@ public class SpecParser {
 		ArrayList<Code> codes = new ArrayList<Code>();
 		Environment environment = new Environment();
 		Type type = parsePatternTerm(environment,codes);
+		System.out.println(environment);
 		match(Colon.class);
 		matchEndLine();
 		parseRuleBlock(1,environment,codes);
-		return new FunDecl("rewrite", Type.T_FUN(Type.T_VOID, type),
+		return new FunDecl("rewrite", Type.T_FUN(Type.T_VOID, Type.T_REF(type)),
 				environment.asList(), codes, sourceAttr(start, index - 1));
 	}
 
@@ -462,14 +463,15 @@ public class SpecParser {
 		} else if (token instanceof Bar) {
 			parseLengthOf(target, environment, codes);
 		} else if (token instanceof LeftSquare || token instanceof LeftCurly) {
-			parseCompoundVal(target, environment, codes);
+			parseCompound(target, environment, codes);
 		} else if (token instanceof Shreak) {
 			parseNot(target, environment, codes);
+		} else {
+			syntaxError("unrecognised term.", token);
 		}
-		syntaxError("unrecognised term.", token);
 	}
 
-	private void parseCompoundVal(int target, Environment environment,
+	private void parseCompound(int target, Environment environment,
 			ArrayList<Code> codes) {
 		int start = index;
 		match(LeftSquare.class);
@@ -546,7 +548,7 @@ public class SpecParser {
 			parseConditionExpression(operand, environment, codes);
 			match(RightBrace.class);
 		} else {
-			parseCompoundVal(operand, environment, codes);
+			parseCompound(operand, environment, codes);
 		}
 
 		codes.add(new Code.Constructor(target, operand, name.text, sourceAttr(
@@ -621,10 +623,10 @@ public class SpecParser {
 			Token token = tokens.get(index);
 			if (token instanceof LeftBrace || token instanceof LeftCurly
 					|| token instanceof LeftSquare) {
-				data = parseType();
+				data = Type.T_REF(parseType());
 			}
 		}
-		return Type.T_TERM(id.text, Type.T_REF(data));
+		return Type.T_TERM(id.text, data);
 	}
 
 	private Type.Compound parseCompoundType() {
@@ -799,6 +801,10 @@ public class SpecParser {
 
 		public ArrayList<Type> asList() {
 			return idx2type;
+		}
+		
+		public String toString() {
+			return idx2type.toString() + "," + var2idx.toString();
 		}
 	}
 }
