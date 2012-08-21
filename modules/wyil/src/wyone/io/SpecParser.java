@@ -71,60 +71,62 @@ public class SpecParser {
 	private Decl parseRewriteDecl() {
 		int start = index;
 		matchKeyword("rewrite");
-		List<Code> pattern = parsePatternTerm();
+		ArrayList<Code> codes = new ArrayList<Code>();
+		Environment environment = new Environment();
+		Type type = parsePatternTerm(environment,codes);
 		match(Colon.class);
 		matchEndLine();
-		List<Code> codes = parseRuleBlock(1);
-		return new FunDecl(null, codes, sourceAttr(start, index - 1));
+		parseRuleBlock(1,environment,codes);
+		return new FunDecl("rewrite", Type.T_FUN(Type.T_VOID, type),
+				environment.asList(), codes, sourceAttr(start, index - 1));
 	}
 
-	public List<Code> parsePattern() {
+	public Type parsePattern(Environment environment, ArrayList<Code> codes) {
 		skipWhiteSpace(true);
 		checkNotEof();
 		Token token = tokens.get(index);
 
 		if (token instanceof Star) {
 			match(Star.class);
-			return new Pattern.Leaf(Type.T_ANY);
+			return Type.T_ANY;
 		} else if (token instanceof LeftCurly || token instanceof LeftSquare) {
-			return parsePatternCompound();
-		} else if (token instanceof LeftBrace) {
-			Pattern r = parsePattern();
-			return r;
+			return parsePatternCompound(environment,codes);
 		} else if (token instanceof Identifier) {
-			return parsePatternTerm();
+			return parsePatternTerm(environment,codes);
 		} else {
-			return new Pattern.Leaf(parseType());
+			return parseType();
 		}
 	}
 
-	public List<Code> parsePatternTerm() {
-		int start = index;
+	public Type.Term parsePatternTerm(Environment environment, ArrayList<Code> codes) {		
 		String name = matchIdentifier().text;
-		Token token = tokens.get(index);
-		String var = null;
-		Pattern p;
+		Token token = tokens.get(index);		
+		Type type;
 		if (token instanceof LeftCurly || token instanceof LeftSquare) {
-			p = parsePatternCompound();
+			type = parsePatternCompound(environment,codes);
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			p = parsePattern();
+			type = parsePattern(environment,codes);
+			int target;
 			if (index < tokens.size()
 					&& tokens.get(index) instanceof Identifier) {
-				var = matchIdentifier().text;
+				String var = matchIdentifier().text;
+				target = environment.allocate(type,var);
+			} else {
+				target = environment.allocate(type);
 			}
+			// TODO: need to do something with target
 			match(RightBrace.class);
 		} else {
-			p = new Pattern.Leaf(Type.T_VOID);
+			type = Type.T_VOID;
 		}
 
-		return new Pattern.Term(name, p, var, sourceAttr(start, index - 1));
+		return Type.T_TERM(name, type);
 	}
 
-	public List<Code> parsePatternCompound() {
+	public Type.Compound parsePatternCompound(Environment environment, ArrayList<Code> codes) {
 		int start = index;
 		Type.Compound.Kind kind;
-		ArrayList<Pair<Pattern, String>> params = new ArrayList();
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match(LeftSquare.class);
 			kind = Type.Compound.Kind.LIST;
@@ -134,6 +136,8 @@ public class SpecParser {
 		}
 		boolean firstTime = true;
 		boolean unbound = false;
+		ArrayList<Type> parameters = new ArrayList<Type>();
+		
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightSquare)
 				&& !(tokens.get(index) instanceof RightCurly)) {
@@ -144,17 +148,22 @@ public class SpecParser {
 				match(Comma.class);
 			}
 			firstTime = false;
-			Pattern p = parsePattern();
+			Type type = parsePattern(environment, codes);
 			if (index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
 				match(DotDotDot.class);
 				unbound = true;
 			}
+			parameters.add(type);
 			String n = null;
+			int target;
 			if (index < tokens.size()
 					&& tokens.get(index) instanceof Identifier) {
 				n = matchIdentifier().text;
+				target = environment.allocate(type,n);
+			} else {
+				target = environment.allocate(type);
 			}
-			params.add(new Pair<Pattern, String>(p, n));
+			// TODO: need to actually load target out
 		}
 		switch (kind) {
 		case LIST:
@@ -164,17 +173,16 @@ public class SpecParser {
 			match(RightCurly.class);
 		}
 
-		return new Pattern.Compound(kind, unbound, params, sourceAttr(start,
-				index - 1));
+		return Type.T_COMPOUND(kind, unbound, parameters);
 	}
 
-	public List<Code> parseRuleBlock(int indent) {
+	public List<Code> parseRuleBlock(int indent, Environment environment,
+			ArrayList<Code> codes) {
 		Tabs tabs = getIndent();
 
-		ArrayList<Code> codes = new ArrayList<Code>();
 		while (tabs != null && tabs.ntabs == indent) {
 			index = index + 1;
-			codes.addAll(parseRule());
+			codes.addAll(parseRule(environment));
 			tabs = getIndent();
 		}
 
@@ -196,10 +204,11 @@ public class SpecParser {
 		}
 	}
 
-	public List<Code> parseRule() {
-		match(Arrow.class);
-		Environment environment = new Environment();
+	public List<Code> parseRule(Environment environment) {
+		match(Arrow.class);		
 		ArrayList<Code> codes = new ArrayList<Code>();
+		int ruleTarget = environment.allocate(Type.T_ANY);
+		
 		if (index < tokens.size() && tokens.get(index).text.equals("let")) {
 			matchKeyword("let");
 			boolean firstTime = true;
@@ -211,23 +220,23 @@ public class SpecParser {
 				firstTime = false;
 				String id = matchIdentifier().text;
 				match(Equals.class);
-				int target = environment.allocate(Type.T_ANY, id);
-				parseAddSubExpression(target, environment, codes);
+				int letTarget = environment.allocate(Type.T_ANY, id);
+				parseAddSubExpression(letTarget, environment, codes);
 				skipWhiteSpace(true);
 			} while (index < tokens.size()
 					&& tokens.get(index) instanceof Comma);
 			match(ElemOf.class);
 		}
 
-		parseAddSubExpression(freeRegister, environment,
-				codes);
+		parseAddSubExpression(ruleTarget, environment, codes);
+		
 		skipWhiteSpace(true);
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			match(Comma.class);
 			matchKeyword("if");
-			int target = environment.allocate(Type.T_BOOL);
-			parseCondition(target, environment, codes);
-			// FIXME: need to do something with target!!
+			int ifTarget = environment.allocate(Type.T_BOOL);
+			parseCondition(ifTarget, environment, codes);
+			// FIXME: need to do something with rule target!!
 			matchEndLine();
 		}
 
@@ -348,23 +357,24 @@ public class SpecParser {
 	private void parseMulDivExpression(int target, Environment environment,
 			ArrayList<Code> codes) {
 		int start = index;
-		parseIndexTerm(target, freeRegister, environment, codes);
+		parseIndexTerm(target, environment, codes);
 
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
 			skipWhiteSpace(true);
-			parseMulDivExpression(freeRegister, freeRegister + 1, environment,
-					codes);
-			codes.add(new Code.BinOp(Code.BOp.MUL, target, target,
-					freeRegister, sourceAttr(start, index - 1)));
+			int operand = environment.allocate(Type.T_ANY);
+			parseMulDivExpression(operand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.MUL, target, target, operand,
+					sourceAttr(start, index - 1)));
+			
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightSlash) {
 			match(RightSlash.class);
 			skipWhiteSpace(true);
-			parseMulDivExpression(freeRegister, freeRegister + 1, environment,
-					codes);
-			codes.add(new Code.BinOp(Code.BOp.DIV, target, target,
-					freeRegister, sourceAttr(start, index - 1)));
+			int operand = environment.allocate(Type.T_ANY);
+			parseMulDivExpression(operand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.DIV, target, target, operand,
+					sourceAttr(start, index - 1)));
 		}
 	}
 
@@ -372,7 +382,7 @@ public class SpecParser {
 			ArrayList<Code> codes) {
 		checkNotEof();
 		int start = index;
-		parseTerm(target, freeRegister, environment, codes);
+		parseTerm(target, environment, codes);
 
 		Token lookahead = tokens.get(index);
 
@@ -385,11 +395,14 @@ public class SpecParser {
 
 				lookahead = tokens.get(index);
 
-				parseAddSubExpression(freeRegister, freeRegister + 1,
-						environment, codes);
+				int operand = environment.allocate(Type.T_INT);
+				
+				parseAddSubExpression(operand, environment, codes);
 
 				match(RightSquare.class);
-				codes.add(new Code.ListAccess(target, target, freeRegister,
+				
+				// TODO: I'll need to create my own target here I think
+				codes.add(new Code.ListAccess(target, target, operand,
 						sourceAttr(start, index - 1)));
 			}
 			if (index < tokens.size()) {
@@ -411,7 +424,7 @@ public class SpecParser {
 			match(LeftBrace.class);
 			skipWhiteSpace(true);
 			checkNotEof();
-			parseCondition(target, freeRegister, environment, codes);
+			parseCondition(target, environment, codes);
 			skipWhiteSpace(true);
 			checkNotEof();
 			token = tokens.get(index);
@@ -421,7 +434,7 @@ public class SpecParser {
 				&& (tokens.get(index + 1) instanceof LeftBrace
 						|| tokens.get(index + 1) instanceof LeftSquare || tokens
 							.get(index + 1) instanceof LeftCurly)) {
-			parseConstructor(target, freeRegister, environment, codes);
+			parseConstructor(target, environment, codes);
 		} else if (token.text.equals("true")) {
 			matchKeyword("true");
 			codes.add(new Code.Constant(target, true, sourceAttr(start,
@@ -439,19 +452,19 @@ public class SpecParser {
 			codes.add(new Code.Assign(target, source, sourceAttr(start,
 					index - 1)));
 		} else if (token instanceof Int) {
-			parseInteger(target, freeRegister, environment, codes);
+			parseInteger(target, environment, codes);
 		} else if (token instanceof Real) {
-			parseReal(target, freeRegister, environment, codes);
+			parseReal(target, environment, codes);
 		} else if (token instanceof Strung) {
-			parseString(target, freeRegister, environment, codes);
+			parseString(target, environment, codes);
 		} else if (token instanceof Minus) {
-			parseNegation(target, freeRegister, environment, codes);
+			parseNegation(target, environment, codes);
 		} else if (token instanceof Bar) {
-			parseLengthOf(target, freeRegister, environment, codes);
+			parseLengthOf(target, environment, codes);
 		} else if (token instanceof LeftSquare || token instanceof LeftCurly) {
-			parseCompoundVal(target, freeRegister, environment, codes);
+			parseCompoundVal(target, environment, codes);
 		} else if (token instanceof Shreak) {
-			parseNot(target, freeRegister, environment, codes);
+			parseNot(target, environment, codes);
 		}
 		syntaxError("unrecognised term.", token);
 	}
@@ -465,19 +478,21 @@ public class SpecParser {
 		checkNotEof();
 		Token token = tokens.get(index);
 		ArrayList<Integer> operands = new ArrayList<Integer>();
+		
 		while (!(token instanceof RightSquare)) {
 			if (!firstTime) {
 				match(Comma.class);
 				skipWhiteSpace(true);
 			}
 			firstTime = false;
-			parseCondition(freeRegister, freeRegister + 1, environment, codes);
-			operands.add(freeRegister);
+			int operand = environment.allocate(Type.T_ANY);
+			parseCondition(operand, environment, codes);
+			operands.add(operand);
 			skipWhiteSpace(true);
 			checkNotEof();
-			token = tokens.get(index);
-			freeRegister = freeRegister + 1;
+			token = tokens.get(index);			
 		}
+		
 		match(RightSquare.class);
 		codes.add(new Code.NaryOp(Code.NOp.LISTGEN, target, operands,
 				sourceAttr(start, index - 1)));
@@ -488,10 +503,11 @@ public class SpecParser {
 		int start = index;
 		match(Bar.class);
 		skipWhiteSpace(true);
-		parseIndexTerm(target, freeRegister, environment, codes);
+		int operand = environment.allocate(Type.T_ANY);
+		parseIndexTerm(operand, environment, codes);
 		skipWhiteSpace(true);
 		match(Bar.class);
-		codes.add(new Code.UnOp(Code.UOp.LENGTHOF, target, target, sourceAttr(
+		codes.add(new Code.UnOp(Code.UOp.LENGTHOF, target, operand, sourceAttr(
 				start, index - 1)));
 	}
 
@@ -500,9 +516,10 @@ public class SpecParser {
 		int start = index;
 		match(Minus.class);
 		skipWhiteSpace(true);
-		parseIndexTerm(target, freeRegister, environment, codes);
-		codes.add(new Code.UnOp(Code.UOp.NEG, target, target, sourceAttr(start,
-				index - 1)));
+		int operand = environment.allocate(Type.T_ANY);
+		parseIndexTerm(operand, environment, codes);
+		codes.add(new Code.UnOp(Code.UOp.NEG, target, operand, sourceAttr(
+				start, index - 1)));
 	}
 
 	private void parseNot(int target, Environment environment,
@@ -510,9 +527,10 @@ public class SpecParser {
 		int start = index;
 		match(Shreak.class);
 		skipWhiteSpace(true);
-		parseIndexTerm(target, freeRegister, environment, codes);
-		codes.add(new Code.UnOp(Code.UOp.NOT, target, target, sourceAttr(start,
-				index - 1)));
+		int operand = environment.allocate(Type.T_ANY);
+		parseIndexTerm(operand, environment, codes);
+		codes.add(new Code.UnOp(Code.UOp.NOT, target, operand, sourceAttr(
+				start, index - 1)));
 	}
 
 	private void parseConstructor(int target, Environment environment,
@@ -522,15 +540,16 @@ public class SpecParser {
 		skipWhiteSpace(true);
 		checkNotEof();
 		Token token = tokens.get(index);
+		int operand = environment.allocate(Type.T_ANY);
 		if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			parseConditionExpression(target, freeRegister, environment, codes);
+			parseConditionExpression(operand, environment, codes);
 			match(RightBrace.class);
 		} else {
-			parseCompoundVal(target, freeRegister, environment, codes);
+			parseCompoundVal(operand, environment, codes);
 		}
 
-		codes.add(new Code.Constructor(target, target, name.text, sourceAttr(
+		codes.add(new Code.Constructor(target, operand, name.text, sourceAttr(
 				start, index - 1)));
 	}
 

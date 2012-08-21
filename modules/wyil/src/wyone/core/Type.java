@@ -51,6 +51,10 @@ public abstract class Type {
 		return get(new Ref(element));
 	}
 	
+	public static Fun T_FUN(Type ret, Type param) {
+		return get(new Fun(ret,param));
+	}
+	
 	/**
 	 * Return true if t2 is a subtype of t1 in the context of the given type
 	 * hierarchy.  
@@ -223,7 +227,29 @@ public abstract class Type {
 	}
 	
 	public static final class Fun extends Type {
+		public final Type ret;
+		public final Type param;
 		
+		public Fun(Type ret, Type param) {
+			this.ret = ret;
+			this.param = param;
+		}
+		
+		public int hashCode() {
+			return ret.hashCode() + param.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Fun) {
+				Fun r = (Fun) o;
+				return ret.equals(r.ret) && param.equals(r.param);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return ret + "=>" + param;
+		}
 	}
 	
 	public static final class Compound extends Type {

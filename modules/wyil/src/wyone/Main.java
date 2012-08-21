@@ -100,11 +100,15 @@ public class Main {
 		if (waitFileName.size() <= 0) {
 			throw new RuntimeException("No filenames given");
 		}
-		digestAll(waitFileName);
+		try {
+			digestAll(waitFileName);
+		} catch(IOException e) {
+			System.err.println("I/O error - " + e.getMessage());
+		}
 	}
 
-	private static void digestAll(LinkedList<String> names) {		
-		SpecFile spec = null;
+	private static void digestAll(LinkedList<String> names) throws IOException {		
+		
 		PrintStream oFile = null;
 		String oName = optString("-out");		
 
@@ -120,43 +124,27 @@ public class Main {
 			oFile = System.out;
 		}
 		long start = System.currentTimeMillis();
-		while (names.size() > 0) {
-			String specfile = names.remove();
+		
+		for(String specfile : names) {
 			try {
-				spec = digestOne(specfile);				
-				if(spec != null) {
-					new JavaFileWriter(oFile).write(spec);
-				}
-			} catch(IOException e) {
-				System.err.println("i/o error: " + e.getMessage());
-			}
+				SpecLexer lexer = new SpecLexer(specfile);
+				SpecParser parser = new SpecParser(specfile, lexer.scan());
+				SpecFile spec = parser.parse();
+				//new TypeChecker().check(ans);			
+				new SpecFileWriter(oFile).write(spec);
+				//new JavaFileWriter(oFile).write(spec);				
+			} catch(SyntaxError e) {
+				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
+				
+				if(optBool("-verbose")) {
+					e.printStackTrace(System.err);
+				}			
+			} 
 		}
 								
 		start = System.currentTimeMillis() - start;
 		System.err.println("Time: " + start + "ms");
-	}
-
-	private static SpecFile digestOne(String filename) throws IOException {
-		SpecFile ans = null;
-		try {
-			
-			SpecLexer lexer = new SpecLexer(filename);
-			SpecParser parser = new SpecParser(filename, lexer.scan());
-			ans = parser.parse();
-			new TypeChecker().check(ans);
-			
-			return ans;	
-			
-		} catch(SyntaxError e) {
-			outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
-				
-			if(optBool("-verbose")) {
-				e.printStackTrace(System.err);
-			}
-			
-			return null;
-		}
-	}					
+	}				
 	
 	/**
 	 * This method simply reads in the input file, and prints out a

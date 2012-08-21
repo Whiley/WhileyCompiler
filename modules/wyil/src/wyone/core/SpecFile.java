@@ -43,13 +43,18 @@ public class SpecFile {
 		}		
 	}
 	
-	public static class FunDecl extends SyntacticElement.Impl implements
-			Decl {
+	public static class FunDecl extends SyntacticElement.Impl implements Decl {
+		public final String name;
+		public final Type.Fun type;
+		public final ArrayList<Type> types;
 		public final ArrayList<Code> codes;
 
-		public FunDecl(Type.Fun type, List<Code> codes,
+		public FunDecl(String name, Type.Fun type, List<Type> types, List<Code> codes,
 				Attribute... attributes) {
 			super(attributes);
+			this.name = name;
+			this.type = type;
+			this.types = new ArrayList<Type>(types);
 			this.codes = new ArrayList<Code>(codes);
 		}
 	}
