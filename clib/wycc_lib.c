@@ -371,6 +371,7 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
  * 
  */
 #define WYCC_SET_CHUNK 8
+#define WYCC_MAP_CHUNK 8*3
 wycc_obj* wycc_set_new(int typ) {
     wycc_obj* ans;
     long tmp;
@@ -387,6 +388,107 @@ wycc_obj* wycc_set_new(int typ) {
     return ans;
 }
 
+struct chunk_ptr {
+    void **p;		/* the top level set or map */
+    void **chk;		/* the current chunk */
+    wycc_obj *key;	/* the current key object */
+    wycc_obj *val;	/* the current value object if any*/
+    long cnt;		/* the number of items remaining */
+    long at;		/* position in the set */
+    int idx;		/* poisition in the chunk */
+    int flg;		/* 0==set, 1==map */
+};
+
+static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
+    int brnch;
+    int step;
+    int max;
+    int tmp;
+    wycc_obj *itm;
+    void ** up;
+    void ** was;
+    void ** dn;
+
+    chunk->key = NULL;
+    chunk->val = NULL;
+    if (chunk->cnt-- < 1) {
+	chunk->cnt = 0;
+	return;
+    }
+    if (chunk->flg == 0) {
+	step = 1;	/* a key */
+	max = WYCC_SET_CHUNK;
+    } else {
+	step = 2;	/* a key and a value */
+	max = WYCC_MAP_CHUNK;
+    };
+    if (chunk->at == 0) {
+	chunk->idx = 0;
+    };
+    tmp = chunk->idx;
+    /*
+     * pointing at a key, next is ?
+     */
+    while  (1) {
+	brnch = (int) chunk->chk[0] * (step + 1);
+	tmp++;
+	if (tmp >=brnch) {
+	    break;
+	};
+	dn = (void **) chunk->chk[tmp];
+	if (dn == NULL) {
+	    fprintf(stderr, "HHEELLPP: confused in chunk_ptr_inc; 2 deep\n");
+	    exit(-3);
+	};
+	chunk->chk = dn;
+	tmp = 0;
+    }
+    /*
+     * we are now pointing beyond the branches.
+     */
+    while (1) {
+	if (tmp < (max-1)) {
+	    itm = (wycc_obj *) chunk->chk[tmp];
+	    if (itm != NULL) {
+		break;
+	    };
+	};
+	/*
+	 * exhausted a chunk (maybe several)
+	 */
+	was = (void **) chunk->chk;
+	up = (void **) chunk->chk[max-1];
+	chunk->chk = up;
+	brnch = (int) up[0] * (step + 1);
+	for (tmp= 1; tmp < brnch ; tmp += (step + 1)) {
+	    if (up[tmp] == was) {
+		break;
+	    };
+	}
+	if (up[tmp] != was) {
+	    fprintf(stderr, "HHEELLPP: confused in chunk_ptr_inc\n");
+	    exit(-3);
+	};
+	tmp++;
+    }
+    /*
+     * we found a non-null item
+     */
+    if (step > 1) {
+	chunk->val = itm;
+	tmp++;
+	itm = (wycc_obj *) chunk->chk[tmp];
+    };
+    chunk->idx = tmp;
+    chunk->key = itm;
+    chunk->at++;
+    return;
+}
+
+static void bp(){
+    static int i = 0;
+    i++;
+}
 void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     void** p = lst->ptr;
     void** chunk;
@@ -437,7 +539,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	if (end == 0) {
 	    return;	/* key match == done */
 	};
-	if (end < 0) {
+	if (end > 0) {
 	    continue;
 	};
 	/* the item in question goes before here; ergo down a chunk */
@@ -448,7 +550,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     at *= 2;		/* 2 ::= sizeof branch pair */
     /* at -= 1;		/* but not looking at pairs anymore */
     /*at += 1;		/* but not looking at pairs anymore */
-    while (at < (WYCC_SET_CHUNK -1)) {
+    while (at < (WYCC_SET_CHUNK -2)) {
 	at++;
 	tst = (wycc_obj *) chunk[at];
 	if (tst == (wycc_obj *) NULL) {
@@ -466,9 +568,10 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	    break;
 	};
     };
-    if (end < 0) {
+    if (end > 0) {
 	at++;
     };
+    bp();
     /* this is a definite add */
     p[1]++;
     itm->cnt++;
@@ -529,7 +632,8 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	    chunk[cnt++] = (void *) new;
 	    chunk[cnt] = new[--cp];	/* last value becomes branch pair */
 	    new[cp] = (void *) NULL;
-	    
+	    chunk[0]++;
+	    new[WYCC_SET_CHUNK-1] = chunk;
 	};
 	/**** rebalance tree */
 	return;
@@ -548,7 +652,6 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
  * given a simple type, setup an empty map object
  * 
  */
-#define WYCC_MAP_CHUNK 8*3
 wycc_obj* wycc_map_new(int typ) {
     wycc_obj* ans;
     long tmp;
@@ -1809,6 +1912,64 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
 /*
  * given a chunk of a set, step thru every slot, digressing as needed
  */
+static wycc_obj *wycc__toString_set_alt(wycc_obj *itm){
+    /* (void **chunk, char* buf, size_t *isiz) { */
+    struct chunk_ptr my_chunk_ptr;
+    struct chunk_ptr *chptr = & my_chunk_ptr;
+    long tmp;
+    wycc_obj* nxt;
+    size_t siz;
+    long cnt, idx, at;
+    char *buf;
+    char *part;
+    char *ptr;
+
+    cnt = wycc_length_of_set(itm);
+    chptr->cnt = cnt;
+    siz = 3 + (cnt * 4);	/* minimalist approx. */
+    buf = (char *) malloc(siz);
+    buf[0] = '\0';
+    strncat(buf, "{", siz);
+    at = 1;
+    void **p = itm->ptr;
+    chptr->p = p;
+    chptr->chk = &(p[2]);
+    chptr->at = 0;
+    chptr->flg = 0;	/* this is a set */
+    while (1) {
+	wycc_chunk_ptr_inc(chptr);
+	nxt = chptr->key;
+	if (nxt == NULL) {
+	    break;
+	};
+	nxt = wycc__toString(nxt);
+	tmp = strlen(nxt->ptr);
+	if (siz <= (at+tmp+3)) {
+	    if (siz > 512) {
+		siz += 1024;
+		siz -= 1;
+		siz - (siz % 512);
+	    } else {
+		siz += siz/2;
+	    }
+	    buf = (char*) realloc((void*)buf, siz);
+	};
+	if (at > 1) {
+	    strcpy((buf+at), ", ");
+	    at += 2;
+	};
+	strcpy((buf+at), nxt->ptr);
+	at += tmp;
+	wycc_deref_box(nxt);
+    };
+    at = strlen(buf);
+    strcpy((buf+at), "}");
+    return wycc_box_str(buf);
+}
+
+/*
+ * given a chunk of a set, step thru every slot, digressing as needed
+ */
 static char *wycc__toString_set(void **chunk, char* buf, size_t *isiz) {
     int cnt;
     int idx;
@@ -1972,6 +2133,7 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	return wycc_box_str(buf);
     };
     if (itm->typ == Wy_Set) {
+return wycc__toString_set_alt(itm);
 	//return wycc_box_cstr("Set");
 	cnt = wycc_length_of_set(itm);
 	siz = 3 + (cnt * 4);	/* minimalist approx. */
@@ -1984,6 +2146,7 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	at = strlen(buf);
 	strcpy((buf+at), "}");
 	return wycc_box_str(buf);
+	// return wycc__toString_set_alt(itm);
     };
     if (itm->typ == Wy_Map) {
 	// return wycc_box_cstr("Map");
