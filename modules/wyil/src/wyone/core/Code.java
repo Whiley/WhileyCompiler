@@ -8,6 +8,21 @@ public class Code extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
+	public static final class Assign extends Code {
+		public final int target;
+		public final int operand;
+
+		public Assign(int target, int operand, Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.operand = operand;
+		}
+
+		public String toString() {
+			return "assign %" + target + " = %" + operand;
+		}
+	}
+	
 	public static final class Constant extends Code {
 		public final Object value;
 		public final int target;
@@ -20,6 +35,24 @@ public class Code extends SyntacticElement.Impl {
 
 		public String toString() {
 			return "const %" + target + " = " + value.toString();
+		}
+	}
+	
+	public static final class Constructor extends Code {
+		public final int target;
+		public final int operand;
+		public final String name;
+
+		public Constructor(int target, int operand, String name,
+				Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.operand = operand;
+			this.name = name;
+		}
+
+		public String toString() {
+			return "construct %" + target + " = " + name + "(%" + operand + ")";
 		}
 	}
 	
@@ -153,6 +186,17 @@ public class Code extends SyntacticElement.Impl {
 			this.operands = operands;
 		}
 		
+		public NaryOp(NOp nop, int target, java.util.List<Integer> operands,
+				Attribute... attributes) {
+			super(attributes);
+			this.op = nop;
+			this.target = target;
+			this.operands = new int[operands.size()];
+			for (int i = 0; i != operands.size(); ++i) {
+				this.operands[i] = operands.get(i);
+			}
+		}
+		
 		public String toString() {
 			switch(op) {				 
 				case LISTGEN:
@@ -177,15 +221,4 @@ public class Code extends SyntacticElement.Impl {
 		LISTGEN					
 	}
 	
-	public class Constructor extends Code {
-		public final Type.Term type;
-		public final int target;
-		public final int operand;
-
-		public Constructor(Type.Term type, int target, int operand, String name) {
-			this.target = target;
-			this.operand = operand;
-			this.type = type;
-		}
-	}
 }
