@@ -71,14 +71,14 @@ public class SpecParser {
 	private Decl parseRewriteDecl() {
 		int start = index;
 		matchKeyword("rewrite");
-		Pattern.Term pattern = parsePatternTerm();
+		List<Code> pattern = parsePatternTerm();
 		match(Colon.class);
 		matchEndLine();
-		List<RuleDecl> rules = parseRuleBlock(1);
-		return new RewriteDecl(pattern,rules,sourceAttr(start,index-1));
+		List<Code> codes = parseRuleBlock(1);
+		return new FunDecl(null, codes, sourceAttr(start, index - 1));
 	}
 	
-	public Pattern parsePattern() {
+	public List<Code> parsePattern() {
 		skipWhiteSpace(true);
 		checkNotEof();
 		Token token = tokens.get(index);
@@ -99,7 +99,7 @@ public class SpecParser {
 		}
 	}
 	
-	public Pattern.Term parsePatternTerm() {
+	public List<Code> parsePatternTerm() {
 		int start = index;
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);
@@ -123,7 +123,7 @@ public class SpecParser {
 		return new Pattern.Term(name, p, var, sourceAttr(start, index - 1));
 	}
 	
-	public Pattern.Compound parsePatternCompound() {
+	public List<Code> parsePatternCompound() {
 		int start = index;		
 		Type.Compound.Kind kind;
 		ArrayList<Pair<Pattern, String>> params = new ArrayList();
@@ -171,17 +171,17 @@ public class SpecParser {
 				sourceAttr(start, index - 1));		
 	}
 	
-	public List<RuleDecl> parseRuleBlock(int indent) {
+	public List<Code> parseRuleBlock(int indent) {
 		Tabs tabs = getIndent();
 		
-		ArrayList<RuleDecl> rules = new ArrayList<RuleDecl>();
+		ArrayList<Code> codes = new ArrayList<Code>();
 		while(tabs != null && tabs.ntabs == indent) {
 			index = index + 1;
-			rules.add(parseRule());			
+			codes.addAll(parseRule());			
 			tabs = getIndent();			
 		}
 		
-		return rules;		
+		return codes;		
 	}
 	
 	private Tabs getIndent() {
@@ -199,10 +199,12 @@ public class SpecParser {
 		}
 	}
 	
-	public RuleDecl parseRule() {
+	public List<Code> parseRule() {
 		int start = index;
 		match(Arrow.class);
-		ArrayList<Pair<String,Expr>> lets = new ArrayList();
+		HashMap<String,Integer> environment = new HashMap<String,Integer>();
+		ArrayList<Code> codes = new ArrayList();
+		int freeRegister = 0;
 		if(index < tokens.size() && tokens.get(index).text.equals("let")) {
 			matchKeyword("let");
 			boolean firstTime=true;
@@ -214,13 +216,15 @@ public class SpecParser {
 				firstTime=false;
 				String id = matchIdentifier().text;
 				match(Equals.class);
-				Expr rhs = parseAddSubExpression();
-				lets.add(new Pair(id,rhs));
+				parseAddSubExpression(freeRegister,freeRegister+1,environment,codes);
+				environment.put(id,freeRegister);
+				freeRegister++;
 				skipWhiteSpace(true);
 			} while(index < tokens.size() && tokens.get(index) instanceof Comma);
 			match(ElemOf.class);
 		}
-		Expr result = parseAddSubExpression();
+		
+		parseAddSubExpression(freeRegister,freeRegister+1,environment,codes);
 		skipWhiteSpace(true);
 		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
 			match(Comma.class);
@@ -233,210 +237,153 @@ public class SpecParser {
 		}
 	}
 	
-	private Expr parseCondition() {
+	private void parseCondition(int target, int freeRegister,
+			HashMap<String, Integer> environment, ArrayList<Code> codes) {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseConditionExpression();		
+		parseConditionExpression(target,freeRegister,environment,codes);		
 		
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
-			skipWhiteSpace(true);
-			
-			Expr c2 = parseCondition();			
-			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
-					index - 1));
+			skipWhiteSpace(true);			
+			parseCondition(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.AND,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			skipWhiteSpace(true);
-			
-			Expr c2 = parseCondition();
-			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
-					index - 1));			
+			parseCondition(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.OR,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} 
-		return c1;		
 	}
 		
-	private Expr parseConditionExpression() {		
+	private void parseConditionExpression(int target, int freeRegister,
+			HashMap<String, Integer> environment, ArrayList<Code> codes) {		
 		int start = index;
 				
-		Expr lhs = parseAddSubExpression();
+		parseAddSubExpression(target,freeRegister,environment,codes);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
+			parseConditionExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.LTEQ,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			skipWhiteSpace(true);
- 			
- 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
+			parseConditionExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.LT,target,target,freeRegister, sourceAttr(start,
+					index - 1))); 			
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 			skipWhiteSpace(true);			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
+			parseConditionExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.GTEQ,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
+			parseConditionExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.GT,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
+			parseConditionExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.EQ,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseAddSubExpression();			
-			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index).text.equals("is")) {
-			return parseTypeEquals(lhs,start);			
-		} else {
-			return lhs;
-		}	
+			parseConditionExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.NEQ,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
+		} 	
 	}
 	
-	private Expr parseTypeEquals(Expr lhs, int start) {
-		matchKeyword("is");			
-		skipWhiteSpace(true);
-		
-		Type type = parseType();
-		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));				
-		
-		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
-				index - 1));
-	}
-	
-
-	private Expr parseAddSubExpression() {
+	private void parseAddSubExpression(int target, int freeRegister,
+			HashMap<String, Integer> environment, ArrayList<Code> codes) {
 		int start = index;
-		Expr lhs = parseMulDivExpression();
+		parseMulDivExpression(target,freeRegister,environment,codes);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
 			skipWhiteSpace(true);
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.ADD, lhs, rhs, sourceAttr(start,
-					index - 1));
+			parseAddSubExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.ADD,target,target,freeRegister, sourceAttr(start,
+					index - 1)));			
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
-					index - 1));
+			parseAddSubExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.SUB,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} else if (index < tokens.size() && tokens.get(index) instanceof PlusPlus) {
 			// wrong precidence
 			match(PlusPlus.class);
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.APPEND, lhs, rhs, sourceAttr(start,
-					index - 1));
+			parseAddSubExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.APPEND,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} 	
-		
-		return lhs;
 	}
 	
-	private Expr parseMulDivExpression() {
+	private void parseMulDivExpression(int target, int freeRegister,
+			HashMap<String, Integer> environment, ArrayList<Code> codes) {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		parseIndexTerm(target,freeRegister,environment,codes);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
-					index - 1));
+			parseMulDivExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.MUL,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightSlash) {
 			match(RightSlash.class);
 			skipWhiteSpace(true);
-			
-			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
-					index - 1));
+			parseMulDivExpression(freeRegister,freeRegister+1,environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.DIV,target,target,freeRegister, sourceAttr(start,
+					index - 1)));
 		}
-
-		return lhs;
 	}	
 	
-	private Expr parseIndexTerm() {
+	private void parseIndexTerm(int target, int freeRegister,
+			HashMap<String, Integer> environment, ArrayList<Code> codes) {
 		checkNotEof();
 		int start = index;
-		int ostart = index;		
-		Expr lhs = parseTerm();
+		parseTerm(target,freeRegister,environment,codes);
 		
 		Token lookahead = tokens.get(index);
 		
 		while (lookahead instanceof LeftSquare
 				|| lookahead instanceof LeftBrace || lookahead instanceof Hash) {
-			ostart = start;
 			start = index;
-			if(lookahead instanceof LeftSquare) {
+			if (lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
 				skipWhiteSpace(true);
-				
+
 				lookahead = tokens.get(index);
-				
-				if (lookahead instanceof DotDot) {
-					// this indicates a sublist without a starting expression;
-					// hence, start point defaults to zero
-					match(DotDot.class);
-					skipWhiteSpace(true);
-					lookahead = tokens.get(index);
-					Expr end = parseAddSubExpression();
-					match(RightSquare.class);
-					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
-							index - 1), lhs, new Expr.Constant(BigInteger.ZERO,
-							sourceAttr(start, index - 1)), end);
-				}
-				
-				Expr rhs = parseAddSubExpression();
-				
+
+				parseAddSubExpression(freeRegister, freeRegister + 1,
+						environment, codes);
+
+				match(RightSquare.class);
+				codes.add(new Code.ListAccess(target, target, freeRegister,
+						sourceAttr(start, index - 1)));
+			}
+			if (index < tokens.size()) {
 				lookahead = tokens.get(index);
-				if(lookahead instanceof DotDot) {					
-					match(DotDot.class);
-					skipWhiteSpace(true);
-					lookahead = tokens.get(index);
-					Expr end;
-					if(lookahead instanceof RightSquare) {
-						// In this case, no end of the slice has been provided.
-						// Therefore, it is taken to be the length of the source
-						// expression.						
-						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
-								.attribute(Attribute.Source.class));
-					} else {
-						end = parseAddSubExpression();						
-					}
-					match(RightSquare.class);
-					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
-							start, index - 1), lhs, rhs, end);
-				} else {
-					match(RightSquare.class);							
-					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
-							index - 1));
-				}
-			} 
-			if(index < tokens.size()) {
-				lookahead = tokens.get(index);	
 			} else {
 				lookahead = null;
 			}
 		}
-		
-		return lhs;		
 	}
 		
-	private Expr parseTerm() {		
+	private void parseTerm(int target, int freeRegister, HashMap<String,Integer> environment, ArrayList<Code> codes) {		
 		checkNotEof();		
 		
 		int start = index;
@@ -446,63 +393,54 @@ public class SpecParser {
 			match(LeftBrace.class);
 			skipWhiteSpace(true);
 			checkNotEof();			
-			Expr v = parseCondition();			
+			parseCondition(target,freeRegister,environment,codes);			
 			skipWhiteSpace(true);
 			checkNotEof();
 			token = tokens.get(index);			
-			match(RightBrace.class);
-			return v;			 		
+			match(RightBrace.class);		 		
 		} else if ((index + 1) < tokens.size()
 				&& token instanceof Identifier
 				&& (tokens.get(index + 1) instanceof LeftBrace
 						|| tokens.get(index + 1) instanceof LeftSquare || tokens
-							.get(index + 1) instanceof LeftCurly)) {				
-			// must be a method invocation			
-			return parseConstructorExpr();
-		} else if (token.text.equals("null")) {
-			matchKeyword("null");			
-			return new Expr.Constant(null,
-					sourceAttr(start, index - 1));
+							.get(index + 1) instanceof LeftCurly)) {
+			parseConstructorExpr(target, freeRegister, environment, codes);
 		} else if (token.text.equals("true")) {
-			matchKeyword("true");			
-			return new Expr.Constant(true,
-					sourceAttr(start, index - 1));
+			matchKeyword("true");
+			codes.add(new Code.Constant(target, true, sourceAttr(start, index - 1)));
 		} else if (token.text.equals("false")) {	
 			matchKeyword("false");
-			return new Expr.Constant(false,
-					sourceAttr(start, index - 1));			
+			codes.add(new Code.Constant(target, false, sourceAttr(start, index - 1)));
 		} else if (token instanceof Identifier) {
-			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
-					index - 1));			
+			String var = matchIdentifier().text;
+			Integer source = environment.get(var);
+			if(source == null) {
+				syntaxError("unknown variable",token);
+			}
+			codes.add(new Code.Assign(target, source, sourceAttr(start, index - 1)));
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
-			return new Expr.Constant(val, sourceAttr(start, index - 1));
+			codes.add(new Code.Constant(target, val, sourceAttr(start, index - 1)));
 		} else if (token instanceof Real) {
 			BigRational val = match(Real.class).value;
-			return new Expr.Constant(val, sourceAttr(start,
-					index - 1));			
+			codes.add(new Code.Constant(target, val, sourceAttr(start, index - 1)));
 		} else if (token instanceof Strung) {
-			return parseString();
+			parseString(target,freeRegister,environment,codes);
 		} else if (token instanceof Minus) {
-			return parseNegation();
+			parseNegation(target,freeRegister,environment,codes);
 		} else if (token instanceof Bar) {
-			return parseLengthOf();
+			parseLengthOf(target,freeRegister,environment,codes);
 		} else if (token instanceof LeftSquare || token instanceof LeftCurly) {
-			return parseCompoundVal();
-		} else if (token instanceof EmptySet) {
-			match(EmptySet.class);
-			return new Expr.Constant(new HashSet(),
-					sourceAttr(start, index - 1));
+			parseCompoundVal(target,freeRegister,environment,codes);
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(),
+			new Expr.UnOp(Expr.UOp.NOT, parseTerm(),
 					sourceAttr(start, index - 1));
 		} 
 		syntaxError("unrecognised term.",token);
-		return null;		
 	}
 	
-	private Expr parseCompoundVal() {
+	private void parseCompoundVal(int target, int freeRegister,
+			HashMap<String, Integer> environment, ArrayList<Code> codes) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match(LeftSquare.class);
@@ -526,7 +464,7 @@ public class SpecParser {
 				index - 1));
 	}
 			
-	private Expr parseLengthOf() {
+	private void parseLengthOf(int target, int freeRegister, HashMap<String,Integer> environment, ArrayList<Code> codes) {
 		int start = index;
 		match(Bar.class);
 		skipWhiteSpace(true);
@@ -536,7 +474,7 @@ public class SpecParser {
 		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseNegation() {
+	private void parseNegation(int target, int freeRegister, HashMap<String,Integer> environment, ArrayList<Code> codes) {
 		int start = index;
 		match(Minus.class);
 		skipWhiteSpace(true);
@@ -553,7 +491,7 @@ public class SpecParser {
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
-	private Expr.Constructor parseConstructorExpr() {
+	private void parseConstructorExpr(int target, int freeRegister, HashMap<String,Integer> environment, ArrayList<Code> codes) {
 		int start = index;
 		Identifier name = matchIdentifier();
 		skipWhiteSpace(true);
@@ -572,7 +510,7 @@ public class SpecParser {
 				index - 1));
 	}
 	
-	private Expr parseString() {
+	private void parseString(int target, int freeRegister, HashMap<String,Integer> environment, ArrayList<Code> codes) {
 		int start = index;
 		String s = match(Strung.class).string;		
 		//return new Expr.Constant(s, sourceAttr(start, index - 1));

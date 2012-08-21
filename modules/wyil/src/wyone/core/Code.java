@@ -93,14 +93,12 @@ public class Code extends SyntacticElement.Impl {
 	
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static final class ListAccess extends Code {
-		public final Type type;
 		public final int target;
 		public final int src;
 		public final int index;
 
-		public ListAccess(Type type, int target, int src, int index, Attribute... attributes) {
+		public ListAccess(int target, int src, int index, Attribute... attributes) {
 			super(attributes);
-			this.type = type;
 			this.target = target;
 			this.src = src;
 			this.index = index;
