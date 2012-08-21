@@ -20,6 +20,9 @@ rewrite And{Bool b, Term... xs}:
 rewrite And{And{Term...xs}, Term... ys}:
     => And(xs ++ ys)
 
+rewrite And{Term x, Term y, Term... ys}:
+    => And([x] ++ ys), if x == y
+
 rewrite And(Term t):
     => t
 
@@ -35,6 +38,9 @@ rewrite Or{Bool b, Term... xs}:
 
 rewrite Or{Or{Term...xs}, Term... ys}:
     => Or(xs ++ ys)
+
+rewrite Or{Term x, Term y, Term... ys}:
+    => Or([x] ++ ys), if x == y
 
 rewrite Or(Term t):
     => t
@@ -71,10 +77,10 @@ rewrite NotEqual[Expr x, Expr y]:
     => False, if x == y
 
 rewrite Not(Equal[Expr x,Expr y]):
-    => NotEqual([x,y])
+    => NotEqual[x,y]
 
 rewrite Not(NotEqual[Expr x,Expr y]):
-    => Equal([x,y])
+    => Equal[x,y]
 
 // ==================================================
 // Theory of Inequality
@@ -87,25 +93,25 @@ rewrite LessThan[Expr x, Expr y]:
     => False, if x == y
 
 rewrite And{LessThanEq[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
-    => And(Equal({x,y}) ++ xs), if x == y && y == v
+    => And(Equal[x,y] ++ xs), if x == y && y == v
 
 rewrite And{LessThanEq[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
-    => And(LessThanEq([x,v]) ++ xs), if y == u
+    => And(LessThanEq[x,v] ++ xs), if y == u
 
 rewrite And{LessThan[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
-    => And(LessThan([x,v]) ++ xs), if y == u
+    => And(LessThan[x,v] ++ xs), if y == u
 
 rewrite And{LessThanEq[Expr x, Expr y], LessThan[Expr u, Expr v], Term... xs}:
-    => And(LessThan([x,v]) ++ xs), if y == u
+    => And(LessThan[x,v] ++ xs), if y == u
 
 rewrite And{LessThan[Expr x, Expr y], LessThan[Expr u, Expr v],Term... xs}:
-    => And(LessThan([x,v]) ++ xs), if y == u
+    => And(LessThan[x,v] ++ xs), if y == u
 
 rewrite Not(LessThanEq[Expr x,Expr y]):
-    => LessThan([y,x])
+    => LessThan[y,x]
 
 rewrite Not(LessThan[Expr x,Expr y]):
-    => LessThanEq([y,x])
+    => LessThanEq[y,x]
 
 // ==================================================
 // Theory of Sets
@@ -123,19 +129,19 @@ rewrite SubSetEq[Set[Expr... xs],Set[Expr... ys]]:
     => False, if |xs| > |ys|
 
 rewrite And{SubSetEq[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
-    => And(Equal([x,y]) ++ xs), if x == u && y == v
+    => And(Equal[x,y] ++ xs), if x == u && y == v
 
 rewrite And{SubSetEq[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
-    => And(SubSetEq([x,v]) ++ xs), if y == u
+    => And(SubSetEq[x,v] ++ xs), if y == u
 
 rewrite And{SubSet[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
-    => And(SubSet([x,v]) ++ xs), if y == u
+    => And(SubSet[x,v] ++ xs), if y == u
 
 rewrite And{SubSetEq[Expr x, Expr y], SubSet[Expr u, Expr v], Term... xs}:
-    => And(SubSet([x,v]) ++ xs), if y == u
+    => And(SubSet[x,v] ++ xs), if y == u
 
 rewrite And{SubSet[Expr x, Expr y], SubSet[Expr u, Expr v], Term... xs}:
-    => And(SubSet([x,v]) ++ xs), if y == u
+    => And(SubSet[x,v] ++ xs), if y == u
 
 // ==================================================
 // Combined Theories
