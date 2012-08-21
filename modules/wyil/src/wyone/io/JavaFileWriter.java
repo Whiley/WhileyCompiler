@@ -9,7 +9,6 @@ import java.util.*;
 import wyone.util.*;
 import wyone.core.*;
 import wyone.core.SpecFile.TypeDecl;
-import static wyone.core.Expr.*;
 import static wyone.core.SpecFile.*;
 import static wyone.core.Attribute.*;
 
@@ -56,7 +55,6 @@ public class JavaFileWriter {
 		myOut("public final class " + clsNam + " {");
 		HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
 		HashSet<String> used = new HashSet<String>();
-		HashMap<String, List<RewriteDecl>> dispatchTable = new HashMap();
 		for (Decl d : spDecl) {
 			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
@@ -77,22 +75,11 @@ public class JavaFileWriter {
 				write((TermDecl) d, hierarchy);
 			} else if (d instanceof ClassDecl) {
 				write((ClassDecl) d, hierarchy);
-			} else if (d instanceof RewriteDecl) {
-				write((RewriteDecl) d, used);
+			} else if (d instanceof FunDecl) {
+				write((FunDecl) d, used);
 			}
 		}
-		for (Decl d : spDecl) {
-			if (d instanceof RewriteDecl) {
-				RewriteDecl rd = (RewriteDecl) d;
-				List<RewriteDecl> ls = dispatchTable.get(rd.pattern.name);
-				if (ls == null) {
-					ls = new ArrayList<RewriteDecl>();
-					dispatchTable.put(rd.pattern.name, ls);
-				}
-				ls.add(rd);
-			}
-		}
-		write(dispatchTable);
+		
 		writeTypeTests(hierarchy);
 		writeSchema();
 		writeMainMethod();
@@ -138,264 +125,10 @@ public class JavaFileWriter {
 		myOut();
 	}
 
-	public void write(RewriteDecl decl, HashSet<String> used) {
-		// FIRST COMMENT CODE FROM SPEC FILE
-		indent(1);
-		out.print("// rewrite " + decl.pattern);
-		myOut(":");
-		String lin;
-		for (RuleDecl rd : decl.rules) {
-			lin = "// => " + rd.result;
-			if (rd.condition != null) {
-				;
-				lin += ", if " + rd.condition;
-			}
-			myOut(1, lin);
-		}
-
-		// NOW PRINT REAL CODE
-		String mangle = nameMangle(decl.pattern, used);
-		myOut(1, "private static boolean rewrite" + mangle
-				+ "(final int index, final Term state, final Automaton automaton) {");
+	public void write(FunDecl decl, HashSet<String> used) {
 		
-		write(decl.pattern,"state");
-		
-		boolean defCase = false;
-		int casNo = 1;
-		for (RuleDecl rd : decl.rules) {
-			for (Pair<String, Expr> p : rd.lets) {
-				Pair<List<String>, String> r = translate(p.second());
-				write(r.first(), 2);
-				indent(2);
-				Type t = p.second().attribute(TypeAttr.class).type;
-				out.print("final ");
-				write(t);
-				myOut(" " + p.first() + " = " + r.second() + ";");
-			}
-			if (rd.condition != null && defCase) {
-				// this indicates a syntax error since it means we've got a
-				// default case before a conditional case.
-				// syntaxError("case cannot be reached",specfile.filename,rd);
-				throw new RuntimeException("Unreachable condition in "
-						+ decl.pattern.name);
-			} else if (rd.condition != null) {
-				Pair<List<String>, String> r = translate(rd.condition);
-				write(r.first(), 2);
-				myOut(2, "if(" + r.second() + ") {");
-				r = translate(rd.result);
-				write(r.first(), 3);
-				myOut(3, "return automaton.rewrite(index," + r.second() + ");");
-				myOut(2, "}");
-			} else {
-				defCase = true;
-				Pair<List<String>, String> r = translate(rd.result);
-				write(r.first(), 2);
-				myOut(2, "return automaton.rewrite(index," + r.second() + ");");
-			}
-		}
-		if (!defCase) {
-			myOut(2, "return false;");
-		}
-		myOut(1, "}\n");
-	}
-
-	/**
-	 * Write out the code for destructuring a given pattern. That is, we
-	 * traverse from a given input state matching the pattern and extracting and
-	 * declaring any variables it defines.
-	 * 
-	 * @param pattern
-	 */
-	public void write(Pattern pattern, String root) {
-		if (pattern instanceof Pattern.Leaf) {
-			// nothing to do
-		} else if (pattern instanceof Pattern.Term) {
-			Pattern.Term term = (Pattern.Term) pattern;
-			write((Pattern.Term)pattern,root);			
-		} else if (pattern instanceof Pattern.Compound) {
-			write((Pattern.Compound)pattern,root);
-		}
 	}
 	
-	public void write(Pattern.Term pattern, String root) {
-		String name = root + "_" + 0;
-		indent(2);writePatternDecl(name,pattern.data);				
-		myOut("automaton.get(" + root + ".contents);");
-		write(pattern.data,name);
-		if(pattern.var != null) {
-			Type.Term type = (Type.Term) pattern.attribute(TypeAttr.class).type;
-			indent(2);out.print(unboxedType(type.data));
-			out.println(" " + pattern.var + " = " + unbox(type.data,root + ".contents") + ";");
-		}
-	}
-	
-	public void write(Pattern.Compound pattern, String root) {
-		
-		// good luck figuring this out ... ;)
-		
-		myOut(2,"int[] " + root + "_children = " + root + ".children;");
-		
-		if(pattern.kind != Type.Compound.Kind.LIST && pattern.elements.size() > 1) { 
-			int level = 1;
-			for (int i = 0; i != pattern.elements.size(); ++i) {
-				Pattern element = pattern.elements.get(i).first();
-				if(!pattern.unbounded || i+1 < pattern.elements.size()) {
-					String idx = "s" + i;
-					myOut(2+i, "for(int " + idx + "=0;" + idx + " < " + root + "_children.length;++" + idx + ") {");
-					if(i > 0) {
-						indent(3+i);out.print("if(");
-						for(int j=0;j<i;++j) {
-							if(j != 0) {
-								out.print(" || ");
-							}
-							out.print(idx  + "==s" + j);
-						}
-						out.println(") { continue; }");
-					}
-					Type type = element.type();
-					myOut(level+2, "if(!typeof_" + type2HexStr(type)
-							+ "(" + root + "_children[" + idx + "],automaton)) { continue; }");
-				}
-				level++;
-			}
-			myOut(level,"int[] n" + root + "_children = new int[" + root + "_children.length];");
-			for (int i = 0; i != pattern.elements.size(); ++i) {
-				if(!pattern.unbounded || i+1 < pattern.elements.size()) {
-					myOut(level,"n" + root + "_children[" + i + "]=" + root + "_children[s" + i + "];");
-				}
-			}
-			if(pattern.unbounded) {
-				myOut(level,"int j = " + (pattern.elements.size()-1) + ";");
-				myOut(level, "for(int i=0;i < " + root + "_children.length;++i) {");
-				indent(level+1);				
-				out.print("if(");
-				for (int i = 0; i != pattern.elements.size(); ++i) {
-					if(!pattern.unbounded || i+1 < pattern.elements.size()) {
-						if(i!=0) { out.print(" && "); }
-						out.print("i!=s" + i);
-					}
-				}
-				out.print(") { n" + root + "_children[j++] = " + root + "_children[i]; }");
-				myOut();
-				myOut(level,"}");
-			}
-			myOut(level,root + "_children = n" + root + "_children;");
-			myOut(level,"break;");
-			for (int i = 0; i != pattern.elements.size(); ++i) {
-				if(!pattern.unbounded || i+1 < pattern.elements.size()) {
-					myOut(level - (i+1),"}");
-				}
-			}	
-		}
-		
-		// proceed with the matched children
-		int i = 0;
-		for (Pair<Pattern, String> p : pattern.elements) {
-			String name = root + "_" + i;
-			if (pattern.unbounded && (i + 1) == pattern.elements.size()) {
-				// do nothing
-			} else {
-				indent(2);writePatternDecl(name,p.first());
-				out.println("automaton.get(" + root
-						+ "_children[" + i + "]);");
-				write(p.first(), name);
-			}
-			i = i + 1;
-		}
-		i = 0;
-		for (Pair<Pattern, String> p : pattern.elements) {
-			String var = p.second();
-			if (var != null) {
-				String name = root + "_" + i;
-				if (pattern.unbounded && (i + 1) == pattern.elements.size()) {
-					myOut(2, "final int[] " + var + " = Arrays.copyOfRange("
-							+ root + "_children," + i + "," + root
-							+ "_children.length);");
-				} else {
-					myOut(2, "final int " + var + " = " + root + "_children["
-							+ i + "];");
-				}
-			}
-			i = i + 1;
-		}
-	}
-
-	public void writePatternDecl(String name, Pattern pattern) {
-		if(pattern instanceof Pattern.Leaf) {
-			out.print("State " + name + " = ");
-		} else if(pattern instanceof Pattern.Term) {
-			out.print("Term " + name + " = (Term) ");	
-		} else if(pattern instanceof Pattern.Compound) {
-			out.print("Compound "+ name + " = (Compound) ");
-		}
-	}
-	
-	public void write(HashMap<String, List<RewriteDecl>> dispatchTable) {
-		// First, write individual dispatches
-		for (Map.Entry<String, List<RewriteDecl>> e : dispatchTable.entrySet()) {
-			write(e.getKey(), e.getValue());
-		}
-
-		// Second, write outermost dispatch
-		myOut(1,
-				"// =========================================================================");
-		myOut(1, "// Rewrite Dispatcher");
-		myOut(1,
-				"// =========================================================================");
-		myOut();
-		myOut(1, "public static Automaton rewrite(Automaton automaton) {");
-		myOut(2, "Automaton old;");
-		myOut(2, "do {");
-		myOut(3, "old = automaton;");
-		myOut(3, "boolean changed = false;");
-		myOut(3, "for(int index=0;index!=automaton.nStates();++index) {");
-		myOut(4, "State state = automaton.get(index);");
-		myOut(4, "switch(state.kind) {");
-		for (Map.Entry<String, List<RewriteDecl>> e : dispatchTable.entrySet()) {
-			String name = e.getKey();
-			myOut(4, "case K_" + name + ": {");
-			myOut(5, "changed |= rewrite_" + name + "(index,(Term) state,automaton);");
-			myOut(5, "break;");
-			myOut(4, "}");
-		}
-		myOut(4, "}");
-		myOut(3, "}");
-		myOut(2, "} while(!automaton.equals(old));");
-		myOut(2, "return automaton;");
-		myOut(1, "}\n");
-
-	}
-
-	public void write(String name, List<RewriteDecl> rules) {
-		myOut(1, "// Rewrite dispatcher for " + name);
-		myOut(1, "private static boolean rewrite_" + name
-				+ "(int index, Term state, Automaton automaton) {");
-		myOut(2, "boolean changed = false;\n");
-
-		myOut(2, "// Now rewrite me");
-		HashSet<String> used = new HashSet<String>();
-		for (RewriteDecl r : rules) {
-			Type type = r.pattern.attribute(TypeAttr.class).type;
-			String mangle = nameMangle(r.pattern, used);
-			indent(2);
-			out.print("if(typeof_" + type2HexStr(type) + "(index,automaton)");
-			typeTests.add(type);
-			myOut(") {");
-			myOut(3, "changed |= rewrite" + mangle + "(index,state,automaton);");
-			myOut(2, "}");
-		}
-		myOut(2, "");
-		myOut(2, "// done");
-		myOut(2, "return changed;");
-		myOut(1, "}\n");
-	}
-
-	public void write(List<String> inserts, int level) {
-		for (String s : inserts) {
-			myOut(level, s);
-		}
-	}
-
 	public void writeSchema() {
 		myOut(1,
 				"// =========================================================================");
@@ -460,276 +193,116 @@ public class JavaFileWriter {
 		}
 	}
 
-	public Pair<List<String>, String> translate(Expr expr) {
-		if (expr instanceof Constant) {
-			return translate((Constant) expr);
-		} else if (expr instanceof Variable) {
-			return translate((Variable) expr);
-		} else if (expr instanceof UnOp) {
-			return translate((UnOp) expr);
-		} else if (expr instanceof BinOp) {
-			return translate((BinOp) expr);
-		} else if (expr instanceof NaryOp) {
-			return translate((NaryOp) expr);
-		} else if (expr instanceof Comprehension) {
-			return translate((Comprehension) expr);
-		} else if (expr instanceof Constructor) {
-			return translate((Constructor) expr);
-		} else if (expr instanceof TermAccess) {
-			return translate((TermAccess) expr);
+	public String translate(Code expr) {
+		if (expr instanceof Code.Constant) {
+			return translate((Code.Constant) expr);
+		} else if (expr instanceof Code.UnOp) {
+			return translate((Code.UnOp) expr);
+		} else if (expr instanceof Code.BinOp) {
+			return translate((Code.BinOp) expr);
+		} else if (expr instanceof Code.NaryOp) {
+			return translate((Code.NaryOp) expr);
+		} else if (expr instanceof Code.Constructor) {
+			return translate((Code.Constructor) expr);
 		} else {
 			throw new RuntimeException("unknown expression encountered");
 		}
 	}
 
-	public Pair<List<String>, String> translate(Constant c) {
-		return translate(c.value, c);
-	}
-
-	public Pair<List<String>, String> translate(Object v, SyntacticElement elem) {
-		String r = null;
-		List<String> inserts = Collections.EMPTY_LIST;
+	public String translate(Code.Constant code) {
+		Object v = code.value;
+		String rhs;
+		
 		if (v instanceof Boolean) {
-			r = v.toString();
+			rhs = v.toString();
 		} else if (v instanceof BigInteger) {
 			BigInteger bi = (BigInteger) v;
-			r = "new BigInteger(\"" + bi.toString() + "\")";
-		} else if (v instanceof HashSet) {
-			HashSet hs = (HashSet) v;
-			r = "new HashSet(){{";
-			for (Object o : hs) {
-				Pair<List<String>, String> is = translate(o, elem);
-				inserts = concat(inserts, is.first());
-				r = r + "add(" + is.second() + ");";
-
-			}
-			r = r + "}}";
+			rhs = "new BigInteger(\"" + bi.toString() + "\")";
 		} else {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
 		}
-		return new Pair(inserts, r);
+		return "r" + code.target + " = " + rhs;
 	}
 
-	public Pair<List<String>, String> translate(Variable v) {
-		if (v.isConstructor) {			
-			return new Pair(Collections.EMPTY_LIST, "(K_FREE-K_" + v.var + ")");
-		} else {
-			return new Pair(Collections.EMPTY_LIST, v.var);
-		}
-	}
-
-	public Pair<List<String>, String> translate(UnOp uop) {
-		Pair<List<String>, String> mhs = translate(uop.mhs);
-		switch (uop.op) {
+	public String translate(Code.UnOp code) {
+		String rhs;
+		switch (code.op) {
 		case LENGTHOF:
-			return new Pair(mhs.first(), "BigInteger.valueOf(" + mhs.second()
-					+ ".length)");
+			rhs = "BigInteger.valueOf(r" + code.operand + ".length)";
+			break;
 		case NEG:
-			return new Pair(mhs.first(), mhs.second() + ".negate()");
+			rhs = "r" + code.operand + ".negate()";
+			break;
 		case NOT:
-			return new Pair(mhs.first(), "!" + mhs.second());
+			rhs = "!r" + code.operand;
+			break;
 		default:
 			throw new RuntimeException("unknown unary expression encountered");
 		}
+		return "r" + code.target + " = " + rhs;
 	}
 
-	public Pair<List<String>, String> translate(BinOp bop) {
-		if (bop.op == BOp.TYPEEQ) {
-			return translateTypeEquals(bop.lhs,
-					bop.rhs.attribute(TypeAttr.class).type);
-		}
-		Pair<List<String>, String> lhs = translate(bop.lhs);
-		Pair<List<String>, String> rhs = translate(bop.rhs);
-		List<String> inserts = concat(lhs.first(), rhs.first());
-		switch (bop.op) {
+	public String translate(Code.BinOp code) {
+		String rhs;
+		
+		switch (code.op) {
 		case ADD:
-			return new Pair(inserts, lhs.second() + ".add(" + rhs.second()
-					+ ")");
+			rhs = "r" + code.lhs + ".add(r" + code.rhs + ")";
+			break;
 		case SUB:
-			return new Pair(inserts, lhs.second() + ".subtract(" + rhs.second()
-					+ ")");
+			rhs = "r" + code.lhs + ".subtract(r" + code.rhs + ")";
+			break;
 		case MUL:
-			return new Pair(inserts, lhs.second() + ".multiply(" + rhs.second()
-					+ ")");
+			rhs = "r" + code.lhs + ".multiply(r" + code.rhs + ")";
+			break;
 		case DIV:
-			return new Pair(inserts, lhs.second() + ".divide(" + rhs.second()
-					+ ")");
+			rhs = "r" + code.lhs + ".divide(r" + code.rhs + ")";
+			break;
 		case AND:
-			return new Pair(inserts, lhs.second() + " && " + rhs.second() + "");
+			rhs = "r" + code.lhs + " && r" + code.rhs ;
+			break;
 		case OR:
-			return new Pair(inserts, lhs.second() + " || " + rhs.second() + "");
+			rhs = "r" + code.lhs + " || r" + code.rhs ;
+			break;
 		case EQ:
 			// FIXME: support lists as well!
-			return new Pair(inserts, lhs.second() + " == " + rhs.second());
+			rhs = "r" + code.lhs + " == r" + code.rhs ;
+			break;
 		case NEQ:
 			// FIXME: support lists as well!
-			return new Pair(inserts, lhs.second() + " != " + rhs.second());
+			rhs = "r" + code.lhs + " != r" + code.rhs ;
+			break;
 		case LT:
-			return new Pair(inserts, lhs.second() + ".compareTo("
-					+ rhs.second() + ")<0");
+			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")<0";
+			break;
 		case LTEQ:
-			return new Pair(inserts, lhs.second() + ".compareTo("
-					+ rhs.second() + ")<=0");
+			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")<=0";
+			break;
 		case GT:
-			return new Pair(inserts, lhs.second() + ".compareTo("
-					+ rhs.second() + ")>0");
+			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")>0";
+			break;
 		case GTEQ:
-			return new Pair(inserts, lhs.second() + ".compareTo("
-					+ rhs.second() + ")>=0");
+			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")>=0";
+			break;
 		case APPEND:
-			return new Pair(inserts, "append(" + lhs.second() + ","
-					+ rhs.second() + ")");
-			// case ELEMENTOF:
-			// return new Pair(inserts,rhs.second() + ".contains(" +
-			// lhs.second() + ")");
-			// case UNION:
-			// return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() +
-			// ");addAll(" + rhs.second() + ");}}");
-			// case DIFFERENCE:
-			// return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() +
-			// ");removeAll(" + rhs.second() + ");}}");
-			// case INTERSECTION:
-			// return new Pair(inserts,"new HashSet(){{for(Object o : " +
-			// lhs.second() + "){if(" + rhs.second() +
-			// ".contains(o)){add(o);}}}}");
-		default:
-			throw new RuntimeException("unknown binary operator encountered: "
-					+ bop);
-		}
-	}
-
-	public Pair<List<String>, String> translateTypeEquals(Expr src, Type rhs) {
-		Pair<List<String>, String> lhs = translate(src);
-		String mangle = type2HexStr(rhs);
-		typeTests.add(rhs);
-		return new Pair(lhs.first(), "typeof_" + mangle + "(" + lhs.second()
-				+ ",automaton)");
-	}
-
-	public Pair<List<String>, String> translate(NaryOp nop) {
-		List<String> inserts = Collections.EMPTY_LIST;
-		String r = null;
-		switch (nop.op) {
-		case LISTGEN:
-			r = "new ArrayList(){{";
-			for (Expr e : nop.arguments) {
-				Pair<List<String>, String> p = translate(e);
-				inserts = concat(inserts, p.first());
-				r = r + "add(" + p.second() + ");";
-			}
-			r = r + "}}";
+			rhs = "append(r" + code.lhs + ",r" + code.rhs + ")";
 			break;
 		default:
-			throw new RuntimeException("sublist encountered: ");
+			throw new RuntimeException("unknown binary operator encountered: "
+					+ code);
 		}
-
-		return new Pair(inserts, r);
+		return "r" + code.target + " = " + rhs;
 	}
 
-	public Pair<List<String>, String> translate(Constructor ivk) {				
-		Expr arg = ivk.argument;
-		Type arg_t = arg.attribute(TypeAttr.class).type;
-		Pair<List<String>, String> es = translate(arg);		
-		String contents = es.second();
-		
-		if(arg_t instanceof Type.Int) {
-			contents = "automaton.add(new Item(K_INT," + contents + "))";
-		} else if(arg_t instanceof Type.Strung) {
-			contents = "automaton.add(new Item(K_STRING," + contents + "))";
-		} else if(arg_t instanceof Type.Compound) {
-			Type.Compound tc = (Type.Compound) arg_t;
-			String kind;
-			if(tc.kind == Type.Compound.Kind.LIST) {
-				kind = "K_LIST";
-			} else {
-				kind = "K_SET";
-			}
-			contents = "automaton.add(new Compound(" + kind + "," + contents + "))";
-		}
-		
-		String r = "automaton.add(new Term(K_" + ivk.name + "," + contents + "))";		
-		return new Pair(es.first(), r);
+	public String translate(Code.NaryOp nop) {
+		return "TODO: list generator";
 	}
 
-	// public Pair<List<String>,String> translateSome(Comprehension c,
-	// HashMap<String,Type> environment) {
-	// ArrayList<String> inserts = new ArrayList<String>();
-	// String tmp = freshVar();
-	// inserts.add("boolean " + tmp + " = false;");
-	// int l=0;
-	// for(Pair<String,Expr> src : c.sources) {
-	// Pair<List<String>,String> r = translate(src.second(), environment);
-	// Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
-	// for(String i : r.first()) {
-	// inserts.add(indentStr(l) + i);
-	// }
-	// inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
-	// + src.first() + " : (HashSet<" + typeStr(type.element)
-	// + ">) " + r.second() + ") {");
-	// }
-	// Pair<List<String>,String> r = translate(c.condition, environment);
-	// for(String i : r.first()) {
-	// inserts.add(indentStr(l) + i);
-	// }
-	// inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp +
-	// " = true; break; }");
-	//
-	// for(Pair<String,Expr> src : c.sources) {
-	// inserts.add(indentStr(--l) + "}");
-	// }
-	// return new Pair(inserts,tmp);
-	// }
-
-	// public Pair<List<String>,String> translateSetComp(Comprehension c,
-	// HashMap<String,Type> environment) {
-	// ArrayList<String> inserts = new ArrayList<String>();
-	// String tmp = freshVar();
-	// inserts.add("HashSet " + tmp + " = new HashSet();");
-	// int l=0;
-	// for(Pair<String,Expr> src : c.sources) {
-	// Pair<List<String>,String> r = translate(src.second(), environment);
-	// Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
-	// for(String i : r.first()) {
-	// inserts.add(indentStr(l) + i);
-	// }
-	// inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
-	// + src.first() + " : (HashSet<" + typeStr(type.element)
-	// + ">) " + r.second() + ") {");
-	// }
-	// Pair<List<String>,String> val = translate(c.value, environment);
-	// for(String i : val.first()) {
-	// inserts.add(indentStr(l) + i);
-	// }
-	// if(c.condition != null) {
-	// Pair<List<String>,String> r = translate(c.condition, environment);
-	// for(String i : r.first()) {
-	// inserts.add(indentStr(l) + i);
-	// }
-	// inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + ".add(" +
-	// val.second() + ");}");
-	// } else {
-	// inserts.add(indentStr(l) + tmp + ".add(" + val.second() + ");");
-	// }
-	//
-	// for(Pair<String,Expr> src : c.sources) {
-	// inserts.add(indentStr(--l) + "}");
-	// }
-	// return new Pair(inserts,tmp);
-	// }
-
-	public Pair<List<String>, String> translate(TermAccess ta) {
-		Pair<List<String>, String> src = translate(ta.src);
-		Type.Term srcType = (Type.Term) ta.src.attribute(TypeAttr.class).type;
-		if (ta.index >= 0) {
-			return new Pair(src.first(), "automaton.states[" + src.second()
-					+ "].children[" + ta.index + "]");
-		} else {
-			return new Pair(src.first(), "((" + typeStr(srcType.data)
-					+ ") automaton.states[" + src.second() + "].data)");
-		}
+	public String translate(Code.Constructor ivk) {				
+		return "TODO: list generator";
 	}
-
+	
 	public void write(Type type) {
 		out.print(typeStr(type));
 	}
@@ -762,9 +335,9 @@ public class JavaFileWriter {
 		return "null";
 	}
 
-	protected String nameMangle(Pattern pattern, HashSet<String> used) {
+	protected String nameMangle(Type type, HashSet<String> used) {
 		String mangle = null;
-		String _mangle = type2HexStr(pattern.attribute(TypeAttr.class).type);
+		String _mangle = type2HexStr(type);
 		int i = 0;
 		do {
 			mangle = _mangle + "_" + i++;

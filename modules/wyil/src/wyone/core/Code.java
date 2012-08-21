@@ -135,6 +135,9 @@ public class Code extends SyntacticElement.Impl {
 		NEG {
 			public String toString() { return "neg"; }
 		},
+		DEREF {
+			public String toString() { return "deref"; }
+		},
 		LENGTHOF {
 			public String toString() { return "length"; }
 		}		
@@ -174,5 +177,17 @@ public class Code extends SyntacticElement.Impl {
 	
 	public enum NOp {
 		LISTGEN					
+	}
+	
+	public class Constructor extends Code {
+		public final Type.Term type;
+		public final int target;
+		public final int operand;
+
+		public Constructor(Type.Term type, int target, int operand, String name) {
+			this.target = target;
+			this.operand = operand;
+			this.type = type;
+		}
 	}
 }
