@@ -107,6 +107,7 @@ public class JavaFileWriter {
 		myOut("import wyone.io.PrettyAutomataReader;");
 		myOut("import wyone.io.PrettyAutomataWriter;");
 		myOut("import wyone.core.*;");
+		myOut("import static wyone.core.Automaton.*;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
@@ -115,9 +116,9 @@ public class JavaFileWriter {
 		myOut(1, "// term " + decl.type);
 		myOut(1, "public final static int K_" + decl.type.name + " = "
 				+ termCounter++ + ";");
-		if (decl.type.data instanceof Type.Void) {
-			myOut(1, "public final static Automaton.State " + decl.type.name
-					+ " = new Automaton.Term(K_" + decl.type.name + ");");
+		if (decl.type.data == Type.T_VOID) {
+			myOut(1, "public final static State " + decl.type.name
+					+ " = new Term(K_" + decl.type.name + ");");
 		}
 		myOut();
 	}
@@ -155,7 +156,7 @@ public class JavaFileWriter {
 		// NOW PRINT REAL CODE
 		String mangle = nameMangle(decl.pattern, used);
 		myOut(1, "private static boolean rewrite" + mangle
-				+ "(final int index, final Automaton.Term state, final Automaton automaton) {");
+				+ "(final int index, final Term state, final Automaton automaton) {");
 		
 		write(decl.pattern,"state");
 		
@@ -321,11 +322,11 @@ public class JavaFileWriter {
 
 	public void writePatternDecl(String name, Pattern pattern) {
 		if(pattern instanceof Pattern.Leaf) {
-			out.print("Automaton.State " + name + " = ");
+			out.print("State " + name + " = ");
 		} else if(pattern instanceof Pattern.Term) {
-			out.print("Automaton.Term " + name + " = (Automaton.Term) ");	
+			out.print("Term " + name + " = (Term) ");	
 		} else if(pattern instanceof Pattern.Compound) {
-			out.print("Automaton.Compound "+ name + " = (Automaton.Compound) ");
+			out.print("Compound "+ name + " = (Compound) ");
 		}
 	}
 	
@@ -348,12 +349,12 @@ public class JavaFileWriter {
 		myOut(3, "old = automaton;");
 		myOut(3, "boolean changed = false;");
 		myOut(3, "for(int index=0;index!=automaton.nStates();++index) {");
-		myOut(4, "Automaton.State state = automaton.get(index);");
+		myOut(4, "State state = automaton.get(index);");
 		myOut(4, "switch(state.kind) {");
 		for (Map.Entry<String, List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			String name = e.getKey();
 			myOut(4, "case K_" + name + ": {");
-			myOut(5, "changed |= rewrite_" + name + "(index,(Automaton.Term) state,automaton);");
+			myOut(5, "changed |= rewrite_" + name + "(index,(Term) state,automaton);");
 			myOut(5, "break;");
 			myOut(4, "}");
 		}
@@ -368,7 +369,7 @@ public class JavaFileWriter {
 	public void write(String name, List<RewriteDecl> rules) {
 		myOut(1, "// Rewrite dispatcher for " + name);
 		myOut(1, "private static boolean rewrite_" + name
-				+ "(int index, Automaton.Term state, Automaton automaton) {");
+				+ "(int index, Term state, Automaton automaton) {");
 		myOut(2, "boolean changed = false;\n");
 
 		myOut(2, "// Now rewrite me");
@@ -512,7 +513,7 @@ public class JavaFileWriter {
 
 	public Pair<List<String>, String> translate(Variable v) {
 		if (v.isConstructor) {			
-			return new Pair(Collections.EMPTY_LIST, "(Automaton.K_FREE-K_" + v.var + ")");
+			return new Pair(Collections.EMPTY_LIST, "(K_FREE-K_" + v.var + ")");
 		} else {
 			return new Pair(Collections.EMPTY_LIST, v.var);
 		}
@@ -633,21 +634,21 @@ public class JavaFileWriter {
 		String contents = es.second();
 		
 		if(arg_t instanceof Type.Int) {
-			contents = "automaton.add(new Automaton.Item(Automaton.K_INT," + contents + "))";
+			contents = "automaton.add(new Item(K_INT," + contents + "))";
 		} else if(arg_t instanceof Type.Strung) {
-			contents = "automaton.add(new Automaton.Item(Automaton.K_STRING," + contents + "))";
+			contents = "automaton.add(new Item(K_STRING," + contents + "))";
 		} else if(arg_t instanceof Type.Compound) {
 			Type.Compound tc = (Type.Compound) arg_t;
 			String kind;
 			if(tc.kind == Type.Compound.Kind.LIST) {
-				kind = "Automaton.K_LIST";
+				kind = "K_LIST";
 			} else {
-				kind = "Automaton.K_SET";
+				kind = "K_SET";
 			}
-			contents = "automaton.add(new Automaton.Compound(" + kind + "," + contents + "))";
+			contents = "automaton.add(new Compound(" + kind + "," + contents + "))";
 		}
 		
-		String r = "automaton.add(new Automaton.Term(K_" + ivk.name + "," + contents + "))";		
+		String r = "automaton.add(new Term(K_" + ivk.name + "," + contents + "))";		
 		return new Pair(es.first(), r);
 	}
 
@@ -835,7 +836,7 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");		
-		myOut(2, "return automaton.get(index).kind == Automaton.K_INT;");
+		myOut(2, "return automaton.get(index).kind == K_INT;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -846,7 +847,7 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");		
-		myOut(2, "return automaton.get(index).kind == Automaton.K_STRING;");
+		myOut(2, "return automaton.get(index).kind == K_STRING;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -857,12 +858,12 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");
-		myOut(2, "Automaton.State state = automaton.get(index);");
+		myOut(2, "State state = automaton.get(index);");
 		
 		HashSet<String> expanded = new HashSet<String>();
 		expand(type.name, hierarchy, expanded);
 		indent(2);
-		out.print("if(state instanceof Automaton.Term && (");
+		out.print("if(state instanceof Term && (");
 		boolean firstTime = true;
 		for (String n : expanded) {			
 			myOut();
@@ -878,7 +879,7 @@ public class JavaFileWriter {
 		myOut(")) {");
 		// FIXME: there is definitely a bug here since we need the offset within the automaton state
 		if (type.data != Type.T_VOID) {
-			myOut(3,"int data = ((Automaton.Term)state).contents;");
+			myOut(3,"int data = ((Term)state).contents;");
 			myOut(3,"if(typeof_" + type2HexStr(type.data) + "(data,automaton)) { return true; }");
 			if (typeTests.add(type.data)) {
 				worklist.add(type.data);
@@ -898,9 +899,9 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");
-		myOut(2, "Automaton.State _state = automaton.get(index);");
-		myOut(2, "if(_state instanceof Automaton.Compound) {");
-		myOut(3, "Automaton.Compound state = (Automaton.Compound) _state;");
+		myOut(2, "State _state = automaton.get(index);");
+		myOut(2, "if(_state instanceof Compound) {");
+		myOut(3, "Compound state = (Compound) _state;");
 		myOut(3, "int[] children = state.children;");
 		
 		Type[] tt_elements = type.elements;
@@ -1044,9 +1045,9 @@ public class JavaFileWriter {
 	
 	public String unbox(Type t, String src) {
 		if(t instanceof Type.Int) {
-			return "(BigInteger) ((Automaton.Item) automaton.get(" + src + ")).payload";
+			return "(BigInteger) ((Item) automaton.get(" + src + ")).payload";
 		} else if(t instanceof Type.Strung) {
-			return "(String) ((Automaton.Item) automaton.get(" + src + ")).payload";
+			return "(String) ((Item) automaton.get(" + src + ")).payload";
 		} else {
 			// TODO: what should I do here?
 			return null;

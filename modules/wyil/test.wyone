@@ -2,11 +2,11 @@ term True
 term False
 class Bool as True | False
 
-term Var(string)
+term Var[string...]
 term Not(Term)
 term Or{Term...}
 
-rewrite Or(Term x):
-    => x
+rewrite Var[string x,string... xs]:
+    => Var(xs)
 
 class Term as Bool | Var | Not | Or

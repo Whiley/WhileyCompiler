@@ -47,6 +47,10 @@ public abstract class Type {
 		return get(new Term(name,data));
 	}
 	
+	public static Ref T_REF(Type element) {
+		return get(new Ref(element));
+	}
+	
 	/**
 	 * Return true if t2 is a subtype of t1 in the context of the given type
 	 * hierarchy.  
@@ -89,11 +93,16 @@ public abstract class Type {
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
 			if(n1.name.equals(n2.name)) {
-				return true;
+				return isSubtype(n1.data,n2.data);
 			} else {				
-				return true; // TODO: need to do this properly
+				return false;
 			}
-		} 
+		} else if(t1 instanceof Ref && t2 instanceof Ref) {
+			Ref r1 = (Ref) t1;
+			Ref r2 = (Ref) t2;
+			// TODO: unsure whether this makes sense or not?
+			return r1.element.equals(r2.element);
+		}
 
 		return false;
 	}
@@ -161,6 +170,30 @@ public abstract class Type {
 		}
 	}
 	
+	public static final class Ref<T extends Type> extends Type {
+		public final T element;
+		
+		public Ref(T element) {
+			this.element = element;
+		}
+		
+		public int hashCode() {
+			return element.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Ref) {
+				Ref r = (Ref) o;
+				return element.equals(r.element);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "ref " + element;
+		}
+	}
+	
 	public static final class Term extends Type {		
 		public final String name;
 		public final Type data;
@@ -181,14 +214,16 @@ public abstract class Type {
 			return false;
 		}
 		public String toString() {	
-			if(data instanceof Type.Compound) {
-				return name + data;
-			} else if(data != T_VOID) {
+			if(data != T_VOID) {
 				return name + "(" + data + ")";
 			} else {
 				return name;
 			}
 		}
+	}
+	
+	public static final class Fun extends Type {
+		
 	}
 	
 	public static final class Compound extends Type {
@@ -201,7 +236,7 @@ public abstract class Type {
 		public final Type[] elements;
 		public final boolean unbounded;
 		
-		private Compound(Kind kind, boolean unbounded, Type... elements) {			
+		private Compound(Kind kind, boolean unbounded, Type... elements) {
 			this.elements = elements;
 			this.kind = kind;
 			this.unbounded = unbounded;
@@ -257,6 +292,8 @@ public abstract class Type {
 			return "I";
 		} else if(t instanceof Type.Real) {
 			return "R";
+		} else if(t instanceof Type.Strung) {
+			return "S";
 		} else if(t instanceof Type.Compound) {
 			Type.Compound st = (Type.Compound) t;
 			String r = "";

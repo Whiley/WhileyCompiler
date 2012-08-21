@@ -34,32 +34,6 @@ public class SpecFile {
 		}				
 	}
 	
-	public static class RewriteDecl extends SyntacticElement.Impl implements
-			Decl {
-		public final Pattern.Term pattern;
-		public final ArrayList<RuleDecl> rules;
-
-		public RewriteDecl(Pattern.Term pattern, Collection<RuleDecl> rules,
-				Attribute... attributes) {
-			super(attributes);
-			this.pattern = pattern;
-			this.rules = new ArrayList<RuleDecl>(rules);
-		}
-	}
-	
-	public static class RuleDecl extends SyntacticElement.Impl implements SyntacticElement {
-		public final ArrayList<Pair<String,Expr>> lets;
-		public final Expr result;
-		public final Expr condition;
-		
-		public RuleDecl(Collection<Pair<String,Expr>> lets, Expr result, Expr condition, Attribute... attributes) {
-			super(attributes);
-			this.lets = new ArrayList<Pair<String,Expr>>(lets);
-			this.result = result;
-			this.condition = condition;
-		}	
-	}
-
 	public static class TypeDecl extends SyntacticElement.Impl implements SyntacticElement {
 		public final Type type;
 		
@@ -67,5 +41,16 @@ public class SpecFile {
 			super(attributes);
 			this.type = type;
 		}		
+	}
+	
+	public static class FunDecl extends SyntacticElement.Impl implements
+			Decl {
+		public final ArrayList<Code> codes;
+
+		public FunDecl(Type.Fun type, List<Code> codes,
+				Attribute... attributes) {
+			super(attributes);
+			this.codes = new ArrayList<Code>(codes);
+		}
 	}
 }

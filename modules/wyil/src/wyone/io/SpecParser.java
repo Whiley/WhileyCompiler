@@ -425,15 +425,6 @@ public class SpecParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 							index - 1));
 				}
-			} else if(lookahead instanceof Hash) {
-				match(Hash.class);
-				if(index < tokens.size() && tokens.get(index) instanceof Int) {
-					BigInteger x = match(Int.class).value;		
-					// FIXME: should check size here
-					lhs = new Expr.TermAccess(lhs, x.intValue(), sourceAttr(start,index - 1));
-				} else {
-					lhs = new Expr.TermAccess(lhs, -1, sourceAttr(start,index - 1));
-				}
 			} 
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
@@ -629,16 +620,16 @@ public class SpecParser {
 	private Type.Term parseTermType() {
 		skipWhiteSpace(false);
 		checkNotEof();
-		Identifier id = matchIdentifier();		
+		Identifier id = matchIdentifier();
 		Type data = Type.T_VOID;
-		if(index < tokens.size()) {
+		if (index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token instanceof LeftBrace || token instanceof LeftCurly
 					|| token instanceof LeftSquare) {
 				data = parseType();
 			}
 		}
-		return Type.T_TERM(id.text,data);
+		return Type.T_TERM(id.text, Type.T_REF(data));
 	}
 	
 	private Type.Compound parseCompoundType() {
