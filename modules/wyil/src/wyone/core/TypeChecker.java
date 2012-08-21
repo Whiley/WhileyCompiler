@@ -271,9 +271,25 @@ public class TypeChecker {
 			return Type.T_BOOL;
 		}
 		case APPEND: {
-			checkSubtype(Type.T_COMPOUNDANY, lhs_t, bop.lhs);
-			checkSubtype(Type.T_COMPOUNDANY, rhs_t, bop.rhs);
-			return Type.leastUpperBound(lhs_t, rhs_t);
+			if(lhs_t instanceof Type.Compound && rhs_t instanceof Type.Compound) {				
+				return Type.leastUpperBound(lhs_t, rhs_t);					
+			} else if(rhs_t instanceof Type.Compound) {
+				// right append
+				Type.Compound rhs_tc = (Type.Compound) rhs_t; 
+				return Type.T_COMPOUND(rhs_tc.kind,rhs_tc.unbounded,append(lhs_t,rhs_tc.elements));
+			} else {
+				// left append
+				Type.Compound lhs_tc = (Type.Compound) rhs_t; 
+				if(!lhs_tc.unbounded) {
+					return Type.T_COMPOUND(lhs_tc.kind,false,append(lhs_tc.elements,lhs_t));
+				} else {
+					int length = lhs_tc.elements.length;
+					Type[] nelements = Arrays.copyOf(lhs_tc.elements,length);
+					length--;
+					nelements[length] = Type.leastUpperBound(rhs_t, nelements[length]);
+					return Type.T_COMPOUND(lhs_tc.kind,true,nelements);
+				}
+			}			
 		}
 		case TYPEEQ: {
 			checkSubtype(lhs_t, rhs_t, bop.lhs);
@@ -351,6 +367,20 @@ public class TypeChecker {
 		return rt.element();
 	}
 
+	public Type[] append(Type head, Type[] tail) {
+		Type[] r = new Type[tail.length+1];
+		System.arraycopy(tail,0,r,1,tail.length);
+		r[0] = head;
+		return r;
+	}
+	
+	public Type[] append(Type[] head, Type tail) {
+		Type[] r = new Type[head.length+1];
+		System.arraycopy(head,0,r,0,head.length);
+		r[head.length] = tail;
+		return r;
+	}
+	
 	/**
 	 * Check whether t1 :> t2; that is, whether t2 is a subtype of t1.
 	 * 

@@ -8,6 +8,6 @@ term Or{Term...}
 term Equal[Term,Term]
 
 rewrite Or{Term x, Term y, Term... ys}:
-    => Or([Equal[x,y]] ++ ys), if x == y
+    => Or(x ++ ys), if x == y
 
 class Term as Bool | Var | Not | Or
