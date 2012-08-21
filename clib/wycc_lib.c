@@ -1180,7 +1180,14 @@ static wycc_compare_subset(wycc_obj* lhs, wycc_obj* rhs, int flg) {
     void** rch;
     int lcnt;
     int rcnt;
+    struct chunk_ptr lhs_chunk_ptr;
+    struct chunk_ptr *lptr = & lhs_chunk_ptr;
+    struct chunk_ptr rhs_chunk_ptr;
+    struct chunk_ptr *rptr = & rhs_chunk_ptr;
+    wycc_obj *litm;
+    wycc_obj *ritm;
     int dif;
+    int end;
 
     if (lhs->typ != Wy_Set) {
 	fprintf(stderr, "Help needed in wycc_compare_subset for type %d\n"
@@ -1197,9 +1204,53 @@ static wycc_compare_subset(wycc_obj* lhs, wycc_obj* rhs, int flg) {
     if (lcnt > rcnt) {
 	return 0;
     };
+    if (lcnt <= 0) {
+	if (rcnt <= 0) {
+	    return flg;
+	};
+	return 1;
+    };
     dif = 0;
     lch = &(lp[2]);
     rch = &(rp[2]);
+    lptr->cnt = lcnt;
+    rptr->cnt = rcnt;
+    lptr->p = lp;
+    rptr->p = rp;
+    lptr->chk = lch;
+    rptr->chk = rch;
+    lptr->at = 0;
+    rptr->at = 0;
+    lptr->flg = 0;	/* this is a set */
+    rptr->flg = 0;	/* this is a set */
+    wycc_chunk_ptr_inc(lptr);
+    litm = lptr->key;
+    while (1) {
+	wycc_chunk_ptr_inc(rptr);
+	ritm = rptr->key;
+	if (ritm == NULL) {
+	    if (litm == NULL) {
+		if (dif) {
+		    return 1;
+		};
+		return flg;
+	    };
+	    return 0;
+	};
+	if (litm == NULL) {
+	    return 1;
+	};
+	end = wycc_comp_gen(litm, ritm);
+	if (end == 0) {
+	    wycc_chunk_ptr_inc(lptr);
+	    litm = lptr->key;
+	    continue;
+	};
+	if (end > 0) {
+	    return 0;
+	};
+	dif++;
+    }
     fprintf(stderr, "Failure: wycc_compare_subset\n");
     exit(-3);
 }
@@ -1945,13 +1996,7 @@ static wycc_obj *wycc__toString_set_alt(wycc_obj *itm){
 	nxt = wycc__toString(nxt);
 	tmp = strlen(nxt->ptr);
 	if (siz <= (at+tmp+3)) {
-	    if (siz > 512) {
-		siz += 1024;
-		siz -= 1;
-		siz - (siz % 512);
-	    } else {
-		siz += siz/2;
-	    }
+	    siz += (chptr->cnt + 1) * 4;
 	    buf = (char*) realloc((void*)buf, siz);
 	};
 	if (at > 1) {
