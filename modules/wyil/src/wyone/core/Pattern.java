@@ -108,17 +108,15 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 						
 		public String toString() {
-			if(data instanceof Leaf) {
-				Leaf l = (Leaf) data;
-				if(l.type == Type.T_VOID) {
-					return name;
-				} else if(var != null){
-					return name + "(" + data + " " + var + ")";
-				} else {
-					return name + " " + data;
-				}
-			}
-			return name + data;
+			if(var != null) {
+				return name + "(" + data + " " + var + ")";
+			} else if(data instanceof Compound) {
+				return name + data;
+			} else if(!(data instanceof Leaf) || ((Leaf)data).type != Type.T_VOID) {
+				return name + "(" + data + " " + var + ")";
+			} else {
+				return name;
+			}			
 		}			
 	}
 		

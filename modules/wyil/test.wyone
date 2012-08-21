@@ -5,9 +5,8 @@ class Bool as True | False
 term Var(string)
 term Not(Term)
 term Or{Term...}
-term Equal[Term,Term]
 
-rewrite Or{Term x, Term y, Term... ys}:
-    => Or(x ++ ys), if x == y
+rewrite Or(Term x):
+    => x
 
 class Term as Bool | Var | Not | Or
