@@ -399,6 +399,21 @@ struct chunk_ptr {
     int flg;		/* 0==set, 1==map */
 };
 
+static void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ) {
+    void** p = itm->ptr;
+    void** chunk;
+    int cnt;
+
+    cnt = (int) p[1];
+    ptr->cnt = cnt;
+    ptr->p = p;
+    chunk = &(p[2]);
+    ptr->chk = chunk;
+    ptr->at = 0;
+    ptr->flg = typ;
+    return;
+}
+
 static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
     int brnch;
     int step;
@@ -489,6 +504,10 @@ static void bp(){
     static int i = 0;
     i++;
 }
+
+/*
+ * given a set and an item, insert the item in the set (increment ref cnt)
+ */
 void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     void** p = lst->ptr;
     void** chunk;
@@ -1175,9 +1194,7 @@ static wycc_compare_member_of(wycc_obj* lhs, wycc_obj* rhs) {
  */
 static wycc_compare_subset(wycc_obj* lhs, wycc_obj* rhs, int flg) {
     void** lp = lhs->ptr;
-    void** lch;
     void** rp = rhs->ptr;
-    void** rch;
     int lcnt;
     int rcnt;
     struct chunk_ptr lhs_chunk_ptr;
@@ -1211,18 +1228,8 @@ static wycc_compare_subset(wycc_obj* lhs, wycc_obj* rhs, int flg) {
 	return 1;
     };
     dif = 0;
-    lch = &(lp[2]);
-    rch = &(rp[2]);
-    lptr->cnt = lcnt;
-    rptr->cnt = rcnt;
-    lptr->p = lp;
-    rptr->p = rp;
-    lptr->chk = lch;
-    rptr->chk = rch;
-    lptr->at = 0;
-    rptr->at = 0;
-    lptr->flg = 0;	/* this is a set */
-    rptr->flg = 0;	/* this is a set */
+    wycc_chunk_ptr_fill(lptr, lhs, 0);	/* 0 == this is a set */
+    wycc_chunk_ptr_fill(rptr, rhs, 0);
     wycc_chunk_ptr_inc(lptr);
     litm = lptr->key;
     while (1) {
@@ -1343,6 +1350,53 @@ wycc_obj* wyil_set_diff(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the intersection between lhs and rhs
  */
 wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
+    wycc_obj* ans;
+    struct chunk_ptr lhs_chunk_ptr;
+    struct chunk_ptr *lptr = & lhs_chunk_ptr;
+    struct chunk_ptr rhs_chunk_ptr;
+    struct chunk_ptr *rptr = & rhs_chunk_ptr;
+    wycc_obj *litm;
+    wycc_obj *ritm;
+    int end;
+
+    if (lhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wycc_compare_subset for type %d\n"
+		, lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wycc_compare_subset for type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    ans = wycc_set_new(-1);
+    wycc_chunk_ptr_fill(lptr, lhs, 0);	/* 0 == this is a set */
+    wycc_chunk_ptr_fill(rptr, rhs, 0);
+    wycc_chunk_ptr_inc(lptr);
+    wycc_chunk_ptr_inc(rptr);
+    while (1) {
+	litm = lptr->key;
+	ritm = rptr->key;
+	if (litm == NULL) {
+	    return ans;
+	};
+	if (ritm == NULL) {
+	    return ans;
+	};
+	end = wycc_comp_gen(litm, ritm);
+	if (end == 0) {
+	    wycc_set_add(ans, litm);
+	    wycc_chunk_ptr_inc(lptr);
+	    wycc_chunk_ptr_inc(rptr);
+	    continue;
+	};
+	if (end < 0) {
+	    wycc_chunk_ptr_inc(lptr);
+	} else {
+	    wycc_chunk_ptr_inc(rptr);
+	};
+
+    };
     fprintf(stderr, "Failure: wyil_set_insect\n");
     exit(-3);
 }
@@ -1562,22 +1616,41 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     size_t siz, sizl, sizr;
     char* rslt;
     wycc_obj* ans;
+    char lbuf[4], rbuf[4];
+    char *lp, *rp;
+    int x;
 
     /* **** do we need to support Wy_Char ? */
-    if ((lhs->typ != Wy_String) && (lhs->typ != Wy_CString)) {
+    if (lhs->typ == Wy_Char) {
+	lp = lbuf;
+	x = (int) lhs->ptr;
+	*lp = (char) x;
+	lp[1] = '\0';
+	sizl = 1;
+    } else if ((lhs->typ != Wy_String) && (lhs->typ != Wy_CString)) {
 	fprintf(stderr, "Help needed in strappend for type %d\n", lhs->typ);
 	exit(-3);
+    } else {
+	lp = lhs->ptr;
+	sizl = strlen(lp); 
     };
-    if ((rhs->typ != Wy_String) && (rhs->typ != Wy_CString)) {
+    if (rhs->typ == Wy_Char) {
+	rp = rbuf;
+	x = (int) rhs->ptr;
+	*rp = (char) x;
+	rp[1] = '\0';
+	sizr = 1;
+    } else if ((rhs->typ != Wy_String) && (rhs->typ != Wy_CString)) {
 	fprintf(stderr, "Help needed in strappend for type %d\n", rhs->typ);
 	exit(-3);
+    } else {
+	rp = rhs->ptr;
+	sizr = strlen(rp);
     };
-    sizr = strlen(rhs->ptr);
-    sizl = strlen(lhs->ptr); 
     siz = sizl + sizr + 2;		/* pad for terminator and spare */
     rslt = (char*) malloc(siz);
-    strncpy(rslt, lhs->ptr, sizl);
-    strncpy(rslt+sizl, rhs->ptr, sizr+1);
+    strncpy(rslt, lp, sizl);
+    strncpy(rslt+sizl, rp, sizr+1);
     return wycc_box_str(rslt);
 }
 

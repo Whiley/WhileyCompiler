@@ -1335,6 +1335,7 @@ public class Wyil2CBuilder implements Builder {
 
 			Code.Return cod = (Code.Return) codIn;
 			
+			// **** need to deref all the other registers.
 			// **** may need to consider other return types
 			if (retType instanceof Type.Void) {
 				lin = "	return;";
@@ -1613,6 +1614,9 @@ public class Wyil2CBuilder implements Builder {
 				}
 			} else if (tyc.equals("char")) {
 				assn = "wycc_box_char";
+			} else if (tyc.equals("{void}")) {
+				rval = "-1";
+				assn = "wycc_set_new";
 			} else {
 				ans += "// HELP needed for value type '" + tyc + "'\n";
 				return ans;
