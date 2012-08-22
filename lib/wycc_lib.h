@@ -98,6 +98,7 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 wycc_obj* wyil_update_string(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
+wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs);
 
 /*
  * routines to implement whiley standard library

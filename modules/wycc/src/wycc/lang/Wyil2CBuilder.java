@@ -1098,11 +1098,22 @@ public class Wyil2CBuilder implements Builder {
 		}
 				
 		public String writeCodeForAll(Code codIn, String tag){
-			String ans = "";
+			//String ans = "";
+			int ign;
+			String tmp;
+			int opIdx;
+			int opBlk;
 			
-			ans += "// HELP needed for ForAll\n";
+			//ans += "// HELP needed for ForAll\n";
+			tmp = "// HELP needed for ForAll\n";
+			ign = bodyAddLine(tmp);
 			Code.ForAll cod = (Code.ForAll) codIn;
-			return ans;
+			opIdx = cod.indexOperand;
+			opBlk = cod.sourceOperand;
+			tmp = "//                 stepping over X" + opBlk + " with X" + opIdx + "\n";
+			ign = bodyAddLine(tmp);
+			//return ans;
+			return "";
 		}
 		
 		public String writeCodeSwitch(Code codIn, String tag){
@@ -1592,6 +1603,8 @@ public class Wyil2CBuilder implements Builder {
 				rtn = "wyil_shift_up";
 			} else if (opr == Code.BinArithKind.RIGHTSHIFT){
 				rtn = "wyil_shift_down";
+			} else if (opr == Code.BinArithKind.RANGE){
+				rtn = "wyil_range";
 			} else {
 				ans += "// HELP needed for binArithOp '" + opr + "'\n";
 				return ans;

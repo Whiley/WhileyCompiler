@@ -2137,6 +2137,42 @@ static wycc_obj* wyil_index_of_string(wycc_obj* str, wycc_obj* index){
     return wycc_box_char(rslt);
 }
 
+/*
+ * given two small integers (**** need to support wide ints)
+ * construct a list of with members in that range.
+ */
+wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs) {
+    wycc_obj* ans;
+    wycc_obj* itm;
+    int lo, hi, sz, idx;
+
+    if (lhs->typ != Wy_Int) {
+	fprintf(stderr, "HELP needed in wyil_range for start of type %d\n"
+		, lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Int) {
+	fprintf(stderr, "HELP needed in wyil_range for end of type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    lo = (int) lhs->ptr;
+    hi = (int) rhs->ptr;
+    sz = hi - lo;
+    if (sz < 0) {
+	lo = hi;
+	hi = -1;
+    } else {
+	hi = 1;
+    }
+    ans = wycc_list_new(sz);
+    for (idx=0 ; idx < sz; idx++) {
+	itm = wycc_box_int((idx * hi) + lo);
+	wycc_list_add(ans, itm);
+    }
+    return ans;
+}
+
 wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
     wycc_obj* ans;
 

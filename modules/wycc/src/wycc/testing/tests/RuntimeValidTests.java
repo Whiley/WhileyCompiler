@@ -206,7 +206,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAppend_Valid_1_RuntimeTest() { runTest("ListAppend_Valid_1"); }
  @Test public void ListAppend_Valid_2_RuntimeTest() { runTest("ListAppend_Valid_2"); }
  @Test public void ListAppend_Valid_3_RuntimeTest() { runTest("ListAppend_Valid_3"); }
- @Test public void ListAppend_Valid_4_RuntimeTest() { runTest("ListAppend_Valid_4"); }
+ @Ignore("Known Issue - reals") @Test public void ListAppend_Valid_4_RuntimeTest() { runTest("ListAppend_Valid_4"); }
  @Test public void ListAppend_Valid_5_RuntimeTest() { runTest("ListAppend_Valid_5"); }
  @Test public void ListAppend_Valid_6_RuntimeTest() { runTest("ListAppend_Valid_6"); }
  @Test public void ListAppend_Valid_7_RuntimeTest() { runTest("ListAppend_Valid_7"); }
@@ -231,6 +231,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Starting slow")@Test public void ListGenerator_Valid_3_RuntimeTest() { runTest("ListGenerator_Valid_3"); }
  @Test public void ListLength_Valid_1_RuntimeTest() { runTest("ListLength_Valid_1"); }
  @Test public void ListLength_Valid_2_RuntimeTest() { runTest("ListLength_Valid_2"); }
+ @Test public void ListRange_Valid_1_RuntimeTest() { runTest("ListRange_Valid_1"); }
  @Ignore("Starting slow")@Test public void ListSublist_Valid_1_RuntimeTest() { runTest("ListSublist_Valid_1"); }
  @Ignore("Starting slow")@Test public void ListSublist_Valid_2_RuntimeTest() { runTest("ListSublist_Valid_2"); }
  @Ignore("Starting slow")@Test public void ListSublist_Valid_3_RuntimeTest() { runTest("ListSublist_Valid_3"); }
