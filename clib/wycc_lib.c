@@ -1143,8 +1143,16 @@ int wycc_length_of_string(wycc_obj* itm) {
  * some operation need to change an object that is currently being shared
  */
 wycc_obj* wycc_cow_string(wycc_obj* str) {
-    fprintf(stderr, "Fail: wycc_cow_string not written yet.\n");
-    exit(-3);
+    char* p = str->ptr;
+    char *buf;
+    size_t siz;
+
+    siz = strlen(p) + 3;
+    buf = (char *) malloc(siz);
+    strcpy(buf, p);
+    return wycc_box_str(buf);
+    //fprintf(stderr, "Fail: wycc_cow_string not written yet.\n");
+    //exit(-3);
 
 }
 
@@ -1450,6 +1458,55 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 /*
+ * given a set and a list add each element of the list to the set
+ */
+static wycc_obj* wyil_set_add_list(wycc_obj* set, wycc_obj* lst){
+    void** p = lst->ptr;
+    wycc_obj *itm;
+    long at, tmp;
+
+    for (at= 0; at < (long) p[0]; at++) {
+	itm = (wycc_obj *) p[2+at];
+	wycc_set_add(set, itm);
+    };
+    return set;
+}
+
+/*
+ * like wyil_set_union but where one or both operands are lists
+ */
+static wycc_obj* wyil_set_union_list(wycc_obj* lhs, wycc_obj* rhs){
+    wycc_obj* ans;
+    struct chunk_ptr my_chunk_ptr;
+    struct chunk_ptr *cptr = & my_chunk_ptr;
+
+    ans = wycc_set_new(-1);
+    if (lhs->typ == Wy_Set) {
+	wycc_chunk_ptr_fill(cptr, lhs, 0);	/* 0 == this is a set */
+	wycc_chunk_ptr_inc(cptr);
+    } else if (rhs->typ == Wy_Set) {
+	wycc_chunk_ptr_fill(cptr, rhs, 0);
+	wycc_chunk_ptr_inc(cptr);
+    } else {
+	cptr->key = (wycc_obj *) NULL;
+    };
+    while (cptr->key != (wycc_obj *) NULL) {
+	wycc_set_add(ans, cptr->key);
+	wycc_chunk_ptr_inc(cptr);
+    };
+    if (lhs->typ == Wy_List) {
+	wyil_set_add_list(ans, lhs);
+    };
+    if (rhs->typ == Wy_List) {
+	wyil_set_add_list(ans, rhs);
+    };
+    return ans;
+
+    //fprintf(stderr, "Help needed in wyil_set_union_list \n");
+    //exit(-3);
+}
+
+/*
  * return a set that is the union of lhs and rhs
  */
 wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
@@ -1462,6 +1519,9 @@ wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
     wycc_obj *ritm;
     int end;
 
+    if ((lhs->typ == Wy_List) || (rhs->typ == Wy_List)) {
+	return wyil_set_union_list(lhs, rhs);
+    }
     if (lhs->typ != Wy_Set) {
 	fprintf(stderr, "Help needed in wyil_set_union for type %d\n"
 		, lhs->typ);
@@ -1505,8 +1565,6 @@ wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
 	};
 
     };
-    fprintf(stderr, "Failure: wyil_set_union\n");
-    exit(-3);
 }
 
 /*
@@ -1556,8 +1614,9 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
     char *txt;
     long lsiz, idx;
     int tmp;
+    wycc_obj *swp;
 
-    if (str->typ != Wy_String) {
+    if ((str->typ != Wy_String) && (str->typ != Wy_CString)) {
 	fprintf(stderr, "ERROR: string in wyil_update_string is type %d\n"
 		, str->typ);
 	exit(-3);
@@ -1573,6 +1632,16 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
 		, "ERROR: replacement value in wyil_update_string is type %d\n"
 		, rhs->typ);
 	exit(-3);
+    };
+    /* **** Need to cow_clone the string     */
+    if (str->typ == Wy_CString) {
+	swp = str;
+	str = wycc_cow_string(swp);
+	wycc_deref_box(swp);
+    } else if (str->cnt > 1) {
+	swp = str;
+	str = wycc_cow_string(swp);
+	wycc_deref_box(swp);
     };
     txt = str->ptr;
     lsiz = strlen(txt);
@@ -2297,7 +2366,7 @@ static char *wycc__toString_map(void **chunk, char* buf, size_t *isiz) {
 
 wycc_obj* wycc__toString(wycc_obj* itm) {
     size_t siz;
-    long tmp;
+    long tmp, tmpa, tmpb;
     long cnt, idx, at;
     char *buf;
     char *part;
@@ -2341,8 +2410,14 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	    nxt = wycc_list_get(itm, idx);
 	    nxt = wycc__toString(nxt);
 	    tmp = strlen(nxt->ptr);
-	    if (siz <= (at+tmp+3)) {
-		siz += (cnt - idx) * 4;
+	    tmpa = at + tmp + 3;
+	    if (siz <= tmpa) {
+		tmpb = siz + ((cnt - idx) * (tmp + 2));
+		if (tmpa < tmpb) {
+		    siz = tmpb;
+		}else {
+		    siz = tmpa;
+		};
 		buf = (char*) realloc((void*)buf, siz);
 	    };
 	    if (idx > 0) {

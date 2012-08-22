@@ -546,14 +546,8 @@ public class Wyil2CBuilder implements Builder {
 			ans += mungName(name) + "(" + argl + ") {\n";
 			ign = bodyAddLine(ans);
 			//System.err.println("milestone 5.3.6");
-			// ans += writeDecls();
-			//tmp = writeDecls();
 			writeDecls();
-			//ign = bodyAddLine(tmp);
-			//ans += body;
-			//ign = bodyAddLine(body);
 			ign = bodyAddBlock(body);
-			//ans += "}\n";
 			tmp = "}\n";
 			ign = bodyAddLine(tmp);
 
@@ -563,22 +557,29 @@ public class Wyil2CBuilder implements Builder {
 
 		// private String writeDecls() {
 		private void writeDecls() {
-			String ans = "";
+			//String ans = "";
+			String ans;
 			Integer k;
 			String typ;
+			Integer skip;
 			int ign;
 			//private Map<String, String> decl;
 
+			skip = params.size();
 			for (Map.Entry<Integer, String> e : declsT.entrySet()) {
 				k = e.getKey();
 				typ = e.getValue();
-				ans += indent;
+				if (k < skip) {
+					continue;
+				}
+				ans = indent;
 				ans += typ;
 				ans += " X" + k;
 				// ans += ";\n";
 				ans += " = (" + typ + ")0;\n";
+				ign = bodyAddLine(ans);
 			}
-			ign = bodyAddLine(ans);
+			//ign = bodyAddLine(ans);
 			// return ans;
 			return;
 		}
@@ -706,6 +707,7 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 
+		// produce comments and optionally C directives to note the source line numbers
 		public String writeSourceLineID(Block.Entry blkIn){
 			int ign;
 			String tmp;
@@ -890,12 +892,12 @@ public class Wyil2CBuilder implements Builder {
 		}
 		
 		public String writeCodeGoto(Code codIn, String tag){
-			String ans = "";
+			//String ans = "";
 			int ign;
 			String tmp;
 			String target;
 			
-			ans += "// HELP needed for Goto\n";
+			//ans += "// HELP needed for Goto\n";
 			Code.Goto cod = (Code.Goto) codIn;
 			target = cod.target;
 			tmp = "//             going to " + target + "\n";
@@ -903,7 +905,8 @@ public class Wyil2CBuilder implements Builder {
 			tmp = indent + "goto " + target + ";\n";
 			ign = this.mbodyAddLine(tmp);
 
-			return ans;
+			//return ans;
+			return "";
 		}
 		
 		public String writeCodeLoopEnd(Code codIn, String tag){
@@ -1153,27 +1156,37 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeUpdate(Code codIn, String tag){
 			int ign;
 			String tmp;
-			String ans = "";
+			//String ans = "";
 			int targ, rhs, ofs;
 			int cnt;
 			Type typ;
 			String lin;
 			
-			ans += "// HELP needed for Update\n";
+			//ans += "// HELP needed for Update\n";
+			tmp = "// HELP needed for Update\n";
+			ign = bodyAddLine(tmp);
 			Code.Update cod = (Code.Update) codIn;
 			targ = cod.target;
-			ans += "//             target is " + targ + "\n";
+			//ans += "//             target is " + targ + "\n";
+			tmp = "//             target is " + targ + "\n";
+			ign = bodyAddLine(tmp);
 			cnt = 0;
 			ofs = -1;
 			for (int itm : cod.operands) {
 				cnt += 1;
-				ans += "//             operand " + cnt + " is " + itm + "\n";
+				//ans += "//             operand " + cnt + " is " + itm + "\n";
+				tmp = "//             operand " + cnt + " is " + itm + "\n";
+				ign = bodyAddLine(tmp);
 				ofs = itm;
 			}
 			rhs = cod.operand;
-			ans += "//             rhs is " + rhs + "\n";
+			// ans += "//             rhs is " + rhs + "\n";
+			tmp = "//             rhs is " + rhs + "\n";
+			ign = bodyAddLine(tmp);
 			typ = cod.type;
-			ans += "//             type is " + typ + "\n";
+			//ans += "//             type is " + typ + "\n";
+			tmp = "//             type is " + typ + "\n";
+			ign = bodyAddLine(tmp);
 
 			if (typ instanceof Type.List) {
 				if (cnt != 1){
@@ -1183,10 +1196,18 @@ public class Wyil2CBuilder implements Builder {
 				// this.body += indent + lin + tag + "\n";
 				tmp = indent + lin + tag + "\n";
 				ign = this.mbodyAddLine(tmp);
+			} else if (typ instanceof Type.Strung) {
+				if (cnt != 1){
+					error += "ERROR bad argument count for string update (" + cnt + ")\n";
+				}
+				lin = "X" + targ + " = wyil_update_string(X" + targ + ", X" + ofs + ", X" + rhs + ");";
+				tmp = indent + lin + tag + "\n";
+				ign = this.mbodyAddLine(tmp);
 			} else {
 				error += "ERROR cannot yet do updates for type " + typ + "\n";
 			}
-			return ans;
+			//return ans;
+			return "";
 		}
 		
 		public String writeCodeVoid(Code codIn, String tag){
