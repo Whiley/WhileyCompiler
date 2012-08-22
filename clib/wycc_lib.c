@@ -1342,6 +1342,56 @@ void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
  * return a set that is the difference between lhs and rhs
  */
 wycc_obj* wyil_set_diff(wycc_obj* lhs, wycc_obj* rhs){
+    wycc_obj* ans;
+    struct chunk_ptr lhs_chunk_ptr;
+    struct chunk_ptr *lptr = & lhs_chunk_ptr;
+    struct chunk_ptr rhs_chunk_ptr;
+    struct chunk_ptr *rptr = & rhs_chunk_ptr;
+    wycc_obj *litm;
+    wycc_obj *ritm;
+    int end;
+
+    if (lhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_diff for type %d\n"
+		, lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_diff for type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    ans = wycc_set_new(-1);
+    wycc_chunk_ptr_fill(lptr, lhs, 0);	/* 0 == this is a set */
+    wycc_chunk_ptr_fill(rptr, rhs, 0);
+    wycc_chunk_ptr_inc(lptr);
+    wycc_chunk_ptr_inc(rptr);
+    while (1) {
+	litm = lptr->key;
+	ritm = rptr->key;
+	if ((litm == NULL) && (ritm == NULL)) {
+	    return ans;
+	};
+	if (litm == NULL) {
+	    end = 1;
+	} else if (ritm == NULL) {
+	    end = -1;
+	} else {
+	    end = wycc_comp_gen(litm, ritm);
+	};
+	if (end == 0) {
+	    wycc_chunk_ptr_inc(lptr);
+	    wycc_chunk_ptr_inc(rptr);
+	    continue;
+	};
+	if (end < 0) {
+	    wycc_set_add(ans, litm);
+	    wycc_chunk_ptr_inc(lptr);
+	} else {
+	    wycc_chunk_ptr_inc(rptr);
+	};
+
+    };
     fprintf(stderr, "Failure: wyil_set_diff\n");
     exit(-3);
 }
@@ -1360,12 +1410,12 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
     int end;
 
     if (lhs->typ != Wy_Set) {
-	fprintf(stderr, "Help needed in wycc_compare_subset for type %d\n"
+	fprintf(stderr, "Help needed in wyil_set_insect for type %d\n"
 		, lhs->typ);
 	exit(-3);
     };
     if (rhs->typ != Wy_Set) {
-	fprintf(stderr, "Help needed in wycc_compare_subset for type %d\n"
+	fprintf(stderr, "Help needed in wyil_set_insect for type %d\n"
 		, rhs->typ);
 	exit(-3);
     };
@@ -1397,14 +1447,64 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
 	};
 
     };
-    fprintf(stderr, "Failure: wyil_set_insect\n");
-    exit(-3);
 }
 
 /*
  * return a set that is the union of lhs and rhs
  */
 wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
+    wycc_obj* ans;
+    struct chunk_ptr lhs_chunk_ptr;
+    struct chunk_ptr *lptr = & lhs_chunk_ptr;
+    struct chunk_ptr rhs_chunk_ptr;
+    struct chunk_ptr *rptr = & rhs_chunk_ptr;
+    wycc_obj *litm;
+    wycc_obj *ritm;
+    int end;
+
+    if (lhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_union for type %d\n"
+		, lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_union for type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    ans = wycc_set_new(-1);
+    wycc_chunk_ptr_fill(lptr, lhs, 0);	/* 0 == this is a set */
+    wycc_chunk_ptr_fill(rptr, rhs, 0);
+    wycc_chunk_ptr_inc(lptr);
+    wycc_chunk_ptr_inc(rptr);
+    while (1) {
+	litm = lptr->key;
+	ritm = rptr->key;
+	if ((litm == NULL) && (ritm == NULL)) {
+	    return ans;
+	};
+	if (litm == NULL) {
+	    end = 1;
+	} else if (ritm == NULL) {
+	    end = -1;
+	} else {
+	    end = wycc_comp_gen(litm, ritm);
+	};
+	if (end == 0) {
+	    wycc_set_add(ans, litm);
+	    wycc_chunk_ptr_inc(lptr);
+	    wycc_chunk_ptr_inc(rptr);
+	    continue;
+	};
+	if (end < 0) {
+	    wycc_set_add(ans, litm);
+	    wycc_chunk_ptr_inc(lptr);
+	} else {
+	    wycc_set_add(ans, ritm);
+	    wycc_chunk_ptr_inc(rptr);
+	};
+
+    };
     fprintf(stderr, "Failure: wyil_set_union\n");
     exit(-3);
 }
@@ -2216,6 +2316,12 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	tmp = (int) itm->ptr;
 	buf = (char *) malloc(16);
 	sprintf(buf, "%-.1d", tmp);
+	return wycc_box_str(buf);
+    };
+    if (itm->typ == Wy_Char) {
+	tmp = (int) itm->ptr;
+	buf = (char *) malloc(6);
+	sprintf(buf, "'%-.1c'", (char) tmp);
 	return wycc_box_str(buf);
     };
     if (itm->typ == Wy_Bool) {
