@@ -221,4 +221,31 @@ public class Code extends SyntacticElement.Impl {
 		LISTGEN					
 	}
 	
+	public static final class Rewrite extends Code {
+		public final int target;		
+		public final int operand;
+
+		public Rewrite(int target, int operand, Attribute... attributes) {
+			super(attributes);
+			this.target = target;			
+			this.operand = operand;
+		}
+
+		public String toString() {
+			return "rewrite *%" + target + " => %" + operand;
+		}
+	}
+	
+	public static final class Return extends Code {		
+		public final int operand;
+
+		public Return(int operand, Attribute... attributes) {
+			super(attributes);			
+			this.operand = operand;
+		}
+
+		public String toString() {
+			return "return %" + operand;
+		}
+	}
 }

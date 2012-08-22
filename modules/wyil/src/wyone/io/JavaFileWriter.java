@@ -163,7 +163,12 @@ public class JavaFileWriter {
 			out.print("Type.T_ANY");
 		} else if(t instanceof Type.Void) {
 			out.print("Type.T_VOID");
-		} else if(t instanceof Type.Compound) {
+		} else if(t instanceof Type.Ref) {
+			Type.Ref ref = (Type.Ref) t;
+			out.print("Type.T_REF(");
+			writeTypeSchema(ref.element);
+			out.print(")");
+		} else if(t instanceof Type.Compound) {		
 			Type.Compound compound = (Type.Compound) t;
 			out.print("Type.T_COMPOUND(");
 			switch(compound.kind) {

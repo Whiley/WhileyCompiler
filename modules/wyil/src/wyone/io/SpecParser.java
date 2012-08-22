@@ -73,12 +73,13 @@ public class SpecParser {
 		matchKeyword("rewrite");
 		ArrayList<Code> codes = new ArrayList<Code>();
 		Environment environment = new Environment();
-		Type type = parsePatternTerm(environment,codes);
+		environment.allocate(null,"this");
+		Type type = parsePatternTerm(environment,codes);		
 		System.out.println(environment);
 		match(Colon.class);
 		matchEndLine();
 		parseRuleBlock(1,environment,codes);
-		return new FunDecl("rewrite", Type.T_FUN(Type.T_VOID, Type.T_REF(type)),
+		return new FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, type),
 				environment.asList(), codes, sourceAttr(start, index - 1));
 	}
 
@@ -99,7 +100,7 @@ public class SpecParser {
 		}
 	}
 
-	public Type.Term parsePatternTerm(Environment environment, ArrayList<Code> codes) {		
+	public Type.Ref parsePatternTerm(Environment environment, ArrayList<Code> codes) {		
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);		
 		Type type;
@@ -122,10 +123,10 @@ public class SpecParser {
 			type = Type.T_VOID;
 		}
 
-		return Type.T_TERM(name, type);
+		return Type.T_REF(Type.T_TERM(name, type));
 	}
 
-	public Type.Compound parsePatternCompound(Environment environment, ArrayList<Code> codes) {
+	public Type.Ref parsePatternCompound(Environment environment, ArrayList<Code> codes) {
 		int start = index;
 		Type.Compound.Kind kind;
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
@@ -174,7 +175,7 @@ public class SpecParser {
 			match(RightCurly.class);
 		}
 
-		return Type.T_COMPOUND(kind, unbound, parameters);
+		return Type.T_REF(Type.T_COMPOUND(kind, unbound, parameters));
 	}
 
 	public List<Code> parseRuleBlock(int indent, Environment environment,
@@ -206,9 +207,11 @@ public class SpecParser {
 	}
 
 	public List<Code> parseRule(Environment environment) {
+		int start = index;
 		match(Arrow.class);		
 		ArrayList<Code> codes = new ArrayList<Code>();
-		int ruleTarget = environment.allocate(Type.T_ANY);
+		
+		int ruleOperand = environment.allocate(Type.T_ANY);
 		
 		if (index < tokens.size() && tokens.get(index).text.equals("let")) {
 			matchKeyword("let");
@@ -229,16 +232,25 @@ public class SpecParser {
 			match(ElemOf.class);
 		}
 
-		parseAddSubExpression(ruleTarget, environment, codes);
+		parseAddSubExpression(ruleOperand, environment, codes);
+		
+		codes.add(new Code.Rewrite(environment.get("this"), ruleOperand,
+				sourceAttr(start, index - 1)));		
+		
+		int target = environment.allocate(Type.T_BOOL);
+		codes.add(new Code.Constant(target,true,sourceAttr(start, index - 1)));
+		codes.add(new Code.Return(target,sourceAttr(start, index - 1)));
 		
 		skipWhiteSpace(true);
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			match(Comma.class);
 			matchKeyword("if");
 			int ifTarget = environment.allocate(Type.T_BOOL);
-			parseCondition(ifTarget, environment, codes);
+			ArrayList<Code> ifCodes = new ArrayList<Code>();
+			parseCondition(ifTarget, environment, ifCodes);
 			// FIXME: need to do something with rule target!!
 			matchEndLine();
+			codes.addAll(0,ifCodes);
 		}
 
 		return codes;
