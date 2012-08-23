@@ -561,6 +561,7 @@ public class Wyil2CBuilder implements Builder {
 			String ans;
 			Integer k;
 			String typ;
+			String nam = "";
 			Integer skip;
 			int ign;
 			//private Map<String, String> decl;
@@ -569,14 +570,20 @@ public class Wyil2CBuilder implements Builder {
 			for (Map.Entry<Integer, String> e : declsT.entrySet()) {
 				k = e.getKey();
 				typ = e.getValue();
-				if (k < skip) {
+				if (k < 0) {
+					nam = " XN" + (-k);
+				} else if (k < skip) {
 					continue;
+				} else {
+					nam = " X" + k;
 				}
-				ans = indent;
-				ans += typ;
-				ans += " X" + k;
+				//ans = indent;
+				//ans += typ;
+				//ans += " X" + k;
+				//ans += nam;
 				// ans += ";\n";
-				ans += " = (" + typ + ")0;\n";
+				//ans += " = (" + typ + ")0;\n";
+				ans = indent + typ + nam + " = (" + typ + ")0;\n";
 				ign = bodyAddLine(ans);
 			}
 			//ign = bodyAddLine(ans);
@@ -1103,6 +1110,7 @@ public class Wyil2CBuilder implements Builder {
 			String tmp;
 			int opIdx;
 			int opBlk;
+			String target;
 			
 			//ans += "// HELP needed for ForAll\n";
 			tmp = "// HELP needed for ForAll\n";
@@ -1110,8 +1118,22 @@ public class Wyil2CBuilder implements Builder {
 			Code.ForAll cod = (Code.ForAll) codIn;
 			opIdx = cod.indexOperand;
 			opBlk = cod.sourceOperand;
+			target = cod.target;
 			tmp = "//                 stepping over X" + opBlk + " with X" + opIdx + "\n";
 			ign = bodyAddLine(tmp);
+			tmp = "//                 reaching" + target + "\n";
+			ign = bodyAddLine(tmp);
+			writeClearTarget(opIdx, tag);
+			this.addDecl(opIdx, "wycc_obj*");
+			writeClearTarget(-opIdx, tag);
+			this.addDecl(-opIdx, "wycc_obj*");
+			
+			tmp = indent + "XN" + opIdx + " = wycc_iter_new(X" + opBlk + ");\n";
+			ign = this.mbodyAddLine(tmp);
+			tmp = indent + "while (X" + opIdx + " = wycc_iter_next(XN" + opIdx + ")) {\n";
+			ign = this.mbodyAddLine(tmp);
+			this.mbodyPush(target);
+
 			//return ans;
 			return "";
 		}
@@ -1319,7 +1341,7 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeIndexOf(Code codIn, String tag){
 			int ign;
 			String tmp;
-			String ans = "";
+			// String ans = "";
 			int targ, lhs, rhs;
 			String lin;
 			
@@ -1329,13 +1351,14 @@ public class Wyil2CBuilder implements Builder {
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 			
-			ans += writeClearTarget(targ, tag);
+			//ans += writeClearTarget(targ, tag);
+			writeClearTarget(targ, tag);
 			this.addDecl(targ, "wycc_obj*");
 			lin = "X" + targ + " = wyil_index_of(X" + lhs + ", X" + rhs + ");" + tag;
 			//this.body += indent + lin + "\n";
 			tmp = indent + lin + "\n";
 			ign = this.mbodyAddLine(tmp);
-			return ans;
+			return "";
 		}
 		
 		public String writeCodeLengthOf(Code codIn, String tag){

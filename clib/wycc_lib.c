@@ -94,7 +94,10 @@ static char* wy_type_names[] = {
     /* a boolean value */
 #define Wy_Bool		11
     "bool",
-#define Wy_Type_Max	11
+    /* an iterator */
+#define Wy_Iter		12
+    "iterator",
+#define Wy_Type_Max	12
     (char *) NULL
 };
 
@@ -112,8 +115,8 @@ static char* wy_type_names[] = {
  * Wy_Int	ptr is long
  * Wy_WInt	TBD
  * Wy_List	ptr to block:
- *		member count
  *		alloc size
+ *		member count
  *		array of obj ptrs
  * Wy_Set	ptr to block:
  *		member type
@@ -141,7 +144,7 @@ static char* wy_type_names[] = {
  *				key
  *			} ...
  *			level_chunk link
- *
+ * Wy_Iter	ptr to block: w/ block == struct chunk_ptr
  *
  */
 
@@ -317,8 +320,8 @@ wycc_obj* wycc_list_new(long siz) {
     ans->typ = Wy_List;
     tmp = 2 * wycc_high_bit(siz+2);
     p = (void**) calloc(tmp, sizeof(void *));
-    p[0] = (void *) 0;
-    p[1] = (void *) tmp;
+    p[1] = (void *) 0;
+    p[0] = (void *) tmp;
     ans->ptr = (void *) p;
     ans->cnt = 1;
     return ans;
@@ -331,7 +334,7 @@ wycc_obj* wycc_list_get(wycc_obj* lst, long at) {
 	fprintf(stderr, "Help needed in wycc_list_get for type %d\n", lst->typ);
 	exit(-3);
     };
-    if (at >= (long) p[0]) {
+    if (at >= (long) p[1]) {
 	return NULL;
     };
     /* **** Does this need to inc the ref count */
@@ -347,9 +350,9 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
 	fprintf(stderr, "Help needed in wycc_list_add for type %d\n", lst->typ);
 	exit(-3);
     };
-    tmp = (long) p[1];
-    at = ((long) p[0]) +1;
-    p[0] = (void *) at;
+    tmp = (long) p[0];
+    at = ((long) p[1]) +1;
+    p[1] = (void *) at;
     if ((at+2) >= tmp) {
 	tmp *= 2;
         raw = tmp * sizeof(void *);
@@ -358,7 +361,7 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
 	    fprintf(stderr, "ERROR: realloc failed\n");
 	    exit(-4);
 	};
-	p[1] = (void *) tmp;
+	p[0] = (void *) tmp;
 	lst->ptr = p;
     };
     p[1 + at] = (void *) itm;
@@ -389,15 +392,41 @@ wycc_obj* wycc_set_new(int typ) {
 }
 
 struct chunk_ptr {
-    void **p;		/* the top level set or map */
+    void **p;		/* the top level set, map, or list */
     void **chk;		/* the current chunk */
     wycc_obj *key;	/* the current key object */
     wycc_obj *val;	/* the current value object if any*/
     long cnt;		/* the number of items remaining */
     long at;		/* position in the set */
-    int idx;		/* poisition in the chunk */
-    int flg;		/* 0==set, 1==map */
+    int idx;		/* position in the chunk */
+    int flg;		/* 0==set, 1==map, 2==list */
 };
+
+wycc_obj* wycc_iter_new(wycc_obj *itm) {
+    void** p = itm->ptr;
+    void** chunk;
+    wycc_obj* ans;
+    struct chunk_ptr *ptr;
+    int cnt;
+
+    if (itm->typ != Wy_List) {
+	fprintf(stderr, "Help needed in wycc_iter_new for type %d\n", itm->typ);
+	exit(-3);
+    };
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_Iter;
+    ptr = (struct chunk_ptr *) calloc(1, sizeof(struct chunk_ptr));
+    cnt = (int) p[1];
+    ptr->cnt = cnt;
+    ptr->p = p;
+    chunk = &(p[2]);
+    ptr->chk = chunk;
+    ptr->at = 0;
+    ptr->flg = 2;
+    ans->ptr = ptr;
+    return ans;
+
+}
 
 static void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ) {
     void** p = itm->ptr;
@@ -433,9 +462,20 @@ static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
     if (chunk->flg == 0) {
 	step = 1;	/* a key */
 	max = WYCC_SET_CHUNK;
-    } else {
+    } else if (chunk->flg == 1) {
 	step = 2;	/* a key and a value */
 	max = WYCC_MAP_CHUNK;
+    } else if (chunk->flg == 2) {
+	tmp = chunk->at++;
+	chunk->idx = tmp;
+	itm = (wycc_obj *) chunk->chk[tmp];
+	chunk->key = (wycc_obj *) NULL;
+	chunk->val = itm;
+	return;
+    } else {
+	fprintf(stderr, "HELP: bad chunk->typ chunk_ptr_inc (%d)\n"
+		, chunk->flg);
+	exit(-3);
     };
     if (chunk->at == 0) {
 	chunk->idx = 0;
@@ -500,9 +540,50 @@ static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
     return;
 }
 
+wycc_obj* wycc_iter_next(wycc_obj *itm) {
+    struct chunk_ptr *ptr;
+    wycc_obj* ans;
+
+    if (itm->typ != Wy_Iter) {
+	fprintf(stderr, "Help needed in wycc_iter_next for type %d\n"
+		, itm->typ);
+	exit(-3);
+    };
+    ptr = (struct chunk_ptr *) itm->ptr;
+    wycc_chunk_ptr_inc(ptr);
+    if (ptr->flg == 2) {
+	ans = ptr->val;
+    } else {
+	fprintf(stderr, "Help needed in wycc_iter_next for subtype %d\n"
+		, ptr->flg);
+	exit(-3);
+    };
+    if (ans != (wycc_obj *) NULL) {
+	ans->cnt++;
+    };
+    return ans;
+}
+
+/*
+ * a disgusting little kludge routine to call from the middle of a routine
+ * to use as a place for a breakpoint.
+ */
 static void bp(){
     static int i = 0;
     i++;
+}
+
+/*
+ * given a chunk and an item, insert the item (increment ref cnt)
+ */
+static void wycc_chunk_add(wycc_obj* lst, wycc_obj* key, wycc_obj* val) {
+}
+
+/*
+ * given a chunk_ptr and an item, find the spot for it
+ */
+static void wycc_chunk_ptr_find(struct chunk_ptr *chunk, wycc_obj* key) {
+    return;
 }
 
 /*
@@ -946,7 +1027,7 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	return;
     };
     if (typ == Wy_List) {
-	siz = (long) p[0];
+	siz = (long) p[1];
 	for (idx= 0; idx < siz; idx++) {
 	    itm = (wycc_obj*) p[2+ idx]; 
 	    wycc_deref_box(itm);
@@ -1039,14 +1120,6 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs){
     int lhv, rhv;
 
-    //if (lhs->typ != Wy_Int) {
-    //	fprintf(stderr, "Help needed in wycc_comp_int for type %d\n", lhs->typ);
-    //	exit(-3);
-    //};
-    //if (rhs->typ != Wy_Int) {
-    //	fprintf(stderr, "Help needed in wycc_comp_int for type %d\n", rhs->typ);
-    //	exit(-3);
-    //};
     lhv = (long) lhs->ptr;
     rhv = (long) rhs->ptr;
     if (lhv < rhv) {
@@ -1096,7 +1169,7 @@ int wycc_length_of_list(wycc_obj* itm) {
 	fprintf(stderr, "Help length_of_list called for type %d\n", itm->typ);
 	exit(-3);
     }
-    return (int) p[0];
+    return (int) p[1];
 }
 
 int wycc_length_of_set(wycc_obj* itm) {
@@ -1172,15 +1245,15 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
     };
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     ans->typ = Wy_List;
-    tmp = (long) p[1];
-    new = (void**) calloc(tmp, sizeof(void *));
     tmp = (long) p[0];
+    new = (void**) calloc(tmp, sizeof(void *));
+    tmp = (long) p[1];
     for (at= 0; at < tmp ; at++) {
 	nxt = (wycc_obj*) p[2+at];
 	nxt->cnt++;
 	new[2+at] = (void *) nxt;
     }
-    new[0] = (void *) tmp;
+    new[1] = (void *) tmp;
     ans->ptr = (void *) new;
     ans->cnt = 1;
     return ans;
@@ -1465,7 +1538,7 @@ static wycc_obj* wyil_set_add_list(wycc_obj* set, wycc_obj* lst){
     wycc_obj *itm;
     long at, tmp;
 
-    for (at= 0; at < (long) p[0]; at++) {
+    for (at= 0; at < (long) p[1]; at++) {
 	itm = (wycc_obj *) p[2+at];
 	wycc_set_add(set, itm);
     };
@@ -1501,9 +1574,6 @@ static wycc_obj* wyil_set_union_list(wycc_obj* lhs, wycc_obj* rhs){
 	wyil_set_add_list(ans, rhs);
     };
     return ans;
-
-    //fprintf(stderr, "Help needed in wyil_set_union_list \n");
-    //exit(-3);
 }
 
 /*
@@ -1633,7 +1703,6 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
 		, rhs->typ);
 	exit(-3);
     };
-    /* **** Need to cow_clone the string     */
     if (str->typ == Wy_CString) {
 	swp = str;
 	str = wycc_cow_string(swp);
@@ -2034,11 +2103,11 @@ static wycc_obj* wyil_index_of_list(wycc_obj* lhs, wycc_obj* rhs){
     };
     idx = (long) rhs->ptr;
     if (idx < 0) {
-	fprintf(stderr, "ERROR: IndexOf under range for list (%d)", idx);
+	fprintf(stderr, "ERROR: IndexOf under range for list (%d)\n", idx);
 	exit(-4);
     };
-    if (idx >= (long) p[0]) {
-	fprintf(stderr, "ERROR: IndexOf over range for list (%d)", idx);
+    if (idx >= (long) p[1]) {
+	fprintf(stderr, "ERROR: IndexOf over range for list (%d)\n", idx);
 	exit(-4);
     };
     ans = (wycc_obj*) p[2+idx];
@@ -2164,12 +2233,12 @@ wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs) {
 	hi = -1;
     } else {
 	hi = 1;
-    }
+    };
     ans = wycc_list_new(sz);
     for (idx=0 ; idx < sz; idx++) {
 	itm = wycc_box_int((idx * hi) + lo);
 	wycc_list_add(ans, itm);
-    }
+    };
     return ans;
 }
 
