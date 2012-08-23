@@ -1236,6 +1236,13 @@ public class Wyil2CBuilder implements Builder {
 				lin = "X" + targ + " = wyil_update_string(X" + targ + ", X" + ofs + ", X" + rhs + ");";
 				tmp = indent + lin + tag + "\n";
 				ign = this.mbodyAddLine(tmp);
+			} else if (typ instanceof Type.Map) {
+				if (cnt != 1){
+					error += "ERROR bad argument count for map update (" + cnt + ")\n";
+				}
+				lin = "wycc_map_add(X" + targ + ", X" + ofs + ", X" + rhs + ");";
+				tmp = indent + lin + tag + "\n";
+				ign = this.mbodyAddLine(tmp);
 			} else {
 				error += "ERROR cannot yet do updates for type " + typ + "\n";
 			}

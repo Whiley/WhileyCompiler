@@ -807,6 +807,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	p[1] = (void *) 1;
 	return;
     }
+    deep = 0;
     /*
      * sequencial search within the chunk
      */
@@ -855,7 +856,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    break;
 	};
     };
-    if (end < 0) {
+    if (end > 0) {
 	at += 2;
     };
     /* this is a definite add */
@@ -885,7 +886,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    chunk[0] = (void *) 1;
 	    chunk[1] = (void *) new;
 	    cp = 2;
-	    for (; idx < (WYCC_SET_CHUNK - 2); ) {
+	    for (; idx < (WYCC_MAP_CHUNK - 2); ) {
 		if (idx == at-1) {
 		    chunk[cp++] = itm;
 		    chunk[cp++] = key;
@@ -894,11 +895,11 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 		chunk[cp++] = chunk[idx++];
 	    };
 	    /* we have to special special case an insert after the end */
-	    if (idx == at-1) {
+	    if (idx == at) {
 		chunk[cp++] = itm;
 		chunk[cp++] = key;
 	    };
-	    for (; cp < (WYCC_SET_CHUNK - 1); cp++) {
+	    for (; cp < (WYCC_MAP_CHUNK - 1); cp++) {
 		chunk[cp++] = (void *) NULL;
 	    };
 	} else {
@@ -906,8 +907,8 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    cnt+= 1;	/* adjust for the branch counter */
 	    new[0] = 0;
 	    cp = 1;
-	    for (idx= cnt; idx < (WYCC_SET_CHUNK - 2); ) {
-		if (idx == at-1) {
+	    for (idx= cnt; idx < (WYCC_MAP_CHUNK - 2); ) {
+		if (idx == at) {
 		    new[cp++] = itm;
 		    new[cp++] = key;
 		};
@@ -917,7 +918,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 		chunk[idx++] = (void *) NULL;
 	    };
 	    /* we have to special special case an insert after the end */
-	    if (idx == at-1) {
+	    if (idx == at) {
 		new[cp++] = itm;
 		new[cp++] = key;
 	    };
@@ -927,6 +928,8 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    chunk[cnt++] = new[cp-1];	/* last value becomes branch pair */
 	    new[cp-2] = (void *) NULL;
 	    new[cp-1] = (void *) NULL;
+	    chunk[0]++;
+	    new[WYCC_MAP_CHUNK-1] = chunk;
 	};
 	/**** rebalance tree */
 	return;
