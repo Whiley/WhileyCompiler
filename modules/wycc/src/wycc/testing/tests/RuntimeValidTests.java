@@ -120,7 +120,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_2_RuntimeTest() { runTest("Dictionary_Valid_2"); }
  @Test public void Dictionary_Valid_3_RuntimeTest() { runTest("Dictionary_Valid_3"); }
  @Test public void Dictionary_Valid_4_RuntimeTest() { runTest("Dictionary_Valid_4"); }
- @Test public void Dictionary_Valid_5_RuntimeTest() { runTest("Dictionary_Valid_5"); }
+ @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_5_RuntimeTest() { runTest("Dictionary_Valid_5"); }
  @Test public void Dictionary_Valid_6_RuntimeTest() { runTest("Dictionary_Valid_6"); }
  @Test public void Dictionary_Valid_7_RuntimeTest() { runTest("Dictionary_Valid_7"); }
  @Test public void Dictionary_Valid_8_RuntimeTest() { runTest("Dictionary_Valid_8"); }

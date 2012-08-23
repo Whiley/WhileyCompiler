@@ -822,7 +822,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    wycc_deref_box(tst);
 	    return;
 	};
-	if (end < 0) {
+	if (end > 0) {
 	    continue;
 	};
 	/* the item in question goes before here; ergo down a chunk */
@@ -831,7 +831,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	deep++;
     };
     at *= 3;		/* 3 ::= sizeof branch value key triplet */
-    while (at < (WYCC_MAP_CHUNK -2)) {
+    while (at < (WYCC_MAP_CHUNK -4)) {
 	at += 2;
 	tst = (wycc_obj *) chunk[at];
 	if (tst == (wycc_obj *) NULL) {
@@ -856,15 +856,17 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    break;
 	};
     };
+    bp();
     if (end > 0) {
 	at += 2;
     };
+    /* at -= 1;	/* correct for to point at value */
     /* this is a definite add */
     p[1]++;
     itm->cnt++;
     key->cnt++;
 	/* Need to insert just before or just after the end of a full chunk */
-    tst = chunk[WYCC_MAP_CHUNK -3];
+    tst = chunk[WYCC_MAP_CHUNK -4];
     if (tst != (void *) NULL) {
 	/* need to insert in a full chunk (noo room for more) */
 	/* split chunk into 2, expanding down deeper */
@@ -895,7 +897,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 		chunk[cp++] = chunk[idx++];
 	    };
 	    /* we have to special special case an insert after the end */
-	    if (idx == at) {
+	    if (idx == at-1) {
 		chunk[cp++] = itm;
 		chunk[cp++] = key;
 	    };
@@ -907,8 +909,8 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    cnt+= 1;	/* adjust for the branch counter */
 	    new[0] = 0;
 	    cp = 1;
-	    for (idx= cnt; idx < (WYCC_MAP_CHUNK - 2); ) {
-		if (idx == at) {
+	    for (idx= cnt; idx < (WYCC_MAP_CHUNK - 3); ) {
+		if (idx == at-1) {
 		    new[cp++] = itm;
 		    new[cp++] = key;
 		};
@@ -918,7 +920,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 		chunk[idx++] = (void *) NULL;
 	    };
 	    /* we have to special special case an insert after the end */
-	    if (idx == at) {
+	    if (idx == at-1) {
 		new[cp++] = itm;
 		new[cp++] = key;
 	    };
@@ -2424,38 +2426,47 @@ static wycc_obj *wycc__toString_set_alt(wycc_obj *itm){
 }
 
 /*
- * given a chunk of a set, step thru every slot, digressing as needed
+ * given a chunk of a map, step thru every slot, digressing as needed
  */
-static char *wycc__toString_set(void **chunk, char* buf, size_t *isiz) {
-    int cnt;
-    int idx;
+static wycc_obj *wycc__toString_map_alt(wycc_obj *itm){
+    /* (void **chunk, char* buf, size_t *isiz) { */
+    struct chunk_ptr my_chunk_ptr;
+    struct chunk_ptr *chptr = & my_chunk_ptr;
     long tmp;
     wycc_obj* nxt;
+    wycc_obj* val;
+    size_t siz;
+    long cnt, idx, at;
+    char *buf;
+    char *part;
+    char *ptr;
 
-    size_t siz = *isiz;
-    long at = strlen(buf);
-
-    cnt = ((long) chunk[0]) * 2;
-    for (idx = 1; idx < WYCC_SET_CHUNK ; idx++) {
-	nxt = (wycc_obj*) chunk[idx];
+    cnt = wycc_length_of_map(itm);
+    chptr->cnt = cnt;
+    siz = 3 + (cnt * 10);	/* minimalist approx. */
+    buf = (char *) malloc(siz);
+    buf[0] = '\0';
+    strncat(buf, "{", siz);
+    at = 1;
+    void **p = itm->ptr;
+    chptr->p = p;
+    chptr->chk = &(p[2]);
+    chptr->at = 0;
+    chptr->flg = 1;	/* this is a set */
+    while (1) {
+	wycc_chunk_ptr_inc(chptr);
+	nxt = chptr->key;
+	val = chptr->val;
 	if (nxt == NULL) {
 	    break;
 	};
-	if ((idx < cnt) && ((idx % 2) != 0)) {
-	    buf = wycc__toString_set((void**) nxt, buf, isiz);
-	    at = strlen(buf);
-	    continue;
+	if (val == NULL) {
+	    break;
 	};
 	nxt = wycc__toString(nxt);
 	tmp = strlen(nxt->ptr);
-	if (siz <= (at+tmp+3)) {
-	    if (siz > 512) {
-		siz += 1024;
-		siz -= 1;
-		siz - (siz % 512);
-	    } else {
-		siz += siz/2;
-	    }
+	if (siz <= (at+tmp+5)) {
+	    siz += (chptr->cnt + 1) * 10;
 	    buf = (char*) realloc((void*)buf, siz);
 	};
 	if (at > 1) {
@@ -2465,72 +2476,21 @@ static char *wycc__toString_set(void **chunk, char* buf, size_t *isiz) {
 	strcpy((buf+at), nxt->ptr);
 	at += tmp;
 	wycc_deref_box(nxt);
-    }
-    *isiz = siz;
-    return buf;
-}
-
-/*
- * given a chunk of a map, step thru every slot, digressing as needed
- */
-static char *wycc__toString_map(void **chunk, char* buf, size_t *isiz) {
-    int cnt;
-    int idx;
-    int flip;
-    long tmpa, tmpb;
-    wycc_obj* nxt;
-    wycc_obj* savo;
-    char *sav;
-
-    size_t siz = *isiz;
-    long at = strlen(buf);
-
-    cnt = ((long) chunk[0]) * 3;
-    flip = 0;
-    for (idx = 1; idx < WYCC_SET_CHUNK ; idx++) {
-	nxt = (wycc_obj*) chunk[idx];
-	if (nxt == NULL) {
-	    break;
-	};
-	if ((idx < cnt) && ((idx % 3) == 1)) {
-	    buf = wycc__toString_map((void**) nxt, buf, isiz);
-	    at = strlen(buf);
-	    continue;
-	};
-	nxt = wycc__toString(nxt);
-	flip++;
-	if (1 == (flip%2)) {
-	    sav = nxt->ptr;
-	    savo = nxt;
-	    tmpb = strlen(sav);
-	    continue;
-	};
-	tmpa = strlen(nxt->ptr);
-	if (siz <= (at+tmpa+tmpb+4)) {
-	    if (siz > 512) {
-		siz += 1024;
-		siz -= 1;
-		siz - (siz % 512);
-	    } else {
-		siz += siz/2;
-	    }
-	    buf = (char*) realloc((void*)buf, siz);
-	};
-	if (at > 1) {
-	    strcpy((buf+at), ", ");
-	    at += 2;
-	};
-	strcpy((buf+at), nxt->ptr);
-	wycc_deref_box(nxt);
-	at += tmpa;
 	strcpy((buf+at), "=>");
 	at += 2;
-	strcpy((buf+at), sav);
-	at += tmpb;
-	wycc_deref_box(savo);	/* if we reref sooner the text vanishes */
-    }
-    *isiz = siz;
-    return buf;
+	nxt = wycc__toString(val);
+	tmp = strlen(nxt->ptr);
+	if (siz <= (at+tmp+3)) {
+	    siz += (chptr->cnt + 1) * 10;
+	    buf = (char*) realloc((void*)buf, siz);
+	};
+	strcpy((buf+at), nxt->ptr);
+	at += tmp;
+	wycc_deref_box(nxt);
+    };
+    at = strlen(buf);
+    strcpy((buf+at), "}");
+    return wycc_box_str(buf);
 }
 
 wycc_obj* wycc__toString(wycc_obj* itm) {
@@ -2604,18 +2564,7 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	return wycc__toString_set_alt(itm);
     };
     if (itm->typ == Wy_Map) {
-	// return wycc_box_cstr("Map");
-	cnt = wycc_length_of_map(itm);
-	siz = 3 + (cnt * 6);	/* minimalist approx. */
-	buf = (char *) malloc(siz);
-	buf[0] = '\0';
-	strncat(buf, "{", siz);
-	at = 1;
-	void **p = itm->ptr;
-	buf = wycc__toString_map((void**)&(p[2]), buf, &siz);
-	at = strlen(buf);
-	strcpy((buf+at), "}");
-	return wycc_box_str(buf);
+	return wycc__toString_map_alt(itm);
     };
     return wycc_box_cstr("Unknown");
 }

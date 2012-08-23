@@ -1371,7 +1371,7 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeLengthOf(Code codIn, String tag){
 			int ign;
 			String tmp;
-			String ans = "";
+			//String ans = "";
 			int targ, rhs;
 			String lin;
 			
@@ -1380,13 +1380,22 @@ public class Wyil2CBuilder implements Builder {
 			targ = cod.target;
 			rhs = cod.operand;
 
-			ans += writeClearTarget(targ, tag);
+			//ans += writeClearTarget(targ, tag);
+			writeClearTarget(-targ, tag);
+			this.addDecl(-targ, "wycc_obj*");
+			lin = "XN" + targ + " = wyil_length_of(X" + rhs + ");" + tag;
+			tmp = indent + lin + "\n";
+			ign = this.mbodyAddLine(tmp);
+			
+			writeClearTarget(targ, tag);
 			this.addDecl(targ, "wycc_obj*");
-			lin = "X" + targ + " = wyil_length_of(X" + rhs + ");" + tag;
+			//lin = "X" + targ + " = wyil_length_of(X" + rhs + ");" + tag;
+			lin = "X" + targ + " = XN" + targ + ";" + tag;
 			//this.body += indent + lin + "\n";
 			tmp = indent + lin + "\n";
 			ign = this.mbodyAddLine(tmp);
-			return ans;
+			//return ans;
+			return "";
 		}
 
 		public String writeCodeReturn(Code codIn, String tag){
@@ -1649,10 +1658,11 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeConstant(Code codIn, String tag){
 			int ign;
 			String tmp;
-			String ans = "";
+			//String ans = "";
 			int targ;
 			Constant val;
-			String tyc;
+			//String tyc;
+			Type typ;
 			String rval;
 			String assn = null;
 			
@@ -1662,31 +1672,46 @@ public class Wyil2CBuilder implements Builder {
 			Code.Const cod = (Const) codIn;
 			targ = cod.target;
 			val = cod.constant;
-			ans += "//             target " + targ + "\n";
-			tyc = val.type().toString();
+			//ans += "//             target " + targ + "\n";
+			tmp = "//             target " + targ + "\n";
+			ign = bodyAddLine(tmp);
+			//tyc = val.type().toString();
+			typ = val.type();
 			rval = val.toString();
-			if (tyc.equals("string")) {
-				assn = "wycc_box_cstr";								
-			} else if (tyc.equals("int")) {
+			//if (tyc.equals("string")) {
+			if (typ instanceof Type.Strung) {	
+				assn = "wycc_box_cstr";							
+			//} else if (tyc.equals("int")) {
+			} else if (typ instanceof Type.Int) {
 				assn = "wycc_box_int";
-			} else if (tyc.equals("bool")) {
+			//} else if (tyc.equals("bool")) {
+			} else if (typ instanceof Type.Bool) {
 				assn = "wycc_box_bool";
 				if (rval.equals("true")) {
 					rval = "1";
 				} else {
 					rval = "0";
 				}
-			} else if (tyc.equals("char")) {
+			//} else if (tyc.equals("char")) {
+			} else if (typ instanceof Type.Char) {
 				assn = "wycc_box_char";
-			} else if (tyc.equals("{void}")) {
+			//} else if (tyc.equals("{void}")) {
+			} else if (typ instanceof Type.Set) {
 				rval = "-1";
 				assn = "wycc_set_new";
+			} else if (typ instanceof Type.Map) {
+				rval = "-1";
+				assn = "wycc_map_new";
 			} else {
-				ans += "// HELP needed for value type '" + tyc + "'\n";
-				return ans;
+				//ans += "// HELP needed for value type '" + tyc + "'\n";
+				tmp = "// HELP needed for value type '" + typ + "'\n";
+				ign = bodyAddLine(tmp);
+				//return ans;
+				return "";
 			}
 			this.addDecl(targ, "wycc_obj*");
-			ans += writeClearTarget(targ, tag);
+			//ans += writeClearTarget(targ, tag);
+			writeClearTarget(targ, tag);
 			assn += "(" + rval + ")";
 			this.addDecl(targ, "wycc_obj*");
 			// lin = ctyp + " X" + targ + assn + ";" + tag;
@@ -1696,18 +1721,26 @@ public class Wyil2CBuilder implements Builder {
 				tmp = indent + "X" + targ + " = " + assn + ";" + tag + "\n";
 				ign = this.mbodyAddLine(tmp);
 			}
-			return ans;
+			//return ans;
+			return "";
 		}
 		
 		public String writeClearTarget(int target, String tag){
 			int ign;
 			String tmp;
+			String nam = "";
 			Integer tgt = target;
 			//String ans = "";
 
 			if (declsU.contains(tgt)) {
 				//this.body += indent + "wycc_deref_box(X" + target + ");" + tag + "\n";
-				tmp = indent + "wycc_deref_box(X" + target + ");" + tag + "\n";
+				if (target < 0) {
+					nam = "XN" + target;
+				} else {
+					nam = "X" + target;
+				}
+				//tmp = indent + "wycc_deref_box(X" + target + ");" + tag + "\n";
+				tmp = indent + "wycc_deref_box(" + nam + ");" + tag + "\n";
 				ign = this.mbodyAddLine(tmp);
 			}
 			declsU.add(tgt);
