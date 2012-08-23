@@ -1017,6 +1017,34 @@ static void wycc_dealloc_set_chunk(void** chunk) {
     return;
 }
 
+/*
+ * given a chunk of a set, dereference/deallocate all keys, and
+ * deallocate branch chunks, recursing as needed.
+ */
+static void wycc_dealloc_map_chunk(void** chunk) {
+    int cnt;
+    int idx;
+    wycc_obj* nxt;
+
+    cnt = ((long) chunk[0]) * 3;
+    for (idx = 1; idx < WYCC_MAP_CHUNK ; idx++) {
+	nxt = (wycc_obj*) chunk[idx];
+	chunk[idx] = NULL;
+	if (nxt == NULL) {
+	    break;
+	};
+	if ((idx < cnt) && ((idx % 3) == 1)) {
+	    wycc_dealloc_set_chunk((void**) nxt);
+	    free(nxt);
+	    continue;
+	};
+	wycc_deref_box(nxt);
+    }
+
+    // fprintf(stderr, "deallocating chunk of set\n");
+    return;
+}
+
 static void wycc_dealloc_typ(void* ptr, int typ){
     long siz, idx;
     void** p = (void**) ptr;
@@ -1042,8 +1070,10 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	return;
     }
     if (typ == Wy_Map) {
-	fprintf(stderr, "Fail: no support for map in dealloc\n");
-	exit(-3);
+	void** chunk = &(p[2]);
+	wycc_dealloc_map_chunk(chunk);
+	free(ptr);
+	return;
     }
     if (typ == Wy_Record) {
 	fprintf(stderr, "Fail: no support for record in dealloc\n");
