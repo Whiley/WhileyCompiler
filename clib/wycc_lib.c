@@ -1433,6 +1433,20 @@ int wycc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel){
     return 0;
 }
 
+static wycc_obj *wycc_set_from_list(wycc_obj *lst) {
+    void** p = lst->ptr;
+    wycc_obj *ans;
+    wycc_obj *itm;
+    long idx;
+
+    ans = wycc_set_new(-1);
+    for (idx= 0; idx < (long) p[1] ; idx++) {
+	itm = (wycc_obj *) p[2 + idx];
+	//itm->cnt++;
+	wycc_set_add(ans, itm);
+    }
+    return ans;
+}
 /*
  * ******************************
  * wyil opcode implementations
@@ -1522,7 +1536,18 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
     wycc_obj *litm;
     wycc_obj *ritm;
     int end;
+    int flg = 0;
 
+    if (lhs->typ == Wy_List) {
+	flg |= 1;
+	ans = wycc_set_from_list(lhs);
+	lhs = ans;
+    };
+    if (rhs->typ == Wy_List) {
+	flg |= 2;
+	ans = wycc_set_from_list(rhs);
+	rhs = ans;
+    };
     if (lhs->typ != Wy_Set) {
 	fprintf(stderr, "Help needed in wyil_set_insect for type %d\n"
 		, lhs->typ);
@@ -1542,10 +1567,10 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
 	litm = lptr->key;
 	ritm = rptr->key;
 	if (litm == NULL) {
-	    return ans;
+	    break;;
 	};
 	if (ritm == NULL) {
-	    return ans;
+	    break;
 	};
 	end = wycc_comp_gen(litm, ritm);
 	if (end == 0) {
@@ -1559,8 +1584,14 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
 	} else {
 	    wycc_chunk_ptr_inc(rptr);
 	};
-
     };
+    if (flg & 1) {
+	wycc_deref_box(lhs);
+    };
+    if (flg & 2) {
+	wycc_deref_box(rhs);
+    };
+    return ans;
 }
 
 /*
@@ -2570,20 +2601,7 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	return wycc_box_str(buf);
     };
     if (itm->typ == Wy_Set) {
-return wycc__toString_set_alt(itm);
-	//return wycc_box_cstr("Set");
-	cnt = wycc_length_of_set(itm);
-	siz = 3 + (cnt * 4);	/* minimalist approx. */
-	buf = (char *) malloc(siz);
-	buf[0] = '\0';
-	strncat(buf, "{", siz);
-	at = 1;
-	void **p = itm->ptr;
-	buf = wycc__toString_set((void**)&(p[2]), buf, &siz);
-	at = strlen(buf);
-	strcpy((buf+at), "}");
-	return wycc_box_str(buf);
-	// return wycc__toString_set_alt(itm);
+	return wycc__toString_set_alt(itm);
     };
     if (itm->typ == Wy_Map) {
 	// return wycc_box_cstr("Map");

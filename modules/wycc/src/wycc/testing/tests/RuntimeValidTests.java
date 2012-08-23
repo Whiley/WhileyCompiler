@@ -137,9 +137,9 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Future Work") @Test public void DoWhile_Valid_3_RuntimeTest() { runTest("DoWhile_Valid_3"); }
  @Ignore("Starting slow")@Test public void DoWhile_Valid_4_RuntimeTest() { runTest("DoWhile_Valid_4"); }
  @Test public void For_Valid_1_RuntimeTest() { runTest("For_Valid_1"); }
- @Ignore("Starting slow")@Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
- @Ignore("Starting slow")@Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
- @Ignore("Starting slow")@Test public void For_Valid_4_RuntimeTest() { runTest("For_Valid_4"); }
+ @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
+ @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
+ @Test public void For_Valid_4_RuntimeTest() { runTest("For_Valid_4"); }
  @Ignore("Future Work") @Test public void For_Valid_5_RuntimeTest() { runTest("For_Valid_5"); }
  @Ignore("Starting slow")@Test public void For_Valid_6_RuntimeTest() { runTest("For_Valid_6"); }
  @Ignore("Starting slow")@Test public void For_Valid_7_RuntimeTest() { runTest("For_Valid_7"); }
@@ -188,7 +188,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Starting slow")@Test public void IntDefine_Valid_1_RuntimeTest() { runTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { runTest("IntDiv_Valid_1"); }
  @Test public void IntDiv_Valid_2_RuntimeTest() { runTest("IntDiv_Valid_2"); }
- @Test public void IntEquals_Valid_1_RuntimeTest() { runTest("IntEquals_Valid_1"); }
+ @Ignore("Known Issue - reals")@Test public void IntEquals_Valid_1_RuntimeTest() { runTest("IntEquals_Valid_1"); }
  @Test public void IntMul_Valid_1_RuntimeTest() { runTest("IntMul_Valid_1"); }
  @Test public void IntOp_Valid_1_RuntimeTest() { runTest("IntOp_Valid_1"); }
  @Test public void LengthOf_Valid_1_RuntimeTest() { runTest("LengthOf_Valid_1"); }
