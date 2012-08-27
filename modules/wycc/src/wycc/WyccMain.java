@@ -44,7 +44,8 @@ import wycc.util.WyccBuildTask;
 public class WyccMain {
 	
 	public static final OptArg[] WYCC_OPTIONS = new OptArg[]{
-		new OptArg("debug", "Include debug information in generated C files.")
+		new OptArg("debug", "Include debug information in generated C files."),
+		new OptArg("no_numbers", "Suppress Whiley source line numbers in generated C files.")
 	};
 	
 	public static void main(String[] _args) {	
@@ -57,7 +58,7 @@ public class WyccMain {
 		}
 		
 		// FIXME: modify default options to include cdir
-		System.exit(new WycMain(new WyccBuildTask(), WycMain.DEFAULT_OPTIONS)
+		System.exit(new WycMain(new WyccBuildTask(values), WycMain.DEFAULT_OPTIONS)
 				.run(args.toArray(new String[args.size()])));
 	}
 }

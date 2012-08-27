@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import wybs.lang.Content;
 import wybs.lang.Logger;
@@ -16,6 +17,7 @@ import wycc.lang.*;
 
 public class WyccBuildTask extends wyc.util.WycBuildTask {
 	
+	private Map<String, Object> ccOptions;
 	public static class Registry extends wyc.util.WycBuildTask.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
@@ -72,6 +74,11 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
 	
 	public WyccBuildTask() {
 		super(new Registry());
+	}
+	
+	public WyccBuildTask(Map<String, Object> values) {
+		super(new Registry());
+		this.ccOptions = values;
 	}
 	
 	@Override
@@ -163,7 +170,7 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
 		// Now, add build rule for converting wyil files into class files using
 		// the Wyil2JavaBuilder.
 		
-		Wyil2CBuilder cbuilder = new Wyil2CBuilder();
+		Wyil2CBuilder cbuilder = new Wyil2CBuilder(this.ccOptions);
 
 		if (verbose) {
 			cbuilder.setLogger(new Logger.Default(System.err));

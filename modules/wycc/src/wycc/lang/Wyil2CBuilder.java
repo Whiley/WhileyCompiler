@@ -78,6 +78,19 @@ public class Wyil2CBuilder implements Builder {
 		this.lineNumFlag = true;
 	}
 	
+	public Wyil2CBuilder(Map<String, Object> values) {
+		this.debugFlag = false;
+		this.lineNumFlag = true;
+		for (String itm : values.keySet()) {
+			if (itm.equals("debug")) {
+				this.debugFlag = true;
+			} else if (itm.equals("no_numbers")) {
+				this.lineNumFlag = false;
+			}
+		}
+		return;
+	}
+
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
