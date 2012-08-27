@@ -1339,6 +1339,7 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
     ans->typ = Wy_List;
     tmp = (long) p[0];
     new = (void**) calloc(tmp, sizeof(void *));
+    new[0] = (void *) tmp;
     tmp = (long) p[1];
     for (at= 0; at < tmp ; at++) {
 	nxt = (wycc_obj*) p[2+at];
