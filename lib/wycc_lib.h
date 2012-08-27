@@ -108,6 +108,13 @@ wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wycc__toString(wycc_obj* itm);
 void wycc__println(wycc_obj* sys, wycc_obj* itm);
 
+
+#ifndef WY_OBJ_SAFE
+#define WY_OBJ_SANE(x)	wycc_obj_sane(x)
+#define WY_OBJ_BUMP(x)	wycc_obj_bump(x)
+#endif
+
+
 /*
 ;;; Local Variables: ***
 ;;; c-basic-offset: 4 ***

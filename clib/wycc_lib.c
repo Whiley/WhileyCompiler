@@ -207,6 +207,33 @@ int main(int argc, char** argv, char** envp) {
 /* -------------------------------
  *  internal routines
  * -------------------------------
+ */
+
+/*
+ *
+ */
+void wycc_obj_sane(wycc_obj *itm){
+    if (itm->cnt <=0) {
+	fprintf(stderr, "FAILURE: ref count not positive (%d)\n", itm->cnt);
+	exit(-3);
+    }
+    if (itm->typ <=0) {
+	fprintf(stderr, "FAILURE: type not set (%d)\n", itm->typ);
+	exit(-3);
+    }
+    if (itm->typ > Wy_Type_Max) {
+	fprintf(stderr, "FAILURE: type bound exceeded (%d)\n", itm->typ);
+	exit(-3);
+    }
+    return;
+}
+
+void wycc_obj_bump(wycc_obj *itm) {
+    WY_OBJ_SANE(itm);
+    itm->cnt++;
+    return;
+}
+/*
  *
  * given a long mask it down to its most significant bit
  */
@@ -301,7 +328,7 @@ wycc_obj* wycc_box_long(long x) {
 
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     ans->typ = Wy_Int;
-    ans->cnt = 0;
+    ans->cnt = 1;
     ans->ptr = (void*) x;	/* **** kludge */
     return ans;
 }
@@ -328,6 +355,7 @@ wycc_obj* wycc_list_new(long siz) {
 }
 
 wycc_obj* wycc_list_get(wycc_obj* lst, long at) {
+    WY_OBJ_SANE(lst);
     void** p = lst->ptr;
 
     if (lst->typ != Wy_List) {
@@ -342,6 +370,7 @@ wycc_obj* wycc_list_get(wycc_obj* lst, long at) {
 }
 
 void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
+    WY_OBJ_SANE(lst);
     void** p = lst->ptr;
     long at, tmp;
     size_t raw;
@@ -403,6 +432,7 @@ struct chunk_ptr {
 };
 
 wycc_obj* wycc_iter_new(wycc_obj *itm) {
+    WY_OBJ_SANE(itm);
     void** p = itm->ptr;
     void** chunk;
     wycc_obj* ans;
@@ -415,6 +445,7 @@ wycc_obj* wycc_iter_new(wycc_obj *itm) {
     };
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     ans->typ = Wy_Iter;
+    ans->cnt = 1;
     ptr = (struct chunk_ptr *) calloc(1, sizeof(struct chunk_ptr));
     cnt = (int) p[1];
     ptr->cnt = cnt;
@@ -429,6 +460,7 @@ wycc_obj* wycc_iter_new(wycc_obj *itm) {
 }
 
 static void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ) {
+    WY_OBJ_SANE(itm);
     void** p = itm->ptr;
     void** chunk;
     int cnt;
@@ -541,6 +573,7 @@ static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
 }
 
 wycc_obj* wycc_iter_next(wycc_obj *itm) {
+    WY_OBJ_SANE(itm);
     struct chunk_ptr *ptr;
     wycc_obj* ans;
 
@@ -590,6 +623,8 @@ static void wycc_chunk_ptr_find(struct chunk_ptr *chunk, wycc_obj* key) {
  * given a set and an item, insert the item in the set (increment ref cnt)
  */
 void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
+    WY_OBJ_SANE(lst);
+    WY_OBJ_SANE(itm);
     void** p = lst->ptr;
     void** chunk;
     void** new;
@@ -769,6 +804,9 @@ wycc_obj* wycc_map_new(int typ) {
 }
 
 void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
+    WY_OBJ_SANE(lst);
+    WY_OBJ_SANE(key);
+    WY_OBJ_SANE(itm);
     void** p = lst->ptr;
     void** chunk;
     void** new;
@@ -972,6 +1010,10 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     if (itm->cnt-- > 1) {
 	return itm;
     };
+    if (itm->cnt < 0) {
+	fprintf(stderr, "FAILURE: ref count went negative (%d)\n", itm->cnt);
+	exit(-3);
+    }
     ptr = itm->ptr;
     typ = itm->typ;
     if (wycc_debug_flag) {
@@ -1098,6 +1140,8 @@ static void wycc_dealloc_typ(void* ptr, int typ){
  */
 
 static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     int lt = lhs->typ;
     int rt = rhs->typ;
 
@@ -1130,6 +1174,8 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     char *lp, *rp;
     int ans;
 
@@ -1153,6 +1199,8 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     int lhv, rhv;
 
     lhv = (long) lhs->ptr;
@@ -1166,6 +1214,8 @@ static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
 	fprintf(stderr, "Help needed in wycc_comp_wint\n");
 	exit(-3);
 }
@@ -1190,6 +1240,7 @@ static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs){
  * (how many longs it takes to represent it)
  */
 static int wycc_wint_size(wycc_obj *itm) {
+    WY_OBJ_SANE(itm);
     if (itm->typ == Wy_Int) {
 	return (size_t) 1;
     };
@@ -1198,6 +1249,7 @@ static int wycc_wint_size(wycc_obj *itm) {
 }
 
 int wycc_length_of_list(wycc_obj* itm) {
+    WY_OBJ_SANE(itm);
     void** p = itm->ptr;
 
     if (itm->typ != Wy_List) {
@@ -1208,6 +1260,7 @@ int wycc_length_of_list(wycc_obj* itm) {
 }
 
 int wycc_length_of_set(wycc_obj* itm) {
+    WY_OBJ_SANE(itm);
     void** p = itm->ptr;
     int rslt;
 
@@ -1222,6 +1275,7 @@ int wycc_length_of_set(wycc_obj* itm) {
 }
 
 int wycc_length_of_map(wycc_obj* itm) {
+    WY_OBJ_SANE(itm);
     void** p = itm->ptr;
     int rslt;
 
@@ -1236,6 +1290,7 @@ int wycc_length_of_map(wycc_obj* itm) {
 }
 
 int wycc_length_of_string(wycc_obj* itm) {
+    WY_OBJ_SANE(itm);
     char* p = (char *) itm->ptr;
     int rslt;
 
@@ -1251,6 +1306,7 @@ int wycc_length_of_string(wycc_obj* itm) {
  * some operation need to change an object that is currently being shared
  */
 wycc_obj* wycc_cow_string(wycc_obj* str) {
+    WY_OBJ_SANE(str);
     char* p = str->ptr;
     char *buf;
     size_t siz;
@@ -1268,6 +1324,7 @@ wycc_obj* wycc_cow_string(wycc_obj* str) {
  * some operation need to change an object that is currently being shared
  */
 wycc_obj* wycc_cow_list(wycc_obj* lst) {
+    WY_OBJ_SANE(lst);
     wycc_obj* ans;
     wycc_obj* nxt;
     void** p = lst->ptr;
@@ -1299,6 +1356,8 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
  * else return 0
  */
 static wycc_compare_member_of(wycc_obj* lhs, wycc_obj* rhs) {
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     fprintf(stderr, "Failure: wcc_compare_member_of\n");
     exit(-3);
 }
@@ -1309,6 +1368,8 @@ static wycc_compare_member_of(wycc_obj* lhs, wycc_obj* rhs) {
  * else return 0
  */
 static wycc_compare_subset(wycc_obj* lhs, wycc_obj* rhs, int flg) {
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     void** lp = lhs->ptr;
     void** rp = rhs->ptr;
     int lcnt;
@@ -1383,6 +1444,8 @@ static wycc_compare_subset(wycc_obj* lhs, wycc_obj* rhs, int flg) {
  * else return 0
  */
 int wycc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     int end;
 
     if ((rel < 0) || (rel > Wyil_Relation_Se)) {
@@ -1436,6 +1499,7 @@ int wycc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel){
 }
 
 static wycc_obj *wycc_set_from_list(wycc_obj *lst) {
+    WY_OBJ_SANE(lst);
     void** p = lst->ptr;
     wycc_obj *ans;
     wycc_obj *itm;
@@ -1460,6 +1524,8 @@ static wycc_obj *wycc_set_from_list(wycc_obj *lst) {
  * returnn if the relationship holds, else print the text and exit.
  */
 void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
 
     if (wycc_compare(lhs, rhs, rel)) {
 	return;
@@ -1472,6 +1538,8 @@ void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
  * return a set that is the difference between lhs and rhs
  */
 wycc_obj* wyil_set_diff(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     wycc_obj* ans;
     struct chunk_ptr lhs_chunk_ptr;
     struct chunk_ptr *lptr = & lhs_chunk_ptr;
@@ -1530,6 +1598,8 @@ wycc_obj* wyil_set_diff(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the intersection between lhs and rhs
  */
 wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     wycc_obj* ans;
     struct chunk_ptr lhs_chunk_ptr;
     struct chunk_ptr *lptr = & lhs_chunk_ptr;
@@ -1600,6 +1670,8 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
  * given a set and a list add each element of the list to the set
  */
 static wycc_obj* wyil_set_add_list(wycc_obj* set, wycc_obj* lst){
+    WY_OBJ_SANE(set);
+    WY_OBJ_SANE(lst);
     void** p = lst->ptr;
     wycc_obj *itm;
     long at, tmp;
@@ -1615,6 +1687,8 @@ static wycc_obj* wyil_set_add_list(wycc_obj* set, wycc_obj* lst){
  * like wyil_set_union but where one or both operands are lists
  */
 static wycc_obj* wyil_set_union_list(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     wycc_obj* ans;
     struct chunk_ptr my_chunk_ptr;
     struct chunk_ptr *cptr = & my_chunk_ptr;
@@ -1646,6 +1720,8 @@ static wycc_obj* wyil_set_union_list(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the union of lhs and rhs
  */
 wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     wycc_obj* ans;
     struct chunk_ptr lhs_chunk_ptr;
     struct chunk_ptr *lptr = & lhs_chunk_ptr;
@@ -1707,6 +1783,8 @@ wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the union of lhs and rhs
  */
 wycc_obj* wyil_set_union_left(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     fprintf(stderr, "Failure: wyil_set_union_left\n");
     exit(-3);
 }
@@ -1715,6 +1793,8 @@ wycc_obj* wyil_set_union_left(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the union of lhs and rhs
  */
 wycc_obj* wyil_set_union_right(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     fprintf(stderr, "Failure: wyil_set_union_right\n");
     exit(-3);
 }
@@ -1723,6 +1803,8 @@ wycc_obj* wyil_set_union_right(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the intersection between lhs and rhs
  */
 wycc_obj* wyil_set_insect_left(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     fprintf(stderr, "Failure: wyil_set_insect_left\n");
     exit(-3);
 }
@@ -1731,6 +1813,8 @@ wycc_obj* wyil_set_insect_left(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the intersection between lhs and rhs
  */
 wycc_obj* wyil_set_insect_right(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     fprintf(stderr, "Failure: wyil_set_insect_right\n");
     exit(-3);
 }
@@ -1739,6 +1823,8 @@ wycc_obj* wyil_set_insect_right(wycc_obj* lhs, wycc_obj* rhs){
  * return a set that is the difference between the lhs and rhs
  */
 wycc_obj* wyil_set_diff_left(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     fprintf(stderr, "Failure: wyil_set_diff_left\n");
     exit(-3);
 }
@@ -1747,6 +1833,9 @@ wycc_obj* wyil_set_diff_left(wycc_obj* lhs, wycc_obj* rhs){
  * update an element of a string
  */
 wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
+    WY_OBJ_SANE(str);
+    WY_OBJ_SANE(osv);
+    WY_OBJ_SANE(rhs);
     char *txt;
     long lsiz, idx;
     int tmp;
@@ -1798,6 +1887,9 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
  * update an element of a list
  */
 wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs){
+    WY_OBJ_SANE(lst);
+    WY_OBJ_SANE(osv);
+    WY_OBJ_SANE(rhs);
     void** p = lst->ptr;
     wycc_obj* itm;
     long lsiz, idx;
@@ -1834,6 +1926,8 @@ wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs){
  * create a list that combines two lists
  */
 wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     wycc_obj* ans;
     wycc_obj* itm;
     long lsiz, rsiz, idx, siz;
@@ -1868,6 +1962,7 @@ wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs){
  * given a wycc obj return an object that represents the length
  */
 wycc_obj* wyil_length_of(wycc_obj* itm) {
+    WY_OBJ_SANE(itm);
     long typ = itm->typ;
     int rslt = 0;
 
@@ -1901,6 +1996,7 @@ void wyil_debug_str(char* mesg) {
  * debug using a wycc_obj
  */
 void wyil_debug_obj(wycc_obj* ptr1) {
+    WY_OBJ_SANE(ptr1);
     char* mesg;
     /* if (ptr1->typ == 1) { */
     if (ptr1->typ == Wy_String) {
@@ -1917,6 +2013,8 @@ void wyil_debug_obj(wycc_obj* ptr1) {
  * given two strings, return their concatination
  */
 wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     size_t siz, sizl, sizr;
     char* rslt;
     wycc_obj* ans;
@@ -1959,6 +2057,8 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
 
@@ -1974,6 +2074,8 @@ wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
 
@@ -1989,6 +2091,8 @@ wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
     /* wycc_obj* ans;*/
@@ -2005,6 +2109,8 @@ wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
     /* wycc_obj* ans;*/
@@ -2021,6 +2127,8 @@ wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
     /* wycc_obj* ans;*/
@@ -2037,6 +2145,8 @@ wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
 
@@ -2052,6 +2162,8 @@ wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_mod(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
 
@@ -2080,6 +2192,8 @@ static int wycc_ilog2(long itm){
 }
 
 wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc, ac;
 
@@ -2102,6 +2216,8 @@ wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_shift_up(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc;
 
@@ -2133,6 +2249,8 @@ wycc_obj* wyil_shift_up(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     long rslt;
     int lc, rc;
 
@@ -2158,6 +2276,8 @@ wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 static wycc_obj* wyil_index_of_list(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     void** p = lhs->ptr;
     wycc_obj* ans;
     long idx;
@@ -2182,6 +2302,8 @@ static wycc_obj* wyil_index_of_list(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 static wycc_obj* wyil_index_of_map(wycc_obj* map, wycc_obj* key){
+    WY_OBJ_SANE(map);
+    WY_OBJ_SANE(key);
     void** p = map->ptr;
     void** chunk;
     wycc_obj* ans;
@@ -2249,6 +2371,8 @@ static wycc_obj* wyil_index_of_map(wycc_obj* map, wycc_obj* key){
 }
 
 static wycc_obj* wyil_index_of_string(wycc_obj* str, wycc_obj* index){
+    WY_OBJ_SANE(str);
+    WY_OBJ_SANE(index);
     char *txt;
     long idx;
     char rslt;
@@ -2277,6 +2401,8 @@ static wycc_obj* wyil_index_of_string(wycc_obj* str, wycc_obj* index){
  * construct a list of with members in that range.
  */
 wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs) {
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     wycc_obj* ans;
     wycc_obj* itm;
     int lo, hi, sz, idx;
@@ -2309,6 +2435,8 @@ wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs) {
 }
 
 wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
     wycc_obj* ans;
 
     if (lhs->typ == Wy_List) {
@@ -2340,6 +2468,8 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
  * given a System object, write a line to the file referred to by out
  */
 void wycc__println(wycc_obj* sys, wycc_obj* itm) {
+    /* WY_OBJ_SANE(sys); */
+    WY_OBJ_SANE(itm);
     wycc_obj* alt;
     int tmp;
 
@@ -2377,6 +2507,7 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
  * given a chunk of a set, step thru every slot, digressing as needed
  */
 static wycc_obj *wycc__toString_set_alt(wycc_obj *itm){
+    WY_OBJ_SANE(itm);
     /* (void **chunk, char* buf, size_t *isiz) { */
     struct chunk_ptr my_chunk_ptr;
     struct chunk_ptr *chptr = & my_chunk_ptr;
@@ -2429,6 +2560,7 @@ static wycc_obj *wycc__toString_set_alt(wycc_obj *itm){
  * given a chunk of a map, step thru every slot, digressing as needed
  */
 static wycc_obj *wycc__toString_map_alt(wycc_obj *itm){
+    WY_OBJ_SANE(itm);
     /* (void **chunk, char* buf, size_t *isiz) { */
     struct chunk_ptr my_chunk_ptr;
     struct chunk_ptr *chptr = & my_chunk_ptr;
@@ -2494,6 +2626,7 @@ static wycc_obj *wycc__toString_map_alt(wycc_obj *itm){
 }
 
 wycc_obj* wycc__toString(wycc_obj* itm) {
+    WY_OBJ_SANE(itm);
     size_t siz;
     long tmp, tmpa, tmpb;
     long cnt, idx, at;

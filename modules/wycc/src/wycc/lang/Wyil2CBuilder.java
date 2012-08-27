@@ -210,6 +210,11 @@ public class Wyil2CBuilder implements Builder {
 
 		ign = bodyAddLine(this.optIncludeFile);
 		for (Method met : mets) {
+			met.writeProto();
+		}
+		tmp = "// ===========================================";
+		ign = bodyAddLine(tmp);	
+		for (Method met : mets) {
 			met.write();
 		}
 		//System.err.println("milestone 6.");
@@ -348,6 +353,7 @@ public class Wyil2CBuilder implements Builder {
 		private List<Attribute> atts;
 		private ArrayList<Type> params;
 		private Type retType;
+		private String proto = null;
 
 		public Method(MethodDeclaration metDe, int idx) {
 			String lin;
@@ -467,7 +473,29 @@ public class Wyil2CBuilder implements Builder {
 			this.body = blk;
 			return true;
 		}
-
+		
+		private boolean endsWithLabel(){
+			int idx;
+			String tmp;
+			boolean ans;
+			
+			idx = this.body.size();
+			while (true) {
+				idx -= 1;
+				if (idx < 0) {
+					return false;
+				}
+				tmp = this.body.get(idx);
+				if (! tmp.startsWith("#")) {
+					break;
+				}
+			}
+			//System.err.println("Debug last line looks like " + tmp);
+			ans = tmp.endsWith(":\n");
+			//System.err.println("Debug last line yields" + ans);
+			return ans;
+		}
+		
 		public String mbodyRender(){
 			String ans = "";
 
@@ -504,14 +532,49 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 
+		private void makeProto() {
+			String ans = "";
+			String sep = "";
+			String argl = "";
+			int cnt;
+			
+			if (proto != null) {
+				return;
+			}
+			// **** need to consider other possible types
+			if (retType instanceof Type.Void) {
+				ans += "void ";
+			} else  {
+				ans += "wycc_obj* ";
+			}
+			cnt = 0;
+			for (Type tp : params){
+				argl += sep + "wycc_obj* X" + cnt ;
+				cnt += 1;
+				sep = ", ";
+			}
+			ans += mungName(name) + "(" + argl + ")";
+			proto = ans;
+			return;
+		}
+		
+		public void writeProto() {
+			String tmp;
+			int ign;
+			if (isNative) {
+				return;
+			}
+			makeProto();
+			tmp = proto + ";\n";
+			ign = bodyAddLine(tmp);
+
+		}
 		//
 		public void write() {
 			String tmp;
 			int ign;
-			String ans = "";
+			//String ans = "";
 			int cnt;
-			String sep;
-			String argl = "";
 			
 			//System.err.println("milestone 5.3.1");
 			cnt = 0;
@@ -529,22 +592,11 @@ public class Wyil2CBuilder implements Builder {
 			if (isNative) {
 				return;
 			}
-			// **** need to consider other possible types
-			if (retType instanceof Type.Void) {
-				ans += "void ";
-			} else  {
-				ans += "wycc_obj* ";
-			}
-			sep = "";
-			cnt = 0;
-			//System.err.println("milestone 5.3.4");
-			for (Type tp : params){
-				argl += sep + "wycc_obj* X" + cnt ;
-				cnt += 1;
-				sep = ", ";
-			}
-			ans += mungName(name) + "(" + argl + ") {\n";
-			ign = bodyAddLine(ans);
+			makeProto();
+			//ans += mungName(name) + "(" + argl + ") {\n";
+			tmp = proto + " {\n";
+			//ign = bodyAddLine(ans);
+			ign = bodyAddLine(tmp);
 			//System.err.println("milestone 5.3.6");
 			writeDecls();
 			ign = bodyAddBlock(body);
@@ -931,6 +983,10 @@ public class Wyil2CBuilder implements Builder {
 			tmp = "//             called " + nam + "\n";
 			ign = bodyAddLine(tmp);
 			if (this.mbodyPop(nam)) {
+				if (this.endsWithLabel()) {
+					tmp = indent + indent + ";\n";
+					ign = this.mbodyAddLine(tmp);
+				}
 				tmp = indent + "};\n";
 				ign = this.mbodyAddLine(tmp);
 			}
@@ -1556,7 +1612,8 @@ public class Wyil2CBuilder implements Builder {
 			//this.body += indent + lin + "\n";
 			tmp = indent + lin + "\n";
 			ign = this.mbodyAddLine(tmp);
-			lin = "X" + rhs + "->cnt++;" + tag;
+			//lin = "X" + rhs + "->cnt++;" + tag;
+			lin = "WY_OBJ_BUMP(X" + rhs + ");" + tag;
 			//this.body += indent + lin + "\n";
 			tmp = indent + lin + "\n";
 			ign = this.mbodyAddLine(tmp);
@@ -1724,7 +1781,9 @@ public class Wyil2CBuilder implements Builder {
 			//return ans;
 			return "";
 		}
-		
+
+		// A register is about to be clobbered; dereference any object.
+		// negative register numbers are our own constructs, very local, not ref counted.
 		public String writeClearTarget(int target, String tag){
 			int ign;
 			String tmp;
@@ -1735,13 +1794,16 @@ public class Wyil2CBuilder implements Builder {
 			if (declsU.contains(tgt)) {
 				//this.body += indent + "wycc_deref_box(X" + target + ");" + tag + "\n";
 				if (target < 0) {
-					nam = "XN" + target;
+					nam = "XN" + (-target);
 				} else {
 					nam = "X" + target;
+					tmp = indent + nam + " = wycc_deref_box(" + nam + ");" + tag + "\n";
+					ign = this.mbodyAddLine(tmp);
 				}
 				//tmp = indent + "wycc_deref_box(X" + target + ");" + tag + "\n";
-				tmp = indent + "wycc_deref_box(" + nam + ");" + tag + "\n";
-				ign = this.mbodyAddLine(tmp);
+				//tmp = indent + "wycc_deref_box(" + nam + ");" + tag + "\n";
+				//tmp = indent + nam + " = wycc_deref_box(" + nam + ");" + tag + "\n";
+				//ign = this.mbodyAddLine(tmp);
 			}
 			declsU.add(tgt);
 			return "";
