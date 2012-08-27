@@ -155,6 +155,7 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
+static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs);
 
 typedef int (*Wycc_Comp_Ptr)(wycc_obj* lhs, wycc_obj* rhs);
@@ -1169,10 +1170,16 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
     if (lt == Wy_Bool) {
 	return wycc_comp_int(lhs, rhs);
     };
+    if (lt == Wy_Set) {
+	return wycc_comp_set(lhs, rhs);
+    };
     fprintf(stderr, "Help needed in wycc_comp_gen for type %d\n", lt);
     exit(-3);
 }
 
+/*
+ * simple comarison of two c (null-terminated)strings
+ */
 static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs);
     WY_OBJ_SANE(rhs);
@@ -1198,6 +1205,9 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
     return 0;
 }
 
+/*
+ * simple comarison of two small integers
+ */
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs);
     WY_OBJ_SANE(rhs);
@@ -1218,6 +1228,45 @@ static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(rhs);
 	fprintf(stderr, "Help needed in wycc_comp_wint\n");
 	exit(-3);
+}
+
+/*
+ * a not quite simple comarison of two small sets
+ * a set with fewer elements is always smaller
+ * a 
+ */
+static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs);
+    WY_OBJ_SANE(rhs);
+    struct chunk_ptr lhs_chunk_ptr;
+    struct chunk_ptr *lptr = & lhs_chunk_ptr;
+    struct chunk_ptr rhs_chunk_ptr;
+    struct chunk_ptr *rptr = & rhs_chunk_ptr;
+    wycc_obj *litm;
+    wycc_obj *ritm;
+    int end;
+
+    wycc_chunk_ptr_fill(lptr, lhs, 0);	/* 0 == this is a set */
+    wycc_chunk_ptr_fill(rptr, rhs, 0);
+    if (lptr->cnt < rptr->cnt) {
+	return -1;
+    };
+    if (rptr->cnt < lptr->cnt) {
+	return 1;
+    };
+    wycc_chunk_ptr_inc(lptr);
+    wycc_chunk_ptr_inc(rptr);
+    while (lptr->key) {
+	litm = lptr->key;
+	ritm = rptr->key;
+	end = wycc_comp_gen(litm, ritm);
+	if (end != 0) {
+	    return end;
+	};
+	wycc_chunk_ptr_inc(lptr);
+	wycc_chunk_ptr_inc(rptr);
+    };
+    return 0;
 }
 
 /*
