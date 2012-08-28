@@ -126,15 +126,13 @@ public class JavaFileWriter {
 	}
 
 	public void write(FunDecl decl, HashSet<String> used) {
-		myOut(1,"void " + decl.name + "_" + nameMangle(decl.type.param,used) + "() {");
+		myOut(1, type2JavaType(decl.type.ret) + " " + decl.name + "_"
+				+ nameMangle(decl.type.param, used) + "("
+				+ type2JavaType(decl.type.param) + " r0, Automaton automaton) {");
 		// first, declare variables
-		int i = 0;
-		for(Type t : decl.types) {
-			if(t == null) {
-				myOut(2,"null r" + i++ + ";");
-			} else {
-				myOut(2,comment(type2JavaType(t) + " r" + i++ + ";",t.toString()));
-			}
+		for(int i=1;i<decl.types.size();++i) {			
+			Type pt = decl.types.get(i);
+			myOut(2,comment(type2JavaType(pt) + " r" + i + ";",pt.toString()));
 		}
 		// second, translate bytecodes
 		myOut(1);
@@ -253,7 +251,7 @@ public class JavaFileWriter {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
 		}
-		return comment("r" + code.target + " = " + rhs,code.toString());
+		return comment("r" + code.target + " = " + rhs + ";",code.toString());
 	}
 
 	public String translate(Code.UnOp code) {
@@ -271,7 +269,7 @@ public class JavaFileWriter {
 		default:
 			throw new RuntimeException("unknown unary expression encountered");
 		}
-		return "r" + code.target + " = " + rhs;
+		return comment("r" + code.target + " = " + rhs + ";",code.toString());
 	}
 
 	public String translate(Code.BinOp code) {
@@ -323,7 +321,7 @@ public class JavaFileWriter {
 			throw new RuntimeException("unknown binary operator encountered: "
 					+ code);
 		}
-		return "r" + code.target + " = " + rhs;
+		return comment("r" + code.target + " = " + rhs + ";",code.toString());
 	}
 
 	public String translate(Code.NaryOp nop) {
@@ -331,7 +329,7 @@ public class JavaFileWriter {
 	}
 
 	public String translate(Code.Constructor ivk) {				
-		return "TODO: list generator";
+		return "TODO: constructor";
 	}
 	
 	public String translate(Code.Rewrite code) {
