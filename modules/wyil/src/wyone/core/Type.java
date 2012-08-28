@@ -28,6 +28,7 @@ public abstract class Type {
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();
+	public static final Ref<Any> T_REFANY = new Ref(T_ANY);
 	public static final Compound T_COMPOUNDANY = new Compound(Compound.Kind.LIST,true,T_ANY);
 	
 	public static Compound T_COMPOUND(Compound.Kind kind, boolean unbounded, Collection<Type> elements) {

@@ -74,7 +74,7 @@ public class SpecParser {
 		ArrayList<Code> codes = new ArrayList<Code>();
 		Environment environment = new Environment();
 		environment.allocate(null,"this");
-		Type type = parsePatternTerm(environment,codes);		
+		Type type = parsePatternTerm(environment,0,codes);		
 		System.out.println(environment);
 		match(Colon.class);
 		matchEndLine();
@@ -83,7 +83,7 @@ public class SpecParser {
 				environment.asList(), codes, sourceAttr(start, index - 1));
 	}
 
-	public Type parsePattern(Environment environment, ArrayList<Code> codes) {
+	public Type parsePattern(Environment environment, int src, ArrayList<Code> codes) {
 		skipWhiteSpace(true);
 		checkNotEof();
 		Token token = tokens.get(index);
@@ -92,32 +92,34 @@ public class SpecParser {
 			match(Star.class);
 			return Type.T_ANY;
 		} else if (token instanceof LeftCurly || token instanceof LeftSquare) {
-			return parsePatternCompound(environment,codes);
+			return parsePatternCompound(environment,src,codes);
 		} else if (token instanceof Identifier) {
-			return parsePatternTerm(environment,codes);
+			return parsePatternTerm(environment,src,codes);
 		} else {
 			return parseType();
 		}
 	}
 
-	public Type.Ref parsePatternTerm(Environment environment, ArrayList<Code> codes) {		
+	public Type.Ref parsePatternTerm(Environment environment, int src, ArrayList<Code> codes) {		
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);		
+		
+		
 		Type type;
-		if (token instanceof LeftCurly || token instanceof LeftSquare) {
-			type = parsePatternCompound(environment,codes);
+		if (token instanceof LeftCurly || token instanceof LeftSquare) {			
+			int target = environment.allocate(Type.T_REFANY);
+			codes.add(new Code.Assign(target,src)); // FIXME: DEREF
+			type = parsePatternCompound(environment,target,codes);
 		} else if (token instanceof LeftBrace) {
+			int target = environment.allocate(Type.T_REFANY);
+			codes.add(new Code.Assign(target,src)); // FIXME: DEREF
 			match(LeftBrace.class);
-			type = parsePattern(environment,codes);
-			int target;
+			type = parsePattern(environment,target,codes);			
 			if (index < tokens.size()
 					&& tokens.get(index) instanceof Identifier) {
 				String var = matchIdentifier().text;
-				target = environment.allocate(type,var);
-			} else {
-				target = environment.allocate(type);
-			}
-			// TODO: need to do something with target
+				environment.put(target,var);
+			} 
 			match(RightBrace.class);
 		} else {
 			type = Type.T_VOID;
@@ -126,7 +128,7 @@ public class SpecParser {
 		return Type.T_REF(Type.T_TERM(name, type));
 	}
 
-	public Type.Ref parsePatternCompound(Environment environment, ArrayList<Code> codes) {
+	public Type.Ref parsePatternCompound(Environment environment, int src, ArrayList<Code> codes) {
 		int start = index;
 		Type.Compound.Kind kind;
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
@@ -150,7 +152,7 @@ public class SpecParser {
 				match(Comma.class);
 			}
 			firstTime = false;
-			Type type = parsePattern(environment, codes);
+			Type type = parsePattern(environment, src,codes);
 			if (index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
 				match(DotDotDot.class);
 				unbound = true;
@@ -811,6 +813,10 @@ public class SpecParser {
 			return var2idx.get(v);
 		}
 
+		public void put(int idx, String v) {
+			var2idx.put(v, idx);
+		}
+		
 		public ArrayList<Type> asList() {
 			return idx2type;
 		}
