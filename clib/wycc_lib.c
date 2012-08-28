@@ -211,9 +211,21 @@ int main(int argc, char** argv, char** envp) {
  */
 
 /*
+ * a disgusting little kludge routine to call from the middle of a routine
+ * to use as a place for a breakpoint.
+ */
+static void bp(){
+    static int i = 0;
+    i++;
+}
+
+/*
  *
  */
 void wycc_obj_sane(wycc_obj *itm){
+    if (itm == (wycc_obj *) NULL) {
+	return;
+    }
     if (itm->cnt <=0) {
 	fprintf(stderr, "FAILURE: ref count not positive (%d)\n", itm->cnt);
 	exit(-3);
@@ -541,6 +553,7 @@ static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
 		break;
 	    };
 	};
+	bp();
 	/*
 	 * exhausted a chunk (maybe several)
 	 */
@@ -599,15 +612,6 @@ wycc_obj* wycc_iter_next(wycc_obj *itm) {
 }
 
 /*
- * a disgusting little kludge routine to call from the middle of a routine
- * to use as a place for a breakpoint.
- */
-static void bp(){
-    static int i = 0;
-    i++;
-}
-
-/*
  * given a chunk and an item, insert the item (increment ref cnt)
  */
 static void wycc_chunk_add(wycc_obj* lst, wycc_obj* key, wycc_obj* val) {
@@ -629,6 +633,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     void** p = lst->ptr;
     void** chunk;
     void** new;
+    void** chg;
     long at, typ, cnt, deep, idx, cp;
     size_t raw;
     wycc_obj* tst;
@@ -707,7 +712,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     if (end > 0) {
 	at++;
     };
-    bp();
+    //bp();
     /* this is a definite add */
     p[1]++;
     itm->cnt++;
@@ -729,6 +734,11 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	    cnt += 1;	/* include the branch counter */
 	    for (idx= 0; idx < cnt ;idx++) {
 		new[idx] = chunk[idx];
+		/* for each chunk, update its up links */
+		if ((idx % 2) == 1) {
+		    chg = chunk[idx];
+		    chg[WYCC_SET_CHUNK -1] = new;
+		};
 	    };
 	    /* we are forming a branch out of all the branch pairs */
 	    /* but that branch pairs up with the first leaf */
@@ -748,8 +758,10 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
 	    for (; cp < (WYCC_SET_CHUNK - 1); cp++) {
 		chunk[cp++] = (void *) NULL;
 	    };
+	    new[WYCC_SET_CHUNK-1] = chunk;
 	} else {
 	    /* bigger is the leaf section */
+	    bp();
 	    cnt+= 1;	/* adjust for the branch counter */
 	    new[0] = 0;
 	    cp = 1;
@@ -776,7 +788,7 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     };
     /* need to insert item before at and we have room for it. */
     /* it is a leaf */
-    for (idx= (WYCC_SET_CHUNK - 1); idx > at ; idx--) {
+    for (idx= (WYCC_SET_CHUNK - 2); idx > at ; idx--) {
 	chunk[idx] = chunk[idx - 1];
     }
     chunk[at] = itm;
@@ -1012,7 +1024,8 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
 	return itm;
     };
     if (itm->cnt < 0) {
-	fprintf(stderr, "FAILURE: ref count went negative (%d)\n", itm->cnt);
+	fprintf(stderr, "FAILURE: ref count went negative (%d:%d@%p)\n"
+		, itm->cnt, itm->typ, (void *) itm);
 	exit(-3);
     }
     ptr = itm->ptr;
@@ -1047,7 +1060,7 @@ static void wycc_dealloc_set_chunk(void** chunk) {
     wycc_obj* nxt;
 
     cnt = ((long) chunk[0]) * 2;
-    for (idx = 1; idx < WYCC_SET_CHUNK ; idx++) {
+    for (idx = 1; idx < (WYCC_SET_CHUNK-1) ; idx++) {
 	nxt = (wycc_obj*) chunk[idx];
 	chunk[idx] = NULL;
 	if (nxt == NULL) {

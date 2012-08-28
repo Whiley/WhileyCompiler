@@ -239,21 +239,17 @@ public class Wyil2CBuilder implements Builder {
 	private void writePreamble(WyilFile module) {	
 		int ign;
 		String tmp;
-		//String ans = "";
 		
-		//ans += "#line 0 \"" + module.id() + ".whiley\"" + "\n";
-		tmp = "#line 0 \"" + module.id() + ".whiley\"" + "\n";
-		ign = bodyAddLine(tmp);
-		//ans += "// WYIL Module: " + name + "\n";
+		if (this.lineNumFlag) {
+			tmp = "#line 0 \"" + module.id() + ".whiley\"" + "\n";
+			ign = bodyAddLine(tmp);
+		}
 		tmp = "// WYIL Module: " + name + "\n";
 		ign = bodyAddLine(tmp);
-		//ans += "// WYIL Filename: " + module.filename() + "\n";
 		tmp = "// WYIL Filename: " + module.filename() + "\n";
 		ign = bodyAddLine(tmp);
-		//ans += this.includeFile;
 		tmp = this.includeFile;
 		ign = bodyAddLine(tmp);
-		//return ans;
 		return;
 	} 
 
@@ -642,12 +638,6 @@ public class Wyil2CBuilder implements Builder {
 				} else {
 					nam = " X" + k;
 				}
-				//ans = indent;
-				//ans += typ;
-				//ans += " X" + k;
-				//ans += nam;
-				// ans += ";\n";
-				//ans += " = (" + typ + ")0;\n";
 				ans = indent + typ + nam + " = (" + typ + ")0;\n";
 				ign = bodyAddLine(ans);
 			}
@@ -1181,9 +1171,8 @@ public class Wyil2CBuilder implements Builder {
 			int opBlk;
 			String target;
 			
-			//ans += "// HELP needed for ForAll\n";
-			tmp = "// HELP needed for ForAll\n";
-			ign = bodyAddLine(tmp);
+			//tmp = "// HELP needed for ForAll\n";
+			//ign = bodyAddLine(tmp);
 			Code.ForAll cod = (Code.ForAll) codIn;
 			opIdx = cod.indexOperand;
 			opBlk = cod.sourceOperand;
@@ -1203,7 +1192,6 @@ public class Wyil2CBuilder implements Builder {
 			ign = this.mbodyAddLine(tmp);
 			this.mbodyPush(target);
 
-			//return ans;
 			return "";
 		}
 		
@@ -1333,9 +1321,8 @@ public class Wyil2CBuilder implements Builder {
 			int targ, lhs, rhs;
 			String rtn, lin;
 			
-			//ans += "// HELP needed for BinSetOp\n";
-			tmp = "// HELP needed for BinSetOp\n";
-			ign = bodyAddLine(tmp);
+			//tmp = "// HELP needed for BinSetOp\n";
+			//ign = bodyAddLine(tmp);
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
 			Code.BinSetKind opr = cod.kind;
 			targ = cod.target;
@@ -1470,22 +1457,45 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeReturn(Code codIn, String tag){
 			int ign;
 			String tmp;
-			String ans = "";
 			String lin;
+
+			Integer k;
+			//String typ;
+			String nam = "";
+			Integer skip;
+			int tgt;
 
 			Code.Return cod = (Code.Return) codIn;
 			
-			// **** need to deref all the other registers.
-			// **** may need to consider other return types
 			if (retType instanceof Type.Void) {
 				lin = "	return;";
+				tgt = 0;
 			} else  {
-				lin = "	return(X" + cod.operand + ");";
+				tgt = cod.operand;
+				skip = params.size();
+				for (Map.Entry<Integer, String> e : declsT.entrySet()) {
+					k = e.getKey();
+					//typ = e.getValue();
+					if (k < skip) {
+						continue;
+					} if (tgt == k) {
+						continue;
+					} else {
+						nam = " X" + k;
+					}
+					//ans = indent + typ + nam + " = (" + typ + ")0;\n";
+					tmp = indent + nam + " = wycc_deref_box(" + nam + ");\n";
+					ign = this.mbodyAddLine(tmp);
+				}		
+				lin = "	return(X" + tgt + ");";
 			}
-			//this.body += lin + tag + "\n";
+			// **** need to deref all the other registers.
+			
+			// **** may need to consider other return types
 			tmp = lin + tag + "\n";
 			ign = this.mbodyAddLine(tmp);
-			return ans;
+			//return ans;
+			return "";
 		}
 
 		public String writeCodeNewMap(Code codIn, String tag){

@@ -155,6 +155,9 @@ do
     -x)		# continue with the execution of the built
 	    WYCC_OPTS=-no_numbers
 	    ;;
+    -v)		# continue with the execution of the built
+	    Vecho=echo
+	    ;;
     -*)
 	    #Opts="$Opts $1"
 	    #echo "unknown option '$1'"
@@ -198,10 +201,12 @@ fi
 $Necho "wycc succeeded"
 $ToO || exit 0
 
+$Vecho gcc $WYCC_GCC_OPTS $ToS $CName 
 gcc $WYCC_GCC_OPTS $ToS $CName 
 
 $ToB || exit 0
 
+$Vecho gcc -o $BaseName $BaseName.o $WYCC_LIB
 gcc -o $BaseName $BaseName.o $WYCC_LIB
 
 $ToX || exit 0
