@@ -1,4 +1,4 @@
-package wyone.core;
+	package wyone.core;
 
 import wyone.util.SyntacticElement;
 
@@ -219,6 +219,36 @@ public class Code extends SyntacticElement.Impl {
 	
 	public enum NOp {
 		LISTGEN					
+	}
+	
+	public static final class Deref extends Code {
+		public final int target;		
+		public final int operand;
+
+		public Deref(int target, int operand, Attribute... attributes) {
+			super(attributes);
+			this.target = target;			
+			this.operand = operand;
+		}
+		
+		public String toString() {			
+			return "deref %" + target + " = *%" + operand;			
+		}
+	}
+	
+	public static final class TermContents extends Code {
+		public final int target;		
+		public final int operand;
+
+		public TermContents(int target, int operand, Attribute... attributes) {
+			super(attributes);
+			this.target = target;			
+			this.operand = operand;
+		}
+
+		public String toString() {			
+			return "contents %" + target + " = %" + operand;			
+		}
 	}
 	
 	public static final class Rewrite extends Code {

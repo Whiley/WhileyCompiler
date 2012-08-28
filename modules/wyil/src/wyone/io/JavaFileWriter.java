@@ -137,7 +137,7 @@ public class JavaFileWriter {
 		// second, translate bytecodes
 		myOut(1);
 		for(Code code : decl.codes) {
-			myOut(2,translate(code));
+			myOut(2,translate(code,decl));
 		}
 		myOut(1,"}");
 	}
@@ -211,34 +211,49 @@ public class JavaFileWriter {
 		}
 	}
 
-	public String translate(Code code) {
+	public String translate(Code code, FunDecl fun) {
 		if(code instanceof Code.Assign) {
-			return translate((Code.Assign) code);
+			return translate((Code.Assign) code, fun);
 		} else if (code instanceof Code.Constant) {
-			return translate((Code.Constant) code);
+			return translate((Code.Constant) code, fun);
+		} else if (code instanceof Code.TermContents) {
+			return translate((Code.TermContents) code, fun);
+		} else if (code instanceof Code.Deref) {
+			return translate((Code.Deref) code, fun);
 		} else if (code instanceof Code.UnOp) {
-			return translate((Code.UnOp) code);
+			return translate((Code.UnOp) code, fun);
 		} else if (code instanceof Code.BinOp) {
-			return translate((Code.BinOp) code);
+			return translate((Code.BinOp) code, fun);
 		} else if (code instanceof Code.NaryOp) {
-			return translate((Code.NaryOp) code);
+			return translate((Code.NaryOp) code, fun);
 		} else if (code instanceof Code.Rewrite) {
-			return translate((Code.Rewrite) code);
+			return translate((Code.Rewrite) code, fun);
 		} else if (code instanceof Code.Return) {
-			return translate((Code.Return) code);
+			return translate((Code.Return) code, fun);
 		} else if (code instanceof Code.Constructor) {
-			return translate((Code.Constructor) code);
+			return translate((Code.Constructor) code, fun);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
 	}
 	
-	public String translate(Code.Assign code) {
-		// TODO: clone
+	public String translate(Code.Assign code, FunDecl fun) {
+		// TODO: clone?
 		return comment("r" + code.target + " = r" + code.operand + ";",code.toString());
 	}
 
-	public String translate(Code.Constant code) {
+	public String translate(Code.Deref code, FunDecl fun) {
+		// FIXME: need a cast here
+		String body = "Automaton.get(r" + code.operand + ")";		
+		return comment("r" + code.target + " = " + body + ";",code.toString());
+	}
+	
+	public String translate(Code.TermContents code, FunDecl fun) {
+		String body = "r" + code.operand + ".contents";		
+		return comment("r" + code.target + " = " + body + ";",code.toString());
+	}
+	
+	public String translate(Code.Constant code, FunDecl fun) {
 		Object v = code.value;
 		String rhs;
 		
@@ -254,7 +269,7 @@ public class JavaFileWriter {
 		return comment("r" + code.target + " = " + rhs + ";",code.toString());
 	}
 
-	public String translate(Code.UnOp code) {
+	public String translate(Code.UnOp code, FunDecl fun) {
 		String rhs;
 		switch (code.op) {
 		case LENGTHOF:
@@ -272,7 +287,7 @@ public class JavaFileWriter {
 		return comment("r" + code.target + " = " + rhs + ";",code.toString());
 	}
 
-	public String translate(Code.BinOp code) {
+	public String translate(Code.BinOp code, FunDecl fun) {
 		String rhs;
 		
 		switch (code.op) {
@@ -324,20 +339,21 @@ public class JavaFileWriter {
 		return comment("r" + code.target + " = " + rhs + ";",code.toString());
 	}
 
-	public String translate(Code.NaryOp nop) {
+	public String translate(Code.NaryOp nop, FunDecl fun) {
 		return "TODO: list generator";
 	}
 
-	public String translate(Code.Constructor ivk) {				
+	public String translate(Code.Constructor ivk, FunDecl fun) {				
 		return "TODO: constructor";
 	}
 	
-	public String translate(Code.Rewrite code) {
+	public String translate(Code.Rewrite code, FunDecl fun) {
 		// TODO: implement
-		return comment(";",code.toString());
+		return comment("automaton.rewrite(" + code.target + "," + code.operand
+				+ ");", code.toString());
 	}
 	
-	public String translate(Code.Return code) {
+	public String translate(Code.Return code, FunDecl fun) {
 		// TODO: implement
 		return comment("return r" + code.operand + ";",code.toString());
 	}
@@ -623,7 +639,7 @@ public class JavaFileWriter {
 	public String comment(String code, String comment) {
 		int nspaces = 25 - code.length();
 		String r = "";
-		for(int i=0;i!=nspaces;++i) {
+		for(int i=0;i<nspaces;++i) {
 			r += " ";
 		}
 		return code + r + " // " + comment;

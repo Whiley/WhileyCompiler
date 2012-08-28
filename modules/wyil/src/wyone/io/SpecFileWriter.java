@@ -51,7 +51,7 @@ public class SpecFileWriter {
 	protected void write(SpecFile.FunDecl decl) {
 		myOut(decl.type.ret + " " + decl.name + "(" + decl.type.param + "):");
 		myOut(1,"// declarations");
-		for(int i=0;i!=decl.types.size();++i) {
+		for(int i=1;i!=decl.types.size();++i) {
 			myOut(1,decl.types.get(i) + " %" + i);
 		}
 		myOut(1,"// bytecodes");

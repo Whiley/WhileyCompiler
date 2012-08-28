@@ -193,7 +193,7 @@ public final class Automaton {
 	 *            destroyed.
 	 * @return
 	 */
-	public boolean rewrite(int src, int target) {
+	public void rewrite(int src, int target) {
 		if(target < 0) {
 			for(int i=0;i!=nStates;++i) {
 				states[i].remap(src,target);
@@ -203,7 +203,6 @@ public final class Automaton {
 					roots[i] = target;
 				}
 			}
-			return true;
 		} else {
 			State os = states[src];
 			State ns = states[target];
@@ -217,7 +216,6 @@ public final class Automaton {
 				}
 			}
 			// to is now free to be garbage collected
-			return !os.equals(ns);
 		}
 	}
 	

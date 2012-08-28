@@ -104,21 +104,24 @@ public class SpecParser {
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);		
 		
-		
 		Type type;
 		if (token instanceof LeftCurly || token instanceof LeftSquare) {			
-			int target = environment.allocate(Type.T_REFANY);
-			codes.add(new Code.Assign(target,src)); // FIXME: DEREF
-			type = parsePatternCompound(environment,target,codes);
+			int target = environment.allocate(Type.T_ANY);
+			int contents = environment.allocate(Type.T_REFANY);
+			codes.add(new Code.Deref(target,src)); 
+			codes.add(new Code.TermContents(contents,target));
+			type = parsePatternCompound(environment,contents,codes);
 		} else if (token instanceof LeftBrace) {
-			int target = environment.allocate(Type.T_REFANY);
-			codes.add(new Code.Assign(target,src)); // FIXME: DEREF
+			int target = environment.allocate(Type.T_ANY);
+			int contents = environment.allocate(Type.T_REFANY);
+			codes.add(new Code.Deref(target,src)); 
+			codes.add(new Code.TermContents(contents,target));
 			match(LeftBrace.class);
-			type = parsePattern(environment,target,codes);			
+			type = parsePattern(environment,contents,codes);			
 			if (index < tokens.size()
 					&& tokens.get(index) instanceof Identifier) {
 				String var = matchIdentifier().text;
-				environment.put(target,var);
+				environment.put(contents,var);
 			} 
 			match(RightBrace.class);
 		} else {
