@@ -204,7 +204,6 @@ public final class Automaton {
 				}
 			}
 		} else {
-			State os = states[src];
 			State ns = states[target];
 			states[src] = ns;
 			for(int i=0;i!=nStates;++i) {

@@ -130,7 +130,7 @@ public class Main {
 				SpecLexer lexer = new SpecLexer(specfile);
 				SpecParser parser = new SpecParser(specfile, lexer.scan());
 				SpecFile spec = parser.parse();
-				//new TypeChecker().check(ans);			
+				new TypeChecker().check(spec);			
 				new SpecFileWriter(oFile).write(spec);
 				new JavaFileWriter(oFile).write(spec);				
 			} catch(SyntaxError e) {
