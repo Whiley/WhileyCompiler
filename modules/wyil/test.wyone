@@ -1,12 +1,9 @@
 term True
 term False
 class Bool as True | False
-
-term Var[string...]
 term Not(Term)
-term Or{Term...}
 
-rewrite Var[string x,string... xs]:
-    => Var(xs)
+rewrite Not(Term x):
+    => x
 
-class Term as Bool | Var | Not | Or
+class Term as Bool | Not

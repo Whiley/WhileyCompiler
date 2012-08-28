@@ -194,7 +194,7 @@ public abstract class Type {
 		}
 		
 		public String toString() {
-			return "ref " + element;
+			return "^" + element;
 		}
 	}
 	
@@ -320,6 +320,12 @@ public abstract class Type {
 			return "R";
 		} else if(t instanceof Type.Strung) {
 			return "S";
+		} else if(t instanceof Type.Ref) {
+			Type.Ref r = (Type.Ref) t;
+			return "^" + type2str(r.element);
+		} else if(t instanceof Type.Fun) {
+			Type.Fun f = (Type.Fun) t;
+			return type2str(f.ret) + "(" + type2str(f.param) + ")";
 		} else if(t instanceof Type.Compound) {
 			Type.Compound st = (Type.Compound) t;
 			String r = "";

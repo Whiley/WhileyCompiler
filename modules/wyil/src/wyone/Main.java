@@ -132,7 +132,7 @@ public class Main {
 				SpecFile spec = parser.parse();
 				//new TypeChecker().check(ans);			
 				new SpecFileWriter(oFile).write(spec);
-				//new JavaFileWriter(oFile).write(spec);				
+				new JavaFileWriter(oFile).write(spec);				
 			} catch(SyntaxError e) {
 				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
 				

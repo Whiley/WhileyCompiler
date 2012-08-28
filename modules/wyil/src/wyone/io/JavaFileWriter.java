@@ -126,7 +126,14 @@ public class JavaFileWriter {
 	}
 
 	public void write(FunDecl decl, HashSet<String> used) {
-		
+		myOut(1,"void " + decl.name + "_" + nameMangle(decl.type.param,used) + "() {");
+		// first, declare variables
+		int i = 0;
+		for(Type t : decl.types) {
+			myOut(2,type2JavaType(t) + " r" + i++ + "; // " + t);
+		}
+		// second, translate bytecodes
+		myOut(1,"}");
 	}
 	
 	public void writeSchema() {
@@ -309,22 +316,7 @@ public class JavaFileWriter {
 	}
 	
 	public void write(Type type) {
-		out.print(typeStr(type));
-	}
-
-	public String typeStr(Type type) {
-		if (type instanceof Type.Term) {
-			return "int";
-		} else if (type instanceof Type.Int) {
-			return "BigInteger";
-		} else if (type instanceof Type.Bool) {
-			return "boolean";
-		} else if (type instanceof Type.Strung) {
-			return "String";
-		} else if (type instanceof Type.Compound) {
-			return "ArrayList";
-		}
-		throw new RuntimeException("unknown type encountered: " + type);
+		out.print(type2JavaType(type));
 	}
 
 	public String readerStr(Type type) {
@@ -351,15 +343,6 @@ public class JavaFileWriter {
 		return mangle;
 	}
 
-	public String type2HexStr(Type t) {
-		String mangle = "";
-		String str = Type.type2str(t);		
-		for (int i = 0; i != str.length(); ++i) {
-			char c = str.charAt(i);
-			mangle = mangle + Integer.toHexString(c);
-		}
-		return mangle;
-	}
 
 	protected void writeTypeTests(HashMap<String, Set<String>> hierarchy) {
 		myOut(1,
@@ -608,6 +591,43 @@ public class JavaFileWriter {
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");
 		myOut(1, "}");
+	}
+
+	public String type2HexStr(Type t) {
+		String mangle = "";
+		String str = Type.type2str(t);		
+		for (int i = 0; i != str.length(); ++i) {
+			char c = str.charAt(i);
+			mangle = mangle + Integer.toHexString(c);
+		}
+		return mangle;
+	}
+	
+	/**
+	 * Convert a Wyone type into its equivalent Java type.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public String type2JavaType(Type type) {
+		if (type instanceof Type.Any) {
+			return "Object";
+		} else if (type instanceof Type.Int) {
+			return "BigInteger";
+		} else if (type instanceof Type.Bool) {
+			return "boolean";
+		} else if (type instanceof Type.Strung) {
+			return "String";
+		} else if (type instanceof Type.Term) {
+			return "int"; // FIXME: BROKEN
+		} else if (type instanceof Type.Ref) {
+			return "int";
+		} else if (type instanceof Type.Compound) {
+			return "ArrayList";
+		} else if(type == null) {
+			return "null"; // FIXME: BROKEN
+		}
+		throw new RuntimeException("unknown type encountered: " + type);
 	}
 
 	public String unboxedType(Type t) {
