@@ -130,9 +130,17 @@ public class JavaFileWriter {
 		// first, declare variables
 		int i = 0;
 		for(Type t : decl.types) {
-			myOut(2,type2JavaType(t) + " r" + i++ + "; // " + t);
+			if(t == null) {
+				myOut(2,"null r" + i++ + ";");
+			} else {
+				myOut(2,comment(type2JavaType(t) + " r" + i++ + ";",t.toString()));
+			}
 		}
 		// second, translate bytecodes
+		myOut(1);
+		for(Code code : decl.codes) {
+			myOut(2,translate(code));
+		}
 		myOut(1,"}");
 	}
 	
@@ -205,20 +213,31 @@ public class JavaFileWriter {
 		}
 	}
 
-	public String translate(Code expr) {
-		if (expr instanceof Code.Constant) {
-			return translate((Code.Constant) expr);
-		} else if (expr instanceof Code.UnOp) {
-			return translate((Code.UnOp) expr);
-		} else if (expr instanceof Code.BinOp) {
-			return translate((Code.BinOp) expr);
-		} else if (expr instanceof Code.NaryOp) {
-			return translate((Code.NaryOp) expr);
-		} else if (expr instanceof Code.Constructor) {
-			return translate((Code.Constructor) expr);
+	public String translate(Code code) {
+		if(code instanceof Code.Assign) {
+			return translate((Code.Assign) code);
+		} else if (code instanceof Code.Constant) {
+			return translate((Code.Constant) code);
+		} else if (code instanceof Code.UnOp) {
+			return translate((Code.UnOp) code);
+		} else if (code instanceof Code.BinOp) {
+			return translate((Code.BinOp) code);
+		} else if (code instanceof Code.NaryOp) {
+			return translate((Code.NaryOp) code);
+		} else if (code instanceof Code.Rewrite) {
+			return translate((Code.Rewrite) code);
+		} else if (code instanceof Code.Return) {
+			return translate((Code.Return) code);
+		} else if (code instanceof Code.Constructor) {
+			return translate((Code.Constructor) code);
 		} else {
-			throw new RuntimeException("unknown expression encountered");
+			throw new RuntimeException("unknown expression encountered - " + code);
 		}
+	}
+	
+	public String translate(Code.Assign code) {
+		// TODO: clone
+		return comment("r" + code.target + " = r" + code.operand + ";",code.toString());
 	}
 
 	public String translate(Code.Constant code) {
@@ -234,7 +253,7 @@ public class JavaFileWriter {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
 		}
-		return "r" + code.target + " = " + rhs;
+		return comment("r" + code.target + " = " + rhs,code.toString());
 	}
 
 	public String translate(Code.UnOp code) {
@@ -313,6 +332,16 @@ public class JavaFileWriter {
 
 	public String translate(Code.Constructor ivk) {				
 		return "TODO: list generator";
+	}
+	
+	public String translate(Code.Rewrite code) {
+		// TODO: implement
+		return comment(";",code.toString());
+	}
+	
+	public String translate(Code.Return code) {
+		// TODO: implement
+		return comment("return r" + code.operand + ";",code.toString());
 	}
 	
 	public void write(Type type) {
@@ -593,6 +622,15 @@ public class JavaFileWriter {
 		myOut(1, "}");
 	}
 
+	public String comment(String code, String comment) {
+		int nspaces = 25 - code.length();
+		String r = "";
+		for(int i=0;i!=nspaces;++i) {
+			r += " ";
+		}
+		return code + r + " // " + comment;
+	}
+	
 	public String type2HexStr(Type t) {
 		String mangle = "";
 		String str = Type.type2str(t);		
@@ -624,9 +662,7 @@ public class JavaFileWriter {
 			return "int";
 		} else if (type instanceof Type.Compound) {
 			return "ArrayList";
-		} else if(type == null) {
-			return "null"; // FIXME: BROKEN
-		}
+		} 
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
 
