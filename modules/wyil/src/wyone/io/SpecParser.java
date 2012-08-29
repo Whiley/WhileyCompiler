@@ -22,6 +22,8 @@ public class SpecParser {
 	public SpecFile parse() {
 		ArrayList<Decl> decls = new ArrayList<Decl>();
 
+		// first, translate declarations
+		
 		while (index < tokens.size()) {
 			Token t = tokens.get(index);
 			if (t instanceof NewLine || t instanceof Comment) {
@@ -39,6 +41,10 @@ public class SpecParser {
 			}
 		}
 
+		// second, add the outermost rewrite rule
+		FunDecl dispatcher = createRewriteDispatch(decls);
+		decls.add(dispatcher);
+		
 		return new SpecFile(filename, decls);
 	}
 
@@ -195,6 +201,14 @@ public class SpecParser {
 		return codes;
 	}
 
+	public FunDecl createRewriteDispatch(ArrayList<Decl> decls) {
+		ArrayList<Code> codes = new ArrayList<Code>();
+		Environment environment = new Environment();
+		environment.allocate(Type.T_REFANY, "this");
+		return new FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, Type.T_REFANY),
+				environment.asList(), codes);
+	}
+	
 	private Tabs getIndent() {
 		// FIXME: there's still a bug here for empty lines with arbitrary tabs
 		if (index < tokens.size() && tokens.get(index) instanceof Tabs) {
@@ -252,9 +266,11 @@ public class SpecParser {
 			int ifTarget = environment.allocate(Type.T_BOOL);
 			ArrayList<Code> ifCodes = new ArrayList<Code>();
 			parseCondition(ifTarget, environment, ifCodes);
-			// FIXME: need to do something with rule target!!
+			
 			matchEndLine();
-			codes.addAll(0,ifCodes);
+			ifCodes.add(new Code.If(ifTarget, codes, Collections.EMPTY_LIST,
+					sourceAttr(start, index - 1)));
+			codes = ifCodes;
 		}
 
 		return codes;

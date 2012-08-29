@@ -1,4 +1,6 @@
-	package wyone.core;
+package wyone.core;
+
+import java.util.*;
 
 import wyone.util.SyntacticElement;
 
@@ -84,40 +86,40 @@ public class Code extends SyntacticElement.Impl {
 			public String toString() { return "||"; }
 		},
 		ADD{
-			public String toString() { return "+"; }
+			public String toString() { return "add"; }
 		},
 		SUB{
-			public String toString() { return "-"; }
+			public String toString() { return "sub"; }
 		},
 		MUL{
-			public String toString() { return "*"; }
+			public String toString() { return "mul"; }
 		},
 		DIV{
-			public String toString() { return "/"; }
+			public String toString() { return "div"; }
 		},				
 		EQ{
-			public String toString() { return "=="; }
+			public String toString() { return "eq"; }
 		},
 		NEQ{
-			public String toString() { return "!="; }
+			public String toString() { return "neq"; }
 		},
 		LT{
-			public String toString() { return "<"; }
+			public String toString() { return "lt"; }
 		},
 		LTEQ{
-			public String toString() { return "<="; }
+			public String toString() { return "le"; }
 		},
 		GT{
-			public String toString() { return ">"; }
+			public String toString() { return "gt"; }
 		},
 		GTEQ{
-			public String toString() { return ">="; }
+			public String toString() { return "ge"; }
 		},
 		APPEND{
-			public String toString() { return "++"; }
+			public String toString() { return "append"; }
 		},
 		RANGE{
-			public String toString() { return ".."; }
+			public String toString() { return "range"; }
 		},
 		TYPEEQ{
 			public String toString() { return "is"; }
@@ -233,6 +235,24 @@ public class Code extends SyntacticElement.Impl {
 		
 		public String toString() {			
 			return "deref %" + target + " = *%" + operand;			
+		}
+	}
+	
+	public static final class If extends Code {
+		public final int operand;
+		public final ArrayList<Code> trueBranch;
+		public final ArrayList<Code> falseBranch;
+		
+		public If(int operand, List<Code> trueBranch, List<Code> falseBranch,
+				Attribute... attributes) {
+			super(attributes);
+			this.operand = operand;
+			this.trueBranch = new ArrayList<Code>(trueBranch);
+			this.falseBranch = new ArrayList<Code>(falseBranch);
+		}
+		
+		public String toString() {
+			return "if " + trueBranch + " else " + falseBranch;
 		}
 	}
 	

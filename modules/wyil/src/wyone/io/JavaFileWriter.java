@@ -137,7 +137,7 @@ public class JavaFileWriter {
 		// second, translate bytecodes
 		myOut(1);
 		for(Code code : decl.codes) {
-			myOut(2,translate(code,decl));
+			translate(2,code,decl);
 		}
 		myOut(1,"}");
 	}
@@ -211,48 +211,66 @@ public class JavaFileWriter {
 		}
 	}
 
-	public String translate(Code code, FunDecl fun) {
+	public void translate(int level, Code code, FunDecl fun) {
 		if(code instanceof Code.Assign) {
-			return translate((Code.Assign) code, fun);
+			translate(level,(Code.Assign) code, fun);
 		} else if (code instanceof Code.Constant) {
-			return translate((Code.Constant) code, fun);
+			translate(level,(Code.Constant) code, fun);
 		} else if (code instanceof Code.TermContents) {
-			return translate((Code.TermContents) code, fun);
+			translate(level,(Code.TermContents) code, fun);
+		} else if (code instanceof Code.If) {
+			translate(level,(Code.If) code, fun);
 		} else if (code instanceof Code.Deref) {
-			return translate((Code.Deref) code, fun);
+			translate(level,(Code.Deref) code, fun);
 		} else if (code instanceof Code.UnOp) {
-			return translate((Code.UnOp) code, fun);
+			translate(level,(Code.UnOp) code, fun);
 		} else if (code instanceof Code.BinOp) {
-			return translate((Code.BinOp) code, fun);
+			translate(level,(Code.BinOp) code, fun);
 		} else if (code instanceof Code.NaryOp) {
-			return translate((Code.NaryOp) code, fun);
+			translate(level,(Code.NaryOp) code, fun);
 		} else if (code instanceof Code.Rewrite) {
-			return translate((Code.Rewrite) code, fun);
+			translate(level,(Code.Rewrite) code, fun);
 		} else if (code instanceof Code.Return) {
-			return translate((Code.Return) code, fun);
+			translate(level,(Code.Return) code, fun);
 		} else if (code instanceof Code.Constructor) {
-			return translate((Code.Constructor) code, fun);
+			translate(level,(Code.Constructor) code, fun);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
 	}
 	
-	public String translate(Code.Assign code, FunDecl fun) {
+	public void translate(int level, Code.Assign code, FunDecl fun) {
 		// TODO: clone?
-		return comment("r" + code.target + " = r" + code.operand + ";",code.toString());
+		myOut(level,comment("r" + code.target + " = r" + code.operand + ";",code.toString()));
 	}
 
-	public String translate(Code.Deref code, FunDecl fun) {
+	public void translate(int level, Code.Deref code, FunDecl fun) {
 		String body = "(" + type2JavaType(fun.types.get(code.target)) +  ") automaton.get(r" + code.operand + ")";		
-		return comment("r" + code.target + " = " + body + ";",code.toString());
+		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
-	public String translate(Code.TermContents code, FunDecl fun) {
+	public void translate(int level, Code.If code, FunDecl fun) {
+		myOut(level,"if(r" + code.operand + ") {");
+		for(Code c : code.trueBranch) {
+			translate(level+1,c,fun);
+		}
+		if(code.falseBranch.isEmpty()) {
+			myOut(level,"}");
+		} else {
+			myOut(level,"} else {");
+			for(Code c : code.falseBranch) {
+				translate(level+1,c,fun);
+			}
+			myOut(level,"}");
+		}
+	}
+	
+	public void translate(int level, Code.TermContents code, FunDecl fun) {
 		String body = "r" + code.operand + ".contents";		
-		return comment("r" + code.target + " = " + body + ";",code.toString());
+		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
-	public String translate(Code.Constant code, FunDecl fun) {
+	public void translate(int level, Code.Constant code, FunDecl fun) {
 		Object v = code.value;
 		String rhs;
 		
@@ -265,10 +283,10 @@ public class JavaFileWriter {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
 		}
-		return comment("r" + code.target + " = " + rhs + ";",code.toString());
+		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
 	}
 
-	public String translate(Code.UnOp code, FunDecl fun) {
+	public void translate(int level, Code.UnOp code, FunDecl fun) {
 		String rhs;
 		switch (code.op) {
 		case LENGTHOF:
@@ -283,10 +301,10 @@ public class JavaFileWriter {
 		default:
 			throw new RuntimeException("unknown unary expression encountered");
 		}
-		return comment("r" + code.target + " = " + rhs + ";",code.toString());
+		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
 	}
 
-	public String translate(Code.BinOp code, FunDecl fun) {
+	public void translate(int level, Code.BinOp code, FunDecl fun) {
 		String rhs;
 		
 		switch (code.op) {
@@ -335,26 +353,26 @@ public class JavaFileWriter {
 			throw new RuntimeException("unknown binary operator encountered: "
 					+ code);
 		}
-		return comment("r" + code.target + " = " + rhs + ";",code.toString());
+		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
 	}
 
-	public String translate(Code.NaryOp nop, FunDecl fun) {
-		return "TODO: list generator";
+	public void translate(int level, Code.NaryOp nop, FunDecl fun) {
+		myOut(level,"TODO: list generator");
 	}
 
-	public String translate(Code.Constructor ivk, FunDecl fun) {				
-		return "TODO: constructor";
+	public void translate(int level, Code.Constructor ivk, FunDecl fun) {				
+		myOut(level,"TODO: constructor");
 	}
 	
-	public String translate(Code.Rewrite code, FunDecl fun) {
+	public void translate(int level, Code.Rewrite code, FunDecl fun) {
 		// TODO: implement
-		return comment("automaton.rewrite(" + code.target + "," + code.operand
-				+ ");", code.toString());
+		myOut(level,comment("automaton.rewrite(" + code.target + "," + code.operand
+				+ ");", code.toString()));
 	}
 	
-	public String translate(Code.Return code, FunDecl fun) {
+	public void translate(int level, Code.Return code, FunDecl fun) {
 		// TODO: implement
-		return comment("return r" + code.operand + ";",code.toString());
+		myOut(level,comment("return r" + code.operand + ";",code.toString()));
 	}
 	
 	public void write(Type type) {
