@@ -219,6 +219,24 @@ public class TypeChecker {
 		environment.set(bop.target,result);
 	}
 
+	public void resolve(Code.TermContents code, ArrayList<Type> environment) {
+		Type type = environment.get(code.operand);
+		if (!(type instanceof Type.Term)) {
+			syntaxError("expecting term type, got type " + type, filename, code);
+		}
+		Type contents = ((Type.Term) type).data;
+		environment.set(code.target, contents);
+	}
+	
+	public void resolve(Code.Rewrite code, ArrayList<Type> environment) {
+		Type type = environment.get(code.operand);
+		checkSubtype(Type.T_REFANY,type,code);		
+	}
+	
+	public void resolve(Code.Return code, ArrayList<Type> environment) {
+		// TODO: should do something here!		
+	}
+	
 	public Type[] append(Type head, Type[] tail) {
 		Type[] r = new Type[tail.length+1];
 		System.arraycopy(tail,0,r,1,tail.length);

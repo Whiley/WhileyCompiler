@@ -105,8 +105,7 @@ public abstract class Type {
 		} else if(t1 instanceof Ref && t2 instanceof Ref) {
 			Ref r1 = (Ref) t1;
 			Ref r2 = (Ref) t2;
-			// TODO: unsure whether this makes sense or not?
-			return r1.element.equals(r2.element);
+			return isSubtype(r1.element,r2.element);
 		}
 
 		return false;

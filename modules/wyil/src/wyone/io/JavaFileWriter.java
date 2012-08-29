@@ -244,7 +244,7 @@ public class JavaFileWriter {
 
 	public String translate(Code.Deref code, FunDecl fun) {
 		// FIXME: need a cast here
-		String body = "Automaton.get(r" + code.operand + ")";		
+		String body = "(" + type2JavaType(fun.types.get(code.target)) +  ") automaton.get(r" + code.operand + ")";		
 		return comment("r" + code.target + " = " + body + ";",code.toString());
 	}
 	
@@ -637,7 +637,7 @@ public class JavaFileWriter {
 	}
 
 	public String comment(String code, String comment) {
-		int nspaces = 25 - code.length();
+		int nspaces = 30 - code.length();
 		String r = "";
 		for(int i=0;i<nspaces;++i) {
 			r += " ";
@@ -671,7 +671,7 @@ public class JavaFileWriter {
 		} else if (type instanceof Type.Strung) {
 			return "String";
 		} else if (type instanceof Type.Term) {
-			return "int"; // FIXME: BROKEN
+			return "Automaton.Term";
 		} else if (type instanceof Type.Ref) {
 			return "int";
 		} else if (type instanceof Type.Compound) {

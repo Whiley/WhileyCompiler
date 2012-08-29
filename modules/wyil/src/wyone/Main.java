@@ -131,7 +131,7 @@ public class Main {
 				SpecParser parser = new SpecParser(specfile, lexer.scan());
 				SpecFile spec = parser.parse();
 				new TypeChecker().check(spec);			
-				new SpecFileWriter(oFile).write(spec);
+				//new SpecFileWriter(oFile).write(spec);
 				new JavaFileWriter(oFile).write(spec);				
 			} catch(SyntaxError e) {
 				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());

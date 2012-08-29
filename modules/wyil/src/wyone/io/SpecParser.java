@@ -75,7 +75,6 @@ public class SpecParser {
 		Environment environment = new Environment();
 		environment.allocate(null,"this");
 		Type type = parsePatternTerm(environment,0,codes);		
-		System.out.println(environment);
 		match(Colon.class);
 		matchEndLine();
 		parseRuleBlock(1,environment,codes);
