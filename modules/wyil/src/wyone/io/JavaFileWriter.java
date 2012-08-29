@@ -243,7 +243,6 @@ public class JavaFileWriter {
 	}
 
 	public String translate(Code.Deref code, FunDecl fun) {
-		// FIXME: need a cast here
 		String body = "(" + type2JavaType(fun.types.get(code.target)) +  ") automaton.get(r" + code.operand + ")";		
 		return comment("r" + code.target + " = " + body + ";",code.toString());
 	}
