@@ -294,10 +294,10 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Starting slow")@Test public void RealSplit_Valid_1_RuntimeTest() { runTest("RealSplit_Valid_1"); }
  @Ignore("Starting slow")@Test public void RealSub_Valid_1_RuntimeTest() { runTest("RealSub_Valid_1"); }
  @Ignore("Starting slow")@Test public void RealSub_Valid_2_RuntimeTest() { runTest("RealSub_Valid_2"); }
- @Ignore("Starting slow")@Test public void RecordAccess_Valid_1_RuntimeTest() { runTest("RecordAccess_Valid_1"); }
- @Ignore("Starting slow")@Test public void RecordAccess_Valid_2_RuntimeTest() { runTest("RecordAccess_Valid_2"); }
- @Ignore("Starting slow")@Test public void RecordAssign_Valid_1_RuntimeTest() { runTest("RecordAssign_Valid_1"); }
- @Ignore("Starting slow")@Test public void RecordAssign_Valid_2_RuntimeTest() { runTest("RecordAssign_Valid_2"); }
+ @Test public void RecordAccess_Valid_1_RuntimeTest() { runTest("RecordAccess_Valid_1"); }
+ @Test public void RecordAccess_Valid_2_RuntimeTest() { runTest("RecordAccess_Valid_2"); }
+ @Test public void RecordAssign_Valid_1_RuntimeTest() { runTest("RecordAssign_Valid_1"); }
+ @Test public void RecordAssign_Valid_2_RuntimeTest() { runTest("RecordAssign_Valid_2"); }
  @Ignore("Starting slow")@Test public void RecordAssign_Valid_3_RuntimeTest() { runTest("RecordAssign_Valid_3"); }
  @Ignore("Starting slow")@Test public void RecordAssign_Valid_4_RuntimeTest() { runTest("RecordAssign_Valid_4"); }
  @Ignore("Starting slow")@Test public void RecordAssign_Valid_5_RuntimeTest() { runTest("RecordAssign_Valid_5"); }
@@ -352,7 +352,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetIntersection_Valid_1_RuntimeTest() { runTest("SetIntersection_Valid_1"); }
  @Test public void SetIntersection_Valid_2_RuntimeTest() { runTest("SetIntersection_Valid_2"); }
  @Test public void SetIntersection_Valid_3_RuntimeTest() { runTest("SetIntersection_Valid_3"); }
- @Test public void SetIntersection_Valid_4_RuntimeTest() { runTest("SetIntersection_Valid_4"); }
+ @Ignore("Known Issue - reals") @Test public void SetIntersection_Valid_4_RuntimeTest() { runTest("SetIntersection_Valid_4"); }
  @Test public void SetIntersect_Valid_1_RuntimeTest() { runTest("SetIntersect_Valid_1"); }
  @Test public void SetIntersect_Valid_2_RuntimeTest() { runTest("SetIntersect_Valid_2"); }
  @Test public void SetLength_Valid_1_RuntimeTest() { runTest("SetLength_Valid_1"); }

@@ -49,6 +49,13 @@ wycc_obj* wycc_box_int(int x);
 wycc_obj* wycc_box_long(long x);
 wycc_obj* wycc_box_bool(int x);
 wycc_obj* wycc_box_char(char x);
+wycc_obj* wycc_box_null();
+wycc_obj* wycc_box_ref(int x);
+wycc_obj* wycc_record_record(wycc_obj* nam, wycc_obj* typ);
+wycc_obj* wycc_rrecord_new(long siz);
+wycc_obj* wycc_record_new(wycc_obj* meta);
+void wycc_record_fill(wycc_obj* rec, int osv, wycc_obj* itm);
+wycc_obj* wycc_record_get_dr(wycc_obj* rec, long osv);
 wycc_obj* wycc_list_new(long siz);
 wycc_obj* wycc_list_get(wycc_obj* lst, long at);
 void wycc_list_add(wycc_obj* lst, wycc_obj* itm);
@@ -110,8 +117,9 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm);
 
 
 #ifndef WY_OBJ_SAFE
-#define WY_OBJ_SANE(x)	wycc_obj_sane(x)
-#define WY_OBJ_BUMP(x)	wycc_obj_bump(x)
+#define WY_OBJ_SANE(x,y)	wycc_obj_sane(x,y)
+#define WY_OBJ_BUMP(x)		wycc_obj_bump(x)
+extern int wycc__mile__stone;
 #endif
 
 
