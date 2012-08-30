@@ -191,13 +191,21 @@ public class SpecParser {
 	public List<Code> parseRuleBlock(int indent, Environment environment,
 			ArrayList<Code> codes) {
 		Tabs tabs = getIndent();
-
+		boolean conditional = true;
 		while (tabs != null && tabs.ntabs == indent) {
 			index = index + 1;
-			codes.addAll(parseRule(environment));
+			conditional &= parseRule(environment,codes);
 			tabs = getIndent();
 		}
 
+		if (conditional) {
+			// indicates all rules in this block were conditional, so we need to
+			// add a default case.
+			int operand = environment.allocate(Type.T_BOOL);
+			codes.add(new Code.Constant(operand, false));
+			codes.add(new Code.Return(operand));
+		}
+		
 		return codes;
 	}
 
@@ -224,11 +232,11 @@ public class SpecParser {
 		}
 	}
 
-	public List<Code> parseRule(Environment environment) {
-		int start = index;
+	public  boolean parseRule(Environment environment, ArrayList<Code> codes) {
+		int startIndex = index;
 		match(Arrow.class);		
-		ArrayList<Code> codes = new ArrayList<Code>();
 		
+		ArrayList<Code> body = new ArrayList<Code>();
 		int ruleOperand = environment.allocate(Type.T_ANY);
 		
 		if (index < tokens.size() && tokens.get(index).text.equals("let")) {
@@ -243,60 +251,65 @@ public class SpecParser {
 				String id = matchIdentifier().text;
 				match(Equals.class);
 				int letTarget = environment.allocate(Type.T_ANY, id);
-				parseAddSubExpression(letTarget, environment, codes);
+				parseAddSubExpression(letTarget, environment, body);
 				skipWhiteSpace(true);
 			} while (index < tokens.size()
 					&& tokens.get(index) instanceof Comma);
 			match(ElemOf.class);
 		}
 
-		parseAddSubExpression(ruleOperand, environment, codes);
+		parseAddSubExpression(ruleOperand, environment, body);
 		
-		codes.add(new Code.Rewrite(environment.get("this"), ruleOperand,
-				sourceAttr(start, index - 1)));		
+		body.add(new Code.Rewrite(environment.get("this"), ruleOperand,
+				sourceAttr(startIndex, index - 1)));		
 		
 		int target = environment.allocate(Type.T_BOOL);
-		codes.add(new Code.Constant(target,true,sourceAttr(start, index - 1)));
-		codes.add(new Code.Return(target,sourceAttr(start, index - 1)));
+		body.add(new Code.Constant(target,true,sourceAttr(startIndex, index - 1)));
+		body.add(new Code.Return(target,sourceAttr(startIndex, index - 1)));
 		
 		skipWhiteSpace(true);
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			match(Comma.class);
 			matchKeyword("if");
 			int ifTarget = environment.allocate(Type.T_BOOL);
-			ArrayList<Code> ifCodes = new ArrayList<Code>();
-			parseCondition(ifTarget, environment, ifCodes);
+			parseCondition(ifTarget, environment, codes);
 			
 			matchEndLine();
-			ifCodes.add(new Code.If(ifTarget, codes, Collections.EMPTY_LIST,
-					sourceAttr(start, index - 1)));
-			codes = ifCodes;
+			codes.add(new Code.If(ifTarget, body, Collections.EMPTY_LIST,
+					sourceAttr(startIndex, index - 1)));
+			return true;
+		} else {
+			codes.addAll(body);
+			return false;
 		}
-
-		return codes;
 	}
 
 	private void parseCondition(int target, Environment environment,
 			ArrayList<Code> codes) {
 		checkNotEof();
 		int start = index;
-		parseConditionExpression(target, environment, codes);
+		int leftOperand = environment.allocate(Type.T_ANY);
+		
+		parseConditionExpression(leftOperand, environment, codes);
 
 		if (index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {
 			match(LogicalAnd.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseCondition(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.AND, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_BOOL);
+			parseCondition(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.AND, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseCondition(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.OR, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_BOOL);
+			parseCondition(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.OR, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
+		} else {
+			// TODO: it would be nice to get rid of this.
+			codes.add(new Code.Assign(target, leftOperand, sourceAttr(start, index - 1)));
 		}
 	}
 
@@ -304,110 +317,125 @@ public class SpecParser {
 			ArrayList<Code> codes) {
 		int start = index;
 
-		parseAddSubExpression(target, environment, codes);
+		int leftOperand = environment.allocate(Type.T_ANY);
+		
+		parseAddSubExpression(leftOperand, environment, codes);
 
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseConditionExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.LTEQ, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseConditionExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.LTEQ, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof LeftAngle) {
 			match(LeftAngle.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseConditionExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.LT, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseConditionExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.LT, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseConditionExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.GTEQ, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseConditionExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.GTEQ, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseConditionExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.GT, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseConditionExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.GT, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseConditionExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.EQ, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseConditionExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.EQ, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_BOOL);
-			parseConditionExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.NEQ, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseConditionExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.NEQ, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
+		} else {
+			// TODO: it would be nice to get rid of this.
+			codes.add(new Code.Assign(target, leftOperand, sourceAttr(start, index - 1)));
 		}
 	}
 
 	private void parseAddSubExpression(int target, Environment environment,
 			ArrayList<Code> codes) {
 		int start = index;
-		parseMulDivExpression(target, environment, codes);
+		int leftOperand = environment.allocate(Type.T_ANY);
+		
+		parseMulDivExpression(leftOperand, environment, codes);
 
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_ANY);
-			parseAddSubExpression(operand, environment,codes);
-			codes.add(new Code.BinOp(Code.BOp.ADD, target, target,
-					operand, sourceAttr(start, index - 1)));
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseAddSubExpression(rightOperand, environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.ADD, target, leftOperand,
+					rightOperand, sourceAttr(start, index - 1)));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_ANY);
-			parseAddSubExpression(operand, environment,codes);
-			codes.add(new Code.BinOp(Code.BOp.SUB, target, target,
-					operand, sourceAttr(start, index - 1)));
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseAddSubExpression(rightOperand, environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.SUB, target, leftOperand,
+					rightOperand, sourceAttr(start, index - 1)));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof PlusPlus) {
 			// wrong precidence
 			match(PlusPlus.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_ANY);
-			parseAddSubExpression(operand, environment,codes);
-			codes.add(new Code.BinOp(Code.BOp.APPEND, target, target,
-					operand, sourceAttr(start, index - 1)));
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseAddSubExpression(rightOperand, environment,codes);
+			codes.add(new Code.BinOp(Code.BOp.APPEND, target, leftOperand,
+					rightOperand, sourceAttr(start, index - 1)));
+		} else {
+			// TODO: it would be nice to get rid of this.
+			codes.add(new Code.Assign(target, leftOperand, sourceAttr(start, index - 1)));
 		}
 	}
 
 	private void parseMulDivExpression(int target, Environment environment,
 			ArrayList<Code> codes) {
 		int start = index;
-		parseIndexTerm(target, environment, codes);
+		int leftOperand = environment.allocate(Type.T_ANY);
+		
+		parseIndexTerm(leftOperand, environment, codes);
 
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_ANY);
-			parseMulDivExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.MUL, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseMulDivExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.MUL, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
 			
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightSlash) {
 			match(RightSlash.class);
 			skipWhiteSpace(true);
-			int operand = environment.allocate(Type.T_ANY);
-			parseMulDivExpression(operand, environment, codes);
-			codes.add(new Code.BinOp(Code.BOp.DIV, target, target, operand,
+			int rightOperand = environment.allocate(Type.T_ANY);
+			parseMulDivExpression(rightOperand, environment, codes);
+			codes.add(new Code.BinOp(Code.BOp.DIV, target, leftOperand, rightOperand,
 					sourceAttr(start, index - 1)));
+		} else {
+			// TODO: it would be nice to get rid of this.
+			codes.add(new Code.Assign(target, leftOperand, sourceAttr(start, index - 1)));
 		}
 	}
 

@@ -243,7 +243,7 @@ public class TypeChecker {
 	
 	public void resolve(Code.Rewrite code, ArrayList<Type> environment) {
 		Type type = environment.get(code.operand);
-		checkSubtype(Type.T_REFANY,type,code);		
+		//checkSubtype(Type.T_REFANY,type,code);		
 	}
 	
 	public void resolve(Code.Return code, ArrayList<Type> environment) {
