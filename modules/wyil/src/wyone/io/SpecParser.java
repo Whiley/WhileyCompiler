@@ -213,8 +213,30 @@ public class SpecParser {
 		ArrayList<Code> codes = new ArrayList<Code>();
 		Environment environment = new Environment();
 		environment.allocate(Type.T_REFANY, "this");
+		environment.allocate(Type.T_BOOL, "ret");
+		
+		codes.add(new Code.Constant(environment.get("ret"),false));
+		
+		for(Decl d : decls) {
+			if(d instanceof FunDecl) {
+				FunDecl fd = (FunDecl) d;
+				createRewriteDispatcher(fd,codes,environment);
+			}
+		}
+		
+		codes.add(new Code.Return(environment.get("ret")));
+		
 		return new FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, Type.T_REFANY),
 				environment.asList(), codes);
+	}
+	
+	public void createRewriteDispatcher(FunDecl fd, ArrayList<Code> codes, Environment environment) {
+		ArrayList<Code> ifCodes = new ArrayList<Code>();
+		int[] operands = new int[] { environment.get("this") };
+		ifCodes.add(new Code.Invoke("rewrite", fd.type, environment.get("ret"),
+				operands));
+		codes.add(new Code.IfIs(environment.get("this"), fd.type.param,
+				ifCodes, Collections.EMPTY_LIST));	
 	}
 	
 	private Tabs getIndent() {

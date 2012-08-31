@@ -238,6 +238,27 @@ public class Code extends SyntacticElement.Impl {
 		}
 	}
 	
+	public static final class Invoke extends Code {
+		public final String name;
+		public final Type.Fun type;
+		public final int target;
+		public final int[] operands;
+
+		public Invoke(String name, Type.Fun type, int target, int[] operands,
+				Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.type = type;
+			this.target = target;
+			this.operands = operands;
+		}
+
+		public String toString() {
+			return "invoke " + name + ":" + type + " %" + target + " = "
+					+ Arrays.toString(operands);
+		}
+	}
+	
 	public static final class If extends Code {
 		public final int operand;
 		public final ArrayList<Code> trueBranch;
@@ -252,7 +273,27 @@ public class Code extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
-			return "if " + trueBranch + " else " + falseBranch;
+			return "if " + operand + " " + trueBranch + " else " + falseBranch;
+		}
+	}
+	
+	public static final class IfIs extends Code {
+		public final int operand;
+		public final Type type;
+		public final ArrayList<Code> trueBranch;
+		public final ArrayList<Code> falseBranch;
+		
+		public IfIs(int operand, Type type, List<Code> trueBranch, List<Code> falseBranch,
+				Attribute... attributes) {
+			super(attributes);
+			this.operand = operand;
+			this.type = type;
+			this.trueBranch = new ArrayList<Code>(trueBranch);
+			this.falseBranch = new ArrayList<Code>(falseBranch);
+		}
+		
+		public String toString() {
+			return "if " + operand + " is " + type + " " + trueBranch + " else " + falseBranch;
 		}
 	}
 	

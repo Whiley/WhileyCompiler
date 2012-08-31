@@ -53,8 +53,12 @@ public class TypeChecker {
 				resolve((Code.TermContents) code, fun);
 			} else if (code instanceof Code.Deref) {
 				resolve((Code.Deref) code, fun);
+			} else if (code instanceof Code.Invoke) {
+				resolve((Code.Invoke) code, fun);
 			} else if (code instanceof Code.If) {
 				resolve((Code.If) code, fun);
+			} else if (code instanceof Code.IfIs) {
+				resolve((Code.IfIs) code, fun);
 			} else if (code instanceof Code.UnOp) {
 				resolve((Code.UnOp) code, fun);
 			} else if (code instanceof Code.BinOp) {
@@ -103,9 +107,25 @@ public class TypeChecker {
 		environment.set(code.target,contents);
 	}
 	
+	protected void resolve(Code.Invoke code, ArrayList<Type> environment) {
+		// FIXME: type check the operands!!
+		environment.set(code.target,code.type.ret);
+	}
+	
+	
 	protected void resolve(Code.If code, ArrayList<Type> environment) {
 		Type type = environment.get(code.operand);
 		checkSubtype(Type.T_BOOL,type,code);
+		for(Code c : code.trueBranch) {
+			resolve(c,environment);
+		}
+		for(Code c : code.falseBranch) {
+			resolve(c,environment);
+		}
+	}
+	
+	protected void resolve(Code.IfIs code, ArrayList<Type> environment) {
+		Type type = environment.get(code.operand);
 		for(Code c : code.trueBranch) {
 			resolve(c,environment);
 		}

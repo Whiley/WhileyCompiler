@@ -126,7 +126,7 @@ public class JavaFileWriter {
 	}
 
 	public void write(FunDecl decl, HashSet<String> used) {
-		myOut(1, type2JavaType(decl.type.ret) + " " + decl.name + "_"
+		myOut(1, "static " + type2JavaType(decl.type.ret) + " " + decl.name + "_"
 				+ nameMangle(decl.type.param, used) + "("
 				+ type2JavaType(decl.type.param) + " r0, Automaton automaton) {");
 		// first, declare variables
@@ -218,8 +218,12 @@ public class JavaFileWriter {
 			translate(level,(Code.Constant) code, fun);
 		} else if (code instanceof Code.TermContents) {
 			translate(level,(Code.TermContents) code, fun);
+		} else if (code instanceof Code.Invoke) {
+			translate(level,(Code.Invoke) code, fun);
 		} else if (code instanceof Code.If) {
 			translate(level,(Code.If) code, fun);
+		} else if (code instanceof Code.IfIs) {
+			translate(level,(Code.IfIs) code, fun);
 		} else if (code instanceof Code.Deref) {
 			translate(level,(Code.Deref) code, fun);
 		} else if (code instanceof Code.UnOp) {
@@ -247,6 +251,37 @@ public class JavaFileWriter {
 	public void translate(int level, Code.Deref code, FunDecl fun) {
 		String body = "(" + type2JavaType(fun.types.get(code.target)) +  ") automaton.get(r" + code.operand + ")";		
 		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
+	}
+	
+	public void translate(int level, Code.Invoke code, FunDecl fun) {
+		HashSet<String> used = new HashSet<String>();
+		String body = code.name + "_" + nameMangle(code.type.param,used) + "(";
+		for(int i=0;i!=code.operands.length;++i) {
+			if(i!=0) {
+				body = body + ", ";
+			}
+			body = body + "r" + code.operands[i];
+		}
+		body = body + ")";
+		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
+	}
+	
+	public void translate(int level, Code.IfIs code, FunDecl fun) {
+		String mangle = type2HexStr(code.type);
+		myOut(level,"if(typeof_" + mangle + "(" + code.operand + ",automaton)) {");
+		for(Code c : code.trueBranch) {
+			translate(level+1,c,fun);
+		}
+		if(code.falseBranch.isEmpty()) {
+			myOut(level,"}");
+		} else {
+			myOut(level,"} else {");
+			for(Code c : code.falseBranch) {
+				translate(level+1,c,fun);
+			}
+			myOut(level,"}");
+		}
+		typeTests.add(code.type);
 	}
 	
 	public void translate(int level, Code.If code, FunDecl fun) {
@@ -429,6 +464,8 @@ public class JavaFileWriter {
 			writeTypeTest((Type.Int)type,worklist,hierarchy);
 		} else if (type instanceof Type.Strung) {
 			writeTypeTest((Type.Strung)type,worklist,hierarchy);
+		} else if (type instanceof Type.Ref) {
+			writeTypeTest((Type.Ref)type,worklist,hierarchy);							
 		} else if (type instanceof Type.Term) {
 			writeTypeTest((Type.Term)type,worklist,hierarchy);
 		} else if (type instanceof Type.Compound) {
@@ -445,7 +482,7 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");		
+				+ "(Automaton.State state, Automaton automaton) {");		
 		myOut(2, "return true;");
 		myOut(1, "}");
 		myOut();
@@ -456,8 +493,8 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");		
-		myOut(2, "return automaton.get(index).kind == K_INT;");
+				+ "(Automaton.State state, Automaton automaton) {");		
+		myOut(2, "return state.kind == K_INT;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -467,10 +504,26 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");		
-		myOut(2, "return automaton.get(index).kind == K_STRING;");
+				+ "(Automaton.State state, Automaton automaton) {");		
+		myOut(2, "return state.kind == K_STRING;");
 		myOut(1, "}");
 		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Ref type, HashSet<Type> worklist,
+			HashMap<String, Set<String>> hierarchy) {
+		String mangle = type2HexStr(type);
+		String elementMangle = type2HexStr(type.element);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(int index, Automaton automaton) {");		
+		myOut(2, "return typeof_" + elementMangle + "(automaton.get(index),automaton);");
+		myOut(1, "}");
+		myOut();	
+		
+		if (typeTests.add(type.element)) {
+			worklist.add(type.element);
+		}
 	}
 	
 	protected void writeTypeTest(Type.Term type, HashSet<Type> worklist,
@@ -643,7 +696,13 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
-		myOut(3, "a = rewrite(a);");
+		myOut(3, "boolean changed = true;");
+		myOut(3, "while(changed) {");
+		myOut(4, "changed = false;");
+		myOut(4, "for(int i=0;i!=a.nStates();++i) {");
+		myOut(5, "changed |= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,a);");
+		myOut(4, "}");
+		myOut(3, "}");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(a);");
 		myOut(3, "System.out.println();");
