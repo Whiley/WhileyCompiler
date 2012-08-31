@@ -399,7 +399,7 @@ public class JavaFileWriter {
 	
 	public void translate(int level, Code.Rewrite code, FunDecl fun) {
 		// TODO: implement
-		myOut(level,comment("automaton.rewrite(" + code.target + "," + code.operand
+		myOut(level,comment("automaton.rewrite(r" + code.target + ",r" + code.operand
 				+ ");", code.toString()));
 	}
 	
@@ -696,7 +696,7 @@ public class JavaFileWriter {
 		myOut(3, "while(changed) {");
 		myOut(4, "changed = false;");
 		myOut(4, "for(int i=0;i!=a.nStates();++i) {");
-		myOut(5, "changed |= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,a);");
+		myOut(5, "changed &= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,a);");
 		myOut(4, "}");
 		myOut(3, "}");
 		myOut(3, "System.out.print(\"REWROTE: \");");

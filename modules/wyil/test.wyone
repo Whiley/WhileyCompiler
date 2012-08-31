@@ -4,6 +4,6 @@ class Bool as True | False
 term Not(Term)
 
 rewrite Not(Term x):
-    => x, if x == x
+    => x
 
 class Term as Bool | Not
