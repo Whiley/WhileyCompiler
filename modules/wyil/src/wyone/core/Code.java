@@ -313,17 +313,20 @@ public class Code extends SyntacticElement.Impl {
 	}
 	
 	public static final class Rewrite extends Code {
-		public final int target;		
-		public final int operand;
+		public final int target;
+		public final int fromOperand;
+		public final int toOperand;		
 
-		public Rewrite(int target, int operand, Attribute... attributes) {
+		public Rewrite(int target, int fromOperand, int toOperand, Attribute... attributes) {
 			super(attributes);
 			this.target = target;			
-			this.operand = operand;
+			this.fromOperand = fromOperand;
+			this.toOperand = toOperand;
 		}
 
 		public String toString() {
-			return "rewrite *%" + target + " => %" + operand;
+			return "rewrite %" + target + " = (%" + fromOperand + " => %"
+					+ toOperand +")";
 		}
 	}
 	

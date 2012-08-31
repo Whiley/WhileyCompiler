@@ -76,7 +76,8 @@ public final class Automaton {
 	private int nStates;
 		
 	/**
-	 * The array of automaton states
+	 * The array of automaton states. <b>NOTES:</b> this may contain
+	 * <code>null</code> values for states which have been garbage collected.
 	 */
 	private State[] states;	// should not be public!
 	
@@ -193,28 +194,42 @@ public final class Automaton {
 	 *            destroyed.
 	 * @return
 	 */
-	public void rewrite(int src, int target) {
-		if(target < 0) {
+	public boolean rewrite(int src, int target) {
+		if(src == target) {
+			return false;
+		} else if(target < 0) {
 			for(int i=0;i!=nStates;++i) {
-				states[i].remap(src,target);
+				State state = states[i];
+				if(state != null) {
+					state.remap(src,target);
+				}
 			}
 			for(int i=0;i!=nRoots;++i) {
 				if(roots[i] == src) {
 					roots[i] = target;
 				}
 			}
+			if(src >= 0) {
+				states[src] = null;
+			}
+			return true;
 		} else {
+			State os = states[src];
 			State ns = states[target];
 			states[src] = ns;
 			for(int i=0;i!=nStates;++i) {
-				states[i].remap(target,src);
+				State state = states[i];
+				if(state != null) {
+					state.remap(target,src);
+				}
 			}
 			for(int i=0;i!=nRoots;++i) {
 				if(roots[i] == target) {
 					roots[i] = src;
 				}
 			}
-			// to is now free to be garbage collected
+			states[target] = null;
+			return !os.equals(ns);
 		}
 	}
 	

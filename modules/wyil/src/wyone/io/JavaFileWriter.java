@@ -399,7 +399,7 @@ public class JavaFileWriter {
 	
 	public void translate(int level, Code.Rewrite code, FunDecl fun) {
 		// TODO: implement
-		myOut(level,comment("automaton.rewrite(r" + code.target + ",r" + code.operand
+		myOut(level,comment("r" + code.target +" = automaton.rewrite(r" + code.fromOperand + ",r" + code.toOperand
 				+ ");", code.toString()));
 	}
 	
@@ -688,19 +688,21 @@ public class JavaFileWriter {
 				"PrettyAutomataReader reader = new PrettyAutomataReader(System.in,SCHEMA);");
 		myOut(3,
 				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
-		myOut(3, "Automaton a = reader.read();");
+		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
-		myOut(3, "writer.write(a);");
+		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
 		myOut(3, "boolean changed = true;");
 		myOut(3, "while(changed) {");
 		myOut(4, "changed = false;");
-		myOut(4, "for(int i=0;i<a.nStates();++i) {");
-		myOut(5, "changed |= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,a);");
+		myOut(4, "for(int i=0;i<automaton.nStates();++i) {");
+		myOut(5, "if(automaton.get(i) != null) {");
+		myOut(6, "changed |= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,automaton);");
+		myOut(5, "}");
 		myOut(4, "}");
 		myOut(3, "}");
 		myOut(3, "System.out.print(\"REWROTE: \");");
-		myOut(3, "writer.write(a);");
+		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");

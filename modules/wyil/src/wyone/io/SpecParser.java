@@ -188,27 +188,6 @@ public class SpecParser {
 		return Type.T_REF(Type.T_COMPOUND(kind, unbound, parameters));
 	}
 
-	public List<Code> parseRuleBlock(int indent, Environment environment,
-			ArrayList<Code> codes) {
-		Tabs tabs = getIndent();
-		boolean conditional = true;
-		while (tabs != null && tabs.ntabs == indent) {
-			index = index + 1;
-			conditional &= parseRule(environment,codes);
-			tabs = getIndent();
-		}
-
-		if (conditional) {
-			// indicates all rules in this block were conditional, so we need to
-			// add a default case.
-			int operand = environment.allocate(Type.T_BOOL);
-			codes.add(new Code.Constant(operand, false));
-			codes.add(new Code.Return(operand));
-		}
-		
-		return codes;
-	}
-
 	public FunDecl createRewriteDispatch(ArrayList<Decl> decls) {
 		ArrayList<Code> codes = new ArrayList<Code>();
 		Environment environment = new Environment();
@@ -254,6 +233,27 @@ public class SpecParser {
 		}
 	}
 
+	public List<Code> parseRuleBlock(int indent, Environment environment,
+			ArrayList<Code> codes) {
+		Tabs tabs = getIndent();
+		boolean conditional = true;
+		while (tabs != null && tabs.ntabs == indent) {
+			index = index + 1;
+			conditional &= parseRule(environment,codes);
+			tabs = getIndent();
+		}
+
+		if (conditional) {
+			// indicates all rules in this block were conditional, so we need to
+			// add a default case.
+			int operand = environment.allocate(Type.T_BOOL);
+			codes.add(new Code.Constant(operand, false));
+			codes.add(new Code.Return(operand));
+		}
+		
+		return codes;
+	}
+
 	public  boolean parseRule(Environment environment, ArrayList<Code> codes) {
 		int startIndex = index;
 		match(Arrow.class);		
@@ -281,12 +281,9 @@ public class SpecParser {
 		}
 
 		parseAddSubExpression(ruleOperand, environment, body);
-		
-		body.add(new Code.Rewrite(environment.get("this"), ruleOperand,
-				sourceAttr(startIndex, index - 1)));		
-		
 		int target = environment.allocate(Type.T_BOOL);
-		body.add(new Code.Constant(target,true,sourceAttr(startIndex, index - 1)));
+		body.add(new Code.Rewrite(target, environment.get("this"), ruleOperand,
+				sourceAttr(startIndex, index - 1)));		
 		body.add(new Code.Return(target,sourceAttr(startIndex, index - 1)));
 		
 		skipWhiteSpace(true);

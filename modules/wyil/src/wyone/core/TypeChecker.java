@@ -262,8 +262,9 @@ public class TypeChecker {
 	}
 	
 	public void resolve(Code.Rewrite code, ArrayList<Type> environment) {
-		Type type = environment.get(code.operand);
-		//checkSubtype(Type.T_REFANY,type,code);		
+		//Type type = environment.get(code.operand);
+		//checkSubtype(Type.T_REFANY,type,code);
+		environment.set(code.target,Type.T_BOOL);
 	}
 	
 	public void resolve(Code.Return code, ArrayList<Type> environment) {
