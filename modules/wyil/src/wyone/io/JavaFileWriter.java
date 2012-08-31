@@ -256,13 +256,11 @@ public class JavaFileWriter {
 	public void translate(int level, Code.Invoke code, FunDecl fun) {
 		HashSet<String> used = new HashSet<String>();
 		String body = code.name + "_" + nameMangle(code.type.param,used) + "(";
-		for(int i=0;i!=code.operands.length;++i) {
-			if(i!=0) {
-				body = body + ", ";
-			}
-			body = body + "r" + code.operands[i];
+		for(int i=0;i!=code.operands.length;++i) {			
+			body = body + "r" + code.operands[i];			
+			body = body + ", ";
 		}
-		body = body + ")";
+		body = body + "automaton)";
 		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
@@ -531,8 +529,7 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");
-		myOut(2, "State state = automaton.get(index);");
+				+ "(Automaton.State state, Automaton automaton) {");
 		
 		HashSet<String> expanded = new HashSet<String>();
 		expand(type.name, hierarchy, expanded);
@@ -572,8 +569,7 @@ public class JavaFileWriter {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");
-		myOut(2, "State _state = automaton.get(index);");
+				+ "(Automaton.State _state, Automaton automaton) {");		
 		myOut(2, "if(_state instanceof Compound) {");
 		myOut(3, "Compound state = (Compound) _state;");
 		myOut(3, "int[] children = state.children;");
