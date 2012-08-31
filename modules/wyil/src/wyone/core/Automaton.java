@@ -303,6 +303,14 @@ public final class Automaton {
 				r = r + state.toString();
 			}
 		}		
+		r = r + "<";
+		for(int i=0;i!=roots.length;++i) {
+			if(i != 0) {
+				r += ",";
+			}
+			r += roots[i];
+		}
+		r = r + ">";
 		return r;
 	}
 		

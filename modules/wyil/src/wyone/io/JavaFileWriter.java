@@ -266,7 +266,7 @@ public class JavaFileWriter {
 	
 	public void translate(int level, Code.IfIs code, FunDecl fun) {
 		String mangle = type2HexStr(code.type);
-		myOut(level,"if(typeof_" + mangle + "(" + code.operand + ",automaton)) {");
+		myOut(level,"if(typeof_" + mangle + "(r" + code.operand + ",automaton)) {");
 		for(Code c : code.trueBranch) {
 			translate(level+1,c,fun);
 		}
@@ -695,8 +695,8 @@ public class JavaFileWriter {
 		myOut(3, "boolean changed = true;");
 		myOut(3, "while(changed) {");
 		myOut(4, "changed = false;");
-		myOut(4, "for(int i=0;i!=a.nStates();++i) {");
-		myOut(5, "changed &= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,a);");
+		myOut(4, "for(int i=0;i<a.nStates();++i) {");
+		myOut(5, "changed |= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,a);");
 		myOut(4, "}");
 		myOut(3, "}");
 		myOut(3, "System.out.print(\"REWROTE: \");");
