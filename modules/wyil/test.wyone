@@ -3,7 +3,7 @@ term False
 class Bool as True | False
 term Not(Term)
 
-rewrite Not(Term x):
-    => x, if x == x
+rewrite Not(True):
+    => False
 
 class Term as Bool | Not

@@ -526,11 +526,13 @@ public class SpecParser {
 		} else if (token instanceof Identifier) {
 			String var = matchIdentifier().text;
 			Integer source = environment.get(var);
-			if (source == null) {
-				syntaxError("unknown variable", token);
-			}
-			codes.add(new Code.Assign(target, source, sourceAttr(start,
-					index - 1)));
+			if (source != null) {
+				codes.add(new Code.Assign(target, source, sourceAttr(start,
+						index - 1)));	
+			} else {
+				codes.add(new Code.Constructor(target, var, sourceAttr(
+						start, index - 1)));
+			}			
 		} else if (token instanceof Int) {
 			parseInteger(target, environment, codes);
 		} else if (token instanceof Real) {

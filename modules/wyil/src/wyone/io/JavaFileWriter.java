@@ -94,7 +94,6 @@ public class JavaFileWriter {
 		myOut("import wyone.io.PrettyAutomataReader;");
 		myOut("import wyone.io.PrettyAutomataWriter;");
 		myOut("import wyone.core.*;");
-		myOut("import static wyone.core.Automaton.*;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
@@ -104,8 +103,8 @@ public class JavaFileWriter {
 		myOut(1, "public final static int K_" + decl.type.name + " = "
 				+ termCounter++ + ";");
 		if (decl.type.data == Type.T_VOID) {
-			myOut(1, "public final static State " + decl.type.name
-					+ " = new Term(K_" + decl.type.name + ");");
+			myOut(1, "public final static Automaton.Term " + decl.type.name
+					+ " = new Automaton.Term(K_" + decl.type.name + ");");
 		}
 		myOut();
 	}
@@ -393,14 +392,30 @@ public class JavaFileWriter {
 		myOut(level,"TODO: list generator");
 	}
 
-	public void translate(int level, Code.Constructor ivk, FunDecl fun) {				
-		myOut(level,"TODO: constructor");
+	public void translate(int level, Code.Constructor code, FunDecl fun) {
+		String body;
+		if (code.operand == -1) {
+			body = code.name;
+		} else {
+			body = "new Automaton.Term(K_" + code.name + ",r" + code.operand
+					+ ")";
+		}
+		myOut(level, "r" + code.target + " = " + body + ";");
 	}
 	
 	public void translate(int level, Code.Rewrite code, FunDecl fun) {
-		// TODO: implement
-		myOut(level,comment("r" + code.target +" = automaton.rewrite(r" + code.fromOperand + ",r" + code.toOperand
+		int toOperand = code.toOperand;
+		Type type = fun.types.get(toOperand);		
+		if (!(type instanceof Type.Ref)) {
+			// this indicates a new kind of value has been created and we need
+			// to allocate this.
+			myOut(level, "int v" + toOperand + " = automaton.add(r" + toOperand + ");");
+			myOut(level,comment("r" + code.target +" = automaton.rewrite(r" + code.fromOperand + ",v" + toOperand
+					+ ");", code.toString()));
+		} else {
+			myOut(level,comment("r" + code.target +" = automaton.rewrite(r" + code.fromOperand + ",r" + toOperand
 				+ ");", code.toString()));
+		}
 	}
 	
 	public void translate(int level, Code.Return code, FunDecl fun) {
@@ -534,7 +549,7 @@ public class JavaFileWriter {
 		HashSet<String> expanded = new HashSet<String>();
 		expand(type.name, hierarchy, expanded);
 		indent(2);
-		out.print("if(state instanceof Term && (");
+		out.print("if(state instanceof Automaton.Term && (");
 		boolean firstTime = true;
 		for (String n : expanded) {			
 			myOut();
@@ -550,7 +565,7 @@ public class JavaFileWriter {
 		myOut(")) {");
 		// FIXME: there is definitely a bug here since we need the offset within the automaton state
 		if (type.data != Type.T_VOID) {
-			myOut(3,"int data = ((Term)state).contents;");
+			myOut(3,"int data = ((Automaton.Term)state).contents;");
 			myOut(3,"if(typeof_" + type2HexStr(type.data) + "(data,automaton)) { return true; }");
 			if (typeTests.add(type.data)) {
 				worklist.add(type.data);

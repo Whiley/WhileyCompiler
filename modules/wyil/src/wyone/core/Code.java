@@ -52,9 +52,21 @@ public class Code extends SyntacticElement.Impl {
 			this.operand = operand;
 			this.name = name;
 		}
+		
+		public Constructor(int target,String name,
+				Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.operand = -1;
+			this.name = name;
+		}
 
 		public String toString() {
-			return "construct %" + target + " = " + name + "(%" + operand + ")";
+			if(operand != -1) {
+				return "construct %" + target + " = " + name + "(%" + operand + ")";
+			} else {
+				return "construct %" + target + " = " + name;
+			}
 		}
 	}
 	
@@ -343,3 +355,4 @@ public class Code extends SyntacticElement.Impl {
 		}
 	}
 }
+

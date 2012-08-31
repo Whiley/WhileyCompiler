@@ -141,9 +141,10 @@ public class TypeChecker {
 	
 	protected void resolve(Code.Constructor code, ArrayList<Type> environment) {
 	
-		Type arg_t = environment.get(code.operand);			
-
-		// TODO: type check parameter argument!
+		if(code.operand != -1) {
+			Type arg_t = environment.get(code.operand);			
+			// TODO: type check parameter argument!
+		}
 
 		Type.Term type = terms.get(code.name);
 		if (type == null) {
