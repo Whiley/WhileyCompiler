@@ -95,7 +95,7 @@ public class SpecParser {
 
 		if (token instanceof Star) {
 			match(Star.class);
-			return Type.T_ANY;
+			return Type.T_REFANY;
 		} else if (token instanceof LeftCurly || token instanceof LeftSquare) {
 			return parsePatternCompound(environment,src,codes);
 		} else if (token instanceof Identifier) {
