@@ -132,7 +132,7 @@ public class Main {
 				SpecParser parser = new SpecParser(specfile, lexer.scan());
 				SpecFile sf = parser.parse();
 				WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
-				// new TypeChecker().check(wyf);
+				new TypeChecker().check(wyf);
 				// new SpecFileWriter(oFile).write(spec);
 				new JavaFileWriter(oFile).write(wyf);
 			} catch (SyntaxError e) {

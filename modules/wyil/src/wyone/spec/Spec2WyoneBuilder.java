@@ -43,6 +43,7 @@ public class Spec2WyoneBuilder {
 		Environment environment = new Environment();
 		ArrayList<Code> body = new ArrayList<Code>();
 		int root = environment.allocate(param, "this");
+		
 		translate(d.pattern, root, environment, body);
 
 		boolean conditional = true;
@@ -98,7 +99,34 @@ public class Spec2WyoneBuilder {
 	}
 	
 	private void translate(Pattern pattern, int source, Environment environment, ArrayList<Code> codes) {
-		
+		if(pattern instanceof Pattern.Leaf) {
+			translate((Pattern.Leaf) pattern, source, environment, codes);
+		} else if(pattern instanceof Pattern.Term) {
+			translate((Pattern.Term) pattern, source, environment, codes);
+		} else if(pattern instanceof Pattern.Compound) {
+			translate((Pattern.Compound) pattern, source, environment, codes);
+		} else {
+			syntaxError("unknown pattern encountered",filename,pattern);
+		}
+	}
+	
+	private void translate(Pattern.Leaf pattern, int source, Environment environment, ArrayList<Code> codes) {
+		// do nothing?
+	}
+	
+	private void translate(Pattern.Term pattern, int source, Environment environment, ArrayList<Code> codes) {
+		int target = environment.allocate(Type.T_ANY);
+		int contents = environment.allocate(Type.T_REFANY);
+		codes.add(new Code.Deref(target,source)); 
+		codes.add(new Code.TermContents(contents,target));
+		translate(pattern.data,contents,environment,codes);
+		if(pattern.variable != null) {
+			environment.put(contents,pattern.variable);
+		}
+	}
+
+	private void translate(Pattern.Compound pattern, int source, Environment environment, ArrayList<Code> codes) {
+	
 	}
 	
 	private int translate(Expr expr, Environment environment, ArrayList<Code> codes) {
