@@ -3,6 +3,7 @@ term False
 class Bool as True | False
 term Not(Term)
 term And[Term]
+term Var(String)
 
 rewrite Not(True x):
     => False
@@ -13,7 +14,7 @@ rewrite Not(False x):
 rewrite Not(Not(* x)):
     => x
 
-rewrite And[False,Term... xs]:
-    => False
+rewrite And[Term t, Term... ts]:
+    => t
 
-class Term as Bool | Not
+class Term as Bool | Not | Var
