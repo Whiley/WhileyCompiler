@@ -22,6 +22,7 @@ import java.util.*;
 import wyone.core.*;
 import wyone.util.Pair;
 import wyone.util.*;
+import static wyone.core.Type.Compound.*;
 
 public abstract class Pattern extends SyntacticElement.Impl {
 	
@@ -47,7 +48,8 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		public final Pattern data;
 		public final String variable;
 		
-		private Term(String name, Pattern data, String variable) {			
+		public Term(String name, Pattern data, String variable, Attribute... attributes) {
+			super(attributes);
 			this.name = name;
 			this.data = data;					
 			this.variable = variable;
@@ -67,11 +69,6 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	}
 	
 	public static final class Compound extends Pattern {
-		public enum Kind {
-			LIST,
-			SET
-		}
-		
 		public final Kind kind;
 		public final Pair<Pattern,String>[] elements;
 		public final boolean unbounded;

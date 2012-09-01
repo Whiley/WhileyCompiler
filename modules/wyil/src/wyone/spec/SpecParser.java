@@ -629,16 +629,16 @@ public class SpecParser {
 	private Type.Term parseTermType() {
 		skipWhiteSpace(false);
 		checkNotEof();
-		Identifier id = matchIdentifier();		
-		Type data = Type.T_VOID;
-		if(index < tokens.size()) {
+		Identifier id = matchIdentifier();
+		Type.Ref data = null;
+		if (index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token instanceof LeftBrace || token instanceof LeftCurly
 					|| token instanceof LeftSquare) {
-				data = parseType();
+				data = Type.T_REF(parseType());
 			}
 		}
-		return Type.T_TERM(id.text,data);
+		return Type.T_TERM(id.text, data);
 	}
 	
 	private Type.Compound parseCompoundType() {
