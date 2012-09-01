@@ -94,10 +94,10 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 
 	protected void write(Automaton.Term term, Automaton automaton) throws IOException {
 		writer.print(schema[term.kind].name);
-		Type type = schema[term.kind].data;
-		if(type instanceof Type.Compound) {			
+		Type.Ref type = (Type.Ref) schema[term.kind].data;		
+		if(type != null && type.element instanceof Type.Compound) {			
 			write(term.contents,automaton);
-		} else if(type != Type.T_VOID) {
+		} else if(type != null) {
 			writer.print("(");
 			write(term.contents,automaton);
 			writer.print(")");

@@ -21,7 +21,7 @@ public class TypeChecker {
 		for (Decl d : spec.declarations) {
 			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
-				terms.put(cd.name, Type.T_TERM(cd.name, Type.T_VOID));
+				terms.put(cd.name, Type.T_TERM(cd.name, null));
 			} else if (d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
 				terms.put(td.type.name, td.type);

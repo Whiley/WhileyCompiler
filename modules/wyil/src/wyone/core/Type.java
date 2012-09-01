@@ -44,7 +44,7 @@ public abstract class Type {
 		return get(new Compound(kind,unbounded,elements));
 	}
 	
-	public static Term T_TERM(String name, Type data) {
+	public static Term T_TERM(String name, Type.Ref data) {
 		return get(new Term(name,data));
 	}
 	
@@ -200,25 +200,33 @@ public abstract class Type {
 	
 	public static final class Term extends Type {		
 		public final String name;
-		public final Type data;
+		public final Type.Ref data;
 		
-		private Term(String name, Type data) {			
+		private Term(String name, Type.Ref data) {			
 			this.name = name;
 			this.data = data;					
 		}
 				
 		public int hashCode() {
-			return name.hashCode() + data.hashCode();
+			if(data != null) {
+				return name.hashCode() + data.hashCode();
+			} else {
+				return name.hashCode();
+			}
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Term) {
 				Term t = (Term) o;
-				return t.name.equals(name) && data.equals(t.data);
+				if(data == null) {
+					return t.name.equals(name) && data == t.data;
+				} else {
+					return t.name.equals(name) && data.equals(t.data);
+				}
 			}
 			return false;
 		}
 		public String toString() {	
-			if(data != T_VOID) {
+			if(data != null) {
 				return name + "(" + data + ")";
 			} else {
 				return name;
@@ -345,8 +353,12 @@ public abstract class Type {
 			}	
 		} else if(t instanceof Type.Term) {
 			Type.Term st = (Type.Term) t;
-			String r = "T" + st.name;			
-			return r + type2str(st.data);
+			String r = "T" + st.name;		
+			if(st.data != null) {
+				return r + type2str(st.data);
+			} else {
+				return r;
+			}
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}

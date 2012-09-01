@@ -77,7 +77,7 @@ public class PrettyAutomataReader {
 		} 
 		Type.Term type = schema[kind];
 		int data = -1;
-		if(type.data != Type.T_VOID) {			
+		if(type.data != null) {			
 			data = parseState(automaton);
 		}
 		

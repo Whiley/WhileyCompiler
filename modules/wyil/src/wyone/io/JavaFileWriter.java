@@ -102,7 +102,7 @@ public class JavaFileWriter {
 		myOut(1, "// term " + decl.type);
 		myOut(1, "public final static int K_" + decl.type.name + " = "
 				+ termCounter++ + ";");
-		if (decl.type.data == Type.T_VOID) {
+		if (decl.type.data == null) {
 			myOut(1, "public final static Automaton.Term " + decl.type.name
 					+ " = new Automaton.Term(K_" + decl.type.name + ");");
 		}
@@ -205,7 +205,11 @@ public class JavaFileWriter {
 		} else {
 			Type.Term term = (Type.Term) t;
 			out.print("Type.T_TERM(\"" + term.name + "\",");
-			writeTypeSchema(term.data);
+			if(term.data != null) {
+				writeTypeSchema(term.data);
+			} else {
+				out.print("null");
+			}
 			out.print(")");
 		}
 	}
@@ -564,7 +568,7 @@ public class JavaFileWriter {
 		}
 		myOut(")) {");
 		// FIXME: there is definitely a bug here since we need the offset within the automaton state
-		if (type.data != Type.T_VOID) {
+		if (type.data != null) {
 			myOut(3,"int data = ((Automaton.Term)state).contents;");
 			myOut(3,"if(typeof_" + type2HexStr(type.data) + "(data,automaton)) { return true; }");
 			if (typeTests.add(type.data)) {
@@ -585,8 +589,8 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State _state, Automaton automaton) {");		
-		myOut(2, "if(_state instanceof Compound) {");
-		myOut(3, "Compound state = (Compound) _state;");
+		myOut(2, "if(_state instanceof Automaton.Compound) {");
+		myOut(3, "Automaton.Compound state = (Automaton.Compound) _state;");
 		myOut(3, "int[] children = state.children;");
 		
 		Type[] tt_elements = type.elements;

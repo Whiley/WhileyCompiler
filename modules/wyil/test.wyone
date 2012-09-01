@@ -2,11 +2,18 @@ term True
 term False
 class Bool as True | False
 term Not(Term)
+term And[Term]
+
+rewrite Not(True x):
+    => False
 
 rewrite Not(False x):
     => True
 
 rewrite Not(Not(* x)):
     => x
+
+rewrite And[False,Term... xs]:
+    => False
 
 class Term as Bool | Not

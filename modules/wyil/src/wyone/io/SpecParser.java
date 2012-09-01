@@ -88,7 +88,7 @@ public class SpecParser {
 				environment.asList(), codes, sourceAttr(start, index - 1));
 	}
 
-	public Type parsePattern(Environment environment, int src, ArrayList<Code> codes) {
+	public Type.Ref parsePattern(Environment environment, int src, ArrayList<Code> codes) {
 		skipWhiteSpace(true);
 		checkNotEof();
 		Token token = tokens.get(index);
@@ -101,7 +101,7 @@ public class SpecParser {
 		} else if (token instanceof Identifier) {
 			return parsePatternTerm(environment,src,codes);
 		} else {
-			return parseType();
+			return Type.T_REF(parseType());
 		}
 	}
 
@@ -109,7 +109,7 @@ public class SpecParser {
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);		
 		
-		Type type;
+		Type.Ref type;
 		if (token instanceof LeftCurly || token instanceof LeftSquare) {			
 			int target = environment.allocate(Type.T_ANY);
 			int contents = environment.allocate(Type.T_REFANY);
@@ -130,7 +130,7 @@ public class SpecParser {
 			} 
 			match(RightBrace.class);
 		} else {
-			type = Type.T_VOID;
+			return Type.T_REF(Type.T_TERM(name, null));
 		}
 
 		return Type.T_REF(Type.T_TERM(name, type));
@@ -699,7 +699,7 @@ public class SpecParser {
 		skipWhiteSpace(false);
 		checkNotEof();
 		Identifier id = matchIdentifier();
-		Type data = Type.T_VOID;
+		Type.Ref data = null;
 		if (index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token instanceof LeftBrace || token instanceof LeftCurly
