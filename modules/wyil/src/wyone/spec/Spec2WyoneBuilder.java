@@ -1,6 +1,7 @@
 package wyone.spec;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 import wyone.core.*;
@@ -36,12 +37,71 @@ public class Spec2WyoneBuilder {
 	private WyoneFile.FunDecl build(SpecFile.RewriteDecl d) {
 		Type.Ref param = typeOf(d.pattern);
 		Environment environment = new Environment();
-		ArrayList<Code> body = new ArrayList<Code>();
+		ArrayList<Code> body = new ArrayList<Code>();		
+		int root = environment.allocate(param,"this");
+		translate(d.pattern,root,environment,body);
 		
-		// generate codes and type them.
+		boolean conditional = true;
+		for(SpecFile.RuleDecl rd : d.rules) {
+			build(rd,environment,body);
+			conditional &= rd.condition != null;
+		}
+		
+		if (conditional) {
+			// indicates all rules in this block were conditional, so we need to
+			// add a default case.
+			int operand = environment.allocate(Type.T_BOOL);
+			body.add(new Code.Constant(operand, false));
+			body.add(new Code.Return(operand));
+		}
 		
 		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, param),
 				environment.asList(), body, d.attributes());
+	}
+	
+	private void build(SpecFile.RuleDecl rd, Environment environment,
+			ArrayList<Code> codes) {
+		ArrayList<Code> myCodes = codes;
+		if(rd.condition != null) {
+			myCodes = new ArrayList<Code>();
+		}
+		
+		for(Pair<String,Expr> let : rd.lets) {
+			int target = environment.allocate(Type.T_ANY);
+			translate(let.second(),target,environment,myCodes);
+			environment.put(target, let.first());
+		}
+		// translate rewrite body
+		int operand = environment.allocate(Type.T_ANY);
+		translate(rd.result,operand,environment,myCodes);
+		
+		// add return vaue
+		int target = environment.allocate(Type.T_BOOL);
+		myCodes.add(new Code.Rewrite(target, environment.get("this"), operand,
+				rd.attribute(Attribute.Source.class)));		
+		myCodes.add(new Code.Return(target,rd.attribute(Attribute.Source.class)));
+
+		// translate condition (if applicable)
+		if(rd.condition != null) {
+			int condition = environment.allocate(Type.T_ANY);
+			translate(rd.condition,condition,environment,codes);
+			codes.add(new Code.If(condition, myCodes, Collections.EMPTY_LIST,
+					rd.condition.attribute(Attribute.Source.class)));
+		}
+		
+		// undo name bindings as they're now out of scope.
+		for(Pair<String,Expr> let : rd.lets) {
+			int idx = environment.get(let.first());
+			environment.put(idx,null);
+		}
+	}
+	
+	private void translate(Pattern pattern, int source, Environment environment, ArrayList<Code> codes) {
+		
+	}
+	
+	private void translate(Expr expr, int target, Environment environment, ArrayList<Code> codes) {
+		
 	}
 	
 	/**
