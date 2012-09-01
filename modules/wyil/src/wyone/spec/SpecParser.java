@@ -1,12 +1,12 @@
-package wyone.io;
+package wyone.spec;
 
 import java.math.BigInteger;
 import java.util.*;
 
 import wyone.core.Attribute;
 import wyone.util.*;
-import static wyone.core.SpecFile.*;
-import static wyone.io.SpecLexer.*;
+import static wyone.core.WyoneFile.*;
+import static wyone.spec.SpecLexer.*;
 import wyone.core.*;
 
 public class SpecParser {
@@ -19,7 +19,7 @@ public class SpecParser {
 		this.tokens = new ArrayList<Token>(tokens);
 	}
 
-	public SpecFile parse() {
+	public WyoneFile parse() {
 		ArrayList<Decl> decls = new ArrayList<Decl>();
 
 		// first, translate declarations
@@ -45,7 +45,7 @@ public class SpecParser {
 		FunDecl dispatcher = createRewriteDispatch(decls);
 		decls.add(dispatcher);
 		
-		return new SpecFile(filename, decls);
+		return new WyoneFile(filename, decls);
 	}
 
 	private Decl parseTermDecl() {

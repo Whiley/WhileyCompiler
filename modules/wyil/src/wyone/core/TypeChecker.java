@@ -2,7 +2,7 @@ package wyone.core;
 
 import java.util.*;
 
-import static wyone.core.SpecFile.*;
+import static wyone.core.WyoneFile.*;
 import wyone.util.*;
 import static wyone.util.SyntaxError.*;
 
@@ -15,7 +15,7 @@ public class TypeChecker {
 	// globals contains the list of global variables
 	// private final HashMap<String,Type> globals = new HashMap();
 
-	public void check(SpecFile spec) {
+	public void check(WyoneFile spec) {
 		filename = spec.filename;
 
 		for (Decl d : spec.declarations) {

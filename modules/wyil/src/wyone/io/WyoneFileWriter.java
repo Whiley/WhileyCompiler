@@ -4,16 +4,16 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 
-import wyone.core.SpecFile;
+import wyone.core.WyoneFile;
 
-public class SpecFileWriter {
+public class WyoneFileWriter {
 	private PrintWriter out;
 
-	public SpecFileWriter(Writer os) {
+	public WyoneFileWriter(Writer os) {
 		out = new PrintWriter(os);
 	}
 
-	public SpecFileWriter(OutputStream os) {
+	public WyoneFileWriter(OutputStream os) {
 		out = new PrintWriter(os);
 	}
 
@@ -21,34 +21,34 @@ public class SpecFileWriter {
 		out.flush();
 	}
 	
-	public void write(SpecFile spec) {		
-		for(SpecFile.Decl d : spec.declarations) {			
+	public void write(WyoneFile spec) {		
+		for(WyoneFile.Decl d : spec.declarations) {			
 			write(d);
 		}
 		flush();
 	}
 	
-	protected void write(SpecFile.Decl decl) {		
-		if(decl instanceof SpecFile.TermDecl) {
-			write((SpecFile.TermDecl) decl);
-		} else if(decl instanceof SpecFile.ClassDecl){
-			write((SpecFile.ClassDecl) decl);
-		} else if(decl instanceof SpecFile.FunDecl) {
-			write((SpecFile.FunDecl) decl);
+	protected void write(WyoneFile.Decl decl) {		
+		if(decl instanceof WyoneFile.TermDecl) {
+			write((WyoneFile.TermDecl) decl);
+		} else if(decl instanceof WyoneFile.ClassDecl){
+			write((WyoneFile.ClassDecl) decl);
+		} else if(decl instanceof WyoneFile.FunDecl) {
+			write((WyoneFile.FunDecl) decl);
 		} 
 	}
 	
-	protected void write(SpecFile.TermDecl decl) {
+	protected void write(WyoneFile.TermDecl decl) {
 		myOut("term " + decl.type);
 		myOut("");
 	}
 	
-	protected void write(SpecFile.ClassDecl decl) {
+	protected void write(WyoneFile.ClassDecl decl) {
 		myOut("class " + decl.name + " as " + decl.children);
 		myOut("");
 	}
 
-	protected void write(SpecFile.FunDecl decl) {
+	protected void write(WyoneFile.FunDecl decl) {
 		myOut(decl.type.ret + " " + decl.name + "(" + decl.type.param + "):");
 		myOut(1,"// declarations");
 		for(int i=1;i!=decl.types.size();++i) {

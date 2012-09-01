@@ -8,8 +8,8 @@ import java.util.*;
 
 import wyone.util.*;
 import wyone.core.*;
-import wyone.core.SpecFile.TypeDecl;
-import static wyone.core.SpecFile.*;
+import wyone.core.WyoneFile.TypeDecl;
+import static wyone.core.WyoneFile.*;
 import static wyone.core.Attribute.*;
 
 public class JavaFileWriter {
@@ -27,11 +27,11 @@ public class JavaFileWriter {
 		out = new PrintWriter(os);
 	}
 
-	public void write(SpecFile spec) {
+	public void write(WyoneFile spec) {
 		write(spec, null);
 	}
 
-	public void write(SpecFile spec, String pkgNam) {
+	public void write(WyoneFile spec, String pkgNam) {
 		int lindex = spec.filename.lastIndexOf('.');
 		String className = spec.filename.substring(0, lindex);
 		int clipSpot = className.indexOf('/');
@@ -125,6 +125,7 @@ public class JavaFileWriter {
 	}
 
 	public void write(FunDecl decl, HashSet<String> used) {
+		myOut(1, "// " + decl.type.ret + " " + decl.name + "(" + decl.type.param + ")");
 		myOut(1, "static " + type2JavaType(decl.type.ret) + " " + decl.name + "_"
 				+ nameMangle(decl.type.param, used) + "("
 				+ type2JavaType(decl.type.param) + " r0, Automaton automaton) {");
@@ -139,6 +140,7 @@ public class JavaFileWriter {
 			translate(2,code,decl);
 		}
 		myOut(1,"}");
+		myOut();
 	}
 	
 	public void writeSchema() {

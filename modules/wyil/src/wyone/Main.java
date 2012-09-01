@@ -22,10 +22,12 @@ import java.io.*;
 import java.util.*;
 
 // import wyone.util.SyntaxError;
+import wyone.spec.SpecLexer;
+import wyone.spec.SpecParser;
 import wyone.util.*;
 import wyone.core.*;
 //import wyone.core.SpecFile.TypeDecl;
-import wyone.core.SpecFile.*;
+import wyone.core.WyoneFile.*;
 import wyone.io.*;
 
 /**
@@ -129,7 +131,7 @@ public class Main {
 			try {
 				SpecLexer lexer = new SpecLexer(specfile);
 				SpecParser parser = new SpecParser(specfile, lexer.scan());
-				SpecFile spec = parser.parse();
+				WyoneFile spec = parser.parse();
 				new TypeChecker().check(spec);			
 				//new SpecFileWriter(oFile).write(spec);
 				new JavaFileWriter(oFile).write(spec);				

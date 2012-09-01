@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.io;
+package wyone.spec;
 
 import java.io.*;
 import java.math.BigInteger;
