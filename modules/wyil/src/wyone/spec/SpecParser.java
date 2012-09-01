@@ -117,7 +117,7 @@ public class SpecParser {
 			}
 			match(RightBrace.class);
 		} else {
-			p = new Pattern.Leaf(Type.T_VOID);
+			p = null;
 		}
 		 	
 		return new Pattern.Term(name, p, var, sourceAttr(start, index - 1));

@@ -25,8 +25,11 @@ public class Spec2WyoneBuilder {
 			} else {
 				// unknown?
 				throw new IllegalArgumentException("Unknown SpecFile Declaration encountered");
-			}
+			}		
 		}
+		
+		declarations.add(buildRuleDispatch(file));
+		
 		return new WyoneFile(file.filename,declarations);
 	}
 	
@@ -98,6 +101,33 @@ public class Spec2WyoneBuilder {
 		}
 	}
 	
+	public WyoneFile.FunDecl buildRuleDispatch(SpecFile file) {
+		ArrayList<Code> codes = new ArrayList<Code>();
+		Environment environment = new Environment();
+		environment.allocate(Type.T_REFANY, "this");
+		environment.allocate(Type.T_BOOL, "ret");
+		
+		codes.add(new Code.Constant(environment.get("ret"),false));
+		
+		for(SpecFile.Decl d : file.declarations) {
+			if(d instanceof SpecFile.RewriteDecl) {
+				SpecFile.RewriteDecl fd = (SpecFile.RewriteDecl) d;
+				Type.Fun type = Type.T_FUN(Type.T_BOOL,typeOf(fd.pattern));
+				ArrayList<Code> ifCodes = new ArrayList<Code>();
+				int[] operands = new int[] { environment.get("this") };
+				ifCodes.add(new Code.Invoke("rewrite", type, environment.get("ret"),
+						operands));
+				codes.add(new Code.IfIs(environment.get("this"), type.param,
+						ifCodes, Collections.EMPTY_LIST));					
+			}
+		}
+		
+		codes.add(new Code.Return(environment.get("ret")));
+		
+		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, Type.T_REFANY),
+				environment.asList(), codes);
+	}	
+	
 	private void translate(Pattern pattern, int source, Environment environment, ArrayList<Code> codes) {
 		if(pattern instanceof Pattern.Leaf) {
 			translate((Pattern.Leaf) pattern, source, environment, codes);
@@ -115,13 +145,15 @@ public class Spec2WyoneBuilder {
 	}
 	
 	private void translate(Pattern.Term pattern, int source, Environment environment, ArrayList<Code> codes) {
-		int target = environment.allocate(Type.T_ANY);
-		int contents = environment.allocate(Type.T_REFANY);
-		codes.add(new Code.Deref(target,source)); 
-		codes.add(new Code.TermContents(contents,target));
-		translate(pattern.data,contents,environment,codes);
-		if(pattern.variable != null) {
-			environment.put(contents,pattern.variable);
+		if(pattern.data != null) {
+			int target = environment.allocate(Type.T_ANY);
+			int contents = environment.allocate(Type.T_REFANY);		
+			codes.add(new Code.Deref(target,source)); 
+			codes.add(new Code.TermContents(contents,target));
+			translate(pattern.data,contents,environment,codes);
+			if(pattern.variable != null) {
+				environment.put(contents,pattern.variable);
+			}
 		}
 	}
 
@@ -192,7 +224,10 @@ public class Spec2WyoneBuilder {
 			return Type.T_REF(pl.type);
 		} else if (pattern instanceof Pattern.Term) {
 			Pattern.Term pt = (Pattern.Term) pattern;
-			Type.Ref data = typeOf(pt.data);
+			Type.Ref data = null;
+			if(pt.data != null) {
+				data = typeOf(pt.data);
+			}
 			return Type.T_REF(Type.T_TERM(pt.name, data));
 		} else if (pattern instanceof Pattern.Compound) {
 			Pattern.Compound pc = (Pattern.Compound) pattern;
