@@ -157,8 +157,25 @@ public class Spec2WyoneBuilder {
 		}
 	}
 
-	private void translate(Pattern.Compound pattern, int source, Environment environment, ArrayList<Code> codes) {
-	
+	private void translate(Pattern.Compound pattern, int source,
+			Environment environment, ArrayList<Code> codes) {
+		Pair<Pattern, String>[] elements = pattern.elements;
+		int target = environment.allocate(Type.T_ANY);
+		codes.add(new Code.Deref(target, source));
+
+		// TODO: unbound compound matches
+		
+		// TODO: non-sequential compound matches
+		
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			int element = environment.allocate(Type.T_REFANY);
+			codes.add(new Code.IndexOf(target, source, i));
+			translate(p.first(), element, environment, codes);
+			if (p.second() != null) {
+				environment.put(element, p.second());
+			}
+		}
 	}
 	
 	private int translate(Expr expr, Environment environment, ArrayList<Code> codes) {

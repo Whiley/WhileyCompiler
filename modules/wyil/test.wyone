@@ -14,4 +14,7 @@ rewrite Not(False x):
 rewrite Not(Not(* x)):
     => x
 
+rewrite And[Term t, Term ts]:
+    => t
+
 class Term as Bool | Not | Var
