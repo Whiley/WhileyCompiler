@@ -23,7 +23,7 @@ import java.util.*;
 
 // import wyone.util.SyntaxError;
 import wyone.spec.SpecLexer;
-import wyone.spec.SpecParser;
+import wyone.spec.NewSpecParser;
 import wyone.util.*;
 import wyone.core.*;
 //import wyone.core.SpecFile.TypeDecl;
@@ -130,7 +130,7 @@ public class Main {
 		for(String specfile : names) {
 			try {
 				SpecLexer lexer = new SpecLexer(specfile);
-				SpecParser parser = new SpecParser(specfile, lexer.scan());
+				NewSpecParser parser = new NewSpecParser(specfile, lexer.scan());
 				WyoneFile spec = parser.parse();
 				new TypeChecker().check(spec);			
 				//new SpecFileWriter(oFile).write(spec);
