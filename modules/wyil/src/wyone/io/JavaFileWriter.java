@@ -8,7 +8,6 @@ import java.util.*;
 
 import wyone.util.*;
 import wyone.core.*;
-import wyone.core.WyoneFile.TypeDecl;
 import static wyone.core.WyoneFile.*;
 import static wyone.core.Attribute.*;
 

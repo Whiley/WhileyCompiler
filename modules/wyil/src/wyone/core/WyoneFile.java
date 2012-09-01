@@ -20,7 +20,12 @@ public class WyoneFile {
 		public TermDecl(Type.Term data, Attribute... attributes) {
 			super(attributes);
 			this.type = data;
-		}		
+		}
+		
+		public TermDecl(Type.Term data, Collection<Attribute> attributes) {
+			super(attributes);
+			this.type = data;
+		}
 	}
 	
 	public static class ClassDecl extends SyntacticElement.Impl implements Decl {
@@ -31,16 +36,13 @@ public class WyoneFile {
 			super(attributes);
 			this.name = n;
 			this.children = new ArrayList<String>(children);
-		}				
-	}
-	
-	public static class TypeDecl extends SyntacticElement.Impl implements SyntacticElement {
-		public final Type type;
+		}
 		
-		public TypeDecl(Type type, Attribute... attributes) {
+		public ClassDecl(String n, Collection<String> children, Collection<Attribute> attributes) {
 			super(attributes);
-			this.type = type;
-		}		
+			this.name = n;
+			this.children = new ArrayList<String>(children);
+		}
 	}
 	
 	public static class FunDecl extends SyntacticElement.Impl implements Decl {
@@ -49,8 +51,17 @@ public class WyoneFile {
 		public final ArrayList<Type> types;
 		public final ArrayList<Code> codes;
 
-		public FunDecl(String name, Type.Fun type, List<Type> types, List<Code> codes,
-				Attribute... attributes) {
+		public FunDecl(String name, Type.Fun type, List<Type> types,
+				List<Code> codes, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.type = type;
+			this.types = new ArrayList<Type>(types);
+			this.codes = new ArrayList<Code>(codes);
+		}
+		
+		public FunDecl(String name, Type.Fun type, List<Type> types,
+				List<Code> codes, Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.type = type;

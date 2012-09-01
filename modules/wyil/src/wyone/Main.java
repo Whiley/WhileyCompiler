@@ -26,8 +26,7 @@ import wyone.spec.SpecLexer;
 import wyone.spec.NewSpecParser;
 import wyone.util.*;
 import wyone.core.*;
-//import wyone.core.SpecFile.TypeDecl;
-import wyone.core.WyoneFile.*;
+import wyone.spec.*;
 import wyone.io.*;
 
 /**
@@ -127,21 +126,23 @@ public class Main {
 		}
 		long start = System.currentTimeMillis();
 		
-		for(String specfile : names) {
+		for (String specfile : names) {
 			try {
 				SpecLexer lexer = new SpecLexer(specfile);
-				NewSpecParser parser = new NewSpecParser(specfile, lexer.scan());
-				WyoneFile spec = parser.parse();
-				new TypeChecker().check(spec);			
-				//new SpecFileWriter(oFile).write(spec);
-				new JavaFileWriter(oFile).write(spec);				
-			} catch(SyntaxError e) {
-				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
-				
-				if(optBool("-verbose")) {
+				SpecParser parser = new SpecParser(specfile, lexer.scan());
+				SpecFile sf = parser.parse();
+				WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
+				// new TypeChecker().check(wyf);
+				// new SpecFileWriter(oFile).write(spec);
+				new JavaFileWriter(oFile).write(wyf);
+			} catch (SyntaxError e) {
+				outputSourceError(e.filename(), e.start(), e.end(),
+						e.getMessage());
+
+				if (optBool("-verbose")) {
 					e.printStackTrace(System.err);
-				}			
-			} 
+				}
+			}
 		}
 								
 		start = System.currentTimeMillis() - start;
