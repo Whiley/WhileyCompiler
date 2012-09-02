@@ -16,7 +16,7 @@ public class TypeInference {
 	// globals contains the list of global variables
 	// private final HashMap<String,Type> globals = new HashMap();
 
-	public void check(SpecFile spec) {
+	public void infer(SpecFile spec) {
 		filename = spec.filename;
 
 		for (SpecFile.Decl d : spec.declarations) {
@@ -31,26 +31,35 @@ public class TypeInference {
 
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.RewriteDecl) {
-				check((SpecFile.RewriteDecl) d);
+				infer((SpecFile.RewriteDecl) d);
 			}
 		}
 	}
 
-	public void check(SpecFile.RewriteDecl rd) {
+	public void infer(SpecFile.RewriteDecl rd) {
 		Pattern pattern = rd.pattern;
 		Type.Ref thisType = pattern.type();
 		for(SpecFile.RuleDecl rule : rd.rules) {
-			check(rule,thisType);
+			infer(rule,thisType);
 		}
 	}
 	
-	public void check(SpecFile.RuleDecl rd, Type.Ref thisType) {
+	public void infer(SpecFile.RuleDecl rd, Type.Ref thisType) {
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
 		for(Pair<String,Expr> let : rd.lets) {
 			Type expr = resolve(let.second(),environment);
 			environment.put(let.first(), expr);
 		}
+		
+		if(rd.condition != null) {
+			Type condition = resolve(rd.condition,environment);
+			checkSubtype(Type.T_BOOL,condition,rd.condition);
+		}
+		
+		Type result = resolve(rd.result,environment);
+
+		// TODO: check result is a ref?
 	}
 
 	protected Type resolve(Expr expr, HashMap<String,Type> environment) {
