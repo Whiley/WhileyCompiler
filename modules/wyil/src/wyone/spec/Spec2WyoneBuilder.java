@@ -195,8 +195,13 @@ public class Spec2WyoneBuilder {
 		}
 	}
 	
-	private int translate(Expr.BinOp expr, Environment environment, ArrayList<Code> codes) {
-		// TODO
+	private int translate(Expr.BinOp expr, Environment environment,
+			ArrayList<Code> codes) {
+		int result = environment.allocate(Type.T_ANY);
+		int lhs = translate(expr.lhs, environment, codes);
+		int rhs = translate(expr.rhs, environment, codes);
+		codes.add(new Code.BinOp(expr.op, result, lhs, rhs, expr.attributes()));
+		return result;
 	}
 
 	private int translate(Expr.Constant expr, Environment environment, ArrayList<Code> codes) {		

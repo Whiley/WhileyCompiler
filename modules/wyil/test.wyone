@@ -2,7 +2,6 @@ term True
 term False
 class Bool as True | False
 term Not(Term)
-term And[Term]
 term Var(String)
 
 rewrite Not(True x):
@@ -14,7 +13,13 @@ rewrite Not(False x):
 rewrite Not(Not(* x)):
     => x
 
-rewrite And[Term t, Term ts]:
-    => t
-
 class Term as Bool | Not | Var
+
+term LessThan[Num,Num]
+term Num(int)
+
+rewrite LessThan[Num(int x), Num(int y)]:
+    => True, if x < y
+    => False
+
+

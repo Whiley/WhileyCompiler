@@ -67,18 +67,18 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
-		public BOp op;
+		public wyone.core.Code.BOp op;
 		public final Expr lhs;
 		public final Expr rhs;
 		
-		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
+		public BinOp(wyone.core.Code.BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 		
-		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+		public BinOp(wyone.core.Code.BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
@@ -90,55 +90,6 @@ public interface Expr extends SyntacticElement {
 			return lhs + " " + op + " " + rhs;
 		}
 	}
-
-
-	public enum BOp { 
-		AND {
-			public String toString() { return "&&"; }
-		},
-		OR{
-			public String toString() { return "||"; }
-		},
-		ADD{
-			public String toString() { return "+"; }
-		},
-		SUB{
-			public String toString() { return "-"; }
-		},
-		MUL{
-			public String toString() { return "*"; }
-		},
-		DIV{
-			public String toString() { return "/"; }
-		},				
-		EQ{
-			public String toString() { return "=="; }
-		},
-		NEQ{
-			public String toString() { return "!="; }
-		},
-		LT{
-			public String toString() { return "<"; }
-		},
-		LTEQ{
-			public String toString() { return "<="; }
-		},
-		GT{
-			public String toString() { return ">"; }
-		},
-		GTEQ{
-			public String toString() { return ">="; }
-		},
-		APPEND{
-			public String toString() { return "++"; }
-		},
-		RANGE{
-			public String toString() { return ".."; }
-		},
-		TYPEEQ{
-			public String toString() { return "is"; }
-		}
-	};
 	
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static class ListAccess extends SyntacticElement.Impl implements

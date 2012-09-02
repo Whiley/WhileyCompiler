@@ -59,6 +59,8 @@ public class TypeChecker {
 				resolve((Code.If) code, fun);
 			} else if (code instanceof Code.IfIs) {
 				resolve((Code.IfIs) code, fun);
+			} else if (code instanceof Code.IndexOf) {
+				resolve((Code.IndexOf) code, fun);
 			} else if (code instanceof Code.UnOp) {
 				resolve((Code.UnOp) code, fun);
 			} else if (code instanceof Code.BinOp) {
@@ -132,6 +134,14 @@ public class TypeChecker {
 		for(Code c : code.falseBranch) {
 			resolve(c,environment);
 		}
+	}
+	
+	protected void resolve(Code.IndexOf code, ArrayList<Type> environment) {
+		Type source = environment.get(code.source);
+		Type index = environment.get(code.index);
+		checkSubtype(Type.T_INT, index, code);
+		checkSubtype(Type.T_COMPOUNDANY, index, code);
+		environment.set(code.target, ((Type.Compound) source).element());
 	}
 	
 	protected void resolve(Code.Assign code, ArrayList<Type> environment) {

@@ -10,6 +10,10 @@ public class Code extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
+	public Code(Collection<Attribute> attributes) {
+		super(attributes);
+	}
+	
 	public static final class Assign extends Code {
 		public final int target;
 		public final int operand;
@@ -85,6 +89,15 @@ public class Code extends SyntacticElement.Impl {
 			this.rhs = rhs;
 		}
 
+		public BinOp(BOp op, int target, int lhs, int rhs,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.op = op;
+			this.target = target;
+			this.lhs = lhs;
+			this.rhs = rhs;
+		}
+		
 		public String toString() {
 			return op + " %" + target + " = %" + lhs + ", %" + rhs;
 		}
@@ -247,6 +260,24 @@ public class Code extends SyntacticElement.Impl {
 		
 		public String toString() {			
 			return "deref %" + target + " = *%" + operand;			
+		}
+	}
+	
+	public static final class IndexOf extends Code {
+		public final int target;
+		public final int source;
+		public final int index;
+
+		public IndexOf(int target, int source, int index,
+				Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.source = source;
+			this.index = index;
+		}
+
+		public String toString() {
+			return "indexof %" + target + " = %" + source + "[%" + index + "]";
 		}
 	}
 	
