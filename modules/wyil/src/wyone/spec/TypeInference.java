@@ -41,7 +41,7 @@ public class TypeInference {
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
 		infer(rd.pattern,environment);
-				
+		
 		for(SpecFile.RuleDecl rule : rd.rules) {
 			infer(rule,environment);
 		}
@@ -158,7 +158,7 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
-		Type t = environment.get(uop.mhs);
+		Type t = resolve(uop.mhs,environment);
 		switch (uop.op) {
 		case LENGTHOF:
 			checkSubtype(Type.T_COMPOUNDANY, t, uop);
@@ -179,8 +179,8 @@ public class TypeInference {
 
 	protected Type resolve(Expr.BinOp bop, HashMap<String,Type> environment) {
 
-		Type lhs_t = environment.get(bop.lhs);
-		Type rhs_t = environment.get(bop.rhs);
+		Type lhs_t = resolve(bop.lhs,environment);
+		Type rhs_t = resolve(bop.rhs,environment);
 		Type result;
 		
 		switch (bop.op) {
