@@ -2,31 +2,9 @@ package wyone.spec;
 
 import java.util.*;
 
-import static wyone.core.WyoneFile.*;
-import wyone.core.Code;
+import wyone.core.Attribute;
 import wyone.core.Type;
-import wyone.core.WyoneFile;
-import wyone.core.Code.Assign;
-import wyone.core.Code.BinOp;
-import wyone.core.Code.Constant;
-import wyone.core.Code.Constructor;
-import wyone.core.Code.Deref;
-import wyone.core.Code.If;
-import wyone.core.Code.IfIs;
-import wyone.core.Code.IndexOf;
-import wyone.core.Code.Invoke;
-import wyone.core.Code.NaryOp;
-import wyone.core.Code.Return;
-import wyone.core.Code.Rewrite;
-import wyone.core.Code.TermContents;
-import wyone.core.Code.UnOp;
-import wyone.core.Type.Compound;
-import wyone.core.Type.Ref;
-import wyone.core.Type.Term;
-import wyone.core.WyoneFile.ClassDecl;
-import wyone.core.WyoneFile.Decl;
-import wyone.core.WyoneFile.FunDecl;
-import wyone.core.WyoneFile.TermDecl;
+import wyone.spec.*;
 import wyone.util.*;
 import static wyone.util.SyntaxError.*;
 
@@ -39,75 +17,71 @@ public class TypeInference {
 	// globals contains the list of global variables
 	// private final HashMap<String,Type> globals = new HashMap();
 
-	public void check(WyoneFile spec) {
+	public void check(SpecFile spec) {
 		filename = spec.filename;
 
-		for (Decl d : spec.declarations) {
-			if (d instanceof ClassDecl) {
-				ClassDecl cd = (ClassDecl) d;
+		for (SpecFile.Decl d : spec.declarations) {
+			if (d instanceof SpecFile.ClassDecl) {
+				SpecFile.ClassDecl cd = (SpecFile.ClassDecl) d;
 				terms.put(cd.name, Type.T_TERM(cd.name, null));
-			} else if (d instanceof TermDecl) {
-				TermDecl td = (TermDecl) d;
+			} else if (d instanceof SpecFile.TermDecl) {
+				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
 				terms.put(td.type.name, td.type);
 			}
 		}
 
-		for (Decl d : spec.declarations) {
-			if (d instanceof FunDecl) {
-				check((FunDecl) d);
+		for (SpecFile.Decl d : spec.declarations) {
+			if (d instanceof SpecFile.RewriteDecl) {
+				check((SpecFile.RewriteDecl) d);
 			}
 		}
 	}
 
-	public void check(FunDecl rd) {
-		rd.types.set(0, rd.type.param);
+	public void check(SpecFile.RewriteDecl rd) {
+		Pattern pattern = rd.pattern;
+		Type.Ref thisType = pattern.type();
+		for(SpecFile.RuleDecl rule : rd.rules) {
+			check(rule,thisType);
+		}
+	}
+	
+	public void check(SpecFile.RuleDecl rd, Type.Ref thisType) {
+		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
-		for (Code code : rd.codes) {
-			resolve(code, rd.types);
+		for(Pair<String,Expr> let : rd.lets) {
+			Type expr = resolve(let.second(),environment);
+			environment.put(let.first(), expr);
 		}
 	}
 
-	protected void resolve(Code code, ArrayList<Type> fun) {
+	protected Type resolve(Expr code, HashMap<String,Type> environment) {
 		try {
-			if(code instanceof Code.Assign) {
-				resolve((Code.Assign) code, fun);
-			} else if (code instanceof Code.Constant) {
-				resolve((Code.Constant) code, fun);
-			} else if (code instanceof Code.TermContents) {
-				resolve((Code.TermContents) code, fun);
-			} else if (code instanceof Code.Deref) {
-				resolve((Code.Deref) code, fun);
-			} else if (code instanceof Code.Invoke) {
-				resolve((Code.Invoke) code, fun);
-			} else if (code instanceof Code.If) {
-				resolve((Code.If) code, fun);
-			} else if (code instanceof Code.IfIs) {
-				resolve((Code.IfIs) code, fun);
-			} else if (code instanceof Code.IndexOf) {
-				resolve((Code.IndexOf) code, fun);
-			} else if (code instanceof Code.UnOp) {
-				resolve((Code.UnOp) code, fun);
-			} else if (code instanceof Code.BinOp) {
-				resolve((Code.BinOp) code, fun);
-			} else if (code instanceof Code.NaryOp) {
-				resolve((Code.NaryOp) code, fun);
-			} else if (code instanceof Code.Rewrite) {
-				resolve((Code.Rewrite) code, fun);
-			} else if (code instanceof Code.Return) {
-				resolve((Code.Return) code, fun);
-			} else if (code instanceof Code.Constructor) {
-				resolve((Code.Constructor) code, fun);
+			Type result;
+			if (code instanceof Expr.Constant) {
+				result = resolve((Expr.Constant) code, environment);
+			} else if (code instanceof Expr.UnOp) {
+				result = resolve((Expr.UnOp) code, environment);
+			} else if (code instanceof Expr.BinOp) {
+				result = resolve((Expr.BinOp) code, environment);
+			} else if (code instanceof Expr.NaryOp) {
+				result = resolve((Expr.NaryOp) code, environment);
+			} else if (code instanceof Expr.Constructor) {
+				result = resolve((Expr.Constructor) code, environment);
 			} else {
 				syntaxError("unknown code encountered", filename, code);
+				return null;
 			}
+			code.attributes().add(new Attribute.Type(result));
+			return result; // dead code
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
 			syntaxError("internal failure", filename, code, ex);
 		}
+		return null; // dead code
 	}
 
-	protected void resolve(Code.Constant code, ArrayList<Type> environment) {
+	protected Type resolve(Expr.Constant code, HashMap<String,Type> environment) {
 		Object v = code.value;
 		Type result;
 		if (v instanceof Boolean) {
@@ -126,54 +100,7 @@ public class TypeInference {
 		environment.set(code.target, result);
 	}
 
-	protected void resolve(Code.Deref code, ArrayList<Type> environment) {
-		Type type = environment.get(code.operand);
-		checkSubtype(Type.T_REFANY,type,code);
-		Type contents = ((Type.Ref)type).element;
-		environment.set(code.target,contents);
-	}
-	
-	protected void resolve(Code.Invoke code, ArrayList<Type> environment) {
-		// FIXME: type check the operands!!
-		environment.set(code.target,code.type.ret);
-	}
-	
-	
-	protected void resolve(Code.If code, ArrayList<Type> environment) {
-		Type type = environment.get(code.operand);
-		checkSubtype(Type.T_BOOL,type,code);
-		for(Code c : code.trueBranch) {
-			resolve(c,environment);
-		}
-		for(Code c : code.falseBranch) {
-			resolve(c,environment);
-		}
-	}
-	
-	protected void resolve(Code.IfIs code, ArrayList<Type> environment) {
-		Type type = environment.get(code.operand);
-		for(Code c : code.trueBranch) {
-			resolve(c,environment);
-		}
-		for(Code c : code.falseBranch) {
-			resolve(c,environment);
-		}
-	}
-	
-	protected void resolve(Code.IndexOf code, ArrayList<Type> environment) {
-		Type source = environment.get(code.source);
-		Type index = environment.get(code.index);
-		checkSubtype(Type.T_COMPOUNDANY, source, code);
-		checkSubtype(Type.T_INT, index, code);		
-		environment.set(code.target, ((Type.Compound) source).element());
-	}
-	
-	protected void resolve(Code.Assign code, ArrayList<Type> environment) {
-		Type type = environment.get(code.operand);
-		environment.set(code.target,type);
-	}
-	
-	protected void resolve(Code.Constructor code, ArrayList<Type> environment) {
+	protected Type resolve(Expr.Constructor code, HashMap<String,Type> environment) {
 	
 		if(code.operand != -1) {
 			Type arg_t = environment.get(code.operand);			
@@ -187,7 +114,7 @@ public class TypeInference {
 		environment.set(code.target,type);
 	}
 
-	protected void resolve(Code.UnOp uop, ArrayList<Type> environment) {		
+	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
 		Type t = environment.get(uop.operand);
 		switch (uop.op) {
 		case LENGTHOF:
@@ -206,7 +133,7 @@ public class TypeInference {
 		environment.set(uop.target, t);
 	}
 
-	protected void resolve(Code.BinOp bop, ArrayList<Type> environment) {
+	protected Type resolve(Expr.BinOp bop, HashMap<String,Type> environment) {
 
 		Type lhs_t = environment.get(bop.lhs);
 		Type rhs_t = environment.get(bop.rhs);
@@ -287,25 +214,6 @@ public class TypeInference {
 		environment.set(bop.target,result);
 	}
 
-	public void resolve(Code.TermContents code, ArrayList<Type> environment) {
-		Type type = environment.get(code.operand);
-		if (!(type instanceof Type.Term)) {
-			syntaxError("expecting term type, got type " + type, filename, code);
-		}
-		Type contents = ((Type.Term) type).data;
-		environment.set(code.target, contents);
-	}
-	
-	public void resolve(Code.Rewrite code, ArrayList<Type> environment) {
-		//Type type = environment.get(code.operand);
-		//checkSubtype(Type.T_REFANY,type,code);
-		environment.set(code.target,Type.T_BOOL);
-	}
-	
-	public void resolve(Code.Return code, ArrayList<Type> environment) {
-		// TODO: should do something here!		
-	}
-	
 	public Type[] append(Type head, Type[] tail) {
 		Type[] r = new Type[tail.length+1];
 		System.arraycopy(tail,0,r,1,tail.length);

@@ -42,7 +42,7 @@ public class Spec2WyoneBuilder {
 	}
 	
 	private WyoneFile.FunDecl build(SpecFile.RewriteDecl d) {
-		Type.Ref param = typeOf(d.pattern);
+		Type.Ref param = d.pattern.type();
 		Environment environment = new Environment();
 		ArrayList<Code> body = new ArrayList<Code>();
 		int root = environment.allocate(param, "this");
@@ -112,7 +112,7 @@ public class Spec2WyoneBuilder {
 		for(SpecFile.Decl d : file.declarations) {
 			if(d instanceof SpecFile.RewriteDecl) {
 				SpecFile.RewriteDecl fd = (SpecFile.RewriteDecl) d;
-				Type.Fun type = Type.T_FUN(Type.T_BOOL,typeOf(fd.pattern));
+				Type.Fun type = Type.T_FUN(Type.T_BOOL,fd.pattern.type());
 				ArrayList<Code> ifCodes = new ArrayList<Code>();
 				int[] operands = new int[] { environment.get("this") };
 				ifCodes.add(new Code.Invoke("rewrite", type, environment.get("ret"),
@@ -233,41 +233,7 @@ public class Spec2WyoneBuilder {
 			return result;
 		}
 	}
-
-	
-	/**
-	 * Translate the declared type in a pattern construct into an actual type.
-	 * Essentially, this corresponds to discarding all of the parameter(s) used
-	 * for matching subcomponents of the type.
-	 * 
-	 * @param pattern
-	 * @return
-	 */
-	private Type.Ref typeOf(Pattern pattern) {
-		if (pattern instanceof Pattern.Leaf) {
-			Pattern.Leaf pl = (Pattern.Leaf) pattern;
-			return Type.T_REF(pl.type);
-		} else if (pattern instanceof Pattern.Term) {
-			Pattern.Term pt = (Pattern.Term) pattern;
-			Type.Ref data = null;
-			if(pt.data != null) {
-				data = typeOf(pt.data);
-			}
-			return Type.T_REF(Type.T_TERM(pt.name, data));
-		} else if (pattern instanceof Pattern.Compound) {
-			Pattern.Compound pc = (Pattern.Compound) pattern;
-			// FIXME: following should be an ArrayList<Type.Ref>
-			ArrayList<Type> types = new ArrayList<Type>();
-			for (Pair<Pattern, String> ps : pc.elements) {
-				types.add(typeOf(ps.first()));
-			}
-			return Type.T_REF(Type.T_COMPOUND(pc.kind, pc.unbounded, types));
-		} else {
-			syntaxError("unknown pattern encountered", filename, pattern);
-			return null;
-		}
-	}
-	
+		
 	private class Environment {
 		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
 		private final ArrayList<Type> idx2type = new ArrayList<Type>();

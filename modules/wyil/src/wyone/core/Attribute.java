@@ -16,10 +16,10 @@ public interface Attribute {
 		}
 	}
 	
-	public static final class TypeAttr implements Attribute {
-		public final Type type;
+	public static final class Type implements Attribute {
+		public final wyone.core.Type type;
 
-		public TypeAttr(Type type) {
+		public Type(wyone.core.Type type) {
 			this.type = type;
 		}
 	}	
