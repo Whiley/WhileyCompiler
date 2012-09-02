@@ -139,8 +139,8 @@ public class TypeChecker {
 	protected void resolve(Code.IndexOf code, ArrayList<Type> environment) {
 		Type source = environment.get(code.source);
 		Type index = environment.get(code.index);
-		checkSubtype(Type.T_INT, index, code);
-		checkSubtype(Type.T_COMPOUNDANY, index, code);
+		checkSubtype(Type.T_COMPOUNDANY, source, code);
+		checkSubtype(Type.T_INT, index, code);		
 		environment.set(code.target, ((Type.Compound) source).element());
 	}
 	
