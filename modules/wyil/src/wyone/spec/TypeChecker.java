@@ -1,8 +1,32 @@
-package wyone.core;
+package wyone.spec;
 
 import java.util.*;
 
 import static wyone.core.WyoneFile.*;
+import wyone.core.Code;
+import wyone.core.Type;
+import wyone.core.WyoneFile;
+import wyone.core.Code.Assign;
+import wyone.core.Code.BinOp;
+import wyone.core.Code.Constant;
+import wyone.core.Code.Constructor;
+import wyone.core.Code.Deref;
+import wyone.core.Code.If;
+import wyone.core.Code.IfIs;
+import wyone.core.Code.IndexOf;
+import wyone.core.Code.Invoke;
+import wyone.core.Code.NaryOp;
+import wyone.core.Code.Return;
+import wyone.core.Code.Rewrite;
+import wyone.core.Code.TermContents;
+import wyone.core.Code.UnOp;
+import wyone.core.Type.Compound;
+import wyone.core.Type.Ref;
+import wyone.core.Type.Term;
+import wyone.core.WyoneFile.ClassDecl;
+import wyone.core.WyoneFile.Decl;
+import wyone.core.WyoneFile.FunDecl;
+import wyone.core.WyoneFile.TermDecl;
 import wyone.util.*;
 import static wyone.util.SyntaxError.*;
 

@@ -164,14 +164,15 @@ public class Spec2WyoneBuilder {
 		codes.add(new Code.Deref(target, source));
 
 		// TODO: unbound compound matches
-		
+
 		// TODO: non-sequential compound matches
-		
+
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
 			int index = environment.allocate(Type.T_INT);
 			int element = environment.allocate(Type.T_REFANY);
-			codes.add(new Code.Constant(index, i, pattern.attribute(Attribute.Source.class)));
+			codes.add(new Code.Constant(index, i, pattern
+					.attribute(Attribute.Source.class)));
 			codes.add(new Code.IndexOf(element, target, index));
 			translate(p.first(), element, environment, codes);
 			if (p.second() != null) {
