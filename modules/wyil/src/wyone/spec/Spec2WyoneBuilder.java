@@ -172,7 +172,7 @@ public class Spec2WyoneBuilder {
 			int index = environment.allocate(Type.T_INT);
 			int element = environment.allocate(Type.T_REFANY);
 			codes.add(new Code.Constant(index, i, pattern.attribute(Attribute.Source.class)));
-			codes.add(new Code.IndexOf(element, source, index));
+			codes.add(new Code.IndexOf(element, target, index));
 			translate(p.first(), element, environment, codes);
 			if (p.second() != null) {
 				environment.put(element, p.second());
