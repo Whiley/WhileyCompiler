@@ -75,6 +75,8 @@ public class TypeInference {
 				result = resolve((Expr.NaryOp) expr, environment);
 			} else if (expr instanceof Expr.Constructor) {
 				result = resolve((Expr.Constructor) expr, environment);
+			} else if (expr instanceof Expr.Variable) {
+				result = resolve((Expr.Variable) expr, environment);
 			} else {
 				syntaxError("unknown code encountered", filename, expr);
 				return null;
@@ -220,6 +222,19 @@ public class TypeInference {
 			return null; // dead-code
 		}
 		return result;
+	}
+	
+	protected Type resolve(Expr.Variable code, HashMap<String, Type> environment) {
+		Type result = environment.get(code.var);
+		if (result == null) {
+			Type.Term tmp = terms.get(code.var);
+			if (tmp == null || tmp.data != null) {
+				syntaxError("unknown variable encountered", filename, code);
+			}
+			return tmp;
+		} else {
+			return result;
+		}
 	}
 
 	public Type[] append(Type head, Type[] tail) {
