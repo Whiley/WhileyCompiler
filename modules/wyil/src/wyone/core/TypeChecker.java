@@ -1,4 +1,4 @@
-package wyone.spec;
+package wyone.core;
 
 import java.util.*;
 

@@ -24,7 +24,7 @@ import java.util.*;
 // import wyone.util.SyntaxError;
 import wyone.spec.SpecLexer;
 import wyone.spec.NewSpecParser;
-import wyone.spec.TypeChecker;
+import wyone.spec.TypeInference;
 import wyone.util.*;
 import wyone.core.*;
 import wyone.spec.*;
@@ -133,7 +133,7 @@ public class Main {
 				SpecParser parser = new SpecParser(specfile, lexer.scan());
 				SpecFile sf = parser.parse();
 				WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
-				new TypeChecker().check(wyf);
+				new TypeInference().check(wyf);
 				// new SpecFileWriter(oFile).write(spec);
 				new JavaFileWriter(oFile).write(wyf);
 			} catch (SyntaxError e) {
