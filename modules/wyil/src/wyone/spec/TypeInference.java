@@ -37,15 +37,48 @@ public class TypeInference {
 	}
 
 	public void infer(SpecFile.RewriteDecl rd) {
-		Pattern pattern = rd.pattern;
-		Type.Ref thisType = pattern.type();
+		
+		HashMap<String,Type> environment = new HashMap<String,Type>();
+		
+		infer(rd.pattern,environment);
+				
 		for(SpecFile.RuleDecl rule : rd.rules) {
-			infer(rule,thisType);
+			infer(rule,environment);
 		}
 	}
 	
-	public void infer(SpecFile.RuleDecl rd, Type.Ref thisType) {
-		HashMap<String,Type> environment = new HashMap<String,Type>();
+	public Type.Ref infer(Pattern pattern, HashMap<String,Type> environment) {
+		if(pattern instanceof Pattern.Leaf) {
+			Pattern.Leaf p = (Pattern.Leaf) pattern; 
+			return Type.T_REF(p.type);
+		} else if(pattern instanceof Pattern.Term) {
+			Pattern.Term p = (Pattern.Term) pattern;
+			Type.Ref d = null;
+			if(p.data != null) {
+				d = infer(p.data,environment);
+			}
+			if(p.variable != null) {
+				environment.put(p.variable, d);
+			}
+			return Type.T_REF(Type.T_TERM(p.name, d));
+		} else {
+			Pattern.Compound p = (Pattern.Compound) pattern;
+			ArrayList<Type> types = new ArrayList<Type>();
+			for (Pair<Pattern, String> ps : p.elements) {
+				String var = ps.second();
+				Pattern pat = ps.first();
+				Type type = infer(pat,environment);				
+				types.add(type);
+				if(var != null) {
+					environment.put(var,type);
+				}
+			}
+			return Type.T_REF(Type.T_COMPOUND(p.kind, p.unbounded, types));
+		}
+	}
+	
+	public void infer(SpecFile.RuleDecl rd, HashMap<String,Type> environment) {
+		 environment = new HashMap<String,Type>(environment);
 		
 		for(Pair<String,Expr> let : rd.lets) {
 			Type expr = resolve(let.second(),environment);
