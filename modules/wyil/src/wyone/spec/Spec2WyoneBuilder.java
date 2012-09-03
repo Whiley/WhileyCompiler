@@ -172,14 +172,17 @@ public class Spec2WyoneBuilder {
 
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
+			Pattern pat = p.first();
+			String var = p.second();
+			Type.Ref type = (Type.Ref) pat.attribute(Attribute.Type.class).type;
 			int index = environment.allocate(Type.T_INT);
-			int element = environment.allocate(Type.T_REFANY);
+			int element = environment.allocate(type);
 			codes.add(new Code.Constant(index, BigInteger.valueOf(i), pattern
 					.attribute(Attribute.Source.class)));
 			codes.add(new Code.IndexOf(element, target, index));
-			translate(p.first(), element, environment, codes);
-			if (p.second() != null) {
-				environment.put(element, p.second());
+			translate(pat, element, environment, codes);
+			if (var != null) {
+				environment.put(element, var);
 			}
 		}
 	}
@@ -203,7 +206,7 @@ public class Spec2WyoneBuilder {
 	
 	private int translate(Expr.BinOp expr, Environment environment,
 			ArrayList<Code> codes) {
-		int result = environment.allocate(Type.T_ANY);
+		int result = environment.allocate(expr.attribute(Attribute.Type.class).type);
 		int lhs = translate(expr.lhs, environment, codes);
 		int rhs = translate(expr.rhs, environment, codes);
 		codes.add(new Code.BinOp(expr.op, result, lhs, rhs, expr.attributes()));
@@ -211,7 +214,7 @@ public class Spec2WyoneBuilder {
 	}
 
 	private int translate(Expr.Constant expr, Environment environment, ArrayList<Code> codes) {		
-		int target = environment.allocate(Type.T_ANY);
+		int target = environment.allocate(expr.attribute(Attribute.Type.class).type);
 		codes.add(new Code.Constant(target, expr.value, expr.attribute(Attribute.Source.class)));
 		return target;
 	}
@@ -230,7 +233,7 @@ public class Spec2WyoneBuilder {
 		if (target != null) {
 			return target;
 		} else {
-			int result = environment.allocate(Type.T_ANY);
+			int result = environment.allocate(expr.attribute(Attribute.Type.class).type);
 			codes.add(new Code.Constructor(result, expr.var, expr
 					.attribute(Attribute.Source.class)));
 			return result;
