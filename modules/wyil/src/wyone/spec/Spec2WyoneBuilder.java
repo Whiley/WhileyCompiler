@@ -217,9 +217,22 @@ public class Spec2WyoneBuilder {
 		int result = environment
 				.allocate(expr.attribute(Attribute.Type.class).type);
 		int lhs = translate(expr.lhs, environment, codes);
-		lhs = coerceToValue(expr.lhs, lhs, environment, codes);
 		int rhs = translate(expr.rhs, environment, codes);
-		rhs = coerceToValue(expr.rhs, rhs, environment, codes);
+		switch(expr.op) {
+		case EQ:
+		case NEQ:
+			Type lt = expr.lhs.attribute(Attribute.Type.class).type;
+			Type rt = expr.rhs.attribute(Attribute.Type.class).type;
+			boolean lb = lt instanceof Type.Ref;
+			boolean rb = rt instanceof Type.Ref;
+			if(lb == rb) {
+				// these ones don't need a coercion
+				break;
+			}
+		default:		
+			lhs = coerceToValue(expr.lhs, lhs, environment, codes);			
+			rhs = coerceToValue(expr.rhs, rhs, environment, codes);
+		}
 		codes.add(new Code.BinOp(expr.op, result, lhs, rhs, expr.attributes()));
 		return result;
 	}
