@@ -164,7 +164,11 @@ public class PrettyAutomataReader {
 		
 		next(); // match right brace
 		
-		return automaton.add(new Automaton.Compound(kind,children));
+		if(kind == Automaton.K_LIST) { 
+			return automaton.add(new Automaton.List(children));
+		} else {
+			return automaton.add(new Automaton.Set(children));
+		}
 	}
 	
 	protected int next() throws IOException {

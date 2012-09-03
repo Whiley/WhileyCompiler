@@ -491,10 +491,10 @@ public final class Automaton {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Compound extends State {
+	public static abstract class Compound extends State {
 		public final int[] children;
 
-		public Compound(int kind, int...children) {
+		private Compound(int kind, int...children) {
 			super(kind);
 			if(kind != K_LIST && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
@@ -505,7 +505,7 @@ public final class Automaton {
 			this.children = children;
 		}
 		
-		public Compound(int kind, List<Integer> children) {
+		private Compound(int kind, java.util.List<Integer> children) {
 			super(kind);
 			if(kind != K_LIST && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
@@ -531,10 +531,14 @@ public final class Automaton {
 			}
 		}
 
-		public Compound clone() {
-			return new Compound(kind, Arrays.copyOf(children,children.length));
+		public int get(int index) {
+			return children[index];
 		}
-
+		
+		public int size() {
+			return children.length;
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Compound) {
 				Compound t = (Compound) o;
@@ -577,6 +581,34 @@ public final class Automaton {
 		}
 	}
 	
+	public static final class Set extends Compound {
+		public Set(int... children) {
+			super(K_SET, children);
+		}
+
+		public Set(java.util.List<Integer> children) {
+			super(K_SET, children);
+		}
+
+		public Compound clone() {
+			return new Set(Arrays.copyOf(children, children.length));
+		}
+	}
+	
+	public static final class List extends Compound {
+		public List(int...children) {
+			super(K_LIST,children);
+		}
+		
+		public List(java.util.List<Integer> children) {
+			super(K_LIST,children);
+		}
+		
+		public Compound clone() {
+			return new List(Arrays.copyOf(children,children.length));
+		}		
+	}
+	
 	public static final int K_VOID = -1;
 	public static final int K_INT = -2;
 	public static final int K_STRING = -3;
@@ -590,6 +622,6 @@ public final class Automaton {
 	 * allocations.
 	 */
 	public static final int[] NOCHILDREN = new int[0];
-	public static final Compound EMPTY_LIST = new Compound(K_LIST,NOCHILDREN);
-	public static final Compound EMPTY_SET = new Compound(K_SET,NOCHILDREN);
+	public static final List EMPTY_LIST = new List(NOCHILDREN);
+	public static final Set EMPTY_SET = new Set(NOCHILDREN);
 }

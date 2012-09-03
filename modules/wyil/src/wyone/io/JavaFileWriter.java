@@ -307,7 +307,7 @@ public class JavaFileWriter {
 	}
 	
 	public void translate(int level, Code.IndexOf code, FunDecl fun) {
-		String body = "r" + code.source + "[r" + code.index + ".intValue()]";
+		String body = "r" + code.source + ".get(r" + code.index + ".intValue())";
 		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
@@ -403,7 +403,7 @@ public class JavaFileWriter {
 	}
 
 	public void translate(int level, Code.NaryOp code, FunDecl fun) {
-		String body = "new int[]{";
+		String body = "new Automaton.List(";
 		int[] operands = code.operands;
 		for(int i=0;i!=operands.length;++i) {
 			if(i != 0) {
@@ -411,7 +411,7 @@ public class JavaFileWriter {
 			}
 			body += "r" + operands[i];
 		}
-		myOut(level,comment("r" + code.target + " = " + body + "};",code.toString()));
+		myOut(level,comment("r" + code.target + " = " + body + ");",code.toString()));
 	}
 
 	public void translate(int level, Code.Constructor code, FunDecl fun) {
@@ -770,7 +770,7 @@ public class JavaFileWriter {
 		} else if (type instanceof Type.Ref) {
 			return "int";
 		} else if (type instanceof Type.Compound) {
-			return "int[]";
+			return "Automaton.Compound";
 		} 
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
