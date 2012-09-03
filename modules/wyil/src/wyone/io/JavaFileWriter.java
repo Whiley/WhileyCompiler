@@ -229,6 +229,8 @@ public class JavaFileWriter {
 			translate(level,(Code.If) code, fun);
 		} else if (code instanceof Code.IfIs) {
 			translate(level,(Code.IfIs) code, fun);
+		} else if (code instanceof Code.IndexOf) {
+			translate(level,(Code.IndexOf) code, fun);
 		} else if (code instanceof Code.Deref) {
 			translate(level,(Code.Deref) code, fun);
 		} else if (code instanceof Code.UnOp) {
@@ -301,6 +303,11 @@ public class JavaFileWriter {
 			}
 			myOut(level,"}");
 		}
+	}
+	
+	public void translate(int level, Code.IndexOf code, FunDecl fun) {
+		String body = "r" + code.source + ".children[r" + code.index + "]";
+		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
 	public void translate(int level, Code.TermContents code, FunDecl fun) {

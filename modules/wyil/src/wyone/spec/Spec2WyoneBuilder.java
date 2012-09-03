@@ -1,5 +1,6 @@
 package wyone.spec;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -146,8 +147,10 @@ public class Spec2WyoneBuilder {
 	
 	private void translate(Pattern.Term pattern, int source, Environment environment, ArrayList<Code> codes) {
 		if(pattern.data != null) {
-			int target = environment.allocate(Type.T_ANY);
-			int contents = environment.allocate(Type.T_REFANY);		
+			Type.Ref<Type.Term> type = (Type.Ref<Type.Term>) pattern
+					.attribute(Attribute.Type.class).type;
+			int target = environment.allocate(type.element);
+			int contents = environment.allocate(type.element.data);		
 			codes.add(new Code.Deref(target,source)); 
 			codes.add(new Code.TermContents(contents,target));
 			translate(pattern.data,contents,environment,codes);
@@ -171,7 +174,7 @@ public class Spec2WyoneBuilder {
 			Pair<Pattern, String> p = elements[i];
 			int index = environment.allocate(Type.T_INT);
 			int element = environment.allocate(Type.T_REFANY);
-			codes.add(new Code.Constant(index, i, pattern
+			codes.add(new Code.Constant(index, BigInteger.valueOf(i), pattern
 					.attribute(Attribute.Source.class)));
 			codes.add(new Code.IndexOf(element, target, index));
 			translate(p.first(), element, environment, codes);

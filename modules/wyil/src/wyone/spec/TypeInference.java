@@ -48,9 +48,10 @@ public class TypeInference {
 	}
 	
 	public Type.Ref infer(Pattern pattern, HashMap<String,Type> environment) {
+		Type.Ref type;
 		if(pattern instanceof Pattern.Leaf) {
 			Pattern.Leaf p = (Pattern.Leaf) pattern; 
-			return Type.T_REF(p.type);
+			type = Type.T_REF(p.type);
 		} else if(pattern instanceof Pattern.Term) {
 			Pattern.Term p = (Pattern.Term) pattern;
 			Type.Ref d = null;
@@ -60,21 +61,23 @@ public class TypeInference {
 			if(p.variable != null) {
 				environment.put(p.variable, d);
 			}
-			return Type.T_REF(Type.T_TERM(p.name, d));
+			type = Type.T_REF(Type.T_TERM(p.name, d));
 		} else {
 			Pattern.Compound p = (Pattern.Compound) pattern;
 			ArrayList<Type> types = new ArrayList<Type>();
 			for (Pair<Pattern, String> ps : p.elements) {
 				String var = ps.second();
 				Pattern pat = ps.first();
-				Type type = infer(pat,environment);				
-				types.add(type);
+				Type t = infer(pat,environment);				
+				types.add(t);
 				if(var != null) {
-					environment.put(var,type);
+					environment.put(var,t);
 				}
 			}
-			return Type.T_REF(Type.T_COMPOUND(p.kind, p.unbounded, types));
+			type = Type.T_REF(Type.T_COMPOUND(p.kind, p.unbounded, types));
 		}
+		pattern.attributes().add(new Attribute.Type(type));
+		return type;
 	}
 	
 	public void infer(SpecFile.RuleDecl rd, HashMap<String,Type> environment) {
@@ -292,9 +295,21 @@ public class TypeInference {
 	 * @param elem
 	 */
 	public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (!Type.isSubtype(t1, t2)) {
-			syntaxError("expecting type " + t1 + ", got type " + t2, filename,
-					elem);
+		if (Type.isSubtype(t1, t2)) {
+			return;
 		}
+
+		if (t1 instanceof Type.Ref) {
+			t1 = ((Type.Ref) t1).element;
+		}
+		if (t2 instanceof Type.Ref) {
+			t2 = ((Type.Ref) t2).element;
+		}
+
+		if (Type.isSubtype(t1, t2)) {
+			return;
+		}
+
+		syntaxError("expecting type " + t1 + ", got type " + t2, filename, elem);
 	}
 }
