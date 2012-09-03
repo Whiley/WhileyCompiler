@@ -256,7 +256,18 @@ public class JavaFileWriter {
 	}
 
 	public void translate(int level, Code.Deref code, FunDecl fun) {
-		String body = "(" + type2JavaType(fun.types.get(code.target)) +  ") automaton.get(r" + code.operand + ")";		
+		Type type = fun.types.get(code.target);
+		String body = "(" + type2JavaType(type) +  ")";
+		
+		if(type instanceof Type.Constant) { 
+			body += "((Automaton.Item) automaton.get(r" + code.operand + ")).payload";	
+		} else if(type instanceof Type.Compound) {
+			body += "((Automaton.Compound) automaton.get(r" + code.operand + ")).children";
+		} else {
+			// others don;t need any special attention
+			body += "automaton.get(r" + code.operand + ")";
+		}
+						
 		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
@@ -306,7 +317,7 @@ public class JavaFileWriter {
 	}
 	
 	public void translate(int level, Code.IndexOf code, FunDecl fun) {
-		String body = "r" + code.source + ".children[r" + code.index + ".intValue()]";
+		String body = "r" + code.source + "[r" + code.index + ".intValue()]";
 		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
@@ -434,23 +445,6 @@ public class JavaFileWriter {
 	public void translate(int level, Code.Return code, FunDecl fun) {
 		// TODO: implement
 		myOut(level,comment("return r" + code.operand + ";",code.toString()));
-	}
-	
-	public void write(Type type) {
-		out.print(type2JavaType(type));
-	}
-
-	public String readerStr(Type type) {
-		if (type instanceof Type.Int) {
-			return "INT_READER";
-		} else if (type instanceof Type.Bool) {
-			return "BOOL_READER";
-		} else if (type instanceof Type.Strung) {
-			return "STRING_READER";
-		} else if (type instanceof Type.Compound) {
-			return "COMPOUND_READER";
-		}
-		return "null";
 	}
 
 	protected String nameMangle(Type type, HashSet<String> used) {
@@ -777,7 +771,7 @@ public class JavaFileWriter {
 		} else if (type instanceof Type.Ref) {
 			return "int";
 		} else if (type instanceof Type.Compound) {
-			return "Automaton.Compound";
+			return "int[]";
 		} 
 		throw new RuntimeException("unknown type encountered: " + type);
 	}

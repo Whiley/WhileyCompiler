@@ -148,26 +148,29 @@ public abstract class Type {
 		public String toString() {
 			return "void";
 		}
-	}	
-	public static final class Bool  extends Type {
+	}
+	public static abstract class Constant extends Type {
+		
+	}
+	public static final class Bool extends Constant {
 		private Bool() {}
 		public String toString() {
 			return "bool";
 		}
 	}
-	public static final class Int  extends Type {
+	public static final class Int extends Constant {
 		private Int() {}
 		public String toString() {
 			return "int";
 		}
 	}
-	public static final class Real  extends Type {
+	public static final class Real extends Constant {
 		private Real() {}
 		public String toString() {
 			return "real";
 		}
 	}
-	public static final class Strung  extends Type {				
+	public static final class Strung extends Constant {				
 		private Strung() {}		
 		public String toString() {
 			return "string";
