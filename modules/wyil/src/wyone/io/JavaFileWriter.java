@@ -306,7 +306,7 @@ public class JavaFileWriter {
 	}
 	
 	public void translate(int level, Code.IndexOf code, FunDecl fun) {
-		String body = "r" + code.source + ".children[r" + code.index + "]";
+		String body = "r" + code.source + ".children[r" + code.index + ".intValue()]";
 		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
@@ -520,7 +520,7 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
-		myOut(2, "return state.kind == K_INT;");
+		myOut(2, "return state.kind == Automaton.K_INT;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -531,7 +531,7 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
-		myOut(2, "return state.kind == K_STRING;");
+		myOut(2, "return state.kind == Automaton.K_STRING;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -777,7 +777,7 @@ public class JavaFileWriter {
 		} else if (type instanceof Type.Ref) {
 			return "int";
 		} else if (type instanceof Type.Compound) {
-			return "ArrayList";
+			return "Automaton.Compound";
 		} 
 		throw new RuntimeException("unknown type encountered: " + type);
 	}

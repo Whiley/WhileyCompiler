@@ -162,8 +162,9 @@ public class Spec2WyoneBuilder {
 
 	private void translate(Pattern.Compound pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
+		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern.attribute(Attribute.Type.class).type;
 		Pair<Pattern, String>[] elements = pattern.elements;
-		int target = environment.allocate(Type.T_ANY);
+		int target = environment.allocate(type.element);
 		codes.add(new Code.Deref(target, source));
 
 		// TODO: unbound compound matches
@@ -174,9 +175,9 @@ public class Spec2WyoneBuilder {
 			Pair<Pattern, String> p = elements[i];
 			Pattern pat = p.first();
 			String var = p.second();
-			Type.Ref type = (Type.Ref) pat.attribute(Attribute.Type.class).type;
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
 			int index = environment.allocate(Type.T_INT);
-			int element = environment.allocate(type);
+			int element = environment.allocate(pt);
 			codes.add(new Code.Constant(index, BigInteger.valueOf(i), pattern
 					.attribute(Attribute.Source.class)));
 			codes.add(new Code.IndexOf(element, target, index));
