@@ -104,8 +104,7 @@ public class PrettyAutomataReader {
 		// FIXME: should support arbitrary sized ints
 		int val = Integer.parseInt(sb.toString());
 	
-		return automaton.add(new Automaton.Item(Automaton.K_INT,
-				BigInteger.valueOf(val)));
+		return automaton.add(new Automaton.Int(BigInteger.valueOf(val)));
 	}
 	
 	protected int parseString(Automaton automaton)
@@ -118,8 +117,7 @@ public class PrettyAutomataReader {
 			sb.append((char) lookahead);
 		}
 
-		return automaton.add(new Automaton.Item(Automaton.K_STRING,
-				sb.toString()));
+		return automaton.add(new Automaton.Strung(sb.toString()));
 	}
 	
 	protected int parseCompound(Automaton automaton)

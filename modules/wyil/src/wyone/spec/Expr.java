@@ -20,6 +20,7 @@ package wyone.spec;
 
 import java.util.*;
 import wyone.core.*;
+import wyone.core.Code.NOp;
 import wyone.util.*;
 
 public interface Expr extends SyntacticElement {
@@ -198,11 +199,6 @@ public interface Expr extends SyntacticElement {
 					return arguments.get(0) + "[" + arguments.get(1) + ".." + arguments.get(2) + "]";
 			}
 		}
-	}
-	
-	public enum NOp {
-		LISTGEN,
-		SUBLIST					
 	}
 	
 	public static class Constructor extends SyntacticElement.Impl implements Expr {

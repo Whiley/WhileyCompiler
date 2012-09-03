@@ -72,8 +72,8 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 	
 	protected void write(int index, Automaton automaton) throws IOException {
 		Automaton.State state = automaton.get(index);
-		if(state instanceof Automaton.Item) {
-			write((Automaton.Item)state,automaton);
+		if(state instanceof Automaton.Constant) {
+			write((Automaton.Constant)state,automaton);
 		} else if(state instanceof Automaton.Term) {
 			write((Automaton.Term)state,automaton);
 		} else {
@@ -82,8 +82,8 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 		
 	}
 	
-	protected void write(Automaton.Item item, Automaton automaton) throws IOException {
-		Object payload = item.payload;
+	protected void write(Automaton.Constant item, Automaton automaton) throws IOException {
+		Object payload = item.value;
 		if (payload instanceof String) {
 			writer.print("\"" + payload.toString() + "\"");
 		} else {

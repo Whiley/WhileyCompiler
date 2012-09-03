@@ -257,17 +257,7 @@ public class JavaFileWriter {
 
 	public void translate(int level, Code.Deref code, FunDecl fun) {
 		Type type = fun.types.get(code.target);
-		String body = "(" + type2JavaType(type) +  ")";
-		
-		if(type instanceof Type.Constant) { 
-			body += "((Automaton.Item) automaton.get(r" + code.operand + ")).payload";	
-		} else if(type instanceof Type.Compound) {
-			body += "((Automaton.Compound) automaton.get(r" + code.operand + ")).children";
-		} else {
-			// others don;t need any special attention
-			body += "automaton.get(r" + code.operand + ")";
-		}
-						
+		String body = "(" + type2JavaType(type) +  ") automaton.get(r" + code.operand + ")";
 		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
 	}
 	
@@ -334,7 +324,7 @@ public class JavaFileWriter {
 			rhs = v.toString();
 		} else if (v instanceof BigInteger) {
 			BigInteger bi = (BigInteger) v;
-			rhs = "new BigInteger(\"" + bi.toString() + "\")";
+			rhs = "new Automaton.Int(\"" + bi.toString() + "\")";
 		} else {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
@@ -412,8 +402,16 @@ public class JavaFileWriter {
 		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
 	}
 
-	public void translate(int level, Code.NaryOp nop, FunDecl fun) {
-		myOut(level,"TODO: list generator");
+	public void translate(int level, Code.NaryOp code, FunDecl fun) {
+		String body = "new int[]{";
+		int[] operands = code.operands;
+		for(int i=0;i!=operands.length;++i) {
+			if(i != 0) {
+				body += ", ";
+			}
+			body += "r" + operands[i];
+		}
+		myOut(level,comment("r" + code.target + " = " + body + "};",code.toString()));
 	}
 
 	public void translate(int level, Code.Constructor code, FunDecl fun) {
@@ -761,11 +759,12 @@ public class JavaFileWriter {
 		if (type instanceof Type.Any) {
 			return "Object";
 		} else if (type instanceof Type.Int) {
-			return "BigInteger";
+			return "Automaton.Int";
 		} else if (type instanceof Type.Bool) {
+			// FIXME: not sure what to do here?
 			return "boolean";
 		} else if (type instanceof Type.Strung) {
-			return "String";
+			return "Automaton.Strung";
 		} else if (type instanceof Type.Term) {
 			return "Automaton.Term";
 		} else if (type instanceof Type.Ref) {

@@ -385,46 +385,11 @@ public class SpecParser {
 				match(LeftSquare.class);
 				skipWhiteSpace(true);
 				
-				lookahead = tokens.get(index);
-				
-				if (lookahead instanceof DotDot) {
-					// this indicates a sublist without a starting expression;
-					// hence, start point defaults to zero
-					match(DotDot.class);
-					skipWhiteSpace(true);
-					lookahead = tokens.get(index);
-					Expr end = parseAddSubExpression();
-					match(RightSquare.class);
-					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
-							index - 1), lhs, new Expr.Constant(BigInteger.ZERO,
-							sourceAttr(start, index - 1)), end);
-				}
-				
 				Expr rhs = parseAddSubExpression();
 				
-				lookahead = tokens.get(index);
-				if(lookahead instanceof DotDot) {					
-					match(DotDot.class);
-					skipWhiteSpace(true);
-					lookahead = tokens.get(index);
-					Expr end;
-					if(lookahead instanceof RightSquare) {
-						// In this case, no end of the slice has been provided.
-						// Therefore, it is taken to be the length of the source
-						// expression.						
-						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
-								.attribute(Attribute.Source.class));
-					} else {
-						end = parseAddSubExpression();						
-					}
-					match(RightSquare.class);
-					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
-							start, index - 1), lhs, rhs, end);
-				} else {
-					match(RightSquare.class);							
-					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
-							index - 1));
-				}
+				match(RightSquare.class);							
+				lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
+						index - 1));
 			} else if(lookahead instanceof Hash) {
 				match(Hash.class);
 				if(index < tokens.size() && tokens.get(index) instanceof Int) {
@@ -531,7 +496,7 @@ public class SpecParser {
 			token = tokens.get(index);
 		}
 		match(RightSquare.class);
-		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(start,
+		return new Expr.NaryOp(Code.NOp.LISTGEN, exprs, sourceAttr(start,
 				index - 1));
 	}
 			

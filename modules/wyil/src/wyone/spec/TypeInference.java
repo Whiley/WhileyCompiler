@@ -144,17 +144,17 @@ public class TypeInference {
 		}
 	}
 
-	protected Type resolve(Expr.Constructor code, HashMap<String,Type> environment) {
+	protected Type resolve(Expr.Constructor expr, HashMap<String,Type> environment) {
 	
-		if(code.argument != null) {
-			Type arg_t = environment.get(code.argument);
+		if(expr.argument != null) {
+			Type arg_t = resolve(expr.argument,environment);
 			
 			// TODO: type check parameter argument
 		}
 
-		Type.Term type = terms.get(code.name);
+		Type.Term type = terms.get(expr.name);
 		if (type == null) {
-			syntaxError("function not declared", filename, code);
+			syntaxError("function not declared", filename, expr);
 		}
 		
 		return type;
@@ -258,6 +258,19 @@ public class TypeInference {
 			return null; // dead-code
 		}
 		return result;
+	}
+	
+	protected Type resolve(Expr.NaryOp expr, HashMap<String, Type> environment) {
+		ArrayList<Expr> operands = expr.arguments;
+		Type[] types = new Type[operands.size()];
+
+		for (int i = 0; i != types.length; ++i) {
+			types[i] = resolve(operands.get(i), environment);
+		}
+		
+		// TODO: support set generation
+
+		return Type.T_COMPOUND(Type.Compound.Kind.LIST, false, types);
 	}
 	
 	protected Type resolve(Expr.Variable code, HashMap<String, Type> environment) {

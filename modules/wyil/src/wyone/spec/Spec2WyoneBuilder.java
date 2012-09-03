@@ -202,6 +202,8 @@ public class Spec2WyoneBuilder {
 			return translate((Expr.Constant) expr, environment, codes);
 		} else if (expr instanceof Expr.Constructor) {
 			return translate((Expr.Constructor) expr, environment, codes);
+		} else if (expr instanceof Expr.NaryOp) {
+			return translate((Expr.NaryOp) expr, environment, codes);
 		} else if (expr instanceof Expr.UnOp) {
 			return translate((Expr.UnOp) expr, environment, codes);
 		} else if (expr instanceof Expr.Variable) {
@@ -248,9 +250,35 @@ public class Spec2WyoneBuilder {
 
 	private int translate(Expr.Constructor expr, Environment environment,
 			ArrayList<Code> codes) {
-		// TODO
+		int target = environment
+				.allocate(expr.attribute(Attribute.Type.class).type);
+		Code.Constructor code;
+		if (expr.argument != null) {
+			int operand = translate(expr.argument, environment, codes);
+			code = new Code.Constructor(target, operand, expr.name,
+					expr.attribute(Attribute.Source.class));
+		} else {
+			code = new Code.Constructor(target, expr.name,
+					expr.attribute(Attribute.Source.class));
+		}
+		codes.add(code);
+		return target;
 	}
 
+	private int translate(Expr.NaryOp expr, Environment environment,
+			ArrayList<Code> codes) {
+		int target = environment
+				.allocate(expr.attribute(Attribute.Type.class).type);
+		ArrayList<Expr> expr_operands = expr.arguments;
+		int[] operands = new int[expr_operands.size()];
+		for (int i = 0; i != operands.length; ++i) {
+			operands[i] = translate(expr_operands.get(i), environment, codes);
+		}
+		codes.add(new Code.NaryOp(expr.op, target, operands, expr
+				.attribute(Attribute.Source.class)));
+		return target;
+	}
+	
 	private int translate(Expr.UnOp expr, Environment environment,
 			ArrayList<Code> codes) {
 		// TODO

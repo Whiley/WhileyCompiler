@@ -25,6 +25,7 @@
 
 package wyone.core;
 
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -427,16 +428,12 @@ public final class Automaton {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Item extends State {
-		public final Object payload;
+	public static abstract class Constant<T> extends State {
+		public final T value;
 
-		public Item(int kind, Object data) {
+		public Constant(int kind, T data) {
 			super(kind);
-			this.payload = data;
-		}
-
-		public Item clone() {
-			return new Item(kind, payload);
+			this.value = data;
 		}
 
 		public void remap(int from, int to) {
@@ -444,19 +441,47 @@ public final class Automaton {
 		}
 		
 		public boolean equals(final Object o) {
-			if (o instanceof Item) {
-				Item t = (Item) o;
-				return kind == t.kind && payload.equals(t.payload);
+			if (o instanceof Constant) {
+				Constant t = (Constant) o;
+				return kind == t.kind && value.equals(t.value);
 			}
 			return false;
 		}
 
 		public int hashCode() {
-			return payload.hashCode() * kind;
+			return value.hashCode() * kind;
 		}
 		
 		public String toString() {
-			return payload.toString();
+			return value.toString();
+		}
+	}
+	
+	public static final class Int extends Constant<BigInteger> {
+		public Int(BigInteger value) {
+			super(K_INT, value);
+		}
+
+		public Int(String str) {
+			super(K_INT, new BigInteger(str));
+		}
+		
+		public Constant clone() {
+			return new Int(value);
+		}
+
+		public int intValue() {
+			return value.intValue();
+		}
+	}
+	
+	public static final class Strung extends Constant<String> {
+		public Strung(String value) {
+			super(K_STRING, value);
+		}
+
+		public Strung clone() {
+			return new Strung(value);
 		}
 	}
 	

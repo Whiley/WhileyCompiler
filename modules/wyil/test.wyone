@@ -15,11 +15,21 @@ rewrite Not(Not(* x)):
 
 class Term as Bool | Not | Var
 
-term LessThan[Num,Num]
+term Equal[Num,Num]
+term NotEqual[Num,Num]
 term Num(int)
 
-rewrite LessThan[Num(int x), Num(int y)]:
-    => True, if x < y
+rewrite Equal[Num(int x), Num(int y)]:
+    => True, if x == y
     => False
+
+rewrite NotEqual[Num(int x), Num(int y)]:
+    => True, if x != y
+    => False
+
+rewrite Not(NotEqual[* x, * y]):
+    => Equal[x,y]
+
+
 
 
