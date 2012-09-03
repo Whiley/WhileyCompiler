@@ -1511,7 +1511,8 @@ public class Wyil2CBuilder implements Builder {
 			tmp = "//             type is " + typ + "\n";
 			bodyAddLine(tmp);
 
-			if (typ instanceof Type.List) {
+			// if (typ instanceof Type.List) {
+			if ((typ instanceof Type.List) || (typ instanceof Type.UnionOfLists)){
 				if (cnt != 1){
 					error += "ERROR bad argument count for list update (" + cnt + ")\n";
 				}
@@ -1689,6 +1690,7 @@ public class Wyil2CBuilder implements Builder {
 			Code.LengthOf cod = (Code.LengthOf) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
+			
 			lin = " = wyil_length_of(X" + rhs + ");";
 			writeTargetSwap(lin, targ, rhs, tag);
 
@@ -1699,6 +1701,8 @@ public class Wyil2CBuilder implements Builder {
 		private void writeTargetSwap(String lin, int targ, int opr, String tag){
 			//int ign;
 			String tmp;
+			
+			this.addDecl(targ, "wycc_obj*");
 			if (targ == opr) {
 				//writeClearTarget(-targ, tag);
 				this.addDecl(-targ, "wycc_obj*");
@@ -1921,16 +1925,22 @@ public class Wyil2CBuilder implements Builder {
 			opr = cod.operand;
 			ntyp = cod.result;
 			otyp = cod.type;
-			tmp = "//            ignoring convert operation \n";
+			if (ntyp instanceof Type.Any) {
+				tmp = "//            Safely ignoring convert operation to Any \n";
+				bodyAddLine(tmp);
+				return "";
+			}
+			
+			tmp = "//            Help ignoring convert operation \n";
 			bodyAddLine(tmp);
 			tmp = "//**          change X" + opr + " from " + otyp + " to " + ntyp + "\n";
 			bodyAddLine(tmp);
 			tmp = "";
 			if (otyp instanceof Type.Leaf) {
-				tmp += "was ";
+				tmp += "was " + otyp + " ";
 			}
 			if (ntyp instanceof Type.Leaf) {
-				tmp += "will be";
+				tmp += "will be " + ntyp + " ";
 			}
 			if (tmp != "") {
 				tmp = "//--          " + tmp + " a leaf type\n";
