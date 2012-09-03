@@ -113,7 +113,7 @@ static char* wy_type_names[] = {
     /* a record of the meta data for a variety of record. */
     /* a pointer to which changes a raw record into a record. */
 #define Wy_Rcd_Rcd		16
-    "raw record",
+    "record meta",
 #define Wy_Type_Max	16
     (char *) NULL
 };
@@ -168,7 +168,9 @@ static char* wy_type_names[] = {
  *		registry index (-1 for raw records)
  *		size (pad so as match list)
  *		array of obj ptrs *
- *		
+ * Wy_Rcd_Rcd	ptr to block:
+ *		ptr to Wy_List of names
+ *		ptr to Wy_List of types
  */
 
 /*
@@ -179,6 +181,9 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs);
+static int wycc_comp_list(wycc_obj* lhs, wycc_obj* rhs);
+static int wycc_comp_rmeta(wycc_obj* lhs, wycc_obj* rhs);
+static int wycc_comp_record(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs);
 
 typedef int (*Wycc_Comp_Ptr)(wycc_obj* lhs, wycc_obj* rhs);
@@ -413,6 +418,34 @@ wycc_obj* wycc_box_null() {
     ans->cnt = 1;
     ans->ptr = (void*) 0;	/* **** kludge */
     return ans;
+}
+
+/*
+ * given an object and a string,
+ * return 1 if the string describes the type of the object,
+ * else return 0;
+ */
+int wycc_type_check(wycc_obj* itm, char* typ){
+    WY_OBJ_SANE(itm, "wycc_type_check");
+
+    // fprintf(stderr, "DEBUG wycc_type_check for type %s\n", typ);
+    // fprintf(stderr, "DEBUG wycc_type_check given type %d\n", itm->typ);
+
+    if (0 == strcmp(typ, "null")) {
+	if (itm->typ == Wy_Null) {
+	    return 1;
+	};
+	return 0;
+    };
+    if (0 == strcmp(typ, "char")) {
+	if (itm->typ == Wy_Char) {
+	    return 1;
+	};
+	return 0;
+    };
+    fprintf(stderr, "Help needed in wycc_type_check for type %s\n", typ);
+    exit(-3);
+
 }
 
 /*
@@ -671,8 +704,16 @@ wycc_obj* wycc_iter_new(wycc_obj *itm) {
     wycc_obj* ans;
     struct chunk_ptr *ptr;
     int cnt;
+    int flg;
 
-    if (itm->typ != Wy_List) {
+    flg = -1;
+    if (itm->typ == Wy_List) {
+	flg = 2;
+    };
+    if (itm->typ == Wy_Set) {
+	flg = 0;
+    };
+    if (flg == -1) {
 	fprintf(stderr, "Help needed in wycc_iter_new for type %d\n", itm->typ);
 	exit(-3);
     };
@@ -686,7 +727,7 @@ wycc_obj* wycc_iter_new(wycc_obj *itm) {
     chunk = &(p[2]);
     ptr->chk = chunk;
     ptr->at = 0;
-    ptr->flg = 2;
+    ptr->flg = flg;
     ans->ptr = ptr;
     return ans;
 
@@ -820,6 +861,8 @@ wycc_obj* wycc_iter_next(wycc_obj *itm) {
     wycc_chunk_ptr_inc(ptr);
     if (ptr->flg == 2) {
 	ans = ptr->val;
+    } else if (ptr->flg == 0) {
+	ans = ptr->key;
     } else {
 	fprintf(stderr, "Help needed in wycc_iter_next for subtype %d\n"
 		, ptr->flg);
@@ -1414,6 +1457,12 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
     if (lt == Wy_Set) {
 	return wycc_comp_set(lhs, rhs);
     };
+    if (lt == Wy_Record) {
+	return wycc_comp_record(lhs, rhs);
+    };
+    if (lt == Wy_List) {
+	return wycc_comp_list(lhs, rhs);
+    };
     fprintf(stderr, "Help needed in wycc_comp_gen for type %d\n", lt);
     exit(-3);
 }
@@ -1472,7 +1521,7 @@ static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 /*
- * a not quite simple comarison of two small sets
+ * a not quite simple comparison of two small sets
  * a set with fewer elements is always smaller
  * a 
  */
@@ -1488,14 +1537,8 @@ static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs){
     int end;
 
     wycc_chunk_ptr_fill(lptr, lhs, 0);	/* 0 == this is a set */
-    wycc_chunk_ptr_fill(rptr, rhs, 0);
-    if (lptr->cnt < rptr->cnt) {
-	return -1;
-    };
-    if (rptr->cnt < lptr->cnt) {
-	return 1;
-    };
-    wycc_chunk_ptr_inc(lptr);
+    wycc_chunk_ptr_fill(rptr, rhs, 0); 
+   wycc_chunk_ptr_inc(lptr);
     wycc_chunk_ptr_inc(rptr);
     while (lptr->key) {
 	litm = lptr->key;
@@ -1506,6 +1549,100 @@ static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs){
 	};
 	wycc_chunk_ptr_inc(lptr);
 	wycc_chunk_ptr_inc(rptr);
+    };
+    return 0;
+}
+
+/*
+ * a not quite simple comparison of two lists
+ * a list with fewer elements is always smaller
+ * a 
+ */
+static int wycc_comp_list(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs, "wycc_comp_list lhs");
+    WY_OBJ_SANE(rhs, "wycc_comp_list rhs");
+    void ** lblk = (void **) lhs->ptr;
+    void ** rblk = (void **) rhs->ptr;
+    wycc_obj *litm;
+    wycc_obj *ritm;
+    int end;
+    int idx;
+    int cnt;
+
+    idx = (int) lblk[1];
+    cnt = (int) rblk[1];
+    if (idx < cnt) {
+	return -1;
+    };
+    if (cnt < idx) {
+	return 1;
+    };
+    for (idx = 0; idx < cnt ; idx ++) {
+	litm = (wycc_obj *) lblk[2+idx];
+	ritm = (wycc_obj *) rblk[2+idx];
+	end = wycc_comp_gen(litm, ritm);
+	if (end != 0) {
+	    return end;
+	};
+    }
+    return 0;
+}
+
+/*
+ * a not quite simple comparison of two records
+ * a record with fewer fields is always smaller
+ * a 
+ */
+static int wycc_comp_record(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs, "wycc_comp_record lhs");
+    WY_OBJ_SANE(rhs, "wycc_comp_record rhs");
+    void ** lblk = (void **) lhs->ptr;
+    void ** rblk = (void **) rhs->ptr;
+    int lcnt = (int) lblk[1];
+    int rcnt = (int) rblk[1];
+    int end;
+
+    if (lcnt < rcnt) {
+	return -1;
+    };
+    if (rcnt < lcnt) {
+	return 1;
+    };
+    end = wycc_comp_rmeta((wycc_obj*) lblk[0], (wycc_obj*) rblk[0]);
+    if (end != 0) {
+	return end;
+    };
+
+    return wycc_comp_list(lhs, rhs);
+}
+
+/*
+ * a not quite simple comparison of two records
+ * a record with fewer fields is always smaller
+ * a 
+ */
+static int wycc_comp_rmeta(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs, "wycc_comp_record lhs");
+    WY_OBJ_SANE(rhs, "wycc_comp_record rhs");
+    void ** lblk = (void **) lhs->ptr;
+    void ** rblk = (void **) rhs->ptr;
+    int end;
+
+    if (lhs->typ != Wy_Rcd_Rcd) {
+	fprintf(stderr, "FAIL wycc_comp_meta called for type %d\n", lhs->typ);
+	exit(-3);
+    }
+    if (rhs->typ != Wy_Rcd_Rcd) {
+	fprintf(stderr, "FAIL wycc_comp_meta called for type %d\n", rhs->typ);
+	exit(-3);
+    }
+    end = wycc_comp_list((wycc_obj *) lblk[0], (wycc_obj *) rblk[0]);
+    if (end != 0) {
+	return end;
+    };
+    end = wycc_comp_list((wycc_obj *) lblk[1], (wycc_obj *) rblk[1]);
+    if (end != 0) {
+	return end;
     };
     return 0;
 }

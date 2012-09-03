@@ -60,7 +60,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Starting slow")@Test public void Byte_Valid_7_RuntimeTest() { runTest("Byte_Valid_7"); }
  @Ignore("Starting slow")@Test public void Byte_Valid_8_RuntimeTest() { runTest("Byte_Valid_8"); }
  @Ignore("Starting slow")@Test public void Byte_Valid_9_RuntimeTest() { runTest("Byte_Valid_9"); }
- @Test public void Cast_Valid_1_RuntimeTest() { runTest("Cast_Valid_1"); }
+ @Ignore("Known Issue - reals")@Test public void Cast_Valid_1_RuntimeTest() { runTest("Cast_Valid_1"); }
  @Ignore("Starting slow")@Test public void Cast_Valid_2_RuntimeTest() { runTest("Cast_Valid_2"); }
  @Ignore("Starting slow")@Test public void Cast_Valid_3_RuntimeTest() { runTest("Cast_Valid_3"); }
  @Ignore("Starting slow")@Test public void Cast_Valid_4_RuntimeTest() { runTest("Cast_Valid_4"); }
@@ -298,8 +298,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecordAccess_Valid_2_RuntimeTest() { runTest("RecordAccess_Valid_2"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { runTest("RecordAssign_Valid_1"); }
  @Test public void RecordAssign_Valid_2_RuntimeTest() { runTest("RecordAssign_Valid_2"); }
- @Ignore("Starting slow")@Test public void RecordAssign_Valid_3_RuntimeTest() { runTest("RecordAssign_Valid_3"); }
- @Ignore("Starting slow")@Test public void RecordAssign_Valid_4_RuntimeTest() { runTest("RecordAssign_Valid_4"); }
+ @Test public void RecordAssign_Valid_3_RuntimeTest() { runTest("RecordAssign_Valid_3"); }
+ @Test public void RecordAssign_Valid_4_RuntimeTest() { runTest("RecordAssign_Valid_4"); }
  @Ignore("Starting slow")@Test public void RecordAssign_Valid_5_RuntimeTest() { runTest("RecordAssign_Valid_5"); }
  @Ignore("Starting slow")@Test public void RecordAssign_Valid_6_RuntimeTest() { runTest("RecordAssign_Valid_6"); }
  @Ignore("Starting slow")@Test public void RecordConversion_Valid_1_RuntimeTest() { runTest("RecordConversion_Valid_1"); }

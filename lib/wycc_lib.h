@@ -51,6 +51,7 @@ wycc_obj* wycc_box_bool(int x);
 wycc_obj* wycc_box_char(char x);
 wycc_obj* wycc_box_null();
 wycc_obj* wycc_box_ref(int x);
+int wycc_type_check(wycc_obj* itm, char* typ);
 wycc_obj* wycc_record_record(wycc_obj* nam, wycc_obj* typ);
 wycc_obj* wycc_rrecord_new(long siz);
 wycc_obj* wycc_record_new(wycc_obj* meta);
