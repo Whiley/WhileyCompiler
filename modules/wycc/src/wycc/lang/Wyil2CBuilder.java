@@ -1440,13 +1440,39 @@ public class Wyil2CBuilder implements Builder {
 		
 		public String writeCodeUnArithOp(Code codIn, String tag){
 			String tmp;
-			//String ans = "";
+			int targ, rhs;
+			String rtn, lin;
 			
-			//ans += "// HELP needed for UnArithOp\n";
 			tmp = "// HELP needed for UnArithOp\n";
 			bodyAddLine(tmp);
 			Code.UnArithOp cod = (Code.UnArithOp) codIn;
+			Code.UnArithKind opr = cod.kind;
+			targ = cod.target;
+			rhs = cod.operand;
+
+			if (opr == Code.UnArithKind.NEG) {
+				rtn = "wyil_negate";
+			} else if (opr == Code.UnArithKind.NUMERATOR){
+				rtn = "wyil_negate";
+				tmp = "// HELP needed for unArithOp '" + opr + "'\n";
+				bodyAddLine(tmp);
+				return "";
+			} else if (opr == Code.UnArithKind.DENOMINATOR){
+				rtn = "wyil_negate";
+				tmp = "// HELP needed for unArithOp '" + opr + "'\n";
+				bodyAddLine(tmp);
+				return "";
+			} else {
+				tmp = "// HELP needed for unArithOp '" + opr + "'\n";
+				bodyAddLine(tmp);
+				return "";
+			}
+			lin = "X" + targ + " = " + rtn + "(X" + rhs + ");" + tag;
+			tmp = indent + lin + "\n";
+			this.mbodyAddLine(tmp);
 			//return ans;
+			
+			
 			return "";
 		}
 		
@@ -1896,8 +1922,19 @@ public class Wyil2CBuilder implements Builder {
 			otyp = cod.type;
 			tmp = "//            ignoring convert operation \n";
 			bodyAddLine(tmp);
-			tmp = "//            change X" + opr + " from " + otyp + " to " + ntyp + "\n";
+			tmp = "//**          change X" + opr + " from " + otyp + " to " + ntyp + "\n";
 			bodyAddLine(tmp);
+			tmp = "";
+			if (otyp instanceof Type.Leaf) {
+				tmp += "was ";
+			}
+			if (ntyp instanceof Type.Leaf) {
+				tmp += "will be";
+			}
+			if (tmp != "") {
+				tmp = "//--          " + tmp + " a leaf type\n";
+				bodyAddLine(tmp);
+			}
 			return "";
 		}
 		
@@ -1937,21 +1974,18 @@ public class Wyil2CBuilder implements Builder {
 		}
 		
 		public String writeCodeBinArithOp(Code codIn, String tag){
-			//int ign;
 			String tmp;
-			//String ans = "";
 			int targ, lhs, rhs;
 			String rtn, lin;
 			
 			Code.BinArithOp cod = (Code.BinArithOp) codIn;
 			Code.BinArithKind opr = cod.kind;
 			targ = cod.target;
-			//ans += writeClearTarget(targ, tag);
 			writeClearTarget(targ, tag);
 			this.addDecl(targ, "wycc_obj*");
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
-			// ans += "// HELP needed for binArithOp '" + opr + "'\n";
+
 			if (opr == Code.BinArithKind.ADD) {
 				rtn = "wyil_add";
 			} else if (opr == Code.BinArithKind.SUB){

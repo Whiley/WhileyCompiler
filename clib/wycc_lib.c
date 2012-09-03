@@ -207,6 +207,7 @@ int main(int argc, char** argv, char** envp) {
     char* argp;
     wycc_initor* ini;
     wycc_obj* sys;
+    wycc_obj* lst;
     wycc_obj* itm;
 
     orig_argc = argc;
@@ -229,10 +230,17 @@ int main(int argc, char** argv, char** envp) {
 	ini = (wycc_initor*)ini->nxt;
     };
     //sys = wycc_box_int(1);	/* **** KLUDGE **** */
+
     itm = wycc_box_ref(1);
     sys = wycc_rrecord_new(2);
     wycc_record_fill(sys, 1, itm);
     wycc_deref_box(itm);
+    lst = wycc_list_new(argc-1);
+    for (idx=1; idx < argc ; idx++) {
+	itm = wycc_box_cstr(argv[idx]);
+	wycc_list_add(lst, itm);
+    }
+    wycc_record_fill(sys, 0, lst);
     wycc__main(sys);
     exit(0);
     return 0;
@@ -1102,7 +1110,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	typ = key->typ;
 	p[0] = (void *) typ;
     } else if (typ == Wy_Any) {
-    } else if (typ != itm->typ) {
+    } else if (typ != key->typ) {
 	//fprintf(stderr, "Help needed in wycc_map_add for multi-types \n");
 	//exit(-3);
 	p[0] = (void *) Wy_Any;
@@ -1485,7 +1493,7 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
 	exit(-3);
     };
     lp = lhs->ptr;
-    rp = lhs->ptr;
+    rp = rhs->ptr;
     ans =  strcmp(lp, rp);
     if (ans < 0) {
 	return -1;
@@ -2494,6 +2502,22 @@ wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs){
     return wycc_box_str(rslt);
 }
 
+/*
+ * rudimentary negation operation
+ */
+wycc_obj* wyil_negate(wycc_obj* itm){
+    WY_OBJ_SANE(itm, "wyil_negate");
+
+    if (itm->typ == Wy_Int) {
+	return wycc_box_long(-((long) itm->ptr));
+    }
+    fprintf(stderr, "Help needed in wyil_negate for wide ints (%d\n", itm->typ);
+    exit(-3);
+}
+
+/*
+ * rudimentary add operation
+ */
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_add lhs");
     WY_OBJ_SANE(rhs, "wyil_add rhs");

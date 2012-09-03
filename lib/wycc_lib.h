@@ -94,6 +94,7 @@ wycc_obj* wyil_set_insect_right(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_set_diff_left(wycc_obj* lhs, wycc_obj* rhs);
 
 wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_negate(wycc_obj* itm);
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs);
