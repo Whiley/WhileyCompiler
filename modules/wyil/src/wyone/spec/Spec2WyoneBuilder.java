@@ -11,43 +11,44 @@ import static wyone.util.SyntaxError.*;
 
 public class Spec2WyoneBuilder {
 	private String filename;
-	
+
 	public WyoneFile build(SpecFile file) {
 		this.filename = file.filename;
-		
+
 		ArrayList<WyoneFile.Decl> declarations = new ArrayList<WyoneFile.Decl>();
-		for(SpecFile.Decl d : file.declarations) {
-			if(d instanceof SpecFile.TermDecl) {
-				declarations.add(build((SpecFile.TermDecl)d));
-			} else if(d instanceof SpecFile.ClassDecl) {
-				declarations.add(build((SpecFile.ClassDecl)d));
-			} else if(d instanceof SpecFile.RewriteDecl) {
-				declarations.add(build((SpecFile.RewriteDecl)d));
+		for (SpecFile.Decl d : file.declarations) {
+			if (d instanceof SpecFile.TermDecl) {
+				declarations.add(build((SpecFile.TermDecl) d));
+			} else if (d instanceof SpecFile.ClassDecl) {
+				declarations.add(build((SpecFile.ClassDecl) d));
+			} else if (d instanceof SpecFile.RewriteDecl) {
+				declarations.add(build((SpecFile.RewriteDecl) d));
 			} else {
 				// unknown?
-				throw new IllegalArgumentException("Unknown SpecFile Declaration encountered");
-			}		
+				throw new IllegalArgumentException(
+						"Unknown SpecFile Declaration encountered");
+			}
 		}
-		
+
 		declarations.add(buildRuleDispatch(file));
-		
-		return new WyoneFile(file.filename,declarations);
+
+		return new WyoneFile(file.filename, declarations);
 	}
-	
+
 	private WyoneFile.TermDecl build(SpecFile.TermDecl d) {
-		return new WyoneFile.TermDecl(d.type,d.attributes());
+		return new WyoneFile.TermDecl(d.type, d.attributes());
 	}
-	
+
 	private WyoneFile.ClassDecl build(SpecFile.ClassDecl d) {
-		return new WyoneFile.ClassDecl(d.name,d.children,d.attributes());
+		return new WyoneFile.ClassDecl(d.name, d.children, d.attributes());
 	}
-	
+
 	private WyoneFile.FunDecl build(SpecFile.RewriteDecl d) {
 		Type.Ref param = d.pattern.type();
 		Environment environment = new Environment();
 		ArrayList<Code> body = new ArrayList<Code>();
 		int root = environment.allocate(param, "this");
-		
+
 		translate(d.pattern, root, environment, body);
 
 		boolean conditional = true;
@@ -67,102 +68,107 @@ public class Spec2WyoneBuilder {
 		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, param),
 				environment.asList(), body, d.attributes());
 	}
-	
+
 	private void build(SpecFile.RuleDecl rd, Environment environment,
 			ArrayList<Code> codes) {
 		ArrayList<Code> myCodes = codes;
-		if(rd.condition != null) {
+		if (rd.condition != null) {
 			myCodes = new ArrayList<Code>();
 		}
-		
-		for(Pair<String,Expr> let : rd.lets) {
-			int target = translate(let.second(),environment,myCodes);
+
+		for (Pair<String, Expr> let : rd.lets) {
+			int target = translate(let.second(), environment, myCodes);
 			environment.put(target, let.first());
 		}
 		// translate rewrite body
-		int operand = translate(rd.result,environment,myCodes);
-		
+		int operand = translate(rd.result, environment, myCodes);
+
 		// add return vaue
 		int target = environment.allocate(Type.T_BOOL);
 		myCodes.add(new Code.Rewrite(target, environment.get("this"), operand,
-				rd.attribute(Attribute.Source.class)));		
-		myCodes.add(new Code.Return(target,rd.attribute(Attribute.Source.class)));
+				rd.attribute(Attribute.Source.class)));
+		myCodes.add(new Code.Return(target, rd
+				.attribute(Attribute.Source.class)));
 
 		// translate condition (if applicable)
-		if(rd.condition != null) {
-			int condition = translate(rd.condition,environment,codes);
+		if (rd.condition != null) {
+			int condition = translate(rd.condition, environment, codes);
 			codes.add(new Code.If(condition, myCodes, Collections.EMPTY_LIST,
 					rd.condition.attribute(Attribute.Source.class)));
 		}
-		
+
 		// undo name bindings as they're now out of scope.
-		for(Pair<String,Expr> let : rd.lets) {
+		for (Pair<String, Expr> let : rd.lets) {
 			int idx = environment.get(let.first());
-			environment.put(idx,null);
+			environment.put(idx, null);
 		}
 	}
-	
+
 	public WyoneFile.FunDecl buildRuleDispatch(SpecFile file) {
 		ArrayList<Code> codes = new ArrayList<Code>();
 		Environment environment = new Environment();
 		environment.allocate(Type.T_REFANY, "this");
 		environment.allocate(Type.T_BOOL, "ret");
-		
-		codes.add(new Code.Constant(environment.get("ret"),false));
-		
-		for(SpecFile.Decl d : file.declarations) {
-			if(d instanceof SpecFile.RewriteDecl) {
+
+		codes.add(new Code.Constant(environment.get("ret"), false));
+
+		for (SpecFile.Decl d : file.declarations) {
+			if (d instanceof SpecFile.RewriteDecl) {
 				SpecFile.RewriteDecl fd = (SpecFile.RewriteDecl) d;
-				Type.Fun type = Type.T_FUN(Type.T_BOOL,fd.pattern.type());
+				Type.Fun type = Type.T_FUN(Type.T_BOOL, fd.pattern.type());
 				ArrayList<Code> ifCodes = new ArrayList<Code>();
 				int[] operands = new int[] { environment.get("this") };
-				ifCodes.add(new Code.Invoke("rewrite", type, environment.get("ret"),
-						operands));
+				ifCodes.add(new Code.Invoke("rewrite", type, environment
+						.get("ret"), operands));
 				codes.add(new Code.IfIs(environment.get("this"), type.param,
-						ifCodes, Collections.EMPTY_LIST));					
+						ifCodes, Collections.EMPTY_LIST));
 			}
 		}
-		
+
 		codes.add(new Code.Return(environment.get("ret")));
-		
-		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, Type.T_REFANY),
-				environment.asList(), codes);
-	}	
-	
-	private void translate(Pattern pattern, int source, Environment environment, ArrayList<Code> codes) {
-		if(pattern instanceof Pattern.Leaf) {
+
+		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL,
+				Type.T_REFANY), environment.asList(), codes);
+	}
+
+	private void translate(Pattern pattern, int source,
+			Environment environment, ArrayList<Code> codes) {
+		if (pattern instanceof Pattern.Leaf) {
 			translate((Pattern.Leaf) pattern, source, environment, codes);
-		} else if(pattern instanceof Pattern.Term) {
+		} else if (pattern instanceof Pattern.Term) {
 			translate((Pattern.Term) pattern, source, environment, codes);
-		} else if(pattern instanceof Pattern.Compound) {
+		} else if (pattern instanceof Pattern.Compound) {
 			translate((Pattern.Compound) pattern, source, environment, codes);
 		} else {
-			syntaxError("unknown pattern encountered",filename,pattern);
+			syntaxError("unknown pattern encountered", filename, pattern);
 		}
 	}
-	
-	private void translate(Pattern.Leaf pattern, int source, Environment environment, ArrayList<Code> codes) {
+
+	private void translate(Pattern.Leaf pattern, int source,
+			Environment environment, ArrayList<Code> codes) {
 		// do nothing?
 	}
-	
-	private void translate(Pattern.Term pattern, int source, Environment environment, ArrayList<Code> codes) {
-		if(pattern.data != null) {
+
+	private void translate(Pattern.Term pattern, int source,
+			Environment environment, ArrayList<Code> codes) {
+		if (pattern.data != null) {
 			Type.Ref<Type.Term> type = (Type.Ref<Type.Term>) pattern
 					.attribute(Attribute.Type.class).type;
 			int target = environment.allocate(type.element);
-			int contents = environment.allocate(type.element.data);		
-			codes.add(new Code.Deref(target,source)); 
-			codes.add(new Code.TermContents(contents,target));
-			translate(pattern.data,contents,environment,codes);
-			if(pattern.variable != null) {
-				environment.put(contents,pattern.variable);
+			int contents = environment.allocate(type.element.data);
+			codes.add(new Code.Deref(target, source));
+			codes.add(new Code.TermContents(contents, target));
+			translate(pattern.data, contents, environment, codes);
+			if (pattern.variable != null) {
+				environment.put(contents, pattern.variable);
 			}
 		}
 	}
 
 	private void translate(Pattern.Compound pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
-		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern.attribute(Attribute.Type.class).type;
+		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
+				.attribute(Attribute.Type.class).type;
 		Pair<Pattern, String>[] elements = pattern.elements;
 		int target = environment.allocate(type.element);
 		codes.add(new Code.Deref(target, source));
@@ -187,44 +193,53 @@ public class Spec2WyoneBuilder {
 			}
 		}
 	}
-	
-	private int translate(Expr expr, Environment environment, ArrayList<Code> codes) {
-		if(expr instanceof Expr.BinOp) {
-			return translate((Expr.BinOp) expr,environment,codes);
-		} else if(expr instanceof Expr.Constant) {
-			return translate((Expr.Constant) expr,environment,codes);
-		} else if(expr instanceof Expr.Constructor) {
-			return translate((Expr.Constructor) expr,environment,codes);
-		} else if(expr instanceof Expr.UnOp) {
-			return translate((Expr.UnOp) expr,environment,codes);
-		} else if(expr instanceof Expr.Variable) {
-			return translate((Expr.Variable) expr,environment,codes);
+
+	private int translate(Expr expr, Environment environment,
+			ArrayList<Code> codes) {
+		if (expr instanceof Expr.BinOp) {
+			return translate((Expr.BinOp) expr, environment, codes);
+		} else if (expr instanceof Expr.Constant) {
+			return translate((Expr.Constant) expr, environment, codes);
+		} else if (expr instanceof Expr.Constructor) {
+			return translate((Expr.Constructor) expr, environment, codes);
+		} else if (expr instanceof Expr.UnOp) {
+			return translate((Expr.UnOp) expr, environment, codes);
+		} else if (expr instanceof Expr.Variable) {
+			return translate((Expr.Variable) expr, environment, codes);
 		} else {
-			syntaxError("unknown expression encountered",filename,expr);
+			syntaxError("unknown expression encountered", filename, expr);
 			return 0; // dead code
 		}
 	}
-	
+
 	private int translate(Expr.BinOp expr, Environment environment,
 			ArrayList<Code> codes) {
-		int result = environment.allocate(expr.attribute(Attribute.Type.class).type);
+		int result = environment
+				.allocate(expr.attribute(Attribute.Type.class).type);
 		int lhs = translate(expr.lhs, environment, codes);
+		lhs = coerceToValue(expr.lhs, lhs, environment, codes);
 		int rhs = translate(expr.rhs, environment, codes);
+		rhs = coerceToValue(expr.rhs, rhs, environment, codes);
 		codes.add(new Code.BinOp(expr.op, result, lhs, rhs, expr.attributes()));
 		return result;
 	}
 
-	private int translate(Expr.Constant expr, Environment environment, ArrayList<Code> codes) {		
-		int target = environment.allocate(expr.attribute(Attribute.Type.class).type);
-		codes.add(new Code.Constant(target, expr.value, expr.attribute(Attribute.Source.class)));
+	private int translate(Expr.Constant expr, Environment environment,
+			ArrayList<Code> codes) {
+		int target = environment
+				.allocate(expr.attribute(Attribute.Type.class).type);
+		codes.add(new Code.Constant(target, expr.value, expr
+				.attribute(Attribute.Source.class)));
 		return target;
 	}
 
-	private int translate(Expr.Constructor expr, Environment environment, ArrayList<Code> codes) {
+	private int translate(Expr.Constructor expr, Environment environment,
+			ArrayList<Code> codes) {
 		// TODO
 	}
 
-	private int translate(Expr.UnOp expr, Environment environment, ArrayList<Code> codes) {
+	private int translate(Expr.UnOp expr, Environment environment,
+			ArrayList<Code> codes) {
 		// TODO
 	}
 
@@ -234,13 +249,34 @@ public class Spec2WyoneBuilder {
 		if (target != null) {
 			return target;
 		} else {
-			int result = environment.allocate(expr.attribute(Attribute.Type.class).type);
+			int result = environment.allocate(expr
+					.attribute(Attribute.Type.class).type);
 			codes.add(new Code.Constructor(result, expr.var, expr
 					.attribute(Attribute.Source.class)));
 			return result;
 		}
 	}
-		
+
+	/**
+	 * Coerce the result of the given expression into a value. In other words,
+	 * if the result of the expression is a reference then derference it!
+	 * 
+	 * @param expr
+	 * @param codes
+	 */
+	private int coerceToValue(Expr expr, int target, Environment environment, ArrayList<Code> codes) {
+		Type type = expr.attribute(Attribute.Type.class).type;
+		if(type instanceof Type.Ref) {
+			Type.Ref ref = (Type.Ref) type;
+			int ntarget = environment.allocate(ref.element);
+			codes.add(new Code.Deref(ntarget, target, expr
+					.attribute(Attribute.Source.class)));
+			return ntarget;
+		} else {
+			return target;
+		}
+	}
+
 	private class Environment {
 		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
 		private final ArrayList<Type> idx2type = new ArrayList<Type>();
@@ -264,11 +300,11 @@ public class Spec2WyoneBuilder {
 		public void put(int idx, String v) {
 			var2idx.put(v, idx);
 		}
-		
+
 		public ArrayList<Type> asList() {
 			return idx2type;
 		}
-		
+
 		public String toString() {
 			return idx2type.toString() + "," + var2idx.toString();
 		}
