@@ -1363,6 +1363,7 @@ public class Wyil2CBuilder implements Builder {
 			tmp = "//             checking X" + opr + " with " + cnt + " choices:\n";
 			bodyAddLine(tmp);
 			idx = 0;
+			this.addDecl(-opr, "wycc_obj*");
 			for (Pair<Constant, String> pick:branches) {
 				alt = pick.second();
 				con = pick.first();
@@ -2055,6 +2056,8 @@ public class Wyil2CBuilder implements Builder {
 			Type typ;
 			String rval;
 			String assn = null;
+			String nam;
+			int alt;
 			
 			// Code.Const cod = (Const) codIn;
 			// targ = cod.target;
@@ -2091,8 +2094,14 @@ public class Wyil2CBuilder implements Builder {
 			//writeClearTarget(targ, tag);
 			// assn += "(" + rval + ")";
 			// this.addDecl(targ, "wycc_obj*");
+			if (targ < 0){
+				alt = 0 - targ;
+				nam = "XN" + alt;
+			} else {
+				nam = "X" + targ;
+			}
 			if (assn != null) {
-				tmp = indent + "X" + targ + " = " + assn + ";" + tag + "\n";
+				tmp = indent + nam + " = " + assn + ";" + tag + "\n";
 				//this.mbodyAddLine(tmp);
 			} else {
 				tmp = "";
