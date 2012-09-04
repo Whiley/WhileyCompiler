@@ -247,6 +247,8 @@ public class JavaFileWriter {
 			translate(level,(Code.Return) code, fun);
 		} else if (code instanceof Code.Constructor) {
 			translate(level,(Code.Constructor) code, fun);
+		} else if (code instanceof Code.SubList) {
+			translate(level,(Code.SubList) code, fun);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
@@ -326,7 +328,12 @@ public class JavaFileWriter {
 			rhs = v.toString();
 		} else if (v instanceof BigInteger) {
 			BigInteger bi = (BigInteger) v;
-			rhs = "new Automaton.Int(\"" + bi.toString() + "\")";
+			if(bi.bitLength() <= 64) {
+				rhs = "new Automaton.Int(" + bi.longValue() + ")";
+			} else {
+				rhs = "new Automaton.Int(\"" + bi.toString() + "\")";	
+			}
+			
 		} else {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
@@ -448,10 +455,18 @@ public class JavaFileWriter {
 	}
 	
 	public void translate(int level, Code.Return code, FunDecl fun) {
-		// TODO: implement
+		// TODO: implement no return value
 		myOut(level,comment("return r" + code.operand + ";",code.toString()));
 	}
 
+	public void translate(int level, Code.SubList code, FunDecl fun) {
+		String body = "r" + code.source + ".sublist(r" + code.start;
+		if(code.end != -1) {
+			body += ",r" + code.end; 
+		} 
+		myOut(level, "r" + code.target + " = " + body + ");");
+	}
+	
 	protected String nameMangle(Type type, HashSet<String> used) {
 		String mangle = null;
 		String _mangle = type2HexStr(type);

@@ -462,6 +462,10 @@ public final class Automaton {
 			super(K_INT, value);
 		}
 
+		public Int(long value) {
+			super(K_INT,BigInteger.valueOf(value));
+		}
+		
 		public Int(String str) {
 			super(K_INT, new BigInteger(str));
 		}
@@ -618,6 +622,16 @@ public final class Automaton {
 		
 		public List(java.util.List<Integer> children) {
 			super(K_LIST,children);
+		}
+		
+		public List sublist(Int start, Int end) {
+			return new List(Arrays.copyOfRange(children, start.intValue(),
+					end.intValue()));
+		}
+
+		public List sublist(Int start) {
+			return new List(Arrays.copyOfRange(children, start.intValue(),
+					children.length));
 		}
 		
 		public Compound clone() {

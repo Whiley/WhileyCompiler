@@ -19,7 +19,7 @@ term Sum[Num,Num]
 term Num(int)
 
 rewrite Sum[Num(int x), Num(int y), Num... xs]:
-    => Sum[Num(x+y),xs]
+    => Sum (Num(x+y) ++ xs)
 
 rewrite Sum[Num x]:
     => x

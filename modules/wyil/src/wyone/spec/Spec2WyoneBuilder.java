@@ -182,11 +182,22 @@ public class Spec2WyoneBuilder {
 			Pattern pat = p.first();
 			String var = p.second();
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
-			int index = environment.allocate(Type.T_INT);
-			int element = environment.allocate(pt);
-			codes.add(new Code.Constant(index, BigInteger.valueOf(i), pattern
-					.attribute(Attribute.Source.class)));
-			codes.add(new Code.IndexOf(element, target, index));
+			int element;
+			if(pattern.unbounded && (i+1) == elements.length) {
+				element = environment.allocate(Type.T_COMPOUND(pattern.kind,
+						true, pt));
+				int start = environment.allocate(Type.T_INT);
+				codes.add(new Code.Constant(start, BigInteger.valueOf(i), pattern
+						.attribute(Attribute.Source.class)));				
+				codes.add(new Code.SubList(element, target, start, pattern
+						.attribute(Attribute.Source.class)));		
+			} else {
+				element = environment.allocate(pt);
+				int index = environment.allocate(Type.T_INT);				
+				codes.add(new Code.Constant(index, BigInteger.valueOf(i), pattern
+						.attribute(Attribute.Source.class)));
+				codes.add(new Code.IndexOf(element, target, index));				
+			}
 			translate(pat, element, environment, codes);
 			if (var != null) {
 				environment.put(element, var);

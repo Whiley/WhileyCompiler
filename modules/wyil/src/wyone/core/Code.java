@@ -166,6 +166,21 @@ public class Code extends SyntacticElement.Impl {
 		}
 	};
 	
+	
+	public static final class LengthOf extends Code {
+		public final int target;
+		public final int source;
+		
+		public LengthOf(int target, int source) {
+			this.target = target;
+			this.source = source;
+		}
+		
+		public String toString() {
+			return "lengthof %" + target + " = %" + source;
+		}
+	}
+	
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static final class ListAccess extends Code {
 		public final int target;
@@ -398,6 +413,39 @@ public class Code extends SyntacticElement.Impl {
 
 		public String toString() {
 			return "return %" + operand;
+		}
+	}
+	
+	public static final class SubList extends Code {
+		public final int target;
+		public final int source;
+		public final int start;
+		public final int end;
+
+		public SubList(int target, int source, int start, int end, Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.source = source;
+			this.start = start;
+			this.end = end;
+		}
+
+		public SubList(int target, int source, int start, Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.source = source;
+			this.start = start;
+			this.end = -1;
+		}
+		
+		public String toString() {
+			if(end != -1) {
+				return "sublist %" + target + " = %" + source + "[%" + start
+					+ "..%" + end + "]";
+			} else {
+				return "sublist %" + target + " = %" + source + "[%" + start
+						+ "..]";				
+			}
 		}
 	}
 }
