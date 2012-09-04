@@ -166,7 +166,8 @@ public final class Automaton {
 		// Second, check to see whether there already exists an equivalent
 		// state. 
 		for(int i=0;i!=nStates;++i) {
-			if(states[i].equals(state)) {
+			State ith = states[i];
+			if(ith != null && ith.equals(state)) {
 				return i; // match
 			}
 		}
