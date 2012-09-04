@@ -83,6 +83,30 @@ public abstract class Type {
 	}
 	
 	/**
+	 * Coerce the result of the given expression into a value. In other words,
+	 * if the result of the expression is a reference then derference it!
+	 * 
+	 * @param expr
+	 * @param codes
+	 */
+	public static Type unbox(Type type) {		
+		if(type instanceof Type.Ref) {
+			Type.Ref ref = (Type.Ref) type;
+			return ref.element;
+		} else {
+			return type;
+		}
+	}
+	
+	public static Type box(Type type) {		
+		if(type instanceof Type.Ref) {
+			return type;
+		} else {
+			return Type.T_REF(type);
+		}
+	}
+	
+	/**
 	 * Return true if t2 is a subtype of t1 in the context of the given type
 	 * hierarchy.  
 	 * 

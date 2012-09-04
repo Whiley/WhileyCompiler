@@ -229,9 +229,27 @@ public class Spec2WyoneBuilder {
 			ArrayList<Code> codes) {
 		int result = environment
 				.allocate(expr.attribute(Attribute.Type.class).type);
+		Type lhs_t = expr.lhs.attribute(Attribute.Type.class).type;
+		Type rhs_t = expr.rhs.attribute(Attribute.Type.class).type;
 		int lhs = translate(expr.lhs, environment, codes);
 		int rhs = translate(expr.rhs, environment, codes);
 		switch(expr.op) {
+		case APPEND:
+			lhs_t = Type.unbox(lhs_t);
+			rhs_t = Type.unbox(rhs_t);
+			
+			if(lhs_t instanceof Type.Compound) {
+				lhs = coerceToValue(expr.lhs, lhs, environment, codes);				
+			} else {
+				lhs = coerceFromValue(expr.lhs, lhs, environment, codes);				
+			}
+			if(rhs_t instanceof Type.Compound) {
+				rhs = coerceToValue(expr.rhs, rhs, environment, codes);	
+			} else {
+				rhs = coerceFromValue(expr.rhs, rhs, environment, codes);
+			}
+			 		
+			break;
 		case EQ:
 		case NEQ:
 			Type lt = expr.lhs.attribute(Attribute.Type.class).type;
@@ -246,6 +264,7 @@ public class Spec2WyoneBuilder {
 			lhs = coerceToValue(expr.lhs, lhs, environment, codes);			
 			rhs = coerceToValue(expr.rhs, rhs, environment, codes);
 		}
+		
 		codes.add(new Code.BinOp(expr.op, result, lhs, rhs, expr.attributes()));
 		return result;
 	}
