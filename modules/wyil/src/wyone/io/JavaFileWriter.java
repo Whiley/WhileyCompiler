@@ -402,7 +402,11 @@ public class JavaFileWriter {
 			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")>=0";
 			break;
 		case APPEND:
-			rhs = "append(r" + code.lhs + ",r" + code.rhs + ")";
+			if(fun.types.get(code.lhs) instanceof Type.Compound) {
+				rhs = "r" + code.lhs + ".append(r" + code.rhs + ")";
+			} else {
+				rhs = "r" + code.rhs + ".appendFront(r" + code.lhs + ")";
+			}
 			break;
 		default:
 			throw new RuntimeException("unknown binary operator encountered: "

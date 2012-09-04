@@ -65,13 +65,19 @@ public class TypeInference {
 		} else {
 			Pattern.Compound p = (Pattern.Compound) pattern;
 			ArrayList<Type> types = new ArrayList<Type>();
-			for (Pair<Pattern, String> ps : p.elements) {
+			Pair<Pattern,String>[] p_elements = p.elements;
+			for (int i=0;i!=p_elements.length;++i) {
+				Pair<Pattern,String> ps = p_elements[i];
 				String var = ps.second();
 				Pattern pat = ps.first();
 				Type t = infer(pat,environment);				
 				types.add(t);
 				if(var != null) {
-					environment.put(var,t);
+					if(p.unbounded && (i+1) == p_elements.length) {
+						// TODO: include non-sequential option as well
+						t = Type.T_LIST(true,t);
+					} 
+					environment.put(var,t);					
 				}
 			}
 			type = Type.T_REF(Type.T_COMPOUND(p.kind, p.unbounded, types));
@@ -242,7 +248,7 @@ public class TypeInference {
 				Type.Compound rhs_tc = (Type.Compound) rhs_t;
 				result = Type.T_COMPOUND(rhs_tc.kind, rhs_tc.unbounded,
 						append(lhs_t, rhs_tc.elements));
-			} else {
+			} else if (lhs_t instanceof Type.Compound){
 				// left append
 				Type.Compound lhs_tc = (Type.Compound) rhs_t;
 				if (!lhs_tc.unbounded) {
@@ -257,7 +263,12 @@ public class TypeInference {
 							nelements[length]);
 					result = Type.T_COMPOUND(lhs_tc.kind, true, nelements);
 				}
-			}		
+			} else {
+				System.out.println("LHS: " + lhs_t);
+				System.out.println("RHS: " + rhs_t);
+				syntaxError("cannot append non-list types",filename,bop);
+				return null;
+			}
 			break;
 		}
 		case TYPEEQ: {

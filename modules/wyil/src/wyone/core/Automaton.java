@@ -634,6 +634,27 @@ public final class Automaton {
 					children.length));
 		}
 		
+		public List append(List rhs) {
+			int[] nchildren = new int[children.length + rhs.children.length];
+			System.arraycopy(children,0,nchildren,0,children.length);
+			System.arraycopy(rhs.children,0,nchildren,children.length,rhs.children.length);
+			return new List(nchildren);
+		}
+		
+		public List append(int rhs) {
+			int[] nchildren = new int[children.length + 1];
+			System.arraycopy(children,0,nchildren,0,children.length);
+			nchildren[children.length] = rhs;			
+			return new List(nchildren);
+		}
+		
+		public List appendFront(int lhs) {
+			int[] nchildren = new int[children.length + 1];
+			System.arraycopy(children,0,nchildren,1,children.length);
+			nchildren[0] = lhs;			
+			return new List(nchildren);
+		}
+		
 		public Compound clone() {
 			return new List(Arrays.copyOf(children,children.length));
 		}		

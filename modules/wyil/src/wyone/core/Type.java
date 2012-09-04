@@ -44,6 +44,32 @@ public abstract class Type {
 		return get(new Compound(kind,unbounded,elements));
 	}
 	
+	public static Compound T_LIST(boolean unbounded, Collection<Type> elements) {
+		Type[] es = new Type[elements.size()];
+		int i =0;
+		for(Type t : elements) {
+			es[i++] = t;
+		}
+		return get(new Compound(Compound.Kind.LIST,unbounded,es));
+	}
+	
+	public static Compound T_LIST(boolean unbounded, Type... elements) {
+		return get(new Compound(Compound.Kind.LIST,unbounded,elements));
+	}
+	
+	public static Compound T_SET(boolean unbounded, Collection<Type> elements) {
+		Type[] es = new Type[elements.size()];
+		int i =0;
+		for(Type t : elements) {
+			es[i++] = t;
+		}
+		return get(new Compound(Compound.Kind.SET,unbounded,es));
+	}
+	
+	public static Compound T_SET(boolean unbounded, Type... elements) {
+		return get(new Compound(Compound.Kind.SET,unbounded,elements));
+	}
+	
 	public static Term T_TERM(String name, Type.Ref data) {
 		return get(new Term(name,data));
 	}
