@@ -777,7 +777,12 @@ public class JavaFileWriter {
 		} else if (type instanceof Type.Ref) {
 			return "int";
 		} else if (type instanceof Type.Compound) {
-			return "Automaton.Compound";
+			Type.Compound tc = (Type.Compound) type;
+			if(tc.kind == Type.Compound.Kind.LIST) {
+				return "Automaton.List";
+			} else {
+				return "Automaton.Set";
+			}
 		} 
 		throw new RuntimeException("unknown type encountered: " + type);
 	}

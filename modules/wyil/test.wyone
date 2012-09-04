@@ -18,8 +18,11 @@ class Term as Bool | Not | Var
 term Sum[Num,Num]
 term Num(int)
 
-rewrite Sum[Num(int x), Num(int y)]:
-    => Num(x/y)
+rewrite Sum[Num(int x), Num(int y), Num... xs]:
+    => Sum[Num(x+y),xs]
+
+rewrite Sum[Num x]:
+    => x
 
 
 

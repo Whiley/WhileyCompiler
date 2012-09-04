@@ -273,7 +273,10 @@ public class Spec2WyoneBuilder {
 		ArrayList<Expr> expr_operands = expr.arguments;
 		int[] operands = new int[expr_operands.size()];
 		for (int i = 0; i != operands.length; ++i) {
-			operands[i] = translate(expr_operands.get(i), environment, codes);
+			Expr operand = expr_operands.get(i);			
+			int optarget = translate(operand, environment, codes);
+			optarget = coerceFromValue(operand, optarget, environment, codes);
+			operands[i] = optarget;
 		}
 		codes.add(new Code.NaryOp(expr.op, target, operands, expr
 				.attribute(Attribute.Source.class)));
