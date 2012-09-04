@@ -1,8 +1,11 @@
 term True
 term False
 class Bool as True | False
+
 term Not(Term)
-term Var(String)
+term Var(string)
+term And[Term...]
+term LessThan[Term,Term]
 
 rewrite Not(True x):
     => False
@@ -13,16 +16,10 @@ rewrite Not(False x):
 rewrite Not(Not(* x)):
     => x
 
+rewrite And[LessThan[* x,* y] l1, LessThan[* y,* z] l2]:
+    => And[l1,l2,LessThan[x,z]]
+
 class Term as Bool | Not | Var
-
-term Sum[Num,Num]
-term Num(int)
-
-rewrite Sum[Num(int x), Num(int y), Num... xs]:
-    => Sum (Num(x+y) ++ xs)
-
-rewrite Sum[Num x]:
-    => x
 
 
 
