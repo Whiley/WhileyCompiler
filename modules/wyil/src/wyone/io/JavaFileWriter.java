@@ -239,6 +239,8 @@ public class JavaFileWriter {
 			translate(level,(Code.BinOp) code, fun);
 		} else if (code instanceof Code.NaryOp) {
 			translate(level,(Code.NaryOp) code, fun);
+		} else if (code instanceof Code.New) {
+			translate(level,(Code.New) code, fun);
 		} else if (code instanceof Code.Rewrite) {
 			translate(level,(Code.Rewrite) code, fun);
 		} else if (code instanceof Code.Return) {
@@ -414,6 +416,11 @@ public class JavaFileWriter {
 		myOut(level,comment("r" + code.target + " = " + body + ");",code.toString()));
 	}
 
+	public void translate(int level, Code.New code, FunDecl fun) {
+		String body = "automaton.add(r" + code.operand + ")";
+		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
+	}
+	
 	public void translate(int level, Code.Constructor code, FunDecl fun) {
 		String body;
 		if (code.operand == -1) {

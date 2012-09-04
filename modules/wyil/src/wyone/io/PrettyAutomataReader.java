@@ -77,7 +77,8 @@ public class PrettyAutomataReader {
 		} 
 		Type.Term type = schema[kind];
 		int data = -1;
-		if(type.data != null) {			
+		
+		if(type.data != null) {
 			data = parseState(automaton);
 		}
 		
@@ -160,9 +161,8 @@ public class PrettyAutomataReader {
 			case Automaton.K_SET:
 				match('}');				
 				break;
+			default:				
 		}
-		
-		next(); // match right brace
 		
 		if(kind == Automaton.K_LIST) { 
 			return automaton.add(new Automaton.List(children));

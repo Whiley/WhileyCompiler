@@ -29,6 +29,21 @@ public class Code extends SyntacticElement.Impl {
 		}
 	}
 	
+	public static final class New extends Code {
+		public final int target;
+		public final int operand;
+
+		public New(int target, int operand, Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.operand = operand;
+		}
+
+		public String toString() {
+			return "new %" + target + " = %" + operand;
+		}
+	}
+	
 	public static final class Constant extends Code {
 		public final Object value;
 		public final int target;

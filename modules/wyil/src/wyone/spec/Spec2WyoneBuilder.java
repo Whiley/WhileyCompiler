@@ -255,6 +255,7 @@ public class Spec2WyoneBuilder {
 		Code.Constructor code;
 		if (expr.argument != null) {
 			int operand = translate(expr.argument, environment, codes);
+			operand = coerceFromValue(expr.argument,operand,environment,codes);
 			code = new Code.Constructor(target, operand, expr.name,
 					expr.attribute(Attribute.Source.class));
 		} else {
@@ -318,6 +319,25 @@ public class Spec2WyoneBuilder {
 		}
 	}
 
+	/**
+	 * Coerce the result of the given expression from a value. In other words,
+	 * if the result of the expression is a value then allocate it on the heap!
+	 * 
+	 * @param expr
+	 * @param codes
+	 */
+	private int coerceFromValue(Expr expr, int target, Environment environment, ArrayList<Code> codes) {
+		Type type = expr.attribute(Attribute.Type.class).type;
+		if(type instanceof Type.Ref) {
+			return target;
+		} else {
+			int ntarget = environment.allocate(Type.T_REF(type));
+			codes.add(new Code.New(ntarget, target, expr
+					.attribute(Attribute.Source.class)));
+			return ntarget;
+		} 
+	}
+	
 	private class Environment {
 		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
 		private final ArrayList<Type> idx2type = new ArrayList<Type>();
