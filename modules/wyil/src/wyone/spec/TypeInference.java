@@ -186,6 +186,18 @@ public class TypeInference {
 		Type rhs_t = resolve(bop.rhs,environment);
 		Type result;
 		
+		// first, deal with auto-unboxing
+		switch(bop.op) {
+		case EQ:
+		case NEQ:
+			break;
+		default:
+			lhs_t = coerceToValue(lhs_t);
+			rhs_t = coerceToValue(rhs_t);
+		}
+		
+		// Second, do the thing for each
+		
 		switch (bop.op) {
 		case ADD: {
 			checkSubtype(Type.T_REAL, lhs_t, bop);
@@ -298,6 +310,22 @@ public class TypeInference {
 		System.arraycopy(head,0,r,0,head.length);
 		r[head.length] = tail;
 		return r;
+	}
+	
+	/**
+	 * Coerce the result of the given expression into a value. In other words,
+	 * if the result of the expression is a reference then derference it!
+	 * 
+	 * @param expr
+	 * @param codes
+	 */
+	private Type coerceToValue(Type type) {		
+		if(type instanceof Type.Ref) {
+			Type.Ref ref = (Type.Ref) type;
+			return ref.element;
+		} else {
+			return type;
+		}
 	}
 	
 	/**

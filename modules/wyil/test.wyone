@@ -15,20 +15,12 @@ rewrite Not(Not(* x)):
 
 class Term as Bool | Not | Var
 
-term Equal[Num,Num]
-term NotEqual[Num,Num]
+term Sum[Num,Num]
 term Num(int)
 
-rewrite Equal[Num(int x), Num(int y)]:
-    => True, if x == y
-    => False
+rewrite Sum[Num(int x), Num(int y)]:
+    => Num(x/y)
 
-rewrite NotEqual[Num(int x), Num(int y)]:
-    => True, if x != y
-    => False
-
-rewrite Not(NotEqual[* x, * y]):
-    => Equal[x,y]
 
 
 

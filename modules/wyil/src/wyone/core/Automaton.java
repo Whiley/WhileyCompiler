@@ -473,6 +473,22 @@ public final class Automaton {
 		public int intValue() {
 			return value.intValue();
 		}
+		
+		public Int add(Int x) {
+			return new Int(value.add(x.value));
+		}
+		
+		public Int subtract(Int x) {
+			return new Int(value.subtract(x.value));
+		}
+		
+		public Int multiply(Int x) {
+			return new Int(value.multiply(x.value));
+		}
+		
+		public Int divide(Int x) {
+			return new Int(value.divide(x.value));
+		}
 	}
 	
 	public static final class Strung extends Constant<String> {
