@@ -1654,8 +1654,8 @@ public class Wyil2CBuilder implements Builder {
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 			
-			writeClearTarget(targ, tag);
-			this.addDecl(targ, "wycc_obj*");
+			//writeClearTarget(targ, tag);
+			//this.addDecl(targ, "wycc_obj*");
 			
 			if (opr == Code.BinSetKind.DIFFERENCE) {
 				rtn = "wyil_set_diff";
@@ -1679,9 +1679,11 @@ public class Wyil2CBuilder implements Builder {
 				bodyAddLine(tmp);
 				return "";
 			}
-			lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs + ");" + tag;
-			tmp = indent + lin + "\n";
-			this.mbodyAddLine(tmp);
+			//lin = "X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs + ");" + tag;
+			//tmp = indent + lin + "\n";
+			//this.mbodyAddLine(tmp);
+			tmp = " = "+ rtn + "(X" + lhs + ", X" + rhs + ");";
+			writeTargetSwap(tmp, targ, lhs, tag);
 
 			return "";
 		}
@@ -1755,20 +1757,27 @@ public class Wyil2CBuilder implements Builder {
 			return "";
 		}
 
+		//
 		private void writeTargetSwap(String lin, int targ, int opr, String tag){
 			String tmp;
+			String t2;
 			
 			this.addDecl(targ, "wycc_obj*");
 			if (targ == opr) {
 				//writeClearTarget(-targ, tag);
-				this.addDecl(-targ, "wycc_obj*");
-				lin = "XN" + targ + lin + tag;
+				if (targ != 0) {
+					this.addDecl(-targ, "wycc_obj*");
+					t2 = "XN" + targ;
+				} else {
+					t2 = "XXXX";
+				}
+				lin = t2 + lin + tag;
 				tmp = indent + lin + "\n";
 				this.mbodyAddLine(tmp);
 			
 				writeClearTarget(targ, tag);
 				this.addDecl(targ, "wycc_obj*");
-				lin = "X" + targ + " = XN" + targ + ";" + tag;
+				lin = "X" + targ + " = " + t2 + ";" + tag;
 				tmp = indent + lin + "\n";
 				this.mbodyAddLine(tmp);
 			} else {
@@ -1986,6 +1995,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ;
 			String sep, mnam;
 			String lin = "";
+			int foo;
 			
 			Code.Invoke cod = (Code.Invoke) codIn;
 			targ = cod.target;
@@ -1993,21 +2003,33 @@ public class Wyil2CBuilder implements Builder {
 			Path.ID pat = nid.module();
 			String nam = nid.name();
 			mnam = defaultManglePrefix + nam;
-			if (targ >= 0) {
-				writeClearTarget(targ, tag);
-				this.addDecl(targ, "wycc_obj*");
-				lin = "X" + targ + " = ";
-			}
 			lin += mnam + "(";
 
+			foo = -1;
 			sep = "";
 			for (int itm : cod.operands) {
 				lin += sep + "X" + itm;
 				sep = ", ";
+				if (itm == targ) {
+					foo = targ;
+				}
 			}
 			lin += ");" + tag;
-			tmp = indent + lin + "\n";
-			this.mbodyAddLine(tmp);
+			if (targ < 0) {
+				tmp = indent + lin + "\n";
+				this.mbodyAddLine(tmp);
+				return "";
+			}
+			lin = " = " + lin;
+			//tmp = " = "+ rtn + "(X" + lhs + ", X" + rhs + ");";
+			writeTargetSwap(lin, targ, foo, tag);
+
+			//	writeClearTarget(targ, tag);
+			//	this.addDecl(targ, "wycc_obj*");
+			//	lin = "X" + targ + " = ";
+
+			//tmp = indent + lin + "\n";
+			//this.mbodyAddLine(tmp);
 			return "";
 		}
 		

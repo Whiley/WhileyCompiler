@@ -259,7 +259,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Future Work") @Test public void NegationType_Valid_3_RuntimeTest() { runTest("NegationType_Valid_3"); }
  @Test public void NegationType_Valid_4_RuntimeTest() { runTest("NegationType_Valid_4"); }
  @Test public void OpenRecord_Valid_1_RuntimeTest() { runTest("OpenRecord_Valid_1"); }
- @Ignore("Starting slow")@Test public void OpenRecord_Valid_2_RuntimeTest() { runTest("OpenRecord_Valid_2"); }
+ @Test public void OpenRecord_Valid_2_RuntimeTest() { runTest("OpenRecord_Valid_2"); }
  @Ignore("Starting slow")@Test public void OpenRecord_Valid_3_RuntimeTest() { runTest("OpenRecord_Valid_3"); }
  @Ignore("Starting slow")@Test public void OpenRecord_Valid_4_RuntimeTest() { runTest("OpenRecord_Valid_4"); }
  @Ignore("Starting slow")@Test public void OpenRecord_Valid_5_RuntimeTest() { runTest("OpenRecord_Valid_5"); }
@@ -300,7 +300,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecordAssign_Valid_2_RuntimeTest() { runTest("RecordAssign_Valid_2"); }
  @Test public void RecordAssign_Valid_3_RuntimeTest() { runTest("RecordAssign_Valid_3"); }
  @Test public void RecordAssign_Valid_4_RuntimeTest() { runTest("RecordAssign_Valid_4"); }
- @Ignore("Starting slow")@Test public void RecordAssign_Valid_5_RuntimeTest() { runTest("RecordAssign_Valid_5"); }
+ @Test public void RecordAssign_Valid_5_RuntimeTest() { runTest("RecordAssign_Valid_5"); }
  @Ignore("Starting slow")@Test public void RecordAssign_Valid_6_RuntimeTest() { runTest("RecordAssign_Valid_6"); }
  @Ignore("Starting slow")@Test public void RecordConversion_Valid_1_RuntimeTest() { runTest("RecordConversion_Valid_1"); }
  @Ignore("Starting slow")@Test public void RecordCoercion_Valid_1_RuntimeTest() { runTest("RecordCoercion_Valid_1"); }
@@ -387,9 +387,9 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Starting slow")@Test public void String_Valid_6_RuntimeTest() { runTest("String_Valid_6"); }
  @Ignore("Starting slow")@Test public void String_Valid_7_RuntimeTest() { runTest("String_Valid_7"); }
  @Test public void Switch_Valid_1_RuntimeTest() { runTest("Switch_Valid_1"); }
- @Ignore("Starting slow")@Test public void Switch_Valid_2_RuntimeTest() { runTest("Switch_Valid_2"); }
- @Ignore("Starting slow")@Test public void Switch_Valid_3_RuntimeTest() { runTest("Switch_Valid_3"); }
- @Ignore("Starting slow")@Test public void Switch_Valid_4_RuntimeTest() { runTest("Switch_Valid_4"); }
+ @Test public void Switch_Valid_2_RuntimeTest() { runTest("Switch_Valid_2"); }
+ @Ignore("Known Issue - reals")@Test public void Switch_Valid_3_RuntimeTest() { runTest("Switch_Valid_3"); }
+ @Test public void Switch_Valid_4_RuntimeTest() { runTest("Switch_Valid_4"); }
  @Ignore("Starting slow")@Test public void Switch_Valid_5_RuntimeTest() { runTest("Switch_Valid_5"); }
  @Ignore("Starting slow")@Test public void Switch_Valid_6_RuntimeTest() { runTest("Switch_Valid_6"); }
  @Ignore("Starting slow")@Test public void Switch_Valid_7_RuntimeTest() { runTest("Switch_Valid_7"); }
@@ -452,7 +452,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Starting slow")@Test public void TypeEquals_Valid_38_RuntimeTest() { runTest("TypeEquals_Valid_38"); }
  @Ignore("Known Issue") @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
  @Ignore("Known Issue") @Test public void Update_Valid_2_RuntimeTest() { runTest("Update_Valid_2"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
+ @Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
  @Ignore("Starting slow")@Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
  @Ignore("Starting slow")@Test public void UnionType_Valid_4_RuntimeTest() { runTest("UnionType_Valid_4"); }
  @Ignore("Starting slow")@Test public void UnionType_Valid_5_RuntimeTest() { runTest("UnionType_Valid_5"); }
@@ -470,16 +470,16 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Starting slow")@Test public void UnionType_Valid_17_RuntimeTest() { runTest("UnionType_Valid_17"); }
  @Ignore("Starting slow")@Test public void UnionType_Valid_18_RuntimeTest() { runTest("UnionType_Valid_18"); }
  @Test public void VarDecl_Valid_1_RuntimeTest() { runTest("VarDecl_Valid_1"); }
- @Ignore("Starting slow")@Test public void VarDecl_Valid_2_RuntimeTest() { runTest("VarDecl_Valid_2"); }
- @Ignore("Starting slow")@Test public void VarDecl_Valid_3_RuntimeTest() { runTest("VarDecl_Valid_3"); }
+ @Test public void VarDecl_Valid_2_RuntimeTest() { runTest("VarDecl_Valid_2"); }
+ @Ignore("Known Issue - wide ints")@Test public void VarDecl_Valid_3_RuntimeTest() { runTest("VarDecl_Valid_3"); }
  @Test public void While_Valid_1_RuntimeTest() { runTest("While_Valid_1"); }
- @Ignore("Starting slow")@Test public void While_Valid_2_RuntimeTest() { runTest("While_Valid_2"); }
- @Ignore("Starting slow")@Test public void While_Valid_3_RuntimeTest() { runTest("While_Valid_3"); }
- @Ignore("Starting slow")@Test public void While_Valid_4_RuntimeTest() { runTest("While_Valid_4"); }
- @Ignore("Starting slow")@Test public void While_Valid_5_RuntimeTest() { runTest("While_Valid_5"); }
- @Ignore("Starting slow") @Test public void While_Valid_6_RuntimeTest() { runTest("While_Valid_6"); } 
- @Ignore("Starting slow")@Test public void While_Valid_7_RuntimeTest() { runTest("While_Valid_7"); }
- @Ignore("Starting slow")@Test public void While_Valid_8_RuntimeTest() { runTest("While_Valid_8"); }
- @Ignore("Starting slow")@Test public void While_Valid_9_RuntimeTest() { runTest("While_Valid_9"); }
- @Ignore("Starting slow")@Test public void While_Valid_10_RuntimeTest() { runTest("While_Valid_10"); }
+ @Test public void While_Valid_2_RuntimeTest() { runTest("While_Valid_2"); }
+ @Test public void While_Valid_3_RuntimeTest() { runTest("While_Valid_3"); }
+ @Test public void While_Valid_4_RuntimeTest() { runTest("While_Valid_4"); }
+ @Test public void While_Valid_5_RuntimeTest() { runTest("While_Valid_5"); }
+ @Test public void While_Valid_6_RuntimeTest() { runTest("While_Valid_6"); } 
+ @Test public void While_Valid_7_RuntimeTest() { runTest("While_Valid_7"); }
+ @Test public void While_Valid_8_RuntimeTest() { runTest("While_Valid_8"); }
+ @Test public void While_Valid_9_RuntimeTest() { runTest("While_Valid_9"); }
+ @Test public void While_Valid_10_RuntimeTest() { runTest("While_Valid_10"); }
 }

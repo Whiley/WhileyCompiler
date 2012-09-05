@@ -1416,8 +1416,19 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	return;
     }
     if (typ == Wy_Record) {
-	fprintf(stderr, "Fail: no support for record in dealloc\n");
-	exit(-3);
+	itm = (wycc_obj *) p[0];
+	if (itm->cnt > 1) {
+	    itm->cnt--;		/* never attempt to reclaim the meta record. */
+	};
+	siz = (long) p[1];
+	for (idx= 0; idx < siz; idx++) {
+	    itm = (wycc_obj*) p[2+ idx]; 
+	    wycc_deref_box(itm);
+	}
+        free(ptr);
+	return;
+	//fprintf(stderr, "Fail: no support for record in dealloc\n");
+	//exit(-3);
     }
     fprintf(stderr, "ERROR: unrecognized type (%d) in dealloc\n", typ);
     exit(-3);
@@ -1770,6 +1781,33 @@ wycc_obj* wycc_cow_map(wycc_obj* itm) {
 
 wycc_obj* wycc_cow_record(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc_cow_record");
+    wycc_obj* ans;
+    wycc_obj* nxt;
+    void** p = itm->ptr;
+    long at, tmp;
+    void** new;
+
+    if (itm->typ != Wy_Record) {
+	fprintf(stderr, "Help needed in wycc_cow_list for type %d\n", itm->typ);
+	exit(-3);
+    };
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = itm->typ;
+    nxt = (wycc_obj*) p[0];
+    tmp = 2 + wycc_length_of_list(nxt);
+    new = (void**) calloc(tmp, sizeof(void *));
+    nxt->cnt++;
+
+    new[0] = (void *) nxt;
+    for (at= 2; at < tmp ; at++) {
+	nxt = (wycc_obj*) p[at];
+	nxt->cnt++;
+	new[at] = (void *) nxt;
+    }
+    new[1] = (void *) (tmp-2);
+    ans->ptr = (void *) new;
+    ans->cnt = 1;
+    return ans;
     fprintf(stderr, "Fail: wycc_cow_record not written yet.\n");
     exit(-3);
 }
@@ -2265,8 +2303,34 @@ wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
 wycc_obj* wyil_set_union_left(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_set_union_left lhs");
     WY_OBJ_SANE(rhs, "wyil_set_union_left rhs");
-    fprintf(stderr, "Failure: wyil_set_union_left\n");
-    exit(-3);
+    struct chunk_ptr rhs_chunk_ptr;
+    struct chunk_ptr *rptr = & rhs_chunk_ptr;
+    wycc_obj *ritm;
+    int end;
+
+    if (lhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_union_left for type %d\n"
+		, lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_union_left for type %d\n"
+		, rhs->typ);
+	exit(-3);
+    };
+    lhs = wycc_cow_obj(lhs);
+    wycc_chunk_ptr_fill(rptr, rhs, 0);
+    wycc_chunk_ptr_inc(rptr);
+    while (1) {
+	ritm = rptr->key;
+	if (ritm == NULL) {
+	    return lhs;
+	};
+	wycc_set_add(lhs, ritm);
+	wycc_chunk_ptr_inc(rptr);
+    };
+    //fprintf(stderr, "Failure: wyil_set_union_left\n");
+    //exit(-3);
 }
 
 /*
@@ -3219,6 +3283,9 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     char *ptr;
     wycc_obj* nxt;
 
+    if (itm == (wycc_obj *)NULL) {
+	return wycc_box_cstr("null");
+    }
     if (itm->typ == Wy_String) {
 	itm->cnt++;
 	return itm;
