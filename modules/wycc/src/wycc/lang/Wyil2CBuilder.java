@@ -903,7 +903,7 @@ public class Wyil2CBuilder implements Builder {
 			//int ign;
 			String tmp;
 
-			String ans = "";
+			//String ans = "";
 			int targ;
 			String lin;
 			String tag = "\t/* entry# " + idx + "*/";
@@ -923,7 +923,8 @@ public class Wyil2CBuilder implements Builder {
 			String opc = frags[0];
 			//System.err.println("milestone 5.3.1.3 + " + temp);
 			if (cod instanceof Code.Const) {
-				ans += this.writeCodeConstant(cod, tag);
+				//ans += this.writeCodeConstant(cod, tag);
+				this.writeCodeConstant(cod, tag);
 			} else if (cod instanceof Code.Debug) {
 				Code.Debug codd = (Code.Debug) cod;
 				targ = codd.operand;
@@ -931,86 +932,88 @@ public class Wyil2CBuilder implements Builder {
 				tmp = lin + "\n";
 				this.mbodyAddLine(tmp);
 			} else if (cod instanceof Code.Return) {
-				ans += this.writeCodeReturn(cod, tag);
+				this.writeCodeReturn(cod, tag);
 			} else if (cod instanceof Code.BinStringOp) {
-				ans += this.writeCodeBinStringOp(cod, tag);
+				this.writeCodeBinStringOp(cod, tag);
 
 			} else if (cod instanceof Code.Assign) {
-				ans += this.writeCodeAssign(cod, tag);
+				this.writeCodeAssign(cod, tag);
 			} else if (cod instanceof Code.Invoke) {
-				ans += this.writeCodeInvoke(cod, tag);
+				this.writeCodeInvoke(cod, tag);
 			} else if (cod instanceof Code.BinArithOp) {
-				ans += this.writeCodeBinArithOp(cod, tag);
+				this.writeCodeBinArithOp(cod, tag);
 			} else if (cod instanceof Code.NewList) {
-				ans += this.writeCodeNewList(cod, tag);
+				this.writeCodeNewList(cod, tag);
 			} else if (cod instanceof Code.NewSet) {
-				ans += this.writeCodeNewSet(cod, tag);
+				this.writeCodeNewSet(cod, tag);
 			} else if (cod instanceof Code.NewMap) {
-				ans += this.writeCodeNewMap(cod, tag);
+				this.writeCodeNewMap(cod, tag);
 			} else if (cod instanceof Code.LengthOf) {
-				ans += this.writeCodeLengthOf(cod, tag);
+				this.writeCodeLengthOf(cod, tag);
 			} else if (cod instanceof Code.IndexOf) {
-				ans += this.writeCodeIndexOf(cod, tag);
+				this.writeCodeIndexOf(cod, tag);
 			} else if (cod instanceof Code.Assert) {
-				ans += this.writeCodeAssert(cod, tag);
+				this.writeCodeAssert(cod, tag);
 			} else if (cod instanceof Code.LoopEnd) {
-				ans += this.writeCodeLoopEnd(cod, tag);
+				this.writeCodeLoopEnd(cod, tag);
 			} else if (cod instanceof Code.Label) {
-				ans += this.writeCodeLabel(cod, tag);
+				this.writeCodeLabel(cod, tag);
 	
 			} else if (cod instanceof Code.FieldLoad) {
-				ans += this.writeCodeFieldLoad(cod, tag);
+				this.writeCodeFieldLoad(cod, tag);
 
 			} else if (cod instanceof Code.NewRecord) {
-				ans += this.writeCodeNewRecord(cod, tag);
+				this.writeCodeNewRecord(cod, tag);
 			} else if (cod instanceof Code.If) {
-				ans += this.writeCodeIf(cod, tag);
+				this.writeCodeIf(cod, tag);
 
 			} else if (cod instanceof Code.BinListOp) {
-				ans += this.writeCodeBinListOp(cod, tag);
+				this.writeCodeBinListOp(cod, tag);
 			} else if (cod instanceof Code.BinSetOp) {
-				ans += this.writeCodeBinSetOp(cod, tag);
+				this.writeCodeBinSetOp(cod, tag);
 			} else if (cod instanceof Code.Void) {
-				ans += this.writeCodeVoid(cod, tag);
+				this.writeCodeVoid(cod, tag);
 			} else if (cod instanceof Code.Update) {
-				ans += this.writeCodeUpdate(cod, tag);
+				this.writeCodeUpdate(cod, tag);
 			} else if (cod instanceof Code.UnArithOp) {
-				ans += this.writeCodeUnArithOp(cod, tag);
+				this.writeCodeUnArithOp(cod, tag);
 			} else if (cod instanceof Code.TupleLoad) {
-				ans += this.writeCodeTupleLoad(cod, tag);
+				this.writeCodeTupleLoad(cod, tag);
 			} else if (cod instanceof Code.TryEnd) {
-				ans += this.writeCodeTryEnd(cod, tag);
+				this.writeCodeTryEnd(cod, tag);
 			} else if (cod instanceof Code.TryCatch) {
-				ans += this.writeCodeTryCatch(cod, tag);
+				this.writeCodeTryCatch(cod, tag);
 			} else if (cod instanceof Code.Throw) {
-				ans += this.writeCodeThrow(cod, tag);
+				this.writeCodeThrow(cod, tag);
 			} else if (cod instanceof Code.Switch) {
-				ans += this.writeCodeSwitch(cod, tag);
+				this.writeCodeSwitch(cod, tag);
 			} else if (cod instanceof Code.ForAll) {
-				ans += this.writeCodeForAll(cod, tag);
+				this.writeCodeForAll(cod, tag);
 			} else if (cod instanceof Code.IfIs) {
-				ans += this.writeCodeIfIs(cod, tag);
+				this.writeCodeIfIs(cod, tag);
 			} else if (cod instanceof Code.Loop) {
-				ans += this.writeCodeLoop(cod, tag);
+				this.writeCodeLoop(cod, tag);
 
 			} else if (cod instanceof Code.Goto) {
-				ans += this.writeCodeGoto(cod, tag);
+				this.writeCodeGoto(cod, tag);
 
 			} else if (cod instanceof Code.Convert) {
-				ans += this.writeCodeConvert(cod, tag);
+				this.writeCodeConvert(cod, tag);
 
 			} else if (cod instanceof Code.Void) {
-				ans += this.writeCodeVoid(cod, tag);
+				this.writeCodeVoid(cod, tag);
 			} else if (cod instanceof Code.Void) {
-				ans += this.writeCodeVoid(cod, tag);
+				this.writeCodeVoid(cod, tag);
 
 			} else if (cod instanceof Code.Void) {
-				ans += this.writeCodeVoid(cod, tag);
+				this.writeCodeVoid(cod, tag);
 			} else {
-				ans += "// HELP needed for opcode '" + opc + "'\n";
+				//ans += "// HELP needed for opcode '" + opc + "'\n";
+				tmp = "// HELP needed for opcode '" + opc + "'\n";
+				bodyAddLine(tmp);
 			}
 			//System.err.println("milestone 5.3.1.8");
-			bodyAddLine(ans);
+			//bodyAddLine(ans);
 			return;
 		}
 	
@@ -1023,6 +1026,51 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLine(tmp);
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
 			//return ans;
+			return "";
+		}
+		
+		public String writeCodeTryCatch(Code codIn, String tag){
+			String tmp;
+			
+			tmp = "// HELP needed for TryCatch\n";
+			bodyAddLine(tmp);
+			Code.TryCatch cod = (Code.TryCatch) codIn;
+			return "";
+		}
+		
+		public String writeCodeThrow(Code codIn, String tag){
+			String tmp;
+
+			tmp = "// HELP needed for Throw\n";
+			bodyAddLine(tmp);
+			Code.Throw cod = (Code.Throw) codIn;
+			return "";
+		}
+		
+		public String writeCodeTryEnd(Code codIn, String tag){
+			String tmp;
+			
+			tmp = "// HELP needed for TryEnd\n";
+			bodyAddLine(tmp);
+			Code.TryEnd cod = (Code.TryEnd) codIn;
+			return "";
+		}
+		
+		public String writeCodeTupleLoad(Code codIn, String tag){
+			String tmp;
+			
+			tmp = "// HELP needed for TupleLoad\n";
+			bodyAddLine(tmp);
+			Code.TupleLoad cod = (Code.TupleLoad) codIn;
+			return "";
+		}
+		
+		public String writeCodeVoid(Code codIn, String tag){
+			String tmp;
+			
+			tmp = "// HELP needed for Void\n";
+			bodyAddLine(tmp);
+			Code.Void cod = (Code.Void) codIn;
 			return "";
 		}
 		
@@ -1359,42 +1407,6 @@ public class Wyil2CBuilder implements Builder {
 			return "";
 		}
 		
-		public String writeCodeThrow(Code codIn, String tag){
-			String tmp;
-
-			tmp = "// HELP needed for Throw\n";
-			bodyAddLine(tmp);
-			Code.Throw cod = (Code.Throw) codIn;
-			return "";
-		}
-		
-		public String writeCodeTryCatch(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP needed for TryCatch\n";
-			bodyAddLine(tmp);
-			Code.TryCatch cod = (Code.TryCatch) codIn;
-			return "";
-		}
-		
-		public String writeCodeTryEnd(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP needed for TryEnd\n";
-			bodyAddLine(tmp);
-			Code.TryEnd cod = (Code.TryEnd) codIn;
-			return "";
-		}
-		
-		public String writeCodeTupleLoad(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP needed for TupleLoad\n";
-			bodyAddLine(tmp);
-			Code.TupleLoad cod = (Code.TupleLoad) codIn;
-			return "";
-		}
-		
 		public String writeCodeUnArithOp(Code codIn, String tag){
 			String tmp;
 			int targ, rhs;
@@ -1437,6 +1449,7 @@ public class Wyil2CBuilder implements Builder {
 			int cnt;
 			Type typ;
 			String lin;
+			String backFix;
 			ArrayList<String> flds;
 			Code.LVal lv;
 			int idx;
@@ -1448,8 +1461,9 @@ public class Wyil2CBuilder implements Builder {
 			Code.Update cod = (Code.Update) codIn;
 			targ = cod.target;
 			flds = cod.fields;
+			idx = cod.level();
 			
-			tmp = "//             target is " + targ + "\n";
+			tmp = "//             target is " + targ + " and depth is " + idx + "\n";
 			bodyAddLine(tmp);
 			tmp = "//             field count is " + flds.size() + "\n";
 			bodyAddLine(tmp);
@@ -1474,21 +1488,42 @@ public class Wyil2CBuilder implements Builder {
 			tnam2 = "XN" + targ;				
 			
 			Iterator<Code.LVal> foo = cod.iterator();
-			idx = cod.level();
+
 			iidx = 0;
 			fidx = 0;
+			backFix = null;
 			//for (Code.LVal lv : foo.next()){
 			while (idx > 0) {
 				lv = foo.next();
-				tnam1 = "X" + targ;
-				tnam2 = "XN" + targ;				
+				//lin = tnam1 + " = wycc_cow_obj(" + tnam1 + ");";
+				lin = "XXXX = wycc_cow_obj(" + tnam1 + ");";
+				tmp = indent + lin + "\n";
+				this.mbodyAddLine(tmp);
+				lin = "if (XXXX != " + tnam1 + "){";
+				tmp = indent + lin + "\n";
+				this.mbodyAddLine(tmp);
+				lin = tnam1 + " = XXXX;";
+				tmp = indent + indent + lin + "\n";
+				this.mbodyAddLine(tmp);
+				if (backFix != null){
+					tmp = indent + indent + backFix + "\n";
+					this.mbodyAddLine(tmp);
+					backFix = null;
+				}
+				lin = "};";
+				tmp = indent + lin + "\n";
+				this.mbodyAddLine(tmp);
+				//tnam1 = "X" + targ;
+				//tnam2 = "XN" + targ;				
 				if (lv instanceof Code.ListLVal) {
 					ofs = cod.operands[iidx];
 					iidx += 1;
 					if (idx > 1) {
 						// need to do a fetch
 						lin = "XXXX = wyil_index_of(" + tnam1 + ", X" + ofs + ");" + tag;
+						backFix = "XXXX = wyil_update_list(" + tnam1 + ", X" + ofs + ", " + tnam2 + ");" + tag;
 						tmp = indent + lin + "\n";
+						this.mbodyAddLine(tmp);
 						writeClearTarget(-targ, tag);
 						lin = tnam2 + " = XXXX;";
 						tnam1 = tnam2;
@@ -1604,15 +1639,6 @@ public class Wyil2CBuilder implements Builder {
 			}			
 			
 			return -1;
-		}
-		
-		public String writeCodeVoid(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP needed for Void\n";
-			bodyAddLine(tmp);
-			Code.Void cod = (Code.Void) codIn;
-			return "";
 		}
 		
 		public String writeCodeBinSetOp(Code codIn, String tag){

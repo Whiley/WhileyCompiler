@@ -1738,7 +1738,44 @@ int wycc_length_of_string(wycc_obj* itm) {
 }
 
 /*
- * some operation need to change an object that is currently being shared
+ * Given an object that needs to updated, return an "unshared" version
+ */
+wycc_obj* wycc_cow_obj(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc_cow_gen");
+
+    if (itm->cnt == 1) {
+	return itm;
+    };
+    if (itm->typ == Wy_String) {
+	return wycc_cow_string(itm);
+    };
+    if (itm->typ == Wy_List) {
+	return wycc_cow_list(itm);
+    };
+    if (itm->typ == Wy_Record) {
+	return wycc_cow_record(itm);
+    };
+    if (itm->typ == Wy_Map) {
+	return wycc_cow_map(itm);
+    };
+    fprintf(stderr, "Fail: wycc_cow_obj not yet supports type(%d).\n", itm->typ);
+    exit(-3);
+}
+
+wycc_obj* wycc_cow_map(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc_cow_map");
+    fprintf(stderr, "Fail: wycc_cow_map not written yet.\n");
+    exit(-3);
+}
+
+wycc_obj* wycc_cow_record(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc_cow_record");
+    fprintf(stderr, "Fail: wycc_cow_record not written yet.\n");
+    exit(-3);
+}
+
+/*
+ * some operation needs to change an object that is currently being shared
  */
 wycc_obj* wycc_cow_string(wycc_obj* str) {
     WY_OBJ_SANE(str, "wycc_cow_string");
@@ -1750,9 +1787,6 @@ wycc_obj* wycc_cow_string(wycc_obj* str) {
     buf = (char *) malloc(siz);
     strcpy(buf, p);
     return wycc_box_str(buf);
-    //fprintf(stderr, "Fail: wycc_cow_string not written yet.\n");
-    //exit(-3);
-
 }
 
 /*
@@ -2308,10 +2342,10 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
 	swp = str;
 	str = wycc_cow_string(swp);
 	wycc_deref_box(swp);
-    } else if (str->cnt > 1) {
-	swp = str;
-	str = wycc_cow_string(swp);
-	wycc_deref_box(swp);
+	//} else if (str->cnt > 1) {
+	//swp = str;
+	//str = wycc_cow_string(swp);
+	//wycc_deref_box(swp);
     };
     txt = str->ptr;
     lsiz = strlen(txt);
@@ -2357,10 +2391,10 @@ wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs){
 		, "ERROR: out of bounds offset value in wyil_update_list\n");
 	exit(-3);
     };
-    if (lst->cnt > 1) {
-	lst = wycc_cow_list(lst);
-	p = lst->ptr;
-    };
+    //if (lst->cnt > 1) {
+    //lst = wycc_cow_list(lst);
+    //p = lst->ptr;
+    //};
     itm = p[2+idx];
     p[2+idx] = rhs;
     rhs->cnt++;
