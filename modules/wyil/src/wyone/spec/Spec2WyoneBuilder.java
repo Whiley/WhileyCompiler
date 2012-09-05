@@ -167,20 +167,7 @@ public class Spec2WyoneBuilder {
 		}
 	}
 
-	private void translate(Pattern.Set pattern, int source,
-			Environment environment, ArrayList<Code> codes) {
-		
-		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
-				.attribute(Attribute.Type.class).type;
-		
-		Pair<Pattern, String>[] elements = pattern.elements;
-		int target = environment.allocate(type.element);
-		codes.add(new Code.Deref(target, source));
-	
-		
-	}
-	
-	private void translate(Pattern.List pattern, int source,
+	private void translate(Pattern.Compound pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
 		
 		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
@@ -190,7 +177,14 @@ public class Spec2WyoneBuilder {
 		int target = environment.allocate(type.element);
 		codes.add(new Code.Deref(target, source));
 
-		// TODO: non-sequential compound matches
+		if(pattern instanceof Pattern.Set) {
+			// non-sequntial match
+			Type.Set ts = (Type.Set) type.element;
+			int ntarget = environment.allocate(Type.T_LIST(ts.unbounded,ts.elements));
+			codes.add(new Code.Match(ntarget, source, ts, pattern
+					.attribute(Attribute.Source.class)));
+			target = ntarget;
+		}
 
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];

@@ -403,6 +403,22 @@ public class Code extends SyntacticElement.Impl {
 		}
 	}
 	
+	public static final class Match extends Code {
+		public final int target;
+		public final int source;
+		public final Type.Set match;
+		
+		public Match(int target, int source, Type.Set match, Attribute... attributes) {
+			this.target = target;
+			this.source = source;
+			this.match = match;
+		}
+		
+		public String toString() {
+			return "match %" + target + " = %" + source + " ? " + match;
+		}
+	}
+	
 	public static final class Return extends Code {		
 		public final int operand;
 

@@ -2,27 +2,11 @@ term True
 term False
 class Bool as True | False
 
-term Not(Term)
 term Var(string)
 term And{Term...}
 
-rewrite Not(True x):
-    => False
-
-rewrite Not(False x):
-    => True
-
-rewrite Not(Not(* x)):
-    => x
-
-rewrite And{}:
-    => True
-
-rewrite And{Term x}:
-    => x
-
-// rewrite And{True, Term... xs}:
-//    => And (xs)
+rewrite And{True, Term... xs}:
+    => And (xs)
 
 class Term as Bool | Not | Var
 
