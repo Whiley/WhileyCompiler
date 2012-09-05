@@ -415,6 +415,9 @@ public class JavaFileWriter {
 				rhs = "r" + code.rhs + ".appendFront(r" + code.lhs + ")";
 			}
 			break;
+		case DIFFERENCE:
+			rhs = "r" + code.lhs + ".removeAll(r" + code.rhs + ")";
+			break;
 		default:
 			throw new RuntimeException("unknown binary operator encountered: "
 					+ code);
@@ -423,7 +426,13 @@ public class JavaFileWriter {
 	}
 	
 	public void translate(int level, Code.NaryOp code, FunDecl fun) {
-		String body = "new Automaton.List(";
+		
+		String body = "new Automaton.";				
+		if(code.op == Code.NOp.LISTGEN) { 
+			body += "List(";
+		} else {
+			body += "Set(";
+		}
 		int[] operands = code.operands;
 		for(int i=0;i!=operands.length;++i) {
 			if(i != 0) {

@@ -258,10 +258,13 @@ public class Spec2WyoneBuilder {
 		// variables
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
-			if (pattern.unbounded && i == elements.length) {
+			if (pattern.unbounded && (i+1) == elements.length) {
 				int i_operand = operands[i];
-				body.add(Code.NaryOp(Code.NOp.SETGEN,i_operand,Arrays.copyOf(operands, operands.length-1)));
-				body.add(Code.BinOp(Code.BOp.DIFFERENCE,target,i_operand));
+				body.add(new Code.NaryOp(Code.NOp.SETGEN, i_operand, Arrays
+						.copyOf(operands, operands.length - 1), pattern
+						.attribute(Attribute.Source.class)));
+				body.add(new Code.BinOp(Code.BOp.DIFFERENCE, i_operand, target,
+						i_operand, pattern.attribute(Attribute.Source.class)));
 			} else {
 				body = translate(p.first(), operands[i], environment, body);
 			}

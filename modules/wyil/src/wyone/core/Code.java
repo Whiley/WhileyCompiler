@@ -158,6 +158,9 @@ public class Code extends SyntacticElement.Impl {
 		APPEND{
 			public String toString() { return "append"; }
 		},
+		DIFFERENCE{
+			public String toString() { return "difference"; }
+		},
 		RANGE{
 			public String toString() { return "range"; }
 		},
@@ -268,6 +271,18 @@ public class Code extends SyntacticElement.Impl {
 					}
 					return "[" + args + "]";
 				}	
+				case SETGEN:
+				{
+					String args = "";
+					boolean firstTime=true;
+					for(int e : operands) {
+						if(!firstTime) {
+							args += ",";
+						}
+						args += "%" + e;
+					}
+					return "{" + args + "}";
+				}	
 				default:
 					return "";
 			}
@@ -275,7 +290,8 @@ public class Code extends SyntacticElement.Impl {
 	}
 	
 	public enum NOp {
-		LISTGEN					
+		LISTGEN,
+		SETGEN
 	}
 	
 	public static final class Deref extends Code {

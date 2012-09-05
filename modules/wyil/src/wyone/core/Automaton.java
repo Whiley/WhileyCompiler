@@ -614,6 +614,57 @@ public final class Automaton {
 		public Compound clone() {
 			return new Set(Arrays.copyOf(children, children.length));
 		}
+		
+		public Set append(Compound rhs) {
+			int[] nchildren = new int[children.length + rhs.children.length];
+			System.arraycopy(children,0,nchildren,0,children.length);
+			System.arraycopy(rhs.children,0,nchildren,children.length,rhs.children.length);
+			return new Set(nchildren);
+		}
+		
+		public Set append(int rhs) {
+			int[] nchildren = new int[children.length + 1];
+			System.arraycopy(children,0,nchildren,0,children.length);
+			nchildren[children.length] = rhs;			
+			return new Set(nchildren);
+		}
+		
+		public Set appendFront(int lhs) {
+			int[] nchildren = new int[children.length + 1];
+			System.arraycopy(children,0,nchildren,1,children.length);
+			nchildren[0] = lhs;			
+			return new Set(nchildren);
+		}
+		
+		public Set removeAll(Set rhs) {		
+			int[] rhs_children = rhs.children;
+			boolean[] marks = new boolean[children.length];
+			int count = 0;
+			int i = 0;
+			int j = 0;
+			while (i < children.length && j < rhs_children.length) {
+				int ith = children[i];
+				int jth = rhs_children[j];
+				if (jth < ith) {
+					j++;
+				} else if (ith < jth) {
+					i++;
+				} else {
+					marks[i] = true;
+					i++;
+					j++;
+				}
+			}
+
+			int[] nchildren = new int[children.length - count];
+			j = 0;
+			for (i = 0; i != children.length; ++i) {
+				if (!marks[i]) {
+					nchildren[j++] = children[i];
+				}
+			}
+			return new Set(nchildren);
+		}
 	}
 	
 	public static final class List extends Compound {

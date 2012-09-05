@@ -2,8 +2,7 @@ package wyone.spec;
 
 import java.util.*;
 
-import wyone.core.Attribute;
-import wyone.core.Type;
+import wyone.core.*;
 import wyone.util.*;
 import static wyone.util.SyntaxError.*;
 
@@ -74,7 +73,11 @@ public class TypeInference {
 				types.add(t);
 				if(var != null) {
 					if(p.unbounded && (i+1) == p_elements.length) {
-						t = Type.T_LIST(true,t);
+						if(p instanceof Pattern.List) {
+							t = Type.T_LIST(true,t);
+						} else {
+							t = Type.T_SET(true,t);
+						}
 					} 
 					environment.put(var,t);					
 				}
@@ -245,6 +248,7 @@ public class TypeInference {
 		case APPEND: {
 			if (lhs_t instanceof Type.Compound
 					&& rhs_t instanceof Type.Compound) {
+				System.err.println("GOT HERE - " + lhs_t + " ++ " + rhs_t);
 				result = Type.leastUpperBound(lhs_t, rhs_t);
 			} else if (rhs_t instanceof Type.Compound) {
 				// right append
@@ -306,10 +310,11 @@ public class TypeInference {
 		for (int i = 0; i != types.length; ++i) {
 			types[i] = resolve(operands.get(i), environment);
 		}
-		
-		// TODO: support set generation
-
-		return Type.T_LIST(false, types);
+		if(expr.op == Code.NOp.LISTGEN) {
+			return Type.T_LIST(false, types);
+		} else {
+			return Type.T_SET(false, types);
+		}
 	}
 	
 	protected Type resolve(Expr.Variable code, HashMap<String, Type> environment) {
