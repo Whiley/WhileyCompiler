@@ -1,5 +1,6 @@
 package wyone.spec;
 
+import java.math.BigInteger;
 import java.util.*;
 
 import wyone.core.*;
@@ -143,7 +144,7 @@ public class TypeInference {
 		Object v = expr.value;
 		if (v instanceof Boolean) {
 			return Type.T_BOOL;
-		} else if (v instanceof Integer) {
+		} else if (v instanceof BigInteger) {
 			return Type.T_INT;
 		} else if (v instanceof Double) {
 			return Type.T_REAL;
