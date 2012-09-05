@@ -181,7 +181,7 @@ public class Spec2WyoneBuilder {
 			// non-sequntial match
 			Type.Set ts = (Type.Set) type.element;
 			int ntarget = environment.allocate(Type.T_LIST(ts.unbounded,ts.elements));
-			codes.add(new Code.Match(ntarget, source, ts, pattern
+			codes.add(new Code.Match(ntarget, target, ts, pattern
 					.attribute(Attribute.Source.class)));
 			target = ntarget;
 		}

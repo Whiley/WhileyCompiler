@@ -241,6 +241,8 @@ public class JavaFileWriter {
 			translate(level,(Code.Rewrite) code, fun);
 		} else if (code instanceof Code.Return) {
 			translate(level,(Code.Return) code, fun);
+		} else if (code instanceof Code.Match) {
+			translate(level,(Code.Match) code, fun);
 		} else if (code instanceof Code.Constructor) {
 			translate(level,(Code.Constructor) code, fun);
 		} else if (code instanceof Code.SubList) {
@@ -411,6 +413,63 @@ public class JavaFileWriter {
 		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
 	}
 
+	public void translate(int level, Code.Match code, FunDecl fun) {
+		Type.Set match = code.match;
+		
+		myOut(level,"r" + code.target + " = null;");
+		for (int i = 0; i != match.elements.length; ++i) {
+			Type element = match.elements[i];
+			if (!match.unbounded || i + 1 < match.elements.length) {
+				String idx = "s" + i;
+				myOut(level, "for(int " + idx + "=0;" + idx + " < r"
+						+ code.source + ".children.length;++" + idx + ") {");
+				if (i > 0) {
+					indent(3 + i);
+					out.print("if(");
+					for (int j = 0; j < i; ++j) {
+						if (j != 0) {
+							out.print(" || ");
+						}
+						out.print(idx + "==s" + j);
+					}
+					out.println(") { continue; }");
+				}
+				myOut(level + 1, "if(!typeof_" + type2HexStr(element) + "(r"
+						+ code.source + ".children[" + idx
+						+ "],automaton)) { continue; }");
+				level++;
+			}
+		}
+		myOut(level,"int[] r" + code.target + "_children = new int[r" + code.source + ".children.length];");
+		for (int i = 0; i != match.elements.length; ++i) {
+			if(!match.unbounded || i+1 < match.elements.length) {
+				myOut(level,"r" + code.target + "_children[" + i + "] = r" + code.source + ".children[s" + i + "];");
+			}
+		}
+		if(match.unbounded) {
+			myOut(level,"int j = " + (match.elements.length-1) + ";");
+			myOut(level, "for(int i=0;i < r" + code.source + ".children.length;++i) {");
+			indent(level+1);				
+			out.print("if(");
+			for (int i = 0; i != match.elements.length; ++i) {
+				if(!match.unbounded || i+1 < match.elements.length) {
+					if(i!=0) { out.print(" && "); }
+					out.print("i!=s" + i);
+				}
+			}
+			out.print(") { r" + code.target + "_children[j++] = r" + code.source + ".children[i]; }");
+			myOut();
+			myOut(level,"}");
+		}
+		myOut(level,"r" + code.target + " = new Automaton.List(r" + code.target + "_children);");
+		myOut(level,"break;");
+		for (int i = 0; i != match.elements.length; ++i) {
+			if(!match.unbounded || i+1 < match.elements.length) {
+				myOut(level - (i+1),"}");
+			}
+		}	
+	}
+	
 	public void translate(int level, Code.NaryOp code, FunDecl fun) {
 		String body = "new Automaton.List(";
 		int[] operands = code.operands;
