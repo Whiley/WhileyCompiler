@@ -2,16 +2,54 @@ term True
 term False
 class Bool as True | False
 
-term Var(string)
+term Not(Term)
 term And{Term...}
+term Or{Term...}
+term Var(string)
 
-rewrite And{Term x, Term y, Term... xs}:
-    => And (x ++ xs), if x == y
+// ====================================================================
+// Not
+// ====================================================================
+
+rewrite Not(True):
+    => False
+
+rewrite Not(False):
+    => True
+
+rewrite Not(Not(* x)):
+    => x
+
+// rewrite Not(And{Term... xs})
+
+// rewrite Not(Or{Term... xs})
+
+// ====================================================================
+// And
+// ====================================================================
+
+// Dones't work because of unforeseen problem with non-sequential match.
+// rewrite And{Term x, Term y, Term... xs}:
+//    => And (x ++ xs), if x == y
 
 rewrite And{And{Term... xs}, Term... ys}:
     => And (xs ++ ys)
 
-class Term as Bool | Var
+// Need comprehension
+//rewrite And{Or{Term... xs}, Term... ys}:
+
+// ====================================================================
+// Or
+// ====================================================================
+
+rewrite Or{Or{Term... xs}, Term... ys}:
+    => Or (xs ++ ys)
+
+// ====================================================================
+// Term
+// ====================================================================
+
+class Term as Bool | Not | And | Or | Var 
 
 
 
