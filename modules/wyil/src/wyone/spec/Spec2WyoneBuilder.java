@@ -137,8 +137,10 @@ public class Spec2WyoneBuilder {
 			translate((Pattern.Leaf) pattern, source, environment, codes);
 		} else if (pattern instanceof Pattern.Term) {
 			translate((Pattern.Term) pattern, source, environment, codes);
-		} else if (pattern instanceof Pattern.Compound) {
-			translate((Pattern.Compound) pattern, source, environment, codes);
+		} else if (pattern instanceof Pattern.Set) {
+			translate((Pattern.Set) pattern, source, environment, codes);
+		} else if (pattern instanceof Pattern.List) {
+			translate((Pattern.List) pattern, source, environment, codes);
 		} else {
 			syntaxError("unknown pattern encountered", filename, pattern);
 		}
@@ -165,15 +167,28 @@ public class Spec2WyoneBuilder {
 		}
 	}
 
-	private void translate(Pattern.Compound pattern, int source,
+	private void translate(Pattern.Set pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
+		
 		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
 				.attribute(Attribute.Type.class).type;
+		
 		Pair<Pattern, String>[] elements = pattern.elements;
 		int target = environment.allocate(type.element);
 		codes.add(new Code.Deref(target, source));
-
-		// TODO: unbound compound matches
+	
+		
+	}
+	
+	private void translate(Pattern.List pattern, int source,
+			Environment environment, ArrayList<Code> codes) {
+		
+		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
+				.attribute(Attribute.Type.class).type;
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		int target = environment.allocate(type.element);
+		codes.add(new Code.Deref(target, source));
 
 		// TODO: non-sequential compound matches
 

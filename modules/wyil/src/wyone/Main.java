@@ -23,7 +23,6 @@ import java.util.*;
 
 // import wyone.util.SyntaxError;
 import wyone.spec.SpecLexer;
-import wyone.spec.NewSpecParser;
 import wyone.spec.TypeInference;
 import wyone.util.*;
 import wyone.core.*;
