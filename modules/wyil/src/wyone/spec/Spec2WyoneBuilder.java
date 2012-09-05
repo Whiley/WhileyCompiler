@@ -49,11 +49,11 @@ public class Spec2WyoneBuilder {
 		ArrayList<Code> body = new ArrayList<Code>();
 		int root = environment.allocate(param, "this");
 
-		translate(d.pattern, root, environment, body);
+		ArrayList<Code> codes = translate(d.pattern, root, environment, body);
 
 		boolean conditional = true;
 		for (SpecFile.RuleDecl rd : d.rules) {
-			build(rd, environment, body);
+			build(rd, environment, codes);
 			conditional &= rd.condition != null;
 		}
 
@@ -61,8 +61,8 @@ public class Spec2WyoneBuilder {
 			// indicates all rules in this block were conditional, so we need to
 			// add a default case.
 			int operand = environment.allocate(Type.T_BOOL);
-			body.add(new Code.Constant(operand, false));
-			body.add(new Code.Return(operand));
+			codes.add(new Code.Constant(operand, false));
+			codes.add(new Code.Return(operand));
 		}
 
 		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, param),
@@ -132,27 +132,29 @@ public class Spec2WyoneBuilder {
 				Type.T_REFANY), environment.asList(), codes);
 	}
 
-	private void translate(Pattern pattern, int source,
+	private ArrayList<Code> translate(Pattern pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
 		if (pattern instanceof Pattern.Leaf) {
-			translate((Pattern.Leaf) pattern, source, environment, codes);
+			return translate((Pattern.Leaf) pattern, source, environment, codes);
 		} else if (pattern instanceof Pattern.Term) {
-			translate((Pattern.Term) pattern, source, environment, codes);
+			return translate((Pattern.Term) pattern, source, environment, codes);
 		} else if (pattern instanceof Pattern.Set) {
-			translate((Pattern.Set) pattern, source, environment, codes);
+			return translate((Pattern.Set) pattern, source, environment, codes);
 		} else if (pattern instanceof Pattern.List) {
-			translate((Pattern.List) pattern, source, environment, codes);
+			return translate((Pattern.List) pattern, source, environment, codes);
 		} else {
 			syntaxError("unknown pattern encountered", filename, pattern);
+			return null;
 		}
 	}
 
-	private void translate(Pattern.Leaf pattern, int source,
+	private ArrayList<Code> translate(Pattern.Leaf pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
 		// do nothing?
+		return codes;
 	}
 
-	private void translate(Pattern.Term pattern, int source,
+	private ArrayList<Code> translate(Pattern.Term pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
 		if (pattern.data != null) {
 			Type.Ref<Type.Term> type = (Type.Ref<Type.Term>) pattern
@@ -161,14 +163,15 @@ public class Spec2WyoneBuilder {
 			int contents = environment.allocate(type.element.data);
 			codes.add(new Code.Deref(target, source));
 			codes.add(new Code.TermContents(contents, target));
-			translate(pattern.data, contents, environment, codes);
+			codes = translate(pattern.data, contents, environment, codes);
 			if (pattern.variable != null) {
 				environment.put(contents, pattern.variable);
 			}
 		}
+		return codes;
 	}
 
-	private void translate(Pattern.Compound pattern, int source,
+	private ArrayList<Code> translate(Pattern.Set pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
 		
 		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
@@ -177,15 +180,65 @@ public class Spec2WyoneBuilder {
 		Pair<Pattern, String>[] elements = pattern.elements;
 		int target = environment.allocate(type.element);
 		codes.add(new Code.Deref(target, source));
-
-		if(pattern instanceof Pattern.Set) {
-			// non-sequntial match
-			Type.Set ts = (Type.Set) type.element;
-			int ntarget = environment.allocate(Type.T_LIST(ts.unbounded,ts.elements));
-			codes.add(new Code.Match(ntarget, target, ts, pattern
-					.attribute(Attribute.Source.class)));
-			target = ntarget;
+		
+		if(elements.length > 1) {
+			Code.ForAll loop = null;
+			ArrayList<Code> body = null;
+			
+			for (int i = elements.length; i > 0; --i) {
+				Pair<Pattern,String> p = elements[0];	
+				Pattern pat = p.first();
+				String var = p.second();
+				Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
+				int operand = environment.allocate(pt);
+				
+				ArrayList<Code> ifCodes = new ArrayList<Code>();				
+				if(loop != null) {
+					ifCodes.add(loop); 
+				} 
+	
+				// TODO: check matched element against existing matches
+				
+				Code.IfIs is = new Code.IfIs(operand, pt, ifCodes,
+						Collections.EMPTY_LIST,
+						pattern.attribute(Attribute.Source.class));
+				
+				if(loop == null) {
+					body = is.trueBranch; // v.naughty
+				}
+				
+				ArrayList<Code> forCodes = new ArrayList<Code>();
+				forCodes.add(is);
+				loop = new Code.ForAll(operand, target, forCodes,
+						pattern.attribute(Attribute.Source.class));
+				
+				if(var != null) {
+					environment.put(operand,var);
+				}
+			}
+			
+			// TODO: construct unbounded option.
+			
+			codes.add(loop);
+			int operand = environment.allocate(Type.T_BOOL);
+			codes.add(new Code.Constant(operand, false));
+			codes.add(new Code.Return(operand));			
+			return body;
+		} else {
+			System.err.println("// TODO: non-sequential match of size <= 1");
+			return null;
 		}
+	}
+	
+	private ArrayList<Code> translate(Pattern.List pattern, int source,
+			Environment environment, ArrayList<Code> codes) {
+		
+		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
+				.attribute(Attribute.Type.class).type;
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		int target = environment.allocate(type.element);
+		codes.add(new Code.Deref(target, source));
 
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
@@ -209,11 +262,13 @@ public class Spec2WyoneBuilder {
 						.attribute(Attribute.Source.class)));
 				codes.add(new Code.IndexOf(element, target, index));				
 			}
-			translate(pat, element, environment, codes);
+			codes = translate(pat, element, environment, codes);
 			if (var != null) {
 				environment.put(element, var);
 			}
 		}
+		
+		return codes;
 	}
 
 	private int translate(Expr expr, Environment environment,

@@ -293,6 +293,24 @@ public class Code extends SyntacticElement.Impl {
 		}
 	}
 	
+	public static final class ForAll extends Code {
+		public final int target;
+		public final int source;
+		public final ArrayList<Code> body;
+		
+		public ForAll(int target, int source, List<Code> body,
+				Attribute... attributes) {
+			super(attributes);
+			this.target = target;
+			this.source = source;
+			this.body = new ArrayList<Code>(body);
+		}
+		
+		public String toString() {
+			return "for(%" + target + " in %" + source +") " + body;
+		}
+	}
+	
 	public static final class IndexOf extends Code {
 		public final int target;
 		public final int source;
@@ -400,22 +418,6 @@ public class Code extends SyntacticElement.Impl {
 		public String toString() {
 			return "rewrite %" + target + " = (%" + fromOperand + " => %"
 					+ toOperand +")";
-		}
-	}
-	
-	public static final class Match extends Code {
-		public final int target;
-		public final int source;
-		public final Type.Set match;
-		
-		public Match(int target, int source, Type.Set match, Attribute... attributes) {
-			this.target = target;
-			this.source = source;
-			this.match = match;
-		}
-		
-		public String toString() {
-			return "match %" + target + " = %" + source + " ? " + match;
 		}
 	}
 	
