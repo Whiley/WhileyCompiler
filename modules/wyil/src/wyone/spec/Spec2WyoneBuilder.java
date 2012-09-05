@@ -2,6 +2,7 @@ package wyone.spec;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -176,93 +177,102 @@ public class Spec2WyoneBuilder {
 		int target = environment.allocate(type.element);
 		codes.add(new Code.Deref(target, source));
 		
-		//if(elements.length > 1) {
-			Code.ForAll internal = null;
-			ArrayList<Code> body = codes;
-			int[] operands = new int[elements.length];
-			
-			// First, allocate all variables required for each element of the
-			// pattern.
-			
-			for(int i=0;i!=elements.length;++i) {
-				Pair<Pattern,String> p = elements[i];	
-				Pattern pat = p.first();
-				String var = p.second();
-				Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;				
-				int i_operand = environment.allocate(pt);
-				operands[i] = i_operand;
+		Code.ForAll internal = null;
+		ArrayList<Code> body = codes;
+		int[] operands = new int[elements.length];
 
-				if(var != null) {
-					environment.put(i_operand,var);
-				}
+		// First, allocate all variables required for each element of the
+		// pattern.
+
+		for(int i=0;i!=elements.length;++i) {
+			Pair<Pattern,String> p = elements[i];	
+			Pattern pat = p.first();
+			String var = p.second();
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;				
+			int i_operand;
+			if(pattern.unbounded && (i+1) == elements.length) {			
+				i_operand = environment.allocate(Type.T_SET(true,pt));				
+			} else {
+				i_operand = environment.allocate(pt);
 			}
+			operands[i] = i_operand;
 			
-			// Second, generate the nested for-loops required for search for a
-			// match for each element.
+			if(var != null) {
+				environment.put(i_operand,var);
+			}
+		}
 			
-			int end = pattern.unbounded ? elements.length - 1 : elements.length;
-			for (int i = end; i > 0; --i) {
-				Code.ForAll last = internal;
-				Pair<Pattern,String> p = elements[i-1];	
-				Pattern pat = p.first();
-				Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
-				int i_operand = operands[i-1];
+		// Second, generate the nested for-loops required for search for a
+		// match for each element.
 
-				internal = new Code.ForAll(i_operand, target, Collections.EMPTY_LIST,
-						pattern.attribute(Attribute.Source.class));
-				ArrayList<Code> forCodes = internal.body; // v.naughty
+		int end = pattern.unbounded ? elements.length - 1 : elements.length;
+		for (int i = end; i > 0; --i) {
+			Code.ForAll last = internal;
+			Pair<Pattern, String> p = elements[i - 1];
+			Pattern pat = p.first();
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
+			int i_operand = operands[i - 1];
 
-				// TODO: construct unbounded option.
+			internal = new Code.ForAll(i_operand, target,
+					Collections.EMPTY_LIST,
+					pattern.attribute(Attribute.Source.class));
+			ArrayList<Code> forCodes = internal.body; // v.naughty
 
-				if(i > 1) {
-					// Check current index is unique against those
-					// already matched.
-					int tmp1 = environment.allocate(Type.T_BOOL);
-					int tmp2 = environment.allocate(Type.T_BOOL);
-					for(int j=0;j<(i-1);++j) {
-						int j_operand = operands[j];
-						if(j != 0) {
-							forCodes.add(new Code.BinOp(Code.BOp.NEQ,tmp2,i_operand,j_operand));
-							forCodes.add(new Code.BinOp(Code.BOp.AND,tmp1,tmp1,tmp2));							
-						} else {
-							forCodes.add(new Code.BinOp(Code.BOp.NEQ,tmp1,i_operand,j_operand));
-						}
+			if (i > 1) {
+				// Check current index is unique against those
+				// already matched.
+				int tmp1 = environment.allocate(Type.T_BOOL);
+				int tmp2 = environment.allocate(Type.T_BOOL);
+				for (int j = 0; j < (i - 1); ++j) {
+					int j_operand = operands[j];
+					if (j != 0) {
+						forCodes.add(new Code.BinOp(Code.BOp.NEQ, tmp2,
+								i_operand, j_operand));
+						forCodes.add(new Code.BinOp(Code.BOp.AND, tmp1, tmp1,
+								tmp2));
+					} else {
+						forCodes.add(new Code.BinOp(Code.BOp.NEQ, tmp1,
+								i_operand, j_operand));
 					}
-					Code.If iif = new Code.If(tmp1, Collections.EMPTY_LIST, Collections.EMPTY_LIST, pattern.attribute(Attribute.Source.class));
-					forCodes.add(iif);
-					forCodes = iif.trueBranch; // v.naughty
 				}
-
-				Code.IfIs is = new Code.IfIs(i_operand, pt,
-						Collections.EMPTY_LIST, Collections.EMPTY_LIST,
+				Code.If iif = new Code.If(tmp1, Collections.EMPTY_LIST,
+						Collections.EMPTY_LIST,
 						pattern.attribute(Attribute.Source.class));
+				forCodes.add(iif);
+				forCodes = iif.trueBranch; // v.naughty
+			}
 
-				if(i == end) {
-					body = is.trueBranch; // v.naughty
-				} else {
-					is.trueBranch.add(last);
-				}					
-				forCodes.add(is);
+			Code.IfIs is = new Code.IfIs(i_operand, pt, Collections.EMPTY_LIST,
+					Collections.EMPTY_LIST,
+					pattern.attribute(Attribute.Source.class));
+
+			if (i == end) {
+				body = is.trueBranch; // v.naughty
+			} else {
+				is.trueBranch.add(last);
 			}
-						
-			// Third, translate nested pattern matches and extract unbounded
-			// variables
-			for(int i=0;i!=elements.length;++i) {
-				Pair<Pattern,String> p = elements[i];
-				if(pattern.unbounded && i == elements.length) {
-					
-				} else {
-					body = translate(p.first(),operands[i],environment,body);
-				}
+			forCodes.add(is);
+		}
+
+		// Third, translate nested pattern matches and extract unbounded
+		// variables
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			if (pattern.unbounded && i == elements.length) {
+				int i_operand = operands[i];
+				body.add(Code.NaryOp(Code.NOp.SETGEN,i_operand,Arrays.copyOf(operands, operands.length-1)));
+				body.add(Code.BinOp(Code.BOp.DIFFERENCE,target,i_operand));
+			} else {
+				body = translate(p.first(), operands[i], environment, body);
 			}
-			if(internal != null) {
-				codes.add(internal);
-			}
-			return body;
-//		} else {
-//			System.err.println("// TODO: non-sequential match of size <= 1");
-//			return null;
-//		}
+		}
+		
+		if (internal != null) {
+			// internal can be null if the original non-sequential match had
+			// only a single element.
+			codes.add(internal);
+		}
+		return body;
 	}
 	
 	private ArrayList<Code> translate(Pattern.List pattern, int source,
