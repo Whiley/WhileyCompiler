@@ -176,10 +176,14 @@ public class Spec2WyoneBuilder {
 		int target = environment.allocate(type.element);
 		codes.add(new Code.Deref(target, source));
 		
-		if(elements.length > 1) {
+		//if(elements.length > 1) {
 			Code.ForAll internal = null;
-			ArrayList<Code> body = null;
+			ArrayList<Code> body = codes;
 			int[] operands = new int[elements.length];
+			
+			// First, allocate all variables required for each element of the
+			// pattern.
+			
 			for(int i=0;i!=elements.length;++i) {
 				Pair<Pattern,String> p = elements[i];	
 				Pattern pat = p.first();
@@ -193,20 +197,26 @@ public class Spec2WyoneBuilder {
 				}
 			}
 			
-			for (int i = elements.length; i > 0; --i) {
+			// Second, generate the nested for-loops required for search for a
+			// match for each element.
+			
+			int end = pattern.unbounded ? elements.length - 1 : elements.length;
+			for (int i = end; i > 0; --i) {
 				Code.ForAll last = internal;
 				Pair<Pattern,String> p = elements[i-1];	
 				Pattern pat = p.first();
 				Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
 				int i_operand = operands[i-1];
-				
+
 				internal = new Code.ForAll(i_operand, target, Collections.EMPTY_LIST,
 						pattern.attribute(Attribute.Source.class));
 				ArrayList<Code> forCodes = internal.body; // v.naughty
-				
-				// TODO: recursive call translate for pattern
-								
+
+				// TODO: construct unbounded option.
+
 				if(i > 1) {
+					// Check current index is unique against those
+					// already matched.
 					int tmp1 = environment.allocate(Type.T_BOOL);
 					int tmp2 = environment.allocate(Type.T_BOOL);
 					for(int j=0;j<(i-1);++j) {
@@ -222,28 +232,37 @@ public class Spec2WyoneBuilder {
 					forCodes.add(iif);
 					forCodes = iif.trueBranch; // v.naughty
 				}
-						
+
 				Code.IfIs is = new Code.IfIs(i_operand, pt,
 						Collections.EMPTY_LIST, Collections.EMPTY_LIST,
 						pattern.attribute(Attribute.Source.class));
-				
-				if(i == elements.length) {
+
+				if(i == end) {
 					body = is.trueBranch; // v.naughty
-				} else {					
-					is.trueBranch.add(last);  
-				}
-				
-				forCodes.add(is);				
+				} else {
+					is.trueBranch.add(last);
+				}					
+				forCodes.add(is);
 			}
-			
-			// TODO: construct unbounded option.
-			
-			codes.add(internal);			
+						
+			// Third, translate nested pattern matches and extract unbounded
+			// variables
+			for(int i=0;i!=elements.length;++i) {
+				Pair<Pattern,String> p = elements[i];
+				if(pattern.unbounded && i == elements.length) {
+					
+				} else {
+					body = translate(p.first(),operands[i],environment,body);
+				}
+			}
+			if(internal != null) {
+				codes.add(internal);
+			}
 			return body;
-		} else {
-			System.err.println("// TODO: non-sequential match of size <= 1");
-			return null;
-		}
+//		} else {
+//			System.err.println("// TODO: non-sequential match of size <= 1");
+//			return null;
+//		}
 	}
 	
 	private ArrayList<Code> translate(Pattern.List pattern, int source,
