@@ -651,6 +651,7 @@ public final class Automaton {
 					i++;
 				} else {
 					marks[i] = true;
+					count++;
 					i++;
 					j++;
 				}
