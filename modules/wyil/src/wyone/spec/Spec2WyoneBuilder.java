@@ -193,9 +193,9 @@ public class Spec2WyoneBuilder {
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
 			int element;
 			if(pattern.unbounded && (i+1) == elements.length) {
-				Type.Compound tc = pattern instanceof Pattern.List ? Type
-						.T_LIST(true, pt) : Type.T_SET(true, pt);
-				element = environment.allocate(tc);
+				// FIXME: need to allocate a set here
+				element = environment.allocate(Type
+						.T_LIST(true, pt));
 				int start = environment.allocate(Type.T_INT);
 				codes.add(new Code.Constant(start, BigInteger.valueOf(i), pattern
 						.attribute(Attribute.Source.class)));				

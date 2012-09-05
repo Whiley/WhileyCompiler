@@ -853,7 +853,7 @@ public class JavaFileWriter {
 		} else if (type instanceof Type.List) {
 			return "Automaton.List";			
 		} else if (type instanceof Type.Set) {
-			return "Automaton.List";
+			return "Automaton.Set";
 		}
 		throw new RuntimeException("unknown type encountered: " + type);
 	}

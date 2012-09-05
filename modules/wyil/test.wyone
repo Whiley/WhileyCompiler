@@ -5,6 +5,9 @@ class Bool as True | False
 term Var(string)
 term And{Term...}
 
+rewrite And{Term x, Term y, Term... xs}:
+    => And (x ++ xs), if x == y
+
 rewrite And{True, Term... xs}:
     => And (xs)
 
