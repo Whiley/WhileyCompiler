@@ -460,8 +460,10 @@ public class SpecParser {
 			return parseNegation();
 		} else if (token instanceof Bar) {
 			return parseLengthOf();
-		} else if (token instanceof LeftSquare || token instanceof LeftCurly) {
-			return parseCompoundVal();
+		} else if (token instanceof LeftSquare) {
+			return parseListVal();
+		} else if (token instanceof LeftCurly) {
+			return parseSetVal();
 		} else if (token instanceof EmptySet) {
 			match(EmptySet.class);
 			return new Expr.Constant(new HashSet(),
@@ -475,7 +477,7 @@ public class SpecParser {
 		return null;		
 	}
 	
-	private Expr parseCompoundVal() {
+	private Expr parseListVal() {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match(LeftSquare.class);
@@ -498,7 +500,31 @@ public class SpecParser {
 		return new Expr.NaryOp(Code.NOp.LISTGEN, exprs, sourceAttr(start,
 				index - 1));
 	}
-			
+	
+	private Expr parseSetVal() {
+		int start = index;
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		match(LeftCurly.class);
+		skipWhiteSpace(true);
+		boolean firstTime = true;
+		checkNotEof();
+		Token token = tokens.get(index);
+		while(!(token instanceof RightCurly)) {
+			if(!firstTime) {
+				match(Comma.class);
+				skipWhiteSpace(true);
+			}
+			firstTime=false;
+			exprs.add(parseCondition());
+			skipWhiteSpace(true);
+			checkNotEof();
+			token = tokens.get(index);
+		}
+		match(RightCurly.class);
+		return new Expr.NaryOp(Code.NOp.SETGEN, exprs, sourceAttr(start,
+				index - 1));
+	}
+	
 	private Expr parseLengthOf() {
 		int start = index;
 		match(Bar.class);
@@ -537,9 +563,14 @@ public class SpecParser {
 			match(LeftBrace.class);
 			argument = parseConditionExpression();
 			match(RightBrace.class);
+		} else if(token instanceof LeftSquare) {
+			argument = parseListVal();
+		} else if(token instanceof LeftCurly) {
+			argument = parseSetVal();
 		} else {
-			argument = parseCompoundVal();
-		}		 					
+			syntaxError("unknown token encountered",token);
+			return null;
+		}
 		
 		return new Expr.Constructor(name.text, argument, sourceAttr(start,
 				index - 1));
