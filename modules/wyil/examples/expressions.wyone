@@ -1,18 +1,30 @@
-term Num(int)
-term Var(string)
-term Sum[Expr...]
-term Mul[Expr...]
 
-// Sum constants together 
-rewrite Sum[Num(int x), Num(int y), Expr... rest]:
+// ====================================================================
+// Sum
+// ====================================================================
+
+term Sum{Expr...}
+
+rewrite Sum{Num(int x), Num(int y), Expr... rest}:
     => Sum (Num(x+y) ++ rest)
 
-// Multiply variables together 
-rewrite Sum[Var x, Var y, Expr... rest]:
-    => Sum (Mul[Num(2),x] ++ rest)
+//rewrite Sum{Var x, Var y, Expr... rest}:
+//    => Sum (Mul{Num(2),x} ++ rest), if x == y
 
-// remove multiplier by one
-rewrite Mul[Num(int x), Expr... rest]:
-    => Mul(rest), if x == 1
+// ====================================================================
+// Sum
+// ====================================================================
 
+term Mul{Expr...}
 
+//rewrite Mul{Num(int x), Expr... rest}:
+//    => Mul(rest), if x == 1
+
+// ====================================================================
+// Expr
+// ====================================================================
+
+term Num(int)
+term Var(string)
+
+class Expr as Num | Var | Sum | Mul
