@@ -437,6 +437,7 @@ public class JavaFileWriter {
 				myOut(level + 1, "if(!typeof_" + type2HexStr(element) + "(r"
 						+ code.source + ".children[" + idx
 						+ "],automaton)) { continue; }");
+				typeTests.add(element);
 				level++;
 			}
 		}
@@ -449,20 +450,26 @@ public class JavaFileWriter {
 		if(match.unbounded) {
 			myOut(level,"int j = " + (match.elements.length-1) + ";");
 			myOut(level, "for(int i=0;i < r" + code.source + ".children.length;++i) {");
-			indent(level+1);				
-			out.print("if(");
-			for (int i = 0; i != match.elements.length; ++i) {
-				if(!match.unbounded || i+1 < match.elements.length) {
-					if(i!=0) { out.print(" && "); }
-					out.print("i!=s" + i);
+			indent(level+1);
+			if(match.elements.length > 1) {
+				out.print("if(");
+				for (int i = 0; i != match.elements.length; ++i) {
+					if(!match.unbounded || i+1 < match.elements.length) {
+						if(i!=0) { out.print(" && "); }
+						out.print("i!=s" + i);
+					}
 				}
+				out.print(") { r" + code.target + "_children[j++] = r" + code.source + ".children[i]; }");
+			} else {
+				out.print("r" + code.target + "_children[j++] = r" + code.source + ".children[i];");
 			}
-			out.print(") { r" + code.target + "_children[j++] = r" + code.source + ".children[i]; }");
 			myOut();
 			myOut(level,"}");
 		}
 		myOut(level,"r" + code.target + " = new Automaton.List(r" + code.target + "_children);");
-		myOut(level,"break;");
+		if(match.elements.length > 1) {
+			myOut(level,"break;");
+		}
 		for (int i = 0; i != match.elements.length; ++i) {
 			if(!match.unbounded || i+1 < match.elements.length) {
 				myOut(level - (i+1),"}");

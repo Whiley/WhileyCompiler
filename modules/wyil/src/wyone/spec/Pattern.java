@@ -106,16 +106,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.elements = elements.toArray(new Pair[elements.size()]);			
 			this.unbounded = unbounded;
 		}
-		
-		public Type.Ref type() {
-			// FIXME: following should be an ArrayList<Type.Ref>
-			ArrayList<Type> types = new ArrayList<Type>();
-			for (Pair<Pattern, String> ps : elements) {
-				types.add(ps.first().type());
-			}
-			return Type.T_REF(Type.T_LIST(unbounded, types));
-		}
-		
+				
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -144,7 +135,15 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			super(unbounded,elements,attributes);
 		}	
 		
-
+		public Type.Ref type() {
+			// FIXME: following should be an ArrayList<Type.Ref>
+			ArrayList<Type> types = new ArrayList<Type>();
+			for (Pair<Pattern, String> ps : elements) {
+				types.add(ps.first().type());
+			}
+			return Type.T_REF(Type.T_LIST(unbounded, types));
+		}
+		
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -168,7 +167,16 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		public Set(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}	
-		
+
+		public Type.Ref type() {
+			// FIXME: following should be an ArrayList<Type.Ref>
+			ArrayList<Type> types = new ArrayList<Type>();
+			for (Pair<Pattern, String> ps : elements) {
+				types.add(ps.first().type());
+			}
+			// TODO: T_SET ?
+			return Type.T_REF(Type.T_LIST(unbounded, types));
+		}
 
 		public String toString() {
 			String r = "";

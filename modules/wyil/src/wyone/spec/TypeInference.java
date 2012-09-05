@@ -74,7 +74,6 @@ public class TypeInference {
 				types.add(t);
 				if(var != null) {
 					if(p.unbounded && (i+1) == p_elements.length) {
-						// TODO: include non-sequential option as well
 						t = Type.T_LIST(true,t);
 					} 
 					environment.put(var,t);					
