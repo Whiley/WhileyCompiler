@@ -248,7 +248,6 @@ public class TypeInference {
 		case APPEND: {
 			if (lhs_t instanceof Type.Compound
 					&& rhs_t instanceof Type.Compound) {
-				System.err.println("GOT HERE - " + lhs_t + " ++ " + rhs_t);
 				result = Type.leastUpperBound(lhs_t, rhs_t);
 			} else if (rhs_t instanceof Type.Compound) {
 				// right append

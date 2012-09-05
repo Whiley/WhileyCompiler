@@ -653,7 +653,6 @@ public final class Automaton {
 					marks[i] = true;
 					count++;
 					i++;
-					j++;
 				}
 			}
 
