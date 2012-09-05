@@ -125,14 +125,14 @@ public class SpecParser {
 	
 	public Pattern.Compound parsePatternCompound() {
 		int start = index;		
-		Type.Compound.Kind kind;
+		boolean listKind;
 		ArrayList<Pair<Pattern, String>> params = new ArrayList();
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match(LeftSquare.class);
-			kind = Type.Compound.Kind.LIST;
+			listKind = true;
 		} else {
 			match(LeftCurly.class);
-			kind = Type.Compound.Kind.SET;
+			listKind = false;
 		}
 		boolean firstTime = true;
 		boolean unbound = false;
@@ -159,16 +159,15 @@ public class SpecParser {
 			}
 			params.add(new Pair<Pattern, String>(p, n));
 		}
-		switch (kind) {
-		case LIST:
+		if(listKind) {
 			match(RightSquare.class);
-			break;
-		case SET:
-			match(RightCurly.class);
+			return new Pattern.List(unbound, params, 
+					sourceAttr(start, index - 1));
+		} else {
+			match(RightCurly.class);			
+			return new Pattern.Set(unbound, params, 
+					sourceAttr(start, index - 1));		
 		}
-		
-		return new Pattern.Compound(kind, unbound, params, 
-				sourceAttr(start, index - 1));		
 	}
 	
 	public List<RuleDecl> parseRuleBlock(int indent) {
@@ -607,13 +606,13 @@ public class SpecParser {
 	}
 	
 	private Type.Compound parseCompoundType() {
-		Type.Compound.Kind kind;
+		boolean listKind;
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match(LeftSquare.class);
-			kind = Type.Compound.Kind.LIST;
+			listKind = true;
 		} else {
 			match(LeftCurly.class);
-			kind = Type.Compound.Kind.SET;
+			listKind = false;
 		}
 		ArrayList<Type> types = new ArrayList<Type>();
 		boolean firstTime = true;
@@ -632,16 +631,17 @@ public class SpecParser {
 			match(DotDotDot.class);
 			unbounded = true;
 		}
-		switch (kind) {
-		case LIST:
+		if(listKind) {
 			match(RightSquare.class);
-			break;
-		case SET:
+			
+			return Type.T_LIST(unbounded,
+					types.toArray(new Type[types.size()]));
+		} else {
 			match(RightCurly.class);
-		}
-		
-		return Type.T_COMPOUND(kind, unbounded,
-				types.toArray(new Type[types.size()]));
+
+			return Type.T_SET(unbounded,
+					types.toArray(new Type[types.size()]));
+		}		
 	}
 	
 	private boolean isTypeStart() {

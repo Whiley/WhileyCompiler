@@ -4,8 +4,7 @@ class Bool as True | False
 
 term Not(Term)
 term Var(string)
-term And[Term...]
-term LessThan[Term,Term]
+term And{Term...}
 
 rewrite Not(True x):
     => False
@@ -16,8 +15,14 @@ rewrite Not(False x):
 rewrite Not(Not(* x)):
     => x
 
-rewrite And[LessThan[* x,* y] l1, LessThan[* y,* z] l2]:
-    => And[l1,l2,LessThan[x,z]]
+rewrite And{}:
+    => True
+
+rewrite And{Term x}:
+    => x
+
+// rewrite And{True, Term... xs}:
+//    => And (xs)
 
 class Term as Bool | Not | Var
 

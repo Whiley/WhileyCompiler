@@ -91,22 +91,19 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static final class Compound extends Pattern {
-		public final Kind kind;
+	public static abstract class Compound extends Pattern {
 		public final Pair<Pattern,String>[] elements;
 		public final boolean unbounded;
 		
-		public Compound(Kind kind, boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
+		public Compound(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(attributes);
 			this.elements = elements;
-			this.kind = kind;
 			this.unbounded = unbounded;
 		}
 		
-		public Compound(Kind kind, boolean unbounded, List<Pair<Pattern,String>> elements, Attribute... attributes) {
+		public Compound(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(attributes);
 			this.elements = elements.toArray(new Pair[elements.size()]);			
-			this.kind = kind;
 			this.unbounded = unbounded;
 		}
 		
@@ -116,7 +113,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			for (Pair<Pattern, String> ps : elements) {
 				types.add(ps.first().type());
 			}
-			return Type.T_REF(Type.T_COMPOUND(kind, unbounded, types));
+			return Type.T_REF(Type.T_LIST(unbounded, types));
 		}
 		
 		public String toString() {
@@ -130,12 +127,61 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			if(unbounded) {
 				r += "...";
 			}
-			switch(kind) {
-			case LIST:
+			if(this instanceof List) {
 				return "[" + r + "]";
-			default:
+			} else {
 				return "{" + r + "}";			
 			}			
+		}
+	}
+	
+	public final static class List extends Compound {
+		public List(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}
+		
+		public List(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}	
+		
+
+		public String toString() {
+			String r = "";
+			for(int i=0;i!=elements.length;++i) {
+				if(i!=0) {
+					r += ",";
+				}
+				r += elements[i];
+			}
+			if(unbounded) {
+				r += "...";
+			}			
+			return "[" + r + "]";					
+		}
+	}
+	
+	public final static class Set extends Compound {
+		public Set(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}
+		
+		public Set(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}	
+		
+
+		public String toString() {
+			String r = "";
+			for(int i=0;i!=elements.length;++i) {
+				if(i!=0) {
+					r += ",";
+				}
+				r += elements[i];
+			}
+			if(unbounded) {
+				r += "...";
+			}			
+			return "{" + r + "}";					
 		}
 	}
 }

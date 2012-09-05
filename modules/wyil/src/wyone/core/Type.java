@@ -29,45 +29,33 @@ public abstract class Type {
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();
 	public static final Ref<Any> T_REFANY = new Ref(T_ANY);
-	public static final Compound T_COMPOUNDANY = new Compound(Compound.Kind.LIST,true,T_ANY);
+	public static final List T_LISTANY = new List(true,T_ANY);
+	public static final Set T_SETANY = new Set(true,T_ANY);
 	
-	public static Compound T_COMPOUND(Compound.Kind kind, boolean unbounded, Collection<Type> elements) {
+	public static List T_LIST(boolean unbounded, Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
 		for(Type t : elements) {
 			es[i++] = t;
 		}
-		return get(new Compound(kind,unbounded,es));
+		return get(new List(unbounded,es));
 	}
 	
-	public static Compound T_COMPOUND(Compound.Kind kind, boolean unbounded, Type... elements) {
-		return get(new Compound(kind,unbounded,elements));
+	public static List T_LIST(boolean unbounded, Type... elements) {
+		return get(new List(unbounded,elements));
 	}
 	
-	public static Compound T_LIST(boolean unbounded, Collection<Type> elements) {
+	public static Set T_SET(boolean unbounded, Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
 		for(Type t : elements) {
 			es[i++] = t;
 		}
-		return get(new Compound(Compound.Kind.LIST,unbounded,es));
+		return get(new Set(unbounded,es));
 	}
 	
-	public static Compound T_LIST(boolean unbounded, Type... elements) {
-		return get(new Compound(Compound.Kind.LIST,unbounded,elements));
-	}
-	
-	public static Compound T_SET(boolean unbounded, Collection<Type> elements) {
-		Type[] es = new Type[elements.size()];
-		int i =0;
-		for(Type t : elements) {
-			es[i++] = t;
-		}
-		return get(new Compound(Compound.Kind.SET,unbounded,es));
-	}
-	
-	public static Compound T_SET(boolean unbounded, Type... elements) {
-		return get(new Compound(Compound.Kind.SET,unbounded,elements));
+	public static Set T_SET(boolean unbounded, Type... elements) {
+		return get(new Set(unbounded,elements));
 	}
 	
 	public static Term T_TERM(String name, Type.Ref data) {
@@ -313,19 +301,12 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class Compound extends Type {
-		public enum Kind {
-			LIST,
-			SET
-		}
-		
-		public final Kind kind;
+	public static abstract class Compound extends Type {		
 		public final Type[] elements;
 		public final boolean unbounded;
 		
-		private Compound(Kind kind, boolean unbounded, Type... elements) {
+		private Compound(boolean unbounded, Type... elements) {
 			this.elements = elements;
-			this.kind = kind;
 			this.unbounded = unbounded;
 		}
 		
@@ -340,14 +321,28 @@ public abstract class Type {
 		public boolean equals(Object o) {
 			if(o instanceof Compound) {
 				Compound l = (Compound) o;
-				return kind == l.kind && unbounded == l.unbounded
+				return unbounded == l.unbounded
 						&& Arrays.equals(elements, l.elements);				
 			}
 			return false;
 		}
 		public int hashCode() {
-			return kind.hashCode() * Arrays.hashCode(elements);
+			return Arrays.hashCode(elements);
+		}		
+	}
+	
+	public final static class Set extends Compound {
+		private Set(boolean unbounded, Type... elements) {
+			super(unbounded,elements);
 		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Set) {
+				return super.equals(o);				
+			}
+			return false;
+		}
+		
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -359,15 +354,39 @@ public abstract class Type {
 			if(unbounded) {
 				r += "...";
 			}
-			switch(kind) {
-			case LIST:
-				return "[" + r + "]";
-			default:
-				return "{" + r + "}";			
-			}			
+			
+			return "{" + r + "}";								
 		}
 	}
+	
+	public final static class List extends Compound {
+		private List(boolean unbounded, Type... elements) {
+			super(unbounded,elements);
+		}
 		
+		public boolean equals(Object o) {
+			if(o instanceof List) {
+				return super.equals(o);				
+			}
+			return false;
+		}
+		
+		public String toString() {
+			String r = "";
+			for(int i=0;i!=elements.length;++i) {
+				if(i!=0) {
+					r += ",";
+				}
+				r += elements[i];
+			}
+			if(unbounded) {
+				r += "...";
+			}
+			
+			return "[" + r + "]";					
+		}
+	}
+	
 	public static String type2str(Type t) {
 		if(t instanceof Any) {
 			return "*";
@@ -396,13 +415,10 @@ public abstract class Type {
 			if(st.unbounded) {
 				r += ".";
 			}
-			switch(st.kind) {
-			case LIST:
-				return "(" + r + ")";
-			case SET:
-				return "{" + r + "}";
-			default:
+			if(st instanceof List) {			
 				return "[" + r + "]";
+			} else {
+				return "{" + r + "}";
 			}	
 		} else if(t instanceof Type.Term) {
 			Type.Term st = (Type.Term) t;

@@ -183,20 +183,16 @@ public class JavaFileWriter {
 			writeTypeSchema(ref.element);
 			out.print(")");
 		} else if(t instanceof Type.Compound) {		
-			Type.Compound compound = (Type.Compound) t;
-			out.print("Type.T_COMPOUND(");
-			switch(compound.kind) {
-				case LIST:
-					out.print("Type.Compound.Kind.LIST");
-					break;
-				case SET:
-					out.print("Type.Compound.Kind.SET");
-					break;			
+			Type.Compound compound = (Type.Compound) t;			
+			if(compound instanceof Type.List) {
+				out.print("Type.T_LIST(");
+			} else {
+				out.print("Type.T_SET(");							
 			}
 			if(compound.unbounded) {
-				out.print(",true");
+				out.print("true");
 			} else {
-				out.print(",false");
+				out.print("false");
 			}
 			Type[] elements = compound.elements;
 			for(int i=0;i!=elements.length;++i) {
@@ -630,7 +626,7 @@ public class JavaFileWriter {
 		}
 		
 		int level = 3;
-		if(type.kind == Type.Compound.Kind.LIST) {
+		if(type instanceof Type.List) {
 			// easy, sequential match case
 			for (int i = 0; i != tt_elements.length; ++i) {
 				myOut(3, "int s" + i + " = " + i + ";");				
@@ -682,7 +678,7 @@ public class JavaFileWriter {
 		
 		myOut(level,"}");
 		myOut(level,"if(result) { return true; } // found match");
-		if(type.kind != Type.Compound.Kind.LIST) {
+		if(type instanceof Type.Set) {
 			for (int i = 0; i != tt_elements.length; ++i) {
 				if(!type.unbounded || i+1 < tt_elements.length) {
 					myOut(level - (i+1),"}");
@@ -795,14 +791,11 @@ public class JavaFileWriter {
 			return "Automaton.Term";
 		} else if (type instanceof Type.Ref) {
 			return "int";
-		} else if (type instanceof Type.Compound) {
-			Type.Compound tc = (Type.Compound) type;
-			if(tc.kind == Type.Compound.Kind.LIST) {
-				return "Automaton.List";
-			} else {
-				return "Automaton.Set";
-			}
-		} 
+		} else if (type instanceof Type.List) {
+			return "Automaton.List";			
+		} else if (type instanceof Type.Set) {
+			return "Automaton.List";
+		}
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
 

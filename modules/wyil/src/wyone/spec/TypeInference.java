@@ -80,7 +80,11 @@ public class TypeInference {
 					environment.put(var,t);					
 				}
 			}
-			type = Type.T_REF(Type.T_COMPOUND(p.kind, p.unbounded, types));
+			if(p instanceof Pattern.List) { 
+				type = Type.T_REF(Type.T_LIST(p.unbounded, types));
+			} else {
+				type = Type.T_REF(Type.T_SET(p.unbounded, types));
+			}
 		}
 		pattern.attributes().add(new Attribute.Type(type));
 		return type;
@@ -170,7 +174,7 @@ public class TypeInference {
 		Type t = resolve(uop.mhs,environment);
 		switch (uop.op) {
 		case LENGTHOF:
-			checkSubtype(Type.T_COMPOUNDANY, t, uop);
+			checkSubtype(Type.T_LISTANY, t, uop);
 			t = Type.T_INT;
 			break;
 		case NEG:
@@ -246,22 +250,35 @@ public class TypeInference {
 			} else if (rhs_t instanceof Type.Compound) {
 				// right append
 				Type.Compound rhs_tc = (Type.Compound) rhs_t;
-				result = Type.T_COMPOUND(rhs_tc.kind, rhs_tc.unbounded,
+				if(rhs_tc instanceof Type.List) { 
+					result = Type.T_LIST(rhs_tc.unbounded,
 						append(lhs_t, rhs_tc.elements));
+				} else {
+					result = Type.T_SET(rhs_tc.unbounded,
+							append(lhs_t, rhs_tc.elements));
+				}
 			} else if (lhs_t instanceof Type.Compound){
 				// left append
 				Type.Compound lhs_tc = (Type.Compound) rhs_t;
 				if (!lhs_tc.unbounded) {
-					result = Type.T_COMPOUND(lhs_tc.kind, false,
-							append(lhs_tc.elements, lhs_t));
-
+					if(lhs_tc instanceof Type.List) { 
+						result = Type.T_LIST(lhs_tc.unbounded,
+							append(lhs_tc.elements,lhs_t));
+					} else {
+						result = Type.T_SET(lhs_tc.unbounded,
+								append(lhs_tc.elements,lhs_t));
+					}
 				} else {
 					int length = lhs_tc.elements.length;
 					Type[] nelements = Arrays.copyOf(lhs_tc.elements, length);
 					length--;
 					nelements[length] = Type.leastUpperBound(rhs_t,
 							nelements[length]);
-					result = Type.T_COMPOUND(lhs_tc.kind, true, nelements);
+					if(lhs_tc instanceof Type.List) {
+						result = Type.T_LIST(true, nelements);
+					} else {
+						result = Type.T_SET(true, nelements);
+					}
 				}
 			} else {
 				System.out.println("LHS: " + lhs_t);
@@ -293,7 +310,7 @@ public class TypeInference {
 		
 		// TODO: support set generation
 
-		return Type.T_COMPOUND(Type.Compound.Kind.LIST, false, types);
+		return Type.T_LIST(false, types);
 	}
 	
 	protected Type resolve(Expr.Variable code, HashMap<String, Type> environment) {
