@@ -44,7 +44,7 @@ public class Spec2WyoneBuilder {
 	}
 
 	private WyoneFile.FunDecl build(SpecFile.RewriteDecl d) {
-		Type.Ref param = d.pattern.type();
+		Type.Ref param = (Type.Ref) d.pattern.attribute(Attribute.Type.class).type;
 		Environment environment = new Environment();
 		ArrayList<Code> body = new ArrayList<Code>();
 		int root = environment.allocate(param, "this");
@@ -115,7 +115,8 @@ public class Spec2WyoneBuilder {
 		for (SpecFile.Decl d : file.declarations) {
 			if (d instanceof SpecFile.RewriteDecl) {
 				SpecFile.RewriteDecl fd = (SpecFile.RewriteDecl) d;
-				Type.Fun type = Type.T_FUN(Type.T_BOOL, fd.pattern.type());
+				Type.Fun type = Type.T_FUN(Type.T_BOOL,
+						fd.pattern.attribute(Attribute.Type.class).type);
 				ArrayList<Code> ifCodes = new ArrayList<Code>();
 				int[] operands = new int[] { environment.get("this") };
 				ifCodes.add(new Code.Invoke("rewrite", type, environment
