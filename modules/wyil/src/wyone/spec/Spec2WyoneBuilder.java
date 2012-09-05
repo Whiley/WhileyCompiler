@@ -48,6 +48,8 @@ public class Spec2WyoneBuilder {
 		Environment environment = new Environment();
 		ArrayList<Code> body = new ArrayList<Code>();
 		int root = environment.allocate(param, "this");
+		int ret = environment.allocate(Type.T_BOOL, "$");
+		body.add(new Code.Constant(ret, false, d.attribute(Attribute.Source.class)));
 
 		ArrayList<Code> codes = translate(d.pattern, root, environment, body);
 
@@ -57,14 +59,8 @@ public class Spec2WyoneBuilder {
 			conditional &= rd.condition != null;
 		}
 
-		if (conditional) {
-			// indicates all rules in this block were conditional, so we need to
-			// add a default case.
-			int operand = environment.allocate(Type.T_BOOL);
-			codes.add(new Code.Constant(operand, false));
-			codes.add(new Code.Return(operand));
-		}
-
+		body.add(new Code.Return(ret, d.attribute(Attribute.Source.class)));
+		
 		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL, param),
 				environment.asList(), body, d.attributes());
 	}
@@ -84,11 +80,8 @@ public class Spec2WyoneBuilder {
 		int operand = translate(rd.result, environment, myCodes);
 
 		// add return vaue
-		int target = environment.allocate(Type.T_BOOL);
-		myCodes.add(new Code.Rewrite(target, environment.get("this"), operand,
+		myCodes.add(new Code.Rewrite(environment.get("$"), environment.get("this"), operand,
 				rd.attribute(Attribute.Source.class)));
-		myCodes.add(new Code.Return(target, rd
-				.attribute(Attribute.Source.class)));
 
 		// translate condition (if applicable)
 		if (rd.condition != null) {
@@ -108,9 +101,9 @@ public class Spec2WyoneBuilder {
 		ArrayList<Code> codes = new ArrayList<Code>();
 		Environment environment = new Environment();
 		environment.allocate(Type.T_REFANY, "this");
-		environment.allocate(Type.T_BOOL, "ret");
+		environment.allocate(Type.T_BOOL, "$");
 
-		codes.add(new Code.Constant(environment.get("ret"), false));
+		codes.add(new Code.Constant(environment.get("$"), false));
 
 		for (SpecFile.Decl d : file.declarations) {
 			if (d instanceof SpecFile.RewriteDecl) {
@@ -120,13 +113,13 @@ public class Spec2WyoneBuilder {
 				ArrayList<Code> ifCodes = new ArrayList<Code>();
 				int[] operands = new int[] { environment.get("this") };
 				ifCodes.add(new Code.Invoke("rewrite", type, environment
-						.get("ret"), operands));
+						.get("$"), operands));
 				codes.add(new Code.IfIs(environment.get("this"), type.param,
 						ifCodes, Collections.EMPTY_LIST));
 			}
 		}
 
-		codes.add(new Code.Return(environment.get("ret")));
+		codes.add(new Code.Return(environment.get("$")));
 
 		return new WyoneFile.FunDecl("rewrite", Type.T_FUN(Type.T_BOOL,
 				Type.T_REFANY), environment.asList(), codes);
@@ -174,6 +167,8 @@ public class Spec2WyoneBuilder {
 	private ArrayList<Code> translate(Pattern.Set pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
 		
+		// if you can figure this method out then you're doing well ;)
+		
 		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
 				.attribute(Attribute.Type.class).type;
 		
@@ -182,47 +177,68 @@ public class Spec2WyoneBuilder {
 		codes.add(new Code.Deref(target, source));
 		
 		if(elements.length > 1) {
-			Code.ForAll loop = null;
+			Code.ForAll internal = null;
 			ArrayList<Code> body = null;
-			
-			for (int i = elements.length; i > 0; --i) {
-				Pair<Pattern,String> p = elements[0];	
+			int[] operands = new int[elements.length];
+			for(int i=0;i!=elements.length;++i) {
+				Pair<Pattern,String> p = elements[i];	
 				Pattern pat = p.first();
 				String var = p.second();
-				Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
-				int operand = environment.allocate(pt);
-				
-				ArrayList<Code> ifCodes = new ArrayList<Code>();				
-				if(loop != null) {
-					ifCodes.add(loop); 
-				} 
-	
-				// TODO: check matched element against existing matches
-				
-				Code.IfIs is = new Code.IfIs(operand, pt, ifCodes,
-						Collections.EMPTY_LIST,
-						pattern.attribute(Attribute.Source.class));
-				
-				if(loop == null) {
-					body = is.trueBranch; // v.naughty
-				}
-				
-				ArrayList<Code> forCodes = new ArrayList<Code>();
-				forCodes.add(is);
-				loop = new Code.ForAll(operand, target, forCodes,
-						pattern.attribute(Attribute.Source.class));
-				
+				Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;				
+				int i_operand = environment.allocate(pt);
+				operands[i] = i_operand;
+
 				if(var != null) {
-					environment.put(operand,var);
+					environment.put(i_operand,var);
 				}
+			}
+			
+			for (int i = elements.length; i > 0; --i) {
+				Code.ForAll last = internal;
+				Pair<Pattern,String> p = elements[i-1];	
+				Pattern pat = p.first();
+				Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
+				int i_operand = operands[i-1];
+				
+				internal = new Code.ForAll(i_operand, target, Collections.EMPTY_LIST,
+						pattern.attribute(Attribute.Source.class));
+				ArrayList<Code> forCodes = internal.body; // v.naughty
+				
+				// TODO: recursive call translate for pattern
+								
+				if(i > 1) {
+					int tmp1 = environment.allocate(Type.T_BOOL);
+					int tmp2 = environment.allocate(Type.T_BOOL);
+					for(int j=0;j<(i-1);++j) {
+						int j_operand = operands[j];
+						if(j != 0) {
+							forCodes.add(new Code.BinOp(Code.BOp.NEQ,tmp2,i_operand,j_operand));
+							forCodes.add(new Code.BinOp(Code.BOp.AND,tmp1,tmp1,tmp2));							
+						} else {
+							forCodes.add(new Code.BinOp(Code.BOp.NEQ,tmp1,i_operand,j_operand));
+						}
+					}
+					Code.If iif = new Code.If(tmp1, Collections.EMPTY_LIST, Collections.EMPTY_LIST, pattern.attribute(Attribute.Source.class));
+					forCodes.add(iif);
+					forCodes = iif.trueBranch; // v.naughty
+				}
+						
+				Code.IfIs is = new Code.IfIs(i_operand, pt,
+						Collections.EMPTY_LIST, Collections.EMPTY_LIST,
+						pattern.attribute(Attribute.Source.class));
+				
+				if(i == elements.length) {
+					body = is.trueBranch; // v.naughty
+				} else {					
+					is.trueBranch.add(last);  
+				}
+				
+				forCodes.add(is);				
 			}
 			
 			// TODO: construct unbounded option.
 			
-			codes.add(loop);
-			int operand = environment.allocate(Type.T_BOOL);
-			codes.add(new Code.Constant(operand, false));
-			codes.add(new Code.Return(operand));			
+			codes.add(internal);			
 			return body;
 		} else {
 			System.err.println("// TODO: non-sequential match of size <= 1");
