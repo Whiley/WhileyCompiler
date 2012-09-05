@@ -24,23 +24,46 @@ rewrite Not(Not(* x)):
 
 // rewrite Not(Or{Term... xs})
 
+rewrite Or{Not(Term x), Term y}:
+    => True, if x == y
+
 // ====================================================================
 // And
 // ====================================================================
 
-// Dones't work because of unforeseen problem with non-sequential match.
+rewrite And{}:
+    => True
+
+rewrite And{False, Term... xs}:
+    => False
+
+rewrite And{True, Term... xs}:
+    => And (xs)
+
 // rewrite And{Term x, Term y, Term... xs}:
-//    => And (x ++ xs), if x == y
 
 rewrite And{And{Term... xs}, Term... ys}:
     => And (xs ++ ys)
 
-// Need comprehension
-//rewrite And{Or{Term... xs}, Term... ys}:
+// rewrite And{Or{Term... xs}, Term... ys}:
+
+rewrite And{Not(Term x), Term y}:
+    => False, if x == y
 
 // ====================================================================
 // Or
 // ====================================================================
+
+rewrite Or{}:
+    => False
+
+rewrite Or{True, Term... xs}:
+    => True
+
+rewrite Or{False, Term... xs}:
+    => Or (xs)
+
+// rewrite Or{Term x, Term y, Term... xs}:
 
 rewrite Or{Or{Term... xs}, Term... ys}:
     => Or (xs ++ ys)
