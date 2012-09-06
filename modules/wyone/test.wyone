@@ -1,7 +1,9 @@
 term True
 term Num(int)
+term Sum{|Num...|}
 
-
+rewrite Sum{|Num(int x), Num(int y), Num... rest|}:
+    => Sum (Num(x+y) ++ rest)
 
 
 
