@@ -520,16 +520,13 @@ public final class Automaton {
 	 * 
 	 */
 	public static abstract class Compound extends State {
-		public final int[] children;
+		public int[] children;
 
 		private Compound(int kind, int...children) {
 			super(kind);
-			if(kind != K_LIST && kind != K_SET) {
+			if (kind != K_LIST && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
-			} else if(kind == K_SET) {
-				Arrays.sort(children);
-			}
-			
+			} 			
 			this.children = children;
 		}
 		
@@ -541,10 +538,7 @@ public final class Automaton {
 			int[] nchildren = new int[children.size()];
 			for (int i = 0; i != children.size(); ++i) {
 				nchildren[i] = children.get(i);
-			}
-			if(kind == K_SET) {
-				Arrays.sort(nchildren);
-			}
+			}			
 			this.children = nchildren;			
 		}
 		
@@ -553,10 +547,7 @@ public final class Automaton {
 				if(children[i] == from) {
 					children[i] = to;
 				}
-			}
-			if(kind == K_SET) {
-				Arrays.sort(children);
-			}
+			}			
 		}
 
 		public int get(int index) {
@@ -571,106 +562,103 @@ public final class Automaton {
 			if (o instanceof Compound) {
 				Compound t = (Compound) o;
 				int[] t_children = t.children;
-				return kind == t.kind && Arrays.equals(children,t_children);							
+				return kind == t.kind && Arrays.equals(children, t_children);
 			}
 			return false;
 		}
 
 		public int hashCode() {
 			return kind * Arrays.hashCode(children);
+		}							
+	}
+	
+	public static final class Bag extends Compound {
+		public Bag(int... children) {
+			super(K_BAG, children);
+			Arrays.sort(this.children);
+		}
+
+		public Bag(java.util.List<Integer> children) {
+			super(K_BAG, children);
+			Arrays.sort(this.children);
+		}
+		
+		public void remap(int from, int to) {
+			super.remap(from,to);
+			Arrays.sort(children);
+		}
+		
+		public Bag clone() {
+			return new Bag(Arrays.copyOf(children, children.length));
+		}
+		
+		public Bag append(Bag rhs) {
+			return new Bag(Automaton.append(children,rhs.children));
+		}
+		
+		public Bag append(int rhs) {
+			return new Bag(Automaton.append(children,rhs));			
+		}
+		
+		public Bag appendFront(int lhs) {
+			return new Bag(Automaton.append(lhs,children));
+		}
+		
+		public Bag removeAll(Bag rhs) {
+			return new Bag(sortedRemoveAll(this.children, rhs.children));
 		}
 		
 		public String toString() {
-			String r = "";
-			switch(kind) {
-				case K_LIST:
-					r = "[";
-					break;
-				case K_SET:
-					r = "{";
-					break;
-			}
-			
+			String r = "{|";
 			for(int i=0;i!=children.length;++i) {
 				if(i != 0) { r += ","; }
 				r += children[i];
 			}
-			
-			switch(kind) {
-				case K_LIST:
-					r += "]";
-					break;
-				case K_SET:
-					r += "}";
-					break;
-			}
-			
-			return r;
+			return r + "|}";
 		}
 	}
 	
 	public static final class Set extends Compound {
 		public Set(int... children) {
-			super(K_SET, children);
+			super(K_SET, sortAndRemoveDuplicates(children));
 		}
 
 		public Set(java.util.List<Integer> children) {
-			super(K_SET, children);
+			super(K_SET, sortAndRemoveDuplicates(children));
 		}
 
-		public Compound clone() {
+		public void remap(int from, int to) {
+			super.remap(from,to);
+			children = sortAndRemoveDuplicates(children);
+		}
+		
+		public Set clone() {
 			return new Set(Arrays.copyOf(children, children.length));
 		}
 		
-		public Set append(Compound rhs) {
-			int[] nchildren = new int[children.length + rhs.children.length];
-			System.arraycopy(children,0,nchildren,0,children.length);
-			System.arraycopy(rhs.children,0,nchildren,children.length,rhs.children.length);
-			return new Set(nchildren);
+		public Set append(Set rhs) {
+			return new Set(Automaton.append(children,rhs.children));
 		}
 		
 		public Set append(int rhs) {
-			int[] nchildren = new int[children.length + 1];
-			System.arraycopy(children,0,nchildren,0,children.length);
-			nchildren[children.length] = rhs;			
-			return new Set(nchildren);
+			return new Set(Automaton.append(children,rhs));			
 		}
 		
 		public Set appendFront(int lhs) {
-			int[] nchildren = new int[children.length + 1];
-			System.arraycopy(children,0,nchildren,1,children.length);
-			nchildren[0] = lhs;			
-			return new Set(nchildren);
+			return new Set(Automaton.append(lhs,children));
 		}
 		
-		public Set removeAll(Set rhs) {		
-			int[] rhs_children = rhs.children;
-			boolean[] marks = new boolean[children.length];
-			int count = 0;
-			int i = 0;
-			int j = 0;
-			while (i < children.length && j < rhs_children.length) {
-				int ith = children[i];
-				int jth = rhs_children[j];
-				if (jth < ith) {
-					j++;
-				} else if (ith < jth) {
-					i++;
-				} else {
-					marks[i] = true;
-					count++;
-					i++;
-				}
+		public Set removeAll(Set rhs) {
+			return new Set(sortedRemoveAll(this.children, rhs.children));
+		}
+		
+		public String toString() {
+			String r = "{";
+			for(int i=0;i!=children.length;++i) {
+				if(i != 0) { r += ","; }
+				r += children[i];
 			}
-
-			int[] nchildren = new int[children.length - count];
-			j = 0;
-			for (i = 0; i != children.length; ++i) {
-				if (!marks[i]) {
-					nchildren[j++] = children[i];
-				}
-			}
-			return new Set(nchildren);
+			return r + "}";
 		}
 	}
 	
@@ -694,37 +682,145 @@ public final class Automaton {
 		}
 		
 		public List append(List rhs) {
-			int[] nchildren = new int[children.length + rhs.children.length];
-			System.arraycopy(children,0,nchildren,0,children.length);
-			System.arraycopy(rhs.children,0,nchildren,children.length,rhs.children.length);
-			return new List(nchildren);
+			return new List(Automaton.append(children,rhs.children));
 		}
 		
 		public List append(int rhs) {
-			int[] nchildren = new int[children.length + 1];
-			System.arraycopy(children,0,nchildren,0,children.length);
-			nchildren[children.length] = rhs;			
-			return new List(nchildren);
+			return new List(Automaton.append(children,rhs));			
 		}
 		
 		public List appendFront(int lhs) {
-			int[] nchildren = new int[children.length + 1];
-			System.arraycopy(children,0,nchildren,1,children.length);
-			nchildren[0] = lhs;			
-			return new List(nchildren);
+			return new List(Automaton.append(lhs,children));
 		}
 		
 		public Compound clone() {
 			return new List(Arrays.copyOf(children,children.length));
 		}		
+		
+		public String toString() {
+			String r = "[";
+			for(int i=0;i!=children.length;++i) {
+				if(i != 0) { r += ","; }
+				r += children[i];
+			}
+			return r + "]";
+		}
+	}
+	
+	private static int[] sortAndRemoveDuplicates(
+			java.util.List<Integer> children) {
+		int[] nchildren = new int[children.size()];
+		for (int i = 0; i != nchildren.length; ++i) {
+			nchildren[i] = children.get(i);
+		}
+		return sortAndRemoveDuplicates(nchildren);
+	}
+	
+	private static int[] sortAndRemoveDuplicates(int[] children) {
+		if(children.length == 0) {
+			return children;
+		}
+		
+		Arrays.sort(children);
+		
+		// first, decide if we have duplicates
+		final int length = children.length;
+		int last = children[0];
+		int i;
+		for (i = 1; i < length; ++i) {
+			int current = children[i];
+			if (current == last) {
+				break; // duplicate detected
+			} else {
+				last = current;
+			}
+		}
+		
+		// second, if duplicates then mark and remove them
+		if(i == length) {
+			return children;
+		} else {
+			// duplicates is created lazily to avoid allocations in the common
+			// case.
+			boolean[] duplicates = new boolean[children.length];
+			int count = 0;
+			for(;i < length;++i) {
+				int current = children[i];
+				if(current == last) {
+					duplicates[i] = true;
+					count++;
+				} else {
+					last = current;
+				}
+			}
+			int[] nchildren = new int[children.length-count];
+			int j;
+			for (i = 0, j = 0; i < length; ++i) {
+				if (!duplicates[i]) {
+					nchildren[j++] = children[i];
+				}
+			}
+			return nchildren;
+		}
+	}
+	
+	private static int[] sortedRemoveAll(int[] lhs, int[] rhs) {		
+		boolean[] marks = new boolean[lhs.length];
+		int count = 0;
+		int i = 0;
+		int j = 0;
+		while (i < lhs.length && j < rhs.length) {
+			int ith = lhs[i];
+			int jth = rhs[j];
+			if (jth < ith) {
+				j++;
+			} else if (ith < jth) {
+				i++;
+			} else {
+				marks[i] = true;
+				count++;
+				i++;
+			}
+		}
+
+		int[] nchildren = new int[lhs.length - count];
+		j = 0;
+		for (i = 0; i != lhs.length; ++i) {
+			if (!marks[i]) {
+				nchildren[j++] = lhs[i];
+			}
+		}
+		return nchildren;
+	}
+	
+	private static int[] append(int[] lhs, int[] rhs) {
+		int[] nchildren = new int[lhs.length + rhs.length];
+		System.arraycopy(lhs, 0, nchildren, 0, rhs.length);
+		System.arraycopy(rhs, 0, nchildren, lhs.length, rhs.length);
+		return nchildren;
+	}
+	
+	private static int[] append(int[] lhs, int rhs) {
+		int[] nchildren = new int[lhs.length + 1];
+		System.arraycopy(lhs,0,nchildren,0,lhs.length);
+		nchildren[lhs.length] = rhs;			
+		return nchildren;
+	}
+	
+	private static int[] append(int lhs, int[] rhs) {
+		int[] nchildren = new int[rhs.length + 1];
+		System.arraycopy(rhs,0,nchildren,1,rhs.length);
+		nchildren[0] = lhs;			
+		return nchildren;
 	}
 	
 	public static final int K_VOID = -1;
 	public static final int K_INT = -2;
 	public static final int K_STRING = -3;
 	public static final int K_LIST = -4;
-	public static final int K_SET = -5;
-	public static final int K_FREE = -6;
+	public static final int K_BAG = -5;
+	public static final int K_SET = -6;
+	public static final int K_FREE = -7;
 	
 	
 	/**
