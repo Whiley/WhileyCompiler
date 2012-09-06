@@ -53,7 +53,9 @@ rewrite And{And{Term... xs}, Term... ys}:
 rewrite And{Not(Term x), Term y}:
     => False, if x == y
 
-// rewrite And{Or{Term... xs}, Term... ys}:
+rewrite And{Or{Term... xs}, Term... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
 
 // ====================================================================
 // Or
