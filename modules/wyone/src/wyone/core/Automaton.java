@@ -309,6 +309,7 @@ public final class Automaton {
 			}
 			Automaton.State state = states[i];
 			r = r + "#" + i + " ";
+			
 			if (state instanceof Term) {
 				Term t = (Term) state;
 				if(t.contents == K_VOID) {
@@ -316,11 +317,13 @@ public final class Automaton {
 				} else {
 					r = r + schema[t.kind].name + "(" + t.contents + ")";
 				}
-			} else {
+			} else if(state != null) {
 				r = r + state.toString();
+			} else {
+				r = r + "null";
 			}
 		}		
-		r = r + "<";
+		r = r + " <";
 		for(int i=0;i!=roots.length;++i) {
 			if(i != 0) {
 				r += ",";
