@@ -41,6 +41,9 @@ term And{Term...}
 rewrite And{}:
     => True
 
+rewrite And{Term x}:
+    => x
+
 rewrite And{False, Term... xs}:
     => False
 
@@ -65,6 +68,9 @@ term Or{Term...}
 
 rewrite Or{}:
     => False
+
+rewrite Or{Term x}:
+    => x
 
 rewrite Or{True, Term... xs}:
     => True
