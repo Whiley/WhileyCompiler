@@ -41,6 +41,9 @@ rewrite And{Not(Any), Type... xs}:
 rewrite And{Any, Type... xs}:
     => And (xs)
 
+rewrite And{Int, Tuple y, Type... ys}:
+    => Not(Any)
+
 rewrite And{And{Type... xs}, Type... ys}:
     => And (xs ++ ys)
 
@@ -52,11 +55,11 @@ rewrite And{Or{Type... xs}, Type... ys}:
        in Or(ys)
 
 // why doesn't this rule work?
-rewrite And{Not(Tuple[Type...]), Int, Type... rest}:
-    => Not(Any)
+rewrite And{Int x, Not(Tuple[Type...]), Type... rest}:
+    => And (x ++ rest)
 
-rewrite And{Tuple[Type...], Not(Int), Type... rest}:
-    => Not(Any)
+rewrite And{Tuple x, Not(Int), Type... rest}:
+    => And (x ++ rest)
 
 // not sure how to express this rule?
 // rewrite And{Tuple[Type...], Not(Tuple[Type...]), Type... rest}:
