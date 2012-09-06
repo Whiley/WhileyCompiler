@@ -58,6 +58,19 @@ public abstract class Type {
 		return get(new Set(unbounded,elements));
 	}
 	
+	public static Bag T_BAG(boolean unbounded, Collection<Type> elements) {
+		Type[] es = new Type[elements.size()];
+		int i =0;
+		for(Type t : elements) {
+			es[i++] = t;
+		}
+		return get(new Bag(unbounded,es));
+	}
+	
+	public static Bag T_BAG(boolean unbounded, Type... elements) {
+		return get(new Bag(unbounded,elements));
+	}
+	
 	public static Term T_TERM(String name, Type.Ref data) {
 		return get(new Term(name,data));
 	}
@@ -335,7 +348,10 @@ public abstract class Type {
 		}
 	}
 	
-	public static abstract class Compound extends Type {		
+	public static abstract class Compound extends Type {
+		
+		// FIXME: elements should be Type.Ref[]
+		
 		public final Type[] elements;
 		public final boolean unbounded;
 		
@@ -372,6 +388,34 @@ public abstract class Type {
 		
 		public boolean equals(Object o) {
 			if(o instanceof Set) {
+				return super.equals(o);				
+			}
+			return false;
+		}
+		
+		public String toString() {
+			String r = "";
+			for(int i=0;i!=elements.length;++i) {
+				if(i!=0) {
+					r += ",";
+				}
+				r += elements[i];
+			}
+			if(unbounded) {
+				r += "...";
+			}
+			
+			return "{" + r + "}";								
+		}
+	}
+	
+	public final static class Bag extends Compound {
+		private Bag(boolean unbounded, Type... elements) {
+			super(unbounded,elements);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Bag) {
 				return super.equals(o);				
 			}
 			return false;

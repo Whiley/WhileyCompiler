@@ -151,5 +151,29 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			return "{" + r + "}";					
 		}
 	}
+	
+	public final static class Bag extends Compound {
+		public Bag(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}
+		
+		public Bag(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}	
+		
+		public String toString() {
+			String r = "";
+			for(int i=0;i!=elements.length;++i) {
+				if(i!=0) {
+					r += ",";
+				}
+				r += elements[i];
+			}
+			if(unbounded) {
+				r += "...";
+			}			
+			return "{|" + r + "|}";					
+		}
+	}
 }
 

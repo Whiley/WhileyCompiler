@@ -321,8 +321,14 @@ public class SpecLexer {
 		} else if(c == ']') {
 			return new RightSquare(pos++);
 		} else if(c == '{') {
-			return new LeftCurly(pos++);
-		} else if(c == '}') {
+			pos++;
+			if(pos < input.length() && input.charAt(pos) == '|') {
+				pos++;
+				return new LeftCurlyBar(pos-2);
+			} else {
+				return new LeftCurly(pos-1);
+			}
+		} else if(c == '}') {			
 			return new RightCurly(pos++);
 		} else if(c == '+') {
 			pos++;
@@ -348,6 +354,9 @@ public class SpecLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '|') {
 				pos += 2;
 				return new LogicalOr("||",pos-2);
+			} if((pos+1) < input.length() && input.charAt(pos+1) == '}') {
+				pos += 2;
+				return new BarRightCurly(pos-2);
 			} else {
 				return new Bar(pos++);
 			}
@@ -591,6 +600,12 @@ public class SpecLexer {
 	}
 	public static class LeftCurly extends Token {
 		public LeftCurly(int pos) { super("{",pos);	}
+	}
+	public static class LeftCurlyBar extends Token {
+		public LeftCurlyBar(int pos) { super("{|",pos);	}
+	}
+	public static class BarRightCurly extends Token {
+		public BarRightCurly(int pos) { super("|}",pos);	}
 	}
 	public static class RightCurly extends Token {
 		public RightCurly(int pos) { super("}",pos);	}

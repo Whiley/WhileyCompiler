@@ -258,40 +258,29 @@ public class Code extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
+			String args = "";
+			boolean firstTime=true;
+			for(int e : operands) {
+				if(!firstTime) {
+					args += ",";
+				}
+				args += "%" + e;
+			}
 			switch(op) {				 
 				case LISTGEN:
-				{
-					String args = "";
-					boolean firstTime=true;
-					for(int e : operands) {
-						if(!firstTime) {
-							args += ",";
-						}
-						args += "%" + e;
-					}
-					return "[" + args + "]";
-				}	
-				case SETGEN:
-				{
-					String args = "";
-					boolean firstTime=true;
-					for(int e : operands) {
-						if(!firstTime) {
-							args += ",";
-						}
-						args += "%" + e;
-					}
-					return "{" + args + "}";
-				}	
+					return "[" + args + "]";					
+				case BAGGEN:
+					return "{|" + args + "|}";				
 				default:
-					return "";
+					return "{" + args + "}";
 			}
 		}
 	}
 	
 	public enum NOp {
 		LISTGEN,
-		SETGEN
+		SETGEN,
+		BAGGEN
 	}
 	
 	public static final class Deref extends Code {

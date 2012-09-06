@@ -87,6 +87,7 @@ public class SpecParser {
 			match(Star.class);
 			return new Pattern.Leaf(Type.T_ANY);
 		} else if (token instanceof LeftCurly
+				|| token instanceof LeftCurlyBar
 				|| token instanceof LeftSquare) {
 			return parsePatternCompound();
 		} else if (token instanceof LeftBrace) {			
@@ -106,6 +107,7 @@ public class SpecParser {
 		String var = null;
 		Pattern p;
 		if (token instanceof LeftCurly
+				|| token instanceof LeftCurlyBar
 				|| token instanceof LeftSquare) {
 			p = parsePatternCompound();
 		} else if(token instanceof LeftBrace) {
@@ -125,20 +127,25 @@ public class SpecParser {
 	
 	public Pattern.Compound parsePatternCompound() {
 		int start = index;		
-		boolean listKind;
+		int kind; // 0 for set, 1 for bag, 2 for list
 		ArrayList<Pair<Pattern, String>> params = new ArrayList();
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match(LeftSquare.class);
-			listKind = true;
+			kind = 2;
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof LeftCurlyBar) {
+			match(LeftCurlyBar.class);
+			kind = 1;
 		} else {
 			match(LeftCurly.class);
-			listKind = false;
+			kind = 0;
 		}
 		boolean firstTime = true;
 		boolean unbound = false;
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightSquare)
-				&& !(tokens.get(index) instanceof RightCurly)) {
+				&& !(tokens.get(index) instanceof RightCurly)
+				&& !(tokens.get(index) instanceof BarRightCurly)) {
 			if (unbound) {
 				syntaxError("... must be last match", tokens.get(index));
 			}
@@ -159,14 +166,19 @@ public class SpecParser {
 			}
 			params.add(new Pair<Pattern, String>(p, n));
 		}
-		if(listKind) {
+		switch(kind) {
+		case 2:
 			match(RightSquare.class);
 			return new Pattern.List(unbound, params, 
 					sourceAttr(start, index - 1));
-		} else {
+		case 1:
+			match(BarRightCurly.class);			
+			return new Pattern.Bag(unbound, params, 
+					sourceAttr(start, index - 1));
+		default:
 			match(RightCurly.class);			
 			return new Pattern.Set(unbound, params, 
-					sourceAttr(start, index - 1));		
+					sourceAttr(start, index - 1));
 		}
 	}
 	
@@ -428,8 +440,9 @@ public class SpecParser {
 		} else if ((index + 1) < tokens.size()
 				&& token instanceof Identifier
 				&& (tokens.get(index + 1) instanceof LeftBrace
-						|| tokens.get(index + 1) instanceof LeftSquare || tokens
-							.get(index + 1) instanceof LeftCurly)) {				
+						|| tokens.get(index + 1) instanceof LeftSquare 
+						|| tokens.get(index + 1) instanceof LeftCurly
+						|| tokens.get(index + 1) instanceof LeftCurlyBar)) {				
 			// must be a method invocation			
 			return parseConstructorExpr();
 		} else if (token.text.equals("null")) {
@@ -462,6 +475,8 @@ public class SpecParser {
 			return parseLengthOf();
 		} else if (token instanceof LeftSquare) {
 			return parseListVal();
+		} else if (token instanceof LeftCurlyBar) {
+			return parseBagVal();
 		} else if (token instanceof LeftCurly) {
 			return parseSetVal();
 		} else if (token instanceof EmptySet) {
@@ -498,6 +513,30 @@ public class SpecParser {
 		}
 		match(RightSquare.class);
 		return new Expr.NaryOp(Code.NOp.LISTGEN, exprs, sourceAttr(start,
+				index - 1));
+	}
+	
+	private Expr parseBagVal() {
+		int start = index;
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		match(LeftCurlyBar.class);
+		skipWhiteSpace(true);
+		boolean firstTime = true;
+		checkNotEof();
+		Token token = tokens.get(index);
+		while (!(token instanceof BarRightCurly)) {
+			if (!firstTime) {
+				match(Comma.class);
+				skipWhiteSpace(true);
+			}
+			firstTime = false;
+			exprs.add(parseCondition());
+			skipWhiteSpace(true);
+			checkNotEof();
+			token = tokens.get(index);
+		}
+		match(BarRightCurly.class);
+		return new Expr.NaryOp(Code.NOp.BAGGEN, exprs, sourceAttr(start,
 				index - 1));
 	}
 	
@@ -565,6 +604,8 @@ public class SpecParser {
 			match(RightBrace.class);
 		} else if(token instanceof LeftSquare) {
 			argument = parseListVal();
+		} else if(token instanceof LeftCurlyBar) {
+			argument = parseBagVal();
 		} else if(token instanceof LeftCurly) {
 			argument = parseSetVal();
 		} else {
@@ -612,7 +653,8 @@ public class SpecParser {
 			match(LeftBrace.class);
 			t = parseType();
 			match(RightBrace.class);
-		} else if (token instanceof LeftCurly || token instanceof LeftSquare) {		
+		} else if (token instanceof LeftCurly || token instanceof LeftCurlyBar
+				|| token instanceof LeftSquare) {		
 			return parseCompoundType();
 		} else {
 			return parseTermType();
@@ -629,6 +671,7 @@ public class SpecParser {
 		if (index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token instanceof LeftBrace || token instanceof LeftCurly
+					|| token instanceof LeftCurlyBar
 					|| token instanceof LeftSquare) {
 				data = Type.T_REF(parseType());
 			}
@@ -637,20 +680,25 @@ public class SpecParser {
 	}
 	
 	private Type.Compound parseCompoundType() {
-		boolean listKind;
+		int kind; // 0 = set, 1 = bag, 2 = list
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match(LeftSquare.class);
-			listKind = true;
+			kind = 2;
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof LeftCurlyBar) {
+			match(LeftCurlyBar.class);
+			kind = 1;
 		} else {
 			match(LeftCurly.class);
-			listKind = false;
+			kind = 0;
 		}
 		ArrayList<Type> types = new ArrayList<Type>();
 		boolean firstTime = true;
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightSquare
-						|| tokens.get(index) instanceof RightCurly || tokens
-							.get(index) instanceof DotDotDot)) {
+						|| tokens.get(index) instanceof RightCurly
+						|| tokens.get(index) instanceof BarRightCurly 
+						|| tokens.get(index) instanceof DotDotDot)) {
 			if (!firstTime) {
 				match(Comma.class);
 			}
@@ -662,37 +710,18 @@ public class SpecParser {
 			match(DotDotDot.class);
 			unbounded = true;
 		}
-		if(listKind) {
-			match(RightSquare.class);
-			
+		switch(kind) {
+		case 2:
+			match(RightSquare.class);			
 			return Type.T_LIST(unbounded,
 					types.toArray(new Type[types.size()]));
-		} else {
-			match(RightCurly.class);
-
-			return Type.T_SET(unbounded,
+		case 1:
+			match(BarRightCurly.class);			
+			return Type.T_BAG(unbounded,
 					types.toArray(new Type[types.size()]));
-		}		
-	}
-	
-	private boolean isTypeStart() {
-		checkNotEof();
-		Token token = tokens.get(index);
-		if(token instanceof Keyword) {
-			return token.text.equals("int") || token.text.equals("void")
-					|| token.text.equals("bool") || token.text.equals("real")
-					|| token.text.equals("?") || token.text.equals("*")
-					|| token.text.equals("process");			
-		} else if(token instanceof LeftBrace) {
-			// Left brace is a difficult situation, since it can represent the
-			// start of a tuple expression or the start of a typle lval.
-			int tmp = index;
-			match(LeftBrace.class);
-			boolean r = isTypeStart();
-			index = tmp;
-			return r;
-		} else {
-			return token instanceof LeftCurly || token instanceof LeftSquare;
+		default:
+			match(RightCurly.class);
+			return Type.T_SET(unbounded, types.toArray(new Type[types.size()]));
 		}
 	}
 
