@@ -58,6 +58,10 @@ rewrite And{Not(Tuple[Type...]), Int, Type... rest}:
 rewrite And{Tuple[Type...], Not(Int), Type... rest}:
     => Not(Any)
 
+// not sure how to express this rule?
+// rewrite And{Tuple[Type...], Not(Tuple[Type...]), Type... rest}:
+//    => ?
+
 // ====================================================================
 // Or
 // ====================================================================
