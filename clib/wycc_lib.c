@@ -721,6 +721,9 @@ wycc_obj* wycc_iter_new(wycc_obj *itm) {
     if (itm->typ == Wy_Set) {
 	flg = 0;
     };
+    if ((itm->typ == Wy_String) || (itm->typ == Wy_CString)) {
+	flg = 4;
+    };
     if (flg == -1) {
 	fprintf(stderr, "Help needed in wycc_iter_new for type %d\n", itm->typ);
 	exit(-3);
@@ -732,7 +735,11 @@ wycc_obj* wycc_iter_new(wycc_obj *itm) {
     cnt = (int) p[1];
     ptr->cnt = cnt;
     ptr->p = p;
-    chunk = &(p[2]);
+    if (flg == 4) {
+	chunk = p;
+    } else {
+	chunk = &(p[2]);
+    }
     ptr->chk = chunk;
     ptr->at = 0;
     ptr->flg = flg;
@@ -762,6 +769,8 @@ static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
     int step;
     int max;
     int tmp;
+    char cc;
+    char *cp;
     wycc_obj *itm;
     void ** up;
     void ** was;
@@ -783,8 +792,18 @@ static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
 	tmp = chunk->at++;
 	chunk->idx = tmp;
 	itm = (wycc_obj *) chunk->chk[tmp];
-	chunk->key = (wycc_obj *) NULL;
+	//chunk->key = (wycc_obj *) NULL;
 	chunk->val = itm;
+	return;
+    } else if (chunk->flg == 4) {
+	cp = (char *) chunk->chk;
+	tmp = chunk->at++;
+	max = strlen(cp);
+	if (tmp >= max) {
+	    return;
+	};
+	cc = cp[tmp];
+	chunk->val = wycc_box_char(cc);
 	return;
     } else {
 	fprintf(stderr, "HELP: bad chunk->typ chunk_ptr_inc (%d)\n"
@@ -867,7 +886,7 @@ wycc_obj* wycc_iter_next(wycc_obj *itm) {
     };
     ptr = (struct chunk_ptr *) itm->ptr;
     wycc_chunk_ptr_inc(ptr);
-    if (ptr->flg == 2) {
+    if ((ptr->flg == 2) || (ptr->flg == 4)) {
 	ans = ptr->val;
     } else if (ptr->flg == 0) {
 	ans = ptr->key;
@@ -1066,6 +1085,29 @@ void wycc_set_add(wycc_obj* lst, wycc_obj* itm) {
     chunk[at] = itm;
     /**** rebalance tree */
     return;
+}
+
+/*
+ * given a set and an item, remove the item from the set (decrement ref cnt)
+ */
+void wycc_set_del(wycc_obj* lst, wycc_obj* itm) {
+    WY_OBJ_SANE(lst, "wycc_set_del lst");
+    WY_OBJ_SANE(itm, "wycc_set_del itm");
+    void** p = lst->ptr;
+    void** chunk;
+    void** new;
+    void** chg;
+    long at, typ, cnt, deep, idx, cp;
+    size_t raw;
+    wycc_obj* tst;
+    int end;
+
+    if (lst->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wycc_set_del for type %d\n", lst->typ);
+	exit(-3);
+    };
+    fprintf(stderr, "Help! wycc_set_del not yet complete\n");
+    exit(-3);
 }
 
 /*
@@ -1275,6 +1317,29 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
     chunk[at]   = itm;
     /**** rebalance tree */
     return;
+}
+
+/*
+ * given a map and an item, remove the item from the map (decrement ref cnt)
+ */
+void wycc_map_del(wycc_obj* lst, wycc_obj* itm) {
+    WY_OBJ_SANE(lst, "wycc_map_del lst");
+    WY_OBJ_SANE(itm, "wycc_map_del itm");
+    void** p = lst->ptr;
+    void** chunk;
+    void** new;
+    void** chg;
+    long at, typ, cnt, deep, idx, cp;
+    size_t raw;
+    wycc_obj* tst;
+    int end;
+
+    if (lst->typ != Wy_Map) {
+	fprintf(stderr, "Help needed in wycc_map_del for type %d\n", lst->typ);
+	exit(-3);
+    };
+    fprintf(stderr, "Help! wycc_map_del not yet complete\n");
+    exit(-3);
 }
 
 /*
@@ -1860,24 +1925,92 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
 }
 
 /*
+ * sublist is just like a defective cow_list
+ */
+wycc_obj* wycc_list_slice(wycc_obj* lst, int lo, int hi) {
+    WY_OBJ_SANE(lst, "wycc_list_slice");
+    wycc_obj* ans;
+    wycc_obj* nxt;
+    void** p = lst->ptr;
+    long at, tmp;
+    void** new;
+
+    if (lst->typ != Wy_List) {
+	fprintf(stderr, "Help needed in wycc_list_slice for type %d\n"
+		, lst->typ);
+	exit(-3);
+    };
+    if (lo > hi) {
+	fprintf(stderr, "ERROR in wycc_list_slice %d>=%d\n"
+		, lo, hi);
+	exit(-3);
+    };
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_List;
+    at = (long) p[0];
+    tmp = (hi - lo) + 2;
+    if (at < tmp) {
+	at -= tmp;
+	fprintf(stderr, "ERROR wycc_list_slice too big by %d\n"
+		, at);
+	exit(-3);
+    };
+    new = (void**) calloc(tmp, sizeof(void *));
+    new[0] = (void *) tmp;
+    tmp = (long) p[1];
+    for (at= 0; lo < hi ; lo++,at++) {
+	nxt = (wycc_obj*) p[2+lo];
+	nxt->cnt++;
+	new[2+at] = (void *) nxt;
+    }
+    new[1] = (void *) at;
+    ans->ptr = (void *) new;
+    ans->cnt = 1;
+    return ans;
+}
+
+/*
  * if rhs contains lhs return 1;
  * else return 0
  */
-static wycc_compare_member_of(wycc_obj* lhs, wycc_obj* rhs) {
-    WY_OBJ_SANE(lhs, "wycc_compare_member_of lhs");
+static wycc_compare_member_of(wycc_obj* itm, wycc_obj* rhs) {
+    WY_OBJ_SANE(itm, "wycc_compare_member_of itm");
     WY_OBJ_SANE(rhs, "wycc_compare_member_of rhs");
-    void** rp = rhs->ptr;
-    int rcnt;
+    void** p = rhs->ptr;
+    struct chunk_ptr rhs_chunk_ptr;
+    struct chunk_ptr *rptr = & rhs_chunk_ptr;
+    wycc_obj* nxt;
+    int flg;
+    int end;
 
-    if (rhs->typ != Wy_Set) {
+    flg = -1;
+    if (rhs->typ == Wy_Map) {
+	flg = 1;
+    };
+    if (rhs->typ == Wy_Set) {
+	flg = 0;
+    };
+    if (flg == -1) {
 	fprintf(stderr, "Help needed in wycc_compare_member_of for type %d\n"
 		, rhs->typ);
 	exit(-3);
     };
-    rcnt = (int) rp[1];
+    wycc_chunk_ptr_fill(rptr, rhs, flg);
     
-    fprintf(stderr, "Failure: wycc_compare_member_of\n");
-    exit(-3);
+    wycc_chunk_ptr_inc(rptr);
+    while (1) {
+	nxt = rptr->key;
+	if (nxt == NULL) {
+	    return 0;
+	};
+	end = wycc_comp_gen(nxt, itm);
+	if (end == 0) {
+	    return 1;
+	};
+	wycc_chunk_ptr_inc(rptr);
+    };
+    //fprintf(stderr, "Failure: wycc_compare_member_of\n");
+    //exit(-3);
 }
 
 /*
@@ -2298,79 +2431,71 @@ wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 /*
- * return a set that is the union of lhs and rhs
+ * return a set that is the union of lhs set and rhs member
  */
-wycc_obj* wyil_set_union_left(wycc_obj* lhs, wycc_obj* rhs){
-    WY_OBJ_SANE(lhs, "wyil_set_union_left lhs");
-    WY_OBJ_SANE(rhs, "wyil_set_union_left rhs");
-    struct chunk_ptr rhs_chunk_ptr;
-    struct chunk_ptr *rptr = & rhs_chunk_ptr;
-    wycc_obj *ritm;
-    int end;
+wycc_obj* wyil_set_union_odd(wycc_obj* lhs, wycc_obj* itm){
+    WY_OBJ_SANE(lhs, "wyil_set_union_odd lhs");
+    WY_OBJ_SANE(itm, "wyil_set_union_odd itm");
 
     if (lhs->typ != Wy_Set) {
-	fprintf(stderr, "Help needed in wyil_set_union_left for type %d\n"
+	fprintf(stderr, "Help needed in wyil_set_union_odd for type %d\n"
 		, lhs->typ);
 	exit(-3);
     };
-    if (rhs->typ != Wy_Set) {
-	fprintf(stderr, "Help needed in wyil_set_union_left for type %d\n"
-		, rhs->typ);
-	exit(-3);
+    //if (rhs->typ != Wy_Set) {
+    //fprintf(stderr, "Help needed in wyil_set_union_left for type %d\n"
+    //	, rhs->typ);
+    //exit(-3);
+    //};
+    /* **** should put a type check on rhs and the set */
+    if (wycc_compare(itm, lhs, Wyil_Relation_Mo)) {
+	return lhs;
     };
     lhs = wycc_cow_obj(lhs);
-    wycc_chunk_ptr_fill(rptr, rhs, 0);
-    wycc_chunk_ptr_inc(rptr);
-    while (1) {
-	ritm = rptr->key;
-	if (ritm == NULL) {
-	    return lhs;
-	};
-	wycc_set_add(lhs, ritm);
-	wycc_chunk_ptr_inc(rptr);
+    wycc_set_add(lhs, itm);
+    return lhs;
+}
+
+/*
+ * return a set that is the intersection between lhs and rhs
+ */
+wycc_obj* wyil_set_insect_odd(wycc_obj* lhs, wycc_obj* itm){
+    WY_OBJ_SANE(lhs, "wyil_set_insect_odd lhs");
+    WY_OBJ_SANE(itm, "wyil_set_insect_odd itm");
+    wycc_obj* ans;
+
+    if (lhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_insect_odd for type %d\n"
+		, lhs->typ);
+	exit(-3);
     };
-    //fprintf(stderr, "Failure: wyil_set_union_left\n");
-    //exit(-3);
-}
-
-/*
- * return a set that is the union of lhs and rhs
- */
-wycc_obj* wyil_set_union_right(wycc_obj* lhs, wycc_obj* rhs){
-    WY_OBJ_SANE(lhs, "wyil_set_union_right lhs");
-    WY_OBJ_SANE(rhs, "wyil_set_union_right rhs");
-    fprintf(stderr, "Failure: wyil_set_union_right\n");
-    exit(-3);
-}
-
-/*
- * return a set that is the intersection between lhs and rhs
- */
-wycc_obj* wyil_set_insect_left(wycc_obj* lhs, wycc_obj* rhs){
-    WY_OBJ_SANE(lhs, "wyil_set_insect_left lhs");
-    WY_OBJ_SANE(rhs, "wyil_set_insect_left rhs");
-    fprintf(stderr, "Failure: wyil_set_insect_left\n");
-    exit(-3);
-}
-
-/*
- * return a set that is the intersection between lhs and rhs
- */
-wycc_obj* wyil_set_insect_right(wycc_obj* lhs, wycc_obj* rhs){
-    WY_OBJ_SANE(lhs, "wyil_set_insect_right lhs");
-    WY_OBJ_SANE(rhs, "wyil_set_insect_right rhs");
-    fprintf(stderr, "Failure: wyil_set_insect_right\n");
-    exit(-3);
+    /* **** should put a type check on rhs and the set */
+    ans = wycc_set_new(-1);
+    if (wycc_compare(itm, lhs, Wyil_Relation_Mo)) {
+	wycc_set_add(ans, itm);
+    };
+    return ans;
 }
 
 /*
  * return a set that is the difference between the lhs and rhs
  */
-wycc_obj* wyil_set_diff_left(wycc_obj* lhs, wycc_obj* rhs){
-    WY_OBJ_SANE(lhs, "wyil_set_diff_left lhs");
-    WY_OBJ_SANE(rhs, "wyil_set_diff_left rhs");
-    fprintf(stderr, "Failure: wyil_set_diff_left\n");
-    exit(-3);
+wycc_obj* wyil_set_diff_odd(wycc_obj* lhs, wycc_obj* itm){
+    WY_OBJ_SANE(lhs, "wyil_set_diff_odd lhs");
+    WY_OBJ_SANE(itm, "wyil_set_diff_odd itm");
+
+    if (lhs->typ != Wy_Set) {
+	fprintf(stderr, "Help needed in wyil_set_diff_odd for type %d\n"
+		, lhs->typ);
+	exit(-3);
+    };
+    if (wycc_compare(itm, lhs, Wyil_Relation_Mo)) {
+	lhs = wycc_cow_obj(lhs);
+	wycc_set_del(lhs, itm);
+    };
+    return lhs;
+    //fprintf(stderr, "Failure: wyil_set_diff_odd\n");
+    //exit(-3);
 }
 
 /*
@@ -2500,6 +2625,28 @@ wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs){
 	wycc_list_add(ans, itm);
     }
     return ans;
+}
+/*
+ * create a list that combines two lists
+ */
+wycc_obj* wyil_list_sub(wycc_obj* lst, wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lst, "wyil_list_sub lst");
+    WY_OBJ_SANE(lhs, "wyil_list_sub lhs");
+    WY_OBJ_SANE(rhs, "wyil_list_sub rhs");
+
+    if (lst->typ != Wy_List) {
+	fprintf(stderr, "ERROR: list in wyil_list_sub is type %d\n", lst->typ);
+	exit(-3);
+    };
+    if (lhs->typ != Wy_Int) {
+	fprintf(stderr, "ERROR: low in wyil_list_sub is type %d\n", lhs->typ);
+	exit(-3);
+    };
+    if (rhs->typ != Wy_Int) {
+	fprintf(stderr, "ERROR: hi in wyil_list_sub is type %d\n", rhs->typ);
+	exit(-3);
+    };
+    return wycc_list_slice(lst, (int) lhs->ptr, (int) rhs->ptr);
 }
 
 /*

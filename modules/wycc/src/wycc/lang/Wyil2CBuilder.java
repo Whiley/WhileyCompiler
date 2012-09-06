@@ -414,6 +414,16 @@ public class Wyil2CBuilder implements Builder {
 
 		tmp = "// **** Need help with constant declaaration #" + idx + "\n";
 		bodyAddLine(tmp);
+		if (conDe.isProtected()) {
+			tmp = "//                 is Protected\n";
+			bodyAddLine(tmp);
+		}
+		if (conDe.isPublic()) {
+			tmp = "//                 is Public\n";
+			bodyAddLine(tmp);
+		}
+		tmp = "//                 has name '"+conDe.name()+"'\n";
+		bodyAddLine(tmp);
 		return;
 	}
 
@@ -1000,8 +1010,8 @@ public class Wyil2CBuilder implements Builder {
 			} else if (cod instanceof Code.Convert) {
 				this.writeCodeConvert(cod, tag);
 
-			} else if (cod instanceof Code.Void) {
-				this.writeCodeVoid(cod, tag);
+			} else if (cod instanceof Code.SubList) {
+				this.writeCodeSubList(cod, tag);
 			} else if (cod instanceof Code.Void) {
 				this.writeCodeVoid(cod, tag);
 
@@ -1018,14 +1028,11 @@ public class Wyil2CBuilder implements Builder {
 		}
 	
 		public String writeCodefoo(Code codIn, String tag){
-			//String ans = "";
 			String tmp;
 			
-			// ans += "// HELP needed for \n";
 			tmp = "// HELP needed for \n";
 			bodyAddLine(tmp);
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
-			//return ans;
 			return "";
 		}
 		
@@ -1641,9 +1648,39 @@ public class Wyil2CBuilder implements Builder {
 			return -1;
 		}
 		
+		public void writeCodeSubList(Code codIn, String tag){
+			String tmp;
+			int targ, src, lhs, rhs, cnt;
+		
+			tmp = "// HELP needed for SubList\n";
+			bodyAddLine(tmp);
+			Code.SubList cod = (Code.SubList) codIn;
+			targ = cod.target;
+			cnt = cod.operands.length;
+			if (cnt != 3) {
+				error += "SubList operand count is "+ cnt + "\n";
+				tmp = "// HELP needed for  SubList\n";
+				bodyAddLine(tmp);
+				return;
+				
+			};
+			src = cod.operands[0];
+			lhs = cod.operands[1];
+			rhs = cod.operands[2];
+			cnt = -1;
+			for (int itm : cod.operands) {
+				if (itm == targ) {
+					cnt = targ;
+				}
+			}
+			tmp = " = "+ "wyil_list_sub(X" + src + ", X" + lhs + ", X" + rhs + ");";
+			writeTargetSwap(tmp, targ, cnt, tag);
+			return;
+		}
+		
 		public String writeCodeBinSetOp(Code codIn, String tag){
 			String tmp;
-			int targ, lhs, rhs;
+			int targ, lhs, rhs, swp;
 			String rtn, lin;
 			
 			//tmp = "// HELP needed for BinSetOp\n";
@@ -1662,15 +1699,21 @@ public class Wyil2CBuilder implements Builder {
 			} else if (opr == Code.BinSetKind.INTERSECTION){
 				rtn = "wyil_set_insect";
 			} else if (opr == Code.BinSetKind.LEFT_DIFFERENCE){
-				rtn = "wyil_set_diff_left";
+				rtn = "wyil_set_diff_odd";
 			} else if (opr == Code.BinSetKind.LEFT_INTERSECTION){
-				rtn = "wyil_set_insect_left";
+				rtn = "wyil_set_insect_odd";
 			} else if (opr == Code.BinSetKind.LEFT_UNION){
-				rtn = "wyil_set_union_left";
+				rtn = "wyil_set_union_odd";
 			} else if (opr == Code.BinSetKind.RIGHT_INTERSECTION){
-				rtn = "wyil_set_insect_right";
+				rtn = "wyil_set_insect_odd";
+				swp = lhs;
+				lhs = rhs;
+				rhs = swp;
 			} else if (opr == Code.BinSetKind.RIGHT_UNION){
-				rtn = "wyil_set_union_right";
+				rtn = "wyil_set_union_odd";
+				swp = lhs;
+				lhs = rhs;
+				rhs = swp;
 			} else if (opr == Code.BinSetKind.UNION){
 				rtn = "wyil_set_union";
 			} else {

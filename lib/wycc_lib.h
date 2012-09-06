@@ -62,8 +62,10 @@ wycc_obj* wycc_list_get(wycc_obj* lst, long at);
 void wycc_list_add(wycc_obj* lst, wycc_obj* itm);
 wycc_obj* wycc_set_new(int typ);
 void wycc_set_add(wycc_obj* lst, wycc_obj* itm);
+void wycc_set_del(wycc_obj* lst, wycc_obj* itm);
 wycc_obj* wycc_map_new(int typ);
 void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm);
+void wycc_map_del(wycc_obj* lst, wycc_obj* itm);
 wycc_obj* wycc_cow_obj(wycc_obj* itm);
 wycc_obj* wycc_cow_map(wycc_obj* itm);
 wycc_obj* wycc_cow_record(wycc_obj* itm);
@@ -72,6 +74,7 @@ wycc_obj* wycc_cow_list(wycc_obj* lst);
 int ywcc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel);
 wycc_obj* wycc_iter_new(wycc_obj *itm);
 wycc_obj* wycc_iter_next(wycc_obj *itm);
+wycc_obj* wycc_list_slice(wycc_obj* lst, int lo, int hi);
 
 /*
  * routines to implement wyil operations
@@ -91,11 +94,9 @@ void wyil_debug_obj(wycc_obj* ptr);
 wycc_obj* wyil_set_diff(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs);
-wycc_obj* wyil_set_union_left(wycc_obj* lhs, wycc_obj* rhs);
-wycc_obj* wyil_set_union_right(wycc_obj* lhs, wycc_obj* rhs);
-wycc_obj* wyil_set_insect_left(wycc_obj* lhs, wycc_obj* rhs);
-wycc_obj* wyil_set_insect_right(wycc_obj* lhs, wycc_obj* rhs);
-wycc_obj* wyil_set_diff_left(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_set_union_odd(wycc_obj* lhs, wycc_obj* itm);
+wycc_obj* wyil_set_insect_odd(wycc_obj* lhs, wycc_obj* itm);
+wycc_obj* wyil_set_diff_odd(wycc_obj* lhs, wycc_obj* itm);
 
 wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_negate(wycc_obj* itm);
@@ -111,6 +112,7 @@ wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_length_of(wycc_obj* itm);
 wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_list_comb(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_list_sub(wycc_obj* lst, wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 wycc_obj* wyil_update_string(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs);
