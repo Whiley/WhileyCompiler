@@ -107,6 +107,9 @@ public class PrettyAutomataWriter  {
 			case Automaton.K_LIST:
 				writer.print("[");
 				break;
+			case Automaton.K_BAG:
+				writer.print("{|");
+				break;
 			case Automaton.K_SET:
 				writer.print("{");
 				break;
@@ -120,6 +123,9 @@ public class PrettyAutomataWriter  {
 		switch(state.kind) {
 			case Automaton.K_LIST:
 				writer.print("]");
+				break;
+			case Automaton.K_BAG:
+				writer.print("|}");
 				break;
 			case Automaton.K_SET:
 				writer.print("}");

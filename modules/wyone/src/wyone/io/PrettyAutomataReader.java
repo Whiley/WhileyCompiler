@@ -140,7 +140,12 @@ public class PrettyAutomataReader {
 				kind = Automaton.K_LIST;
 				break;
 			case '{':
-				kind = Automaton.K_SET;
+				if(lookahead() == '|') {
+					next(); // skip bar
+					kind = Automaton.K_BAG;
+				} else {
+					kind = Automaton.K_SET;
+				}
 				break;
 			default:
 				throw new IllegalArgumentException("invalid compound start");
@@ -150,7 +155,7 @@ public class PrettyAutomataReader {
 		ArrayList<Integer> children = new ArrayList<Integer>();
 		
 		while ((lookahead = lookahead()) != -1 && lookahead != ']'
-				&& lookahead != '}') {
+				&& lookahead != '|' && lookahead != '}') {
 			if (!firstTime) {
 				if (lookahead != ',') {
 					throw new SyntaxError("expecting ','", pos, pos);
@@ -166,6 +171,10 @@ public class PrettyAutomataReader {
 			case Automaton.K_LIST:
 				match(']');	
 				break;
+			case Automaton.K_BAG:
+				match('|');
+				match('}');
+				break;
 			case Automaton.K_SET:
 				match('}');				
 				break;
@@ -174,6 +183,8 @@ public class PrettyAutomataReader {
 		
 		if(kind == Automaton.K_LIST) { 
 			return automaton.add(new Automaton.List(children));
+		} else if(kind == Automaton.K_BAG) { 
+			return automaton.add(new Automaton.Bag(children));
 		} else {
 			return automaton.add(new Automaton.Set(children));
 		}

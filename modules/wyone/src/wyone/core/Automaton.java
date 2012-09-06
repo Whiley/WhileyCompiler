@@ -524,7 +524,7 @@ public final class Automaton {
 
 		private Compound(int kind, int...children) {
 			super(kind);
-			if (kind != K_LIST && kind != K_SET) {
+			if (kind != K_LIST && kind != K_BAG && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
 			} 			
 			this.children = children;
@@ -532,7 +532,7 @@ public final class Automaton {
 		
 		private Compound(int kind, java.util.List<Integer> children) {
 			super(kind);
-			if(kind != K_LIST && kind != K_SET) {
+			if(kind != K_LIST && kind != K_BAG && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
 			}
 			int[] nchildren = new int[children.size()];
