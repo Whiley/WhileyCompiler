@@ -21,9 +21,13 @@ rewrite Not(False):
 rewrite Not(Not(* x)):
     => x
 
-// rewrite Not(And{Term... xs})
+rewrite Not(And{Term... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Or(ys)
 
-// rewrite Not(Or{Term... xs})
+rewrite Not(Or{Term... xs}):
+    => let ys = { Not(x) | x in xs }
+       in And(ys)
 
 rewrite Or{Not(Term x), Term y}:
     => True, if x == y
