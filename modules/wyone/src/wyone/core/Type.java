@@ -106,7 +106,9 @@ public abstract class Type {
 		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any
 				|| (t1 instanceof Real && t2 instanceof Int)) {
 			return true;
-		} else if (t1 instanceof Compound && t2 instanceof Compound) {
+		} else if (t1 instanceof Set
+				&& t2 instanceof Set
+				|| (t1 instanceof List && (t2 instanceof Set || t2 instanceof List))) {
 			// RULE: S-LIST
 			Compound l1 = (Compound) t1;
 			Compound l2 = (Compound) t2;
@@ -130,11 +132,12 @@ public abstract class Type {
 				if (!isSubtype(l1_last,l2_elements[i])) {
 					return false;
 				}
-			}
+			}			
 			return true;
 		} else if (t1 instanceof Term && t2 instanceof Term) {			
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
+			System.err.println("CHECKING: " + n1.name + " :> " + n2.name);
 			if(n1.name.equals(n2.name)) {
 				return isSubtype(n1.data,n2.data);
 			} else {				

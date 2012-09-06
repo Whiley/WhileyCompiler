@@ -289,6 +289,7 @@ public class TypeInference {
 				syntaxError("cannot append non-list types",filename,bop);
 				return null;
 			}
+			System.err.println("INFERRED RESULT: " + lhs_t + " ++ " + rhs_t + " = " + result);
 			break;
 		}
 		case TYPEEQ: {
@@ -308,7 +309,7 @@ public class TypeInference {
 		Type[] types = new Type[operands.size()];
 
 		for (int i = 0; i != types.length; ++i) {
-			types[i] = resolve(operands.get(i), environment);
+			types[i] = coerceToRef(resolve(operands.get(i), environment));
 		}
 		if(expr.op == Code.NOp.LISTGEN) {
 			return Type.T_LIST(false, types);
@@ -344,6 +345,20 @@ public class TypeInference {
 		return r;
 	}
 	
+	/**
+	 * Coerce the result of the given expression into a reference. In other words,
+	 * if the result of the expression is a value then make a reference from it!
+	 * 
+	 * @param expr
+	 * @param codes
+	 */
+	private Type.Ref coerceToRef(Type type) {		
+		if(type instanceof Type.Ref) {
+			return (Type.Ref) type;
+		} else {
+			return Type.T_REF(type);
+		}
+	}
 	/**
 	 * Coerce the result of the given expression into a value. In other words,
 	 * if the result of the expression is a reference then derference it!
