@@ -7,28 +7,6 @@ term False
 class Bool as True | False
 
 // ====================================================================
-// Not
-// ====================================================================
-
-term Not(Term)
-
-rewrite Not(True):
-    => False
-
-rewrite Not(False):
-    => True
-
-rewrite Not(Not(* x)):
-    => x
-
-// rewrite Not(And{Term... xs})
-
-// rewrite Not(Or{Term... xs})
-
-rewrite Or{Not(Term x), Term y}:
-    => True, if x == y
-
-// ====================================================================
 // And
 // ====================================================================
 
@@ -43,42 +21,33 @@ rewrite And{False, Term... xs}:
 rewrite And{True, Term... xs}:
     => And (xs)
 
-rewrite And{And{Term... xs}, Term... ys}:
-    => And (xs ++ ys)
-
-rewrite And{Not(Term x), Term y}:
-    => False, if x == y
-
-// rewrite And{Or{Term... xs}, Term... ys}:
-
 // ====================================================================
-// Or
+// LessThan
 // ====================================================================
 
-term Or{Term...}
+term LessThan[Expr,Expr]
 
-rewrite Or{}:
+rewrite LessThan[Num(int x), Num(int y)]:
+    => True, if x < y
     => False
 
-rewrite Or{True, Term... xs}:
-    => True
+rewrite LessThan[Var x, Var y]:
+    => False, if x == y
 
-rewrite Or{False, Term... xs}:
-    => Or (xs)
+rewrite And{LessThan[Expr x, Expr y], LessThan[Expr u, Expr v], Term... rest}:
+    => And ({LessThan[x,y], LessThan[u,v], LessThan[x,v]} ++ rest), if y == u
 
-rewrite Or{Or{Term... xs}, Term... ys}:
-    => Or (xs ++ ys)
+// ====================================================================
+// Expr
+// ====================================================================
+
+term Num(int)
+term Var(string)
+
+class Expr as Num | Var | LessThan
 
 // ====================================================================
 // Term
 // ====================================================================
 
-term Var(string)
-
-class Term as Bool | Not | And | Or | Var 
-
-
-
-
-
-
+class Term as Bool | LessThan
