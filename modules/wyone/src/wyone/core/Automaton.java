@@ -458,7 +458,7 @@ public final class Automaton {
 		}
 	}
 	
-	public static final class Int extends Constant<BigInteger> {
+	public static final class Int extends Constant<BigInteger> implements Comparable<Int> {
 		public Int(BigInteger value) {
 			super(K_INT, value);
 		}
@@ -477,6 +477,10 @@ public final class Automaton {
 
 		public int intValue() {
 			return value.intValue();
+		}
+
+		public int compareTo(Int rhs) {
+			return value.compareTo(rhs.value);
 		}
 		
 		public Int add(Int x) {
