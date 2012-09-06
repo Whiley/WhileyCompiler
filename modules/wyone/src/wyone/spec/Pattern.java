@@ -128,7 +128,17 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	}
 	
-	public final static class Set extends Compound {
+	public abstract static class BagOrSet extends Compound {
+		public BagOrSet(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}
+		
+		public BagOrSet(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
+			super(unbounded,elements,attributes);
+		}	
+	}
+	
+	public final static class Set extends BagOrSet {
 		public Set(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}
@@ -152,7 +162,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	}
 	
-	public final static class Bag extends Compound {
+	public final static class Bag extends BagOrSet {
 		public Bag(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}

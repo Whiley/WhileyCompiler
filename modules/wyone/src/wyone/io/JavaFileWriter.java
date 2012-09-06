@@ -430,6 +430,8 @@ public class JavaFileWriter {
 		String body = "new Automaton.";				
 		if(code.op == Code.NOp.LISTGEN) { 
 			body += "List(";
+		} else if(code.op == Code.NOp.BAGGEN) { 
+			body += "Bag(";
 		} else {
 			body += "Set(";
 		}
@@ -698,7 +700,7 @@ public class JavaFileWriter {
 		
 		myOut(level,"}");
 		myOut(level,"if(result) { return true; } // found match");
-		if(type instanceof Type.Set) {
+		if(type instanceof Type.Bag || type instanceof Type.Set) {
 			for (int i = 0; i != tt_elements.length; ++i) {
 				if(!type.unbounded || i+1 < tt_elements.length) {
 					myOut(level - (i+1),"}");
@@ -813,6 +815,8 @@ public class JavaFileWriter {
 			return "int";
 		} else if (type instanceof Type.List) {
 			return "Automaton.List";			
+		} else if (type instanceof Type.Bag) {
+			return "Automaton.Bag";
 		} else if (type instanceof Type.Set) {
 			return "Automaton.Set";
 		}

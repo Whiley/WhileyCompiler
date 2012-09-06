@@ -32,6 +32,17 @@ public abstract class Type {
 	public static final List T_LISTANY = new List(true,T_ANY);
 	public static final Set T_SETANY = new Set(true,T_ANY);
 	
+	public static Compound T_COMPOUND(Type.Compound template,
+			boolean unbounded, Type... elements) {
+		if (template instanceof List) {
+			return get(new List(unbounded, elements));
+		} else if (template instanceof Bag) {
+			return get(new Bag(unbounded, elements));
+		} else {
+			return get(new Set(unbounded, elements));
+		}
+	}
+	
 	public static List T_LIST(boolean unbounded, Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
@@ -495,6 +506,8 @@ public abstract class Type {
 			}
 			if(st instanceof List) {			
 				return "[" + r + "]";
+			} else if(st instanceof Bag) {
+				return "|" + r + "|";
 			} else {
 				return "{" + r + "}";
 			}	

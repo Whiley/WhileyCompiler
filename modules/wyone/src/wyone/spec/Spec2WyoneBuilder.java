@@ -132,8 +132,8 @@ public class Spec2WyoneBuilder {
 			return translate((Pattern.Leaf) pattern, source, environment, codes);
 		} else if (pattern instanceof Pattern.Term) {
 			return translate((Pattern.Term) pattern, source, environment, codes);
-		} else if (pattern instanceof Pattern.Set) {
-			return translate((Pattern.Set) pattern, source, environment, codes);
+		} else if (pattern instanceof Pattern.BagOrSet) {
+			return translate((Pattern.BagOrSet) pattern, source, environment, codes);
 		} else if (pattern instanceof Pattern.List) {
 			return translate((Pattern.List) pattern, source, environment, codes);
 		} else {
@@ -165,7 +165,7 @@ public class Spec2WyoneBuilder {
 		return codes;
 	}
 
-	private ArrayList<Code> translate(Pattern.Set pattern, int source,
+	private ArrayList<Code> translate(Pattern.BagOrSet pattern, int source,
 			Environment environment, ArrayList<Code> codes) {
 		
 		// if you can figure this method out then you're doing well ;)
@@ -259,10 +259,12 @@ public class Spec2WyoneBuilder {
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
 			if (pattern.unbounded && (i+1) == elements.length) {
-				int i_operand = operands[i];
-				body.add(new Code.NaryOp(Code.NOp.SETGEN, i_operand, Arrays
-						.copyOf(operands, operands.length - 1), pattern
-						.attribute(Attribute.Source.class)));
+				int i_operand = operands[i];				
+				body.add(new Code.NaryOp(
+						pattern instanceof Pattern.Set ? Code.NOp.SETGEN
+								: Code.NOp.BAGGEN, i_operand, Arrays.copyOf(
+								operands, operands.length - 1), pattern
+								.attribute(Attribute.Source.class)));
 				body.add(new Code.BinOp(Code.BOp.DIFFERENCE, i_operand, target,
 						i_operand, pattern.attribute(Attribute.Source.class)));
 			} else {

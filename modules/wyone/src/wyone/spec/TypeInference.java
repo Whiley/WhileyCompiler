@@ -80,6 +80,8 @@ public class TypeInference {
 					if(p.unbounded && (i+1) == p_elements.length) {
 						if(p instanceof Pattern.List) {
 							t = Type.T_LIST(true,t);
+						} else if(pattern instanceof Pattern.Bag) {
+							t = Type.T_BAG(true,t);
 						} else {
 							t = Type.T_SET(true,t);
 						}
@@ -89,6 +91,8 @@ public class TypeInference {
 			}
 			if(p instanceof Pattern.List) { 
 				type = Type.T_REF(Type.T_LIST(p.unbounded, types));
+			} else if(p instanceof Pattern.Bag) { 
+				type = Type.T_REF(Type.T_BAG(p.unbounded, types));
 			} else {
 				type = Type.T_REF(Type.T_SET(p.unbounded, types));
 			}
@@ -257,35 +261,21 @@ public class TypeInference {
 			} else if (rhs_t instanceof Type.Compound) {
 				// right append
 				Type.Compound rhs_tc = (Type.Compound) rhs_t;
-				if(rhs_tc instanceof Type.List) { 
-					result = Type.T_LIST(rhs_tc.unbounded,
-						append(lhs_t, rhs_tc.elements));
-				} else {
-					result = Type.T_SET(rhs_tc.unbounded,
-							append(lhs_t, rhs_tc.elements));
-				}
+				result = Type.T_COMPOUND(rhs_tc,rhs_tc.unbounded,
+						append(lhs_t, rhs_tc.elements));				
 			} else if (lhs_t instanceof Type.Compound){
 				// left append
 				Type.Compound lhs_tc = (Type.Compound) rhs_t;
 				if (!lhs_tc.unbounded) {
-					if(lhs_tc instanceof Type.List) { 
-						result = Type.T_LIST(lhs_tc.unbounded,
-							append(lhs_tc.elements,lhs_t));
-					} else {
-						result = Type.T_SET(lhs_tc.unbounded,
-								append(lhs_tc.elements,lhs_t));
-					}
+					result = Type.T_COMPOUND(lhs_tc, lhs_tc.unbounded,
+							append(lhs_tc.elements, lhs_t));					
 				} else {
 					int length = lhs_tc.elements.length;
 					Type[] nelements = Arrays.copyOf(lhs_tc.elements, length);
 					length--;
 					nelements[length] = Type.leastUpperBound(rhs_t,
 							nelements[length], hierarchy);
-					if(lhs_tc instanceof Type.List) {
-						result = Type.T_LIST(true, nelements);
-					} else {
-						result = Type.T_SET(true, nelements);
-					}
+					result = Type.T_COMPOUND(lhs_tc,true,nelements);					
 				}
 			} else {
 				System.out.println("LHS: " + lhs_t);
@@ -316,6 +306,8 @@ public class TypeInference {
 		}
 		if(expr.op == Code.NOp.LISTGEN) {
 			return Type.T_LIST(false, types);
+		} else if(expr.op == Code.NOp.BAGGEN) {
+			return Type.T_BAG(false, types);
 		} else {
 			return Type.T_SET(false, types);
 		}
