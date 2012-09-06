@@ -1,0 +1,135 @@
+// defines a language of types similar to that used in Whiley (albeit
+// significantly cut-down).
+//
+// In fact, it's the system from this paper:
+// 
+// * "Sound and Complete Flow Typing with Unions, Intersections and 
+//    Negations", David J. Pearce, #ECSTR12-20, 2012.
+
+// ====================================================================
+// Not
+// ====================================================================
+
+term Not(Type)
+
+rewrite Not(Not(* x)):
+    => x
+
+rewrite Not(And{Type... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Or(ys)
+
+rewrite Not(Or{Type... xs}):
+    => let ys = { Not(x) | x in xs }
+       in And(ys)
+
+// ====================================================================
+// And
+// ====================================================================
+
+term And{Type...}
+
+rewrite And{}:
+    => Any
+
+rewrite And{Type x}:
+    => x
+
+rewrite And{Not(Any), Type... xs}:
+    => Not(Any)
+
+rewrite And{Any, Type... xs}:
+    => And (xs)
+
+rewrite And{And{Type... xs}, Type... ys}:
+    => And (xs ++ ys)
+
+rewrite And{Not(Type x), Type y, Type... ys}:
+    => Not(Any), if x == y
+
+rewrite And{Or{Type... xs}, Type... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
+
+// why doesn't this rule work?
+rewrite And{Not(Tuple[Type...]), Int, Type... rest}:
+    => Not(Any)
+
+rewrite And{Tuple[Type...], Not(Int), Type... rest}:
+    => Not(Any)
+
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{Type...}
+
+rewrite Or{}:
+    => Not(Any)
+
+rewrite Or{Type x}:
+    => x
+
+rewrite Or{Any, Type... xs}:
+    => Any
+
+rewrite Or{Not(Any), Type... xs}:
+    => Or (xs)
+
+rewrite Or{Not(Type x), Type y, Type... ys}:
+    => Any, if x == y
+
+rewrite Or{Or{Type... xs}, Type... ys}:
+    => Or (xs ++ ys)
+
+// ====================================================================
+// Tuple
+// ====================================================================
+
+term Tuple[Type...]
+
+// this rule is BROKEN!
+rewrite Tuple{And{Type... xs}, Type... rest}:
+    => let ys = { Tuple(x ++ rest) | x in xs }
+       in And(ys)
+
+// this rule is BROKEN!
+rewrite Tuple{Or{Type... xs}, Type... rest}:
+    => let ys = { Tuple(x ++ rest) | x in xs }
+       in Or(ys)
+
+// this rule is BROKEN!
+rewrite Tuple{Not(Type t), Type... rest}:
+    => let pos = Tuple(Any ++ rest),
+           neg = Not(Tuple(t ++ rest))
+       in And {pos,neg}
+
+// ====================================================================
+// Type
+// ====================================================================
+
+term Any
+term Int
+
+class Type as Any | Int | Not | And | Tuple | Or
+
+// ====================================================================
+// Subtype
+// ====================================================================
+
+term True
+term Eval(Type)
+term Subtype[Type,Type] // read as lhs :> rhs
+
+rewrite Subtype[Type lhs, Type rhs]:
+    => Eval(And{Not(lhs),rhs})
+
+rewrite Eval(Not(Any)):
+    => True
+
+// kind of annoying I can't rewrite to False.
+
+
+
+
+
