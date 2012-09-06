@@ -26,8 +26,6 @@
 package wyone.io;
 
 import java.io.*;
-
-import wyautl.io.GenericWriter;
 import wyone.core.*;
 
 /**
@@ -50,7 +48,7 @@ import wyone.core.*;
  * @author David J. Pearce
  * 
  */
-public class PrettyAutomataWriter implements GenericWriter<Automaton> {
+public class PrettyAutomataWriter  {
 	private final PrintStream writer;
 	private final Type.Term[] schema;
 	
@@ -78,8 +76,7 @@ public class PrettyAutomataWriter implements GenericWriter<Automaton> {
 			write((Automaton.Term)state,automaton);
 		} else {
 			write((Automaton.Compound)state,automaton);
-		}
-		
+		}	
 	}
 	
 	protected void write(Automaton.Constant item, Automaton automaton) throws IOException {
