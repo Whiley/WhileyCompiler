@@ -191,7 +191,9 @@ public class Spec2WyoneBuilder {
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;				
 			int i_operand;
 			if(pattern.unbounded && (i+1) == elements.length) {			
-				i_operand = environment.allocate(Type.T_SET(true,pt));				
+				i_operand = environment
+						.allocate(pattern instanceof Pattern.Bag ? Type.T_BAG(
+								true, pt) : Type.T_SET(true, pt));				
 			} else {
 				i_operand = environment.allocate(pt);
 			}
@@ -297,8 +299,7 @@ public class Spec2WyoneBuilder {
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
 			int element;
 			if(pattern.unbounded && (i+1) == elements.length) {
-				Type.Compound tc = type.element instanceof Type.List ? Type
-						.T_LIST(true, pt) : Type.T_SET(true, pt);
+				Type.Compound tc = Type.T_LIST(true, pt);
 				element = environment.allocate(tc);
 				int start = environment.allocate(Type.T_INT);
 				codes.add(new Code.Constant(start, BigInteger.valueOf(i), pattern
