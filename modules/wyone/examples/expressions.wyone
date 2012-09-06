@@ -18,7 +18,7 @@ rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
     => Sum (Num(x+y) ++ rest)
 
 rewrite Sum{|Expr x, Expr y, Expr... rest|}:
-    => Sum (Mul{Num(2),y} ++ rest), if x == y
+    => Sum (Mul{|Num(2),y|} ++ rest), if x == y
 
 rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
