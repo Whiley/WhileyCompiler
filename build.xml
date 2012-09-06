@@ -5,6 +5,7 @@
 
   <target name="build-all">
     <subant failonerror="true" target="build">
+      <fileset dir="modules" includes="wyone/build.xml"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
@@ -16,6 +17,7 @@
 
   <target name="doc">
     <subant failonerror="true" target="doc">
+      <fileset dir="modules" includes="wyone/build.xml"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
@@ -68,6 +70,7 @@
       <include name="bin/wyc"/>
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
+      <include name="lib/wyone-v${version}.jar"/>
       <include name="lib/wyil-v${version}.jar"/>
       <include name="lib/wyc-v${version}.jar"/>
       <include name="lib/wyrt-v${version}.jar"/>

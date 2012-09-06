@@ -7,7 +7,6 @@
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/> 
       <exclude name="wyil/testing/**"/> 
-      <exclude name="wyone/testing/**"/> 
     </javac>
   </target>
 
@@ -40,7 +39,6 @@
       <fileset dir="src">
 	<include name="wyautl/**/*.class"/>
 	<include name="wybs/**/*.class"/>
-	<include name="wyone/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>
     </jar>
@@ -52,8 +50,8 @@
 
   <target name="doc">
     <javadoc
-       packagenames="wybs.*,wyil.*,wyone.*,wyautl.*"
-       excludepackagenames="wyil.testing.*,wyone..*"
+       packagenames="wybs.*,wyil.*,wyautl.*"
+       excludepackagenames="wyil.testing.*"
        sourcepath="src/"
        destdir="../../docs/wyil/api"
        author="true"
