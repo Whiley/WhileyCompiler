@@ -13,6 +13,9 @@ public class TypeInference {
 	// maps constructor names to their declared types.
 	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
 
+	// type hiearchy
+	private final Type.Hierarchy hierarchy = new Type.Hierarchy();
+	
 	// globals contains the list of global variables
 	// private final HashMap<String,Type> globals = new HashMap();
 
@@ -23,6 +26,7 @@ public class TypeInference {
 			if (d instanceof SpecFile.ClassDecl) {
 				SpecFile.ClassDecl cd = (SpecFile.ClassDecl) d;
 				terms.put(cd.name, Type.T_TERM(cd.name, null));
+				hierarchy.set(cd.name,cd.children);
 			} else if (d instanceof SpecFile.TermDecl) {
 				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
 				terms.put(td.type.name, td.type);
@@ -215,14 +219,14 @@ public class TypeInference {
 		case ADD: {
 			checkSubtype(Type.T_REAL, lhs_t, bop);
 			checkSubtype(Type.T_REAL, rhs_t, bop);
-			result = Type.leastUpperBound(lhs_t, rhs_t);
+			result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 			break;
 		}
 		case DIV:
 		case MUL: {
 			checkSubtype(Type.T_REAL, lhs_t, bop);
 			checkSubtype(Type.T_REAL, rhs_t, bop);
-			result = Type.leastUpperBound(lhs_t, rhs_t);
+			result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 			break;
 		}
 		case EQ:
@@ -249,7 +253,7 @@ public class TypeInference {
 		case APPEND: {
 			if (lhs_t instanceof Type.Compound
 					&& rhs_t instanceof Type.Compound) {
-				result = Type.leastUpperBound(lhs_t, rhs_t);
+				result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 			} else if (rhs_t instanceof Type.Compound) {
 				// right append
 				Type.Compound rhs_tc = (Type.Compound) rhs_t;
@@ -276,7 +280,7 @@ public class TypeInference {
 					Type[] nelements = Arrays.copyOf(lhs_tc.elements, length);
 					length--;
 					nelements[length] = Type.leastUpperBound(rhs_t,
-							nelements[length]);
+							nelements[length], hierarchy);
 					if(lhs_tc instanceof Type.List) {
 						result = Type.T_LIST(true, nelements);
 					} else {
@@ -289,7 +293,6 @@ public class TypeInference {
 				syntaxError("cannot append non-list types",filename,bop);
 				return null;
 			}
-			System.err.println("INFERRED RESULT: " + lhs_t + " ++ " + rhs_t + " = " + result);
 			break;
 		}
 		case TYPEEQ: {
@@ -383,7 +386,7 @@ public class TypeInference {
 	 * @param elem
 	 */
 	public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (Type.isSubtype(t1, t2)) {
+		if (Type.isSubtype(t1, t2, hierarchy)) {
 			return;
 		}
 
@@ -394,7 +397,7 @@ public class TypeInference {
 			t2 = ((Type.Ref) t2).element;
 		}
 
-		if (Type.isSubtype(t1, t2)) {
+		if (Type.isSubtype(t1, t2, hierarchy)) {
 			return;
 		}
 

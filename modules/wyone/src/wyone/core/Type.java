@@ -102,7 +102,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {
+	public static boolean isSubtype(Type t1, Type t2, Hierarchy hierarchy) {
 		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any
 				|| (t1 instanceof Real && t2 instanceof Int)) {
 			return true;
@@ -123,13 +123,13 @@ public abstract class Type {
 			}
 			int min_len = Math.min(l1_elements.length, l2_elements.length);
 			for (int i = 0; i != min_len; ++i) {
-				if (!isSubtype(l1_elements[i], l2_elements[i])) {
+				if (!isSubtype(l1_elements[i], l2_elements[i], hierarchy)) {
 					return false;
 				}
 			}
 			Type l1_last = l1_elements[l1_elements.length-1];
 			for (int i = min_len; i != l2_elements.length; ++i) {
-				if (!isSubtype(l1_last,l2_elements[i])) {
+				if (!isSubtype(l1_last,l2_elements[i], hierarchy)) {
 					return false;
 				}
 			}			
@@ -137,16 +137,17 @@ public abstract class Type {
 		} else if (t1 instanceof Term && t2 instanceof Term) {			
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
-			System.err.println("CHECKING: " + n1.name + " :> " + n2.name);
 			if(n1.name.equals(n2.name)) {
-				return isSubtype(n1.data,n2.data);
+				return isSubtype(n1.data,n2.data, hierarchy);
+			} else if(hierarchy.isSubclass(n1.name,n2.name)) {
+				return true;
 			} else {				
 				return false;
 			}
 		} else if(t1 instanceof Ref && t2 instanceof Ref) {
 			Ref r1 = (Ref) t1;
 			Ref r2 = (Ref) t2;
-			return isSubtype(r1.element,r2.element);
+			return isSubtype(r1.element,r2.element, hierarchy);
 		}
 
 		return false;
@@ -162,10 +163,10 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type leastUpperBound(Type t1, Type t2) {
-		if (isSubtype(t1, t2)) {
+	public static Type leastUpperBound(Type t1, Type t2, Hierarchy hierarchy) {
+		if (isSubtype(t1, t2, hierarchy)) {
 			return t1;
-		} else if (isSubtype(t2, t1)) {
+		} else if (isSubtype(t2, t1, hierarchy)) {
 			return t2;
 		} else if (t1 instanceof Compound && t2 instanceof Compound) {
 			Compound l1 = (Compound) t1;
@@ -176,6 +177,36 @@ public abstract class Type {
 		// FIXME: we can do better for named types by searching the hierarchy!
 		
 		return T_ANY;
+	}
+	
+	public static final class Hierarchy {
+		private HashMap<String,HashSet<String>> subclasses = new HashMap();
+		
+		public void set(String sup, Collection<String> subs) {
+			HashSet<String> s = new HashSet<String>(subs);
+			subclasses.put(sup,s);
+		}
+		
+		public boolean isSubclass(String t1, String t2) {
+			
+			// FIXME: this algorithm is not very efficient. In particular, it
+			// may explore a given class more than once. 
+			
+			ArrayList<String> worklist = new ArrayList<String>();
+			worklist.add(t1);
+			while(!worklist.isEmpty()) {
+				String next = worklist.get(worklist.size()-1);
+				worklist.remove(worklist.size()-1);
+				if(next.equals(t2)) {
+					return true;
+				}
+				HashSet<String> subs = subclasses.get(next);
+				if(subs != null) {
+					worklist.addAll(subs);
+				}
+			}
+			return false;
+		}
 	}
 	
 	public static final class Any  extends Type {
@@ -313,10 +344,10 @@ public abstract class Type {
 			this.unbounded = unbounded;
 		}
 		
-		public Type element() {
+		public Type element(Hierarchy hierarchy) {
 			Type r = Type.T_VOID;
 			for(Type t : elements) {
-				r = Type.leastUpperBound(r, t);
+				r = Type.leastUpperBound(r, t, hierarchy);
 			}
 			return r;
 		}
