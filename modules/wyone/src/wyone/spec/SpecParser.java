@@ -307,6 +307,11 @@ public class SpecParser {
 			
 			Expr rhs = parseAddSubExpression();			
 			return new Expr.BinOp(Code.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (index < tokens.size() && tokens.get(index) instanceof ElemOf) {
+			match(ElemOf.class);			
+			skipWhiteSpace(true);			
+			Expr rhs = parseAddSubExpression();			
+			return new Expr.BinOp(Code.BOp.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index).text.equals("is")) {
 			return parseTypeEquals(lhs,start);			
 		} else {
@@ -545,23 +550,74 @@ public class SpecParser {
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match(LeftCurly.class);
 		skipWhiteSpace(true);
-		boolean firstTime = true;
-		checkNotEof();
 		Token token = tokens.get(index);
-		while(!(token instanceof RightCurly)) {
-			if(!firstTime) {
-				match(Comma.class);
-				skipWhiteSpace(true);
+		
+		if(!(token instanceof RightCurly)) {
+			Expr expr = parseCondition();
+			skipWhiteSpace(true);
+			token = tokens.get(index);
+			if(token instanceof Bar) {
+				// comprehension
+				return parseSetComprehensionRest(start,expr);
 			}
-			firstTime=false;
+			exprs.add(expr);
+		}
+		
+		while(!(token instanceof RightCurly)) {
+			match(Comma.class);
+			skipWhiteSpace(true);
 			exprs.add(parseCondition());
 			skipWhiteSpace(true);
 			checkNotEof();
 			token = tokens.get(index);
 		}
+		
 		match(RightCurly.class);
 		return new Expr.NaryOp(Code.NOp.SETGEN, exprs, sourceAttr(start,
 				index - 1));
+	}
+	
+	private Expr parseSetComprehensionRest(int start, Expr result) {
+		match(Bar.class);
+		skipWhiteSpace(true);
+		ArrayList<Pair<String,Expr>> sources = new ArrayList<Pair<String,Expr>>();
+		Expr condition = null;
+		boolean firstTime = true;
+		Token token = tokens.get(index);
+		while(!(token instanceof RightCurly)) {
+			if(condition != null) {
+				syntaxError("condition must come last in set comprehension",
+						token);
+			}
+			if(!firstTime) {
+				match(Comma.class);
+				skipWhiteSpace(true);
+			} else {
+				firstTime=false;
+			}
+			condition = parseCondition();
+			Pair<String,Expr> source = extractComprehensionSource(condition);
+			if(source != null) {
+				condition = null;
+				sources.add(source);
+			}
+			skipWhiteSpace(true);
+			token = tokens.get(index);
+		}
+		match(RightCurly.class);
+		
+		return new Expr.Comprehension(Expr.COp.SETCOMP, result, sources, condition, sourceAttr(start,index-1));
+	}
+	
+	private Pair<String, Expr> extractComprehensionSource(Expr expr) {
+		if (expr instanceof Expr.BinOp) {
+			Expr.BinOp bop = (Expr.BinOp) expr;
+			if (bop.op == Code.BOp.IN && bop.lhs instanceof Expr.Variable) {
+				Expr.Variable var = (Expr.Variable) bop.lhs;
+				return new Pair<String, Expr>(var.var, bop.rhs);
+			}
+		}
+		return null;
 	}
 	
 	private Expr parseLengthOf() {

@@ -155,6 +155,9 @@ public class Code extends SyntacticElement.Impl {
 		GTEQ{
 			public String toString() { return "ge"; }
 		},
+		IN{
+			public String toString() { return "in"; }
+		},
 		APPEND{
 			public String toString() { return "append"; }
 		},

@@ -235,6 +235,8 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public enum COp {
+		SETCOMP,
+		BAGCOMP,
 		LISTCOMP,
 		NONE, // implies value == null					
 		SOME, // implies value == null
