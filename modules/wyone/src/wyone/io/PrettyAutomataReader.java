@@ -40,6 +40,8 @@ public class PrettyAutomataReader {
 			case '[':
 			case '{':
 				return parseCompound(automaton);
+			case '-':
+				return parseInteger(automaton,true);
 			case '0':
 			case '1':
 			case '2':
@@ -50,7 +52,7 @@ public class PrettyAutomataReader {
 			case '7':
 			case '8':
 			case '9':
-				return parseInteger(automaton);
+				return parseInteger(automaton,false);
 			case '\"':
 				return parseString(automaton);
 			default:
@@ -92,9 +94,11 @@ public class PrettyAutomataReader {
 		return r;
 	}
 	
-	protected int parseInteger(Automaton automaton)
+	protected int parseInteger(Automaton automaton, boolean negative)
 			throws IOException, SyntaxError {		
-
+		if(negative) {
+			match('-');
+		}
 		StringBuffer sb = new StringBuffer();		
 		int lookahead;
 		while ((lookahead = lookahead()) != -1
@@ -105,6 +109,10 @@ public class PrettyAutomataReader {
 		// FIXME: should support arbitrary sized ints
 		int val = Integer.parseInt(sb.toString());
 	
+		if(negative) {
+			val = -val;
+		}
+		
 		return automaton.add(new Automaton.Int(BigInteger.valueOf(val)));
 	}
 	

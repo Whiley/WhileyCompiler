@@ -1,9 +1,5 @@
 term True
-term Poly{Term...}
-term Term[int,{string...}]
-
-rewrite Poly{Term[int x,{string...} xs],Term[int y,{string...} ys], Term... rest}:
-    => (Term[x+y,xs] ++ rest), if xs == ys
+term Num(int)
 
 
 
