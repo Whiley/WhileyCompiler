@@ -134,6 +134,8 @@ public class TypeInference {
 				result = resolve((Expr.Constructor) expr, environment);
 			} else if (expr instanceof Expr.Variable) {
 				result = resolve((Expr.Variable) expr, environment);
+			} else if (expr instanceof Expr.Comprehension) {
+				result = resolve((Expr.Comprehension) expr, environment);
 			} else {
 				syntaxError("unknown code encountered", filename, expr);
 				return null;
@@ -295,6 +297,32 @@ public class TypeInference {
 			return null; // dead-code
 		}
 		return result;
+	}
+	
+	protected Type resolve(Expr.Comprehension expr, HashMap<String, Type> environment) {
+		environment = (HashMap) environment.clone();
+		
+		for(Pair<String,Expr> p : expr.sources) {
+			String variable = p.first();
+			Expr source = p.second();
+			if(environment.containsKey(variable)) {
+				syntaxError("duplicate variable '" + variable + "'",filename,expr);
+			}
+			Type type = resolve(source,environment);
+			if(!(type instanceof Type.Compound)) {
+				syntaxError("collection type required",filename,source);
+			}
+			Type.Compound sourceType = (Type.Compound) type;
+			environment.put(variable, sourceType);
+		}
+		
+		if(expr.condition != null) {
+			Type condition = resolve(expr.condition,environment);
+			checkSubtype(Type.T_BOOL,condition,expr.condition);
+		}
+		
+		Type result = resolve(expr.value,environment);
+		return Type.T_SET(true,result);
 	}
 	
 	protected Type resolve(Expr.NaryOp expr, HashMap<String, Type> environment) {
