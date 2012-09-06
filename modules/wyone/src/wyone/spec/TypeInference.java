@@ -302,18 +302,20 @@ public class TypeInference {
 	protected Type resolve(Expr.Comprehension expr, HashMap<String, Type> environment) {
 		environment = (HashMap) environment.clone();
 		
-		for(Pair<String,Expr> p : expr.sources) {
-			String variable = p.first();
+		for(Pair<Expr.Variable,Expr> p : expr.sources) {
+			Expr.Variable variable = p.first();
 			Expr source = p.second();
-			if(environment.containsKey(variable)) {
-				syntaxError("duplicate variable '" + variable + "'",filename,expr);
+			if(environment.containsKey(variable.var)) {
+				syntaxError("duplicate variable '" + variable + "'",filename,variable);
 			}
 			Type type = resolve(source,environment);
 			if(!(type instanceof Type.Compound)) {
 				syntaxError("collection type required",filename,source);
 			}
 			Type.Compound sourceType = (Type.Compound) type;
-			environment.put(variable, sourceType);
+			Type elementType = sourceType.element(hierarchy);
+			variable.attributes().add(new Attribute.Type(elementType));
+			environment.put(variable.var, elementType);
 		}
 		
 		if(expr.condition != null) {
@@ -322,7 +324,7 @@ public class TypeInference {
 		}
 		
 		Type result = resolve(expr.value,environment);
-		return Type.T_SET(true,result);
+		return Type.T_SET(true,Type.T_REF(result));
 	}
 	
 	protected Type resolve(Expr.NaryOp expr, HashMap<String, Type> environment) {

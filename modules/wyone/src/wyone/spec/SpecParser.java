@@ -580,7 +580,7 @@ public class SpecParser {
 	private Expr parseSetComprehensionRest(int start, Expr result) {
 		match(Bar.class);
 		skipWhiteSpace(true);
-		ArrayList<Pair<String,Expr>> sources = new ArrayList<Pair<String,Expr>>();
+		ArrayList<Pair<Expr.Variable,Expr>> sources = new ArrayList<Pair<Expr.Variable,Expr>>();
 		Expr condition = null;
 		boolean firstTime = true;
 		Token token = tokens.get(index);
@@ -596,7 +596,7 @@ public class SpecParser {
 				firstTime=false;
 			}
 			condition = parseCondition();
-			Pair<String,Expr> source = extractComprehensionSource(condition);
+			Pair<Expr.Variable,Expr> source = extractComprehensionSource(condition);
 			if(source != null) {
 				condition = null;
 				sources.add(source);
@@ -609,12 +609,12 @@ public class SpecParser {
 		return new Expr.Comprehension(Expr.COp.SETCOMP, result, sources, condition, sourceAttr(start,index-1));
 	}
 	
-	private Pair<String, Expr> extractComprehensionSource(Expr expr) {
+	private Pair<Expr.Variable, Expr> extractComprehensionSource(Expr expr) {
 		if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
 			if (bop.op == Code.BOp.IN && bop.lhs instanceof Expr.Variable) {
 				Expr.Variable var = (Expr.Variable) bop.lhs;
-				return new Pair<String, Expr>(var.var, bop.rhs);
+				return new Pair<Expr.Variable, Expr>(var, bop.rhs);
 			}
 		}
 		return null;

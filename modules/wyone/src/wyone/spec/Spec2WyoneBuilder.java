@@ -336,6 +336,8 @@ public class Spec2WyoneBuilder {
 			return translate((Expr.UnOp) expr, environment, codes);
 		} else if (expr instanceof Expr.Variable) {
 			return translate((Expr.Variable) expr, environment, codes);
+		} else if (expr instanceof Expr.Comprehension) {
+			return translate((Expr.Comprehension) expr, environment, codes);
 		} else {
 			syntaxError("unknown expression encountered", filename, expr);
 			return 0; // dead code
@@ -401,7 +403,7 @@ public class Spec2WyoneBuilder {
 				.allocate(expr.attribute(Attribute.Type.class).type);
 		Code.Constructor code;
 		if (expr.argument != null) {
-			int operand = translate(expr.argument, environment, codes);
+			int operand = translate(expr.argument, environment, codes);			
 			operand = coerceFromValue(expr.argument,operand,environment,codes);
 			code = new Code.Constructor(target, operand, expr.name,
 					expr.attribute(Attribute.Source.class));
@@ -449,6 +451,58 @@ public class Spec2WyoneBuilder {
 		}
 	}
 
+	private int translate(Expr.Comprehension expr, Environment environment,
+			ArrayList<Code> codes) {
+		int target = environment
+				.allocate(expr.attribute(Attribute.Type.class).type);
+		
+		codes.add(new Code.NaryOp(Code.NOp.SETGEN, target, new int[0], expr
+				.attribute(Attribute.Source.class)));
+		
+		// first, translate all source expressions
+		int[] sources = new int[expr.sources.size()];
+		for(int i=0;i!=sources.length;++i) {
+			Pair<Expr.Variable,Expr> p = expr.sources.get(i);
+			int operand = translate(p.second(),environment,codes);
+			operand = coerceToValue(p.second(),operand,environment,codes);
+			sources[i] = operand;									
+		}
+		
+		// second, generate all the for loops
+		ArrayList<Code> innermost = codes;
+		for(int i=0;i!=sources.length;++i) {
+			Pair<Expr.Variable,Expr> p = expr.sources.get(i);
+			Expr.Variable variable = p.first();
+			Expr source = p.second();
+			Type.Compound sourceType = (Type.Compound) source.attribute(Attribute.Type.class).type;
+			Type elementType = variable.attribute(Attribute.Type.class).type;
+			int operand = environment.allocate(elementType, variable.var);			
+			Code.ForAll loop = new Code.ForAll(operand, sources[i],
+					Collections.EMPTY_LIST,
+					expr.attribute(Attribute.Source.class));
+			innermost.add(loop);
+			innermost = loop.body; // v.naughty
+		}
+		
+		// third, generate condition (if applicable) 
+		if(expr.condition != null) {
+			int condition = translate(expr.condition,environment,innermost);
+			Code.If ifc = new Code.If(condition, Collections.EMPTY_LIST,
+					Collections.EMPTY_LIST,
+					expr.attribute(Attribute.Source.class));
+			innermost.add(ifc);
+			innermost = ifc.trueBranch; // v.naughty
+		}
+		
+		int value = translate(expr.value,environment,innermost);
+		value = coerceFromValue(expr.value,value,environment,innermost);
+		innermost.add(new Code.BinOp(Code.BOp.APPEND, target, target, value,
+				expr.value.attribute(Attribute.Source.class)));
+		
+		// fourth, calculate value and add to resut set		
+		return target;
+	}
+	
 	/**
 	 * Coerce the result of the given expression into a value. In other words,
 	 * if the result of the expression is a reference then derference it!

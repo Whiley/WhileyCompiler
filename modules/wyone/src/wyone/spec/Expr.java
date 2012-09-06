@@ -220,17 +220,17 @@ public interface Expr extends SyntacticElement {
 	public static class Comprehension extends SyntacticElement.Impl implements Expr {
 		public final COp cop;
 		public final Expr value;
-		public final ArrayList<Pair<String,Expr>> sources;
+		public final ArrayList<Pair<Expr.Variable,Expr>> sources;
 		public final Expr condition;
 		
 		public Comprehension(COp cop, Expr value,
-				Collection<Pair<String, Expr>> sources, Expr condition,
+				Collection<Pair<Expr.Variable, Expr>> sources, Expr condition,
 				Attribute... attributes) {
 			super(attributes);
 			this.cop = cop;
 			this.value = value;
 			this.condition = condition;
-			this.sources = new ArrayList<Pair<String, Expr>>(sources);
+			this.sources = new ArrayList<Pair<Expr.Variable, Expr>>(sources);
 		}
 	}
 	
