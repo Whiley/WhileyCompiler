@@ -649,6 +649,9 @@ public final class Automaton {
 		}
 		
 		public Set removeAll(Set rhs) {
+			
+			// TODO: avoid the unnecessary sortAndRemoveDuplicates
+			
 			return new Set(sortedRemoveAll(this.children, rhs.children));
 		}
 		
@@ -795,7 +798,7 @@ public final class Automaton {
 	
 	private static int[] append(int[] lhs, int[] rhs) {
 		int[] nchildren = new int[lhs.length + rhs.length];
-		System.arraycopy(lhs, 0, nchildren, 0, rhs.length);
+		System.arraycopy(lhs, 0, nchildren, 0, lhs.length);
 		System.arraycopy(rhs, 0, nchildren, lhs.length, rhs.length);
 		return nchildren;
 	}
