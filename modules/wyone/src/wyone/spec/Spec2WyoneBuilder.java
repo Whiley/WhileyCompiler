@@ -219,30 +219,30 @@ public class Spec2WyoneBuilder {
 					Collections.EMPTY_LIST,
 					pattern.attribute(Attribute.Source.class));
 			ArrayList<Code> forCodes = internal.body; // v.naughty
-
-			if (i > 1) {
-				// Check current index is unique against those
-				// already matched.
-				int tmp1 = environment.allocate(Type.T_BOOL);
-				int tmp2 = environment.allocate(Type.T_BOOL);
-				for (int j = 0; j < (i - 1); ++j) {
-					int j_operand = operands[j];
-					if (j != 0) {
-						forCodes.add(new Code.BinOp(Code.BOp.NEQ, tmp2,
-								i_operand, j_operand));
-						forCodes.add(new Code.BinOp(Code.BOp.AND, tmp1, tmp1,
-								tmp2));
-					} else {
-						forCodes.add(new Code.BinOp(Code.BOp.NEQ, tmp1,
-								i_operand, j_operand));
-					}
-				}
-				Code.If iif = new Code.If(tmp1, Collections.EMPTY_LIST,
-						Collections.EMPTY_LIST,
-						pattern.attribute(Attribute.Source.class));
-				forCodes.add(iif);
-				forCodes = iif.trueBranch; // v.naughty
-			}
+//
+//			if (i > 1) {
+//				// Check current index is unique against those
+//				// already matched.
+//				int tmp1 = environment.allocate(Type.T_BOOL);
+//				int tmp2 = environment.allocate(Type.T_BOOL);
+//				for (int j = 0; j < (i - 1); ++j) {
+//					int j_operand = operands[j];
+//					if (j != 0) {
+//						forCodes.add(new Code.BinOp(Code.BOp.NEQ, tmp2,
+//								i_operand, j_operand));
+//						forCodes.add(new Code.BinOp(Code.BOp.AND, tmp1, tmp1,
+//								tmp2));
+//					} else {
+//						forCodes.add(new Code.BinOp(Code.BOp.NEQ, tmp1,
+//								i_operand, j_operand));
+//					}
+//				}
+//				Code.If iif = new Code.If(tmp1, Collections.EMPTY_LIST,
+//						Collections.EMPTY_LIST,
+//						pattern.attribute(Attribute.Source.class));
+//				forCodes.add(iif);
+//				forCodes = iif.trueBranch; // v.naughty
+//			}
 
 			Code.IfIs is = new Code.IfIs(i_operand, pt, Collections.EMPTY_LIST,
 					Collections.EMPTY_LIST,
