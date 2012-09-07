@@ -40,7 +40,17 @@ public class SpecParser {
 			}
 		}
 				
-		return new SpecFile(pkg, new File(filename).getName(), filename, decls);
+		return new SpecFile(pkg, moduleName(filename), filename, decls);
+	}
+	
+	private String moduleName(String filename) {
+		String name = new File(filename).getName();
+		int idx = name.lastIndexOf('.');
+		if(idx < 0) {
+			return name;
+		} else {
+			return name.substring(0,idx);
+		}
 	}
 	
 	private String parsePackage() {
