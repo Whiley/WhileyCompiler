@@ -88,6 +88,11 @@ public class JavaFileWriter {
 		if (decl.type.data == null) {
 			myOut(1, "public final static Automaton.Term " + decl.type.name
 					+ " = new Automaton.Term(K_" + decl.type.name + ");");
+		} else {
+			myOut(1, "public final static Automaton.Term " + decl.type.name
+					+ "(" + type2JavaType(decl.type.data) + " r0) {" );
+			myOut(2,"return new Automaton.Term(K_" + decl.type.name + ", r0);");
+			myOut(1,"}");
 		}
 		myOut();
 	}

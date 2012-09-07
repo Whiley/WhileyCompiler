@@ -40,25 +40,7 @@ import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wyone.core.*;
-import wyone.theory.list.WLengthOf;
-import wyone.theory.list.WListAccess;
-import wyone.theory.list.WListConstructor;
-import wyone.theory.list.WListType;
-import wyone.theory.list.WListVal;
-import wyone.theory.logic.*;
-import wyone.theory.numeric.*;
-import wyone.theory.quantifier.WBoundedForall;
-import wyone.theory.set.WSetConstructor;
-import wyone.theory.set.WSetType;
-import wyone.theory.set.WSetVal;
-import wyone.theory.set.WSets;
-import wyone.theory.tuple.WTupleAccess;
-import wyone.theory.tuple.WTupleConstructor;
-import wyone.theory.tuple.WTupleType;
-import wyone.theory.tuple.WTupleVal;
-import wyone.theory.type.WAnyType;
-import wyone.theory.type.WTypes;
-import wyone.theory.type.WVoidType;
+import wyil.util.ConstraintSolver;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -130,7 +112,7 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
-		WFormula constraint = WBool.TRUE;					
+		Automaton constraint = WBool.TRUE;					
 				
 		// add type information available from parameters
 		Type.FunctionOrMethod fmm = method.type();
@@ -145,7 +127,7 @@ public class VerificationCheck implements Transform {
 		Block precondition = methodCase.precondition();				
 		
 		if(precondition != null) {
-			WFormula precon = transform(WBool.TRUE, true, precondition);
+			Automaton precon = transform(WBool.TRUE, true, precondition);
 			constraint = WFormulas.and(constraint,precon);
 		}
 		
@@ -190,11 +172,11 @@ public class VerificationCheck implements Transform {
 	 */
 	private static class Branch {
 		public final int pc;
-		public final WFormula constraint;
+		public final Automaton constraint;
 		public final int[] environment;
 		public final ArrayList<Scope> scopes;
 
-		public Branch(int pc, WFormula constraint, int[] environment,
+		public Branch(int pc, Automaton constraint, int[] environment,
 				ArrayList<Scope> scopes) {
 			this.pc = pc;
 			this.constraint = constraint;
@@ -203,7 +185,7 @@ public class VerificationCheck implements Transform {
 		}
 	}
 	
-	protected WFormula transform(WFormula constraint, boolean assumes, Block blk) {
+	protected Automaton transform(Automaton constraint, boolean assumes, Block blk) {
 		ArrayList<Branch> branches = new ArrayList<Branch>();
 		ArrayList<Scope> scopes = new ArrayList<Scope>();
 		int[] environment = new int[blk.numSlots()];
@@ -237,7 +219,7 @@ public class VerificationCheck implements Transform {
 		return constraint.substitute(binding);
 	}
 	
-	protected WFormula transform(int pc, WFormula constraint, int[] environment,
+	protected Automaton transform(int pc, Automaton constraint, int[] environment,
 			ArrayList<Scope> scopes,
 			ArrayList<Branch> branches, boolean assumes, Block body) {
 		
@@ -384,7 +366,7 @@ public class VerificationCheck implements Transform {
 	 *            --- if true, indicates assumption mode.
 	 * @return
 	 */
-	protected WFormula transform(Block.Entry entry, WFormula constraint,
+	protected Automaton transform(Block.Entry entry, Automaton constraint,
 			int[] environment, boolean assume) {
 		Code code = entry.code;		
 		
@@ -465,8 +447,8 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 	
-	protected WFormula transform(Code.Assert code, Block.Entry entry,
-			WFormula constraint, int[] environment,
+	protected Automaton transform(Code.Assert code, Block.Entry entry,
+			Automaton constraint, int[] environment,
 			boolean assume) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
@@ -493,8 +475,8 @@ public class VerificationCheck implements Transform {
 		return WFormulas.and(test, constraint);
 	}
 	
-	protected WFormula transform(Code.BinArithOp code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.BinArithOp code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		WExpr lhs = operand(code.leftOperand,environment);
 		WExpr rhs = operand(code.rightOperand,environment);
 		WExpr result;
@@ -520,33 +502,33 @@ public class VerificationCheck implements Transform {
 		return update(code.target,result,environment,constraint);
 	}
 
-	protected WFormula transform(Code.Convert code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Convert code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		WVariable result = operand(code.operand, environment);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.Const code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Const code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		return update(code.target, convert(code.constant, entry), environment,
 				constraint);
 	}
 
-	protected WFormula transform(Code.FieldLoad code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.FieldLoad code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		WVariable src = operand(code.operand, environment);
 		WExpr result = new WTupleAccess(src, code.field);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.IndirectInvoke code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.IndirectInvoke code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.Invoke code, Block.Entry entry,
-			WFormula constraint, int[] environment)
+	protected Automaton transform(Code.Invoke code, Block.Entry entry,
+			Automaton constraint, int[] environment)
 			throws Exception {
 		
 		// first, take arguments off the stack
@@ -565,15 +547,15 @@ public class VerificationCheck implements Transform {
 		if (code.target != Code.NULL_REG) {
 			WVariable rhs = new WVariable(code.name.toString(), args);
 
-			constraint = WFormulas.and(constraint,
+			constraint = Automatons.and(constraint,
 					WTypes.subtypeOf(rhs, convert(ft.ret())));
 
 			// now deal with post-condition
 			Block postcondition = findPostcondition(code.name, ft, entry);
 			if (postcondition != null) {
-				WFormula pc = transform(WBool.TRUE, true, postcondition);
+				Automaton pc = transform(WBool.TRUE, true, postcondition);
 				binding.put(new WVariable("0$0"), rhs);
-				constraint = WFormulas.and(constraint, pc.substitute(binding));
+				constraint = Automatons.and(constraint, pc.substitute(binding));
 			}
 
 			return update(code.target, rhs, environment, constraint);
@@ -582,65 +564,65 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 
-	protected WFormula transform(Code.Invert code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Invert code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.BinListOp code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.BinListOp code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.LengthOf code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.LengthOf code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		WExpr src = operand(code.operand, environment);
 		WExpr result = new WLengthOf(src);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.SubList code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.SubList code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.IndexOf code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.IndexOf code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		WExpr src = operand(code.leftOperand, environment);
 		WExpr idx = operand(code.rightOperand, environment);
 		WExpr result = new WListAccess(src, idx);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.Move code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Move code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		return update(code.target, operand(code.operand, environment),
 				environment, constraint);
 	}
 	
-	protected WFormula transform(Code.Assign code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Assign code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		return update(code.target, operand(code.operand, environment),
 				environment, constraint);
 	}
 
-	protected WFormula transform(Code.Update code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Update code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.NewMap code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.NewMap code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.NewList code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.NewList code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		int[] code_operands = code.operands;
 		for (int i=0;i!=code_operands.length;++i) {			
@@ -651,8 +633,8 @@ public class VerificationCheck implements Transform {
 		return update(code.target,result,environment,constraint);
 	}
 
-	protected WFormula transform(Code.NewSet code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.NewSet code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		HashSet<WExpr> args = new HashSet<WExpr>();
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; ++i) {
@@ -663,8 +645,8 @@ public class VerificationCheck implements Transform {
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.NewRecord code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.NewRecord code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
@@ -676,8 +658,8 @@ public class VerificationCheck implements Transform {
 		return update(code.target,result,environment,constraint);
 	}
 
-	protected WFormula transform(Code.NewTuple code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.NewTuple code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		ArrayList<String> fields = new ArrayList<String>();
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		int[] code_operands = code.operands;
@@ -689,22 +671,22 @@ public class VerificationCheck implements Transform {
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.UnArithOp code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.UnArithOp code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: update to support numerator and denominators
 		WExpr expr = operand(code.operand, environment);
 		WExpr result = WNumerics.negate(expr);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected WFormula transform(Code.Dereference code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Dereference code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.BinSetOp code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.BinSetOp code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		WVariable lhs = operand(code.leftOperand, environment);
 		WVariable rhs = operand(code.rightOperand, environment);
 		WVariable target = update(code.target, environment);
@@ -718,14 +700,14 @@ public class VerificationCheck implements Transform {
 		switch(code.kind) {
 		case UNION:	{
 			
-			WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs),
+			Automaton allc = WFormulas.or(WSets.subsetEq(sc, lhs),
 				WSets.subsetEq(sc, rhs));
 			constraint = WFormulas.and(constraint, WSets.subsetEq(lhs, target), WSets
 					.subsetEq(rhs, target), new WBoundedForall(true, vars, allc));
 			break;
 		}
 		case DIFFERENCE: {
-			WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
 					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
 
 			constraint = WFormulas
@@ -733,11 +715,11 @@ public class VerificationCheck implements Transform {
 			break;
 		}
 		case INTERSECTION:
-			WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
 					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
 			vars = new HashMap();
 			vars.put(tmp, lhs);
-			WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
+			Automaton right = new WBoundedForall(true, vars, WFormulas.implies(WSets
 					.subsetEq(sc, rhs), WSets.subsetEq(sc, target)));
 			
 			constraint = WFormulas
@@ -750,32 +732,32 @@ public class VerificationCheck implements Transform {
 		return constraint;
 	}
 	
-	protected WFormula transform(Code.BinStringOp code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.BinStringOp code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.SubString code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.SubString code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.NewObject code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.NewObject code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.Throw code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.Throw code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		// TODO: complete this transform
 		return constraint;
 	}
 
-	protected WFormula transform(Code.TupleLoad code, Block.Entry entry,
-			WFormula constraint, int[] environment) {
+	protected Automaton transform(Code.TupleLoad code, Block.Entry entry,
+			Automaton constraint, int[] environment) {
 		WExpr src = operand(code.operand, environment);
 		WExpr result = new WTupleAccess(src, Integer.toString(code.index));
 		return update(code.target, result, environment, constraint);
