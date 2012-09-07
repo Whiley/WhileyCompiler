@@ -21,6 +21,7 @@ package wyone.spec;
 import java.util.*;
 import wyone.core.*;
 import wyone.core.Code.NOp;
+import wyone.core.Code.UOp;
 import wyone.util.*;
 
 public interface Expr extends SyntacticElement {
@@ -135,12 +136,6 @@ public interface Expr extends SyntacticElement {
 		public String toString() {
 			return src + "#" + index;
 		}
-	}
-	
-	public enum UOp {
-		NOT,
-		NEG,
-		LENGTHOF		
 	}
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {

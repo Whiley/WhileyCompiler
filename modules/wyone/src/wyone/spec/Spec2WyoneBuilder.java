@@ -436,7 +436,13 @@ public class Spec2WyoneBuilder {
 	
 	private int translate(Expr.UnOp expr, Environment environment,
 			ArrayList<Code> codes) {
-		// TODO
+		int target = environment
+				.allocate(expr.attribute(Attribute.Type.class).type);
+		int operand = translate(expr.mhs, environment, codes);
+		operand = coerceToValue(expr.mhs, operand, environment, codes);
+		codes.add(new Code.UnOp(expr.op, target, operand, expr
+				.attribute(Attribute.Source.class)));
+		return target;
 	}
 
 	private int translate(Expr.Variable expr, Environment environment,

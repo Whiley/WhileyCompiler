@@ -517,7 +517,7 @@ public class SpecParser {
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(),
+			return new Expr.UnOp(Code.UOp.NOT, parseTerm(),
 					sourceAttr(start, index - 1));
 		} 
 		syntaxError("unrecognised term.",token);
@@ -654,7 +654,7 @@ public class SpecParser {
 		Expr e = parseIndexTerm();
 		skipWhiteSpace(true);
 		match(Bar.class);
-		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
+		return new Expr.UnOp(Code.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseNegation() {
@@ -671,7 +671,7 @@ public class SpecParser {
 			} 
 		} 
 		
-		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
+		return new Expr.UnOp(Code.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
 	private Expr.Constructor parseConstructorExpr() {
