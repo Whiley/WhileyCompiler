@@ -26,20 +26,44 @@
 package wyone.util;
 
 import java.io.*;
-import java.util.*;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
+import wyone.core.WyoneFile;
+import wyone.io.JavaFileWriter;
+import wyone.spec.*;
+
+/**
+ * The most basic ant task ever for compiling wyone files.
+ * 
+ * @author djp
+ * 
+ */
 public class WyoneAntTask extends MatchingTask {
-	
+	private String sourceFile;
+	private String outputFile;
 	
 	public WyoneAntTask() {
 	}
-	    
+	
+	public void setSource(String filename) {
+		this.sourceFile = filename;
+	}
+	
+	public void setOutput(String filename) {
+		this.outputFile = filename;
+	}
+	
     public void execute() throws BuildException { 
     	try {
-    		    		    		
+    		SpecLexer lexer = new SpecLexer(sourceFile);
+			SpecParser parser = new SpecParser(sourceFile, lexer.scan());
+			SpecFile sf = parser.parse();
+			new TypeInference().infer(sf);
+			WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
+			// new SpecFileWriter(oFile).write(spec);
+			new JavaFileWriter(new FileWriter(outputFile)).write(wyf);	
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}

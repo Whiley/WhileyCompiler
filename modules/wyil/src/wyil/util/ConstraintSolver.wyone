@@ -1,0 +1,98 @@
+package wyil.util
+
+// ====================================================================
+// Bool
+// ====================================================================
+
+term True
+term False
+class Bool as True | False
+
+// ====================================================================
+// Not
+// ====================================================================
+
+term Not(Term)
+
+rewrite Not(True):
+    => False
+
+rewrite Not(False):
+    => True
+
+rewrite Not(Not(* x)):
+    => x
+
+rewrite Not(And{Term... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Or(ys)
+
+rewrite Not(Or{Term... xs}):
+    => let ys = { Not(x) | x in xs }
+       in And(ys)
+
+// ====================================================================
+// And
+// ====================================================================
+
+term And{Term...}
+
+rewrite And{}:
+    => True
+
+rewrite And{Term x}:
+    => x
+
+rewrite And{False, Term... xs}:
+    => False
+
+rewrite And{True, Term... xs}:
+    => And (xs)
+
+rewrite And{And{Term... xs}, Term... ys}:
+    => And (xs ++ ys)
+
+rewrite And{Not(Term x), Term y, Term... ys}:
+    => False, if x == y
+
+rewrite And{Or{Term... xs}, Term... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
+
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{Term...}
+
+rewrite Or{}:
+    => False
+
+rewrite Or{Term x}:
+    => x
+
+rewrite Or{True, Term... xs}:
+    => True
+
+rewrite Or{False, Term... xs}:
+    => Or (xs)
+
+rewrite Or{Not(Term x), Term y, Term... ys}:
+    => True, if x == y
+
+rewrite Or{Or{Term... xs}, Term... ys}:
+    => Or (xs ++ ys)
+
+// ====================================================================
+// Term
+// ====================================================================
+
+term Var(string)
+
+class Term as Bool | Not | And | Or | Var 
+
+
+
+
+
+
