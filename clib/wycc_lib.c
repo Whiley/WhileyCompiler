@@ -428,6 +428,20 @@ wycc_obj* wycc_box_null() {
     return ans;
 }
 
+static int wycc_type_not_map(char* typ) {
+    char *at;
+
+    at = strchr(typ, '{');
+    if (at != NULL) {
+	return 0;
+    };
+    at = strchr(typ, '}');
+    if (at != NULL) {
+	return 0;
+    };
+    return 1;
+}
+
 /*
  * given an object and a string,
  * return 1 if the string describes the type of the object,
@@ -450,6 +464,12 @@ int wycc_type_check(wycc_obj* itm, char* typ){
 	    return 1;
 	};
 	return 0;
+    };
+    if (wycc_type_not_map(typ)) {
+	if (wycc_debug_flag) {
+
+	    fprintf(stderr, "Note: %s is not a map\n", typ);
+	};
     };
     fprintf(stderr, "Help needed in wycc_type_check for type %s\n", typ);
     exit(-3);

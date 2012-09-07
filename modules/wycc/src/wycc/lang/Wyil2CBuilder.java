@@ -1375,6 +1375,7 @@ public class Wyil2CBuilder implements Builder {
 			int idx;
 			String alt;
 			Constant con;
+			String nam;
 			
 			tmp = "// HELP needed for Switch\n";
 			bodyAddLine(tmp);
@@ -1387,6 +1388,7 @@ public class Wyil2CBuilder implements Builder {
 			tmp = "//             checking X" + opr + " with " + cnt + " choices:\n";
 			bodyAddLine(tmp);
 			idx = 0;
+			nam = "XN" + opr;
 			this.addDecl(-opr, "wycc_obj*");
 			for (Pair<Constant, String> pick:branches) {
 				alt = pick.second();
@@ -1394,8 +1396,9 @@ public class Wyil2CBuilder implements Builder {
 				tmp = "//             #" + idx + " -> " + con + ":" + alt + "\n";
 				bodyAddLine(tmp);
 				idx += 1;
-				
-				tmp = this.writeMyConstant(con, -opr, tag);
+
+				//tmp = this.writeMyConstant(con, -opr, tag);
+				tmp = this.writeMyConstant(con, nam, tag);
 				if (tmp == null){
 					continue;
 				}
@@ -2126,16 +2129,27 @@ public class Wyil2CBuilder implements Builder {
 			String tmp;
 			int targ;
 			Constant val;
-			Type typ;
-			String rval;
-			String assn = null;
+			//Value val;
+			//Type typ;
+			//String rval;
+			//String assn = null;
+			int alt;
+			String nam;
 			
 			Code.Const cod = (Const) codIn;
 			targ = cod.target;
 			val = cod.constant;
 			tmp = "//             target " + targ + "\n";
 			bodyAddLine(tmp);
-			tmp = this.writeMyConstant(val, targ, tag);
+			//if (targ < 0){
+			//	alt = 0 - targ;
+			//	nam = "XN" + alt;
+			//} else {
+				nam = "X" + targ;
+			//}
+
+			//tmp = this.writeMyConstant(val, targ, tag);
+			tmp = this.writeMyConstant(val, nam, tag);
 			if (tmp == null) {
 				return "";
 			}
@@ -2147,15 +2161,18 @@ public class Wyil2CBuilder implements Builder {
 			return "";
 		}
 
-		private String writeMyConstant(Constant val, int targ, String tag){
+		//private String writeMyConstant(Value val, int targ, String tag){
+		private String writeMyConstant(Constant val, String nam, String tag){
+			String ans = "";
 			String tmp;
 			// int targ;
 			// Constant val;
 			Type typ;
 			String rval;
 			String assn = null;
-			String nam;
+			//String nam;
 			int alt;
+			int cnt;
 			
 			// Code.Const cod = (Const) codIn;
 			// targ = cod.target;
@@ -2164,6 +2181,12 @@ public class Wyil2CBuilder implements Builder {
 			// bodyAddLine(tmp);
 			typ = val.type();
 			rval = val.toString();
+			//if (targ < 0){
+			//	alt = 0 - targ;
+			//	nam = "XN" + alt;
+			//} else {
+			//	nam = "X" + targ;
+			//}
 			if (typ instanceof Type.Strung) {	
 				assn = "wycc_box_cstr(" + rval + ")";							
 			} else if (typ instanceof Type.Int) {
@@ -2179,10 +2202,33 @@ public class Wyil2CBuilder implements Builder {
 				assn = "wycc_box_char(" + rval + ")";
 			} else if (typ instanceof Type.Set) {
 				assn = "wycc_set_new(-1)";
+				//Set vs = (Set) val;
+				Constant.Set cs = (Constant.Set)val;
+				cnt = cs.values.size();
+				tmp = "//             with " + cnt + " initialisers\n";
+				bodyAddLine(tmp);
+				tmp = indent + nam + " = " + assn + ";" + tag + "\n";
+				ans += tmp;
+				tmp = indent + "{\n";
+				ans += tmp;
+				tmp = indent + indent + "wycc_obj *XXXX = (wycc_obj*)0;\n";
+				ans += tmp;
+				for (Constant itm:cs.values) {
+					tmp = writeMyConstant(itm, "XXXX", "");
+					ans += indent + tmp;
+					tmp = indent + indent + "wycc_set_add(" + nam + ", XXXX);\n";
+					ans += tmp;
+					tmp = indent + indent + "wycc_deref_box(XXXX);\n";
+					ans += tmp;
+				}
+				tmp = indent + "}\n";
+				ans += tmp;
+				return ans;
 			} else if (typ instanceof Type.Map) {
 				assn = "wycc_map_new(-1)";
 			} else if (typ instanceof Type.Null) {
 				assn = "wycc_box_null()";
+				
 			} else {
 				tmp = "// HELP needed for value type '" + typ + "'\n";
 				bodyAddLine(tmp);
@@ -2192,18 +2238,12 @@ public class Wyil2CBuilder implements Builder {
 			//writeClearTarget(targ, tag);
 			// assn += "(" + rval + ")";
 			// this.addDecl(targ, "wycc_obj*");
-			if (targ < 0){
-				alt = 0 - targ;
-				nam = "XN" + alt;
-			} else {
-				nam = "X" + targ;
-			}
-			if (assn != null) {
+			//if (assn != null) {
 				tmp = indent + nam + " = " + assn + ";" + tag + "\n";
 				//this.mbodyAddLine(tmp);
-			} else {
-				tmp = "";
-			}
+			//} else {
+				//tmp = "";
+			//}
 			return tmp;
 		}
 		
