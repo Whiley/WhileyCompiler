@@ -279,7 +279,7 @@ public class ConstraintInline implements Transform {
 			blk.append(
 					Code.LengthOf(code.type, freeSlot + 1, code.leftOperand),
 					attributes(elem));
-			blk.append(Code.Assert(Type.T_INT, freeSlot, freeSlot + 1,
+			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot + 1,
 					Code.Comparator.LT, "index out of bounds (not less than length)"),
 					attributes(elem));
 			return blk;

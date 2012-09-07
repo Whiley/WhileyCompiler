@@ -5,7 +5,8 @@
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src"> 
       <src path="src"/>
       <include name="*/**"/>
-      <exclude name="*/**/package-info.java"/> 
+      <exclude name="*/**/package-info.java"/>
+      <exclude name="wyc/testing/**"/> 
     </javac>
   </target>
 
