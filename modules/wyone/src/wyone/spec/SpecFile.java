@@ -8,10 +8,15 @@ import wyone.spec.Pattern.Term;
 import wyone.util.*;
 
 public class SpecFile {
+	public final String pkg;
+	public final String name;
 	public final String filename;
 	public final ArrayList<Decl> declarations;
 	
-	public SpecFile(String filename, Collection<Decl> declarations) {
+	public SpecFile(String pkg, String name, String filename,
+			Collection<Decl> declarations) {
+		this.pkg = pkg;
+		this.name = name;
 		this.filename = filename;
 		this.declarations = new ArrayList<Decl>(declarations);
 	}

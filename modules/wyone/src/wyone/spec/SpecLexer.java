@@ -449,7 +449,8 @@ public class SpecLexer {
 		"terms",
 		"class",
 		"rewrite",		
-		"let"
+		"let",
+		"package"
 	};
 	
 	public Token scanIdentifier() {

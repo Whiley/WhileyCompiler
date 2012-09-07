@@ -1,3 +1,5 @@
+package wyil.util
+
 term True
 term Num(int)
 term Sum{|Num...|}

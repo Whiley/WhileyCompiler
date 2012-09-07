@@ -28,31 +28,14 @@ public class JavaFileWriter {
 	}
 
 	public void write(WyoneFile spec) {
-		write(spec, null);
-	}
-
-	public void write(WyoneFile spec, String pkgNam) {
-		int lindex = spec.filename.lastIndexOf('.');
-		String className = spec.filename.substring(0, lindex);
-		int clipSpot = className.indexOf('/');
-		if (clipSpot >= 0) {
-			if (pkgNam == null) {
-				pkgNam = className.substring(0, clipSpot);
-			}
-			className = className.substring(clipSpot + 1);
-		}
-		write(spec.declarations, pkgNam, className);
-	}
-
-	public void write(ArrayList<Decl> spDe, String pkgNam, String clsNam) {
+		ArrayList<Decl> spDe = spec.declarations;
 		spDecl = spDe;
-		if (pkgNam != null) {
-			myOut("package " + pkgNam + ";");
+		if (!spec.pkg.equals("")) {
+			myOut("package " + spec.pkg + ";");
 			myOut("");
 		}
-		pkgName = pkgNam;
 		writeImports();
-		myOut("public final class " + clsNam + " {");
+		myOut("public final class " + spec.name + " {");
 		HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
 		HashSet<String> used = new HashSet<String>();
 		for (Decl d : spDecl) {

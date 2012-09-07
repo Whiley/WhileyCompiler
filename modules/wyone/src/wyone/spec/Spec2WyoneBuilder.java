@@ -33,7 +33,7 @@ public class Spec2WyoneBuilder {
 
 		declarations.add(buildRuleDispatch(file));
 
-		return new WyoneFile(file.filename, declarations);
+		return new WyoneFile(file.pkg, file.name, file.filename, declarations);
 	}
 
 	private WyoneFile.TermDecl build(SpecFile.TermDecl d) {

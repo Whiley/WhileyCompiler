@@ -4,10 +4,14 @@ import java.util.*;
 import wyone.util.*;
 
 public class WyoneFile {
+	public final String pkg;
+	public final String name;
 	public final String filename;
 	public final ArrayList<Decl> declarations;
 	
-	public WyoneFile(String filename, Collection<Decl> declarations) {
+	public WyoneFile(String pkg, String name, String filename, Collection<Decl> declarations) {
+		this.pkg = pkg;
+		this.name = name;
 		this.filename = filename;
 		this.declarations = new ArrayList<Decl>(declarations);
 	}

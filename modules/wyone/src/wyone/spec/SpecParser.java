@@ -2,6 +2,7 @@ package wyone.spec;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.io.*;
 
 import wyone.core.Attribute;
 import wyone.util.*;
@@ -21,7 +22,7 @@ public class SpecParser {
 	
 	public SpecFile parse() {
 		ArrayList<Decl> decls = new ArrayList<Decl>();
-
+		String pkg = parsePackage();	
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
 			if (t instanceof NewLine || t instanceof Comment) {
@@ -38,10 +39,26 @@ public class SpecParser {
 				}				
 			}
 		}
-		
-		return new SpecFile(filename,decls);
+				
+		return new SpecFile(pkg, new File(filename).getName(), filename, decls);
 	}
-		
+	
+	private String parsePackage() {
+		skipWhiteSpace(true);
+		Token lookahead = tokens.get(index);
+		if(lookahead.text.equals("package")) {
+			matchKeyword("package");
+			String pkg = matchIdentifier().text;
+			while((lookahead=tokens.get(index)) instanceof Dot) {
+				match(Dot.class);
+				pkg = pkg + "." + matchIdentifier().text;
+			}
+			return pkg;
+		} else {
+			return ""; // empty package
+		}
+	}
+	
 	private Decl parseTermDecl() {
 		int start = index;
 		matchKeyword("term");
