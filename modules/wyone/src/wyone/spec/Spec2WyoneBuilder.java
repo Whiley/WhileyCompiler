@@ -219,6 +219,8 @@ public class Spec2WyoneBuilder {
 					Collections.EMPTY_LIST,
 					pattern.attribute(Attribute.Source.class));
 			ArrayList<Code> forCodes = internal.body; // v.naughty
+
+// The following is comment out, which makes sense in *most* cases ;)
 //
 //			if (i > 1) {
 //				// Check current index is unique against those
