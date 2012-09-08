@@ -176,26 +176,28 @@ public class VerificationCheck implements Transform {
 	 */
 	private static class Branch {
 		public final int pc;
+		public final int root; // constraint root
 		public final Automaton constraint;
 		public final int[] environment;
 		public final ArrayList<Scope> scopes;
 
-		public Branch(int pc, Automaton constraint, int[] environment,
+		public Branch(int pc, int root, Automaton constraint, int[] environment,
 				ArrayList<Scope> scopes) {
 			this.pc = pc;
+			this.root = root;
 			this.constraint = constraint;
 			this.environment = Arrays.copyOf(environment,environment.length);
 			this.scopes = new ArrayList<Scope>(scopes);
 		}
 	}
 	
-	protected Automaton transform(Automaton constraint, boolean assumes, Block blk) {
+	protected int transform(int root, Automaton constraint, boolean assumes, Block blk) {
 		ArrayList<Branch> branches = new ArrayList<Branch>();
 		ArrayList<Scope> scopes = new ArrayList<Scope>();
 		int[] environment = new int[blk.numSlots()];
 
 		// take initial branch
-		constraint = transform(0, constraint, environment, scopes,
+		root = transform(0, root, constraint, environment, scopes,
 				branches, assumes, blk);
 
 		// continue any resulting branches
@@ -203,11 +205,12 @@ public class VerificationCheck implements Transform {
 			int last = branches.size() - 1;
 			Branch branch = branches.get(last);
 			branches.remove(last);
-			constraint = WFormulas
-					.or(constraint,
-							transform(branch.pc, branch.constraint,
-									branch.environment, 
-									branch.scopes, branches, assumes, blk));
+			root = Or(
+					constraint,
+					root,
+					transform(branch.pc, branch.root, branch.constraint,
+							branch.environment, branch.scopes, branches,
+							assumes, blk));
 		}
 		
 		// The following is necessary to prevent any possible clashes between
@@ -223,7 +226,7 @@ public class VerificationCheck implements Transform {
 		return constraint.substitute(binding);
 	}
 	
-	protected Automaton transform(int pc, Automaton constraint, int[] environment,
+	protected int transform(int pc, int root, Automaton constraint, int[] environment,
 			ArrayList<Scope> scopes,
 			ArrayList<Branch> branches, boolean assumes, Block body) {
 		
@@ -370,77 +373,76 @@ public class VerificationCheck implements Transform {
 	 *            --- if true, indicates assumption mode.
 	 * @return
 	 */
-	protected Automaton transform(Block.Entry entry, Automaton constraint,
+	protected int transform(Block.Entry entry, Automaton constraint,
 			int[] environment, boolean assume) {
 		Code code = entry.code;		
 		
 		try {
-		if(code instanceof Code.Assert) {
-			constraint = transform((Code.Assert)code,entry,constraint,environment,assume);
-		} else if(code instanceof Code.BinArithOp) {
-			constraint = transform((Code.BinArithOp)code,entry,constraint,environment);
-		} else if(code instanceof Code.Convert) {
-			constraint = transform((Code.Convert)code,entry,constraint,environment);
-		} else if(code instanceof Code.Const) {
-			constraint = transform((Code.Const)code,entry,constraint,environment);
-		} else if(code instanceof Code.Debug) {
-			// skip
-		} else if(code instanceof Code.FieldLoad) {
-			constraint = transform((Code.FieldLoad)code,entry,constraint,environment);			
-		} else if(code instanceof Code.IndirectInvoke) {
-			constraint = transform((Code.IndirectInvoke)code,entry,constraint,environment);
-		} else if(code instanceof Code.Invoke) {
-			constraint = transform((Code.Invoke)code,entry,constraint,environment);
-		} else if(code instanceof Code.Invert) {
-			constraint = transform((Code.Invert)code,entry,constraint,environment);
-		} else if(code instanceof Code.Label) {
-			// skip			
-		} else if(code instanceof Code.BinListOp) {
-			constraint = transform((Code.BinListOp)code,entry,constraint,environment);
-		} else if(code instanceof Code.LengthOf) {
-			constraint = transform((Code.LengthOf)code,entry,constraint,environment);
-		} else if(code instanceof Code.SubList) {
-			constraint = transform((Code.SubList)code,entry,constraint,environment);
-		} else if(code instanceof Code.IndexOf) {
-			constraint = transform((Code.IndexOf)code,entry,constraint,environment);
-		} else if(code instanceof Code.Move) {
-			constraint = transform((Code.Move)code,entry,constraint,environment);
-		} else if(code instanceof Code.Assign) {
-			constraint = transform((Code.Assign)code,entry,constraint,environment);
-		} else if(code instanceof Code.Update) {
-			constraint = transform((Code.Update)code,entry,constraint,environment);
-		} else if(code instanceof Code.NewMap) {
-			constraint = transform((Code.NewMap)code,entry,constraint,environment);
-		} else if(code instanceof Code.NewList) {
-			constraint = transform((Code.NewList)code,entry,constraint,environment);
-		} else if(code instanceof Code.NewRecord) {
-			constraint = transform((Code.NewRecord)code,entry,constraint,environment);
-		} else if(code instanceof Code.NewSet) {
-			constraint = transform((Code.NewSet)code,entry,constraint,environment);
-		} else if(code instanceof Code.NewTuple) {
-			constraint = transform((Code.NewTuple)code,entry,constraint,environment);
-		} else if(code instanceof Code.UnArithOp) {
-			constraint = transform((Code.UnArithOp)code,entry,constraint,environment);
-		} else if(code instanceof Code.Dereference) {
-			constraint = transform((Code.Dereference)code,entry,constraint,environment);
-		} else if(code instanceof Code.Nop) {
-			// skip			
-		} else if(code instanceof Code.BinSetOp) {
-			constraint = transform((Code.BinSetOp)code,entry,constraint,environment);
-		} else if(code instanceof Code.BinStringOp) {
-			constraint = transform((Code.BinStringOp)code,entry,constraint,environment);
-		} else if(code instanceof Code.SubString) {
-			constraint = transform((Code.SubString)code,entry,constraint,environment);
-		} else if(code instanceof Code.NewObject) {
-			constraint = transform((Code.NewObject)code,entry,constraint,environment);
-		} else if(code instanceof Code.Throw) {
-			constraint = transform((Code.Throw)code,entry,constraint,environment);
-		} else if(code instanceof Code.TupleLoad) {
-			constraint = transform((Code.TupleLoad)code,entry,constraint,environment);
-		} else {			
-			internalFailure("unknown: " + code.getClass().getName(),filename,entry);
-			return null;
-		}
+			if(code instanceof Code.Assert) {
+				return transform((Code.Assert)code,entry,constraint,environment,assume);
+			} else if(code instanceof Code.BinArithOp) {
+				return transform((Code.BinArithOp)code,entry,constraint,environment);
+			} else if(code instanceof Code.Convert) {
+				return transform((Code.Convert)code,entry,constraint,environment);
+			} else if(code instanceof Code.Const) {
+				return transform((Code.Const)code,entry,constraint,environment);
+			} else if(code instanceof Code.Debug) {
+				// skip
+			} else if(code instanceof Code.FieldLoad) {
+				return transform((Code.FieldLoad)code,entry,constraint,environment);			
+			} else if(code instanceof Code.IndirectInvoke) {
+				return transform((Code.IndirectInvoke)code,entry,constraint,environment);
+			} else if(code instanceof Code.Invoke) {
+				return transform((Code.Invoke)code,entry,constraint,environment);
+			} else if(code instanceof Code.Invert) {
+				return transform((Code.Invert)code,entry,constraint,environment);
+			} else if(code instanceof Code.Label) {
+				// skip			
+			} else if(code instanceof Code.BinListOp) {
+				return transform((Code.BinListOp)code,entry,constraint,environment);
+			} else if(code instanceof Code.LengthOf) {
+				return transform((Code.LengthOf)code,entry,constraint,environment);
+			} else if(code instanceof Code.SubList) {
+				return transform((Code.SubList)code,entry,constraint,environment);
+			} else if(code instanceof Code.IndexOf) {
+				return transform((Code.IndexOf)code,entry,constraint,environment);
+			} else if(code instanceof Code.Move) {
+				return transform((Code.Move)code,entry,constraint,environment);
+			} else if(code instanceof Code.Assign) {
+				return transform((Code.Assign)code,entry,constraint,environment);
+			} else if(code instanceof Code.Update) {
+				return transform((Code.Update)code,entry,constraint,environment);
+			} else if(code instanceof Code.NewMap) {
+				return transform((Code.NewMap)code,entry,constraint,environment);
+			} else if(code instanceof Code.NewList) {
+				return transform((Code.NewList)code,entry,constraint,environment);
+			} else if(code instanceof Code.NewRecord) {
+				return transform((Code.NewRecord)code,entry,constraint,environment);
+			} else if(code instanceof Code.NewSet) {
+				return transform((Code.NewSet)code,entry,constraint,environment);
+			} else if(code instanceof Code.NewTuple) {
+				return transform((Code.NewTuple)code,entry,constraint,environment);
+			} else if(code instanceof Code.UnArithOp) {
+				return transform((Code.UnArithOp)code,entry,constraint,environment);
+			} else if(code instanceof Code.Dereference) {
+				return transform((Code.Dereference)code,entry,constraint,environment);
+			} else if(code instanceof Code.Nop) {
+				// skip			
+			} else if(code instanceof Code.BinSetOp) {
+				return transform((Code.BinSetOp)code,entry,constraint,environment);
+			} else if(code instanceof Code.BinStringOp) {
+				return transform((Code.BinStringOp)code,entry,constraint,environment);
+			} else if(code instanceof Code.SubString) {
+				return transform((Code.SubString)code,entry,constraint,environment);
+			} else if(code instanceof Code.NewObject) {
+				return transform((Code.NewObject)code,entry,constraint,environment);
+			} else if(code instanceof Code.Throw) {
+				return transform((Code.Throw)code,entry,constraint,environment);
+			} else if(code instanceof Code.TupleLoad) {
+				return transform((Code.TupleLoad)code,entry,constraint,environment);
+			} else {			
+				internalFailure("unknown: " + code.getClass().getName(),filename,entry);			
+			}
 		} catch(InternalFailure e) {
 			throw e;
 		} catch(SyntaxError e) {
@@ -448,15 +450,15 @@ public class VerificationCheck implements Transform {
 		} catch(Throwable e) {
 			internalFailure(e.getMessage(),filename,entry,e);
 		}
-		return constraint;
+		return -1; // dead-code
 	}
 	
-	protected Automaton transform(Code.Assert code, Block.Entry entry,
-			Automaton constraint, int[] environment,
+	protected int transform(Code.Assert code, Block.Entry entry,
+			int root, Automaton constraint, int[] environment,
 			boolean assume) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
-		WFormula test = buildTest(code.op, entry, code.leftOperand, code.rightOperand, environment);
+		int test = buildTest(constraint, code.op, entry, code.leftOperand, code.rightOperand, environment);
 		
 		if (assume) {
 			// in assumption mode we don't assert the test; rather, we assume
@@ -465,306 +467,290 @@ public class VerificationCheck implements Transform {
 //			System.out.println("======================================");
 //			System.out.println("CHECKING: " + test.not() + " && " + constraint);
 //			System.out.println("======================================");
-			// Pass constraint through the solver to check for unsatisfiability
-			Proof tp = Solver.checkUnsatisfiable(timeout,
-					WFormulas.and(test.not(), constraint),
-					wyone.Main.heuristic, wyone.Main.theories);
 
-			// If constraint was satisfiable, then we have an error.
-			if (!(tp instanceof Proof.Unsat)) {
-				syntaxError(code.msg, filename, entry);
-			}
+			// FIXME: run the solver!
+			
+			// Pass constraint through the solver to check for unsatisfiability			
+//			Proof tp = Solver.checkUnsatisfiable(timeout,
+//					WFormulas.and(test.not(), constraint),
+//					wyone.Main.heuristic, wyone.Main.theories);
+			
 		}
 		
-		return WFormulas.and(test, constraint);
+		return test;
 	}
 	
-	protected Automaton transform(Code.BinArithOp code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		WExpr lhs = operand(code.leftOperand,environment);
-		WExpr rhs = operand(code.rightOperand,environment);
-		WExpr result;
+	protected int transform(Code.BinArithOp code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		int lhs = operand(constraint, code.leftOperand,environment);
+		int rhs = operand(constraint, code.rightOperand,environment);
+		int result;
 		
 		switch(code.kind) {
 		case ADD:
-			result = WNumerics.add(lhs, rhs);
+			result = Sum(constraint, lhs, rhs);
 			break;
 		case SUB:
-			result = WNumerics.subtract(lhs, rhs);
+			result = Sum(constraint, lhs, Neg(constraint, rhs));
 			break;
 		case MUL:
-			result = WNumerics.multiply(lhs, rhs);
+			result = Mul(constraint, lhs, rhs);
 			break;
 		case DIV:
-			result = WNumerics.divide(lhs, rhs);			
+			result = Div(constraint, lhs, rhs);			
 			break;	
 		default:
 			internalFailure("unknown binary operator",filename,entry);
-			return null;
+			return -1;
 		}
 				
 		return update(code.target,result,environment,constraint);
 	}
 
-	protected Automaton transform(Code.Convert code, Block.Entry entry,
+	protected int transform(Code.Convert code, Block.Entry entry,
 			Automaton constraint, int[] environment) {
-		WVariable result = operand(code.operand, environment);
+		int result = operand(constraint, code.operand, environment);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected Automaton transform(Code.Const code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		return update(code.target, convert(code.constant, entry), environment,
-				constraint);
+	protected int transform(Code.Const code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		int rhs = convert(code.constant, constraint, entry);
+		return update(code.target, rhs, environment, constraint);
 	}
 
-	protected Automaton transform(Code.FieldLoad code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		WVariable src = operand(code.operand, environment);
-		WExpr result = new WTupleAccess(src, code.field);
-		return update(code.target, result, environment, constraint);
+	protected int transform(Code.FieldLoad code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.IndirectInvoke code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.IndirectInvoke code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.Invoke code, Block.Entry entry,
-			Automaton constraint, int[] environment)
+	protected int transform(Code.Invoke code, Block.Entry entry,
+			 Automaton constraint, int[] environment)
 			throws Exception {
 		
 		// first, take arguments off the stack
-		Type.FunctionOrMethod ft = code.type;
-		List<Type> ft_params = code.type.params();
-		ArrayList<WExpr> args = new ArrayList<WExpr>();
-		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
-		int[] code_operands = code.operands;
-		for(int i=0;i!=code_operands.length;++i) {
-			WExpr arg = operand(code_operands[i],environment);
-			args.add(arg);
-			binding.put(new WVariable(i + "$0"), arg);
-		}			
-		
-		// second, setup return value
-		if (code.target != Code.NULL_REG) {
-			WVariable rhs = new WVariable(code.name.toString(), args);
-
-			constraint = Automatons.and(constraint,
-					WTypes.subtypeOf(rhs, convert(ft.ret())));
-
-			// now deal with post-condition
-			Block postcondition = findPostcondition(code.name, ft, entry);
-			if (postcondition != null) {
-				Automaton pc = transform(WBool.TRUE, true, postcondition);
-				binding.put(new WVariable("0$0"), rhs);
-				constraint = Automatons.and(constraint, pc.substitute(binding));
-			}
-
-			return update(code.target, rhs, environment, constraint);
-		}
-		
-		return constraint;
+//		Type.FunctionOrMethod ft = code.type;
+//		List<Type> ft_params = code.type.params();
+//		ArrayList<WExpr> args = new ArrayList<WExpr>();
+//		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
+//		int[] code_operands = code.operands;
+//		for(int i=0;i!=code_operands.length;++i) {
+//			WExpr arg = operand(code_operands[i],environment);
+//			args.add(arg);
+//			binding.put(new WVariable(i + "$0"), arg);
+//		}			
+//		
+//		// second, setup return value
+//		if (code.target != Code.NULL_REG) {
+//			WVariable rhs = new WVariable(code.name.toString(), args);
+//
+//			constraint = Automatons.and(constraint,
+//					WTypes.subtypeOf(rhs, convert(ft.ret())));
+//
+//			// now deal with post-condition
+//			Block postcondition = findPostcondition(code.name, ft, entry);
+//			if (postcondition != null) {
+//				Automaton pc = transform(WBool.TRUE, true, postcondition);
+//				binding.put(new WVariable("0$0"), rhs);
+//				constraint = Automatons.and(constraint, pc.substitute(binding));
+//			}
+//
+//			return update(code.target, rhs, environment, constraint);
+//		}
+//		
+//		return constraint;
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.Invert code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.Invert code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.BinListOp code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.BinListOp code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.LengthOf code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		WExpr src = operand(code.operand, environment);
-		WExpr result = new WLengthOf(src);
+	protected int transform(Code.LengthOf code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		int src = operand(constraint, code.operand, environment);
+		int result = LengthOf(constraint, src);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected Automaton transform(Code.SubList code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.SubList code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.IndexOf code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		WExpr src = operand(code.leftOperand, environment);
-		WExpr idx = operand(code.rightOperand, environment);
-		WExpr result = new WListAccess(src, idx);
+	protected int transform(Code.IndexOf code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		int src = operand(constraint, code.leftOperand, environment);
+		int idx = operand(constraint, code.rightOperand, environment);
+		int result = IndexOf(constraint, src, idx);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected Automaton transform(Code.Move code, Block.Entry entry,
+	protected int transform(Code.Move code, Block.Entry entry,
 			Automaton constraint, int[] environment) {
-		return update(code.target, operand(code.operand, environment),
-				environment, constraint);
+		return update(code.target,
+				operand(constraint, code.operand, environment), environment,
+				constraint);
 	}
 	
-	protected Automaton transform(Code.Assign code, Block.Entry entry,
+	protected int transform(Code.Assign code, Block.Entry entry,
 			Automaton constraint, int[] environment) {
-		return update(code.target, operand(code.operand, environment),
-				environment, constraint);
+		return update(code.target,
+				operand(constraint, code.operand, environment), environment,
+				constraint);
 	}
 
-	protected Automaton transform(Code.Update code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.Update code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.NewMap code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.NewMap code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.NewList code, Block.Entry entry,
+	protected int transform(Code.NewList code, Block.Entry entry,
 			Automaton constraint, int[] environment) {
-		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		int[] code_operands = code.operands;
-		for (int i=0;i!=code_operands.length;++i) {			
-			args.add(operand(code_operands[i],environment));			
+		int[] vals = new int[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = operand(constraint, code_operands[i], environment);
 		}
-		
-		WExpr result = new WListConstructor(args);
-		return update(code.target,result,environment,constraint);
-	}
-
-	protected Automaton transform(Code.NewSet code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		HashSet<WExpr> args = new HashSet<WExpr>();
-		int[] code_operands = code.operands;
-		for (int i = 0; i != code_operands.length; ++i) {
-			args.add(operand(code_operands[i], environment));
-		}
-
-		WExpr result = new WSetConstructor(args);
+		int result = List(constraint, vals);
 		return update(code.target, result, environment, constraint);
 	}
 
-	protected Automaton transform(Code.NewRecord code, Block.Entry entry,
+	protected int transform(Code.NewSet code, Block.Entry entry,
 			Automaton constraint, int[] environment) {
+		int[] code_operands = code.operands;
+		int[] vals = new int[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = operand(constraint, code_operands[i], environment);
+		}
+		int result = Set(constraint, vals);
+		return update(code.target, result, environment, constraint);
+	}
+
+	protected int transform(Code.NewRecord code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
-		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		return constraint.add(False); // TODO
+	}
+
+	protected int transform(Code.NewTuple code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
 		int[] code_operands = code.operands;
-		for (int i = 0; i != code_operands.length; ++i) {
-			args.add(operand(code_operands[i], environment));
-		}		
-		WExpr result = new WTupleConstructor(fields, args);
-		return update(code.target,result,environment,constraint);
+		int[] vals = new int[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = operand(constraint, code_operands[i], environment);
+		}
+		int result = Tuple(constraint, vals);
+		return update(code.target, result, environment, constraint);		
 	}
 
-	protected Automaton transform(Code.NewTuple code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		ArrayList<String> fields = new ArrayList<String>();
-		ArrayList<WExpr> args = new ArrayList<WExpr>();
-		int[] code_operands = code.operands;
-		for (int i = 0; i != code_operands.length; ++i) {
-			args.add(operand(code_operands[i], environment));
-			fields.add(Integer.toString(i));
+	protected int transform(Code.UnArithOp code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		if(code.kind == Code.UnArithKind.NEG) {
+			int expr = operand(constraint, code.operand, environment);
+			int result = Neg(constraint, expr);
+			return update(code.target, result, environment, constraint);
+		} else {
+			return constraint.add(False); // TODO
 		}
-		WExpr result = new WTupleConstructor(fields, args);
-		return update(code.target, result, environment, constraint);
 	}
 
-	protected Automaton transform(Code.UnArithOp code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: update to support numerator and denominators
-		WExpr expr = operand(code.operand, environment);
-		WExpr result = WNumerics.negate(expr);
-		return update(code.target, result, environment, constraint);
+	protected int transform(Code.Dereference code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.Dereference code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
-	}
-
-	protected Automaton transform(Code.BinSetOp code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		WVariable lhs = operand(code.leftOperand, environment);
-		WVariable rhs = operand(code.rightOperand, environment);
-		WVariable target = update(code.target, environment);
-
-		WVariable tmp = WVariable.freshVar();
-		WSetConstructor sc = new WSetConstructor(tmp);
-		
-		HashMap<WVariable, WExpr> vars = new HashMap();
-		vars.put(tmp, target);
-		
-		switch(code.kind) {
-		case UNION:	{
-			
-			Automaton allc = WFormulas.or(WSets.subsetEq(sc, lhs),
-				WSets.subsetEq(sc, rhs));
-			constraint = WFormulas.and(constraint, WSets.subsetEq(lhs, target), WSets
-					.subsetEq(rhs, target), new WBoundedForall(true, vars, allc));
-			break;
-		}
-		case DIFFERENCE: {
-			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
-					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
-
-			constraint = WFormulas
-					.and(constraint, WSets.subsetEq(lhs, target), left);		
-			break;
-		}
-		case INTERSECTION:
-			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
-					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
-			vars = new HashMap();
-			vars.put(tmp, lhs);
-			Automaton right = new WBoundedForall(true, vars, WFormulas.implies(WSets
-					.subsetEq(sc, rhs), WSets.subsetEq(sc, target)));
-			
-			constraint = WFormulas
-					.and(constraint, left, right, WSets.subsetEq(target, lhs), WSets.subsetEq(target, rhs));
-			break;
-			default:
-				internalFailure("missing support for left/right set operations",filename,entry);
-		}
-
-		return constraint;
+	protected int transform(Code.BinSetOp code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+//		WVariable lhs = operand(code.leftOperand, environment);
+//		WVariable rhs = operand(code.rightOperand, environment);
+//		WVariable target = update(code.target, environment);
+//
+//		WVariable tmp = WVariable.freshVar();
+//		WSetConstructor sc = new WSetConstructor(tmp);
+//		
+//		HashMap<WVariable, WExpr> vars = new HashMap();
+//		vars.put(tmp, target);
+//		
+//		switch(code.kind) {
+//		case UNION:	{
+//			
+//			Automaton allc = WFormulas.or(WSets.subsetEq(sc, lhs),
+//				WSets.subsetEq(sc, rhs));
+//			constraint = WFormulas.and(constraint, WSets.subsetEq(lhs, target), WSets
+//					.subsetEq(rhs, target), new WBoundedForall(true, vars, allc));
+//			break;
+//		}
+//		case DIFFERENCE: {
+//			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
+//					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
+//
+//			constraint = WFormulas
+//					.and(constraint, WSets.subsetEq(lhs, target), left);		
+//			break;
+//		}
+//		case INTERSECTION:
+//			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
+//					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
+//			vars = new HashMap();
+//			vars.put(tmp, lhs);
+//			Automaton right = new WBoundedForall(true, vars, WFormulas.implies(WSets
+//					.subsetEq(sc, rhs), WSets.subsetEq(sc, target)));
+//			
+//			constraint = WFormulas
+//					.and(constraint, left, right, WSets.subsetEq(target, lhs), WSets.subsetEq(target, rhs));
+//			break;
+//			default:
+//				internalFailure("missing support for left/right set operations",filename,entry);
+//		}
+//
+//		return constraint;
+		return constraint.add(False); // TODO
 	}
 	
-	protected Automaton transform(Code.BinStringOp code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.BinStringOp code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.SubString code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.SubString code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.NewObject code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.NewObject code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.Throw code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		// TODO: complete this transform
-		return constraint;
+	protected int transform(Code.Throw code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		return constraint.add(False); // TODO
 	}
 
-	protected Automaton transform(Code.TupleLoad code, Block.Entry entry,
-			Automaton constraint, int[] environment) {
-		WExpr src = operand(code.operand, environment);
-		WExpr result = new WTupleAccess(src, Integer.toString(code.index));
-		return update(code.target, result, environment, constraint);
+	protected int transform(Code.TupleLoad code, Block.Entry entry,
+			 Automaton constraint, int[] environment) {
+		int src = operand(constraint, code.operand, environment);
+		int idx = constraint.add(new Automaton.Int(code.index));
+		int result = IndexOf(constraint, src, idx);
+		return update(code.target, result, environment, constraint);		
 	}
 	
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
@@ -790,29 +776,29 @@ public class VerificationCheck implements Transform {
 	// which use the given variable (left), and those which don't (right). This
 	// is done to avoid quantifying more than is necessary when dealing with
 	// loops.
-	protected static Pair<WFormula, WFormula> splitFormula(String var, WFormula f) {
-		if (f instanceof WConjunct) {
-			WConjunct c = (WConjunct) f;
-			WFormula ts = WBool.TRUE;
-			WFormula fs = WBool.TRUE;
-			for (WFormula st : c.subterms()) {
-				Pair<WFormula, WFormula> r = splitFormula(var, st);
-				ts = WFormulas.and(ts, r.first());
-				fs = WFormulas.and(fs, r.second());
-			}
-			return new Pair<WFormula, WFormula>(ts, fs);
-		} else {
-			// not a conjunct, so check whether or not this uses var or not.
-			Set<WVariable> uses = WExprs.match(WVariable.class, f);
-			for (WVariable v : uses) {
-				if (v.name().equals(var)) {
-					return new Pair<WFormula, WFormula>(f, WBool.TRUE);
-				}
-			}
-			// Ok, doesn't use variable
-			return new Pair<WFormula, WFormula>(WBool.TRUE, f);
-		}
-	}
+//	protected static Pair<WFormula, WFormula> splitFormula(String var, WFormula f) {
+//		if (f instanceof WConjunct) {
+//			WConjunct c = (WConjunct) f;
+//			WFormula ts = WBool.TRUE;
+//			WFormula fs = WBool.TRUE;
+//			for (WFormula st : c.subterms()) {
+//				Pair<WFormula, WFormula> r = splitFormula(var, st);
+//				ts = WFormulas.and(ts, r.first());
+//				fs = WFormulas.and(fs, r.second());
+//			}
+//			return new Pair<WFormula, WFormula>(ts, fs);
+//		} else {
+//			// not a conjunct, so check whether or not this uses var or not.
+//			Set<WVariable> uses = WExprs.match(WVariable.class, f);
+//			for (WVariable v : uses) {
+//				if (v.name().equals(var)) {
+//					return new Pair<WFormula, WFormula>(f, WBool.TRUE);
+//				}
+//			}
+//			// Ok, doesn't use variable
+//			return new Pair<WFormula, WFormula>(WBool.TRUE, f);
+//		}
+//	}
 	/**
 	 * Convert between a WYIL value and a WYONE value. Basically, this is really
 	 * stupid and it would be good for them to be the same.
@@ -820,106 +806,59 @@ public class VerificationCheck implements Transform {
 	 * @param value
 	 * @return
 	 */
-	private WValue convert(wyil.lang.Constant value, SyntacticElement elem) {
+	private int convert(wyil.lang.Constant value, Automaton constraint, SyntacticElement elem) {
 		if(value instanceof wyil.lang.Constant.Bool) {
 			wyil.lang.Constant.Bool b = (wyil.lang.Constant.Bool) value;
-			return b.value ? WBool.TRUE : WBool.FALSE;
+			return b.value ? constraint.add(True) : constraint.add(False);
 		} else if(value instanceof wyil.lang.Constant.Byte) {
 			wyil.lang.Constant.Byte v = (wyil.lang.Constant.Byte) value;
-			return new WNumber(v.value);
+			return Num(constraint, v.value);
 		} else if(value instanceof wyil.lang.Constant.Char) {
 			wyil.lang.Constant.Char v = (wyil.lang.Constant.Char) value;
 			// Simple, but mostly good translation
-			return new WNumber(v.value);
+			return Num(constraint, v.value);
 		} else if(value instanceof wyil.lang.Constant.Map) {
-			return WBool.FALSE; // FIXME
+			return constraint.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.FunctionOrMethod) {
-			return WBool.FALSE; // FIXME
+			return constraint.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.Integer) {
 			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
-			return new WNumber(v.value);
+			return Num(constraint, v.value);
+		} else if(value instanceof wyil.lang.Constant.Null) {
+			return constraint.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.List) {
 			Constant.List vl = (Constant.List) value;
-			ArrayList<WValue> vals = new ArrayList<WValue>();
-			for(Constant e : vl.values) {
-				vals.add(convert(e,elem));
+			int[] vals = new int[vl.values.size()];
+			for(int i=0;i!=vals.length;++i) {				
+				vals[i] = convert(vl.values.get(i),constraint,elem);
 			}
-			return new WListVal(vals);
-		} else if(value instanceof wyil.lang.Constant.Null) {
-			return WBool.FALSE; // FIXME
+			return List(constraint, vals);
+		} else if(value instanceof wyil.lang.Constant.Set) {
+			Constant.Set vs = (Constant.Set) value;			
+			int[] vals = new int[vs.values.size()];
+			int i=0;
+			for(Constant c : vs.values) {				
+				vals[i++] = convert(c,constraint,elem);
+			}
+			return Set(constraint,vals);
 		} else if(value instanceof wyil.lang.Constant.Rational) {
 			wyil.lang.Constant.Rational v = (wyil.lang.Constant.Rational) value;
 			BigRational br = v.value;
-			return new WNumber(br.numerator(),br.denominator());
+			return constraint.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.Record) {
 			Constant.Record vt = (Constant.Record) value;
-			ArrayList<String> fields = new ArrayList<String>(vt.values.keySet());
-			ArrayList<WValue> values = new ArrayList<WValue>();
-			Collections.sort(fields);
-			for(String f : fields) {			
-				values.add(convert(vt.values.get(f),elem));
-			}
-			return new WTupleVal(fields,values);
-		} else if(value instanceof wyil.lang.Constant.Set) {
-			Constant.Set vs = (Constant.Set) value;			
-			HashSet<WValue> vals = new HashSet<WValue>();
-			for(Constant e : vs.values) {
-				vals.add(convert(e,elem));
-			}
-			return new WSetVal(vals);
+			return constraint.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.Strung) {
-			return WBool.FALSE; // FIXME
+			return constraint.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.Tuple) {
 			Constant.Tuple vt = (Constant.Tuple) value;
-			ArrayList<String> fields = new ArrayList<String>();
-			ArrayList<WValue> values = new ArrayList<WValue>();
-			int i = 0;
-			for(Constant e : vt.values) {			
-				values.add(convert(e,elem));
-				fields.add(""+i++);
-			}
-			return new WTupleVal(fields,values);
+			return constraint.add(False); // TODO
 		} else {
 			internalFailure("unknown value encountered (" + value + ")",filename,elem);
-			return null;
+			return -1;
 		}
 	}
-	
-	/**
-	 * Convert a Wyil type into a Wyone type. Mostly, the conversion is
-	 * straightforward and obvious.
-	 * 
-	 * @param type
-	 * @return
-	 */
-	protected WType convert(Type type) {
-		if(type == Type.T_VOID) {
-			return WVoidType.T_VOID;
-		} else if(type == Type.T_BOOL) {
-			return WBoolType.T_BOOL;
-		} else if(type == Type.T_INT) {
-			return WIntType.T_INT;
-		} else if(type == Type.T_REAL) {
-			return WRealType.T_REAL;
-		} else if(type instanceof Type.EffectiveList) {
-			Type.EffectiveList tl = (Type.EffectiveList) type;
-			return new WListType(convert(tl.element()));			
-		} else if(type instanceof Type.EffectiveSet) {
-			Type.EffectiveSet tl = (Type.EffectiveSet) type;
-			return new WSetType(convert(tl.element()));			
-		} else if(type instanceof Type.EffectiveRecord) {
-			Type.EffectiveRecord tl = (Type.EffectiveRecord) type;
-			ArrayList<String> keys = new ArrayList<String>(tl.fields().keySet());
-			ArrayList<wyone.util.Pair<String,WType>> types = new ArrayList();
-			Collections.sort(keys);
-			for(String key : keys) {
-				types.add(new wyone.util.Pair(key,convert(tl.fields().get(key))));
-			}
-			return new WTupleType(types);
-		} else {
-			return WAnyType.T_ANY;
-		}
-	}
+		
 	/**
 	 * Generate a formula representing a condition from an Code.IfCode or
 	 * Code.Assert bytecodes.
@@ -929,52 +868,53 @@ public class VerificationCheck implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	private WFormula buildTest(Code.Comparator op, SyntacticElement elem, int leftOperand, int rightOperand, int[] environment) {
-		WExpr lhs = operand(leftOperand,environment);
-		WExpr rhs = operand(rightOperand,environment);
+	private int buildTest(Automaton constraint, Code.Comparator op,
+			SyntacticElement elem, int leftOperand, int rightOperand,
+			int[] environment) {
+		int lhs = operand(constraint,leftOperand,environment);
+		int rhs = operand(constraint,rightOperand,environment);
 		
 		switch(op) {
 		case EQ:
-			return WExprs.equals(lhs, rhs);
+			return Equals(constraint, lhs, rhs);
 		case NEQ:
-			return WExprs.notEquals(lhs, rhs);
+			return NotEquals(constraint, lhs, rhs);
 		case GTEQ:
-			return WNumerics.greaterThanEq(lhs, rhs);
+			return GreaterThanEq(constraint, lhs, rhs);
 		case GT:
-			return WNumerics.greaterThan(lhs, rhs);
+			return GreaterThan(constraint, lhs, rhs);
 		case LTEQ:
-			return WNumerics.lessThanEq(lhs, rhs);
+			return LessThanEq(constraint, lhs, rhs);
 		case LT:
-			return WNumerics.lessThan(lhs, rhs);
+			return LessThan(constraint, lhs, rhs);
 		case SUBSET:
-			return WSets.subset(lhs, rhs);
+			return SubSet(constraint, lhs, rhs);
 		case SUBSETEQ:
-			return WSets.subsetEq(lhs, rhs);
+			return SubSetEq(constraint, lhs, rhs);
 		case ELEMOF:
-			return WSets.elementOf(lhs, rhs);
+			return ElementOf(constraint, lhs, rhs);
 		default:
 			internalFailure("unknown comparator (" + op + ")",filename,elem);
-			return null;
+			return -1;
 		}
 	}
 	
-	private static WVariable operand(int register, int[] environment) {
-		return new WVariable(register + "$" + environment[register]);
+	private static int operand(Automaton constraint, int register,
+			int[] environment) {
+		return Var(constraint, register + "$" + environment[register]);
 	}
 
-	private static WVariable update(int target, int[] environment) {
+	private static int update(int target, int[] environment, Automaton constraint) {
 		int nval = environment[target] + 1;
 		environment[target] = nval;
-		WVariable lhs = new WVariable(target + "$" + nval);
-		return lhs;
+		return Var(constraint, target + "$" + nval);		
 	}
 	
-	private static WFormula update(int target, WExpr rhs, int[] environment,
-			WFormula constraint) {
-		int nval = environment[target] + 1;
-		environment[target] = nval;
-		WVariable lhs = new WVariable(target + "$" + nval);
-		return WFormulas.and(constraint, WExprs.equals(lhs, rhs));
+	private static int update(int lhs, int rhs, int[] environment,
+			Automaton constraint) {
+		int nval = environment[lhs] + 1;
+		environment[lhs] = nval;
+		return Equals(constraint, Var(constraint, lhs + "$" + nval), rhs);
 	}
 	
 	private static <T> T pop(ArrayList<T> stack) {

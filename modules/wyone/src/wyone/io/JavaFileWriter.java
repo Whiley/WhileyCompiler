@@ -93,7 +93,7 @@ public class JavaFileWriter {
 			Type element = data.element;
 			if(element instanceof Type.Compound) {
 				myOut(1, "public final static int " + decl.type.name
-						+ "(Automaton automaton, int[] r0) {" );
+						+ "(Automaton automaton, int... r0) {" );
 				if(element instanceof Type.Set) { 
 					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
 				} else if(element instanceof Type.Bag) {

@@ -1,18 +1,75 @@
 package wyil.util
 
+term Var(string)
+
+class Expr as BExpr | AExpr | SExpr
+
 // ====================================================================
-// Bool
+// Boolean Expressions
 // ====================================================================
+class BExpr as Bool | Not | And | Or | Var 
 
 term True
 term False
 class Bool as True | False
 
 // ====================================================================
+// Arithmetic Expressions
+// ====================================================================
+class AExpr as Num | Sum | Mul | Var
+
+term Num(int)
+term Neg(AExpr)
+term Sum{|AExpr...|}
+term Mul{|AExpr...|}
+term Div[AExpr,AExpr]
+
+// ====================================================================
+// Collections
+// ====================================================================
+class SExpr as Set | Var
+class LExpr as List | Var
+class CExpr as Set | List | Var
+
+term Set{Expr...}
+term ElementOf[Expr,SExpr]
+
+term List[Expr...]
+term IndexOf[LExpr, Expr]
+
+term Tuple[Expr...]
+
+
+term LengthOf[CExpr]
+
+// ====================================================================
+// Arithmetic Inequalities
+// ====================================================================
+term LessThan[AExpr,AExpr]
+term LessThanEq[AExpr,AExpr]
+term GreaterThan[AExpr,AExpr]
+term GreaterThanEq[AExpr,AExpr]
+
+// ====================================================================
+// Equalities
+// ====================================================================
+term Equals[Expr,Expr]
+term NotEquals[Expr,Expr]
+
+// ====================================================================
+// Set Constraints
+// ====================================================================
+term SubSet[SExpr,SExpr]
+term SubSetEq[SExpr,SExpr]
+term SupSet[SExpr,SExpr]
+term SupSetEq[SExpr,SExpr]
+
+
+// ====================================================================
 // Not
 // ====================================================================
 
-term Not(Term)
+term Not(BExpr)
 
 rewrite Not(True):
     => False
@@ -23,11 +80,11 @@ rewrite Not(False):
 rewrite Not(Not(* x)):
     => x
 
-rewrite Not(And{Term... xs}):
+rewrite Not(And{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in Or(ys)
 
-rewrite Not(Or{Term... xs}):
+rewrite Not(Or{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in And(ys)
 
@@ -35,27 +92,27 @@ rewrite Not(Or{Term... xs}):
 // And
 // ====================================================================
 
-term And{Term...}
+term And{BExpr...}
 
 rewrite And{}:
     => True
 
-rewrite And{Term x}:
+rewrite And{BExpr x}:
     => x
 
-rewrite And{False, Term... xs}:
+rewrite And{False, BExpr... xs}:
     => False
 
-rewrite And{True, Term... xs}:
+rewrite And{True, BExpr... xs}:
     => And (xs)
 
-rewrite And{And{Term... xs}, Term... ys}:
+rewrite And{And{BExpr... xs}, BExpr... ys}:
     => And (xs ++ ys)
 
-rewrite And{Not(Term x), Term y, Term... ys}:
+rewrite And{Not(BExpr x), BExpr y, BExpr... ys}:
     => False, if x == y
 
-rewrite And{Or{Term... xs}, Term... ys}:
+rewrite And{Or{BExpr... xs}, BExpr... ys}:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
 
@@ -63,33 +120,27 @@ rewrite And{Or{Term... xs}, Term... ys}:
 // Or
 // ====================================================================
 
-term Or{Term...}
+term Or{BExpr...}
 
 rewrite Or{}:
     => False
 
-rewrite Or{Term x}:
+rewrite Or{BExpr x}:
     => x
 
-rewrite Or{True, Term... xs}:
+rewrite Or{True, BExpr... xs}:
     => True
 
-rewrite Or{False, Term... xs}:
+rewrite Or{False, BExpr... xs}:
     => Or (xs)
 
-rewrite Or{Not(Term x), Term y, Term... ys}:
+rewrite Or{Not(BExpr x), BExpr y, BExpr... ys}:
     => True, if x == y
 
-rewrite Or{Or{Term... xs}, Term... ys}:
+rewrite Or{Or{BExpr... xs}, BExpr... ys}:
     => Or (xs ++ ys)
 
-// ====================================================================
-// Term
-// ====================================================================
 
-term Var(string)
-
-class Term as Bool | Not | And | Or | Var 
 
 
 
