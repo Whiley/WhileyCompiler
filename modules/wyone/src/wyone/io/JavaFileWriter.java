@@ -89,10 +89,47 @@ public class JavaFileWriter {
 			myOut(1, "public final static Automaton.Term " + decl.type.name
 					+ " = new Automaton.Term(K_" + decl.type.name + ");");
 		} else {
-			myOut(1, "public final static Automaton.Term " + decl.type.name
-					+ "(" + type2JavaType(decl.type.data) + " r0) {" );
-			myOut(2,"return new Automaton.Term(K_" + decl.type.name + ", r0);");
-			myOut(1,"}");
+			Type.Ref data = decl.type.data;
+			Type element = data.element;
+			if(element instanceof Type.Compound) {
+				myOut(1, "public final static int " + decl.type.name
+						+ "(Automaton automaton, int[] r0) {" );
+				if(element instanceof Type.Set) { 
+					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
+				} else if(element instanceof Type.Bag) {
+					myOut(2,"int r1 = automaton.add(new Automaton.Bag(r0));");
+				} else {
+					myOut(2,"int r1 = automaton.add(new Automaton.List(r0));");
+				}
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(1,"}");
+			} else if(element instanceof Type.Int) {
+				// add two helpers
+				myOut(1, "public final static int " + decl.type.name 
+						+ "(Automaton automaton, long r0) {" );			
+				myOut(2,"int r1 = automaton.add(new Automaton.Int(r0));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(1,"}");
+				
+				myOut(1, "public final static int " + decl.type.name
+						+ "(Automaton automaton, BigInteger r0) {" );	
+				myOut(2,"int r1 = automaton.add(new Automaton.Int(r0));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(1,"}");
+			} else if(element instanceof Type.Strung) {
+				// add two helpers
+				myOut(1, "public final static int " + type2JavaType(element)
+						+ "(Automaton automaton, String r0) {" );	
+				myOut(2,"int r1 = automaton.add(new Automaton.Strung(r0));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(1,"}");
+			} else {
+				myOut(1, "public final static int " + decl.type.name
+						+ "(Automaton.State automaton," + type2JavaType(data) + " r0) {" );			
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r0));");
+				myOut(1,"}");
+			}
+			
 		}
 		myOut();
 	}

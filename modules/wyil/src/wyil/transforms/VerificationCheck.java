@@ -39,8 +39,9 @@ import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
-import wyone.core.*;
+import wyone.core.Automaton;
 import wyil.util.ConstraintSolver;
+import static wyil.util.ConstraintSolver.*;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -112,23 +113,26 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
-		Automaton constraint = WBool.TRUE;					
+		Automaton constraint = new Automaton(ConstraintSolver.SCHEMA); 
+		int root = constraint.add(True);		
 				
 		// add type information available from parameters
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
-		for(int i=paramStart;i!=fmm.params().numState();++i) {
-			Type paramType = fmm.params().get(i); 
-			WVariable pv = new WVariable(i + "$" + 0);
-			constraint = WFormulas.and(constraint,
-					WTypes.subtypeOf(pv, convert(paramType)));
+		for(int i=paramStart;i!=fmm.params().size();++i) {
+			Type paramType = fmm.params().get(i);
+			
+			// FIXME: add type information
+			
+//			WVariable pv = new WVariable(i + "$" + 0);
+//			constraint = WFormulas.and(constraint,
+//					WTypes.subtypeOf(pv, convert(paramType)));
 		}
 		
 		Block precondition = methodCase.precondition();				
 		
 		if(precondition != null) {
-			Automaton precon = transform(WBool.TRUE, true, precondition);
-			constraint = WFormulas.and(constraint,precon);
+			Automaton precon = transform(constraint, true, precondition);
 		}
 		
 		transform(constraint,false,methodCase.body());
