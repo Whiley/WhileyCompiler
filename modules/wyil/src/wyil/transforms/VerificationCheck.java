@@ -113,9 +113,6 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
-		Automaton constraint = new Automaton(ConstraintSolver.SCHEMA); 
-		int root = constraint.add(True);		
-				
 		// add type information available from parameters
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
@@ -137,7 +134,7 @@ public class VerificationCheck implements Transform {
 //			int precon = transform(branch.automaton, true, precondition);
 //		}
 		
-		transform(constraint,false,methodCase.body());
+		transform(false,methodCase.body());
 	}
 	
 	
@@ -176,7 +173,7 @@ public class VerificationCheck implements Transform {
 	 * @author djp
 	 * 
 	 */
-	private static class Branch {
+	private static final class Branch {
 		public int pc;
 		public final int[] environment;
 		public final ArrayList<Scope> scopes;		
@@ -204,19 +201,40 @@ public class VerificationCheck implements Transform {
 			return new Branch(pc, environment, scopes, constraints, automaton);
 		}
 
-		public boolean check() {
+		/**
+		 * Assert that the given constraint holds.
+		 * 
+		 * @return
+		 */
+		public boolean assertTrue(int test) {
 			try {
 				System.out.println("================================================");
-				System.out.println("CHECKING");
-				System.out.println("================================================");
-				new PrettyAutomataWriter(System.out,SCHEMA).write(automaton);
+				System.out.print("ASSERTING: " + constraints);				
+				System.out.println("\n================================================");
+				Automaton tmp = new Automaton(automaton);
+				int root = And(tmp,constraints);
+				root = And(tmp,root,Not(tmp,test));
+				tmp.mark(root);				
+				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
+				System.out.println("--");
+				// TODO: following should be part of constraint solver
+				boolean changed = true;
+				while(changed) {
+					changed = false;
+					for(int i=0;i<automaton.nStates();++i) {
+						if(automaton.get(i) != null) {
+							changed |= rewrite_5e2a_0(i,automaton);
+						}
+					}
+				}
+				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
 			return false;
 		}
 				
-		public void add(Integer constraint) {
+		public void assume(int constraint) {
 			constraints.add(constraint);
 		}
 		
@@ -228,20 +246,15 @@ public class VerificationCheck implements Transform {
 			return Var(automaton, register + "$" + environment[register]);
 		}
 
-		public int write(int target) {
-			int nval = environment[target] + 1;
-			environment[target] = nval;
-			return Var(automaton, target + "$" + nval);		
-		}
-		
-		public int write(int lhs, int rhs) {
+		public void write(int lhs, int rhs) {
 			int nval = environment[lhs] + 1;
 			environment[lhs] = nval;
-			return Equals(automaton, Var(automaton, lhs + "$" + nval), rhs);
-		}		
+			constraints.add(Equals(automaton, Var(automaton, lhs + "$" + nval),
+					rhs));
+		}
 	}
 	
-	protected void transform(Automaton constraint, boolean assumes, Block blk) {
+	protected void transform(boolean assumes, Block blk) {
 		ArrayList<Branch> branches = new ArrayList<Branch>();
 		Branch branch = new Branch(0,blk.numSlots());
 
@@ -426,7 +439,7 @@ public class VerificationCheck implements Transform {
 	 */
 	protected void transform(Block.Entry entry, boolean assume, Branch branch) {
 		Code code = entry.code;		
-		
+		System.out.println("GOT: " + code);
 		try {
 			if(code instanceof Code.Assert) {
 				transform((Code.Assert)code,entry,assume,branch);
@@ -509,25 +522,10 @@ public class VerificationCheck implements Transform {
 		int test = buildTest(code.op, entry, code.leftOperand, code.rightOperand, branch);
 		
 		if (assume) {
-			// in assumption mode we don't assert the test; rather, we assume
-			// it. 
-		} else {
-//			System.out.println("======================================");
-//			System.out.println("CHECKING: " + test.not() + " && " + constraint);
-//			System.out.println("======================================");
-
-			// FIXME: run the solver!
-			
-			// Pass constraint through the solver to check for unsatisfiability			
-			
-			Branch invalid = branch.clone();
-			invalid.add(Not(invalid.automaton,test));
-			if(!invalid.check()) {
-				syntaxError("assertion failed " + code.msg,filename,entry);
-			}
-		}
-		
-		branch.add(test);
+			branch.assume(test);			 
+		} else if(!branch.assertTrue(test)){
+			syntaxError(code.msg,filename,entry);
+		}		
 	}
 	
 	protected void transform(Code.BinArithOp code, Block.Entry entry,
@@ -553,7 +551,7 @@ public class VerificationCheck implements Transform {
 			internalFailure("unknown binary operator",filename,entry);
 			return;
 		}
-				
+		
 		branch.write(code.target,result);
 	}
 

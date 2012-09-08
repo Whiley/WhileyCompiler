@@ -107,7 +107,10 @@ public final class Automaton {
 		this.nStates = automaton.nStates;
 		this.states = new State[automaton.states.length];
 		for(int i=0;i!=states.length;++i) {
-			states[i] = automaton.states[i].clone();			
+			Automaton.State state = automaton.states[i];
+			if(state != null) {
+				states[i] = state.clone();
+			}
 		}
 		this.nRoots = automaton.nRoots;
 		this.roots = Arrays.copyOf(automaton.roots, nRoots);		
