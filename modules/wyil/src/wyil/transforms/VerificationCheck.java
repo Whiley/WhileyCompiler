@@ -32,7 +32,6 @@ import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wyil.lang.*;
-import wyil.lang.Code;
 import wyil.util.ErrorMessages;
 import wyil.util.BigRational;
 import wyil.util.Pair;
@@ -40,6 +39,7 @@ import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wyone.core.Automaton;
+import wyone.io.PrettyAutomataWriter;
 import wyil.util.ConstraintSolver;
 import static wyil.util.ConstraintSolver.*;
 
@@ -205,6 +205,14 @@ public class VerificationCheck implements Transform {
 		}
 
 		public boolean check() {
+			try {
+				System.out.println("================================================");
+				System.out.println("CHECKING");
+				System.out.println("================================================");
+				new PrettyAutomataWriter(System.out,SCHEMA).write(automaton);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 			return false;
 		}
 				
