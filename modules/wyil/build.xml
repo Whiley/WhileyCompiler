@@ -3,8 +3,7 @@
 
   <target name="compile-wyil">
     <taskdef name="wyone" classname="wyone.util.WyoneAntTask" classpath="../wyone/src/"/>
-    <!-- <wyone source="src/wyil/util/ConstraintSolver.wyone" output="src/wyil/util/ConstraintSolver.java"/>
-    -->
+    <wyone source="src/wyil/util/ConstraintSolver.wyone" output="src/wyil/util/ConstraintSolver.java"/>
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../wyone/src">
       <src path="src"/>
       <include name="*/**"/>
