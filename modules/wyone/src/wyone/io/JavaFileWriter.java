@@ -92,8 +92,21 @@ public class JavaFileWriter {
 			Type.Ref data = decl.type.data;
 			Type element = data.element;
 			if(element instanceof Type.Compound) {
+				// add two helpers
 				myOut(1, "public final static int " + decl.type.name
 						+ "(Automaton automaton, int... r0) {" );
+				if(element instanceof Type.Set) { 
+					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
+				} else if(element instanceof Type.Bag) {
+					myOut(2,"int r1 = automaton.add(new Automaton.Bag(r0));");
+				} else {
+					myOut(2,"int r1 = automaton.add(new Automaton.List(r0));");
+				}
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(1,"}");
+				
+				myOut(1, "public final static int " + decl.type.name
+						+ "(Automaton automaton, List<Integer> r0) {" );
 				if(element instanceof Type.Set) { 
 					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
 				} else if(element instanceof Type.Bag) {
