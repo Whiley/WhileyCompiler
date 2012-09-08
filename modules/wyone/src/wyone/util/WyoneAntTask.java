@@ -41,10 +41,15 @@ import wyone.spec.*;
  * 
  */
 public class WyoneAntTask extends MatchingTask {
+	private File srcdir;
 	private String sourceFile;
 	private String outputFile;
 	
 	public WyoneAntTask() {
+	}
+	
+	public void setSrcdir(File dir) throws IOException {
+		this.srcdir = dir;
 	}
 	
 	public void setSource(String filename) {
@@ -57,13 +62,15 @@ public class WyoneAntTask extends MatchingTask {
 	
     public void execute() throws BuildException { 
     	try {
-    		SpecLexer lexer = new SpecLexer(sourceFile);
+    		File sfile = new File(srcdir,sourceFile); 
+    		SpecLexer lexer = new SpecLexer(new FileReader(sfile));
 			SpecParser parser = new SpecParser(sourceFile, lexer.scan());
 			SpecFile sf = parser.parse();
 			new TypeInference().infer(sf);
 			WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
 			// new SpecFileWriter(oFile).write(spec);
-			new JavaFileWriter(new FileWriter(outputFile)).write(wyf);	
+			File ofile = new File(srcdir,outputFile); 
+			new JavaFileWriter(new FileWriter(ofile)).write(wyf);	
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}
