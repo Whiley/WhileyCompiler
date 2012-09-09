@@ -58,11 +58,11 @@ public class NewJavaFileWriter {
 
 		for (Decl d : spDecl) {
 			if (d instanceof TermDecl) {
-				write((TermDecl) d, hierarchy);
+				translate((TermDecl) d, hierarchy);
 			} else if (d instanceof ClassDecl) {
-				write((ClassDecl) d, hierarchy);
+				translate((ClassDecl) d, hierarchy);
 			} else if (d instanceof RewriteDecl) {
-				write((RewriteDecl) d, used);
+				translate((RewriteDecl) d, used);
 			}
 		}
 		
@@ -84,7 +84,7 @@ public class NewJavaFileWriter {
 		myOut();
 	}
 
-	public void write(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
+	public void translate(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
 		myOut(1, "// term " + decl.type);
 		myOut(1, "public final static int K_" + decl.type.name + " = "
 				+ termCounter++ + ";");
@@ -152,7 +152,7 @@ public class NewJavaFileWriter {
 
 	private static int termCounter = 0;
 
-	public void write(ClassDecl decl, HashMap<String, Set<String>> hierarchy) {
+	public void translate(ClassDecl decl, HashMap<String, Set<String>> hierarchy) {
 		String lin = "// " + decl.name + " as ";
 		for (int i = 0; i != decl.children.size(); ++i) {
 			String child = decl.children.get(i);
@@ -165,7 +165,7 @@ public class NewJavaFileWriter {
 		myOut();
 	}
 
-	public void write(RewriteDecl decl, HashSet<String> used) {
+	public void translate(RewriteDecl decl, HashSet<String> used) {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
@@ -175,15 +175,16 @@ public class NewJavaFileWriter {
 		
 		// setup the environment
 		Environment environment = new Environment();
-		environment.allocate(param,"this");
+		int thus = environment.allocate(param,"this");
 		
 		// translate pattern
+		translate(pattern,thus,environment);
 		
 		// translate expressions
 		myOut(1);
 		boolean conditional = true;
 		for(RuleDecl rd : decl.rules) {
-			conditional &= write(rd,environment);
+			conditional &= translate(rd,environment);
 		}
 		if(conditional) {
 			myOut(2,"return false;");
@@ -192,7 +193,46 @@ public class NewJavaFileWriter {
 		myOut();
 	}
 	
-	public boolean write(RuleDecl decl, Environment environment) {
+	public void translate(Pattern p, int source, Environment environment) {
+		if(p instanceof Pattern.Leaf) {
+			translate((Pattern.Leaf) p,source,environment);
+		} else if(p instanceof Pattern.Term) {
+			translate((Pattern.Term) p,source,environment);
+		} else if(p instanceof Pattern.Set) {
+			translate((Pattern.Set) p,source,environment);
+		} else if(p instanceof Pattern.Bag) {
+			translate((Pattern.Bag) p,source,environment);
+		} else  {
+			translate((Pattern.List) p,source,environment);
+		} 
+	}
+	
+	public void translate(Pattern.Leaf p, int source, Environment environment) {
+		// do nothing?
+	}
+	
+	public void translate(Pattern.Term p, int source, Environment environment) {
+		Type.Ref<Type.Term> type = (Type.Ref) p.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(2,p,source,environment);
+		if(type.element.data != null) {
+			int target = environment.allocate(type.element.data,p.variable);
+			myOut(2,type2JavaType(type.element.data) + " r" + target + " = r" + source + ".contents;");
+			translate(p.data,target,environment);
+		}
+	}
+
+	public void translate(Pattern.Set p, int source, Environment environment) {
+
+	}
+
+	public void translate(Pattern.Bag p, int source, Environment environment) {
+
+	}
+
+	public void translate(Pattern.List p, int source, Environment environment) {
+
+	}
+	public boolean translate(RuleDecl decl, Environment environment) {
 		boolean conditional = false;
 		int thus = environment.get("this");
 		for(Pair<String,Expr> let : decl.lets) {
@@ -207,6 +247,7 @@ public class NewJavaFileWriter {
 			myOut(level++, "if(r" + condition + ") {");
 		}
 		int result = translate(level, decl.result, environment);
+		result = coerceFromValue(level,decl.result,result,environment);
 		myOut(level, "return automaton.rewrite(r" + thus + ", r" + result + ");");
 		if(decl.condition != null) {
 			myOut(--level,"}");
@@ -804,34 +845,30 @@ public class NewJavaFileWriter {
 		}
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
+	
+	public int coerceFromValue(int level, Expr expr, int register, Environment environment) {
+		Type type = expr.attribute(Attribute.Type.class).type;
+		if(type instanceof Type.Ref) {
+			return register;
+		} else {
+			Type.Ref refType = Type.T_REF(type);
+			int result = environment.allocate(refType);
+			myOut(level, type2JavaType(refType) + " r" + result + " = automaton.add(r" + register + ");");
+			return result;
+		}
+	}
 
-	public String unboxedType(Type t) {
-		if(t instanceof Type.Int) {
-			return "BigInteger";
-		} else if(t instanceof Type.Strung) {
-			return "String";
+	public int coerceFromRef(int level, SyntacticElement elem, int register, Environment environment) {
+		Type type = elem.attribute(Attribute.Type.class).type;
+		if(type instanceof Type.Ref) {
+			Type.Ref refType = (Type.Ref) type;
+			int result = environment.allocate(refType.element);
+			String cast = type2JavaType(refType.element);
+			myOut(level, cast + " r" + result + " = (" + cast + ") automaton.get(r" + register + ");");
+			return result;
 		} else {
-			// TODO: what should I do here?
-			return null;
+			return register;
 		}
-	}
-	
-	public String unbox(Type t, String src) {
-		if(t instanceof Type.Int) {
-			return "(BigInteger) ((Item) automaton.get(" + src + ")).payload";
-		} else if(t instanceof Type.Strung) {
-			return "(String) ((Item) automaton.get(" + src + ")).payload";
-		} else {
-			// TODO: what should I do here?
-			return null;
-		}
-	}
-	
-	protected List<String> concat(List<String> xs, List<String> ys) {
-		ArrayList<String> zs = new ArrayList<String>();
-		zs.addAll(xs);
-		zs.addAll(ys);
-		return zs;
 	}
 	
 	protected void myOut() {
@@ -857,20 +894,6 @@ public class NewJavaFileWriter {
 		for (int i = 0; i < level; ++i) {
 			out.print("\t");
 		}
-	}
-
-	protected String indentStr(int level) {
-		String r = "";
-		for (int i = 0; i != level; ++i) {
-			r = r + "\t";
-		}
-		return r;
-	}
-
-	protected int tmpIndex = 0;
-
-	protected String freshVar() {
-		return "tmp" + tmpIndex++;
 	}
 	
 	private static class Environment {
