@@ -77,7 +77,7 @@ rewrite Not(Equals (* x)):
     => NotEquals(x)
 
 rewrite And{Equals{* x, * y},Equals{* u,* v}, BExpr... rest}:
-    => And ({Equals{x,y},Equals{u,v},Equals{x,v}} ++ rest), if y == u && x != v
+    => And ({Equals{x,y},Equals{u,v},Equals{x,v}} ++ rest), if x != y && u != v && y == u && x != v
 
 // ====================================================================
 // Set Constraints

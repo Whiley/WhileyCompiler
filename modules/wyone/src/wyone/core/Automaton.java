@@ -423,7 +423,7 @@ public final class Automaton {
 		}
 		
 		public String toString() {
-			return kind + " " + contents;
+			return kind + "(" + contents + ")";
 		}
 	}
 	
@@ -564,8 +564,7 @@ public final class Automaton {
 		public boolean equals(final Object o) {
 			if (o instanceof Compound) {
 				Compound t = (Compound) o;
-				int[] t_children = t.children;
-				return kind == t.kind && Arrays.equals(children, t_children);
+				return kind == t.kind && Arrays.equals(children, t.children);
 			}
 			return false;
 		}

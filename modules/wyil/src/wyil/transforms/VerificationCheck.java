@@ -220,6 +220,8 @@ public class VerificationCheck implements Transform {
 				// TODO: following should be part of constraint solver
 				boolean changed = true;
 				while(changed) {
+					new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
+					System.out.println("\n --------");
 					changed = false;
 					for(int i=0;i<tmp.nStates();++i) {
 						if(tmp.get(i) != null) {
