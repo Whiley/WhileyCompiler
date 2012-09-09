@@ -40,7 +40,7 @@ public class NewJavaFileWriter {
 		writeImports();
 		myOut("public final class " + spec.name + " {");
 		HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
-		HashSet<String> used = new HashSet<String>();
+
 		for (Decl d : spDecl) {
 			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
@@ -62,12 +62,12 @@ public class NewJavaFileWriter {
 			} else if (d instanceof ClassDecl) {
 				translate((ClassDecl) d, hierarchy);
 			} else if (d instanceof RewriteDecl) {
-				translate((RewriteDecl) d, used);
+				translate((RewriteDecl) d);
 			}
 		}
-		
+		writeRuleDispatch(spec);
 		writeTypeTests(hierarchy);
-		writeSchema();
+		writeSchema();		
 		writeMainMethod();
 		myOut("}");
 		out.flush();
@@ -82,6 +82,32 @@ public class NewJavaFileWriter {
 		myOut("import wyone.core.*;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
+	}
+	
+	public void writeRuleDispatch(SpecFile sf) {
+		myOut(1, "public static boolean rewrite(Automaton automaton) {");
+		myOut(2, "boolean result = false;");
+		myOut(2, "boolean changed = true;");
+		myOut(2, "while(changed) {");
+		myOut(3, "changed = false;");
+		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
+		myOut(4, "if(automaton.get(i) == null) { continue; }");
+		for(Decl decl : sf.declarations) {
+			if(decl instanceof RewriteDecl) {
+				RewriteDecl rw = (RewriteDecl) decl;
+				Type type = rw.pattern.attribute(Attribute.Type.class).type;
+				String mangle = type2HexStr(type);
+				myOut(4,"");
+				myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
+				typeTests.add(type);
+				myOut(5, "changed |= rewrite_" + mangle + "(i,automaton);");				
+				myOut(4, "}");
+			}
+		}
+		myOut(3,"}");
+		myOut(2,"}");
+		myOut(2, "return result;");
+		myOut(1, "}");
 	}
 
 	public void translate(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
@@ -165,12 +191,12 @@ public class NewJavaFileWriter {
 		myOut();
 	}
 
-	public void translate(RewriteDecl decl, HashSet<String> used) {
+	public void translate(RewriteDecl decl) {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
 		myOut(1, "public static boolean rewrite_"
-				+ nameMangle(param, used) + "("
+				+ type2HexStr(param) + "("
 				+ type2JavaType(param) + " r0, Automaton automaton) {");
 		
 		// setup the environment
@@ -233,7 +259,6 @@ public class NewJavaFileWriter {
 
 	}
 	public boolean translate(RuleDecl decl, Environment environment) {
-		boolean conditional = false;
 		int thus = environment.get("this");
 		for(Pair<String,Expr> let : decl.lets) {
 			String letVar = let.first();
@@ -252,7 +277,7 @@ public class NewJavaFileWriter {
 		if(decl.condition != null) {
 			myOut(--level,"}");
 		}
-		return conditional;
+		return decl.condition != null;
 	}
 	
 	public void writeSchema() {
@@ -512,18 +537,6 @@ public class NewJavaFileWriter {
 		}
 	}
 	
-	protected String nameMangle(Type type, HashSet<String> used) {
-		String mangle = null;
-		String _mangle = type2HexStr(type);
-		int i = 0;
-		do {
-			mangle = _mangle + "_" + i++;
-		} while (used.contains(mangle));
-		used.add(mangle);
-		return mangle;
-	}
-
-
 	protected void writeTypeTests(HashMap<String, Set<String>> hierarchy) {
 		myOut(1,
 				"// =========================================================================");
@@ -779,15 +792,7 @@ public class NewJavaFileWriter {
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
-		myOut(3, "boolean changed = true;");
-		myOut(3, "while(changed) {");
-		myOut(4, "changed = false;");
-		myOut(4, "for(int i=0;i<automaton.nStates();++i) {");
-		myOut(5, "if(automaton.get(i) != null) {");
-		myOut(6, "changed |= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,automaton);");
-		myOut(5, "}");
-		myOut(4, "}");
-		myOut(3, "}");
+		myOut(3, "rewrite(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
