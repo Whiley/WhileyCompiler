@@ -126,15 +126,16 @@ public class VerificationCheck implements Transform {
 //					WTypes.subtypeOf(pv, convert(paramType)));
 		}
 		
+		Block body = methodCase.body();
 		Block precondition = methodCase.precondition();				
 		
-		// FIXME: include preconditions again.
+		Branch branch = new Branch(0,body.numSlots()); 
+		if(precondition != null) {
+			branch = transform(true, branch, precondition);
+			branch.pc = 0; // must reset
+		}
 		
-//		if(precondition != null) {
-//			int precon = transform(branch.automaton, true, precondition);
-//		}
-		
-		transform(false,methodCase.body());
+		transform(false,branch,body);
 	}
 	
 	
@@ -257,9 +258,8 @@ public class VerificationCheck implements Transform {
 		}
 	}
 	
-	protected void transform(boolean assumes, Block blk) {
+	protected Branch transform(boolean assumes, Branch branch, Block blk) {
 		ArrayList<Branch> branches = new ArrayList<Branch>();
-		Branch branch = new Branch(0,blk.numSlots());
 
 		// take initial branch
 		transform(assumes, blk, branch, branches);
@@ -287,7 +287,7 @@ public class VerificationCheck implements Transform {
 //		}
 
 		//return constraint.substitute(binding);
-		
+		return branch;
 	}
 	
 	protected Branch transform(boolean assumes, Block body, Branch branch,
