@@ -90,8 +90,9 @@ public class SpecParser {
 			}
 			firstTime=false;
 			children.add(matchIdentifier().text);
+			skipWhiteSpace(true);
 		} while(index < tokens.size() && tokens.get(index) instanceof Bar);
-		matchEndLine();
+
 		return new ClassDecl(name, children, sourceAttr(start,index-1));
 	}
 	

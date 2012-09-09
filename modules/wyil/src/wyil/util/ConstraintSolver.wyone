@@ -7,12 +7,26 @@ class Expr as BExpr | AExpr | SExpr
 // ====================================================================
 // Boolean Expressions
 // ====================================================================
-class BExpr as Bool | Not | And | Or | Var 
-
 term True
 term False
 class Bool as True | False
 
+class BExpr as Bool 
+	| Not 
+	| And 
+	| Or 
+	| Var
+	| Equals
+	| NotEquals 
+	| LessThan
+	| LessThanEq 
+	| GreaterThan
+	| GreaterThanEq
+	| SubSet
+	| SubSetEq 
+	| SupSet
+	| SupSetEq
+	 
 // ====================================================================
 // Arithmetic Expressions
 // ====================================================================
@@ -53,8 +67,17 @@ term GreaterThanEq[AExpr,AExpr]
 // ====================================================================
 // Equalities
 // ====================================================================
-term Equals[Expr,Expr]
-term NotEquals[Expr,Expr]
+term Equals{Expr,Expr}
+term NotEquals{Expr,Expr}
+
+rewrite Not(NotEquals (* x)):
+    => Equals(x)
+    
+rewrite Not(Equals (* x)):
+    => NotEquals(x)
+
+rewrite And{Equals{* x, * y},Equals{* u,* v}, BExpr... rest}:
+    => And ({Equals{x,y},Equals{u,v},Equals{x,v}} ++ rest), if y == u && x != v
 
 // ====================================================================
 // Set Constraints
@@ -64,11 +87,9 @@ term SubSetEq[SExpr,SExpr]
 term SupSet[SExpr,SExpr]
 term SupSetEq[SExpr,SExpr]
 
-
 // ====================================================================
 // Not
 // ====================================================================
-
 term Not(BExpr)
 
 rewrite Not(True):

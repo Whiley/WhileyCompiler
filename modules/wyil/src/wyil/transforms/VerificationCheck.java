@@ -216,18 +216,19 @@ public class VerificationCheck implements Transform {
 				root = And(tmp,root,Not(tmp,test));
 				tmp.mark(root);				
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
-				System.out.println("--");
+				System.out.println("\n --------");
 				// TODO: following should be part of constraint solver
 				boolean changed = true;
 				while(changed) {
 					changed = false;
-					for(int i=0;i<automaton.nStates();++i) {
-						if(automaton.get(i) != null) {
-							changed |= rewrite_5e2a_0(i,automaton);
+					for(int i=0;i<tmp.nStates();++i) {
+						if(tmp.get(i) != null) {
+							changed |= rewrite_5e2a_0(i,tmp);
 						}
 					}
 				}
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
+				System.out.println();
 			} catch(Exception e) {
 				e.printStackTrace();
 			}

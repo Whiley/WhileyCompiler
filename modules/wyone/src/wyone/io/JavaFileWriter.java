@@ -164,7 +164,7 @@ public class JavaFileWriter {
 
 	public void write(FunDecl decl, HashSet<String> used) {
 		myOut(1, "// " + decl.type.ret + " " + decl.name + "(" + decl.type.param + ")");
-		myOut(1, "static " + type2JavaType(decl.type.ret) + " " + decl.name + "_"
+		myOut(1, "public static " + type2JavaType(decl.type.ret) + " " + decl.name + "_"
 				+ nameMangle(decl.type.param, used) + "("
 				+ type2JavaType(decl.type.param) + " r0, Automaton automaton) {");
 		// first, declare variables
