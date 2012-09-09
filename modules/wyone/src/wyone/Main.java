@@ -135,7 +135,7 @@ public class Main {
 				WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
 				// new TypeCheck().check(wyf);
 				// new SpecFileWriter(oFile).write(spec);
-				new JavaFileWriter(oFile).write(wyf);
+				new NewJavaFileWriter(oFile).write(sf);
 			} catch (SyntaxError e) {
 				outputSourceError(e.filename(), e.start(), e.end(),
 						e.getMessage());

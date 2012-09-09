@@ -1,11 +1,10 @@
-package wyil.util
-
+term False
 term True
-term Num(int)
-term Sum{|Num...|}
+class Bool as True | False
+term Not(Bool)
 
-rewrite Sum{|Num(int x), Num(int y), Num... rest|}:
-    => Sum (Num(x+y) ++ rest)
+rewrite Not(Bool b):
+    => False, if b == b
 
 
 
