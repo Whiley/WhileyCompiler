@@ -270,15 +270,17 @@ public class NewJavaFileWriter {
 			myOut(level, type2JavaType(pt) + " r" + index + " = r"
 					+ source + ".get(" + name + ");");
 
-			// TODO: check against earlier indices
-			
+			indent(level);out.print("if(");
+			// check against earlier indices
+			for(int j=0;j<i;++j) {
+				out.print(name + " != i" + indices[j] + " &&");
+			}
 			// check matching type
-			myOut(level,"if(typeof_" + type2HexStr(pt) + "(r" + index + ",automaton)) {");			
+			myOut("typeof_" + type2HexStr(pt) + "(r" + index + ",automaton)) {");			
 			translate(level+1,pat,index,environment);
 			myOut(level,"}");
 		}
-		
-		
+				
 		// close each for-loop created
 		for (int i = 0; i != elements.length; ++i) {			
 			myOut(--level,"}");

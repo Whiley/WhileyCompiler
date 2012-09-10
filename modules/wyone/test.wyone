@@ -4,7 +4,7 @@ class Bool as True | False
 term Not{Bool,Bool}
 term Var(string)
 
-rewrite Not{True, * other}:
+rewrite Not{True, True, * other}:
     => False
 
     
