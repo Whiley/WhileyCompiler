@@ -7,8 +7,8 @@ term Or{Term...}
 term Var(string)
 class Term as And | Or | Var | Bool
 
-rewrite And{Or x, Term... rest}:
-    => And (rest)
+rewrite And{And{Term... xs}, Term... ys}:
+    => And (xs ++ ys)
 
 
 
