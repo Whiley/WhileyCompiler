@@ -2,19 +2,11 @@ term False
 term True
 class Bool as True | False
 
-term Not(Term)
-term And{Term...}
-term Or{Term...}
-term Var(string)
-class Term as Not | And | Or | Var | Bool
+term Num(int)
+term Sum{|Num...|}
 
-rewrite And{And{Term... xs}, Term... ys}:
-    => And (xs ++ ys)
-
-rewrite Not(And{Term... xs}):
-    => let ys = { Not(x) | x in xs }
-       in Or(ys)
-
+rewrite Sum{|Num(int x), Num(int y), Num... rest|}:
+    => Sum (Num(x+y) ++ rest)
 
 
 

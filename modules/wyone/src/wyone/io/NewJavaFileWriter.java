@@ -304,8 +304,8 @@ public class NewJavaFileWriter {
 					int rest = environment.allocate(rt,var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Set(t" + index + ");");
 				} else {
-					Type.Compound rt = Type.T_LIST(true,pt);
-					int rest = environment.allocate(Type.T_SET(true,pt),var);
+					Type.Compound rt = Type.T_BAG(true,pt);
+					int rest = environment.allocate(rt,var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Bag(t" + index + ");");
 				}
 			} else {
@@ -507,10 +507,42 @@ public class NewJavaFileWriter {
 
 	public int translate(int level, Expr.BinOp code, Environment environment) {
 		Type type = code.attribute(Attribute.Type.class).type;
+		Type lhs_t = code.lhs.attribute(Attribute.Type.class).type;
+		Type rhs_t = code.rhs.attribute(Attribute.Type.class).type;
 		int lhs = translate(level,code.lhs,environment);
 		int rhs = translate(level,code.rhs,environment);
-		String body;
+		// First, convert operands into values (where appropriate)
+		switch(code.op) {
+		case EQ:
+		case NEQ:
+			// do nothing for these
+			break;
+		case APPEND:
+			// append is a tricky case as we have support the non-symmetic cases
+			// for adding a single element to the end or the beginning of a
+			// list.
+			lhs_t = Type.unbox(lhs_t);
+			rhs_t = Type.unbox(rhs_t);
+			
+			if(lhs_t instanceof Type.Compound) {
+				lhs = coerceFromRef(level,code.lhs, lhs, environment);				
+			} else {
+				lhs = coerceFromValue(level, code.lhs, lhs, environment);				
+			}
+			if(rhs_t instanceof Type.Compound) {
+				rhs = coerceFromRef(level,code.rhs, rhs, environment);	
+			} else {
+				rhs = coerceFromValue(level,code.rhs, rhs, environment);
+			}
+			break;
+		default:
+			lhs = coerceFromRef(level,code.lhs,lhs,environment);
+			rhs = coerceFromRef(level,code.rhs,rhs,environment);
+		}
 		
+		// Second, construct the body of the computation
+		String body;
+						
 		switch (code.op) {
 		case ADD:
 			body = "r" + lhs + ".add(r" + rhs + ")";
@@ -550,8 +582,7 @@ public class NewJavaFileWriter {
 		case GTEQ:
 			body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
 			break;
-		case APPEND:
-			Type lhs_t = code.lhs.attribute(Attribute.Type.class).type; 
+		case APPEND: 
 			if (lhs_t instanceof Type.Compound) {
 				body = "r" + lhs + ".append(r" + rhs + ")";
 			} else {
