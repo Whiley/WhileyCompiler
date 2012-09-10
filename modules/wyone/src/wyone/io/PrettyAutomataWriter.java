@@ -102,7 +102,6 @@ public class PrettyAutomataWriter  {
 	}
 	
 	protected void write(Automaton.Compound state, Automaton automaton) throws IOException {
-		int[] children = state.children;
 		switch(state.kind) {
 			case Automaton.K_LIST:
 				writer.print("[");
@@ -114,11 +113,11 @@ public class PrettyAutomataWriter  {
 				writer.print("{");
 				break;
 		}		
-		for(int i=0;i!=children.length;++i) {
+		for(int i=0;i!=state.size();++i) {
 			if(i != 0) {
 				writer.print(",");
 			}
-			write(children[i],automaton);
+			write(state.get(i),automaton);
 		}
 		switch(state.kind) {
 			case Automaton.K_LIST:

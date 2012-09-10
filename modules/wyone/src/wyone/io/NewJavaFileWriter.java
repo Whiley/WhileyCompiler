@@ -8,7 +8,6 @@ import java.util.*;
 
 import wyone.util.*;
 import wyone.core.Attribute;
-import wyone.core.Code;
 import wyone.core.Type;
 import wyone.spec.Expr;
 import wyone.spec.Pattern;
@@ -253,7 +252,7 @@ public class NewJavaFileWriter {
 		source = coerceFromRef(level, pattern, source, environment);
 		if (type.element.data != null) {
 			int target = environment.allocate(type.element.data, pattern.variable);
-			myOut(2, type2JavaType(type.element.data) + " r" + target + " = r"
+			myOut(level, type2JavaType(type.element.data) + " r" + target + " = r"
 					+ source + ".contents;");
 			return translate(level,pattern.data, target, environment);
 		} else {
@@ -448,8 +447,10 @@ public class NewJavaFileWriter {
 			return translate(level,(Expr.NaryOp) code, environment);
 		} else if (code instanceof Expr.Constructor) {
 			return translate(level,(Expr.Constructor) code, environment);
-		} if (code instanceof Expr.Variable) {
+		} else if (code instanceof Expr.Variable) {
 			return translate(level,(Expr.Variable) code, environment);
+		} else if(code instanceof Expr.Comprehension) {
+			return translate(level,(Expr.Comprehension) code, environment);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
@@ -625,6 +626,65 @@ public class NewJavaFileWriter {
 			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
 			return target;
 		}
+	}
+	
+	public int translate(int level, Expr.Comprehension expr, Environment environment) {		
+		Type type = expr.attribute(Attribute.Type.class).type;
+		int target = environment
+				.allocate(type);
+		
+		// first, translate all source expressions
+		int[] sources = new int[expr.sources.size()];
+		for(int i=0;i!=sources.length;++i) {
+			Pair<Expr.Variable,Expr> p = expr.sources.get(i);
+			int operand = translate(level,p.second(),environment);
+			operand = coerceFromRef(level,p.second(),operand,environment);
+			sources[i] = operand;									
+		}
+		
+		// TODO: initialise result set
+		myOut(level, "Automaton.List t" + target + " = new Automaton.List();");
+		// second, generate all the for loops
+		for (int i = 0; i != sources.length; ++i) {
+			Pair<Expr.Variable, Expr> p = expr.sources.get(i);
+			Expr.Variable variable = p.first();
+			Expr source = p.second();
+			Type.Compound sourceType = (Type.Compound) source
+					.attribute(Attribute.Type.class).type;
+			Type elementType = variable.attribute(Attribute.Type.class).type;
+			int index = environment.allocate(elementType, variable.var);
+			myOut(level++, "for(int i" + index + "=0;i" + index + "<r"
+					+ sources[i] + ".size();i" + index + "++) {");
+			myOut(level, type2JavaType(elementType) + " r" + index + " = r"
+					+ sources[i] + ".get(i" + index + ");");
+		}
+		
+		if(expr.condition != null) {
+			int condition = translate(level,expr.condition,environment);
+			myOut(level++,"if(r" + condition + ") {");			
+		}
+		
+		int result = translate(level,expr.value,environment);
+		result = coerceFromValue(level,expr.value,result,environment);
+		myOut(level,"t" + target + ".add(r" + result + ");");
+		
+		// finally, terminate all the for loops
+		for(int i=0;i!=sources.length;++i) {
+			myOut(--level,"}");
+		}
+
+		switch(expr.cop) {
+		case SETCOMP:
+			myOut(level, type2JavaType(type) + " r" + target
+				+ " = new Automaton.Set(t" + target + ".children);");
+			break;
+		case BAGCOMP:
+			myOut(level, type2JavaType(type) + " r" + target
+				+ " = new Automaton.Bag(t" + target + ".children);");
+			break;
+		}
+
+		return target;
 	}
 	
 	protected void writeTypeTests(HashMap<String, Set<String>> hierarchy) {

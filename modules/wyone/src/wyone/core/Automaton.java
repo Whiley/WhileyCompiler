@@ -523,7 +523,11 @@ public final class Automaton {
 	 * 
 	 */
 	public static abstract class Compound extends State {
+
+		// TODO: make this private
+		
 		public int[] children;
+		protected int length;
 
 		private Compound(int kind, int...children) {
 			super(kind);
@@ -531,6 +535,7 @@ public final class Automaton {
 				throw new IllegalArgumentException("invalid compound kind");
 			} 			
 			this.children = children;
+			length = children.length;
 		}
 		
 		private Compound(int kind, java.util.List<Integer> children) {
@@ -542,11 +547,12 @@ public final class Automaton {
 			for (int i = 0; i != children.size(); ++i) {
 				nchildren[i] = children.get(i);
 			}			
-			this.children = nchildren;			
+			this.children = nchildren;	
+			length = nchildren.length;
 		}
 		
 		public void remap(int from, int to) {
-			for(int i=0;i!=children.length;++i) {
+			for(int i=0;i!=length;++i) {
 				if(children[i] == from) {
 					children[i] = to;
 				}
@@ -558,20 +564,38 @@ public final class Automaton {
 		}
 		
 		public int size() {
-			return children.length;
+			return length;
 		}
 		
 		public boolean equals(final Object o) {
 			if (o instanceof Compound) {
 				Compound t = (Compound) o;
-				return kind == t.kind && Arrays.equals(children, t.children);
+				if(kind == t.kind && length == t.length) {
+					int[] t_children = t.children;
+					for(int i=0;i!=length;++i) {
+						if(children[i] != t_children[i]) {
+							return false;
+						}
+					}
+					return true;
+				}
 			}
 			return false;
 		}
 
 		public int hashCode() {
 			return kind * Arrays.hashCode(children);
-		}							
+		}			
+		
+		protected void internal_add(int ref) {
+			if(length == children.length) {
+				int nlength = (1+children.length) * 2;
+				int[] nchildren = new int[nlength];
+				System.arraycopy(children,0,nchildren,0,length);
+				children = nchildren;
+			}
+			children[length++] = ref;
+		}
 	}
 	
 	public static final class Bag extends Compound {
@@ -591,28 +615,28 @@ public final class Automaton {
 		}
 		
 		public Bag clone() {
-			return new Bag(Arrays.copyOf(children, children.length));
+			return new Bag(Arrays.copyOf(children, length));
 		}
 		
 		public Bag append(Bag rhs) {
-			return new Bag(Automaton.append(children,rhs.children));
+			return new Bag(Automaton.append(children,length,rhs.children,rhs.length));
 		}
 		
 		public Bag append(int rhs) {
-			return new Bag(Automaton.append(children,rhs));			
+			return new Bag(Automaton.append(children,length,rhs));			
 		}
 		
 		public Bag appendFront(int lhs) {
-			return new Bag(Automaton.append(lhs,children));
+			return new Bag(Automaton.append(lhs,children,length));
 		}
 		
 		public Bag removeAll(Bag rhs) {
-			return new Bag(sortedRemoveAll(this.children, rhs.children));
+			return new Bag(sortedRemoveAll(this.children, length, rhs.children, rhs.length));
 		}
 		
 		public String toString() {
 			String r = "{|";
-			for(int i=0;i!=children.length;++i) {
+			for(int i=0;i!=length;++i) {
 				if(i != 0) { r += ","; }
 				r += children[i];
 			}
@@ -635,31 +659,31 @@ public final class Automaton {
 		}
 		
 		public Set clone() {
-			return new Set(Arrays.copyOf(children, children.length));
+			return new Set(Arrays.copyOf(children, length));
 		}
 		
 		public Set append(Set rhs) {
-			return new Set(Automaton.append(children,rhs.children));
+			return new Set(Automaton.append(children,length,rhs.children,rhs.length));
 		}
 		
 		public Set append(int rhs) {
-			return new Set(Automaton.append(children,rhs));			
+			return new Set(Automaton.append(children,length,rhs));			
 		}
 		
 		public Set appendFront(int lhs) {
-			return new Set(Automaton.append(lhs,children));
+			return new Set(Automaton.append(lhs,children,length));
 		}
 		
 		public Set removeAll(Set rhs) {
 			
 			// TODO: avoid the unnecessary sortAndRemoveDuplicates
 			
-			return new Set(sortedRemoveAll(this.children, rhs.children));
+			return new Set(sortedRemoveAll(this.children, length, rhs.children, rhs.length));
 		}
 		
 		public String toString() {
 			String r = "{";
-			for(int i=0;i!=children.length;++i) {
+			for(int i=0;i!=length;++i) {
 				if(i != 0) { r += ","; }
 				r += children[i];
 			}
@@ -683,7 +707,7 @@ public final class Automaton {
 
 		public List sublist(Int start) {
 			return new List(Arrays.copyOfRange(children, start.intValue(),
-					children.length));
+					length));
 		}
 		
 		public List sublist(int start, int end) {
@@ -693,28 +717,32 @@ public final class Automaton {
 
 		public List sublist(int start) {
 			return new List(
-					Arrays.copyOfRange(children, start, children.length));
+					Arrays.copyOfRange(children, start, length));
 		}
 		
 		public List append(List rhs) {
-			return new List(Automaton.append(children,rhs.children));
+			return new List(Automaton.append(children,length,rhs.children,rhs.length));
 		}
 		
 		public List append(int rhs) {
-			return new List(Automaton.append(children,rhs));			
+			return new List(Automaton.append(children,length,rhs));			
 		}
 		
 		public List appendFront(int lhs) {
-			return new List(Automaton.append(lhs,children));
+			return new List(Automaton.append(lhs,children,length));
+		}
+		
+		public void add(int ref) {
+			internal_add(ref);
 		}
 		
 		public Compound clone() {
-			return new List(Arrays.copyOf(children,children.length));
+			return new List(Arrays.copyOf(children,length));
 		}		
 		
 		public String toString() {
 			String r = "[";
-			for(int i=0;i!=children.length;++i) {
+			for(int i=0;i!=length;++i) {
 				if(i != 0) { r += ","; }
 				r += children[i];
 			}
@@ -779,12 +807,12 @@ public final class Automaton {
 		}
 	}
 	
-	private static int[] sortedRemoveAll(int[] lhs, int[] rhs) {		
-		boolean[] marks = new boolean[lhs.length];
+	private static int[] sortedRemoveAll(int[] lhs, int lhs_len, int[] rhs, int rhs_len) {		
+		boolean[] marks = new boolean[lhs_len];
 		int count = 0;
 		int i = 0;
 		int j = 0;
-		while (i < lhs.length && j < rhs.length) {
+		while (i < lhs_len && j < rhs_len) {
 			int ith = lhs[i];
 			int jth = rhs[j];
 			if (jth < ith) {
@@ -798,9 +826,9 @@ public final class Automaton {
 			}
 		}
 
-		int[] nchildren = new int[lhs.length - count];
+		int[] nchildren = new int[lhs_len - count];
 		j = 0;
-		for (i = 0; i != lhs.length; ++i) {
+		for (i = 0; i != lhs_len; ++i) {
 			if (!marks[i]) {
 				nchildren[j++] = lhs[i];
 			}
@@ -808,23 +836,23 @@ public final class Automaton {
 		return nchildren;
 	}
 	
-	private static int[] append(int[] lhs, int[] rhs) {
-		int[] nchildren = new int[lhs.length + rhs.length];
-		System.arraycopy(lhs, 0, nchildren, 0, lhs.length);
-		System.arraycopy(rhs, 0, nchildren, lhs.length, rhs.length);
+	private static int[] append(int[] lhs, int lhs_len, int[] rhs, int rhs_len) {
+		int[] nchildren = new int[lhs_len + rhs_len];
+		System.arraycopy(lhs, 0, nchildren, 0, lhs_len);
+		System.arraycopy(rhs, 0, nchildren, lhs_len, rhs_len);
 		return nchildren;
 	}
 	
-	private static int[] append(int[] lhs, int rhs) {
-		int[] nchildren = new int[lhs.length + 1];
-		System.arraycopy(lhs,0,nchildren,0,lhs.length);
-		nchildren[lhs.length] = rhs;			
+	private static int[] append(int[] lhs, int lhs_len, int rhs) {
+		int[] nchildren = new int[lhs_len + 1];
+		System.arraycopy(lhs,0,nchildren,0,lhs_len);
+		nchildren[lhs_len] = rhs;			
 		return nchildren;
 	}
 	
-	private static int[] append(int lhs, int[] rhs) {
-		int[] nchildren = new int[rhs.length + 1];
-		System.arraycopy(rhs,0,nchildren,1,rhs.length);
+	private static int[] append(int lhs, int[] rhs, int rhs_len) {
+		int[] nchildren = new int[rhs_len + 1];
+		System.arraycopy(rhs,0,nchildren,1,rhs_len);
 		nchildren[0] = lhs;			
 		return nchildren;
 	}
