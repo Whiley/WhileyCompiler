@@ -51,6 +51,7 @@ wycc_obj* wycc_box_bool(int x);
 wycc_obj* wycc_box_char(char x);
 wycc_obj* wycc_box_null();
 wycc_obj* wycc_box_ref(int x);
+wycc_obj* wycc_box_pair(wycc_obj* key, wycc_obj* val);
 int wycc_type_check(wycc_obj* itm, char* typ);
 wycc_obj* wycc_record_record(wycc_obj* nam, wycc_obj* typ);
 wycc_obj* wycc_rrecord_new(long siz);
@@ -75,6 +76,8 @@ int ywcc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel);
 wycc_obj* wycc_iter_new(wycc_obj *itm);
 wycc_obj* wycc_iter_next(wycc_obj *itm);
 wycc_obj* wycc_list_slice(wycc_obj* lst, int lo, int hi);
+wycc_obj* wycc_tuple_new(long siz);
+wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
 
 /*
  * routines to implement wyil operations
