@@ -125,6 +125,7 @@ wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs);
  */
 wycc_obj* wycc__toString(wycc_obj* itm);
 void wycc__println(wycc_obj* sys, wycc_obj* itm);
+void wycc__print(wycc_obj* sys, wycc_obj* itm);
 
 
 #ifndef WY_OBJ_SAFE

@@ -656,7 +656,7 @@ wycc_obj* wycc_tuple_new(long siz) {
     ans = wycc_list_new(siz);
     ans->typ = Wy_Tuple;
     p = (void **) ans->ptr;
-    p[1] = siz; 
+    p[1] = (void *) siz; 
     return ans;
 }
 
@@ -3265,7 +3265,7 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
 /*
  * given a System object, write a line to the file referred to by out
  */
-void wycc__println(wycc_obj* sys, wycc_obj* itm) {
+void wycc__print(wycc_obj* sys, wycc_obj* itm) {
     /* WY_OBJ_SANE(sys); */
     WY_OBJ_SANE(itm, "wycc__println itm");
     wycc_obj* alt;
@@ -3275,33 +3275,45 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
 	fprintf(stderr, "Help needed in wycc__println for type %d\n", sys->typ);
     };
     if (itm->typ == Wy_String) {
-	printf("%s\n", (char *) itm->ptr);
+	printf("%s", (char *) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_CString) {
-	printf("%s\n", (char *) itm->ptr);
+	printf("%s", (char *) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_Char) {
 	tmp = (int) itm->ptr;
-	printf("'%c'\n", (char) tmp);
+	printf("'%c'", (char) tmp);
 	return;
     };
     if (itm->typ == Wy_Int) {
-	printf("%-.1d\n", (long) itm->ptr);
+	printf("%-.1d", (long) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_Bool) {
 	if (itm->ptr == NULL) {
-	    printf("false\n");
+	    printf("false");
 	} else {
-	    printf("true\n");
+	    printf("true");
 	}
 	return;
     };
     alt = wycc__toString(itm);
-    printf("%s\n", alt->ptr);
+    printf("%s", alt->ptr);
     wycc_deref_box(alt);
+}
+
+
+/*
+ * given a System object, write a line to the file referred to by out
+ */
+void wycc__println(wycc_obj* sys, wycc_obj* itm) {
+    /* WY_OBJ_SANE(sys); */
+    WY_OBJ_SANE(itm, "wycc__println itm");
+
+    wycc__print(sys, itm);
+    printf("\n");
 }
 
 
@@ -3524,7 +3536,14 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     if (itm == (wycc_obj *)NULL) {
 	return wycc_box_cstr("null");
     }
-    if (itm->typ == Wy_String) {
+    //if (itm->typ == Wy_String) {
+    if ((itm->typ == Wy_String) || (itm->typ == Wy_CString)) {
+	part = (char *) itm->ptr;
+	siz = strlen(part);
+	siz += 4;
+	buf = (char *) malloc(siz);
+	sprintf(buf, "\"%s\"", part);
+	return wycc_box_str(buf);
 	itm->cnt++;
 	return itm;
     };

@@ -1051,6 +1051,8 @@ public class Wyil2CBuilder implements Builder {
 			targ = cod.target;
 			cnt = cod.operands.length;
 			
+			writeClearTarget(targ, tag);
+			this.addDecl(targ, "wycc_obj*");
 			lin = "X" + targ + " = wycc_tuple_new(" + cnt + ");" + tag;
 			tmp = indent + lin + "\n";
 			this.mbodyAddLine(tmp);
