@@ -205,51 +205,63 @@ public class NewJavaFileWriter {
 		int thus = environment.allocate(param,"this");
 		
 		// translate pattern
-		translate(2,pattern,thus,environment);
+		int level = translate(2,pattern,thus,environment);
 		
 		// translate expressions
 		myOut(1);
 		boolean conditional = true;
 		for(RuleDecl rd : decl.rules) {
-			conditional &= translate(rd,environment);
+			conditional &= translate(level,rd,environment);
 		}
+		
+		// close the pattern match
+		conditional |= level > 2;
+		
+		while(level > 2) {
+			myOut(--level,"}");
+		}
+		
 		if(conditional) {
-			myOut(2,"return false;");
+			myOut(level,"return false;");
 		}
-		myOut(1,"}");
+				
+		myOut(--level,"}");
 		myOut();
 	}
 	
-	public void translate(int level, Pattern p, int source, Environment environment) {
+	public int translate(int level, Pattern p, int source, Environment environment) {
 		if(p instanceof Pattern.Leaf) {
-			translate(level,(Pattern.Leaf) p,source,environment);
+			return translate(level,(Pattern.Leaf) p,source,environment);
 		} else if(p instanceof Pattern.Term) {
-			translate(level,(Pattern.Term) p,source,environment);
+			return translate(level,(Pattern.Term) p,source,environment);
 		} else if(p instanceof Pattern.Set) {
-			translate(level,(Pattern.Set) p,source,environment);
+			return translate(level,(Pattern.Set) p,source,environment);
 		} else if(p instanceof Pattern.Bag) {
-			translate(level,(Pattern.Bag) p,source,environment);
+			return translate(level,(Pattern.Bag) p,source,environment);
 		} else  {
-			translate(level,(Pattern.List) p,source,environment);
+			return translate(level,(Pattern.List) p,source,environment);
 		} 
 	}
 	
-	public void translate(int level, Pattern.Leaf p, int source, Environment environment) {
+	public int translate(int level, Pattern.Leaf p, int source, Environment environment) {
 		// do nothing?
+		return level;
 	}
 	
-	public void translate(int level, Pattern.Term pattern, int source, Environment environment) {
+	public int translate(int level, Pattern.Term pattern, int source, Environment environment) {
 		Type.Ref<Type.Term> type = (Type.Ref) pattern.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
 		if (type.element.data != null) {
 			int target = environment.allocate(type.element.data, pattern.variable);
 			myOut(2, type2JavaType(type.element.data) + " r" + target + " = r"
 					+ source + ".contents;");
-			translate(level,pattern.data, target, environment);
+			return translate(level,pattern.data, target, environment);
+		} else {
+			return level;
 		}
 	}
 
-	public void translate(int level, Pattern.BagOrSet pattern, int source, Environment environment) {
+	public int translate(int level, Pattern.BagOrSet pattern, int source, Environment environment) {
 		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
 				.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
@@ -259,13 +271,19 @@ public class NewJavaFileWriter {
 		// construct a for-loop for each fixed element to match
 		int[] indices = new int[elements.length];
 		for (int i = 0; i != elements.length; ++i) {
+			boolean isUnbounded = pattern.unbounded && (i+1) == elements.length;
 			Pair<Pattern, String> p = elements[i];
 			Pattern pat = p.first();
 			String var = p.second();
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
-			int index = environment.allocate(pt);
+			int index = environment.allocate(pt,var);
 			String name = "i" + index;
 			indices[i] = index;
+			if(isUnbounded) {
+				Type.Compound rt = pattern instanceof Pattern.Bag ? Type.T_BAG(true,pt) : Type.T_SET(true,pt);
+				myOut(level, "int j" + index + " = 0;");
+				myOut(level, "int[] t" + index + " = new int[r" + source + ".size()-" + i + "];");				
+			}
 			myOut(level++,"for(int " + name + "=0;" + name + "!=r" + source + ".size();++" + name + ") {");
 			myOut(level, type2JavaType(pt) + " r" + index + " = r"
 					+ source + ".get(" + name + ");");
@@ -273,21 +291,33 @@ public class NewJavaFileWriter {
 			indent(level);out.print("if(");
 			// check against earlier indices
 			for(int j=0;j<i;++j) {
-				out.print(name + " != i" + indices[j] + " &&");
+				out.print(name + " == i" + indices[j] + " || ");
 			}
 			// check matching type
-			myOut("typeof_" + type2HexStr(pt) + "(r" + index + ",automaton)) {");			
-			translate(level+1,pat,index,environment);
-			myOut(level,"}");
-		}
-				
-		// close each for-loop created
-		for (int i = 0; i != elements.length; ++i) {			
-			myOut(--level,"}");
-		}
+			myOut("!typeof_" + type2HexStr(pt) + "(r" + index + ",automaton)) { continue; }");
+			myOut(level);
+			
+			if(isUnbounded) {
+				myOut(level,"t" + index + "[j" + index + "++] = r" + index + ";");
+				myOut(--level,"}");
+				if(pattern instanceof Pattern.Set) { 
+					Type.Compound rt = Type.T_SET(true,pt);
+					int rest = environment.allocate(rt,var);
+					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Set(t" + index + ");");
+				} else {
+					Type.Compound rt = Type.T_LIST(true,pt);
+					int rest = environment.allocate(Type.T_SET(true,pt),var);
+					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Bag(t" + index + ");");
+				}
+			} else {
+				level = translate(level++,pat,index,environment);
+			}
+		}	
+		
+		return level;
 	}
 
-	public void translate(int level, Pattern.List pattern, int source, Environment environment) {
+	public int translate(int level, Pattern.List pattern, int source, Environment environment) {
 		Type.Ref<Type.List> type = (Type.Ref<Type.List>) pattern
 				.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
@@ -309,14 +339,15 @@ public class NewJavaFileWriter {
 				myOut(level, type2JavaType(pt) + " r" + element + " = r"
 						+ source + ".get(" + i + ");");
 			}
-			translate(level,pat, element, environment);
+			level = translate(level,pat, element, environment);
 			if (var != null) {
 				environment.put(element, var);
 			}
 		}
+		return level;
 	}
 	
-	public boolean translate(RuleDecl decl, Environment environment) {
+	public boolean translate(int level, RuleDecl decl, Environment environment) {
 		int thus = environment.get("this");
 		for(Pair<String,Expr> let : decl.lets) {
 			String letVar = let.first();
@@ -324,7 +355,6 @@ public class NewJavaFileWriter {
 			int result = translate(2, letExpr, environment);
 			environment.put(result, letVar);
 		}
-		int level = 2;
 		if(decl.condition != null) {
 			int condition = translate(2, decl.condition, environment);
 			myOut(level++, "if(r" + condition + ") {");
@@ -573,8 +603,10 @@ public class NewJavaFileWriter {
 		if (code.argument == null) {
 			body = code.name;
 		} else {
+			int arg = translate(level, code.argument, environment);
+			arg = coerceFromValue(level,code.argument,arg,environment);
 			body = "new Automaton.Term(K_" + code.name + ",r"
-					+ translate(level, code.argument, environment) + ")";
+					+  arg + ")";
 		}
 
 		int target = environment.allocate(type);

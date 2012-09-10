@@ -83,25 +83,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			super(attributes);
 			this.elements = elements.toArray(new Pair[elements.size()]);			
 			this.unbounded = unbounded;
-		}
-				
-		public String toString() {
-			String r = "";
-			for(int i=0;i!=elements.length;++i) {
-				if(i!=0) {
-					r += ",";
-				}
-				r += elements[i];
-			}
-			if(unbounded) {
-				r += "...";
-			}
-			if(this instanceof List) {
-				return "[" + r + "]";
-			} else {
-				return "{" + r + "}";			
-			}			
-		}
+		}		
 	}
 	
 	public final static class List extends Compound {
@@ -116,10 +98,17 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
+				Pair<Pattern,String> element = elements[i];
+				Pattern pattern = element.first();
+				String variable = element.second();
 				if(i!=0) {
-					r += ",";
+					r += ", ";
 				}
-				r += elements[i];
+				r += pattern;
+				if(variable != null) {
+					r += " " + variable;
+				}
+				
 			}
 			if(unbounded) {
 				r += "...";
@@ -150,10 +139,16 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
+				Pair<Pattern,String> element = elements[i];
+				Pattern pattern = element.first();
+				String variable = element.second();
 				if(i!=0) {
-					r += ",";
+					r += ", ";
 				}
-				r += elements[i];
+				r += pattern;
+				if(variable != null) {
+					r += " " + variable;
+				}
 			}
 			if(unbounded) {
 				r += "...";
@@ -174,10 +169,16 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
+				Pair<Pattern,String> element = elements[i];
+				Pattern pattern = element.first();
+				String variable = element.second();
 				if(i!=0) {
-					r += ",";
+					r += ", ";
 				}
-				r += elements[i];
+				r += pattern;
+				if(variable != null) {
+					r += " " + variable;
+				}
 			}
 			if(unbounded) {
 				r += "...";

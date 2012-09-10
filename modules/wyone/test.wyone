@@ -1,13 +1,17 @@
 term False
 term True
 class Bool as True | False
-term Not{Bool,Bool}
+
+term And{Term...}
+term Or{Term...}
 term Var(string)
+class Term as And | Or | Var | Bool
 
-rewrite Not{True, True, * other}:
-    => False
+rewrite And{Or x, Term... rest}:
+    => And (rest)
 
-    
+
+
 
 
 
