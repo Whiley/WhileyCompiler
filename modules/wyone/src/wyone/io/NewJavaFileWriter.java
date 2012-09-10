@@ -205,7 +205,7 @@ public class NewJavaFileWriter {
 		int thus = environment.allocate(param,"this");
 		
 		// translate pattern
-		translate(pattern,thus,environment);
+		translate(2,pattern,thus,environment);
 		
 		// translate expressions
 		myOut(1);
@@ -220,47 +220,75 @@ public class NewJavaFileWriter {
 		myOut();
 	}
 	
-	public void translate(Pattern p, int source, Environment environment) {
+	public void translate(int level, Pattern p, int source, Environment environment) {
 		if(p instanceof Pattern.Leaf) {
-			translate((Pattern.Leaf) p,source,environment);
+			translate(level,(Pattern.Leaf) p,source,environment);
 		} else if(p instanceof Pattern.Term) {
-			translate((Pattern.Term) p,source,environment);
+			translate(level,(Pattern.Term) p,source,environment);
 		} else if(p instanceof Pattern.Set) {
-			translate((Pattern.Set) p,source,environment);
+			translate(level,(Pattern.Set) p,source,environment);
 		} else if(p instanceof Pattern.Bag) {
-			translate((Pattern.Bag) p,source,environment);
+			translate(level,(Pattern.Bag) p,source,environment);
 		} else  {
-			translate((Pattern.List) p,source,environment);
+			translate(level,(Pattern.List) p,source,environment);
 		} 
 	}
 	
-	public void translate(Pattern.Leaf p, int source, Environment environment) {
+	public void translate(int level, Pattern.Leaf p, int source, Environment environment) {
 		// do nothing?
 	}
 	
-	public void translate(Pattern.Term pattern, int source, Environment environment) {
+	public void translate(int level, Pattern.Term pattern, int source, Environment environment) {
 		Type.Ref<Type.Term> type = (Type.Ref) pattern.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(2, pattern, source, environment);
+		source = coerceFromRef(level, pattern, source, environment);
 		if (type.element.data != null) {
 			int target = environment.allocate(type.element.data, pattern.variable);
 			myOut(2, type2JavaType(type.element.data) + " r" + target + " = r"
 					+ source + ".contents;");
-			translate(pattern.data, target, environment);
+			translate(level,pattern.data, target, environment);
 		}
 	}
 
-	public void translate(Pattern.Set pattern, int source, Environment environment) {
+	public void translate(int level, Pattern.BagOrSet pattern, int source, Environment environment) {
+		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
+				.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(level, pattern, source, environment);
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		
+		// construct a for-loop for each fixed element to match
+		int[] indices = new int[elements.length];
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			Pattern pat = p.first();
+			String var = p.second();
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
+			int index = environment.allocate(pt);
+			String name = "i" + index;
+			indices[i] = index;
+			myOut(level++,"for(int " + name + "=0;" + name + "!=r" + source + ".size();++" + name + ") {");
+			myOut(level, type2JavaType(pt) + " r" + index + " = r"
+					+ source + ".get(" + name + ");");
 
+			// TODO: check against earlier indices
+			
+			// check matching type
+			myOut(level,"if(typeof_" + type2HexStr(pt) + "(r" + index + ",automaton)) {");			
+			translate(level+1,pat,index,environment);
+			myOut(level,"}");
+		}
+		
+		
+		// close each for-loop created
+		for (int i = 0; i != elements.length; ++i) {			
+			myOut(--level,"}");
+		}
 	}
 
-	public void translate(Pattern.Bag pattern, int source, Environment environment) {
-
-	}
-
-	public void translate(Pattern.List pattern, int source, Environment environment) {
+	public void translate(int level, Pattern.List pattern, int source, Environment environment) {
 		Type.Ref<Type.List> type = (Type.Ref<Type.List>) pattern
 				.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(2, pattern, source, environment);
+		source = coerceFromRef(level, pattern, source, environment);
 		
 		Pair<Pattern, String>[] elements = pattern.elements;
 		for (int i = 0; i != elements.length; ++i) {
@@ -272,14 +300,14 @@ public class NewJavaFileWriter {
 			if(pattern.unbounded && (i+1) == elements.length) {
 				Type.List tc = Type.T_LIST(true, pt);
 				element = environment.allocate(tc);
-				myOut(2, type2JavaType(tc) + " r" + element + " = r"
+				myOut(level, type2JavaType(tc) + " r" + element + " = r"
 						+ source + ".sublist(" + i + ");");
 			} else {
 				element = environment.allocate(pt);				
-				myOut(2, type2JavaType(pt) + " r" + element + " = r"
+				myOut(level, type2JavaType(pt) + " r" + element + " = r"
 						+ source + ".get(" + i + ");");
 			}
-			translate(pat, element, environment);
+			translate(level,pat, element, environment);
 			if (var != null) {
 				environment.put(element, var);
 			}

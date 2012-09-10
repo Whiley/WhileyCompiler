@@ -1,11 +1,11 @@
 term False
 term True
 class Bool as True | False
-term Not[Bool,Bool]
+term Not{Bool,Bool}
 term Var(string)
 
-rewrite Not[True, *... rest]:
-    => rest
+rewrite Not{True, * other}:
+    => False
 
     
 
