@@ -8,6 +8,7 @@ import java.util.*;
 
 import wyone.util.*;
 import wyone.core.Attribute;
+import wyone.core.Code;
 import wyone.core.Type;
 import wyone.spec.Expr;
 import wyone.spec.Pattern;
@@ -237,27 +238,54 @@ public class NewJavaFileWriter {
 		// do nothing?
 	}
 	
-	public void translate(Pattern.Term p, int source, Environment environment) {
-		Type.Ref<Type.Term> type = (Type.Ref) p.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(2,p,source,environment);
-		if(type.element.data != null) {
-			int target = environment.allocate(type.element.data,p.variable);
-			myOut(2,type2JavaType(type.element.data) + " r" + target + " = r" + source + ".contents;");
-			translate(p.data,target,environment);
+	public void translate(Pattern.Term pattern, int source, Environment environment) {
+		Type.Ref<Type.Term> type = (Type.Ref) pattern.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(2, pattern, source, environment);
+		if (type.element.data != null) {
+			int target = environment.allocate(type.element.data, pattern.variable);
+			myOut(2, type2JavaType(type.element.data) + " r" + target + " = r"
+					+ source + ".contents;");
+			translate(pattern.data, target, environment);
 		}
 	}
 
-	public void translate(Pattern.Set p, int source, Environment environment) {
+	public void translate(Pattern.Set pattern, int source, Environment environment) {
 
 	}
 
-	public void translate(Pattern.Bag p, int source, Environment environment) {
+	public void translate(Pattern.Bag pattern, int source, Environment environment) {
 
 	}
 
-	public void translate(Pattern.List p, int source, Environment environment) {
-
+	public void translate(Pattern.List pattern, int source, Environment environment) {
+		Type.Ref<Type.List> type = (Type.Ref<Type.List>) pattern
+				.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(2, pattern, source, environment);
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			Pattern pat = p.first();
+			String var = p.second();
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
+			int element;
+			if(pattern.unbounded && (i+1) == elements.length) {
+				Type.List tc = Type.T_LIST(true, pt);
+				element = environment.allocate(tc);
+				myOut(2, type2JavaType(tc) + " r" + element + " = r"
+						+ source + ".sublist(" + i + ");");
+			} else {
+				element = environment.allocate(pt);				
+				myOut(2, type2JavaType(pt) + " r" + element + " = r"
+						+ source + ".get(" + i + ");");
+			}
+			translate(pat, element, environment);
+			if (var != null) {
+				environment.put(element, var);
+			}
+		}
 	}
+	
 	public boolean translate(RuleDecl decl, Environment environment) {
 		int thus = environment.get("this");
 		for(Pair<String,Expr> let : decl.lets) {

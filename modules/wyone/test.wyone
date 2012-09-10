@@ -1,10 +1,13 @@
 term False
 term True
 class Bool as True | False
-term Not(Bool)
+term Not[Bool,Bool]
+term Var(string)
 
-rewrite Not(Bool b):
-    => False, if b == b
+rewrite Not[True, *... rest]:
+    => rest
+
+    
 
 
 

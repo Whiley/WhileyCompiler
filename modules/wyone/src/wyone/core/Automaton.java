@@ -686,6 +686,16 @@ public final class Automaton {
 					children.length));
 		}
 		
+		public List sublist(int start, int end) {
+			return new List(Arrays.copyOfRange(children, start,
+					end));
+		}
+
+		public List sublist(int start) {
+			return new List(
+					Arrays.copyOfRange(children, start, children.length));
+		}
+		
 		public List append(List rhs) {
 			return new List(Automaton.append(children,rhs.children));
 		}
