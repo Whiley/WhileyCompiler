@@ -42,7 +42,7 @@ like to download the Whiley Development Kit (WDK), which includes the
 source code for the compiler/runtime and various scripts to simplify
 compiling and running Whiley programs from the command-line.
 
-Eclipse Plugin
+Whiley Eclipse Plugin (Wyclipse)
 ----------------------------------------------------------------------
 To install the Whiley Eclipse plugin (wyclipse) start Eclipse and
 select "Install New Software" (normally found under "Help").  Then,
@@ -53,7 +53,7 @@ plugin.
 
 For more info on Wyclipse, see http://whiley.org/tools/wyclipse/
 
-Executable Jar
+Whiley Executable Jar
 ----------------------------------------------------------------------
 If you're running on a Windows system without cygwin, or you're having
 trouble getting the wyjc scripts to work, then a useful alternative is
