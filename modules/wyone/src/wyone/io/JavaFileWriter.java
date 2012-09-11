@@ -208,22 +208,16 @@ public class JavaFileWriter {
 		
 		// translate expressions
 		myOut(1);
-		boolean conditional = true;
 		for(RuleDecl rd : decl.rules) {
-			conditional &= translate(level,rd,environment);
+			translate(level,rd,environment);
 		}
 		
 		// close the pattern match
-		conditional |= level > 2;
-		
 		while(level > 2) {
 			myOut(--level,"}");
 		}
-		
-		if(conditional) {
-			myOut(level,"return false;");
-		}
 				
+		myOut(level,"return false;");
 		myOut(--level,"}");
 		myOut();
 	}
@@ -346,7 +340,7 @@ public class JavaFileWriter {
 		return level;
 	}
 	
-	public boolean translate(int level, RuleDecl decl, Environment environment) {
+	public void translate(int level, RuleDecl decl, Environment environment) {
 		int thus = environment.get("this");
 		for(Pair<String,Expr> let : decl.lets) {
 			String letVar = let.first();
@@ -360,11 +354,10 @@ public class JavaFileWriter {
 		}
 		int result = translate(level, decl.result, environment);
 		result = coerceFromValue(level,decl.result,result,environment);
-		myOut(level, "return automaton.rewrite(r" + thus + ", r" + result + ");");
+		myOut(level, "if(automaton.rewrite(r" + thus + ", r" + result + ")) { return true; }");
 		if(decl.condition != null) {
 			myOut(--level,"}");
 		}
-		return decl.condition != null;
 	}
 	
 	public void writeSchema() {
