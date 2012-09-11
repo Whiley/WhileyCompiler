@@ -38,6 +38,30 @@ term Sum{|AExpr...|}
 term Mul{|AExpr...|}
 term Div[AExpr,AExpr]
 
+rewrite Equals{|Num(int x), Num(int y)|}:
+    => True, if x == y
+    => False
+    
+rewrite NotEquals{|Num(int x), Num(int y)|}:
+    => True, if x != y
+    => False
+
+rewrite LessThan[Num(int x), Num(int y)]:
+    => True, if x < y
+    => False
+
+rewrite LessThanEq[Num(int x), Num(int y)]:
+    => True, if x <= y
+    => False
+    
+rewrite GreaterThan[Num(int x), Num(int y)]:
+    => True, if x > y
+    => False
+
+rewrite GreaterThanEq[Num(int x), Num(int y)]:
+    => True, if x >= y
+    => False
+
 // ====================================================================
 // Collections
 // ====================================================================
@@ -67,8 +91,8 @@ term GreaterThanEq[AExpr,AExpr]
 // ====================================================================
 // Equalities
 // ====================================================================
-term Equals{Expr,Expr}
-term NotEquals{Expr,Expr}
+term Equals{|Expr,Expr|}
+term NotEquals{|Expr,Expr|}
 
 rewrite Not(NotEquals (* x)):
     => Equals(x)
@@ -76,8 +100,12 @@ rewrite Not(NotEquals (* x)):
 rewrite Not(Equals (* x)):
     => NotEquals(x)
 
-rewrite And{Equals{* x, * y},Equals{* u,* v}, BExpr... rest}:
-    => And ({Equals{x,y},Equals{u,v},Equals{x,v}} ++ rest), if x != y && u != v && y == u && x != v
+rewrite And{Equals{|* x, * y|},Equals{|* u,* v|}, BExpr... rest}:
+    => And ({Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}} ++ rest), if y == u
+
+rewrite And{NotEquals{|* x, * y|},Equals{|* u,* v|}, BExpr... rest}:
+    => And ({NotEquals{|x,y|},Equals{|u,v|},NotEquals{|x,v|}} ++ rest), if y == u
+
 
 // ====================================================================
 // Set Constraints
