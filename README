@@ -13,13 +13,13 @@ Whiley is a programming language particularly suited to
 safety-critical systems. It is a hybrid object-oriented and functional
 programming language which employs extended static checking to
 eliminate errors at compile time, including divide-by-zero, array
-out-of-bounds and null dereference errors.  Whiley compiles to the
-Java Virtual Machine and is fully inter-operable with existing Java
-applications.
+out-of-bounds and null dereference errors.  
 
-Whiley will operate on any system that can run Java including Windows,
-Mac OS and Linux.  Whiley is released under the New BSD License ---
-see the LICENSE file for more on this.
+Whiley compiles to the Java Virtual Machine and is fully
+inter-operable with existing Java applications.  Whiley will operate
+on any system that can run Java including Windows, Mac OS and Linux.
+Whiley is released under the New BSD License --- see the LICENSE file
+for more on this.
 
 To find out more, visit http://whiley.org
 
