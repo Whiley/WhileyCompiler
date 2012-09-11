@@ -27,13 +27,13 @@ To find out more, visit http://whiley.org
 Installation
 ======================================================================
 
-There are several different ways you can get going with Whiley:
+There are several ways to get going with Whiley:
 
-1) Installing the Eclipse Plugin
+1) Install the Eclipse Plugin
 
-2) Downloading the Whiley Development Kit.
+2) Download and setup the Whiley Development Kit.
 
-3) Running an executable Jar file directly
+3) Download and run an executable Jar.
 
 The Eclipse plugin is the easiest way to install and run Whiley
 programs (see below for instructions).  However, if you don't use
