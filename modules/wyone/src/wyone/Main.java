@@ -22,11 +22,8 @@ import java.io.*;
 import java.util.*;
 
 // import wyone.util.SyntaxError;
-import wyone.spec.SpecLexer;
-import wyone.spec.TypeInference;
 import wyone.util.*;
 import wyone.core.*;
-import wyone.spec.*;
 import wyone.io.*;
 
 /**
@@ -132,10 +129,7 @@ public class Main {
 				SpecParser parser = new SpecParser(specfile, lexer.scan());
 				SpecFile sf = parser.parse();
 				new TypeInference().infer(sf);
-				WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
-				// new TypeCheck().check(wyf);
-				// new SpecFileWriter(oFile).write(spec);
-				new NewJavaFileWriter(oFile).write(sf);
+				new JavaFileWriter(oFile).write(sf);
 			} catch (SyntaxError e) {
 				outputSourceError(e.filename(), e.start(), e.end(),
 						e.getMessage());

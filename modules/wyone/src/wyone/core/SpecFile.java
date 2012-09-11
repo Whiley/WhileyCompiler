@@ -1,10 +1,8 @@
-package wyone.spec;
+package wyone.core;
 
 import java.util.*;
 
-import wyone.core.Attribute;
-import wyone.core.Type;
-import wyone.spec.Pattern.Term;
+import wyone.core.Pattern.Term;
 import wyone.util.*;
 
 public class SpecFile {

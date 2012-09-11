@@ -16,12 +16,10 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.spec;
+package wyone.core;
 
 import java.util.*;
 import wyone.core.*;
-import wyone.core.Code.NOp;
-import wyone.core.Code.UOp;
 import wyone.util.*;
 
 public interface Expr extends SyntacticElement {
@@ -68,19 +66,74 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+
+	public enum BOp { 
+		AND {
+			public String toString() { return "&&"; }
+		},
+		OR{
+			public String toString() { return "||"; }
+		},
+		ADD{
+			public String toString() { return "add"; }
+		},
+		SUB{
+			public String toString() { return "sub"; }
+		},
+		MUL{
+			public String toString() { return "mul"; }
+		},
+		DIV{
+			public String toString() { return "div"; }
+		},				
+		EQ{
+			public String toString() { return "eq"; }
+		},
+		NEQ{
+			public String toString() { return "neq"; }
+		},
+		LT{
+			public String toString() { return "lt"; }
+		},
+		LTEQ{
+			public String toString() { return "le"; }
+		},
+		GT{
+			public String toString() { return "gt"; }
+		},
+		GTEQ{
+			public String toString() { return "ge"; }
+		},
+		IN{
+			public String toString() { return "in"; }
+		},
+		APPEND{
+			public String toString() { return "append"; }
+		},
+		DIFFERENCE{
+			public String toString() { return "difference"; }
+		},
+		RANGE{
+			public String toString() { return "range"; }
+		},
+		TYPEEQ{
+			public String toString() { return "is"; }
+		}
+	};
+	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
-		public wyone.core.Code.BOp op;
+		public BOp op;
 		public final Expr lhs;
 		public final Expr rhs;
 		
-		public BinOp(wyone.core.Code.BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
+		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 		
-		public BinOp(wyone.core.Code.BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
@@ -138,6 +191,18 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public enum UOp {
+		NOT {
+			public String toString() { return "not"; }
+		},
+		NEG {
+			public String toString() { return "neg"; }
+		},
+		LENGTHOF {
+			public String toString() { return "length"; }
+		}		
+	}	
+	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
 		public final Expr mhs;		
@@ -159,6 +224,12 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public enum NOp {
+		LISTGEN,
+		SETGEN,
+		BAGGEN
+	}
+		
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {
 		public final NOp op;
 		public final ArrayList<Expr> arguments;

@@ -1,14 +1,22 @@
-package wyone.spec;
+package wyone.io;
 
 import java.math.BigInteger;
 import java.util.*;
 import java.io.*;
 
-import wyone.core.Attribute;
 import wyone.util.*;
-import static wyone.spec.SpecFile.*;
-import static wyone.spec.SpecLexer.*;
+import static wyone.core.SpecFile.*;
+import static wyone.io.SpecLexer.*;
 import wyone.core.*;
+import wyone.core.Attribute.Source;
+import wyone.core.SpecFile.ClassDecl;
+import wyone.core.SpecFile.Decl;
+import wyone.core.SpecFile.RewriteDecl;
+import wyone.core.SpecFile.RuleDecl;
+import wyone.core.SpecFile.TermDecl;
+import wyone.core.Type.Compound;
+import wyone.core.Type.Ref;
+import wyone.core.Type.Term;
 
 public class SpecParser {
 	private String filename;
@@ -282,14 +290,14 @@ public class SpecParser {
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();			
-			return new Expr.BinOp(Code.BOp.AND, c1, c2, sourceAttr(start,
+			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();
-			return new Expr.BinOp(Code.BOp.OR, c1, c2, sourceAttr(start,
+			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		
@@ -305,41 +313,41 @@ public class SpecParser {
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			skipWhiteSpace(true);
  			
  			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 			skipWhiteSpace(true);			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();			
-			return new Expr.BinOp(Code.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof ElemOf) {
 			match(ElemOf.class);			
 			skipWhiteSpace(true);			
 			Expr rhs = parseAddSubExpression();			
-			return new Expr.BinOp(Code.BOp.IN, lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index).text.equals("is")) {
 			return parseTypeEquals(lhs,start);			
 		} else {
@@ -354,7 +362,7 @@ public class SpecParser {
 		Type type = parseType();
 		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));				
 		
-		return new Expr.BinOp(Code.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
+		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
 				index - 1));
 	}
 	
@@ -367,14 +375,14 @@ public class SpecParser {
 			match(Plus.class);
 			skipWhiteSpace(true);
 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.ADD, lhs, rhs, sourceAttr(start,
+			return new Expr.BinOp(Expr.BOp.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.SUB, lhs, rhs, sourceAttr(start,
+			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof PlusPlus) {
 			// wrong precidence
@@ -382,7 +390,7 @@ public class SpecParser {
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Code.BOp.APPEND, lhs, rhs, sourceAttr(start,
+			return new Expr.BinOp(Expr.BOp.APPEND, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} 	
 		
@@ -398,7 +406,7 @@ public class SpecParser {
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Code.BOp.MUL, lhs, rhs, sourceAttr(start,
+			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightSlash) {
@@ -406,7 +414,7 @@ public class SpecParser {
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Code.BOp.DIV, lhs, rhs, sourceAttr(start,
+			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
 
@@ -518,7 +526,7 @@ public class SpecParser {
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Code.UOp.NOT, parseTerm(),
+			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(),
 					sourceAttr(start, index - 1));
 		} 
 		syntaxError("unrecognised term.",token);
@@ -545,7 +553,7 @@ public class SpecParser {
 			token = tokens.get(index);
 		}
 		match(RightSquare.class);
-		return new Expr.NaryOp(Code.NOp.LISTGEN, exprs, sourceAttr(start,
+		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(start,
 				index - 1));
 	}
 	
@@ -569,7 +577,7 @@ public class SpecParser {
 			token = tokens.get(index);
 		}
 		match(BarRightCurly.class);
-		return new Expr.NaryOp(Code.NOp.BAGGEN, exprs, sourceAttr(start,
+		return new Expr.NaryOp(Expr.NOp.BAGGEN, exprs, sourceAttr(start,
 				index - 1));
 	}
 	
@@ -601,7 +609,7 @@ public class SpecParser {
 		}
 		
 		match(RightCurly.class);
-		return new Expr.NaryOp(Code.NOp.SETGEN, exprs, sourceAttr(start,
+		return new Expr.NaryOp(Expr.NOp.SETGEN, exprs, sourceAttr(start,
 				index - 1));
 	}
 	
@@ -640,7 +648,7 @@ public class SpecParser {
 	private Pair<Expr.Variable, Expr> extractComprehensionSource(Expr expr) {
 		if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
-			if (bop.op == Code.BOp.IN && bop.lhs instanceof Expr.Variable) {
+			if (bop.op == Expr.BOp.IN && bop.lhs instanceof Expr.Variable) {
 				Expr.Variable var = (Expr.Variable) bop.lhs;
 				return new Pair<Expr.Variable, Expr>(var, bop.rhs);
 			}
@@ -655,7 +663,7 @@ public class SpecParser {
 		Expr e = parseIndexTerm();
 		skipWhiteSpace(true);
 		match(Bar.class);
-		return new Expr.UnOp(Code.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
+		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseNegation() {
@@ -672,7 +680,7 @@ public class SpecParser {
 			} 
 		} 
 		
-		return new Expr.UnOp(Code.UOp.NEG, e, sourceAttr(start, index));		
+		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
 	private Expr.Constructor parseConstructorExpr() {

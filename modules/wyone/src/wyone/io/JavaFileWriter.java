@@ -7,10 +7,13 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyone.util.*;
-import wyone.core.*;
+import wyone.core.Attribute;
+import wyone.core.Expr;
+import wyone.core.Pattern;
+import wyone.core.SpecFile;
 import wyone.core.Type;
-import static wyone.core.WyoneFile.*;
 import static wyone.core.Attribute.*;
+import static wyone.core.SpecFile.*;
 
 public class JavaFileWriter {
 	private PrintWriter out;
@@ -27,7 +30,7 @@ public class JavaFileWriter {
 		out = new PrintWriter(os);
 	}
 
-	public void write(WyoneFile spec) {
+	public void write(SpecFile spec) {
 		ArrayList<Decl> spDe = spec.declarations;
 		spDecl = spDe;
 		if (!spec.pkg.equals("")) {
@@ -37,7 +40,7 @@ public class JavaFileWriter {
 		writeImports();
 		myOut("public final class " + spec.name + " {");
 		HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
-		HashSet<String> used = new HashSet<String>();
+
 		for (Decl d : spDecl) {
 			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
@@ -55,16 +58,16 @@ public class JavaFileWriter {
 
 		for (Decl d : spDecl) {
 			if (d instanceof TermDecl) {
-				write((TermDecl) d, hierarchy);
+				translate((TermDecl) d, hierarchy);
 			} else if (d instanceof ClassDecl) {
-				write((ClassDecl) d, hierarchy);
-			} else if (d instanceof FunDecl) {
-				write((FunDecl) d, used);
+				translate((ClassDecl) d, hierarchy);
+			} else if (d instanceof RewriteDecl) {
+				translate((RewriteDecl) d);
 			}
 		}
-		
+		writeRuleDispatch(spec);
 		writeTypeTests(hierarchy);
-		writeSchema();
+		writeSchema();		
 		writeMainMethod();
 		myOut("}");
 		out.flush();
@@ -80,8 +83,34 @@ public class JavaFileWriter {
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
+	
+	public void writeRuleDispatch(SpecFile sf) {
+		myOut(1, "public static boolean rewrite(Automaton automaton) {");
+		myOut(2, "boolean result = false;");
+		myOut(2, "boolean changed = true;");
+		myOut(2, "while(changed) {");
+		myOut(3, "changed = false;");
+		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
+		myOut(4, "if(automaton.get(i) == null) { continue; }");
+		for(Decl decl : sf.declarations) {
+			if(decl instanceof RewriteDecl) {
+				RewriteDecl rw = (RewriteDecl) decl;
+				Type type = rw.pattern.attribute(Attribute.Type.class).type;
+				String mangle = type2HexStr(type);
+				myOut(4,"");
+				myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
+				typeTests.add(type);
+				myOut(5, "changed |= rewrite_" + mangle + "(i,automaton);");				
+				myOut(4, "}");
+			}
+		}
+		myOut(3,"}");
+		myOut(2,"}");
+		myOut(2, "return result;");
+		myOut(1, "}");
+	}
 
-	public void write(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
+	public void translate(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
 		myOut(1, "// term " + decl.type);
 		myOut(1, "public final static int K_" + decl.type.name + " = "
 				+ termCounter++ + ";");
@@ -149,7 +178,7 @@ public class JavaFileWriter {
 
 	private static int termCounter = 0;
 
-	public void write(ClassDecl decl, HashMap<String, Set<String>> hierarchy) {
+	public void translate(ClassDecl decl, HashMap<String, Set<String>> hierarchy) {
 		String lin = "// " + decl.name + " as ";
 		for (int i = 0; i != decl.children.size(); ++i) {
 			String child = decl.children.get(i);
@@ -162,23 +191,180 @@ public class JavaFileWriter {
 		myOut();
 	}
 
-	public void write(FunDecl decl, HashSet<String> used) {
-		myOut(1, "// " + decl.type.ret + " " + decl.name + "(" + decl.type.param + ")");
-		myOut(1, "public static " + type2JavaType(decl.type.ret) + " " + decl.name + "_"
-				+ nameMangle(decl.type.param, used) + "("
-				+ type2JavaType(decl.type.param) + " r0, Automaton automaton) {");
-		// first, declare variables
-		for(int i=1;i<decl.types.size();++i) {			
-			Type pt = decl.types.get(i);
-			myOut(2,comment(type2JavaType(pt) + " r" + i + ";",pt.toString()));
-		}
-		// second, translate bytecodes
+	public void translate(RewriteDecl decl) {
+		Pattern.Term pattern = decl.pattern;
+		Type param = pattern.attribute(Attribute.Type.class).type; 
+		myOut(1, "// " + decl.pattern);
+		myOut(1, "public static boolean rewrite_"
+				+ type2HexStr(param) + "("
+				+ type2JavaType(param) + " r0, Automaton automaton) {");
+		
+		// setup the environment
+		Environment environment = new Environment();
+		int thus = environment.allocate(param,"this");
+		
+		// translate pattern
+		int level = translate(2,pattern,thus,environment);
+		
+		// translate expressions
 		myOut(1);
-		for(Code code : decl.codes) {
-			translate(2,code,decl);
+		boolean conditional = true;
+		for(RuleDecl rd : decl.rules) {
+			conditional &= translate(level,rd,environment);
 		}
-		myOut(1,"}");
+		
+		// close the pattern match
+		conditional |= level > 2;
+		
+		while(level > 2) {
+			myOut(--level,"}");
+		}
+		
+		if(conditional) {
+			myOut(level,"return false;");
+		}
+				
+		myOut(--level,"}");
 		myOut();
+	}
+	
+	public int translate(int level, Pattern p, int source, Environment environment) {
+		if(p instanceof Pattern.Leaf) {
+			return translate(level,(Pattern.Leaf) p,source,environment);
+		} else if(p instanceof Pattern.Term) {
+			return translate(level,(Pattern.Term) p,source,environment);
+		} else if(p instanceof Pattern.Set) {
+			return translate(level,(Pattern.Set) p,source,environment);
+		} else if(p instanceof Pattern.Bag) {
+			return translate(level,(Pattern.Bag) p,source,environment);
+		} else  {
+			return translate(level,(Pattern.List) p,source,environment);
+		} 
+	}
+	
+	public int translate(int level, Pattern.Leaf p, int source, Environment environment) {
+		// do nothing?
+		return level;
+	}
+	
+	public int translate(int level, Pattern.Term pattern, int source, Environment environment) {
+		Type.Ref<Type.Term> type = (Type.Ref) pattern.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(level, pattern, source, environment);
+		if (type.element.data != null) {
+			int target = environment.allocate(type.element.data, pattern.variable);
+			myOut(level, type2JavaType(type.element.data) + " r" + target + " = r"
+					+ source + ".contents;");
+			return translate(level,pattern.data, target, environment);
+		} else {
+			return level;
+		}
+	}
+
+	public int translate(int level, Pattern.BagOrSet pattern, int source, Environment environment) {
+		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
+				.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(level, pattern, source, environment);
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		
+		// construct a for-loop for each fixed element to match
+		int[] indices = new int[elements.length];
+		for (int i = 0; i != elements.length; ++i) {
+			boolean isUnbounded = pattern.unbounded && (i+1) == elements.length;
+			Pair<Pattern, String> p = elements[i];
+			Pattern pat = p.first();
+			String var = p.second();
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
+			int index = environment.allocate(pt,var);
+			String name = "i" + index;
+			indices[i] = index;
+			if(isUnbounded) {
+				Type.Compound rt = pattern instanceof Pattern.Bag ? Type.T_BAG(true,pt) : Type.T_SET(true,pt);
+				myOut(level, "int j" + index + " = 0;");
+				myOut(level, "int[] t" + index + " = new int[r" + source + ".size()-" + i + "];");				
+			}
+			myOut(level++,"for(int " + name + "=0;" + name + "!=r" + source + ".size();++" + name + ") {");
+			myOut(level, type2JavaType(pt) + " r" + index + " = r"
+					+ source + ".get(" + name + ");");
+
+			indent(level);out.print("if(");
+			// check against earlier indices
+			for(int j=0;j<i;++j) {
+				out.print(name + " == i" + indices[j] + " || ");
+			}
+			// check matching type
+			myOut("!typeof_" + type2HexStr(pt) + "(r" + index + ",automaton)) { continue; }");
+			myOut(level);
+			
+			if(isUnbounded) {
+				myOut(level,"t" + index + "[j" + index + "++] = r" + index + ";");
+				myOut(--level,"}");
+				if(pattern instanceof Pattern.Set) { 
+					Type.Compound rt = Type.T_SET(true,pt);
+					int rest = environment.allocate(rt,var);
+					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Set(t" + index + ");");
+				} else {
+					Type.Compound rt = Type.T_BAG(true,pt);
+					int rest = environment.allocate(rt,var);
+					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Bag(t" + index + ");");
+				}
+			} else {
+				level = translate(level++,pat,index,environment);
+			}
+		}	
+		
+		return level;
+	}
+
+	public int translate(int level, Pattern.List pattern, int source, Environment environment) {
+		Type.Ref<Type.List> type = (Type.Ref<Type.List>) pattern
+				.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(level, pattern, source, environment);
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			Pattern pat = p.first();
+			String var = p.second();
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
+			int element;
+			if(pattern.unbounded && (i+1) == elements.length) {
+				Type.List tc = Type.T_LIST(true, pt);
+				element = environment.allocate(tc);
+				myOut(level, type2JavaType(tc) + " r" + element + " = r"
+						+ source + ".sublist(" + i + ");");
+			} else {
+				element = environment.allocate(pt);				
+				myOut(level, type2JavaType(pt) + " r" + element + " = r"
+						+ source + ".get(" + i + ");");
+			}
+			level = translate(level,pat, element, environment);
+			if (var != null) {
+				environment.put(element, var);
+			}
+		}
+		return level;
+	}
+	
+	public boolean translate(int level, RuleDecl decl, Environment environment) {
+		int thus = environment.get("this");
+		for(Pair<String,Expr> let : decl.lets) {
+			String letVar = let.first();
+			Expr letExpr = let.second();
+			int result = translate(2, letExpr, environment);
+			environment.put(result, letVar);
+		}
+		if(decl.condition != null) {
+			int condition = translate(2, decl.condition, environment);
+			myOut(level++, "if(r" + condition + ") {");
+		}
+		int result = translate(level, decl.result, environment);
+		result = coerceFromValue(level,decl.result,result,environment);
+		myOut(level, "return automaton.rewrite(r" + thus + ", r" + result + ");");
+		if(decl.condition != null) {
+			myOut(--level,"}");
+		}
+		return decl.condition != null;
 	}
 	
 	public void writeSchema() {
@@ -250,125 +436,31 @@ public class JavaFileWriter {
 		}
 	}
 
-	public void translate(int level, Code code, FunDecl fun) {
-		if(code instanceof Code.Assign) {
-			translate(level,(Code.Assign) code, fun);
-		} else if (code instanceof Code.Constant) {
-			translate(level,(Code.Constant) code, fun);
-		} else if (code instanceof Code.TermContents) {
-			translate(level,(Code.TermContents) code, fun);
-		} else if (code instanceof Code.ForAll) {
-			translate(level,(Code.ForAll) code, fun);
-		}  else if (code instanceof Code.Invoke) {
-			translate(level,(Code.Invoke) code, fun);
-		} else if (code instanceof Code.If) {
-			translate(level,(Code.If) code, fun);
-		} else if (code instanceof Code.IfIs) {
-			translate(level,(Code.IfIs) code, fun);
-		} else if (code instanceof Code.IndexOf) {
-			translate(level,(Code.IndexOf) code, fun);
-		} else if (code instanceof Code.Deref) {
-			translate(level,(Code.Deref) code, fun);
-		} else if (code instanceof Code.UnOp) {
-			translate(level,(Code.UnOp) code, fun);
-		} else if (code instanceof Code.BinOp) {
-			translate(level,(Code.BinOp) code, fun);
-		} else if (code instanceof Code.NaryOp) {
-			translate(level,(Code.NaryOp) code, fun);
-		} else if (code instanceof Code.New) {
-			translate(level,(Code.New) code, fun);
-		} else if (code instanceof Code.Rewrite) {
-			translate(level,(Code.Rewrite) code, fun);
-		} else if (code instanceof Code.Return) {
-			translate(level,(Code.Return) code, fun);
-		} else if (code instanceof Code.Constructor) {
-			translate(level,(Code.Constructor) code, fun);
-		} else if (code instanceof Code.SubList) {
-			translate(level,(Code.SubList) code, fun);
+	public int translate(int level, Expr code, Environment environment) {
+		if (code instanceof Expr.Constant) {
+			return translate(level,(Expr.Constant) code, environment);
+		} else if (code instanceof Expr.UnOp) {
+			return translate(level,(Expr.UnOp) code, environment);
+		} else if (code instanceof Expr.BinOp) {
+			return translate(level,(Expr.BinOp) code, environment);
+		} else if (code instanceof Expr.NaryOp) {
+			return translate(level,(Expr.NaryOp) code, environment);
+		} else if (code instanceof Expr.Constructor) {
+			return translate(level,(Expr.Constructor) code, environment);
+		} else if (code instanceof Expr.Variable) {
+			return translate(level,(Expr.Variable) code, environment);
+		} else if(code instanceof Expr.Comprehension) {
+			return translate(level,(Expr.Comprehension) code, environment);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
 	}
 	
-	public void translate(int level, Code.Assign code, FunDecl fun) {
-		// TODO: clone?
-		myOut(level,comment("r" + code.target + " = r" + code.operand + ";",code.toString()));
-	}
-
-	public void translate(int level, Code.Deref code, FunDecl fun) {
-		Type type = fun.types.get(code.target);
-		String body = "(" + type2JavaType(type) +  ") automaton.get(r" + code.operand + ")";
-		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
-	}
-	
-	public void translate(int level, Code.ForAll code, FunDecl fun) {
-		myOut(level,"for(int i" + code.target + " : r" + code.source +".children) {");
-		myOut(level+1,"r" + code.target + " = i" + code.target +";");
-		for(Code c : code.body) {
-			translate(level+1,c,fun);
-		}
-		myOut(level,"}");
-	}
-	
-	public void translate(int level, Code.Invoke code, FunDecl fun) {
-		HashSet<String> used = new HashSet<String>();
-		String body = code.name + "_" + nameMangle(code.type.param,used) + "(";
-		for(int i=0;i!=code.operands.length;++i) {			
-			body = body + "r" + code.operands[i];			
-			body = body + ", ";
-		}
-		body = body + "automaton)";
-		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
-	}
-	
-	public void translate(int level, Code.IfIs code, FunDecl fun) {
-		String mangle = type2HexStr(code.type);
-		myOut(level,"if(typeof_" + mangle + "(r" + code.operand + ",automaton)) {");
-		for(Code c : code.trueBranch) {
-			translate(level+1,c,fun);
-		}
-		if(code.falseBranch.isEmpty()) {
-			myOut(level,"}");
-		} else {
-			myOut(level,"} else {");
-			for(Code c : code.falseBranch) {
-				translate(level+1,c,fun);
-			}
-			myOut(level,"}");
-		}
-		typeTests.add(code.type);
-	}
-	
-	public void translate(int level, Code.If code, FunDecl fun) {
-		myOut(level,"if(r" + code.operand + ") {");
-		for(Code c : code.trueBranch) {
-			translate(level+1,c,fun);
-		}
-		if(code.falseBranch.isEmpty()) {
-			myOut(level,"}");
-		} else {
-			myOut(level,"} else {");
-			for(Code c : code.falseBranch) {
-				translate(level+1,c,fun);
-			}
-			myOut(level,"}");
-		}
-	}
-	
-	public void translate(int level, Code.IndexOf code, FunDecl fun) {
-		String body = "r" + code.source + ".get(r" + code.index + ".intValue())";
-		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
-	}
-	
-	public void translate(int level, Code.TermContents code, FunDecl fun) {
-		String body = "r" + code.operand + ".contents";		
-		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
-	}
-	
-	public void translate(int level, Code.Constant code, FunDecl fun) {
+	public int translate(int level, Expr.Constant code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
 		Object v = code.value;
 		String rhs;
-		
+				
 		if (v instanceof Boolean) {
 			rhs = v.toString();
 		} else if (v instanceof BigInteger) {
@@ -383,162 +475,249 @@ public class JavaFileWriter {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
 		}
-		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
+		
+		int target = environment.allocate(type);
+		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + rhs + ";",code.toString()));
+		return target;
 	}
 
-	public void translate(int level, Code.UnOp code, FunDecl fun) {
-		String rhs;
+	public int translate(int level, Expr.UnOp code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
+		int rhs = translate(level,code.mhs,environment);
+		String body;
+		
 		switch (code.op) {
 		case LENGTHOF:
-			rhs = "BigInteger.valueOf(r" + code.operand + ".length)";
+			body = "BigInteger.valueOf(r" + rhs + ".length)";
 			break;
 		case NEG:
-			rhs = "r" + code.operand + ".negate()";
+			body = "r" + rhs + ".negate()";
 			break;
 		case NOT:
-			rhs = "!r" + code.operand;
+			body = "!r" + rhs;
 			break;
 		default:
 			throw new RuntimeException("unknown unary expression encountered");
 		}
-		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
+		
+		int target = environment.allocate(type);
+		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
+		return target;
 	}
 
-	public void translate(int level, Code.BinOp code, FunDecl fun) {
-		String rhs;
+	public int translate(int level, Expr.BinOp code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
+		Type lhs_t = code.lhs.attribute(Attribute.Type.class).type;
+		Type rhs_t = code.rhs.attribute(Attribute.Type.class).type;
+		int lhs = translate(level,code.lhs,environment);
+		int rhs = translate(level,code.rhs,environment);
+		// First, convert operands into values (where appropriate)
+		switch(code.op) {
+		case EQ:
+		case NEQ:
+			// do nothing for these
+			break;
+		case APPEND:
+			// append is a tricky case as we have support the non-symmetic cases
+			// for adding a single element to the end or the beginning of a
+			// list.
+			lhs_t = Type.unbox(lhs_t);
+			rhs_t = Type.unbox(rhs_t);
+			
+			if(lhs_t instanceof Type.Compound) {
+				lhs = coerceFromRef(level,code.lhs, lhs, environment);				
+			} else {
+				lhs = coerceFromValue(level, code.lhs, lhs, environment);				
+			}
+			if(rhs_t instanceof Type.Compound) {
+				rhs = coerceFromRef(level,code.rhs, rhs, environment);	
+			} else {
+				rhs = coerceFromValue(level,code.rhs, rhs, environment);
+			}
+			break;
+		default:
+			lhs = coerceFromRef(level,code.lhs,lhs,environment);
+			rhs = coerceFromRef(level,code.rhs,rhs,environment);
+		}
 		
+		// Second, construct the body of the computation
+		String body;
+						
 		switch (code.op) {
 		case ADD:
-			rhs = "r" + code.lhs + ".add(r" + code.rhs + ")";
+			body = "r" + lhs + ".add(r" + rhs + ")";
 			break;
 		case SUB:
-			rhs = "r" + code.lhs + ".subtract(r" + code.rhs + ")";
+			body = "r" + lhs + ".subtract(r" + rhs + ")";
 			break;
 		case MUL:
-			rhs = "r" + code.lhs + ".multiply(r" + code.rhs + ")";
+			body = "r" + lhs + ".multiply(r" + rhs + ")";
 			break;
 		case DIV:
-			rhs = "r" + code.lhs + ".divide(r" + code.rhs + ")";
+			body = "r" + lhs + ".divide(r" + rhs + ")";
 			break;
 		case AND:
-			rhs = "r" + code.lhs + " && r" + code.rhs ;
+			body = "r" + lhs + " && r" + rhs ;
 			break;
 		case OR:
-			rhs = "r" + code.lhs + " || r" + code.rhs ;
+			body = "r" + lhs + " || r" + rhs ;
 			break;
 		case EQ:
 			// FIXME: support lists as well!
-			rhs = "r" + code.lhs + " == r" + code.rhs ;
+			body = "r" + lhs + " == r" + rhs ;
 			break;
 		case NEQ:
 			// FIXME: support lists as well!
-			rhs = "r" + code.lhs + " != r" + code.rhs ;
+			body = "r" + lhs + " != r" + rhs ;
 			break;
 		case LT:
-			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")<0";
+			body = "r" + lhs + ".compareTo(r" + rhs + ")<0";
 			break;
 		case LTEQ:
-			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")<=0";
+			body = "r" + lhs + ".compareTo(r" + rhs + ")<=0";
 			break;
 		case GT:
-			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")>0";
+			body = "r" + lhs + ".compareTo(r" + rhs + ")>0";
 			break;
 		case GTEQ:
-			rhs = "r" + code.lhs + ".compareTo(r" + code.rhs + ")>=0";
+			body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
 			break;
-		case APPEND:
-			if(fun.types.get(code.lhs) instanceof Type.Compound) {
-				rhs = "r" + code.lhs + ".append(r" + code.rhs + ")";
+		case APPEND: 
+			if (lhs_t instanceof Type.Compound) {
+				body = "r" + lhs + ".append(r" + rhs + ")";
 			} else {
-				rhs = "r" + code.rhs + ".appendFront(r" + code.lhs + ")";
+				body = "r" + rhs + ".appendFront(r" + lhs + ")";
 			}
 			break;
 		case DIFFERENCE:
-			rhs = "r" + code.lhs + ".removeAll(r" + code.rhs + ")";
+			body = "r" + lhs + ".removeAll(r" + rhs + ")";
 			break;
 		default:
 			throw new RuntimeException("unknown binary operator encountered: "
 					+ code);
 		}
-		myOut(level,comment("r" + code.target + " = " + rhs + ";",code.toString()));
+		
+		int target = environment.allocate(type);
+		myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
+		return target;
 	}
 	
-	public void translate(int level, Code.NaryOp code, FunDecl fun) {
-		
+	public int translate(int level, Expr.NaryOp code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
 		String body = "new Automaton.";				
-		if(code.op == Code.NOp.LISTGEN) { 
+		
+		if(code.op == Expr.NOp.LISTGEN) { 
 			body += "List(";
-		} else if(code.op == Code.NOp.BAGGEN) { 
+		} else if(code.op == Expr.NOp.BAGGEN) { 
 			body += "Bag(";
 		} else {
 			body += "Set(";
 		}
-		int[] operands = code.operands;
-		for(int i=0;i!=operands.length;++i) {
+		
+		List<Expr> arguments = code.arguments;
+		for(int i=0;i!=arguments.size();++i) {
 			if(i != 0) {
 				body += ", ";
 			}
-			body += "r" + operands[i];
+			body += "r" + translate(level,arguments.get(i),environment);
 		}
-		myOut(level,comment("r" + code.target + " = " + body + ");",code.toString()));
-	}
-
-	public void translate(int level, Code.New code, FunDecl fun) {
-		String body = "automaton.add(r" + code.operand + ")";
-		myOut(level,comment("r" + code.target + " = " + body + ";",code.toString()));
+		
+		int target = environment.allocate(type);
+		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ");",code.toString()));
+		return target;
 	}
 	
-	public void translate(int level, Code.Constructor code, FunDecl fun) {
+	public int translate(int level, Expr.Constructor code,
+			Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
 		String body;
-		if (code.operand == -1) {
+
+		if (code.argument == null) {
 			body = code.name;
 		} else {
-			body = "new Automaton.Term(K_" + code.name + ",r" + code.operand
-					+ ")";
+			int arg = translate(level, code.argument, environment);
+			arg = coerceFromValue(level,code.argument,arg,environment);
+			body = "new Automaton.Term(K_" + code.name + ",r"
+					+  arg + ")";
 		}
-		myOut(level, "r" + code.target + " = " + body + ";");
+
+		int target = environment.allocate(type);
+		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
+		return target;
 	}
 	
-	public void translate(int level, Code.Rewrite code, FunDecl fun) {
-		int toOperand = code.toOperand;
-		Type type = fun.types.get(toOperand);		
-		if (!(type instanceof Type.Ref)) {
-			// this indicates a new kind of value has been created and we need
-			// to allocate this.
-			myOut(level, "int v" + toOperand + " = automaton.add(r" + toOperand + ");");
-			myOut(level,comment("r" + code.target +" = automaton.rewrite(r" + code.fromOperand + ",v" + toOperand
-					+ ");", code.toString()));
+	public int translate(int level, Expr.Variable code, Environment environment) {
+		Integer operand = environment.get(code.var);
+		if(operand != null) {
+			return environment.get(code.var);
 		} else {
-			myOut(level,comment("r" + code.target +" = automaton.rewrite(r" + code.fromOperand + ",r" + toOperand
-				+ ");", code.toString()));
+			Type type = code
+					.attribute(Attribute.Type.class).type;
+			int target = environment.allocate(type);
+			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
+			return target;
 		}
 	}
 	
-	public void translate(int level, Code.Return code, FunDecl fun) {
-		// TODO: implement no return value
-		myOut(level,comment("return r" + code.operand + ";",code.toString()));
-	}
+	public int translate(int level, Expr.Comprehension expr, Environment environment) {		
+		Type type = expr.attribute(Attribute.Type.class).type;
+		int target = environment
+				.allocate(type);
+		
+		// first, translate all source expressions
+		int[] sources = new int[expr.sources.size()];
+		for(int i=0;i!=sources.length;++i) {
+			Pair<Expr.Variable,Expr> p = expr.sources.get(i);
+			int operand = translate(level,p.second(),environment);
+			operand = coerceFromRef(level,p.second(),operand,environment);
+			sources[i] = operand;									
+		}
+		
+		// TODO: initialise result set
+		myOut(level, "Automaton.List t" + target + " = new Automaton.List();");
+		// second, generate all the for loops
+		for (int i = 0; i != sources.length; ++i) {
+			Pair<Expr.Variable, Expr> p = expr.sources.get(i);
+			Expr.Variable variable = p.first();
+			Expr source = p.second();
+			Type.Compound sourceType = (Type.Compound) source
+					.attribute(Attribute.Type.class).type;
+			Type elementType = variable.attribute(Attribute.Type.class).type;
+			int index = environment.allocate(elementType, variable.var);
+			myOut(level++, "for(int i" + index + "=0;i" + index + "<r"
+					+ sources[i] + ".size();i" + index + "++) {");
+			myOut(level, type2JavaType(elementType) + " r" + index + " = r"
+					+ sources[i] + ".get(i" + index + ");");
+		}
+		
+		if(expr.condition != null) {
+			int condition = translate(level,expr.condition,environment);
+			myOut(level++,"if(r" + condition + ") {");			
+		}
+		
+		int result = translate(level,expr.value,environment);
+		result = coerceFromValue(level,expr.value,result,environment);
+		myOut(level,"t" + target + ".add(r" + result + ");");
+		
+		// finally, terminate all the for loops
+		for(int i=0;i!=sources.length;++i) {
+			myOut(--level,"}");
+		}
 
-	public void translate(int level, Code.SubList code, FunDecl fun) {
-		String body = "r" + code.source + ".sublist(r" + code.start;
-		if(code.end != -1) {
-			body += ",r" + code.end; 
-		} 
-		myOut(level, "r" + code.target + " = " + body + ");");
+		switch(expr.cop) {
+		case SETCOMP:
+			myOut(level, type2JavaType(type) + " r" + target
+				+ " = new Automaton.Set(t" + target + ".children);");
+			break;
+		case BAGCOMP:
+			myOut(level, type2JavaType(type) + " r" + target
+				+ " = new Automaton.Bag(t" + target + ".children);");
+			break;
+		}
+
+		return target;
 	}
 	
-	protected String nameMangle(Type type, HashSet<String> used) {
-		String mangle = null;
-		String _mangle = type2HexStr(type);
-		int i = 0;
-		do {
-			mangle = _mangle + "_" + i++;
-		} while (used.contains(mangle));
-		used.add(mangle);
-		return mangle;
-	}
-
-
 	protected void writeTypeTests(HashMap<String, Set<String>> hierarchy) {
 		myOut(1,
 				"// =========================================================================");
@@ -794,15 +973,7 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
-		myOut(3, "boolean changed = true;");
-		myOut(3, "while(changed) {");
-		myOut(4, "changed = false;");
-		myOut(4, "for(int i=0;i<automaton.nStates();++i) {");
-		myOut(5, "if(automaton.get(i) != null) {");
-		myOut(6, "changed |= rewrite_" + nameMangle(Type.T_REFANY,new HashSet<String>()) + "(i,automaton);");
-		myOut(5, "}");
-		myOut(4, "}");
-		myOut(3, "}");
+		myOut(3, "rewrite(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
@@ -860,36 +1031,32 @@ public class JavaFileWriter {
 		}
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
-
-	public String unboxedType(Type t) {
-		if(t instanceof Type.Int) {
-			return "BigInteger";
-		} else if(t instanceof Type.Strung) {
-			return "String";
+	
+	public int coerceFromValue(int level, Expr expr, int register, Environment environment) {
+		Type type = expr.attribute(Attribute.Type.class).type;
+		if(type instanceof Type.Ref) {
+			return register;
 		} else {
-			// TODO: what should I do here?
-			return null;
+			Type.Ref refType = Type.T_REF(type);
+			int result = environment.allocate(refType);
+			myOut(level, type2JavaType(refType) + " r" + result + " = automaton.add(r" + register + ");");
+			return result;
+		}
+	}
+
+	public int coerceFromRef(int level, SyntacticElement elem, int register, Environment environment) {
+		Type type = elem.attribute(Attribute.Type.class).type;
+		if(type instanceof Type.Ref) {
+			Type.Ref refType = (Type.Ref) type;
+			int result = environment.allocate(refType.element);
+			String cast = type2JavaType(refType.element);
+			myOut(level, cast + " r" + result + " = (" + cast + ") automaton.get(r" + register + ");");
+			return result;
+		} else {
+			return register;
 		}
 	}
 	
-	public String unbox(Type t, String src) {
-		if(t instanceof Type.Int) {
-			return "(BigInteger) ((Item) automaton.get(" + src + ")).payload";
-		} else if(t instanceof Type.Strung) {
-			return "(String) ((Item) automaton.get(" + src + ")).payload";
-		} else {
-			// TODO: what should I do here?
-			return null;
-		}
-	}
-	
-	protected List<String> concat(List<String> xs, List<String> ys) {
-		ArrayList<String> zs = new ArrayList<String>();
-		zs.addAll(xs);
-		zs.addAll(ys);
-		return zs;
-	}
-
 	protected void myOut() {
 		myOut(0, "");
 	}
@@ -914,18 +1081,37 @@ public class JavaFileWriter {
 			out.print("\t");
 		}
 	}
+	
+	private static class Environment {
+		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
+		private final ArrayList<Type> idx2type = new ArrayList<Type>();
 
-	protected String indentStr(int level) {
-		String r = "";
-		for (int i = 0; i != level; ++i) {
-			r = r + "\t";
+		public int allocate(Type t) {
+			int idx = idx2type.size();
+			idx2type.add(t);
+			return idx;
 		}
-		return r;
-	}
 
-	protected int tmpIndex = 0;
+		public int allocate(Type t, String v) {
+			int r = allocate(t);
+			var2idx.put(v, r);
+			return r;
+		}
 
-	protected String freshVar() {
-		return "tmp" + tmpIndex++;
+		public Integer get(String v) {
+			return var2idx.get(v);
+		}
+
+		public void put(int idx, String v) {
+			var2idx.put(v, idx);
+		}
+
+		public ArrayList<Type> asList() {
+			return idx2type;
+		}
+
+		public String toString() {
+			return idx2type.toString() + "," + var2idx.toString();
+		}
 	}
 }

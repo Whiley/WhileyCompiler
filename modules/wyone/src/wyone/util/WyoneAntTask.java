@@ -30,9 +30,11 @@ import java.io.*;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
-import wyone.core.WyoneFile;
+import wyone.core.SpecFile;
+import wyone.core.TypeInference;
 import wyone.io.JavaFileWriter;
-import wyone.spec.*;
+import wyone.io.SpecLexer;
+import wyone.io.SpecParser;
 
 /**
  * The most basic ant task ever for compiling wyone files.
@@ -66,11 +68,10 @@ public class WyoneAntTask extends MatchingTask {
     		SpecLexer lexer = new SpecLexer(new FileReader(sfile));
 			SpecParser parser = new SpecParser(sourceFile, lexer.scan());
 			SpecFile sf = parser.parse();
-			new TypeInference().infer(sf);
-			WyoneFile wyf = new Spec2WyoneBuilder().build(sf);
+			new TypeInference().infer(sf);			
 			// new SpecFileWriter(oFile).write(spec);
 			File ofile = new File(srcdir,outputFile); 
-			new JavaFileWriter(new FileWriter(ofile)).write(wyf);	
+			new JavaFileWriter(new FileWriter(ofile)).write(sf);	
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}

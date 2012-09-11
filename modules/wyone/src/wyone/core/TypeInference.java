@@ -1,9 +1,8 @@
-package wyone.spec;
+package wyone.core;
 
 import java.math.BigInteger;
 import java.util.*;
 
-import wyone.core.*;
 import wyone.util.*;
 import static wyone.util.SyntaxError.*;
 
@@ -334,9 +333,9 @@ public class TypeInference {
 		for (int i = 0; i != types.length; ++i) {
 			types[i] = coerceToRef(resolve(operands.get(i), environment));
 		}
-		if(expr.op == Code.NOp.LISTGEN) {
+		if(expr.op == Expr.NOp.LISTGEN) {
 			return Type.T_LIST(false, types);
-		} else if(expr.op == Code.NOp.BAGGEN) {
+		} else if(expr.op == Expr.NOp.BAGGEN) {
 			return Type.T_BAG(false, types);
 		} else {
 			return Type.T_SET(false, types);

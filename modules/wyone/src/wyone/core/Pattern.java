@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.spec;
+package wyone.core;
 
 import java.util.*;
 
