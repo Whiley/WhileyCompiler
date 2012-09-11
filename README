@@ -38,7 +38,35 @@ introduction into the syntax of the language.
 Installation
 ======================================================================
 
-To install the Whiley Development Kit, unpack the tarball into an
+There are several different ways you can get going with Whiley:
+
+1) Installing the Eclipse Plugin
+
+2) Downloading the Whiley Development Kit.
+
+3) Running an executable Jar file directly
+
+The Eclipse plugin is the easiest way to install and run Whiley
+programs (see below for instructions).  However, if you don't use
+Eclipse or would like to work with the source directly, then download
+and install the development kit (see below).  Finally, you can also
+run the compiler directly as an executable Jar.
+
+Eclipse Plugin
+----------------------------------------------------------------------
+To install the Whiley Eclipse plugin (wyclipse) start Eclipse and
+select "Install New Software" (normally found under "Help").  Then,
+enter the Whiley Software Site (http://whiley.org/eclipse), and you
+should find the "Whiley Eclipse Plugin" becomes an option to install.
+At this point, "select all" and follow the instructions to install the
+plugin.
+
+For more info on Wyclipse, see http://whiley.org/tools/wyclipse/
+
+Whiley Development Kit (WDK)
+----------------------------------------------------------------------
+To install the Whiley Development Kit, first download it from
+http://whiley.org/downloads.  Then, unpack the tarball into an
 appropriate directory (as you've probably already done).  You then
 need to make sure that PATH environment variable points to the bin/
 directory, where several scripts are provided for running Whiley.
@@ -58,10 +86,8 @@ Hello World
 
 (note: the wyj command is just a wrapper for java -cp lib/wyrt.jar).
 
-======================================================================
 Executable Jar
-======================================================================
-
+----------------------------------------------------------------------
 If you're running on a Windows system without cygwin, or you're having
 trouble getting the wyjc scripts to work, then a useful alternative is
 to run the jar file directly.  You can do this as follows:
