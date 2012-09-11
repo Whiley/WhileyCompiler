@@ -758,7 +758,11 @@ public abstract class Type {
 	}
 	
 	/**
-	 * Represents a unicode character.
+	 * Represents a sequence of 8 bits. Note that, unlike many languages, there
+	 * is no representation associated with a byte. For example, to extract an
+	 * integer value from a byte, it must be explicitly decoded according to
+	 * some representation (e.g. two's compliment) using an auxillary function
+	 * (e.g. <code>Byte.toInt()</code>).
 	 * 
 	 * @author David J. Pearce
 	 * 
