@@ -69,7 +69,7 @@ Then, to run the program you would do this:
 % java -cp "../lib/wyrt-vX.Y.Z.jar;." hello-world
 Hello World
 
-(note: under UNIX you will want to replace the ';' with a ':')
+(note: under Mac OS and UNIX you will want to replace the ';' with a ':')
 
 3. Whiley Development Kit (WDK)
 ----------------------------------------------------------------------
