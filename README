@@ -45,10 +45,11 @@ compiling and running Whiley programs from the command-line.
 1. Whiley Eclipse Plugin (Wyclipse)
 ----------------------------------------------------------------------
 To install the Whiley Eclipse plugin start Eclipse and select "Install
-New Software" (normally found under "Help").  Then, enter the Whiley
-Software Site (http://whiley.org/eclipse), and you should find the
-"Whiley Eclipse Plugin" becomes an option to install.  At this point,
-"select all" and follow the instructions to install the plugin.
+New Software" (normally found under "Help").  Then, add
+http://whiley.org/eclipse as a "software site", afterwhich you should
+find the "Whiley Eclipse Plugin" becomes an option to install.  At
+this point, "select all" and follow the instructions to install the
+plugin.
 
 For more info on Wyclipse, see http://whiley.org/tools/wyclipse/
 
