@@ -92,7 +92,7 @@ At this point, you can run the program using the whiley command:
 % wyj hello-world
 Hello World
 
-(note: the wyj command is just a wrapper for java -cp lib/wyrt.jar).
+(note: the wyj command is just a wrapper for java -cp lib/wyrt-vX.Y.Z.jar).
 
 ============================================================================
 Making a Contribution
