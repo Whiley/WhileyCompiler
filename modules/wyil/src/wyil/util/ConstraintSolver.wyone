@@ -88,6 +88,12 @@ term LessThanEq[AExpr,AExpr]
 term GreaterThan[AExpr,AExpr]
 term GreaterThanEq[AExpr,AExpr]
 
+rewrite GreaterThan[AExpr x, AExpr y]:
+    => LessThan[y,x]
+
+rewrite GreaterThanEq[AExpr x, AExpr y]:
+    => LessThanEq[y,x]
+    
 // ====================================================================
 // Equalities
 // ====================================================================
@@ -106,6 +112,13 @@ rewrite And{Equals{|* x, * y|},Equals{|* u,* v|}, BExpr... rest}:
 rewrite And{NotEquals{|* x, * y|},Equals{|* u,* v|}, BExpr... rest}:
     => And ({NotEquals{|x,y|},Equals{|u,v|},NotEquals{|x,v|}} ++ rest), if y == u
 
+rewrite And{Equals{|* x, * y|},LessThan[* u,* v], BExpr... rest}:
+    => And ({Equals{|x,y|},Equals{|u,v|},LessThan[x,v]} ++ rest), if y == u
+    => And ({Equals{|x,y|},Equals{|u,v|},LessThan[u,x]} ++ rest), if y == v
+
+rewrite And{Equals{|* x, * y|},LessThanEq[* u,* v], BExpr... rest}:
+    => And ({Equals{|x,y|},Equals{|u,v|},LessThanEq[x,v]} ++ rest), if y == u
+    => And ({Equals{|x,y|},Equals{|u,v|},LessThanEq[u,x]} ++ rest), if y == v
 
 // ====================================================================
 // Set Constraints
