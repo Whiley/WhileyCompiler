@@ -484,6 +484,7 @@ public class JavaFileWriter {
 	public int translate(int level, Expr.UnOp code, Environment environment) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		int rhs = translate(level,code.mhs,environment);
+		rhs = coerceFromRef(level,code.mhs, rhs, environment);
 		String body;
 		
 		switch (code.op) {
