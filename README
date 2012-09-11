@@ -36,7 +36,7 @@ There are several ways to get going with Whiley:
 3) Download and setup the Whiley Development Kit.
 
 The Eclipse plugin is the easiest way to get started with Whiley (see
-instructions below).  If you don't use Eclipse another simple option
+instructions below).  If you don't use Eclipse, another simple option
 is to download and run the executable Jar.  Finally, developers may
 like to download the Whiley Development Kit (WDK), which includes the
 source code for the compiler/runtime and various scripts to simplify
