@@ -619,7 +619,10 @@ public class JavaFileWriter {
 			if(i != 0) {
 				body += ", ";
 			}
-			body += "r" + translate(level,arguments.get(i),environment);
+			Expr argument = arguments.get(i);
+			int reg = translate(level, argument, environment);
+			reg = coerceFromValue(level, argument, reg, environment);
+			body += "r" + reg;
 		}
 		
 		int target = environment.allocate(type);

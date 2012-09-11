@@ -249,20 +249,28 @@ public interface Expr extends SyntacticElement {
 		public String toString() {
 			switch(op) {
 				 
-				case LISTGEN:
-				{
-					String args = "";
-					boolean firstTime=true;
-					for(Expr e : arguments) {
-						if(!firstTime) {
-							args += ",";
-						}
-						args += e;
+			case SETGEN:
+			case BAGGEN:
+			case LISTGEN: {
+				String args = "";
+				boolean firstTime = true;
+				for (Expr e : arguments) {
+					if (!firstTime) {
+						args += ",";
 					}
+					args += e;
+				}
+				if(op == Expr.NOp.SETGEN) {
+					return "{" + args + "}";
+				} else if(op == Expr.NOp.BAGGEN) {
+					return "{|" + args + "|}";
+				} else {
 					return "[" + args + "]";
-				}	
-				default:
-					return arguments.get(0) + "[" + arguments.get(1) + ".." + arguments.get(2) + "]";
+				}
+			}
+			default:
+				return arguments.get(0) + "[" + arguments.get(1) + ".."
+						+ arguments.get(2) + "]";
 			}
 		}
 	}
