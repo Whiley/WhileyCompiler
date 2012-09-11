@@ -215,12 +215,14 @@ public class VerificationCheck implements Transform {
 				Automaton tmp = new Automaton(automaton);
 				int root = And(tmp,constraints);
 				root = And(tmp,root,Not(tmp,test));
-				tmp.mark(root);				
+				int mark = tmp.mark(root);				
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
 				System.out.println("\n --------");				
-				rewrite(tmp);			
+				rewrite(tmp);
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
 				System.out.println();
+				// assertion holds if a constradiction is shown.
+				return tmp.get(tmp.root(mark)).equals(ConstraintSolver.False);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -431,7 +433,6 @@ public class VerificationCheck implements Transform {
 	 */
 	protected void transform(Block.Entry entry, boolean assume, Branch branch) {
 		Code code = entry.code;		
-		System.out.println("GOT: " + code);
 		try {
 			if(code instanceof Code.Assert) {
 				transform((Code.Assert)code,entry,assume,branch);
