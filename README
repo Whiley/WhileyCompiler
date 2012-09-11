@@ -31,15 +31,17 @@ There are several ways to get going with Whiley:
 
 1) Install the Eclipse Plugin
 
-2) Download and setup the Whiley Development Kit.
+2) Download and run an executable Jar.
 
-3) Download and run an executable Jar.
+3) Download and setup the Whiley Development Kit.
 
 The Eclipse plugin is the easiest way to install and run Whiley
 programs (see below for instructions).  However, if you don't use
-Eclipse or would like to work with the source directly, then download
-and install the development kit (see below).  Finally, you can also
-run the compiler directly as an executable Jar.
+Eclipse, the next easiest option is to download and run the executable
+Jar.  Finally, if you're a developer you may like to download the
+Whiley Development Kit, which includes the source code for Whiley and
+various scripts for to simplify compiling and running Whiley programs
+from the command-line.
 
 Eclipse Plugin
 ----------------------------------------------------------------------
@@ -51,6 +53,24 @@ At this point, "select all" and follow the instructions to install the
 plugin.
 
 For more info on Wyclipse, see http://whiley.org/tools/wyclipse/
+
+Executable Jar
+----------------------------------------------------------------------
+If you're running on a Windows system without cygwin, or you're having
+trouble getting the wyjc scripts to work, then a useful alternative is
+to run the jar file directly.  You can do this as follows:
+
+% cd examples
+% java -jar ../lib/wyjc-vX.Y.Z.jar -bp ../lib/wyrt-vX.Y.Z.jar hello-world.whiley
+
+(here, vX.Y.Z is the version number of the distribution)
+
+Then, to run the program you would do this:
+
+% java -cp "../lib/wyrt-vX.Y.Z.jar;." hello-world
+Hello World
+
+(note: under UNIX you will want to replace the ';' with a ':')
 
 Whiley Development Kit (WDK)
 ----------------------------------------------------------------------
@@ -74,24 +94,6 @@ At this point, you can run the program using the whiley command:
 Hello World
 
 (note: the wyj command is just a wrapper for java -cp lib/wyrt.jar).
-
-Executable Jar
-----------------------------------------------------------------------
-If you're running on a Windows system without cygwin, or you're having
-trouble getting the wyjc scripts to work, then a useful alternative is
-to run the jar file directly.  You can do this as follows:
-
-% cd examples
-% java -jar ../lib/wyjc-vX.Y.Z.jar -bp ../lib/wyrt-vX.Y.Z.jar hello-world.whiley
-
-(here, vX.Y.Z is the version number of the distribution)
-
-Then, to run the program you would do this:
-
-% java -cp "../lib/wyrt-vX.Y.Z.jar;." hello-world
-Hello World
-
-(note: under UNIX you will want to replace the ';' with a ':')
 
 ============================================================================
 Making a Contribution
