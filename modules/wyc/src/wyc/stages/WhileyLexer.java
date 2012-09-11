@@ -394,7 +394,7 @@ public class WhileyLexer {
 				return scanLineComment();
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '*') {
 				return scanBlockComment();
-			} {
+			} else {
 				return new RightSlash(pos++,line);
 			}
 		} else if(c == '%') {

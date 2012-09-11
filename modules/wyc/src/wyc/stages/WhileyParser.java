@@ -1143,7 +1143,7 @@ public final class WhileyParser {
 			match(token.getClass());
 			ops.add(mulDivOp(token));
 			exprs.add(parseCastExpression());	
-			ends.add(index);
+			ends.add(index-1);
 		}
 		
 		Expr result = exprs.get(0);
