@@ -349,7 +349,7 @@ public class JavaFileWriter {
 			environment.put(result, letVar);
 		}
 		if(decl.condition != null) {
-			int condition = translate(2, decl.condition, environment);
+			int condition = translate(level, decl.condition, environment);
 			myOut(level++, "if(r" + condition + ") {");
 		}
 		int result = translate(level, decl.result, environment);
@@ -704,11 +704,11 @@ public class JavaFileWriter {
 		switch(expr.cop) {
 		case SETCOMP:
 			myOut(level, type2JavaType(type) + " r" + target
-				+ " = new Automaton.Set(t" + target + ".children);");
+				+ " = new Automaton.Set(t" + target + ".toArray());");
 			break;
 		case BAGCOMP:
 			myOut(level, type2JavaType(type) + " r" + target
-				+ " = new Automaton.Bag(t" + target + ".children);");
+				+ " = new Automaton.Bag(t" + target + ".toArray());");
 			break;
 		}
 
@@ -850,15 +850,14 @@ public class JavaFileWriter {
 				+ "(Automaton.State _state, Automaton automaton) {");		
 		myOut(2, "if(_state instanceof Automaton.Compound) {");
 		myOut(3, "Automaton.Compound state = (Automaton.Compound) _state;");
-		myOut(3, "int[] children = state.children;");
 		
 		Type[] tt_elements = type.elements;
 		int min = tt_elements.length;
 		if (type.unbounded) {
-			myOut(3, "if(children.length < " + (min - 1)
+			myOut(3, "if(state.size() < " + (min - 1)
 					+ ") { return false; }");
 		} else {
-			myOut(3, "if(children.length != " + min + ") { return false; }");
+			myOut(3, "if(state.size() != " + min + ") { return false; }");
 		}
 		
 		int level = 3;
@@ -871,7 +870,7 @@ public class JavaFileWriter {
 			for (int i = 0; i != tt_elements.length; ++i) {
 				if(!type.unbounded || i+1 < tt_elements.length) {
 					String idx = "s" + i;
-					myOut(3+i, "for(int " + idx + "=0;" + idx + " < children.length;++" + idx + ") {");
+					myOut(3+i, "for(int " + idx + "=0;" + idx + " < state.size();++" + idx + ") {");
 					if(i > 0) {
 						indent(3+i);out.print("if(");
 						for(int j=0;j<i;++j) {
@@ -888,8 +887,8 @@ public class JavaFileWriter {
 		}
 		
 		myOut(level, "boolean result=true;");
-		myOut(level, "for(int i=0;i!=children.length;++i) {");
-		myOut(level+1, "int child = children[i];");
+		myOut(level, "for(int i=0;i!=state.size();++i) {");
+		myOut(level+1, "int child = state.get(i);");
 		for (int i = 0; i != tt_elements.length; ++i) {
 			Type pt = tt_elements[i];
 			String pt_mangle = type2HexStr(pt);

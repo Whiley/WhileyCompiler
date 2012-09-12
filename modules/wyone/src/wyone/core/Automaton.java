@@ -524,9 +524,7 @@ public final class Automaton {
 	 */
 	public static abstract class Compound extends State {
 
-		// TODO: make this private
-		
-		public int[] children;
+		protected int[] children;
 		protected int length;
 
 		private Compound(int kind, int...children) {
@@ -535,7 +533,7 @@ public final class Automaton {
 				throw new IllegalArgumentException("invalid compound kind");
 			} 			
 			this.children = children;
-			length = children.length;
+			this.length = children.length;
 		}
 		
 		private Compound(int kind, java.util.List<Integer> children) {
@@ -584,17 +582,27 @@ public final class Automaton {
 		}
 
 		public int hashCode() {
-			return kind * Arrays.hashCode(children);
+			int hashCode = kind;
+			for(int i=0;i!=length;++i) {
+				hashCode ^= children[i];
+			}
+			return hashCode;
 		}			
 		
 		protected void internal_add(int ref) {
 			if(length == children.length) {
-				int nlength = (1+children.length) * 2;
+				int nlength = (1+length) * 2;
 				int[] nchildren = new int[nlength];
 				System.arraycopy(children,0,nchildren,0,length);
 				children = nchildren;
 			}
 			children[length++] = ref;
+		}
+		
+		public int[] toArray() {
+			int[] result = new int[length];
+			System.arraycopy(children,0,result,0,length);
+			return result;
 		}
 	}
 	
@@ -603,7 +611,7 @@ public final class Automaton {
 			super(K_BAG, children);
 			Arrays.sort(this.children);
 		}
-
+		
 		public Bag(java.util.List<Integer> children) {
 			super(K_BAG, children);
 			Arrays.sort(this.children);
