@@ -3624,7 +3624,93 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     return wycc_box_cstr("Unknown");
 }
 
-
+/*
+ * from Byte  
+ */
+// wycc__toString	(byte)	(char)	(int)	(any)
+// wycc__toUnsignedInt	(byte)	([byte])
+// wycc__toInt		(byte)
+// wycc__toChar		(byte)	([byte])
+// .stack
+// wycc__top		([int])
+// wycc__push		([int], int)
+// wycc__pop		([int])
+// .list
+// wycc__enlarge	([int], int, int)
+// wycc__create		(int, int)	(int, bool)
+// wycc__reverse	([bool])	([byte])	([int])
+// .errors
+// wycc__Error		(string)
+// wycc__SyntaxError
+// .string
+// wycc__indexOf	(string, char)	(string, char, int)
+// wycc__lastIndexOf	(string, char)
+// wycc__replace	(string, char, char)
+// wycc__fromASCII	([byte])
+// wycc__toUTF8		(string)
+// .real
+// wycc__toString	(real)
+// wycc__parse		(string) ****
+// wycc__toDecimal	(real)	(real, int)
+// .time
+// wycc__current	()
+// .file
+// wycc__Reader		(string)
+// wycc__close		(ref)
+// wycc__read		(ref)	(ref, int)
+// wycc__Writer		(string)
+// wycc__write		(ref, [byte])
+// .char
+// wycc__isUpperCase	(char)
+// wycc__isLowerCase	(char)
+// wycc__isLetter	(char)
+// wycc__isDigit	(char)
+// wycc__isWhiteSpace	(char)
+// .int
+// wycc__toHexString	(int)
+// wycc__toUnsignedByte	(int)
+// wycc__toUnsignedBytes	(int)
+// wycc__toSignedByte	(int)
+// .system
+// wycc__print		(ref, string)
+// wycc__println	(ref, string)
+// .math
+// wycc__abs		(int)	(real)
+// wycc__max		(int, int)	(real, real)
+// wycc__min		(int, int)	(real, real)
+// wycc__pow		(int, int)	(real, real)
+// wycc__floor		(real)
+// wycc__ceil		(real)
+// wycc__round		(real)
+// wycc__isqrt		(int)
+// wycc__sqrt 		(int, real)	(real, real)
+/*
+ * from Errors  
+ */
+/*
+ * from Int
+ */
+/*
+ * from List
+ */
+/*
+ * from Math
+ */
+/*
+ * from Real
+ */
+/*
+ * from Stack
+ */
+/*
+ * from String
+ */
+/*
+ * from System
+ */
+/*
+ * from Time
+ */
 /*
 ;;; Local Variables: ***
 ;;; c-basic-offset: 4 ***
