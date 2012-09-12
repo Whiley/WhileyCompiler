@@ -113,12 +113,12 @@ rewrite And{NotEquals{|* x, * y|},Equals{|* u,* v|}, BExpr... rest}:
     => And ({NotEquals{|x,y|},Equals{|u,v|},NotEquals{|x,v|}} ++ rest), if y == u
 
 rewrite And{Equals{|* x, * y|},LessThan[* u,* v], BExpr... rest}:
-    => And ({Equals{|x,y|},Equals{|u,v|},LessThan[x,v]} ++ rest), if y == u
-    => And ({Equals{|x,y|},Equals{|u,v|},LessThan[u,x]} ++ rest), if y == v
+    => And ({Equals{|x,y|},LessThan[u,v],LessThan[x,v]} ++ rest), if y == u
+    => And ({Equals{|x,y|},LessThan[u,v],LessThan[u,x]} ++ rest), if y == v
 
 rewrite And{Equals{|* x, * y|},LessThanEq[* u,* v], BExpr... rest}:
-    => And ({Equals{|x,y|},Equals{|u,v|},LessThanEq[x,v]} ++ rest), if y == u
-    => And ({Equals{|x,y|},Equals{|u,v|},LessThanEq[u,x]} ++ rest), if y == v
+    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u
+    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[u,x]} ++ rest), if y == v
 
 // ====================================================================
 // Set Constraints
