@@ -1,12 +1,24 @@
 term False
 term True
 class Bool as True | False
-
+term And{Term}
+term Equals{|Term,Term|}
 term Num(int)
-term Sum{|Num...|}
+term Var(string)
 
-rewrite Sum{|Num(int x), Num(int y), Num... rest|}:
-    => Sum (Num(x+y) ++ rest)
+class Term as Bool | And | Equals | Var
+
+rewrite And{False x, Term... rest}:
+    => And (rest)
+
+rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}}:
+    => And{Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}}, if y == u
+
+rewrite Equals{|Num(int x), Num(int y)|}:
+    => True, if x == y
+    => False
+
+
 
 
 
