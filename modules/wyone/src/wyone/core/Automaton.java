@@ -538,15 +538,12 @@ public final class Automaton {
 		
 		private Compound(int kind, java.util.List<Integer> children) {
 			super(kind);
-			if(kind != K_LIST && kind != K_BAG && kind != K_SET) {
-				throw new IllegalArgumentException("invalid compound kind");
-			}
 			int[] nchildren = new int[children.size()];
-			for (int i = 0; i != children.size(); ++i) {
+			for (int i = 0; i != nchildren.length; ++i) {
 				nchildren[i] = children.get(i);
 			}			
 			this.children = nchildren;	
-			length = nchildren.length;
+			length = nchildren.length;		
 		}
 		
 		public void remap(int from, int to) {
@@ -596,7 +593,7 @@ public final class Automaton {
 				System.arraycopy(children,0,nchildren,0,length);
 				children = nchildren;
 			}
-			children[length++] = ref;
+			children[length++] = ref;			
 		}
 		
 		public int[] toArray() {
@@ -654,16 +651,18 @@ public final class Automaton {
 	
 	public static final class Set extends Compound {
 		public Set(int... children) {
-			super(K_SET, sortAndRemoveDuplicates(children));
+			super(K_SET, children);
+			sortAndRemoveDuplicates();
 		}
 
 		public Set(java.util.List<Integer> children) {
-			super(K_SET, sortAndRemoveDuplicates(children));
+			super(K_SET, children);
+			sortAndRemoveDuplicates();
 		}
 
 		public void remap(int from, int to) {
 			super.remap(from,to);
-			children = sortAndRemoveDuplicates(children);
+			sortAndRemoveDuplicates();
 		}
 		
 		public Set clone() {
@@ -697,6 +696,52 @@ public final class Automaton {
 			}
 			return r + "}";
 		}
+		
+		private void sortAndRemoveDuplicates() {
+			if(length == 0) {
+				return;
+			}
+			
+			Arrays.sort(children);
+			
+			// first, decide if we have duplicates
+			int last = children[0];
+			int i;
+			for (i = 1; i < length; ++i) {
+				int current = children[i];
+				if (current == last) {
+					break; // duplicate detected
+				} else {
+					last = current;
+				}
+			}
+			
+			// second, if duplicates then mark and remove them
+			if(i != length) {				
+				// duplicates is created lazily to avoid allocations in the common
+				// case.
+				boolean[] duplicates = new boolean[length];
+				int count = 0;
+				for(;i < length;++i) {
+					int current = children[i];
+					if(current == last) {
+						duplicates[i] = true;
+						count++;
+					} else {
+						last = current;
+					}
+				}
+				int[] nchildren = new int[length-count];
+				int j;
+				for (i = 0, j = 0; i < length; ++i) {
+					if (!duplicates[i]) {
+						nchildren[j++] = children[i];
+					}
+				}
+				children = nchildren;
+				length = length - count;
+			}
+		}		
 	}
 	
 	public static final class List extends Compound {
@@ -757,64 +802,7 @@ public final class Automaton {
 			return r + "]";
 		}
 	}
-	
-	private static int[] sortAndRemoveDuplicates(
-			java.util.List<Integer> children) {
-		int[] nchildren = new int[children.size()];
-		for (int i = 0; i != nchildren.length; ++i) {
-			nchildren[i] = children.get(i);
-		}
-		return sortAndRemoveDuplicates(nchildren);
-	}
-	
-	private static int[] sortAndRemoveDuplicates(int[] children) {
-		if(children.length == 0) {
-			return children;
-		}
 		
-		Arrays.sort(children);
-		
-		// first, decide if we have duplicates
-		final int length = children.length;
-		int last = children[0];
-		int i;
-		for (i = 1; i < length; ++i) {
-			int current = children[i];
-			if (current == last) {
-				break; // duplicate detected
-			} else {
-				last = current;
-			}
-		}
-		
-		// second, if duplicates then mark and remove them
-		if(i == length) {
-			return children;
-		} else {
-			// duplicates is created lazily to avoid allocations in the common
-			// case.
-			boolean[] duplicates = new boolean[children.length];
-			int count = 0;
-			for(;i < length;++i) {
-				int current = children[i];
-				if(current == last) {
-					duplicates[i] = true;
-					count++;
-				} else {
-					last = current;
-				}
-			}
-			int[] nchildren = new int[children.length-count];
-			int j;
-			for (i = 0, j = 0; i < length; ++i) {
-				if (!duplicates[i]) {
-					nchildren[j++] = children[i];
-				}
-			}
-			return nchildren;
-		}
-	}
-	
 	private static int[] sortedRemoveAll(int[] lhs, int lhs_len, int[] rhs, int rhs_len) {		
 		boolean[] marks = new boolean[lhs_len];
 		int count = 0;
