@@ -1443,6 +1443,10 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
 	fprintf(stderr, "note: deallocing box for typ %d\n", typ);
     };
     free(itm);
+    if (typ == Wy_None) {
+	fprintf(stderr, "note: deallocing box for typ %d\n", typ);
+	return (wycc_obj *) NULL;
+    };
     if (typ == Wy_Int) {
 	return (wycc_obj *) NULL;
     };
@@ -1453,6 +1457,12 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
 	return (wycc_obj *) NULL;
     };
     if (typ == Wy_Bool) {
+	return (wycc_obj *) NULL;
+    };
+    if (typ == Wy_Null) {
+	return (wycc_obj *) NULL;
+    };
+    if (typ == Wy_Ref) {
 	return (wycc_obj *) NULL;
     };
     wycc_dealloc_typ(ptr, typ);
@@ -2289,6 +2299,62 @@ void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
     };
     fprintf(stderr, msg);
     exit(-4);
+}
+
+/*
+ * return a string extracted from the given string 
+ */
+wycc_obj* wyil_substring(wycc_obj* str, wycc_obj* loo, wycc_obj* hio){
+    WY_OBJ_SANE(str, "wyil_substrin str");
+    WY_OBJ_SANE(loo, "wyil_substrin loo");
+    WY_OBJ_SANE(hio, "wyil_substrin hio");
+    wycc_obj* ans;
+    size_t siz;
+    long lo, hi, max;
+    char *buf;
+    char *sptr;
+
+    if ((str->typ != Wy_String) && (str->typ != Wy_CString)) {
+	fprintf(stderr, "Help needed in wyil_substring for type %d\n"
+		, str->typ);
+	exit(-3);
+    };
+    if (loo->typ != Wy_Int) {
+	fprintf(stderr, "Help needed in wyil_substring for type %d\n"
+		, loo->typ);
+	exit(-3);
+    };
+    if (hio->typ != Wy_Int) {
+	fprintf(stderr, "Help needed in wyil_substring for type %d\n"
+		, hio->typ);
+	exit(-3);
+    };
+    lo = (long) loo->ptr;
+    hi = (long) hio->ptr;
+    if (lo > hi) {
+	fprintf(stderr, "Help needed in wyil_substring for limits %d:%d\n"
+		, lo, hi);
+	exit(-3);
+    };
+    siz = hi - lo;
+    sptr = (char *) str->ptr;
+    max = strlen(sptr);
+    if (hi > max) {
+	fprintf(stderr, "Help needed in wyil_substring for max %d:%d\n"
+		, hi, max);
+	exit(-3);
+    };
+    if (lo < 0) {
+	fprintf(stderr, "Help needed in wyil_substring for min %d\n"
+		, lo);
+	exit(-3);
+    };
+    buf = (char *) malloc(siz + 3);
+    if (siz > 0) {
+	strncpy(buf, (sptr+lo), siz);
+    }
+    buf[siz] = 0;
+    return wycc_box_str(buf);
 }
 
 /*
@@ -3624,10 +3690,55 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     return wycc_box_cstr("Unknown");
 }
 
+
+static wycc_obj* wycc__abs_int(wycc_obj* itm) {
+    long val = (long) itm->ptr;
+
+    if (val < 0) {
+	val *= -1;
+	return wycc_box_long(val);
+    };
+    itm->cnt++;
+    return itm;
+}
+
+wycc_obj* wycc__abs(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc__abs");
+
+    if (itm->typ == Wy_Int) {
+	return wycc__abs_int(itm);
+    };
+    fprintf(stderr, "Help needed in wycc__abs for type %d\n", itm->typ);
+    exit(-3);
+}
+
+wycc_obj* wycc__isLetter(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc__isLetter");
+    long val;
+
+    val = -1;
+    if (itm->typ == Wy_Int) {
+	val = (long) itm->ptr;
+    } else if (itm->typ == Wy_Char) {
+	val = (long) itm->ptr;
+    } else {
+	fprintf(stderr, "Help needed in wycc__isLetter for type %d\n"
+		, itm->typ);
+	exit(-3);
+    };
+    if ((val >= 'a') && (val <= 'z')) {
+	return wycc_box_bool(1);
+    };
+    if ((val >= 'A') && (val <= 'Z')) {
+	return wycc_box_bool(1);
+    };
+    return wycc_box_bool(0);
+}
+
 /*
  * from Byte  
  */
-// wycc__toString	(byte)	(char)	(int)	(any)
+// = wycc__toString	(byte)	(char)	(int)	(any)
 // wycc__toUnsignedInt	(byte)	([byte])
 // wycc__toInt		(byte)
 // wycc__toChar		(byte)	([byte])
@@ -3663,7 +3774,7 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 // .char
 // wycc__isUpperCase	(char)
 // wycc__isLowerCase	(char)
-// wycc__isLetter	(char)
+// = wycc__isLetter	(char)
 // wycc__isDigit	(char)
 // wycc__isWhiteSpace	(char)
 // .int
@@ -3675,7 +3786,7 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 // wycc__print		(ref, string)
 // wycc__println	(ref, string)
 // .math
-// wycc__abs		(int)	(real)
+// = wycc__abs		(int)	(real)
 // wycc__max		(int, int)	(real, real)
 // wycc__min		(int, int)	(real, real)
 // wycc__pow		(int, int)	(real, real)
@@ -3684,33 +3795,8 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 // wycc__round		(real)
 // wycc__isqrt		(int)
 // wycc__sqrt 		(int, real)	(real, real)
-/*
- * from Errors  
- */
-/*
- * from Int
- */
-/*
- * from List
- */
-/*
- * from Math
- */
-/*
- * from Real
- */
-/*
- * from Stack
- */
-/*
- * from String
- */
-/*
- * from System
- */
-/*
- * from Time
- */
+
+
 /*
 ;;; Local Variables: ***
 ;;; c-basic-offset: 4 ***

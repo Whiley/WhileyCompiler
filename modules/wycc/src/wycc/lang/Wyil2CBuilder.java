@@ -967,8 +967,8 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeLengthOf(cod, tag);
 			} else if (cod instanceof Code.IndexOf) {
 				this.writeCodeIndexOf(cod, tag);
-			} else if (cod instanceof Code.Assert) {
-				this.writeCodeAssert(cod, tag);
+			} else if (cod instanceof Code.AssertOrAssume) {
+				this.writeCodeAssertOrAssume(cod, tag);
 			} else if (cod instanceof Code.LoopEnd) {
 				this.writeCodeLoopEnd(cod, tag);
 			} else if (cod instanceof Code.Label) {
@@ -1008,6 +1008,8 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeIfIs(cod, tag);
 			} else if (cod instanceof Code.Loop) {
 				this.writeCodeLoop(cod, tag);
+			} else if (cod instanceof Code.NewTuple) {
+				this.writeCodeNewTuple(cod, tag);
 
 			} else if (cod instanceof Code.Goto) {
 				this.writeCodeGoto(cod, tag);
@@ -1017,16 +1019,14 @@ public class Wyil2CBuilder implements Builder {
 
 			} else if (cod instanceof Code.SubList) {
 				this.writeCodeSubList(cod, tag);
-			} else if (cod instanceof Code.Void) {
-				this.writeCodeVoid(cod, tag);
+			} else if (cod instanceof Code.SubString) {
+				this.writeCodeSubString(cod, tag);
 
 			} else if (cod instanceof Code.Void) {
 				this.writeCodeVoid(cod, tag);
-			} else if (cod instanceof Code.NewTuple) {
-				this.writeCodeNewTuple(cod, tag);
 			} else {
 				//ans += "// HELP needed for opcode '" + opc + "'\n";
-				tmp = "// HELP needed for opcode '" + opc + "'\n";
+				tmp = "// HELP! needed for opcode '" + opc + "'\n";
 				bodyAddLine(tmp);
 			}
 			//System.err.println("milestone 5.3.1.8");
@@ -1034,13 +1034,41 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 	
-		public String writeCodefoo(Code codIn, String tag){
+		public void writeCodefoo(Code codIn, String tag){
 			String tmp;
 			
-			tmp = "// HELP needed for \n";
+			tmp = "// HELP! needed for \n";
 			bodyAddLine(tmp);
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
-			return "";
+			return;
+		}
+
+		public void writeCodeSubString(Code codIn, String tag){
+			String tmp;
+			int targ;
+			String lin;
+			int src, lo, hi;
+			int cnt;
+			
+			tmp = "// HELP! needed for SubString\n";
+			bodyAddLine(tmp);
+			Code.SubString cod = (Code.SubString) codIn;
+			targ = cod.target;
+			cnt = cod.operands.length;
+			if (cnt != 3) {
+				error += "ERROR SubString bad arg count " + cnt + "\n";
+				return;
+			}
+			src = cod.operands[0];
+			lo = cod.operands[1];
+			hi = cod.operands[2];
+			writeClearTarget(targ, tag);
+			this.addDecl(targ, "wycc_obj*");
+			lin = "X" + targ + " = wyil_substring(X" + src + ", X" + lo + ", X" + hi + ");";
+			tmp = indent + lin + tag + "\n";
+			this.mbodyAddLine(tmp);
+
+			return;
 		}
 		
 		public void writeCodeNewTuple(Code codIn, String tag){
@@ -1071,19 +1099,19 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 		
-		public String writeCodeTryCatch(Code codIn, String tag){
+		public void writeCodeTryCatch(Code codIn, String tag){
 			String tmp;
 			
-			tmp = "// HELP needed for TryCatch\n";
+			tmp = "// HELP! needed for TryCatch\n";
 			bodyAddLine(tmp);
 			Code.TryCatch cod = (Code.TryCatch) codIn;
-			return "";
+			return;
 		}
 		
 		public String writeCodeThrow(Code codIn, String tag){
 			String tmp;
 
-			tmp = "// HELP needed for Throw\n";
+			tmp = "// HELP!needed for Throw\n";
 			bodyAddLine(tmp);
 			Code.Throw cod = (Code.Throw) codIn;
 			return "";
@@ -1092,7 +1120,7 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeTryEnd(Code codIn, String tag){
 			String tmp;
 			
-			tmp = "// HELP needed for TryEnd\n";
+			tmp = "// HELP! needed for TryEnd\n";
 			bodyAddLine(tmp);
 			Code.TryEnd cod = (Code.TryEnd) codIn;
 			return "";
@@ -1122,7 +1150,7 @@ public class Wyil2CBuilder implements Builder {
 		public String writeCodeVoid(Code codIn, String tag){
 			String tmp;
 			
-			tmp = "// HELP needed for Void\n";
+			tmp = "// HELP! needed for Void\n";
 			bodyAddLine(tmp);
 			Code.Void cod = (Code.Void) codIn;
 			return "";
@@ -1184,7 +1212,7 @@ public class Wyil2CBuilder implements Builder {
 			return "";
 		}
 		
-		public String writeCodeAssert(Code codIn, String tag){
+		public String writeCodeAssertOrAssume(Code codIn, String tag){
 			String tmp;
 			int lhs, rhs;
 			String lin;
@@ -1194,7 +1222,7 @@ public class Wyil2CBuilder implements Builder {
 			//tmp = "// HELP needed for Assert\n";
 			//bodyAddLine(tmp);
 			
-			Code.Assert cod = (Code.Assert) codIn;
+			Code.AssertOrAssume cod = (Code.AssertOrAssume) codIn;
 			Code.Comparator opr = cod.op;
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
@@ -1480,16 +1508,16 @@ public class Wyil2CBuilder implements Builder {
 				rtn = "wyil_negate";
 			} else if (opr == Code.UnArithKind.NUMERATOR){
 				rtn = "wyil_negate";
-				tmp = "// HELP needed for unArithOp '" + opr + "'\n";
+				tmp = "// HELP! needed for unArithOp '" + opr + "'\n";
 				bodyAddLine(tmp);
 				return "";
 			} else if (opr == Code.UnArithKind.DENOMINATOR){
 				rtn = "wyil_negate";
-				tmp = "// HELP needed for unArithOp '" + opr + "'\n";
+				tmp = "// HELP! needed for unArithOp '" + opr + "'\n";
 				bodyAddLine(tmp);
 				return "";
 			} else {
-				tmp = "// HELP needed for unArithOp '" + opr + "'\n";
+				tmp = "// HELP! needed for unArithOp '" + opr + "'\n";
 				bodyAddLine(tmp);
 				return "";
 			}
@@ -1763,7 +1791,7 @@ public class Wyil2CBuilder implements Builder {
 				rtn = "wyil_set_union";
 			} else {
 				error += "BinSetOp un-defined\n";
-				tmp = "// HELP needed for binSetOp '" + opr + "'\n";
+				tmp = "// HELP! needed for binSetOp '" + opr + "'\n";
 				bodyAddLine(tmp);
 				return "";
 			}
@@ -1800,7 +1828,7 @@ public class Wyil2CBuilder implements Builder {
 				error += "BinListOp ill-defined\n";
 			} else {
 				error += "BinListOp un-defined\n";
-				tmp = "// HELP needed for binListOp '" + opr + "'\n";
+				tmp = "// HELP! needed for binListOp '" + opr + "'\n";
 				bodyAddLine(tmp);
 				return "";
 			}
@@ -2152,7 +2180,7 @@ public class Wyil2CBuilder implements Builder {
 			} else if (opr == Code.BinArithKind.RANGE){
 				rtn = "wyil_range";
 			} else {
-				tmp = "// HELP needed for binArithOp '" + opr + "'\n";
+				tmp = "// HELP! needed for binArithOp '" + opr + "'\n";
 				bodyAddLine(tmp);
 				return;
 			}
@@ -2264,7 +2292,7 @@ public class Wyil2CBuilder implements Builder {
 				assn = "wycc_box_null()";
 				
 			} else {
-				tmp = "// HELP needed for value type '" + typ + "'\n";
+				tmp = "// HELP! needed for value type '" + typ + "'\n";
 				bodyAddLine(tmp);
 				return null;
 			}

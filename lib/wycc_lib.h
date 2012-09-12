@@ -119,6 +119,7 @@ wycc_obj* wyil_list_sub(wycc_obj* lst, wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 wycc_obj* wyil_update_string(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_substring(wycc_obj* str, wycc_obj* loo, wycc_obj* hio);
 
 /*
  * routines to implement whiley standard library
@@ -126,7 +127,8 @@ wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wycc__toString(wycc_obj* itm);
 void wycc__println(wycc_obj* sys, wycc_obj* itm);
 void wycc__print(wycc_obj* sys, wycc_obj* itm);
-
+wycc_obj* wycc__isLetter(wycc_obj* itm);
+wycc_obj* wycc__abs(wycc_obj* itm);
 
 #ifndef WY_OBJ_SAFE
 #define WY_OBJ_SANE(x,y)	wycc_obj_sane(x,y)
