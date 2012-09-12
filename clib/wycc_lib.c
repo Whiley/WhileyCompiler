@@ -2833,7 +2833,7 @@ wycc_obj* wyil_length_of(wycc_obj* itm) {
  */
 void wyil_debug_str(char* mesg) {
     ;
-    fprintf(stderr, "%s\n", mesg);
+    fprintf(stderr, "%s", mesg);
     return;
 }
 
@@ -3664,8 +3664,13 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 		buf = (char*) realloc((void*)buf, siz);
 	    };
 	    if (idx > 0) {
-		strcpy((buf+at), ", ");
-		at += 2;
+		if (itm->typ == Wy_List) {
+		    strcpy((buf+at), ", ");
+		    at += 2;
+		} else {
+		    strcpy((buf+at), ",");
+		    at += 1;
+		};
 	    };
 	    strcpy((buf+at), nxt->ptr);
 	    at += tmp;
@@ -3675,7 +3680,7 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	    strcpy((buf+at), "]");
 	} else {
 	    strcpy((buf+at), ")");
-	}
+	};
 	return wycc_box_str(buf);
     };
     if (itm->typ == Wy_Set) {
@@ -3709,6 +3714,60 @@ wycc_obj* wycc__abs(wycc_obj* itm) {
 	return wycc__abs_int(itm);
     };
     fprintf(stderr, "Help needed in wycc__abs for type %d\n", itm->typ);
+    exit(-3);
+}
+
+static wycc_obj* wycc__max_int(wycc_obj* lhs, wycc_obj* rhs) {
+    long a, b;
+    wycc_obj *ans;
+
+    a = (long) lhs->ptr;
+    b = (long) rhs->ptr;
+    if (a < b) {
+	ans = rhs;
+    } else {
+	ans = lhs;
+    };
+    ans->cnt++;
+    return ans;
+}
+
+wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs) {
+    WY_OBJ_SANE(lhs, "wycc__max lhs");
+    WY_OBJ_SANE(rhs, "wycc__max rhs");
+
+    if ((lhs->typ == Wy_Int) && (rhs->typ == Wy_Int)) {
+	return wycc__max_int(lhs, rhs);
+    };
+    fprintf(stderr, "Help needed in wycc__max for types %d:%d\n"
+	    , lhs->typ, rhs->typ);
+    exit(-3);
+}
+
+static wycc_obj* wycc__min_int(wycc_obj* lhs, wycc_obj* rhs) {
+    long a, b;
+    wycc_obj *ans;
+
+    a = (long) lhs->ptr;
+    b = (long) rhs->ptr;
+    if (a > b) {
+	ans = rhs;
+    } else {
+	ans = lhs;
+    };
+    ans->cnt++;
+    return ans;
+}
+
+wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs) {
+    WY_OBJ_SANE(lhs, "wycc__min lhs");
+    WY_OBJ_SANE(rhs, "wycc__min rhs");
+
+    if ((lhs->typ == Wy_Int) && (rhs->typ == Wy_Int)) {
+	return wycc__min_int(lhs, rhs);
+    };
+    fprintf(stderr, "Help needed in wycc__min for types %d:%d\n"
+	    , lhs->typ, rhs->typ);
     exit(-3);
 }
 
@@ -3783,12 +3842,12 @@ wycc_obj* wycc__isLetter(wycc_obj* itm) {
 // wycc__toUnsignedBytes	(int)
 // wycc__toSignedByte	(int)
 // .system
-// wycc__print		(ref, string)
-// wycc__println	(ref, string)
+// = wycc__print		(ref, string)
+// = wycc__println	(ref, string)
 // .math
 // = wycc__abs		(int)	(real)
-// wycc__max		(int, int)	(real, real)
-// wycc__min		(int, int)	(real, real)
+// = wycc__max		(int, int)	(real, real)
+// = wycc__min		(int, int)	(real, real)
 // wycc__pow		(int, int)	(real, real)
 // wycc__floor		(real)
 // wycc__ceil		(real)

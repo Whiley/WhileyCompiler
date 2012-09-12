@@ -129,6 +129,8 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm);
 void wycc__print(wycc_obj* sys, wycc_obj* itm);
 wycc_obj* wycc__isLetter(wycc_obj* itm);
 wycc_obj* wycc__abs(wycc_obj* itm);
+wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs);
 
 #ifndef WY_OBJ_SAFE
 #define WY_OBJ_SANE(x,y)	wycc_obj_sane(x,y)

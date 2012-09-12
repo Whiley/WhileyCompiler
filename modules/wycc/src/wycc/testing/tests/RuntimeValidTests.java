@@ -127,11 +127,11 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_9_RuntimeTest() { runTest("Dictionary_Valid_9"); }
  @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_10_RuntimeTest() { runTest("Dictionary_Valid_10"); }
  @Test public void Dictionary_Valid_11_RuntimeTest() { runTest("Dictionary_Valid_11"); }
- @Test public void Dictionary_Valid_12_RuntimeTest() { runTest("Dictionary_Valid_12"); }
- @Ignore("Starting slow")@Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
- @Ignore("Starting slow")@Test public void Dictionary_Valid_14_RuntimeTest() { runTest("Dictionary_Valid_14"); }
- @Ignore("Starting slow")@Test public void Dictionary_Valid_15_RuntimeTest() { runTest("Dictionary_Valid_15"); }
- @Ignore("Starting slow")@Test public void Dictionary_Valid_16_RuntimeTest() { runTest("Dictionary_Valid_16"); }
+ @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_12_RuntimeTest() { runTest("Dictionary_Valid_12"); }
+ @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
+ @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_14_RuntimeTest() { runTest("Dictionary_Valid_14"); }
+ @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_15_RuntimeTest() { runTest("Dictionary_Valid_15"); }
+ @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_16_RuntimeTest() { runTest("Dictionary_Valid_16"); }
  @Test public void DoWhile_Valid_1_RuntimeTest() { runTest("DoWhile_Valid_1"); }
  @Test public void DoWhile_Valid_2_RuntimeTest() { runTest("DoWhile_Valid_2"); }
  @Ignore("Future Work") @Test public void DoWhile_Valid_3_RuntimeTest() { runTest("DoWhile_Valid_3"); }
@@ -148,7 +148,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void For_Valid_10_RuntimeTest() { runTest("For_Valid_10"); }
  @Test public void For_Valid_11_RuntimeTest() { runTest("For_Valid_11"); }
  @Test public void For_Valid_12_RuntimeTest() { runTest("For_Valid_12"); }
- @Ignore("Starting slow")@Test public void For_Valid_13_RuntimeTest() { runTest("For_Valid_13"); }
+ @Test public void For_Valid_13_RuntimeTest() { runTest("For_Valid_13"); }
  @Ignore("Known Issue - overloading")@Test public void Function_Valid_1_RuntimeTest() { runTest("Function_Valid_1"); }
  @Ignore("Starting slow")@Test public void Function_Valid_2_RuntimeTest() { runTest("Function_Valid_2"); }
  @Ignore("Starting slow")@Test public void Function_Valid_3_RuntimeTest() { runTest("Function_Valid_3"); }
@@ -333,7 +333,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetAssign_Valid_1_RuntimeTest() { runTest("SetAssign_Valid_1"); }
  @Test public void SetAssign_Valid_2_RuntimeTest() { runTest("SetAssign_Valid_2"); }
  @Test public void SetComprehension_Valid_1_RuntimeTest() { runTest("SetComprehension_Valid_1"); }
- @Ignore("Starting slow")@Test public void SetComprehension_Valid_2_RuntimeTest() { runTest("SetComprehension_Valid_2"); }
+ @Test public void SetComprehension_Valid_2_RuntimeTest() { runTest("SetComprehension_Valid_2"); }
  @Ignore("Starting slow")@Test public void SetComprehension_Valid_3_RuntimeTest() { runTest("SetComprehension_Valid_3"); }
  @Ignore("Starting slow")@Test public void SetComprehension_Valid_4_RuntimeTest() { runTest("SetComprehension_Valid_4"); }
  @Ignore("Starting slow")@Test public void SetComprehension_Valid_5_RuntimeTest() { runTest("SetComprehension_Valid_5"); }
@@ -373,7 +373,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue - reals") @Test public void SetUnion_Valid_9_RuntimeTest() { runTest("SetUnion_Valid_9"); }
  @Test public void SingleLineComment_Valid_1_RuntimeTest() { runTest("SingleLineComment_Valid_1"); }
  @Test public void Subtype_Valid_3_RuntimeTest() { runTest("Subtype_Valid_3"); }
- @Ignore("Starting slow")@Test public void Subtype_Valid_4_RuntimeTest() { runTest("Subtype_Valid_4"); }
+ @Test public void Subtype_Valid_4_RuntimeTest() { runTest("Subtype_Valid_4"); }
  @Ignore("Starting slow")@Test public void Subtype_Valid_5_RuntimeTest() { runTest("Subtype_Valid_5"); }
  @Ignore("Starting slow")@Test public void Subtype_Valid_6_RuntimeTest() { runTest("Subtype_Valid_6"); }
  @Ignore("Starting slow")@Test public void Subtype_Valid_7_RuntimeTest() { runTest("Subtype_Valid_7"); }
@@ -406,9 +406,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TupleType_Valid_3_RuntimeTest() { runTest("TupleType_Valid_3"); }
  @Ignore("Known Issue - reals")@Test public void TupleType_Valid_4_RuntimeTest() { runTest("TupleType_Valid_4"); }
  @Test public void TupleType_Valid_5_RuntimeTest() { runTest("TupleType_Valid_5"); }
- @Test public void TupleType_Valid_6_RuntimeTest() { runTest("TupleType_Valid_6"); }
- @Ignore("Starting slow")@Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); }
- @Ignore("Starting slow")@Test public void TupleType_Valid_8_RuntimeTest() { runTest("TupleType_Valid_8"); }
+ @Ignore("Known Issue - reals")@Test public void TupleType_Valid_6_RuntimeTest() { runTest("TupleType_Valid_6"); }
+ @Ignore("Known Issue - reals")@Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); }
+ @Test public void TupleType_Valid_8_RuntimeTest() { runTest("TupleType_Valid_8"); }
  @Test public void TypeEquals_Valid_1_RuntimeTest() { runTest("TypeEquals_Valid_1"); }
  @Ignore("Starting slow")@Test public void TypeEquals_Valid_2_RuntimeTest() { runTest("TypeEquals_Valid_2"); }
  @Ignore("Starting slow")@Test public void TypeEquals_Valid_3_RuntimeTest() { runTest("TypeEquals_Valid_3"); }
