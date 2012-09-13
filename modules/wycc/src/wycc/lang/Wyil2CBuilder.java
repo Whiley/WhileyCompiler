@@ -1057,13 +1057,55 @@ public class Wyil2CBuilder implements Builder {
 			Code.Dereference cod = (Code.Dereference) codIn;
 			return;
 		}
+		
+		public void writeCodeTryCatch(Code codIn, String tag){
+			String tmp;
+			
+			tmp = "// HELP! needed for TryCatch\n";
+			bodyAddLine(tmp);
+			Code.TryCatch cod = (Code.TryCatch) codIn;
+			return;
+		}
+		
+		public void writeCodeThrow(Code codIn, String tag){
+			String tmp;
+
+			tmp = "// HELP!needed for Throw\n";
+			bodyAddLine(tmp);
+			Code.Throw cod = (Code.Throw) codIn;
+			return;
+		}
+		
+		public void writeCodeVoid(Code codIn, String tag){
+			String tmp;
+			
+			tmp = "// HELP! needed for Void\n";
+			bodyAddLine(tmp);
+			Code.Void cod = (Code.Void) codIn;
+			return;
+		}
+		
+		public void writeCodeTryEnd(Code codIn, String tag){
+			String tmp;
+			
+			tmp = "// HELP! needed for TryEnd\n";
+			bodyAddLine(tmp);
+			Code.TryEnd cod = (Code.TryEnd) codIn;
+			return;
+		}
 
 		public void writeCodeNewObject(Code codIn, String tag){
 			String tmp;
+			int targ, lhs;
 			
 			tmp = "// HELP! needed for NewObject\n";
 			bodyAddLine(tmp);
 			Code.NewObject cod = (Code.NewObject) codIn;
+			targ = cod.target;
+			lhs = cod.operand;
+			
+			tmp = " = wycc_box_ref(X" + lhs  + ");";
+			writeTargetSwap(tmp, targ, lhs, tag);
 			return;
 		}
 
@@ -1123,33 +1165,6 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 		
-		public void writeCodeTryCatch(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP! needed for TryCatch\n";
-			bodyAddLine(tmp);
-			Code.TryCatch cod = (Code.TryCatch) codIn;
-			return;
-		}
-		
-		public String writeCodeThrow(Code codIn, String tag){
-			String tmp;
-
-			tmp = "// HELP!needed for Throw\n";
-			bodyAddLine(tmp);
-			Code.Throw cod = (Code.Throw) codIn;
-			return "";
-		}
-		
-		public String writeCodeTryEnd(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP! needed for TryEnd\n";
-			bodyAddLine(tmp);
-			Code.TryEnd cod = (Code.TryEnd) codIn;
-			return "";
-		}
-		
 		public void writeCodeTupleLoad(Code codIn, String tag){
 			String tmp;
 			int targ, rhs, idx;
@@ -1169,15 +1184,6 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLine(tmp);
 			
 			return;
-		}
-		
-		public String writeCodeVoid(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP! needed for Void\n";
-			bodyAddLine(tmp);
-			Code.Void cod = (Code.Void) codIn;
-			return "";
 		}
 		
 		public String writeCodeGoto(Code codIn, String tag){
@@ -2217,6 +2223,8 @@ public class Wyil2CBuilder implements Builder {
 			//String nam;
 			int alt;
 			int cnt;
+			int tok;
+			int idx;
 			
 			// Code.Const cod = (Const) codIn;
 			// targ = cod.target;
@@ -2244,10 +2252,14 @@ public class Wyil2CBuilder implements Builder {
 				assn = "wycc_box_bool(" + rval + ")";
 			} else if (typ instanceof Type.Char) {
 				assn = "wycc_box_char(" + rval + ")";
+			} else if (typ instanceof Type.Byte) {
+				alt = intFromByte(rval);
+				//assn = "wycc_box_byte(" + rval + ")";
+				assn = "wycc_box_byte(" + alt + ")";
 			} else if (typ instanceof Type.Set) {
 				assn = "wycc_set_new(-1)";
 				//Set vs = (Set) val;
-				Constant.Set cs = (Constant.Set)val;
+				Constant.Set cs = (Constant.Set) val;
 				cnt = cs.values.size();
 				tmp = "//             with " + cnt + " initialisers\n";
 				bodyAddLine(tmp);
@@ -2269,12 +2281,70 @@ public class Wyil2CBuilder implements Builder {
 				ans += tmp;
 				return ans;
 			} else if (typ instanceof Type.Map) {
+				// **** does this need to handle initial values, as set does
+				tmp = "// HELP! needed in const for value type '" + typ + "'\n";
+				bodyAddLine(tmp);
 				assn = "wycc_map_new(-1)";
+				Constant.Map cm = (Constant.Map)val;
+			} else if (typ instanceof Type.Record) {
+				Constant.Record cr = (Constant.Record) val;
+				cnt = cr.values.size();
+				tmp = "//             with " + cnt + " initialisers\n";
+				bodyAddLine(tmp);
+				tok = registerRecordType((Record) typ);
+				assn = "wycc_record_new(record_reg[" + tok + "])";
+				tmp = indent + nam + " = " + assn + ";" + tag + "\n";
+				ans += tmp;
+				tmp = indent + "{\n";
+				ans += tmp;
+				tmp = indent + indent + "wycc_obj *Xc = (wycc_obj*)0;\n";
+				ans += tmp;
+				idx = 0;
+				for (String ke:getFieldNames((Record) typ)){
+				
+					tmp = writeMyConstant(cr.values.get(ke), "Xc", "");
+					ans += indent + tmp;
+					tmp = indent + indent + "wycc_record_fill(" + nam + ", " + idx +", Xc);\n";
+					ans += tmp;
+					tmp = indent + indent + "wycc_deref_box(Xc);\n";
+					ans += tmp;
+					idx += 1;
+				}
+				tmp = indent + "}\n";
+				ans += tmp;
+				return ans;
+			} else if (typ instanceof Type.List) {
+				Constant.List cl = (Constant.List) val;
+				cnt = cl.values.size();
+				tmp = "//             with " + cnt + " initialisers\n";
+				bodyAddLine(tmp);
+				assn = "wycc_list_new(" + cnt + ")";
+				tmp = indent + nam + " = " + assn + ";" + tag + "\n";
+				ans += tmp;
+				tmp = indent + "{\n";
+				ans += tmp;
+				tmp = indent + indent + "wycc_obj *Xc = (wycc_obj*)0;\n";
+				ans += tmp;
+				for (Constant itm:cl.values) {
+					tmp = writeMyConstant(itm, "Xc", "");
+					ans += indent + tmp;
+					tmp = indent + indent + "wycc_list_add(" + nam + ", Xc);\n";
+					ans += tmp;
+					tmp = indent + indent + "wycc_deref_box(Xc);\n";
+					ans += tmp;
+				}
+				tmp = indent + "}\n";
+				ans += tmp;
+				return ans;
+			
 			} else if (typ instanceof Type.Null) {
 				assn = "wycc_box_null()";
+			} else if (typ instanceof Type.Real) {
+				assn = "wycc_box_float(" + rval + ")";
+				
 				
 			} else {
-				tmp = "// HELP! needed for value type '" + typ + "'\n";
+				tmp = "// HELP! needed in const for value type '" + typ + "'\n";
 				bodyAddLine(tmp);
 				return null;
 			}
@@ -2289,6 +2359,27 @@ public class Wyil2CBuilder implements Builder {
 				//tmp = "";
 			//}
 			return tmp;
+		}
+		
+		private int intFromByte(String txt){
+			int ans = 0;
+			int idx = 0;
+			char chr;
+			
+			while (idx<8){
+				chr = txt.charAt(idx);
+				if (chr == 'b') {
+					return ans;
+				}
+				ans *= 2;
+				if (chr == '1') {
+					//ans += 2 ^ (7-idx);
+					ans += 1;
+				}
+				
+				idx += 1;
+			}
+			return ans;
 		}
 		
 		// A register is about to be clobbered; dereference any object.
@@ -2344,11 +2435,11 @@ public class Wyil2CBuilder implements Builder {
 		}		
 	}
 
-		private ArrayList<String> getFieldNames(Type.Record record) {
-		    ArrayList<String> fields = new ArrayList<String>(record.keys());
-		    Collections.sort(fields);
-		    return fields;
-		}
+	public ArrayList<String> getFieldNames(Type.Record record) {
+	    ArrayList<String> fields = new ArrayList<String>(record.keys());
+	    Collections.sort(fields);
+	    return fields;
+	}
 
 	
 	

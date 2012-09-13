@@ -107,17 +107,29 @@ static char* wy_type_names[] = {
     /* a raw record, no names or field tpyes registered*/
 #define Wy_RRecord		14
     "raw record",
-    /* a reference to system resources */
-#define Wy_Ref		15
-    "reference",
+    /* a token to reference system resources */
+#define Wy_Token		15
+    "token",
     /* a record of the meta data for a variety of record. */
     /* a pointer to which changes a raw record into a record. */
 #define Wy_Rcd_Rcd		16
     "record meta",
     /* a tuple == a fixed size list */
 #define Wy_Tuple		17
-    "record meta",
-#define Wy_Type_Max	17
+    "tuple",
+    /* a floating point number (long double) */
+#define Wy_Float		18
+    "float",
+    /* a reference == an indirect pointer */
+#define Wy_Ref		19
+    "reference",
+    /* a unicode string as wchar array */
+#define Wy_WString	20
+    "wide string",
+    /* a single byte (8 bits) */
+#define Wy_Byte		21
+    "byte",
+#define Wy_Type_Max	21
     (char *) NULL
 };
 
@@ -127,15 +139,21 @@ static char* wy_type_names[] = {
  * ie, what does obj->ptr really point to.
  *
  * Wy_None	
+ * Wy_Null
  * Wy_Any	ptr must be void
- * Wy_CString
- * Wy_String	ptr to null terminated char[].
- * Wy_Char	ptr is char
+ * Wy_Char	ptr is char (will become wchar)
+ * Wy_Byte	ptr is char (8 bits)
  * Wy_Bool
  * Wy_Int	ptr is long
- * wy_Ref	ptr is token
+ * Wy_Token	ptr is token
+ * Wy_Ref	ptr is pointer to another wycc_obj.
+ * Wy_CString
+ * Wy_String	ptr to null terminated char[].
+ * Wy_WString	ptr to null terminated wchar[].
  * Wy_WInt	TBD
  * Wy_Tuple	just like Wy_List except no size changing.
+ * Wy_Float	ptr to data:
+ *		long double
  * Wy_List	ptr to block:
  *		alloc size
  *		member count
@@ -235,7 +253,7 @@ int main(int argc, char** argv, char** envp) {
     };
     //sys = wycc_box_int(1);	/* **** KLUDGE **** */
 
-    itm = wycc_box_ref(1);
+    itm = wycc_box_token(1);
     sys = wycc_rrecord_new(2);
     wycc_record_fill(sys, 1, itm);
     wycc_deref_box(itm);
@@ -246,6 +264,8 @@ int main(int argc, char** argv, char** envp) {
     }
     wycc_record_fill(sys, 0, lst);
     wycc__main(sys);
+    fflush(stderr);
+    fflush(stdout);
     exit(0);
     return 0;
 }
@@ -396,13 +416,41 @@ wycc_obj* wycc_box_int(int x) {
 /*
  * given an int (32 bits), box it in a wycc_obj as a reference token
  */
-wycc_obj* wycc_box_ref(int x) {
+wycc_obj* wycc_box_token(int x) {
+    wycc_obj* ans;
+
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_Token;
+    ans->cnt = 1;
+    ans->ptr = (void*) x;	/* **** kludge */
+    return ans;
+}
+
+/*
+ * given an int (only 8 bits), box it in a wycc_obj as a byte
+ */
+wycc_obj* wycc_box_byte(int x) {
+    wycc_obj* ans;
+
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_Byte;
+    ans->cnt = 1;
+    ans->ptr = (void*) x;
+    return ans;
+}
+
+/*
+ * given a pointer to wycc_obj, box it in a wycc_obj as a reference
+ */
+wycc_obj* wycc_box_ref(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc_box_ref");
     wycc_obj* ans;
 
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     ans->typ = Wy_Ref;
     ans->cnt = 1;
-    ans->ptr = (void*) x;	/* **** kludge */
+    ans->ptr = (void*) itm;
+    itm->cnt++;
     return ans;
 }
 
@@ -434,6 +482,22 @@ wycc_obj* wycc_box_long(long x) {
 }
 
 /*
+ * given an long double, box it in a wycc_obj
+ */
+wycc_obj* wycc_box_float(long double x) {
+    wycc_obj* ans;
+    long double *buf;
+
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    buf = (long double*)  calloc(1, sizeof(long double));
+    ans->typ = Wy_Int;
+    ans->cnt = 1;
+    *buf = x;
+    ans->ptr = (void*) buf;
+    return ans;
+}
+
+/*
  * box up a null
  */
 wycc_obj* wycc_box_null() {
@@ -442,7 +506,7 @@ wycc_obj* wycc_box_null() {
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     ans->typ = Wy_Null;
     ans->cnt = 1;
-    ans->ptr = (void*) 0;	/* **** kludge */
+    ans->ptr = (void*) 0;
     return ans;
 }
 
@@ -707,6 +771,9 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
 	fprintf(stderr, "Help needed in wycc_list_add for type %d\n", lst->typ);
 	exit(-3);
     };
+    if (itm == NULL) {
+	return;
+    }
     tmp = (long) p[0];
     at = ((long) p[1]) +1;
     p[1] = (void *) at;
@@ -1462,7 +1529,11 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     if (typ == Wy_Null) {
 	return (wycc_obj *) NULL;
     };
+    if (typ == Wy_Token) {
+	return (wycc_obj *) NULL;
+    };
     if (typ == Wy_Ref) {
+	wycc_deref_box((wycc_obj *) ptr);
 	return (wycc_obj *) NULL;
     };
     wycc_dealloc_typ(ptr, typ);
@@ -2611,6 +2682,7 @@ wycc_obj* wyil_set_union(wycc_obj* lhs, wycc_obj* rhs){
 wycc_obj* wyil_set_union_odd(wycc_obj* lhs, wycc_obj* itm){
     WY_OBJ_SANE(lhs, "wyil_set_union_odd lhs");
     WY_OBJ_SANE(itm, "wyil_set_union_odd itm");
+    wycc_obj *was = lhs;
 
     if (lhs->typ != Wy_Set) {
 	fprintf(stderr, "Help needed in wyil_set_union_odd for type %d\n"
@@ -2624,10 +2696,14 @@ wycc_obj* wyil_set_union_odd(wycc_obj* lhs, wycc_obj* itm){
     //};
     /* **** should put a type check on rhs and the set */
     if (wycc_compare(itm, lhs, Wyil_Relation_Mo)) {
+	lhs->cnt++;
 	return lhs;
     };
     lhs = wycc_cow_obj(lhs);
     wycc_set_add(lhs, itm);
+    if (lhs == was) {
+	lhs->cnt++;
+    };
     return lhs;
 }
 
@@ -2845,9 +2921,9 @@ void wyil_debug_obj(wycc_obj* ptr1) {
     char* mesg;
     /* if (ptr1->typ == 1) { */
     if (ptr1->typ == Wy_String) {
-	fprintf(stderr, "%s\n", ptr1->ptr);
+	fprintf(stderr, "%s", ptr1->ptr);
     } else if (ptr1->typ == Wy_CString) {
-	fprintf(stderr, "%s\n", ptr1->ptr);
+	fprintf(stderr, "%s", ptr1->ptr);
     } else {
 	fprintf(stderr, "Help needed in Debug for type %d\n", ptr1->typ);
     };
@@ -3337,7 +3413,7 @@ void wycc__print(wycc_obj* sys, wycc_obj* itm) {
     wycc_obj* alt;
     int tmp;
 
-    if (sys->typ != Wy_Ref) {
+    if (sys->typ != Wy_Token) {
 	fprintf(stderr, "Help needed in wycc__println for type %d\n", sys->typ);
     };
     if (itm->typ == Wy_String) {
@@ -3381,7 +3457,6 @@ void wycc__println(wycc_obj* sys, wycc_obj* itm) {
     wycc__print(sys, itm);
     printf("\n");
 }
-
 
 /*
  * given a record, step thru every slot pairing with its meta data
@@ -3589,15 +3664,79 @@ static wycc_obj *wycc__toString_map_alt(wycc_obj *itm){
     return wycc_box_str(buf);
 }
 
+/*
+ * given a record, step thru every slot pairing with its meta data
+ */
+static wycc_obj *wycc__toString_array(wycc_obj *itm){
+    WY_OBJ_SANE(itm, "wycc__toString_array");
+    size_t siz;
+    long cnt, idx, at;
+    long tmp, tmpa, tmpb;
+    char *buf;
+    char *ptr;
+    wycc_obj* nxt;
+
+    cnt = wycc_length_of_list(itm);
+    siz = 3 + (cnt * 4);	/* minimalist approx. */
+    buf = (char *) malloc(siz);
+    buf[0] = '\0';
+    if (itm->typ == Wy_List) {
+	strncat(buf, "[", siz);
+    } else {
+	strncat(buf, "(", siz);
+    };
+    at = 1;
+    for (idx=0 ; idx < cnt; idx++) {
+	nxt = wycc_list_get(itm, idx);
+	nxt = wycc__toString(nxt);
+	tmp = strlen(nxt->ptr);
+	tmpa = at + tmp + 3;
+	if (siz <= tmpa) {
+	    tmpb = siz + ((cnt - idx) * (tmp + 2));
+	    if (tmpa < tmpb) {
+		siz = tmpb;
+	    }else {
+		siz = tmpa;
+	    };
+	    buf = (char*) realloc((void*)buf, siz);
+	};
+	if (idx > 0) {
+	    if (itm->typ == Wy_List) {
+		strcpy((buf+at), ", ");
+		at += 2;
+	    } else {
+		strcpy((buf+at), ",");
+		at += 1;
+	    };
+	};
+	strcpy((buf+at), nxt->ptr);
+	at += tmp;
+	wycc_deref_box(nxt);
+    }
+    if (itm->typ == Wy_List) {
+	strcpy((buf+at), "]");
+    } else {
+	strcpy((buf+at), ")");
+    };
+    return wycc_box_str(buf);
+}
+
+/*
+ * given a record, step thru every slot pairing with its meta data
+ */
+static wycc_obj *wycc__toString_wint(wycc_obj *itm){
+    WY_OBJ_SANE(itm, "wycc__toString_wint");
+
+    fprintf(stderr, "Help needed in wycc__toString_wint\n");
+    exit(-3);    
+}
+
 wycc_obj* wycc__toString(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc__toString");
     size_t siz;
-    long tmp, tmpa, tmpb;
-    long cnt, idx, at;
+    long tmp, tmpa, at;
     char *buf;
     char *part;
-    char *ptr;
-    wycc_obj* nxt;
 
     if (itm == (wycc_obj *)NULL) {
 	return wycc_box_cstr("null");
@@ -3635,53 +3774,25 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	}
 	return wycc_box_cstr("true");
     };
+    if (itm->typ == Wy_Byte) {
+	tmp = (int) itm->ptr;
+	buf = (char *) malloc(9 + 3);	/* excess pad */
+	for (tmpa= 128, at= 0; tmpa >0; at++, tmpa>>=1) {
+	    if (tmpa & tmp) {
+		buf[at] = '1';
+	    } else {
+		buf[at] = '0';
+	    };
+	}
+	buf[at++] = 'b';
+	buf[at++] = '\0';
+	return wycc_box_str(buf);
+    };
     if (itm->typ == Wy_Null) {
 	return wycc_box_cstr("null");
     };
     if ((itm->typ == Wy_List) || (itm->typ == Wy_Tuple)) {
-	cnt = wycc_length_of_list(itm);
-	siz = 3 + (cnt * 4);	/* minimalist approx. */
-	buf = (char *) malloc(siz);
-	buf[0] = '\0';
-	if (itm->typ == Wy_List) {
-	    strncat(buf, "[", siz);
-	} else {
-	    strncat(buf, "(", siz);
-	};
-	at = 1;
-	for (idx=0 ; idx < cnt; idx++) {
-	    nxt = wycc_list_get(itm, idx);
-	    nxt = wycc__toString(nxt);
-	    tmp = strlen(nxt->ptr);
-	    tmpa = at + tmp + 3;
-	    if (siz <= tmpa) {
-		tmpb = siz + ((cnt - idx) * (tmp + 2));
-		if (tmpa < tmpb) {
-		    siz = tmpb;
-		}else {
-		    siz = tmpa;
-		};
-		buf = (char*) realloc((void*)buf, siz);
-	    };
-	    if (idx > 0) {
-		if (itm->typ == Wy_List) {
-		    strcpy((buf+at), ", ");
-		    at += 2;
-		} else {
-		    strcpy((buf+at), ",");
-		    at += 1;
-		};
-	    };
-	    strcpy((buf+at), nxt->ptr);
-	    at += tmp;
-	    wycc_deref_box(nxt);
-	}
-	if (itm->typ == Wy_List) {
-	    strcpy((buf+at), "]");
-	} else {
-	    strcpy((buf+at), ")");
-	};
-	return wycc_box_str(buf);
+	return wycc__toString_array(itm);
     };
     if (itm->typ == Wy_Set) {
 	return wycc__toString_set_alt(itm);
@@ -3691,6 +3802,9 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     };
     if (itm->typ == Wy_Record) {
 	return wycc__toString_record(itm);
+    };
+    if (itm->typ == Wy_WInt) {
+	return wycc__toString_wint(itm);
     };
     return wycc_box_cstr("Unknown");
 }
@@ -3854,7 +3968,6 @@ wycc_obj* wycc__isLetter(wycc_obj* itm) {
 // wycc__round		(real)
 // wycc__isqrt		(int)
 // wycc__sqrt 		(int, real)	(real, real)
-
 
 /*
 ;;; Local Variables: ***
