@@ -346,7 +346,25 @@ static wycc_high_bit(long itm) {
 /* -------------------------------
  *  Routines for basic support of typed objects
  * -------------------------------
- *
+ */
+static wycc_obj* wycc_box_type_match(wycc_obj *lhs, wycc_obj *rhs, long rslt) {
+
+    if (lhs->typ == Wy_Char) {
+	return wycc_box_char((char) rslt);
+    };
+    if (rhs->typ == Wy_Char) {
+	return wycc_box_char((char) rslt);
+    };
+    if (lhs->typ == Wy_Byte) {
+	return wycc_box_byte((char) rslt);
+    };
+    if (rhs->typ == Wy_Byte) {
+	return wycc_box_byte((char) rslt);
+    };
+    return wycc_box_long(rslt);
+}
+
+/*
  * given a text string, box it in a wycc_obj
  */
 wycc_obj* wycc_box_str(char* text) {
@@ -1901,10 +1919,17 @@ static int wycc_comp_obj(wycc_obj* lhs, wycc_obj* rhs){
  */
 static int wycc_wint_size(wycc_obj *itm) {
     WY_OBJ_SANE(itm, "wycc_wint_size");
+
     if (itm->typ == Wy_Int) {
 	return (size_t) 1;
     };
-    fprintf(stderr, "Help needed in add for type %d\n", itm->typ);
+    if (itm->typ == Wy_Byte) {
+	return (size_t) 1;
+    };
+    if (itm->typ == Wy_Char) {
+	return (size_t) 1;
+    };
+    fprintf(stderr, "Help needed in wint_size for type %d\n", itm->typ);
     exit(-3);
 }
 
@@ -2373,6 +2398,23 @@ void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg){
 }
 
 /*
+ * given a byte, return a byte with every bit inverted.
+ */
+wycc_obj* wyil_invert(wycc_obj* itm){
+    WY_OBJ_SANE(itm, "wyil_invert");
+    long rslt;
+
+    if (itm->typ != Wy_Byte) {
+	fprintf(stderr, "Help needed in wyil_invert for type %d\n"
+		, itm->typ);
+	exit(-3);
+    };
+    rslt = (long) itm->ptr;
+    rslt ^= 255;
+    return wycc_box_byte((char) rslt);
+}
+
+/*
  * return a string extracted from the given string 
  */
 wycc_obj* wyil_substring(wycc_obj* str, wycc_obj* loo, wycc_obj* hio){
@@ -2734,6 +2776,7 @@ wycc_obj* wyil_set_insect_odd(wycc_obj* lhs, wycc_obj* itm){
 wycc_obj* wyil_set_diff_odd(wycc_obj* lhs, wycc_obj* itm){
     WY_OBJ_SANE(lhs, "wyil_set_diff_odd lhs");
     WY_OBJ_SANE(itm, "wyil_set_diff_odd itm");
+    wycc_obj *was = lhs;
 
     if (lhs->typ != Wy_Set) {
 	fprintf(stderr, "Help needed in wyil_set_diff_odd for type %d\n"
@@ -2743,6 +2786,9 @@ wycc_obj* wyil_set_diff_odd(wycc_obj* lhs, wycc_obj* itm){
     if (wycc_compare(itm, lhs, Wyil_Relation_Mo)) {
 	lhs = wycc_cow_obj(lhs);
 	wycc_set_del(lhs, itm);
+    };
+    if (lhs == was) {
+	lhs->cnt++;
     };
     return lhs;
     //fprintf(stderr, "Failure: wyil_set_diff_odd\n");
@@ -2760,6 +2806,7 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
     long lsiz, idx;
     int tmp;
     wycc_obj *swp;
+    wycc_obj *was = str;
 
     if ((str->typ != Wy_String) && (str->typ != Wy_CString)) {
 	fprintf(stderr, "ERROR: string in wyil_update_string is type %d\n"
@@ -2798,7 +2845,11 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
     if (str->cnt > 1) {
 	str = wycc_cow_string(str);
     };
+    if (str == was) {
+	str->cnt++;
+    };
     tmp = (int) rhs->ptr;
+    txt = str->ptr;
     txt[idx] = (char) tmp;
     return str;
 }
@@ -2986,6 +3037,12 @@ wycc_obj* wyil_negate(wycc_obj* itm){
     if (itm->typ == Wy_Int) {
 	return wycc_box_long(-((long) itm->ptr));
     }
+    if (itm->typ == Wy_Byte) {
+	return wycc_box_byte(-((long) itm->ptr));
+    }
+    if (itm->typ == Wy_Char) {
+	return wycc_box_char(-((long) itm->ptr));
+    }
     fprintf(stderr, "Help needed in wyil_negate for wide ints (%d\n", itm->typ);
     exit(-3);
 }
@@ -3004,7 +3061,7 @@ wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
 	rslt = ((long) lhs->ptr) + ((long)rhs->ptr); 
-	return wycc_box_long(rslt);
+	return wycc_box_type_match(lhs, rhs, rslt);
     };
     fprintf(stderr, "Help needed in add for wide ints (%d)\n", ac);
     exit(-3);
@@ -3021,9 +3078,9 @@ wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
 	rslt = ((long) lhs->ptr) - ((long)rhs->ptr); 
-	return wycc_box_long(rslt);
+	return wycc_box_type_match(lhs, rhs, rslt);
     };
-    fprintf(stderr, "Help needed in add for wide ints (%d)\n", ac);
+    fprintf(stderr, "Help needed in sub for wide ints (%d)\n", ac);
     exit(-3);
 }
 
@@ -3038,8 +3095,8 @@ wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs){
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
-	rslt = ((long) lhs->ptr) & ((long)rhs->ptr); 
-	return wycc_box_long(rslt);
+	rslt = ((long) lhs->ptr) & ((long)rhs->ptr);
+	return wycc_box_type_match(lhs, rhs, rslt);
     };
     fprintf(stderr, "Help needed in bit_and for wide ints (%d)\n", ac);
     exit(-3);
@@ -3057,7 +3114,7 @@ wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
 	rslt = ((long) lhs->ptr) | ((long)rhs->ptr); 
-	return wycc_box_long(rslt);
+	return wycc_box_type_match(lhs, rhs, rslt);
     };
     fprintf(stderr, "Help needed in bit_or for wide ints (%d)\n", ac);
     exit(-3);
@@ -3075,7 +3132,7 @@ wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
 	rslt = ((long) lhs->ptr) ^ ((long)rhs->ptr); 
-	return wycc_box_long(rslt);
+	return wycc_box_type_match(lhs, rhs, rslt);
     };
     fprintf(stderr, "Help needed in bit_xor for wide ints (%d)\n", ac);
     exit(-3);
@@ -3092,7 +3149,7 @@ wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
 	rslt = ((long) lhs->ptr) / ((long)rhs->ptr); 
-	return wycc_box_long(rslt);
+	return wycc_box_type_match(lhs, rhs, rslt);
     };
     fprintf(stderr, "Help needed in div for wide ints (%d)\n", ac);
     exit(-3);
@@ -3109,7 +3166,7 @@ wycc_obj* wyil_mod(wycc_obj* lhs, wycc_obj* rhs){
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
 	rslt = ((long) lhs->ptr) % ((long)rhs->ptr); 
-	return wycc_box_long(rslt);
+	return wycc_box_type_match(lhs, rhs, rslt);
     };
     fprintf(stderr, "Help needed in div for wide ints (%d)\n", ac);
     exit(-3);
@@ -3182,7 +3239,8 @@ wycc_obj* wyil_shift_up(wycc_obj* lhs, wycc_obj* rhs){
     rc = rslt;
     rslt = (long) lhs->ptr;
     rslt <<= rc;
-    return wycc_box_long(rslt);
+    return wycc_box_type_match(lhs, rhs, rslt);
+    //return wycc_box_long(rslt);
 }
 
 wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs){
@@ -3209,7 +3267,8 @@ wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs){
     rc = rslt;
     rslt = (long) lhs->ptr;
     rslt >>= rc;
-    return wycc_box_long(rslt);
+    return wycc_box_type_match(lhs, rhs, rslt);
+    //return wycc_box_long(rslt);
 }
 
 static wycc_obj* wyil_index_of_list(wycc_obj* lhs, wycc_obj* rhs){

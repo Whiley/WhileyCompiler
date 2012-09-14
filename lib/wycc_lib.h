@@ -106,6 +106,7 @@ wycc_obj* wyil_set_insect_odd(wycc_obj* lhs, wycc_obj* itm);
 wycc_obj* wyil_set_diff_odd(wycc_obj* lhs, wycc_obj* itm);
 
 wycc_obj* wyil_strappend(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_invert(wycc_obj* itm);
 wycc_obj* wyil_negate(wycc_obj* itm);
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs);
