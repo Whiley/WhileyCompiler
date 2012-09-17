@@ -202,6 +202,7 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
+static int wycc_comp_float(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_list(wycc_obj* lhs, wycc_obj* rhs);
 static int wycc_comp_rmeta(wycc_obj* lhs, wycc_obj* rhs);
@@ -248,7 +249,11 @@ int main(int argc, char** argv, char** envp) {
 	};
     };
     for (ini= wycc_init_chain; ini != NULL; ) {
-	ini->function();
+	ini->functionr();
+	ini = (wycc_initor*)ini->nxt;
+    };
+    for (ini= wycc_init_chain; ini != NULL; ) {
+	ini->functionq();
 	ini = (wycc_initor*)ini->nxt;
     };
     //sys = wycc_box_int(1);	/* **** KLUDGE **** */
@@ -341,6 +346,17 @@ static wycc_high_bit(long itm) {
 	fprintf(stderr, "wycc_high_bit(%d) => %d\n", itm, tmpb);
     }
     return tmpb;
+}
+
+/* -------------------------------
+ *  Routines for basic support general infrastructure
+ * -------------------------------
+ */
+void wycc_register_routine(const char *nam, int args, char *rtyp, char *sig) {
+    if (wycc_debug_flag) {
+	fprintf(stderr, "wycc_register(%s) => %d, %s:%s\n", nam, rtyp, sig);
+    }
+
 }
 
 /* -------------------------------
@@ -506,9 +522,13 @@ wycc_obj* wycc_box_float(long double x) {
     wycc_obj* ans;
     long double *buf;
 
+    if (wycc_debug_flag) {
+	fprintf(stderr, "wycc_box_float(%Lg)\n", x);
+    }
+
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     buf = (long double*)  calloc(1, sizeof(long double));
-    ans->typ = Wy_Int;
+    ans->typ = Wy_Float;
     ans->cnt = 1;
     *buf = x;
     ans->ptr = (void*) buf;
@@ -561,6 +581,12 @@ int wycc_type_check(wycc_obj* itm, char* typ){
     };
     if (0 == strcmp(typ, "char")) {
 	if (itm->typ == Wy_Char) {
+	    return 1;
+	};
+	return 0;
+    };
+    if (0 == strcmp(typ, "int")) {
+	if (itm->typ == Wy_Int) {
 	    return 1;
 	};
 	return 0;
@@ -1550,6 +1576,9 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     if (typ == Wy_Token) {
 	return (wycc_obj *) NULL;
     };
+    if (typ == Wy_Byte) {
+	return (wycc_obj *) NULL;
+    };
     if (typ == Wy_Ref) {
 	wycc_deref_box((wycc_obj *) ptr);
 	return (wycc_obj *) NULL;
@@ -1620,6 +1649,10 @@ static void wycc_dealloc_typ(void* ptr, int typ){
     wycc_obj* itm;
 
     if (typ == Wy_String) {
+        free(ptr);
+	return;
+    };
+    if (typ == Wy_Float) {
         free(ptr);
 	return;
     };
@@ -1714,6 +1747,9 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
     if (lt == Wy_Tuple) {
 	return wycc_comp_list(lhs, rhs);
     };
+    if (lt == Wy_Float) {
+	return wycc_comp_float(lhs, rhs);
+    };
     fprintf(stderr, "Help needed in wycc_comp_gen for type %d\n", lt);
     exit(-3);
 }
@@ -1744,6 +1780,26 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
 	return 1;
     };
     return 0;
+}
+
+/*
+ * simple comarison of two long double (floats)
+ */
+static int wycc_comp_float(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs, "wycc_comp_float lhs");
+    WY_OBJ_SANE(rhs, "wycc_comp_float rhs");
+    long double *xp;
+    long double *yp;
+
+    xp = (long double *) lhs->ptr;
+    yp = (long double *) rhs->ptr;
+    if (*xp < *yp) {
+	return -1;
+    } else if (*xp > *yp) {
+	return 1;
+    };
+    return 0;
+
 }
 
 /*
@@ -1993,6 +2049,10 @@ int wycc_length_of_string(wycc_obj* itm) {
 wycc_obj* wycc_cow_obj(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc_cow_gen");
 
+    if (itm->typ == Wy_CString) {
+	/* Constant strings must always be cow'ed */
+	return wycc_cow_string(itm);
+    };
     if (itm->cnt == 1) {
 	return itm;
     };
@@ -2164,6 +2224,9 @@ static wycc_compare_member_of(wycc_obj* itm, wycc_obj* rhs) {
     int end;
 
     flg = -1;
+    if (rhs->typ == Wy_List) {
+	flg = 2;
+    };
     if (rhs->typ == Wy_Map) {
 	flg = 1;
     };
@@ -2179,7 +2242,11 @@ static wycc_compare_member_of(wycc_obj* itm, wycc_obj* rhs) {
     
     wycc_chunk_ptr_inc(rptr);
     while (1) {
-	nxt = rptr->key;
+	if (flg == 2) {
+	    nxt = rptr->val;
+	} else {
+	    nxt = rptr->key;
+	};
 	if (nxt == NULL) {
 	    return 0;
 	};
@@ -2381,6 +2448,23 @@ wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx){
  * wyil opcode implementations
  * ******************************
  */
+
+/*
+ * given a reference object, return the thing referred to.
+ */
+wycc_obj* wyil_dereference(wycc_obj* itm){
+    WY_OBJ_SANE(itm, "wyil_dereference");
+    wycc_obj* ans;
+
+    if (itm->typ != Wy_Ref) {
+	fprintf(stderr, "Help needed in wyil_dereference for type %d\n"
+		, itm->typ);
+	exit(-3);
+    };
+    ans = (wycc_obj*) itm->ptr;
+    ans->cnt++;
+    return ans;
+}
 
 /*
  * given two operands, a relationship, and a text line
@@ -3048,6 +3132,58 @@ wycc_obj* wyil_negate(wycc_obj* itm){
 }
 
 /*
+ * given an int of some ilk, conjure the floating point object.
+ */
+wycc_obj* wycc_float_int(wycc_obj* itm){
+    WY_OBJ_SANE(itm, "wycc_float_int");
+    long rslt;
+    char chr;
+    long double x;
+
+    if ((itm->typ == Wy_Int) || (itm->typ == Wy_Char)) {
+	rslt = (long) itm->ptr;
+	x = (long double) rslt;
+	return wycc_box_float(x);
+    };
+    if (itm->typ == Wy_Byte) {
+	rslt = (long) itm->ptr;
+	rslt &= 255;
+	x = (long double) rslt;
+	return wycc_box_float(x);
+    };
+    if (itm->typ == Wy_Bool) {
+	rslt = 1;
+	if (((long) itm->ptr) == 0) {
+	    rslt = 0;
+	};
+	x = (long double) rslt;
+	return wycc_box_float(x);
+    };
+    fprintf(stderr, "Help needed in wycc_float_int for type %d\n", itm->typ);
+    exit(-3);
+}
+
+/*
+ * floating point add operation
+ */
+static wycc_obj* wyil_add_ld(wycc_obj* lhs, wycc_obj* rhs){
+    long double *xp;
+    long double *yp;
+    long double rslt;
+
+    if (lhs->typ != Wy_Float) {
+	lhs = wycc_float_int(lhs);
+    };
+    if (rhs->typ != Wy_Float) {
+	rhs = wycc_float_int(rhs);
+    };
+    xp = (long double *) lhs->ptr;
+    yp = (long double *) rhs->ptr;
+    rslt = *xp + *yp;
+    return wycc_box_float(rslt);
+}
+
+/*
  * rudimentary add operation
  */
 wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
@@ -3056,6 +3192,9 @@ wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
     long rslt;
     int lc, rc, ac;
 
+    if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
+	return wyil_add_ld(lhs, rhs);
+    };
     lc = wycc_wint_size(lhs);
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
@@ -3067,12 +3206,38 @@ wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
     exit(-3);
 }
 
+/*
+ * floating point sub operation
+ */
+static wycc_obj* wyil_sub_ld(wycc_obj* lhs, wycc_obj* rhs){
+    long double *xp;
+    long double *yp;
+    long double rslt;
+
+    if (lhs->typ != Wy_Float) {
+	lhs = wycc_float_int(lhs);
+    };
+    if (rhs->typ != Wy_Float) {
+	rhs = wycc_float_int(rhs);
+    };
+    xp = (long double *) lhs->ptr;
+    yp = (long double *) rhs->ptr;
+    rslt = *xp - *yp;
+    return wycc_box_float(rslt);
+}
+
+/*
+ * rudimentary sub operation
+ */
 wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_sub lhs");
     WY_OBJ_SANE(rhs, "wyil_sub rhs");
     long rslt;
     int lc, rc, ac;
 
+    if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
+	return wyil_sub_ld(lhs, rhs);
+    };
     lc = wycc_wint_size(lhs);
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
@@ -3084,6 +3249,9 @@ wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
     exit(-3);
 }
 
+/*
+ * rudimentary and operation
+ */
 wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_bit_and lhs");
     WY_OBJ_SANE(rhs, "wyil_bit_and rhs");
@@ -3102,6 +3270,9 @@ wycc_obj* wyil_bit_and(wycc_obj* lhs, wycc_obj* rhs){
     exit(-3);
 }
 
+/*
+ * rudimentary ior operation
+ */
 wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_bit_ior lhs");
     WY_OBJ_SANE(rhs, "wyil_bit_ior rhs");
@@ -3120,6 +3291,9 @@ wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
     exit(-3);
 }
 
+/*
+ * rudimentary xor operation
+ */
 wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_bit_xor lhs");
     WY_OBJ_SANE(rhs, "wyil_bit_xor rhs");
@@ -3138,12 +3312,38 @@ wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
     exit(-3);
 }
 
+/*
+ * floating point div operation
+ */
+static wycc_obj* wyil_div_ld(wycc_obj* lhs, wycc_obj* rhs){
+    long double *xp;
+    long double *yp;
+    long double rslt;
+
+    if (lhs->typ != Wy_Float) {
+	lhs = wycc_float_int(lhs);
+    };
+    if (rhs->typ != Wy_Float) {
+	rhs = wycc_float_int(rhs);
+    };
+    xp = (long double *) lhs->ptr;
+    yp = (long double *) rhs->ptr;
+    rslt = *xp / *yp;
+    return wycc_box_float(rslt);
+}
+
+/*
+ * rudimentary divide operation
+ */
 wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_div lhs");
     WY_OBJ_SANE(rhs, "wyil_div rhs");
     long rslt;
     int lc, rc, ac;
 
+    if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
+	return wyil_div_ld(lhs, rhs);
+    };
     lc = wycc_wint_size(lhs);
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
@@ -3155,6 +3355,9 @@ wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
     exit(-3);
 }
 
+/*
+ * rudimentary modulo operation
+ */
 wycc_obj* wyil_mod(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_mod lhs");
     WY_OBJ_SANE(rhs, "wyil_mod rhs");
@@ -3168,7 +3371,7 @@ wycc_obj* wyil_mod(wycc_obj* lhs, wycc_obj* rhs){
 	rslt = ((long) lhs->ptr) % ((long)rhs->ptr); 
 	return wycc_box_type_match(lhs, rhs, rslt);
     };
-    fprintf(stderr, "Help needed in div for wide ints (%d)\n", ac);
+    fprintf(stderr, "Help needed in mod for wide ints (%d)\n", ac);
     exit(-3);
 }
 
@@ -3185,12 +3388,38 @@ static int wycc_ilog2(long itm){
     return ans;
 }
 
+/*
+ * floating point multiply operation
+ */
+static wycc_obj* wyil_mul_ld(wycc_obj* lhs, wycc_obj* rhs){
+    long double *xp;
+    long double *yp;
+    long double rslt;
+
+    if (lhs->typ != Wy_Float) {
+	lhs = wycc_float_int(lhs);
+    };
+    if (rhs->typ != Wy_Float) {
+	rhs = wycc_float_int(rhs);
+    };
+    xp = (long double *) lhs->ptr;
+    yp = (long double *) rhs->ptr;
+    rslt = *xp * *yp;
+    return wycc_box_float(rslt);
+}
+
+/*
+ * rudimentary multiply operation
+ */
 wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wyil_mul lhs");
     WY_OBJ_SANE(rhs, "wyil_mul rhs");
     long rslt;
     int lc, rc, ac;
 
+    if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
+	return wyil_mul_ld(lhs, rhs);
+    };
     lc = wycc_wint_size(lhs);
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
@@ -3790,6 +4019,9 @@ static wycc_obj *wycc__toString_wint(wycc_obj *itm){
     exit(-3);    
 }
 
+/*
+ * given any type of object, produce a string object that represents its value
+ */
 wycc_obj* wycc__toString(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc__toString");
     size_t siz;
@@ -3811,14 +4043,20 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 	itm->cnt++;
 	return itm;
     };
-    if (itm->typ == Wy_CString) {
-	itm->cnt++;
-	return itm;
-    };
+    //if (itm->typ == Wy_CString) {
+    //itm->cnt++;
+    //	return itm;
+    //};
     if (itm->typ == Wy_Int) {
 	tmp = (int) itm->ptr;
 	buf = (char *) malloc(16);
-	sprintf(buf, "%-.1d", tmp);
+	snprintf(buf, 16, "%-.1d", tmp);
+	return wycc_box_str(buf);
+    };
+    if (itm->typ == Wy_Float) {
+	long double *fltp = (long double *) itm->ptr;
+	buf = (char *) malloc(16);
+	snprintf(buf, 16, "%Lg", *fltp);
 	return wycc_box_str(buf);
     };
     if (itm->typ == Wy_Char) {
@@ -3868,7 +4106,9 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     return wycc_box_cstr("Unknown");
 }
 
-
+/*
+ * given an int, return one with absolute value.
+ */
 static wycc_obj* wycc__abs_int(wycc_obj* itm) {
     long val = (long) itm->ptr;
 
@@ -3880,6 +4120,9 @@ static wycc_obj* wycc__abs_int(wycc_obj* itm) {
     return itm;
 }
 
+/*
+ * given an object, return one with absolute value.
+ */
 wycc_obj* wycc__abs(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc__abs");
 
@@ -3890,6 +4133,9 @@ wycc_obj* wycc__abs(wycc_obj* itm) {
     exit(-3);
 }
 
+/*
+ * given a pair of ints, return the larger value.
+ */
 static wycc_obj* wycc__max_int(wycc_obj* lhs, wycc_obj* rhs) {
     long a, b;
     wycc_obj *ans;
@@ -3905,6 +4151,9 @@ static wycc_obj* wycc__max_int(wycc_obj* lhs, wycc_obj* rhs) {
     return ans;
 }
 
+/*
+ * given a pair of objects, return the larger value.
+ */
 wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs) {
     WY_OBJ_SANE(lhs, "wycc__max lhs");
     WY_OBJ_SANE(rhs, "wycc__max rhs");
@@ -3917,6 +4166,9 @@ wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs) {
     exit(-3);
 }
 
+/*
+ * given a pair of ints, return the smaller value.
+ */
 static wycc_obj* wycc__min_int(wycc_obj* lhs, wycc_obj* rhs) {
     long a, b;
     wycc_obj *ans;
@@ -3932,6 +4184,9 @@ static wycc_obj* wycc__min_int(wycc_obj* lhs, wycc_obj* rhs) {
     return ans;
 }
 
+/*
+ * given a pair of object, return the smaller value.
+ */
 wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs) {
     WY_OBJ_SANE(lhs, "wycc__min lhs");
     WY_OBJ_SANE(rhs, "wycc__min rhs");
@@ -3944,6 +4199,10 @@ wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs) {
     exit(-3);
 }
 
+/*
+ * given a int, byte, or char, return a bool.
+ * true if the code is for ASCII letter.
+ */
 wycc_obj* wycc__isLetter(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc__isLetter");
     long val;
@@ -3952,6 +4211,8 @@ wycc_obj* wycc__isLetter(wycc_obj* itm) {
     if (itm->typ == Wy_Int) {
 	val = (long) itm->ptr;
     } else if (itm->typ == Wy_Char) {
+	val = (long) itm->ptr;
+    } else if (itm->typ == Wy_Byte) {
 	val = (long) itm->ptr;
     } else {
 	fprintf(stderr, "Help needed in wycc__isLetter for type %d\n"
@@ -3968,12 +4229,62 @@ wycc_obj* wycc__isLetter(wycc_obj* itm) {
 }
 
 /*
+ * given a int, byte, or char, return a byte with the same value.
+ */
+wycc_obj* wycc__toUnsignedByte(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc__toUnsignedByte");
+    long val;
+
+    if (itm->typ == Wy_Int) {
+	val = (long) itm->ptr;
+    } else if (itm->typ == Wy_Char) {
+	val = (long) itm->ptr;
+    } else if (itm->typ == Wy_Byte) {
+	val = (long) itm->ptr;
+    } else {
+	fprintf(stderr, "Help needed in wycc__toUnsignedByte for type %d\n"
+		, itm->typ);
+	exit(-3);
+    };
+    if (val < 0) {
+	fprintf(stderr,  "precondition not satisfied\n");
+	exit(-4);
+    }
+    if (val > 255) {
+	fprintf(stderr,  "precondition not satisfied\n");
+	exit(-4);
+    }
+    return wycc_box_byte(val);
+}
+
+/*
+ * given a int, byte, or char, return an int with the same value.
+ */
+wycc_obj* wycc__toUnsignedInt(wycc_obj* itm) {
+    WY_OBJ_SANE(itm, "wycc__toUnsignedInt");
+    long val;
+
+    if (itm->typ == Wy_Int) {
+	val = (long) itm->ptr;
+    } else if (itm->typ == Wy_Char) {
+	val = (long) itm->ptr;
+    } else if (itm->typ == Wy_Byte) {
+	val = (long) itm->ptr;
+    } else {
+	fprintf(stderr, "Help needed in wycc__toUnsignedByte for type %d\n"
+		, itm->typ);
+	exit(-3);
+    };
+    return wycc_box_long(val);
+}
+
+/*
  * from Byte  
  */
 // = wycc__toString	(byte)	(char)	(int)	(any)
 // wycc__toUnsignedInt	(byte)	([byte])
 // wycc__toInt		(byte)
-// wycc__toChar		(byte)	([byte])
+// = wycc__toChar		(byte)	([byte])
 // .stack
 // wycc__top		([int])
 // wycc__push		([int], int)

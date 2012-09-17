@@ -29,7 +29,8 @@ typedef struct Wycc_object {
 } wycc_obj;
 
 typedef struct Wycc_Init_Routine_Link {
-    void (*function)();
+    void (*functionr)();
+    void (*functionq)();
     //wycc_initor* nxt;
     struct Wycc_Init_Routine_Link* nxt;
 } wycc_initor;
@@ -95,6 +96,7 @@ wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
 #define Wyil_Relation_Mo	7
 #define Wyil_Relation_Ss	8
 #define Wyil_Relation_Se	9
+wycc_obj* wyil_dereference(wycc_obj* itm);
 void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg);
 void wyil_debug_str(char* mesg);
 void wyil_debug_obj(wycc_obj* ptr);
@@ -136,6 +138,8 @@ wycc_obj* wycc__isLetter(wycc_obj* itm);
 wycc_obj* wycc__abs(wycc_obj* itm);
 wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wycc__toUnsignedByte(wycc_obj* itm);
+wycc_obj* wycc__toUnsignedInt(wycc_obj* itm);
 
 #ifndef WY_OBJ_SAFE
 #define WY_OBJ_SANE(x,y)	wycc_obj_sane(x,y)

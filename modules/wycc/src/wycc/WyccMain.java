@@ -45,7 +45,10 @@ public class WyccMain {
 	
 	public static final OptArg[] WYCC_OPTIONS = new OptArg[]{
 		new OptArg("debug", "Include debug information in generated C files."),
-		new OptArg("no_numbers", "Suppress Whiley source line numbers in generated C files.")
+		new OptArg("no_numbers", "Suppress Whiley source line numbers in generated C files."),
+		new OptArg("floats", "Support Whiley rational numbers using C floating point."),
+		new OptArg("no_floats", "Suppress all C floating point.")
+		
 	};
 	
 	public static void main(String[] _args) {	
