@@ -111,24 +111,24 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ConstrainedSet_Valid_2_RuntimeTest() { runTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RuntimeTest() { runTest("ConstrainedSet_Valid_3"); }
  @Test public void ConstrainedSet_Valid_4_RuntimeTest() { runTest("ConstrainedSet_Valid_4"); }
- @Ignore("Known Issue - reals")@Test public void DecimalAssignment_Valid_1_RuntimeTest() { runTest("DecimalAssignment_Valid_1"); }
+ @Test public void DecimalAssignment_Valid_1_RuntimeTest() { runTest("DecimalAssignment_Valid_1"); }
  @Test public void Define_Valid_1_RuntimeTest() { runTest("Define_Valid_1"); }
- @Ignore("Known Issue - reals") @Test public void Define_Valid_2_RuntimeTest() { runTest("Define_Valid_2"); }
+ @Test public void Define_Valid_2_RuntimeTest() { runTest("Define_Valid_2"); }
  @Test public void Define_Valid_3_RuntimeTest() { runTest("Define_Valid_3"); }
  @Test public void Define_Valid_4_RuntimeTest() { runTest("Define_Valid_4"); }
  @Test public void Dictionary_Valid_1_RuntimeTest() { runTest("Dictionary_Valid_1"); }
  @Test public void Dictionary_Valid_2_RuntimeTest() { runTest("Dictionary_Valid_2"); }
  @Test public void Dictionary_Valid_3_RuntimeTest() { runTest("Dictionary_Valid_3"); }
  @Test public void Dictionary_Valid_4_RuntimeTest() { runTest("Dictionary_Valid_4"); }
- @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_5_RuntimeTest() { runTest("Dictionary_Valid_5"); }
+ @Test public void Dictionary_Valid_5_RuntimeTest() { runTest("Dictionary_Valid_5"); }
  @Test public void Dictionary_Valid_6_RuntimeTest() { runTest("Dictionary_Valid_6"); }
  @Test public void Dictionary_Valid_7_RuntimeTest() { runTest("Dictionary_Valid_7"); }
- @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_8_RuntimeTest() { runTest("Dictionary_Valid_8"); }
- @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_9_RuntimeTest() { runTest("Dictionary_Valid_9"); }
- @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_10_RuntimeTest() { runTest("Dictionary_Valid_10"); }
+ @Test public void Dictionary_Valid_8_RuntimeTest() { runTest("Dictionary_Valid_8"); }
+ @Test public void Dictionary_Valid_9_RuntimeTest() { runTest("Dictionary_Valid_9"); }
+ @Test public void Dictionary_Valid_10_RuntimeTest() { runTest("Dictionary_Valid_10"); }
  @Test public void Dictionary_Valid_11_RuntimeTest() { runTest("Dictionary_Valid_11"); }
- @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_12_RuntimeTest() { runTest("Dictionary_Valid_12"); }
- @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
+ @Test public void Dictionary_Valid_12_RuntimeTest() { runTest("Dictionary_Valid_12"); }
+ @Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
  @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_14_RuntimeTest() { runTest("Dictionary_Valid_14"); }
  @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_15_RuntimeTest() { runTest("Dictionary_Valid_15"); }
  @Ignore("Known Issue - reals")@Test public void Dictionary_Valid_16_RuntimeTest() { runTest("Dictionary_Valid_16"); }
@@ -320,7 +320,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_11_RuntimeTest() { runTest("RecursiveType_Valid_11"); }
  @Test public void RecursiveType_Valid_12_RuntimeTest() { runTest("RecursiveType_Valid_12"); }
  @Test public void RecursiveType_Valid_13_RuntimeTest() { runTest("RecursiveType_Valid_13"); }
- @Ignore("Starting slow")@Test public void RecursiveType_Valid_14_RuntimeTest() { runTest("RecursiveType_Valid_14"); }
+ @Test public void RecursiveType_Valid_14_RuntimeTest() { runTest("RecursiveType_Valid_14"); }
  @Ignore("Starting slow")@Test public void RecursiveType_Valid_15_RuntimeTest() { runTest("RecursiveType_Valid_15"); }
  @Ignore("Starting slow")@Test public void RecursiveType_Valid_16_RuntimeTest() { runTest("RecursiveType_Valid_16"); } 
  @Ignore("Starting slow")@Test public void RecursiveType_Valid_17_RuntimeTest() { runTest("RecursiveType_Valid_17"); }
@@ -457,14 +457,14 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void UnionType_Valid_4_RuntimeTest() { runTest("UnionType_Valid_4"); }
  @Test public void UnionType_Valid_5_RuntimeTest() { runTest("UnionType_Valid_5"); }
  @Test public void UnionType_Valid_6_RuntimeTest() { runTest("UnionType_Valid_6"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_7_RuntimeTest() { runTest("UnionType_Valid_7"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_8_RuntimeTest() { runTest("UnionType_Valid_8"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_9_RuntimeTest() { runTest("UnionType_Valid_9"); }
- @Ignore("Starting slow") @Test public void UnionType_Valid_10_RuntimeTest() { runTest("UnionType_Valid_10"); }
- @Ignore("Starting slow") @Test public void UnionType_Valid_11_RuntimeTest() { runTest("UnionType_Valid_11"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_12_RuntimeTest() { runTest("UnionType_Valid_12"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_13_RuntimeTest() { runTest("UnionType_Valid_13"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_14_RuntimeTest() { runTest("UnionType_Valid_14"); }
+ @Test public void UnionType_Valid_7_RuntimeTest() { runTest("UnionType_Valid_7"); }
+ @Test public void UnionType_Valid_8_RuntimeTest() { runTest("UnionType_Valid_8"); }
+ @Test public void UnionType_Valid_9_RuntimeTest() { runTest("UnionType_Valid_9"); }
+ @Test public void UnionType_Valid_10_RuntimeTest() { runTest("UnionType_Valid_10"); }
+ @Test public void UnionType_Valid_11_RuntimeTest() { runTest("UnionType_Valid_11"); }
+ @Test public void UnionType_Valid_12_RuntimeTest() { runTest("UnionType_Valid_12"); }
+ @Test public void UnionType_Valid_13_RuntimeTest() { runTest("UnionType_Valid_13"); }
+ @Test public void UnionType_Valid_14_RuntimeTest() { runTest("UnionType_Valid_14"); }
  @Ignore("Starting slow")@Test public void UnionType_Valid_15_RuntimeTest() { runTest("UnionType_Valid_15"); }
  @Ignore("Starting slow")@Test public void UnionType_Valid_16_RuntimeTest() { runTest("UnionType_Valid_16"); }
  @Ignore("Starting slow")@Test public void UnionType_Valid_17_RuntimeTest() { runTest("UnionType_Valid_17"); }

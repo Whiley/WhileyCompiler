@@ -62,7 +62,9 @@ wycc_obj* wycc_record_record(wycc_obj* nam, wycc_obj* typ);
 wycc_obj* wycc_rrecord_new(long siz);
 wycc_obj* wycc_record_new(wycc_obj* meta);
 void wycc_record_fill(wycc_obj* rec, int osv, wycc_obj* itm);
+int wycc_recrec_nam(wycc_obj* rec, char *nam);
 wycc_obj* wycc_record_get_dr(wycc_obj* rec, long osv);
+wycc_obj* wycc_record_get_nam(wycc_obj* rec, char *nam);
 wycc_obj* wycc_list_new(long siz);
 wycc_obj* wycc_list_get(wycc_obj* lst, long at);
 void wycc_list_add(wycc_obj* lst, wycc_obj* itm);
@@ -96,6 +98,7 @@ wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
 #define Wyil_Relation_Mo	7
 #define Wyil_Relation_Ss	8
 #define Wyil_Relation_Se	9
+wycc_obj* wyil_convert(wycc_obj* itm, char *typ);
 wycc_obj* wyil_dereference(wycc_obj* itm);
 void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg);
 void wyil_debug_str(char* mesg);

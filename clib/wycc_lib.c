@@ -665,6 +665,70 @@ wycc_obj* wycc_record_get_dr(wycc_obj* rec, long osv) {
 }
 
 /*
+ * given a record_record and a field name, return the field number.
+ */
+int wycc_recrec_nam(wycc_obj* rec, char *nam) {
+    WY_OBJ_SANE(rec, "wycc_recrec_nam");
+    void** p = (void **) rec->ptr;
+    wycc_obj *nxt;
+    wycc_obj *nams;
+    char *str;
+    int cnt;
+    int ans = 0;
+
+    if (rec->typ != Wy_Rcd_Rcd) {
+	fprintf(stderr, "Help needed in wycc_recrec_nam for type %d\n"
+		, rec->typ);
+	exit(-3);
+    };
+    nams = p[0];
+    if (nams->typ != Wy_List) {
+	fprintf(stderr, "Help needed in wycc_recrec_nam, bad names %d\n"
+		, nams->typ);
+	exit(-3);
+    };
+    cnt = wycc_length_of_list(nams);
+    p = (void **) nams->ptr;
+    for ( ; ans < cnt ; ans++) {
+	nxt = (wycc_obj *) p[2+ans];
+	if ((nxt->typ != Wy_String) && (nxt->typ != Wy_CString)) {
+	    fprintf(stderr, "Help needed in wycc_recrec_nam for names %d @%d\n"
+		    , nxt->typ, ans);
+	    exit(-3);
+
+	};
+
+	str = (char *) nxt->ptr;
+	if (strcmp(str, nam) == 0) {
+	    return ans;
+	};
+    }
+    fprintf(stderr, "Help needed in wycc_recrec, name '%s' not found.\n"
+	    , nam);
+    exit(-3);
+    return 0;
+}
+
+/*
+ * given a record and field name, return the contents of that field.
+ */
+wycc_obj* wycc_record_get_nam(wycc_obj* rec, char *nam) {
+    WY_OBJ_SANE(rec, "wycc_record_get_nam");
+    long at;
+    wycc_obj* meta;
+    void** p = rec->ptr;
+
+    if (rec->typ != Wy_Record) {
+	fprintf(stderr, "Help needed in wycc_record_get_nam for type %d\n"
+		, rec->typ);
+	exit(-3);
+    };
+    meta = (wycc_obj *) p[0];
+    at = wycc_recrec_nam(meta, nam);
+    return wycc_record_get_dr(rec, at);
+}
+
+/*
  * given a count, setup a raw record:
  * just like list object big enough to accept them.
  */
@@ -2071,6 +2135,9 @@ wycc_obj* wycc_cow_obj(wycc_obj* itm) {
     if (itm->typ == Wy_Map) {
 	return wycc_cow_map(itm);
     };
+    if (itm->typ == Wy_Ref) {
+	return wycc_box_ref(itm->ptr);
+    };
     fprintf(stderr, "Fail: wycc_cow_obj not yet supports type(%d).\n", itm->typ);
     exit(-3);
 }
@@ -2448,6 +2515,20 @@ wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx){
  * wyil opcode implementations
  * ******************************
  */
+
+/*
+ * given an object and a type, return an object of that type
+ * with the closest value.
+ */
+wycc_obj* wyil_convert(wycc_obj* itm, char *typ){
+    WY_OBJ_SANE(itm, "wyil_convert");
+    wycc_obj* ans = itm;
+
+    if (wycc_debug_flag) {
+	fprintf(stderr, "wyil_convert %d => %s\n", itm->typ, typ);
+    }
+    return ans;
+}
 
 /*
  * given a reference object, return the thing referred to.
@@ -3044,7 +3125,8 @@ wycc_obj* wyil_length_of(wycc_obj* itm) {
  */
 void wyil_debug_str(char* mesg) {
     ;
-    fprintf(stderr, "%s", mesg);
+    //fprintf(stderr, "%s", mesg);
+    fprintf(stdout, "%s", mesg);
     return;
 }
 
@@ -3056,11 +3138,14 @@ void wyil_debug_obj(wycc_obj* ptr1) {
     char* mesg;
     /* if (ptr1->typ == 1) { */
     if (ptr1->typ == Wy_String) {
-	fprintf(stderr, "%s", ptr1->ptr);
+	//fprintf(stderr, "%s", ptr1->ptr);
+	fprintf(stdout, "%s", ptr1->ptr);
     } else if (ptr1->typ == Wy_CString) {
-	fprintf(stderr, "%s", ptr1->ptr);
+	//fprintf(stderr, "%s", ptr1->ptr);
+	fprintf(stdout, "%s", ptr1->ptr);
     } else {
-	fprintf(stderr, "Help needed in Debug for type %d\n", ptr1->typ);
+	//fprintf(stderr, "Help needed in Debug for type %d\n", ptr1->typ);
+	fprintf(stdout, "Help needed in Debug for type %d\n", ptr1->typ);
     };
     return;
 }
@@ -3778,7 +3863,7 @@ static wycc_obj *wycc__toString_record(wycc_obj *itm){
     nams = pa[0];
     if (nams->typ != Wy_List) {
 	fprintf(stderr, "Help needed in wycc__toString_record, bad names %d\n"
-		, meta->typ);
+		, nams->typ);
 	exit(-3);
     };
     siz = 1 + (4 * cnt);
@@ -4056,7 +4141,11 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     if (itm->typ == Wy_Float) {
 	long double *fltp = (long double *) itm->ptr;
 	buf = (char *) malloc(16);
-	snprintf(buf, 16, "%Lg", *fltp);
+	snprintf(buf, 16, "%#Lg", *fltp);
+	siz = strlen(buf) - 1;
+	while ((siz > 1) && (buf[siz] == '0') && (buf[siz-1] != '.')) {
+	    buf[siz--] = '\0';
+	};
 	return wycc_box_str(buf);
     };
     if (itm->typ == Wy_Char) {

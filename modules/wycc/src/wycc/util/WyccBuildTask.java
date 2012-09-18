@@ -171,11 +171,11 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
 		// the Wyil2JavaBuilder.
 		
 		Wyil2CBuilder cbuilder = new Wyil2CBuilder(this.ccOptions);
-
+		//System.err.println("Finished my init code yeah.");
 		if (verbose) {
 			cbuilder.setLogger(new Logger.Default(System.err));
 		}
-
+		//System.err.println("Finished my init code true.");
 		StandardBuildRule rule = new StandardBuildRule(cbuilder);
 		
 		rule.add(wyilDir, wyilIncludes, wyilExcludes, cDir,
