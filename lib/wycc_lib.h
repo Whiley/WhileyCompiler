@@ -42,10 +42,13 @@ int	wycc_debug_flag;
  * routines used by wycc for structure and bookkeeping
  */
 /* void wycc_main(); */
+void wycc_register_routine(const char *nam, int args, const char *rtyp
+			   , const char *sig
+			   , void* ptr);
 void wycc__main(wycc_obj* sys);
 wycc_obj* wycc_deref_box(wycc_obj* itm);
 wycc_obj* wycc_box_str(char* text);
-wycc_obj* wycc_box_cstr(char* text);
+wycc_obj* wycc_box_cstr(const char* text);
 wycc_obj* wycc_box_int(int x);
 wycc_obj* wycc_box_long(long x);
 wycc_obj* wycc_box_bool(int x);

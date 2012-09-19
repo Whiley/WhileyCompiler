@@ -78,6 +78,7 @@ public class Wyil2CBuilder implements Builder {
 	private Map<Integer, Type.Record> recdReg;
 	private Map<String, Integer> recdTok;
 	private List<Method> mets;
+	private String commentsFOM = "";
 	
 	public Wyil2CBuilder() {
 		this.wy2cbInit();
@@ -167,9 +168,18 @@ public class Wyil2CBuilder implements Builder {
 	//mnam = lookupFOMname(nam, cnt, cod.type);
 	public String lookupFOMname(String nam, int cnt, Type typ) {
 		String ans = "";
+		String sig = "";
+		String sep = "";
 		
 		// **** need to fill in the invocation register
 		ans = "wycc__" + nam;
+		Type.FunctionOrMethod fom = (Type.FunctionOrMethod)typ;
+		for (Type tp : fom.params()) {
+			sig += sep + tp;
+			sep = "^";
+		}
+		//commentsFOM += "// FOM query for " + nam + " (" + cnt + ") '" + typ + "'\n";
+		commentsFOM += "// FOM query for " + nam + " (" + cnt + ") '" + fom.ret() + "'  '"+sig+"'\n";
 		return ans;
 	}
 	
@@ -362,12 +372,12 @@ public class Wyil2CBuilder implements Builder {
 	}
 	
 	private void writeTypeRegistry() {
-		//int ign;
 		String tmp;
+		
 		int cnt = recdTok.size();
-		bodyAddLine("// type registry array goes here (size " + cnt + ")\n");
-		tmp = "static wycc_obj *record_reg[" + cnt + "];\n";
-		bodyAddLine(tmp);
+		bodyAddLineNL(	"// type registry array goes here (size " + cnt + ")"	);
+		//tmp = "static wycc_obj *record_reg[" + cnt + "];\n";
+		bodyAddLineNL(	"static wycc_obj *record_reg[" + cnt + "];"	);
 	}
 
 	private void writeTypeRegistryFill() {
@@ -406,7 +416,7 @@ public class Wyil2CBuilder implements Builder {
 	private void writeFOMRegistryFill() {
 		String tmp;
 
-		bodyAddLine("// Here goes code to fill the FOM registry\n");
+		bodyAddLineNL("// Here goes code to fill the FOM registry");
 		// need a loop over the known FOM.
 		
 		for (Method met : mets) {
@@ -416,15 +426,17 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLineNL(tmp);
 			tmp = "//			sig:" + met.argt;
 			bodyAddLineNL(tmp);
+			tmp = "//	wycc_register_routine(\"" + met.name + "\", " + met.argc + ", \"" + met.retType
+					+ "\", \"" + met.argt + "\");";
+			bodyAddLineNL(tmp);
+
 		}
 
 	}
 	
 	private void writeFOMRegistryQuery() {
-		bodyAddLine("// Here goes code to query the FOM registry\n");
-		// NO it doesn't
-		// needs a second round of initialisation for the queries.
-		
+		bodyAddLineNL("// Here goes code to query the FOM registry");
+		bodyAddLine(commentsFOM);
 	}
 	
 	public void writeTypeComments(TypeDeclaration typDe, int idx) {
@@ -692,7 +704,7 @@ public class Wyil2CBuilder implements Builder {
 			this.comments += ans;
 			for (Type tp : params){
 				argl += sep + tp;
-				sep = ",";
+				sep = "^";
 			}
 			this.argt = argl;
 			return;
@@ -1111,8 +1123,9 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodefoo(Code codIn, String tag){
 			String tmp;
 			
-			tmp = "// HELP! needed for \n";
-			bodyAddLine(tmp);
+			//tmp = "// HELP! needed for \n";
+			//bodyAddLine(tmp);
+			bodyAddLineNL(	"// HELP! needed for"		);
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
 			return;
 		}
@@ -1120,10 +1133,10 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodeInvert(Code codIn, String tag){
 			String tmp;
 			int targ, rhs;
-						
 			
-			tmp = "// HELP! needed for Invert\n";
-			bodyAddLine(tmp);
+			//tmp = "// HELP! needed for Invert\n";
+			//bodyAddLine(tmp);
+			//bodyAddLineNL(	"// HELP! needed for Invert"	);
 			Code.Invert cod = (Code.Invert) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
@@ -1174,8 +1187,9 @@ public class Wyil2CBuilder implements Builder {
 			String tmp;
 			int targ, lhs;
 			
-			tmp = "// HELP! needed for Dereference\n";
-			bodyAddLine(tmp);
+			//tmp = "// HELP! needed for Dereference\n";
+			//bodyAddLine(tmp);
+			bodyAddLineNL(	"// HELP needed for Dereference"		);
 			Code.Dereference cod = (Code.Dereference) codIn;
 			targ = cod.target;
 			lhs = cod.operand;
@@ -1190,8 +1204,8 @@ public class Wyil2CBuilder implements Builder {
 			String tmp;
 			int targ, lhs;
 			
-			tmp = "// HELP! needed for NewObject\n";
-			bodyAddLine(tmp);
+			//tmp = "// HELP needed for NewObject\n";
+			//bodyAddLine(tmp);
 			Code.NewObject cod = (Code.NewObject) codIn;
 			targ = cod.target;
 			lhs = cod.operand;
@@ -1684,31 +1698,32 @@ public class Wyil2CBuilder implements Builder {
 			// Here backFix gets the C code to update the (soon to be) previous level
 			// 
 			//
-			tmp = "// HELP needed for Update\n";
-			bodyAddLine(tmp);
+			//tmp = "// HELP needed for Update\n";
+			//bodyAddLine(tmp);
+			bodyAddLineNL(	"// HELP needed for Update"	);
 			Code.Update cod = (Code.Update) codIn;
 			targ = cod.target;
 			flds = cod.fields;
 			idx = cod.level();
 			
-			tmp = "//             target is " + targ + " and depth is " + idx + "\n";
-			bodyAddLine(tmp);
-			tmp = "//             field count is " + flds.size() + "\n";
-			bodyAddLine(tmp);
+			tmp = "//             target is " + targ + " and depth is " + idx;
+			bodyAddLineNL(tmp);
+			tmp = "//             field count is " + flds.size();
+			bodyAddLineNL(tmp);
 			cnt = 0;
 			ofs = -1;
 			for (int itm : cod.operands) {
 				cnt += 1;
-				tmp = "//             operand " + cnt + " is " + itm + "\n";
-				bodyAddLine(tmp);
+				tmp = "//             operand " + cnt + " is " + itm;
+				bodyAddLineNL(tmp);
 				ofs = itm;
 			}
 			rhs = cod.operand;
-			tmp = "//             rhs is " + rhs + "\n";
-			bodyAddLine(tmp);
+			tmp = "//             rhs is " + rhs;
+			bodyAddLineNL(tmp);
 			typ = cod.type;
-			tmp = "//             type is " + typ + "\n";
-			bodyAddLine(tmp);
+			tmp = "//             type is " + typ;
+			bodyAddLineNL(tmp);
 
 			this.addDecl(targ, "wycc_obj*");
 			tnam1 = "X" + targ;
