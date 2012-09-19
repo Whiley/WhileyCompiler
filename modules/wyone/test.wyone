@@ -11,6 +11,9 @@ class Term as Bool | And | Equals | Var
 rewrite And{False x, Term... rest}:
     => And (rest)
 
+rewrite And{Equals{|Num(int x), * u|},Equals{|* v, Num(int y)|}}:
+    => False, if u == v && x != y
+
 rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}}:
     => And{Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}}, if y == u
 

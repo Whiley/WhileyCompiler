@@ -156,7 +156,7 @@ rewrite Not(Or{BExpr... xs}):
 
 term And{BExpr...}
 
-rewrite And{}:
+rewrite And{True x}:
     => True
 
 rewrite And{BExpr x}:
@@ -164,9 +164,6 @@ rewrite And{BExpr x}:
 
 rewrite And{False, BExpr... xs}:
     => False
-
-rewrite And{True, BExpr... xs}:
-    => And (xs)
 
 rewrite And{And{BExpr... xs}, BExpr... ys}:
     => And (xs ++ ys)
@@ -184,7 +181,7 @@ rewrite And{Or{BExpr... xs}, BExpr... ys}:
 
 term Or{BExpr...}
 
-rewrite Or{}:
+rewrite Or{False}:
     => False
 
 rewrite Or{BExpr x}:
@@ -192,9 +189,6 @@ rewrite Or{BExpr x}:
 
 rewrite Or{True, BExpr... xs}:
     => True
-
-rewrite Or{False, BExpr... xs}:
-    => Or (xs)
 
 rewrite Or{Not(BExpr x), BExpr y, BExpr... ys}:
     => True, if x == y
