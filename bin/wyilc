@@ -24,7 +24,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBs="wyil-v*.jar"
+LIBS="wyil-v*.jar wyone-v*.jar"
 
 # check for running under cywin
 cygwin=false
