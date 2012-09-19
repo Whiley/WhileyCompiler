@@ -11,11 +11,12 @@ class Term as Bool | And | Equals | Var
 rewrite And{False x, Term... rest}:
     => And (rest)
 
+// bypass
 rewrite And{Equals{|Num(int x), * u|},Equals{|* v, Num(int y)|}}:
     => False, if u == v && x != y
 
 rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}}:
-    => And{Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}}, if y == u
+    => And{Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}}, if y == u && !(x is Num && y is Num)
 
 rewrite Equals{|Num(int x), Num(int y)|}:
     => True, if x == y

@@ -273,6 +273,30 @@ public abstract class Type {
 		}
 	}
 	
+	public static final class Meta<T extends Type> extends Type {
+		public final T element;
+		
+		public Meta(T element) {
+			this.element = element;
+		}
+		
+		public int hashCode() {
+			return element.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Meta) {
+				Meta r = (Meta) o;
+				return element.equals(r.element);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "?" + element;
+		}
+	}
+	
 	public static final class Ref<T extends Type> extends Type {
 		public final T element;
 		

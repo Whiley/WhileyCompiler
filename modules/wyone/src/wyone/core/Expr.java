@@ -53,20 +53,6 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class TypeConst extends SyntacticElement.Impl implements Expr {
-		public final Type type;
-
-		public TypeConst(Type val, Attribute... attributes) {
-			super(attributes);
-			this.type = val;
-		}
-		
-		public String toString() {
-			return type.toString();
-		}
-	}
-	
-
 	public enum BOp { 
 		AND {
 			public String toString() { return "&&"; }

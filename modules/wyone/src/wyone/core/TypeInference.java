@@ -136,7 +136,7 @@ public class TypeInference {
 			} else if (expr instanceof Expr.Comprehension) {
 				result = resolve((Expr.Comprehension) expr, environment);
 			} else {
-				syntaxError("unknown code encountered", filename, expr);
+				syntaxError("unknown code encountered (" + expr.getClass().getName() + ")", filename, expr);
 				return null;
 			}
 			expr.attributes().add(new Attribute.Type(result));
@@ -159,6 +159,9 @@ public class TypeInference {
 			return Type.T_REAL;
 		} else if (v instanceof String) {
 			return Type.T_STRING;
+		} else if (v instanceof Type) {
+			Type t = (Type) v;
+			return Type.T_META(t);
 		} else {
 			syntaxError("unknown constant encountered ("
 					+ v.getClass().getName() + ")", filename, expr);

@@ -360,7 +360,7 @@ public class SpecParser {
 		skipWhiteSpace(true);
 		
 		Type type = parseType();
-		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));				
+		Expr.Constant tc = new Expr.Constant(type, sourceAttr(start, index - 1));				
 		
 		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
 				index - 1));
