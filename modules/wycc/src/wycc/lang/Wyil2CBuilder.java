@@ -78,6 +78,7 @@ public class Wyil2CBuilder implements Builder {
 	private Map<Integer, Type.Record> recdReg;
 	private Map<String, Integer> recdTok;
 	private List<Method> mets;
+	private Set<String> faultCodes;
 	private String commentsFOM = "";
 	
 	public Wyil2CBuilder() {
@@ -115,6 +116,9 @@ public class Wyil2CBuilder implements Builder {
 		//System.err.println("Got to my init code.");
 		recdReg = new HashMap<Integer, Type.Record>();
 		recdTok = new HashMap<String, Integer>();
+		faultCodes= new HashSet();
+		faultCodes.add("invoke");
+		faultCodes.add("throw");
 		this.debugFlag = true;
 		this.lineNumFlag = true;
 		this.floatFlag = true;		// the default setting
@@ -321,7 +325,7 @@ public class Wyil2CBuilder implements Builder {
 		
 		bodyAddLineNL(		"static void __initor_b() {"						);
 		bodyAddLineNL( 		"	if (wycc_debug_flag != 0)"						);
-		bodyAddLineNL( 		"		wyil_debug_str(\"registering for " + this.name + "\");"	);
+		bodyAddLineNL( 		"		wyil_debug_str(\"registering for " + this.name + "\\n\");"	);
 		this.writeTypeRegistryFill();
 		this.writeFOMRegistryFill();
 		
@@ -332,7 +336,7 @@ public class Wyil2CBuilder implements Builder {
 		bodyAddLineNL(		""													);
 		bodyAddLineNL(		"static void __initor_d() {"							);
 		bodyAddLineNL(		"	if (wycc_debug_flag != 0)"						);
-		bodyAddLineNL(		"		wyil_debug_str(\"consulting for " + this.name + "\");"	);
+		bodyAddLineNL(		"		wyil_debug_str(\"consulting for " + this.name + "\\n\");"	);
 		
 		this.writeFOMRegistryQuery();
 
@@ -441,7 +445,6 @@ public class Wyil2CBuilder implements Builder {
 	
 	public void writeTypeComments(TypeDeclaration typDe, int idx) {
 		String lin;
-		//int ign;
 		String ans = "";
 
 		Block strain = typDe.constraint();
@@ -512,8 +515,11 @@ public class Wyil2CBuilder implements Builder {
 		private Map<Integer, String> declsT;
 		private Map<Integer, String> declsI;
 		private Set<Integer> declsU;
-		private List<List> bStack;
-		private List<String> nStack;
+		private List<List> bStack;			// a stack of stacks of lines (a context body)
+		private List<String> nStack;		// a stack of names for end-of-s 
+		private List<String> tStack;		// a try stack (names of end labels)
+		private List<Integer> tvStack;		// a try stack (register number for the exception object)
+		private List<ArrayList<Pair<Type, String>>> tcStack; 
 		
 		private String indent;
 		private String error;
@@ -522,6 +528,7 @@ public class Wyil2CBuilder implements Builder {
 		private boolean isExport;
 		private boolean isProtected;
 		private boolean isPublic;
+		private boolean returnSeen;
 		private List<Modifier> mods;
 		private List<Case> cas;
 		private List<Attribute> atts;
@@ -546,6 +553,8 @@ public class Wyil2CBuilder implements Builder {
 			this.body = new ArrayList<String>();
 			this.bStack = new ArrayList<List>();
 			this.nStack = new ArrayList<String>();
+			this.tcStack = new ArrayList<ArrayList<Pair<Type, String>>>  ();
+			this.tvStack = new ArrayList<Integer>  ();
 			
 			Type.FunctionOrMethod rtnTyp;
 			//System.err.println("milestone 5.1");
@@ -557,6 +566,7 @@ public class Wyil2CBuilder implements Builder {
 			isExport = false;
 			isProtected = false;
 			isPublic = false;
+			returnSeen = false;
 			mods = declaration.modifiers();
 			cas = declaration.cases();
 			atts = declaration.attributes();
@@ -597,19 +607,25 @@ public class Wyil2CBuilder implements Builder {
 			this.body.add(lin);
 			return;
 		}
+		
+		public void mbodyAddLineNL(String lin){
+			this.body.add(lin + "\n");
+			return;
+		}
 
 		public void mbodyAddBlock(List<String> lins){
 			this.body.addAll(lins);
 			return;
 		}
 
+		//  save a context for nested code
 		public void mbodyPush(String nam) {
 			this.bStack.add(this.body);
 			this.body = new ArrayList<String>();
 			this.nStack.add(nam);
 		}
 
-		//public void mbodyPop(String nam) {
+		// collapse the current context into the next save down.
 		public boolean mbodyPop(String nam) {
 			int idx = this.bStack.size();
 			String tgt;
@@ -644,6 +660,34 @@ public class Wyil2CBuilder implements Builder {
 			}
 			this.body = blk;
 			return true;
+		}
+		
+		private String getClosingGoto() {
+			int idx;
+			String tmp;
+
+			idx = this.body.size();
+			while (true) {
+				idx -= 1;
+				if (idx < 0) {
+					return null;
+				}
+				tmp = this.body.get(idx);
+				if (tmp.startsWith("#")) {
+					continue;
+				}
+				if (tmp.startsWith("//")) {
+					continue;
+				}
+				if (tmp.endsWith(":\n")) {
+					continue;
+				}
+				if (tmp.contains("goto")) {
+					this.body.remove(idx);
+					return tmp;
+				}
+				return null;
+			}
 		}
 		
 		private boolean endsWithLabel(){
@@ -1050,6 +1094,8 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeAssertOrAssume(cod, tag);
 			} else if (cod instanceof Code.LoopEnd) {
 				this.writeCodeLoopEnd(cod, tag);
+			} else if (cod instanceof Code.TryEnd) {
+				this.writeCodeTryEnd(cod, tag);
 			} else if (cod instanceof Code.Label) {
 				this.writeCodeLabel(cod, tag);
 	
@@ -1073,8 +1119,6 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeUnArithOp(cod, tag);
 			} else if (cod instanceof Code.TupleLoad) {
 				this.writeCodeTupleLoad(cod, tag);
-			} else if (cod instanceof Code.TryEnd) {
-				this.writeCodeTryEnd(cod, tag);
 			} else if (cod instanceof Code.TryCatch) {
 				this.writeCodeTryCatch(cod, tag);
 			} else if (cod instanceof Code.Throw) {
@@ -1111,12 +1155,15 @@ public class Wyil2CBuilder implements Builder {
 			} else if (cod instanceof Code.Void) {
 				this.writeCodeVoid(cod, tag);
 			} else {
-				//ans += "// HELP needed for opcode '" + opc + "'\n";
-				tmp = "// HELP! needed for opcode '" + opc + "'\n";
-				bodyAddLine(tmp);
+				//tmp = "// HELP! needed for opcode '" + opc + "'\n";
+				//bodyAddLine(tmp);
+				bodyAddLineNL(	"// HELP! needed for opcode '" + opc + "'"	);
+			}
+			if (faultCodes.contains(opc)) {
+				writeCatchCheck(tag);
+
 			}
 			//System.err.println("milestone 5.3.1.8");
-			//bodyAddLine(ans);
 			return;
 		}
 	
@@ -1125,43 +1172,22 @@ public class Wyil2CBuilder implements Builder {
 			
 			//tmp = "// HELP! needed for \n";
 			//bodyAddLine(tmp);
-			bodyAddLineNL(	"// HELP! needed for"		);
+			bodyAddLineNL(	"// HELP! needed for "		);
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
 			return;
 		}
 		
-		public void writeCodeInvert(Code codIn, String tag){
-			String tmp;
-			int targ, rhs;
-			
-			//tmp = "// HELP! needed for Invert\n";
-			//bodyAddLine(tmp);
-			//bodyAddLineNL(	"// HELP! needed for Invert"	);
-			Code.Invert cod = (Code.Invert) codIn;
-			targ = cod.target;
-			rhs = cod.operand;
-			
-			tmp = " = wyil_invert(X" + rhs + ");";
-			writeTargetSwap(tmp, targ, rhs, tag);
-			
-			return;
-		}
-		
-		public void writeCodeTryCatch(Code codIn, String tag){
+		public void writeCatchCheck(String tag){
 			String tmp;
 			
-			tmp = "// HELP! needed for TryCatch\n";
-			bodyAddLine(tmp);
-			Code.TryCatch cod = (Code.TryCatch) codIn;
-			return;
-		}
-		
-		public void writeCodeThrow(Code codIn, String tag){
-			String tmp;
-
-			tmp = "// HELP!needed for Throw\n";
-			bodyAddLine(tmp);
-			Code.Throw cod = (Code.Throw) codIn;
+			//bodyAddLineNL(	"// HELP! needed for ex-check"		);
+			//mbodyAddLineNL(	"//	need a check for exception."	);
+			//mbodyAddLineNL(	"//	Xa = wycc_exception_check(\"" + this.name + "\");"	);
+			if (1 > this.tcStack.size()) {
+				mbodyAddLineNL(	indent + "if (wycc_exception_check()) goto return0;"	);
+			} else {
+				mbodyAddLineNL(	indent + "if (wycc_exception_check()) break;"	);
+			}
 			return;
 		}
 		
@@ -1176,10 +1202,95 @@ public class Wyil2CBuilder implements Builder {
 		
 		public void writeCodeTryEnd(Code codIn, String tag){
 			String tmp;
+			String nam;
+			//String gone;
+			Type typ;
+			Integer reg;
+			int opr;
+			ArrayList<Pair<Type, String>> dsp;
+			int idx = this.tcStack.size()-1;
+
 			
-			tmp = "// HELP! needed for TryEnd\n";
-			bodyAddLine(tmp);
+			//tmp = "// HELP! needed for TryEnd\n";
+			//bodyAddLine(tmp);
+			//bodyAddLineNL(	"// HELP! needed for TryEnd"	);
 			Code.TryEnd cod = (Code.TryEnd) codIn;
+			nam = cod.label;
+			//System.err.println("milestone 5.3.1.2.3");
+			if (this.mbodyPop("")) {
+				//gone = getClosingGoto();
+				if (this.endsWithLabel()) {
+					tmp = indent + indent + ";\n";
+					this.mbodyAddLine(tmp);
+				}
+				//tmp = indent + "} while (0);\n";
+				this.mbodyAddLineNL(indent + "} while (0);"	);
+				//System.err.println("milestone 5.3.1.2.4");
+				dsp = this.tcStack.remove(idx);
+				reg = this.tvStack.remove(idx);
+				opr = reg;
+				
+				//System.err.println("milestone 5.3.1.2.5");
+				for (Pair<Type, String> pitm: dsp) {
+					//tmp = indent + "if (wycc_exception_try(\"" + pitm.first() + "\")) ";
+					//tmp += "goto " + pitm.second() + ";";
+					//this.mbodyAddLineNL(tmp);
+					typ = pitm.first();
+					this.mbodyAddLineNL(	indent + "if (wycc_exception_try(\"" + typ + "\")){"	);
+					writeClearTarget(opr, tag);
+					this.mbodyAddLineNL(	indent + indent + "X" + opr +" = wycc_exception_get();"	);
+					this.mbodyAddLineNL(	indent + indent + "wycc_exception_clear();"	);
+					this.mbodyAddLineNL(	indent + indent + "goto " + pitm.second() + ";"		);
+					this.mbodyAddLineNL(	indent + "};"		);
+				}
+				// ***** much more is need here to handle the dispatch table
+				//if (gone != null) {
+				//	this.mbodyAddLine(gone);
+				//}
+				this.mbodyAddLineNL(	indent + "goto return0;");
+			}
+			this.mbodyAddLineNL(	nam + ":"		);
+			//System.err.println("milestone 5.3.1.2.4.6");
+			return;
+		}
+		
+		public void writeCodeTryCatch(Code codIn, String tag){
+			String tmp;
+			int lhs;
+			Integer reg;
+			
+			//tmp = "// HELP! needed for TryCatch\n";
+			//bodyAddLine(tmp);
+			//System.err.println("milestone 5.3.1.2.1");
+			bodyAddLineNL(	"// HELP! needed for TryCatch"	);
+			Code.TryCatch cod = (Code.TryCatch) codIn;
+			lhs = cod.operand;
+			ArrayList<Pair<Type, String>> foo = cod.catches;
+			
+			tcStack.add(foo);
+			this.addDecl(lhs, "wycc_obj*");
+			
+			reg = lhs;
+			tvStack.add(reg);
+			this.mbodyAddLineNL( indent + "wyil_catch(\"" + this.name + "\");"	 );
+			tmp = indent + "do {\n";
+			this.mbodyAddLine(tmp);
+			this.mbodyPush("");
+			//System.err.println("milestone 5.3.1.2.2");
+			return;
+		}
+		
+		public void writeCodeThrow(Code codIn, String tag){
+			String tmp;
+			int lhs;
+
+			//tmp = "// HELP!needed for Throw\n";
+			//bodyAddLine(tmp);
+			bodyAddLineNL(	"// HELP! needed for Throw"		);
+			Code.Throw cod = (Code.Throw) codIn;
+			lhs = cod.operand;
+			tmp = indent + "wyil_throw(X" + lhs + ");" + tag;
+			this.mbodyAddLineNL(tmp);
 			return;
 		}
 		
@@ -1250,8 +1361,7 @@ public class Wyil2CBuilder implements Builder {
 			int idx;
 			String lin;
 			
-			tmp = "// HELP needed for NewTuple\n";
-			bodyAddLine(tmp);
+			//bodyAddLineNL(	"// HELP needed for NewTuple"	);
 			Code.NewTuple cod = (Code.NewTuple) codIn;
 			targ = cod.target;
 			cnt = cod.operands.length;
@@ -1276,8 +1386,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, rhs, idx;
 			String lin;
 			
-			tmp = "// HELP needed for TupleLoad\n";
-			bodyAddLine(tmp);
+			//bodyAddLineNL(	"// HELP needed for TupleLoad"	);
 			Code.TupleLoad cod = (Code.TupleLoad) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
@@ -1292,16 +1401,30 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 		
+		public void writeCodeInvert(Code codIn, String tag){
+			String tmp;
+			int targ, rhs;
+			
+			//bodyAddLineNL(	"// HELP! needed for Invert"	);
+			Code.Invert cod = (Code.Invert) codIn;
+			targ = cod.target;
+			rhs = cod.operand;
+			
+			tmp = " = wyil_invert(X" + rhs + ");";
+			writeTargetSwap(tmp, targ, rhs, tag);
+			
+			return;
+		}
+		
 		public void writeCodeGoto(Code codIn, String tag){
 			String tmp;
 			String target;
 			
-			//tmp = "// HELP needed for Goto\n";
-			//bodyAddLine(tmp);
+			//bodyAddLineNL(	"// HELP needed for Goto"	);
 			Code.Goto cod = (Code.Goto) codIn;
 			target = cod.target;
-			tmp = "//             going to " + target + "\n";
-			bodyAddLine(tmp);
+			tmp = "//             going to " + target ;
+			bodyAddLineNL(tmp);
 			tmp = indent + "goto " + target + ";\n";
 			this.mbodyAddLine(tmp);
 
@@ -1312,9 +1435,7 @@ public class Wyil2CBuilder implements Builder {
 			String tmp;
 			String nam;
 			
-			//tmp = "// HELP needed for LoopEnd\n";
-			//bodyAddLine(tmp);
-
+			//bodyAddLineNL(	"// HELP needed for LoopEnd"	);
 			Code.LoopEnd cod = (Code.LoopEnd) codIn;
 			nam = cod.label;
 			tmp = "//             called " + nam + "\n";
@@ -1410,7 +1531,6 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLine(tmp);
 			tmp = indent + "};\n";
 			this.mbodyAddLine(tmp);
-			//this.mbodyPush(target);
 			return;
 		}
 		
@@ -1468,8 +1588,7 @@ public class Wyil2CBuilder implements Builder {
 			Type.Record typ;
 	
 			//System.err.println("milestone NewRecord");
-			tmp = "// HELP needed for NewRecord\n";
-			bodyAddLine(tmp);
+			//bodyAddLineNL(	"// HELP needed for NewRecord"	);
 			Code.NewRecord cod = (Code.NewRecord) codIn;
 			cnt = cod.operands.length;
 			targ = cod.target;
@@ -1737,20 +1856,27 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLine(tmp);
 			while (idx > 0) {
 				lv = foo.next();
-				lin = "Xa = wycc_cow_obj(Xb);";
-				tmp = indent + lin + tag + "\n";
-				this.mbodyAddLine(tmp);
-				lin = "if (Xb != Xa) {";
-				tmp = indent + lin + "\n";
-				this.mbodyAddLine(tmp);
-				tmp = indent + indent + backFix + "\n";
-				this.mbodyAddLine(tmp);
-				lin = "};";
-				tmp = indent + lin + "\n";
-				this.mbodyAddLine(tmp);
-				lin = "Xc = Xa;";
-				tmp = indent + lin + tag + "\n";
-				this.mbodyAddLine(tmp);
+				if (lv instanceof Code.ReferenceLVal) {
+					lin = "Xc = Xb;";
+					tmp = indent + lin + tag + "\n";
+					this.mbodyAddLine(tmp);
+					
+				} else {
+					lin = "Xa = wycc_cow_obj(Xb);";
+					tmp = indent + lin + tag + "\n";
+					this.mbodyAddLine(tmp);
+					lin = "if (Xb != Xa) {";
+					tmp = indent + lin + "\n";
+					this.mbodyAddLine(tmp);
+					tmp = indent + indent + backFix + "\n";
+					this.mbodyAddLine(tmp);
+					lin = "};";
+					tmp = indent + lin + "\n";
+					this.mbodyAddLine(tmp);
+					lin = "Xc = Xa;";
+					tmp = indent + lin + tag + "\n";
+					this.mbodyAddLine(tmp);
+				}
 			
 				if (lv instanceof Code.ListLVal) {
 					ofs = cod.operands[iidx];
@@ -2032,7 +2158,14 @@ public class Wyil2CBuilder implements Builder {
 			int tgt;
 
 			Code.Return cod = (Code.Return) codIn;
+
 			
+			if (returnSeen) {
+				
+			} else {
+				this.mbodyAddLineNL("return0:");
+			}
+			returnSeen = true;
 			if (retType instanceof Type.Void) {
 				lin = "	return;";
 				tgt = 0;
@@ -2051,7 +2184,8 @@ public class Wyil2CBuilder implements Builder {
 					tmp = indent + nam + " = wycc_deref_box(" + nam + ");\n";
 					this.mbodyAddLine(tmp);
 				}		
-				lin = "	return(X" + tgt + ");";
+				//lin = "	return(X" + tgt + ");";
+				lin = "	return X" + tgt + ";";
 			}
 			
 			// **** may need to consider other return types
@@ -2201,16 +2335,20 @@ public class Wyil2CBuilder implements Builder {
 			ntyp = cod.result;
 			otyp = cod.type;
 			if (ntyp instanceof Type.Any) {
-				tmp = "//            Safely ignoring convert operation to Any \n";
-				bodyAddLine(tmp);
+				bodyAddLineNL(	"//            Safely ignoring convert operation to Any"	);
 				return;
 			}
 			
-			tmp = "//            Help ignoring convert operation \n";
-			bodyAddLine(tmp);
-			tmp = "//**          change X" + opr + " from " + otyp + " to " + ntyp + "\n";
-			bodyAddLine(tmp);
+			bodyAddLineNL(	"//            Help ignoring convert operation"	);
+			tmp = "//**          change X" + opr + " from " + otyp + " to " + ntyp ;
+			bodyAddLineNL(tmp);
 			tmp = "";
+			if (ntyp instanceof Type.Union) {
+				if (((Type.Union) ntyp).bounds().contains(otyp)) {
+					bodyAddLineNL(	"//            Safely ignoring convert operation to supertype"	);
+					return;					
+				}
+			}
 			if (otyp instanceof Type.Leaf) {
 				tmp += "was " + otyp + " ";
 			}
@@ -2218,9 +2356,15 @@ public class Wyil2CBuilder implements Builder {
 				tmp += "will be " + ntyp + " ";
 			}
 			if (tmp != "") {
-				tmp = "//--          " + tmp + " a leaf type\n";
-				bodyAddLine(tmp);
+				tmp = "//--          " + tmp + " a leaf type";
+				bodyAddLineNL(tmp);
 			}
+			//tmp = "//	X" + tgt + " = wyil_convert(X" + opr + ", \"" + ntyp + "\");";
+			//bodyAddLineNL(tmp);
+			this.addDecl(tgt, "wycc_obj*");			
+			this.mbodyAddLineNL(	indent + "Xa = wyil_convert(X" + opr + ", \"" + ntyp + "\");"		);
+			writeClearTarget(tgt, tag);
+			this.mbodyAddLineNL(	indent + "X" + tgt + " = Xa;"		);
 			return;
 		}
 		
@@ -2264,7 +2408,6 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 		
-		//public String writeCodeBinArithOp(Code codIn, String tag){
 		public void writeCodeBinArithOp(Code codIn, String tag){
 			String tmp;
 			int targ, lhs, rhs;

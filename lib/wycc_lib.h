@@ -45,6 +45,12 @@ int	wycc_debug_flag;
 void wycc_register_routine(const char *nam, int args, const char *rtyp
 			   , const char *sig
 			   , void* ptr);
+int wycc_exception_check();
+int wycc_exception_try(char *str);
+wycc_obj* wycc_exception_get();
+void  wycc_exception_clear();
+char *wyil_catch(char *nam);
+
 void wycc__main(wycc_obj* sys);
 wycc_obj* wycc_deref_box(wycc_obj* itm);
 wycc_obj* wycc_box_str(char* text);
@@ -101,6 +107,8 @@ wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
 #define Wyil_Relation_Mo	7
 #define Wyil_Relation_Ss	8
 #define Wyil_Relation_Se	9
+
+void wyil_throw(wycc_obj* itm);
 wycc_obj* wyil_convert(wycc_obj* itm, char *typ);
 wycc_obj* wyil_dereference(wycc_obj* itm);
 void wyil_assert(wycc_obj* lhs, wycc_obj* rhs, int rel, char *msg);
