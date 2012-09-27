@@ -504,6 +504,21 @@ public class JavaFileWriter {
 		Type lhs_t = code.lhs.attribute(Attribute.Type.class).type;
 		Type rhs_t = code.rhs.attribute(Attribute.Type.class).type;
 		int lhs = translate(level,code.lhs,environment);
+		
+		if(code.op == Expr.BOp.IS && code.rhs instanceof Expr.Constant) {
+			// special case for runtime type tests
+			Expr.Constant c = (Expr.Constant) code.rhs;			
+			Type test = (Type)c.value;
+			lhs = coerceFromRef(level,code.lhs, lhs, environment);
+			// TODO: cast is a hack :(
+			String body = "typeof_" + type2HexStr(test) + "( (Automaton.State) r" + lhs +",automaton)";
+			typeTests.add(test);
+			int target = environment.allocate(type);			
+			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));			
+			return target;
+		}
+		
+		
 		int rhs = translate(level,code.rhs,environment);
 		// First, convert operands into values (where appropriate)
 		switch(code.op) {

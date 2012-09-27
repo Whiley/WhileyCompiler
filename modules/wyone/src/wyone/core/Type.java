@@ -90,6 +90,10 @@ public abstract class Type {
 		return get(new Ref(element));
 	}
 	
+	public static Meta T_META(Type element) {
+		return get(new Meta(element));
+	}
+		
 	public static Fun T_FUN(Type ret, Type param) {
 		return get(new Fun(ret,param));
 	}

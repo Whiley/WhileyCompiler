@@ -362,7 +362,7 @@ public class SpecParser {
 		Type type = parseType();
 		Expr.Constant tc = new Expr.Constant(type, sourceAttr(start, index - 1));				
 		
-		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
+		return new Expr.BinOp(Expr.BOp.IS, lhs, tc, sourceAttr(start,
 				index - 1));
 	}
 	

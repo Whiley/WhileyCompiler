@@ -102,7 +102,7 @@ public interface Expr extends SyntacticElement {
 		RANGE{
 			public String toString() { return "range"; }
 		},
-		TYPEEQ{
+		IS{
 			public String toString() { return "is"; }
 		}
 	};

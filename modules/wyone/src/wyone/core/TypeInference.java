@@ -289,7 +289,7 @@ public class TypeInference {
 			}
 			break;
 		}
-		case TYPEEQ: {
+		case IS: {
 			checkSubtype(lhs_t, rhs_t, bop);
 			result = Type.T_BOOL;
 			break;
