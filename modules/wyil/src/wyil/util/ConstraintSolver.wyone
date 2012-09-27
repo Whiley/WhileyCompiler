@@ -105,15 +105,39 @@ rewrite Not(NotEquals (* x)):
 rewrite Not(Equals (* x)):
     => NotEquals(x)
 
-rewrite And{Equals{|* x, * y|},Equals{|* u,* v|}, BExpr... rest}:
+// bypass
+rewrite And{Equals{|Num(int x), * y|},Equals{|* u, Num(int v)|}, BExpr... rest}:
+    => False, if y == u && x != v
+
+rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}, BExpr... rest}:
     => And ({Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}} ++ rest), if y == u && !(x is Num && v is Num)
 
-rewrite And{NotEquals{|* x, * y|},Equals{|* u,* v|}, BExpr... rest}:
+// bypass
+rewrite And{NotEquals{|Num(int x), * y|},Equals{|* u, Num(int v)|}, BExpr... rest}:
+    => False, if y == u && x == v
+
+rewrite And{NotEquals{|* x, * y|},Equals{|* u, * v|}, BExpr... rest}:
     => And ({NotEquals{|x,y|},Equals{|u,v|},NotEquals{|x,v|}} ++ rest), if y == u && !(x is Num && v is Num)
 
-rewrite And{Equals{|* x, * y|},LessThan[* u,* v], BExpr... rest}:
+// bypass(1)
+rewrite And{Equals{|Num(int x), * y|}, LessThan[* u,Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+// bypass(2)
+rewrite And{Equals{|Num(int x), * y|}, LessThan[Num(int u),* v], BExpr... rest}:
+    => False, if y == v && x <= u
+
+rewrite And{Equals{|* x, * y|},LessThan[* u, * v], BExpr... rest}:
     => And ({Equals{|x,y|},LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && !(x is Num && v is Num)
     => And ({Equals{|x,y|},LessThan[u,v],LessThan[u,x]} ++ rest), if y == v && !(u is Num && x is Num)
+
+// bypass(1)
+rewrite And{Equals{|Num(int x), * y|}, LessThanEq[* u,Num(int v)], BExpr... rest}:
+    => False, if y == u && x > v
+
+// bypass(2)
+rewrite And{Equals{|Num(int x), * y|}, LessThanEq[Num(int u),* v], BExpr... rest}:
+    => False, if y == v && x < u
 
 rewrite And{Equals{|* x, * y|},LessThanEq[* u,* v], BExpr... rest}:
     => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u && !(x is Num && v is Num)
