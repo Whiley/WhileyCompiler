@@ -93,6 +93,12 @@ rewrite GreaterThan[AExpr x, AExpr y]:
 rewrite GreaterThanEq[AExpr x, AExpr y]:
     => LessThanEq[y,x]
     
+rewrite LessThan[* x, * y]:
+    => False, if x == y
+
+rewrite LessThanEq[* x, * y]:
+    => True, if x == y
+
 // ====================================================================
 // Equalities
 // ====================================================================
