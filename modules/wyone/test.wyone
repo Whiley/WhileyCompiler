@@ -13,6 +13,7 @@ rewrite And{True x, Term... rest}:
 
 rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}, Term... rs}:
     => And({Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}} ++ rs), if y == u && !(x is Num && v is Num)
+    => False, if y == u
 
 rewrite Equals{|Num(int x), Num(int y)|}:
     => True, if x == y
