@@ -99,6 +99,37 @@ rewrite LessThan[* x, * y]:
 rewrite LessThanEq[* x, * y]:
     => True, if x == y
 
+// bypass
+rewrite And{LessThan[Num(int x), * y],LessThan[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+rewrite And{LessThan[* x, * y],LessThan[* u, * v], BExpr... rest}:
+    => And ({LessThan[x,y],LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v    
+
+// bypass
+rewrite And{LessThanEq[Num(int x), * y],LessThan[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+rewrite And{LessThanEq[* x, * y],LessThan[* u, * v], BExpr... rest}:
+    => And ({LessThan[x,y],LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v
+
+// bypass
+rewrite And{LessThan[Num(int x), * y],LessThanEq[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+rewrite And{LessThan[* x, * y],LessThanEq[* u, * v], BExpr... rest}:
+    => And ({LessThan[x,y],LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v
+
+// bypass
+rewrite And{LessThanEq[Num(int x), * y],LessThanEq[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x > v
+
+rewrite And{LessThanEq[* x, * y],LessThanEq[* u, * v], BExpr... rest}:
+    => And ({LessThan[x,y],LessThan[u,v],LessThanEq[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+
 // ====================================================================
 // Equalities
 // ====================================================================
@@ -134,8 +165,10 @@ rewrite And{Equals{|Num(int x), * y|}, LessThan[Num(int u),* v], BExpr... rest}:
     => False, if y == v && x <= u
 
 rewrite And{Equals{|* x, * y|},LessThan[* u, * v], BExpr... rest}:
-    => And ({Equals{|x,y|},LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && !(x is Num && v is Num)
-    => And ({Equals{|x,y|},LessThan[u,v],LessThan[u,x]} ++ rest), if y == v && !(u is Num && x is Num)
+    => And ({Equals{|x,y|},LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v
+    => And ({Equals{|x,y|},LessThan[u,v],LessThan[u,x]} ++ rest), if y == v && u != x && !(u is Num && x is Num)
+    => False, if y == v && u == x
 
 // bypass(1)
 rewrite And{Equals{|Num(int x), * y|}, LessThanEq[* u,Num(int v)], BExpr... rest}:
@@ -146,8 +179,8 @@ rewrite And{Equals{|Num(int x), * y|}, LessThanEq[Num(int u),* v], BExpr... rest
     => False, if y == v && x < u
 
 rewrite And{Equals{|* x, * y|},LessThanEq[* u,* v], BExpr... rest}:
-    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u && !(x is Num && v is Num)
-    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[u,x]} ++ rest), if y == v && !(u is Num && x is Num)
+    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[u,x]} ++ rest), if y == v && u != x && !(u is Num && x is Num)
 
 // ====================================================================
 // Set Constraints
