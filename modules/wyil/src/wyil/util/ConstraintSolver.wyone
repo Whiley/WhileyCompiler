@@ -99,12 +99,6 @@ rewrite LessThan[* x, * y]:
 rewrite LessThanEq[* x, * y]:
     => True, if x == y
 
-rewrite Not(LessThanEq[* x, * y]):
-    => LessThan[y,x]
-
-rewrite Not(LessThan[* x, * y]):
-    => LessThanEq[y,x]
-
 // bypass
 rewrite And{LessThan[Num(int x), * y],LessThan[* u, Num(int v)], BExpr... rest}:
     => False, if y == u && x >= v
@@ -142,12 +136,6 @@ rewrite And{LessThanEq[* x, * y],LessThanEq[* u, * v], BExpr... rest}:
 // ====================================================================
 term Equals{|Expr,Expr|}
 term NotEquals{|Expr,Expr|}
-
-rewrite Not(NotEquals (* x)):
-    => Equals(x)
-    
-rewrite Not(Equals (* x)):
-    => NotEquals(x)
 
 // bypass
 rewrite And{Equals{|Num(int x), * y|},Equals{|* u, Num(int v)|}, BExpr... rest}:
@@ -210,6 +198,18 @@ rewrite Not(False):
 
 rewrite Not(Not(* x)):
     => x
+
+rewrite Not(NotEquals(* x)):
+    => Equals(x)
+    
+rewrite NotEquals(* x):
+    => Not(Equals(x))
+
+rewrite Not(LessThanEq[* x, * y]):
+    => LessThan[y,x]
+
+rewrite Not(LessThan[* x, * y]):
+    => LessThanEq[y,x]
 
 rewrite Not(And{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
