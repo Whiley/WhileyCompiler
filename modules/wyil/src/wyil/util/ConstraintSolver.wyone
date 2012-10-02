@@ -42,10 +42,6 @@ rewrite Equals{|Num(int x), Num(int y)|}:
     => True, if x == y
     => False
     
-rewrite NotEquals{|Num(int x), Num(int y)|}:
-    => True, if x != y
-    => False
-
 rewrite LessThan[Num(int x), Num(int y)]:
     => True, if x < y
     => False
@@ -143,13 +139,6 @@ rewrite And{Equals{|Num(int x), * y|},Equals{|* u, Num(int v)|}, BExpr... rest}:
 
 rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}, BExpr... rest}:
     => And ({Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}} ++ rest), if y == u && !(x is Num && v is Num)
-
-// bypass
-rewrite And{NotEquals{|Num(int x), * y|},Equals{|* u, Num(int v)|}, BExpr... rest}:
-    => False, if y == u && x == v
-
-rewrite And{NotEquals{|* x, * y|},Equals{|* u, * v|}, BExpr... rest}:
-    => And ({NotEquals{|x,y|},Equals{|u,v|},NotEquals{|x,v|}} ++ rest), if y == u && !(x is Num && v is Num)
 
 // bypass(1)
 rewrite And{Equals{|Num(int x), * y|}, LessThan[* u,Num(int v)], BExpr... rest}:
