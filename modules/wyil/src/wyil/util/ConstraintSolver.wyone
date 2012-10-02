@@ -75,14 +75,17 @@ term Tuple[Expr...]
 
 term LengthOf[CExpr]
 
-rewrite LengthOf[Set{Expr... xs}]:
-    => |xs|
+// exposes bug
+// rewrite LengthOf[Set{Expr... xs}]:
+//     => |xs|
 
+// exposes bug
 rewrite LengthOf[List[Expr... xs]]:
     => |xs|
 
-rewrite LengthOf[Tuple[Expr... xs]]:
-    => |xs|
+// exposes bug
+// rewrite LengthOf[Tuple[Expr... xs]]:
+//     => |xs|
 
 // ====================================================================
 // Arithmetic Inequalities

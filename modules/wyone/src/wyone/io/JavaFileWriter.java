@@ -331,8 +331,8 @@ public class JavaFileWriter {
 				element = environment.allocate(pt);				
 				myOut(level, type2JavaType(pt) + " r" + element + " = r"
 						+ source + ".get(" + i + ");");
-			}
-			level = translate(level,pat, element, environment);
+				level = translate(level,pat, element, environment);
+			}			
 			if (var != null) {
 				environment.put(element, var);
 			}

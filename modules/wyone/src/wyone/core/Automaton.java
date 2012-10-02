@@ -756,11 +756,7 @@ public final class Automaton {
 		public List(java.util.List<Integer> children) {
 			super(K_LIST,children);
 		}
-		
-		public int get(int index) {
-			return children[index];
-		}
-		
+				
 		public List sublist(Int start, Int end) {
 			return new List(Arrays.copyOfRange(children, start.intValue(),
 					end.intValue()));
