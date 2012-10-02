@@ -49,14 +49,6 @@ rewrite LessThan[Num(int x), Num(int y)]:
 rewrite LessThanEq[Num(int x), Num(int y)]:
     => True, if x <= y
     => False
-    
-rewrite GreaterThan[Num(int x), Num(int y)]:
-    => True, if x > y
-    => False
-
-rewrite GreaterThanEq[Num(int x), Num(int y)]:
-    => True, if x >= y
-    => False
 
 // ====================================================================
 // Collections
@@ -190,6 +182,26 @@ term SubSet[SExpr,SExpr]
 term SubSetEq[SExpr,SExpr]
 term SupSet[SExpr,SExpr]
 term SupSetEq[SExpr,SExpr]
+
+//rewrite SubSet[Set{Expr... xs}, Set{Expr... ys}]:
+//    => True, if |xs| != |ys| && no { x in xs | !(x in ys)}
+//    => False
+
+//rewrite SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
+//    => True, if no { x in xs | !(x in ys)}
+//    => False
+
+//rewrite SupSet[AExpr x, AExpr y]:
+//    => SubSet[y,x]
+
+//rewrite SupSetEq[AExpr x, AExpr y]:
+//    => SubSetEq[y,x]
+
+//rewrite SubSet[* x, * y]:
+//    => False, if x == y
+
+//rewrite SubSetEq[* x, * y]:
+//    => True, if x == y
 
 // ====================================================================
 // Not
