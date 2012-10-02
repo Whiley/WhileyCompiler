@@ -71,21 +71,22 @@ term ElementOf[Expr,SExpr]
 term List[Expr...]
 term IndexOf[LExpr, Expr]
 
+// exposes issue as xs[i] looks like constructor!!
+//rewrite IndexOf[List[Expr... xs], Num(int i)]:
+//    => xs[i]
+
 term Tuple[Expr...]
 
 term LengthOf[CExpr]
 
-// exposes bug
-// rewrite LengthOf[Set{Expr... xs}]:
-//     => |xs|
+rewrite LengthOf[Set{Expr... xs}]:
+    => |xs|
 
-// exposes bug
 rewrite LengthOf[List[Expr... xs]]:
     => |xs|
 
-// exposes bug
-// rewrite LengthOf[Tuple[Expr... xs]]:
-//     => |xs|
+rewrite LengthOf[Tuple[Expr... xs]]:
+    => |xs|
 
 // ====================================================================
 // Arithmetic Inequalities
