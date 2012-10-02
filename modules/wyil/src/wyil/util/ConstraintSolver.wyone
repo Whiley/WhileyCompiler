@@ -63,7 +63,7 @@ rewrite GreaterThanEq[Num(int x), Num(int y)]:
 // ====================================================================
 class SExpr as Set | Var
 class LExpr as List | Var
-class CExpr as Set | List | Var
+class CExpr as Set | List | Tuple | Var
 
 term Set{Expr...}
 term ElementOf[Expr,SExpr]
@@ -74,6 +74,15 @@ term IndexOf[LExpr, Expr]
 term Tuple[Expr...]
 
 term LengthOf[CExpr]
+
+rewrite LengthOf[Set{Expr... xs}]:
+    => |xs|
+
+rewrite LengthOf[List[Expr... xs]]:
+    => |xs|
+
+rewrite LengthOf[Tuple[Expr... xs]]:
+    => |xs|
 
 // ====================================================================
 // Arithmetic Inequalities
