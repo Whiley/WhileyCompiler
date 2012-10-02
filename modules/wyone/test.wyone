@@ -1,23 +1,18 @@
 term False
 term True
 class Bool as True | False
+
 term And{Term}
 term Equals{|Term,Term|}
 term Num(int)
 term Var(string)
+term Tuple[Expr...]
 
-class Term as Bool | And | Equals | Var
+class Term as Bool | Var | And | Equals | Tuple
 
-rewrite And{True x, Term... rest}:
-    => And (rest)
+rewrite And{Equals{|Tuple[*... xs], Tuple[*... ys]|}, Term... rest}:
+    => False, if |xs| != |ys|
 
-rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}, Term... rs}:
-    => And({Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}} ++ rs), if y == u && !(x is Num && v is Num)
-    => False, if y == u
-
-rewrite Equals{|Num(int x), Num(int y)|}:
-    => True, if x == y
-    => False
 
 
 

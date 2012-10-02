@@ -482,7 +482,7 @@ public class JavaFileWriter {
 		
 		switch (code.op) {
 		case LENGTHOF:
-			body = "BigInteger.valueOf(r" + rhs + ".length)";
+			body = "r" + rhs + ".lengthOf()";
 			break;
 		case NEG:
 			body = "r" + rhs + ".negate()";
@@ -524,7 +524,12 @@ public class JavaFileWriter {
 		switch(code.op) {
 		case EQ:
 		case NEQ:
-			// do nothing for these
+			if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
+				// OK to do nothing here...
+			} else {
+				lhs = coerceFromRef(level,code.lhs, lhs, environment);
+				rhs = coerceFromRef(level,code.rhs, rhs, environment);
+			}
 			break;
 		case APPEND:
 			// append is a tricky case as we have support the non-symmetic cases
@@ -572,12 +577,18 @@ public class JavaFileWriter {
 			body = "r" + lhs + " || r" + rhs ;
 			break;
 		case EQ:
-			// FIXME: support lists as well!
-			body = "r" + lhs + " == r" + rhs ;
+			if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) { 
+				body = "r" + lhs + " == r" + rhs ;
+			} else {
+				body = "r" + lhs + ".equals(r" + rhs +")" ;
+			}
 			break;
 		case NEQ:
-			// FIXME: support lists as well!
-			body = "r" + lhs + " != r" + rhs ;
+			if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
+				body = "r" + lhs + " != r" + rhs ;
+			} else {
+				body = "!r" + lhs + ".equals(r" + rhs +")" ;
+			}
 			break;
 		case LT:
 			body = "r" + lhs + ".compareTo(r" + rhs + ")<0";

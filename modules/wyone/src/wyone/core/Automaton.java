@@ -586,6 +586,10 @@ public final class Automaton {
 			return hashCode;
 		}			
 		
+		public Int lengthOf() {
+			return new Int(length);
+		}
+		
 		protected void internal_add(int ref) {
 			if(length == children.length) {
 				int nlength = (1+length) * 2;

@@ -166,6 +166,10 @@ rewrite And{Equals{|* x, * y|},LessThanEq[* u,* v], BExpr... rest}:
     => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
     => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[u,x]} ++ rest), if y == v && u != x && !(u is Num && x is Num)
 
+//rewrite And{Equals{|Tuple[*... xs], Tuple[*... ys]|}, BExpr... rest}:
+//    => False, if |xs| != |ys|
+//    => 
+
 // ====================================================================
 // Set Constraints
 // ====================================================================
