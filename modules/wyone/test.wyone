@@ -6,12 +6,14 @@ term And{Term}
 term Equals{|Term,Term|}
 term Num(int)
 term Var(string)
-term Tuple[Expr...]
+term Tuple[Term...]
 
 class Term as Bool | Var | And | Equals | Tuple
 
 rewrite And{Equals{|Tuple[*... xs], Tuple[*... ys]|}, Term... rest}:
     => False, if |xs| != |ys|
+    => let neqs = [ Equals{|x,y|} | x in xs, y in ys ]
+       in And ({Equals{|Tuple(xs), Tuple(ys)|}} ++ neqs ++ rest)
 
 
 
