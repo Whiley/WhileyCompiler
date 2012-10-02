@@ -94,6 +94,29 @@ public class TestHarness {
 	}
 	
 	/**
+	 * Compile a syntactically valid test case with verification enabled. The
+	 * expectation is that compilation should pass without an error and, hence, the
+	 * test fails if compilation fails. 
+	 * 
+	 * @param name
+	 *            Name of the test to run. This must correspond to an executable
+	 *            Java file in the srcPath of the same name.
+	 */
+	protected void verifyPassTest(String name) {
+		// this will need to turn on verification at some point.
+		name = sourcepath + File.separatorChar + name + ".whiley";
+
+		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
+				"verification:enable=true", name);
+
+		if (r == WycMain.INTERNAL_FAILURE) {
+			fail("Test caused internal failure!");
+		} else if (r != WycMain.SUCCESS) {
+			fail("Couldn't compile test!");
+		} 
+	}
+	
+	/**
 	 * Compile a syntactically invalid test case with verification enabled. The
 	 * expectation is that compilation should fail with an error and, hence, the
 	 * test fails if compilation does not. This differs from the contextFailTest
@@ -117,6 +140,8 @@ public class TestHarness {
 			fail("Test caused internal failure!");
 		}
 	}
+	
+	
 	
 	private static int compile(String... args) {
 		return new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS).run(args);
