@@ -99,6 +99,12 @@ rewrite LessThan[* x, * y]:
 rewrite LessThanEq[* x, * y]:
     => True, if x == y
 
+rewrite Not(LessThanEq[* x, * y]):
+    => LessThan[y,x]
+
+rewrite Not(LessThan[* x, * y]):
+    => LessThanEq[y,x]
+
 // bypass
 rewrite And{LessThan[Num(int x), * y],LessThan[* u, Num(int v)], BExpr... rest}:
     => False, if y == u && x >= v
