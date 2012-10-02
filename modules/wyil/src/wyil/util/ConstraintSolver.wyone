@@ -129,6 +129,7 @@ rewrite And{LessThanEq[Num(int x), * y],LessThanEq[* u, Num(int v)], BExpr... re
 
 rewrite And{LessThanEq[* x, * y],LessThanEq[* u, * v], BExpr... rest}:
     => And ({LessThanEq[x,y],LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => And ({LessThanEq[x,y],LessThanEq[u,v],Equals{|x,y|}} ++ rest), if y == u && x == v && !(x is Num && v is Num)
 
 // ====================================================================
 // Equalities
