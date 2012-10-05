@@ -389,31 +389,43 @@ public class Wyil2CBuilder implements Builder {
 	private void writeTypeRegistryFill() {
 		int siz;
 		String tmp;
+		String dtyp;
+		String fnams;
+		String sep;
 		Type.Record typ;
 		int cnt = recdTok.size();
 		int idx;
 
-		bodyAddLine("// filling in type registry array goes here " + cnt + "\n");
-		bodyAddLine("	wycc_obj * itm;\n");
-		bodyAddLine("	wycc_obj * nam_list;\n");
-		bodyAddLine("	wycc_obj * typ_list;\n");
-		bodyAddLine("	wycc_obj * rcd_rcd;\n");
+		bodyAddLineNL("// filling in type registry array goes here " + cnt	);
+		//bodyAddLineNL("	wycc_obj * itm;"	);
+		//bodyAddLineNL("	wycc_obj * nam_list;"	);
+		//bodyAddLineNL("	wycc_obj * typ_list;"	);
+		bodyAddLineNL("	wycc_obj * rcd_rcd;"	);
 		idx = 0;
 		for (Integer tok:recdReg.keySet()) {
 			typ = recdReg.get(tok);
-			siz = typ.keys().size();
-			bodyAddLine("	nam_list = wycc_list_new(" + siz + ");\n");
-			bodyAddLine("	typ_list = wycc_list_new(" + siz + ");\n");
+			dtyp = writeDenseType(typ);
+			bodyAddLineNL("	record_reg[" + idx + "] = wycc_record_type(\"" + dtyp + "\");"	);
+			//siz = typ.keys().size();
+			//bodyAddLineNL("	//nam_list = wycc_list_new(" + siz + ");");
+			//bodyAddLineNL("	typ_list = wycc_list_new(" + siz + ");"	);
+			//fnams = "";
+			//sep = "";
 			//for (String ke:typ.keys()){
-			for (String ke:getFieldNames(typ)){
-
-				bodyAddLine("	itm = wycc_box_cstr(\"" + ke + "\");\n");
-				bodyAddLine("	wycc_list_add(nam_list, itm);\n");
-				bodyAddLine("	itm = wycc_box_cstr(\"" + typ.field(ke) + "\");\n");
-				bodyAddLine("	wycc_list_add(typ_list, itm);\n");
-			}
-			bodyAddLine("	rcd_rcd = wycc_record_record(nam_list, typ_list);\n");
-			bodyAddLine("	record_reg[" + idx + "] = rcd_rcd;\n");
+			//for (String ke:getFieldNames(typ)){
+//
+			//	fnams += sep + ke;
+			//	sep = ",";
+			//	bodyAddLineNL("	//itm = wycc_box_cstr(\"" + ke + "\");"	);
+			//	bodyAddLineNL("	//wycc_list_add(nam_list, itm);"	);
+			//	//bodyAddLineNL("	itm = wycc_box_cstr(\"" + typ.field(ke) + "\");"	);
+			//	dtyp = writeDenseType(typ.field(ke));
+			//	bodyAddLineNL("	itm = wycc_box_cstr(\"" + dtyp + "\");"	);
+			//	bodyAddLineNL("	wycc_list_add(typ_list, itm);"	);
+			//}
+			//bodyAddLineNL("	nam_list = wycc_record_list_names(\"" + fnams + "\");");
+			//bodyAddLineNL("	rcd_rcd = wycc_record_record(nam_list, typ_list);"	);
+			//bodyAddLineNL("	record_reg[" + idx + "] = rcd_rcd;"	);
 			idx+= 1;
 		}
 		
@@ -432,6 +444,7 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLineNL(tmp);
 			tmp = "//			sig:" + met.argt;
 			bodyAddLineNL(tmp);
+			bodyAddLineNL(	"// ff	\"" + met.denseType + "\""	);
 			tmp = "//	wycc_register_routine(\"" + met.name + "\", " + met.argc + ", \"" + met.retType
 					+ "\", \"" + met.argt + "\");";
 			bodyAddLineNL(tmp);
@@ -541,6 +554,7 @@ public class Wyil2CBuilder implements Builder {
 		public Type retType;
 		public int argc;
 		public String argt;
+		public String denseType;
 
 		public Method(MethodDeclaration metDe, int idx) {
 			String lin;
@@ -573,6 +587,7 @@ public class Wyil2CBuilder implements Builder {
 			cas = declaration.cases();
 			atts = declaration.attributes();
 			rtnTyp = declaration.type();
+			denseType = writeDenseType(rtnTyp);
 			comments = "";
 
 			lin = "#" + index + " (";
@@ -2382,268 +2397,6 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineNL(	indent + "X" + tgt + " = Xa;"		);
 			return;
 		}
-		
-		private String writeDenseType(Type ntyp) {
-			// TODO Auto-generated method stub
-			
-			//System.err.println("milestone 5.3.A1");
-			if (ntyp instanceof Type.Void) {
-				return "v";
-			}
-			if (ntyp instanceof Type.Void) {
-				return "v";
-			}
-			if (ntyp instanceof Type.Void) {
-				return "v";
-			}
-			if (ntyp instanceof Type.Void) {
-				return "v";
-			}
-			if (ntyp instanceof Type.Void) {
-				return "v";
-			}
-			if (ntyp instanceof Type.Compound) {
-				Type.Compound compound = (Type.Compound) ntyp;
-				Automaton automaton = compound.automaton;
-
-				return writeTypeCompound(automaton);
-			}
-			if (ntyp instanceof Type.Nominal) {
-				return "n";							// **** need to fix; had nid
-			}
-			if (ntyp instanceof Type.Strung) {
-				return "s";
-			}
-			if (ntyp instanceof Type.Real) {
-				return "r";
-			}
-			if (ntyp instanceof Type.Int) {
-				return "i";
-			}
-			if (ntyp instanceof Type.Byte) {
-				return "d";
-			}
-			if (ntyp instanceof Type.Char) {
-				return "c";
-			}
-			if (ntyp instanceof Type.Bool) {
-				return "b";
-			}
-			if (ntyp instanceof Type.Meta) {
-				return "m";
-			}
-			if (ntyp instanceof Type.Void) {
-				return "v";
-			}
-			if (ntyp instanceof Type.Any) {
-				return "a";
-			}
-			
-			return "&";
-		}
-		private String writeTypeCompound(Automaton automaton) {
-			//System.err.println("milestone 5.3.B1");
-			BitSet headers = new BitSet(automaton.size());
-			BitSet visited = new BitSet(automaton.size());
-			BitSet onStack = new BitSet(automaton.size());
-			findHeaders(0, visited, onStack, headers, automaton);
-			visited.clear();
-			String[] titles = new String[automaton.size()];
-			int count = 0;
-			for (int i = 0; i != automaton.size(); ++i) {
-				if (headers.get(i)) {
-					titles[i] = headerTitle(count++);
-				}
-			}
-			return writeTypeCompound(0, visited, titles, automaton);
-		}
-		
-		private void findHeaders(int index, BitSet visited,
-					BitSet onStack, BitSet headers, Automaton automaton) {
-			if(visited.get(index)) {
-					// node already visited
-				if(onStack.get(index)) {
-					headers.set(index);
-				}
-				return; 
-			} 		
-			onStack.set(index);
-			visited.set(index);
-			State state = automaton.states[index];
-			for(int child : state.children) {
-				findHeaders(child,visited,onStack,headers,automaton);
-			}	
-			onStack.set(index,false);
-		}
-		private char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
-		private String headerTitle(int count) {
-			String r = Character.toString(headers[count%headers.length]);
-			int n = count / headers.length;
-			if(n > 0) {
-				return r + n;
-			} else {
-				return r;
-			}
-		}	
-		
-		private String writeTypeCompound(int index, BitSet visited,
-				String[] headers, Automaton automaton) {
-			String sep = "";
-			String middle;
-
-			//System.err.println("milestone 5.3.C1");
-			if (visited.get(index)) {
-				// node already visited
-				return headers[index];
-			} else if(headers[index] != null) {
-				visited.set(index);
-			}
-			String header = headers[index];
-			State state = automaton.states[index];
-
-			switch (state.kind) {
-			case Type.K_VOID:
-				return "v";
-			case Type.K_ANY:
-				return "a";
-			case Type.K_NULL:
-				return "n";
-			case Type.K_BOOL:
-				return "b";
-			case Type.K_BYTE:
-				return "d";
-			case Type.K_CHAR:
-				return "c";
-			case Type.K_INT:
-				return "i";
-			case Type.K_RATIONAL:
-				return "r";
-			case Type.K_STRING:
-				return "s";
-			case Type.K_NOMINAL:
-				middle = "[$";
-				middle += state.data.toString();
-				middle +=  "]";
-				if(header != null) {
-					// The following case is interesting. Basically, we'll never revisit
-					// a header. Therefore, if we have multiple edges landing on a
-					// header we must update the header string to represent the full
-					// type reachable from the header.
-					//String r = header + "<" + middle + ">";
-					String r = "[<" + header + middle + ">]"; 
-					headers[index] = r;
-					return r;
-				} 
-				return middle;
-			};
-			//System.err.println("milestone 5.3.C2");
-			//boolean nonEmpty = (Boolean) state.data;
-			int[] children = state.children;
-			//System.err.println("milestone 5.3.C3 = " + state.kind);
-			
-			switch (state.kind) {
-			case Type.K_SET: {
-				middle = "[*";
-				boolean nonEmpty = (Boolean) state.data;
-				if (nonEmpty) {
-					middle +=  "+";
-				}
-				// *** need to check that there is exactly 1 child
-				break;
-			}
-			case Type.K_LIST: {
-				middle = "[#";
-				boolean nonEmpty = (Boolean) state.data;
-				if (nonEmpty) {
-					middle +=  "+";
-				}
-				// *** need to check that there is exactly 1 child
-				break;
-			}
-			case Type.K_REFERENCE:
-				middle = "[.";
-				// *** need to check that there is exactly 1 child
-				break;
-			case Type.K_NEGATION: {
-				middle = "[!";
-				// *** need to check that there is exactly 1 child
-				break;
-			}
-			case Type.K_MAP: {
-				// binary node
-				middle = "[@";
-				// *** need to check that there are exactly 2 children
-				break;
-			}		
-			case Type.K_UNION: {
-				middle = "[|";
-				break;
-			}
-			case Type.K_TUPLE: {
-				middle = "[=";
-				break;
-			}
-			case Type.K_RECORD: {
-				// labeled nary node
-				middle = "[{";
-				middle += writeTypeFieldNames((Record.State) state.data);
-				middle +=  "}";
-				break;
-			}		
-			case Type.K_METHOD: {
-				middle = "[:";
-				break;
-			}
-			case Type.K_FUNCTION: {
-				middle = "[^";
-				break;
-			}		
-			default: 
-				throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
-			}
-			//System.err.println("milestone 5.3.C4");
-			sep = "";		
-			for (int i = 0; i != children.length; ++i) {
-				//System.err.println("milestone 5.3.D1");
-				middle+= sep;
-				middle += writeTypeCompound(children[i], visited, headers, automaton);
-				sep = ",";
-			}
-			
-			middle +=  "]";			
-			// Finally, check whether this is a header node, or not. If it is a
-			// header then we need to insert the recursive type.
-
-			if(header != null) {
-				// The following case is interesting. Basically, we'll never revisit
-				// a header. Therefore, if we have multiple edges landing on a
-				// header we must update the header string to represent the full
-				// type reachable from the header.
-				//String r = header + "<" + middle + ">"; 
-				String r = "[<" + header + middle + ">]"; 
-				headers[index] = r;
-				return r;
-			} 
-			return middle;
-
-		}
-
-		private String writeTypeFieldNames(wyil.lang.Type.Record.State fields) {
-			// TODO Auto-generated method stub
-			String ans= "";
-			String sep = "";
-			
-			for (int i = 0; i != fields.size(); ++i) {
-				ans += sep;
-				ans += fields.get(i);
-				sep = ",";
-			}
-			if (fields.isOpen) {
-				ans += sep;
-				ans +=  "...";
-			}
-			return ans;
-		}
 
 		public void writeCodeInvoke(Code codIn, String tag){
 			String tmp;
@@ -3038,6 +2791,268 @@ public class Wyil2CBuilder implements Builder {
 			} 
 			return null;
 		}		
+	}
+	
+	private String writeDenseType(Type ntyp) {
+		// TODO Auto-generated method stub
+		
+		//System.err.println("milestone 5.3.A1");
+		if (ntyp instanceof Type.Void) {
+			return "v";
+		}
+		if (ntyp instanceof Type.Void) {
+			return "v";
+		}
+		if (ntyp instanceof Type.Void) {
+			return "v";
+		}
+		if (ntyp instanceof Type.Void) {
+			return "v";
+		}
+		if (ntyp instanceof Type.Void) {
+			return "v";
+		}
+		if (ntyp instanceof Type.Compound) {
+			Type.Compound compound = (Type.Compound) ntyp;
+			Automaton automaton = compound.automaton;
+
+			return writeTypeCompound(automaton);
+		}
+		if (ntyp instanceof Type.Nominal) {
+			return "n";							// **** need to fix; had nid
+		}
+		if (ntyp instanceof Type.Strung) {
+			return "s";
+		}
+		if (ntyp instanceof Type.Real) {
+			return "r";
+		}
+		if (ntyp instanceof Type.Int) {
+			return "i";
+		}
+		if (ntyp instanceof Type.Byte) {
+			return "d";
+		}
+		if (ntyp instanceof Type.Char) {
+			return "c";
+		}
+		if (ntyp instanceof Type.Bool) {
+			return "b";
+		}
+		if (ntyp instanceof Type.Meta) {
+			return "m";
+		}
+		if (ntyp instanceof Type.Void) {
+			return "v";
+		}
+		if (ntyp instanceof Type.Any) {
+			return "a";
+		}
+		
+		return "&";
+	}
+	private String writeTypeCompound(Automaton automaton) {
+		//System.err.println("milestone 5.3.B1");
+		BitSet headers = new BitSet(automaton.size());
+		BitSet visited = new BitSet(automaton.size());
+		BitSet onStack = new BitSet(automaton.size());
+		findHeaders(0, visited, onStack, headers, automaton);
+		visited.clear();
+		String[] titles = new String[automaton.size()];
+		int count = 0;
+		for (int i = 0; i != automaton.size(); ++i) {
+			if (headers.get(i)) {
+				titles[i] = headerTitle(count++);
+			}
+		}
+		return writeTypeCompound(0, visited, titles, automaton);
+	}
+	
+	private void findHeaders(int index, BitSet visited,
+				BitSet onStack, BitSet headers, Automaton automaton) {
+		if(visited.get(index)) {
+				// node already visited
+			if(onStack.get(index)) {
+				headers.set(index);
+			}
+			return; 
+		} 		
+		onStack.set(index);
+		visited.set(index);
+		State state = automaton.states[index];
+		for(int child : state.children) {
+			findHeaders(child,visited,onStack,headers,automaton);
+		}	
+		onStack.set(index,false);
+	}
+	private char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
+	private String headerTitle(int count) {
+		String r = Character.toString(headers[count%headers.length]);
+		int n = count / headers.length;
+		if(n > 0) {
+			return r + n;
+		} else {
+			return r;
+		}
+	}	
+	
+	private String writeTypeCompound(int index, BitSet visited,
+			String[] headers, Automaton automaton) {
+		String sep = "";
+		String middle;
+
+		//System.err.println("milestone 5.3.C1");
+		if (visited.get(index)) {
+			// node already visited
+			return headers[index];
+		} else if(headers[index] != null) {
+			visited.set(index);
+		}
+		String header = headers[index];
+		State state = automaton.states[index];
+
+		switch (state.kind) {
+		case Type.K_VOID:
+			return "v";
+		case Type.K_ANY:
+			return "a";
+		case Type.K_NULL:
+			return "n";
+		case Type.K_BOOL:
+			return "b";
+		case Type.K_BYTE:
+			return "d";
+		case Type.K_CHAR:
+			return "c";
+		case Type.K_INT:
+			return "i";
+		case Type.K_RATIONAL:
+			return "r";
+		case Type.K_STRING:
+			return "s";
+		case Type.K_NOMINAL:
+			middle = "[$";
+			middle += state.data.toString();
+			middle +=  "]";
+			if(header != null) {
+				// The following case is interesting. Basically, we'll never revisit
+				// a header. Therefore, if we have multiple edges landing on a
+				// header we must update the header string to represent the full
+				// type reachable from the header.
+				//String r = header + "<" + middle + ">";
+				String r = "[<" + header + middle + ">]"; 
+				headers[index] = r;
+				return r;
+			} 
+			return middle;
+		};
+		//System.err.println("milestone 5.3.C2");
+		//boolean nonEmpty = (Boolean) state.data;
+		int[] children = state.children;
+		//System.err.println("milestone 5.3.C3 = " + state.kind);
+		
+		switch (state.kind) {
+		case Type.K_SET: {
+			middle = "[*";
+			boolean nonEmpty = (Boolean) state.data;
+			if (nonEmpty) {
+				middle +=  "+";
+			}
+			// *** need to check that there is exactly 1 child
+			break;
+		}
+		case Type.K_LIST: {
+			middle = "[#";
+			boolean nonEmpty = (Boolean) state.data;
+			if (nonEmpty) {
+				middle +=  "+";
+			}
+			// *** need to check that there is exactly 1 child
+			break;
+		}
+		case Type.K_REFERENCE:
+			middle = "[.";
+			// *** need to check that there is exactly 1 child
+			break;
+		case Type.K_NEGATION: {
+			middle = "[!";
+			// *** need to check that there is exactly 1 child
+			break;
+		}
+		case Type.K_MAP: {
+			// binary node
+			middle = "[@";
+			// *** need to check that there are exactly 2 children
+			break;
+		}		
+		case Type.K_UNION: {
+			middle = "[|";
+			break;
+		}
+		case Type.K_TUPLE: {
+			middle = "[=";
+			break;
+		}
+		case Type.K_RECORD: {
+			// labeled nary node
+			middle = "[{";
+			middle += writeTypeFieldNames((Record.State) state.data);
+			middle +=  "}";
+			break;
+		}		
+		case Type.K_METHOD: {
+			middle = "[:";
+			break;
+		}
+		case Type.K_FUNCTION: {
+			middle = "[^";
+			break;
+		}		
+		default: 
+			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
+		}
+		//System.err.println("milestone 5.3.C4");
+		sep = "";		
+		for (int i = 0; i != children.length; ++i) {
+			//System.err.println("milestone 5.3.D1");
+			middle+= sep;
+			middle += writeTypeCompound(children[i], visited, headers, automaton);
+			sep = ",";
+		}
+		
+		middle +=  "]";			
+		// Finally, check whether this is a header node, or not. If it is a
+		// header then we need to insert the recursive type.
+
+		if(header != null) {
+			// The following case is interesting. Basically, we'll never revisit
+			// a header. Therefore, if we have multiple edges landing on a
+			// header we must update the header string to represent the full
+			// type reachable from the header.
+			//String r = header + "<" + middle + ">"; 
+			String r = "[<" + header + middle + ">]"; 
+			headers[index] = r;
+			return r;
+		} 
+		return middle;
+
+	}
+
+	private String writeTypeFieldNames(wyil.lang.Type.Record.State fields) {
+		// TODO Auto-generated method stub
+		String ans= "";
+		String sep = "";
+		
+		for (int i = 0; i != fields.size(); ++i) {
+			ans += sep;
+			ans += fields.get(i);
+			sep = ",";
+		}
+		if (fields.isOpen) {
+			ans += sep;
+			ans +=  "...";
+		}
+		return ans;
 	}
 
 	public ArrayList<String> getFieldNames(Type.Record record) {
