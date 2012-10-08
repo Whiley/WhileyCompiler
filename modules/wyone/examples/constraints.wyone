@@ -1,0 +1,44 @@
+// an implementation of basic set constraints
+
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+term True
+term False
+class Bool as True | False
+class BExpr as Bool | And 
+
+term And{BExpr...}
+
+rewrite And{True x}:
+    => True
+
+rewrite And{BExpr x}:
+    => x
+
+rewrite And{False, BExpr... xs}:
+    => False
+
+// ====================================================================
+// Set Constraints
+// ====================================================================
+
+term Set{Expr...}
+term SubSetEq[Expr,Expr]
+
+//rewrite SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
+//    => True, if no { x in xs | !(x in ys)}
+//    => False
+
+rewrite SubSetEq[* x, * y]:
+    => True, if x == y
+
+rewrite And{SubSetEq[* x, * y],SubSetEq[* u, * v], BExpr... rest}:
+    => And ({SubSetEq[x,y],SubSetEq[u,v],SubSetEq[x,v]} ++ rest), if y == u && x != v
+
+// ====================================================================
+// Expressions
+// ====================================================================
+
+term Num(int)
+class Expr as Set | Num
