@@ -194,8 +194,8 @@ static char* wy_type_names[] = {
  * Wy_RRecord
  * Wy_Record	ptr to block:
  *		size
- *		pad so to match list
- *		registry index (-1 for raw records; else ptr to recrec)
+ *		meta obj (was pad so to match list)
+ *		zero (was registry index (-1 for raw records; else ptr to recrec)
  *		array of obj ptrs * [3]
  * Wy_Rcd_Rcd	ptr to block:
  *		ptr to Wy_List of names
@@ -319,6 +319,7 @@ static int wycc_type_internal(const char *nam);
 static int wycc_type_parse(const char *nam, int *lo, int hi);
 static int wycc_type_flags(int id);
 static int wycc_type_tok_alloc();
+static int wycc_type_child_count(int tok);
 
 void wycc_chunk_rebal(int payl, void** p, void** chunk, long at, long deep);
 static int wycc_type_down(int id);
@@ -513,12 +514,15 @@ static wycc_high_bit(long itm) {
  *  Routines for basic support general infrastructure
  * -------------------------------
  */
-void wycc_register_routine(const char *nam, int args, const char *rtyp
-			   , const char *sig
-			   , void* ptr) {
+//void wycc_register_routine(const char *nam, int args, const char *rtyp
+//			   , const char *sig
+//			   , void* ptr) {
+void wycc_register_routine(const char *nam, const char *sig, void* ptr) {
+    int tok;
     size_t siz;
     int tmp;
     int idx;
+    int args;
     void **p;
     wycc_obj *namMap;
     wycc_obj *sigMap;
@@ -526,8 +530,14 @@ void wycc_register_routine(const char *nam, int args, const char *rtyp
     wycc_obj *fom;
 
     if (wycc_debug_flag) {
-	fprintf(stderr, "wycc_register(%s) => %d, %s:%s\n", nam, rtyp, sig);
+	fprintf(stderr, "wycc_register(%s) => %s\n", nam, sig);
     }
+    tok = wycc_type_internal(sig);
+    tmp = wycc_type_child_count(tok);
+    if (wycc_debug_flag) {
+	fprintf(stderr, "wycc_register(%d) => %d\n", tok, tmp);
+    }
+    return;
     tmp = FOM_max_arg_count;
     while (args > tmp ) {
 	tmp *= 2;
@@ -840,10 +850,11 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
     if (wycc_debug_flag) {
 	fprintf(stderr, "Debug in wycc_type_check_tok w/ tok %d, %d\n"
 		, tok, flgs);
-	tmp = wycc_type_flags(alt);
-	fprintf(stderr, "Debug in wycc_type_check_tok w/ alt %d, %d\n"
+	if ((flgs & Type_Record) == 0) {
+	    tmp = wycc_type_flags(alt);
+	    fprintf(stderr, "Debug in wycc_type_check_tok w/ alt %d, %d\n"
 		, alt, tmp);
-
+	};
     };
     if (wycc_type_is_list(tok)){
 	ty = (int) p[1];
@@ -903,10 +914,17 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 	}
 	return 1;
     };
+    if (wycc_type_is_record(tok)) {
+	val = (wycc_obj *) p[1];
+	tmp = (int) val->ptr;
+	return (tmp == tok);
+	fprintf(stderr, "Help needed in wycc_type_check_tok w/ record\n");
+	exit(-3);
+
+    };
 	fprintf(stderr, "Help needed in wycc_type_check_tok w/ unk %d\n", tok);
     desc = &((struct type_desc *)type_parsings)[tok];
     fprintf(stderr, "\t tok type (%d)\n", desc->flgs);
-	exit(-3);
 }
 
 /*
@@ -1004,20 +1022,24 @@ wycc_obj* wycc_record_list_names(const char *nams) {
     return ans;
 }
 
-/*
- * given a pair of lists, combine them into a record_record
- */
-wycc_obj* wycc_record_type(const char *txt) {
-    int tok;
+static wycc_obj* wycc_box_meta(int tok) {
     wycc_obj* ans;
 
-    tok = wycc_type_internal(txt);
     ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     ans->typ = Wy_Rcd_Rcd;
     ans->ptr = (void *) tok;
     ans->cnt = 1;
     return ans;
+}
 
+/*
+ * given a pair of lists, combine them into a record_record
+ */
+wycc_obj* wycc_record_type(const char *txt) {
+    int tok;
+
+    tok = wycc_type_internal(txt);
+    return wycc_box_meta(tok);
 }
 
 /*
@@ -3148,11 +3170,21 @@ static int wycc_type_is_leaf(int id) {
     return 0;
 }
 
+static int wycc_type_child_count(int tok) {
+    struct type_desc *desc;
+
+    if (tok == 0) {
+	return 0;
+    };
+    desc = &((struct type_desc *)type_parsings)[tok];
+    return 1 + wycc_type_child_count(desc->next);
+
+}
 static int wycc_type_flags(int id) {
     struct type_desc *desc;
 
     if (id >= type_count) {
-	fprintf(stderr, "Help needed in wycc_type_is_list w/ %d\n", id);
+	fprintf(stderr, "Help needed: bad id in wycc_type_flags (%d)\n", id);
 	exit(-3);
     };
     desc = &((struct type_desc *)type_parsings)[id];
@@ -3822,17 +3854,57 @@ static wycc_obj* wyil_convert_list(wycc_obj* lst, int tok){
  */
 static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok){
     void** p = lst->ptr;
+    void** pn;
     wycc_obj* ans;
     wycc_obj* nxt;
+    wycc_obj* prt;
+    wycc_obj* nnam;
     long max;
     int alt;
     long at, tmp;
     void** new;
+    char * vu;
 
     if (lst->typ != Wy_Record) {
 	fprintf(stderr, "Help needed in wyil_convert_record w/ %d\n", lst->typ);
 	exit(-3);
     };
+    nxt = (wycc_obj *) p[1];
+    alt = (int) nxt->ptr;
+    if (alt == tok) {
+	ans = lst;
+	ans->cnt++;
+	return ans;
+    }
+    /* **** need to check the names */
+    nxt = wycc_box_meta(tok);
+    ans = wycc_record_new(nxt);
+    nnam = (wycc_obj *) wycc_type_down(tok);
+    pn = (void **) nnam->ptr;
+    max = (long) pn[0];
+    alt = wycc_type_next(tok);
+    for (at= 0; at < max ; at++) {
+	if (alt <= 0) {
+	    break;
+	};
+	nxt = (wycc_obj *) pn[3+at];
+	vu = (char *) nxt->ptr;
+	tmp = wycc_type_down(alt);
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "\tneed to fill in %d (%s)", at, vu);
+	    fprintf(stderr, "\tconverted to %d\n", tmp);
+	};
+	nxt = wycc_record_get_nam(lst, vu);
+	if (nxt != NULL) {
+	    prt = wyil_convert_tok(nxt, tmp);
+	    wycc_deref_box(nxt);
+	} else {
+	    prt = nxt;
+	};
+	wycc_record_fill(ans, at, prt); 
+	alt = wycc_type_next(alt);
+    }
+    return ans;
     fprintf(stderr, "Help needed: wyil_convert_record incomplete\n");
     exit(-3);
 

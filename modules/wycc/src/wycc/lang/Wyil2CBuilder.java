@@ -51,6 +51,7 @@ import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.lang.Type.Record;
+import wyil.lang.Type.Strung;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Case;
 import wyil.lang.WyilFile.ConstantDeclaration;
@@ -439,15 +440,18 @@ public class Wyil2CBuilder implements Builder {
 		
 		for (Method met : mets) {
 			//met.writeProto();
-			tmp = "//	name:" + met.name + "  argc:" + met.argc + " rtyp:" + met.retType;
+			//tmp = "//	name:" + met.name + "  argc:" + met.argc + " rtyp:" + met.retType;
 			// **** needs to become wycc_register_routine(nam, argc, rtyp, sig)
-			bodyAddLineNL(tmp);
-			tmp = "//			sig:" + met.argt;
-			bodyAddLineNL(tmp);
-			bodyAddLineNL(	"// ff	\"" + met.denseType + "\""	);
-			tmp = "//	wycc_register_routine(\"" + met.name + "\", " + met.argc + ", \"" + met.retType
-					+ "\", \"" + met.argt + "\");";
-			bodyAddLineNL(tmp);
+			//bodyAddLineNL(tmp);
+			//tmp = "//			sig:" + met.argt;
+			//bodyAddLineNL(tmp);
+			tmp = "	wycc_register_routine(\"" + met.name ;
+			tmp += "\", \"" + met.denseType;
+			tmp += "\", wycc__" + met.name + ");";
+			bodyAddLineNL(	tmp	);
+			//tmp = "//	wycc_register_routine(\"" + met.name + "\", " + met.argc + ", \"" + met.retType
+			//		+ "\", \"" + met.argt + "\");";
+			//bodyAddLineNL(tmp);
 
 		}
 
@@ -1071,7 +1075,7 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLine(tmp);
 			
 			String temp = cod.toString();
-			tmp = "//             Looks like " + temp + "\n";
+			tmp = "//             Looks like " + safeString2(temp) + "\n";
 			bodyAddLine(tmp);
 			
 			String[] frags = temp.split(" ", 4);
@@ -2527,6 +2531,7 @@ public class Wyil2CBuilder implements Builder {
 			String rval;
 			String assn = null;
 			//String nam;
+			Strung foo;
 			int alt;
 			int cnt;
 			int tok;
@@ -2554,7 +2559,10 @@ public class Wyil2CBuilder implements Builder {
 			//	nam = "X" + targ;
 			//}
 			if (typ instanceof Type.Strung) {	
-				assn = "wycc_box_cstr(" + rval + ")";							
+				//assn = "wycc_box_cstr(" + rval + ")";
+				//foo = val.;
+				//assn = "wycc_box_cstr(" + val.value + ")";
+				assn = "wycc_box_cstr(\"" + safeString1(rval) + "\")";
 			} else if (typ instanceof Type.Int) {
 				assn = "wycc_box_int(" + rval + ")";
 			} else if (typ instanceof Type.Bool) {
@@ -3060,7 +3068,39 @@ public class Wyil2CBuilder implements Builder {
 	    Collections.sort(fields);
 	    return fields;
 	}
+	
+	public String safeString2(String was){
+		return safeString(was, 0, was.length(), false);
+	}
+	
+	public String safeString1(String was){
+		return safeString(was, 1, was.length()-1, true);
+	}
 
+	public String safeString(String was){
+		return safeString(was, 0, was.length(), true);
+	}
+	public String safeString(String was, int lo, int hi, boolean flg){	
+		String ans = "";
+		int at = lo;
+		char ch;
+		
+		while (at < hi) {
+			ch = was.charAt(at);
+			if (ch == '\\') {
+				ans += "\\\\";
+			} else if (ch == '\n') {
+				ans += "\\n";
+			} else if ((ch == '"') && flg) {
+				ans += "\\\"";
+			} else {
+				ans += ch;
+			}
+			at++;
+		}
+		
+		return ans;
+	}
 	
 	
 	public String mungName(String nam) {
