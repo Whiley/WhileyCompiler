@@ -6,7 +6,7 @@
 term True
 term False
 class Bool as True | False
-class BExpr as Bool | And 
+class BExpr as Bool | And | SubSetEq
 
 term And{BExpr...}
 
@@ -41,4 +41,6 @@ rewrite And{SubSetEq[* x, * y],SubSetEq[* u, * v], BExpr... rest}:
 // ====================================================================
 
 term Num(int)
-class Expr as Set | Num
+term Var(string)
+
+class Expr as Set | Num | Var
