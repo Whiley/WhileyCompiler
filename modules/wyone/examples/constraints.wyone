@@ -45,8 +45,8 @@ rewrite And{SubSetEq[* x, Set{Expr... xs}] s1,SubSetEq[* y, Set{Expr... ys}] s2,
 rewrite And{SubSetEq[Set{Expr... xs}, * x],SubSetEq[* y, Set{Expr... ys}], BExpr... rest}:
     => False, if x == y && some { z in xs | !(z in ys) }
 
-rewrite And{SubSetEq[* x, * y],SubSetEq[* u, * v], BExpr... rest}:
-    => And ({SubSetEq[x,y],SubSetEq[u,v],SubSetEq[x,v]} ++ rest), if y == u && x != v && !(x is Set && v is Set)
+rewrite And{SubSetEq[* x, * y] s1,SubSetEq[* u, * v] s2, BExpr... rest}:
+    => And ({s1,s2,SubSetEq[x,v]} ++ rest), if y == u && x != v && !(x is Set && v is Set)
 
 // ====================================================================
 // Expressions
