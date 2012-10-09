@@ -612,6 +612,9 @@ public class JavaFileWriter {
 		case DIFFERENCE:
 			body = "r" + lhs + ".removeAll(r" + rhs + ")";
 			break;
+		case IN:
+			body = "r" + rhs + ".contains(r" + lhs + ")";
+			break;
 		default:
 			throw new RuntimeException("unknown binary operator encountered: "
 					+ code);
@@ -718,10 +721,17 @@ public class JavaFileWriter {
 			myOut(level++,"if(r" + condition + ") {");			
 		}
 		
-		int result = translate(level,expr.value,environment);
-		result = coerceFromValue(level,expr.value,result,environment);
-		myOut(level,"t" + target + ".add(r" + result + ");");
-		
+		switch(expr.cop) {
+		case SETCOMP:
+		case BAGCOMP:
+			int result = translate(level,expr.value,environment);
+			result = coerceFromValue(level,expr.value,result,environment);
+			myOut(level,"t" + target + ".add(r" + result + ");");
+			break;
+		case NONE:
+		case SOME:
+			GOT HERE
+		}
 		// finally, terminate all the for loops
 		for(int i=0;i!=sources.length;++i) {
 			myOut(--level,"}");
@@ -736,6 +746,11 @@ public class JavaFileWriter {
 			myOut(level, type2JavaType(type) + " r" + target
 				+ " = new Automaton.Bag(t" + target + ".toArray());");
 			break;
+		case NONE:
+			myOut(level,type2JavaType(type) + " r" + target + " = true;");
+			break;
+		case SOME:
+			myOut(level,type2JavaType(type) + " r" + target + " = false;");
 		}
 
 		return target;
