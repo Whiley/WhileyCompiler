@@ -294,6 +294,15 @@ public class TypeInference {
 			result = Type.T_BOOL;
 			break;
 		}
+		case IN: {
+			if(!(rhs_t instanceof Type.Compound)) {
+				syntaxError("collection type required",filename,bop.rhs);
+			}
+			Type.Compound tc = (Type.Compound) rhs_t; 
+			checkSubtype(lhs_t, tc.element(hierarchy), bop);
+			result = Type.T_BOOL;
+			break;
+		}
 		default:
 			syntaxError("unknown binary expression encountered", filename, bop);
 			return null; // dead-code
@@ -325,8 +334,12 @@ public class TypeInference {
 			checkSubtype(Type.T_BOOL,condition,expr.condition);
 		}
 		
-		Type result = resolve(expr.value,environment);
-		return Type.T_SET(true,Type.T_REF(result));
+		if(expr.cop == Expr.COp.NONE || expr.cop == Expr.COp.SOME) {
+			return Type.T_BOOL;
+		} else {
+			Type result = resolve(expr.value,environment);
+			return Type.T_SET(true,Type.T_REF(result));
+		}
 	}
 	
 	protected Type resolve(Expr.NaryOp expr, HashMap<String, Type> environment) {
