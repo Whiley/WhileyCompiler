@@ -165,8 +165,9 @@ public class PrettyAutomataReader {
 				firstTime = false;
 			}
 			children.add(parseState(automaton));
+			skipWhiteSpace();
 		}
-		
+						
 		switch(kind) {
 			case Automaton.K_LIST:
 				match(']');	

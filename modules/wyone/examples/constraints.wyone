@@ -33,7 +33,15 @@ rewrite SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
 rewrite SubSetEq[* x, * y]:
     => True, if x == y
 
-// by pass
+rewrite And{SubSetEq[Set{Expr... xs}, * x] s1,SubSetEq[Set{Expr... ys}, * y] s2, BExpr... rest}:
+    => let zs = (xs ++ ys) 
+       in And ({s1,s2,SubSetEq[Set(zs),x]} ++ rest), if x == y
+
+rewrite And{SubSetEq[* x, Set{Expr... xs}] s1,SubSetEq[* y, Set{Expr... ys}] s2, BExpr... rest}:
+    => let zs = { z | z in xs, true && z in ys }
+       in And ({s1,s2,SubSetEq[x,Set(zs)]} ++ rest), if x == y
+
+// bypass
 rewrite And{SubSetEq[Set{Expr... xs}, * x],SubSetEq[* y, Set{Expr... ys}], BExpr... rest}:
     => False, if x == y && some { z in xs | !(z in ys) }
 
