@@ -216,6 +216,9 @@ public class TypeInference {
 		case EQ:
 		case NEQ:
 			break;
+		case IN:
+			rhs_t = coerceToValue(rhs_t);
+			break;
 		default:
 			lhs_t = coerceToValue(lhs_t);
 			rhs_t = coerceToValue(rhs_t);

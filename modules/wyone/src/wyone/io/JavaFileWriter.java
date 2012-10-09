@@ -549,6 +549,9 @@ public class JavaFileWriter {
 				rhs = coerceFromValue(level,code.rhs, rhs, environment);
 			}
 			break;
+		case IN:
+			rhs = coerceFromRef(level,code.rhs,rhs,environment);
+			break;
 		default:
 			lhs = coerceFromRef(level,code.lhs,lhs,environment);
 			rhs = coerceFromRef(level,code.rhs,rhs,environment);
@@ -698,9 +701,22 @@ public class JavaFileWriter {
 			operand = coerceFromRef(level,p.second(),operand,environment);
 			sources[i] = operand;									
 		}
-		
 		// TODO: initialise result set
 		myOut(level, "Automaton.List t" + target + " = new Automaton.List();");
+		int startLevel = level;
+		
+		// initialise result register if needed
+		switch(expr.cop) {		
+		case NONE:
+			myOut(level,type2JavaType(type) + " r" + target + " = true;");
+			myOut(level,"outer:");
+			break;
+		case SOME:
+			myOut(level,type2JavaType(type) + " r" + target + " = false;");
+			myOut(level,"outer:");
+			break;
+		}
+		
 		// second, generate all the for loops
 		for (int i = 0; i != sources.length; ++i) {
 			Pair<Expr.Variable, Expr> p = expr.sources.get(i);
@@ -729,11 +745,16 @@ public class JavaFileWriter {
 			myOut(level,"t" + target + ".add(r" + result + ");");
 			break;
 		case NONE:
+			myOut(level,"r" + target + " = false;");
+			myOut(level,"break outer;");
+			break;
 		case SOME:
-			GOT HERE
+			myOut(level,"r" + target + " = true;");
+			myOut(level,"break outer;");
+			break;
 		}
 		// finally, terminate all the for loops
-		for(int i=0;i!=sources.length;++i) {
+		while(level > startLevel) {
 			myOut(--level,"}");
 		}
 
@@ -745,12 +766,7 @@ public class JavaFileWriter {
 		case BAGCOMP:
 			myOut(level, type2JavaType(type) + " r" + target
 				+ " = new Automaton.Bag(t" + target + ".toArray());");
-			break;
-		case NONE:
-			myOut(level,type2JavaType(type) + " r" + target + " = true;");
-			break;
-		case SOME:
-			myOut(level,type2JavaType(type) + " r" + target + " = false;");
+			break;		
 		}
 
 		return target;

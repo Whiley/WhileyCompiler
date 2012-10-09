@@ -562,6 +562,15 @@ public final class Automaton {
 			return length;
 		}
 		
+		public boolean contains(int index) {
+			for(int i=0;i<length;++i) {
+				if(children[i] == index) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Compound) {
 				Compound t = (Compound) o;
