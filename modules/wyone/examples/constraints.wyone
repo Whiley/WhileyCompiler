@@ -26,15 +26,19 @@ rewrite And{False, BExpr... xs}:
 term Set{Expr...}
 term SubSetEq[Expr,Expr]
 
-//rewrite SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
-//    => True, if no { x in xs | !(x in ys)}
-//    => False
+rewrite SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
+    => True, if no { x in xs | !(x in ys)}
+    => False
 
 rewrite SubSetEq[* x, * y]:
     => True, if x == y
 
+// by pass
+rewrite And{SubSetEq[Set{Expr... xs}, * x],SubSetEq[* y, Set{Expr... ys}], BExpr... rest}:
+    => False, if x == y && some { z in xs | !(z in ys) }
+
 rewrite And{SubSetEq[* x, * y],SubSetEq[* u, * v], BExpr... rest}:
-    => And ({SubSetEq[x,y],SubSetEq[u,v],SubSetEq[x,v]} ++ rest), if y == u && x != v
+    => And ({SubSetEq[x,y],SubSetEq[u,v],SubSetEq[x,v]} ++ rest), if y == u && x != v && !(x is Set && v is Set)
 
 // ====================================================================
 // Expressions
