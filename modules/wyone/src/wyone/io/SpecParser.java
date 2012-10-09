@@ -305,7 +305,15 @@ public class SpecParser {
 		
 	private Expr parseConditionExpression() {		
 		int start = index;
-				
+						
+		if (index < tokens.size() && tokens.get(index) instanceof None) {
+			match(None.class);
+			return parseQuantifierSet(start,Expr.COp.NONE);			
+		} else if (index < tokens.size() && tokens.get(index) instanceof Some) {
+			match(Some.class);
+			return parseQuantifierSet(start,Expr.COp.SOME);			
+		} 
+		
 		Expr lhs = parseAddSubExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
@@ -645,6 +653,35 @@ public class SpecParser {
 		return new Expr.Comprehension(Expr.COp.SETCOMP, result, sources, condition, sourceAttr(start,index-1));
 	}
 	
+	private Expr parseQuantifierSet(int start, Expr.COp cop) {
+		match(LeftCurly.class);		
+		skipWhiteSpace(true);
+		ArrayList<Pair<Expr.Variable,Expr>> sources = new ArrayList<Pair<Expr.Variable,Expr>>();
+		boolean firstTime = true;
+		Token token = tokens.get(index);
+		while(!(token instanceof Bar)) {			
+			if(!firstTime) {
+				match(Comma.class);
+				skipWhiteSpace(true);
+			} else {
+				firstTime=false;
+			}
+			Expr condition = parseConditionExpression();
+			Pair<Expr.Variable,Expr> source = extractComprehensionSource(condition);
+			if(source == null) {
+				syntaxError("source expression required",
+						token);
+			}			
+			sources.add(source);			
+			skipWhiteSpace(true);
+			token = tokens.get(index);
+		}
+		match(Bar.class);
+		Expr condition = parseCondition();
+		match(RightCurly.class);
+		
+		return new Expr.Comprehension(cop, null, sources, condition, sourceAttr(start,index-1));
+	}
 	private Pair<Expr.Variable, Expr> extractComprehensionSource(Expr expr) {
 		if (expr instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) expr;
