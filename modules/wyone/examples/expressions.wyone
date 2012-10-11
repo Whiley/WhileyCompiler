@@ -5,14 +5,11 @@
 
 term Sum{|Expr...|}
 
-rewrite Sum{||}:
-    => Num(0) // e.g. 0+0+0
-
 rewrite Sum{|Expr e|}:
     => e
 
 rewrite Sum{|Num(int x), Expr... rest|}:
-    => Sum(rest), if x == 0
+    => Sum(rest), if x == 0 // && |rest| > 0
 
 rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
     => Sum (Num(x+y) ++ rest)
@@ -24,19 +21,16 @@ rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
 
 // ====================================================================
-// Sum
+// Mul
 // ====================================================================
 
 term Mul{|Expr...|}
-
-rewrite Mul{||}:
-    => Num(1) // e.g. 1*1*1 ...
 
 rewrite Mul{|Expr e|}:
     => e
 
 rewrite Mul{|Num(int x), Expr... rest|}:
-    => Mul(rest), if x == 1
+    => Mul(rest), if x == 1 // && |rest| > 0
     => Num(0), if x == 0
 
 rewrite Mul{|Num(int x), Num(int y), Expr... rest|}:
@@ -45,7 +39,9 @@ rewrite Mul{|Num(int x), Num(int y), Expr... rest|}:
 rewrite Mul{|Mul{|Expr... xs|}, Expr... ys|}:
     => Mul (xs ++ ys)
 
-// rewrite Mul {Sum{Expr... xs}, Expr... ys}:
+//rewrite Mul{|Sum{|Expr... xs|}, Expr... ys|}:
+//    => let ys = {| Mul({x} ++ ys) | x in xs |}
+//       in Sum(ys)
    
 // ====================================================================
 // Expr
