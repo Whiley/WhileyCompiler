@@ -127,11 +127,11 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_9_RuntimeTest() { runTest("Dictionary_Valid_9"); }
  @Test public void Dictionary_Valid_10_RuntimeTest() { runTest("Dictionary_Valid_10"); }
  @Test public void Dictionary_Valid_11_RuntimeTest() { runTest("Dictionary_Valid_11"); }
- @Ignore("Known Issue - union types")@Test public void Dictionary_Valid_12_RuntimeTest() { runTest("Dictionary_Valid_12"); }
- @Ignore("Known Issue - union types")@Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
- @Ignore("Known Issue - union types")@Test public void Dictionary_Valid_14_RuntimeTest() { runTest("Dictionary_Valid_14"); }
- @Ignore("Known Issue - union types")@Test public void Dictionary_Valid_15_RuntimeTest() { runTest("Dictionary_Valid_15"); }
- @Ignore("Known Issue - union types")@Test public void Dictionary_Valid_16_RuntimeTest() { runTest("Dictionary_Valid_16"); }
+ @Test public void Dictionary_Valid_12_RuntimeTest() { runTest("Dictionary_Valid_12"); }
+ @Test public void Dictionary_Valid_13_RuntimeTest() { runTest("Dictionary_Valid_13"); }
+ @Test public void Dictionary_Valid_14_RuntimeTest() { runTest("Dictionary_Valid_14"); }
+ @Test public void Dictionary_Valid_15_RuntimeTest() { runTest("Dictionary_Valid_15"); }
+ @Test public void Dictionary_Valid_16_RuntimeTest() { runTest("Dictionary_Valid_16"); }
  @Test public void DoWhile_Valid_1_RuntimeTest() { runTest("DoWhile_Valid_1"); }
  @Test public void DoWhile_Valid_2_RuntimeTest() { runTest("DoWhile_Valid_2"); }
  @Ignore("Future Work") @Test public void DoWhile_Valid_3_RuntimeTest() { runTest("DoWhile_Valid_3"); }
@@ -162,12 +162,12 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void FunctionRef_Valid_1_RuntimeTest() { runTest("FunctionRef_Valid_1"); }
  @Ignore("Known Issue") @Test public void FunctionRef_Valid_2_RuntimeTest() { runTest("FunctionRef_Valid_2"); }
  @Ignore("Known Issue") @Test public void FunctionRef_Valid_3_RuntimeTest() { runTest("FunctionRef_Valid_3"); }
- @Ignore("Starting slow")@Test public void FunctionRef_Valid_4_RuntimeTest() { runTest("FunctionRef_Valid_4"); }
- @Ignore("Starting slow")@Test public void FunctionRef_Valid_5_RuntimeTest() { runTest("FunctionRef_Valid_5"); }
+ @Test public void FunctionRef_Valid_4_RuntimeTest() { runTest("FunctionRef_Valid_4"); }
+ @Test public void FunctionRef_Valid_5_RuntimeTest() { runTest("FunctionRef_Valid_5"); }
  @Ignore("Known Issue") @Test public void FunctionRef_Valid_6_RuntimeTest() { runTest("FunctionRef_Valid_6"); } 
- @Ignore("Starting slow")@Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
- @Ignore("Starting slow")@Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
- @Ignore("Starting slow")@Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
+ @Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
+ @Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
+ @Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
  @Ignore("Future Work") @Test public void FunctionRef_Valid_10_RuntimeTest() { runTest("FunctionRef_Valid_10"); }
  @Test public void HexAssign_Valid_1_RuntimeTest() { runTest("HexAssign_Valid_1"); }
  @Test public void IfElse_Valid_1_RuntimeTest() { runTest("IfElse_Valid_1"); }
@@ -255,9 +255,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void MultiLineComment_Valid_1_RuntimeTest() { runTest("MultiLineComment_Valid_1"); }
  @Test public void MultiLineComment_Valid_2_RuntimeTest() { runTest("MultiLineComment_Valid_2"); }
  @Test public void NegationType_Valid_1_RuntimeTest() { runTest("NegationType_Valid_1"); }
- @Ignore("Known Issue - negation types")@Test public void NegationType_Valid_2_RuntimeTest() { runTest("NegationType_Valid_2"); }
+ @Test public void NegationType_Valid_2_RuntimeTest() { runTest("NegationType_Valid_2"); }
  @Ignore("Future Work") @Test public void NegationType_Valid_3_RuntimeTest() { runTest("NegationType_Valid_3"); }
- @Ignore("Known Issue - negation types")@Test public void NegationType_Valid_4_RuntimeTest() { runTest("NegationType_Valid_4"); }
+ @Test public void NegationType_Valid_4_RuntimeTest() { runTest("NegationType_Valid_4"); }
  @Ignore("Known Issue - complex types")@Test public void OpenRecord_Valid_1_RuntimeTest() { runTest("OpenRecord_Valid_1"); }
  @Ignore("Known Issue - complex types")@Test public void OpenRecord_Valid_2_RuntimeTest() { runTest("OpenRecord_Valid_2"); }
  @Ignore("Known Issue - complex types")@Test public void OpenRecord_Valid_3_RuntimeTest() { runTest("OpenRecord_Valid_3"); }
@@ -292,7 +292,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RealDiv_Valid_3_RuntimeTest() { runTest("RealDiv_Valid_3"); }
  @Ignore("Known Issue - rationals")@Test public void RealDiv_Valid_4_RuntimeTest() { runTest("RealDiv_Valid_4"); }
  @Ignore("Known Issue - rationals")@Test public void RealNeg_Valid_1_RuntimeTest() { runTest("RealNeg_Valid_1"); }
- @Test public void RealSplit_Valid_1_RuntimeTest() { runTest("RealSplit_Valid_1"); }
+ @Ignore("Known Issue - rationals")@Test public void RealSplit_Valid_1_RuntimeTest() { runTest("RealSplit_Valid_1"); }
  @Ignore("Known Issue - rationals")@Test public void RealSub_Valid_1_RuntimeTest() { runTest("RealSub_Valid_1"); }
  @Ignore("Known Issue - rationals")@Test public void RealSub_Valid_2_RuntimeTest() { runTest("RealSub_Valid_2"); }
  @Test public void RecordAccess_Valid_1_RuntimeTest() { runTest("RecordAccess_Valid_1"); }
@@ -314,7 +314,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_4_RuntimeTest() { runTest("RecursiveType_Valid_4"); }
  @Test public void RecursiveType_Valid_5_RuntimeTest() { runTest("RecursiveType_Valid_5"); }
  @Test public void RecursiveType_Valid_6_RuntimeTest() { runTest("RecursiveType_Valid_6"); }
- @Test public void RecursiveType_Valid_7_RuntimeTest() { runTest("RecursiveType_Valid_7"); }
+ @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_7_RuntimeTest() { runTest("RecursiveType_Valid_7"); }
  @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_8_RuntimeTest() { runTest("RecursiveType_Valid_8"); }
  @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_9_RuntimeTest() { runTest("RecursiveType_Valid_9"); }
  @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_10_RuntimeTest() { runTest("RecursiveType_Valid_10"); }
@@ -325,7 +325,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_15_RuntimeTest() { runTest("RecursiveType_Valid_15"); }
  @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_16_RuntimeTest() { runTest("RecursiveType_Valid_16"); } 
  @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_17_RuntimeTest() { runTest("RecursiveType_Valid_17"); }
- @Test public void RecursiveType_Valid_18_RuntimeTest() { runTest("RecursiveType_Valid_18"); }
+ @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_18_RuntimeTest() { runTest("RecursiveType_Valid_18"); }
  @Ignore("Known Issue")
  @Test public void RecursiveType_Valid_19_RuntimeTest() { runTest("RecursiveType_Valid_19"); }
  @Ignore("Known Issue - complex types")@Test public void RecursiveType_Valid_20_RuntimeTest() { runTest("RecursiveType_Valid_20"); }
@@ -425,7 +425,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_11_RuntimeTest() { runTest("TypeEquals_Valid_11"); }
  @Test public void TypeEquals_Valid_12_RuntimeTest() { runTest("TypeEquals_Valid_12"); }
  @Test public void TypeEquals_Valid_13_RuntimeTest() { runTest("TypeEquals_Valid_13"); }
- @Test public void TypeEquals_Valid_14_RuntimeTest() { runTest("TypeEquals_Valid_14"); }
+ @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_14_RuntimeTest() { runTest("TypeEquals_Valid_14"); }
  @Ignore("Future Work")
  @Test public void TypeEquals_Valid_15_RuntimeTest() { runTest("TypeEquals_Valid_15"); }
  @Test public void TypeEquals_Valid_16_RuntimeTest() { runTest("TypeEquals_Valid_16"); }
@@ -437,19 +437,19 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_22_RuntimeTest() { runTest("TypeEquals_Valid_22"); }
  @Test public void TypeEquals_Valid_23_RuntimeTest() { runTest("TypeEquals_Valid_23"); }
  @Test public void TypeEquals_Valid_24_RuntimeTest() { runTest("TypeEquals_Valid_24"); }
- @Test public void TypeEquals_Valid_25_RuntimeTest() { runTest("TypeEquals_Valid_25"); }
+ @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_25_RuntimeTest() { runTest("TypeEquals_Valid_25"); }
  @Test public void TypeEquals_Valid_26_RuntimeTest() { runTest("TypeEquals_Valid_26"); }
  @Test public void TypeEquals_Valid_27_RuntimeTest() { runTest("TypeEquals_Valid_27"); }
  @Test public void TypeEquals_Valid_28_RuntimeTest() { runTest("TypeEquals_Valid_28"); } 
  @Test public void TypeEquals_Valid_29_RuntimeTest() { runTest("TypeEquals_Valid_29"); }
  @Test public void TypeEquals_Valid_30_RuntimeTest() { runTest("TypeEquals_Valid_30"); }
  @Test public void TypeEquals_Valid_31_RuntimeTest() { runTest("TypeEquals_Valid_31"); }
- @Test public void TypeEquals_Valid_32_RuntimeTest() { runTest("TypeEquals_Valid_32"); }
+ @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_32_RuntimeTest() { runTest("TypeEquals_Valid_32"); }
  @Test public void TypeEquals_Valid_33_RuntimeTest() { runTest("TypeEquals_Valid_33"); }
  @Test public void TypeEquals_Valid_34_RuntimeTest() { runTest("TypeEquals_Valid_34"); }
  @Test public void TypeEquals_Valid_35_RuntimeTest() { runTest("TypeEquals_Valid_35"); }
  @Test public void TypeEquals_Valid_36_RuntimeTest() { runTest("TypeEquals_Valid_36"); }
- @Test public void TypeEquals_Valid_37_RuntimeTest() { runTest("TypeEquals_Valid_37"); }
+ @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_37_RuntimeTest() { runTest("TypeEquals_Valid_37"); }
  @Test public void TypeEquals_Valid_38_RuntimeTest() { runTest("TypeEquals_Valid_38"); }
  @Ignore("Known Issue") @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
  @Ignore("Known Issue") @Test public void Update_Valid_2_RuntimeTest() { runTest("Update_Valid_2"); }
@@ -467,9 +467,9 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue - complex types")@Test public void UnionType_Valid_13_RuntimeTest() { runTest("UnionType_Valid_13"); }
  @Ignore("Known Issue - complex types")@Test public void UnionType_Valid_14_RuntimeTest() { runTest("UnionType_Valid_14"); }
  @Test public void UnionType_Valid_15_RuntimeTest() { runTest("UnionType_Valid_15"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_16_RuntimeTest() { runTest("UnionType_Valid_16"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_17_RuntimeTest() { runTest("UnionType_Valid_17"); }
- @Ignore("Starting slow")@Test public void UnionType_Valid_18_RuntimeTest() { runTest("UnionType_Valid_18"); }
+ @Test public void UnionType_Valid_16_RuntimeTest() { runTest("UnionType_Valid_16"); }
+ @Test public void UnionType_Valid_17_RuntimeTest() { runTest("UnionType_Valid_17"); }
+ @Test public void UnionType_Valid_18_RuntimeTest() { runTest("UnionType_Valid_18"); }
  @Test public void VarDecl_Valid_1_RuntimeTest() { runTest("VarDecl_Valid_1"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { runTest("VarDecl_Valid_2"); }
  @Ignore("Known Issue - wide ints")@Test public void VarDecl_Valid_3_RuntimeTest() { runTest("VarDecl_Valid_3"); }

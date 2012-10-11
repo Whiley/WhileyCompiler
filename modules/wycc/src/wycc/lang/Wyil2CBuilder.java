@@ -1172,6 +1172,8 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeDereference(cod, tag);
 			} else if (cod instanceof Code.Invert) {
 				this.writeCodeInvert(cod, tag);
+			} else if (cod instanceof Code.IndirectInvoke) {
+				this.writeCodeIndirectInvoke(cod, tag);
 				
 			} else if (cod instanceof Code.Void) {
 				this.writeCodeVoid(cod, tag);
@@ -1191,13 +1193,65 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodefoo(Code codIn, String tag){
 			String tmp;
 			
-			//tmp = "// HELP! needed for \n";
-			//bodyAddLine(tmp);
 			bodyAddLineNL(	"// HELP! needed for "		);
 			Code.BinSetOp cod = (Code.BinSetOp) codIn;
 			return;
 		}
 		
+		public void writeCodeIndirectInvoke(Code codIn, String tag){
+			String tmp;
+			int cnt;
+			int targ;
+			int opr;
+			String lin;
+			String var;
+			
+			bodyAddLineNL(	"// HELP! needed for IndirectInvoke"		);
+			Code.IndirectInvoke cod = (Code.IndirectInvoke) codIn;
+			targ = cod.target;
+			cnt = cod.operands.length;
+			opr = cod.operand;
+			
+			//this.addDecl(-targ, "wycc_obj*");
+			//var = "XN" + targ;
+			var = "Xc";
+			
+			//writeClearTarget(targ, tag);
+			//this.addDecl(targ, "wycc_obj*");
+			lin = var + " = wycc_list_new(" + cnt + ");" + tag;
+			tmp = indent + lin ;
+			this.mbodyAddLineNL(tmp);
+			cnt = -1;
+			for (int itm : cod.operands) {
+				lin = "wycc_list_add(" + var + ", X" + itm + ");" + tag;
+				tmp = indent + lin;
+				this.mbodyAddLineNL(tmp);
+				if (itm == targ) {
+					cnt = targ;
+				}
+			}
+			if (cnt == -1) {
+				if (targ == opr) {
+					cnt = opr;
+				}
+			}
+			//tmp = " = "+ "wyil_list_sub(X" + src + ", X" + lhs + ", X" + rhs + ");";
+			tmp = " = wycc_indirect_invoke(X" +opr + ", " + var + ");";
+			writeTargetSwap(tmp, targ, cnt, tag);
+
+			return;
+		}
+		
+		public void writeCodeVoid(Code codIn, String tag){
+			String tmp;
+			
+			//tmp = "// HELP! needed for Void\n";
+			//bodyAddLine(tmp);
+			bodyAddLineNL(	"// HELP! needed for Void"	);
+			Code.Void cod = (Code.Void) codIn;
+			return;
+		}
+				
 		public void writeCatchCheck(String tag){
 			String tmp;
 			
@@ -1211,16 +1265,7 @@ public class Wyil2CBuilder implements Builder {
 			}
 			return;
 		}
-		
-		public void writeCodeVoid(Code codIn, String tag){
-			String tmp;
-			
-			tmp = "// HELP! needed for Void\n";
-			bodyAddLine(tmp);
-			Code.Void cod = (Code.Void) codIn;
-			return;
-		}
-		
+
 		public void writeCodeTryEnd(Code codIn, String tag){
 			String tmp;
 			String nam;
@@ -1815,9 +1860,13 @@ public class Wyil2CBuilder implements Builder {
 				bodyAddLine(tmp);
 				return;
 			}
-			lin = "X" + targ + " = " + rtn + "(X" + rhs + ");" + tag;
-			tmp = indent + lin + "\n";
-			this.mbodyAddLine(tmp);	
+			//lin = "X" + targ + " = " + rtn + "(X" + rhs + ");" + tag;
+			//tmp = indent + lin + "\n";
+			//this.mbodyAddLine(tmp);	
+			
+			//tmp = " = "+ "wyil_list_sub(X" + src + ", X" + lhs + ", X" + rhs + ");";
+			tmp = " = " + rtn + "(X" + rhs + ");";
+			writeTargetSwap(tmp, targ, rhs, tag);
 			
 			return;
 		}
@@ -2037,9 +2086,6 @@ public class Wyil2CBuilder implements Builder {
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 			
-			//writeClearTarget(targ, tag);
-			//this.addDecl(targ, "wycc_obj*");
-			
 			if (opr == Code.BinSetKind.DIFFERENCE) {
 				rtn = "wyil_set_diff";
 			} else if (opr == Code.BinSetKind.INTERSECTION){
@@ -2146,7 +2192,9 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 
-		//
+		// given an assignment (sans target), a target register, a source register, and a tag
+		// handle declaring the target register, and producing the completed assignment
+		// where an intermediate register has to be used if the target 
 		private void writeTargetSwap(String lin, int targ, int opr, String tag){
 			String tmp;
 			String t2;
@@ -2531,12 +2579,13 @@ public class Wyil2CBuilder implements Builder {
 			String rval;
 			String assn = null;
 			//String nam;
-			Strung foo;
+			//Strung foo;
 			int alt;
 			int cnt;
 			int tok;
 			int idx;
 			String anam, bnam;
+			String dtyp;
 			
 			if ((deep % 2) == 1) {
 				anam = "Xb";
@@ -2563,6 +2612,11 @@ public class Wyil2CBuilder implements Builder {
 				//foo = val.;
 				//assn = "wycc_box_cstr(" + val.value + ")";
 				assn = "wycc_box_cstr(\"" + safeString1(rval) + "\")";
+				Constant.Strung sq = (Constant.Strung) val;
+				
+				tmp = sq.value;
+				idx =  tmp.indexOf('\n');
+				bodyAddLineNL(	"//		Constant.Strung index is " + idx		);
 			} else if (typ instanceof Type.Int) {
 				assn = "wycc_box_int(" + rval + ")";
 			} else if (typ instanceof Type.Bool) {
@@ -2704,9 +2758,15 @@ public class Wyil2CBuilder implements Builder {
 			} else if (typ instanceof Type.Real) {
 				assn = "wycc_box_float((long double)" + rval + ")";
 			} else if (typ instanceof Type.FunctionOrMethod) {
-				tmp = "// HELP! needed in const for FOM value type '" + typ + "'\n";
-				bodyAddLine(tmp);
-				return null;
+				//tmp = "// HELP! needed in const for FOM value type '" + typ + "'\n";
+				bodyAddLineNL(	"// HELP! needed in const for FOM value type '" + typ + "'"	);
+				bodyAddLineNL(	"// HELP! needed in const for FOM value: '" + rval + "'"	);
+				Constant.FunctionOrMethod fom = (Constant.FunctionOrMethod) val;
+				bodyAddLineNL(	"// HELP! needed in const for FOM name: '" + fom.name.name() + "'"	);
+				dtyp = writeDenseType(typ);
+				bodyAddLineNL(	"// HELP! needed in const for FOM dtyp: '" + dtyp + "'"	);
+				assn = "wycc_fom_handle(\"" + fom.name.name() + "\", \"" + dtyp + "\")";
+				//return null;
 				
 				
 			} else {
@@ -2827,7 +2887,7 @@ public class Wyil2CBuilder implements Builder {
 			return writeTypeCompound(automaton);
 		}
 		if (ntyp instanceof Type.Nominal) {
-			return "n";							// **** need to fix; had nid
+			return "N";							// **** need to fix; had nid
 		}
 		if (ntyp instanceof Type.Strung) {
 			return "s";
@@ -2855,6 +2915,9 @@ public class Wyil2CBuilder implements Builder {
 		}
 		if (ntyp instanceof Type.Any) {
 			return "a";
+		}
+		if (ntyp instanceof Type.Null) {
+			return "n";
 		}
 		
 		return "&";

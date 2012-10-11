@@ -98,6 +98,7 @@ wycc_obj* wycc_iter_next(wycc_obj *itm);
 wycc_obj* wycc_list_slice(wycc_obj* lst, int lo, int hi);
 wycc_obj* wycc_tuple_new(long siz);
 wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
+wycc_obj* wycc_fom_handle(const char *nam, const char *sig);
 
 /*
  * routines to implement wyil operations
