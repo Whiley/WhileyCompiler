@@ -1,0 +1,59 @@
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+term True
+term False
+class Bool as True | False
+class BExpr as Bool | And | Equals
+
+term And{BExpr...}
+
+rewrite And{True x}:
+    => True
+
+rewrite And{BExpr x}:
+    => x
+
+rewrite And{False, BExpr... xs}:
+    => False
+
+// ====================================================================
+// Congruence
+// ====================================================================
+term Equals{|Expr,Expr|}
+
+rewrite Equals{|Num(int x), Num(int y)|}:
+    => True, if x == y
+    => False, if x != y
+
+rewrite Equals{|Expr x, Expr y|}:
+    => True, if x == y
+
+//rewrite Equals{|Sum x, Sum y|}:
+
+// ====================================================================
+// Sum
+// ====================================================================
+term Sum{|Expr|}
+
+rewrite Sum{|Expr e|}:
+    => e
+
+rewrite Sum{|Num(int x), Expr... rest|}:
+    => Sum(rest), if x == 0 // && |rest| > 0
+
+rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
+    => Sum (Num(x+y) ++ rest)
+
+rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
+    => Sum (xs ++ ys)
+
+
+// ====================================================================
+// Expressions
+// ====================================================================
+
+term Num(int)
+term Var(string)
+
+class Expr as Num | Var | Sum
