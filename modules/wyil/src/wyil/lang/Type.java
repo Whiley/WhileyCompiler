@@ -901,7 +901,8 @@ public abstract class Type {
 	 */
 
 	public static class Compound extends Type {
-		protected Automaton automaton;
+		//protected Automaton automaton;
+		public Automaton automaton;
 		
 		public Compound(Automaton automaton) {
 			this.automaton = automaton;
