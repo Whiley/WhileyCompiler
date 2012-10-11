@@ -24,10 +24,14 @@ rewrite And{False, BExpr... xs}:
 
 term List[Expr...]
 term IndexOf[Expr,Expr]
+term Update[Expr,Expr,Expr]
 term LengthOf(Expr)
 
 rewrite LengthOf(List[Expr... ls]):
     => |ls|
+
+//rewrite Update[List[Expr... ls],Num(int idx),Expr val]:
+//    => ls[idx] = val
 
 //rewrite IndexOf[List[Expr... ls], Num(int i)]:
 //    => ls[i]
