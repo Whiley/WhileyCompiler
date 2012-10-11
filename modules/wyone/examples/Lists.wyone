@@ -1,0 +1,42 @@
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+term True
+term False
+class Bool as True | False
+class BExpr as Bool | And
+
+term And{BExpr...}
+
+rewrite And{True x}:
+    => True
+
+rewrite And{BExpr x}:
+    => x
+
+rewrite And{False, BExpr... xs}:
+    => False
+
+
+// ====================================================================
+// List Expressions
+// ====================================================================
+
+term List[Expr...]
+term IndexOf[Expr,Expr]
+term LengthOf(Expr)
+
+rewrite LengthOf(List[Expr... ls]):
+    => |ls|
+
+//rewrite IndexOf[List[Expr... ls], Num(int i)]:
+//    => ls[i]
+
+// ====================================================================
+// Expressions
+// ====================================================================
+
+term Num(int)
+term Var(string)
+
+class Expr as List | Num | Var
