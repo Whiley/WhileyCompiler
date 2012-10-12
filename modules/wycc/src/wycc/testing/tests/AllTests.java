@@ -23,45 +23,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycc;
+package wycc.testing.tests;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-import wyc.WycMain;
-import wyc.util.OptArg;
-import wycc.util.WyccBuildTask;
-
-/**
- * The main class provides all of the necessary plumbing to process command-line
- * options, construct an appropriate pipeline and then instantiate the Whiley
- * Compiler to generate class files.
- * 
- * @author David J. Pearce
- * 
- */
-public class WyccMain {
-	
-	public static final OptArg[] WYCC_OPTIONS = new OptArg[]{
-		new OptArg("debug", "Include debug information in generated C files."),
-		new OptArg("no_numbers", "Suppress Whiley source line numbers in generated C files."),
-		new OptArg("floats", "Support Whiley rational numbers using C floating point."),
-		new OptArg("no_floats", "Suppress all C floating point.")
-		
-	};
-	
-	public static void main(String[] _args) {	
-		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
-		Map<String, Object> values = OptArg.parseOptions(args, WYCC_OPTIONS);
-		
-		boolean debug = values.containsKey("debug");
-		if(debug) {
-			System.out.println("GOT DEBUG!");
-		}
-		
-		// FIXME: modify default options to include cdir
-		System.exit(new WycMain(new WyccBuildTask(values), WycMain.DEFAULT_OPTIONS)
-				.run(args.toArray(new String[args.size()])));
-	}
+@RunWith(Suite.class)
+@Suite.SuiteClasses( { RuntimeValidTests.class, ExtendedValidTests.class, ExtendedRuntimeInvalidTests.class })
+public class AllTests {
 }
