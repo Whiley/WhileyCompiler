@@ -187,6 +187,8 @@ public class TypeInference {
 
 	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
 		Type t = resolve(uop.mhs,environment);
+		t = coerceToValue(t);
+		
 		switch (uop.op) {
 		case LENGTHOF:
 			checkSubtype(Type.T_LISTANY, t, uop);

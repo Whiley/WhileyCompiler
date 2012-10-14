@@ -504,6 +504,10 @@ public final class Automaton {
 		public Int divide(Int x) {
 			return new Int(value.divide(x.value));
 		}
+		
+		public Int negate() {
+			return new Int(value.negate());
+		}
 	}
 	
 	public static final class Strung extends Constant<String> {
