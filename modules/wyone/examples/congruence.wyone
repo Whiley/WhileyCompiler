@@ -29,18 +29,34 @@ rewrite Equals{|Num(int x), Num(int y)|}:
 rewrite Equals{|Expr x, Expr y|}:
     => True, if x == y
 
-//rewrite Equals{|Sum x, Sum y|}:
+rewrite Equals{|Sum x, Sum y|}:
+    => Equals{|Num(0),Sum{|x,Neg(y)|}|}
+
+// ====================================================================
+// Neg
+// ====================================================================
+term Neg(Expr)
+
+rewrite Neg(Num(int x)):
+    => Num(-x)
+
+rewrite Neg(Sum{|Expr... xs|}):
+    => let ys = { Neg(x) | x in xs } // FIXME (should be bag)
+       in Sum(ys)
 
 // ====================================================================
 // Sum
 // ====================================================================
 term Sum{|Expr|}
 
+rewrite Sum{||}:
+    => Num(0)
+
 rewrite Sum{|Expr e|}:
     => e
 
 rewrite Sum{|Num(int x), Expr... rest|}:
-    => Sum(rest), if x == 0 // && |rest| > 0
+    => Sum(rest), if x == 0
 
 rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
     => Sum (Num(x+y) ++ rest)
@@ -48,6 +64,8 @@ rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
 rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
 
+rewrite Sum{|Neg(Expr x), Expr y, Expr... rest|}:
+    => Sum(rest), if x == y
 
 // ====================================================================
 // Expressions
