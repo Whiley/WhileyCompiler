@@ -28,9 +28,8 @@ rewrite Equals{|Num(int x), Num(int y)|}:
 
 rewrite Equals{|Expr x, Expr y|}:
     => True, if x == y
+    => Equals{|Num(0),Sum{|x,Neg(y)|}|}, if x != Num(0) && y != Num(0)
 
-rewrite Equals{|Sum x, Sum y|}:
-    => Equals{|Num(0),Sum{|x,Neg(y)|}|}
 
 // ====================================================================
 // Neg
