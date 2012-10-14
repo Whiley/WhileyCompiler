@@ -4,7 +4,7 @@
 term True
 term False
 class Bool as True | False
-class BExpr as Bool | And | Equals
+class BExpr as Bool | And | Equals | Sum
 
 term And{BExpr...}
 
@@ -28,8 +28,8 @@ rewrite Equals{|Num(int x), Num(int y)|}:
 
 rewrite Equals{|Expr x, Expr y|}:
     => True, if x == y
-    => Equals{|Num(0),Sum{|x,Neg(y)|}|}, if x != Num(0) && y != Num(0)
-
+//    => False, if x is Num && y is Num // FIXME
+    => Sum{|x,Neg(y)|}
 
 // ====================================================================
 // Neg
@@ -38,6 +38,9 @@ term Neg(Expr)
 
 rewrite Neg(Num(int x)):
     => Num(-x)
+
+rewrite Neg(Neg(Expr x)):
+    => x
 
 rewrite Neg(Sum{|Expr... xs|}):
     => let ys = { Neg(x) | x in xs } // FIXME (should be bag)
@@ -65,6 +68,11 @@ rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
 
 rewrite Sum{|Neg(Expr x), Expr y, Expr... rest|}:
     => Sum(rest), if x == y
+
+// eliminate a variable
+rewrite And{Sum{|Var x, Expr... xs|} s1, Sum{|Var y, Expr... ys|} s2, BExpr... rest}:
+    => let s3 = Sum{|xs,Neg(Sum(ys))|}
+       in And ({s1,s2,s3} ++ rest), if x == y && xs != ys
 
 // ====================================================================
 // Expressions
