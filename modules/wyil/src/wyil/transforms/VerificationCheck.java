@@ -316,7 +316,8 @@ public class VerificationCheck implements Transform {
 				int end = findLabel(i,forall.target,body);
 				int src = branch.read(forall.sourceOperand);
 				int var = branch.read(forall.indexOperand);
-				
+
+//              FIXME!				
 //				constraint = WFormulas.and(constraint,
 //						WTypes.subtypeOf(var, convert(forall.type.element())));
 //				

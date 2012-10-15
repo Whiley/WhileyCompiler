@@ -132,6 +132,8 @@ public final class Automaton {
 					return EMPTY_LIST;
 				case K_SET:
 					return EMPTY_SET;
+				case K_BAG:
+					return EMPTY_BAG;
 				default:
 					return new Term(-index + K_FREE,K_VOID);
 			}
@@ -392,11 +394,13 @@ public final class Automaton {
 		
 		public Term(int kind) {
 			super(kind);
+			if(kind < 0) { throw new IllegalArgumentException("invalid term kind"); }
 			this.contents = K_VOID;
 		}
 		
 		public Term(int kind, int data) {
 			super(kind);
+			if(kind < 0) { throw new IllegalArgumentException("invalid term kind"); }
 			this.contents = data;
 		}
 		
@@ -890,4 +894,5 @@ public final class Automaton {
 	public static final int[] NOCHILDREN = new int[0];
 	public static final List EMPTY_LIST = new List(NOCHILDREN);
 	public static final Set EMPTY_SET = new Set(NOCHILDREN);
+	public static final Bag EMPTY_BAG = new Bag(NOCHILDREN);
 }
