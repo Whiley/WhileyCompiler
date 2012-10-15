@@ -4,7 +4,7 @@
 term True
 term False
 class Bool as True | False
-class BExpr as Bool | And | Equals | Sum
+class BExpr as Bool | And | Equals | EqZero
 
 term And{BExpr...}
 
@@ -21,6 +21,7 @@ rewrite And{False, BExpr... xs}:
 // Congruence
 // ====================================================================
 term Equals{|Expr,Expr|}
+term EqZero{|Expr...|}
 
 rewrite Equals{|Num(int x), Num(int y)|}:
     => True, if x == y
@@ -29,7 +30,12 @@ rewrite Equals{|Num(int x), Num(int y)|}:
 rewrite Equals{|Expr x, Expr y|}:
     => True, if x == y
 //    => False, if x is Num && y is Num // FIXME
-    => Sum{|x,Neg(y)|}
+    => EqZero{|x,Neg(y)|}
+
+// eliminate a variable
+rewrite And{EqZero{|Var x, Expr... xs|} s1, EqZero{|Var y, Expr... ys|} s2, BExpr... rest}:
+    => let s3 = EqZero{|Sum(xs),Neg(Sum(ys))|}
+       in And ({s1,s2,s3} ++ rest), if x == y && xs != ys && |xs| > 0 && |ys| > 0
 
 // ====================================================================
 // Neg
@@ -42,9 +48,9 @@ rewrite Neg(Num(int x)):
 rewrite Neg(Neg(Expr x)):
     => x
 
-rewrite Neg(Sum{|Expr... xs|}):
-    => let ys = { Neg(x) | x in xs } // FIXME (should be bag)
-       in Sum(ys)
+//rewrite Neg(Sum{|Expr... xs|}):
+//    => let ys = { Neg(x) | x in xs } // FIXME (should be bag)
+//       in Sum(ys)
 
 // ====================================================================
 // Sum
@@ -54,11 +60,8 @@ term Sum{|Expr|}
 rewrite Sum{||}:
     => Num(0)
 
-rewrite Sum{|Expr e|}:
-    => e
-
-rewrite Sum{|Num(int x), Expr... rest|}:
-    => Sum(rest), if x == 0
+//rewrite Sum{|Num(int x), Expr... rest|}:
+//    => Sum(rest), if x == 0 && |rest| > 0
 
 rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
     => Sum (Num(x+y) ++ rest)
@@ -66,13 +69,8 @@ rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
 rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
 
-rewrite Sum{|Neg(Expr x), Expr y, Expr... rest|}:
-    => Sum(rest), if x == y
-
-// eliminate a variable
-rewrite And{Sum{|Var x, Expr... xs|} s1, Sum{|Var y, Expr... ys|} s2, BExpr... rest}:
-    => let s3 = Sum{|xs,Neg(Sum(ys))|}
-       in And ({s1,s2,s3} ++ rest), if x == y && xs != ys
+//rewrite Sum{|Neg(Expr x), Expr y, Expr... rest|}:
+//    => Sum(rest), if x == y
 
 // ====================================================================
 // Expressions
