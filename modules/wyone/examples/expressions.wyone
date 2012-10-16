@@ -5,20 +5,24 @@
 
 term Sum{|Expr...|}
 
-rewrite Sum{|Expr e|}:
+reduce Sum{|Expr e|}:
     => e
 
-rewrite Sum{|Num(int x), Expr... rest|}:
-    => Sum(rest), if x == 0 // && |rest| > 0
+reduce Sum{|Num(int x), Expr... rest|}:
+    => Sum(rest), if x == 0 && |rest| > 0
 
-rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
+reduce Sum{|Num(int x), Num(int y), Expr... rest|}:
     => Sum (Num(x+y) ++ rest)
 
-rewrite Sum{|Expr x, Expr y, Expr... rest|}:
+reduce Sum{|Expr x, Expr y, Expr... rest|}:
     => Sum (Mul{|Num(2),y|} ++ rest), if x == y
 
-rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
+reduce Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
+
+reduce Sum{|Mul{|Num(int x), Expr... xs|}, Mul{|Num(int y), Expr... ys|}, Expr... zs|}:
+    => let m = Mul(Num(x+y) ++ xs)
+       in Sum (m ++ zs), if xs == ys
 
 // ====================================================================
 // Mul
@@ -26,22 +30,22 @@ rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
 
 term Mul{|Expr...|}
 
-rewrite Mul{|Expr e|}:
+reduce Mul{|Expr e|}:
     => e
 
-rewrite Mul{|Num(int x), Expr... rest|}:
-    => Mul(rest), if x == 1 // && |rest| > 0
+reduce Mul{|Num(int x), Expr... rest|}:
+    => Mul(rest), if x == 1 && |rest| > 0
     => Num(0), if x == 0
 
-rewrite Mul{|Num(int x), Num(int y), Expr... rest|}:
+reduce Mul{|Num(int x), Num(int y), Expr... rest|}:
     => Mul (Num(x*y) ++ rest)
 
-rewrite Mul{|Mul{|Expr... xs|}, Expr... ys|}:
+reduce Mul{|Mul{|Expr... xs|}, Expr... ys|}:
     => Mul (xs ++ ys)
 
-//rewrite Mul{|Sum{|Expr... xs|}, Expr... ys|}:
-//    => let ys = {| Mul({x} ++ ys) | x in xs |}
-//       in Sum(ys)
+reduce Mul{|Sum{|Expr... xs|}, Expr... ys|}:
+    => let ys = {| Mul(x ++ ys) | x in xs |}
+       in Sum(ys)
    
 // ====================================================================
 // Expr
