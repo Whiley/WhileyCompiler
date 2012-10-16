@@ -202,12 +202,16 @@ public final class Automaton {
 	 * @return
 	 */
 	public boolean rewrite(int src, int target) {
+		System.out.println("REWRITE: #" + src + " => #" + target);
+		System.out.println("STATE: " + this);
+		
 		if(src == target) {
 			return false;
 		} else if(target < 0) {
 			for(int i=0;i!=nStates;++i) {
 				State state = states[i];
 				if(state != null) {
+					// FIXME: bug here as can produce equivalent states
 					state.remap(src,target);
 				}
 			}
@@ -223,11 +227,11 @@ public final class Automaton {
 		} else {
 			State os = states[src];
 			State ns = states[target];
-			System.out.println("REWRITE: " + os + " => " + ns);
 			states[src] = ns;
 			for(int i=0;i!=nStates;++i) {
 				State state = states[i];
 				if(state != null) {
+					// FIXME: bug here as can produce equivalent states
 					state.remap(target,src);
 				}
 			}
@@ -276,13 +280,19 @@ public final class Automaton {
 	 */
 	public void compact() {
 		int i,j;
+		int[] map = new int[nStates];
 		for(i=0,j=0;i!=nStates;++i) {
 			State si = states[i];
 			if(si != null) {
-				states[j++] = si;
+				map[i] = j;
+				states[j++] = si;				
 			}
 		}
 		nStates = j;
+		// finally, update mappings
+		for(i=0;i!=nStates;++i) {
+			states[i].remap(map);
+		}		
 	}
 	
 	/**
@@ -385,6 +395,8 @@ public final class Automaton {
 		
 		public abstract void remap(int from, int to);
 		
+		public abstract void remap(int[] map);
+		
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
 				State c = (State) o;
@@ -433,6 +445,12 @@ public final class Automaton {
 			}
 		}
 		
+		public void remap(int[] map) {
+			if(contents >= 0) {
+				contents = map[contents];
+			}
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Term) {
 				Term t = (Term) o;
@@ -467,6 +485,10 @@ public final class Automaton {
 		}
 
 		public void remap(int from, int to) {
+			// nothing to do
+		}
+		
+		public void remap(int[] map) {
 			// nothing to do
 		}
 		
@@ -581,6 +603,15 @@ public final class Automaton {
 			}			
 		}
 
+		public void remap(int[] map) {
+			for (int i = 0; i != length; ++i) {
+				int child = children[i];
+				if(child >= 0) {
+					children[i] = map[child];
+				}
+			}
+		}
+
 		public int get(int index) {
 			return children[index];
 		}
@@ -610,7 +641,6 @@ public final class Automaton {
 					}
 					return true;
 				}
-				System.out.println("FAILED: " + this + " == " + o);
 			}
 			return false;
 		}
@@ -660,6 +690,11 @@ public final class Automaton {
 			Arrays.sort(children);
 		}
 		
+		public void remap(int[] map) {
+			super.remap(map);
+			Arrays.sort(children);
+		}
+		
 		public Bag clone() {
 			return new Bag(Arrays.copyOf(children, length));
 		}
@@ -703,6 +738,11 @@ public final class Automaton {
 
 		public void remap(int from, int to) {
 			super.remap(from,to);
+			sortAndRemoveDuplicates();
+		}
+		
+		public void remap(int[] map) {
+			super.remap(map);
 			sortAndRemoveDuplicates();
 		}
 		
