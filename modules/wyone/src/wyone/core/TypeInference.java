@@ -191,7 +191,9 @@ public class TypeInference {
 		
 		switch (uop.op) {
 		case LENGTHOF:
-			checkSubtype(Type.T_LISTANY, t, uop);
+			if(!(t instanceof Type.Compound)) {
+				syntaxError("collection type required",filename,uop.mhs);
+			}			
 			t = Type.T_INT;
 			break;
 		case NEG:
