@@ -217,7 +217,7 @@ public final class Automaton {
 				}
 			}
 			if(src >= 0) {
-				states[src] = null;
+				states[src] = null;				
 			}
 			return true;
 		} else {
@@ -235,7 +235,7 @@ public final class Automaton {
 					roots[i] = src;
 				}
 			}
-			states[target] = null;
+			states[target] = null;			
 			return !os.equals(ns);
 		}
 	}
@@ -268,6 +268,20 @@ public final class Automaton {
 	
 	public int root(int index) {
 		return roots[index];
+	}
+	
+	/**
+	 * Remove any null states.
+	 */
+	public void compact() {
+		int i,j;
+		for(i=0,j=0;i!=nStates;++i) {
+			State si = states[i];
+			if(si != null) {
+				states[j++] = si;
+			}
+		}
+		nStates = j;
 	}
 	
 	/**

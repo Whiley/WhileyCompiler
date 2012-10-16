@@ -106,17 +106,18 @@ public class JavaFileWriter {
 			}
 		}
 		myOut(3,"}");
+		myOut(3, "result |= changed;");
 		myOut(2,"}");
+		myOut(2, "if(result) { automaton.compact(); }");
 		myOut(2, "return result;");
 		myOut(1, "}");
 	}
 
 	public void writeInferenceDispatch(SpecFile sf) {
 		myOut(1, "public static boolean infer(Automaton automaton) {");
-		myOut(2, "boolean result = false;");
+		myOut(2, "boolean result = reduce(automaton);");
 		myOut(2, "Automaton old;");
-		myOut(2, "do {");		
-		myOut(3, "reduce(automaton);");
+		myOut(2, "do {");				
 		myOut(3, "old = new Automaton(automaton); // ew, not optimal!!");
 		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
@@ -133,6 +134,7 @@ public class JavaFileWriter {
 			}
 		}
 		myOut(3,"}");
+		myOut(3, "reduce(automaton);");
 		myOut(2,"} while(!old.equals(automaton));");
 		myOut(2, "return result;");		
 		myOut(1, "}");
