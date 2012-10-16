@@ -297,7 +297,11 @@ public final class Automaton {
 				return false;
 			}
 			for(int i=0;i!=nStates;++i) {
-				if(!states[i].equals(cs[i])) {
+				State si = states[i];
+				State ci = cs[i];
+				if(si != null && !states[i].equals(ci)) {
+					return false;
+				} else if(si == null && ci != null) {
 					return false;
 				}
 			}

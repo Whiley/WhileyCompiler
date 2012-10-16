@@ -113,7 +113,28 @@ public class JavaFileWriter {
 
 	public void writeInferenceDispatch(SpecFile sf) {
 		myOut(1, "public static boolean infer(Automaton automaton) {");
-		myOut(2, "return false;");
+		myOut(2, "boolean result = false;");
+		myOut(2, "Automaton old;");
+		myOut(2, "do {");		
+		myOut(3, "reduce(automaton);");
+		myOut(3, "old = new Automaton(automaton); // ew, not optimal!!");
+		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
+		myOut(4, "if(automaton.get(i) == null) { continue; }");
+		for(Decl decl : sf.declarations) {
+			if(decl instanceof InferDecl) {
+				InferDecl rw = (InferDecl) decl;
+				Type type = rw.pattern.attribute(Attribute.Type.class).type;
+				String mangle = type2HexStr(type);
+				myOut(4,"");
+				myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
+				typeTests.add(type);
+				myOut(5, "result |= infer_" + mangle + "(i,automaton);");				
+				myOut(4, "}");
+			}
+		}
+		myOut(3,"}");
+		myOut(2,"} while(!old.equals(automaton));");
+		myOut(2, "return result;");		
 		myOut(1, "}");
 	}
 	
