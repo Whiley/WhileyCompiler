@@ -12,13 +12,9 @@ class Bool as True | False
 
 term And{Term...}
 
-rewrite And{}:
-    => True
-
-rewrite And{False, Term... xs}:
-    => False
-
-rewrite And{True, Term... xs}:
+reduce And{Bool b, Term... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
     => And (xs)
 
 // ====================================================================
@@ -27,14 +23,14 @@ rewrite And{True, Term... xs}:
 
 term LessThan[Expr,Expr]
 
-rewrite LessThan[Num(int x), Num(int y)]:
+reduce LessThan[Num(int x), Num(int y)]:
     => True, if x < y
     => False
 
-rewrite LessThan[Var x, Var y]:
+reduce LessThan[Var x, Var y]:
     => False, if x == y
 
-rewrite And{LessThan[Expr x, Expr y], LessThan[Expr u, Expr v], Term... rest}:
+infer And{LessThan[Expr x, Expr y], LessThan[Expr u, Expr v], Term... rest}:
     => And ({LessThan[x,y], LessThan[u,v], LessThan[x,v]} ++ rest), if y == u
 
 // ====================================================================
