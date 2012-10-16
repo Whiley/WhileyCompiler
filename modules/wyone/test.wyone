@@ -1,26 +1,11 @@
-term False
-term True
-class Bool as True | False
-
-term And{Term}
-term Equals{|Term,Term|}
+term Neg(Expr)
+term Sum{|Expr|}
 term Num(int)
 term Var(string)
-term Tuple[Term...]
 
-class Term as Bool | Var | And | Equals | Tuple
+class Expr as Num | Var | Neg | Sum
 
-rewrite And{Equals{|Tuple[*... xs], Tuple[*... ys]|}, Term... rest}:
-    => False, if |xs| != |ys|
-    => let neqs = [ Equals{|x,y|} | x in xs, y in ys ]
-       in And ({Equals{|Tuple(xs), Tuple(ys)|}} ++ neqs ++ rest)
-
-
-
-
-
-
-
-
-
+rewrite Neg(Sum{|Expr... xs|}):
+    => let ys = {| Neg(x) | x in xs |}
+       in Sum(ys)
 

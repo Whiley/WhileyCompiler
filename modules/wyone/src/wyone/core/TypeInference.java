@@ -341,12 +341,25 @@ public class TypeInference {
 			checkSubtype(Type.T_BOOL,condition,expr.condition);
 		}
 		
-		if(expr.cop == Expr.COp.NONE || expr.cop == Expr.COp.SOME) {
-			return Type.T_BOOL;
-		} else {
-			Type result = resolve(expr.value,environment);
-			return Type.T_SET(true,Type.T_REF(result));
-		}
+		switch(expr.cop) {
+			case NONE:
+			case SOME:
+				return Type.T_BOOL;
+			case SETCOMP: {
+				Type result = resolve(expr.value,environment);
+				return Type.T_SET(true,Type.T_REF(result));
+			}
+			case BAGCOMP: {
+				Type result = resolve(expr.value,environment);
+				return Type.T_BAG(true,Type.T_REF(result));
+			}
+			case LISTCOMP: {
+				Type result = resolve(expr.value,environment);
+				return Type.T_LIST(true,Type.T_REF(result));
+			}
+			default:
+				throw new IllegalArgumentException("unknown comprehension kind");
+		}		
 	}
 	
 	protected Type resolve(Expr.NaryOp expr, HashMap<String, Type> environment) {

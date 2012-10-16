@@ -570,20 +570,28 @@ public class SpecParser {
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match(LeftCurlyBar.class);
 		skipWhiteSpace(true);
-		boolean firstTime = true;
-		checkNotEof();
 		Token token = tokens.get(index);
-		while (!(token instanceof BarRightCurly)) {
-			if (!firstTime) {
-				match(Comma.class);
-				skipWhiteSpace(true);
+		
+		if(!(token instanceof BarRightCurly)) {
+			Expr expr = parseCondition();
+			skipWhiteSpace(true);
+			token = tokens.get(index);
+			if(token instanceof Bar) {
+				// comprehension
+				return parseComprehensionRest(start,expr,Expr.COp.BAGCOMP);
 			}
-			firstTime = false;
+			exprs.add(expr);
+		}
+		
+		while(!(token instanceof BarRightCurly)) {
+			match(Comma.class);
+			skipWhiteSpace(true);
 			exprs.add(parseCondition());
 			skipWhiteSpace(true);
 			checkNotEof();
 			token = tokens.get(index);
 		}
+		
 		match(BarRightCurly.class);
 		return new Expr.NaryOp(Expr.NOp.BAGGEN, exprs, sourceAttr(start,
 				index - 1));
@@ -602,7 +610,7 @@ public class SpecParser {
 			token = tokens.get(index);
 			if(token instanceof Bar) {
 				// comprehension
-				return parseSetComprehensionRest(start,expr);
+				return parseComprehensionRest(start,expr,Expr.COp.SETCOMP);
 			}
 			exprs.add(expr);
 		}
@@ -621,16 +629,17 @@ public class SpecParser {
 				index - 1));
 	}
 	
-	private Expr parseSetComprehensionRest(int start, Expr result) {
+	private Expr parseComprehensionRest(int start, Expr result, Expr.COp cop) {
 		match(Bar.class);
 		skipWhiteSpace(true);
 		ArrayList<Pair<Expr.Variable,Expr>> sources = new ArrayList<Pair<Expr.Variable,Expr>>();
 		Expr condition = null;
 		boolean firstTime = true;
 		Token token = tokens.get(index);
-		while(!(token instanceof RightCurly)) {
+		
+		outer: while(true) {
 			if(condition != null) {
-				syntaxError("condition must come last in set comprehension",
+				syntaxError("condition must come last in comprehension",
 						token);
 			}
 			if(!firstTime) {
@@ -647,10 +656,31 @@ public class SpecParser {
 			}
 			skipWhiteSpace(true);
 			token = tokens.get(index);
+			
+			switch(cop) {
+				case SETCOMP:
+					if(token instanceof RightCurly) {
+						match(RightCurly.class);
+						break outer;
+					}
+					break;
+				case BAGCOMP:
+					if(token instanceof BarRightCurly) {
+						match(BarRightCurly.class);
+						break outer;
+					}
+					break;
+				case LISTCOMP:
+					if(token instanceof RightSquare) {
+						match(RightSquare.class);
+						break outer;
+					}
+					break;
+			}	
+			
 		}
-		match(RightCurly.class);
-		
-		return new Expr.Comprehension(Expr.COp.SETCOMP, result, sources, condition, sourceAttr(start,index-1));
+					
+		return new Expr.Comprehension(cop, result, sources, condition, sourceAttr(start,index-1));
 	}
 	
 	private Expr parseQuantifierSet(int start, Expr.COp cop) {
