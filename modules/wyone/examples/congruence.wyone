@@ -28,9 +28,9 @@ rewrite Equals(Num(int x)):
 
 // eliminate a variable
 rewrite And{Equals(Sum{|Var x, Expr... xs|}) s1, Equals(Sum{|Var y, Expr... ys|}) s2, BExpr... rest}:
-    => let zs = { Neg(z) | z in xs }, // FIXME (should be bag)
+    => let zs = { Neg(z) | z in ys }, // FIXME (should be bag)
            s3 = Equals(Sum(zs) ++ xs)
-       in And ({s1,s2,s3} ++ rest), if x == y && xs != ys // && |xs| > 0 && |ys| > 0
+       in And ({s1,s2,s3} ++ rest), if x == y && xs != ys && |ys| > 0
 
 // ====================================================================
 // Neg
@@ -52,11 +52,9 @@ rewrite Neg(Sum{|Expr... xs|}):
 // ====================================================================
 term Sum{|Expr|}
 
-rewrite Sum{|Num n|}:
-    => n
-
-rewrite Sum{|Num(int x), Expr... rest|}:
-    => Sum(rest), if x == 0 // && |rest| > 0
+rewrite Sum{|Num(int x) n, Expr... rest|}:
+    => Sum(rest), if x == 0 && |rest| > 0
+    => n, if |rest| == 0
 
 rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
     => Sum (Num(x+y) ++ rest)
@@ -65,7 +63,8 @@ rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
 
 rewrite Sum{|Neg(Expr x), Expr y, Expr... rest|}:
-    => Sum(rest), if x == y // && |rest| > 0
+    => Sum(rest), if x == y && |rest| > 0
+    => Num(0), if x == y
 
 // ====================================================================
 // Expressions
