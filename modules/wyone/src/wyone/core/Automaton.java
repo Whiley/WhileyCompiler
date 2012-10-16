@@ -392,7 +392,7 @@ public final class Automaton {
 					State ith = states[i];
 					for(int j=0;j!=nStates;++j) {
 						State jth = states[j];
-						if(ith.equals(jth)) {
+						if(jth != null && jth.equals(ith)) {
 							// found an equivalent state
 							if(i != j) {
 								// is not ourself, so update map
