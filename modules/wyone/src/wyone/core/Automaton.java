@@ -223,6 +223,7 @@ public final class Automaton {
 		} else {
 			State os = states[src];
 			State ns = states[target];
+			System.out.println("REWRITE: " + os + " => " + ns);
 			states[src] = ns;
 			for(int i=0;i!=nStates;++i) {
 				State state = states[i];
@@ -598,7 +599,7 @@ public final class Automaton {
 		}
 		
 		public boolean equals(final Object o) {
-			if (o instanceof Compound) {
+			if (o instanceof Compound) {				
 				Compound t = (Compound) o;
 				if(kind == t.kind && length == t.length) {
 					int[] t_children = t.children;
@@ -609,6 +610,7 @@ public final class Automaton {
 					}
 					return true;
 				}
+				System.out.println("FAILED: " + this + " == " + o);
 			}
 			return false;
 		}
