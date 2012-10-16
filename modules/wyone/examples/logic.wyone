@@ -12,20 +12,18 @@ class Bool as True | False
 
 term Not(Term)
 
-rewrite Not(True):
-    => False
-
-rewrite Not(False):
+reduce Not(Bool b):
+    => False, if b == True
     => True
 
-rewrite Not(Not(* x)):
+reduce Not(Not(* x)):
     => x
 
-rewrite Not(And{Term... xs}):
+reduce Not(And{Term... xs}):
     => let ys = { Not(x) | x in xs }
        in Or(ys)
 
-rewrite Not(Or{Term... xs}):
+reduce Not(Or{Term... xs}):
     => let ys = { Not(x) | x in xs }
        in And(ys)
 
@@ -35,25 +33,23 @@ rewrite Not(Or{Term... xs}):
 
 term And{Term...}
 
-rewrite And{}:
+reduce And{}:
     => True
 
-rewrite And{Term x}:
+reduce And{Term x}:
     => x
 
-rewrite And{False, Term... xs}:
-    => False
-
-rewrite And{True, Term... xs}:
+reduce And{Bool b, Term... xs}:
+    => False, if b == False
     => And (xs)
 
-rewrite And{And{Term... xs}, Term... ys}:
+reduce And{And{Term... xs}, Term... ys}:
     => And (xs ++ ys)
 
-rewrite And{Not(Term x), Term y, Term... ys}:
+reduce And{Not(Term x), Term y, Term... ys}:
     => False, if x == y
 
-rewrite And{Or{Term... xs}, Term... ys}:
+reduce And{Or{Term... xs}, Term... ys}:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
 
@@ -63,22 +59,20 @@ rewrite And{Or{Term... xs}, Term... ys}:
 
 term Or{Term...}
 
-rewrite Or{}:
+reduce Or{}:
     => False
 
-rewrite Or{Term x}:
+reduce Or{Term x}:
     => x
 
-rewrite Or{True, Term... xs}:
-    => True
-
-rewrite Or{False, Term... xs}:
+reduce Or{Bool b, Term... xs}:
+    => True, if b == True
     => Or (xs)
 
-rewrite Or{Not(Term x), Term y, Term... ys}:
+reduce Or{Not(Term x), Term y, Term... ys}:
     => True, if x == y
 
-rewrite Or{Or{Term... xs}, Term... ys}:
+reduce Or{Or{Term... xs}, Term... ys}:
     => Or (xs ++ ys)
 
 // ====================================================================
