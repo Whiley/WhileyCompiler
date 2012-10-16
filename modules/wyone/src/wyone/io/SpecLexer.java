@@ -448,7 +448,8 @@ public class SpecLexer {
 		"term",
 		"terms",
 		"class",
-		"rewrite",		
+		"reduce",		
+		"infer",
 		"let",
 		"package"
 	};

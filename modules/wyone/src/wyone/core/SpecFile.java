@@ -41,7 +41,7 @@ public class SpecFile {
 		}				
 	}
 	
-	public static class RewriteDecl extends SyntacticElement.Impl implements
+	public static abstract class RewriteDecl extends SyntacticElement.Impl implements
 			Decl {
 		public final Pattern.Term pattern;
 		public final ArrayList<RuleDecl> rules;
@@ -51,6 +51,20 @@ public class SpecFile {
 			super(attributes);
 			this.pattern = pattern;
 			this.rules = new ArrayList<RuleDecl>(rules);
+		}
+	}
+	
+	public static class ReduceDecl extends RewriteDecl {
+		public ReduceDecl(Pattern.Term pattern, Collection<RuleDecl> rules,
+				Attribute... attributes) {
+			super(pattern,rules,attributes);
+		}
+	}
+	
+	public static class InferDecl extends RewriteDecl {
+		public InferDecl(Pattern.Term pattern, Collection<RuleDecl> rules,
+				Attribute... attributes) {
+			super(pattern,rules,attributes);
 		}
 	}
 	

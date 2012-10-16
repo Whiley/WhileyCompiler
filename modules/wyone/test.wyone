@@ -1,11 +1,36 @@
-term Neg(Expr)
-term Sum{|Expr|}
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+term True
+term False
+class Bool as True | False
+class BExpr as Bool | And | LessThan
+
+term And{BExpr...}
+
+reduce And{True x}:
+    => True
+
+reduce And{BExpr x}:
+    => x
+
+reduce And{False, BExpr... xs}:
+    => False
+
+// ====================================================================
+// Expressions
+// ====================================================================
+
 term Num(int)
 term Var(string)
+term LessThan[Expr,Expr]
 
-class Expr as Num | Var | Neg | Sum
+class Expr as Num | Var
 
-rewrite Neg(Sum{|Expr... xs|}):
-    => let ys = {| Neg(x) | x in xs |}
-       in Sum(ys)
+reduce LessThan[Num(int x),Num(int y)]:
+    => True, if x < y
+    => False
 
+infer And{LessThan[Expr x, Expr y] i1, LessThan[Expr u, Expr v] i2, BExpr... rest}:
+    => let i3 = LessThan[x,v]
+       in And({i1,i2,i3} ++ rest), if y == u

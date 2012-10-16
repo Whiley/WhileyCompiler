@@ -106,12 +106,25 @@ public class SpecParser {
 	
 	private Decl parseRewriteDecl() {
 		int start = index;
-		matchKeyword("rewrite");
+		Token lookahead = tokens.get(index);
+		boolean reduce;
+		if(lookahead.text.equals("reduce")) {
+			matchKeyword("reduce");
+			reduce = true;
+		} else {
+			matchKeyword("infer");
+			reduce = false;
+		}
 		Pattern.Term pattern = parsePatternTerm();
 		match(Colon.class);
 		matchEndLine();
 		List<RuleDecl> rules = parseRuleBlock(1);
-		return new RewriteDecl(pattern,rules,sourceAttr(start,index-1));
+		
+		if(reduce) {
+			return new ReduceDecl(pattern,rules,sourceAttr(start,index-1));
+		} else {
+			return new InferDecl(pattern,rules,sourceAttr(start,index-1));
+		}
 	}
 	
 	public Pattern parsePattern() {
