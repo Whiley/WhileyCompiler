@@ -202,9 +202,6 @@ public final class Automaton {
 	 * @return
 	 */
 	public boolean rewrite(int src, int target) {
-		System.out.println("REWRITE: #" + src + " => #" + target);
-		System.out.println("STATE: " + this);
-		
 		if(src == target) {
 			return false;
 		} else if(target < 0) {			
@@ -259,8 +256,6 @@ public final class Automaton {
 		
 		// FIXME: bug as we should collect garbage here I think
 		
-		// FIXME: bug as we need to maintain the roots as well!
-		
 		int i,j;
 		int[] map = new int[nStates];
 		for(i=0,j=0;i!=nStates;++i) {
@@ -276,7 +271,10 @@ public final class Automaton {
 			states[i].remap(map);
 		}	
 		for(i=0;i!=nRoots;++i) {
-			roots[i] = map[roots[i]];			
+			int root = roots[i];
+			if(root >= 0) {
+				roots[i] = map[root];
+			}
 		}
 	}
 	
@@ -380,12 +378,15 @@ public final class Automaton {
 				}
 			}
 			
-			if(changed) {
-				// update roots
-				for(int i=0;i!=nRoots;++i) {
-					roots[i] = map[roots[i]];			
-				}	
-				
+			// update roots
+			for(int i=0;i!=nRoots;++i) {
+				int root = roots[i];
+				if(root >= 0) {
+					roots[i] = map[root];
+				}			
+			}	
+			
+			if(changed) {								
 				// now process changes by looking for equivalent states
 				for(int k=0;k!=nChanged;++k) {
 					int i = delta[k];

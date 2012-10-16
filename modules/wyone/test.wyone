@@ -14,8 +14,9 @@ reduce And{True x}:
 reduce And{BExpr x}:
     => x
 
-reduce And{False, BExpr... xs}:
-    => False
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => And(xs)
 
 // ====================================================================
 // Expressions
