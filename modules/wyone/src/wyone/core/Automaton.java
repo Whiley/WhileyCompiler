@@ -207,40 +207,17 @@ public final class Automaton {
 		
 		if(src == target) {
 			return false;
-		} else if(target < 0) {
-			for(int i=0;i!=nStates;++i) {
-				State state = states[i];
-				if(state != null) {
-					// FIXME: bug here as can produce equivalent states
-					state.remap(src,target);
-				}
-			}
-			for(int i=0;i!=nRoots;++i) {
-				if(roots[i] == src) {
-					roots[i] = target;
-				}
-			}
-			if(src >= 0) {
-				states[src] = null;				
-			}
+		} else if(target < 0) {			
+			if(src >= 0) { states[src] = null; }
+			remap(src,target);
 			return true;
 		} else {
+			// FIXME: bug when src < 0 ... ?
 			State os = states[src];
 			State ns = states[target];
 			states[src] = ns;
-			for(int i=0;i!=nStates;++i) {
-				State state = states[i];
-				if(state != null) {
-					// FIXME: bug here as can produce equivalent states
-					state.remap(target,src);
-				}
-			}
-			for(int i=0;i!=nRoots;++i) {
-				if(roots[i] == target) {
-					roots[i] = src;
-				}
-			}
-			states[target] = null;			
+			states[target] = null;				
+			remap(target,src);			
 			return !os.equals(ns);
 		}
 	}
@@ -279,6 +256,11 @@ public final class Automaton {
 	 * Remove any null states.
 	 */
 	public void compact() {
+		
+		// FIXME: bug as we should collect garbage here I think
+		
+		// FIXME: bug as we need to maintain the roots as well!
+		
 		int i,j;
 		int[] map = new int[nStates];
 		for(i=0,j=0;i!=nStates;++i) {
@@ -292,7 +274,10 @@ public final class Automaton {
 		// finally, update mappings
 		for(i=0;i!=nStates;++i) {
 			states[i].remap(map);
-		}		
+		}	
+		for(i=0;i!=nRoots;++i) {
+			roots[i] = map[roots[i]];			
+		}
 	}
 	
 	/**
@@ -367,7 +352,61 @@ public final class Automaton {
 		r = r + ">";
 		return r;
 	}
+	
+	private void remap(int from, int to) {
 		
+		// TODO: make this more efficient!!!
+		
+		int[] map = new int[nStates];			
+		for(int i=0;i!=nStates;++i) {
+			map[i] = i;
+		}
+		map[from] = to;
+		
+		int[] delta = new int[nStates];
+		int nChanged = 0;
+		boolean changed = true;
+		
+		while(changed) {
+			changed = false;
+
+			for(int i=0;i!=nStates;++i) {
+				State state = states[i];
+				if(state != null) {
+					if(state.remap(map)) {
+						changed = true;
+						delta[nChanged++] = i;
+					}
+				}
+			}
+			
+			if(changed) {
+				// update roots
+				for(int i=0;i!=nRoots;++i) {
+					roots[i] = map[roots[i]];			
+				}	
+				
+				// now process changes by looking for equivalent states
+				for(int k=0;k!=nChanged;++k) {
+					int i = delta[k];
+					State ith = states[i];
+					for(int j=0;j!=nStates;++j) {
+						State jth = states[j];
+						if(ith.equals(jth)) {
+							// found an equivalent state
+							if(i != j) {
+								// is not ourself, so update map
+								states[i] = null;
+								map[i] = j;
+							}
+							break;
+						}
+					}
+				}
+			}
+		}		
+	}
+	
 	/**
 	 * Represents an abstract state in an automaton. Each state has a kind.
 	 * 
@@ -393,9 +432,7 @@ public final class Automaton {
 		
 		public abstract State clone();
 		
-		public abstract void remap(int from, int to);
-		
-		public abstract void remap(int[] map);
+		public abstract boolean remap(int[] map);
 		
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
@@ -439,16 +476,12 @@ public final class Automaton {
 			return new Term(kind,contents);
 		}
 		
-		public void remap(int from, int to) {
-			if(contents == from) {
-				contents = to;
-			}
-		}
-		
-		public void remap(int[] map) {
-			if(contents >= 0) {
+		public boolean remap(int[] map) {
+			int old = contents;
+			if(old >= 0) {
 				contents = map[contents];
 			}
+			return contents != old;
 		}
 		
 		public boolean equals(final Object o) {
@@ -484,12 +517,8 @@ public final class Automaton {
 			this.value = data;
 		}
 
-		public void remap(int from, int to) {
-			// nothing to do
-		}
-		
-		public void remap(int[] map) {
-			// nothing to do
+		public boolean remap(int[] map) {
+			return false;
 		}
 		
 		public boolean equals(final Object o) {
@@ -595,21 +624,28 @@ public final class Automaton {
 			length = nchildren.length;		
 		}
 		
-		public void remap(int from, int to) {
+		public boolean remap(int from, int to) {
+			boolean changed = false;
 			for(int i=0;i!=length;++i) {
 				if(children[i] == from) {
 					children[i] = to;
+					changed = true;
 				}
-			}			
+			}		
+			return changed;
 		}
 
-		public void remap(int[] map) {
+		public boolean remap(int[] map) {
+			boolean changed = false;
 			for (int i = 0; i != length; ++i) {
-				int child = children[i];
-				if(child >= 0) {
-					children[i] = map[child];
+				int ochild = children[i];
+				if(ochild >= 0) {
+					int nchild = map[ochild];
+					children[i] = nchild;
+					changed |= nchild != ochild;
 				}
 			}
+			return changed;
 		}
 
 		public int get(int index) {
@@ -685,14 +721,13 @@ public final class Automaton {
 			Arrays.sort(this.children);
 		}
 		
-		public void remap(int from, int to) {
-			super.remap(from,to);
-			Arrays.sort(children);
-		}
-		
-		public void remap(int[] map) {
-			super.remap(map);
-			Arrays.sort(children);
+		public boolean remap(int[] map) {
+			if(super.remap(map)) {
+				Arrays.sort(children);
+				return true;
+			} else {
+				return false;
+			}
 		}
 		
 		public Bag clone() {
@@ -736,14 +771,13 @@ public final class Automaton {
 			sortAndRemoveDuplicates();
 		}
 
-		public void remap(int from, int to) {
-			super.remap(from,to);
-			sortAndRemoveDuplicates();
-		}
-		
-		public void remap(int[] map) {
-			super.remap(map);
-			sortAndRemoveDuplicates();
+		public boolean remap(int[] map) {
+			if(super.remap(map)) {
+				sortAndRemoveDuplicates();
+				return true;
+			} else {
+				return false;
+			}
 		}
 		
 		public Set clone() {
