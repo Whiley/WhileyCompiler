@@ -65,7 +65,8 @@ public class JavaFileWriter {
 				translate((RewriteDecl) d);
 			}
 		}
-		writeRuleDispatch(spec);
+		writeReduceDispatch(spec);
+		writeInferenceDispatch(spec);
 		writeTypeTests(hierarchy);
 		writeSchema();		
 		writeMainMethod();
@@ -84,8 +85,8 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	public void writeRuleDispatch(SpecFile sf) {
-		myOut(1, "public static boolean rewrite(Automaton automaton) {");
+	public void writeReduceDispatch(SpecFile sf) {
+		myOut(1, "public static boolean reduce(Automaton automaton) {");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
 		myOut(2, "while(changed) {");
@@ -93,14 +94,14 @@ public class JavaFileWriter {
 		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		for(Decl decl : sf.declarations) {
-			if(decl instanceof RewriteDecl) {
-				RewriteDecl rw = (RewriteDecl) decl;
+			if(decl instanceof ReduceDecl) {
+				ReduceDecl rw = (ReduceDecl) decl;
 				Type type = rw.pattern.attribute(Attribute.Type.class).type;
 				String mangle = type2HexStr(type);
 				myOut(4,"");
 				myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 				typeTests.add(type);
-				myOut(5, "changed |= rewrite_" + mangle + "(i,automaton);");				
+				myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");				
 				myOut(4, "}");
 			}
 		}
@@ -110,6 +111,12 @@ public class JavaFileWriter {
 		myOut(1, "}");
 	}
 
+	public void writeInferenceDispatch(SpecFile sf) {
+		myOut(1, "public static boolean infer(Automaton automaton) {");
+		myOut(2, "return false;");
+		myOut(1, "}");
+	}
+	
 	public void translate(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
 		myOut(1, "// term " + decl.type);
 		myOut(1, "public final static int K_" + decl.type.name + " = "
@@ -195,9 +202,15 @@ public class JavaFileWriter {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
-		myOut(1, "public static boolean rewrite_"
-				+ type2HexStr(param) + "("
-				+ type2JavaType(param) + " r0, Automaton automaton) {");
+		
+		String sig = type2HexStr(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
+		
+		if(decl instanceof ReduceDecl) {
+			myOut(1, "public static boolean reduce_" + sig);
+					
+		} else {
+			myOut(1, "public static boolean infer_" + sig);					
+		}
 		
 		// setup the environment
 		Environment environment = new Environment();
@@ -288,6 +301,7 @@ public class JavaFileWriter {
 			}
 			// check matching type
 			myOut("!typeof_" + type2HexStr(pt) + "(r" + index + ",automaton)) { continue; }");
+			typeTests.add(pt);
 			myOut(level);
 			
 			if(isUnbounded) {
@@ -1026,7 +1040,7 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
-		myOut(3, "rewrite(automaton);");
+		myOut(3, "infer(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
