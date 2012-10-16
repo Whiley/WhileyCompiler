@@ -33,14 +33,12 @@ reduce Not(Or{Term... xs}):
 
 term And{Term...}
 
-reduce And{}:
-    => True
-
 reduce And{Term x}:
     => x
 
 reduce And{Bool b, Term... xs}:
     => False, if b == False
+    => True, if |xs| == 0
     => And (xs)
 
 reduce And{And{Term... xs}, Term... ys}:
@@ -59,14 +57,12 @@ reduce And{Or{Term... xs}, Term... ys}:
 
 term Or{Term...}
 
-reduce Or{}:
-    => False
-
 reduce Or{Term x}:
     => x
 
 reduce Or{Bool b, Term... xs}:
     => True, if b == True
+    => False, if |xs| == 0
     => Or (xs)
 
 reduce Or{Not(Term x), Term y, Term... ys}:
