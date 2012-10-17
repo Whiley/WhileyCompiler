@@ -451,7 +451,8 @@ public class SpecLexer {
 		"reduce",		
 		"infer",
 		"let",
-		"package"
+		"package",
+		"include"
 	};
 	
 	public Token scanIdentifier() {

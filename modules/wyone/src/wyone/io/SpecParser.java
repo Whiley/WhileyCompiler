@@ -38,7 +38,9 @@ public class SpecParser {
 			} else {
 				Token lookahead = tokens.get(index);
 				
-				if(lookahead.text.equals("term")) {		
+				if(lookahead.text.equals("include")) {
+					decls.add(parseIncludeDecl());
+				} else if(lookahead.text.equals("term")) {		
 					decls.add(parseTermDecl());
 				} else if(lookahead.text.equals("class")) {		
 					decls.add(parseClassDecl());
@@ -75,6 +77,14 @@ public class SpecParser {
 		} else {
 			return ""; // empty package
 		}
+	}
+	
+	private Decl parseIncludeDecl() {
+		int start = index;
+		matchKeyword("include");
+		String filename = match(Strung.class).string;
+		matchEndLine();		
+		return new IncludeDecl(filename, sourceAttr(start,index-1));
 	}
 	
 	private Decl parseTermDecl() {

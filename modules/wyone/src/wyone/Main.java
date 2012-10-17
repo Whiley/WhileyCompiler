@@ -128,6 +128,7 @@ public class Main {
 				SpecLexer lexer = new SpecLexer(specfile);
 				SpecParser parser = new SpecParser(specfile, lexer.scan());
 				SpecFile sf = parser.parse();
+				new IncludeExpander().expand(sf);
 				new TypeInference().infer(sf);
 				new JavaFileWriter(oFile).write(sf);
 			} catch (SyntaxError e) {

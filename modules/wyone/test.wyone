@@ -1,29 +1,10 @@
-// ====================================================================
-// Boolean Expressions
-// ====================================================================
-term True
-term False
-class Bool as True | False
-class BExpr as Bool | And | LessThan
-
-term And{BExpr...}
-
-reduce And{True x}:
-    => True
-
-reduce And{BExpr x}:
-    => x
-
-reduce And{Bool b, BExpr... xs}:
-    => False, if b == False
-    => And(xs)
+include "examples/logic.wyone"
 
 // ====================================================================
 // Expressions
 // ====================================================================
 
 term Num(int)
-term Var(string)
 term LessThan[Expr,Expr]
 
 class Expr as Num | Var

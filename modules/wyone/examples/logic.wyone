@@ -10,7 +10,7 @@ class Bool as True | False
 // Not
 // ====================================================================
 
-term Not(Term)
+term Not(BExpr)
 
 reduce Not(Bool b):
     => False, if b == True
@@ -19,11 +19,11 @@ reduce Not(Bool b):
 reduce Not(Not(* x)):
     => x
 
-reduce Not(And{Term... xs}):
+reduce Not(And{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in Or(ys)
 
-reduce Not(Or{Term... xs}):
+reduce Not(Or{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in And(ys)
 
@@ -31,23 +31,23 @@ reduce Not(Or{Term... xs}):
 // And
 // ====================================================================
 
-term And{Term...}
+term And{BExpr...}
 
-reduce And{Term x}:
+reduce And{BExpr x}:
     => x
 
-reduce And{Bool b, Term... xs}:
+reduce And{Bool b, BExpr... xs}:
     => False, if b == False
     => True, if |xs| == 0
     => And (xs)
 
-reduce And{And{Term... xs}, Term... ys}:
+reduce And{And{BExpr... xs}, BExpr... ys}:
     => And (xs ++ ys)
 
-reduce And{Not(Term x), Term y, Term... ys}:
+reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
     => False, if x == y
 
-reduce And{Or{Term... xs}, Term... ys}:
+reduce And{Or{BExpr... xs}, BExpr... ys}:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
 
@@ -55,29 +55,29 @@ reduce And{Or{Term... xs}, Term... ys}:
 // Or
 // ====================================================================
 
-term Or{Term...}
+term Or{BExpr...}
 
-reduce Or{Term x}:
+reduce Or{BExpr x}:
     => x
 
-reduce Or{Bool b, Term... xs}:
+reduce Or{Bool b, BExpr... xs}:
     => True, if b == True
     => False, if |xs| == 0
     => Or (xs)
 
-reduce Or{Not(Term x), Term y, Term... ys}:
+reduce Or{Not(BExpr x), BExpr y, BExpr... ys}:
     => True, if x == y
 
-reduce Or{Or{Term... xs}, Term... ys}:
+reduce Or{Or{BExpr... xs}, BExpr... ys}:
     => Or (xs ++ ys)
 
 // ====================================================================
-// Term
+// BExpr
 // ====================================================================
 
 term Var(string)
 
-class Term as Bool | Not | And | Or | Var 
+class BExpr as Bool | Not | And | Or | Var 
 
 
 

@@ -21,6 +21,15 @@ public class SpecFile {
 	
 	public interface Decl extends SyntacticElement {}
 	
+	public static class IncludeDecl extends SyntacticElement.Impl implements Decl {
+		public final String filename;
+		
+		public IncludeDecl(String filename, Attribute... attributes) {
+			super(attributes);
+			this.filename = filename;
+		}		
+	}
+	
 	public static class TermDecl extends SyntacticElement.Impl implements Decl {
 		public final Type.Term type;
 		
