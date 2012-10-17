@@ -1,0 +1,31 @@
+include "logic.wyone"
+include "numerics.wyone"
+
+// ====================================================================
+// Inequalities
+// ====================================================================
+
+term LessThan[Expr,Expr]
+
+reduce LessThan[Num(int x), Num(int y)]:
+    => True, if x < y
+    => False
+
+reduce LessThan[Var x, Var y]:
+    => False, if x == y
+
+reduce And{LessThan[Expr e1, Num(int x)] ieq, LessThan[Expr e2, Num(int y)], BExpr... rest}:
+    => And (ieq ++ rest), if e1 == e2 && x < y
+
+reduce And{LessThan[Num(int x), Expr e1] ieq, LessThan[Num(int y), Expr e2], BExpr... rest}:
+    => And (ieq ++ rest), if e1 == e2 && x > y
+
+infer And{LessThan[Expr x, Expr y] ieq1, LessThan[Expr u, Expr v] ieq2, BExpr... rest}:
+    => let ieq3 = LessThan[x,v]
+       in And ({ieq1,ieq2, ieq3} ++ rest), if y == u
+
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+
+class BExpr as LessThan | ...

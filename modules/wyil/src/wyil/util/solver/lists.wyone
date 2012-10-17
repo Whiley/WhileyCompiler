@@ -1,0 +1,26 @@
+include "logic.wyone"
+include "numerics.wyone"
+
+// ====================================================================
+// List Expressions
+// ====================================================================
+
+term List[Expr...]
+term IndexOf[Expr,Expr]
+term Update[Expr,Expr,Expr]
+term LengthOf(Expr)
+
+reduce LengthOf(List[Expr... ls]):
+    => |ls|
+
+//reduce Update[List[Expr... ls],Num(int idx),Expr val]:
+//    => ls[idx] = val
+
+//reduce IndexOf[List[Expr... ls], Num(int i)]:
+//    => ls[i]
+
+// ====================================================================
+// General Expressions
+// ====================================================================
+
+class Expr as List | ...
