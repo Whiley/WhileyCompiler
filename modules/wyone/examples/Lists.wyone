@@ -1,23 +1,5 @@
-// ====================================================================
-// Boolean Expressions
-// ====================================================================
-term True
-term False
-class Bool as True | False
-class BExpr as Bool | And
-
-term And{BExpr...}
-
-reduce And{BExpr x}:
-    => x
-
-reduce And{And{BExpr... xs}, BExpr... ys}:
-    => And (xs ++ ys)
-
-reduce And{Bool b, BExpr... xs}:
-    => False, if b == False
-    => True, if |xs| == 0
-    => And (xs)
+include "logic.wyone"
+include "numerics.wyone"
 
 // ====================================================================
 // List Expressions
@@ -38,10 +20,7 @@ reduce LengthOf(List[Expr... ls]):
 //    => ls[i]
 
 // ====================================================================
-// Expressions
+// General Expressions
 // ====================================================================
 
-term Num(int)
-term Var(string)
-
-class Expr as List | Num | Var
+class Expr as List | ...
