@@ -1,151 +1,292 @@
-// ==================================================
-// Theory of Values
-// ==================================================
+package wyil.util
 
+term Var(string)
+
+class Expr as BExpr | AExpr | SExpr
+
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
 term True
 term False
 class Bool as True | False
 
-// ==================================================
-// Theory of Logical Connectives
-// ==================================================
+class BExpr as Bool 
+	| Not 
+	| And 
+	| Or 
+	| Var
+	| Equals
+	| NotEquals 
+	| LessThan
+	| LessThanEq 
+	| GreaterThan
+	| GreaterThanEq
+	| SubSet
+	| SubSetEq 
+	| SupSet
+	| SupSetEq
+	 
+// ====================================================================
+// Arithmetic Expressions
+// ====================================================================
+class AExpr as Num | Sum | Mul | Var
 
-// --- Logical And ---
-term And{Term...}
+term Num(int)
+term Neg(AExpr)
+term Sum{|AExpr...|}
+term Mul{|AExpr...|}
+term Div[AExpr,AExpr]
 
-rewrite And{Bool b, Term... xs}:
-    => False, if b is False
-    => And(xs)
+rewrite Equals{|Num(int x), Num(int y)|}:
+    => True, if x == y
+    => False
+    
+rewrite LessThan[Num(int x), Num(int y)]:
+    => True, if x < y
+    => False
 
-rewrite And{And{Term...xs}, Term... ys}:
-    => And(xs ++ ys)
+rewrite LessThanEq[Num(int x), Num(int y)]:
+    => True, if x <= y
+    => False
 
-rewrite And{Term x, Term y, Term... ys}:
-    => And([x] ++ ys), if x == y
+// ====================================================================
+// Collections
+// ====================================================================
+class SExpr as Set | Var
+class LExpr as List | Var
+class CExpr as Set | List | Tuple | Var
 
-rewrite And(Term t):
-    => t
+term Set{Expr...}
+term ElementOf[Expr,SExpr]
 
-rewrite And[]:
+term List[Expr...]
+term IndexOf[LExpr, Expr]
+
+// exposes issue as xs[i] looks like constructor!!
+//rewrite IndexOf[List[Expr... xs], Num(int i)]:
+//    => xs[i]
+
+term Tuple[Expr...]
+
+term LengthOf[CExpr]
+
+rewrite LengthOf[Set{Expr... xs}]:
+    => |xs|
+
+rewrite LengthOf[List[Expr... xs]]:
+    => |xs|
+
+rewrite LengthOf[Tuple[Expr... xs]]:
+    => |xs|
+
+// ====================================================================
+// Arithmetic Inequalities
+// ====================================================================
+term LessThan[AExpr,AExpr]
+term LessThanEq[AExpr,AExpr]
+term GreaterThan[AExpr,AExpr]
+term GreaterThanEq[AExpr,AExpr]
+
+rewrite GreaterThan[AExpr x, AExpr y]:
+    => LessThan[y,x]
+
+rewrite GreaterThanEq[AExpr x, AExpr y]:
+    => LessThanEq[y,x]
+    
+rewrite LessThan[* x, * y]:
+    => False, if x == y
+
+rewrite LessThanEq[* x, * y]:
+    => True, if x == y
+
+// bypass
+rewrite And{LessThan[Num(int x), * y],LessThan[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+rewrite And{LessThan[* x, * y],LessThan[* u, * v], BExpr... rest}:
+    => And ({LessThan[x,y],LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v    
+
+// bypass
+rewrite And{LessThanEq[Num(int x), * y],LessThan[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+rewrite And{LessThanEq[* x, * y],LessThan[* u, * v], BExpr... rest}:
+    => And ({LessThanEq[x,y],LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v
+
+// bypass
+rewrite And{LessThan[Num(int x), * y],LessThanEq[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+rewrite And{LessThan[* x, * y],LessThanEq[* u, * v], BExpr... rest}:
+    => And ({LessThan[x,y],LessThanEq[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v
+
+// bypass
+rewrite And{LessThanEq[Num(int x), * y],LessThanEq[* u, Num(int v)], BExpr... rest}:
+    => False, if y == u && x > v
+
+rewrite And{LessThanEq[* x, * y],LessThanEq[* u, * v], BExpr... rest}:
+    => And ({LessThanEq[x,y],LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => And ({LessThanEq[x,y],LessThanEq[u,v],Equals{|x,y|}} ++ rest), if y == u && x == v && !(x is Num && v is Num)
+
+// ====================================================================
+// Equalities
+// ====================================================================
+term Equals{|Expr,Expr|}
+term NotEquals{|Expr,Expr|}
+
+// bypass
+rewrite And{Equals{|Num(int x), * y|},Equals{|* u, Num(int v)|}, BExpr... rest}:
+    => False, if y == u && x != v
+
+rewrite And{Equals{|* x, * y|},Equals{|* u, * v|}, BExpr... rest}:
+    => And ({Equals{|x,y|},Equals{|u,v|},Equals{|x,v|}} ++ rest), if y == u && !(x is Num && v is Num)
+
+// bypass(1)
+rewrite And{Equals{|Num(int x), * y|}, LessThan[* u,Num(int v)], BExpr... rest}:
+    => False, if y == u && x >= v
+
+// bypass(2)
+rewrite And{Equals{|Num(int x), * y|}, LessThan[Num(int u),* v], BExpr... rest}:
+    => False, if y == v && x <= u
+
+rewrite And{Equals{|* x, * y|},LessThan[* u, * v], BExpr... rest}:
+    => And ({Equals{|x,y|},LessThan[u,v],LessThan[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => False, if y == u && x == v
+    => And ({Equals{|x,y|},LessThan[u,v],LessThan[u,x]} ++ rest), if y == v && u != x && !(u is Num && x is Num)
+    => False, if y == v && u == x
+
+// bypass(1)
+rewrite And{Equals{|Num(int x), * y|}, LessThanEq[* u,Num(int v)], BExpr... rest}:
+    => False, if y == u && x > v
+
+// bypass(2)
+rewrite And{Equals{|Num(int x), * y|}, LessThanEq[Num(int u),* v], BExpr... rest}:
+    => False, if y == v && x < u
+
+rewrite And{Equals{|* x, * y|},LessThanEq[* u,* v], BExpr... rest}:
+    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[x,v]} ++ rest), if y == u && x != v && !(x is Num && v is Num)
+    => And ({Equals{|x,y|},LessThanEq[u,v],LessThanEq[u,x]} ++ rest), if y == v && u != x && !(u is Num && x is Num)
+
+//rewrite And{Equals{|Tuple[*... xs], Tuple[*... ys]|}, BExpr... rest}:
+//    => False, if |xs| != |ys|
+//    => 
+
+// ====================================================================
+// Set Constraints
+// ====================================================================
+term SubSet[SExpr,SExpr]
+term SubSetEq[SExpr,SExpr]
+term SupSet[SExpr,SExpr]
+term SupSetEq[SExpr,SExpr]
+
+//rewrite SubSet[Set{Expr... xs}, Set{Expr... ys}]:
+//    => True, if |xs| != |ys| && no { x in xs | !(x in ys)}
+//    => False
+
+//rewrite SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
+//    => True, if no { x in xs | !(x in ys)}
+//    => False
+
+//rewrite SupSet[AExpr x, AExpr y]:
+//    => SubSet[y,x]
+
+//rewrite SupSetEq[AExpr x, AExpr y]:
+//    => SubSetEq[y,x]
+
+//rewrite SubSet[* x, * y]:
+//    => False, if x == y
+
+//rewrite SubSetEq[* x, * y]:
+//    => True, if x == y
+
+// ====================================================================
+// Not
+// ====================================================================
+term Not(BExpr)
+
+rewrite Not(True):
+    => False
+
+rewrite Not(False):
     => True
-
-// --- Logical Or ---
-term Or{Term...}
-
-rewrite Or{Bool b, Term... xs}:
-    => True, if b is True
-    => Or(xs)
-
-rewrite Or{Or{Term...xs}, Term... ys}:
-    => Or(xs ++ ys)
-
-rewrite Or{Term x, Term y, Term... ys}:
-    => Or([x] ++ ys), if x == y
-
-rewrite Or(Term t):
-    => t
-
-rewrite Or[]:
-    => False
-
-// --- Logical Not ---
-term Not(Term)
-
-rewrite Not(Bool b):
-    => True, if b is False
-    => False
 
 rewrite Not(Not(* x)):
     => x
 
-// rewrite Not(And(Term... xs)):
+rewrite Not(NotEquals(* x)):
+    => Equals(x)
+    
+rewrite NotEquals(* x):
+    => Not(Equals(x))
 
-// rewrite Not(Or(Term... xs)):
-
-// ==================================================
-// Theory of Equality
-// ==================================================
-
-term Num(int)
-term Equal{Expr,Expr}
-term NotEqual{Expr,Expr}
-
-rewrite Equal[Expr x,Expr y]:
-    => True, if x == y
-
-rewrite NotEqual[Expr x, Expr y]:
-    => False, if x == y
-
-rewrite Not(Equal[Expr x,Expr y]):
-    => NotEqual[x,y]
-
-rewrite Not(NotEqual[Expr x,Expr y]):
-    => Equal[x,y]
-
-// ==================================================
-// Theory of Inequality
-// ==================================================
-
-term LessThan[Expr,Expr]
-term LessThanEq[Expr,Expr]
-
-rewrite LessThan[Expr x, Expr y]:
-    => False, if x == y
-
-rewrite And{LessThanEq[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
-    => And(Equal[x,y] ++ xs), if x == y && y == v
-
-rewrite And{LessThanEq[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
-    => And(LessThanEq[x,v] ++ xs), if y == u
-
-rewrite And{LessThan[Expr x, Expr y], LessThanEq[Expr u, Expr v], Term... xs}:
-    => And(LessThan[x,v] ++ xs), if y == u
-
-rewrite And{LessThanEq[Expr x, Expr y], LessThan[Expr u, Expr v], Term... xs}:
-    => And(LessThan[x,v] ++ xs), if y == u
-
-rewrite And{LessThan[Expr x, Expr y], LessThan[Expr u, Expr v],Term... xs}:
-    => And(LessThan[x,v] ++ xs), if y == u
-
-rewrite Not(LessThanEq[Expr x,Expr y]):
+rewrite Not(LessThanEq[* x, * y]):
     => LessThan[y,x]
 
-rewrite Not(LessThan[Expr x,Expr y]):
+rewrite Not(LessThan[* x, * y]):
     => LessThanEq[y,x]
 
-// ==================================================
-// Theory of Sets
-// ==================================================
+rewrite Not(And{BExpr... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Or(ys)
 
-term Set{Expr...}
-term SubSet[Expr,Expr]
-term SubSetEq[Expr,Expr]
-term SizeOf(Set)
+rewrite Not(Or{BExpr... xs}):
+    => let ys = { Not(x) | x in xs }
+       in And(ys)
 
-rewrite SubSet[Set[Expr... xs],Set[Expr... ys]]:
-    => False, if |xs| >= |ys|
+// ====================================================================
+// And
+// ====================================================================
 
-rewrite SubSetEq[Set[Expr... xs],Set[Expr... ys]]:
-    => False, if |xs| > |ys|
+term And{BExpr...}
 
-rewrite And{SubSetEq[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
-    => And(Equal[x,y] ++ xs), if x == u && y == v
+rewrite And{True x}:
+    => True
 
-rewrite And{SubSetEq[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
-    => And(SubSetEq[x,v] ++ xs), if y == u
+rewrite And{BExpr x}:
+    => x
 
-rewrite And{SubSet[Expr x, Expr y], SubSetEq[Expr u, Expr v], Term... xs}:
-    => And(SubSet[x,v] ++ xs), if y == u
+rewrite And{False, BExpr... xs}:
+    => False
 
-rewrite And{SubSetEq[Expr x, Expr y], SubSet[Expr u, Expr v], Term... xs}:
-    => And(SubSet[x,v] ++ xs), if y == u
+rewrite And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
 
-rewrite And{SubSet[Expr x, Expr y], SubSet[Expr u, Expr v], Term... xs}:
-    => And(SubSet[x,v] ++ xs), if y == u
+rewrite And{Not(BExpr x), BExpr y, BExpr... ys}:
+    => False, if x == y
 
-// ==================================================
-// Combined Theories
-// ==================================================
+rewrite And{Or{BExpr... xs}, BExpr... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
 
-class Term as Bool | And | Or | Not | Equal | NotEqual | LessThanEq | LessThan
-class Expr as Num | Bool | Set
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{BExpr...}
+
+rewrite Or{False}:
+    => False
+
+rewrite Or{BExpr x}:
+    => x
+
+rewrite Or{True, BExpr... xs}:
+    => True
+
+rewrite Or{Not(BExpr x), BExpr y, BExpr... ys}:
+    => True, if x == y
+
+rewrite Or{Or{BExpr... xs}, BExpr... ys}:
+    => Or (xs ++ ys)
+
+
+
+
+
+
+
+
