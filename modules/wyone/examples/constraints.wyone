@@ -35,13 +35,13 @@ reduce SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
 reduce SubSetEq[* x, * y]:
     => True, if x == y
 
-infer And{SubSetEq[Set{Expr... xs}, * x] s1,SubSetEq[Set{Expr... ys}, * y] s2, BExpr... rest}:
+reduce And{SubSetEq[Set{Expr... xs}, * x],SubSetEq[Set{Expr... ys}, * y], BExpr... rest}:
     => let zs = (xs ++ ys) 
-       in And ({s1,s2,SubSetEq[Set(zs),x]} ++ rest), if x == y
+       in And (SubSetEq[Set(zs),x] ++ rest), if x == y
 
-infer And{SubSetEq[* x, Set{Expr... xs}] s1,SubSetEq[* y, Set{Expr... ys}] s2, BExpr... rest}:
+reduce And{SubSetEq[* x, Set{Expr... xs}],SubSetEq[* y, Set{Expr... ys}], BExpr... rest}:
     => let zs = { z | z in xs, true && z in ys }
-       in And ({s1,s2,SubSetEq[x,Set(zs)]} ++ rest), if x == y
+       in And (SubSetEq[x,Set(zs)] ++ rest), if x == y
 
 infer And{SubSetEq[* x, * y] s1,SubSetEq[* u, * v] s2, BExpr... rest}:
     => And ({s1,s2,SubSetEq[x,v]} ++ rest), if y == u && x != v
