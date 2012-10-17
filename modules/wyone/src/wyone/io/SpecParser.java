@@ -94,6 +94,7 @@ public class SpecParser {
 		matchEndLine();		
 		
 		if(!included.contains(incFile)) {
+			System.out.println("INCLUDING: " + incFile);
 			try {
 				SpecLexer lexer = new SpecLexer(incFile);
 				SpecParser parser = new SpecParser(incFile, lexer.scan(), included);
@@ -103,7 +104,9 @@ public class SpecParser {
 			} catch(IOException e) {
 				syntaxError(e.getMessage(),token);
 			}
-		} 
+		} else {
+			System.out.println("ALREADY INCLUDED: " + incFile);
+		}
 		
 		return null;	
 	}
