@@ -8,15 +8,16 @@ class BExpr as Bool | And
 
 term And{BExpr...}
 
-rewrite And{True x}:
-    => True
-
-rewrite And{BExpr x}:
+reduce And{BExpr x}:
     => x
 
-rewrite And{False, BExpr... xs}:
-    => False
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
 
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
 
 // ====================================================================
 // List Expressions
@@ -27,13 +28,13 @@ term IndexOf[Expr,Expr]
 term Update[Expr,Expr,Expr]
 term LengthOf(Expr)
 
-rewrite LengthOf(List[Expr... ls]):
+reduce LengthOf(List[Expr... ls]):
     => |ls|
 
-//rewrite Update[List[Expr... ls],Num(int idx),Expr val]:
+//reduce Update[List[Expr... ls],Num(int idx),Expr val]:
 //    => ls[idx] = val
 
-//rewrite IndexOf[List[Expr... ls], Num(int i)]:
+//reduce IndexOf[List[Expr... ls], Num(int i)]:
 //    => ls[i]
 
 // ====================================================================
