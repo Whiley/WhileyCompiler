@@ -1,11 +1,3 @@
-// ====================================================================
-// Expressions
-// ====================================================================
-
-term Num(int)
-term Var(string)
-term LessThan[Expr,Expr]
-
-class Expr as Num | ...
-
-class Expr as Var | ...
+include "examples/logic.wyone"
+include "examples/inequalities.wyone"
+include "examples/constraints.wyone"

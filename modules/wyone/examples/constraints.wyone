@@ -1,25 +1,6 @@
 // an implementation of basic set constraints
 
-// ====================================================================
-// Boolean Expressions
-// ====================================================================
-term True
-term False
-class Bool as True | False
-class BExpr as Bool | And | SubSetEq
-
-term And{BExpr...}
-
-reduce And{BExpr x}:
-    => x
-
-reduce And{And{BExpr... xs}, BExpr... ys}:
-    => And (xs ++ ys)
-
-reduce And{Bool b, BExpr... xs}:
-    => False, if b == False
-    => True, if |xs| == 0
-    => And (xs)
+include "logic.wyone"
 
 // ====================================================================
 // Set Constraints
@@ -47,10 +28,13 @@ infer And{SubSetEq[* x, * y] s1,SubSetEq[* u, * v] s2, BExpr... rest}:
     => And ({s1,s2,SubSetEq[x,v]} ++ rest), if y == u && x != v
 
 // ====================================================================
-// Expressions
+// Boolean Expressions
 // ====================================================================
 
-term Num(int)
-term Var(string)
+class BExpr as SubSetEq | ...
 
-class Expr as Set | Num | Var
+// ====================================================================
+// General Expressions
+// ====================================================================
+
+class Expr as Set | ...
