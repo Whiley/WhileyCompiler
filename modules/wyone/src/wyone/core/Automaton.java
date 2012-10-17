@@ -194,29 +194,33 @@ public final class Automaton {
 	/**
 	 * Rewrite one state into another.
 	 * 
-	 * @param src
+	 * @param from
 	 *            --- state being rewritten to look like target.
-	 * @param target
+	 * @param to
 	 *            --- src is rewritten to look like target, which is then
 	 *            destroyed.
 	 * @return
 	 */
-	public boolean rewrite(int src, int target) {
-		if(src == target) {
-			return false;
-		} else if(target < 0) {			
-			if(src >= 0) { states[src] = null; }
-			remap(src,target);
-			return true;
+	public boolean rewrite(int from, int to) {
+		if(from != to) {
+			int[] map = new int[nStates];
+			for(int i=0;i!=map.length;++i) { map[i] = i; }
+			map[from] = to;
+			boolean r = rewrite(map);
+			return r;
 		} else {
-			// FIXME: bug when src < 0 ... ?
-			State os = states[src];
-			State ns = states[target];
-			states[src] = ns;
-			states[target] = null;				
-			remap(target,src);			
-			return !os.equals(ns);
+			return false;
 		}
+	}
+	
+	public boolean rewrite(int[] map) {
+		for (int from = 0; from != map.length; ++from) {
+			int to = map[from];
+			if (from != to) {
+				states[from] = null;
+			}
+		}
+		return remap(map);
 	}
 	
 	/**
@@ -351,19 +355,11 @@ public final class Automaton {
 		return r;
 	}
 	
-	private void remap(int from, int to) {
-		
-		// TODO: make this more efficient!!!
-		
-		int[] map = new int[nStates];			
-		for(int i=0;i!=nStates;++i) {
-			map[i] = i;
-		}
-		map[from] = to;
-		
+	private boolean remap(int[] map) {
 		int[] delta = new int[nStates];
 		int nChanged = 0;
 		boolean changed = true;
+		boolean result = false;
 		
 		while(changed) {
 			changed = false;
@@ -406,8 +402,11 @@ public final class Automaton {
 				}
 				
 				nChanged = 0;
+				result = true;
 			}
-		}		
+		}
+		
+		return result;
 	}
 	
 	/**

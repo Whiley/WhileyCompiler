@@ -119,7 +119,8 @@ public class JavaFileWriter {
 		myOut(2, "Automaton old;");
 		myOut(2, "do {");				
 		myOut(3, "old = new Automaton(automaton); // ew, not optimal!!");
-		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
+		myOut(3, "int nStates = automaton.nStates();");
+		myOut(3, "for(int i=0;i!=nStates;++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		for(Decl decl : sf.declarations) {
 			if(decl instanceof InferDecl) {
@@ -243,7 +244,7 @@ public class JavaFileWriter {
 		int level = translate(2,pattern,thus,environment);
 		
 		// translate expressions
-		myOut(1);
+		myOut(1);		
 		for(RuleDecl rd : decl.rules) {
 			translate(level,rd,environment);
 		}
@@ -252,7 +253,7 @@ public class JavaFileWriter {
 		while(level > 2) {
 			myOut(--level,"}");
 		}
-				
+						
 		myOut(level,"return false;");
 		myOut(--level,"}");
 		myOut();
