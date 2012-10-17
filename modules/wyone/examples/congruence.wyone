@@ -8,42 +8,44 @@ class BExpr as Bool | And | Equals | Equals
 
 term And{BExpr...}
 
-rewrite And{True x}:
-    => True
-
-rewrite And{BExpr x}:
+reduce And{BExpr x}:
     => x
 
-rewrite And{False, BExpr... xs}:
-    => False
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
+
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
 
 // ====================================================================
 // Congruence
 // ====================================================================
 term Equals(Sum)
 
-rewrite Equals(Num(int x)):
+reduce Equals(Num(int x)):
     => True, if x == 0
     => False
 
 // eliminate a variable
-rewrite And{Equals(Sum{|Var x, Expr... xs|}) s1, Equals(Sum{|Var y, Expr... ys|}) s2, BExpr... rest}:
+infer And{Equals(Sum{|Var x, Expr... xs|}) s1, Equals(Sum{|Var y, Expr... ys|}) s2, BExpr... rest}:
     => let zs = {| Neg(z) | z in ys |}, 
-           s3 = Equals(Sum(zs) ++ xs)
-       in And ({s1,s2,s3} ++ rest), if x == y && xs != ys && |ys| > 0
+           s3 = Equals(Sum(zs ++ xs))
+       in And ({s1,s2,s3} ++ rest), if x == y
 
 // ====================================================================
 // Neg
 // ====================================================================
 term Neg(Expr)
 
-rewrite Neg(Num(int x)):
+reduce Neg(Num(int x)):
     => Num(-x)
 
-rewrite Neg(Neg(Expr x)):
+reduce Neg(Neg(Expr x)):
     => x
 
-rewrite Neg(Sum{|Expr... xs|}):
+reduce Neg(Sum{|Expr... xs|}):
     => let ys = {| Neg(x) | x in xs |}
        in Sum(ys)
 
@@ -52,17 +54,17 @@ rewrite Neg(Sum{|Expr... xs|}):
 // ====================================================================
 term Sum{|Expr|}
 
-rewrite Sum{|Num(int x) n, Expr... rest|}:
+reduce Sum{|Num(int x) n, Expr... rest|}:
     => Sum(rest), if x == 0 && |rest| > 0
     => n, if |rest| == 0
 
-rewrite Sum{|Num(int x), Num(int y), Expr... rest|}:
+reduce Sum{|Num(int x), Num(int y), Expr... rest|}:
     => Sum (Num(x+y) ++ rest)
 
-rewrite Sum{|Sum{|Expr... xs|}, Expr... ys|}:
+reduce Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
 
-rewrite Sum{|Neg(Expr x), Expr y, Expr... rest|}:
+reduce Sum{|Neg(Expr x), Expr y, Expr... rest|}:
     => Sum(rest), if x == y && |rest| > 0
     => Num(0), if x == y
 
