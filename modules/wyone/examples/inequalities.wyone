@@ -24,9 +24,15 @@ infer And{LessThan[Expr x, Expr y] ieq1, LessThan[Expr u, Expr v] ieq2, BExpr...
        in And ({ieq1,ieq2, ieq3} ++ rest), if y == u
 
 // ====================================================================
+// BExpr
+// ====================================================================
+
+class BExpr as LessThan | ...
+
+// ====================================================================
 // Expr
 // ====================================================================
 
 term Num(int)
 
-class Expr as Num | Var | LessThan
+class Expr as Num | Var
