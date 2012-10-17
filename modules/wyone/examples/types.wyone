@@ -41,6 +41,9 @@ reduce Intersect{Any, Type... xs}:
 reduce Intersect{Int, Tuple y, Type... ys}:
     => Not(Any)
 
+reduce Intersect{Tuple[Type... xs], Tuple[Type... ys], Type... ys}:
+    => Not(Any), if |xs| != |ys|
+
 reduce Intersect{Intersect{Type... xs}, Type... ys}:
     => Intersect (xs ++ ys)
 
