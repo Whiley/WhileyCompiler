@@ -15,50 +15,50 @@ term Not(Type)
 reduce Not(Not(* x)):
     => x
 
-reduce Not(And{Type... xs}):
+reduce Not(Intersect{Type... xs}):
     => let ys = { Not(x) | x in xs }
        in Union(ys)
 
 reduce Not(Union{Type... xs}):
     => let ys = { Not(x) | x in xs }
-       in And(ys)
+       in Intersect(ys)
 
 // ====================================================================
-// And
+// Intersect
 // ====================================================================
 
-term And{Type...}
+term Intersect{Type...}
 
-reduce And{Type x}:
+reduce Intersect{Type x}:
     => x
 
-reduce And{Not(Any), Type... xs}:
+reduce Intersect{Not(Any), Type... xs}:
     => Not(Any)
 
-reduce And{Any, Type... xs}:
-    => And (xs), if |xs| > 0
+reduce Intersect{Any, Type... xs}:
+    => Intersect (xs), if |xs| > 0
 
-reduce And{Int, Tuple y, Type... ys}:
+reduce Intersect{Int, Tuple y, Type... ys}:
     => Not(Any)
 
-reduce And{And{Type... xs}, Type... ys}:
-    => And (xs ++ ys)
+reduce Intersect{Intersect{Type... xs}, Type... ys}:
+    => Intersect (xs ++ ys)
 
-reduce And{Not(Type x), Type y, Type... ys}:
+reduce Intersect{Not(Type x), Type y, Type... ys}:
     => Not(Any), if x == y
 
-reduce And{Union{Type... xs}, Type... ys}:
-    => let ys = { And(x ++ ys) | x in xs }
+reduce Intersect{Union{Type... xs}, Type... ys}:
+    => let ys = { Intersect(x ++ ys) | x in xs }
        in Union(ys)
 
-reduce And{Int x, Not(Tuple[Type...]), Type... rest}:
-    => And (x ++ rest)
+reduce Intersect{Int x, Not(Tuple[Type...]), Type... rest}:
+    => Intersect (x ++ rest)
 
-reduce And{Tuple x, Not(Int), Type... rest}:
-    => And (x ++ rest)
+reduce Intersect{Tuple x, Not(Int), Type... rest}:
+    => Intersect (x ++ rest)
 
 // not sure how to express this rule?
-// reduce And{Tuple[Type...], Not(Tuple[Type...]), Type... rest}:
+// reduce Intersect{Tuple[Type...], Not(Tuple[Type...]), Type... rest}:
 //    => ?
 
 // ====================================================================
@@ -90,9 +90,9 @@ reduce Union{Union{Type... xs}, Type... ys}:
 term Tuple[Type...]
 
 // this rule is BROKEN!
-reduce Tuple{And{Type... xs}, Type... rest}:
+reduce Tuple{Intersect{Type... xs}, Type... rest}:
     => let ys = { Tuple(x ++ rest) | x in xs }
-       in And(ys)
+       in Intersect(ys)
 
 // this rule is BROKEN!
 reduce Tuple{Union{Type... xs}, Type... rest}:
@@ -103,7 +103,7 @@ reduce Tuple{Union{Type... xs}, Type... rest}:
 reduce Tuple{Not(Type t), Type... rest}:
     => let pos = Tuple(Any ++ rest),
            neg = Not(Tuple(t ++ rest))
-       in And {pos,neg}
+       in Intersect {pos,neg}
 
 // ====================================================================
 // Type
@@ -112,7 +112,7 @@ reduce Tuple{Not(Type t), Type... rest}:
 term Any
 term Int
 
-class Type as Any | Int | Not | And | Tuple | Union
+class Type as Any | Int | Not | Intersect | Tuple | Union
 
 // ====================================================================
 // Subtype
@@ -124,7 +124,7 @@ term Eval(Type)
 term Subtype[Type,Type] // read as lhs :> rhs
 
 reduce Subtype[Type lhs, Type rhs]:
-    => Eval(And{Not(lhs),rhs})
+    => Eval(Intersect{Not(lhs),rhs})
 
 reduce Eval(Not(Any)):
     => True
