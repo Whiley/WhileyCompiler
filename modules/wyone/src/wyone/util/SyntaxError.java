@@ -18,6 +18,8 @@
 
 package wyone.util;
 
+import java.io.File;
+
 import wyone.core.Attribute;
 
 /**
@@ -47,6 +49,25 @@ public class SyntaxError extends RuntimeException {
 	public SyntaxError(String msg, String filename, int start, int end) {
 		this.msg = msg;
 		this.filename = filename;
+		this.start=start;		
+		this.end=end;		
+	}	
+	
+	/**
+	 * Identify a syntax error at a particular point in a file.
+	 * 
+	 * @param msg
+	 *            Message detailing the problem.
+	 * @param file
+	 *            The source file that this error is referring to.
+	 * @param line
+	 *            Line number within file containing problem.
+	 * @param column
+	 *            Column within line of file containing problem.
+	 */
+	public SyntaxError(String msg, File file, int start, int end) {
+		this.msg = msg;
+		this.filename = file.getPath();
 		this.start=start;		
 		this.end=end;		
 	}	
@@ -106,6 +127,14 @@ public class SyntaxError extends RuntimeException {
 	public static final long serialVersionUID = 1l;
 	
 
+	public static void syntaxError(String msg, File file, SyntacticElement elem) {
+		syntaxError(msg,file.getPath(),elem);
+	}
+	
+	public static void syntaxError(String msg, File file, SyntacticElement elem, Throwable ex) {
+		syntaxError(msg,file.getPath(),elem,ex);
+	}
+	
 	public static void syntaxError(String msg, String filename, SyntacticElement elem) {
 		int start = -1;
 		int end = -1;

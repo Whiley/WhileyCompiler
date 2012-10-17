@@ -1,5 +1,6 @@
 package wyone.core;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -7,7 +8,7 @@ import wyone.util.*;
 import static wyone.util.SyntaxError.*;
 
 public class TypeInference {
-	private String filename;
+	private File file;
 
 	// maps constructor names to their declared types.
 	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
@@ -19,7 +20,7 @@ public class TypeInference {
 	// private final HashMap<String,Type> globals = new HashMap();
 
 	public void infer(SpecFile spec) {
-		filename = spec.filename;
+		file = spec.file;
 
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.ClassDecl) {
@@ -136,7 +137,7 @@ public class TypeInference {
 			} else if (expr instanceof Expr.Comprehension) {
 				result = resolve((Expr.Comprehension) expr, environment);
 			} else {
-				syntaxError("unknown code encountered (" + expr.getClass().getName() + ")", filename, expr);
+				syntaxError("unknown code encountered (" + expr.getClass().getName() + ")", file, expr);
 				return null;
 			}
 			expr.attributes().add(new Attribute.Type(result));
@@ -144,7 +145,7 @@ public class TypeInference {
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			syntaxError("internal failure", filename, expr, ex);
+			syntaxError("internal failure", file, expr, ex);
 		}
 		return null; // dead code
 	}
@@ -164,7 +165,7 @@ public class TypeInference {
 			return Type.T_META(t);
 		} else {
 			syntaxError("unknown constant encountered ("
-					+ v.getClass().getName() + ")", filename, expr);
+					+ v.getClass().getName() + ")", file, expr);
 			return null; // deadcode
 		}
 	}
@@ -179,7 +180,7 @@ public class TypeInference {
 
 		Type.Term type = terms.get(expr.name);
 		if (type == null) {
-			syntaxError("function not declared", filename, expr);
+			syntaxError("function not declared", file, expr);
 		}
 		
 		return type;
@@ -192,7 +193,7 @@ public class TypeInference {
 		switch (uop.op) {
 		case LENGTHOF:
 			if(!(t instanceof Type.Compound)) {
-				syntaxError("collection type required",filename,uop.mhs);
+				syntaxError("collection type required",file,uop.mhs);
 			}			
 			t = Type.T_INT;
 			break;
@@ -203,7 +204,7 @@ public class TypeInference {
 			checkSubtype(Type.T_BOOL, t, uop);
 			break;
 		default:
-			syntaxError("unknown unary expression encountered", filename, uop);
+			syntaxError("unknown unary expression encountered", file, uop);
 		}
 		
 		return t;
@@ -291,7 +292,7 @@ public class TypeInference {
 			} else {
 				System.out.println("LHS: " + lhs_t);
 				System.out.println("RHS: " + rhs_t);
-				syntaxError("cannot append non-list types",filename,bop);
+				syntaxError("cannot append non-list types",file,bop);
 				return null;
 			}
 			break;
@@ -303,7 +304,7 @@ public class TypeInference {
 		}
 		case IN: {
 			if(!(rhs_t instanceof Type.Compound)) {
-				syntaxError("collection type required",filename,bop.rhs);
+				syntaxError("collection type required",file,bop.rhs);
 			}
 			Type.Compound tc = (Type.Compound) rhs_t; 
 			checkSubtype(tc.element(hierarchy), lhs_t, bop);
@@ -311,7 +312,7 @@ public class TypeInference {
 			break;
 		}
 		default:
-			syntaxError("unknown binary expression encountered", filename, bop);
+			syntaxError("unknown binary expression encountered", file, bop);
 			return null; // dead-code
 		}
 		return result;
@@ -324,11 +325,11 @@ public class TypeInference {
 			Expr.Variable variable = p.first();
 			Expr source = p.second();
 			if(environment.containsKey(variable.var)) {
-				syntaxError("duplicate variable '" + variable + "'",filename,variable);
+				syntaxError("duplicate variable '" + variable + "'",file,variable);
 			}
 			Type type = resolve(source,environment);
 			if(!(type instanceof Type.Compound)) {
-				syntaxError("collection type required",filename,source);
+				syntaxError("collection type required",file,source);
 			}
 			Type.Compound sourceType = (Type.Compound) type;
 			Type elementType = sourceType.element(hierarchy);
@@ -383,7 +384,7 @@ public class TypeInference {
 		if (result == null) {
 			Type.Term tmp = terms.get(code.var);
 			if (tmp == null || tmp.data != null) {
-				syntaxError("unknown variable encountered", filename, code);
+				syntaxError("unknown variable encountered", file, code);
 			}
 			return tmp;
 		} else {
@@ -458,6 +459,6 @@ public class TypeInference {
 			return;
 		}
 
-		syntaxError("expecting type " + t1 + ", got type " + t2, filename, elem);
+		syntaxError("expecting type " + t1 + ", got type " + t2, file, elem);
 	}
 }

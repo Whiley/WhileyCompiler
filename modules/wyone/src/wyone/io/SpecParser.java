@@ -19,13 +19,19 @@ import wyone.core.Type.Ref;
 import wyone.core.Type.Term;
 
 public class SpecParser {
-	private String filename;
+	private File filename;
 	private ArrayList<Token> tokens;	
+	private HashSet<File> included;
 	private int index;
 
-	public SpecParser(String filename, List<Token> tokens) {
-		this.filename = filename;
-		this.tokens = new ArrayList<Token>(tokens); 
+	public SpecParser(File file, List<Token> tokens) {
+		this(file,tokens,new HashSet<File>());		
+	}
+	
+	private SpecParser(File file, List<Token> tokens, HashSet<File> included) {
+		this.filename = file;
+		this.tokens = new ArrayList<Token>(tokens); 		
+		this.included = included;
 	}
 	
 	public SpecFile parse() {
@@ -50,11 +56,11 @@ public class SpecParser {
 			}
 		}
 				
-		return new SpecFile(pkg, moduleName(filename), filename, decls);
+		return new SpecFile(pkg, moduleName(), filename, decls);
 	}
 	
-	private String moduleName(String filename) {
-		String name = new File(filename).getName();
+	private String moduleName() {
+		String name = filename.getName();
 		int idx = name.lastIndexOf('.');
 		if(idx < 0) {
 			return name;
@@ -81,10 +87,25 @@ public class SpecParser {
 	
 	private Decl parseIncludeDecl() {
 		int start = index;
+		Token token = tokens.get(index);
 		matchKeyword("include");
-		String filename = match(Strung.class).string;
+		String relativeFilename = match(Strung.class).string;
+		File incFile = new File(filename.getParent(),relativeFilename);
 		matchEndLine();		
-		return new IncludeDecl(filename, sourceAttr(start,index-1));
+		
+		if(!included.contains(incFile)) {
+			try {
+				SpecLexer lexer = new SpecLexer(incFile);
+				SpecParser parser = new SpecParser(incFile, lexer.scan(), included);
+				SpecFile sf = parser.parse();
+				included.add(incFile);
+				return new IncludeDecl(sf, sourceAttr(start,index-1));
+			} catch(IOException e) {
+				syntaxError(e.getMessage(),token);
+			}
+		} 
+		
+		return null;	
 	}
 	
 	private Decl parseTermDecl() {

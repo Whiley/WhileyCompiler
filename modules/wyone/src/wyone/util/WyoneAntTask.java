@@ -66,7 +66,7 @@ public class WyoneAntTask extends MatchingTask {
     	try {
     		File sfile = new File(srcdir,sourceFile); 
     		SpecLexer lexer = new SpecLexer(new FileReader(sfile));
-			SpecParser parser = new SpecParser(sourceFile, lexer.scan());
+			SpecParser parser = new SpecParser(sfile, lexer.scan());
 			SpecFile sf = parser.parse();
 			new TypeInference().infer(sf);			
 			// new SpecFileWriter(oFile).write(spec);

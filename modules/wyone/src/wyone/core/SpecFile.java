@@ -1,5 +1,6 @@
 package wyone.core;
 
+import java.io.File;
 import java.util.*;
 
 import wyone.core.Pattern.Term;
@@ -8,25 +9,25 @@ import wyone.util.*;
 public class SpecFile {
 	public final String pkg;
 	public final String name;
-	public final String filename;
+	public final File file;
 	public final ArrayList<Decl> declarations;
 	
-	public SpecFile(String pkg, String name, String filename,
+	public SpecFile(String pkg, String name, File file,
 			Collection<Decl> declarations) {
 		this.pkg = pkg;
 		this.name = name;
-		this.filename = filename;
+		this.file = file;
 		this.declarations = new ArrayList<Decl>(declarations);
 	}
 	
 	public interface Decl extends SyntacticElement {}
 	
 	public static class IncludeDecl extends SyntacticElement.Impl implements Decl {
-		public final String filename;
+		public final SpecFile file;
 		
-		public IncludeDecl(String filename, Attribute... attributes) {
+		public IncludeDecl(SpecFile file, Attribute... attributes) {
 			super(attributes);
-			this.filename = filename;
+			this.file = file;
 		}		
 	}
 	

@@ -25,13 +25,13 @@ import java.util.*;
 import wyone.util.*;
 
 public class SpecLexer {	
-	private String filename;
+	private File file;
 	private StringBuffer input;
 	private int pos;
 	
-	public SpecLexer(String filename) throws IOException {
-		this(new InputStreamReader(new FileInputStream(filename),"UTF8"));
-		this.filename = filename;
+	public SpecLexer(File file) throws IOException {
+		this(new InputStreamReader(new FileInputStream(file),"UTF8"));
+		this.file = file;
 	}
 	
 	public SpecLexer(InputStream instream) throws IOException {
@@ -510,11 +510,11 @@ public class SpecLexer {
 	}
 	
 	private void syntaxError(String msg, int index) {
-		throw new SyntaxError(msg, filename, index, index);
+		throw new SyntaxError(msg, file, index, index);
 	}
 	
 	private void syntaxError(String msg) {
-		throw new SyntaxError(msg, filename, pos, pos);
+		throw new SyntaxError(msg, file, pos, pos);
 	}
 	
 	public static abstract class Token {
