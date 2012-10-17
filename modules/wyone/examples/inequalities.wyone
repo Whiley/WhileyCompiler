@@ -32,7 +32,7 @@ reduce LessThan[Var x, Var y]:
 
 infer And{LessThan[Expr x, Expr y] ieq1, LessThan[Expr u, Expr v] ieq2, Term... rest}:
     => let ieq3 = LessThan[x,v]
-       in And ({ieq1,ieq2, ieq3} ++ rest), if y == u
+       in And ({ieq1,ieq2, ieq3} ++ rest), if y == u // && !(ieq3 in rest)
 
 // ====================================================================
 // Expr

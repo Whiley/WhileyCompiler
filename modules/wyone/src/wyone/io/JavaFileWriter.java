@@ -588,6 +588,7 @@ public class JavaFileWriter {
 			}
 			break;
 		case IN:
+			lhs = coerceFromValue(level,code.lhs,lhs,environment);
 			rhs = coerceFromRef(level,code.rhs,rhs,environment);
 			break;
 		default:

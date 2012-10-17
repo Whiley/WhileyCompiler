@@ -306,7 +306,7 @@ public class TypeInference {
 				syntaxError("collection type required",filename,bop.rhs);
 			}
 			Type.Compound tc = (Type.Compound) rhs_t; 
-			checkSubtype(lhs_t, tc.element(hierarchy), bop);
+			checkSubtype(tc.element(hierarchy), lhs_t, bop);
 			result = Type.T_BOOL;
 			break;
 		}
