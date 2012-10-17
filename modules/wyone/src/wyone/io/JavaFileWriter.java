@@ -17,11 +17,10 @@ import static wyone.core.SpecFile.*;
 
 public class JavaFileWriter {
 	private PrintWriter out;
-	private ArrayList<Decl> spDecl;
-	private String pkgName = null;
 	private HashSet<Type> typeTests = new HashSet<Type>();
 	private HashSet<String> classSet = new HashSet<String>();
-
+	private final HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
+	
 	public JavaFileWriter(Writer os) {
 		out = new PrintWriter(os);
 	}
@@ -30,9 +29,7 @@ public class JavaFileWriter {
 		out = new PrintWriter(os);
 	}
 
-	public void write(SpecFile spec) {
-		ArrayList<Decl> spDe = spec.declarations;
-		spDecl = spDe;
+	public void write(SpecFile spec) {		
 		if (!spec.pkg.equals("")) {
 			myOut("package " + spec.pkg + ";");
 			myOut("");
@@ -42,9 +39,20 @@ public class JavaFileWriter {
 		myOut(1,"public static int numReductions = 0;");
 		myOut(1,"public static int numInferences = 0;");
 		myOut(1,"public static int numMisinferences = 0;");
-		HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
-
-		for (Decl d : spDecl) {
+		
+		translate(spec);
+		
+		writeReduceDispatch(spec);
+		writeInferenceDispatch(spec);
+		writeTypeTests();
+		writeSchema(spec);		
+		writeMainMethod();
+		myOut("}");
+		out.flush();
+	}
+	
+	private void translate(SpecFile spec) {
+		for (Decl d : spec.declarations) {
 			if (d instanceof ClassDecl) {
 				ClassDecl cd = (ClassDecl) d;
 				classSet.add(cd.name);
@@ -59,22 +67,18 @@ public class JavaFileWriter {
 			}
 		}
 
-		for (Decl d : spDecl) {
-			if (d instanceof TermDecl) {
-				translate((TermDecl) d, hierarchy);
+		for (Decl d : spec.declarations) {
+			if(d instanceof IncludeDecl) {
+				IncludeDecl id = (IncludeDecl) d;
+				translate(id.file);
+			} else  if (d instanceof TermDecl) {
+				translate((TermDecl) d);
 			} else if (d instanceof ClassDecl) {
-				translate((ClassDecl) d, hierarchy);
+				translate((ClassDecl) d);
 			} else if (d instanceof RewriteDecl) {
 				translate((RewriteDecl) d);
 			}
 		}
-		writeReduceDispatch(spec);
-		writeInferenceDispatch(spec);
-		writeTypeTests(hierarchy);
-		writeSchema();		
-		writeMainMethod();
-		myOut("}");
-		out.flush();
 	}
 
 	protected void writeImports() {
@@ -144,7 +148,7 @@ public class JavaFileWriter {
 		myOut(1, "}");		
 	}
 	
-	public void translate(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
+	public void translate(TermDecl decl) {
 		myOut(1, "// term " + decl.type);
 		myOut(1, "public final static int K_" + decl.type.name + " = "
 				+ termCounter++ + ";");
@@ -212,7 +216,7 @@ public class JavaFileWriter {
 
 	private static int termCounter = 0;
 
-	public void translate(ClassDecl decl, HashMap<String, Set<String>> hierarchy) {
+	public void translate(ClassDecl decl) {
 		String lin = "// " + decl.name + " as ";
 		for (int i = 0; i != decl.children.size(); ++i) {
 			String child = decl.children.get(i);
@@ -418,7 +422,7 @@ public class JavaFileWriter {
 		}
 	}
 	
-	public void writeSchema() {
+	public void writeSchema(SpecFile spec) {
 		myOut(1,
 				"// =========================================================================");
 		myOut(1, "// Schema");
@@ -426,19 +430,29 @@ public class JavaFileWriter {
 				"// =========================================================================");
 		myOut();
 		myOut(1, "public static final Type.Term[] SCHEMA = new Type.Term[]{");
-		for (int i = 0, j = 0; i != spDecl.size(); ++i) {
-			Decl d = spDecl.get(i);
-			if (d instanceof TermDecl) {
-				TermDecl td = (TermDecl) d;
-				if (j++ != 0) {
-					myOut(",");
-				}
-				indent(2);
-				writeTypeSchema(td.type);				
+		ArrayList<TermDecl> declarations = new ArrayList<TermDecl>();
+		extractTermDecls(spec,declarations);
+		for (int i = 0, j = 0; i != declarations.size(); ++i) {
+			TermDecl td = declarations.get(i);
+			if (j++ != 0) {
+				myOut(",");
 			}
+			indent(2);
+			writeTypeSchema(td.type);				
 		}
 		myOut();
 		myOut(1, "};");		
+	}
+	
+	private void extractTermDecls(SpecFile spec, ArrayList<TermDecl> decls) {
+		for(Decl d : spec.declarations) {
+			if(d instanceof TermDecl) {
+				decls.add((TermDecl)d);
+			} else if(d instanceof IncludeDecl) {
+				IncludeDecl id = (IncludeDecl) d;
+				extractTermDecls(id.file,decls);
+			}
+		}
 	}
 	
 	public void writeTypeSchema(Type t) {
@@ -831,7 +845,7 @@ public class JavaFileWriter {
 		return target;
 	}
 	
-	protected void writeTypeTests(HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTests() {
 		myOut(1,
 				"// =========================================================================");
 		myOut(1, "// Type Tests");
@@ -843,25 +857,24 @@ public class JavaFileWriter {
 		while (!worklist.isEmpty()) {
 			Type t = worklist.iterator().next();
 			worklist.remove(t);
-			writeTypeTest(t, worklist, hierarchy);
+			writeTypeTest(t, worklist);
 		}
 	}
 
-	protected void writeTypeTest(Type type, HashSet<Type> worklist,
-			HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTest(Type type, HashSet<Type> worklist) {
 		
 		if (type instanceof Type.Any) {
-			writeTypeTest((Type.Any)type,worklist,hierarchy);
+			writeTypeTest((Type.Any)type,worklist);
 		} else if (type instanceof Type.Int) {
-			writeTypeTest((Type.Int)type,worklist,hierarchy);
+			writeTypeTest((Type.Int)type,worklist);
 		} else if (type instanceof Type.Strung) {
-			writeTypeTest((Type.Strung)type,worklist,hierarchy);
+			writeTypeTest((Type.Strung)type,worklist);
 		} else if (type instanceof Type.Ref) {
-			writeTypeTest((Type.Ref)type,worklist,hierarchy);							
+			writeTypeTest((Type.Ref)type,worklist);							
 		} else if (type instanceof Type.Term) {
-			writeTypeTest((Type.Term)type,worklist,hierarchy);
+			writeTypeTest((Type.Term)type,worklist);
 		} else if (type instanceof Type.Compound) {
-			writeTypeTest((Type.Compound)type,worklist,hierarchy);							
+			writeTypeTest((Type.Compound)type,worklist);							
 		} else {
 			throw new RuntimeException(
 					"internal failure --- type test not implemented (" + type
@@ -869,8 +882,7 @@ public class JavaFileWriter {
 		}		
 	}
 	
-	protected void writeTypeTest(Type.Any type, HashSet<Type> worklist,
-			HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTest(Type.Any type, HashSet<Type> worklist) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
@@ -880,8 +892,7 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Int type, HashSet<Type> worklist,
-			HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTest(Type.Int type, HashSet<Type> worklist) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
@@ -891,8 +902,7 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Strung type, HashSet<Type> worklist,
-			HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTest(Type.Strung type, HashSet<Type> worklist) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
@@ -902,8 +912,7 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Ref type, HashSet<Type> worklist,
-			HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTest(Type.Ref type, HashSet<Type> worklist) {
 		String mangle = type2HexStr(type);
 		String elementMangle = type2HexStr(type.element);
 		myOut(1, "// " + type);
@@ -918,15 +927,14 @@ public class JavaFileWriter {
 		}
 	}
 	
-	protected void writeTypeTest(Type.Term type, HashSet<Type> worklist,
-			HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTest(Type.Term type, HashSet<Type> worklist) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");
 		
 		HashSet<String> expanded = new HashSet<String>();
-		expand(type.name, hierarchy, expanded);
+		expand(type.name, expanded);
 		indent(2);
 		out.print("if(state instanceof Automaton.Term && (");
 		boolean firstTime = true;
@@ -958,8 +966,7 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Compound type, HashSet<Type> worklist,
-			HashMap<String, Set<String>> hierarchy) {
+	protected void writeTypeTest(Type.Compound type, HashSet<Type> worklist) {
 		String mangle = type2HexStr(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
@@ -1043,8 +1050,7 @@ public class JavaFileWriter {
 		myOut();
 	}
 
-	protected void expand(String name, HashMap<String, Set<String>> hierarchy,
-			HashSet<String> result) {
+	protected void expand(String name,HashSet<String> result) {
 		//
 		// FIXME: this could be made more efficient by not expanding things
 		// which are already expanded!
