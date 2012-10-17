@@ -1,0 +1,48 @@
+include "logic.wyone"
+include "numerics.wyone"
+
+term LengthOf(Expr)
+
+// ====================================================================
+// List Expressions
+// ====================================================================
+
+term List[Expr...]
+term IndexOf[Expr,Expr]
+term Update[Expr,Expr,Expr]
+
+reduce LengthOf(List[Expr... ls]):
+    => |ls|
+
+//reduce Update[List[Expr... ls],Num(int idx),Expr val]:
+//    => ls[idx] = val
+
+//reduce IndexOf[List[Expr... ls], Num(int i)]:
+//    => ls[i]
+
+// ====================================================================
+// Set Expressions
+// ====================================================================
+
+term Set{Expr...}
+term ElementOf[Expr,Expr] // lhs in rhs
+
+// FIXME: really need to do a *lot* better than this
+reduce LengthOf(Set{Num... xs}):
+    => |xs|
+
+reduce ElementOf[Expr e, Set{Expr... es}]:
+    => True, if e in es
+    => False, if |es| == 0
+
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+
+class BExpr as ElementOf | ...
+
+// ====================================================================
+// General Expressions
+// ====================================================================
+
+class Expr as Set | List | LengthOf | IndexOf | Update | ...

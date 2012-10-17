@@ -1,10 +1,10 @@
 include "logic.wyone"
+include "collections.wyone" 
 
 // ====================================================================
 // Set Constraints
 // ====================================================================
 
-term Set{Expr...}
 term SubSetEq[Expr,Expr]
 
 reduce SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
