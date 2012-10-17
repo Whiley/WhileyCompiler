@@ -1,5 +1,5 @@
 include "examples/logic.wyone"
 include "examples/numerics.wyone"
 include "examples/inequalities.wyone"
-include "examples/constraints.wyone"
-include "examples/lists.wyone"
+include "examples/collections.wyone"
+include "examples/set-constraints.wyone"
