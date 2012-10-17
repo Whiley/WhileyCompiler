@@ -10,14 +10,16 @@ class BExpr as Bool | And | SubSetEq
 
 term And{BExpr...}
 
-rewrite And{True x}:
-    => True
-
-rewrite And{BExpr x}:
+reduce And{BExpr x}:
     => x
 
-rewrite And{False, BExpr... xs}:
-    => False
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
+
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
 
 // ====================================================================
 // Set Constraints
@@ -26,27 +28,23 @@ rewrite And{False, BExpr... xs}:
 term Set{Expr...}
 term SubSetEq[Expr,Expr]
 
-rewrite SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
+reduce SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
     => True, if no { x in xs | !(x in ys)}
     => False
 
-rewrite SubSetEq[* x, * y]:
+reduce SubSetEq[* x, * y]:
     => True, if x == y
 
-rewrite And{SubSetEq[Set{Expr... xs}, * x] s1,SubSetEq[Set{Expr... ys}, * y] s2, BExpr... rest}:
+infer And{SubSetEq[Set{Expr... xs}, * x] s1,SubSetEq[Set{Expr... ys}, * y] s2, BExpr... rest}:
     => let zs = (xs ++ ys) 
        in And ({s1,s2,SubSetEq[Set(zs),x]} ++ rest), if x == y
 
-rewrite And{SubSetEq[* x, Set{Expr... xs}] s1,SubSetEq[* y, Set{Expr... ys}] s2, BExpr... rest}:
+infer And{SubSetEq[* x, Set{Expr... xs}] s1,SubSetEq[* y, Set{Expr... ys}] s2, BExpr... rest}:
     => let zs = { z | z in xs, true && z in ys }
        in And ({s1,s2,SubSetEq[x,Set(zs)]} ++ rest), if x == y
 
-// bypass
-rewrite And{SubSetEq[Set{Expr... xs}, * x],SubSetEq[* y, Set{Expr... ys}], BExpr... rest}:
-    => False, if x == y && some { z in xs | !(z in ys) }
-
-rewrite And{SubSetEq[* x, * y] s1,SubSetEq[* u, * v] s2, BExpr... rest}:
-    => And ({s1,s2,SubSetEq[x,v]} ++ rest), if y == u && x != v && !(x is Set && v is Set)
+infer And{SubSetEq[* x, * y] s1,SubSetEq[* u, * v] s2, BExpr... rest}:
+    => And ({s1,s2,SubSetEq[x,v]} ++ rest), if y == u && x != v
 
 // ====================================================================
 // Expressions
