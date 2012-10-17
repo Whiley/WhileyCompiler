@@ -45,7 +45,10 @@ public class SpecParser {
 				Token lookahead = tokens.get(index);
 				
 				if(lookahead.text.equals("include")) {
-					decls.add(parseIncludeDecl());
+					Decl id = parseIncludeDecl();
+					// id can be null if the included file was already included
+					// elsewhere.
+					if(id != null) { decls.add(id); }
 				} else if(lookahead.text.equals("term")) {		
 					decls.add(parseTermDecl());
 				} else if(lookahead.text.equals("class")) {		
@@ -94,7 +97,6 @@ public class SpecParser {
 		matchEndLine();		
 		
 		if(!included.contains(incFile)) {
-			System.out.println("INCLUDING: " + incFile);
 			try {
 				SpecLexer lexer = new SpecLexer(incFile);
 				SpecParser parser = new SpecParser(incFile, lexer.scan(), included);
@@ -104,9 +106,7 @@ public class SpecParser {
 			} catch(IOException e) {
 				syntaxError(e.getMessage(),token);
 			}
-		} else {
-			System.out.println("ALREADY INCLUDED: " + incFile);
-		}
+		} 
 		
 		return null;	
 	}

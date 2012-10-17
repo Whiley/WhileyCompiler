@@ -23,7 +23,12 @@ public class TypeInference {
 		file = spec.file;
 
 		for (SpecFile.Decl d : spec.declarations) {
-			if (d instanceof SpecFile.ClassDecl) {
+			if (d instanceof SpecFile.IncludeDecl) {
+				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
+				File myFile = file; // save
+				infer(id.file);
+				file = myFile; // restore				
+			} else if (d instanceof SpecFile.ClassDecl) {
 				SpecFile.ClassDecl cd = (SpecFile.ClassDecl) d;
 				terms.put(cd.name, Type.T_TERM(cd.name, null));
 				hierarchy.set(cd.name,cd.children);

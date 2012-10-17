@@ -1,4 +1,4 @@
-include "examples/inequalities.wyone"
+include "examples/logic.wyone"
 
 // ====================================================================
 // Expressions
