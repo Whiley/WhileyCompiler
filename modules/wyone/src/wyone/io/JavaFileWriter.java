@@ -115,10 +115,10 @@ public class JavaFileWriter {
 
 	public void writeInferenceDispatch(SpecFile sf) {
 		myOut(1, "public static boolean infer(Automaton automaton) {");
-		myOut(2, "boolean result = reduce(automaton);");
-		myOut(2, "Automaton old;");
-		myOut(2, "do {");				
-		myOut(3, "old = new Automaton(automaton); // ew, not optimal!!");
+		myOut(2, "boolean result = false;");
+		myOut(2, "boolean changed = true;");
+		myOut(2, "while(changed) {");
+		myOut(3, "changed = false;");
 		myOut(3, "int nStates = automaton.nStates();");
 		myOut(3, "for(int i=0;i!=nStates;++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
@@ -130,15 +130,15 @@ public class JavaFileWriter {
 				myOut(4,"");
 				myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 				typeTests.add(type);
-				myOut(5, "result |= infer_" + mangle + "(i,automaton);");				
+				myOut(5, "changed |= infer_" + mangle + "(i,automaton);");				
 				myOut(4, "}");
 			}
 		}
 		myOut(3,"}");
-		myOut(3, "reduce(automaton);");
-		myOut(2,"} while(!old.equals(automaton));");
-		myOut(2, "return result;");		
-		myOut(1, "}");
+		myOut(3, "result |= changed;");
+		myOut(2,"}");
+		myOut(2, "return result;");
+		myOut(1, "}");		
 	}
 	
 	public void translate(TermDecl decl, HashMap<String, Set<String>> hierarchy) {
@@ -223,6 +223,7 @@ public class JavaFileWriter {
 	}
 
 	public void translate(RewriteDecl decl) {
+		boolean isReduction = decl instanceof ReduceDecl;
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
@@ -236,6 +237,10 @@ public class JavaFileWriter {
 			myOut(1, "public static boolean infer_" + sig);					
 		}
 		
+		if(!isReduction) {
+			myOut(1, "Automaton original = new Automaton(automaton);");
+		}
+		
 		// setup the environment
 		Environment environment = new Environment();
 		int thus = environment.allocate(param,"this");
@@ -245,8 +250,9 @@ public class JavaFileWriter {
 		
 		// translate expressions
 		myOut(1);		
+
 		for(RuleDecl rd : decl.rules) {
-			translate(level,rd,environment);
+			translate(level,rd,isReduction,environment);
 		}
 		
 		// close the pattern match
@@ -378,7 +384,7 @@ public class JavaFileWriter {
 		return level;
 	}
 	
-	public void translate(int level, RuleDecl decl, Environment environment) {
+	public void translate(int level, RuleDecl decl, boolean isReduce, Environment environment) {
 		int thus = environment.get("this");
 		for(Pair<String,Expr> let : decl.lets) {
 			String letVar = let.first();
@@ -392,7 +398,16 @@ public class JavaFileWriter {
 		}
 		int result = translate(level, decl.result, environment);
 		result = coerceFromValue(level,decl.result,result,environment);
-		myOut(level, "if(automaton.rewrite(r" + thus + ", r" + result + ")) { return true; }");
+		
+		myOut(level, "if(r" + thus + " != r" + result + ") {");
+		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");
+		if(isReduce) {			
+			myOut(level+1, "return true;");
+		} else {			
+			myOut(level+1, "reduce(automaton);");
+			myOut(level+1, "if(!automaton.equals(original)) { return true; }");
+		}
+		myOut(level,"}");
 		if(decl.condition != null) {
 			myOut(--level,"}");
 		}
@@ -1065,6 +1080,7 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
+		myOut(3, "reduce(automaton);");
 		myOut(3, "infer(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");

@@ -201,26 +201,23 @@ public final class Automaton {
 	 *            destroyed.
 	 * @return
 	 */
-	public boolean rewrite(int from, int to) {
+	public void rewrite(int from, int to) {
 		if(from != to) {
 			int[] map = new int[nStates];
 			for(int i=0;i!=map.length;++i) { map[i] = i; }
 			map[from] = to;
-			boolean r = rewrite(map);
-			return r;
-		} else {
-			return false;
-		}
+			rewrite(map);			
+		} 
 	}
 	
-	public boolean rewrite(int[] map) {
+	public void rewrite(int[] map) {
 		for (int from = 0; from != map.length; ++from) {
 			int to = map[from];
 			if (from != to) {
 				states[from] = null;
 			}
 		}
-		return remap(map);
+		remap(map);
 	}
 	
 	/**
@@ -355,11 +352,10 @@ public final class Automaton {
 		return r;
 	}
 	
-	private boolean remap(int[] map) {
+	private void remap(int[] map) {
 		int[] delta = new int[nStates];
 		int nChanged = 0;
 		boolean changed = true;
-		boolean result = false;
 		
 		while(changed) {
 			changed = false;
@@ -402,11 +398,8 @@ public final class Automaton {
 				}
 				
 				nChanged = 0;
-				result = true;
 			}
-		}
-		
-		return result;
+		}		
 	}
 	
 	/**
