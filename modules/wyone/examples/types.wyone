@@ -60,9 +60,9 @@ reduce Intersect{Int x, Not(Tuple[Type...]), Type... rest}:
 reduce Intersect{Tuple x, Not(Int), Type... rest}:
     => Intersect (x ++ rest)
 
-// not sure how to express this rule?
-// reduce Intersect{Tuple[Type...], Not(Tuple[Type...]), Type... rest}:
-//    => ?
+reduce Intersect{Tuple[Type... xs] t, Not(Tuple[Type... ys]), Type... rest}:
+    => Intersect (t ++ rest), if |xs| != |ys|
+// FIXME: missing case here when |xs| == |ys|
 
 // ====================================================================
 // Union
