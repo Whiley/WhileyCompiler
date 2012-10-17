@@ -39,6 +39,9 @@ public class JavaFileWriter {
 		}
 		writeImports();
 		myOut("public final class " + spec.name + " {");
+		myOut(1,"public static int numReductions = 0;");
+		myOut(1,"public static int numInferences = 0;");
+		myOut(1,"public static int numMisinferences = 0;");
 		HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
 
 		for (Decl d : spDecl) {
@@ -402,10 +405,12 @@ public class JavaFileWriter {
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
 		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");
 		if(isReduce) {			
+			myOut(level+1, "numReductions++;");
 			myOut(level+1, "return true;");
 		} else {			
 			myOut(level+1, "reduce(automaton);");
-			myOut(level+1, "if(!automaton.equals(original)) { return true; }");
+			myOut(level+1, "if(!automaton.equals(original)) { numInferences++; return true; }");
+			myOut(level+1, "else { numMisinferences++; }");
 		}
 		myOut(level,"}");
 		if(decl.condition != null) {
@@ -1085,6 +1090,7 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
+		myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \")\");");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");

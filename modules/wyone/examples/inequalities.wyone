@@ -30,9 +30,15 @@ reduce LessThan[Num(int x), Num(int y)]:
 reduce LessThan[Var x, Var y]:
     => False, if x == y
 
+reduce And{LessThan[Expr e1, Num(int x)] ieq, LessThan[Expr e2, Num(int y)], Term... rest}:
+    => And (ieq ++ rest), if e1 == e2 && x < y
+
+reduce And{LessThan[Num(int x), Expr e1] ieq, LessThan[Num(int y), Expr e2], Term... rest}:
+    => And (ieq ++ rest), if e1 == e2 && x > y
+
 infer And{LessThan[Expr x, Expr y] ieq1, LessThan[Expr u, Expr v] ieq2, Term... rest}:
     => let ieq3 = LessThan[x,v]
-       in And ({ieq1,ieq2, ieq3} ++ rest), if y == u // && !(ieq3 in rest)
+       in And ({ieq1,ieq2, ieq3} ++ rest), if y == u
 
 // ====================================================================
 // Expr
