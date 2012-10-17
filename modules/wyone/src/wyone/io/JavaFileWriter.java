@@ -52,18 +52,15 @@ public class JavaFileWriter {
 	}
 	
 	private void translate(SpecFile spec) {
-		for (Decl d : spec.declarations) {
-			if (d instanceof ClassDecl) {
-				ClassDecl cd = (ClassDecl) d;
-				classSet.add(cd.name);
-				for (String child : cd.children) {
-					Set<String> parents = hierarchy.get(child);
-					if (parents == null) {
-						parents = new HashSet<String>();
-						hierarchy.put(child, parents);
-					}
-					parents.add(cd.name);
+		for (ClassDecl cd : extractDecls(ClassDecl.class,spec)) {			
+			classSet.add(cd.name);
+			for (String child : cd.children) {
+				Set<String> parents = hierarchy.get(child);
+				if (parents == null) {
+					parents = new HashSet<String>();
+					hierarchy.put(child, parents);
 				}
+				parents.add(cd.name);
 			}
 		}
 
@@ -100,17 +97,14 @@ public class JavaFileWriter {
 		myOut(3, "changed = false;");
 		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
-		for(Decl decl : sf.declarations) {
-			if(decl instanceof ReduceDecl) {
-				ReduceDecl rw = (ReduceDecl) decl;
-				Type type = rw.pattern.attribute(Attribute.Type.class).type;
-				String mangle = type2HexStr(type);
-				myOut(4,"");
-				myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
-				typeTests.add(type);
-				myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");				
-				myOut(4, "}");
-			}
+		for(ReduceDecl rw : extractDecls(ReduceDecl.class,sf)) {
+			Type type = rw.pattern.attribute(Attribute.Type.class).type;
+			String mangle = type2HexStr(type);
+			myOut(4,"");
+			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
+			typeTests.add(type);
+			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");				
+			myOut(4, "}");
 		}
 		myOut(3,"}");
 		myOut(3, "result |= changed;");
@@ -129,17 +123,14 @@ public class JavaFileWriter {
 		myOut(3, "int nStates = automaton.nStates();");
 		myOut(3, "for(int i=0;i!=nStates;++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
-		for(Decl decl : sf.declarations) {
-			if(decl instanceof InferDecl) {
-				InferDecl rw = (InferDecl) decl;
-				Type type = rw.pattern.attribute(Attribute.Type.class).type;
-				String mangle = type2HexStr(type);
-				myOut(4,"");
-				myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
-				typeTests.add(type);
-				myOut(5, "changed |= infer_" + mangle + "(i,automaton);");				
-				myOut(4, "}");
-			}
+		for(InferDecl rw : extractDecls(InferDecl.class,sf)) {
+			Type type = rw.pattern.attribute(Attribute.Type.class).type;
+			String mangle = type2HexStr(type);
+			myOut(4,"");
+			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
+			typeTests.add(type);
+			myOut(5, "changed |= infer_" + mangle + "(i,automaton);");				
+			myOut(4, "}");
 		}
 		myOut(3,"}");
 		myOut(3, "result |= changed;");
@@ -430,13 +421,13 @@ public class JavaFileWriter {
 				"// =========================================================================");
 		myOut();
 		myOut(1, "public static final Type.Term[] SCHEMA = new Type.Term[]{");
-		ArrayList<TermDecl> declarations = new ArrayList<TermDecl>();
-		extractTermDecls(spec,declarations);
-		for (int i = 0, j = 0; i != declarations.size(); ++i) {
-			TermDecl td = declarations.get(i);
-			if (j++ != 0) {
+		
+		boolean firstTime=true;
+		for(TermDecl td : extractDecls(TermDecl.class,spec)) {
+			if (!firstTime) {
 				myOut(",");
 			}
+			firstTime=false;
 			indent(2);
 			writeTypeSchema(td.type);				
 		}
@@ -444,13 +435,19 @@ public class JavaFileWriter {
 		myOut(1, "};");		
 	}
 	
-	private void extractTermDecls(SpecFile spec, ArrayList<TermDecl> decls) {
+	private <T extends Decl> ArrayList<T> extractDecls(Class<T> kind, SpecFile spec) {
+		ArrayList r = new ArrayList();
+		extractDecls(kind,spec,r);
+		return r;
+	}
+	
+	private <T extends Decl> void extractDecls(Class<T> kind, SpecFile spec, ArrayList<T> decls) {
 		for(Decl d : spec.declarations) {
-			if(d instanceof TermDecl) {
-				decls.add((TermDecl)d);
+			if(kind.isInstance(d)) {
+				decls.add((T)d);
 			} else if(d instanceof IncludeDecl) {
 				IncludeDecl id = (IncludeDecl) d;
-				extractTermDecls(id.file,decls);
+				extractDecls(kind,id.file,decls);
 			}
 		}
 	}

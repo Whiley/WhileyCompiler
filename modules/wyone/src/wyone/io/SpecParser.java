@@ -126,16 +126,26 @@ public class SpecParser {
 		matchKeyword("as");
 		ArrayList<String> children = new ArrayList<String>();
 		boolean firstTime=true;
+		boolean isOpen = false;
 		do {
-			if(!firstTime) {
+			if (!firstTime) {
+				if (isOpen) {
+					syntaxError("'...' must mark end of declaration",
+							tokens.get(index));
+				}
 				match(Bar.class);
 			}
 			firstTime=false;
-			children.add(matchIdentifier().text);
-			skipWhiteSpace(true);
+			if(index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
+				match(DotDotDot.class);
+				isOpen = true;
+			} else {
+				children.add(matchIdentifier().text);
+				skipWhiteSpace(true);
+			}
 		} while(index < tokens.size() && tokens.get(index) instanceof Bar);
 
-		return new ClassDecl(name, children, sourceAttr(start,index-1));
+		return new ClassDecl(name, children, isOpen, sourceAttr(start,index-1));
 	}
 	
 	private Decl parseRewriteDecl() {

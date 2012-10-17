@@ -13,6 +13,9 @@ public class TypeInference {
 	// maps constructor names to their declared types.
 	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
 
+	// list of open classes
+	private final HashSet<String> openClasses = new HashSet<String>();
+	
 	// type hiearchy
 	private final Type.Hierarchy hierarchy = new Type.Hierarchy();
 	
@@ -30,8 +33,23 @@ public class TypeInference {
 				file = myFile; // restore				
 			} else if (d instanceof SpecFile.ClassDecl) {
 				SpecFile.ClassDecl cd = (SpecFile.ClassDecl) d;
+				Set<String> children = hierarchy.get(cd.name);
+				if(children != null && !openClasses.contains(cd.name)) {
+					syntaxError("class " + cd.name + " is not open",file,cd);
+				} else if(children != null && !cd.isOpen) {
+					syntaxError("class " + cd.name + " cannot be closed (i.e. it's already open)",file,cd);
+				} else if(children != null) {
+					children = new HashSet<String>(children);
+				} else {
+					children = new HashSet<String>();
+				}
+				children.addAll(cd.children);
 				terms.put(cd.name, Type.T_TERM(cd.name, null));
-				hierarchy.set(cd.name,cd.children);
+				hierarchy.set(cd.name,children);
+				
+				if(cd.isOpen) {
+					openClasses.add(cd.name);
+				}
 			} else if (d instanceof SpecFile.TermDecl) {
 				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
 				terms.put(td.type.name, td.type);

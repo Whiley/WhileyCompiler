@@ -77,7 +77,7 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 
 term Var(string)
 
-class BExpr as Bool | Not | And | Or | Var 
+class BExpr as Bool | Not | And | Or | Var | ...
 
 
 

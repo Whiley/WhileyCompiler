@@ -1,18 +1,11 @@
-include "examples/logic.wyone"
-
 // ====================================================================
 // Expressions
 // ====================================================================
 
 term Num(int)
+term Var(string)
 term LessThan[Expr,Expr]
 
-class Expr as Num | Var
+class Expr as Num | ...
 
-reduce LessThan[Num(int x),Num(int y)]:
-    => True, if x < y
-    => False
-
-infer And{LessThan[Expr x, Expr y] i1, LessThan[Expr u, Expr v] i2, BExpr... rest}:
-    => let i3 = LessThan[x,v]
-       in And({i1,i2,i3} ++ rest), if y == u
+class Expr as Var | ...

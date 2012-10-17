@@ -215,6 +215,10 @@ public abstract class Type {
 			subclasses.put(sup,s);
 		}
 		
+		public java.util.Set<String> get(String sup) {
+			return subclasses.get(sup);
+		}
+		
 		public boolean isSubclass(String t1, String t2) {
 			
 			// FIXME: this algorithm is not very efficient. In particular, it
