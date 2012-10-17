@@ -12,14 +12,14 @@
 
 term Not(Type)
 
-rewrite Not(Not(* x)):
+reduce Not(Not(* x)):
     => x
 
-rewrite Not(And{Type... xs}):
+reduce Not(And{Type... xs}):
     => let ys = { Not(x) | x in xs }
-       in Or(ys)
+       in Union(ys)
 
-rewrite Not(Or{Type... xs}):
+reduce Not(Union{Type... xs}):
     => let ys = { Not(x) | x in xs }
        in And(ys)
 
@@ -29,65 +29,59 @@ rewrite Not(Or{Type... xs}):
 
 term And{Type...}
 
-rewrite And{}:
-    => Any
-
-rewrite And{Type x}:
+reduce And{Type x}:
     => x
 
-rewrite And{Not(Any), Type... xs}:
+reduce And{Not(Any), Type... xs}:
     => Not(Any)
 
-rewrite And{Any, Type... xs}:
-    => And (xs)
+reduce And{Any, Type... xs}:
+    => And (xs), if |xs| > 0
 
-rewrite And{Int, Tuple y, Type... ys}:
+reduce And{Int, Tuple y, Type... ys}:
     => Not(Any)
 
-rewrite And{And{Type... xs}, Type... ys}:
+reduce And{And{Type... xs}, Type... ys}:
     => And (xs ++ ys)
 
-rewrite And{Not(Type x), Type y, Type... ys}:
+reduce And{Not(Type x), Type y, Type... ys}:
     => Not(Any), if x == y
 
-rewrite And{Or{Type... xs}, Type... ys}:
+reduce And{Union{Type... xs}, Type... ys}:
     => let ys = { And(x ++ ys) | x in xs }
-       in Or(ys)
+       in Union(ys)
 
-// why doesn't this rule work?
-rewrite And{Int x, Not(Tuple[Type...]), Type... rest}:
+reduce And{Int x, Not(Tuple[Type...]), Type... rest}:
     => And (x ++ rest)
 
-rewrite And{Tuple x, Not(Int), Type... rest}:
+reduce And{Tuple x, Not(Int), Type... rest}:
     => And (x ++ rest)
 
 // not sure how to express this rule?
-// rewrite And{Tuple[Type...], Not(Tuple[Type...]), Type... rest}:
+// reduce And{Tuple[Type...], Not(Tuple[Type...]), Type... rest}:
 //    => ?
 
 // ====================================================================
-// Or
+// Union
 // ====================================================================
 
-term Or{Type...}
+term Union{Type...}
 
-rewrite Or{}:
-    => Not(Any)
-
-rewrite Or{Type x}:
+reduce Union{Type x}:
     => x
 
-rewrite Or{Any, Type... xs}:
+reduce Union{Any, Type... xs}:
     => Any
 
-rewrite Or{Not(Any), Type... xs}:
-    => Or (xs)
+reduce Union{Not(Any), Type... xs}:
+    => Union (xs), if |xs| > 0
+    => Not(Any)
 
-rewrite Or{Not(Type x), Type y, Type... ys}:
+reduce Union{Not(Type x), Type y, Type... ys}:
     => Any, if x == y
 
-rewrite Or{Or{Type... xs}, Type... ys}:
-    => Or (xs ++ ys)
+reduce Union{Union{Type... xs}, Type... ys}:
+    => Union (xs ++ ys)
 
 // ====================================================================
 // Tuple
@@ -96,17 +90,17 @@ rewrite Or{Or{Type... xs}, Type... ys}:
 term Tuple[Type...]
 
 // this rule is BROKEN!
-rewrite Tuple{And{Type... xs}, Type... rest}:
+reduce Tuple{And{Type... xs}, Type... rest}:
     => let ys = { Tuple(x ++ rest) | x in xs }
        in And(ys)
 
 // this rule is BROKEN!
-rewrite Tuple{Or{Type... xs}, Type... rest}:
+reduce Tuple{Union{Type... xs}, Type... rest}:
     => let ys = { Tuple(x ++ rest) | x in xs }
-       in Or(ys)
+       in Union(ys)
 
 // this rule is BROKEN!
-rewrite Tuple{Not(Type t), Type... rest}:
+reduce Tuple{Not(Type t), Type... rest}:
     => let pos = Tuple(Any ++ rest),
            neg = Not(Tuple(t ++ rest))
        in And {pos,neg}
@@ -118,23 +112,27 @@ rewrite Tuple{Not(Type t), Type... rest}:
 term Any
 term Int
 
-class Type as Any | Int | Not | And | Tuple | Or
+class Type as Any | Int | Not | And | Tuple | Union
 
 // ====================================================================
 // Subtype
 // ====================================================================
 
 term True
+term False
 term Eval(Type)
 term Subtype[Type,Type] // read as lhs :> rhs
 
-rewrite Subtype[Type lhs, Type rhs]:
+reduce Subtype[Type lhs, Type rhs]:
     => Eval(And{Not(lhs),rhs})
 
-rewrite Eval(Not(Any)):
+reduce Eval(Not(Any)):
     => True
 
-// kind of annoying I can't rewrite to False.
+// The following is separated out as a inference.  This is sneaky, since 
+// it ensures that all other rules have been applied exhaustively.
+infer Eval(Type t):
+    => False
 
 
 
