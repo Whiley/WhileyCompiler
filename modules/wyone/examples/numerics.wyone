@@ -21,6 +21,10 @@ reduce Sum{|Expr x, Expr y, Expr... rest|}:
 reduce Sum{|Sum{|Expr... xs|}, Expr... ys|}:
     => Sum (xs ++ ys)
 
+reduce Sum{|Neg(Expr x), Expr y, Expr... rest|}:
+    => Sum(rest), if x == y && |rest| > 0
+    => Num(0), if x == y
+
 reduce Sum{|Mul{|Num(int x), Expr... xs|}, Mul{|Num(int y), Expr... ys|}, Expr... zs|}:
     => let m = Mul(Num(x+y) ++ xs)
        in Sum (m ++ zs), if xs == ys
@@ -49,12 +53,27 @@ reduce Mul{|Sum{|Expr... xs|}, Expr... ys|}:
        in Sum(ys)
 
 // ====================================================================
+// Neg
+// ====================================================================
+term Neg(Expr)
+
+reduce Neg(Num(int x)):
+    => Num(-x)
+
+reduce Neg(Neg(Expr x)):
+    => x
+
+reduce Neg(Sum{|Expr... xs|}):
+    => let ys = {| Neg(x) | x in xs |}
+       in Sum(ys)
+
+// ====================================================================
 // Arithmetic Exprssions
 // ====================================================================
 
 term Num(int)
 
-class AExpr as Num | Var | Sum | Mul
+class AExpr as Num | Var | Sum | Mul | Neg
    
 // ====================================================================
 // General Expressions

@@ -1,0 +1,25 @@
+// a minimal congruence example
+
+include "logic.wyone"
+include "numerics.wyone"
+
+// ====================================================================
+// Congruence
+// ====================================================================
+term Equals(Sum)
+
+reduce Equals(Num(int x)):
+    => True, if x == 0
+    => False
+
+// eliminate a variable
+infer And{Equals(Sum{|Var x, Expr... xs|}) s1, Equals(Sum{|Var y, Expr... ys|}) s2, BExpr... rest}:
+    => let zs = {| Neg(z) | z in ys |}, 
+           s3 = Equals(Sum(zs ++ xs))
+       in And ({s1,s2,s3} ++ rest), if x == y
+
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+
+class BExpr as Equals | ...
