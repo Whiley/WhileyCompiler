@@ -295,6 +295,12 @@ struct type_desc {
 #define Type_Method    1024       
 #define Type_Funct     2048       
 #define Type_Chain     4096       
+#define Type_Frac      8192       
+#define Type_Recurs   16384      
+
+static char *Recursive_Type_Letters = "XYZUVWLMNOPQRST";
+static int *Recursive_Type_Tokens = NULL;
+static int Recursive_Type_Token_Max = 0;
 
 /*
  * Odd:		no down, next
@@ -345,6 +351,8 @@ static int wycc_type_is_tuple(int id);
 static int wycc_type_is_record(int id);
 static int wycc_type_is_union(int id);
 static int wycc_type_is_negate(int id);
+static int wycc_type_is_frac(int id);
+static int wycc_type_is_recurs(int id);
 static void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ);
 static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk);
 static void wycc_chunk_ptr_fill_as(struct chunk_ptr *ptr, wycc_obj *itm);
@@ -368,7 +376,7 @@ static wycc_obj *wycc__toString_map_alt(wycc_obj *itm);
 static wycc_obj *wycc__toString_array(wycc_obj *itm);
 static wycc_obj *wycc__toString_wint(wycc_obj *itm);
 static wycc_obj* wycc_box_addr(void* ptr);
-
+static void wycc_register_lib();
 
 /*
  * wycc+wyil needs a unix/c standard starting routine.
@@ -423,6 +431,7 @@ int main(int argc, char** argv, char** envp) {
     mt_string = wycc_box_cstr("");
     map_FOM = wycc_map_new(-1);
     wycc_map_add(map_FOM, mt_string, mt_string);
+    wycc_register_lib();
 
     for (ini= wycc_init_chain; ini != NULL; ) {
 	ini->functionr();
@@ -482,8 +491,39 @@ static void wycc_type_init() {
     my_type_int    = wycc_type_internal("i");		/* 6 */
     my_type_real   = wycc_type_internal("r");	/* 7 */
     my_type_string = wycc_type_internal("s");	/* 8 */
-    my_type_x      = wycc_type_internal("X");		/* 9 */
+    //    my_type_x      = wycc_type_internal("X");		/* 9 */
     return;
+}
+
+/*
+ * register the routines that make up Whiley's standard lib
+ * (its stdlib equivalent as verses its libc).
+ *
+ * **** need to change things in lookup to be able to do impedence matching
+ * like for toString - any should cover all the other cases
+ */
+static void wycc_register_lib(){
+    wycc_register_routine("print", "[:v,v,[.a],s]", wycc__print);
+    wycc_register_routine("print", "[:v,v,[.a],a]", wycc__print);
+    wycc_register_routine("println", "[:v,v,[.a],s]", wycc__println);
+    wycc_register_routine("println", "[:v,v,[.a],a]", wycc__println);
+    wycc_register_routine("toString", "[^s,v,a]", wycc__toString);
+    wycc_register_routine("toString", "[^s,v,b]", wycc__toString);
+    wycc_register_routine("toString", "[^s,v,c]", wycc__toString);
+    wycc_register_routine("toString", "[^s,v,i]", wycc__toString);
+    wycc_register_routine("toString", "[^s,v,r]", wycc__toString);
+    wycc_register_routine("abs", "[^i,v,i]", wycc__abs);
+    wycc_register_routine("abs", "[^r,v,r]", wycc__abs);
+    wycc_register_routine("max", "[^i,v,i,i]", wycc__max);
+    wycc_register_routine("max", "[^r,v,r,r]", wycc__max);
+    wycc_register_routine("min", "[^i,v,i,i]", wycc__min);
+    wycc_register_routine("min", "[^r,v,r,r]", wycc__min);
+    wycc_register_routine("isLetter", "[^b,v,c]", wycc__isLetter);
+    wycc_register_routine("toUnsignedByte", "[^d,v,i]", wycc__toUnsignedByte);
+    wycc_register_routine("toUnsignedInt", "[^i,v,d]", wycc__toUnsignedInt);
+    //wycc_register_routine("toChar", "[^c,v,d]", wycc__toChar);
+
+
 }
 
 /*
@@ -951,6 +991,9 @@ static int wycc_type_comp(int typ, int tok){
     if (flgs & Type_Record) {
 	return (typ == Wy_Record);
     };
+    if (flgs & Type_Frac) {
+	return (typ == Wy_Record);
+    };
     if (flgs & Type_Tuple) {
 	return (typ == Wy_Tuple);
     };
@@ -1002,23 +1045,40 @@ static wycc_type_check_negate(wycc_obj* itm, int tok){
 }
 
 /*
+ * given two type tokens (record types), compute equivalence
+ * This would be a simple comparison of the tokens except that
+ * the second one can be an abstract (recursive) type.
+ */
+static int wycc_type_match_records(int itok, int atok) {
+    /* ***** lots of work needed here */
+    return (itok == atok);
+}
+
+/*
  * return 1 iff the given item (wycc_obj) matches the given type token
  */
 static int wycc_type_check_tok(wycc_obj* itm, int tok){
     void **p = (void **) itm->ptr;
+    void **pn;
     int ty = itm->typ;
     int flgs = wycc_type_flags(tok);
     int alt;
     int alta;
     int tmp;
+    long max;
+    int at;
     struct chunk_ptr col_chunk_ptr;
     struct chunk_ptr *cptr = &col_chunk_ptr;
     wycc_obj* key;
     wycc_obj* val;
     struct type_desc *desc;
+    char * vu;
 
     if (tok == my_type_any) {
 	return 1;
+    };
+    if (wycc_type_is_recurs(tok)) {
+	return wycc_type_check_tok(itm, wycc_type_down(tok));
     };
     if (wycc_type_is_union(tok)) {
 	return wycc_type_check_union(itm, tok);
@@ -1046,11 +1106,93 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 		, alt, tmp);
 	};
     };
+    if (wycc_type_is_tuple(tok)){
+	for (alt= 0; alt < (int)(p[0]) ; alt++) {
+	    val = (wycc_obj *)p[3+alt];
+	    desc = &((struct type_desc *)type_parsings)[tok];
+	    tmp = wycc_type_check_tok(val, desc->down);
+	    if (!tmp) {
+		return 0;
+	    };
+	    tok = desc->next;
+	    if (tok == 0) {
+		return 1;
+	    };
+	}
+	return 1;
+    };
+    if (wycc_type_is_record(tok)) {
+	val = (wycc_obj *) p[1];
+	tmp = (int) val->ptr;
+	//return (tmp == tok);
+	return wycc_type_match_records(tmp, tok);
+	fprintf(stderr, "Help needed in wycc_type_check_tok w/ record\n");
+	exit(-3);
+
+    };
+    if (wycc_type_is_recurs(tok)) {
+	tmp = wycc_type_down(tok);
+	return wycc_type_check_tok(itm, tmp);
+    };
+    if (wycc_type_is_frac(tok)) {
+	val = (wycc_obj *) wycc_type_down(tok);
+	pn = (void **) val->ptr;
+	max = (long) pn[0];
+
+	alt = wycc_type_next(tok);
+	for (at= 0; at < max ; at++) {
+	    if (alt <= 0) {
+		break;
+	    };
+	    key = (wycc_obj *) pn[3+at];
+	    vu = (char *) key->ptr;
+	    alta = wycc_type_down(alt);
+	    if (wycc_debug_flag) {
+		fprintf(stderr, "\tneed to match %d (%s)", at, vu);
+		fprintf(stderr, "\tagainst %d\n", alta);
+	    };
+	    val = wycc_record_get_nam(itm, vu);
+	    tmp = wycc_type_check_tok(val, alta);
+	    if (!tmp) {
+		return 0;
+	    };
+	    alt = wycc_type_next(alt);
+	}
+	return 1;
+
+    };
     if (wycc_type_is_list(tok)){
+	if ((int) p[0] <= 0) {
+	    return 1;	/* an empty list matches any type of list */
+	};
 	ty = (int) p[1];
 	if (ty != Wy_Any) {
-	    return wycc_type_comp(ty, alt);
+	    tmp = wycc_type_comp(ty, alt);
+	    if (! tmp) {
+		return  0;
+	    };
 	};
+	wycc_chunk_ptr_fill_as(cptr, itm);
+	while (1) {
+	    wycc_chunk_ptr_inc(cptr);
+	    key = cptr->key;
+	    val = cptr->val;
+	    if ((key == NULL) && (val == NULL)) {
+		return 1;
+	    };
+	    //if (key != NULL) {
+	    //	tmp = wycc_type_check_tok(key, alt);
+	    //	if (! tmp) {
+	    //	    return 0;
+	    //	};
+	    //};
+	    if (val != NULL) {
+		tmp = wycc_type_check_tok(val, alt);
+		if (! tmp) {
+		    return 0;
+		};
+	    };
+	}
 	/*
 	 * need to check individual list members.
 	 */
@@ -1088,29 +1230,6 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 	//return wycc_type_check_tok_iter(
 	fprintf(stderr, "Help needed in wycc_type_check_tok w/ iter %d\n", tok);
 	exit(-3);
-    };
-    if (wycc_type_is_tuple(tok)){
-	for (alt= 0; alt < (int)(p[0]) ; alt++) {
-	    val = (wycc_obj *)p[3+alt];
-	    desc = &((struct type_desc *)type_parsings)[tok];
-	    tmp = wycc_type_check_tok(val, desc->down);
-	    if (!tmp) {
-		return 0;
-	    };
-	    tok = desc->next;
-	    if (tok == 0) {
-		return 0;
-	    };
-	}
-	return 1;
-    };
-    if (wycc_type_is_record(tok)) {
-	val = (wycc_obj *) p[1];
-	tmp = (int) val->ptr;
-	return (tmp == tok);
-	fprintf(stderr, "Help needed in wycc_type_check_tok w/ record\n");
-	exit(-3);
-
     };
 	fprintf(stderr, "Help needed in wycc_type_check_tok w/ unk %d\n", tok);
     desc = &((struct type_desc *)type_parsings)[tok];
@@ -1340,8 +1459,9 @@ int wycc_recrec_nam(wycc_obj* rec, char *nam) {
 	    return ans;
 	};
     }
-    fprintf(stderr, "Help needed in wycc_recrec, name '%s' not found.\n"
+    fprintf(stderr, "Help needed in wycc_recrec_nam, name '%s' not found.\n"
 	    , nam);
+    WY_SEG_FAULT
     exit(-3);
     return 0;
 }
@@ -1366,8 +1486,31 @@ wycc_obj* wycc_record_get_nam(wycc_obj* rec, char *nam) {
 }
 
 /*
- * given a count, setup a raw record:
- * just like list object big enough to accept them.
+ * given a record, a field name, and an object,
+ * fill in the named slot with the object.
+ */
+wycc_obj* wycc_record_put_nam(wycc_obj* rec, char *nam, wycc_obj *itm) {
+    WY_OBJ_SANE(rec, "wycc_record_put_nam rec");
+    WY_OBJ_SANE(itm, "wycc_record_put_nam itm");
+    long at;
+    wycc_obj* meta;
+    void** p = rec->ptr;
+
+    if (rec->typ != Wy_Record) {
+	fprintf(stderr, "Help needed in wycc_record_put_nam for type %d\n"
+		, rec->typ);
+	exit(-3);
+    };
+    meta = (wycc_obj *) p[1];
+    at = wycc_recrec_nam(meta, nam);
+    //return wycc_record_get_dr(rec, at);
+    wycc_record_fill(rec, at, itm) ;
+    return;
+}
+
+/*
+ * given a record, an offset value and an object,
+ * fill the slot of the record with the object.
  */
 void wycc_record_fill(wycc_obj* rec, int osv, wycc_obj* itm) {
     WY_OBJ_SANE(rec, "wycc_record_fill rec");
@@ -1767,7 +1910,8 @@ static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk) {
      * we are now pointing beyond the branches.
      */
     while (1) {
-	if (tmp < (max-1)) {
+	//if (tmp < (max-1)) {
+	if (tmp < (max-step)) {
 	    itm = (wycc_obj *) chunk->chk[tmp];
 	    if (itm != NULL) {
 		break;
@@ -2275,9 +2419,10 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 		chunk[cp++] = itm;
 		chunk[cp++] = key;
 	    };
-	    for (; cp < (WYCC_MAP_CHUNK - 1); cp++) {
+	    for (; cp < (WYCC_MAP_CHUNK - 2); cp++) {
 		chunk[cp++] = (void *) NULL;
 	    };
+	    new[WYCC_MAP_CHUNK-1] = chunk;
 	} else {
 	    /* bigger is the leaf section */
 	    cnt+= 1;	/* adjust for the branch counter */
@@ -2312,7 +2457,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
     };
     /* need to insert item before at and we have room for it. */
     /* it is a leaf */
-    for (idx= (WYCC_MAP_CHUNK - 1); idx > (at-1) ; idx--) {
+    for (idx= (WYCC_MAP_CHUNK - 2); idx > (at-1) ; idx--) {
 	chunk[idx] = chunk[idx - 2];
     }
     chunk[at--] = key;
@@ -2654,6 +2799,9 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
     };
     if (lt == Wy_Float) {
 	return wycc_comp_float(lhs, rhs);
+    };
+    if (lt == Wy_Null) {
+	return 0;
     };
     fprintf(stderr, "Help needed in wycc_comp_gen for type %d\n", lt);
     exit(-3);
@@ -3507,6 +3655,30 @@ static int wycc_type_is_record(int id) {
 /*
  * given a type number,
  */
+static int wycc_type_is_frac(int id) {
+    int flgs = wycc_type_flags(id);
+
+    if (flgs & Type_Frac) {
+	return 1;
+    };
+    return 0;
+}
+
+/*
+ * given a type number,
+ */
+static int wycc_type_is_recurs(int id) {
+    int flgs = wycc_type_flags(id);
+
+    if (flgs & Type_Recurs) {
+	return 1;
+    };
+    return 0;
+}
+
+/*
+ * given a type number,
+ */
 static int wycc_type_is_union(int id) {
     int flgs = wycc_type_flags(id);
 
@@ -3670,6 +3842,9 @@ static int wycc_type_tok_alloc() {
     return type_count++;
 }
 
+/*
+ * count characters to the next closure (
+ */
 static size_t wycc_type_parse_la(const char *nam, int brk, int hi){
     size_t ans = 0;
     int lvl = 0;
@@ -3690,6 +3865,41 @@ static size_t wycc_type_parse_la(const char *nam, int brk, int hi){
     }
     return ans;
 }
+
+/*
+ * look at the name of the recursive type, and produce an index
+ */
+static int wycc_parse_recurser_idx(const char *nam, int beg, int siz){
+    int ans;
+    char chr = nam[beg];
+    int at;
+    size_t sizt;
+    int cnt = strlen(Recursive_Type_Letters) -1;
+
+    if (siz <= 1) {
+	ans = 0;
+    } else {
+	ans = strtol(&(nam[beg]), NULL, 10);
+	ans *= cnt;
+    };
+    if (Recursive_Type_Token_Max < (ans+cnt)) {
+	Recursive_Type_Token_Max = (ans+cnt);
+	sizt = Recursive_Type_Token_Max * sizeof(int);
+	Recursive_Type_Tokens = (int *) realloc(Recursive_Type_Tokens, sizt);
+	for (at= 0; at < cnt ; at++) {
+	    Recursive_Type_Tokens[ans + at] = -1;
+	};
+    };
+    for (at= 0; at < cnt ; at++) {
+	if (chr == Recursive_Type_Letters[at]) {
+	    return ans + at;
+	};
+    };
+    return -1;
+    fprintf(stderr, "Help needed in wycc_parse_recurser w/ %c\n", chr);
+    exit(-3);
+}
+
 /*
  * given a type nam, find the right number for it.
  */
@@ -3721,6 +3931,9 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
     }
     brk = *lo;
     chr = nam[brk++];
+    if (wycc_debug_flag) {
+	fprintf(stderr, ".. in wycc_type_parse with %s\n", nam);
+    }
     if (chr != '[') {
 	return wycc_type_parse_leaf(nam, lo, hi);
     };
@@ -3728,7 +3941,12 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
     tmp = 0;
     sav = -1;
     sav2 = -1;
+    /* a name list follows only for records, fracs, and recursers */
     if (chr == '{') {
+	sav3 = -1;
+    } else if (chr == '%') {
+	sav3 = -1;
+    } else if (chr == '<') {
 	sav3 = -1;
     } else {
 	sav3 = 1 + *lo;
@@ -3778,7 +3996,56 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
 	fprintf(stderr, "%d %d ; %d %d %d ; %d %d\n"
 		,*lo, hi, sav, sav2, sav3, cnt, cnt2);
     };
-    if (chr == '{') {
+    if (chr == '<') {
+	if (sav3 < 0) {
+	    fprintf(stderr, "Help: wycc_type_parse recurser name unclosed.\n");
+	    exit(-3);
+	};
+	//siz = sav3 - (2 + *lo);
+	siz = sav3 - (brk);
+	if (siz != 1) {
+	    fprintf(stderr, "Help: wycc_type_parse long recurser name.\n");
+	    exit(-3);
+	};
+	tmp = wycc_parse_recurser_idx(nam, brk, siz);
+	if (tmp == -1) {
+	    fprintf(stderr, "Help: wycc_type_parse bad recursive name.\n");
+	    exit(-3);
+	};
+
+	if (wycc_debug_flag) {
+	    // fprintf(stderr, "recurser name = '%c'\n", nam[2+*lo]);
+	    fprintf(stderr, "recurser name = '%c', %d\n", nam[brk], tmp);
+	};
+	ans = wycc_type_tok_alloc();
+	Recursive_Type_Tokens[tmp] = ans;
+	sav3++;
+	if (sav2 < 0) {
+	    siz = sav - sav3;
+	} else {
+	    siz = sav2 - sav3;
+	};
+	buf = (char *) malloc(siz+2);
+	strncpy(buf, &(nam[sav3]), siz);
+	buf[siz] = '\0';
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "recur = '%s'\n", buf);
+	};
+	nxt = wycc_type_internal(buf);
+
+	desc = &((struct type_desc *)type_parsings)[ans];
+#if Save_Name
+	desc->nam = nam;
+#endif
+	desc->flgs = Type_Recurs;
+	desc->down = nxt;
+	desc->next = 0;
+	return ans;
+	
+	    fprintf(stderr, "Help: wycc_type_parse recurser incomplete.\n");
+	    exit(-3);
+    };
+    if ((chr == '{') || (chr == '%')) {
 	if (sav3 < 0) {
 	    fprintf(stderr, "Help: wycc_type_parse record names unclosed.\n");
 	    exit(-3);
@@ -3810,13 +4077,18 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
     } else {
 	siz = sav2 - sav3;
     };
-    buf = (char *) malloc(siz+2);
-    strncpy(buf, &(nam[sav3]), siz);
-    buf[siz] = '\0';
-    if (wycc_debug_flag) {
-	fprintf(stderr, "new = '%s'\n", buf);
+    tmp = wycc_parse_recurser_idx(nam, sav3, siz);
+    if (tmp == -1) {
+	buf = (char *) malloc(siz+2);
+	strncpy(buf, &(nam[sav3]), siz);
+	buf[siz] = '\0';
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "new = '%s'\n", buf);
+	};
+	nxt = wycc_type_internal(buf);
+    } else {
+	nxt = Recursive_Type_Tokens[tmp];
     };
-    nxt = wycc_type_internal(buf);
     flg = -1;
     if (chr == '*') {
 	/* set */
@@ -3847,7 +4119,7 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
 	desc->next = 0;
 	return ans;
     }
-    if ((sav2 < 0) && (chr != '{')) {
+    if ((sav2 < 0) && (chr != '{') && (chr != '%')) {
 	fprintf(stderr, "Help needed in wycc_type_parse short children %s\n"
 		, nam);
 	exit(-3);
@@ -3883,7 +4155,11 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
 #if Save_Name
 	desc->nam = buf;
 #endif
-	desc->flgs = Type_Record;
+	if (chr == '{') {
+	    desc->flgs = Type_Record;
+	} else {
+	    desc->flgs = Type_Frac;
+	};
 	desc->down = (int) lst;
 	desc->next = strt;
 	return ans;
@@ -3914,28 +4190,19 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
 
     };
     if (chr == '|') {
-	/* union */
-	//fprintf(stderr, "Help needed in wycc_type_parse w/ union %s\n", nam);
 	flg = Type_Union;
     } else if (chr == '=') {
-	/* tuple */
-	//fprintf(stderr, "Help needed in wycc_type_parse w/ tuple %s\n", nam);
 	flg = Type_Tuple;
     } else if (chr == '{') {
-	/* record */
-	//fprintf(stderr, "Help needed in wycc_type_parse w/ record %s\n", nam);
 	flg = Type_Record;
+    } else if (chr == '%') {
+	/* frac == an open record is a fraction of a record */
+	flg = Type_Frac;
     } else if (chr == ':') {
-	/* method */
-	//fprintf(stderr, "Help needed in wycc_type_parse w/ method %s\n", nam);
 	flg = Type_Method;
     } else if (chr == '^') {
-	/* function */
-	//fprintf(stderr, "Help needed in wycc_type_parse w/ funct %s\n", nam);
 	flg = Type_Funct;
     } else {
-
-
 	fprintf(stderr, "Help needed in wycc_type_parse w/ %s\n", nam);
 	exit(-3);
     }
@@ -3990,7 +4257,7 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
     desc->flgs = flg;
     desc->down = nxt;
     desc->next = strt;
-    if (flg != Type_Record) {
+    if ((flg != Type_Record)  && (flg != Type_Frac)) {
 	return ans;
     };
     /*
@@ -4311,7 +4578,7 @@ static wycc_obj* wyil_convert_tuple(wycc_obj* lst, int tok){
     char * vu;
 
     if (lst->typ != Wy_Tuple) {
-	fprintf(stderr, "Help needed in wyil_convert_record w/ %d\n", lst->typ);
+	fprintf(stderr, "Help needed in wyil_convert_tuple w/ %d\n", lst->typ);
 	exit(-3);
     };
     max = (int) p[0];
@@ -4337,6 +4604,119 @@ static wycc_obj* wyil_convert_tuple(wycc_obj* lst, int tok){
 	pn[3+at] = (void *) prt;
 	tok = wycc_type_next(tok);
     }
+    return ans;
+}
+
+/*
+ * given an object, return an object of some recursive type.
+ * this conversion is bogus, and will crash if not already trivially true.
+ */
+static wycc_obj* wyil_convert_recurs(wycc_obj* itm, int tok){
+
+    //if (wycc_type_check_tok(itm, tok)) {
+	itm->cnt++;
+	return itm;
+	//};
+    fprintf(stderr, "Help needed in wyil_convert_recurs\n");
+    exit(-3);
+
+}
+
+/*
+ * given an object, return an object of type record (Wy_Record)
+ */
+static wycc_obj* wyil_convert_frac(wycc_obj* lst, int tok){
+    void** p = lst->ptr;
+    void** pn;
+    wycc_obj* ans;
+    wycc_obj* nxt;
+    wycc_obj* prt;
+    wycc_obj* nnam;
+    long max;
+    int alt;
+    long at, tmp;
+    void** new;
+    char * vu;
+
+    if (lst->typ != Wy_Record) {
+	fprintf(stderr, "Help needed in wyil_convert_frac w/ %d\n", lst->typ);
+	exit(-3);
+    };
+    nxt = (wycc_obj *) p[1];
+    //alt = (int) nxt->ptr;
+    //if (alt == tok) {
+    //ans = lst;
+    //ans->cnt++;
+    //return ans;
+    //}
+    /* need to check the names; done in the loop below. */
+    //nxt = wycc_box_meta(tok);
+    //    ans = wycc_record_new(nxt);
+    if (lst->cnt > 1) {
+	ans = wycc_cow_record(lst);
+    } else {
+	ans = lst;
+	lst->cnt++;
+    }
+    nnam = (wycc_obj *) wycc_type_down(tok);
+    pn = (void **) nnam->ptr;
+    max = (long) pn[0];
+
+    alt = wycc_type_next(tok);
+    for (at= 0; at < max ; at++) {
+	if (alt <= 0) {
+	    break;
+	};
+	nxt = (wycc_obj *) pn[3+at];
+	vu = (char *) nxt->ptr;
+	tmp = wycc_type_down(alt);
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "\tneed to adjust %d (%s)", at, vu);
+	    fprintf(stderr, "\tconverted to %d\n", tmp);
+	};
+	nxt = wycc_record_get_nam(lst, vu);
+	if (nxt != NULL) {
+	    prt = wyil_convert_tok(nxt, tmp);
+	    wycc_deref_box(nxt);
+	} else {
+	    prt = nxt;
+	};
+	if (prt != nxt) {
+	    wycc_record_put_nam(ans, vu, prt); 
+	}
+	alt = wycc_type_next(alt);
+    }
+    return ans;
+
+
+
+    fprintf(stderr, "Help needed: wyil_convert_record incomplete\n");
+    exit(-3);
+
+    alt = wycc_type_down(tok);
+    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans->typ = Wy_List;
+    tmp = (long) p[2];
+    new = (void**) calloc(tmp, sizeof(void *));
+    //    new[1] = p[1];
+    new[2] = (void *) tmp;
+    tmp = (long) p[0];
+    for (at= 0; at < tmp ; at++) {
+	nxt = (wycc_obj*) p[3+at];
+	//nxt->cnt++;
+	//new[3+at] = (void *) nxt;
+	new[3+at] = (void *) wyil_convert_tok(nxt, alt);
+    }
+    new[0] = (void *) tmp;
+    if (tmp >0) {
+	nxt = (wycc_obj *)new[3];
+	//tmp    = ((wycc_obj *)new[3])->typ;
+	new[1] = (void *) (nxt->typ);
+    } else {
+	new[1] = (void *) Wy_None;
+    }
+    ans->ptr = (void *) new;
+    ans->cnt = 1;
     return ans;
 }
 
@@ -4396,37 +4776,6 @@ static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok){
 	wycc_record_fill(ans, at, prt); 
 	alt = wycc_type_next(alt);
     }
-    return ans;
-
-
-
-    fprintf(stderr, "Help needed: wyil_convert_record incomplete\n");
-    exit(-3);
-
-    alt = wycc_type_down(tok);
-    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
-    ans->typ = Wy_List;
-    tmp = (long) p[2];
-    new = (void**) calloc(tmp, sizeof(void *));
-    //    new[1] = p[1];
-    new[2] = (void *) tmp;
-    tmp = (long) p[0];
-    for (at= 0; at < tmp ; at++) {
-	nxt = (wycc_obj*) p[3+at];
-	//nxt->cnt++;
-	//new[3+at] = (void *) nxt;
-	new[3+at] = (void *) wyil_convert_tok(nxt, alt);
-    }
-    new[0] = (void *) tmp;
-    if (tmp >0) {
-	nxt = (wycc_obj *)new[3];
-	//tmp    = ((wycc_obj *)new[3])->typ;
-	new[1] = (void *) (nxt->typ);
-    } else {
-	new[1] = (void *) Wy_None;
-    }
-    ans->ptr = (void *) new;
-    ans->cnt = 1;
     return ans;
 }
 
@@ -4561,14 +4910,16 @@ static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok){
 	return wyil_convert_tuple(itm, tok);
     } else if (wycc_type_is_iter(tok)){
 	return wyil_convert_iter(itm, tok);
-	//fprintf(stderr, "Help needed in wyil_convert_tok w/ iter %d\n", tok);
-	//exit(-3);
     } else if (wycc_type_is_record(tok)){
 	return wyil_convert_record(itm, tok);
     } else if (wycc_type_is_union(tok)){
 	return wyil_convert_union(itm, tok);
     } else if (wycc_type_is_negate(tok)){
 	return wyil_convert_negate(itm, tok);
+    } else if (wycc_type_is_frac(tok)){
+	return wyil_convert_frac(itm, tok);
+    } else if (wycc_type_is_recurs(tok)){
+	return wyil_convert_recurs(itm, tok);
     };
 	fprintf(stderr, "Help needed in wyil_convert_tok w/ %d : %d\n"
 		, tok, wycc_type_flags(tok));
@@ -5823,12 +6174,12 @@ wycc_obj* wyil_index_of(wycc_obj* lhs, wycc_obj* rhs){
  */
 void wycc__print(wycc_obj* sys, wycc_obj* itm) {
     /* WY_OBJ_SANE(sys); */
-    WY_OBJ_SANE(itm, "wycc__println itm");
+    WY_OBJ_SANE(itm, "wycc__print itm");
     wycc_obj* alt;
     int tmp;
 
     if (sys->typ != Wy_Token) {
-	fprintf(stderr, "Help needed in wycc__println for type %d\n", sys->typ);
+	fprintf(stderr, "Help needed in wycc__print for type %d\n", sys->typ);
     };
     if (itm->typ == Wy_String) {
 	printf("%s", (char *) itm->ptr);

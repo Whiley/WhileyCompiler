@@ -206,12 +206,12 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAppend_Valid_1_RuntimeTest() { runTest("ListAppend_Valid_1"); }
  @Test public void ListAppend_Valid_2_RuntimeTest() { runTest("ListAppend_Valid_2"); }
  @Test public void ListAppend_Valid_3_RuntimeTest() { runTest("ListAppend_Valid_3"); }
- @Ignore("Known Issue - union types")@Test public void ListAppend_Valid_4_RuntimeTest() { runTest("ListAppend_Valid_4"); }
+ @Test public void ListAppend_Valid_4_RuntimeTest() { runTest("ListAppend_Valid_4"); }
  @Test public void ListAppend_Valid_5_RuntimeTest() { runTest("ListAppend_Valid_5"); }
  @Test public void ListAppend_Valid_6_RuntimeTest() { runTest("ListAppend_Valid_6"); }
  @Test public void ListAppend_Valid_7_RuntimeTest() { runTest("ListAppend_Valid_7"); }
  @Test public void ListAppend_Valid_8_RuntimeTest() { runTest("ListAppend_Valid_8"); }
- @Ignore("Known Issue - union types")@Test public void ListAppend_Valid_9_RuntimeTest() { runTest("ListAppend_Valid_9"); }
+ @Test public void ListAppend_Valid_9_RuntimeTest() { runTest("ListAppend_Valid_9"); }
  @Test public void ListAssign_Valid_1_RuntimeTest() { runTest("ListAssign_Valid_1"); }
  @Test public void ListAssign_Valid_2_RuntimeTest() { runTest("ListAssign_Valid_2"); }
  @Test public void ListAssign_Valid_3_RuntimeTest() { runTest("ListAssign_Valid_3"); }
@@ -221,7 +221,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAssign_Valid_7_RuntimeTest() { runTest("ListAssign_Valid_7"); }
  @Test public void ListAssign_Valid_8_RuntimeTest() { runTest("ListAssign_Valid_8"); }
  @Test public void ListAssign_Valid_9_RuntimeTest() { runTest("ListAssign_Valid_9"); }
- @Ignore("Known Issue - union types")@Test public void ListAssign_Valid_10_RuntimeTest() { runTest("ListAssign_Valid_10"); }
+ @Test public void ListAssign_Valid_10_RuntimeTest() { runTest("ListAssign_Valid_10"); }
  @Test public void ListConversion_Valid_1_RuntimeTest() { runTest("ListConversion_Valid_1"); }
  @Test public void ListElemOf_Valid_1_RuntimeTest() { runTest("ListElemOf_Valid_1"); }
  @Test public void ListEmpty_Valid_1_RuntimeTest() { runTest("ListEmpty_Valid_1"); }
@@ -258,15 +258,15 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void NegationType_Valid_2_RuntimeTest() { runTest("NegationType_Valid_2"); }
  @Ignore("Future Work") @Test public void NegationType_Valid_3_RuntimeTest() { runTest("NegationType_Valid_3"); }
  @Test public void NegationType_Valid_4_RuntimeTest() { runTest("NegationType_Valid_4"); }
- @Ignore("Known Issue - complex types")@Test public void OpenRecord_Valid_1_RuntimeTest() { runTest("OpenRecord_Valid_1"); }
- @Ignore("Known Issue - complex types")@Test public void OpenRecord_Valid_2_RuntimeTest() { runTest("OpenRecord_Valid_2"); }
- @Ignore("Known Issue - complex types")@Test public void OpenRecord_Valid_3_RuntimeTest() { runTest("OpenRecord_Valid_3"); }
+ @Test public void OpenRecord_Valid_1_RuntimeTest() { runTest("OpenRecord_Valid_1"); }
+ @Test public void OpenRecord_Valid_2_RuntimeTest() { runTest("OpenRecord_Valid_2"); }
+ @Test public void OpenRecord_Valid_3_RuntimeTest() { runTest("OpenRecord_Valid_3"); }
  @Test public void OpenRecord_Valid_4_RuntimeTest() { runTest("OpenRecord_Valid_4"); }
- @Ignore("Starting slow")@Test public void OpenRecord_Valid_5_RuntimeTest() { runTest("OpenRecord_Valid_5"); }
- @Ignore("Starting slow")@Test public void OpenRecord_Valid_6_RuntimeTest() { runTest("OpenRecord_Valid_6"); }
- @Ignore("Starting slow")@Test public void OpenRecord_Valid_7_RuntimeTest() { runTest("OpenRecord_Valid_7"); }
- @Ignore("Starting slow")@Test public void OpenRecord_Valid_8_RuntimeTest() { runTest("OpenRecord_Valid_8"); }
- @Ignore("Starting slow")@Test public void OpenRecord_Valid_9_RuntimeTest() { runTest("OpenRecord_Valid_9"); }
+ @Test public void OpenRecord_Valid_5_RuntimeTest() { runTest("OpenRecord_Valid_5"); }
+ @Test public void OpenRecord_Valid_6_RuntimeTest() { runTest("OpenRecord_Valid_6"); }
+ @Test public void OpenRecord_Valid_7_RuntimeTest() { runTest("OpenRecord_Valid_7"); }
+ @Test public void OpenRecord_Valid_8_RuntimeTest() { runTest("OpenRecord_Valid_8"); }
+ @Test public void OpenRecord_Valid_9_RuntimeTest() { runTest("OpenRecord_Valid_9"); }
  @Ignore("Known Issue") @Test public void OpenRecord_Valid_10_RuntimeTest() { runTest("OpenRecord_Valid_10"); }
  @Test public void Print_Valid_1_RuntimeTest() { runTest("Print_Valid_1"); }
  @Test public void ProcessAccess_Valid_1_RuntimeTest() { runTest("ProcessAccess_Valid_1"); }
@@ -328,7 +328,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_18_RuntimeTest() { runTest("RecursiveType_Valid_18"); }
  @Ignore("Known Issue")
  @Test public void RecursiveType_Valid_19_RuntimeTest() { runTest("RecursiveType_Valid_19"); }
- @Ignore("Known Issue - complex types")@Test public void RecursiveType_Valid_20_RuntimeTest() { runTest("RecursiveType_Valid_20"); }
+ @Test public void RecursiveType_Valid_20_RuntimeTest() { runTest("RecursiveType_Valid_20"); }
  @Test public void Remainder_Valid_1_RuntimeTest() { runTest("Remainder_Valid_1"); }
  @Test public void Resolution_Valid_1_RuntimeTest() { runTest("Resolution_Valid_1"); }
  @Test public void SetAssign_Valid_1_RuntimeTest() { runTest("SetAssign_Valid_1"); }
@@ -342,7 +342,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetComprehension_Valid_7_RuntimeTest() { runTest("SetComprehension_Valid_7"); }
  @Test public void SetComprehension_Valid_8_RuntimeTest() { runTest("SetComprehension_Valid_8"); }
  @Test public void SetComprehension_Valid_9_RuntimeTest() { runTest("SetComprehension_Valid_9"); }
- @Ignore("Known Issue - union types")@Test public void SetComprehension_Valid_10_RuntimeTest() { runTest("SetComprehension_Valid_10"); }
+ @Test public void SetComprehension_Valid_10_RuntimeTest() { runTest("SetComprehension_Valid_10"); }
  @Test public void SetConversion_Valid_1_RuntimeTest() { runTest("SetConversion_Valid_1"); }
  @Test public void SetDefine_Valid_1_RuntimeTest() { runTest("SetDefine_Valid_1"); }
  @Test public void SetDefine_Valid_2_RuntimeTest() { runTest("SetDefine_Valid_2"); }
@@ -371,7 +371,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetUnion_Valid_6_RuntimeTest() { runTest("SetUnion_Valid_6"); }
  @Test public void SetUnion_Valid_7_RuntimeTest() { runTest("SetUnion_Valid_7"); }
  @Test public void SetUnion_Valid_8_RuntimeTest() { runTest("SetUnion_Valid_8"); }
- @Ignore("Known Issue - complex types")@Test public void SetUnion_Valid_9_RuntimeTest() { runTest("SetUnion_Valid_9"); }
+ @Test public void SetUnion_Valid_9_RuntimeTest() { runTest("SetUnion_Valid_9"); }
  @Test public void SingleLineComment_Valid_1_RuntimeTest() { runTest("SingleLineComment_Valid_1"); }
  @Test public void Subtype_Valid_3_RuntimeTest() { runTest("Subtype_Valid_3"); }
  @Test public void Subtype_Valid_4_RuntimeTest() { runTest("Subtype_Valid_4"); }
@@ -401,14 +401,14 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TryCatch_Valid_1_RuntimeTest() { runTest("TryCatch_Valid_1"); }
  @Test public void TryCatch_Valid_2_RuntimeTest() { runTest("TryCatch_Valid_2"); }
  @Test public void TryCatch_Valid_3_RuntimeTest() { runTest("TryCatch_Valid_3"); }
- @Ignore("Known Issue - complex types")@Test public void TryCatch_Valid_4_RuntimeTest() { runTest("TryCatch_Valid_4"); }
+ @Test public void TryCatch_Valid_4_RuntimeTest() { runTest("TryCatch_Valid_4"); }
  @Test public void TupleType_Valid_1_RuntimeTest() { runTest("TupleType_Valid_1"); }
  @Test public void TupleType_Valid_2_RuntimeTest() { runTest("TupleType_Valid_2"); }
  @Test public void TupleType_Valid_3_RuntimeTest() { runTest("TupleType_Valid_3"); }
  @Test public void TupleType_Valid_4_RuntimeTest() { runTest("TupleType_Valid_4"); }
  @Test public void TupleType_Valid_5_RuntimeTest() { runTest("TupleType_Valid_5"); }
  @Test public void TupleType_Valid_6_RuntimeTest() { runTest("TupleType_Valid_6"); }
- @Ignore("Known Issue - complex types")@Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); }
+ @Test public void TupleType_Valid_7_RuntimeTest() { runTest("TupleType_Valid_7"); }
  @Test public void TupleType_Valid_8_RuntimeTest() { runTest("TupleType_Valid_8"); }
  @Test public void TypeEquals_Valid_1_RuntimeTest() { runTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_RuntimeTest() { runTest("TypeEquals_Valid_2"); }
@@ -454,18 +454,18 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue") @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
  @Ignore("Known Issue") @Test public void Update_Valid_2_RuntimeTest() { runTest("Update_Valid_2"); }
  @Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
- @Ignore("Known Issue - reals")@Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
+ @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
  @Test public void UnionType_Valid_4_RuntimeTest() { runTest("UnionType_Valid_4"); }
  @Test public void UnionType_Valid_5_RuntimeTest() { runTest("UnionType_Valid_5"); }
- @Ignore("Known Issue - complex types")@Test public void UnionType_Valid_6_RuntimeTest() { runTest("UnionType_Valid_6"); }
- @Ignore("Known Issue - complex types")@Test public void UnionType_Valid_7_RuntimeTest() { runTest("UnionType_Valid_7"); }
+ @Test public void UnionType_Valid_6_RuntimeTest() { runTest("UnionType_Valid_6"); }
+ @Test public void UnionType_Valid_7_RuntimeTest() { runTest("UnionType_Valid_7"); }
  @Test public void UnionType_Valid_8_RuntimeTest() { runTest("UnionType_Valid_8"); }
  @Test public void UnionType_Valid_9_RuntimeTest() { runTest("UnionType_Valid_9"); }
  @Test public void UnionType_Valid_10_RuntimeTest() { runTest("UnionType_Valid_10"); }
  @Test public void UnionType_Valid_11_RuntimeTest() { runTest("UnionType_Valid_11"); }
- @Ignore("Known Issue - complex types")@Test public void UnionType_Valid_12_RuntimeTest() { runTest("UnionType_Valid_12"); }
- @Ignore("Known Issue - complex types")@Test public void UnionType_Valid_13_RuntimeTest() { runTest("UnionType_Valid_13"); }
- @Ignore("Known Issue - complex types")@Test public void UnionType_Valid_14_RuntimeTest() { runTest("UnionType_Valid_14"); }
+ @Test public void UnionType_Valid_12_RuntimeTest() { runTest("UnionType_Valid_12"); }
+ @Test public void UnionType_Valid_13_RuntimeTest() { runTest("UnionType_Valid_13"); }
+ @Test public void UnionType_Valid_14_RuntimeTest() { runTest("UnionType_Valid_14"); }
  @Test public void UnionType_Valid_15_RuntimeTest() { runTest("UnionType_Valid_15"); }
  @Test public void UnionType_Valid_16_RuntimeTest() { runTest("UnionType_Valid_16"); }
  @Test public void UnionType_Valid_17_RuntimeTest() { runTest("UnionType_Valid_17"); }

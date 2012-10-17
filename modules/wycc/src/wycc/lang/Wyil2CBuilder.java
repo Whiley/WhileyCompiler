@@ -72,6 +72,7 @@ public class Wyil2CBuilder implements Builder {
 	private boolean lineNumFlag;
 	private boolean floatFlag;
 	private boolean floatForceFlag;
+	private boolean indirectForceFlag;
 	
 	private final int wyccTypeAny = 0;
 	private final int wyccTypeNone = -1;
@@ -80,6 +81,8 @@ public class Wyil2CBuilder implements Builder {
 	private List<String> fileBody;
 	private Map<Integer, Type.Record> recdReg;
 	private Map<String, Integer> recdTok;
+	private Map<Integer, String> fomReg;
+	private Map<String, Integer> fomTok;
 	private List<Method> mets;
 	private Set<String> faultCodes;
 	private String commentsFOM = "";
@@ -108,6 +111,8 @@ public class Wyil2CBuilder implements Builder {
 			} else if (itm.equals("no_floats")) {
 				this.floatFlag = false;
 				this.floatForceFlag = true;
+			} else if (itm.equals("only_indirect_calls")) {
+				this.lineNumFlag = true;
 			}
 			//System.err.println("in my init loop with '" + itm + "'" );
 		}
@@ -119,6 +124,9 @@ public class Wyil2CBuilder implements Builder {
 		//System.err.println("Got to my init code.");
 		recdReg = new HashMap<Integer, Type.Record>();
 		recdTok = new HashMap<String, Integer>();
+		fomReg = new HashMap<Integer, String>();
+		fomTok = new HashMap<String, Integer>();
+		
 		faultCodes= new HashSet();
 		faultCodes.add("invoke");
 		faultCodes.add("throw");
@@ -126,6 +134,7 @@ public class Wyil2CBuilder implements Builder {
 		this.lineNumFlag = true;
 		this.floatFlag = true;		// the default setting
 		this.floatForceFlag = false;	// no user choice made.
+		this.indirectForceFlag = false;	// the default setting
 	}
 	
 	public void setLogger(Logger logger) {
@@ -175,18 +184,37 @@ public class Wyil2CBuilder implements Builder {
 	//mnam = lookupFOMname(nam, cnt, cod.type);
 	public String lookupFOMname(String nam, int cnt, Type typ) {
 		String ans = "";
-		String sig = "";
-		String sep = "";
+		//String sig = "";
+		//String sep = "";
+		String dtyp;
+		int alt;
+		String key;
+		Integer tok;
 		
 		// **** need to fill in the invocation register
 		ans = "wycc__" + nam;
-		Type.FunctionOrMethod fom = (Type.FunctionOrMethod)typ;
-		for (Type tp : fom.params()) {
-			sig += sep + tp;
-			sep = "^";
-		}
+		//Type.FunctionOrMethod fom = (Type.FunctionOrMethod)typ;
+		//for (Type tp : fom.params()) {
+		//	sig += sep + tp;
+		//	sep = "^";
+		//}
+		dtyp = writeDenseType(typ);
 		//commentsFOM += "// FOM query for " + nam + " (" + cnt + ") '" + typ + "'\n";
-		commentsFOM += "// FOM query for " + nam + " (" + cnt + ") '" + fom.ret() + "'  '"+sig+"'\n";
+		//commentsFOM += "// FOM query for " + nam + " (" + cnt + ") '" + fom.ret() + "'  '"+sig+"'\n";
+		commentsFOM += "// FOM query for " + nam + "  '" + dtyp + "'\n";
+
+		key = nam + " " + dtyp;
+		if (fomTok.containsKey(key)){
+			tok = fomTok.get(key);
+			alt = tok;
+			//return ans;
+		} else {
+			alt = fomTok.size();
+			tok = alt;
+			fomTok.put(key, tok);
+			fomReg.put(tok, key);
+		}
+		bodyAddLineNL(	"// FOM query #" + alt	);
 		return ans;
 	}
 	
@@ -325,14 +353,15 @@ public class Wyil2CBuilder implements Builder {
 		bodyAddLineNL("");
 		
 		this.writeTypeRegistry();
+		this.writeFOMRegistry();
 		
+		bodyAddLineNL(		""													);
 		bodyAddLineNL(		"static void __initor_b() {"						);
 		bodyAddLineNL( 		"	if (wycc_debug_flag != 0)"						);
 		bodyAddLineNL( 		"		wyil_debug_str(\"registering for " + this.name + "\\n\");"	);
 		this.writeTypeRegistryFill();
 		this.writeFOMRegistryFill();
-		
-		
+				
 		bodyAddLineNL( 		"	return;"								);
 		bodyAddLineNL( 		"}"											);
 		
@@ -383,8 +412,15 @@ public class Wyil2CBuilder implements Builder {
 		
 		int cnt = recdTok.size();
 		bodyAddLineNL(	"// type registry array goes here (size " + cnt + ")"	);
-		//tmp = "static wycc_obj *record_reg[" + cnt + "];\n";
 		bodyAddLineNL(	"static wycc_obj *record_reg[" + cnt + "];"	);
+	}
+
+	private void writeFOMRegistry() {
+		String tmp;
+		
+		int cnt = fomTok.size();
+		bodyAddLineNL(	"// FOM handle registry array goes here (size " + cnt + ")"	);
+		bodyAddLineNL(	"static wycc_obj *fom_handle_reg[" + cnt + "];"	);
 	}
 
 	private void writeTypeRegistryFill() {
@@ -398,35 +434,12 @@ public class Wyil2CBuilder implements Builder {
 		int idx;
 
 		bodyAddLineNL("// filling in type registry array goes here " + cnt	);
-		//bodyAddLineNL("	wycc_obj * itm;"	);
-		//bodyAddLineNL("	wycc_obj * nam_list;"	);
-		//bodyAddLineNL("	wycc_obj * typ_list;"	);
 		bodyAddLineNL("	wycc_obj * rcd_rcd;"	);
 		idx = 0;
 		for (Integer tok:recdReg.keySet()) {
 			typ = recdReg.get(tok);
 			dtyp = writeDenseType(typ);
 			bodyAddLineNL("	record_reg[" + idx + "] = wycc_record_type(\"" + dtyp + "\");"	);
-			//siz = typ.keys().size();
-			//bodyAddLineNL("	//nam_list = wycc_list_new(" + siz + ");");
-			//bodyAddLineNL("	typ_list = wycc_list_new(" + siz + ");"	);
-			//fnams = "";
-			//sep = "";
-			//for (String ke:typ.keys()){
-			//for (String ke:getFieldNames(typ)){
-//
-			//	fnams += sep + ke;
-			//	sep = ",";
-			//	bodyAddLineNL("	//itm = wycc_box_cstr(\"" + ke + "\");"	);
-			//	bodyAddLineNL("	//wycc_list_add(nam_list, itm);"	);
-			//	//bodyAddLineNL("	itm = wycc_box_cstr(\"" + typ.field(ke) + "\");"	);
-			//	dtyp = writeDenseType(typ.field(ke));
-			//	bodyAddLineNL("	itm = wycc_box_cstr(\"" + dtyp + "\");"	);
-			//	bodyAddLineNL("	wycc_list_add(typ_list, itm);"	);
-			//}
-			//bodyAddLineNL("	nam_list = wycc_record_list_names(\"" + fnams + "\");");
-			//bodyAddLineNL("	rcd_rcd = wycc_record_record(nam_list, typ_list);"	);
-			//bodyAddLineNL("	record_reg[" + idx + "] = rcd_rcd;"	);
 			idx+= 1;
 		}
 		
@@ -439,27 +452,33 @@ public class Wyil2CBuilder implements Builder {
 		// need a loop over the known FOM.
 		
 		for (Method met : mets) {
-			//met.writeProto();
-			//tmp = "//	name:" + met.name + "  argc:" + met.argc + " rtyp:" + met.retType;
-			// **** needs to become wycc_register_routine(nam, argc, rtyp, sig)
-			//bodyAddLineNL(tmp);
-			//tmp = "//			sig:" + met.argt;
-			//bodyAddLineNL(tmp);
 			tmp = "	wycc_register_routine(\"" + met.name ;
 			tmp += "\", \"" + met.denseType;
 			tmp += "\", wycc__" + met.name + ");";
 			bodyAddLineNL(	tmp	);
-			//tmp = "//	wycc_register_routine(\"" + met.name + "\", " + met.argc + ", \"" + met.retType
-			//		+ "\", \"" + met.argt + "\");";
-			//bodyAddLineNL(tmp);
-
 		}
 
 	}
 	
 	private void writeFOMRegistryQuery() {
+		String key;
+		int idx;
+		String nam;
+		String dty;
+		int cnt = 0;
+		
+		//System.err.println("milestone 99a");
 		bodyAddLineNL("// Here goes code to query the FOM registry");
-		bodyAddLine(commentsFOM);
+		//bodyAddLine(commentsFOM);
+		for (Integer tok:fomReg.keySet()) {
+			key = fomReg.get(tok);
+			idx = key.indexOf(' ');
+			nam = key.substring(0,idx);
+			dty = key.substring(idx+1);
+			bodyAddLineNL("	fom_handle_reg[" + cnt + "] = wycc_fom_handle(\"" + nam + "\", \"" + dty + "\");"	);
+			cnt += 1;
+		}
+
 	}
 	
 	public void writeTypeComments(TypeDeclaration typDe, int idx) {
@@ -1668,6 +1687,7 @@ public class Wyil2CBuilder implements Builder {
 			targ = cod.target;
 			typ = (Type.Record) cod.type;
 			tok = registerRecordType(typ);
+			//System.err.println("milestone NewRecord OK");
 			
 			tmp = "//             tok " + tok + " with " + cnt + " fields:\n";
 			bodyAddLine(tmp);
@@ -1744,7 +1764,7 @@ public class Wyil2CBuilder implements Builder {
 				//return;
 				tmp = " = wycc_record_get_nam(X" + rhs + ", \"" + fnam + "\");";
 			}
-			
+			//System.err.println("FieldLoad OK");
 			writeTargetSwap(tmp, targ, rhs, tag);
 			
 			return;
@@ -2009,16 +2029,31 @@ public class Wyil2CBuilder implements Builder {
 					
 				} else if(lv instanceof Code.RecordLVal) {
 					Code.RecordLVal l = (Code.RecordLVal) lv;
-					Type.EffectiveRecord type = l.rawType();
-					ofs = getFieldNames((Record) type).indexOf(flds.get(fidx));
-					if (idx > 1) {
-						lin = "Xb = wycc_record_get_dr(Xc, " + ofs + ");" + tag;
-						backFix = "wycc_record_fill(Xc, " + ofs + ", Xa);" + tag;
+					Type.EffectiveRecord tipe = l.rawType();
+					//System.err.println("Update :: " + tipe);
+					tnam2 = flds.get(fidx);
+					if (tipe instanceof Type.Record) {
+						ofs = getFieldNames((Record) tipe).indexOf(tnam2);
+						//System.err.println("Update OK");
+						if (idx > 1) {
+							lin = "Xb = wycc_record_get_dr(Xc, " + ofs + ");" + tag;
+							backFix = "wycc_record_fill(Xc, " + ofs + ", Xa);" + tag;
+						} else {
+							lin = "wycc_record_fill(Xc, " + ofs + ", X" + rhs + ");";
+						}
+						tmp = indent + lin + tag + "\n";
+						this.mbodyAddLine(tmp);
 					} else {
-						lin = "wycc_record_fill(Xc, " + ofs + ", X" + rhs + ");";
+						//error += "ERROR cannot yet do updates by name for record unions." + tnam2 + "\n";
+						if (idx > 1) {
+							lin = "Xb = wycc_record_get_nam(Xc, \"" + tnam2 + "\");" + tag;
+							backFix = "wycc_record_put_nam(Xc, \"" + tnam2 + "\", Xa);" + tag;
+						} else {
+							lin = "wycc_record_put_nam(Xc, \"" + tnam2 + "\", X" + rhs + ");";
+						}
+						tmp = indent + lin + tag + "\n";
+						this.mbodyAddLine(tmp);
 					}
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
 					fidx += 1;
 				} else {
 					error += "ERROR cannot yet do updates for type " + lv + "\n";
@@ -2389,6 +2424,10 @@ public class Wyil2CBuilder implements Builder {
 			Code.Assign cod = (Code.Assign) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
+			if (targ == rhs) {
+				bodyAddLineNL(	"//            Safely ignoring assign operation"	);
+				return;
+			}
 			writeClearTarget(targ, tag);
 			// **** should check that types match
 			this.addDecl(targ, "wycc_obj*");
@@ -2671,7 +2710,9 @@ public class Wyil2CBuilder implements Builder {
 				cnt = cr.values.size();
 				tmp = "//             with " + cnt + " initialisers\n";
 				bodyAddLine(tmp);
+				//System.err.println("Const  =" + typ);
 				tok = registerRecordType((Record) typ);
+				//System.err.println("Const  OK");
 				assn = "wycc_record_new(record_reg[" + tok + "])";
 				tmp = indent + nam + " = " + assn + ";" + tag + "\n";
 				ans += tmp;
@@ -3002,20 +3043,23 @@ public class Wyil2CBuilder implements Builder {
 		case Type.K_STRING:
 			return "s";
 		case Type.K_NOMINAL:
-			middle = "[$";
-			middle += state.data.toString();
-			middle +=  "]";
-			if(header != null) {
+			System.err.println("milestone 5.3.C1+");
+			//middle = "[$";
+			//middle += state.data.toString();
+			//middle +=  "]";
+			//if(header != null) {
 				// The following case is interesting. Basically, we'll never revisit
 				// a header. Therefore, if we have multiple edges landing on a
 				// header we must update the header string to represent the full
 				// type reachable from the header.
-				//String r = header + "<" + middle + ">";
-				String r = "[<" + header + middle + ">]"; 
-				headers[index] = r;
-				return r;
-			} 
-			return middle;
+				////String r = header + "<" + middle + ">";
+				//String r = "[<" + header + ">" + middle + "]"; 
+				//headers[index] = r;
+				//return r;
+			//}
+			//System.err.println("milestone 5.3.C1#");
+			//return middle;
+			return "[$]";
 		};
 		//System.err.println("milestone 5.3.C2");
 		//boolean nonEmpty = (Boolean) state.data;
@@ -3066,8 +3110,14 @@ public class Wyil2CBuilder implements Builder {
 		}
 		case Type.K_RECORD: {
 			// labeled nary node
-			middle = "[{";
-			middle += writeTypeFieldNames((Record.State) state.data);
+			Record.State rs = (Record.State) state.data;
+			if (rs.isOpen) {
+				middle = "[%";
+			}else {
+				middle = "[{";
+			}
+			//middle = "[{";
+			middle += writeTypeFieldNames(rs);
 			middle +=  "}";
 			break;
 		}		
@@ -3101,8 +3151,8 @@ public class Wyil2CBuilder implements Builder {
 			// header we must update the header string to represent the full
 			// type reachable from the header.
 			//String r = header + "<" + middle + ">"; 
-			String r = "[<" + header + middle + ">]"; 
-			headers[index] = r;
+			String r = "[<" + header + "}" + middle + "]"; 
+			//headers[index] = r;
 			return r;
 		} 
 		return middle;
@@ -3119,10 +3169,10 @@ public class Wyil2CBuilder implements Builder {
 			ans += fields.get(i);
 			sep = ",";
 		}
-		if (fields.isOpen) {
-			ans += sep;
-			ans +=  "...";
-		}
+		//if (fields.isOpen) {
+		//	ans += sep;
+		//	ans +=  "...";
+		//}
 		return ans;
 	}
 

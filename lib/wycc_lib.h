@@ -78,6 +78,7 @@ int wycc_recrec_nam(wycc_obj* rec, char *nam);
 wycc_obj* wycc_record_list_names(const char *nams);
 wycc_obj* wycc_record_get_dr(wycc_obj* rec, long osv);
 wycc_obj* wycc_record_get_nam(wycc_obj* rec, char *nam);
+wycc_obj* wycc_record_put_nam(wycc_obj* rec, char *nam, wycc_obj *itm);
 wycc_obj* wycc_list_new(long siz);
 wycc_obj* wycc_list_get(wycc_obj* lst, long at);
 void wycc_list_add(wycc_obj* lst, wycc_obj* itm);

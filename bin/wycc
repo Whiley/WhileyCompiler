@@ -94,6 +94,11 @@ usage() {
     echo '	-S	Compile Whiley and compile c to .s file'
     echo '	-D	Sprinkle the .c file with diagnostic comments (default)'
     echo '	-E	Execute the program after compiling & building'
+    echo '	-g	generate debugging information (for gdb)'
+    echo '	-v	be even more verbose'
+    echo '	-x	use .c file line numbers instead of .whiley ones'
+    echo '	-i	use flags to generate IndirectInvoke instead of Invoke'
+    echo '	-a	assume a .whiley extension of the filename'
     echo '	-q	quiet == suppress as much stderr, stdout as possible'
     echo '	-h	display this usage message'
     echo
@@ -117,6 +122,7 @@ Debug=false
 Decho=:
 Vecho=:
 Necho=echo
+Abbrev=
 
 while [[ $# -gt 0 ]]
 do
@@ -152,11 +158,17 @@ do
     -E)		# continue with the execution of the built
 	    ToX=:
 	    ;;
-    -x)		# continue with the execution of the built
-	    WYCC_OPTS=-no_numbers
+    -x)		# tell the compiler backend to not use source line numbers
+	    WYCC_OPTS="${WYCC_OPTS} -no_numbers"
 	    ;;
-    -v)		# continue with the execution of the built
+    -i)		# tell the compiler backend to use IndirectInvoke for Invoke
+	    WYCC_OPTS="${WYCC_OPTS} -only_indirect_calls"
+	    ;;
+    -v)		# be more verbose
 	    Vecho=echo
+	    ;;
+    -a)		# assume a .whiley extension if needed
+	    Abbrev=:
 	    ;;
     -*)
 	    #Opts="$Opts $1"
@@ -178,6 +190,16 @@ if $Debug
 then
     Decho=echo
 fi
+
+case ${FileName##*/} in
+*.*)	;;
+*)
+	if [[ -n "$Abbrev" && -f "${FileName}.whiley" ]]
+	then
+	    FileName=${FileName}.whiley
+	fi
+	;;
+esac
 BaseName=${FileName%%.*}
 CName=${BaseName}.c
 $Decho "wjcc  filename is '$FileName', Opts is '$Opts', Other is '$Other'"
