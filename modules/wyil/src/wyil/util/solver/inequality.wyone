@@ -6,6 +6,7 @@ include "numerics.wyone"
 // ====================================================================
 
 term LessThan[Expr,Expr]
+term LessThanEq[Expr,Expr]
 
 reduce LessThan[Num(int x), Num(int y)]:
     => True, if x < y

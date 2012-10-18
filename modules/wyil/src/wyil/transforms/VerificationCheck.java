@@ -218,7 +218,8 @@ public class VerificationCheck implements Transform {
 				int mark = tmp.mark(root);				
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
 				System.out.println("\n --------");				
-				rewrite(tmp);
+				reduce(tmp);
+				infer(tmp);
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
 				System.out.println();
 				// assertion holds if a constradiction is shown.
@@ -917,11 +918,11 @@ public class VerificationCheck implements Transform {
 		case EQ:
 			return Equals(branch.automaton, lhs, rhs);
 		case NEQ:
-			return NotEquals(branch.automaton, lhs, rhs);
+			return Not(branch.automaton, Equals(branch.automaton, lhs, rhs));
 		case GTEQ:
-			return GreaterThanEq(branch.automaton, lhs, rhs);
+			return LessThanEq(branch.automaton, rhs, lhs);
 		case GT:
-			return GreaterThan(branch.automaton, lhs, rhs);
+			return LessThan(branch.automaton, rhs, lhs);
 		case LTEQ:
 			return LessThanEq(branch.automaton, lhs, rhs);
 		case LT:

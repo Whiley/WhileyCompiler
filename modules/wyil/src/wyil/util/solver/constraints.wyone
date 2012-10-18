@@ -5,6 +5,7 @@ include "collections.wyone"
 // Set Constraints
 // ====================================================================
 
+term SubSet[Expr,Expr]
 term SubSetEq[Expr,Expr]
 
 reduce SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
