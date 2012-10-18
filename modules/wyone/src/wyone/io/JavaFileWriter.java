@@ -95,7 +95,7 @@ public class JavaFileWriter {
 		myOut(2, "boolean changed = true;");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
-		myOut(3, "for(int i=0;i!=automaton.nStates();++i) {");
+		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		for(ReduceDecl rw : extractDecls(ReduceDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
@@ -121,8 +121,7 @@ public class JavaFileWriter {
 		myOut(2, "reduce(automaton);");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
-		myOut(3, "int nStates = automaton.nStates();");
-		myOut(3, "for(int i=0;i!=nStates;++i) {");
+		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		for(InferDecl rw : extractDecls(InferDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
