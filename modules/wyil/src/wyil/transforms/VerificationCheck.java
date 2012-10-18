@@ -129,10 +129,15 @@ public class VerificationCheck implements Transform {
 		Block body = methodCase.body();
 		Block precondition = methodCase.precondition();				
 		
-		Branch branch = new Branch(0,body.numSlots()); 
+		Branch branch; 
 		if(precondition != null) {
+			// to guarantee there are enough slots...
+			int numSlots = Math.max(body.numSlots(), precondition.numSlots());
+			branch =  new Branch(0,numSlots);
 			branch = transform(true, branch, precondition);
 			branch.pc = 0; // must reset
+		} else {
+			branch =  new Branch(0,body.numSlots());
 		}
 		
 		transform(false,branch,body);
