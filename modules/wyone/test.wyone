@@ -1,1 +1,2 @@
 include "examples/logic.wyone"
+include "examples/numerics.wyone"
