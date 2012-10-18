@@ -3,14 +3,15 @@ include "logic.wyone"
 // ====================================================================
 // Congruence
 // ====================================================================
+
 term Equals{Expr,Expr}
 
 reduce Equals{Expr x, Expr y}:
     => True, if x == y
 
-//infer And{Equals{Expr x, Expr y} e1, Equals{Expr u, Expr v} e2, BExpr... rest}:
-//    => let e3 = Equals{x,v}
-//       in And ({e2,e2,e3} ++ rest), if y == u && x != v
+infer And{Equals{Expr x, Expr y} e1, Equals{Expr u, Expr v} e2, BExpr... rest}:
+    => let e3 = Equals{x,v}
+       in And ({e2,e2,e3} ++ rest), if y == u && x != v
 
 // ====================================================================
 // Boolean Expressions
