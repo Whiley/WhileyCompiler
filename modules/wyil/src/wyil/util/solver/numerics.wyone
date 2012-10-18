@@ -1,4 +1,5 @@
 include "variables.wyone"
+include "equality.wyone"
 
 // ====================================================================
 // Sum
@@ -72,6 +73,13 @@ reduce Neg(Neg(Expr x)):
 reduce Neg(Sum{|Expr... xs|}):
     => let ys = {| Neg(x) | x in xs |}
        in Sum(ys)
+
+// ====================================================================
+// Equals
+// ====================================================================
+
+reduce Equals{Num(int x), Num(int y)}:
+    => False, if x != y
 
 // ====================================================================
 // Arithmetic Exprssions
