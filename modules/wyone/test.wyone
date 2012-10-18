@@ -1,6 +1,1 @@
 include "examples/logic.wyone"
-include "examples/numerics.wyone"
-//include "examples/equality.wyone"
-include "examples/inequality.wyone"
-include "examples/collections.wyone"
-include "examples/constraints.wyone"

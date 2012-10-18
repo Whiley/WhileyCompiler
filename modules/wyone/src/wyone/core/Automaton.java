@@ -251,23 +251,58 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Remove any null states.
+	 * Remove any null states and/or dangling states.
 	 */
 	public void compact() {
 		
-		// FIXME: bug as we should collect garbage here I think
-		
-		int i,j;
+		// temporary storage
+		BitSet visited = new BitSet(nStates);
 		int[] map = new int[nStates];
+		
+		// first, identify garbage
+		int i,j=0;
+
+		for(i=0;i!=nRoots;++i) {
+			int root = roots[i];
+			if(root >= 0) {
+				visited.set(root);
+				map[j++] = root;
+			}
+		}
+		
+		while(j > 0) {
+			i = map[--j];
+			State state = states[i];
+			if(state instanceof Term) {
+				Term t = (Term) state;
+				int t_contents = t.contents;
+				if(t_contents >= 0 && !visited.get(t_contents)) {
+					visited.set(t_contents);
+					map[j++] = t_contents;
+				}
+			} else if(state instanceof Compound) {
+				Compound c = (Compound) state;
+				int[] children = c.children;
+				for(int k=0;k!=c.length;++k) {
+					int kth = children[k];
+					if(kth >= 0 && !visited.get(kth)) {
+						visited.set(kth);
+						map[j++] = kth;
+					}
+				}
+			}
+		}
+		
+		// second, shift slots down to compact them		
 		for(i=0,j=0;i!=nStates;++i) {
-			State si = states[i];
-			if(si != null) {
+			if(visited.get(i)) {
 				map[i] = j;
-				states[j++] = si;				
+				states[j++] = states[i];				
 			}
 		}
 		nStates = j;
-		// finally, update mappings
+		
+		// finally, update mappings and roots
 		for(i=0;i!=nStates;++i) {
 			states[i].remap(map);
 		}	
