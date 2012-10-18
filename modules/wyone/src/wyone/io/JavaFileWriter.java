@@ -36,16 +36,14 @@ public class JavaFileWriter {
 		}
 		writeImports();
 		myOut("public final class " + spec.name + " {");
-		myOut(1,"public static int numReductions = 0;");
-		myOut(1,"public static int numInferences = 0;");
-		myOut(1,"public static int numMisinferences = 0;");
 		
 		translate(spec);
 		
 		writeReduceDispatch(spec);
 		writeInferenceDispatch(spec);
 		writeTypeTests();
-		writeSchema(spec);		
+		writeSchema(spec);
+		writeStatsInfo();
 		writeMainMethod();
 		myOut("}");
 		out.flush();
@@ -96,6 +94,7 @@ public class JavaFileWriter {
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
 		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
+		myOut(4, "if(numSteps++ > MAX_STEPS) { return result; } // bail out");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		for(ReduceDecl rw : extractDecls(ReduceDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
@@ -116,12 +115,14 @@ public class JavaFileWriter {
 
 	public void writeInferenceDispatch(SpecFile sf) {
 		myOut(1, "public static boolean infer(Automaton automaton) {");
+		myOut(2, "reset();");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
 		myOut(2, "reduce(automaton);");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
 		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
+		myOut(4, "if(numSteps > MAX_STEPS) { return result; } // bail out");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		for(InferDecl rw : extractDecls(InferDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
@@ -1071,6 +1072,21 @@ public class JavaFileWriter {
 		}
 	}
 
+	protected void writeStatsInfo() {
+		myOut(1,"public static int MAX_STEPS = 50000;");
+		myOut(1,"public static int numSteps = 0;");
+		myOut(1,"public static int numReductions = 0;");
+		myOut(1,"public static int numInferences = 0;");
+		myOut(1,"public static int numMisinferences = 0;");		
+		
+		myOut(1,"public static void reset() {");
+		myOut(2,"numSteps = 0;");
+		myOut(2,"numReductions = 0;");
+		myOut(2,"numInferences = 0;");
+		myOut(2,"numMisinferences = 0;");				
+		myOut(1,"}");
+	}
+	
 	protected void writeMainMethod() {
 		myOut(1,
 				"// =========================================================================");
