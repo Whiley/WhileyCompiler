@@ -109,7 +109,7 @@ public class JavaFileWriter {
 		myOut(3,"}");
 		myOut(3, "result |= changed;");
 		myOut(2,"}");
-		myOut(2, "if(result) { automaton.compact(); }");
+		myOut(2, "automaton.compact();");
 		myOut(2, "return result;");
 		myOut(1, "}");
 	}
@@ -118,6 +118,7 @@ public class JavaFileWriter {
 		myOut(1, "public static boolean infer(Automaton automaton) {");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
+		myOut(2, "reduce(automaton);");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
 		myOut(3, "int nStates = automaton.nStates();");
@@ -1088,7 +1089,6 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
-		myOut(3, "reduce(automaton);");
 		myOut(3, "infer(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");

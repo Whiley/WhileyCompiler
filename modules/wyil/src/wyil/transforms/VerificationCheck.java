@@ -218,7 +218,6 @@ public class VerificationCheck implements Transform {
 				int mark = tmp.mark(root);				
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
 				System.out.println("\n --------");				
-				reduce(tmp);
 				infer(tmp);
 				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
 				System.out.println();
