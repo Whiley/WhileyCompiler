@@ -6,31 +6,30 @@ include "collections.wyone"
 // ====================================================================
 
 term SubSet[Expr,Expr]
-term SubSetEq[Expr,Expr]
 
-reduce SubSetEq[Set{Expr... xs}, Set{Expr... ys}]:
-    => True, if no { x in xs | !(x in ys)}
+reduce SubSet[Set{Expr... xs}, Set{Expr... ys}]:
+    => True, if |xs| < |ys| && no { x in xs | !(x in ys)}
     => False
 
-reduce SubSetEq[* x, * y]:
-    => True, if x == y
+reduce SubSet[* x, * y]:
+    => False, if x == y
 
-reduce And{SubSetEq[Set{Expr... xs}, * x],SubSetEq[Set{Expr... ys}, * y], BExpr... rest}:
+reduce And{SubSet[Set{Expr... xs}, * x],SubSet[Set{Expr... ys}, * y], BExpr... rest}:
     => let zs = (xs ++ ys) 
-       in And (SubSetEq[Set(zs),x] ++ rest), if x == y
+       in And (SubSet[Set(zs),x] ++ rest), if x == y
 
-reduce And{SubSetEq[* x, Set{Expr... xs}],SubSetEq[* y, Set{Expr... ys}], BExpr... rest}:
+reduce And{SubSet[* x, Set{Expr... xs}],SubSet[* y, Set{Expr... ys}], BExpr... rest}:
     => let zs = { z | z in xs, true && z in ys }
-       in And (SubSetEq[x,Set(zs)] ++ rest), if x == y
+       in And (SubSet[x,Set(zs)] ++ rest), if x == y
 
-infer And{SubSetEq[* x, * y] s1,SubSetEq[* u, * v] s2, BExpr... rest}:
-    => And ({s1,s2,SubSetEq[x,v]} ++ rest), if y == u && x != v
+infer And{SubSet[* x, * y] s1,SubSet[* u, * v] s2, BExpr... rest}:
+    => And ({s1,s2,SubSet[x,v]} ++ rest), if y == u
 
 // ====================================================================
 // Boolean Expressions
 // ====================================================================
 
-class BExpr as SubSetEq | ...
+class BExpr as SubSet | ...
 
 // ====================================================================
 // General Expressions

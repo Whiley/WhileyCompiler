@@ -6,7 +6,6 @@ include "numerics.wyone"
 // ====================================================================
 
 term LessThan[Expr,Expr]
-term LessThanEq[Expr,Expr]
 
 reduce LessThan[Num(int x), Num(int y)]:
     => True, if x < y
@@ -23,7 +22,7 @@ reduce And{LessThan[Num(int x), Expr e1] ieq, LessThan[Num(int y), Expr e2], BEx
 
 infer And{LessThan[Expr x, Expr y] ieq1, LessThan[Expr u, Expr v] ieq2, BExpr... rest}:
     => let ieq3 = LessThan[x,v]
-       in And ({ieq1,ieq2, ieq3} ++ rest), if y == u
+       in And ({ieq1,ieq2,ieq3} ++ rest), if y == u
 
 // ====================================================================
 // Boolean Expressions

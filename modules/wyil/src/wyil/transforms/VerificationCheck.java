@@ -920,17 +920,19 @@ public class VerificationCheck implements Transform {
 		case NEQ:
 			return Not(branch.automaton, Equals(branch.automaton, lhs, rhs));
 		case GTEQ:
-			return LessThanEq(branch.automaton, rhs, lhs);
+			return Or(branch.automaton,LessThan(branch.automaton, rhs, lhs),Equals(branch.automaton, rhs, lhs));
 		case GT:
 			return LessThan(branch.automaton, rhs, lhs);
 		case LTEQ:
-			return LessThanEq(branch.automaton, lhs, rhs);
+			// TODO: investigate whether better to represent LessThanEq explcitly in constraint solver
+			return Or(branch.automaton,LessThan(branch.automaton, lhs, rhs),Equals(branch.automaton, lhs, rhs));
 		case LT:
 			return LessThan(branch.automaton, lhs, rhs);
 		case SUBSET:
 			return SubSet(branch.automaton, lhs, rhs);
 		case SUBSETEQ:
-			return SubSetEq(branch.automaton, lhs, rhs);
+			// TODO: investigate whether better to represent SubSetEq explcitly in constraint solver
+			return Or(branch.automaton,Equals(branch.automaton, lhs, rhs),SubSet(branch.automaton, lhs, rhs));
 		case ELEMOF:
 			return ElementOf(branch.automaton, lhs, rhs);
 		default:
