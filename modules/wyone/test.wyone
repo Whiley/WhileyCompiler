@@ -1,2 +1,18 @@
 include "examples/logic.wyone"
 include "examples/numerics.wyone"
+
+// ====================================================================
+// Congruence
+// ====================================================================
+
+term Equals{Expr,Expr}
+
+infer And{Equals{Expr x, Expr y} e1, Equals{Expr u, Expr v} e2, BExpr... rest}:
+    => let e3 = Equals{x,v}
+       in And ({e1,e2,e3} ++ rest), if y == u && x != v
+
+// ====================================================================
+// Boolean Expressions
+// ====================================================================
+
+class BExpr as Equals | ...
