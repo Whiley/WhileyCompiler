@@ -26,6 +26,8 @@
 package wyone.io;
 
 import java.io.*;
+import java.util.HashSet;
+
 import wyone.core.*;
 
 /**
@@ -48,38 +50,48 @@ import wyone.core.*;
  * @author David J. Pearce
  * 
  */
-public class PrettyAutomataWriter  {
+public class PrettyAutomataWriter  {	
 	private final PrintStream writer;
 	private final Type.Term[] schema;
+	private final HashSet<String> indents;
+	private int level;
 	
-	public PrettyAutomataWriter(PrintStream stream, Type.Term[] schema) {
+	public PrettyAutomataWriter(PrintStream stream, Type.Term[] schema, String... indents) {		
 		this.writer = stream;
 		this.schema = schema;
+		this.indents = new HashSet<String>();
+		for(String indent : indents) {
+			this.indents.add(indent);
+		}
 	}
 	
-	public PrettyAutomataWriter(OutputStream stream, Type.Term[] schema) {
+	public PrettyAutomataWriter(OutputStream stream, Type.Term[] schema, String... indents) {		
 		this.writer = new PrintStream(stream);
 		this.schema = schema;
+		this.indents = new HashSet<String>();
+		for(String indent : indents) {
+			this.indents.add(indent);
+		}
 	}
 	
 	public void write(Automaton automaton) throws IOException {	
 		for(int i=0;i!=automaton.nRoots();++i) {
-			write(automaton.root(i),automaton);
+			write(automaton.root(i),automaton,false);
 		}
 	}
 	
-	protected void write(int index, Automaton automaton) throws IOException {
-		Automaton.State state = automaton.get(index);
+	protected void write(int index, Automaton automaton, boolean indent) throws IOException {
+		Automaton.State state = automaton.get(index);		
 		if(state instanceof Automaton.Constant) {
-			write((Automaton.Constant)state,automaton);
+			write((Automaton.Constant)state,automaton,indent);
 		} else if(state instanceof Automaton.Term) {
-			write((Automaton.Term)state,automaton);
+			write((Automaton.Term)state,automaton,indent);
 		} else {
-			write((Automaton.Compound)state,automaton);
+			write((Automaton.Compound)state,automaton,indent);
 		}	
 	}
 	
-	protected void write(Automaton.Constant item, Automaton automaton) throws IOException {
+	protected void write(Automaton.Constant item, Automaton automaton, boolean indent) throws IOException {
 		Object payload = item.value;
 		if (payload instanceof String) {
 			writer.print("\"" + payload.toString() + "\"");
@@ -89,22 +101,25 @@ public class PrettyAutomataWriter  {
 		}
 	}
 
-	protected void write(Automaton.Term term, Automaton automaton) throws IOException {
-		writer.print(schema[term.kind].name);
+	protected void write(Automaton.Term term, Automaton automaton, boolean indent) throws IOException {
+		String name = schema[term.kind].name;
+		indent = indents.contains(name);
+		
+		writer.print(name);
 		Type.Ref type = (Type.Ref) schema[term.kind].data;		
 		if(type != null && type.element instanceof Type.Compound) {			
-			write(term.contents,automaton);
+			write(term.contents,automaton,indent);
 		} else if(type != null) {
 			writer.print("(");
-			write(term.contents,automaton);
+			write(term.contents,automaton,indent);
 			writer.print(")");
 		}
 	}
 	
-	protected void write(Automaton.Compound state, Automaton automaton) throws IOException {
+	protected void write(Automaton.Compound state, Automaton automaton, boolean indent) throws IOException {
 		switch(state.kind) {
 			case Automaton.K_LIST:
-				writer.print("[");
+				writer.print("[");				
 				break;
 			case Automaton.K_BAG:
 				writer.print("{|");
@@ -113,12 +128,24 @@ public class PrettyAutomataWriter  {
 				writer.print("{");
 				break;
 		}		
-		for(int i=0;i!=state.size();++i) {
+		if(indent) {
+			level++;
+		}
+		for(int i=0;i!=state.size();++i) {			
 			if(i != 0) {
 				writer.print(",");
-			}
-			write(state.get(i),automaton);
+			}						
+			if(indent) {
+				writer.println();
+				indent();
+			}			
+			write(state.get(i),automaton,false);
 		}
+		if(indent) {		
+			level--;
+			writer.println();
+			indent();
+		}		
 		switch(state.kind) {
 			case Automaton.K_LIST:
 				writer.print("]");
@@ -138,5 +165,11 @@ public class PrettyAutomataWriter  {
 	
 	public void flush() throws IOException {
 		writer.flush();
+	}
+	
+	private void indent() {
+		for(int i=0;i<level;++i) {
+			writer.print("\t");
+		}		
 	}
 }

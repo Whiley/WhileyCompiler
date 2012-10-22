@@ -221,10 +221,10 @@ public class VerificationCheck implements Transform {
 				int root = And(tmp,constraints);
 				root = And(tmp,root,Not(tmp,test));
 				int mark = tmp.mark(root);				
-				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
+				new PrettyAutomataWriter(System.out,SCHEMA,"And","Or").write(tmp);
 				System.out.println("\n --------");				
 				infer(tmp);
-				new PrettyAutomataWriter(System.out,SCHEMA).write(tmp);
+				new PrettyAutomataWriter(System.out,SCHEMA,"And","Or").write(tmp);
 				System.out.println();
 				// assertion holds if a constradiction is shown.
 				return tmp.get(tmp.root(mark)).equals(ConstraintSolver.False);
