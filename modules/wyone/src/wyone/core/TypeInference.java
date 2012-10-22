@@ -126,23 +126,27 @@ public class TypeInference {
 	
 	public void infer(SpecFile.RuleDecl rd, HashMap<String,Type> environment) {
 		 environment = new HashMap<String,Type>(environment);
-		
-		for(Pair<String,Expr> let : rd.lets) {
-			Type expr = resolve(let.second(),environment);
-			environment.put(let.first(), expr);
+		ArrayList<Pair<String,Expr>> rd_lets = rd.lets;
+		for(int i=0;i!=rd_lets.size();++i) {
+			Pair<String,Expr> let = rd_lets.get(i);
+			Pair<Expr,Type> p = resolve(let.second(),environment);
+			rd.lets.set(i, new Pair(let.first(),p.first()));
+			environment.put(let.first(), p.second());
 		}
 		
 		if(rd.condition != null) {
-			Type condition = resolve(rd.condition,environment);
-			checkSubtype(Type.T_BOOL,condition,rd.condition);
+			Pair<Expr,Type> p = resolve(rd.condition,environment);
+			rd.condition = p.first();
+			checkSubtype(Type.T_BOOL,p.second(),rd.condition);
 		}
 		
-		Type result = resolve(rd.result,environment);
-
+		Pair<Expr,Type> result = resolve(rd.result,environment);
+		rd.result = result.first();
+		
 		// TODO: check result is a ref?
 	}
 
-	protected Type resolve(Expr expr, HashMap<String,Type> environment) {
+	protected Pair<Expr,Type> resolve(Expr expr, HashMap<String,Type> environment) {
 		try {
 			Type result;
 			if (expr instanceof Expr.Constant) {
@@ -154,7 +158,9 @@ public class TypeInference {
 			} else if (expr instanceof Expr.NaryOp) {
 				result = resolve((Expr.NaryOp) expr, environment);
 			} else if (expr instanceof Expr.ListAccess) {
-				result = resolve((Expr.ListAccess) expr, environment);
+				Pair<Expr,Type> tmp = resolve((Expr.ListAccess) expr, environment);
+				expr = tmp.first();
+				result = tmp.second();
 			} else if (expr instanceof Expr.Substitute) {
 				result = resolve((Expr.Substitute) expr, environment);
 			} else if (expr instanceof Expr.Constructor) {
@@ -168,7 +174,7 @@ public class TypeInference {
 				return null;
 			}
 			expr.attributes().add(new Attribute.Type(result));
-			return result; // dead code
+			return new Pair(expr,result); 
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
@@ -200,8 +206,8 @@ public class TypeInference {
 	protected Type resolve(Expr.Constructor expr, HashMap<String,Type> environment) {
 	
 		if(expr.argument != null) {
-			Type arg_t = resolve(expr.argument,environment);
-			
+			Pair<Expr,Type> arg_t = resolve(expr.argument,environment);
+			expr.argument = arg_t.first();
 			// TODO: type check parameter argument
 		}
 
@@ -215,8 +221,9 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
-		Type t = resolve(uop.mhs,environment);
-		t = coerceToValue(t);
+		Pair<Expr,Type> p = resolve(uop.mhs,environment);
+		uop.mhs = p.first();
+		Type t = coerceToValue(p.second());
 		
 		switch (uop.op) {
 		case LENGTHOF:
@@ -240,9 +247,14 @@ public class TypeInference {
 
 	protected Type resolve(Expr.BinOp bop, HashMap<String,Type> environment) {
 
-		Type lhs_t = resolve(bop.lhs,environment);
-		Type rhs_t = resolve(bop.rhs,environment);
+		Pair<Expr,Type> p1 = resolve(bop.lhs,environment);
+		Pair<Expr,Type> p2 = resolve(bop.rhs,environment);
+		bop.lhs = p1.first();
+		bop.rhs = p2.first();
+		Type lhs_t = p1.second();
+		Type rhs_t = p2.second();
 		Type result;
+		
 		
 		// first, deal with auto-unboxing
 		switch(bop.op) {
@@ -348,14 +360,17 @@ public class TypeInference {
 	
 	protected Type resolve(Expr.Comprehension expr, HashMap<String, Type> environment) {
 		environment = (HashMap) environment.clone();
-		
-		for(Pair<Expr.Variable,Expr> p : expr.sources) {
+		ArrayList<Pair<Expr.Variable,Expr>> expr_sources = expr.sources;
+		for(int i=0;i!=expr_sources.size();++i) {
+			Pair<Expr.Variable,Expr> p = expr_sources.get(i);
 			Expr.Variable variable = p.first();
 			Expr source = p.second();
 			if(environment.containsKey(variable.var)) {
 				syntaxError("duplicate variable '" + variable + "'",file,variable);
 			}
-			Type type = resolve(source,environment);
+			Pair<Expr,Type> tmp = resolve(source,environment);
+			expr_sources.set(i, new Pair(variable,tmp.first()));
+			Type type = tmp.second();
 			if(!(type instanceof Type.Compound)) {
 				syntaxError("collection type required",file,source);
 			}
@@ -366,8 +381,9 @@ public class TypeInference {
 		}
 		
 		if(expr.condition != null) {
-			Type condition = resolve(expr.condition,environment);
-			checkSubtype(Type.T_BOOL,condition,expr.condition);
+			Pair<Expr,Type> p = resolve(expr.condition,environment);
+			expr.condition = p.first();
+			checkSubtype(Type.T_BOOL,p.second(),expr.condition);
 		}
 		
 		switch(expr.cop) {
@@ -375,45 +391,68 @@ public class TypeInference {
 			case SOME:
 				return Type.T_BOOL;
 			case SETCOMP: {
-				Type result = resolve(expr.value,environment);
-				return Type.T_SET(true,Type.T_REF(result));
+				Pair<Expr,Type> result = resolve(expr.value,environment);
+				expr.value = result.first();
+				return Type.T_SET(true,Type.T_REF(result.second()));
 			}
 			case BAGCOMP: {
-				Type result = resolve(expr.value,environment);
-				return Type.T_BAG(true,Type.T_REF(result));
+				Pair<Expr,Type> result = resolve(expr.value,environment);
+				expr.value = result.first();
+				return Type.T_BAG(true,Type.T_REF(result.second()));
 			}
 			case LISTCOMP: {
-				Type result = resolve(expr.value,environment);
-				return Type.T_LIST(true,Type.T_REF(result));
+				Pair<Expr,Type> result = resolve(expr.value,environment);
+				expr.value = result.first();
+				return Type.T_LIST(true,Type.T_REF(result.second()));
 			}
 			default:
 				throw new IllegalArgumentException("unknown comprehension kind");
 		}		
 	}
 	
-	protected Type resolve(Expr.ListAccess expr, HashMap<String, Type> environment) {
+	protected Pair<Expr,Type> resolve(Expr.ListAccess expr, HashMap<String, Type> environment) {
+		Pair<Expr,Type> p2 = resolve(expr.index,environment);
+		expr.index= p2.first();
+		Type idx_t = p2.second();
+		
 		// First, a little check for the unusual case that this is, in fact, not
 		// a list access but a constructor with a single element list valued
 		// argument.
+		
 		if(expr.src instanceof Expr.Variable) {
 			Expr.Variable v = (Expr.Variable) expr.src;
-			if(!environment.containsKey(v.var)) {
+			if(!environment.containsKey(v.var) && terms.containsKey(v.var)) {
 				// ok, this is a candidate
-				System.out.println("CANDIDATE FOR CONSTRUCTOR");
+				ArrayList<Expr> arguments = new ArrayList<Expr>();
+				arguments.add(expr.index);
+				Expr argument = new Expr.NaryOp(Expr.NOp.LISTGEN, arguments,
+						expr.attribute(Attribute.Source.class));
+				resolve(argument,environment); // must succeed ;)
+				return new Pair<Expr,Type>(new Expr.Constructor(v.var, argument,
+						expr.attributes()), terms.get(v.var));
 			}
 		}
 		
-		Type src_t = resolve(expr.src,environment);
-		Type idx_t = resolve(expr.index,environment);
+		Pair<Expr,Type> p1 = resolve(expr.src,environment);
+		expr.src = p1.first();
+
+		Type src_t = p1.second();
+
 		checkSubtype(Type.T_LISTANY, src_t, expr.src);
 		checkSubtype(Type.T_INT, idx_t, expr.index);
-		return ((Type.List)src_t).element(hierarchy);
+		return new Pair(expr,((Type.List)src_t).element(hierarchy));
 	}
 	
 	protected Type resolve(Expr.Substitute expr, HashMap<String, Type> environment) {
-		Type src_t = resolve(expr.src,environment);
-		Type orig_t = resolve(expr.original,environment);
-		Type repl_t = resolve(expr.replacement,environment);
+		Pair<Expr,Type> p1 = resolve(expr.src,environment);
+		Pair<Expr,Type> p2 = resolve(expr.original,environment);
+		Pair<Expr,Type> p3 = resolve(expr.replacement,environment);
+		
+		expr.src = p1.first();
+		expr.original= p2.first();
+		expr.replacement= p3.first();
+		
+		Type src_t = p1.second();
 		
 		// FIXME: need to generate something better here!!
 		return src_t;
@@ -424,7 +463,9 @@ public class TypeInference {
 		Type[] types = new Type[operands.size()];
 
 		for (int i = 0; i != types.length; ++i) {
-			types[i] = coerceToRef(resolve(operands.get(i), environment));
+			Pair<Expr,Type> p = resolve(operands.get(i),environment);
+			operands.set(i, p.first());
+			types[i] = coerceToRef(p.second());
 		}
 		if(expr.op == Expr.NOp.LISTGEN) {
 			return Type.T_LIST(false, types);

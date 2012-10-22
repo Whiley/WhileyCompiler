@@ -82,8 +82,8 @@ public class SpecFile {
 	
 	public static class RuleDecl extends SyntacticElement.Impl implements SyntacticElement {
 		public final ArrayList<Pair<String,Expr>> lets;
-		public final Expr result;
-		public final Expr condition;
+		public Expr result;
+		public Expr condition;
 		
 		public RuleDecl(Collection<Pair<String,Expr>> lets, Expr result, Expr condition, Attribute... attributes) {
 			super(attributes);

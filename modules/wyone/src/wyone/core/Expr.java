@@ -109,8 +109,8 @@ public interface Expr extends SyntacticElement {
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public BOp op;
-		public final Expr lhs;
-		public final Expr rhs;
+		public Expr lhs;
+		public Expr rhs;
 		
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -135,8 +135,8 @@ public interface Expr extends SyntacticElement {
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static class ListAccess extends SyntacticElement.Impl implements
 			Expr, LVal {		
-		public final Expr src;
-		public final Expr index;
+		public Expr src;
+		public Expr index;
 		
 		public ListAccess(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -157,9 +157,9 @@ public interface Expr extends SyntacticElement {
 
 	public static class Substitute extends SyntacticElement.Impl implements
 	Expr {		
-		public final Expr src;
-		public final Expr original;
-		public final Expr replacement;
+		public Expr src;
+		public Expr original;
+		public Expr replacement;
 
 		public Substitute(Expr src, Expr original, Expr replacement, Attribute... attributes) {
 			super(attributes);
@@ -181,7 +181,7 @@ public interface Expr extends SyntacticElement {
 	}
 	public static class TermAccess extends SyntacticElement.Impl implements
 			Expr, LVal {		
-		public final Expr src;
+		public Expr src;
 		public final int index;
 		
 		public TermAccess(Expr src, int index, Attribute... attributes) {
@@ -215,7 +215,7 @@ public interface Expr extends SyntacticElement {
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
-		public final Expr mhs;		
+		public Expr mhs;		
 		
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -244,6 +244,11 @@ public interface Expr extends SyntacticElement {
 		public final NOp op;
 		public final ArrayList<Expr> arguments;
 		public NaryOp(NOp nop, Collection<Expr> arguments, Attribute... attributes) {
+			super(attributes);
+			this.op = nop;
+			this.arguments = new ArrayList<Expr>(arguments);
+		}
+		public NaryOp(NOp nop, Collection<Expr> arguments, Collection<Attribute> attributes) {
 			super(attributes);
 			this.op = nop;
 			this.arguments = new ArrayList<Expr>(arguments);
@@ -287,10 +292,17 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Constructor extends SyntacticElement.Impl implements Expr {
 		public final String name;		
-		public final Expr argument;
+		public Expr argument;
 		
 		public Constructor(String name, Expr argument,
 				Attribute... attributes) {
+			super(attributes);
+			this.name = name;			
+			this.argument = argument;
+		}
+		
+		public Constructor(String name, Expr argument,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;			
 			this.argument = argument;
@@ -303,9 +315,9 @@ public interface Expr extends SyntacticElement {
 	
 	public static class Comprehension extends SyntacticElement.Impl implements Expr {
 		public final COp cop;
-		public final Expr value;
+		public Expr value;
 		public final ArrayList<Pair<Expr.Variable,Expr>> sources;
-		public final Expr condition;
+		public Expr condition;
 		
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<Expr.Variable, Expr>> sources, Expr condition,
