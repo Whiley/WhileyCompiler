@@ -202,6 +202,7 @@ public class TypeInference {
 		}
 
 		Type.Term type = terms.get(expr.name);
+	
 		if (type == null) {
 			syntaxError("function not declared", file, expr);
 		}

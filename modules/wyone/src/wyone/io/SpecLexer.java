@@ -266,7 +266,7 @@ public class SpecLexer {
 	static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
-			'*', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '#', '.','~',
+			'*', '\\', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '#', '.','~',
 			UC_FORALL,
 			UC_EXISTS,
 			UC_EMPTYSET,
@@ -360,6 +360,8 @@ public class SpecLexer {
 			} else {
 				return new Bar(pos++);
 			}
+		} else if(c == '\\') {
+			return new LeftSlash(pos++);
 		} else if(c == '/') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '/') {
 				return scanComment();

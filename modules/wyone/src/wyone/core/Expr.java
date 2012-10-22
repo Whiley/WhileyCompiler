@@ -155,6 +155,30 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	public static class Substitute extends SyntacticElement.Impl implements
+	Expr, LVal {		
+		public final Expr src;
+		public final Expr original;
+		public final Expr replacement;
+
+		public Substitute(Expr src, Expr original, Expr replacement, Attribute... attributes) {
+			super(attributes);
+			this.src = src;
+			this.original = original;
+			this.replacement = replacement;
+		}
+
+		public Substitute(Expr src, Expr original, Expr replacement, Collection<Attribute> attributes) {
+			super(attributes);
+			this.src = src;
+			this.original = original;
+			this.replacement = replacement;
+		}
+
+		public String toString() {
+			return src + "[" + original + " \\ " + replacement + "]";
+		}
+	}
 	public static class TermAccess extends SyntacticElement.Impl implements
 			Expr, LVal {		
 		public final Expr src;

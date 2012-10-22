@@ -500,13 +500,22 @@ public class SpecParser {
 			start = index;
 			if(lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
-				skipWhiteSpace(true);
-				
+				skipWhiteSpace(true);				
 				Expr rhs = parseAddSubExpression();
-				
-				match(RightSquare.class);							
-				lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
+				skipWhiteSpace(true);
+				if (index < tokens.size()
+						&& tokens.get(index) instanceof LeftSlash) {
+					// substitution expression
+					match(LeftSlash.class);
+					Expr e = parseAddSubExpression();
+					lhs = new Expr.Substitute(lhs, rhs, e, sourceAttr(start,
+							index - 1));
+					match(RightSquare.class);
+				} else {				 
+					match(RightSquare.class);							
+					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 						index - 1));
+				}
 			} else if(lookahead instanceof Hash) {
 				match(Hash.class);
 				if(index < tokens.size() && tokens.get(index) instanceof Int) {
@@ -546,7 +555,7 @@ public class SpecParser {
 		} else if ((index + 1) < tokens.size()
 				&& token instanceof Identifier
 				&& (tokens.get(index + 1) instanceof LeftBrace
-						|| tokens.get(index + 1) instanceof LeftSquare 
+						// || tokens.get(index + 1) instanceof LeftSquare 
 						|| tokens.get(index + 1) instanceof LeftCurly
 						|| tokens.get(index + 1) instanceof LeftCurlyBar)) {				
 			// must be a method invocation			
@@ -610,12 +619,12 @@ public class SpecParser {
 			if(!firstTime) {
 				match(Comma.class);
 				skipWhiteSpace(true);
-			}
-			firstTime=false;
+			}			
 			exprs.add(parseCondition());
 			skipWhiteSpace(true);
 			checkNotEof();
 			token = tokens.get(index);
+			firstTime=false;
 		}
 		match(RightSquare.class);
 		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(start,
@@ -818,9 +827,11 @@ public class SpecParser {
 			match(LeftBrace.class);
 			argument = parseConditionExpression();
 			match(RightBrace.class);
-		} else if(token instanceof LeftSquare) {
-			argument = parseListVal();
-		} else if(token instanceof LeftCurlyBar) {
+		} 
+//		else if(token instanceof LeftSquare) {
+//			argument = parseListVal();
+//		} 
+		else if(token instanceof LeftCurlyBar) {
 			argument = parseBagVal();
 		} else if(token instanceof LeftCurly) {
 			argument = parseSetVal();

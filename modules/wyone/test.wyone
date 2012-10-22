@@ -1,18 +1,9 @@
-include "examples/logic.wyone"
-include "examples/numerics.wyone"
+// An implementation of the Lambda Calculus :P
 
-// ====================================================================
-// Congruence
-// ====================================================================
+term Lambda[string, Term] // \x.t
+term App[Term, Term] // t1 t2
 
-term Equals{Expr,Expr}
+reduce App[Lamba[string x, Term t1], Term t2]: // (\x.t1) t2
+    => t1[x \ t2]
 
-infer And{Equals{Expr x, Expr y} e1, Equals{Expr u, Expr v} e2, BExpr... rest}:
-    => let e3 = Equals{x,v}
-       in And ({e1,e2,e3} ++ rest), if y == u && x != v
-
-// ====================================================================
-// Boolean Expressions
-// ====================================================================
-
-class BExpr as Equals | ...
+class Term as Lambda | App
