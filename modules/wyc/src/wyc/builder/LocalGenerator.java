@@ -444,67 +444,63 @@ public final class LocalGenerator {
 	 * 
 	 * @param expression
 	 *            --- Source-level expression to be translated
-	 * @param target
-	 *            --- Register in to which the result from this expression
-	 *            should be stored. This may not equal the freeRegsiter.
-	 * @param freeRegister
-	 *            --- All registers with and index equal or higher than this are
-	 *            available for use as temporary storage.
 	 * @param environment
 	 *            --- Mapping from variable names to to slot numbers.
-	 * @return
+	 * @param codes
+	 *            --- List of bytecodes onto which translation should be appended.
+	 *     
+	 * @return --- the register 
 	 */
-	public Block generate(Expr expression, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	public int generate(Expr expression, Environment environment, ArrayList<Code> codes) {
 		try {
 			if (expression instanceof Expr.Constant) {
-				return generate((Expr.Constant) expression, target, freeRegister, environment);
+				return generate((Expr.Constant) expression, environment, codes);
 			} else if (expression instanceof Expr.LocalVariable) {
-				return generate((Expr.LocalVariable) expression, target, freeRegister, environment);
+				return generate((Expr.LocalVariable) expression, environment, codes);
 			} else if (expression instanceof Expr.ConstantAccess) {
-				return generate((Expr.ConstantAccess) expression, target, freeRegister, environment);
+				return generate((Expr.ConstantAccess) expression, environment, codes);
 			} else if (expression instanceof Expr.Set) {
-				return generate((Expr.Set) expression, target, freeRegister, environment);
+				return generate((Expr.Set) expression, environment, codes);
 			} else if (expression instanceof Expr.List) {
-				return generate((Expr.List) expression, target, freeRegister, environment);
+				return generate((Expr.List) expression, environment, codes);
 			} else if (expression instanceof Expr.SubList) {
-				return generate((Expr.SubList) expression, target, freeRegister, environment);
+				return generate((Expr.SubList) expression, environment, codes);
 			} else if (expression instanceof Expr.SubString) {
-				return generate((Expr.SubString) expression, target, freeRegister, environment);
+				return generate((Expr.SubString) expression, environment, codes);
 			} else if (expression instanceof Expr.BinOp) {
-				return generate((Expr.BinOp) expression, target, freeRegister, environment);
+				return generate((Expr.BinOp) expression, environment, codes);
 			} else if (expression instanceof Expr.LengthOf) {
-				return generate((Expr.LengthOf) expression, target, freeRegister, environment);
+				return generate((Expr.LengthOf) expression, environment, codes);
 			} else if (expression instanceof Expr.Dereference) {
-				return generate((Expr.Dereference) expression, target, freeRegister, environment);
+				return generate((Expr.Dereference) expression, environment, codes);
 			} else if (expression instanceof Expr.Convert) {
-				return generate((Expr.Convert) expression, target, freeRegister, environment);
+				return generate((Expr.Convert) expression, environment, codes);
 			} else if (expression instanceof Expr.IndexOf) {
-				return generate((Expr.IndexOf) expression, target, freeRegister, environment);
+				return generate((Expr.IndexOf) expression, environment, codes);
 			} else if (expression instanceof Expr.UnOp) {
-				return generate((Expr.UnOp) expression, target, freeRegister, environment);
+				return generate((Expr.UnOp) expression, environment, codes);
 			} else if (expression instanceof Expr.FunctionCall) {
-				return generate((Expr.FunctionCall) expression, target, freeRegister, environment);
+				return generate((Expr.FunctionCall) expression, environment, codes);
 			} else if (expression instanceof Expr.MethodCall) {
-				return generate((Expr.MethodCall) expression, target, freeRegister, environment);
+				return generate((Expr.MethodCall) expression, environment, codes);
 			} else if (expression instanceof Expr.IndirectFunctionCall) {
-				return generate((Expr.IndirectFunctionCall) expression, target, freeRegister, environment);
+				return generate((Expr.IndirectFunctionCall) expression, environment, codes);
 			} else if (expression instanceof Expr.IndirectMethodCall) {
-				return generate((Expr.IndirectMethodCall) expression, target, freeRegister, environment);
+				return generate((Expr.IndirectMethodCall) expression, environment, codes);
 			} else if (expression instanceof Expr.Comprehension) {
-				return generate((Expr.Comprehension) expression, target, freeRegister, environment);
+				return generate((Expr.Comprehension) expression, environment, codes);
 			} else if (expression instanceof Expr.RecordAccess) {
-				return generate((Expr.RecordAccess) expression, target, freeRegister, environment);
+				return generate((Expr.RecordAccess) expression, environment, codes);
 			} else if (expression instanceof Expr.Record) {
-				return generate((Expr.Record) expression, target, freeRegister, environment);
+				return generate((Expr.Record) expression, environment, codes);
 			} else if (expression instanceof Expr.Tuple) {
-				return generate((Expr.Tuple) expression, target, freeRegister, environment);
+				return generate((Expr.Tuple) expression, environment, codes);
 			} else if (expression instanceof Expr.Map) {
-				return generate((Expr.Map) expression, target, freeRegister, environment);
+				return generate((Expr.Map) expression, environment, codes);
 			} else if (expression instanceof Expr.FunctionOrMethod) {
-				return generate((Expr.FunctionOrMethod) expression, target, freeRegister, environment);
+				return generate((Expr.FunctionOrMethod) expression, environment, codes);
 			} else if (expression instanceof Expr.New) {
-				return generate((Expr.New) expression, target, freeRegister, environment);
+				return generate((Expr.New) expression, environment, codes);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression: "
@@ -518,11 +514,10 @@ public final class LocalGenerator {
 			internalFailure(ex.getMessage(), context, expression, ex);
 		}
 
-		return null;
+		return -1; // deadcode
 	}
 
-	public Block generate(Expr.MethodCall mc, int target, int freeRegister,
-			HashMap<String, Integer> environment) throws ResolveError {
+	public int generate(Expr.MethodCall mc, Environment environment, ArrayList<Code> codes) throws ResolveError {
 		Block blk = new Block(environment.size());
 		
 		int[] operands = generate(mc.arguments, freeRegister, freeRegister+1,
@@ -535,8 +530,8 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	public Block generate(Expr.FunctionCall fc, int target, int freeRegister,
-			HashMap<String, Integer> environment) throws ResolveError {
+	public int generate(Expr.FunctionCall fc, Environment environment,
+			ArrayList<Code> codes) throws ResolveError {
 		Block blk = new Block(environment.size());
 
 		int[] operands = generate(fc.arguments, freeRegister, freeRegister+1,
@@ -548,8 +543,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	public Block generate(Expr.IndirectFunctionCall fc, int target,
-			int freeRegister, HashMap<String, Integer> environment)
+	public int generate(Expr.IndirectFunctionCall fc, Environment environment, ArrayList<Code> codes)
 			throws ResolveError {
 		Block blk = new Block(environment.size());
 
@@ -564,8 +558,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	public Block generate(Expr.IndirectMethodCall fc, int target,
-			int freeRegister, HashMap<String, Integer> environment)
+	public int generate(Expr.IndirectMethodCall fc, Environment environment, ArrayList<Code> codes)
 			throws ResolveError {
 		Block blk = new Block(environment.size());
 
@@ -580,29 +573,27 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.Constant c, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.Constant c, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(target, c.value), attributes(c));
 		return blk;
 	}
 
-	private Block generate(Expr.FunctionOrMethod s, int target,
-			int freeRegister, HashMap<String, Integer> environment) {
+	private int generate(Expr.FunctionOrMethod s, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(target, Constant.V_FUN(s.nid, s.type.raw())),
 				attributes(s));
 		return blk;
 	}
 	
-	private Block generate(Expr.ConstantAccess v, int target, int freeRegister, HashMap<String,Integer> environment) throws ResolveError {						
+	private int generate(Expr.ConstantAccess v, Environment environment, ArrayList<Code> codes) throws ResolveError {						
 		Block blk = new Block(environment.size());
 		Constant val = v.value;				
 		blk.append(Code.Const(target,val),attributes(v));
 		return blk;
 	}
 	
-	private Block generate(Expr.LocalVariable v, int target, int freeRegister, HashMap<String,Integer> environment) throws ResolveError {
+	private int generate(Expr.LocalVariable v, Environment environment, ArrayList<Code> codes) throws ResolveError {
 		
 		if (environment.containsKey(v.var)) {
 			Block blk = new Block(environment.size());
@@ -618,7 +609,7 @@ public final class LocalGenerator {
 		return null;
 	}
 
-	private Block generate(Expr.UnOp v, int target, int freeRegister, HashMap<String,Integer> environment) {
+	private int generate(Expr.UnOp v, Environment environment, ArrayList<Code> codes) {
 		Block blk = generate(v.mhs,  target, freeRegister, environment);	
 		switch (v.op) {
 		case NEG:
@@ -645,24 +636,21 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.LengthOf v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.LengthOf v, Environment environment, ArrayList<Code> codes) {
 		Block blk = generate(v.src, target, freeRegister, environment);
 		blk.append(Code.LengthOf(v.srcType.raw(), target, target),
 				attributes(v));
 		return blk;
 	}
 			
-	private Block generate(Expr.Dereference v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.Dereference v, Environment environment, ArrayList<Code> codes) {
 		Block blk = generate(v.src, target, freeRegister, environment);
 		blk.append(Code.Dereference(v.srcType.raw(), target, target),
 				attributes(v));
 		return blk;
 	}
 	
-	private Block generate(Expr.IndexOf v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.IndexOf v, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, freeRegister, freeRegister+1, environment));
 		blk.append(generate(v.index, freeRegister+1, freeRegister+2, environment));
@@ -671,8 +659,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.Convert v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.Convert v, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.expr, target, freeRegister, environment));
 		Type from = v.expr.result().raw();
@@ -682,7 +669,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.BinOp v, int target, int freeRegister, HashMap<String,Integer> environment) throws Exception {
+	private int generate(Expr.BinOp v, Environment environment, ArrayList<Code> codes) throws Exception {
 
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
@@ -751,8 +738,7 @@ public final class LocalGenerator {
 		}		
 	}
 
-	private Block generate(Expr.Set v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.Set v, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		int[] operands = generate(v.arguments, target, freeRegister, environment,
 				blk);		
@@ -760,8 +746,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.List v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.List v, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());		
 		int[] operands = generate(v.arguments, target, freeRegister, environment,
 				blk);		
@@ -769,8 +754,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.SubList v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.SubList v, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, freeRegister, freeRegister + 1, environment));
 		blk.append(generate(v.start, freeRegister + 1, freeRegister + 2,
@@ -782,8 +766,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.SubString v, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.SubString v, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		blk.append(generate(v.src, freeRegister, freeRegister + 1, environment));
 		blk.append(generate(v.start, freeRegister + 1, freeRegister + 2,
@@ -795,7 +778,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.Comprehension e, int target, int freeRegister, HashMap<String,Integer> _environment) {
+	private int generate(Expr.Comprehension e, Environment environment, ArrayList<Code> codes) {
 
 		// First, check for boolean cases which are handled mostly by
 		// generateCondition.
@@ -896,7 +879,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generate(Expr.Record sg, int target, int freeRegister, HashMap<String,Integer> environment) {
+	private int generate(Expr.Record sg, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);		
@@ -911,8 +894,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generate(Expr.Tuple sg, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.Tuple sg, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		int[] operands = generate(sg.fields, target, freeRegister, environment,
 				blk);
@@ -921,8 +903,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 
-	private Block generate(Expr.Map sg, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.Map sg, Environment environment, ArrayList<Code> codes) {
 		Block blk = new Block(environment.size());
 		int[] operands = new int[sg.pairs.size() * 2];
 		for (int i = 0; i != sg.pairs.size(); ++i) {
@@ -939,8 +920,7 @@ public final class LocalGenerator {
 		return blk;
 	}
 	
-	private Block generate(Expr.RecordAccess sg, int target, int freeRegister,
-			HashMap<String, Integer> environment) {
+	private int generate(Expr.RecordAccess sg, Environment environment, ArrayList<Code> codes) {
 		
 		Block lhs = generate(sg.src, target, freeRegister, environment);
 		lhs.append(Code.FieldLoad(sg.srcType.raw(), target, target, sg.name),
@@ -948,8 +928,7 @@ public final class LocalGenerator {
 		return lhs;
 	}
 	
-	private Block generate(Expr.New expr, int target, int freeRegister,
-			HashMap<String, Integer> environment) throws ResolveError {
+	private int generate(Expr.New expr, Environment environment, ArrayList<Code> codes) throws ResolveError {
 		Block blk = generate(expr.expr, target, freeRegister, environment);
 		blk.append(Code.NewObject(expr.type.raw(), target, target));
 		return blk;
@@ -1150,5 +1129,38 @@ public final class LocalGenerator {
 		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
 		attrs.add(elem.attribute(Attribute.Source.class));
 		return attrs;
+	}
+	
+	private final class Environment {
+		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
+		private final ArrayList<Type> idx2type = new ArrayList<Type>();
+
+		public int allocate(Type t) {
+			int idx = idx2type.size();
+			idx2type.add(t);
+			return idx;
+		}
+
+		public int allocate(Type t, String v) {
+			int r = allocate(t);
+			var2idx.put(v, r);
+			return r;
+		}
+
+		public Integer get(String v) {
+			return var2idx.get(v);
+		}
+
+		public void put(int idx, String v) {
+			var2idx.put(v, idx);
+		}
+
+		public ArrayList<Type> asList() {
+			return idx2type;
+		}
+
+		public String toString() {
+			return idx2type.toString() + "," + var2idx.toString();
+		}
 	}
 }
