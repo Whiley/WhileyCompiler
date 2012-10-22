@@ -902,6 +902,12 @@ public final class Automaton {
 			return children[idx.intValue()];
 		}
 		
+		public List update(Int idx, int value) {
+			int[] nchildren = Arrays.copyOf(children,length);
+			nchildren[idx.intValue()] = value;
+			return new List(nchildren);
+		}
+		
 		public List sublist(Int start, Int end) {
 			return new List(Arrays.copyOfRange(children, start.intValue(),
 					end.intValue()));

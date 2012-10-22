@@ -3,9 +3,9 @@
 term Var(string)
 term Num(int)
 term List[Expr...]
-term IndexOf[Expr, int]
+term Update[Expr, int, Expr]
 class Expr as Num | Var | List
 
-reduce IndexOf[List[Expr... es],int idx]:
-    => es[idx], if idx >= 0 && idx < |es|
+reduce Update[List[Expr... es], int idx, Expr e]:
+    => es[idx = e], if idx >= 0 && idx < |es|
 

@@ -510,6 +510,14 @@ public class SpecParser {
 					lhs = new Expr.Substitute(lhs, rhs, e, sourceAttr(start,
 							index - 1));
 					match(RightSquare.class);
+				} else if (index < tokens.size()
+						&& tokens.get(index) instanceof Equals) {
+					// list update expression
+					match(Equals.class);
+					Expr e = parseAddSubExpression();
+					lhs = new Expr.ListUpdate(lhs, rhs, e, sourceAttr(start,
+							index - 1));
+					match(RightSquare.class);
 				} else if (lhs instanceof Expr.Variable
 						&& index < tokens.size()
 						&& tokens.get(index) instanceof Comma) {

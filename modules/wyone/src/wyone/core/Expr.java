@@ -155,6 +155,31 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	public static class ListUpdate extends SyntacticElement.Impl implements
+	Expr, LVal {		
+		public Expr src;
+		public Expr index;
+		public Expr value;
+
+		public ListUpdate(Expr src, Expr index, Expr value, Attribute... attributes) {
+			super(attributes);
+			this.src = src;
+			this.index = index;
+			this.value = value;
+		}
+
+		public ListUpdate(Expr src, Expr index, Expr value, Collection<Attribute> attributes) {
+			super(attributes);
+			this.src = src;
+			this.index = index;
+			this.value = value;
+		}
+
+		public String toString() {
+			return src + "[" + index + " = " + value + "]";
+		}
+	}
+	
 	public static class Substitute extends SyntacticElement.Impl implements
 	Expr {		
 		public Expr src;

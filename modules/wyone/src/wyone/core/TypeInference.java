@@ -157,6 +157,8 @@ public class TypeInference {
 				result = resolve((Expr.BinOp) expr, environment);
 			} else if (expr instanceof Expr.NaryOp) {
 				result = resolve((Expr.NaryOp) expr, environment);
+			} else if (expr instanceof Expr.ListUpdate) {
+				result = resolve((Expr.ListUpdate) expr, environment);
 			} else if (expr instanceof Expr.ListAccess) {
 				Pair<Expr,Type> tmp = resolve((Expr.ListAccess) expr, environment);
 				expr = tmp.first();
@@ -443,6 +445,24 @@ public class TypeInference {
 		return new Pair(expr,((Type.List)src_t).element(hierarchy));
 	}
 	
+	protected Type resolve(Expr.ListUpdate expr, HashMap<String, Type> environment) {
+		
+		Pair<Expr,Type> p1 = resolve(expr.src,environment);
+		Pair<Expr,Type> p2 = resolve(expr.index,environment);
+		Pair<Expr,Type> p3 = resolve(expr.value,environment);
+		
+		expr.src = p1.first();
+		expr.index = p2.first();
+		expr.value = p3.first();
+
+		Type src_t = p1.second();
+		Type idx_t = p2.second();
+		Type value_t = p3.second();
+		
+		checkSubtype(Type.T_LISTANY, src_t, expr.src);
+		checkSubtype(Type.T_INT, idx_t, expr.index);
+		return Type.leastUpperBound(src_t, Type.T_LIST(true,value_t), hierarchy);
+	}
 	protected Type resolve(Expr.Substitute expr, HashMap<String, Type> environment) {
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		Pair<Expr,Type> p2 = resolve(expr.original,environment);
