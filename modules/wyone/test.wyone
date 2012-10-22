@@ -1,9 +1,11 @@
 // An implementation of the Lambda Calculus :P
 
-term Lambda[string, Term] // \x.t
-term App[Term, Term] // t1 t2
+term Var(string)
+term Num(int)
+term List[Expr...]
+term IndexOf[Expr, int]
+class Expr as Num | Var | List
 
-reduce App[Lambda[string x, Term t1], Term t2]: // (\x.t1) t2
-    => Lambda[t1\t2]
+reduce IndexOf[List[Expr... es],int idx]:
+    => es[idx], if idx >= 0 && idx < |es|
 
-class Term as Lambda | App

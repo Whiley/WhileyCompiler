@@ -898,7 +898,7 @@ public final class Automaton {
 			super(K_LIST,children);
 		}
 		
-		public int get(Int idx) {
+		public int indexOf(Int idx) {
 			return children[idx.intValue()];
 		}
 		

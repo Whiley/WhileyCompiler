@@ -510,6 +510,8 @@ public class JavaFileWriter {
 			return translate(level,(Expr.NaryOp) code, environment);
 		} else if (code instanceof Expr.Constructor) {
 			return translate(level,(Expr.Constructor) code, environment);
+		} else if (code instanceof Expr.ListAccess) {
+			return translate(level,(Expr.ListAccess) code, environment);
 		} else if (code instanceof Expr.Variable) {
 			return translate(level,(Expr.Variable) code, environment);
 		} else if(code instanceof Expr.Comprehension) {
@@ -724,6 +726,20 @@ public class JavaFileWriter {
 		
 		int target = environment.allocate(type);
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ");",code.toString()));
+		return target;
+	}
+	
+	public int translate(int level, Expr.ListAccess code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
+		int src = translate(level,code.src, environment);		
+		int idx = translate(level,code.index, environment);
+		src = coerceFromRef(level,code.src, src, environment);
+		idx = coerceFromRef(level,code.index, idx, environment);
+		
+		String body = "r" + src + ".indexOf(r" + idx + ")";
+				
+		int target = environment.allocate(type);
+		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
 	
