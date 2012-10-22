@@ -153,6 +153,10 @@ public class TypeInference {
 				result = resolve((Expr.BinOp) expr, environment);
 			} else if (expr instanceof Expr.NaryOp) {
 				result = resolve((Expr.NaryOp) expr, environment);
+			} else if (expr instanceof Expr.ListAccess) {
+				result = resolve((Expr.ListAccess) expr, environment);
+			} else if (expr instanceof Expr.Substitute) {
+				result = resolve((Expr.Substitute) expr, environment);
 			} else if (expr instanceof Expr.Constructor) {
 				result = resolve((Expr.Constructor) expr, environment);
 			} else if (expr instanceof Expr.Variable) {
@@ -385,6 +389,34 @@ public class TypeInference {
 			default:
 				throw new IllegalArgumentException("unknown comprehension kind");
 		}		
+	}
+	
+	protected Type resolve(Expr.ListAccess expr, HashMap<String, Type> environment) {
+		// First, a little check for the unusual case that this is, in fact, not
+		// a list access but a constructor with a single element list valued
+		// argument.
+		if(expr.src instanceof Expr.Variable) {
+			Expr.Variable v = (Expr.Variable) expr.src;
+			if(!environment.containsKey(v.var)) {
+				// ok, this is a candidate
+				System.out.println("CANDIDATE FOR CONSTRUCTOR");
+			}
+		}
+		
+		Type src_t = resolve(expr.src,environment);
+		Type idx_t = resolve(expr.index,environment);
+		checkSubtype(Type.T_LISTANY, src_t, expr.src);
+		checkSubtype(Type.T_INT, idx_t, expr.index);
+		return ((Type.List)src_t).element(hierarchy);
+	}
+	
+	protected Type resolve(Expr.Substitute expr, HashMap<String, Type> environment) {
+		Type src_t = resolve(expr.src,environment);
+		Type orig_t = resolve(expr.original,environment);
+		Type repl_t = resolve(expr.replacement,environment);
+		
+		// FIXME: need to generate something better here!!
+		return src_t;
 	}
 	
 	protected Type resolve(Expr.NaryOp expr, HashMap<String, Type> environment) {

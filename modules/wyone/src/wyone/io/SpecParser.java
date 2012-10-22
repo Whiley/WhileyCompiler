@@ -496,7 +496,6 @@ public class SpecParser {
 		
 		while (lookahead instanceof LeftSquare
 				|| lookahead instanceof LeftBrace || lookahead instanceof Hash) {
-			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
@@ -511,7 +510,13 @@ public class SpecParser {
 					lhs = new Expr.Substitute(lhs, rhs, e, sourceAttr(start,
 							index - 1));
 					match(RightSquare.class);
-				} else {				 
+				} else if (lhs instanceof Expr.Variable
+						&& index < tokens.size()
+						&& tokens.get(index) instanceof Comma) {
+					// here, we have a case of mistaken identity
+					index = ostart; // back track
+					return parseConstructorExpr();
+				} else {
 					match(RightSquare.class);							
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 						index - 1));
@@ -827,11 +832,9 @@ public class SpecParser {
 			match(LeftBrace.class);
 			argument = parseConditionExpression();
 			match(RightBrace.class);
-		} 
-//		else if(token instanceof LeftSquare) {
-//			argument = parseListVal();
-//		} 
-		else if(token instanceof LeftCurlyBar) {
+		} else if(token instanceof LeftSquare) {
+			argument = parseListVal();
+		} else if(token instanceof LeftCurlyBar) {
 			argument = parseBagVal();
 		} else if(token instanceof LeftCurly) {
 			argument = parseSetVal();

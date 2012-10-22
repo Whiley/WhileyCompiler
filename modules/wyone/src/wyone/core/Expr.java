@@ -156,7 +156,7 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class Substitute extends SyntacticElement.Impl implements
-	Expr, LVal {		
+	Expr {		
 		public final Expr src;
 		public final Expr original;
 		public final Expr replacement;
