@@ -8,32 +8,53 @@ term LengthOf(Expr)
 // ====================================================================
 
 term List[Expr...]
+term ListVal[Value...]
 term IndexOf[Expr,Expr]
 term Update[Expr,Expr,Expr]
+
+reduce List[Value... xs]:
+    => ListVal(xs)
 
 reduce LengthOf(List[Expr... ls]):
     => |ls|
 
-//reduce Update[List[Expr... ls],Num(int idx),Expr val]:
-//    => ls[idx] = val
+reduce IndexOf[List[Expr... ls], Num(int idx)]:
+    => ls[idx], if idx >= 0 && idx < |ls|
 
-//reduce IndexOf[List[Expr... ls], Num(int i)]:
-//    => ls[i]
+reduce Update[List[Expr... ls],Num(int idx),Expr val]:
+    => ls[idx = val], if idx >= 0 && idx < |ls|
 
 // ====================================================================
 // Set Expressions
 // ====================================================================
 
 term Set{Expr...}
+term SetVal{Value...}
 term ElementOf[Expr,Expr] // lhs in rhs
 
-// FIXME: really need to do a *lot* better than this
-reduce LengthOf(Set{Num... xs}):
+reduce Set{Value... xs}:
+    => SetVal(xs)
+
+reduce LengthOf(SetVal{Value... xs}):
     => |xs|
+
+reduce ElementOf[Value e, SetVal{Value... es}]:
+    => True, if e in es
+    => False
 
 reduce ElementOf[Expr e, Set{Expr... es}]:
     => True, if e in es
     => False, if |es| == 0
+
+// ====================================================================
+// Tuple Expressions
+// ====================================================================
+
+term Tuple[Expr...]
+term TupleVal[Value...]
+
+reduce Tuple[Value... xs]:
+    => TupleVal(xs)
 
 // ====================================================================
 // Boolean Expressions
@@ -42,7 +63,9 @@ reduce ElementOf[Expr e, Set{Expr... es}]:
 class BExpr as ElementOf | ...
 
 // ====================================================================
-// General Expressions
+// Expressions & Values
 // ====================================================================
 
-class Expr as Set | List | LengthOf | IndexOf | Update | ...
+class Value as ListVal | SetVal | TupleVal | ...
+
+class Expr as Set | List | Tuple | LengthOf | IndexOf | Update | ...

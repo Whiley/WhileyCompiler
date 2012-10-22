@@ -1,11 +1,9 @@
 // An implementation of the Lambda Calculus :P
 
-term Var(string)
-term Num(int)
-term List[Expr...]
-term Update[Expr, int, Expr]
-class Expr as Num | Var | List
+term Lambda[string, Term] // \x.t
+term App[Term, Term] // t1 t2
 
-reduce Update[List[Expr... es], int idx, Expr e]:
-    => es[idx = e], if idx >= 0 && idx < |es|
+reduce App[Lambda[string x, Term t1], Term t2]: // (\x.t1) t2
+    => Lambda[t1 \ t2]
 
+class Term as Lambda | App

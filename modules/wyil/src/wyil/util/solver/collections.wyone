@@ -18,11 +18,11 @@ reduce List[Value... xs]:
 reduce LengthOf(List[Expr... ls]):
     => |ls|
 
-//reduce Update[List[Expr... ls],Num(int idx),Expr val]:
-//    => ls[idx] = val
+reduce IndexOf[List[Expr... ls], Num(int idx)]:
+    => ls[idx], if idx >= 0 && idx < |ls|
 
-//reduce IndexOf[List[Expr... ls], Num(int i)]:
-//    => ls[i]
+reduce Update[List[Expr... ls],Num(int idx),Expr val]:
+    => ls[idx = val], if idx >= 0 && idx < |ls|
 
 // ====================================================================
 // Set Expressions
