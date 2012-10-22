@@ -44,7 +44,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void BoolAssign_Valid_4_RuntimeTest() { runTest("BoolAssign_Valid_4"); }
  @Test public void BoolFun_Valid_1_RuntimeTest() { runTest("BoolFun_Valid_1"); }
  @Test public void BoolIfElse_Valid_1_RuntimeTest() { runTest("BoolIfElse_Valid_1"); }
- @Ignore("Known Issue - recursive types")@Test public void BoolIfElse_Valid_2_RuntimeTest() { runTest("BoolIfElse_Valid_2"); }
+ @Test public void BoolIfElse_Valid_2_RuntimeTest() { runTest("BoolIfElse_Valid_2"); }
  @Test public void BoolList_Valid_1_RuntimeTest() { runTest("BoolList_Valid_1"); }
  @Test public void BoolList_Valid_2_RuntimeTest() { runTest("BoolList_Valid_2"); }
  @Test public void BoolList_Valid_3_RuntimeTest() { runTest("BoolList_Valid_3"); }
@@ -81,9 +81,9 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue") @Test public void Coercion_Valid_5_RuntimeTest() { runTest("Coercion_Valid_5"); }
  @Test public void Coercion_Valid_6_RuntimeTest() { runTest("Coercion_Valid_6"); }
  @Test public void Coercion_Valid_7_RuntimeTest() { runTest("Coercion_Valid_7"); }
- @Ignore("Known Issue - recursive types")@Test public void Coercion_Valid_8_RuntimeTest() { runTest("Coercion_Valid_8"); }
+ @Test public void Coercion_Valid_8_RuntimeTest() { runTest("Coercion_Valid_8"); }
  @Test public void Complex_Valid_1_RuntimeTest() { runTest("Complex_Valid_1"); }
- @Ignore("Known Issue - recursive types")@Test public void Complex_Valid_2_RuntimeTest() { runTest("Complex_Valid_2"); }
+ @Test public void Complex_Valid_2_RuntimeTest() { runTest("Complex_Valid_2"); }
  @Ignore("Known Issue") @Test public void Constant_Valid_1_RuntimeTest() { runTest("Constant_Valid_1"); }
  @Ignore("Known Issue") @Test public void Constant_Valid_2_RuntimeTest() { runTest("Constant_Valid_2"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
@@ -135,7 +135,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void DoWhile_Valid_1_RuntimeTest() { runTest("DoWhile_Valid_1"); }
  @Test public void DoWhile_Valid_2_RuntimeTest() { runTest("DoWhile_Valid_2"); }
  @Ignore("Future Work") @Test public void DoWhile_Valid_3_RuntimeTest() { runTest("DoWhile_Valid_3"); }
- @Ignore("Known Issue - recursive types")@Test public void DoWhile_Valid_4_RuntimeTest() { runTest("DoWhile_Valid_4"); }
+ @Test public void DoWhile_Valid_4_RuntimeTest() { runTest("DoWhile_Valid_4"); }
  @Test public void For_Valid_1_RuntimeTest() { runTest("For_Valid_1"); }
  @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
@@ -173,7 +173,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void IfElse_Valid_1_RuntimeTest() { runTest("IfElse_Valid_1"); }
  @Test public void IfElse_Valid_2_RuntimeTest() { runTest("IfElse_Valid_2"); }
  @Test public void IfElse_Valid_3_RuntimeTest() { runTest("IfElse_Valid_3"); }
- @Ignore("Known Issue - recursive types")@Test public void IfElse_Valid_4_RuntimeTest() { runTest("IfElse_Valid_4"); }
+ @Test public void IfElse_Valid_4_RuntimeTest() { runTest("IfElse_Valid_4"); }
  @Test public void Import_Valid_1_RuntimeTest() { runTest("Import_Valid_1"); }
  @Test public void Import_Valid_2_RuntimeTest() { runTest("Import_Valid_2"); } 
  @Test public void Import_Valid_3_RuntimeTest() { runTest("Import_Valid_3"); }
@@ -314,18 +314,18 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_4_RuntimeTest() { runTest("RecursiveType_Valid_4"); }
  @Test public void RecursiveType_Valid_5_RuntimeTest() { runTest("RecursiveType_Valid_5"); }
  @Test public void RecursiveType_Valid_6_RuntimeTest() { runTest("RecursiveType_Valid_6"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_7_RuntimeTest() { runTest("RecursiveType_Valid_7"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_8_RuntimeTest() { runTest("RecursiveType_Valid_8"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_9_RuntimeTest() { runTest("RecursiveType_Valid_9"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_10_RuntimeTest() { runTest("RecursiveType_Valid_10"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_11_RuntimeTest() { runTest("RecursiveType_Valid_11"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_12_RuntimeTest() { runTest("RecursiveType_Valid_12"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_13_RuntimeTest() { runTest("RecursiveType_Valid_13"); }
+ @Test public void RecursiveType_Valid_7_RuntimeTest() { runTest("RecursiveType_Valid_7"); }
+ @Test public void RecursiveType_Valid_8_RuntimeTest() { runTest("RecursiveType_Valid_8"); }
+ @Test public void RecursiveType_Valid_9_RuntimeTest() { runTest("RecursiveType_Valid_9"); }
+ @Test public void RecursiveType_Valid_10_RuntimeTest() { runTest("RecursiveType_Valid_10"); }
+ @Test public void RecursiveType_Valid_11_RuntimeTest() { runTest("RecursiveType_Valid_11"); }
+ @Test public void RecursiveType_Valid_12_RuntimeTest() { runTest("RecursiveType_Valid_12"); }
+ @Test public void RecursiveType_Valid_13_RuntimeTest() { runTest("RecursiveType_Valid_13"); }
  @Ignore("Known Issue - overloading")@Test public void RecursiveType_Valid_14_RuntimeTest() { runTest("RecursiveType_Valid_14"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_15_RuntimeTest() { runTest("RecursiveType_Valid_15"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_16_RuntimeTest() { runTest("RecursiveType_Valid_16"); } 
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_17_RuntimeTest() { runTest("RecursiveType_Valid_17"); }
- @Ignore("Known Issue - recursive types")@Test public void RecursiveType_Valid_18_RuntimeTest() { runTest("RecursiveType_Valid_18"); }
+ @Test public void RecursiveType_Valid_15_RuntimeTest() { runTest("RecursiveType_Valid_15"); }
+ @Test public void RecursiveType_Valid_16_RuntimeTest() { runTest("RecursiveType_Valid_16"); } 
+ @Test public void RecursiveType_Valid_17_RuntimeTest() { runTest("RecursiveType_Valid_17"); }
+ @Test public void RecursiveType_Valid_18_RuntimeTest() { runTest("RecursiveType_Valid_18"); }
  @Ignore("Known Issue")
  @Test public void RecursiveType_Valid_19_RuntimeTest() { runTest("RecursiveType_Valid_19"); }
  @Test public void RecursiveType_Valid_20_RuntimeTest() { runTest("RecursiveType_Valid_20"); }
@@ -425,7 +425,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_11_RuntimeTest() { runTest("TypeEquals_Valid_11"); }
  @Test public void TypeEquals_Valid_12_RuntimeTest() { runTest("TypeEquals_Valid_12"); }
  @Test public void TypeEquals_Valid_13_RuntimeTest() { runTest("TypeEquals_Valid_13"); }
- @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_14_RuntimeTest() { runTest("TypeEquals_Valid_14"); }
+ @Test public void TypeEquals_Valid_14_RuntimeTest() { runTest("TypeEquals_Valid_14"); }
  @Ignore("Future Work")
  @Test public void TypeEquals_Valid_15_RuntimeTest() { runTest("TypeEquals_Valid_15"); }
  @Test public void TypeEquals_Valid_16_RuntimeTest() { runTest("TypeEquals_Valid_16"); }
@@ -437,19 +437,19 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_22_RuntimeTest() { runTest("TypeEquals_Valid_22"); }
  @Test public void TypeEquals_Valid_23_RuntimeTest() { runTest("TypeEquals_Valid_23"); }
  @Test public void TypeEquals_Valid_24_RuntimeTest() { runTest("TypeEquals_Valid_24"); }
- @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_25_RuntimeTest() { runTest("TypeEquals_Valid_25"); }
+ @Test public void TypeEquals_Valid_25_RuntimeTest() { runTest("TypeEquals_Valid_25"); }
  @Test public void TypeEquals_Valid_26_RuntimeTest() { runTest("TypeEquals_Valid_26"); }
  @Test public void TypeEquals_Valid_27_RuntimeTest() { runTest("TypeEquals_Valid_27"); }
  @Test public void TypeEquals_Valid_28_RuntimeTest() { runTest("TypeEquals_Valid_28"); } 
  @Test public void TypeEquals_Valid_29_RuntimeTest() { runTest("TypeEquals_Valid_29"); }
  @Test public void TypeEquals_Valid_30_RuntimeTest() { runTest("TypeEquals_Valid_30"); }
  @Test public void TypeEquals_Valid_31_RuntimeTest() { runTest("TypeEquals_Valid_31"); }
- @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_32_RuntimeTest() { runTest("TypeEquals_Valid_32"); }
+ @Test public void TypeEquals_Valid_32_RuntimeTest() { runTest("TypeEquals_Valid_32"); }
  @Test public void TypeEquals_Valid_33_RuntimeTest() { runTest("TypeEquals_Valid_33"); }
  @Test public void TypeEquals_Valid_34_RuntimeTest() { runTest("TypeEquals_Valid_34"); }
  @Test public void TypeEquals_Valid_35_RuntimeTest() { runTest("TypeEquals_Valid_35"); }
  @Test public void TypeEquals_Valid_36_RuntimeTest() { runTest("TypeEquals_Valid_36"); }
- @Ignore("Known Issue - recursive types")@Test public void TypeEquals_Valid_37_RuntimeTest() { runTest("TypeEquals_Valid_37"); }
+ @Test public void TypeEquals_Valid_37_RuntimeTest() { runTest("TypeEquals_Valid_37"); }
  @Test public void TypeEquals_Valid_38_RuntimeTest() { runTest("TypeEquals_Valid_38"); }
  @Ignore("Known Issue") @Test public void Update_Valid_1_RuntimeTest() { runTest("Update_Valid_1"); }
  @Ignore("Known Issue") @Test public void Update_Valid_2_RuntimeTest() { runTest("Update_Valid_2"); }
@@ -479,8 +479,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void While_Valid_4_RuntimeTest() { runTest("While_Valid_4"); }
  @Test public void While_Valid_5_RuntimeTest() { runTest("While_Valid_5"); }
  @Test public void While_Valid_6_RuntimeTest() { runTest("While_Valid_6"); } 
- @Ignore("Known Issue - recursive types")@Test public void While_Valid_7_RuntimeTest() { runTest("While_Valid_7"); }
+ @Test public void While_Valid_7_RuntimeTest() { runTest("While_Valid_7"); }
  @Test public void While_Valid_8_RuntimeTest() { runTest("While_Valid_8"); }
  @Test public void While_Valid_9_RuntimeTest() { runTest("While_Valid_9"); }
- @Ignore("Known Issue - recursive types")@Test public void While_Valid_10_RuntimeTest() { runTest("While_Valid_10"); }
+ @Test public void While_Valid_10_RuntimeTest() { runTest("While_Valid_10"); }
 }

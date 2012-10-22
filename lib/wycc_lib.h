@@ -160,6 +160,7 @@ wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wycc__toUnsignedByte(wycc_obj* itm);
 wycc_obj* wycc__toUnsignedInt(wycc_obj* itm);
+wycc_obj* wycc__isDigit(wycc_obj* itm);
 
 #ifndef WY_OBJ_SAFE
 #define WY_OBJ_SANE(x,y)	wycc_obj_sane(x,y)
