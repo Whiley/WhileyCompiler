@@ -197,108 +197,102 @@ public final class LocalGenerator {
 			 Environment environment, Block codes) {
 		try {
 			if (condition instanceof Expr.Constant) {
-				return generateCondition(target, (Expr.Constant) condition, freeRegister, environment);
+				generateCondition(target, (Expr.Constant) condition, environment, codes);
+			} else if (condition instanceof Expr.UnOp) {
+				generateCondition(target, (Expr.UnOp) condition, environment, codes);
+			} else if (condition instanceof Expr.BinOp) {
+				generateCondition(target, (Expr.BinOp) condition, environment, codes);
+			} else if (condition instanceof Expr.Comprehension) {
+				generateCondition(target, (Expr.Comprehension) condition, environment, codes);
 			} else if (condition instanceof Expr.ConstantAccess
 					|| condition instanceof Expr.LocalVariable
 					|| condition instanceof Expr.AbstractInvoke
 					|| condition instanceof Expr.RecordAccess
 					|| condition instanceof Expr.IndexOf) {
-				// fall through to default case
-			} else if (condition instanceof Expr.UnOp) {
-				return generateCondition(target, (Expr.UnOp) condition, freeRegister, environment);
-			} else if (condition instanceof Expr.BinOp) {
-				return generateCondition(target, (Expr.BinOp) condition, freeRegister, environment);
-			} else if (condition instanceof Expr.Comprehension) {
-				return generateCondition(target, (Expr.Comprehension) condition, freeRegister, environment);
+
+				// The default case simply compares the computed value against
+				// true. In some cases, we could do better. For example, !(x < 5)
+				// could be rewritten into x>=5. 
+				
+				int r1 = generate(condition, environment, codes);
+				int r2 = environment.allocate(Type.T_BOOL);
+				codes.append(Code.Const(r2, Constant.V_BOOL(true)),
+						attributes(condition));
+				codes.append(
+						Code.If(Type.T_BOOL, r1, r2, Code.Comparator.EQ, target),
+						attributes(condition));
+
 			} else {				
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
 			}
-			
-			// The default case simply compares the computed value against
-			// true. In some cases, we could do better. For example, !(x < 5)
-			// could be rewritten into x>=5. 
-			
-			Block blk = generate(condition, freeRegister, freeRegister + 1,
-					environment);
-			blk.append(Code.Const(freeRegister + 1, Constant.V_BOOL(true)),
-					attributes(condition));
-			blk.append(Code.If(Type.T_BOOL, freeRegister, freeRegister + 1,
-					Code.Comparator.EQ, target), attributes(condition));
-			return blk;
-			
+
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {			
 			internalFailure(ex.getMessage(), context, condition, ex);
 		}
 
-		return null;
 	}
 
-	private Block generateCondition(String target, Expr.Constant c, Environment environment, Block codes) {
+	private void generateCondition(String target, Expr.Constant c, Environment environment, Block codes) {
 		Constant.Bool b = (Constant.Bool) c.value;
-		Block blk = new Block(environment.size());
 		if (b.value) {
-			blk.append(Code.Goto(target));
+			codes.append(Code.Goto(target));
 		} else {
 			// do nout
 		}
-		return blk;
 	}
 	
 	private Block generateCondition(String target, Expr.BinOp v, Environment environment, Block codes) throws Exception {
 		
-		Expr.BOp bop = v.op;
-		Block blk = new Block(environment.size());
+		Expr.BOp bop = v.op;		
 
 		if (bop == Expr.BOp.OR) {
-			blk.append(generateCondition(target, v.lhs, freeRegister, environment));
-			blk.append(generateCondition(target, v.rhs, freeRegister, environment));
-			return blk;
+			generateCondition(target, v.lhs, environment, codes);
+			generateCondition(target, v.rhs, environment, codes);
+			
 		} else if (bop == Expr.BOp.AND) {
 			String exitLabel = Block.freshLabel();
-			blk.append(generateCondition(exitLabel, invert(v.lhs), freeRegister, environment));
-			blk.append(generateCondition(target, v.rhs, freeRegister, environment));
-			blk.append(Code.Label(exitLabel));
-			return blk;
+			generateCondition(exitLabel, invert(v.lhs), environment, codes);
+			generateCondition(target, v.rhs, environment, codes);
+			codes.append(Code.Label(exitLabel));
+			
 		} else if (bop == Expr.BOp.IS) {
-			return generateTypeCondition(target, v, freeRegister, environment);
-		}
-
-		Code.Comparator cop = OP2COP(bop,v);
-		
-		if (cop == Code.Comparator.EQ && v.lhs instanceof Expr.LocalVariable
-				&& v.rhs instanceof Expr.Constant
-				&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
-			// this is a simple rewrite to enable type inference.
-			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
-			if (!environment.containsKey(lhs.var)) {
-				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
-			}
-			int slot = environment.get(lhs.var);								
-			blk.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
-		} else if (cop == Code.Comparator.NEQ && v.lhs instanceof Expr.LocalVariable
-				&& v.rhs instanceof Expr.Constant
-				&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {			
-			// this is a simple rewrite to enable type inference.
-			String exitLabel = Block.freshLabel();
-			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
-			if (!environment.containsKey(lhs.var)) {
-				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
-			}
-			int slot = environment.get(lhs.var);			
-			blk.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
-			blk.append(Code.Goto(target));
-			blk.append(Code.Label(exitLabel));
+			generateTypeCondition(target, v, environment, codes);
+			
 		} else {
-			blk.append(generate(v.lhs, freeRegister, freeRegister + 1,
-					environment));
-			blk.append(generate(v.rhs, freeRegister + 1, freeRegister + 2,
-					environment));
-			blk.append(Code.If(v.srcType.raw(), freeRegister,
-					freeRegister + 1, cop, target), attributes(v));
+
+			Code.Comparator cop = OP2COP(bop,v);
+
+			if (cop == Code.Comparator.EQ && v.lhs instanceof Expr.LocalVariable
+					&& v.rhs instanceof Expr.Constant
+					&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
+				// this is a simple rewrite to enable type inference.
+				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
+				if (environment.get(lhs.var) == null) {
+					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
+				}
+				int slot = environment.get(lhs.var);								
+				codes.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
+			} else if (cop == Code.Comparator.NEQ && v.lhs instanceof Expr.LocalVariable
+					&& v.rhs instanceof Expr.Constant
+					&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {			
+				// this is a simple rewrite to enable type inference.
+				String exitLabel = Block.freshLabel();
+				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
+				if (environment.get(lhs.var) == null) {
+					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
+				}
+				int slot = environment.get(lhs.var);			
+				codes.append(Code.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
+				codes.append(Code.Goto(target));
+				codes.append(Code.Label(exitLabel));
+			} else {
+				int lhs = generate(v.lhs, environment, codes);
+				int rhs = generate(v.rhs, environment, codes);				
+				codes.append(Code.If(v.srcType.raw(), lhs, rhs, cop, target), attributes(v));
+			}
 		}
-		return blk;
 	}
 
 	private Block generateTypeCondition(String target, Expr.BinOp v,
