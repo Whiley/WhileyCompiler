@@ -570,15 +570,16 @@ public final class LocalGenerator {
 	private int generate(Expr.LocalVariable expr, Environment environment, Block codes) throws ResolveError {
 		
 		if (environment.get(expr.var) != null) {
-			return environment.get(expr.var);
+			Type type = expr.result().raw();
+			int operand = environment.get(expr.var);
+			int target = environment.allocate(type);
+			codes.append(Code.Assign(type,target,operand),attributes(expr));
+			return target;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), context,
 					expr);
-		}
-		
-		// must be an error
-		syntaxError("unknown variable \"" + expr.var + "\"", context,expr);
-		return -1;
+			return -1;
+		}		
 	}
 
 	private int generate(Expr.UnOp expr, Environment environment, Block codes) {

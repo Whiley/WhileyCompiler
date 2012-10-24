@@ -302,14 +302,14 @@ public final class CodeGeneration {
 		if (s.lhs instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
 			int operand = localGenerator.generate(s.rhs, environment, codes);
-			int target;
+			
 			if (environment.get(v.var) == null) {
-				target = environment.allocate(Type.T_INT,v.var);
+				environment.put(operand,v.var);
 			} else {
-				target = environment.get(v.var);
+				int target = environment.get(v.var);
+				codes.append(Code.Assign(s.rhs.result().raw(), target, operand),
+						attributes(s));
 			}
-			codes.append(Code.Assign(s.rhs.result().raw(), target, operand),
-					attributes(s));
 		} else if(s.lhs instanceof Expr.RationalLVal) {
 			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
 			
