@@ -546,13 +546,14 @@ public final class CodeGeneration {
 	}
 	
 	private void generate(TryCatch s, LocalGenerator.Environment environment, Block codes) throws Exception {
-		int exceptionRegister = allocate(environment);
+		int start = codes.size();
+		int exceptionRegister = environment.allocate(Type.T_ANY);
 		String exitLab = Block.freshLabel();		
-		Block cblk = new Block(environment.size());		
+		
 		for (Stmt st : s.body) {
-			cblk.append(generate(st, environment));
+			generate(st, environment, codes);
 		}		
-		cblk.append(Code.Goto(exitLab),attributes(s));	
+		codes.append(Code.Goto(exitLab),attributes(s));	
 		String endLab = null;
 		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
 		for(Stmt.Catch c : s.catches) {			
@@ -567,19 +568,16 @@ public final class CodeGeneration {
 			Type pt = c.type.raw();
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt,lab.label));
-			cblk.append(lab, attributes(c));
-			environment.put(c.variable, exceptionRegister);
+			codes.append(lab, attributes(c));
+			environment.put(exceptionRegister, c.variable);
 			for (Stmt st : c.stmts) {
-				cblk.append(generate(st, environment));
+				generate(st, environment, codes);
 			}
-			cblk.append(Code.Goto(exitLab),attributes(c));
+			codes.append(Code.Goto(exitLab),attributes(c));
 		}
 		
-		Block blk = new Block(environment.size());
-		blk.append(Code.TryCatch(exceptionRegister,endLab,catches),attributes(s));
-		blk.append(cblk);
-		blk.append(Code.Label(exitLab), attributes(s));
-		return blk;
+		codes.insert(start, Code.TryCatch(exceptionRegister,endLab,catches),attributes(s));
+		codes.append(Code.Label(exitLab), attributes(s));
 	}
 	
 	private void generate(While s, LocalGenerator.Environment environment,
