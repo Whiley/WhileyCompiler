@@ -354,7 +354,7 @@ public final class CodeGeneration {
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
 			Expr.AssignedVariable lhs = extractLVal(s.lhs, fields, operands,
-					codes, environment);
+					environment, codes);
 			if (environment.get(lhs.var) == null) {
 				WhileyFile.syntaxError("unknown variable",
 						localGenerator.context(), lhs);
@@ -371,26 +371,26 @@ public final class CodeGeneration {
 	}
 
 	private Expr.AssignedVariable extractLVal(Expr e, ArrayList<String> fields,
-			ArrayList<Integer> operands, Block blk,
-			LocalGenerator.Environment environment) {
-		
-	if (e instanceof Expr.AssignedVariable) {
+			ArrayList<Integer> operands,
+			LocalGenerator.Environment environment, Block codes) {
+
+		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return v;
 		} else if (e instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) e;
-			return extractLVal(pa.src, fields, operands, blk, environment);
+			return extractLVal(pa.src, fields, operands, environment, codes);
 		} else if (e instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) e;
-			int operand = localGenerator.generate(la.index, environment, blk);
+			int operand = localGenerator.generate(la.index, environment, codes);
 			Expr.AssignedVariable l = extractLVal(la.src, fields, operands,
-					blk, environment);
+					environment, codes);
 			operands.add(operand);
 			return l;
 		} else if (e instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) e;
 			Expr.AssignedVariable r = extractLVal(ra.src, fields, operands,
-					blk, environment);
+					environment, codes);
 			fields.add(ra.name);
 			return r;
 		} else {
@@ -478,38 +478,48 @@ public final class CodeGeneration {
 		codes.append(Code.Goto(scope.label));
 	}
 	
-	private void generate(Switch s, LocalGenerator.Environment environment, Block codes)
-			throws Exception {
-		int freeRegister = environment.size();
+	private void generate(Switch s, LocalGenerator.Environment environment,
+			Block codes) throws Exception {
 		String exitLab = Block.freshLabel();
-		Block blk = localGenerator.generate(s.expr, freeRegister,
-				freeRegister + 1, environment);
-		Block cblk = new Block(environment.size());
+		int operand = localGenerator.generate(s.expr, environment, codes);
 		String defaultTarget = exitLab;
 		HashSet<Constant> values = new HashSet();
 		ArrayList<Pair<Constant, String>> cases = new ArrayList();
+		int start = codes.size();
 
 		for (Stmt.Case c : s.cases) {
 			if (c.expr.isEmpty()) {
-				// indicates the default block
+				// A case with an empty match represents the default label. We
+				// must check that we have not already seen a case with an empty
+				// match (otherwise, we'd have two default labels ;)
 				if (defaultTarget != exitLab) {
-					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),
+					WhileyFile.syntaxError(
+							errorMessage(DUPLICATE_DEFAULT_LABEL),
 							localGenerator.context(), c);
 				} else {
 					defaultTarget = Block.freshLabel();
-					cblk.append(Code.Label(defaultTarget), attributes(c));
+					codes.append(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
-						cblk.append(generate(st, environment));
+						generate(st, environment, codes);
 					}
-					cblk.append(Code.Goto(exitLab), attributes(c));
+					codes.append(Code.Goto(exitLab), attributes(c));
 				}
+				
 			} else if (defaultTarget == exitLab) {
 				String target = Block.freshLabel();
-				cblk.append(Code.Label(target), attributes(c));
+				codes.append(Code.Label(target), attributes(c));
 
+				// Case statements in Whiley may have multiple matching constant
+				// values. Therefore, we iterate each matching value and
+				// construct a mapping from that to a label indicating the start
+				// of the case body. 
+				
 				for (Constant constant : c.constants) {
+					// Check whether this case constant has already been used as
+					// a case constant elsewhere. If so, then report an error.
 					if (values.contains(constant)) {
-						WhileyFile.syntaxError(errorMessage(DUPLICATE_CASE_LABEL),
+						WhileyFile.syntaxError(
+								errorMessage(DUPLICATE_CASE_LABEL),
 								localGenerator.context(), c);
 					}
 					cases.add(new Pair(constant, target));
@@ -517,20 +527,22 @@ public final class CodeGeneration {
 				}
 
 				for (Stmt st : c.stmts) {
-					cblk.append(generate(st, environment));
+					generate(st, environment, codes);
 				}
-				cblk.append(Code.Goto(exitLab), attributes(c));
+				codes.append(Code.Goto(exitLab), attributes(c));
+				
 			} else {
+				// This represents the case where we have another non-default
+				// case after the default case. Such code cannot be executed,
+				// and is therefore reported as an error.
 				WhileyFile.syntaxError(errorMessage(UNREACHABLE_CODE),
 						localGenerator.context(), c);
 			}
 		}
 
-		blk.append(Code.Switch(s.expr.result().raw(), freeRegister,
+		codes.insert(start, Code.Switch(s.expr.result().raw(), operand,
 				defaultTarget, cases), attributes(s));
-		blk.append(cblk);
-		blk.append(Code.Label(exitLab), attributes(s));
-		return blk;
+		codes.append(Code.Label(exitLab), attributes(s));
 	}
 	
 	private void generate(TryCatch s, LocalGenerator.Environment environment, Block codes) throws Exception {
