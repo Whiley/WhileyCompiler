@@ -273,8 +273,10 @@ public final class CodeGeneration {
 			} else if (stmt instanceof ForAll) {
 				generate((ForAll) stmt, environment, codes);
 			} else if (stmt instanceof Expr.MethodCall) {
+				System.out.println("STAGE 1");
 				localGenerator.generate((Expr.MethodCall) stmt,environment,codes);								
 			} else if (stmt instanceof Expr.FunctionCall) {
+				System.out.println("STAGE 2");
 				localGenerator.generate((Expr.FunctionCall) stmt,environment,codes);								
 			} else if (stmt instanceof Expr.IndirectMethodCall) {
 				localGenerator.generate((Expr.IndirectMethodCall) stmt,environment,codes);								
