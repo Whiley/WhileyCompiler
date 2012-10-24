@@ -56,7 +56,8 @@ int wycc__mile__stone = 0;
 #endif
 
 #define WY_SEG_FAULT		((wycc_obj *) (3))->cnt++;
-#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);exit(-3);
+//#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);exit(-3);
+#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);WY_SEG_FAULT;
 /*
  * storage for the type registry.
  * indexes were off by 1 - to reserve 0 for not assigned.
@@ -276,7 +277,10 @@ typedef wycc_obj *(*FOM_1a)(void *a, ...);
 static wycc_obj *type_dict = NULL;
 static int type_count = 0;
 static int type_alloc = 0;
+
 static void *type_parsings = NULL;
+//	  gdb	 p ((struct type_desc *)type_parsings)[103]
+
 struct type_desc {
 #if Save_Name
     char * nam;
@@ -313,6 +317,7 @@ static int Recursive_Type_Token_Max = 0;
  * Union:	next is chain (continued), down is subtype 
  * Tuple:	next is chain (continued), down is subtype of field
  * Record:	next is tuple (started), down is Record_Record
+ * Recurs:	no next; down is subtype
  * Leaf:	no down, next
  * Leaf:	no down, next
  */
@@ -356,6 +361,7 @@ static int wycc_type_is_union(int id);
 static int wycc_type_is_negate(int id);
 static int wycc_type_is_frac(int id);
 static int wycc_type_is_recurs(int id);
+static int wycc_type_is_chain(int id);
 static void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ);
 static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk);
 static void wycc_chunk_ptr_fill_as(struct chunk_ptr *ptr, wycc_obj *itm);
@@ -386,6 +392,8 @@ static int wycc_type_ishomo(wycc_obj *itm);
 static int wycc_type_subsume_records(int itok, int atok);
 static int wycc_type_subsume_tokens(int itok, int atok);
 static int wycc_type_subsume_tuples(int itok, int atok);
+static int wycc_type_subsume_lists(int itok, int atok);
+static int wycc_type_subsume_leaves(int itok, int atok);
 
 
 /*
@@ -1073,8 +1081,12 @@ static int wycc_type_not_map(char* typ) {
     return 1;
 }
 
+/*
+ * return 1 iff our type (typ) is consistant with the wyil type token
+ */
 static int wycc_type_comp(int typ, int tok){
     int flgs = wycc_type_flags(tok);
+    int alt;
 
     if (tok == my_type_any) {
 	return 1;
@@ -1121,7 +1133,24 @@ static int wycc_type_comp(int typ, int tok){
     if (tok == my_type_null) {
 	return (typ == Wy_Null);
     }
-    WY_SEG_FAULT
+    if (flgs & Type_Recurs) {
+	alt = wycc_type_down(tok);
+	return wycc_type_comp(typ, alt) ;
+    }; 
+    if (flgs & Type_Union) {
+	while (1) {
+	    alt = wycc_type_down(tok);
+	    if (wycc_type_comp(typ, alt)) {
+		return 1;
+	    };
+	    tok = wycc_type_next(tok);
+	    if (tok == 0) {
+		return 0;
+	    };
+	}
+    };
+    //WY_SEG_FAULT
+    WY_PANIC("Help needed in wycc_type_comp other (%d)\n", tok)
     fprintf(stderr, "Help needed in wycc_type_comp other (%d)\n", tok);
     struct type_desc *desc;
     desc = &((struct type_desc *)type_parsings)[tok];
@@ -1174,9 +1203,14 @@ static int wycc_type_subsume_tokens(int itok, int atok) {
     int iflg, aflg;
     int nxt;
     int alt;
+    int end;
 
     if (wycc_type_is_union(itok)) {
-	WY_PANIC("Help needed in wycc_type_subsume instance union (%d)\n", itok)
+	//WY_PANIC("Help needed in wycc_type_subsume instance union (%d)\n", itok)
+	fprintf(stderr, ".... type_subsume has union\n");
+    };
+    if (itok == atok) {
+	return 1;
     };
     iflg = wycc_type_flags(itok);
     aflg = wycc_type_flags(atok);
@@ -1186,6 +1220,24 @@ static int wycc_type_subsume_tokens(int itok, int atok) {
 	};
 	if (wycc_type_is_record(itok)) {
 	    return wycc_type_subsume_records(itok, atok);
+	};
+	if (wycc_type_is_list(itok)) {
+	    return wycc_type_subsume_lists(itok, atok);
+	};
+	if (wycc_type_is_chain(itok)) {
+	    nxt = wycc_type_down(itok);
+	    alt = wycc_type_down(atok);
+	    end = wycc_type_subsume_tokens(nxt, alt);
+	    if (end == 0) {
+		return 0;
+	    };
+	    nxt = wycc_type_next(itok);
+	    alt = wycc_type_next(atok);
+	    return wycc_type_subsume_tokens(nxt, alt);
+	};
+	//WY_SEG_FAULT
+	if (wycc_type_is_leaf(itok)) {
+	    return wycc_type_subsume_leaves(itok, atok);
 	};
 	WY_PANIC("Help needed in wycc_type_subsume descent (%d)\n", iflg);
     };
@@ -1198,15 +1250,75 @@ static int wycc_type_subsume_tokens(int itok, int atok) {
 	}
 	return 0;
     };
-    WY_SEG_FAULT
+    if (wycc_type_is_recurs(atok)) {
+	nxt = wycc_type_down(atok);
+	return wycc_type_subsume_tokens(itok, nxt);
+    };
+    if (wycc_type_is_leaf(itok)) {
+	return 0;
+    }
+    if (itok == my_type_void) {
+	return 1;
+    }
+    //WY_SEG_FAULT
+    WY_PANIC("Help needed in wycc_type_subsume instance unk (%d, %d)\n", itok, iflg)
 
+}
+
+/*
+ * 8:6 6:7
+ * 3b, 4d, 5c, 6i, 7r,  8s
+ */
+static int wycc_type_subsume_leaves(int itok, int atok) {
+    int istp;
+    int astp;
+
+    if (itok == my_type_int) {
+	if (atok == my_type_real) {
+	    return 1;
+	};
+    };
+    if (itok == my_type_string) {
+	if (atok == my_type_int) {
+	    return 0;
+	};
+	return 1;
+    };
+
+    WY_PANIC("Help needed in wycc_type_subsume_leaves (%d:%d)\n", itok, atok);
 
 }
 
 /*
  * 
  */
+static int wycc_type_subsume_lists(int itok, int atok) {
+    int istp;
+    int astp;
+
+    istp = wycc_type_down(itok);
+    astp = wycc_type_down(atok);
+    return wycc_type_subsume_tokens(istp, astp);
+}
+
+/*
+ * 
+ */
 static int wycc_type_subsume_tuples(int itok, int atok) {
+    int istp;
+    int astp;
+    int end;
+
+    istp = wycc_type_down(itok);
+    astp = wycc_type_down(atok);
+    end = wycc_type_subsume_tokens(istp, astp);
+    if (end == 0) {
+	return 0;
+    };
+    istp = wycc_type_next(itok);
+    astp = wycc_type_next(atok);
+    return wycc_type_subsume_tokens(istp, astp);
+    
 }
 
 /*
@@ -1237,8 +1349,8 @@ static int wycc_type_subsume_records(int itok, int atok) {
 	return 1;
     };
     return wycc_type_subsume_tokens(itup, atup);
-    WY_SEG_FAULT
-	return ;
+    //WY_SEG_FAULT
+    //	return ;
 }
 
 /*
@@ -1273,6 +1385,10 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
     };
     if (wycc_type_is_negate(tok)) {
 	return wycc_type_check_negate(itm, tok);
+    };
+    if (wycc_type_is_recurs(tok)) {
+	tmp = wycc_type_down(tok);
+	return wycc_type_check_tok(itm, tmp);
     };
     tmp = wycc_type_comp(ty, tok);
     if (! tmp) {
@@ -1315,10 +1431,6 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 	//return (tmp == tok);
 	return wycc_type_subsume_records(tmp, tok);
 	WY_PANIC("Help needed in wycc_type_check_tok w/ record\n")
-    };
-    if (wycc_type_is_recurs(tok)) {
-	tmp = wycc_type_down(tok);
-	return wycc_type_check_tok(itm, tmp);
     };
     if (wycc_type_is_frac(tok)) {
 	val = (wycc_obj *) wycc_type_down(tok);
@@ -1621,6 +1733,7 @@ int wycc_recrec_nam(wycc_obj* rec, char *nam) {
 	    return ans;
 	};
     }
+    WY_PANIC("Help needed in wycc_recrec_nam, name '%s' not found.\n", nam)
     fprintf(stderr, "Help needed in wycc_recrec_nam, name '%s' not found.\n"
 	    , nam);
     WY_SEG_FAULT
@@ -3621,16 +3734,13 @@ static int wycc_type_down(int id) {
     struct type_desc *desc;
 
     if (id >= type_count) {
-	//WY_SEG_FAULT
 	WY_PANIC("Help needed in wycc_type_down w/ %d\n", id)
     };
     desc = &((struct type_desc *)type_parsings)[id];
     if (desc->flgs & Type_Leaf) {
-	//WY_SEG_FAULT
 	WY_PANIC("Help needed in wycc_type_down w/ %d\n", id)
     };
     if (desc->flgs & Type_Odd) {
-	//WY_SEG_FAULT
 	WY_PANIC("Help needed in wycc_type_down w/ %d\n", id)
     };
     return desc->down;
@@ -3726,6 +3836,18 @@ static int wycc_type_is_record(int id) {
     int flgs = wycc_type_flags(id);
 
     if (flgs & Type_Record) {
+	return 1;
+    };
+    return 0;
+}
+
+/*
+ * given a type number,
+ */
+static int wycc_type_is_chain(int id) {
+    int flgs = wycc_type_flags(id);
+
+    if (flgs & Type_Chain) {
 	return 1;
     };
     return 0;
@@ -3867,6 +3989,9 @@ static int wycc_type_parse_leaf(const char *nam, int *lo, int hi){
 	/*
 	 * lessor cheat: any later arrivals that are one word are leaves.
 	 */
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "... wycc_type_parse_leaf %s\n", nam);
+	};
 	desc->flgs = Type_Leaf;
 	return ans;
     }
@@ -3974,6 +4099,26 @@ static int wycc_parse_recurser_idx(const char *nam, int beg, int siz){
     };
     return -1;
     WY_PANIC("Help needed in wycc_parse_recurser w/ %c\n", chr)
+}
+
+/*
+ *
+ */
+static int wycc_type_parse_fx(const char *nam, int at, size_t siz) {
+    int tmp;
+    char *buf;
+
+    tmp = wycc_parse_recurser_idx(nam, at, siz);
+    if (tmp != -1) {
+	return Recursive_Type_Tokens[tmp];
+    };
+    buf = (char *) malloc(siz+2);
+    strncpy(buf, &(nam[at]), siz);
+    buf[siz] = '\0';
+    if (wycc_debug_flag) {
+	fprintf(stderr, "FX new = '%s'\n", buf);
+    };
+    return wycc_type_internal(buf);
 }
 
 /*
@@ -4143,18 +4288,8 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
     } else {
 	siz = sav2 - sav3;
     };
-    tmp = wycc_parse_recurser_idx(nam, sav3, siz);
-    if (tmp == -1) {
-	buf = (char *) malloc(siz+2);
-	strncpy(buf, &(nam[sav3]), siz);
-	buf[siz] = '\0';
-	if (wycc_debug_flag) {
-	    fprintf(stderr, "new = '%s'\n", buf);
-	};
-	nxt = wycc_type_internal(buf);
-    } else {
-	nxt = Recursive_Type_Tokens[tmp];
-    };
+    nxt = wycc_type_parse_fx(nam, sav3, siz);
+
     flg = -1;
     if (chr == '*') {
 	/* set */
@@ -4227,13 +4362,8 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
     sav3 += 1 + siz;
     siz = wycc_type_parse_la(nam, sav3, sav);
     //siz = sav - sav3;
-    buf = (char *) malloc(siz+2);
-    strncpy(buf, &(nam[sav3]), siz);
-    buf[siz] = '\0';
-    if (wycc_debug_flag) {
-	fprintf(stderr, "nnew = '%s'\n", buf);
-    };
-    nxt2 = wycc_type_internal(buf);
+    nxt2 = wycc_type_parse_fx(nam, sav3, siz);
+
     if (chr == '@') {
 	/* map */
 	//WY_PANIC("Help needed in wycc_type_parse w/ map %s\n", nam);
@@ -4289,13 +4419,7 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
 	    siz = 1;
 	    continue;
 	}
-	buf = (char *) malloc(siz+2);
-	strncpy(buf, &(nam[brk]), siz);
-	buf[siz] = '\0';
-	if (wycc_debug_flag) {
-	    fprintf(stderr, "ynew = '%s'\n", buf);
-	};
-	nxt2 = wycc_type_internal(buf);
+	nxt2 = wycc_type_parse_fx(nam, brk, siz);
 	link = wycc_type_tok_alloc();
 	/* We must recompute desc because type_parsings may change */
 	desc = &((struct type_desc *)type_parsings)[prev];
