@@ -86,12 +86,12 @@ public class GlobalGenerator {
 					if(blk == null) {
 						blk = new Block(1);					
 					}
-					HashMap<String,Integer> environment = new HashMap<String,Integer>();
-					environment.put("$",Code.REG_0);
+					LocalGenerator.Environment environment = new LocalGenerator.Environment();
+					environment.allocate(td.resolvedType.raw(),"$");
 					addExposedNames(td.resolvedType.raw(),environment,blk);
-					blk.append(new LocalGenerator(this, td).generateAssertion(
+					new LocalGenerator(this, td).generateAssertion(
 							"constraint not satisfied", td.constraint, false,
-							environment.size(), environment));
+							environment, blk);
 				}
 				cache.put(nid, blk);
 				return blk;
@@ -295,7 +295,7 @@ public class GlobalGenerator {
 	 * @param t
 	 * @param environment
 	 */
-	private void addExposedNames(Type t, HashMap<String, Integer> environment,
+	private void addExposedNames(Type t, LocalGenerator.Environment environment,
 			Block blk) {
 		// Extending this method to handle lists and sets etc, is very
 		// difficult. The primary problem is that we need to expand expressions
@@ -306,9 +306,8 @@ public class GlobalGenerator {
 			for (Map.Entry<String, Type> e : tt.fields().entrySet()) {
 				String field = e.getKey();
 				Integer i = environment.get(field);
-				if (i == null) {
-					int target = environment.size();
-					environment.put(field, target);
+				if (i == null) {					
+					int target = environment.allocate(e.getValue(),field);
 					blk.append(Code.FieldLoad(tt, target, Code.REG_0, field));
 				}
 			}
