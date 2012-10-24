@@ -487,44 +487,62 @@ public final class LocalGenerator {
 		return -1; // deadcode
 	}
 
-	public int generate(Expr.MethodCall expr, Environment environment, Block codes)
+	public int generate(Expr.MethodCall expr, Environment environment, Block codes) throws ResolveError {
+		int target = environment.allocate(expr.result().raw());
+		generate(expr,target,environment,codes);
+		return target;
+	}
+	
+	public void generate(Expr.MethodCall expr, int target, Environment environment, Block codes)
 			throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes);
-		int target = environment.allocate(expr.result().raw());
 		codes.append(
 				Code.Invoke(expr.methodType.raw(), target, operands, expr.nid()),
 				attributes(expr));
+	}
+	
+	public int generate(Expr.FunctionCall expr, Environment environment, Block codes) throws ResolveError {
+		int target = environment.allocate(expr.result().raw());
+		generate(expr,target,environment,codes);
 		return target;
 	}
 	
-	public int generate(Expr.FunctionCall expr, Environment environment,
+	public void generate(Expr.FunctionCall expr, int target, Environment environment,
 			Block codes) throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes);
-		int target = environment.allocate(expr.result().raw());
 		codes.append(
 				Code.Invoke(expr.functionType.raw(), target, operands, expr.nid()),
 				attributes(expr));
-		return target;
 	}
 	
-	public int generate(Expr.IndirectFunctionCall expr, Environment environment, Block codes)
-			throws ResolveError {
-		int operand = generate(expr.src, environment, codes);
-		int[] operands = generate(expr.arguments, environment, codes);
+	public int generate(Expr.IndirectFunctionCall expr,
+			Environment environment, Block codes) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
-		codes.append(Code.IndirectInvoke(expr.functionType.raw(), target, operand,
-				operands), attributes(expr));
+		generate(expr, target, environment, codes);
 		return target;
 	}
-	
-	public int generate(Expr.IndirectMethodCall expr, Environment environment, Block codes)
-			throws ResolveError {		
+
+	public void generate(Expr.IndirectFunctionCall expr, int target,
+			Environment environment, Block codes) throws ResolveError {
 		int operand = generate(expr.src, environment, codes);
 		int[] operands = generate(expr.arguments, environment, codes);
+		codes.append(Code.IndirectInvoke(expr.functionType.raw(), target,
+				operand, operands), attributes(expr));
+	}
+	
+	public int generate(Expr.IndirectMethodCall expr, Environment environment,
+			Block codes) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
-		codes.append(Code.IndirectInvoke(expr.methodType.raw(), target, operand,
-				operands), attributes(expr));
+		generate(expr, target, environment, codes);
 		return target;
+	}
+
+	public void generate(Expr.IndirectMethodCall expr, int target,
+			Environment environment, Block codes) throws ResolveError {
+		int operand = generate(expr.src, environment, codes);
+		int[] operands = generate(expr.arguments, environment, codes);
+		codes.append(Code.IndirectInvoke(expr.methodType.raw(), target,
+				operand, operands), attributes(expr));
 	}
 	
 	private int generate(Expr.Constant expr, Environment environment, Block codes) {

@@ -273,15 +273,13 @@ public final class CodeGeneration {
 			} else if (stmt instanceof ForAll) {
 				generate((ForAll) stmt, environment, codes);
 			} else if (stmt instanceof Expr.MethodCall) {
-				System.out.println("STAGE 1");
-				localGenerator.generate((Expr.MethodCall) stmt,environment,codes);								
+				localGenerator.generate((Expr.MethodCall) stmt,Code.NULL_REG,environment,codes);								
 			} else if (stmt instanceof Expr.FunctionCall) {
-				System.out.println("STAGE 2");
-				localGenerator.generate((Expr.FunctionCall) stmt,environment,codes);								
+				localGenerator.generate((Expr.FunctionCall) stmt,Code.NULL_REG,environment,codes);								
 			} else if (stmt instanceof Expr.IndirectMethodCall) {
-				localGenerator.generate((Expr.IndirectMethodCall) stmt,environment,codes);								
+				localGenerator.generate((Expr.IndirectMethodCall) stmt,Code.NULL_REG,environment,codes);								
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
-				localGenerator.generate((Expr.IndirectFunctionCall) stmt,environment,codes);								
+				localGenerator.generate((Expr.IndirectFunctionCall) stmt,Code.NULL_REG,environment,codes);								
 			} else if (stmt instanceof Expr.New) {
 				localGenerator.generate((Expr.New) stmt, environment, codes);
 			} else if (stmt instanceof Skip) {
