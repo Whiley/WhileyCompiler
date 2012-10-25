@@ -69,14 +69,20 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		this.enabled = flag;
 	}
 		
-	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
-		// TODO: propagate constants through type constraints
-		return type;		
+	@Override
+	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
+		Block constraint = type.constraint();
+		if(constraint != null) {
+			constraint = propagate(constraint);
+			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
+					type.type(), constraint, type.attributes());
+		}
+		return type;			
 	}
 	
 	public Env initialStore() {				
 		Env environment = new Env();		
-		int nvars = methodCase.body().numSlots();
+		int nvars = block.numSlots();
 		
 		for (int i=0; i != nvars; ++i) {			
 			environment.add(null);			
@@ -85,19 +91,33 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return environment;				
 	}
 	
-	public WyilFile.Case propagate(WyilFile.Case mcase) {		
-		methodCase = mcase;
-		block = mcase.body();
+	@Override
+	public WyilFile.Case propagate(WyilFile.Case mcase) {				
+		// TODO: back propagate through pre- and post-conditions
+		Block precondition = mcase.precondition();
+		Block postcondition = mcase.postcondition();
+		if (precondition != null) {
+			precondition = propagate(precondition);
+		}
+		if (postcondition != null) {
+			postcondition = propagate(postcondition);
+		}
+		Block nbody = propagate(mcase.body());
+		return new WyilFile.Case(nbody, precondition, postcondition,
+				mcase.locals(), mcase.attributes());
+	}
+	
+	public Block propagate(Block body) {				
+		block = body;
 		stores = new HashMap<String,Env>();		
 		rewrites.clear();
 
 		// TODO: propagate constants through pre- and post-conditions.
 		
 		Env environment = initialStore();		
-		propagate(0,mcase.body().size(), environment, Collections.EMPTY_LIST);	
+		propagate(0,body.size(), environment, Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
-		Block body = mcase.body();
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Rewrite rewrite = rewrites.get(i);			
@@ -108,10 +128,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 		
-		return new WyilFile.Case(nbody, mcase.precondition(),
-				mcase.postcondition(), mcase.locals(), mcase.attributes());
+		return nbody;
 	}
-	
 	/*
 	
 	protected Block unrollFor(Code.ForAll fall, Block body) {		
