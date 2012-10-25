@@ -478,7 +478,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant result = environment.get(code.operand);
 		
 		if (result == null) {
-			//result = new Alias(code.operand);
+			result = new Alias(code.operand);
 		}
 
 		assign(code.target,result,environment,index,entry);
@@ -878,6 +878,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void assign(int slot, Constant constant, Env environment, int index, Block.Entry entry) {
 		environment.set(slot, constant);
+		
 		for (int i = 0; i != environment.size(); ++i) {
 			Constant c = environment.get(i);
 			if (c instanceof Alias) {
@@ -888,7 +889,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 		
-		if (constant != null) {
+		if (constant != null && !(constant instanceof Alias)) {
 			entry = new Block.Entry(Code.Const(slot, constant),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
