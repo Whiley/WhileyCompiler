@@ -72,10 +72,34 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	private static final HashSet<Integer> deadcode = new HashSet<Integer>();
 	
+	/**
+	 * Determines whether constant propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
 	public LiveVariablesAnalysis(Builder builder) {
 		
 	}	
 	
+	@Override
+	public void apply(WyilFile module) {
+		if(enabled) {
+			super.apply(module);
+		}
+	}
+	
+
+	public static String describeEnable() {
+		return "Enable/disable live variables analysis";
+	}
+	
+	public static boolean getEnable() {
+		return true; // default value
+	}
+	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {		
 		// TODO: back propagate through type constraints
@@ -131,8 +155,53 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	
 	@Override
 	public Env propagate(int index, Entry entry, Env environment) {		
+		rewrites.put(index,null);
 		Code code = entry.code;		
-				
+		boolean isLive = true;
+		
+		if(code instanceof Code.AbstractAssignable) { 
+			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+			isLive = environment.remove(aa.target);
+		} 
+		
+		if ((isLive && code instanceof Code.AbstractUnaryAssignable)
+				|| (code instanceof Code.Dereference)) {
+			Code.AbstractUnaryAssignable c = (Code.AbstractUnaryAssignable) code;
+			environment.add(c.operand);
+		} else if(isLive && code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp c = (Code.AbstractUnaryOp) code;
+			environment.add(c.operand);
+		} else if(isLive && code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable c = (Code.AbstractBinaryAssignable) code;
+			environment.add(c.leftOperand);
+			environment.add(c.rightOperand);
+		} else if(isLive && code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp c = (Code.AbstractBinaryOp) code;
+			environment.add(c.leftOperand);
+			environment.add(c.rightOperand);
+		} else if ((isLive && code instanceof Code.AbstractNaryAssignable)
+				|| (code instanceof Code.Invoke && ((Code.Invoke) code).type instanceof Type.Method)) {
+			Code.AbstractNaryAssignable c = (Code.AbstractNaryAssignable) code;
+			for(int operand : c.operands) {
+				environment.add(operand);
+			}
+		} else if ((isLive && code instanceof Code.AbstractSplitNaryAssignable)
+				|| (code instanceof Code.IndirectInvoke && ((Code.IndirectInvoke) code).type instanceof Type.Method)
+				|| (code instanceof Code.Update && ((Code.Update) code).type instanceof Type.Reference)) {
+			Code.AbstractSplitNaryAssignable c = (Code.AbstractSplitNaryAssignable) code;
+			environment.add(c.operand);
+			for(int operand : c.operands) {
+				environment.add(operand);
+			}
+			
+		} else if(!isLive) {
+			entry = new Block.Entry(Code.Nop,
+					entry.attributes());
+			rewrites.put(index, entry);
+		} else {
+			// const
+		}
+		
 		return environment;
 	}
 	
