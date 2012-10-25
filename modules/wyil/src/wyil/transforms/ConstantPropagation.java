@@ -158,7 +158,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Code.Const)code,entry,environment);
 		} else if(code instanceof Code.Debug) {
 			infer((Code.Debug)code,entry,environment);
-		} else if(code instanceof Code.Assert) {
+		} else if(code instanceof Code.AssertOrAssume) {
 			// skip
 		} else if(code instanceof Code.FieldLoad) {
 			infer(index,(Code.FieldLoad)code,entry,environment);			
