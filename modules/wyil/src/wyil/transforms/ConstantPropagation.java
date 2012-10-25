@@ -376,7 +376,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 			break;
 		case LEFT_APPEND:
-			if (lhs instanceof Constant.List && rhs instanceof Constant) {
+			if (lhs instanceof Constant.List && isRealConstant(rhs)) {
 				Constant.List left = (Constant.List) lhs;
 				Constant right = (Constant) rhs;
 				ArrayList<Constant> values = new ArrayList<Constant>(left.values);
@@ -385,7 +385,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 			break;
 		case RIGHT_APPEND:
-			if (lhs instanceof Constant && rhs instanceof Constant.List) {
+			if (isRealConstant(lhs) && rhs instanceof Constant.List) {
 				Constant left = (Constant) lhs;
 				Constant.List right = (Constant.List) rhs;
 				ArrayList<Constant> values = new ArrayList<Constant>();
@@ -498,7 +498,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		for (int i = 0; i != code_operands.length; i = i + 2) {
 			Constant key = environment.get(code_operands[i]);
 			Constant val = environment.get(code_operands[i+1]);
-			if (key instanceof Constant && val instanceof Constant) {
+			if (isRealConstant(key) && isRealConstant(val)) {
 				values.put(key, val);
 			} else {
 				isValue = false;
@@ -520,7 +520,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		int[] code_operands = code.operands;
 		for (int i=0;i!=code_operands.length;++i) {
 			Constant val = environment.get(code_operands[i]);
-			if (val != null) {
+			if (isRealConstant(val)) {
 				values.put(keys.get(i), val);
 			} else {
 				isValue = false;
@@ -543,7 +543,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; ++i) {
 			Constant val = environment.get(code_operands[i]);
-			if (val != null) {
+			if (isRealConstant(val)) {
 				values.add(val);
 			} else {
 				isValue = false;
@@ -565,7 +565,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; ++i) {
 			Constant val = environment.get(code_operands[i]);
-			if (val != null) {
+			if (isRealConstant(val)) {
 				values.add(val);
 			} else {
 				isValue = false;
@@ -587,7 +587,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; ++i) {
 			Constant val = environment.get(code_operands[i]);
-			if (val != null) {
+			if (isRealConstant(val)) {
 				values.add(val);
 			} else {
 				isValue = false;
@@ -621,14 +621,14 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 			break;
 		case LEFT_UNION:
-			if(lhs instanceof Constant.Set && rhs instanceof Constant) {
+			if(lhs instanceof Constant.Set && isRealConstant(rhs)) {
 				Constant.Set lv = (Constant.Set) lhs;
 				Constant rv = (Constant) rhs;
 				result = lv.add(rv);
 			} 
 			break;
 		case RIGHT_UNION:
-			if(lhs instanceof Constant && rhs instanceof Constant.Set) {
+			if(isRealConstant(lhs) && rhs instanceof Constant.Set) {
 				Constant lv = (Constant) lhs;
 				Constant.Set rv = (Constant.Set) rhs;
 				result = rv.add(lv);
@@ -643,7 +643,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			} 
 			break;
 		case LEFT_INTERSECTION:
-			if (lhs instanceof Constant.Set && rhs instanceof Constant) {
+			if (lhs instanceof Constant.Set && isRealConstant(rhs)) {
 				Constant.Set lv = (Constant.Set) lhs;
 				Constant rv = (Constant) rhs;
 				if (lv.values.contains(rv)) {
@@ -656,7 +656,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 			break;
 		case RIGHT_INTERSECTION:
-			if(lhs instanceof Constant && rhs instanceof Constant.Set) {
+			if(isRealConstant(lhs) && rhs instanceof Constant.Set) {
 				Constant lv = (Constant) lhs;
 				Constant.Set rv = (Constant.Set) rhs;
 				if(rv.values.contains(lv)) {
@@ -676,7 +676,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 			break;
 		case LEFT_DIFFERENCE:
-			if(lhs instanceof Constant.Set && rhs instanceof Constant) {
+			if(lhs instanceof Constant.Set && isRealConstant(rhs)) {
 				Constant.Set lv = (Constant.Set) lhs;
 				Constant rv = (Constant) rhs;
 				result = lv.remove(rv);
@@ -889,11 +889,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 		
-		if (constant != null && !(constant instanceof Alias)) {
+		if (isRealConstant(constant)) {
 			entry = new Block.Entry(Code.Const(slot, constant),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
 		}
+	}
+	
+	public static boolean isRealConstant(Constant c) {
+		return c != null && !(c instanceof Alias);
 	}
 	
 	public Env join(Env env1, Env env2) {
