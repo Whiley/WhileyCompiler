@@ -280,6 +280,7 @@ static int type_alloc = 0;
 
 static void *type_parsings = NULL;
 //	  gdb	 p ((struct type_desc *)type_parsings)[103]
+//	  gdb	 p *((wycc_obj *) $3)
 
 struct type_desc {
 #if Save_Name
@@ -354,6 +355,7 @@ static int wycc_type_next(int id);
 static int wycc_type_is_odd(int id);
 static int wycc_type_is_leaf(int id);
 static int wycc_type_is_list(int id);
+static int wycc_type_is_map(int id);
 static int wycc_type_is_iter(int id);
 static int wycc_type_is_tuple(int id);
 static int wycc_type_is_record(int id);
@@ -1205,10 +1207,10 @@ static int wycc_type_subsume_tokens(int itok, int atok) {
     int alt;
     int end;
 
-    if (wycc_type_is_union(itok)) {
+    //    if (wycc_type_is_union(itok)) {
 	//WY_PANIC("Help needed in wycc_type_subsume instance union (%d)\n", itok)
-	fprintf(stderr, ".... type_subsume has union\n");
-    };
+    //	fprintf(stderr, ".... type_subsume has union\n");
+    //};
     if (itok == atok) {
 	return 1;
     };
@@ -1235,9 +1237,21 @@ static int wycc_type_subsume_tokens(int itok, int atok) {
 	    alt = wycc_type_next(atok);
 	    return wycc_type_subsume_tokens(nxt, alt);
 	};
-	//WY_SEG_FAULT
 	if (wycc_type_is_leaf(itok)) {
 	    return wycc_type_subsume_leaves(itok, atok);
+	};
+	if (wycc_type_is_recurs(itok)) {
+	    nxt = wycc_type_next(itok);
+	    alt = wycc_type_next(atok);
+	    return wycc_type_subsume_tokens(nxt, alt);
+	};
+	if (wycc_type_is_union(itok)) {
+	    for (nxt= itok; nxt > 0; nxt= wycc_type_next(nxt)) {
+		alt = wycc_type_down(nxt);
+		if (wycc_type_subsume_tokens(alt, atok)) {
+		    return 1;
+		};
+	    }
 	};
 	WY_PANIC("Help needed in wycc_type_subsume descent (%d)\n", iflg);
     };
@@ -1256,10 +1270,23 @@ static int wycc_type_subsume_tokens(int itok, int atok) {
     };
     if (wycc_type_is_leaf(itok)) {
 	return 0;
-    }
+    };
     if (itok == my_type_void) {
 	return 1;
-    }
+    };
+    if (wycc_type_is_recurs(itok)) {
+	alt = wycc_type_down(itok);
+	return wycc_type_subsume_tokens(alt, atok);
+    };
+    if (wycc_type_is_record(itok)) {
+	return 0;
+    };
+    if (wycc_type_is_list(itok)) {
+	return 0;
+    };
+    if (wycc_type_is_map(itok)) {
+	return 0;
+    };
     //WY_SEG_FAULT
     WY_PANIC("Help needed in wycc_type_subsume instance unk (%d, %d)\n", itok, iflg)
 
@@ -1635,6 +1662,12 @@ wycc_obj* wycc_record_type(const char *txt) {
     int tok;
 
     tok = wycc_type_internal(txt);
+    if (wycc_type_is_recurs(tok)) {
+	tok = wycc_type_down(tok);
+    };
+    if (! wycc_type_is_record(tok)) {
+	WY_PANIC("Help needed in wycc_record_type for '%s'\n", txt)
+    };
     return wycc_box_meta(tok);
 }
 
@@ -3832,6 +3865,18 @@ static int wycc_type_is_list(int id) {
 /*
  * given a type number,
  */
+static int wycc_type_is_map(int id) {
+    int flgs = wycc_type_flags(id);
+
+    if (flgs & Type_Map) {
+	return 1;
+    };
+    return 0;
+}
+
+/*
+ * given a type number,
+ */
 static int wycc_type_is_record(int id) {
     int flgs = wycc_type_flags(id);
 
@@ -5084,7 +5129,9 @@ static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok){
     } else if (wycc_type_is_frac(tok)){
 	return wyil_convert_frac(itm, tok);
     } else if (wycc_type_is_recurs(tok)){
-	return wyil_convert_recurs(itm, tok);
+	//return wyil_convert_recurs(itm, tok);
+	tok = wycc_type_down(tok);
+	return wyil_convert_tok(itm, tok);
     };
     WY_PANIC("Help needed in wyil_convert_tok w/ %d : %d\n"
 	     , tok, wycc_type_flags(tok))
