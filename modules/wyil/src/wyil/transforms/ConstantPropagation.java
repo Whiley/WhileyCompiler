@@ -819,7 +819,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		// TODO: could do more here!
 		
-		remap(environment, index, entry);
+		// NOTE: it's unsafe to remap here since the variable being retyped will
+		// need to be subsequently cast.
 		
 		return new Pair(environment, environment);
 	}
@@ -936,6 +937,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		if(code != old) {
 			entry = new Block.Entry(code, entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
+		} else {
+			rewrites.put(index, null);
 		}
 	}
 	
