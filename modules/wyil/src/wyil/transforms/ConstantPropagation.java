@@ -162,6 +162,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			// skip
 		} else if(code instanceof Code.FieldLoad) {
 			infer(index,(Code.FieldLoad)code,entry,environment);			
+		} else if(code instanceof Code.TupleLoad) {
+			infer(index,(Code.TupleLoad)code,entry,environment);			
 		} else if(code instanceof Code.IndirectInvoke) {
 			infer((Code.IndirectInvoke)code,entry,environment);
 		} else if(code instanceof Code.Invoke) {
@@ -326,6 +328,22 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		if (src instanceof Constant.Record) {
 			Constant.Record rec = (Constant.Record) src;
 			result = rec.values.get(code.field);
+			entry = new Block.Entry(Code.Const(code.target, result),
+					entry.attributes());
+			rewrites.put(index, new Rewrite(entry));
+		}
+		
+		environment.set(code.target,result);		
+	}
+	
+	public void infer(int index, Code.TupleLoad code, Block.Entry entry,
+			Env environment) {
+		Constant src = environment.get(code.operand);
+		
+		Constant result = null;
+		if (src instanceof Constant.Tuple) {
+			Constant.Tuple tup = (Constant.Tuple) src;
+			result = tup.values.get(code.index);
 			entry = new Block.Entry(Code.Const(code.target, result),
 					entry.attributes());
 			rewrites.put(index, new Rewrite(entry));
