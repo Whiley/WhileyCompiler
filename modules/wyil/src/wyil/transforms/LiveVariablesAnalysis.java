@@ -68,14 +68,14 @@ import wyil.util.dfa.*;
  * 
  */
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env>{
-	private static final HashMap<Integer,Block.Entry> afterInserts = new HashMap<Integer,Block.Entry>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
-	private static final HashSet<Integer> deadcode = new HashSet<Integer>();
 	
 	/**
 	 * Determines whether constant propagation is enabled or not.
 	 */
 	private boolean enabled = getEnable();
+	
+	private boolean nops = getNops();
 	
 	public LiveVariablesAnalysis(Builder builder) {
 		
@@ -100,6 +100,18 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public void setEnable(boolean flag) {
 		this.enabled = flag;
 	}
+	
+	public static String describeNops() {
+		return "Enable/disable replacement with nops (helpful for debugging)";
+	}
+	
+	public static boolean getNops() {
+		return false; // default value
+	}
+	
+	public void setNops(boolean flag) {
+		this.nops = flag;
+	}
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {		
 		// TODO: back propagate through type constraints
@@ -121,32 +133,22 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		// TODO: back propagate through pre- and post-conditions		
 		methodCase = mcase;
 		stores = new HashMap<String,Env>();
-		afterInserts.clear();
 		rewrites.clear();
-		deadcode.clear();
 		Block body = mcase.body();
 		Env environment = lastStore();		
 		propagate(0,body.size(), environment, Collections.EMPTY_LIST);	
-		
-		// First, check and report any dead-code
-		for(Integer i : deadcode) {
-			syntaxError(errorMessage(DEAD_CODE),
-					filename, body.get(i));		
-		}
 		
 		// At this point, we apply the inserts	
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry rewrite = rewrites.get(i);			
-			if(rewrite != null) {								
-				nbody.append(rewrite);				
+			if(rewrite != null) {		
+				if(nops) {
+					nbody.append(rewrite);
+				}
 			} else {
 				nbody.append(body.get(i));
 			}
-			Block.Entry afters = afterInserts.get(i);			
-			if(afters != null) {								
-				nbody.append(afters);				
-			} 							
 		}
 		
 		return new WyilFile.Case(nbody, mcase.precondition(),
@@ -196,9 +198,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 				environment.add(operand);
 			}
 			
-		} else if(!isLive) {
-			entry = new Block.Entry(Code.Nop,
-					entry.attributes());
+		} else if(!isLive) {			
+			entry = new Block.Entry(Code.Nop, entry.attributes());
 			rewrites.put(index, entry);
 		} else {
 			// const
