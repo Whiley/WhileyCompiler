@@ -158,6 +158,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		rewrites.put(index,null);
 		Code code = entry.code;		
 		boolean isLive = true;
+		environment = (Env) environment.clone();
 		
 		if(code instanceof Code.AbstractAssignable) { 
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
