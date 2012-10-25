@@ -114,7 +114,12 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {		
-		// TODO: back propagate through type constraints
+		Block constraint = type.constraint();
+		if(constraint != null) {
+			constraint = propagate(constraint);
+			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
+					type.type(), constraint, type.attributes());
+		}
 		return type;		
 	}
 	
@@ -128,13 +133,26 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env lastStore() { return EMPTY_ENV; }
 	
 	@Override
-	public WyilFile.Case propagate(WyilFile.Case mcase) {		
+	public WyilFile.Case propagate(WyilFile.Case mcase) {
 
-		// TODO: back propagate through pre- and post-conditions		
-		methodCase = mcase;
+		// TODO: back propagate through pre- and post-conditions
+		Block precondition = mcase.precondition();
+		Block postcondition = mcase.postcondition();
+		if (precondition != null) {
+			precondition = propagate(precondition);
+		}
+		if (postcondition != null) {
+			postcondition = propagate(postcondition);
+		}
+		Block nbody = propagate(mcase.body());
+		return new WyilFile.Case(nbody, precondition, postcondition,
+				mcase.locals(), mcase.attributes());
+	}
+	
+	public Block propagate(Block body) {		
+		block = body;
 		stores = new HashMap<String,Env>();
 		rewrites.clear();
-		Block body = mcase.body();
 		Env environment = lastStore();		
 		propagate(0,body.size(), environment, Collections.EMPTY_LIST);	
 		
@@ -151,8 +169,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			}
 		}
 		
-		return new WyilFile.Case(nbody, mcase.precondition(),
-				mcase.postcondition(), mcase.locals(), mcase.attributes());
+		return nbody;
 	}
 	
 	@Override

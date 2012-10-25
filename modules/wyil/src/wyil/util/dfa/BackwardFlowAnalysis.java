@@ -42,6 +42,7 @@ import wyil.util.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected String filename;
+	protected Block block;
 	protected WyilFile.MethodDeclaration method;
 	protected WyilFile.Case methodCase;
 	protected HashMap<String,T> stores;
@@ -85,13 +86,13 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
+		this.block = mcase.body();
 		T last = lastStore();						
 		propagate(0, mcase.body().size(), last, Collections.EMPTY_LIST);		
 		return mcase;
 	}		
 	
 	protected T propagate(int start, int end, T store, List<Pair<Type,String>> handlers) {
-		Block block = methodCase.body();
 		
 		for(int i=end-1;i>=start;--i) {						
 			Entry stmt = block.get(i);						
