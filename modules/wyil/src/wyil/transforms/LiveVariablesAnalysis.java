@@ -255,7 +255,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		Env newEnv = null;
 		
 		if(loop instanceof Code.ForAll) {
+			Code.ForAll fall = (Code.ForAll) loop;
 			environment = new Env(environment);	
+			environment.add(fall.sourceOperand);
 		} else {
 			environment = EMPTY_ENV;
 		}
