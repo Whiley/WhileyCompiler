@@ -62,7 +62,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 	
 	public static boolean getEnable() {
-		return false; // default value
+		return true; // default value
 	}
 	
 	public void setEnable(boolean flag) {
@@ -506,8 +506,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		boolean isValue = true;
 		int[] code_operands = code.operands;
 		for (int i = 0; i != code_operands.length; i = i + 2) {
-			Constant val = environment.get(code_operands[i]);
-			Constant key = environment.get(code_operands[i + 1]);
+			Constant key = environment.get(code_operands[i]);
+			Constant val = environment.get(code_operands[i+1]);
 			if (key instanceof Constant && val instanceof Constant) {
 				values.put(key, val);
 			} else {
