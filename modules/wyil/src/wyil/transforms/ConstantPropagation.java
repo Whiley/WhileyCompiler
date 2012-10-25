@@ -906,15 +906,16 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		
 		Env oldEnv = null;
-		Env newEnv = null;				
+		Env newEnv = environment;				
 		
 		do {						
 			// iterate until a fixed point reached
-			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv, handlers);									
+			oldEnv = newEnv;
+			newEnv = propagate(start+1,end, oldEnv, handlers);
+			newEnv = join(environment,newEnv);
 		} while (!newEnv.equals(oldEnv));
 		
-		return join(environment,newEnv);		
+		return newEnv;		
 	}
 	
 	public Env join(Env env1, Env env2) {
@@ -933,7 +934,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				env.add(null);
 			}			
 		}
-
 		return env;
 	}	
 	
