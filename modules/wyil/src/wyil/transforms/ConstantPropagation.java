@@ -159,7 +159,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		} else if(code instanceof Code.Debug) {
 			infer(index, (Code.Debug)code,entry,environment);
 		} else if(code instanceof Code.AssertOrAssume) {
-			// skip
+			infer(index, (Code.AssertOrAssume)code,entry,environment);
 		} else if(code instanceof Code.FieldLoad) {
 			infer(index,(Code.FieldLoad)code,entry,environment);			
 		} else if(code instanceof Code.TupleLoad) {
@@ -218,6 +218,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}	
 		
 		return environment;
+	}
+	
+	public void infer(int index, Code.AssertOrAssume code, Block.Entry entry, Env environment) {
+		remap(environment, index, entry);
 	}
 	
 	public void infer(int index, Code.BinArithOp code, Block.Entry entry,
