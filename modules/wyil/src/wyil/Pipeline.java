@@ -75,8 +75,8 @@ public class Pipeline {
 					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					// add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
-					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
 					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
+					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
 					// add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));					
 				}
 			});
