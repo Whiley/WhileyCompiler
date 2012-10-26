@@ -29,6 +29,7 @@ public abstract class Type {
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();
 	public static final Ref<Any> T_REFANY = new Ref(T_ANY);
+	public static final Meta<Any> T_METAANY = new Meta<Any>(T_ANY);
 	public static final List T_LISTANY = new List(true,T_ANY);
 	public static final Set T_SETANY = new Set(true,T_ANY);
 	
@@ -175,6 +176,10 @@ public abstract class Type {
 		} else if(t1 instanceof Ref && t2 instanceof Ref) {
 			Ref r1 = (Ref) t1;
 			Ref r2 = (Ref) t2;
+			return isSubtype(r1.element,r2.element, hierarchy);
+		} else if(t1 instanceof Meta && t2 instanceof Meta) {
+			Meta r1 = (Meta) t1;
+			Meta r2 = (Meta) t2;
 			return isSubtype(r1.element,r2.element, hierarchy);
 		}
 

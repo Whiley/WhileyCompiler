@@ -340,7 +340,9 @@ public class TypeInference {
 			break;
 		}
 		case IS: {
-			checkSubtype(lhs_t, rhs_t, bop);
+			checkSubtype(Type.T_METAANY, rhs_t, bop);
+			Type.Meta m = (Type.Meta) rhs_t;
+			checkSubtype(lhs_t, m.element, bop);
 			result = Type.T_BOOL;
 			break;
 		}

@@ -27,5 +27,10 @@ reduce And{Equals{Var(string s) v,Expr e},Expr... xs}:
     => let ys = { x[v\e] | x in xs}
        in And (Assign[s,e] ++ ys)
 
+reduce And{And{Expr... xs}, Expr... ys}:
+    => let zs = { x | x in xs } // PROBLEM WITH TYPE TEST
+       in And (ys ++ zs)
+
+
 
 
