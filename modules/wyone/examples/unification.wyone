@@ -6,9 +6,10 @@ term Var(string)
 term Num(int)
 term Equals{Expr,Expr}
 term Assign[string,Expr]
+term Break(Assign)
 term And{Expr...}
 
-class Expr as Var | Num | Equals | And | True | False | Assign
+class Expr as Var | Num | Equals | And | True | False | Assign | Break
 
 reduce Equals{Num(int x), Num(int y)}:
     => True, if x == y
@@ -23,14 +24,18 @@ reduce And{True, Expr... xs}:
 reduce And{Expr e}:
     => e
 
+reduce Break(Assign[string s, Expr e] a):
+    => Equals{Var(s),e}
+
 reduce And{Equals{Var(string s) v,Expr e},Expr... xs}:
     => let ys = { x[v\e] | x in xs}
        in And (Assign[s,e] ++ ys)
 
+// let os = { Equals[Var(s),e] | x in xs, x is Assign[s,e] }
 reduce And{And{Expr... xs}, Expr... ys}:
-    => let zs = { x | x in xs } // PROBLEM WITH TYPE TEST
-       in And (ys ++ zs)
-
+    => let zs = { Break(x) | x in xs, x is Assign },
+           ws = { x | x in xs, !(x is Assign) }
+       in And (ys ++ zs ++ ws)
 
 
 
