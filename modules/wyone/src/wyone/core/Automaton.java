@@ -234,7 +234,73 @@ public final class Automaton {
 	 *            --- term to replace matched terms with.
 	 */
 	public int substitute(int source, int search, int replacement) {
-		return source; // FIXME
+		int[] binding = new int[nStates];
+		Arrays.fill(binding, -1); // all states unvisited
+		return substitute(source,search,replacement,binding);
+	}
+	
+	private int substitute(int source, int search, int replacement, int[] binding) {
+		// first, check with this is the term being replaced
+		if(source == search) {
+			return replacement;
+		}
+
+		// second, check whether we've already visited this term (in which case,
+		// we can just reused the previously determine result).
+		int index = binding[source];
+		if(index >= 0) {
+			// already processed this one, no need to go further.
+			return index;
+		}
+		
+		// third, exam the state in question and continue recursing (if applicable)
+		State state = states[source];
+		int nSource = source;
+		if (state instanceof Automaton.Constant) {
+			// fall through as no change possible
+		} else if (state instanceof Automaton.Term) {
+			Automaton.Term term = (Automaton.Term) state;
+			int contents = term.contents;
+			int nContents = substitute(contents, search, replacement, binding);
+			if (contents != nContents) {
+				// contents has changed, so we need to clone ourself.
+				nSource = add(new Automaton.Term(term.kind, nContents));
+			}
+		} else if (state instanceof Automaton.Compound) {
+			Automaton.Compound term = (Automaton.Compound) state;
+			int[] children = term.children;
+			int[] nChildren = null;
+			for (int i = 0; i != children.length; ++i) {
+				int child = children[i];
+				int nChild = substitute(child, search, replacement, binding);
+				if (nChildren != null) {
+					nChildren[i] = nChild;
+				} else if (child != nChild) {
+					nChildren = new int[children.length];
+					System.arraycopy(children, 0, nChildren, 0, i);
+					nChildren[i] = nChild;
+				}
+			}
+			if(nChildren != null) {
+				// something changed, so clone ourself.
+				switch(term.kind) {
+					case K_LIST:
+						term = new Automaton.List(nChildren);
+						break;
+					case K_BAG:
+						term = new Automaton.Bag(nChildren);
+						break;					
+					case K_SET:
+						term = new Automaton.Set(nChildren);
+						break;
+				}				
+				nSource = add(term);
+			}
+		}
+		
+		// default case indicates no change
+		binding[source] = nSource;
+		return nSource;
 	}
 	
 	/**

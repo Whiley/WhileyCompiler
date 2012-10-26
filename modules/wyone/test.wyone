@@ -1,10 +1,10 @@
 // An implementation of the Lambda Calculus :P
 
 term Var(string)
-term Lambda[string, Term] // \x.t
+term Lambda[Var, Term] // \x.t
 term App[Term, Term] // t1 t2
 
-reduce App[Lambda[string x, Term t1], Term t2]: // (\x.t1) t2
+reduce App[Lambda[Var x, Term t1], Term t2]: // (\x.t1) t2
     => t1[x \ t2]
 
 class Term as Lambda | App | Var
