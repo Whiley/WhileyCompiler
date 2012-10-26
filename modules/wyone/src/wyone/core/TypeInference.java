@@ -397,17 +397,17 @@ public class TypeInference {
 			case SETCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_SET(true,Type.T_REF(result.second()));
+				return Type.T_SET(true,coerceToRef(result.second()));
 			}
 			case BAGCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_BAG(true,Type.T_REF(result.second()));
+				return Type.T_BAG(true,coerceToRef(result.second()));
 			}
 			case LISTCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_LIST(true,Type.T_REF(result.second()));
+				return Type.T_LIST(true,coerceToRef(result.second()));
 			}
 			default:
 				throw new IllegalArgumentException("unknown comprehension kind");
