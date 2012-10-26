@@ -221,6 +221,23 @@ public final class Automaton {
 	}
 	
 	/**
+	 * Clone the source object whilst replacing all reachable instances of the
+	 * search term with the replacement term. In the case of no matches, the
+	 * original source term is returned.
+	 * 
+	 * @param source
+	 *            --- term to be cloned and within which to matching search
+	 *            terms are replaced.
+	 * @param search
+	 *            --- term to search for within terms reachable from source.
+	 * @param replacement
+	 *            --- term to replace matched terms with.
+	 */
+	public int substitute(int source, int search, int replacement) {
+		return source; // FIXME
+	}
+	
+	/**
 	 * Mark a state as a "root". This means it is treated specially, and will
 	 * never be deleted from the automaton as a result of garbage collection.
 	 * 

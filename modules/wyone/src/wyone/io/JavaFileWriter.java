@@ -516,6 +516,8 @@ public class JavaFileWriter {
 			return translate(level,(Expr.ListUpdate) code, environment);
 		} else if (code instanceof Expr.Variable) {
 			return translate(level,(Expr.Variable) code, environment);
+		} else if (code instanceof Expr.Substitute) {
+			return translate(level,(Expr.Substitute) code, environment);
 		} else if(code instanceof Expr.Comprehension) {
 			return translate(level,(Expr.Comprehension) code, environment);
 		} else {
@@ -792,6 +794,27 @@ public class JavaFileWriter {
 			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
 			return target;
 		}
+	}
+	
+	public int translate(int level, Expr.Substitute code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
+		
+		// first, translate all subexpressions and make sure they are
+		// references.
+		int src = translate(level, code.src, environment);
+		src = coerceFromValue(level,code.src,src,environment);
+		
+		int original = translate(level, code.original, environment);
+		original = coerceFromValue(level,code.original,original,environment);
+		
+		int replacement = translate(level, code.replacement, environment);
+		replacement = coerceFromValue(level,code.replacement,replacement,environment);
+		
+		// second, put in place the substitution
+		String body = "automaton.substitute(r" + src + ", r" + original + ", r" + replacement + ")";
+		int target = environment.allocate(type);
+		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
+		return target;
 	}
 	
 	public int translate(int level, Expr.Comprehension expr, Environment environment) {		
