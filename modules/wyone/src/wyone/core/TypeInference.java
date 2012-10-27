@@ -97,8 +97,14 @@ public class TypeInference {
 			Type.Ref d = null;
 			if(p.data != null) {
 				d = infer(p.data,environment);
-				if(!Type.isSubtype(declared.data, d, hierarchy)) {
-					syntaxError("declared type smaller than pattern (i.e. " + declared.data + " not supertype of " + d + ")", file, p);
+				
+				// FIXME: would be nice to compute an intersection at this
+				// point.
+				
+				if(Type.isSubtype(d, declared.data, hierarchy)) {
+					// in this case, pattern subsumes declared type (e.g. if
+					// pattern is *).
+					d = declared.data;
 				}
 			} else if(p.data == null && declared.data != null) {
 				d = declared.data; // auto-complete
@@ -137,7 +143,7 @@ public class TypeInference {
 			} else {
 				type = Type.T_REF(Type.T_SET(p.unbounded, types));
 			}
-		}
+		}		
 		pattern.attributes().add(new Attribute.Type(type));
 		return type;
 	}

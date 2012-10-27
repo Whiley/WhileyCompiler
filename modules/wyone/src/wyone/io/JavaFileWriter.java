@@ -286,7 +286,7 @@ public class JavaFileWriter {
 	public int translate(int level, Pattern.Term pattern, int source, Environment environment) {
 		Type.Ref<Type.Term> type = (Type.Ref) pattern.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
-		if (type.element.data != null) {
+		if (pattern.data != null) {
 			int target = environment.allocate(type.element.data, pattern.variable);
 			myOut(level, type2JavaType(type.element.data) + " r" + target + " = r"
 					+ source + ".contents;");
