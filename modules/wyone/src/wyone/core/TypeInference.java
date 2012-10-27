@@ -101,14 +101,12 @@ public class TypeInference {
 					syntaxError("declared type smaller than pattern (i.e. " + declared.data + " not supertype of " + d + ")", file, p);
 				}
 			} else if(p.data == null && declared.data != null) {
-				System.err.println("AUTOCOMPLETING: " + p.name);
 				d = declared.data; // auto-complete
 			}
 			if(p.variable != null) {
 				environment.put(p.variable, d);
 			}
 			type = Type.T_REF(Type.T_TERM(p.name, d));
-			System.err.println("GOT: " + type);
 		} else {
 			Pattern.Compound p = (Pattern.Compound) pattern;
 			ArrayList<Type> types = new ArrayList<Type>();
@@ -354,8 +352,6 @@ public class TypeInference {
 					result = Type.T_COMPOUND(lhs_tc,true,nelements);					
 				}
 			} else {
-				System.out.println("LHS: " + lhs_t);
-				System.out.println("RHS: " + rhs_t);
 				syntaxError("cannot append non-list types",file,bop);
 				return null;
 			}
