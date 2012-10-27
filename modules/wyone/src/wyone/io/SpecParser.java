@@ -941,7 +941,7 @@ public class SpecParser {
 				match(Comma.class);
 			}
 			firstTime = false;
-			types.add(parseType());
+			types.add(Type.T_REF(parseType()));
 		}
 		boolean unbounded = false;
 		if (index < tokens.size() && tokens.get(index) instanceof DotDotDot) {

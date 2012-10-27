@@ -77,18 +77,36 @@ public class TypeInference {
 	public Type.Ref infer(Pattern pattern, HashMap<String,Type> environment) {
 		Type.Ref type;
 		if(pattern instanceof Pattern.Leaf) {
-			Pattern.Leaf p = (Pattern.Leaf) pattern; 
+			Pattern.Leaf p = (Pattern.Leaf) pattern;
 			type = Type.T_REF(p.type);
 		} else if(pattern instanceof Pattern.Term) {
 			Pattern.Term p = (Pattern.Term) pattern;
+			Type _declared = terms.get(p.name);
+			if(_declared == null) {
+				syntaxError("unknown type encountered", file, p);
+			} else if(!(_declared instanceof Type.Term)) {
+				// should be dead code?
+				syntaxError("expected term type", file, p);
+			}
+			Type.Term declared = (Type.Term) _declared;
+			if(declared.data == null && p.data != null) {
+				syntaxError("term type does not have children", file, p);
+			}
 			Type.Ref d = null;
 			if(p.data != null) {
 				d = infer(p.data,environment);
+				if(!Type.isSubtype(declared.data, d, hierarchy)) {
+					syntaxError("declared type smaller than pattern (i.e. " + declared.data + " not supertype of " + d + ")", file, p);
+				}
+			} else if(p.data == null && declared.data != null) {
+				System.err.println("AUTOCOMPLETING: " + p.name);
+				d = declared.data; // auto-complete
 			}
 			if(p.variable != null) {
 				environment.put(p.variable, d);
 			}
 			type = Type.T_REF(Type.T_TERM(p.name, d));
+			System.err.println("GOT: " + type);
 		} else {
 			Pattern.Compound p = (Pattern.Compound) pattern;
 			ArrayList<Type> types = new ArrayList<Type>();
