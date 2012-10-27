@@ -1,13 +1,7 @@
-// An implementation of the Lambda Calculus :P
-
-term Sum{|Expr...|}
-
-term Neg(Expr)
 term Var(string)
-term And{Expr...}
+term And{Var...}
 
-reduce And{Sum{|Expr... xs|}, Expr... ys}:
-    => let zs = { Neg(x) | x in xs }
-       in And (zs ++ ys)
+reduce And{Var(string)... xs}:
+    => let ys = { *x | x in xs }
+       in And (ys)
 
-class Expr as Sum | Neg | Var

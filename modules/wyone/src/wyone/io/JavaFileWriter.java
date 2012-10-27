@@ -520,6 +520,8 @@ public class JavaFileWriter {
 			return translate(level,(Expr.Substitute) code, environment);
 		} else if(code instanceof Expr.Comprehension) {
 			return translate(level,(Expr.Comprehension) code, environment);
+		} else if(code instanceof Expr.TermAccess) {
+			return translate(level,(Expr.TermAccess) code, environment);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
@@ -814,6 +816,20 @@ public class JavaFileWriter {
 		String body = "automaton.substitute(r" + src + ", r" + original + ", r" + replacement + ")";
 		int target = environment.allocate(type);
 		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
+		return target;
+	}
+	
+	public int translate(int level, Expr.TermAccess code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
+
+		// first translate src expression, and coerce to a value
+		int src = translate(level, code.src, environment);
+		src = coerceFromRef(level, code.src, src, environment);
+
+		String body = "r" + src + ".contents";
+
+		int target = environment.allocate(type);
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
 	

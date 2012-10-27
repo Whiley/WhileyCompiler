@@ -171,6 +171,8 @@ public class TypeInference {
 				result = resolve((Expr.Variable) expr, environment);
 			} else if (expr instanceof Expr.Comprehension) {
 				result = resolve((Expr.Comprehension) expr, environment);
+			} else if (expr instanceof Expr.TermAccess) {
+				result = resolve((Expr.TermAccess) expr, environment);
 			} else {
 				syntaxError("unknown code encountered (" + expr.getClass().getName() + ")", file, expr);
 				return null;
@@ -511,6 +513,24 @@ public class TypeInference {
 		}
 	}
 
+	protected Type resolve(Expr.TermAccess expr, HashMap<String, Type> environment) {
+		Pair<Expr,Type> p = resolve(expr.src,environment);
+		Expr src = p.first();
+		Type type = p.second();		
+		
+		expr.src = src;
+		type = coerceToValue(type);
+		if(!(type instanceof Type.Term)) {
+			syntaxError("expecting term type, got type " + src, file, expr);
+		} 
+		type = ((Type.Term) type).data;
+		if(type == null) {
+			return Type.T_VOID;
+		} else {
+			return type;
+		}
+	}
+	
 	public Type[] append(Type head, Type[] tail) {
 		Type[] r = new Type[tail.length+1];
 		System.arraycopy(tail,0,r,1,tail.length);
