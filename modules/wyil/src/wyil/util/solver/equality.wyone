@@ -17,15 +17,9 @@ infer And{Equals{Expr x, Expr y} e1, Equals{Expr u, Expr v} e2, BExpr... rest}:
        in And ({e1,e2,e3} ++ rest), if y == u && x != v
 
 // ====================================================================
-// Boolean Expressions
-// ====================================================================
-
-class BExpr as Equals | ...
-
-// ====================================================================
 // Expressions & Values
 // ====================================================================
 
 class Value as ...
-
-class Expr as Value | ...
+class BExpr as Equals | ...
+class Expr as Equals | ...

@@ -26,13 +26,8 @@ infer And{SubSet[* x, * y] s1,SubSet[* u, * v] s2, BExpr... rest}:
     => And ({s1,s2,SubSet[x,v]} ++ rest), if y == u
 
 // ====================================================================
-// Boolean Expressions
+// Expressions & Values
 // ====================================================================
 
 class BExpr as SubSet | ...
-
-// ====================================================================
-// General Expressions
-// ====================================================================
-
-class Expr as Set | ...
+class Expr as Set | SubSet | ...

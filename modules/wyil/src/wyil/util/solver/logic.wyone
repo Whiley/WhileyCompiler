@@ -74,10 +74,12 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
     => Or (xs ++ ys)
 
 // ====================================================================
-// BExpr
+// Expressions & Values
 // ====================================================================
 
-class BExpr as Bool | Not | And | Or | Var | ...
+class Value as Bool | ...
+class BExpr as Bool | Var | Not | And | Or | ...
+class Expr as BExpr | ...
 
 
 
