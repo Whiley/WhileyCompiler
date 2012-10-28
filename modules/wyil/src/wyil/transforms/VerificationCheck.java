@@ -62,6 +62,11 @@ public class VerificationCheck implements Transform {
 	 */
 	private boolean enabled = getEnable();
 	
+	/**
+	 * Enables debugging information to be printed.
+	 */
+	private boolean debug = getDebug();
+	
 	private Builder builder;
 	
 	private String filename;	
@@ -80,6 +85,18 @@ public class VerificationCheck implements Transform {
 	
 	public void setEnable(boolean flag) {
 		this.enabled = flag;
+	}
+	
+	public static String describeDebug() {
+		return "Enable/disable debugging information";
+	}
+	
+	public static boolean getDebug() {
+		return false; // default value
+	}
+	
+	public void setDebug(boolean flag) {
+		this.debug = flag;
 	}
 	
 	public static int getTimeout() {
@@ -114,6 +131,18 @@ public class VerificationCheck implements Transform {
 	
 	protected void transform(WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
 		// add type information available from parameters
+		if(debug) {
+			System.err.println("============================================");
+			Type.FunctionOrMethod fmt = method.type();
+			String paramString = fmt.params().toString();
+			paramString = paramString.substring(1,paramString.length()-1);
+			if(method.type() instanceof Type.Function) {
+				System.err.println("FUNCTION: " + fmt.ret() + " " + method.name() + "(" + paramString + ")");
+			} else {
+				System.err.println("METHOD: " + fmt.ret() + " " + method.name() + "(" + paramString + ")");
+			}
+			System.err.println("============================================");
+		}
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
 		for(int i=paramStart;i!=fmm.params().size();++i) {
@@ -179,7 +208,7 @@ public class VerificationCheck implements Transform {
 	 * @author djp
 	 * 
 	 */
-	private static final class Branch {
+	private final class Branch {
 		public int pc;
 		public final int[] environment;
 		public final ArrayList<Scope> scopes;		
@@ -214,18 +243,26 @@ public class VerificationCheck implements Transform {
 		 */
 		public boolean assertTrue(int test) {
 			try {
-				System.out.println("================================================");
-				System.out.print("ASSERTING: " + constraints);				
-				System.out.println("\n================================================");
 				Automaton tmp = new Automaton(automaton);
 				int root = And(tmp,constraints);
 				root = And(tmp,root,Not(tmp,test));
-				int mark = tmp.mark(root);				
-				new PrettyAutomataWriter(System.out,SCHEMA,"And","Or").write(tmp);
-				System.out.println("\n --------");				
+				int mark = tmp.mark(root);
+				
+				if(debug) {
+					
+					System.err.print("Line ??");
+					System.err.println("\n--------------------------------------------");
+					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);
+					System.err.println("\n\n=>\n");				
+				}
+												
 				infer(tmp);
-				new PrettyAutomataWriter(System.out,SCHEMA,"And","Or").write(tmp);
-				System.out.println();
+				
+				if(debug) {
+					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);
+					System.err.println();
+				}
+				
 				// assertion holds if a constradiction is shown.
 				return tmp.get(tmp.root(mark)).equals(ConstraintSolver.False);
 			} catch(Exception e) {
