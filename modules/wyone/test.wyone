@@ -1,8 +1,6 @@
-term Var(string)
-term And{Var...}
-class Expr as Var | And
+include "examples/equality.wyone"
+include "examples/numerics.wyone"
 
-reduce And{Expr... xs}:
-    => let ys = { *x | x in xs, x is Var(string) }
-       in And (ys)
 
+reduce Equals{Sum{|Expr... xs|}, Expr y}:
+    => Equals{Num(0), Sum(xs ++ Neg(y))}, if !(y is Num(int) && *y == 0)

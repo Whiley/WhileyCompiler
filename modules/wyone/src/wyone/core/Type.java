@@ -485,7 +485,7 @@ public abstract class Type {
 				r += "...";
 			}
 			
-			return "{" + r + "}";								
+			return "{|" + r + "|}";								
 		}
 	}
 	

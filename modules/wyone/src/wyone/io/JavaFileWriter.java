@@ -583,124 +583,125 @@ public class JavaFileWriter {
 		Type rhs_t = code.rhs.attribute(Attribute.Type.class).type;
 		int lhs = translate(level,code.lhs,environment);
 		
+		String body;
+		
 		if(code.op == Expr.BOp.IS && code.rhs instanceof Expr.Constant) {
 			// special case for runtime type tests
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
-			String body = "typeof_" + type2HexStr(test) + "(r" + lhs +",automaton)";
-			typeTests.add(test);
-			int target = environment.allocate(type);			
-			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));			
+			body = "typeof_" + type2HexStr(test) + "(r" + lhs +",automaton)";
+			typeTests.add(test);			
+		} else if(code.op == Expr.BOp.AND) {
+			// special case to ensure short-circuiting of AND.
+			int target = environment.allocate(type);	
+			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + false + ";",code.toString()));			
+			myOut(level++,"if(r" + lhs + ") {");
+			int rhs = translate(level,code.rhs,environment);
+			myOut(level,"r" + target + " = r" + rhs + ";");
+			myOut(--level,"}");			
 			return target;
+		} else {
+			int rhs = translate(level,code.rhs,environment);
+			// First, convert operands into values (where appropriate)
+			switch(code.op) {
+				case EQ:
+				case NEQ:
+					if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
+						// OK to do nothing here...
+					} else {
+						lhs = coerceFromRef(level,code.lhs, lhs, environment);
+						rhs = coerceFromRef(level,code.rhs, rhs, environment);
+					}
+					break;
+				case APPEND:
+					// append is a tricky case as we have support the non-symmetic cases
+					// for adding a single element to the end or the beginning of a
+					// list.
+					lhs_t = Type.unbox(lhs_t);
+					rhs_t = Type.unbox(rhs_t);
+
+					if(lhs_t instanceof Type.Compound) {
+						lhs = coerceFromRef(level,code.lhs, lhs, environment);				
+					} else {
+						lhs = coerceFromValue(level, code.lhs, lhs, environment);				
+					}
+					if(rhs_t instanceof Type.Compound) {
+						rhs = coerceFromRef(level,code.rhs, rhs, environment);	
+					} else {
+						rhs = coerceFromValue(level,code.rhs, rhs, environment);
+					}
+					break;
+				case IN:
+					lhs = coerceFromValue(level,code.lhs,lhs,environment);
+					rhs = coerceFromRef(level,code.rhs,rhs,environment);
+					break;
+				default:
+					lhs = coerceFromRef(level,code.lhs,lhs,environment);
+					rhs = coerceFromRef(level,code.rhs,rhs,environment);
+			}
+
+			// Second, construct the body of the computation			
+			switch (code.op) {
+				case ADD:
+					body = "r" + lhs + ".add(r" + rhs + ")";
+					break;
+				case SUB:
+					body = "r" + lhs + ".subtract(r" + rhs + ")";
+					break;
+				case MUL:
+					body = "r" + lhs + ".multiply(r" + rhs + ")";
+					break;
+				case DIV:
+					body = "r" + lhs + ".divide(r" + rhs + ")";
+					break;
+				case OR:
+					body = "r" + lhs + " || r" + rhs ;
+					break;
+				case EQ:
+					if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) { 
+						body = "r" + lhs + " == r" + rhs ;
+					} else {
+						body = "r" + lhs + ".equals(r" + rhs +")" ;
+					}
+					break;
+				case NEQ:
+					if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
+						body = "r" + lhs + " != r" + rhs ;
+					} else {
+						body = "!r" + lhs + ".equals(r" + rhs +")" ;
+					}
+					break;
+				case LT:
+					body = "r" + lhs + ".compareTo(r" + rhs + ")<0";
+					break;
+				case LTEQ:
+					body = "r" + lhs + ".compareTo(r" + rhs + ")<=0";
+					break;
+				case GT:
+					body = "r" + lhs + ".compareTo(r" + rhs + ")>0";
+					break;
+				case GTEQ:
+					body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
+					break;
+				case APPEND: 
+					if (lhs_t instanceof Type.Compound) {
+						body = "r" + lhs + ".append(r" + rhs + ")";
+					} else {
+						body = "r" + rhs + ".appendFront(r" + lhs + ")";
+					}
+					break;
+				case DIFFERENCE:
+					body = "r" + lhs + ".removeAll(r" + rhs + ")";
+					break;
+				case IN:
+					body = "r" + rhs + ".contains(r" + lhs + ")";
+					break;
+				default:
+					throw new RuntimeException("unknown binary operator encountered: "
+							+ code);
+			}
 		}
-		
-		
-		int rhs = translate(level,code.rhs,environment);
-		// First, convert operands into values (where appropriate)
-		switch(code.op) {
-		case EQ:
-		case NEQ:
-			if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
-				// OK to do nothing here...
-			} else {
-				lhs = coerceFromRef(level,code.lhs, lhs, environment);
-				rhs = coerceFromRef(level,code.rhs, rhs, environment);
-			}
-			break;
-		case APPEND:
-			// append is a tricky case as we have support the non-symmetic cases
-			// for adding a single element to the end or the beginning of a
-			// list.
-			lhs_t = Type.unbox(lhs_t);
-			rhs_t = Type.unbox(rhs_t);
-			
-			if(lhs_t instanceof Type.Compound) {
-				lhs = coerceFromRef(level,code.lhs, lhs, environment);				
-			} else {
-				lhs = coerceFromValue(level, code.lhs, lhs, environment);				
-			}
-			if(rhs_t instanceof Type.Compound) {
-				rhs = coerceFromRef(level,code.rhs, rhs, environment);	
-			} else {
-				rhs = coerceFromValue(level,code.rhs, rhs, environment);
-			}
-			break;
-		case IN:
-			lhs = coerceFromValue(level,code.lhs,lhs,environment);
-			rhs = coerceFromRef(level,code.rhs,rhs,environment);
-			break;
-		default:
-			lhs = coerceFromRef(level,code.lhs,lhs,environment);
-			rhs = coerceFromRef(level,code.rhs,rhs,environment);
-		}
-		
-		// Second, construct the body of the computation
-		String body;
-						
-		switch (code.op) {
-		case ADD:
-			body = "r" + lhs + ".add(r" + rhs + ")";
-			break;
-		case SUB:
-			body = "r" + lhs + ".subtract(r" + rhs + ")";
-			break;
-		case MUL:
-			body = "r" + lhs + ".multiply(r" + rhs + ")";
-			break;
-		case DIV:
-			body = "r" + lhs + ".divide(r" + rhs + ")";
-			break;
-		case AND:
-			body = "r" + lhs + " && r" + rhs ;
-			break;
-		case OR:
-			body = "r" + lhs + " || r" + rhs ;
-			break;
-		case EQ:
-			if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) { 
-				body = "r" + lhs + " == r" + rhs ;
-			} else {
-				body = "r" + lhs + ".equals(r" + rhs +")" ;
-			}
-			break;
-		case NEQ:
-			if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
-				body = "r" + lhs + " != r" + rhs ;
-			} else {
-				body = "!r" + lhs + ".equals(r" + rhs +")" ;
-			}
-			break;
-		case LT:
-			body = "r" + lhs + ".compareTo(r" + rhs + ")<0";
-			break;
-		case LTEQ:
-			body = "r" + lhs + ".compareTo(r" + rhs + ")<=0";
-			break;
-		case GT:
-			body = "r" + lhs + ".compareTo(r" + rhs + ")>0";
-			break;
-		case GTEQ:
-			body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
-			break;
-		case APPEND: 
-			if (lhs_t instanceof Type.Compound) {
-				body = "r" + lhs + ".append(r" + rhs + ")";
-			} else {
-				body = "r" + rhs + ".appendFront(r" + lhs + ")";
-			}
-			break;
-		case DIFFERENCE:
-			body = "r" + lhs + ".removeAll(r" + rhs + ")";
-			break;
-		case IN:
-			body = "r" + rhs + ".contains(r" + lhs + ")";
-			break;
-		default:
-			throw new RuntimeException("unknown binary operator encountered: "
-					+ code);
-		}
-		
-		int target = environment.allocate(type);
+		int target = environment.allocate(type);	
 		myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}

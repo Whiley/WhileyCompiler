@@ -359,16 +359,18 @@ public class TypeInference {
 					&& rhs_t instanceof Type.Compound) {
 				result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 			} else if (rhs_t instanceof Type.Compound) {
-				// right append
+				lhs_t = coerceToRef(lhs_t);
 				Type.Compound rhs_tc = (Type.Compound) rhs_t;
-				result = Type.T_COMPOUND(rhs_tc,rhs_tc.unbounded,
-						append(lhs_t, rhs_tc.elements));				
+				// right append				
+				result = Type.T_COMPOUND(rhs_tc, rhs_tc.unbounded,
+						append(lhs_t, rhs_tc.elements));								
 			} else if (lhs_t instanceof Type.Compound){
 				// left append
-				Type.Compound lhs_tc = (Type.Compound) rhs_t;
+				Type.Compound lhs_tc = (Type.Compound) lhs_t;
+				rhs_t = coerceToRef(rhs_t);
 				if (!lhs_tc.unbounded) {
 					result = Type.T_COMPOUND(lhs_tc, lhs_tc.unbounded,
-							append(lhs_tc.elements, lhs_t));					
+							append(lhs_tc.elements, rhs_t));					
 				} else {
 					int length = lhs_tc.elements.length;
 					Type[] nelements = Arrays.copyOf(lhs_tc.elements, length);
