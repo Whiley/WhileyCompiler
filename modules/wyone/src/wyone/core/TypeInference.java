@@ -55,7 +55,9 @@ public class TypeInference {
 				terms.put(td.type.name, td.type);
 			}
 		}
-
+		
+		autoCompleteTypes();
+		
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.RewriteDecl) {
 				infer((SpecFile.RewriteDecl) d);
@@ -77,13 +79,35 @@ public class TypeInference {
 	public Type.Ref infer(Pattern pattern, HashMap<String,Type> environment) {
 		Type.Ref type;
 		if(pattern instanceof Pattern.Leaf) {
-			Pattern.Leaf p = (Pattern.Leaf) pattern; 
+			Pattern.Leaf p = (Pattern.Leaf) pattern;
 			type = Type.T_REF(p.type);
 		} else if(pattern instanceof Pattern.Term) {
 			Pattern.Term p = (Pattern.Term) pattern;
+			Type _declared = terms.get(p.name);
+			if(_declared == null) {
+				syntaxError("unknown type encountered", file, p);
+			} else if(!(_declared instanceof Type.Term)) {
+				// should be dead code?
+				syntaxError("expected term type", file, p);
+			}
+			Type.Term declared = (Type.Term) _declared;
+			if(declared.data == null && p.data != null) {
+				syntaxError("term type does not have children", file, p);
+			}
 			Type.Ref d = null;
 			if(p.data != null) {
 				d = infer(p.data,environment);
+				
+				// FIXME: would be nice to compute an intersection at this
+				// point.
+				
+				if(Type.isSubtype(d, declared.data, hierarchy)) {
+					// in this case, pattern subsumes declared type (e.g. if
+					// pattern is *).
+					d = declared.data;
+				}
+			} else if(p.data == null && declared.data != null) {
+				d = declared.data; // auto-complete
 			}
 			if(p.variable != null) {
 				environment.put(p.variable, d);
@@ -119,7 +143,7 @@ public class TypeInference {
 			} else {
 				type = Type.T_REF(Type.T_SET(p.unbounded, types));
 			}
-		}
+		}		
 		pattern.attributes().add(new Attribute.Type(type));
 		return type;
 	}
@@ -171,6 +195,8 @@ public class TypeInference {
 				result = resolve((Expr.Variable) expr, environment);
 			} else if (expr instanceof Expr.Comprehension) {
 				result = resolve((Expr.Comprehension) expr, environment);
+			} else if (expr instanceof Expr.TermAccess) {
+				result = resolve((Expr.TermAccess) expr, environment);
 			} else {
 				syntaxError("unknown code encountered (" + expr.getClass().getName() + ")", file, expr);
 				return null;
@@ -223,6 +249,11 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
+		if(uop.op == Expr.UOp.NOT) {
+			// We need to clone in this case to guard against potential
+			// retypings inside the expression.
+			environment = (HashMap<String,Type>) environment.clone();
+		}
 		Pair<Expr,Type> p = resolve(uop.mhs,environment);
 		uop.mhs = p.first();
 		Type t = coerceToValue(p.second());
@@ -248,17 +279,32 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.BinOp bop, HashMap<String,Type> environment) {
-
-		Pair<Expr,Type> p1 = resolve(bop.lhs,environment);
-		Pair<Expr,Type> p2 = resolve(bop.rhs,environment);
+		
+		// First, handle special case for OR
+		Pair<Expr, Type> p1 = null;
+		Pair<Expr, Type> p2 = null;
+		switch (bop.op) {
+		
+		case OR:			
+			// We need to clone the environment because, otherwise, any retyping
+			// which takes place inside may leak out of the disjunction.
+			p1 = resolve(bop.lhs, (HashMap<String,Type>) environment.clone());
+			p2 = resolve(bop.rhs, (HashMap<String,Type>) environment.clone());
+			break;
+		default:
+			p1 = resolve(bop.lhs,environment);
+			p2 = resolve(bop.rhs,environment);
+		}
+		
+		// Second, handle remaining cases
+		
 		bop.lhs = p1.first();
 		bop.rhs = p2.first();
 		Type lhs_t = p1.second();
 		Type rhs_t = p2.second();
 		Type result;
-		
-		
-		// first, deal with auto-unboxing
+				
+		// deal with auto-unboxing
 		switch(bop.op) {
 		case EQ:
 		case NEQ:
@@ -332,15 +378,21 @@ public class TypeInference {
 					result = Type.T_COMPOUND(lhs_tc,true,nelements);					
 				}
 			} else {
-				System.out.println("LHS: " + lhs_t);
-				System.out.println("RHS: " + rhs_t);
 				syntaxError("cannot append non-list types",file,bop);
 				return null;
 			}
 			break;
 		}
 		case IS: {
-			checkSubtype(lhs_t, rhs_t, bop);
+			checkSubtype(Type.T_METAANY, rhs_t, bop);
+			Type.Meta m = (Type.Meta) rhs_t;
+			checkSubtype(lhs_t, m.element, bop);
+			if(bop.lhs instanceof Expr.Variable) {
+				// retyping
+				Expr.Variable v = (Expr.Variable) bop.lhs;
+				// FIXME: should compute intersection here
+				environment.put(v.var, m.element);
+			}
 			result = Type.T_BOOL;
 			break;
 		}
@@ -395,17 +447,17 @@ public class TypeInference {
 			case SETCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_SET(true,Type.T_REF(result.second()));
+				return Type.T_SET(true,coerceToRef(result.second()));
 			}
 			case BAGCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_BAG(true,Type.T_REF(result.second()));
+				return Type.T_BAG(true,coerceToRef(result.second()));
 			}
 			case LISTCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_LIST(true,Type.T_REF(result.second()));
+				return Type.T_LIST(true,coerceToRef(result.second()));
 			}
 			default:
 				throw new IllegalArgumentException("unknown comprehension kind");
@@ -438,7 +490,7 @@ public class TypeInference {
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		expr.src = p1.first();
 
-		Type src_t = p1.second();
+		Type src_t = coerceToValue(p1.second());
 
 		checkSubtype(Type.T_LISTANY, src_t, expr.src);
 		checkSubtype(Type.T_INT, idx_t, expr.index);
@@ -509,6 +561,106 @@ public class TypeInference {
 		}
 	}
 
+	protected Type resolve(Expr.TermAccess expr, HashMap<String, Type> environment) {
+		Pair<Expr,Type> p = resolve(expr.src,environment);
+		Expr src = p.first();
+		Type type = p.second();		
+		
+		expr.src = src;
+		type = coerceToValue(type);
+		if(!(type instanceof Type.Term)) {
+			syntaxError("expecting term type, got type " + src, file, expr);
+		} 
+		type = ((Type.Term) type).data;
+		if(type == null) {
+			return Type.T_VOID;
+		} else {
+			return type;
+		}
+	}
+	
+	/**
+	 * Auto-complete type declarations. For example, in the following
+	 * declaration:
+	 * 
+	 * <pre>
+	 * term Var(string)
+	 * term And{Var...}
+	 * </pre>
+	 * 
+	 * The initial type we have for <code>And</code> will be
+	 * <code>And{^Var...}</code>. This type is incomplete as it suggests that
+	 * Var has no children. After auto-completion, the inferred type for
+	 * <code>And</code> will be <code>And{^Var(^string)...}</code>.
+	 */
+	public void autoCompleteTypes() {
+		ArrayList<String> keys = new ArrayList<String>(terms.keySet()); 
+		boolean changed = true;
+		while(changed) {
+			changed = false;
+			for(int i=0;i!=keys.size();++i) {
+				String key = keys.get(i);
+				Type.Term original = terms.get(key);
+				Type.Term completed = autoComplete(original);
+				if(!original.equals(completed)) {
+					terms.put(key,completed);
+					changed = true;
+				}				
+			}
+		}
+	}
+	
+	/**
+	 * Traverse down a given type looking for auto-completion points.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public <T extends Type> T autoComplete(T type) {
+		
+		// TODO: it would be nice for this method to do some additional sanity
+		// checking. In particular, that the given child of a term is subtype of
+		// the terms declared type.
+		
+		if(type instanceof Type.Ref) {
+			Type.Ref tr = (Type.Ref) type;
+			return (T) Type.T_REF(autoComplete(tr.element));
+		} else if(type instanceof Type.Meta) {
+			Type.Meta tr = (Type.Meta) type;
+			return (T) Type.T_META(autoComplete(tr.element));
+		} else if(type instanceof Type.Compound) {
+			Type.Compound tc = (Type.Compound) type;
+			Type[] elements = tc.elements;
+			Type[] nelements = new Type[elements.length];
+			for(int i=0;i!=elements.length;++i) {
+				nelements[i] = autoComplete(elements[i]);
+			}
+			if(type instanceof Type.Set) {
+				return (T) Type.T_SET(tc.unbounded,nelements);
+			} else if(type instanceof Type.Bag) {
+				return (T) Type.T_BAG(tc.unbounded,nelements);
+			} else {
+				return (T) Type.T_LIST(tc.unbounded,nelements);
+			}
+		} else if(type instanceof Type.Term) {
+			Type.Term tt = (Type.Term) type;
+			Type.Ref data = tt.data;
+			if(data != null) {
+				data = autoComplete(data);
+			} else {
+				Type.Term declared = terms.get(tt.name);
+				if(declared != null && declared.data != null) {
+					// auto-complete!!
+					data = declared.data;
+				}
+			}
+			return (T) Type.T_TERM(tt.name, data);
+		} else  {
+			// all primitive types (e.g. any, int, etc)
+			return type;
+		} 
+	}
+	
 	public Type[] append(Type head, Type[] tail) {
 		Type[] r = new Type[tail.length+1];
 		System.arraycopy(tail,0,r,1,tail.length);

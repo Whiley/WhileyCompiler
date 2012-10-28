@@ -29,6 +29,7 @@ public abstract class Type {
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();
 	public static final Ref<Any> T_REFANY = new Ref(T_ANY);
+	public static final Meta<Any> T_METAANY = new Meta<Any>(T_ANY);
 	public static final List T_LISTANY = new List(true,T_ANY);
 	public static final Set T_SETANY = new Set(true,T_ANY);
 	
@@ -176,6 +177,10 @@ public abstract class Type {
 			Ref r1 = (Ref) t1;
 			Ref r2 = (Ref) t2;
 			return isSubtype(r1.element,r2.element, hierarchy);
+		} else if(t1 instanceof Meta && t2 instanceof Meta) {
+			Meta r1 = (Meta) t1;
+			Meta r2 = (Meta) t2;
+			return isSubtype(r1.element,r2.element, hierarchy);
 		}
 
 		return false;
@@ -196,6 +201,10 @@ public abstract class Type {
 			return t1;
 		} else if (isSubtype(t2, t1, hierarchy)) {
 			return t2;
+		} else if (t1 instanceof Ref && t2 instanceof Ref) {
+			Type.Ref tr1 = (Type.Ref) t1;
+			Type.Ref tr2 = (Type.Ref) t2;
+			return Type.T_REF(leastUpperBound(tr1.element,tr2.element,hierarchy));
 		} else if (t1 instanceof Compound && t2 instanceof Compound) {
 			Compound l1 = (Compound) t1;
 			Compound l2 = (Compound) t2;

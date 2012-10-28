@@ -243,6 +243,8 @@ public final class Automaton {
 		// first, check with this is the term being replaced
 		if(source == search) {
 			return replacement;
+		} else if(source < 0) {
+			return source;
 		}
 
 		// second, check whether we've already visited this term (in which case,

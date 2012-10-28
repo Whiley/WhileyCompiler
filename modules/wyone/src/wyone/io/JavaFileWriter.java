@@ -286,7 +286,7 @@ public class JavaFileWriter {
 	public int translate(int level, Pattern.Term pattern, int source, Environment environment) {
 		Type.Ref<Type.Term> type = (Type.Ref) pattern.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
-		if (type.element.data != null) {
+		if (pattern.data != null) {
 			int target = environment.allocate(type.element.data, pattern.variable);
 			myOut(level, type2JavaType(type.element.data) + " r" + target + " = r"
 					+ source + ".contents;");
@@ -520,6 +520,8 @@ public class JavaFileWriter {
 			return translate(level,(Expr.Substitute) code, environment);
 		} else if(code instanceof Expr.Comprehension) {
 			return translate(level,(Expr.Comprehension) code, environment);
+		} else if(code instanceof Expr.TermAccess) {
+			return translate(level,(Expr.TermAccess) code, environment);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
@@ -585,9 +587,7 @@ public class JavaFileWriter {
 			// special case for runtime type tests
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
-			lhs = coerceFromRef(level,code.lhs, lhs, environment);
-			// TODO: cast is a hack :(
-			String body = "typeof_" + type2HexStr(test) + "( (Automaton.State) r" + lhs +",automaton)";
+			String body = "typeof_" + type2HexStr(test) + "(r" + lhs +",automaton)";
 			typeTests.add(test);
 			int target = environment.allocate(type);			
 			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));			
@@ -814,6 +814,20 @@ public class JavaFileWriter {
 		String body = "automaton.substitute(r" + src + ", r" + original + ", r" + replacement + ")";
 		int target = environment.allocate(type);
 		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
+		return target;
+	}
+	
+	public int translate(int level, Expr.TermAccess code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
+
+		// first translate src expression, and coerce to a value
+		int src = translate(level, code.src, environment);
+		src = coerceFromRef(level, code.src, src, environment);
+
+		String body = "r" + src + ".contents";
+
+		int target = environment.allocate(type);
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
 	

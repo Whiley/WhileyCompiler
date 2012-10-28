@@ -424,7 +424,7 @@ public class SpecParser {
 		matchKeyword("is");			
 		skipWhiteSpace(true);
 		
-		Type type = parseType();
+		Type type = Type.T_REF(parseType());
 		Expr.Constant tc = new Expr.Constant(type, sourceAttr(start, index - 1));				
 		
 		return new Expr.BinOp(Expr.BOp.IS, lhs, tc, sourceAttr(start,
@@ -529,15 +529,6 @@ public class SpecParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 						index - 1));
 				}
-			} else if(lookahead instanceof Hash) {
-				match(Hash.class);
-				if(index < tokens.size() && tokens.get(index) instanceof Int) {
-					BigInteger x = match(Int.class).value;		
-					// FIXME: should check size here
-					lhs = new Expr.TermAccess(lhs, x.intValue(), sourceAttr(start,index - 1));
-				} else {
-					lhs = new Expr.TermAccess(lhs, -1, sourceAttr(start,index - 1));
-				}
 			} 
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
@@ -599,6 +590,8 @@ public class SpecParser {
 			return parseString();
 		} else if (token instanceof Minus) {
 			return parseNegation();
+		} else if (token instanceof Star) {
+			return parseDeref();
 		} else if (token instanceof Bar) {
 			return parseLengthOf();
 		} else if (token instanceof LeftSquare) {
@@ -802,6 +795,13 @@ public class SpecParser {
 		return null;
 	}
 	
+	private Expr parseDeref() {
+		int start = index;
+		match(Star.class);
+		Expr e = parseIndexTerm();
+		return new Expr.TermAccess(e, sourceAttr(start, index - 1));
+	}
+
 	private Expr parseLengthOf() {
 		int start = index;
 		match(Bar.class);
@@ -941,7 +941,7 @@ public class SpecParser {
 				match(Comma.class);
 			}
 			firstTime = false;
-			types.add(parseType());
+			types.add(Type.T_REF(parseType()));
 		}
 		boolean unbounded = false;
 		if (index < tokens.size() && tokens.get(index) instanceof DotDotDot) {
