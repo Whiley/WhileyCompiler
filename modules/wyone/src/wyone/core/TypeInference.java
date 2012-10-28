@@ -392,7 +392,6 @@ public class TypeInference {
 				Expr.Variable v = (Expr.Variable) bop.lhs;
 				// FIXME: should compute intersection here
 				environment.put(v.var, m.element);
-				System.err.println("RETYPING " + v.var);
 			}
 			result = Type.T_BOOL;
 			break;
@@ -491,7 +490,7 @@ public class TypeInference {
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		expr.src = p1.first();
 
-		Type src_t = p1.second();
+		Type src_t = coerceToValue(p1.second());
 
 		checkSubtype(Type.T_LISTANY, src_t, expr.src);
 		checkSubtype(Type.T_INT, idx_t, expr.index);

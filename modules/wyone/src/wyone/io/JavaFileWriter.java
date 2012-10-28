@@ -587,9 +587,7 @@ public class JavaFileWriter {
 			// special case for runtime type tests
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
-			lhs = coerceFromRef(level,code.lhs, lhs, environment);
-			// TODO: cast is a hack :(
-			String body = "typeof_" + type2HexStr(test) + "( (Automaton.State) r" + lhs +",automaton)";
+			String body = "typeof_" + type2HexStr(test) + "(r" + lhs +",automaton)";
 			typeTests.add(test);
 			int target = environment.allocate(type);			
 			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));			

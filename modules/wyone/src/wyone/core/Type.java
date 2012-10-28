@@ -201,6 +201,10 @@ public abstract class Type {
 			return t1;
 		} else if (isSubtype(t2, t1, hierarchy)) {
 			return t2;
+		} else if (t1 instanceof Ref && t2 instanceof Ref) {
+			Type.Ref tr1 = (Type.Ref) t1;
+			Type.Ref tr2 = (Type.Ref) t2;
+			return Type.T_REF(leastUpperBound(tr1.element,tr2.element,hierarchy));
 		} else if (t1 instanceof Compound && t2 instanceof Compound) {
 			Compound l1 = (Compound) t1;
 			Compound l2 = (Compound) t2;
