@@ -31,6 +31,7 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void ConstrainedInt_Invalid_1_StaticFailTest() { verifyFailTest("ConstrainedInt_Invalid_1"); }
  @Test public void ConstrainedInt_Invalid_10_StaticFailTest() { verifyFailTest("ConstrainedInt_Invalid_10"); }
  @Test public void ConstrainedInt_Invalid_11_StaticFailTest() { verifyFailTest("ConstrainedInt_Invalid_11"); }
+ @Test public void ConstrainedInt_Invalid_12_StaticFailTest() { verifyFailTest("ConstrainedInt_Invalid_12"); }
  @Test public void ConstrainedInt_Invalid_2_StaticFailTest() { verifyFailTest("ConstrainedInt_Invalid_2"); }
  @Test public void ConstrainedInt_Invalid_3_StaticFailTest() { verifyFailTest("ConstrainedInt_Invalid_3"); }
  @Test public void ConstrainedInt_Invalid_4_StaticFailTest() { verifyFailTest("ConstrainedInt_Invalid_4"); }
