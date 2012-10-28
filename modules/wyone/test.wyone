@@ -2,7 +2,7 @@ term Var(string)
 term And{Var...}
 class Expr as Var | And
 
-reduce And{Var... xs}:
-    => let ys = { *x | x in xs }
+reduce And{Expr... xs}:
+    => let ys = { *x | x in xs, x is Var(string) }
        in And (ys)
 

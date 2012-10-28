@@ -249,6 +249,11 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
+		if(uop.op == Expr.UOp.NOT) {
+			// We need to clone in this case to guard against potential
+			// retypings inside the expression.
+			environment = (HashMap<String,Type>) environment.clone();
+		}
 		Pair<Expr,Type> p = resolve(uop.mhs,environment);
 		uop.mhs = p.first();
 		Type t = coerceToValue(p.second());
@@ -274,17 +279,32 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.BinOp bop, HashMap<String,Type> environment) {
-
-		Pair<Expr,Type> p1 = resolve(bop.lhs,environment);
-		Pair<Expr,Type> p2 = resolve(bop.rhs,environment);
+		
+		// First, handle special case for OR
+		Pair<Expr, Type> p1 = null;
+		Pair<Expr, Type> p2 = null;
+		switch (bop.op) {
+		
+		case OR:			
+			// We need to clone the environment because, otherwise, any retyping
+			// which takes place inside may leak out of the disjunction.
+			p1 = resolve(bop.lhs, (HashMap<String,Type>) environment.clone());
+			p2 = resolve(bop.rhs, (HashMap<String,Type>) environment.clone());
+			break;
+		default:
+			p1 = resolve(bop.lhs,environment);
+			p2 = resolve(bop.rhs,environment);
+		}
+		
+		// Second, handle remaining cases
+		
 		bop.lhs = p1.first();
 		bop.rhs = p2.first();
 		Type lhs_t = p1.second();
 		Type rhs_t = p2.second();
 		Type result;
-		
-		
-		// first, deal with auto-unboxing
+				
+		// deal with auto-unboxing
 		switch(bop.op) {
 		case EQ:
 		case NEQ:
@@ -367,6 +387,13 @@ public class TypeInference {
 			checkSubtype(Type.T_METAANY, rhs_t, bop);
 			Type.Meta m = (Type.Meta) rhs_t;
 			checkSubtype(lhs_t, m.element, bop);
+			if(bop.lhs instanceof Expr.Variable) {
+				// retyping
+				Expr.Variable v = (Expr.Variable) bop.lhs;
+				// FIXME: should compute intersection here
+				environment.put(v.var, m.element);
+				System.err.println("RETYPING " + v.var);
+			}
 			result = Type.T_BOOL;
 			break;
 		}
