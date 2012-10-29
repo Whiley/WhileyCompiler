@@ -19,9 +19,9 @@ reduce Not(LessThan[* x, * y]):
 
 // the following rule is broken because we need to eliminate a
 // variable, or it won't terminate!
-infer And{LessThan[Num(int i) n, AExpr x] ieq1, LessThan[Num(int j), AExpr y] ieq2, BExpr... rest}:
-    => let ieq3 = LessThan[n,Sum{|x,y|}]
-       in And ({ieq1,ieq2,ieq3} ++ rest), if x != y && i == 0 && j == 0
+infer And{LessThan[Num(int i) n, Sum{|AExpr... xs|}] ieq1, LessThan[Num(int j), Sum{|AExpr... ys|}] ieq2, BExpr... rest}:
+    => let ieq3 = LessThan[n,Sum (xs ++ ys)]
+       in And ({ieq1,ieq2,ieq3} ++ rest), if i == 0 && j == 0 && some { x in xs | x is Var && x in ys }
 
 // ====================================================================
 // Rearrangement
