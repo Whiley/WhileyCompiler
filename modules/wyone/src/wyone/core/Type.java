@@ -44,6 +44,22 @@ public abstract class Type {
 		}
 	}
 	
+	public static Compound T_COMPOUND(Type.Compound template,
+			boolean unbounded, Collection<Type> elements) {
+		Type[] es = new Type[elements.size()];
+		int i = 0;
+		for (Type t : elements) {
+			es[i++] = t;
+		}
+		if (template instanceof List) {
+			return get(new List(unbounded, es));
+		} else if (template instanceof Bag) {
+			return get(new Bag(unbounded, es));
+		} else {
+			return get(new Set(unbounded, es));
+		}
+	}
+	
 	public static List T_LIST(boolean unbounded, Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
@@ -205,14 +221,85 @@ public abstract class Type {
 			Type.Ref tr1 = (Type.Ref) t1;
 			Type.Ref tr2 = (Type.Ref) t2;
 			return Type.T_REF(leastUpperBound(tr1.element,tr2.element,hierarchy));
-		} else if (t1 instanceof Compound && t2 instanceof Compound) {
-			Compound l1 = (Compound) t1;
-			Compound l2 = (Compound) t2;
-			// TODO: could do better here!
+		} else if (t1 instanceof Term && t2 instanceof Term) {
+			Type.Term tt1 = (Type.Term) t1;
+			Type.Term tt2 = (Type.Term) t2;
+			String name = hierarchy.leastUpperBound(tt1.name,tt2.name);
+			if(name != null) {
+				if(tt1.data == null && tt2.data == null) {
+					return Type.T_TERM(name, null);
+				} else if(tt1.data != null && tt2.data != null) {
+					return Type.T_TERM(name, Type.T_REF(leastUpperBound(
+							tt1.data.element, tt2.data.element, hierarchy)));
+				} 
+			}
+			// cases where one is null and one is not don't make sense ---
+			// so leave them as T_ANY. 			
+		} else if (t1 instanceof List && t2 instanceof List) {
+			List l1 = (List) t1;
+			List l2 = (List) t2;
+			boolean unbounded = l1.unbounded || l2.unbounded
+					|| l1.elements.length != l2.elements.length;
+			
+			// first calculate resulting size of this thing
+			int l1MinSize = l1.elements.length; 
+			int l2MinSize = l2.elements.length;
+			l1MinSize = l1.unbounded ? l1MinSize - 1 : l1MinSize;
+			l2MinSize = l2.unbounded ? l2MinSize - 1 : l2MinSize;
+			int minSize = Math.min(l1MinSize,l2MinSize);
+			
+			// second, calculate lub of fixed indices
+			ArrayList<Type> nelements = new ArrayList<Type>();
+			for(int i=0;i<minSize;++i) {
+				nelements.add(leastUpperBound(l1.elements[i],l2.elements[i],hierarchy));
+			}
+			
+			// finally, add unbounded component (if applicable)
+			if(unbounded) {
+				Type last = T_VOID;
+				for(int i=minSize;i<l1.elements.length;++i) {
+					last = leastUpperBound(last,l1.elements[i],hierarchy);
+				}
+				for(int i=minSize;i<l2.elements.length;++i) {
+					last = leastUpperBound(last,l2.elements[i],hierarchy);
+				}
+				nelements.add(last);
+			}
+			
+			return Type.T_LIST(unbounded,nelements);
+		} else if ((t1 instanceof Bag && t2 instanceof Bag) || (t1 instanceof Set && t2 instanceof Set)) {
+			Compound c1 = (Compound) t1;
+			Compound c2 = (Compound) t2;
+			
+			boolean unbounded = c1.unbounded || c2.unbounded
+					|| c1.elements.length != c2.elements.length;
+			
+			// first calculate resulting size of this thing
+			int l1MinSize = c1.elements.length; 
+			int l2MinSize = c2.elements.length;
+			l1MinSize = c1.unbounded ? l1MinSize - 1 : l1MinSize;
+			l2MinSize = c2.unbounded ? l2MinSize - 1 : l2MinSize;
+			int minSize = Math.min(l1MinSize,l2MinSize);
+						
+			Type element = T_VOID;
+			for(int i=0;i<c1.elements.length;++i) {
+				element = leastUpperBound(element,c1.elements[i],hierarchy);
+			}
+			for(int i=0;i<c2.elements.length;++i) {
+				element = leastUpperBound(element,c2.elements[i],hierarchy);
+			}
+			
+			ArrayList<Type> nelements = new ArrayList<Type>();
+			for(int i=0;i!=minSize;++i) {
+				nelements.add(element);
+			}
+			if(unbounded) {
+				nelements.add(element);
+			}
+			
+			return Type.T_COMPOUND(c1,unbounded,nelements);
 		} 
 
-		// FIXME: we can do better for named types by searching the hierarchy!
-		
 		return T_ANY;
 	}
 	
@@ -247,6 +334,40 @@ public abstract class Type {
 				}
 			}
 			return false;
+		}
+		
+		public String leastUpperBound(String t1, String t2) {
+			ArrayList<String> t1parents = parents(t1);
+			ArrayList<String> t2parents = parents(t2);
+			for(int i=0;i!=t1parents.size();++i) {
+				String t1parent = t1parents.get(i);
+				if(t2parents.contains(t1parents)) {
+					// FIXME: this is broken in the case of multiple least upper
+					// bounds. In such case it returns one of the possible
+					// options.
+					return t1parent;
+				}
+			}
+			return null;
+		}
+		
+		private ArrayList<String> parents(String t1) {
+			ArrayList<String> parents = new ArrayList<String>();
+			HashSet<String> visited = new HashSet<String>();
+			parents.add(t1);
+			int current = 0;
+			while(current < parents.size()) {
+				String parent = parents.get(current++);
+				HashSet<String> grandparents = subclasses.get(parent);
+				if(grandparents != null) {
+					for(String gp : grandparents) {
+						if(visited.add(gp)) {
+							parents.add(gp);
+						}
+					}
+				}
+			}
+			return parents;
 		}
 	}
 	

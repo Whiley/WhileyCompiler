@@ -5,6 +5,7 @@ include "examples/variables.wyone"
 // ====================================================================
 
 term Mul{|Expr...|}
+term Term[int,{|Expr...|}]
 
 reduce Mul{|Num n|}:
     => n
@@ -18,6 +19,10 @@ reduce Mul{|Mul{|Expr... xs|}, Expr... ys|}:
 reduce Mul{|Sum{|Expr... xs|}, Expr... ys|}:
     => let ys = {| Mul(x ++ ys) | x in xs |}
        in Sum(ys)
+
+reduce Mul{|Num(int x), Expr... es|}:
+    => Num(0), if x == 0
+    => Term[x,es], if |es| > 0 && no { e in es | e is Num }
 
 // ====================================================================
 // Sum
@@ -39,22 +44,12 @@ reduce Sum{|Sum{|Expr... xs|}, TExpr... ys|}:
 //        in Sum (m ++ zs), if xs == ys
 
 // ====================================================================
-// Term
-// ====================================================================
-
-term Term[int,{|Expr...|}]
-
-reduce Mul{|Num(int x), Expr... es|}:
-    => Num(0), if x == 0
-    => Term[x,es], if |es| > 0 && no { e in es | e is Num }
-
-// ====================================================================
-// Poly
+// Polynomial
 // ====================================================================
 term Poly[int,{Term...}]
 
 reduce Sum{|Num(int c), Term... rest|}:
-    => Poly[c,rest]
+    => Poly[c,rest] // BROKEN!!
 
 // ====================================================================
 // Arithmetic Exprssions
