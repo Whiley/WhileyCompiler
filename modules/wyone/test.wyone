@@ -1,2 +1,72 @@
-include "examples/equality.wyone"
-include "examples/numerics.wyone"
+include "examples/variables.wyone"
+
+// ====================================================================
+// Mul
+// ====================================================================
+
+term Mul{|Expr...|}
+
+reduce Mul{|Num n|}:
+    => n
+
+reduce Mul{|Num(int x), Num(int y), Expr... rest|}:
+    => Mul (Num(x*y) ++ rest)
+
+reduce Mul{|Mul{|Expr... xs|}, Expr... ys|}:
+    => Mul (xs ++ ys)
+
+reduce Mul{|Sum{|Expr... xs|}, Expr... ys|}:
+    => let ys = {| Mul(x ++ ys) | x in xs |}
+       in Sum(ys)
+
+// ====================================================================
+// Sum
+// ====================================================================
+
+term Sum{|Expr...|}
+
+reduce Sum{|Expr x, TExpr... rest|}:
+    => Sum (Mul{|Num(1),x|} ++ rest), if !(x is Mul || x is Num)
+
+reduce Sum{|Num(int x), Num(int y), TExpr... rest|}:
+    => Sum (Num(x+y) ++ rest)
+
+reduce Sum{|Sum{|Expr... xs|}, TExpr... ys|}:
+    => Sum (xs ++ ys)
+
+// reduce Sum{|Mul{|Num(int x), Expr... xs|}, Mul{|Num(int y), Expr... ys|}, TExpr... zs|}:
+//     => let m = Mul(Num(x+y) ++ xs)
+//        in Sum (m ++ zs), if xs == ys
+
+// ====================================================================
+// Term
+// ====================================================================
+
+term Term[int,{|Expr...|}]
+
+reduce Mul{|Num(int x), Expr... es|}:
+    => Num(0), if x == 0
+    => Term[x,es], if |es| > 0 && no { e in es | e is Num }
+
+// ====================================================================
+// Poly
+// ====================================================================
+term Poly[int,{Term...}]
+
+reduce Sum{|Num(int c), Term... rest|}:
+    => Poly[c,rest]
+
+// ====================================================================
+// Arithmetic Exprssions
+// ====================================================================
+
+term Num(int)
+
+class AExpr as Num | Var | Sum | Mul
+   
+// ====================================================================
+// General Expressions
+// ====================================================================
+
+class Expr as AExpr | ...
+class TExpr as Expr | Term
