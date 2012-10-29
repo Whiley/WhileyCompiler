@@ -280,7 +280,7 @@ public abstract class Type {
 			l1MinSize = c1.unbounded ? l1MinSize - 1 : l1MinSize;
 			l2MinSize = c2.unbounded ? l2MinSize - 1 : l2MinSize;
 			int minSize = Math.min(l1MinSize,l2MinSize);
-						
+			
 			Type element = T_VOID;
 			for(int i=0;i<c1.elements.length;++i) {
 				element = leastUpperBound(element,c1.elements[i],hierarchy);
@@ -290,7 +290,7 @@ public abstract class Type {
 			}
 			
 			ArrayList<Type> nelements = new ArrayList<Type>();
-			for(int i=0;i!=minSize;++i) {
+			for(int i=0;i<minSize;++i) {
 				nelements.add(element);
 			}
 			if(unbounded) {

@@ -358,18 +358,18 @@ public class TypeInference {
 			if (lhs_t instanceof Type.Compound
 					&& rhs_t instanceof Type.Compound) {
 				result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
-			} else if (rhs_t instanceof Type.Compound) {
+			} else if (rhs_t instanceof Type.List) {
 				lhs_t = coerceToRef(lhs_t);
-				Type.Compound rhs_tc = (Type.Compound) rhs_t;
+				Type.List rhs_tc = (Type.List) rhs_t;
 				// right append				
-				result = Type.T_COMPOUND(rhs_tc, rhs_tc.unbounded,
+				result = Type.T_LIST(rhs_tc.unbounded,
 						append(lhs_t, rhs_tc.elements));								
-			} else if (lhs_t instanceof Type.Compound){
+			} else if (lhs_t instanceof Type.List){
 				// left append
-				Type.Compound lhs_tc = (Type.Compound) lhs_t;
+				Type.List lhs_tc = (Type.List) lhs_t;
 				rhs_t = coerceToRef(rhs_t);
 				if (!lhs_tc.unbounded) {
-					result = Type.T_COMPOUND(lhs_tc, lhs_tc.unbounded,
+					result = Type.T_LIST(lhs_tc.unbounded,
 							append(lhs_tc.elements, rhs_t));					
 				} else {
 					int length = lhs_tc.elements.length;
@@ -377,8 +377,18 @@ public class TypeInference {
 					length--;
 					nelements[length] = Type.leastUpperBound(rhs_t,
 							nelements[length], hierarchy);
-					result = Type.T_COMPOUND(lhs_tc,true,nelements);					
+					result = Type.T_LIST(true,nelements);					
 				}
+			} else if (lhs_t instanceof Type.Compound) {
+				Type.Compound lhs_tc = (Type.Compound) lhs_t;
+				rhs_t = coerceToRef(rhs_t);
+				Type.Compound rhs_tc = Type.T_COMPOUND(lhs_tc,false,rhs_t);
+				result = Type.leastUpperBound(lhs_tc,rhs_tc,hierarchy);
+			} else if (rhs_t instanceof Type.Compound) {
+				Type.Compound rhs_tc = (Type.Compound) rhs_t;
+				lhs_t = coerceToRef(lhs_t);
+				Type.Compound lhs_tc = Type.T_COMPOUND(rhs_tc,false,lhs_t);
+				result = Type.leastUpperBound(lhs_tc,rhs_tc,hierarchy);
 			} else {
 				syntaxError("cannot append non-list types",file,bop);
 				return null;
