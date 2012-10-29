@@ -19,10 +19,6 @@ reduce Sum{|AExpr x, AExpr y, AExpr... rest|}:
 reduce Sum{|Sum{|AExpr... xs|}, AExpr... ys|}:
     => Sum (xs ++ ys)
 
-reduce Sum{|Neg(AExpr x), AExpr y, AExpr... rest|}:
-    => Sum(rest), if x == y && |rest| > 0
-    => Num(0), if x == y
-
 reduce Sum{|Mul{|Num(int x), AExpr... xs|}, Mul{|Num(int y), AExpr... ys|}, AExpr... zs|}:
     => let m = Mul(Num(x+y) ++ xs)
        in Sum (m ++ zs), if xs == ys
@@ -57,26 +53,11 @@ reduce Mul{|Sum{|AExpr... xs|}, AExpr... ys|}:
 term Div[AExpr,AExpr]
 
 // ====================================================================
-// Neg
-// ====================================================================
-term Neg(AExpr)
-
-reduce Neg(Num(int x)):
-    => Num(-x)
-
-reduce Neg(Neg(AExpr x)):
-    => x
-
-reduce Neg(Sum{|AExpr... xs|}):
-    => let ys = {| Neg(x) | x in xs |}
-       in Sum(ys)
-
-// ====================================================================
 // Equals (rearrangement)
 // ====================================================================
 
 reduce Equals{Sum{|Expr... xs|}, Expr y}:
-    => Equals{Num(0), Sum(xs ++ Neg(y))}, if !(y is Num(int) && *y == 0)
+    => Equals{Num(0), Sum(xs ++ Mul{|Num(-1),y|})}, if !(y is Num(int) && *y == 0)
 
 // ====================================================================
 // Expressions & Values
@@ -85,5 +66,5 @@ reduce Equals{Sum{|Expr... xs|}, Expr y}:
 term Num(int)
 
 class Value as Num | ...
-class AExpr as Num | Var | Neg | Sum | Mul | Div | ...
+class AExpr as Num | Var | Sum | Mul | Div | ...
 class Expr as AExpr | ...

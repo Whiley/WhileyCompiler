@@ -26,7 +26,7 @@ infer And{LessThan[Num(int i) n, AExpr x] ieq1, LessThan[Num(int j), AExpr y] ie
 // ====================================================================
 
 reduce LessThan[AExpr x, AExpr y]:
-    => let z = Sum{|Neg(x),y|}
+    => let z = Sum{|Mul{|Num(-1),x|},y|}
        in LessThan[Num(0),z], if !(x is Num(int) && *x == 0)
 
 // ====================================================================
