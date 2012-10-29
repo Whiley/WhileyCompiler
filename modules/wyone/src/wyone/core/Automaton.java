@@ -753,17 +753,6 @@ public final class Automaton {
 			length = nchildren.length;		
 		}
 		
-		public boolean remap(int from, int to) {
-			boolean changed = false;
-			for(int i=0;i!=length;++i) {
-				if(children[i] == from) {
-					children[i] = to;
-					changed = true;
-				}
-			}		
-			return changed;
-		}
-
 		public boolean remap(int[] map) {
 			boolean changed = false;
 			for (int i = 0; i != length; ++i) {
@@ -852,7 +841,7 @@ public final class Automaton {
 		
 		public boolean remap(int[] map) {
 			if(super.remap(map)) {
-				Arrays.sort(children);
+				Arrays.sort(children,0,length);
 				return true;
 			} else {
 				return false;
@@ -946,7 +935,7 @@ public final class Automaton {
 				return;
 			}
 			
-			Arrays.sort(children);
+			Arrays.sort(children,0,length);
 			
 			// first, decide if we have duplicates
 			int last = children[0];
