@@ -163,7 +163,7 @@ public final class Automaton {
 			}
 		} else if(state instanceof Compound) {
 			Compound compound = (Compound) state;
-			if(compound.children.length == 0) {
+			if(compound.length == 0) {
 				return compound.kind;
 			}
 		}
@@ -272,13 +272,13 @@ public final class Automaton {
 			Automaton.Compound term = (Automaton.Compound) state;
 			int[] children = term.children;
 			int[] nChildren = null;
-			for (int i = 0; i != children.length; ++i) {
+			for (int i = 0; i != term.length; ++i) {
 				int child = children[i];
 				int nChild = substitute(child, search, replacement, binding);
 				if (nChildren != null) {
 					nChildren[i] = nChild;
 				} else if (child != nChild) {
-					nChildren = new int[children.length];
+					nChildren = new int[term.length];
 					System.arraycopy(children, 0, nChildren, 0, i);
 					nChildren[i] = nChild;
 				}
@@ -472,6 +472,15 @@ public final class Automaton {
 		return r;
 	}
 	
+	/**
+	 * Applying a mapping from "old" vertices to "new" vertices across the whole
+	 * object space. Thus, any references to an "old" vertex is replaced with
+	 * its corresponding "new" vertex (according to the given map). In some
+	 * cases, this will cause follow-on remappings as some existing structures
+	 * may collapse down.
+	 * 
+	 * @param map
+	 */
 	private void remap(int[] map) {
 		int[] delta = new int[nStates];
 		int nChanged = 0;
@@ -501,18 +510,19 @@ public final class Automaton {
 			if(changed) {								
 				// now process changes by looking for equivalent states
 				for(int k=0;k!=nChanged;++k) {
-					int i = delta[k];
-					State ith = states[i];
+					int min = Integer.MAX_VALUE; // least equivalent state
+					State ith = states[delta[k]];
+					if(ith == null) { continue; }
+					// first, determine "least equivalent state"
 					for(int j=0;j!=nStates;++j) {
 						State jth = states[j];
-						if(ith.equals(jth)) {
-							// found an equivalent state
-							if(i != j) {
-								// is not ourself, so update map
-								states[i] = null;
-								map[i] = j;
+						if(ith.equals(jth)) {					
+							if(j < min) {
+								min = j;
+							} else {
+								states[j] = null;
+								map[j] = min;		
 							}
-							break;
 						}
 					}
 				}
@@ -595,8 +605,10 @@ public final class Automaton {
 			int old = contents;
 			if(old >= 0) {
 				contents = map[contents];
+				return contents != old;
+			} else {
+				return false;
 			}
-			return contents != old;
 		}
 		
 		public boolean equals(final Object o) {
@@ -667,6 +679,7 @@ public final class Automaton {
 		}
 		
 		public Constant clone() {
+			// TODO: do we really need a clone here?
 			return new Int(value);
 		}
 
@@ -705,6 +718,7 @@ public final class Automaton {
 		}
 
 		public Strung clone() {
+			// TODO: do we really need a clone here?
 			return new Strung(value);
 		}
 	}

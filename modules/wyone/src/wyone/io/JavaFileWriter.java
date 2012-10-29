@@ -96,13 +96,16 @@ public class JavaFileWriter {
 		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
 		myOut(4, "if(numSteps++ > MAX_STEPS) { return result; } // bail out");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
+		int i=0;
 		for(ReduceDecl rw : extractDecls(ReduceDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
 			String mangle = type2HexStr(type);
 			myOut(4,"");
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 			typeTests.add(type);
-			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");				
+			myOut(5, "boolean tmp = reduce_" + mangle + "(i,automaton);");
+			myOut(5, "if(tmp) { System.out.println(\"REDUCTION " + i++ + " FIRED.\"); }");
+			myOut(5, "changed |= tmp;");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
@@ -124,13 +127,16 @@ public class JavaFileWriter {
 		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
 		myOut(4, "if(numSteps > MAX_STEPS) { return result; } // bail out");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
+		int i = 0;
 		for(InferDecl rw : extractDecls(InferDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
 			String mangle = type2HexStr(type);
 			myOut(4,"");
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
-			typeTests.add(type);
-			myOut(5, "changed |= infer_" + mangle + "(i,automaton);");				
+			typeTests.add(type);			
+			myOut(5, "boolean tmp = infer_" + mangle + "(i,automaton);");
+			myOut(5, "if(tmp) { System.out.println(\"INFERENCE " + i++ + " FIRED.\"); }");
+			myOut(5, "changed |= tmp;");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
