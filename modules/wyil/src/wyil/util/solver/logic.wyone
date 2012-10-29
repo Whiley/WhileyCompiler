@@ -92,6 +92,7 @@ reduce And{Equals{Var(string s) v,Expr e},BExpr... xs}:
     => let ys = { x[v\e] | x in xs}
        in And (Assign[s,e] ++ ys)
 
+// IS THIS RULE NECESSARY?
 // infer And{Equals{Expr x, Expr y} e1, Equals{Expr u, Expr v} e2, BExpr... rest}:
 //     => let e3 = Equals{x,v}
 //        in And ({e1,e2,e3} ++ rest), if y == u && x != v

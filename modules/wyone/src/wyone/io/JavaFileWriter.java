@@ -133,9 +133,7 @@ public class JavaFileWriter {
 			myOut(4,"");
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 			typeTests.add(type);			
-			myOut(5, "boolean tmp = infer_" + mangle + "(i,automaton);");
-			myOut(5, "if(tmp) { System.out.println(\"INFERENCE " + i++ + " FIRED.\"); }");
-			myOut(5, "changed |= tmp;");
+			myOut(5, "changed |= infer_" + mangle + "(i,automaton);");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
