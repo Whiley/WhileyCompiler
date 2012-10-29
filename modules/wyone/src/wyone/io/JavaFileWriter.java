@@ -391,6 +391,11 @@ public class JavaFileWriter {
 	
 	public void translate(int level, RuleDecl decl, boolean isReduce, Environment environment) {
 		int thus = environment.get("this");
+		
+		// TODO: can optimise this by translating lets within the conditionals
+		// in the case that the conditionals don't refer to those lets. This
+		// will then prevent unnecessary object creation.
+		
 		for(Pair<String,Expr> let : decl.lets) {
 			String letVar = let.first();
 			Expr letExpr = let.second();
