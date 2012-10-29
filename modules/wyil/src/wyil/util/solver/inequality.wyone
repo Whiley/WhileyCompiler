@@ -17,6 +17,8 @@ reduce LessThan[Var x, Var y]:
 reduce Not(LessThan[* x, * y]):
     => Or{Equals{x,y},LessThan[y,x]}
 
+// the following rule is broken because we need to eliminate a
+// variable, or it won't terminate!
 infer And{LessThan[Num(int i) n, AExpr x] ieq1, LessThan[Num(int j), AExpr y] ieq2, BExpr... rest}:
     => let ieq3 = LessThan[n,Sum{|x,y|}]
        in And ({ieq1,ieq2,ieq3} ++ rest), if x != y && i == 0 && j == 0
