@@ -66,7 +66,7 @@ public class VerificationCheck implements Transform {
 	 * Enables debugging information to be printed.
 	 */
 	private boolean debug = getDebug();
-	
+		
 	private Builder builder;
 	
 	private String filename;	
@@ -97,6 +97,18 @@ public class VerificationCheck implements Transform {
 	
 	public void setDebug(boolean flag) {
 		this.debug = flag;
+	}
+	
+	public static String describeMaxSteps() {
+		return "Set maximum number of steps constraint solver can apply for a given assertion";
+	}
+	
+	public static long getMaxSteps() {
+		return ConstraintSolver.MAX_STEPS;
+	}
+	
+	public void setMaxSteps(long steps) {		
+		ConstraintSolver.MAX_STEPS = steps;
 	}
 	
 	public static int getTimeout() {
@@ -252,15 +264,18 @@ public class VerificationCheck implements Transform {
 					
 					System.err.print("Line ??");
 					System.err.println("\n--------------------------------------------");
-					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);
-					System.err.println("\n\n=>\n");				
+					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);		
 				}
 												
 				infer(tmp);
 				
 				if(debug) {
+					System.err.println("\n\n=> (" + ConstraintSolver.numSteps
+							+ " steps, " + ConstraintSolver.numInferences
+							+ " reductions, " + ConstraintSolver.numInferences
+							+ " inferences)\n");
 					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);
-					System.err.println();
+					System.err.println();					
 				}
 				
 				// assertion holds if a constradiction is shown.

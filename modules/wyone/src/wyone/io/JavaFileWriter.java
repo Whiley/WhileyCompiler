@@ -1146,11 +1146,11 @@ public class JavaFileWriter {
 	}
 
 	protected void writeStatsInfo() {
-		myOut(1,"public static int MAX_STEPS = 50000;");
-		myOut(1,"public static int numSteps = 0;");
-		myOut(1,"public static int numReductions = 0;");
-		myOut(1,"public static int numInferences = 0;");
-		myOut(1,"public static int numMisinferences = 0;");		
+		myOut(1,"public static long MAX_STEPS = 50000;");
+		myOut(1,"public static long numSteps = 0;");
+		myOut(1,"public static long numReductions = 0;");
+		myOut(1,"public static long numInferences = 0;");
+		myOut(1,"public static long numMisinferences = 0;");		
 		
 		myOut(1,"public static void reset() {");
 		myOut(2,"numSteps = 0;");

@@ -17,21 +17,17 @@ reduce LessThan[Var x, Var y]:
 reduce Not(LessThan[* x, * y]):
     => Or{Equals{x,y},LessThan[y,x]}
 
-reduce And{LessThan[AExpr e1, Num(int x)] ieq, LessThan[AExpr e2, Num(int y)], BExpr... rest}:
-    => And (ieq ++ rest), if e1 == e2 && x < y
+//infer And{LessThan[Num(int i) n, AExpr x] ieq1, LessThan[Num(int j), AExpr y] ieq2, BExpr... rest}:
+//    => let ieq3 = LessThan[n,Sum{|x,y|}]
+//       in And ({ieq1,ieq2,ieq3} ++ rest), if i == 0 && j == 0
 
-reduce And{LessThan[Num(int x), AExpr e1] ieq, LessThan[Num(int y), AExpr e2], BExpr... rest}:
-    => And (ieq ++ rest), if e1 == e2 && x > y
+// ====================================================================
+// Rearrangement
+// ====================================================================
 
-infer And{LessThan[AExpr x, AExpr y] ieq1, LessThan[AExpr u, AExpr v] ieq2, BExpr... rest}:
-    => let ieq3 = LessThan[x,v]
-       in And ({ieq1,ieq2,ieq3} ++ rest), if y == u
-
-infer And{Equals{AExpr x, AExpr y} ieq1, LessThan[AExpr u, AExpr v] ieq2, BExpr... rest}:
-    => let ieq3 = LessThan[x,v]
-       in And ({ieq1,ieq2,ieq3} ++ rest), if y == u
-    => let ieq3 = LessThan[u,x]
-       in And ({ieq1,ieq2,ieq3} ++ rest), if y == v
+//reduce LessThan[AExpr x, AExpr y]:
+//    => let z = Sum{|Neg(x),y|}
+//       in LessThan[Num(0),z], if !(x is Num(int) && *x == 0)
 
 // ====================================================================
 // Expressions & Values

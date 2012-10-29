@@ -238,6 +238,8 @@ public class Pipeline {
 						m = clazz.getDeclaredMethod(name, boolean.class);
 					} else if(value instanceof Integer) {
 						m = clazz.getDeclaredMethod(name, int.class);
+					} else if(value instanceof Long) {
+						m = clazz.getDeclaredMethod(name, long.class);
 					} else {
 						// default
 						m = clazz.getDeclaredMethod(name, value.getClass());
