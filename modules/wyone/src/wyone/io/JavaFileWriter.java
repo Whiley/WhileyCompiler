@@ -103,15 +103,14 @@ public class JavaFileWriter {
 			myOut(4,"");
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 			typeTests.add(type);
-			myOut(5, "boolean tmp = reduce_" + mangle + "(i,automaton);");
-			myOut(5, "if(tmp) { System.out.println(\"REDUCTION " + i++ + " FIRED.\"); }");
-			myOut(5, "changed |= tmp;");
+			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
+			// TODO: this is really inefficient!!!
+			myOut(5, "automaton.compact();");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
 		myOut(3, "result |= changed;");
 		myOut(2,"}");
-		myOut(2, "automaton.compact();");
 		myOut(2, "return result;");
 		myOut(1, "}");
 	}
