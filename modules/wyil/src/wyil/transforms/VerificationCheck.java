@@ -111,6 +111,10 @@ public class VerificationCheck implements Transform {
 		ConstraintSolver.MAX_STEPS = steps;
 	}
 	
+	public void setMaxSteps(int steps) {		
+		ConstraintSolver.MAX_STEPS = steps;
+	}
+	
 	public static int getTimeout() {
 		return 250;
 	}
