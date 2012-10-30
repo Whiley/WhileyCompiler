@@ -2,35 +2,41 @@ include "logic.wyone"
 include "numerics.wyone"
 
 // ====================================================================
-// Inequalities
+// LessThan
 // ====================================================================
 
-term LessThan[AExpr,AExpr]
-
-reduce LessThan[Num(real x), Num(real y)]:
-    => True, if x < y
-    => False
-
-reduce LessThan[Var x, Var y]:
-    => False, if x == y
-
-reduce Not(LessThan[* x, * y]):
-    => Or{Equals{|x,y|},LessThan[y,x]}
-
-// infer And{LessThan[Num(real i) n, Sum{|Var(string x), AExpr... xs|}] ieq1, LessThan[Num(real j), Sum{|Mul{|Num(real f),Var(string y), AExpr...|},AExpr... ys|}] ieq2, BExpr... rest}:
-//     => And ({ieq1,ieq2,LessThan[n,Sum (xs ++ ys)]} ++ rest), if i == 0.0 && j == 0.0 && x == y && f < 0.0
-
-// ====================================================================
-// Rearrangement
-// ====================================================================
+term LessThan[AExpr,AExpr] // syntactic sugar
 
 reduce LessThan[AExpr x, AExpr y]:
-    => let z = Sum[0.0,{|Mul[-1.0,{|x|}],y|}]
-       in LessThan[Num(0.0),z], if !(x is Num(real) && *x == 0.0)
+    => let negx = Mul[-1.0,{|x|}]
+       in ZeroLessThan (Sum[0.0,{|y,negx|}])
+
+// ====================================================================
+// Inequality
+// ====================================================================
+
+term ZeroLessThan(AExpr) // 0 < e
+
+reduce ZeroLessThan(Num(real x)):
+    => True, if 0.0 < x
+    => False
+
+reduce Not(ZeroLessThan(AExpr x)):
+    => let negx = Mul[-1.0,{|x|}]
+       in Or{Equals{|x,Num(0.0)|},ZeroLessThan(negx)}
+
+// rearrange linear inequality
+// NOTE: must be inference rule to ensure Sums are maximally reduced
+// NOTE: can't do anything useful with non-variable terms :(
+// NOTE: requirement x2 < 0.0 && y2 > 0.0 ensures we are eliminating variables
+infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|Var v1|}], Expr... xs|}] s1) ieq1, 
+          ZeroLessThan(Sum[real y1, {|Mul[real y2, {|Var v2|}], Expr... ys|}] s2) ieq2, BExpr... rest}:
+     => let ieq3 = ZeroLessThan(Sum[0.0,{|s1,s2|}])
+        in And ({ieq1,ieq2,ieq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-class BExpr as LessThan | ...
-class Expr as LessThan | ...
+class BExpr as ZeroLessThan | ...
+class Expr as ZeroLessThan | ...

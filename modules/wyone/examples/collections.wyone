@@ -9,8 +9,8 @@ term LengthOf(Expr)
 
 term List[Expr...]
 term ListVal[Value...]
-term IndexOf[Expr,Expr]
-term Update[Expr,Expr,Expr]
+term IndexOf[Expr,AExpr]
+term Update[Expr,AExpr,Expr]
 
 reduce List[Value... xs]:
     => ListVal(xs)
@@ -57,15 +57,9 @@ reduce Tuple[Value... xs]:
     => TupleVal(xs)
 
 // ====================================================================
-// Boolean Expressions
-// ====================================================================
-
-class BExpr as ElementOf | ...
-
-// ====================================================================
 // Expressions & Values
 // ====================================================================
 
 class Value as ListVal | SetVal | TupleVal | ...
-
-class Expr as Set | List | Tuple | LengthOf | IndexOf | Update | ...
+class BExpr as ElementOf | ...
+class Expr as ListVal | SetVal | TupleVal | Set | List | Tuple | LengthOf | IndexOf | Update | ElementOf | ...

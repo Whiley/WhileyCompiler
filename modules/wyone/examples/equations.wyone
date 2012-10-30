@@ -11,8 +11,8 @@ reduce Equation(Num(real n)):
     => True, if n == 0.0
     => False
 
-// rearrange linear equation (without division)
-// NOTE: must be an inference rule at the moment for annoying technical reasons.
+// rearrange linear equation
+// NOTE: must be inference rule to ensure Sums are maximally reduced
 // NOTE: can't do anything useful with non-variable terms :(
 infer And{Equation(Sum[real n1, {|Mul[real n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
      => let nes = Mul[-1.0/n2,{|Sum[n1, es]|}],
