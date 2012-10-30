@@ -53,7 +53,7 @@ wycc_obj* wycc_exception_get();
 void  wycc_exception_clear();
 char *wyil_catch(char *nam);
 
-void wycc__main(wycc_obj* sys);
+// void wycc__main(wycc_obj* sys);
 wycc_obj* wycc_deref_box(wycc_obj* itm);
 wycc_obj* wycc_box_str(char* text);
 wycc_obj* wycc_box_cstr(const char* text);
@@ -100,6 +100,7 @@ wycc_obj* wycc_list_slice(wycc_obj* lst, int lo, int hi);
 wycc_obj* wycc_tuple_new(long siz);
 wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
 wycc_obj* wycc_fom_handle(const char *nam, const char *sig);
+wycc_obj * wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst);
 
 /*
  * routines to implement wyil operations

@@ -211,6 +211,12 @@ static char* wy_type_names[] = {
  * Wy_Rcd_Rcd	ptr to block:
  *		ptr to Wy_List of names
  *		ptr to Wy_List of types
+ * Wy_FOM	ptr to block:
+ *		ptr to name
+ *		ptr to signature
+ *		ptr to type token (index)
+ *		ptr to code
+ *
  */
 
 /*
@@ -413,6 +419,8 @@ int main(int argc, char** argv, char** envp) {
     wycc_obj* sys;
     wycc_obj* lst;
     wycc_obj* itm;
+    void **p;
+    void *rtn;
 
     /*
      * process the command line arguments
@@ -479,7 +487,13 @@ int main(int argc, char** argv, char** envp) {
 	wycc_list_add(lst, itm);
     }
     wycc_record_fill(sys, 0, lst);
-    wycc__main(sys);
+    //    wycc__main(sys);
+    itm = wycc_fom_handle("main", "[:v,v,[{args,out}[#s],[.a]]]");
+    if (itm != NULL) {
+	p = (void **) itm->ptr;
+	rtn = p[3];
+	itm = ((FOM_1a) rtn)(sys);
+    };
     fflush(stderr);
     fflush(stdout);
     exit(0);
