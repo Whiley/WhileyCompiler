@@ -219,6 +219,10 @@ static char* wy_type_names[] = {
  *
  */
 
+static wycc_obj *obj_free_list = (wycc_obj *) NULL;
+static void wycc_obj_free(wycc_obj* itm);
+static void wycc_obj_free_bump();
+
 /*
  * we need comparitor functions for all object types
  */
@@ -629,6 +633,24 @@ static wycc_high_bit(long itm) {
     return tmpb;
 }
 
+static void wycc_obj_free(wycc_obj* itm) {
+    itm->ptr = obj_free_list;
+    itm->typ = Wy_None;
+    obj_free_list = itm;
+}
+
+static void wycc_obj_free_bump() {
+    wycc_obj *array;
+    wycc_obj *itm;
+    int idx;
+
+    array = (wycc_obj *) calloc(1024, sizeof(wycc_obj));
+    for (idx= 0; idx <1024 ; idx++) {
+	itm = &(array[idx]);
+	wycc_obj_free(itm);
+    }
+}
+
 /* -------------------------------
  *  Routines for basic support general infrastructure
  * -------------------------------
@@ -843,9 +865,15 @@ static int wycc_type_ishomo(wycc_obj *itm) {
  * ** switch to C++ and inline this function.
  */
 static wycc_obj* wycc_box_new(int typ, void* ptr) {
-   wycc_obj* ans;
+    wycc_obj* ans;
 
-    ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    //ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
+    ans = obj_free_list;
+    if (ans == NULL) {
+	wycc_obj_free_bump();
+	ans = obj_free_list;
+    }
+    obj_free_list = ans->ptr;
     ans->typ = typ;
     ans->cnt = 1;
     ans->ptr = ptr;
@@ -992,15 +1020,18 @@ wycc_obj* wycc_box_byte(int x) {
  */
 wycc_obj* wycc_box_ref(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc_box_ref");
-    //wycc_obj* ans;
+    wycc_obj* alt;
 
     //ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
     //ans->typ = Wy_Ref;
     //ans->cnt = 1;
     //ans->ptr = (void*) itm;
     itm->cnt++;
+    alt = wycc_cow_obj(itm);
+    itm->cnt--;
     //return ans;
-    return wycc_box_new(Wy_Ref, (void*) itm);
+    //return wycc_box_new(Wy_Ref, (void*) itm);
+    return wycc_box_new(Wy_Ref, (void*) alt);
 }
 
 /*
@@ -2885,7 +2916,8 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     if (wycc_debug_flag) {
 	fprintf(stderr, "note: deallocing box for typ %d\n", typ);
     };
-    free(itm);
+    //    free(itm);
+    wycc_obj_free(itm);
     if (typ == Wy_None) {
 	fprintf(stderr, "note: deallocing box for typ %d\n", typ);
 	return (wycc_obj *) NULL;

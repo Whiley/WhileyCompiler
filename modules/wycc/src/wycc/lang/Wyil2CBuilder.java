@@ -345,7 +345,6 @@ public class Wyil2CBuilder implements Builder {
 	} 
 
 	private void writePostamble() {
-		String ans = "";
 		
 		if (this.initor_flg == 0) {
 			return;
@@ -758,25 +757,19 @@ public class Wyil2CBuilder implements Builder {
 		
 		//
 		public void writeComments() {
-			String tmp;
-			
-			//tmp = "// **** got here\n";
-			//bodyAddLine(tmp);
+
 			if (debugFlag) {
 				bodyAddLine(comments);
 			}
-
 			return;
 		}
 
 		public void typeParse(Type.FunctionOrMethod typ) {
-			//int cnt;
 			String ans = "";
 			String argl = "";
 			String sep = "";
 			
 			params = typ.params();
-			//cnt = params.size();
 			this.argc = params.size();
 			retType = typ.ret();
 			ans += "//              return type = '" + retType+ "'\n";
@@ -831,8 +824,6 @@ public class Wyil2CBuilder implements Builder {
 		//
 		public void write() {
 			String tmp;
-			//int ign;
-			//String ans = "";
 			int cnt;
 			
 			//System.err.println("milestone 5.3.1");
@@ -871,8 +862,7 @@ public class Wyil2CBuilder implements Builder {
 			String typ;
 			String nam = "";
 			Integer skip;
-			//int ign;
-			//private Map<String, String> decl;
+
 
 			skip = params.size();
 			for (Map.Entry<Integer, String> e : declsT.entrySet()) {
@@ -885,15 +875,17 @@ public class Wyil2CBuilder implements Builder {
 				} else {
 					nam = " X" + k;
 				}
-				ans = indent + typ + nam + " = (" + typ + ")0;\n";
-				bodyAddLine(ans);
+				ans = indent + typ + nam + " = (" + typ + ")0;";
+				bodyAddLineNL(ans);
 			}
-			ans = indent + "wycc_obj* Xc = (wycc_obj*)0;\n";
-			bodyAddLine(ans);
-			ans = indent + "wycc_obj* Xb = (wycc_obj*)0;\n";
-			bodyAddLine(ans);
-			ans = indent + "wycc_obj* Xa = (wycc_obj*)0;\n";
-			bodyAddLine(ans);
+			ans = indent + "wycc_obj* Xc = (wycc_obj*)0;";
+			bodyAddLineNL(ans);
+			ans = indent + "wycc_obj* Xb = (wycc_obj*)0;";
+			bodyAddLineNL(ans);
+			ans = indent + "wycc_obj* Xa = (wycc_obj*)0;";
+			bodyAddLineNL(ans);
+			ans = indent + "wycc_obj** Xi = (wycc_obj**)0;";
+			bodyAddLineNL(ans);
 
 			return;
 		}
@@ -988,7 +980,6 @@ public class Wyil2CBuilder implements Builder {
 
 		// generate C code for the wyil sequence, each wyil byte goes to writeBlockEntry
 		public void writeBody(Block bodIn, int idx) {
-			//int ign;
 			String tmp;
 			int cnt = -1;
 
@@ -1945,6 +1936,8 @@ public class Wyil2CBuilder implements Builder {
 			// Xa gets the value of the unshared (mutable) form of Xb
 			// Here backFix gets the C code to update the (soon to be) previous level
 			// 
+			// a Reference is not only mutable, but is expected to track the mutations (COWs)
+			// to which it referes.
 			//
 			//tmp = "// HELP needed for Update\n";
 			//bodyAddLine(tmp);
@@ -1981,30 +1974,36 @@ public class Wyil2CBuilder implements Builder {
 			fidx = 0;
 			backFix = tnam1 + " = Xa;";
 			lin = "Xb = " + tnam1 + ";";
-			tmp = indent + lin + tag + "\n";
-			this.mbodyAddLine(tmp);
+			tmp = indent + lin + tag;
+			this.mbodyAddLineNL(	tmp	);
+			lin = "Xi = &(" + tnam1 + ");";
+			tmp = indent + lin + tag;
+			this.mbodyAddLineNL(	tmp	);
+			
 			while (idx > 0) {
 				lv = foo.next();
 				if (lv instanceof Code.ReferenceLVal) {
 					lin = "Xc = Xb;";
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin + tag;
+					tmp += " /* a */ ";
+					this.mbodyAddLineNL(tmp);
 					
 				} else {
 					lin = "Xa = wycc_cow_obj(Xb);";
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin + tag;
+					tmp += " /* b */ ";
+					this.mbodyAddLineNL(tmp);
 					lin = "if (Xb != Xa) {";
-					tmp = indent + lin + "\n";
-					this.mbodyAddLine(tmp);
-					tmp = indent + indent + backFix + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin;
+					this.mbodyAddLineNL(tmp);
+					tmp = indent + indent + backFix;
+					this.mbodyAddLineNL(tmp);
 					lin = "};";
-					tmp = indent + lin + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin;
+					this.mbodyAddLineNL(tmp);
 					lin = "Xc = Xa;";
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin + tag;
+					this.mbodyAddLineNL(tmp);
 				}
 			
 				if (lv instanceof Code.ListLVal) {
@@ -2016,8 +2015,9 @@ public class Wyil2CBuilder implements Builder {
 					} else {
 						lin =  "Xb = wyil_update_list(Xc, X" + ofs + ", X" + rhs + ");";
 					}
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin + tag;
+					tmp += " /* c */ ";
+					this.mbodyAddLineNL(tmp);
 					
 				} else if (lv instanceof Code.StringLVal) {
 					ofs = cod.operands[iidx];
@@ -2029,21 +2029,25 @@ public class Wyil2CBuilder implements Builder {
 						//lin = tnam1 + " = wyil_update_string(" + tnam1 + ", X" + ofs + ", X" + rhs + ");";
 						lin = "Xb = wyil_update_string(Xc, X" + ofs + ", X" + rhs + ");";
 					}
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin + tag;
+					tmp += " /* d */ ";
+					this.mbodyAddLineNL(tmp);
 
 				} else if (lv instanceof Code.ReferenceLVal) {
 					if (idx > 1) {
 						lin = "Xb = wyil_dereference(Xc);" + tag;
-						backFix = "Xb = wycc_box_ref(Xa);" + tag;
+						//backFix = "Xb = wycc_box_ref(Xa);" + tag;
+						//backFix = "/* ugly no-op */;" + tag;
+						backFix = "if (Xi) { *Xi = wycc_box_ref(Xa); Xi = (wycc_obj**)0;};" + tag;
 					} else {
 						//lin = tnam1 + " = wyil_update_string(" + tnam1 + ", X" + ofs + ", X" + rhs + ");";
 						//lin = "Xb = wyil_update_string(Xc, X" + ofs + ", X" + rhs + ");";
 						error += "ERROR cannot do updates at a reference\n";
 						return;
 					}
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin + tag;
+					tmp += " /* e */ ";
+					this.mbodyAddLineNL(tmp);
 
 				} else if (lv instanceof Code.MapLVal) {
 					ofs = cod.operands[iidx];
@@ -2055,8 +2059,9 @@ public class Wyil2CBuilder implements Builder {
 						//lin = "wycc_map_add(X" + targ + ", X" + ofs + ", X" + rhs + ");";
 						lin = "wycc_map_add(Xc, X" + ofs + ", X" + rhs + ");";
 					}
-					tmp = indent + lin + tag + "\n";
-					this.mbodyAddLine(tmp);
+					tmp = indent + lin + tag;
+					tmp += " /* f */ ";
+					this.mbodyAddLineNL(tmp);
 					
 				} else if(lv instanceof Code.RecordLVal) {
 					Code.RecordLVal l = (Code.RecordLVal) lv;
@@ -2072,8 +2077,9 @@ public class Wyil2CBuilder implements Builder {
 						} else {
 							lin = "wycc_record_fill(Xc, " + ofs + ", X" + rhs + ");";
 						}
-						tmp = indent + lin + tag + "\n";
-						this.mbodyAddLine(tmp);
+						tmp = indent + lin + tag;
+						tmp += " /* g */ ";
+						this.mbodyAddLineNL(tmp);
 					} else {
 						//error += "ERROR cannot yet do updates by name for record unions." + tnam2 + "\n";
 						if (idx > 1) {
@@ -2082,8 +2088,9 @@ public class Wyil2CBuilder implements Builder {
 						} else {
 							lin = "wycc_record_put_nam(Xc, \"" + tnam2 + "\", X" + rhs + ");";
 						}
-						tmp = indent + lin + tag + "\n";
-						this.mbodyAddLine(tmp);
+						tmp = indent + lin + tag;
+						tmp += " /* h */ ";
+						this.mbodyAddLineNL(tmp);
 					}
 					fidx += 1;
 				} else {
