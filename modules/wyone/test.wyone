@@ -8,7 +8,8 @@ include "examples/numerics.wyone"
 reduce Equals{Sum[int n, {|AExpr... xs|}], Expr y}:
     => Equals{Num(0), Sum[n,xs ++ Mul[-1,{|y|}]]}, if !(y is Num(int) && *y == 0)
 
-// reduce And{Equals{Num(int n), Sum{|Var(string s) v, Expr... es|}}, BExpr... rest}:
-//     => let nes = Mul{|Num(-1),Sum(es)|},
-//            nrest = { r[v\nes] | r in rest }
-//        in And (Assign[s,nes] ++ nrest), if n == 0
+// rearrange linear equation (without division)
+reduce And{Equals{Num(int n1), Sum[int n2, {|Mul[int n3, {|Var(string s) v|} t], Expr... es|}]}, BExpr... rest}:
+     => let nes = Mul[-1,{|Sum[n2, es]|}],
+            nrest = { r[v\nes] | r in rest }
+        in And (Assign[s,nes] ++ nrest), if n1 == 0 && n3 == 1 && no {e in es | e is Mul[int,{|AExpr...|}] && (*e)[1] == t}

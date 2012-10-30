@@ -34,6 +34,9 @@ reduce Sum[int n, {|AExpr x, AExpr... rest|}]:
 reduce Sum[int x, {|Num(int y), AExpr... rest|}]:
     => Sum[x+y,rest]
 
+reduce Sum[int n, {|Mul[int x, * xs], Mul[int y, * ys], AExpr... zs|}]:
+    => Sum[n, Mul[x+y, xs] ++ zs], if xs == ys
+
 reduce Sum[int x, {|Sum[int y, {|AExpr... ys|}], AExpr... xs|}]:
     => Sum[x+y, xs ++ ys]
 
