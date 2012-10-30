@@ -1,7 +1,3 @@
-term Num(real)
-term Div[Expr,Expr]
-class Expr as Num | Div
-
-reduce Div[Num(real x), Num(real y)]:
-    => Num(x / y)
+include "examples/numerics.wyone"
+include "examples/equations.wyone"
 

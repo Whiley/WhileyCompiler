@@ -108,7 +108,7 @@ public class PrettyAutomataReader {
 		}
 		
 		if(lookahead == '.') {
-			next();
+			sb.append((char) next());
 			while ((lookahead = lookahead()) != -1
 					&& Character.isDigit((char) lookahead)) {
 				sb.append((char) next());

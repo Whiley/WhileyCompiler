@@ -1,25 +1,33 @@
-// This file is part of the Whiley-to-Java Compiler (wyjc).
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
 //
-// The Whiley-to-Java Compiler is free software; you can redistribute 
-// it and/or modify it under the terms of the GNU General Public 
-// License as published by the Free Software Foundation; either 
-// version 3 of the License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
 //
-// The Whiley-to-Java Compiler is distributed in the hope that it 
-// will be useful, but WITHOUT ANY WARRANTY; without even the 
-// implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
-// PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public 
-// License along with the Whiley-to-Java Compiler. If not, see 
-// <http://www.gnu.org/licenses/>
-//
-// Copyright 2010, David James Pearce. 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package wyone.util;
 
 import java.math.BigInteger;
 import java.math.BigDecimal;
+import java.util.Random;
 
 public final class BigRational extends Number implements Comparable<BigRational> {	
 	private static final BigRational[] cache = new BigRational[20];
@@ -194,9 +202,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
      */ 
 	public String toString() {		
 		if(isInteger()) {
-			return numerator.toString();
+			return numerator.toString() + ".0";
 		} else {
-
 			BigDecimal bd = round(10);
 			BigRational br = new BigRational(bd);
 			if (this.equals(br)) {
@@ -318,6 +325,11 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return new BigRational(num);
 	}
 	
+	public BigRational intRemainder(final BigRational r) {
+		BigInteger num = numerator.remainder(r.numerator);		
+		return new BigRational(num);
+	}
+	
 	// =========================================================
 	// ========================= OTHER =========================
 	// =========================================================
@@ -383,9 +395,38 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		}
 	}
 	
-	public static void main(String[] args) {
-		BigRational r = new BigRational(10,5);
-		System.out.println("GOT: " + r);
-		System.out.println("NOW: " + r.negate());
+
+	public static BigRational valueOf(double d) {
+		// Check against infinities and NAN
+		if(Double.isInfinite(d) || Double.isNaN(d)) {
+			throw new NumberFormatException("BigInteger.valueOf() --- parameter cannot be infinity or NAN");
+		}
+		long l = Double.doubleToLongBits(d);
+		
+		// Pull out IEEE754 info
+		boolean sign = (l&0x8000000000000000L) != 0;
+		int exponent = (int) ((l & 0x7FF0000000000000L) >> 52);		
+		long numerator = l & 0xFFFFFFFFFFFFFL;	
+		final long denominator = 0x10000000000000L;
+		boolean denormalised = exponent == 0;
+		if(denormalised) {
+			exponent = -1022;
+		} else {
+			exponent = exponent - 1023; // remove bias
+		}
+		
+		BigRational base = valueOf(numerator, denominator).add(BigInteger.ONE);
+		if (sign) {
+			base = base.negate();
+		}
+		if(exponent >= 0) {
+			// positive exponent so multiply
+			BigInteger exp = BigInteger.ONE.shiftLeft(exponent);
+			return base.multiply(exp);
+		} else {
+			// negative exponent so divide
+			BigInteger exp = BigInteger.ONE.shiftLeft(-exponent);
+			return base.divide(exp);
+		}
 	}
 }
