@@ -1,0 +1,13 @@
+include "logic.wyone"
+include "numerics.wyone"
+
+reduce Equals{|Sum[int n, {|AExpr... xs|}], Expr y|}:
+    => Equals{|Num(0), Sum[n,xs ++ Mul[-1,{|y|}]]|}, if !(y is Num(int) && *y == 0)
+
+// rearrange linear equation (without division)
+// NOTE: must be an inference rule at the moment for annoying technical reasons.
+// NOTE: can't do anything useful with non-variable terms :(
+infer And{Equals{|Num(int n1), Sum[int n2, {|Mul[int n3, {|Var(string s) v|} t], Expr... es|}]|}, BExpr... rest}:
+     => let nes = Mul[-1,{|Sum[n2, es]|}],
+            nrest = { r[v\nes] | r in rest }
+        in And (Assign[s,nes] ++ nrest), if n1 == 0 && n3 == 1
