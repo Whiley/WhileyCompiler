@@ -585,22 +585,28 @@ public class VerificationCheck implements Transform {
 	
 	protected void transform(Code.BinArithOp code, Block.Entry entry,
 			 Branch branch) {
+		Automaton automaton = branch.automaton;
 		int lhs = branch.read(code.leftOperand);
 		int rhs = branch.read(code.rightOperand);
 		int result;
 		
 		switch(code.kind) {
 		case ADD:
-			result = Sum(branch.automaton, lhs, rhs);
+			result = Sum(automaton, automaton.add(new Automaton.Int(0)),
+					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
 		case SUB:
-			result = Sum(branch.automaton, lhs, Neg(branch.automaton, rhs));
+			result = Sum(automaton, automaton.add(new Automaton.Int(0)), 
+					automaton.add(new Automaton.Bag(lhs, Mul(automaton,
+							automaton.add(new Automaton.Int(-1)),
+							automaton.add(new Automaton.Bag(rhs))))));
 			break;
 		case MUL:
-			result = Mul(branch.automaton, lhs, rhs);
+			result = Mul(automaton, automaton.add(new Automaton.Int(1)),
+					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
 		case DIV:
-			result = Div(branch.automaton, lhs, rhs);			
+			result = Div(automaton, lhs, rhs);			
 			break;	
 		default:
 			internalFailure("unknown binary operator",filename,entry);
@@ -762,8 +768,10 @@ public class VerificationCheck implements Transform {
 
 	protected void transform(Code.UnArithOp code, Block.Entry entry,
 			 Branch branch) {
+		Automaton automaton = branch.automaton;
 		if(code.kind == Code.UnArithKind.NEG) {
-			int result = Neg(branch.automaton, branch.read(code.operand));
+			int result = Mul(automaton, automaton.add(new Automaton.Int(-1)),
+					automaton.add(new Automaton.Bag(branch.read(code.operand))));
 			branch.write(code.target, result);
 		} else {
 			// TODO
