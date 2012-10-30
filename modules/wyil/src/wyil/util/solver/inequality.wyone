@@ -15,7 +15,7 @@ reduce LessThan[Var x, Var y]:
     => False, if x == y
 
 reduce Not(LessThan[* x, * y]):
-    => Or{Equals{x,y},LessThan[y,x]}
+    => Or{Equals{|x,y|},LessThan[y,x]}
 
 // infer And{LessThan[Num(int i) n, Sum{|Var(string x), AExpr... xs|}] ieq1, LessThan[Num(int j), Sum{|Mul{|Num(int f),Var(string y), AExpr...|},AExpr... ys|}] ieq2, BExpr... rest}:
 //     => And ({ieq1,ieq2,LessThan[n,Sum (xs ++ ys)]} ++ rest), if i == 0 && j == 0 && x == y && f < 0
