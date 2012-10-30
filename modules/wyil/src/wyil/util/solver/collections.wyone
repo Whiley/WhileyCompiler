@@ -19,7 +19,7 @@ reduce LengthOf(ListVal[Value... ls]):
     => Num(|ls|)
 
 reduce LengthOf(List[Expr... ls]):
-    => Num(0.0+|ls|)
+    => Num(|ls|)
 
 reduce IndexOf[List[Expr... ls], Num(int idx)]:
     => ls[idx], if idx >= 0 && idx < |ls|
