@@ -15,9 +15,9 @@ reduce Equation(Num(real n)):
 // NOTE: must be an inference rule at the moment for annoying technical reasons.
 // NOTE: can't do anything useful with non-variable terms :(
 infer And{Equation(Sum[real n1, {|Mul[real n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
-     => let nes = Mul[-1.0,{|Sum[n1, es]|}],
+     => let nes = Mul[-1.0/n2,{|Sum[n1, es]|}],
             nrest = { r[v\nes] | r in rest }
-        in And (Assign[s,nes] ++ nrest), if n2 == 1.0
+        in And (Assign[s,nes] ++ nrest)
 
 // ====================================================================
 // Expressions & Values

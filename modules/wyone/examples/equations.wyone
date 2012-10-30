@@ -1,13 +1,27 @@
 include "logic.wyone"
 include "numerics.wyone"
 
-reduce Equals{|Sum[int n, {|AExpr... xs|}], Expr y|}:
-    => Equals{|Num(0), Sum[n,xs ++ Mul[-1,{|y|}]]|}, if !(y is Num(int) && *y == 0)
+term Equation(Sum)
+
+// reduce equalities involving arithmetic constructs to equations
+reduce Equals{|Sum[real n, {|AExpr... xs|}], Expr y|}:
+    => Equation(Sum[n,xs ++ Mul[-1.0,{|y|}]])
+
+reduce Equation(Num(real n)):
+    => True, if n == 0.0
+    => False
 
 // rearrange linear equation (without division)
 // NOTE: must be an inference rule at the moment for annoying technical reasons.
 // NOTE: can't do anything useful with non-variable terms :(
-infer And{Equals{|Num(int n1), Sum[int n2, {|Mul[int n3, {|Var(string s) v|} t], Expr... es|}]|}, BExpr... rest}:
-     => let nes = Mul[-1,{|Sum[n2, es]|}],
+infer And{Equation(Sum[real n1, {|Mul[real n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
+     => let nes = Mul[-1.0/n2,{|Sum[n1, es]|}],
             nrest = { r[v\nes] | r in rest }
-        in And (Assign[s,nes] ++ nrest), if n1 == 0 && n3 == 1
+        in And (Assign[s,nes] ++ nrest)
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+class BExpr as Equation | ...
+class Expr as Equation | ...
