@@ -946,6 +946,8 @@ public class JavaFileWriter {
 			writeTypeTest((Type.Any)type,worklist);
 		} else if (type instanceof Type.Int) {
 			writeTypeTest((Type.Int)type,worklist);
+		} else if (type instanceof Type.Real) {
+			writeTypeTest((Type.Real)type,worklist);
 		} else if (type instanceof Type.Strung) {
 			writeTypeTest((Type.Strung)type,worklist);
 		} else if (type instanceof Type.Ref) {
@@ -977,6 +979,16 @@ public class JavaFileWriter {
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
 		myOut(2, "return state.kind == Automaton.K_INT;");
+		myOut(1, "}");
+		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Real type, HashSet<Type> worklist) {
+		String mangle = type2HexStr(type);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(Automaton.State state, Automaton automaton) {");		
+		myOut(2, "return state.kind == Automaton.K_REAL;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -1226,8 +1238,9 @@ public class JavaFileWriter {
 			return "Object";
 		} else if (type instanceof Type.Int) {
 			return "Automaton.Int";
+		} else if (type instanceof Type.Real) {
+			return "Automaton.Real";
 		} else if (type instanceof Type.Bool) {
-			// FIXME: not sure what to do here?
 			return "boolean";
 		} else if (type instanceof Type.Strung) {
 			return "Automaton.Strung";

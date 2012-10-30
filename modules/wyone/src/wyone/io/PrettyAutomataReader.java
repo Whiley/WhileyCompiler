@@ -4,6 +4,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 import wyone.core.*;
+import wyone.util.BigRational;
 
 public class PrettyAutomataReader {	
 	private final InputStream input;
@@ -41,7 +42,7 @@ public class PrettyAutomataReader {
 			case '{':
 				return parseCompound(automaton);
 			case '-':
-				return parseInteger(automaton,true);
+				return parseNumber(automaton,true);
 			case '0':
 			case '1':
 			case '2':
@@ -52,7 +53,7 @@ public class PrettyAutomataReader {
 			case '7':
 			case '8':
 			case '9':
-				return parseInteger(automaton,false);
+				return parseNumber(automaton,false);
 			case '\"':
 				return parseString(automaton);
 			default:
@@ -94,7 +95,7 @@ public class PrettyAutomataReader {
 		return r;
 	}
 	
-	protected int parseInteger(Automaton automaton, boolean negative)
+	protected int parseNumber(Automaton automaton, boolean negative)
 			throws IOException, SyntaxError {		
 		if(negative) {
 			match('-');
@@ -106,14 +107,29 @@ public class PrettyAutomataReader {
 			sb.append((char) next());
 		}
 		
-		// FIXME: should support arbitrary sized ints
-		int val = Integer.parseInt(sb.toString());
-	
-		if(negative) {
-			val = -val;
+		if(lookahead == '.') {
+			next();
+			while ((lookahead = lookahead()) != -1
+					&& Character.isDigit((char) lookahead)) {
+				sb.append((char) next());
+			}	
+			BigRational val = new BigRational(sb.toString());
+
+			if(negative) {
+				val = val.negate();
+			}
+
+			return automaton.add(new Automaton.Real(val));
+
+		} else {
+			BigInteger val = new BigInteger(sb.toString());
+
+			if(negative) {
+				val = val.negate();
+			}
+
+			return automaton.add(new Automaton.Int(val));
 		}
-		
-		return automaton.add(new Automaton.Int(BigInteger.valueOf(val)));
 	}
 	
 	protected int parseString(Automaton automaton)

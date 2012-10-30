@@ -28,6 +28,8 @@ package wyone.core;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyone.util.BigRational;
+
 /**
  * <p>
  * A finite-state automaton for representing wyone objects. This is a machine
@@ -656,6 +658,10 @@ public final class Automaton {
 			return false;
 		}
 
+		public final Constant<T> clone() {
+			return this;
+		}
+
 		public int hashCode() {
 			return value.hashCode() * kind;
 		}
@@ -678,11 +684,6 @@ public final class Automaton {
 			super(K_INT, new BigInteger(str));
 		}
 		
-		public Constant clone() {
-			// TODO: do we really need a clone here?
-			return new Int(value);
-		}
-
 		public int intValue() {
 			return value.intValue();
 		}
@@ -712,14 +713,51 @@ public final class Automaton {
 		}
 	}
 	
+	public static final class Real extends Constant<BigRational> implements Comparable<Real> {
+		public Real(BigRational value) {
+			super(K_REAL, value);
+		}
+
+		public Real(long value) {
+			super(K_REAL,BigRational.valueOf(value));
+		}
+		
+		public Real(String str) {
+			super(K_REAL, new BigRational(str));
+		}
+
+		public int intValue() {
+			return value.intValue();
+		}
+
+		public int compareTo(Real rhs) {
+			return value.compareTo(rhs.value);
+		}
+		
+		public Real add(Real x) {
+			return new Real(value.add(x.value));
+		}
+		
+		public Real subtract(Real x) {
+			return new Real(value.subtract(x.value));
+		}
+		
+		public Real multiply(Real x) {
+			return new Real(value.multiply(x.value));
+		}
+		
+		public Real divide(Real x) {
+			return new Real(value.divide(x.value));
+		}
+		
+		public Real negate() {
+			return new Real(value.negate());
+		}
+	}
+	
 	public static final class Strung extends Constant<String> {
 		public Strung(String value) {
 			super(K_STRING, value);
-		}
-
-		public Strung clone() {
-			// TODO: do we really need a clone here?
-			return new Strung(value);
 		}
 	}
 	
@@ -1098,11 +1136,12 @@ public final class Automaton {
 	
 	public static final int K_VOID = -1;
 	public static final int K_INT = -2;
-	public static final int K_STRING = -3;
-	public static final int K_LIST = -4;
-	public static final int K_BAG = -5;
-	public static final int K_SET = -6;
-	public static final int K_FREE = -7;
+	public static final int K_REAL = -3;
+	public static final int K_STRING = -4;
+	public static final int K_LIST = -5;
+	public static final int K_BAG = -6;
+	public static final int K_SET = -7;
+	public static final int K_FREE = -8;
 	
 	
 	/**
