@@ -1,9 +1,5 @@
-include "examples/logic.wyone"
-include "examples/numerics.wyone"
-
-// ====================================================================
-// Equals (rearrangement)
-// ====================================================================
+#include "logic.wyone"
+#include "numerics.wyone"
 
 reduce Equals{Sum[int n, {|AExpr... xs|}], Expr y}:
     => Equals{Num(0), Sum[n,xs ++ Mul[-1,{|y|}]]}, if !(y is Num(int) && *y == 0)
