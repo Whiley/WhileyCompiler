@@ -1,52 +1,41 @@
 include "variables.wyone"
 
 // ====================================================================
-// Sum
-// ====================================================================
-
-term Sum{|Expr...|}
-
-reduce Sum{|Expr e|}:
-    => e
-
-reduce Sum{|Num(int x), Expr... rest|}:
-    => Sum(rest), if x == 0 && |rest| > 0
-
-reduce Sum{|Num(int x), Num(int y), Expr... rest|}:
-    => Sum (Num(x+y) ++ rest)
-
-reduce Sum{|Expr x, Expr y, Expr... rest|}:
-    => Sum (Mul{|Num(2),y|} ++ rest), if x == y
-
-reduce Sum{|Sum{|Expr... xs|}, Expr... ys|}:
-    => Sum (xs ++ ys)
-
-reduce Sum{|Mul{|Num(int x), Expr... xs|}, Mul{|Num(int y), Expr... ys|}, Expr... zs|}:
-    => let m = Mul(Num(x+y) ++ xs)
-       in Sum (m ++ zs), if xs == ys
-
-// ====================================================================
 // Mul
 // ====================================================================
 
-term Mul{|Expr...|}
+term Mul[int,{|AExpr...|}]
 
-reduce Mul{|Expr e|}:
-    => e
+reduce Mul[int n, {|AExpr... rest|}]:
+    => Num(n), if n == 0 || |rest| == 0
 
-reduce Mul{|Num(int x), Expr... rest|}:
-    => Mul(rest), if x == 1 && |rest| > 0
-    => Num(0), if x == 0
+reduce Mul[int x, {|Num(int y), AExpr... rest|}]:
+    => Mul[x*y,rest]
 
-reduce Mul{|Num(int x), Num(int y), Expr... rest|}:
-    => Mul (Num(x*y) ++ rest)
+reduce Mul[int n1, {|Mul[int n2,{|AExpr... xs|}], AExpr... ys|}]:
+    => Mul[n1*n2,(xs ++ ys)]
 
-reduce Mul{|Mul{|Expr... xs|}, Expr... ys|}:
-    => Mul (xs ++ ys)
-
-reduce Mul{|Sum{|Expr... xs|}, Expr... ys|}:
-    => let ys = {| Mul(x ++ ys) | x in xs |}
+reduce Mul[int n1, {|Sum{|AExpr... xs|}, AExpr... ys|}]:
+    => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
        in Sum(ys)
+
+// ====================================================================
+// Sum
+// ====================================================================
+
+term Sum[int,{|AExpr...|}]
+
+reduce Sum[int n, {||}]:
+    => Num(n)
+
+reduce Sum[int n, {|AExpr x, AExpr... rest|}]:
+    => Sum [n,Mul[1,{|x|}] ++ rest], if !(x is Mul || x is Sum || x is Num)
+
+reduce Sum[int x, {|Num(int y), AExpr... rest|}]:
+    => Sum[x+y,rest]
+
+reduce Sum[int x, {|Sum[int y, {|AExpr... ys|}], AExpr... xs|}]:
+    => Sum[x+y, xs ++ ys]
 
 // ====================================================================
 // Arithmetic Exprssions
@@ -54,7 +43,8 @@ reduce Mul{|Sum{|Expr... xs|}, Expr... ys|}:
 
 term Num(int)
 
-class AExpr as Num | Var | Sum | Mul
+class Value as Num | ...
+class AExpr as Num | Var | Sum | Mul | ...
    
 // ====================================================================
 // General Expressions

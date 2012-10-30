@@ -1,67 +1,14 @@
-include "examples/variables.wyone"
+include "examples/logic.wyone"
+include "examples/numerics.wyone"
 
 // ====================================================================
-// Mul
+// Equals (rearrangement)
 // ====================================================================
 
-term Mul{|Expr...|}
-term Term[int,{|Expr...|}]
+// reduce Equals{Sum{|AExpr... xs|}, Expr y}:
+//     => Equals{Num(0), Sum(xs ++ Mul{|Num(-1),y|})}, if !(y is Num(int) && *y == 0)
 
-reduce Mul{|Num n|}:
-    => n
-
-reduce Mul{|Num(int x), Num(int y), Expr... rest|}:
-    => Mul (Num(x*y) ++ rest)
-
-reduce Mul{|Mul{|Expr... xs|}, Expr... ys|}:
-    => Mul (xs ++ ys)
-
-reduce Mul{|Sum{|Expr... xs|}, Expr... ys|}:
-    => let ys = {| Mul(x ++ ys) | x in xs |}
-       in Sum(ys)
-
-reduce Mul{|Num(int x), Expr... es|}:
-    => Num(0), if x == 0
-    => Term[x,es], if |es| > 0 && no { e in es | e is Num }
-
-// ====================================================================
-// Sum
-// ====================================================================
-
-term Sum{|Expr...|}
-
-reduce Sum{|Expr x, TExpr... rest|}:
-    => Sum (Mul{|Num(1),x|} ++ rest), if !(x is Mul || x is Num)
-
-reduce Sum{|Num(int x), Num(int y), TExpr... rest|}:
-    => Sum (Num(x+y) ++ rest)
-
-reduce Sum{|Sum{|Expr... xs|}, TExpr... ys|}:
-    => Sum (xs ++ ys)
-
-// reduce Sum{|Mul{|Num(int x), Expr... xs|}, Mul{|Num(int y), Expr... ys|}, TExpr... zs|}:
-//     => let m = Mul(Num(x+y) ++ xs)
-//        in Sum (m ++ zs), if xs == ys
-
-// ====================================================================
-// Polynomial
-// ====================================================================
-term Poly[int,{Term...}]
-
-reduce Sum{|Num(int c), Term... rest|}:
-    => Poly[c,rest] // BROKEN!!
-
-// ====================================================================
-// Arithmetic Exprssions
-// ====================================================================
-
-term Num(int)
-
-class AExpr as Num | Var | Sum | Mul
-   
-// ====================================================================
-// General Expressions
-// ====================================================================
-
-class Expr as AExpr | ...
-class TExpr as Expr | Term
+// reduce And{Equals{Num(int n), Sum{|Var(string s) v, Expr... es|}}, BExpr... rest}:
+//     => let nes = Mul{|Num(-1),Sum(es)|},
+//            nrest = { r[v\nes] | r in rest }
+//        in And (Assign[s,nes] ++ nrest), if n == 0
