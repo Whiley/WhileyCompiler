@@ -4,20 +4,20 @@ include "numerics.wyone"
 term Equation(Sum)
 
 // reduce equalities involving arithmetic constructs to equations
-reduce Equals{|Sum[int n, {|AExpr... xs|}], Expr y|}:
-    => Equation(Sum[n,xs ++ Mul[-1,{|y|}]])
+reduce Equals{|Sum[real n, {|AExpr... xs|}], Expr y|}:
+    => Equation(Sum[n,xs ++ Mul[-1.0,{|y|}]])
 
-reduce Equation(Num(int n)):
-    => True, if n == 0
+reduce Equation(Num(real n)):
+    => True, if n == 0.0
     => False
 
 // rearrange linear equation (without division)
 // NOTE: must be an inference rule at the moment for annoying technical reasons.
 // NOTE: can't do anything useful with non-variable terms :(
-infer And{Equation(Sum[int n1, {|Mul[int n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
-     => let nes = Mul[-1,{|Sum[n1, es]|}],
+infer And{Equation(Sum[real n1, {|Mul[real n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
+     => let nes = Mul[-1.0,{|Sum[n1, es]|}],
             nrest = { r[v\nes] | r in rest }
-        in And (Assign[s,nes] ++ nrest), if n2 == 1
+        in And (Assign[s,nes] ++ nrest), if n2 == 1.0
 
 // ====================================================================
 // Expressions & Values

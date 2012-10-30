@@ -217,7 +217,7 @@ public class TypeInference {
 			return Type.T_BOOL;
 		} else if (v instanceof BigInteger) {
 			return Type.T_INT;
-		} else if (v instanceof Double) {
+		} else if (v instanceof BigRational) {
 			return Type.T_REAL;
 		} else if (v instanceof String) {
 			return Type.T_STRING;

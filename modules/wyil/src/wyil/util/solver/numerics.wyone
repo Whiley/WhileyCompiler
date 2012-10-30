@@ -4,18 +4,18 @@ include "variables.wyone"
 // Mul
 // ====================================================================
 
-term Mul[int,{|AExpr...|}]
+term Mul[real,{|AExpr...|}]
 
-reduce Mul[int n, {|AExpr... rest|}]:
-    => Num(n), if n == 0 || |rest| == 0
+reduce Mul[real n, {|AExpr... rest|}]:
+    => Num(n), if n == 0.0 || |rest| == 0
 
-reduce Mul[int x, {|Num(int y), AExpr... rest|}]:
+reduce Mul[real x, {|Num(real y), AExpr... rest|}]:
     => Mul[x*y,rest]
 
-reduce Mul[int n1, {|Mul[int n2,{|AExpr... xs|}], AExpr... ys|}]:
+reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
     => Mul[n1*n2,(xs ++ ys)]
 
-reduce Mul[int n1, {|Sum[int n2, {|AExpr... xs|}], AExpr... ys|}]:
+reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
     => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
        in Sum[n1*n2,ys]
 
@@ -29,28 +29,28 @@ term Div[AExpr,AExpr]
 // Sum
 // ====================================================================
 
-term Sum[int,{|AExpr...|}]
+term Sum[real,{|AExpr...|}]
 
-reduce Sum[int n, {||}]:
+reduce Sum[real n, {||}]:
     => Num(n)
 
-reduce Sum[int n, {|AExpr x, AExpr... rest|}]:
-    => Sum [n,Mul[1,{|x|}] ++ rest], if !(x is Mul || x is Sum || x is Num)
+reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
+    => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is Mul || x is Sum || x is Num)
 
-reduce Sum[int x, {|Num(int y), AExpr... rest|}]:
+reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
     => Sum[x+y,rest]
 
-reduce Sum[int n, {|Mul[int x, * xs], Mul[int y, * ys], AExpr... zs|}]:
+reduce Sum[real n, {|Mul[real x, * xs], Mul[real y, * ys], AExpr... zs|}]:
     => Sum[n, Mul[x+y, xs] ++ zs], if xs == ys
 
-reduce Sum[int x, {|Sum[int y, {|AExpr... ys|}], AExpr... xs|}]:
+reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
     => Sum[x+y, xs ++ ys]
 
 // ====================================================================
 // Arithmetic Exprssions
 // ====================================================================
 
-term Num(int)
+term Num(real)
 
 class Value as Num | ...
 class AExpr as Num | Var | Sum | Mul | ...

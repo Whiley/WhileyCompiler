@@ -83,6 +83,7 @@ public class JavaFileWriter {
 		myOut("import wyone.io.PrettyAutomataReader;");
 		myOut("import wyone.io.PrettyAutomataWriter;");
 		myOut("import wyone.core.*;");
+		myOut("import wyone.util.BigRational;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
@@ -189,6 +190,19 @@ public class JavaFileWriter {
 				myOut(1, "public final static int " + decl.type.name
 						+ "(Automaton automaton, BigInteger r0) {" );	
 				myOut(2,"int r1 = automaton.add(new Automaton.Int(r0));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(1,"}");
+			} else if(element instanceof Type.Real) {
+				// add two helpers
+				myOut(1, "public final static int " + decl.type.name 
+						+ "(Automaton automaton, long r0) {" );			
+				myOut(2,"int r1 = automaton.add(new Automaton.Real(r0));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(1,"}");
+				
+				myOut(1, "public final static int " + decl.type.name
+						+ "(Automaton automaton, BigRational r0) {" );	
+				myOut(2,"int r1 = automaton.add(new Automaton.Real(r0));");
 				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
 				myOut(1,"}");
 			} else if(element instanceof Type.Strung) {
@@ -548,6 +562,18 @@ public class JavaFileWriter {
 				rhs = "new Automaton.Int(" + bi.longValue() + ")";
 			} else {
 				rhs = "new Automaton.Int(\"" + bi.toString() + "\")";	
+			}
+			
+		} else if (v instanceof BigRational) {
+			BigRational br = (BigRational) v;
+			rhs = "new Automaton.Real(\"" + br.toString() + "\")";
+			if(br.isInteger()) {
+				long lv = br.longValue();
+				if(BigRational.valueOf(lv).equals(br)) {
+					// Yes, this will fit in a long value. Therefore, inline a
+					// long constant as this is faster.
+					rhs = "new Automaton.Real(" + lv + ")";
+				}
 			}
 			
 		} else {

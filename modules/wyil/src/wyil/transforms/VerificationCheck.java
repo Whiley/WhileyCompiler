@@ -33,7 +33,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import wyil.util.BigRational;
+import wyone.util.BigRational;
 import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
@@ -592,17 +592,17 @@ public class VerificationCheck implements Transform {
 		
 		switch(code.kind) {
 		case ADD:
-			result = Sum(automaton, automaton.add(new Automaton.Int(0)),
+			result = Sum(automaton, automaton.add(new Automaton.Real(0)),
 					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
 		case SUB:
-			result = Sum(automaton, automaton.add(new Automaton.Int(0)), 
+			result = Sum(automaton, automaton.add(new Automaton.Real(0)), 
 					automaton.add(new Automaton.Bag(lhs, Mul(automaton,
-							automaton.add(new Automaton.Int(-1)),
+							automaton.add(new Automaton.Real(-1)),
 							automaton.add(new Automaton.Bag(rhs))))));
 			break;
 		case MUL:
-			result = Mul(automaton, automaton.add(new Automaton.Int(1)),
+			result = Mul(automaton, automaton.add(new Automaton.Real(1)),
 					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
 		case DIV:
@@ -770,7 +770,7 @@ public class VerificationCheck implements Transform {
 			 Branch branch) {
 		Automaton automaton = branch.automaton;
 		if(code.kind == Code.UnArithKind.NEG) {
-			int result = Mul(automaton, automaton.add(new Automaton.Int(-1)),
+			int result = Mul(automaton, automaton.add(new Automaton.Real(-1)),
 					automaton.add(new Automaton.Bag(branch.read(code.operand))));
 			branch.write(code.target, result);
 		} else {
@@ -920,7 +920,7 @@ public class VerificationCheck implements Transform {
 			return b.value ? automaton.add(True) : automaton.add(False);
 		} else if(value instanceof wyil.lang.Constant.Byte) {
 			wyil.lang.Constant.Byte v = (wyil.lang.Constant.Byte) value;
-			return Num(branch.automaton, v.value);
+			return Num(branch.automaton, BigRational.valueOf(v.value));
 		} else if(value instanceof wyil.lang.Constant.Char) {
 			wyil.lang.Constant.Char v = (wyil.lang.Constant.Char) value;
 			// Simple, but mostly good translation
@@ -931,7 +931,11 @@ public class VerificationCheck implements Transform {
 			return automaton.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.Integer) {
 			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
-			return Num(branch.automaton, v.value);
+			return Num(branch.automaton, BigRational.valueOf(v.value));
+		} else if(value instanceof wyil.lang.Constant.Rational) {
+			wyil.lang.Constant.Rational v = (wyil.lang.Constant.Rational) value;
+			wyil.util.BigRational br = v.value;
+			return Num(branch.automaton, new BigRational(br.numerator(),br.denominator()));
 		} else if(value instanceof wyil.lang.Constant.Null) {
 			return automaton.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.List) {
@@ -949,10 +953,6 @@ public class VerificationCheck implements Transform {
 				vals[i++] = convert(c,elem,branch);
 			}
 			return Set(branch.automaton,vals);
-		} else if(value instanceof wyil.lang.Constant.Rational) {
-			wyil.lang.Constant.Rational v = (wyil.lang.Constant.Rational) value;
-			BigRational br = v.value;
-			return automaton.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.Record) {
 			Constant.Record vt = (Constant.Record) value;
 			return automaton.add(False); // TODO
