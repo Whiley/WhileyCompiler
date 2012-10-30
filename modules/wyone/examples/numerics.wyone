@@ -15,9 +15,9 @@ reduce Mul[int x, {|Num(int y), AExpr... rest|}]:
 reduce Mul[int n1, {|Mul[int n2,{|AExpr... xs|}], AExpr... ys|}]:
     => Mul[n1*n2,(xs ++ ys)]
 
-reduce Mul[int n1, {|Sum{|AExpr... xs|}, AExpr... ys|}]:
+reduce Mul[int n1, {|Sum[int n2, {|AExpr... xs|}], AExpr... ys|}]:
     => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
-       in Sum(ys)
+       in Sum[n1*n2,ys]
 
 // ====================================================================
 // Sum

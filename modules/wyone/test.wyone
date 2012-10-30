@@ -5,8 +5,8 @@ include "examples/numerics.wyone"
 // Equals (rearrangement)
 // ====================================================================
 
-// reduce Equals{Sum{|AExpr... xs|}, Expr y}:
-//     => Equals{Num(0), Sum(xs ++ Mul{|Num(-1),y|})}, if !(y is Num(int) && *y == 0)
+reduce Equals{Sum[int n, {|AExpr... xs|}], Expr y}:
+    => Equals{Num(0), Sum[n,xs ++ Mul[-1,{|y|}]]}, if !(y is Num(int) && *y == 0)
 
 // reduce And{Equals{Num(int n), Sum{|Var(string s) v, Expr... es|}}, BExpr... rest}:
 //     => let nes = Mul{|Num(-1),Sum(es)|},
