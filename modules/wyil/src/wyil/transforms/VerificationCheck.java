@@ -619,6 +619,7 @@ public class VerificationCheck implements Transform {
 	protected void transform(Code.Convert code, Block.Entry entry,
 			Branch branch) {
 		int result = branch.read(code.operand);
+		// TODO: actually implement some or all coercions?
 		branch.write(code.target, result);
 	}
 
