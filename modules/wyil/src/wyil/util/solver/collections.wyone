@@ -15,8 +15,11 @@ term Update[Expr,AExpr,Expr]
 reduce List[Value... xs]:
     => ListVal(xs)
 
+reduce LengthOf(ListVal[Value... ls]):
+    => Num(|ls|)
+
 reduce LengthOf(List[Expr... ls]):
-    => |ls|
+    => Num(0.0+|ls|)
 
 reduce IndexOf[List[Expr... ls], Num(int idx)]:
     => ls[idx], if idx >= 0 && idx < |ls|
@@ -36,7 +39,7 @@ reduce Set{Value... xs}:
     => SetVal(xs)
 
 reduce LengthOf(SetVal{Value... xs}):
-    => |xs|
+    => Num(|xs|)
 
 reduce ElementOf[Value e, SetVal{Value... es}]:
     => True, if e in es
