@@ -21,6 +21,21 @@ reduce LengthOf(ListVal[Value... ls]):
 reduce LengthOf(List[Expr... ls]):
     => Num((real) |ls|)
 
+reduce ElementOf[Value e1, ListVal[Value... es]]:
+    => True, if e1 in es
+    => False
+
+reduce ElementOf[Expr e1, ListVal[Value... es]]:
+    => False, if |es| == 0
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in Or(ns)
+
+reduce ElementOf[Expr e1, List[Expr... es]]:
+    => True, if e1 in es
+    => False, if |es| == 0
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in Or(ns)
+
 reduce IndexOf[List[Expr... ls], Num(int idx)]:
     => ls[idx], if idx >= 0 && idx < |ls|
 

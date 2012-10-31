@@ -382,25 +382,9 @@ public class VerificationCheck implements Transform {
 //				constraint = WFormulas.and(constraint,
 //						WTypes.subtypeOf(var, convert(forall.type.element())));
 //				
-//				if (forall.type instanceof Type.EffectiveList) {
-//					// We have to treat lists differently from sets because of the
-//					// way wyone handles list quantification. It's kind of annoying,
-//					// but there's not much we can do.
-//					WVariable index = WVariable.freshVar();
-//					constraint = WFormulas.and(constraint,
-//							WExprs.equals(var, new WListAccess(src,index)),
-//							WNumerics.lessThanEq(WNumber.ZERO, index),
-//							WNumerics.lessThan(index, new WLengthOf(src)),
-//							WTypes.subtypeOf(index, WIntType.T_INT));
-//					scopes.add(new ForScope(forall,end,src,index));
-				if (forall.type instanceof Type.EffectiveSet) {
-					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
-					constraints.add(ElementOf(branch.automaton, var, src));
-					scopes.add(new ForScope(forall,end,src,var));
-				} else if (forall.type instanceof Type.EffectiveMap) {
-					// TODO
-				}
-				
+				constraints.add(ElementOf(branch.automaton, var, src));
+				scopes.add(new ForScope(forall,end,src,var));
+								
 				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 
