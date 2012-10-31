@@ -271,7 +271,10 @@ public class TypeInference {
 			t = Type.T_INT;
 			break;
 		case NEG:
-			checkSubtype(Type.T_REAL, t, uop);
+			if(!(t instanceof Type.Int)) {
+				checkSubtype(Type.T_REAL, t, uop);										
+			}
+			
 			break;
 		case NOT:
 			checkSubtype(Type.T_BOOL, t, uop);
