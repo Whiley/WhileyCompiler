@@ -226,22 +226,31 @@ public class VerificationCheck implements Transform {
 	 */
 	private final class Branch {
 		public int pc;
+		
+		/**
+		 * The shift register is used to add an explicit shift onto the variable
+		 * indices. Essentially, register x is shifted by a certain amount to be
+		 * x+n, where n is the shifted amount.
+		 */
+		public final int registerShift;
 		public final int[] environment;
 		public final ArrayList<Scope> scopes;		
 		public final Automaton automaton;
 		private final ArrayList<Integer> constraints;
 
-		public Branch(int pc, int numVariables) {
+		public Branch(int pc, int numVariables, int registerShift) {
 			this.pc = pc;
+			this.registerShift = registerShift;
 			this.automaton = new Automaton(SCHEMA);
 			this.constraints = new ArrayList<Integer>();
 			this.environment = new int[numVariables];
 			this.scopes = new ArrayList<Scope>();
 		}
 
-		private Branch(int pc, int[] environment, List<Scope> scopes,
+		private Branch(int pc, int[] environment, int registerShift, List<Scope> scopes,
 				List<Integer> constraints, Automaton automaton) {
 			this.pc = pc;
+			this.registerShift = registerShift;
 			this.automaton = new Automaton(automaton);
 			this.constraints = new ArrayList<Integer>(constraints);
 			this.environment = environment.clone();
@@ -249,7 +258,7 @@ public class VerificationCheck implements Transform {
 		}
 		
 		public Branch clone() {
-			return new Branch(pc, environment, scopes, constraints, automaton);
+			return new Branch(pc, environment, registerShift, scopes, constraints, automaton);
 		}
 
 		/**
@@ -299,10 +308,11 @@ public class VerificationCheck implements Transform {
 		}
 		
 		public int read(int register) {
-			return Var(automaton, register + "$" + environment[register]);
+			return Var(automaton, (register + registerShift) + "$" + environment[register]);
 		}
 
 		public void write(int lhs, int rhs) {
+			lhs += registerShift;
 			int nval = environment[lhs] + 1;
 			environment[lhs] = nval;
 			constraints.add(Equals(automaton, Var(automaton, lhs + "$" + nval),
