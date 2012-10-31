@@ -393,13 +393,13 @@ public class VerificationCheck implements Transform {
 //							WNumerics.lessThan(index, new WLengthOf(src)),
 //							WTypes.subtypeOf(index, WIntType.T_INT));
 //					scopes.add(new ForScope(forall,end,src,index));
-//				} else if (forall.type instanceof Type.EffectiveSet) {
-//					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
-//					constraint = WFormulas.and(constraint, WSets.elementOf(var, src));
-//					scopes.add(new ForScope(forall,end,src,var));
-//				} else if (forall.type instanceof Type.EffectiveMap) {
-//					// TODO
-//				}
+				if (forall.type instanceof Type.EffectiveSet) {
+					Type.EffectiveSet es = (Type.EffectiveSet) forall.type;
+					constraints.add(ElementOf(branch.automaton, var, src));
+					scopes.add(new ForScope(forall,end,src,var));
+				} else if (forall.type instanceof Type.EffectiveMap) {
+					// TODO
+				}
 				
 				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
