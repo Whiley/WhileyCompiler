@@ -157,7 +157,6 @@ public class VerificationCheck implements Transform {
 			} else {
 				System.err.println("METHOD: " + fmt.ret() + " " + method.name() + "(" + paramString + ")");
 			}
-			System.err.println("============================================");
 		}
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
@@ -285,7 +284,7 @@ public class VerificationCheck implements Transform {
 		 * 
 		 * @return
 		 */
-		public boolean assertTrue(int test) {
+		public boolean assertTrue(int test, Block.Entry entry) {
 			try {
 				Automaton tmp = new Automaton(automaton);
 				int root = And(tmp,constraints);
@@ -293,9 +292,11 @@ public class VerificationCheck implements Transform {
 				int mark = tmp.mark(root);
 				
 				if(debug) {
-					
-					System.err.print("Line ??");
-					System.err.println("\n--------------------------------------------");
+					Attribute.Source src = entry.attribute(Attribute.Source.class);
+					System.err.println("============================================");
+					if(src != null) {
+						System.err.print(src.line + ":");
+					} 					
 					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);		
 				}
 												
@@ -404,28 +405,27 @@ public class VerificationCheck implements Transform {
 	protected Branch transform(boolean assumes, Block body, Branch branch,
 			ArrayList<Branch> branches) {
 	
-		int pc = branch.pc;
 		Automaton constraint = branch.automaton;		
 		ArrayList<Integer> constraints = branch.constraints;
 		ArrayList<Scope> scopes = branch.scopes;
 		int[] environment = branch.environment;
 		
 		int bodySize = body.size();		
-		for (int i = pc; i != bodySize; ++i) {	
+		for (; branch.pc != bodySize; ++branch.pc) {	
 			//constraint = exitScope(constraint,environment,scopes,i);
 			
-			Block.Entry entry = body.get(i);			
+			Block.Entry entry = body.get(branch.pc);			
 			Code code = entry.code;
 			
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
-				i = findLabel(i,g.target,body);					
+				branch.pc = findLabel(branch.pc,g.target,body);					
 			} else if(code instanceof Code.If) {
 				Code.If ifgoto = (Code.If) code;
 				int test = buildTest(ifgoto.op, entry, ifgoto.leftOperand,
 						ifgoto.rightOperand, branch);
 				Branch trueBranch = branch.clone();
-				trueBranch.pc = findLabel(i,ifgoto.target,body)	;
+				trueBranch.pc = findLabel(branch.pc,ifgoto.target,body)	;
 				trueBranch.constraints.add(test);
 				branches.add(trueBranch);
 				constraints.add(Not(constraint,test));
@@ -433,7 +433,7 @@ public class VerificationCheck implements Transform {
 				// TODO: implement me!
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll forall = (Code.ForAll) code; 
-				int end = findLabel(i,forall.target,body);
+				int end = findLabel(branch.pc,forall.target,body);
 				int src = branch.read(forall.sourceOperand);
 				int var = branch.read(forall.indexOperand);
 
@@ -447,7 +447,7 @@ public class VerificationCheck implements Transform {
 				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 
-				int end = findLabel(i,loop.target,body);
+				int end = findLabel(branch.pc,loop.target,body);
 				scopes.add(new LoopScope(loop,end));
 				// FIXME: assume loop invariant?
 				// FIXME: assume condition?
@@ -621,7 +621,7 @@ public class VerificationCheck implements Transform {
 		
 		if (assume) {
 			branch.assume(test);			 
-		} else if(!branch.assertTrue(test)){
+		} else if(!branch.assertTrue(test,entry)){
 			syntaxError(code.msg,filename,entry);
 		}		
 	}
@@ -682,52 +682,35 @@ public class VerificationCheck implements Transform {
 		// TODO
 	}
 
-	protected void transform(Code.Invoke code, Block.Entry entry,
-			 Branch branch)
+	protected void transform(Code.Invoke code, Block.Entry entry, Branch branch)
 			throws Exception {
-		
+
 		// first, maps arguments
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
 		int[] code_operands = code.operands;
-		
+
 		// second, setup return value
-		if(code.target != Code.NULL_REG) {
+		if (code.target != Code.NULL_REG) {
+			int target = branch.read(code.target);
+
+			// FIXME: assign target RHS representing function application.
+
 			// now deal with post-condition
 			Block postcondition = findPostcondition(code.name, ft, entry);
 			if (postcondition != null) {
 				int[] saved = branch.binding;
 				int[] binding = new int[postcondition.numSlots()];
-				for(int i=0;i!=code_operands.length;++i) {
+				binding[0] = target;
+				for (int i = 1; i != code_operands.length; ++i) {
 					binding[i] = branch.read(code_operands[i]);
-				}							
+				}
 				// FIXME: broken if numSlots exceeds num of arguments
 				branch.binding = binding;
-				branch = transform(true,branch,postcondition);
+				branch = transform(true, branch, postcondition);
 				branch.binding = saved;
 			}
 		}
-//		
-//		
-//		if (code.target != Code.NULL_REG) {
-//			WVariable rhs = new WVariable(code.name.toString(), args);
-//
-//			constraint = Automatons.and(constraint,
-//					WTypes.subtypeOf(rhs, convert(ft.ret())));
-//
-//			// now deal with post-condition
-//			Block postcondition = findPostcondition(code.name, ft, entry);
-//			if (postcondition != null) {
-//				Automaton pc = transform(WBool.TRUE, true, postcondition);
-//				binding.put(new WVariable("0$0"), rhs);
-//				constraint = Automatons.and(constraint, pc.substitute(binding));
-//			}
-//
-//			branch.write(code.target, rhs, environment, constraint);
-//		}
-//		
-//		return constraint;
-		// TODO
 	}
 
 	protected void transform(Code.Invert code, Block.Entry entry,
