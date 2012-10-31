@@ -1,3 +1,10 @@
-term Sum[Expr,Expr]
-class Expr as int | Sum
+term Int(int)
+term Real(real)
+term Convert(Expr)
+class Expr as Int | Real
+
+reduce Convert(Int(int x)):
+    => Real( (real) x)
+
+
 

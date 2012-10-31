@@ -544,9 +544,27 @@ public class JavaFileWriter {
 			return translate(level,(Expr.Comprehension) code, environment);
 		} else if(code instanceof Expr.TermAccess) {
 			return translate(level,(Expr.TermAccess) code, environment);
+		} else if(code instanceof Expr.Cast) {
+			return translate(level,(Expr.Cast) code, environment);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
+	}
+	
+	public int translate(int level, Expr.Cast code, Environment environment) {
+		Type type = code.attribute(Attribute.Type.class).type;
+
+		// first translate src expression, and coerce to a value
+		int src = translate(level, code.src, environment);
+		src = coerceFromRef(level, code.src, src, environment);
+
+		// TODO: currently we only support casting from integer to real!!
+		String body = "new Automaton.Real(r" + src + ".value)";
+
+		int target = environment.allocate(type);
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
+		return target;
+		
 	}
 	
 	public int translate(int level, Expr.Constant code, Environment environment) {

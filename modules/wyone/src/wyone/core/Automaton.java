@@ -714,10 +714,14 @@ public final class Automaton {
 	}
 	
 	public static final class Real extends Constant<BigRational> implements Comparable<Real> {
+		public Real(BigInteger value) {
+			super(K_REAL, BigRational.valueOf(value));
+		}
+
 		public Real(BigRational value) {
 			super(K_REAL, value);
 		}
-
+		
 		public Real(long value) {
 			super(K_REAL,BigRational.valueOf(value));
 		}

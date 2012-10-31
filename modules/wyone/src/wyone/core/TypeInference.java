@@ -195,6 +195,8 @@ public class TypeInference {
 				result = resolve((Expr.Variable) expr, environment);
 			} else if (expr instanceof Expr.Comprehension) {
 				result = resolve((Expr.Comprehension) expr, environment);
+			} else if (expr instanceof Expr.Cast) {
+				result = resolve((Expr.Cast) expr, environment);
 			} else if (expr instanceof Expr.TermAccess) {
 				result = resolve((Expr.TermAccess) expr, environment);
 			} else {
@@ -573,6 +575,17 @@ public class TypeInference {
 		}
 	}
 
+	protected Type resolve(Expr.Cast expr, HashMap<String, Type> environment) {
+		Pair<Expr,Type> p = resolve(expr.src,environment);
+		expr.src = p.first();
+		Type type = p.second();		
+		type = coerceToValue(type);
+		if(!(type instanceof Type.Int && expr.type instanceof Type.Real)) {
+			syntaxError("cannot cast from " + type + " to " + expr.type, file, expr);
+		} 		
+		return expr.type;		
+	}
+	
 	protected Type resolve(Expr.TermAccess expr, HashMap<String, Type> environment) {
 		Pair<Expr,Type> p = resolve(expr.src,environment);
 		Expr src = p.first();

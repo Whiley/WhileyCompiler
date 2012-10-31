@@ -464,7 +464,7 @@ public class SpecParser {
 	
 	private Expr parseMulDivExpression() {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		Expr lhs = parseCastExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
@@ -485,6 +485,26 @@ public class SpecParser {
 
 		return lhs;
 	}	
+	
+	private Expr parseCastExpression() {
+		Token lookahead = tokens.get(index);
+		if(lookahead instanceof LeftBrace) {
+			int start = index;
+			try {
+				match(LeftBrace.class);
+				Type type = parseType();
+				match(RightBrace.class);
+				Expr expr = parseIndexTerm();
+				return new Expr.Cast(type, expr, sourceAttr(start,
+						index - 1));
+			} catch(SyntaxError e) {
+				// ok, failed parsing the cast expression ... cannot be a cast
+				// then!  restart assuming just an index term...
+				index = start;
+			}
+		} 
+		return parseIndexTerm();		
+	}
 	
 	private Expr parseIndexTerm() {
 		checkNotEof();
@@ -798,7 +818,7 @@ public class SpecParser {
 	private Expr parseDeref() {
 		int start = index;
 		match(Star.class);
-		Expr e = parseIndexTerm();
+		Expr e = parseCastExpression();
 		return new Expr.TermAccess(e, sourceAttr(start, index - 1));
 	}
 
@@ -806,7 +826,7 @@ public class SpecParser {
 		int start = index;
 		match(Bar.class);
 		skipWhiteSpace(true);
-		Expr e = parseIndexTerm();
+		Expr e = parseCastExpression();
 		skipWhiteSpace(true);
 		match(Bar.class);
 		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
@@ -816,7 +836,7 @@ public class SpecParser {
 		int start = index;
 		match(Minus.class);
 		skipWhiteSpace(true);
-		Expr e = parseIndexTerm();
+		Expr e = parseCastExpression();
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;

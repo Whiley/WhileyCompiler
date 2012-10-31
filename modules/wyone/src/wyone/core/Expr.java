@@ -52,6 +52,28 @@ public interface Expr extends SyntacticElement {
 			return value.toString();
 		}
 	}
+	
+	public static class Cast extends SyntacticElement.Impl implements Expr {
+		public final Type type;
+		public Expr src;
+
+		public Cast(Type type, Expr src, Attribute... attributes) {
+			super(attributes);
+			this.type = type;
+			this.src = src;
+		}
+
+		public Cast(Type type, Expr src, int index,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.type = type;
+			this.src = src;
+		}
+
+		public String toString() {
+			return "(" + type + ") " + src;
+		}
+	}
 
 	public enum BOp { 
 		AND {
