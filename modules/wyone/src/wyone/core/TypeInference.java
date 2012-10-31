@@ -245,7 +245,9 @@ public class TypeInference {
 		} else if(expr.argument != null) {
 			Pair<Expr,Type> arg_t = resolve(expr.argument,environment);
 			expr.argument = arg_t.first();
-			checkSubtype(type.data,arg_t.second(),expr.argument);
+			// FIXME: this test should be enabled, but currently it causes valid
+			// code to fail to compile.
+			//checkSubtype(type.data,arg_t.second(),expr.argument);
 		}
 		
 		return type;
@@ -324,16 +326,28 @@ public class TypeInference {
 		
 		switch (bop.op) {
 		case ADD: {
-			checkSubtype(Type.T_REAL, lhs_t, bop);
-			checkSubtype(Type.T_REAL, rhs_t, bop);
-			result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
+				checkSubtype(Type.T_INT, lhs_t, bop);
+				checkSubtype(Type.T_INT, rhs_t, bop);
+				result = Type.T_INT;
+			} else {
+				checkSubtype(Type.T_REAL, lhs_t, bop);
+				checkSubtype(Type.T_REAL, rhs_t, bop);
+				result = Type.T_REAL;				
+			}
 			break;
 		}
 		case DIV:
 		case MUL: {
-			checkSubtype(Type.T_REAL, lhs_t, bop);
-			checkSubtype(Type.T_REAL, rhs_t, bop);
-			result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
+				checkSubtype(Type.T_INT, lhs_t, bop);
+				checkSubtype(Type.T_INT, rhs_t, bop);
+				result = Type.T_INT;
+			} else {
+				checkSubtype(Type.T_REAL, lhs_t, bop);
+				checkSubtype(Type.T_REAL, rhs_t, bop);
+				result = Type.T_REAL;				
+			}
 			break;
 		}
 		case EQ:
@@ -345,8 +359,14 @@ public class TypeInference {
 		case LTEQ:
 		case GT:
 		case GTEQ: {
-			checkSubtype(Type.T_REAL, lhs_t, bop);
-			checkSubtype(Type.T_REAL, rhs_t, bop);
+			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
+				checkSubtype(Type.T_INT, lhs_t, bop);
+				checkSubtype(Type.T_INT, rhs_t, bop);
+			} else {
+				checkSubtype(Type.T_REAL, lhs_t, bop);
+				checkSubtype(Type.T_REAL, rhs_t, bop);
+			
+			}			
 			result = Type.T_BOOL;
 			break;
 		}
