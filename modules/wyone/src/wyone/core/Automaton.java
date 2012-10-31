@@ -402,6 +402,61 @@ public final class Automaton {
 	}
 	
 	/**
+	 * Copy into this automaton all states in the given automaton reachable from
+	 * a given root state.
+	 * 
+	 * @param root
+	 *            --- root index to begin copying from.
+	 * @param automaton
+	 *            --- other automaton to copye states from.
+	 * @return
+	 */
+	public int copyFrom(int root, Automaton automaton) {
+		if (root < 0) {
+			// nothing to do in this case, since it's a predefined "virtual"
+			// state.
+			return root;
+		}
+		
+		Automaton.State state = automaton.get(root);
+		if(state instanceof Automaton.Constant) {
+			Automaton.Constant<?> constant = (Automaton.Constant<?>) state;
+			root = add(constant); // no need to clone since immutable.
+		} else if(state instanceof Automaton.Term) {
+			Automaton.Term term = (Automaton.Term) state;
+			if(term.contents != Automaton.K_VOID) {
+				root = copyFrom(term.contents, automaton);
+				root = add(new Automaton.Term(term.kind,root));
+			} else {
+				root = add(term); // no need to clone since immutable.
+			}
+		} else {
+			Automaton.Compound compound = (Automaton.Compound) state;
+			int[] children = compound.children;
+			int[] nchildren = new int[compound.children.length];
+			for(int i=0;i!=children.length;++i) {
+				nchildren[i] = copyFrom(children[i],automaton);				
+			}
+			switch(compound.kind) {
+			case K_LIST:
+				root = add(new Automaton.List(nchildren));
+				break;
+			case K_BAG:
+				root = add(new Automaton.Bag(nchildren));
+				break;
+			case K_SET:
+				root = add(new Automaton.Set(nchildren));
+				break;
+			default:
+				throw new RuntimeException("unreachable code reached");
+				
+			}
+		}
+		
+		return root;
+	}
+	
+	/**
 	 * Determine the hashCode of a type.
 	 */
 	public int hashCode() {

@@ -232,15 +232,24 @@ public class VerificationCheck implements Transform {
 		 * indices. Essentially, register x is shifted by a certain amount to be
 		 * x+n, where n is the shifted amount.
 		 */
-		public final int registerShift;
+		public final int shift;
 		public final int[] environment;
 		public final ArrayList<Scope> scopes;		
 		public final Automaton automaton;
+		
+		/**
+		 * Contains a list of sequentially ordered constraints which all must
+		 * hold true (i.e. in the end they will be ANDed together).
+		 */
 		private final ArrayList<Integer> constraints;
 
+		public Branch(int pc, int numVariables) {
+			this(pc,numVariables,0);
+		}
+		
 		public Branch(int pc, int numVariables, int registerShift) {
 			this.pc = pc;
-			this.registerShift = registerShift;
+			this.shift = registerShift;
 			this.automaton = new Automaton(SCHEMA);
 			this.constraints = new ArrayList<Integer>();
 			this.environment = new int[numVariables];
@@ -250,7 +259,7 @@ public class VerificationCheck implements Transform {
 		private Branch(int pc, int[] environment, int registerShift, List<Scope> scopes,
 				List<Integer> constraints, Automaton automaton) {
 			this.pc = pc;
-			this.registerShift = registerShift;
+			this.shift = registerShift;
 			this.automaton = new Automaton(automaton);
 			this.constraints = new ArrayList<Integer>(constraints);
 			this.environment = environment.clone();
@@ -258,7 +267,7 @@ public class VerificationCheck implements Transform {
 		}
 		
 		public Branch clone() {
-			return new Branch(pc, environment, registerShift, scopes, constraints, automaton);
+			return new Branch(pc, environment, shift, scopes, constraints, automaton);
 		}
 
 		/**
@@ -303,16 +312,42 @@ public class VerificationCheck implements Transform {
 			constraints.add(constraint);
 		}
 		
-		public void join(Branch b) {
-			// TODO: kind of important
+		/**
+		 * Merge another branch into this one, such that the resulting branch
+		 * captures the constraints from either incoming branch (i.e. this
+		 * represents a meet-point in the control-flow graph).
+		 * 
+		 * @param other
+		 */
+		public void join(Branch other) {
+			// In this instance, we're joining together two branches. This means
+			// that we'll need to take the logical OR of their respective
+			// sequential constraints.
+			
+			// constraints for this branch are straightforward. 
+			int lhs = And(automaton,constraints);
+			
+			// constraints for other branch are more challenging since we need
+			// to copy all of the states from the other automaton into this
+			// automaton.
+			int rhs = And(other.automaton,other.constraints);
+			rhs = automaton.copyFrom(rhs,other.automaton);
+			
+			// can now compute the logical OR of both branches
+			int join = Or(automaton,lhs,rhs);
+			
+			// now, clear our sequential constraints since we can only have one
+			// which holds now: namely, the or of the two branches.
+			constraints.clear();
+			constraints.add(join);
 		}
 		
 		public int read(int register) {
-			return Var(automaton, (register + registerShift) + "$" + environment[register]);
+			return Var(automaton, (register + shift) + "$" + environment[register]);
 		}
 
 		public void write(int lhs, int rhs) {
-			lhs += registerShift;
+			lhs += shift;
 			int nval = environment[lhs] + 1;
 			environment[lhs] = nval;
 			constraints.add(Equals(automaton, Var(automaton, lhs + "$" + nval),
