@@ -627,19 +627,24 @@ public class VerificationCheck implements Transform {
 			 Branch branch)
 			throws Exception {
 		
-		// first, take arguments off the stack
-//		Type.FunctionOrMethod ft = code.type;
-//		List<Type> ft_params = code.type.params();
-//		ArrayList<WExpr> args = new ArrayList<WExpr>();
-//		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
-//		int[] code_operands = code.operands;
-//		for(int i=0;i!=code_operands.length;++i) {
-//			WExpr arg = branch.read(code_operands[i],environment);
-//			args.add(arg);
-//			binding.put(new WVariable(i + "$0"), arg);
-//		}			
+		// first, maps arguments
+		Type.FunctionOrMethod ft = code.type;
+		List<Type> ft_params = code.type.params();
+		int[] code_operands = code.operands;
+		for(int i=0;i!=code_operands.length;++i) {
+			int arg = branch.read(code_operands[i]);
+		}			
+		
+		// second, setup return value
+		if(code.target != Code.NULL_REG) {
+			// now deal with post-condition
+			Block postcondition = findPostcondition(code.name, ft, entry);
+			if (postcondition != null) {
+				
+			}
+		}
 //		
-//		// second, setup return value
+//		
 //		if (code.target != Code.NULL_REG) {
 //			WVariable rhs = new WVariable(code.name.toString(), args);
 //
