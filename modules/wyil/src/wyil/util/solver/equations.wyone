@@ -7,6 +7,9 @@ term Equation(Sum)
 reduce Equals{|Sum[real n, {|AExpr... xs|}], Expr y|}:
     => Equation(Sum[n,xs ++ Mul[-1.0,{|y|}]])
 
+reduce Equals{|Mul x, Expr y|}:
+    => Equation(Sum[0.0,{|x,Mul[-1.0,{|y|}]|}])
+
 reduce Equation(Num(real n)):
     => True, if n == 0.0
     => False
