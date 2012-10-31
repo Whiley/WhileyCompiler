@@ -148,8 +148,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static boolean isSubtype(Type t1, Type t2, Hierarchy hierarchy) {
-		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any
-				|| (t1 instanceof Real && t2 instanceof Int)) {
+		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any) {
 			return true;
 		} else if (t1 instanceof Set
 				&& t2 instanceof Set

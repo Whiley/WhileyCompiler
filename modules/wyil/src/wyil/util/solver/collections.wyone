@@ -16,10 +16,10 @@ reduce List[Value... xs]:
     => ListVal(xs)
 
 reduce LengthOf(ListVal[Value... ls]):
-    => Num(|ls|)
+    => Num((real) |ls|)
 
 reduce LengthOf(List[Expr... ls]):
-    => Num(|ls|)
+    => Num((real) |ls|)
 
 reduce IndexOf[List[Expr... ls], Num(int idx)]:
     => ls[idx], if idx >= 0 && idx < |ls|
@@ -39,7 +39,7 @@ reduce Set{Value... xs}:
     => SetVal(xs)
 
 reduce LengthOf(SetVal{Value... xs}):
-    => Num(|xs|)
+    => Num((real) |xs|)
 
 reduce ElementOf[Value e, SetVal{Value... es}]:
     => True, if e in es

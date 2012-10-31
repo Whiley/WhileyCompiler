@@ -4,7 +4,7 @@ term Convert(Expr)
 class Expr as Int | Real
 
 reduce Convert(Int(int x)):
-    => Real( (real) x)
+    => Real((real) x)
 
 
 

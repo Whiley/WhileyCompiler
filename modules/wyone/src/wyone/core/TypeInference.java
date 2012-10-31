@@ -234,17 +234,18 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.Constructor expr, HashMap<String,Type> environment) {
-	
-		if(expr.argument != null) {
-			Pair<Expr,Type> arg_t = resolve(expr.argument,environment);
-			expr.argument = arg_t.first();
-			// TODO: type check parameter argument
-		}
 
 		Type.Term type = terms.get(expr.name);
-	
+
+		
 		if (type == null) {
 			syntaxError("function not declared", file, expr);
+		} else if(expr.argument != null && type.data == null) {
+			syntaxError("term does not take a parameter", file, expr);
+		} else if(expr.argument != null) {
+			Pair<Expr,Type> arg_t = resolve(expr.argument,environment);
+			expr.argument = arg_t.first();
+			checkSubtype(type.data,arg_t.second(),expr.argument);
 		}
 		
 		return type;
@@ -505,10 +506,26 @@ public class TypeInference {
 		expr.src = p1.first();
 
 		Type src_t = coerceToValue(p1.second());
-
 		checkSubtype(Type.T_LISTANY, src_t, expr.src);
 		checkSubtype(Type.T_INT, idx_t, expr.index);
-		return new Pair(expr,((Type.List)src_t).element(hierarchy));
+		
+		Type.List list_t = (Type.List) src_t; 
+		
+		if(expr.index instanceof Expr.Constant) {
+			Expr.Constant idx = (Expr.Constant) expr.index;
+			BigInteger v = (BigInteger) idx.value; // must succeed
+			if(v.compareTo(BigInteger.ZERO) < 0) {
+				syntaxError("negative list access",file,idx);
+				return null; // dead-code
+			} else if(!list_t.unbounded && v.compareTo(BigInteger.valueOf(list_t.elements.length)) >= 0) {
+				syntaxError("list access out-of-bounds",file,idx);
+				return null; // dead-code
+			} else {
+				return new Pair<Expr,Type>(expr,list_t.elements[v.intValue()]);
+			}
+		} else {
+			return new Pair<Expr,Type>(expr,list_t.element(hierarchy));
+		}
 	}
 	
 	protected Type resolve(Expr.ListUpdate expr, HashMap<String, Type> environment) {
