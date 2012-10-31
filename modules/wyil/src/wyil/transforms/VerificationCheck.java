@@ -640,7 +640,7 @@ public class VerificationCheck implements Transform {
 			// now deal with post-condition
 			Block postcondition = findPostcondition(code.name, ft, entry);
 			if (postcondition != null) {
-				
+				// FIXME:
 			}
 		}
 //		
