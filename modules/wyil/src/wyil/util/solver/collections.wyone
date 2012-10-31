@@ -41,13 +41,20 @@ reduce Set{Value... xs}:
 reduce LengthOf(SetVal{Value... xs}):
     => Num((real) |xs|)
 
-reduce ElementOf[Value e, SetVal{Value... es}]:
-    => True, if e in es
+reduce ElementOf[Value e1, SetVal{Value... es}]:
+    => True, if e1 in es
     => False
 
-reduce ElementOf[Expr e, Set{Expr... es}]:
-    => True, if e in es
+reduce ElementOf[Expr e1, SetVal{Value... es}]:
     => False, if |es| == 0
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in Or(ns)
+
+reduce ElementOf[Expr e1, Set{Expr... es}]:
+    => True, if e1 in es
+    => False, if |es| == 0
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in Or(ns)
 
 // ====================================================================
 // Tuple Expressions
