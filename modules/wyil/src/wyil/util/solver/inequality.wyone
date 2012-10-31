@@ -22,7 +22,7 @@ reduce ZeroLessThan(Num(real x)):
     => False
 
 reduce Not(ZeroLessThan(AExpr x)):
-    => let negx = Mul[-1.0,{|x|}]
+    => let negx = Sum[0.0,{|Mul[-1.0,{|x|}]|}]
        in Or{Equals{|x,Num(0.0)|},ZeroLessThan(negx)}
 
 // rearrange linear inequality
