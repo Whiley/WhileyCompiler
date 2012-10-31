@@ -228,11 +228,13 @@ public class VerificationCheck implements Transform {
 		public int pc;
 		
 		/**
-		 * The shift register is used to add an explicit shift onto the variable
-		 * indices. Essentially, register x is shifted by a certain amount to be
-		 * x+n, where n is the shifted amount.
+		 * The binding enables a level of redirection between the environment of
+		 * this branch and the block being transformed. This is essentially
+		 * useful only for dealing with blocks separated from the main
+		 * method/function body (e.g. function post-conditions, loop invariants,
+		 * etc).
 		 */
-		public final int shift;
+		public int[] binding;
 		public final int[] environment;
 		public final ArrayList<Scope> scopes;		
 		public final Automaton automaton;
@@ -244,22 +246,30 @@ public class VerificationCheck implements Transform {
 		private final ArrayList<Integer> constraints;
 
 		public Branch(int pc, int numVariables) {
-			this(pc,numVariables,0);
+			this.pc = pc;
+			this.automaton = new Automaton(SCHEMA);
+			this.constraints = new ArrayList<Integer>();
+			this.environment = new int[numVariables];
+			this.scopes = new ArrayList<Scope>();
+			this.binding = new int[numVariables];
+			for(int i=0;i!=numVariables;++i) {
+				binding[i] = i;
+			}
 		}
 		
-		public Branch(int pc, int numVariables, int registerShift) {
+		public Branch(int pc, int numVariables, int[] binding) {
 			this.pc = pc;
-			this.shift = registerShift;
+			this.binding = binding;
 			this.automaton = new Automaton(SCHEMA);
 			this.constraints = new ArrayList<Integer>();
 			this.environment = new int[numVariables];
 			this.scopes = new ArrayList<Scope>();
 		}
 
-		private Branch(int pc, int[] environment, int registerShift, List<Scope> scopes,
+		private Branch(int pc, int[] environment, int[] binding, List<Scope> scopes,
 				List<Integer> constraints, Automaton automaton) {
 			this.pc = pc;
-			this.shift = registerShift;
+			this.binding = binding;
 			this.automaton = new Automaton(automaton);
 			this.constraints = new ArrayList<Integer>(constraints);
 			this.environment = environment.clone();
@@ -267,7 +277,7 @@ public class VerificationCheck implements Transform {
 		}
 		
 		public Branch clone() {
-			return new Branch(pc, environment, shift, scopes, constraints, automaton);
+			return new Branch(pc, environment, binding, scopes, constraints, automaton);
 		}
 
 		/**
@@ -324,7 +334,10 @@ public class VerificationCheck implements Transform {
 			// that we'll need to take the logical OR of their respective
 			// sequential constraints.
 			
-			// constraints for this branch are straightforward. 
+			// constraints for this branch are straightforward.
+			
+			// FIXME: DON'T NEED TO JOIN CONSTRAINTS AFTER THE SPLIT POINT.
+			
 			int lhs = And(automaton,constraints);
 			
 			// constraints for other branch are more challenging since we need
@@ -343,11 +356,12 @@ public class VerificationCheck implements Transform {
 		}
 		
 		public int read(int register) {
-			return Var(automaton, (register + shift) + "$" + environment[register]);
+			register = binding[register];
+			return Var(automaton, (register) + "$" + environment[register]);
 		}
 
 		public void write(int lhs, int rhs) {
-			lhs += shift;
+			lhs = binding[lhs];
 			int nval = environment[lhs] + 1;
 			environment[lhs] = nval;
 			constraints.add(Equals(automaton, Var(automaton, lhs + "$" + nval),
@@ -676,16 +690,21 @@ public class VerificationCheck implements Transform {
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
 		int[] code_operands = code.operands;
-		for(int i=0;i!=code_operands.length;++i) {
-			int arg = branch.read(code_operands[i]);
-		}			
 		
 		// second, setup return value
 		if(code.target != Code.NULL_REG) {
 			// now deal with post-condition
 			Block postcondition = findPostcondition(code.name, ft, entry);
 			if (postcondition != null) {
-				// FIXME:
+				int[] saved = branch.binding;
+				int[] binding = new int[postcondition.numSlots()];
+				for(int i=0;i!=code_operands.length;++i) {
+					binding[i] = branch.read(code_operands[i]);
+				}							
+				// FIXME: broken if numSlots exceeds num of arguments
+				branch.binding = binding;
+				branch = transform(true,branch,postcondition);
+				branch.binding = saved;
 			}
 		}
 //		
