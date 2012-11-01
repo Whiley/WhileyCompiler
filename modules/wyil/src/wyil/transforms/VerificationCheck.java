@@ -338,6 +338,7 @@ public class VerificationCheck implements Transform {
 			// constraints for this branch are straightforward.
 			
 			// FIXME: DON'T NEED TO JOIN CONSTRAINTS AFTER THE SPLIT POINT.
+			// FIXME: PROBLEM WITH POTENTIAL ENVIRONMENT COLLISIONS?
 			
 			int lhs = And(automaton,constraints);
 			

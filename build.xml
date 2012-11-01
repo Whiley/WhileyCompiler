@@ -17,10 +17,10 @@
 
   <target name="doc">
     <subant failonerror="true" target="doc">
-      <fileset dir="modules" includes="wyone/build.xml"/>
+      <!--<fileset dir="modules" includes="wyone/build.xml"/>-->
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
-      <fileset dir="modules" includes="wyrt/build.xml"/>
+      <!--<fileset dir="modules" includes="wyrt/build.xml"/>-->
       <fileset dir="modules" includes="wyjc/build.xml"/>
     </subant>    
   </target>
