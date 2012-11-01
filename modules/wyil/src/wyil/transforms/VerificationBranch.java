@@ -143,37 +143,68 @@ public class VerificationBranch {
 	private int pc;
 
 	/**
-	 * Construct the master verification branch for a given code block.
+	 * Construct the master verification branch for a given code block. The
+	 * master for a block has an origin <code>0</code> and an (initial) PC of
+	 * <code>0</code> (i.e. the branch begins at the entry of the block).
 	 * 
+	 * @param prefix
+	 *            --- the prefix string to use for variable names within the
+	 *            generated constraints. For the master branch of a
+	 *            method/function block, this can be the empty string. However,
+	 *            for an block external to the main block for a method/function,
+	 *            we will need a suitable prefix to avoid name clashes with
+	 *            existing variables.
 	 * @param automaton
+	 *            --- the automaton to which constraints generated for this
+	 *            block are stored.
 	 * @param block
+	 *            --- the block of code on which this branch is operating.
 	 */
-	public VerificationBranch(Automaton automaton, Block block) {
-		this(null, new int[block.numSlots()], new int[block.numSlots()], "",
-				automaton, Collections.EMPTY_LIST, block, 0, 0);
-	}
-
-	private VerificationBranch(VerificationBranch parent, int[] registry,
-			int[] environment, String prefix, Automaton automaton,
-			List<Integer> constraints, Block block, int origin, int pc) {
-		this.parent = parent;
-		this.registry = registry;
-		this.environment = environment;
+	public VerificationBranch(String prefix, Automaton automaton, Block block) {
+		this.parent = null;
+		this.registry = new int[block.numSlots()];
+		this.environment = new int[block.numSlots()];
 		this.prefix = prefix;
 		this.automaton = automaton;
-		this.constraints = new ArrayList<Integer>(constraints);
+		this.constraints = new ArrayList<Integer>();
 		this.block = block;
-		this.origin = origin;
-		this.pc = pc;
+		this.origin = 0;
+		this.pc = 0;
 	}
 
 	/**
-	 * Return the current Program Counter (PC) value for this branch.
+	 * Private constructor used for forking a child-branch from a parent branch.
+	 * 
+	 * @param parent
+	 *            --- parent branch being forked from.
+	 */
+	private VerificationBranch(VerificationBranch parent) {
+		this.parent = parent;
+		this.registry = parent.registry;
+		this.environment = parent.environment.clone();
+		this.prefix = parent.prefix;
+		this.automaton = parent.automaton;
+		this.constraints = new ArrayList<Integer>();
+		this.block = parent.block;
+		this.origin = parent.pc;
+		this.pc = parent.pc;
+	}
+
+	/**
+	 * Return the current Program Counter (PC) value for this branch. This must
+	 * be a valid index into the code block this branch is operating over.
 	 * 
 	 * @return
 	 */
 	public int pc() {
 		return pc;
+	}
+
+	/**
+	 * Return the automaton associated with this branch.
+	 */
+	public Automaton automation() {
+		return automaton;
 	}
 
 	/**
@@ -186,24 +217,97 @@ public class VerificationBranch {
 	}
 
 	/**
-	 * Check that this verification branch is indeed valid.
+	 * <p>
+	 * Fork a child-branch from this branch. The child branch is (initially)
+	 * identical in every way to the parent, however the expectation is that
+	 * they will diverge.
+	 * </p>
+	 * 
+	 * <pre>
+	 *    B1
+	 *    ||
+	 *    ||
+	 *    ##    <- origin
+	 *    | \ 
+	 *    ||\\
+	 *    || \\
+	 *    \/  \/
+	 *    B1  B2
+	 * </pre>
+	 * <p>
+	 * The origin for the forked branch is the <code>PC</code value at the split
+	 * point. Initially, the <code>PC</code> value for the forked branch is
+	 * identical to that of the parent, however it is expected that a
+	 * <code>goTo</code> will be used immediately after the fork to jump the
+	 * child branch to its logical starting point.
+	 * </p>
+	 * <p>
+	 * A new environment is created for the child branch which, initially, is
+	 * identical to that of the parent. As assignments to variables are made on
+	 * either branch, these environments will move apart.
+	 * </p>
+	 * 
+	 * @return
 	 */
-	public void validate() {
+	public VerificationBranch fork() {
+		return new VerificationBranch(this);
+	}
+
+	/**
+	 * <p>
+	 * Merge descendant (i.e. a child or child-of-child, etc) branch back into
+	 * this branch. The constraints for this branch must now correctly capture
+	 * those constraints that hold coming from either branch (i.e. this
+	 * represents a meet-point in the control-flow graph).
+	 * </p>
+	 * <p>
+	 * To generate the constraints which hold after the meet, we take the
+	 * logical OR of those constraints holding on this branch prior to the meet
+	 * and those which hold on the incoming branch. For example, support we
+	 * have:
+	 * </p>
+	 * 
+	 * <pre>
+	 * 	 y$0 != 0    y$0 != 0
+	 *   && x$1 < 1  && x$2 >= 1   
+	 *        ||      ||
+	 *         \\    //
+	 *          \\  //
+	 *           \\//
+	 *            ##
+	 *   y$0 != 0 &&
+	 * ((x$1 < 1 && x$3 == x$1) || 
+	 *  (x$2 >= 1 && x$3 == x$2))
+	 * </pre>
+	 * <p>
+	 * Here, we see that <code>y$0 != 0</code> is constant to both branches and
+	 * is ommitted from the disjunction. Furthermore, we've added and assignment
+	 * <code>x$3 == </code> onto both sides of the disjunction to capture the
+	 * flow of variable <code>x</code> from both sides (since it was modified on
+	 * atleast one of the branches).
+	 * </p>
+	 * <p>
+	 * One challenge is to determine constraints which are constant to both
+	 * sides. Eliminating such constraints from the disjunction reduces the
+	 * overall work of the constraint solver. This is done by comparing the
+	 * automaton references for each constraint since the automaton guarantees
+	 * that identical terms have the same reference.
+	 * </p>
+	 * 
+	 * @param incoming
+	 *            --- The descendant branch which is being merged into this one.
+	 */
+	public void join(VerificationBranch incoming) {
 
 	}
-	
-	public int transform() {
-		
-	}
-	
+
 	/**
-	 * Merge another branch into this one, such that the resulting branch
-	 * captures the constraints from either incoming branch (i.e. this
-	 * represents a meet-point in the control-flow graph).
+	 * Determine a fresh index for the given variable.
 	 * 
-	 * @param other
+	 * @param var
+	 * @return
 	 */
-	public void join(VerificationBranch other) {
-		
+	private int allocateNewIndex(int var) {
+		return ++registry[var];
 	}
 }
