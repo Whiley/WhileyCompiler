@@ -210,7 +210,7 @@ public class VerificationBranch {
 	/**
 	 * Return the automaton associated with this branch.
 	 */
-	public Automaton automation() {
+	public Automaton automaton() {
 		return automaton;
 	}
 
@@ -249,6 +249,16 @@ public class VerificationBranch {
 				Var(automaton, prefix + register + "$" + nval), expr));
 	}
 
+	/**
+	 * Add a given constraint to the list of constraints which are assumed to
+	 * hold.
+	 * 
+	 * @param constraint
+	 */
+	public void assume(int constraint) {
+		constraints.add(constraint);
+	}
+	
 	/**
 	 * <p>
 	 * Fork a child-branch from this branch. The child branch is (initially)

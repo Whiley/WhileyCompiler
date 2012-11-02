@@ -166,22 +166,22 @@ public class VerificationCheck implements Transform {
 			// FIXME: add type information
 			
 //			WVariable pv = new WVariable(i + "$" + 0);
-//			constraint = WFormulas.and(branch.automaton,
+//			constraint = WFormulas.and(branch.automaton(),
 //					WTypes.subtypeOf(pv, convert(paramType)));
 		}
 		
 		Block body = methodCase.body();
 		Block precondition = methodCase.precondition();				
 		
-		Branch branch; 
+		VerificationBranch branch; 
 		if(precondition != null) {
 			// to guarantee there are enough slots...
 			int numSlots = Math.max(body.numSlots(), precondition.numSlots());
-			branch =  new Branch(0,numSlots);
+			branch =  new VerificationBranch(0,numSlots);
 			branch = transform(true, branch, precondition);
 			branch.pc = 0; // must reset
 		} else {
-			branch =  new Branch(0,body.numSlots());
+			branch =  new VerificationBranch(0,body.numSlots());
 		}
 		
 		transform(false,branch,body);
@@ -215,164 +215,10 @@ public class VerificationCheck implements Transform {
 			this.var = var;
 		}
 	}
-	
-	/**
-	 * Represents a path through the control-flow graph which has not yet been
-	 * explored.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	private final class Branch {
-		public int pc;
 		
-		/**
-		 * The binding enables a level of redirection between the environment of
-		 * this branch and the block being transformed. This is essentially
-		 * useful only for dealing with blocks separated from the main
-		 * method/function body (e.g. function post-conditions, loop invariants,
-		 * etc).
-		 */
-		public int[] binding;
-		public final int[] environment;
-		public final ArrayList<Scope> scopes;		
-		public final Automaton automaton;
-		
-		/**
-		 * Contains a list of sequentially ordered constraints which all must
-		 * hold true (i.e. in the end they will be ANDed together).
-		 */
-		private final ArrayList<Integer> constraints;
-
-		public Branch(int pc, int numVariables) {
-			this.pc = pc;
-			this.automaton = new Automaton(SCHEMA);
-			this.constraints = new ArrayList<Integer>();
-			this.environment = new int[numVariables];
-			this.scopes = new ArrayList<Scope>();
-			this.binding = new int[numVariables];
-			for(int i=0;i!=numVariables;++i) {
-				binding[i] = i;
-			}
-		}
-		
-		public Branch(int pc, int numVariables, int[] binding) {
-			this.pc = pc;
-			this.binding = binding;
-			this.automaton = new Automaton(SCHEMA);
-			this.constraints = new ArrayList<Integer>();
-			this.environment = new int[numVariables];
-			this.scopes = new ArrayList<Scope>();
-		}
-
-		private Branch(int pc, int[] environment, int[] binding, List<Scope> scopes,
-				List<Integer> constraints, Automaton automaton) {
-			this.pc = pc;
-			this.binding = binding;
-			this.automaton = new Automaton(automaton);
-			this.constraints = new ArrayList<Integer>(constraints);
-			this.environment = environment.clone();
-			this.scopes = new ArrayList<Scope>(scopes);
-		}
-		
-		public Branch clone() {
-			return new Branch(pc, environment, binding, scopes, constraints, automaton);
-		}
-
-		/**
-		 * Assert that the given constraint holds.
-		 * 
-		 * @return
-		 */
-		public boolean assertTrue(int test, Block.Entry entry) {
-			try {
-				Automaton tmp = new Automaton(automaton);
-				int root = And(tmp,constraints);
-				root = And(tmp,root,Not(tmp,test));
-				int mark = tmp.mark(root);
-				
-				if(debug) {
-					Attribute.Source src = entry.attribute(Attribute.Source.class);
-					System.err.println("============================================");
-					if(src != null) {
-						System.err.print(src.line + ":");
-					} 					
-					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);		
-				}
-												
-				infer(tmp);
-				
-				if(debug) {
-					System.err.println("\n\n=> (" + ConstraintSolver.numSteps
-							+ " steps, " + ConstraintSolver.numInferences
-							+ " reductions, " + ConstraintSolver.numInferences
-							+ " inferences)\n");
-					new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);
-					System.err.println();					
-				}
-				
-				// assertion holds if a constradiction is shown.
-				return tmp.get(tmp.root(mark)).equals(ConstraintSolver.False);
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-			return false;
-		}
-				
-		public void assume(int constraint) {
-			constraints.add(constraint);
-		}
-		
-		/**
-		 * Merge another branch into this one, such that the resulting branch
-		 * captures the constraints from either incoming branch (i.e. this
-		 * represents a meet-point in the control-flow graph).
-		 * 
-		 * @param other
-		 */
-		public void join(Branch other) {
-			// In this instance, we're joining together two branches. This means
-			// that we'll need to take the logical OR of their respective
-			// sequential constraints.
-			
-			// constraints for this branch are straightforward.
-			
-			// FIXME: DON'T NEED TO JOIN CONSTRAINTS AFTER THE SPLIT POINT.
-			// FIXME: PROBLEM WITH POTENTIAL ENVIRONMENT COLLISIONS?
-			
-			int lhs = And(automaton,constraints);
-			
-			// constraints for other branch are more challenging since we need
-			// to copy all of the states from the other automaton into this
-			// automaton.
-			int rhs = And(other.automaton,other.constraints);
-			rhs = automaton.copyFrom(rhs,other.automaton);
-			
-			// can now compute the logical OR of both branches
-			int join = Or(automaton,lhs,rhs);
-			
-			// now, clear our sequential constraints since we can only have one
-			// which holds now: namely, the or of the two branches.
-			constraints.clear();
-			constraints.add(join);
-		}
-		
-		public int read(int register) {
-			register = binding[register];
-			return Var(automaton, (register) + "$" + environment[register]);
-		}
-
-		public void write(int lhs, int rhs) {
-			lhs = binding[lhs];
-			int nval = environment[lhs] + 1;
-			environment[lhs] = nval;
-			constraints.add(Equals(automaton, Var(automaton, lhs + "$" + nval),
-					rhs));
-		}
-	}
-	
-	protected Branch transform(boolean assumes, Branch branch, Block blk) {
-		ArrayList<Branch> branches = new ArrayList<Branch>();
+	protected VerificationBranch transform(boolean assumes,
+			VerificationBranch branch, Block blk) {
+		ArrayList<VerificationBranch> branches = new ArrayList<VerificationBranch>();
 
 		// take initial branch
 		transform(assumes, blk, branch, branches);
@@ -380,61 +226,46 @@ public class VerificationCheck implements Transform {
 		// continue any resulting branches
 		while (!branches.isEmpty()) {
 			int last = branches.size() - 1;
-			Branch b = branches.get(last);
+			VerificationBranch b = branches.get(last);
 			branches.remove(last);
 			transform(assumes, blk, b, branches);
 			branch.join(b);
 		}
-		
-		// The following is necessary to prevent any possible clashes between
-		// temporary variables used in pre- and post-conditions which are then
-		// merged into the running constraint.
-		
-		// TODO: fix this!
-		
-//		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
-//		for(int i=blk.numInputs();i<blk.numSlots();++i) {
-//			for(int j=0;j<=environment[i];++j) {
-//				binding.put(new WVariable(i + "$" + j), WVariable.freshVar());
-//			}
-//		}
 
-		//return constraint.substitute(binding);
 		return branch;
 	}
 	
-	protected Branch transform(boolean assumes, Block body, Branch branch,
-			ArrayList<Branch> branches) {
+	protected VerificationBranch transform(boolean assumes, Block body, VerificationBranch branch,
+			ArrayList<VerificationBranch> branches) {
 	
-		Automaton constraint = branch.automaton;		
-		ArrayList<Integer> constraints = branch.constraints;
-		ArrayList<Scope> scopes = branch.scopes;
-		int[] environment = branch.environment;
+		Automaton constraint = branch.automaton();				
+		ArrayList<Scope> scopes = null;
 		
 		int bodySize = body.size();		
-		for (; branch.pc != bodySize; ++branch.pc) {	
+		while(branch.pc() != bodySize) {	
 			//constraint = exitScope(constraint,environment,scopes,i);
 			
-			Block.Entry entry = body.get(branch.pc);			
+			Block.Entry entry = body.get(branch.pc());			
 			Code code = entry.code;
 			
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
-				branch.pc = findLabel(branch.pc,g.target,body);					
+				branch.goTo(findLabel(branch.pc(),g.target,body));					
 			} else if(code instanceof Code.If) {
 				Code.If ifgoto = (Code.If) code;
 				int test = buildTest(ifgoto.op, entry, ifgoto.leftOperand,
 						ifgoto.rightOperand, branch);
-				Branch trueBranch = branch.clone();
-				trueBranch.pc = findLabel(branch.pc,ifgoto.target,body)	;
-				trueBranch.constraints.add(test);
+				VerificationBranch trueBranch = branch.fork();
+				trueBranch.goTo(findLabel(branch.pc(),
+						ifgoto.target, body));
+				trueBranch.assume(test);
 				branches.add(trueBranch);
-				constraints.add(Not(constraint,test));
+				branch.assume(Not(constraint,test));
 			} else if(code instanceof Code.IfIs) {
 				// TODO: implement me!
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll forall = (Code.ForAll) code; 
-				int end = findLabel(branch.pc,forall.target,body);
+				int end = findLabel(branch.pc(),forall.target,body);
 				int src = branch.read(forall.sourceOperand);
 				int var = branch.read(forall.indexOperand);
 
@@ -442,13 +273,13 @@ public class VerificationCheck implements Transform {
 //				constraint = WFormulas.and(constraint,
 //						WTypes.subtypeOf(var, convert(forall.type.element())));
 //				
-				constraints.add(ElementOf(branch.automaton, var, src));
+				branch.assume(ElementOf(branch.automaton(), var, src));
 				scopes.add(new ForScope(forall,end,src,var));
 								
 				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 
-				int end = findLabel(branch.pc,loop.target,body);
+				int end = findLabel(branch.pc(), loop.target, body);
 				scopes.add(new LoopScope(loop,end));
 				// FIXME: assume loop invariant?
 				// FIXME: assume condition?
@@ -458,6 +289,8 @@ public class VerificationCheck implements Transform {
 			} else {
 				transform(entry, assumes, branch);
 			}
+			
+			branch.goTo(branch.pc()+1);
 		}
 		return branch;
 	}
@@ -537,7 +370,7 @@ public class VerificationCheck implements Transform {
 	 *            --- if true, indicates assumption mode.
 	 * @return
 	 */
-	protected void transform(Block.Entry entry, boolean assume, Branch branch) {
+	protected void transform(Block.Entry entry, boolean assume, VerificationBranch branch) {
 		Code code = entry.code;		
 		try {
 			if(code instanceof Code.Assert) {
@@ -615,21 +448,21 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(Code.Assert code, Block.Entry entry,
-			boolean assume, Branch branch) {
+			boolean assume, VerificationBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
 		int test = buildTest(code.op, entry, code.leftOperand, code.rightOperand, branch);
 		
 		if (assume) {
 			branch.assume(test);			 
-		} else if(!branch.assertTrue(test,entry)){
+		} else if(!assertTrue(test,entry)){
 			syntaxError(code.msg,filename,entry);
 		}		
 	}
 	
 	protected void transform(Code.BinArithOp code, Block.Entry entry,
-			 Branch branch) {
-		Automaton automaton = branch.automaton;
+			 VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
 		int lhs = branch.read(code.leftOperand);
 		int rhs = branch.read(code.rightOperand);
 		int result;
@@ -661,29 +494,29 @@ public class VerificationCheck implements Transform {
 	}
 
 	protected void transform(Code.Convert code, Block.Entry entry,
-			Branch branch) {
+			VerificationBranch branch) {
 		int result = branch.read(code.operand);
 		// TODO: actually implement some or all coercions?
 		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.Const code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		int rhs = convert(code.constant, entry, branch);
 		branch.write(code.target, rhs);
 	}
 
 	protected void transform(Code.FieldLoad code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.IndirectInvoke code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.Invoke code, Block.Entry entry, Branch branch)
+	protected void transform(Code.Invoke code, Block.Entry entry, VerificationBranch branch)
 			throws Exception {
 
 		// first, maps arguments
@@ -700,113 +533,114 @@ public class VerificationCheck implements Transform {
 			// now deal with post-condition
 			Block postcondition = findPostcondition(code.name, ft, entry);
 			if (postcondition != null) {
-				int[] saved = branch.binding;
-				int[] binding = new int[postcondition.numSlots()];
-				binding[0] = target;
-				for (int i = 1; i != code_operands.length; ++i) {
-					binding[i] = branch.read(code_operands[i]);
-				}
-				// FIXME: broken if numSlots exceeds num of arguments
-				branch.binding = binding;
-				branch = transform(true, branch, postcondition);
-				branch.binding = saved;
+				// FIXME: 
+//				int[] saved = branch.binding;
+//				int[] binding = new int[postcondition.numSlots()];
+//				binding[0] = target;
+//				for (int i = 1; i != code_operands.length; ++i) {
+//					binding[i] = branch.read(code_operands[i]);
+//				}
+//				// FIXME: broken if numSlots exceeds num of arguments
+//				branch.binding = binding;
+//				branch = transform(true, branch, postcondition);
+//				branch.binding = saved;
 			}
 		}
 	}
 
 	protected void transform(Code.Invert code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.BinListOp code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.LengthOf code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		int src = branch.read(code.operand);
-		int result = LengthOf(branch.automaton, src);
+		int result = LengthOf(branch.automaton(), src);
 		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.SubList code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.IndexOf code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		int src = branch.read(code.leftOperand);
 		int idx = branch.read(code.rightOperand);
-		int result = IndexOf(branch.automaton, src, idx);
+		int result = IndexOf(branch.automaton(), src, idx);
 		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.Move code, Block.Entry entry,
-			Branch branch) {
+			VerificationBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
 	}
 	
 	protected void transform(Code.Assign code, Block.Entry entry,
-			Branch branch) {
+			VerificationBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
 	}
 
 	protected void transform(Code.Update code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.NewMap code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.NewList code, Block.Entry entry,
-			Branch branch) {
+			VerificationBranch branch) {
 		int[] code_operands = code.operands;
 		int[] vals = new int[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		int result = List(branch.automaton, vals);
+		int result = List(branch.automaton(), vals);
 		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.NewSet code, Block.Entry entry,
-			Branch branch) {
+			VerificationBranch branch) {
 		int[] code_operands = code.operands;
 		int[] vals = new int[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		int result = Set(branch.automaton, vals);
+		int result = Set(branch.automaton(), vals);
 		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.NewRecord code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
 		// TODO
 	}
 
 	protected void transform(Code.NewTuple code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		int[] code_operands = code.operands;
 		int[] vals = new int[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		int result = Tuple(branch.automaton, vals);
+		int result = Tuple(branch.automaton(), vals);
 		branch.write(code.target, result);		
 	}
 
 	protected void transform(Code.UnArithOp code, Block.Entry entry,
-			 Branch branch) {
-		Automaton automaton = branch.automaton;
+			 VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
 		if(code.kind == Code.UnArithKind.NEG) {
 			int result = Mul(automaton, automaton.add(new Automaton.Real(-1)),
 					automaton.add(new Automaton.Bag(branch.read(code.operand))));
@@ -817,12 +651,12 @@ public class VerificationCheck implements Transform {
 	}
 
 	protected void transform(Code.Dereference code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.BinSetOp code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 //		WVariable lhs = branch.read(code.leftOperand, environment);
 //		WVariable rhs = branch.read(code.rightOperand, environment);
 //		WVariable target = update(code.target, environment);
@@ -838,7 +672,7 @@ public class VerificationCheck implements Transform {
 //			
 //			Automaton allc = WFormulas.or(WSets.subsetEq(sc, lhs),
 //				WSets.subsetEq(sc, rhs));
-//			constraint = WFormulas.and(branch.automaton, WSets.subsetEq(lhs, target), WSets
+//			constraint = WFormulas.and(branch.automaton(), WSets.subsetEq(lhs, target), WSets
 //					.subsetEq(rhs, target), new WBoundedForall(true, vars, allc));
 //			break;
 //		}
@@ -847,7 +681,7 @@ public class VerificationCheck implements Transform {
 //					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
 //
 //			constraint = WFormulas
-//					.and(branch.automaton, WSets.subsetEq(lhs, target), left);		
+//					.and(branch.automaton(), WSets.subsetEq(lhs, target), left);		
 //			break;
 //		}
 //		case INTERSECTION:
@@ -859,7 +693,7 @@ public class VerificationCheck implements Transform {
 //					.subsetEq(sc, rhs), WSets.subsetEq(sc, target)));
 //			
 //			constraint = WFormulas
-//					.and(branch.automaton, left, right, WSets.subsetEq(target, lhs), WSets.subsetEq(target, rhs));
+//					.and(branch.automaton(), left, right, WSets.subsetEq(target, lhs), WSets.subsetEq(target, rhs));
 //			break;
 //			default:
 //				internalFailure("missing support for left/right set operations",filename,entry);
@@ -870,31 +704,71 @@ public class VerificationCheck implements Transform {
 	}
 	
 	protected void transform(Code.BinStringOp code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.SubString code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.NewObject code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.Throw code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.TupleLoad code, Block.Entry entry,
-			 Branch branch) {
+			 VerificationBranch branch) {
 		int src = branch.read(code.operand);
-		int idx = branch.automaton.add(new Automaton.Int(code.index));
-		int result = IndexOf(branch.automaton, src, idx);
+		int idx = branch.automaton().add(new Automaton.Int(code.index));
+		int result = IndexOf(branch.automaton(), src, idx);
 		branch.write(code.target, result);		
+	}
+	
+	/**
+	 * Assert that the given constraint holds.
+	 * 
+	 * @return
+	 */
+	public boolean assertTrue(int test, Block.Entry entry) {
+		try {
+			Automaton tmp = new Automaton(automaton);
+			int root = And(tmp,constraints);
+			root = And(tmp,root,Not(tmp,test));
+			int mark = tmp.mark(root);
+			
+			if(debug) {
+				Attribute.Source src = entry.attribute(Attribute.Source.class);
+				System.err.println("============================================");
+				if(src != null) {
+					System.err.print(src.line + ":");
+				} 					
+				new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);		
+			}
+											
+			infer(tmp);
+			
+			if(debug) {
+				System.err.println("\n\n=> (" + ConstraintSolver.numSteps
+						+ " steps, " + ConstraintSolver.numInferences
+						+ " reductions, " + ConstraintSolver.numInferences
+						+ " inferences)\n");
+				new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);
+				System.err.println();					
+			}
+			
+			// assertion holds if a constradiction is shown.
+			return tmp.get(tmp.root(mark)).equals(ConstraintSolver.False);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 	
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
@@ -950,30 +824,30 @@ public class VerificationCheck implements Transform {
 	 * @param value
 	 * @return
 	 */
-	private int convert(wyil.lang.Constant value, SyntacticElement elem, Branch branch) {
-		Automaton automaton = branch.automaton;
+	private int convert(wyil.lang.Constant value, SyntacticElement elem, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
 		
 		if(value instanceof wyil.lang.Constant.Bool) {
 			wyil.lang.Constant.Bool b = (wyil.lang.Constant.Bool) value;
 			return b.value ? automaton.add(True) : automaton.add(False);
 		} else if(value instanceof wyil.lang.Constant.Byte) {
 			wyil.lang.Constant.Byte v = (wyil.lang.Constant.Byte) value;
-			return Num(branch.automaton, BigRational.valueOf(v.value));
+			return Num(branch.automaton(), BigRational.valueOf(v.value));
 		} else if(value instanceof wyil.lang.Constant.Char) {
 			wyil.lang.Constant.Char v = (wyil.lang.Constant.Char) value;
 			// Simple, but mostly good translation
-			return Num(branch.automaton, v.value);
+			return Num(branch.automaton(), v.value);
 		} else if(value instanceof wyil.lang.Constant.Map) {
 			return automaton.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.FunctionOrMethod) {
 			return automaton.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.Integer) {
 			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
-			return Num(branch.automaton, BigRational.valueOf(v.value));
+			return Num(branch.automaton(), BigRational.valueOf(v.value));
 		} else if(value instanceof wyil.lang.Constant.Rational) {
 			wyil.lang.Constant.Rational v = (wyil.lang.Constant.Rational) value;
 			wyil.util.BigRational br = v.value;
-			return Num(branch.automaton, new BigRational(br.numerator(),br.denominator()));
+			return Num(branch.automaton(), new BigRational(br.numerator(),br.denominator()));
 		} else if(value instanceof wyil.lang.Constant.Null) {
 			return automaton.add(False); // TODO
 		} else if(value instanceof wyil.lang.Constant.List) {
@@ -982,7 +856,7 @@ public class VerificationCheck implements Transform {
 			for(int i=0;i!=vals.length;++i) {				
 				vals[i] = convert(vl.values.get(i),elem,branch);
 			}
-			return List(branch.automaton, vals);
+			return List(branch.automaton(), vals);
 		} else if(value instanceof wyil.lang.Constant.Set) {
 			Constant.Set vs = (Constant.Set) value;			
 			int[] vals = new int[vs.values.size()];
@@ -990,7 +864,7 @@ public class VerificationCheck implements Transform {
 			for(Constant c : vs.values) {				
 				vals[i++] = convert(c,elem,branch);
 			}
-			return Set(branch.automaton,vals);
+			return Set(branch.automaton(),vals);
 		} else if(value instanceof wyil.lang.Constant.Record) {
 			Constant.Record vt = (Constant.Record) value;
 			return automaton.add(False); // TODO
@@ -1016,31 +890,31 @@ public class VerificationCheck implements Transform {
 	 */
 	private int buildTest(Code.Comparator op,
 			SyntacticElement elem, int leftOperand, int rightOperand,
-			Branch branch) {
+			VerificationBranch branch) {
 		int lhs = branch.read(leftOperand);
 		int rhs = branch.read(rightOperand);
 		
 		switch(op) {
 		case EQ:
-			return Equals(branch.automaton, lhs, rhs);
+			return Equals(branch.automaton(), lhs, rhs);
 		case NEQ:
-			return Not(branch.automaton, Equals(branch.automaton, lhs, rhs));
+			return Not(branch.automaton(), Equals(branch.automaton(), lhs, rhs));
 		case GTEQ:
-			return Or(branch.automaton,LessThan(branch.automaton, rhs, lhs),Equals(branch.automaton, rhs, lhs));
+			return Or(branch.automaton(),LessThan(branch.automaton(), rhs, lhs),Equals(branch.automaton(), rhs, lhs));
 		case GT:
-			return LessThan(branch.automaton, rhs, lhs);
+			return LessThan(branch.automaton(), rhs, lhs);
 		case LTEQ:
 			// TODO: investigate whether better to represent LessThanEq explcitly in constraint solver
-			return Or(branch.automaton,LessThan(branch.automaton, lhs, rhs),Equals(branch.automaton, lhs, rhs));
+			return Or(branch.automaton(),LessThan(branch.automaton(), lhs, rhs),Equals(branch.automaton(), lhs, rhs));
 		case LT:
-			return LessThan(branch.automaton, lhs, rhs);
+			return LessThan(branch.automaton(), lhs, rhs);
 		case SUBSET:
-			return SubSet(branch.automaton, lhs, rhs);
+			return SubSet(branch.automaton(), lhs, rhs);
 		case SUBSETEQ:
 			// TODO: investigate whether better to represent SubSetEq explcitly in constraint solver
-			return Or(branch.automaton,Equals(branch.automaton, lhs, rhs),SubSet(branch.automaton, lhs, rhs));
+			return Or(branch.automaton(),Equals(branch.automaton(), lhs, rhs),SubSet(branch.automaton(), lhs, rhs));
 		case ELEMOF:
-			return ElementOf(branch.automaton, lhs, rhs);
+			return ElementOf(branch.automaton(), lhs, rhs);
 		default:
 			internalFailure("unknown comparator (" + op + ")",filename,elem);
 			return -1;
