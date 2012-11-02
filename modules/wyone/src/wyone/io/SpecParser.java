@@ -9,6 +9,7 @@ import static wyone.core.SpecFile.*;
 import static wyone.io.SpecLexer.*;
 import wyone.core.*;
 import wyone.core.Attribute.Source;
+import wyone.core.Expr.UOp;
 import wyone.core.SpecFile.ClassDecl;
 import wyone.core.SpecFile.Decl;
 import wyone.core.SpecFile.RewriteDecl;
@@ -596,6 +597,10 @@ public class SpecParser {
 			matchKeyword("false");
 			return new Expr.Constant(false,
 					sourceAttr(start, index - 1));			
+		} else if (token.text.equals("num")) {
+			return parseNumerator();
+		} else if (token.text.equals("den")) {
+			return parseDenominator();
 		} else if (token instanceof Identifier) {
 			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
@@ -832,6 +837,22 @@ public class SpecParser {
 		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
 	}
 
+	private Expr parseNumerator() {
+		int start = index;
+		matchKeyword("num");
+		skipWhiteSpace(true);
+		Expr e = parseCastExpression();
+		return new Expr.UnOp(UOp.NUMERATOR, e, sourceAttr(start, index - 1));
+	}
+	
+	private Expr parseDenominator() {
+		int start = index;
+		matchKeyword("den");
+		skipWhiteSpace(true);
+		Expr e = parseCastExpression();
+		return new Expr.UnOp(UOp.DENOMINATOR, e, sourceAttr(start, index - 1));
+	}
+	
 	private Expr parseNegation() {
 		int start = index;
 		match(Minus.class);

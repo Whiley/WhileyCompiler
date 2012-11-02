@@ -276,6 +276,11 @@ public class TypeInference {
 			}
 			
 			break;
+		case DENOMINATOR:
+		case NUMERATOR:
+			checkSubtype(Type.T_REAL, t, uop);										
+			t = Type.T_INT;			
+			break;
 		case NOT:
 			checkSubtype(Type.T_BOOL, t, uop);
 			break;

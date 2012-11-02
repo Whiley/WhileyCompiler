@@ -1,3 +1,8 @@
-include "examples/inequality.wyone"
+term Real(real)
+term Int[int,int]
+
+reduce Real(real t):
+    => Int[num t,den t]
+
 
 

@@ -614,6 +614,12 @@ public class JavaFileWriter {
 		case LENGTHOF:
 			body = "r" + rhs + ".lengthOf()";
 			break;
+		case NUMERATOR:
+			body = "r" + rhs + ".numerator()";
+			break;
+		case DENOMINATOR:
+			body = "r" + rhs + ".denominator()";
+			break;		
 		case NEG:
 			body = "r" + rhs + ".negate()";
 			break;

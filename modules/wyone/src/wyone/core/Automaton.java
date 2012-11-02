@@ -785,6 +785,14 @@ public final class Automaton {
 			super(K_REAL, new BigRational(str));
 		}
 
+		public Int numerator() {
+			return new Int(value.numerator());
+		}
+		
+		public Int denominator() {
+			return new Int(value.denominator());
+		}
+		
 		public int intValue() {
 			return value.intValue();
 		}

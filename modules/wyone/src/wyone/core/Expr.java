@@ -252,6 +252,12 @@ public interface Expr extends SyntacticElement {
 		NEG {
 			public String toString() { return "neg"; }
 		},
+		NUMERATOR {
+			public String toString() { return "num"; }
+		},
+		DENOMINATOR {
+			public String toString() { return "den"; }
+		},
 		LENGTHOF {
 			public String toString() { return "length"; }
 		}		

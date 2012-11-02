@@ -453,6 +453,8 @@ public class SpecLexer {
 		"reduce",		
 		"infer",
 		"let",
+		"num",
+		"den",
 		"package",
 		"include"
 	};
