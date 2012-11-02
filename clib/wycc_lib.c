@@ -351,7 +351,7 @@ static void wycc_set_add_odd(wycc_obj* col, wycc_obj* key, wycc_obj* val, int cn
 static void wycc_map_add_odd(wycc_obj* lst, wycc_obj* key, wycc_obj* itm, int cnt);
 static void wycc_tuple_add_odd(wycc_obj* lst, wycc_obj* key, wycc_obj* val, int cnt);
 
-static int wycc_type_check_tok(wycc_obj* itm, int tok);
+static int wycc_type_check_tok(wycc_obj* itm, int tok, int force);
 static void wycc_type_init();
 static int wycc_type_internal(const char *nam);
 static int wycc_type_parse(const char *nam, int *lo, int hi);
@@ -381,7 +381,7 @@ static wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key);
 static wycc_obj* wycc_box_fom(wycc_obj *nam, wycc_obj *sig
 			      , int tok, void* ptr);
 
-static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok);
+static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok, int force);
 static wycc_obj* wyil_set_add_list(wycc_obj* set, wycc_obj* lst);
 static wycc_obj* wyil_set_union_list(wycc_obj* lhs, wycc_obj* rhs);
 static wycc_obj* wyil_add_ld(wycc_obj* lhs, wycc_obj* rhs);
@@ -1131,6 +1131,108 @@ static int wycc_type_not_map(char* typ) {
 /*
  * return 1 iff our type (typ) is consistant with the wyil type token
  */
+static int wycc_type_comp_loss(int typ, int tok, int force){
+    int flgs = wycc_type_flags(tok);
+    int alt;
+
+    if (tok == my_type_any) {
+	return 1;
+    };
+    if (wycc_type_is_leaf(tok)) {
+	if (tok == my_type_int) {
+	    if ((typ == Wy_Int) || (typ == Wy_WInt)){
+		return 1;
+	    };
+	    if ((typ == Wy_Char) || (typ == Wy_Bool)){
+		return 1;
+	    };
+	    if (typ == Wy_Byte) {
+		return 1;
+	    };
+	    return 0;
+	};
+	if (tok == my_type_real) {
+	    if (typ == Wy_Float){
+		return 1;
+	    };
+	    if ((typ == Wy_Int) || (typ == Wy_WInt)){
+		return 1;
+	    };
+	    if ((typ == Wy_Char) || (typ == Wy_Bool)){
+		return 1;
+	    };
+	    if (typ == Wy_Byte) {
+		return 1;
+	    };
+	    return 0;
+	};
+	if (tok == my_type_bool) {
+	    return (typ == Wy_Bool);
+	};
+	if (tok == my_type_byte) {
+	    return (typ == Wy_Byte);
+	};
+	if (tok == my_type_char) {
+	    if ((typ == Wy_Char) || (typ == Wy_Byte)){
+		return 1;
+	    };
+	    return 0;
+	};
+	if (tok == my_type_string) {
+	    return ((typ == Wy_String) || (typ == Wy_CString));
+	};
+	WY_PANIC("Help needed in wycc_type_comp leaf (%d)\n", tok)
+    };
+    if (flgs & Type_List) {
+	return (typ == Wy_List);
+    };
+    if (flgs & Type_Set) {
+	return (typ == Wy_Set);
+    };
+    if (flgs & Type_Map) {
+	return (typ == Wy_Map);
+    };
+    if (flgs & Type_Record) {
+	return (typ == Wy_Record);
+    };
+    if (flgs & Type_Frac) {
+	return (typ == Wy_Record);
+    };
+    if (flgs & Type_Tuple) {
+	return (typ == Wy_Tuple);
+    };
+    if (tok == my_type_null) {
+	return (typ == Wy_Null);
+    }
+    if (flgs & Type_Recurs) {
+	alt = wycc_type_down(tok);
+	return wycc_type_comp_loss(typ, alt, force) ;
+    }; 
+    if (flgs & Type_Union) {
+	while (1) {
+	    alt = wycc_type_down(tok);
+	    if (wycc_type_comp_loss(typ, alt, force)) {
+		return 1;
+	    };
+	    tok = wycc_type_next(tok);
+	    if (tok == 0) {
+		return 0;
+	    };
+	}
+    };
+    //WY_SEG_FAULT
+    WY_PANIC("Help needed in wycc_type_comp other (%d)\n", tok)
+    fprintf(stderr, "Help needed in wycc_type_comp other (%d)\n", tok);
+    struct type_desc *desc;
+    desc = &((struct type_desc *)type_parsings)[tok];
+    fprintf(stderr, "\t tok type (%d)\n", desc->flgs);
+    exit(-3);
+
+}
+
+/*
+ * return 1 iff our type (typ) is consistant with the wyil type token
+ */
 static int wycc_type_comp(int typ, int tok){
     int flgs = wycc_type_flags(tok);
     int alt;
@@ -1210,12 +1312,12 @@ static int wycc_type_comp(int typ, int tok){
  * Checking if an item matches a union type is
  * checking if the item matches any subtype.
  */
-static wycc_type_check_union(wycc_obj* itm, int tok){
+static wycc_type_check_union(wycc_obj* itm, int tok, int force){
     int alt;
 
     while (1) {
 	alt = wycc_type_down(tok);
-	if (wycc_type_check_tok(itm, alt)) {
+	if (wycc_type_check_tok(itm, alt, force)) {
 	    return 1;
 	};
 	tok = wycc_type_next(tok);
@@ -1229,12 +1331,12 @@ static wycc_type_check_union(wycc_obj* itm, int tok){
  * Checking if an item matches a negate type is
  * checking that the item does not match the subtype.
  */
-static wycc_type_check_negate(wycc_obj* itm, int tok){
+static wycc_type_check_negate(wycc_obj* itm, int tok, int force){
     int alt;
     int end;
 
     alt = wycc_type_down(tok);
-    end = wycc_type_check_tok(itm, alt);
+    end = wycc_type_check_tok(itm, alt, force);
     if (end == 0) {
 	return 1;
     };
@@ -1332,7 +1434,16 @@ static int wycc_type_subsume_tokens(int itok, int atok) {
     if (wycc_type_is_map(itok)) {
 	return 0;
     };
-    //WY_SEG_FAULT
+    if (wycc_type_is_union(itok)) {
+	for (nxt= itok; nxt > 0; nxt= wycc_type_next(nxt)) {
+	    alt = wycc_type_down(nxt);
+	    if (wycc_type_subsume_tokens(alt, atok)) {
+		return 1;
+	    };
+	}
+	return 0;
+    };
+     //WY_SEG_FAULT
     WY_PANIC("Help needed in wycc_type_subsume instance unk (%d, %d)\n", itok, iflg)
 
 }
@@ -1428,7 +1539,7 @@ static int wycc_type_subsume_records(int itok, int atok) {
 /*
  * return 1 iff the given item (wycc_obj) matches the given type token
  */
-static int wycc_type_check_tok(wycc_obj* itm, int tok){
+static int wycc_type_check_tok(wycc_obj* itm, int tok, int force){
     void **p = (void **) itm->ptr;
     void **pn;
     int ty = itm->typ;
@@ -1450,21 +1561,28 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
     };
     if (wycc_type_is_recurs(tok)) {
 	alt = wycc_type_down(tok);
-	return wycc_type_check_tok(itm, alt);
+	return wycc_type_check_tok(itm, alt, force);
     };
     if (wycc_type_is_union(tok)) {
-	return wycc_type_check_union(itm, tok);
+	return wycc_type_check_union(itm, tok, force);
     };
     if (wycc_type_is_negate(tok)) {
-	return wycc_type_check_negate(itm, tok);
+	return wycc_type_check_negate(itm, tok, force);
     };
     if (wycc_type_is_recurs(tok)) {
 	tmp = wycc_type_down(tok);
-	return wycc_type_check_tok(itm, tmp);
+	return wycc_type_check_tok(itm, tmp, force);
     };
     tmp = wycc_type_comp(ty, tok);
     if (! tmp) {
-	return 0;
+	if (force) {
+	    tmp = wycc_type_comp_loss(ty, tok, force);
+	    if (! tmp) {
+		return 0;
+	    };
+	} else {
+	    return 0;
+	};
     };
     if (wycc_type_is_leaf(tok)) {
 	return 1;
@@ -1486,7 +1604,7 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 	for (alt= 0; alt < (int)(p[0]) ; alt++) {
 	    val = (wycc_obj *)p[3+alt];
 	    desc = &((struct type_desc *)type_parsings)[tok];
-	    tmp = wycc_type_check_tok(val, desc->down);
+	    tmp = wycc_type_check_tok(val, desc->down, force);
 	    if (!tmp) {
 		return 0;
 	    };
@@ -1522,7 +1640,7 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 		fprintf(stderr, "\tagainst %d\n", alta);
 	    };
 	    val = wycc_record_get_nam(itm, vu);
-	    tmp = wycc_type_check_tok(val, alta);
+	    tmp = wycc_type_check_tok(val, alta, force);
 	    if (!tmp) {
 		return 0;
 	    };
@@ -1557,7 +1675,7 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 	    //	};
 	    //};
 	    if (val != NULL) {
-		tmp = wycc_type_check_tok(val, alt);
+		tmp = wycc_type_check_tok(val, alt, force);
 		if (! tmp) {
 		    return 0;
 		};
@@ -1585,13 +1703,13 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok){
 		return 1;
 	    };
 	    if (key != NULL) {
-		tmp = wycc_type_check_tok(key, alt);
+		tmp = wycc_type_check_tok(key, alt, force);
 		if (! tmp) {
 		    return 0;
 		};
 	    };
 	    if (val != NULL) {
-		tmp = wycc_type_check_tok(val, alta);
+		tmp = wycc_type_check_tok(val, alta, force);
 		if (! tmp) {
 		    return 0;
 		};
@@ -1618,7 +1736,7 @@ int wycc_type_check(wycc_obj* itm, char* typ){
     // fprintf(stderr, "DEBUG wycc_type_check given type %d\n", itm->typ);
 
     tok = wycc_type_internal(typ);
-    return wycc_type_check_tok(itm, tok);
+    return wycc_type_check_tok(itm, tok, 0);
 }
 
 /*
@@ -4632,7 +4750,7 @@ wycc_obj * wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst) {
  * given an object, return an object of type list (Wy_List)
  * **** needs rework to handle impedence matching between lists and maps.
  */
-static wycc_obj* wyil_convert_iter(wycc_obj* col, int tok){
+static wycc_obj* wyil_convert_iter(wycc_obj* col, int tok, int force){
     struct chunk_ptr col_chunk_ptr;
     struct chunk_ptr *cptr = &col_chunk_ptr;
     funct_fill *filler;
@@ -4677,13 +4795,13 @@ static wycc_obj* wyil_convert_iter(wycc_obj* col, int tok){
 	    return ans;
 	};
 	if (key != NULL) {
-	    key = wyil_convert_tok(key, alt);
+	    key = wyil_convert_tok(key, alt, force);
 	};
 	if (val != NULL) {
 	    if (alta == -1) {
-		val = wyil_convert_tok(val, alt);
+		val = wyil_convert_tok(val, alt, force);
 	    } else {
-		val = wyil_convert_tok(val, alta);
+		val = wyil_convert_tok(val, alta, force);
 	    };
 	};
 	filler(ans, key, val, cnt);
@@ -4694,7 +4812,7 @@ static wycc_obj* wyil_convert_iter(wycc_obj* col, int tok){
 /*
  * given an object, return an object of type list (Wy_List)
  */
-static wycc_obj* wyil_convert_list_str(wycc_obj* lst, int tok){
+static wycc_obj* wyil_convert_list_str(wycc_obj* lst, int tok, int force){
     char* p = (char *) lst->ptr;
     //wycc_obj* ans;
     wycc_obj* nxt;
@@ -4752,7 +4870,7 @@ static wycc_obj* wyil_convert_list_str(wycc_obj* lst, int tok){
 /*
  * given an object, return an object of type list (Wy_List)
  */
-static wycc_obj* wyil_convert_list(wycc_obj* lst, int tok){
+static wycc_obj* wyil_convert_list(wycc_obj* lst, int tok, int force){
     void** p = lst->ptr;
     //wycc_obj* ans;
     wycc_obj* nxt;
@@ -4762,7 +4880,7 @@ static wycc_obj* wyil_convert_list(wycc_obj* lst, int tok){
     void** new;
 
     if ((lst->typ == Wy_String) || (lst->typ == Wy_CString)) {
-	return wyil_convert_list_str(lst, tok);
+	return wyil_convert_list_str(lst, tok, force);
     }
     if (lst->typ != Wy_List) {
 	WY_PANIC("Help needed in wyil_convert_list w/ %d\n", lst->typ)
@@ -4779,7 +4897,7 @@ static wycc_obj* wyil_convert_list(wycc_obj* lst, int tok){
 	nxt = (wycc_obj*) p[3+at];
 	//nxt->cnt++;
 	//new[3+at] = (void *) nxt;
-	new[3+at] = (void *) wyil_convert_tok(nxt, alt);
+	new[3+at] = (void *) wyil_convert_tok(nxt, alt, force);
     }
     new[0] = (void *) tmp;
     if (tmp >0) {
@@ -4799,9 +4917,9 @@ static wycc_obj* wyil_convert_list(wycc_obj* lst, int tok){
  * given an object, return an object that satisfies a union type.
  * this means iterating thru the union to select the best target.
  */
-static wycc_obj* wyil_convert_negate(wycc_obj* lst, int tok){
+static wycc_obj* wyil_convert_negate(wycc_obj* lst, int tok, int force){
 
-    if (wycc_type_check_tok(lst, tok)) {
+    if (wycc_type_check_tok(lst, tok, force)) {
 	lst->cnt++;
 	return lst;
     }
@@ -4813,7 +4931,7 @@ static wycc_obj* wyil_convert_negate(wycc_obj* lst, int tok){
  * given an object, return an object that satisfies a union type.
  * this means iterating thru the union to select the best target.
  */
-static wycc_obj* wyil_convert_union(wycc_obj* lst, int tok){
+static wycc_obj* wyil_convert_union(wycc_obj* lst, int tok, int force){
     int nxt = tok;
     int alt;
     int cnt = 0;
@@ -4823,7 +4941,7 @@ static wycc_obj* wyil_convert_union(wycc_obj* lst, int tok){
 
     for (nxt= tok; nxt > 0; nxt= wycc_type_next(nxt)) {
 	alt = wycc_type_down(nxt);
-	if (wycc_type_check_tok(lst, alt)) {
+	if (wycc_type_check_tok(lst, alt, force)) {
 	    lst->cnt++;
 	    return lst;
 	}
@@ -4833,10 +4951,17 @@ static wycc_obj* wyil_convert_union(wycc_obj* lst, int tok){
 	for (nxt= tok; nxt > 0; nxt= wycc_type_next(nxt)) {
 	    alt = wycc_type_down(nxt);
 	    if (wycc_type_is_leaf(alt)) {
-		return wyil_convert_tok(lst, alt);
+		return wyil_convert_tok(lst, alt, force);
 	    };
 	}
     };
+    for (nxt= tok; nxt > 0; nxt= wycc_type_next(nxt)) {
+	alt = wycc_type_down(nxt);
+	if (wycc_type_check_tok(lst, alt, force+1)) {
+	    return wyil_convert_tok(lst, alt, force+1);
+	}
+    }
+
     WY_PANIC("Help needed: wyil_convert_union incomplete (1 of %d)\n", cnt)
 
 }
@@ -4844,7 +4969,7 @@ static wycc_obj* wyil_convert_union(wycc_obj* lst, int tok){
 /*
  * given an object, return an object of type record (Wy_Record)
  */
-static wycc_obj* wyil_convert_tuple(wycc_obj* lst, int tok){
+static wycc_obj* wyil_convert_tuple(wycc_obj* lst, int tok, int force){
     void** p = lst->ptr;
     void** pn;
     wycc_obj* ans;
@@ -4875,7 +5000,7 @@ static wycc_obj* wyil_convert_tuple(wycc_obj* lst, int tok){
 	    fprintf(stderr, "\tconverted to %d\n", alt);
 	};
 	if (nxt != NULL) {
-	    prt = wyil_convert_tok(nxt, alt);
+	    prt = wyil_convert_tok(nxt, alt, force);
 	} else {
 	    prt = nxt;
 	};
@@ -4890,7 +5015,7 @@ static wycc_obj* wyil_convert_tuple(wycc_obj* lst, int tok){
  * given an object, return an object of some recursive type.
  * this conversion is bogus, and will crash if not already trivially true.
  */
-static wycc_obj* wyil_convert_recurs(wycc_obj* itm, int tok){
+static wycc_obj* wyil_convert_recurs(wycc_obj* itm, int tok, int force){
 
     //if (wycc_type_check_tok(itm, tok)) {
 	itm->cnt++;
@@ -4903,7 +5028,7 @@ static wycc_obj* wyil_convert_recurs(wycc_obj* itm, int tok){
 /*
  * given an object, return an object of type record (Wy_Record)
  */
-static wycc_obj* wyil_convert_frac(wycc_obj* lst, int tok){
+static wycc_obj* wyil_convert_frac(wycc_obj* lst, int tok, int force){
     void** p = lst->ptr;
     void** pn;
     wycc_obj* ans;
@@ -4953,7 +5078,7 @@ static wycc_obj* wyil_convert_frac(wycc_obj* lst, int tok){
 	};
 	nxt = wycc_record_get_nam(lst, vu);
 	if (nxt != NULL) {
-	    prt = wyil_convert_tok(nxt, tmp);
+	    prt = wyil_convert_tok(nxt, tmp, force);
 	    wycc_deref_box(nxt);
 	} else {
 	    prt = nxt;
@@ -4969,7 +5094,7 @@ static wycc_obj* wyil_convert_frac(wycc_obj* lst, int tok){
 /*
  * given an object, return an object of type record (Wy_Record)
  */
-static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok){
+static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok, int force){
     void** p = lst->ptr;
     void** pn;
     wycc_obj* ans;
@@ -5013,7 +5138,7 @@ static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok){
 	};
 	nxt = wycc_record_get_nam(lst, vu);
 	if (nxt != NULL) {
-	    prt = wyil_convert_tok(nxt, tmp);
+	    prt = wyil_convert_tok(nxt, tmp, force);
 	    wycc_deref_box(nxt);
 	} else {
 	    prt = nxt;
@@ -5128,7 +5253,7 @@ static wycc_obj* wyil_convert_string(wycc_obj* itm){
 /*
  * convert an item (wycc_obj) to the type indicated by the token
  */
-static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok){
+static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok, int force){
     if (tok == my_type_any) {
 	itm->cnt++;
 	return itm;
@@ -5161,23 +5286,23 @@ static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok){
 #endif
 	exit(-3);
     } else if (wycc_type_is_list(tok)){
-	return wyil_convert_list(itm, tok);
+	return wyil_convert_list(itm, tok, force);
     } else if (wycc_type_is_tuple(tok)){
-	return wyil_convert_tuple(itm, tok);
+	return wyil_convert_tuple(itm, tok, force);
     } else if (wycc_type_is_iter(tok)){
-	return wyil_convert_iter(itm, tok);
+	return wyil_convert_iter(itm, tok, force);
     } else if (wycc_type_is_record(tok)){
-	return wyil_convert_record(itm, tok);
+	return wyil_convert_record(itm, tok, force);
     } else if (wycc_type_is_union(tok)){
-	return wyil_convert_union(itm, tok);
+	return wyil_convert_union(itm, tok, force);
     } else if (wycc_type_is_negate(tok)){
-	return wyil_convert_negate(itm, tok);
+	return wyil_convert_negate(itm, tok, force);
     } else if (wycc_type_is_frac(tok)){
-	return wyil_convert_frac(itm, tok);
+	return wyil_convert_frac(itm, tok, force);
     } else if (wycc_type_is_recurs(tok)){
 	//return wyil_convert_recurs(itm, tok);
 	tok = wycc_type_down(tok);
-	return wyil_convert_tok(itm, tok);
+	return wyil_convert_tok(itm, tok, force);
     };
     WY_PANIC("Help needed in wyil_convert_tok w/ %d : %d\n"
 	     , tok, wycc_type_flags(tok))
@@ -5195,7 +5320,7 @@ wycc_obj* wyil_convert(wycc_obj* itm, char *typ){
     if (wycc_debug_flag) {
 	fprintf(stderr, "wyil_convert %d\n", tok);
     }
-    return wyil_convert_tok(itm, tok);
+    return wyil_convert_tok(itm, tok, 0);
 }
 
 /*
