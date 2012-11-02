@@ -427,7 +427,7 @@ public class VerificationTransformer {
 
 	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
 		int src = branch.read(code.operand);
-		int idx = branch.automaton().add(new Automaton.Int(code.index));
+		int idx = Num(branch.automaton(),code.index);
 		int result = IndexOf(branch.automaton(), src, idx);
 		branch.write(code.target, result);
 	}
