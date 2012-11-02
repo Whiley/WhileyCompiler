@@ -7,6 +7,10 @@ include "collections.wyone"
 
 term SubSet[Expr,Expr]
 
+reduce SubSet[SetVal{Value... xs}, SetVal{Value... ys}]:
+    => True, if |xs| < |ys| && no { x in xs | !(x in ys)}
+    => False
+
 reduce SubSet[Set{Expr... xs}, Set{Expr... ys}]:
     => True, if |xs| < |ys| && no { x in xs | !(x in ys)}
     => False
