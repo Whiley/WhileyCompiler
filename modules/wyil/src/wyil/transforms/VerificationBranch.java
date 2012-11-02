@@ -401,6 +401,7 @@ public class VerificationBranch {
 				children.add(trueBranch);
 			} else if(code instanceof Code.Loop) {
 				transformer.transform((Code.Loop) code, this);
+				pc++; // proceed into the loop
 			} else if(code instanceof Code.Return) {
 				transformer.transform((Code.Return) code, this);
 				break; // we're done!!!
