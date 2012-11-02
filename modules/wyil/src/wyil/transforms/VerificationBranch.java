@@ -301,6 +301,21 @@ public class VerificationBranch {
 	}
 	
 	/**
+	 * Invalidate all registers from <code>start</code> upto (but not including)
+	 * <code>end</code>.
+	 * 
+	 * @param start
+	 *            --- first register to invalidate.
+	 * @param end
+	 *            --- first register not to invalidate.
+	 */
+	public void invalidate(int start, int end) {
+		for (int i = start; i != end; ++i) {
+			invalidate(i);
+		}
+	}
+	
+	/**
 	 * Return a reference into the automaton which represents all of the
 	 * constraints that hold at this position in the branch.
 	 * 

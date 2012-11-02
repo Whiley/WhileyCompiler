@@ -176,16 +176,15 @@ public class VerificationCheck implements Transform {
 		VerificationBranch master = new VerificationBranch("", new Automaton(
 				ConstraintSolver.SCHEMA), body);
 		
-		if(precondition != null) {
-			VerificationBranch precond = new VerificationBranch("",master.automaton(),precondition);
-			int constraint = apply(true,precond);
+		if (precondition != null) {
+			VerificationBranch precond = new VerificationBranch("",
+					master.automaton(), precondition);
+			int constraint = apply(true, precond);
 			master.assume(constraint);
 			// invalidate all internal registers used by precondition to avoid
-			// any possible clashes with registers used in the main body. 
-			for (int i = precondition.numInputs(); i != precondition.numSlots(); ++i) {
-				master.invalidate(i);
-			}
-		} 
+			// any possible clashes with registers used in the main body.
+			master.invalidate(precondition.numInputs(),precondition.numSlots());			
+		}
 		
 		apply(false,master);
 	}
