@@ -92,7 +92,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void RecordAssign_Valid_1_RuntimeTest() { verifyPassTest("RecordAssign_Valid_1"); }
  @Test public void RecordAssign_Valid_2_RuntimeTest() { verifyPassTest("RecordAssign_Valid_2"); }
  @Test public void RecordAssign_Valid_4_RuntimeTest() { verifyPassTest("RecordAssign_Valid_4"); }
- @Test public void RecordAssign_Valid_5_RuntimeTest() { verifyPassTest("RecordAssign_Valid_5"); }
+ @Ignore("Takes Too Long") @Test public void RecordAssign_Valid_5_RuntimeTest() { verifyPassTest("RecordAssign_Valid_5"); }
  @Test public void RecordDefine_Valid_1_RuntimeTest() { verifyPassTest("RecordDefine_Valid_1"); }
  @Test public void RecursiveType_Valid_3_RuntimeTest() { verifyPassTest("RecursiveType_Valid_3"); }
  @Test public void RecursiveType_Valid_5_RuntimeTest() { verifyPassTest("RecursiveType_Valid_5"); }
