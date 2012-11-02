@@ -25,7 +25,13 @@
 
 package wyil.transforms;
 
+import static wyil.util.ConstraintSolver.And;
+import static wyil.util.ConstraintSolver.Equals;
+import static wyil.util.ConstraintSolver.Or;
+import static wyil.util.ConstraintSolver.Var;
+
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
@@ -184,7 +190,8 @@ public class VerificationBranch {
 		this.environment = parent.environment.clone();
 		this.prefix = parent.prefix;
 		this.automaton = parent.automaton;
-		this.constraints = new ArrayList<Integer>();
+		// TODO: investigate alternatives to this?
+		this.constraints = new ArrayList<Integer>(parent.constraints);
 		this.block = parent.block;
 		this.origin = parent.pc;
 		this.pc = parent.pc;
@@ -214,6 +221,32 @@ public class VerificationBranch {
 	 */
 	public void goTo(int pc) {
 		this.pc = pc;
+	}
+	
+	/**
+	 * Get the constraint variable which corresponds to the given Wyil bytecode
+	 * register at this point on this branch.
+	 * 
+	 * @param register
+	 * @return
+	 */
+	public int read(int register) {		
+		return Var(automaton, prefix + register + "$"
+				+ environment[register]);
+	}
+
+	/**
+	 * Assign a given expression stored in the automaton to a given Wyil
+	 * bytecode register.
+	 * 
+	 * @param register
+	 * @param expr
+	 */
+	public void write(int register, int expr) {
+		int nval = allocateNewIndex(register);
+		environment[register] = nval;
+		constraints.add(Equals(automaton,
+				Var(automaton, prefix + register + "$" + nval), expr));
 	}
 
 	/**
@@ -247,7 +280,7 @@ public class VerificationBranch {
 	 * either branch, these environments will move apart.
 	 * </p>
 	 * 
-	 * @return
+	 * @return --- The child branch which is forked off this branch.
 	 */
 	public VerificationBranch fork() {
 		return new VerificationBranch(this);
@@ -298,7 +331,30 @@ public class VerificationBranch {
 	 *            --- The descendant branch which is being merged into this one.
 	 */
 	public void join(VerificationBranch incoming) {
+		// FIRST: determine new constraint sequence
+		ArrayList<Integer> common = new ArrayList<Integer>();
+		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
+		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
+		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);
+		
+		int l = And(automaton, lhsConstraints);
+		int r = And(automaton, rhsConstraints);
+		
+		// can now compute the logical OR of both branches
+		int join = Or(automaton, l, r);
 
+		// now, clear our sequential constraints since we can only have one
+		// which holds now: namely, the or of the two branches.
+		constraints.clear();
+		constraints.addAll(common);
+		constraints.add(join);
+		
+		// SECOND: update environment
+		for(int i=0;i!=environment.length;++i) {
+			if(environment[i] != incoming.environment[i]) {
+				System.err.println("DIFFERING ENVIRONMENTS!!");
+			}
+		}
 	}
 
 	/**
@@ -309,5 +365,45 @@ public class VerificationBranch {
 	 */
 	private int allocateNewIndex(int var) {
 		return ++registry[var];
+	}
+	
+	/**
+	 * Split the constraints for this branch and the incoming branch into three
+	 * sets: those common to both; those unique to this branch; and, those
+	 * unique to the incoming branch.
+	 * 
+	 * @param incoming
+	 * @param common
+	 * @param myRemainder
+	 * @param incomingRemainder
+	 */
+	private void splitConstraints(VerificationBranch incoming,
+			ArrayList<Integer> common, ArrayList<Integer> myRemainder,
+			ArrayList<Integer> incomingRemainder) {
+		BitSet lhs = new BitSet(automaton.nStates());
+		BitSet rhs = new BitSet(automaton.nStates());
+		for (int i : constraints) {
+			lhs.set(i);
+		}
+		for (int i : incoming.constraints) {
+			rhs.set(i);
+		}
+		lhs.and(rhs);
+
+		for (int i : constraints) {
+			if (lhs.get(i)) {
+				common.add(i);
+			} else {
+				myRemainder.add(i);
+			}
+		}
+
+		for (int i : incoming.constraints) {
+			if (lhs.get(i)) {
+				common.add(i);
+			} else {
+				incomingRemainder.add(i);
+			}
+		}
 	}
 }
