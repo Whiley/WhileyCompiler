@@ -25,6 +25,7 @@
 
 package wyil.transforms;
 
+import static wybs.lang.SyntaxError.internalFailure;
 import static wyil.util.ConstraintSolver.And;
 import static wyil.util.ConstraintSolver.Equals;
 import static wyil.util.ConstraintSolver.Not;
@@ -38,6 +39,8 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
+import wybs.lang.SyntaxError;
+import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
@@ -497,6 +500,16 @@ public class VerificationBranch {
 	}
 
 	/**
+	 * Push a scope onto the scopes stack. When the branch exits the scope, the
+	 * transformer will be notified.
+	 * 
+	 * @param scope
+	 */
+	public void push(Scope scope) {
+		scopes.add(scope);
+	}
+	
+	/**
 	 * A region of bytecodes which requires special attention when the branch
 	 * exits the scope. For example, when a branch exits the body of a for-loop,
 	 * we must ensure that the appopriate loop-invariants hold, etc.
@@ -512,6 +525,91 @@ public class VerificationBranch {
 		}
 	}
 			
+	/**
+	 * Dispatch on the given bytecode to the appropriate method in transformer
+	 * for generating an appropriate constraint to capture the bytecodes
+	 * semantics.
+	 * 
+	 * @return
+	 */
+	private void dispatch(boolean assume, VerificationTransformer transformer) {
+		Code code = entry().code;		
+		try {
+			if(code instanceof Code.Assert) {
+				transformer.transform((Code.Assert)code,assume,this);
+			} else if(code instanceof Code.BinArithOp) {
+				transformer.transform((Code.BinArithOp)code,this);
+			} else if(code instanceof Code.Convert) {
+				transformer.transform((Code.Convert)code,this);
+			} else if(code instanceof Code.Const) {
+				transformer.transform((Code.Const)code,this);
+			} else if(code instanceof Code.Debug) {
+				transformer.transform((Code.Debug)code,this);
+			} else if(code instanceof Code.FieldLoad) {
+				transformer.transform((Code.FieldLoad)code,this);			
+			} else if(code instanceof Code.IndirectInvoke) {
+				transformer.transform((Code.IndirectInvoke)code,this);
+			} else if(code instanceof Code.Invoke) {
+				transformer.transform((Code.Invoke)code,this);
+			} else if(code instanceof Code.Invert) {
+				transformer.transform((Code.Invert)code,this);
+			} else if(code instanceof Code.Label) {
+				// skip			
+			} else if(code instanceof Code.BinListOp) {
+				transformer.transform((Code.BinListOp)code,this);
+			} else if(code instanceof Code.LengthOf) {
+				transformer.transform((Code.LengthOf)code,this);
+			} else if(code instanceof Code.SubList) {
+				transformer.transform((Code.SubList)code,this);
+			} else if(code instanceof Code.IndexOf) {
+				transformer.transform((Code.IndexOf)code,this);
+			} else if(code instanceof Code.Move) {
+				transformer.transform((Code.Move)code,this);
+			} else if(code instanceof Code.Assign) {
+				transformer.transform((Code.Assign)code,this);
+			} else if(code instanceof Code.Update) {
+				transformer.transform((Code.Update)code,this);
+			} else if(code instanceof Code.NewMap) {
+				transformer.transform((Code.NewMap)code,this);
+			} else if(code instanceof Code.NewList) {
+				transformer.transform((Code.NewList)code,this);
+			} else if(code instanceof Code.NewRecord) {
+				transformer.transform((Code.NewRecord)code,this);
+			} else if(code instanceof Code.NewSet) {
+				transformer.transform((Code.NewSet)code,this);
+			} else if(code instanceof Code.NewTuple) {
+				transformer.transform((Code.NewTuple)code,this);
+			} else if(code instanceof Code.UnArithOp) {
+				transformer.transform((Code.UnArithOp)code,this);
+			} else if(code instanceof Code.Dereference) {
+				transformer.transform((Code.Dereference)code,this);
+			} else if(code instanceof Code.Nop) {
+				transformer.transform((Code.Nop)code,this);
+			} else if(code instanceof Code.BinSetOp) {
+				transformer.transform((Code.BinSetOp)code,this);
+			} else if(code instanceof Code.BinStringOp) {
+				transformer.transform((Code.BinStringOp)code,this);
+			} else if(code instanceof Code.SubString) {
+				transformer.transform((Code.SubString)code,this);
+			} else if(code instanceof Code.NewObject) {
+				transformer.transform((Code.NewObject)code,this);
+			} else if(code instanceof Code.Throw) {
+				transformer.transform((Code.Throw)code,this);
+			} else if(code instanceof Code.TupleLoad) {
+				transformer.transform((Code.TupleLoad)code,this);
+			} else {			
+				internalFailure("unknown: " + code.getClass().getName(),
+						transformer.filename(), entry());			
+			}
+		} catch(InternalFailure e) {
+			throw e;
+		} catch(SyntaxError e) {
+			throw e;
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(), transformer.filename(), entry(), e);
+		}
+	}
+	
 	/**
 	 * Determine a fresh index for the given variable.
 	 * 
