@@ -40,6 +40,7 @@ import java.util.List;
 
 import wyil.lang.Attribute;
 import wyil.lang.Block;
+import wyil.lang.Code;
 import wyil.util.ConstraintSolver;
 import wyone.core.Automaton;
 import wyone.io.PrettyAutomataWriter;
@@ -214,6 +215,15 @@ public class VerificationBranch {
 	}
 
 	/**
+	 * Get the block entry at the current PC position.
+	 * 
+	 * @return
+	 */
+	public Block.Entry entry() {
+		return block.get(pc);
+	}
+	
+	/**
 	 * Return the automaton associated with this branch.
 	 */
 	public Automaton automaton() {
@@ -221,12 +231,36 @@ public class VerificationBranch {
 	}
 
 	/**
-	 * Reposition the Program Counter (PC) for this branch.
+	 * Move the Program Counter (PC) to the next logical instruction in the
+	 * branch.
 	 * 
-	 * @param pc
+	 * @return -- true if there is a next instruction, or false otherwise.
 	 */
-	public void goTo(int pc) {
-		this.pc = pc;
+	public boolean next() {
+		this.pc++;
+		return this.pc < block.size();
+	}
+		
+	/**
+	 * Reposition the Program Counter (PC) for this branch to a given label in
+	 * the block.
+	 * 
+	 * @param label
+	 *            --- label to look for, which is assumed to occupy an index
+	 *            greater than the current PC (this follows the Wyil requirement
+	 *            that branches always go forward).
+	 */
+	public void goTo(String label) {
+		for (int i = pc; i != block.size(); ++i) {
+			Code code = block.get(i).code;
+			if (code instanceof Code.Label) {
+				Code.Label l = (Code.Label) code;
+				if (l.label.equals(label)) {
+					pc = i;
+					return;
+				}
+			}
+		}
 	}
 	
 	/**
@@ -253,6 +287,16 @@ public class VerificationBranch {
 		environment[register] = nval;
 		constraints.add(Equals(automaton,
 				Var(automaton, prefix + register + "$" + nval), expr));
+	}
+	
+	/**
+	 * Return a reference into the automaton which represents all of the
+	 * constraints that hold at this position in the branch.
+	 * 
+	 * @return
+	 */
+	public int constraints() {
+		return And(automaton, constraints);
 	}
 
 	/**

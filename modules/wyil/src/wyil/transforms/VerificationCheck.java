@@ -173,19 +173,15 @@ public class VerificationCheck implements Transform {
 		Block body = methodCase.body();
 		Block precondition = methodCase.precondition();				
 		
-		VerificationBranch branch; 
-		if(precondition != null) {
-			// to guarantee there are enough slots...
-			int numSlots = Math.max(body.numSlots(), precondition.numSlots());
-			branch =  new VerificationBranch(0,numSlots);
-			branch = transform(true, branch, precondition);
-			branch.pc = 0; // must reset
-		} else {
-			branch = new VerificationBranch("", new Automaton(
-					ConstraintSolver.SCHEMA), body);
-		}
+		VerificationBranch master = new VerificationBranch("", new Automaton(
+				ConstraintSolver.SCHEMA), body);
 		
-		transform(false,branch,body);
+		if(precondition != null) {
+			VerificationBranch precond = new VerificationBranch("$",master.automaton(),precondition);
+			int constraint = transform(true,precond);
+		} 
+		
+		transform(false,master);
 	}
 	
 	
@@ -217,48 +213,54 @@ public class VerificationCheck implements Transform {
 		}
 	}
 		
-	protected VerificationBranch transform(boolean assumes,
-			VerificationBranch branch, Block blk) {
+	/**
+	 * Transform a given branch into a set of constraints (stored in the
+	 * automaton) which are known to hold at the end of that branch.
+	 * 
+	 * @param assumes
+	 * @param branch
+	 * @return
+	 */
+	protected int transform(boolean assumes,
+			VerificationBranch branch) {
 		ArrayList<VerificationBranch> branches = new ArrayList<VerificationBranch>();
 
 		// take initial branch
-		transform(assumes, blk, branch, branches);
+		transform(assumes, branch, branches);
 
 		// continue any resulting branches
 		while (!branches.isEmpty()) {
 			int last = branches.size() - 1;
 			VerificationBranch b = branches.get(last);
 			branches.remove(last);
-			transform(assumes, blk, b, branches);
+			transform(assumes, b, branches);
 			branch.join(b);
 		}
 
-		return branch;
+		return branch.constraints();
 	}
 	
-	protected VerificationBranch transform(boolean assumes, Block body, VerificationBranch branch,
-			ArrayList<VerificationBranch> branches) {
+	protected VerificationBranch transform(boolean assumes,
+			VerificationBranch branch, ArrayList<VerificationBranch> branches) {
 	
 		Automaton constraint = branch.automaton();				
 		ArrayList<Scope> scopes = null;
-		
-		int bodySize = body.size();		
-		while(branch.pc() != bodySize) {	
+				
+		do {	
 			//constraint = exitScope(constraint,environment,scopes,i);
 			
-			Block.Entry entry = body.get(branch.pc());			
+			Block.Entry entry = branch.entry();			
 			Code code = entry.code;
 			
 			if(code instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) code;
-				branch.goTo(findLabel(branch.pc(),g.target,body));					
+				branch.goTo(g.target);					
 			} else if(code instanceof Code.If) {
 				Code.If ifgoto = (Code.If) code;
 				int test = buildTest(ifgoto.op, entry, ifgoto.leftOperand,
 						ifgoto.rightOperand, branch);
 				VerificationBranch trueBranch = branch.fork();
-				trueBranch.goTo(findLabel(branch.pc(),
-						ifgoto.target, body));
+				trueBranch.goTo(ifgoto.target);
 				trueBranch.assume(test);
 				branches.add(trueBranch);
 				branch.assume(Not(constraint,test));
@@ -266,7 +268,7 @@ public class VerificationCheck implements Transform {
 				// TODO: implement me!
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll forall = (Code.ForAll) code; 
-				int end = findLabel(branch.pc(),forall.target,body);
+				//int end = findLabel(branch.pc(),forall.target,body);
 				int src = branch.read(forall.sourceOperand);
 				int var = branch.read(forall.indexOperand);
 
@@ -275,13 +277,13 @@ public class VerificationCheck implements Transform {
 //						WTypes.subtypeOf(var, convert(forall.type.element())));
 //				
 				branch.assume(ElementOf(branch.automaton(), var, src));
-				scopes.add(new ForScope(forall,end,src,var));
+				//scopes.add(new ForScope(forall,end,src,var));
 								
 				// FIXME: assume loop invariant?
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 
-				int end = findLabel(branch.pc(), loop.target, body);
-				scopes.add(new LoopScope(loop,end));
+				//int end = findLabel(branch.pc(), loop.target, body);
+				//scopes.add(new LoopScope(loop,end));
 				// FIXME: assume loop invariant?
 				// FIXME: assume condition?
 			} else if(code instanceof Code.Return) {
@@ -289,10 +291,9 @@ public class VerificationCheck implements Transform {
 				break;
 			} else {
 				transform(entry, assumes, branch);
-			}
-			
-			branch.goTo(branch.pc()+1);
-		}
+			}			
+		} while(branch.next());
+		
 		return branch;
 	}
 	
@@ -337,20 +338,6 @@ public class VerificationCheck implements Transform {
 //		
 //		return constraint;
 //	}
-	
-	private static int findLabel(int i, String label, Block body) {
-		for(;i!=body.size();++i) {
-			Code code = body.get(i).code;
-			if(code instanceof Code.Label) {
-				Code.Label l = (Code.Label) code;
-				if(l.label.equals(label)) {
-					return i;
-				}
-			}
-		}
-		// technically, this is dead-code.
-		return i;
-	}
 	
 	/**
 	 * Transform the given constraint according to the abstract semantics of the
@@ -754,33 +741,6 @@ public class VerificationCheck implements Transform {
 		return null;
 	}
 	
-	// The following method splits a formula into two components: those bits
-	// which use the given variable (left), and those which don't (right). This
-	// is done to avoid quantifying more than is necessary when dealing with
-	// loops.
-//	protected static Pair<WFormula, WFormula> splitFormula(String var, WFormula f) {
-//		if (f instanceof WConjunct) {
-//			WConjunct c = (WConjunct) f;
-//			WFormula ts = WBool.TRUE;
-//			WFormula fs = WBool.TRUE;
-//			for (WFormula st : c.subterms()) {
-//				Pair<WFormula, WFormula> r = splitFormula(var, st);
-//				ts = WFormulas.and(ts, r.first());
-//				fs = WFormulas.and(fs, r.second());
-//			}
-//			return new Pair<WFormula, WFormula>(ts, fs);
-//		} else {
-//			// not a conjunct, so check whether or not this uses var or not.
-//			Set<WVariable> uses = WExprs.match(WVariable.class, f);
-//			for (WVariable v : uses) {
-//				if (v.name().equals(var)) {
-//					return new Pair<WFormula, WFormula>(f, WBool.TRUE);
-//				}
-//			}
-//			// Ok, doesn't use variable
-//			return new Pair<WFormula, WFormula>(WBool.TRUE, f);
-//		}
-//	}
 	/**
 	 * Convert between a WYIL value and a WYONE value. Basically, this is really
 	 * stupid and it would be good for them to be the same.
