@@ -139,6 +139,13 @@ public class VerificationBranch {
 	private final ArrayList<Integer> constraints;
 
 	/**
+	 * The stack of currently active scopes (e.g. for-loop). When the branch
+	 * exits a scope, an exit scope event is generated in order that additional
+	 * effects make be applied.
+	 */
+	private final ArrayList<Scope> scopes;
+	
+	/**
 	 * The block of Wyil bytecode instructions which this branch is traversing
 	 * (note: <code>parent == null || block == parent.block</code> must hold).
 	 */
@@ -180,6 +187,7 @@ public class VerificationBranch {
 		this.prefix = prefix;
 		this.automaton = automaton;
 		this.constraints = new ArrayList<Integer>();
+		this.scopes = new ArrayList<Scope>();
 		this.block = block;
 		this.origin = 0;
 		this.pc = 0;
@@ -199,6 +207,7 @@ public class VerificationBranch {
 		this.automaton = parent.automaton;
 		// TODO: investigate alternatives to this?
 		this.constraints = new ArrayList<Integer>(parent.constraints);
+		this.scopes = new ArrayList<Scope>(parent.scopes);
 		this.block = parent.block;
 		this.origin = parent.pc;
 		this.pc = parent.pc;
@@ -487,6 +496,22 @@ public class VerificationBranch {
 		}
 	}
 
+	/**
+	 * A region of bytecodes which requires special attention when the branch
+	 * exits the scope. For example, when a branch exits the body of a for-loop,
+	 * we must ensure that the appopriate loop-invariants hold, etc.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Scope {
+		public final int end;
+		
+		public Scope(int end) {
+			this.end = end;
+		}
+	}
+			
 	/**
 	 * Determine a fresh index for the given variable.
 	 * 

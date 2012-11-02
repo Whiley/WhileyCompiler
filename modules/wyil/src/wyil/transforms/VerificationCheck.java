@@ -190,14 +190,6 @@ public class VerificationCheck implements Transform {
 	}
 	
 	
-	public static class Scope {
-		public final int end;
-		
-		public Scope(int end) {
-			this.end = end;
-		}
-	}
-	
 	private static class LoopScope<T extends Code.Loop> extends Scope {
 		public final T loop;
 		
