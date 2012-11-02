@@ -349,62 +349,62 @@ public final class LocalGenerator {
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 	}
 	
-	private void generateCondition(String target, Expr.Comprehension e, Environment environment, Block codes) {
-				
+	private void generateCondition(String target, Expr.Comprehension e,
+			Environment environment, Block codes) {
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, e);
 		}
-		
-		// Ok, non-boolean case.				
-		Block blk = new Block(environment.size());
-		ArrayList<Triple<Integer,Integer,Type.EffectiveCollection>> slots = new ArrayList();		
-		
+
+		ArrayList<Triple<Integer, Integer, Type.EffectiveCollection>> slots = new ArrayList();
+
 		for (Pair<String, Expr> src : e.sources) {
-			Nominal.EffectiveCollection srcType = (Nominal.EffectiveCollection) src.second().result();
+			Nominal.EffectiveCollection srcType = (Nominal.EffectiveCollection) src
+					.second().result();
 			int srcSlot;
-			int varSlot = environment.allocate(srcType.raw().element(),src.first());					
-			
-			if(src.second() instanceof Expr.LocalVariable) {
+			int varSlot = environment.allocate(srcType.raw().element(),
+					src.first());
+
+			if (src.second() instanceof Expr.LocalVariable) {
 				// this is a little optimisation to produce slightly better
 				// code.
 				Expr.LocalVariable v = (Expr.LocalVariable) src.second();
-				if(environment.get(v.var) != null) {					
+				if (environment.get(v.var) != null) {
 					srcSlot = environment.get(v.var);
-				} else {					
+				} else {
 					// fall-back plan ...
-					srcSlot = generate(src.second(), environment, codes);					
+					srcSlot = generate(src.second(), environment, codes);
 				}
 			} else {
-				srcSlot = generate(src.second(), environment, codes);				
-			}			
-			slots.add(new Triple(varSlot,srcSlot,srcType.raw()));											
+				srcSlot = generate(src.second(), environment, codes);
+			}
+			slots.add(new Triple(varSlot, srcSlot, srcType.raw()));
 		}
-				
+
 		ArrayList<String> labels = new ArrayList<String>();
 		String loopLabel = Block.freshLabel();
-		
+
 		for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
-			Type.EffectiveCollection srcType = p.third();			
-			String lab = loopLabel + "$" + p.first();															
-			blk.append(Code.ForAll(srcType, p.second(), p.first(),
+			Type.EffectiveCollection srcType = p.third();
+			String lab = loopLabel + "$" + p.first();
+			codes.append(Code.ForAll(srcType, p.second(), p.first(),
 					Collections.EMPTY_LIST, lab), attributes(e));
 			labels.add(lab);
 		}
-								
+
 		if (e.cop == Expr.COp.NONE) {
 			String exitLabel = Block.freshLabel();
 			generateCondition(exitLabel, e.condition, environment, codes);
-			for (int i = (labels.size() - 1); i >= 0; --i) {				
-				blk.append(Code.LoopEnd(labels.get(i)));
-			}
-			blk.append(Code.Goto(target));
-			blk.append(Code.Label(exitLabel));
-		} else { // SOME			
-			generateCondition(target, e.condition, environment, codes);			
 			for (int i = (labels.size() - 1); i >= 0; --i) {
-				blk.append(Code.LoopEnd(labels.get(i)));
+				codes.append(Code.LoopEnd(labels.get(i)));
 			}
-		} // ALL, LONE and ONE will be harder							
+			codes.append(Code.Goto(target));
+			codes.append(Code.Label(exitLabel));
+		} else { // SOME
+			generateCondition(target, e.condition, environment, codes);
+			for (int i = (labels.size() - 1); i >= 0; --i) {
+				codes.append(Code.LoopEnd(labels.get(i)));
+			}
+		} // ALL, LONE and ONE will be harder
 	}
 	
 	/**

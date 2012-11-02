@@ -82,7 +82,7 @@ public class GlobalGenerator {
 			if(td != null) {
 				cache.put(nid, EMPTY_BLOCK);
 				blk = generate(td.unresolvedType,td);
-				if(td.constraint != null) {								
+				if(td.constraint != null) {			
 					if(blk == null) {
 						blk = new Block(1);					
 					}
