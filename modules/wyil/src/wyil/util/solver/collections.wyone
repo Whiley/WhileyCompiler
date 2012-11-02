@@ -99,9 +99,26 @@ reduce IndexOf[Tuple[Expr... ls], Num(real rdx)]:
        in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
 
 // ====================================================================
+// Record Expressions
+// ====================================================================
+
+term Record{[string,Expr]...} // NOTE: a map might be better here
+term RecordVal{[string,Value]...}
+term FieldOf[Expr,string]
+
+reduce Record{[string,Value]... fields}:
+    => RecordVal(fields)
+
+reduce FieldOf[RecordVal{[string f1, Value v], * ...},string f2]:
+    => v, if f1 == f2
+
+reduce FieldOf[Record{[string f1, Expr e], * ...},string f2]:
+    => e, if f1 == f2
+
+// ====================================================================
 // Expressions & Values
 // ====================================================================
 
-class Value as ListVal | SetVal | TupleVal | ...
+class Value as ListVal | SetVal | TupleVal | RecordVal | ...
 class BExpr as ElementOf | ...
-class Expr as ListVal | SetVal | TupleVal | Set | List | Tuple | LengthOf | IndexOf | Update | ElementOf | ...
+class Expr as ListVal | SetVal | TupleVal | RecordVal | Set | List | Tuple | Record | LengthOf | IndexOf | Update | ElementOf | FieldOf | ...

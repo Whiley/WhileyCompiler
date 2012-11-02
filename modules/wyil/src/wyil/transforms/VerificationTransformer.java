@@ -31,7 +31,9 @@ import static wyil.util.ConstraintSolver.*;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import wybs.lang.*;
 import wyil.lang.*;
@@ -259,7 +261,10 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
-		// TODO
+		int src = branch.read(code.operand);
+		int field = branch.automaton().add(new Automaton.Strung(code.field));
+		int result = FieldOf(branch.automaton(), src, field);
+		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
@@ -383,9 +388,19 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.NewRecord code, VerificationBranch branch) {
+		int[] code_operands = code.operands;
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
-		// TODO
+		Collections.sort(fields);
+		int[] vals = new int[fields.size()];
+		for (int i = 0; i != fields.size(); ++i) {
+			int k = branch.automaton().add(new Automaton.Strung(fields.get(i)));
+			int v = branch.read(code_operands[i]);
+			vals[i] = branch.automaton().add(new Automaton.List(k, v));
+		}			
+		
+		int result = Record(branch.automaton(),vals);
+		branch.write(code.target,result);
 	}
 
 	protected void transform(Code.NewObject code,
@@ -507,7 +522,7 @@ public class VerificationTransformer {
 			for (int i = 0; i != vals.length; ++i) {
 				vals[i] = convert(vl.values.get(i), branch);
 			}
-			return List(branch.automaton(), vals);
+			return ListVal(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Set) {
 			Constant.Set vs = (Constant.Set) value;
 			int[] vals = new int[vs.values.size()];
@@ -515,15 +530,27 @@ public class VerificationTransformer {
 			for (Constant c : vs.values) {
 				vals[i++] = convert(c, branch);
 			}
-			return Set(branch.automaton(), vals);
+			return SetVal(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Record) {
 			Constant.Record vt = (Constant.Record) value;
-			return automaton.add(False); // TODO
+			int[] vals = new int[vt.values.size()];
+			int i = 0;
+			for (Map.Entry<String, Constant> e : vt.values.entrySet()) {
+				int k = branch.automaton()
+						.add(new Automaton.Strung(e.getKey()));
+				int v = convert(e.getValue(), branch);
+				vals[i++] = branch.automaton().add(new Automaton.List(k,v));
+			}			
+			return RecordVal(branch.automaton(),vals);
 		} else if (value instanceof wyil.lang.Constant.Strung) {
 			return automaton.add(False); // TODO
 		} else if (value instanceof wyil.lang.Constant.Tuple) {
 			Constant.Tuple vt = (Constant.Tuple) value;
-			return automaton.add(False); // TODO
+			int[] vals = new int[vt.values.size()];
+			for (int i = 0; i != vals.length; ++i) {
+				vals[i] = convert(vt.values.get(i), branch);
+			}
+			return TupleVal(branch.automaton(), vals);
 		} else {
 			internalFailure("unknown value encountered (" + value + ")",
 					filename, branch.entry());
