@@ -195,11 +195,20 @@ public class VerificationTransformer {
 		int rhs = branch.read(code.rightOperand);
 		int result;
 
-		switch (code.kind) {
+		switch (code.kind) {		
 		case UNION:
 			result = Union(automaton,lhs,rhs);
 			break;
+		case LEFT_UNION:
+			result = Union(automaton,lhs,Set(automaton,rhs));
+			break;
+		case RIGHT_UNION:
+			result = Union(automaton,Set(automaton,lhs),rhs);
+			break;
 		case INTERSECTION:
+		case LEFT_INTERSECTION:
+		case RIGHT_INTERSECTION:
+		case LEFT_DIFFERENCE:
 		case DIFFERENCE:
 			// TODO:
 			return; 
