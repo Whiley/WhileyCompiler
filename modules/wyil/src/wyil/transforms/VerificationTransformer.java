@@ -190,50 +190,26 @@ public class VerificationTransformer {
 
 	protected void transform(Code.BinSetOp code,
 			 VerificationBranch branch) {
-//		WVariable lhs = branch.read(code.leftOperand, environment);
-//		WVariable rhs = branch.read(code.rightOperand, environment);
-//		WVariable target = update(code.target, environment);
-//
-//		WVariable tmp = WVariable.freshVar();
-//		WSetConstructor sc = new WSetConstructor(tmp);
-//		
-//		HashMap<WVariable, WExpr> vars = new HashMap();
-//		vars.put(tmp, target);
-//		
-//		switch(code.kind) {
-//		case UNION:	{
-//			
-//			Automaton allc = WFormulas.or(WSets.subsetEq(sc, lhs),
-//				WSets.subsetEq(sc, rhs));
-//			constraint = WFormulas.and(branch.automaton(), WSets.subsetEq(lhs, target), WSets
-//					.subsetEq(rhs, target), new WBoundedForall(true, vars, allc));
-//			break;
-//		}
-//		case DIFFERENCE: {
-//			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
-//					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs).not()));
-//
-//			constraint = WFormulas
-//					.and(branch.automaton(), WSets.subsetEq(lhs, target), left);		
-//			break;
-//		}
-//		case INTERSECTION:
-//			Automaton left = new WBoundedForall(true, vars, WFormulas.and(WSets
-//					.subsetEq(sc, lhs), WSets.subsetEq(sc, rhs)));
-//			vars = new HashMap();
-//			vars.put(tmp, lhs);
-//			Automaton right = new WBoundedForall(true, vars, WFormulas.implies(WSets
-//					.subsetEq(sc, rhs), WSets.subsetEq(sc, target)));
-//			
-//			constraint = WFormulas
-//					.and(branch.automaton(), left, right, WSets.subsetEq(target, lhs), WSets.subsetEq(target, rhs));
-//			break;
-//			default:
-//				internalFailure("missing support for left/right set operations",filename,entry);
-//		}
-//
-//		return constraint;
-		// TODO
+		Automaton automaton = branch.automaton();
+		int lhs = branch.read(code.leftOperand);
+		int rhs = branch.read(code.rightOperand);
+		int result;
+
+		switch (code.kind) {
+		case UNION:
+			result = Union(automaton,lhs,rhs);
+			break;
+		case INTERSECTION:
+		case DIFFERENCE:
+			// TODO:
+			return; 
+		default:
+			internalFailure("unknown binary operator", filename, branch.entry());
+			return;
+
+		}
+		
+		branch.write(code.target, result);
 	}
 	
 	protected void transform(Code.BinStringOp code,

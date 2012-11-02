@@ -4,6 +4,51 @@ include "numerics.wyone"
 term LengthOf(Expr)
 
 // ====================================================================
+// Set Expressions
+// ====================================================================
+
+term Set{Expr...}
+term SetVal{Value...}
+term ElementOf[Expr,Expr] // lhs in rhs
+term Union{Expr...}
+
+reduce Set{Value... xs}:
+    => SetVal(xs)
+
+reduce LengthOf(SetVal{Value... xs}):
+    => Num((real) |xs|)
+
+reduce ElementOf[Value e1, SetVal{Value... es}]:
+    => True, if e1 in es
+    => False
+
+reduce ElementOf[Expr e1, SetVal{Value... es}]:
+    => False, if |es| == 0
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in Or(ns)
+
+reduce ElementOf[Expr e1, Set{Expr... es}]:
+    => True, if e1 in es
+    => False, if |es| == 0
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in Or(ns)
+
+reduce Union{Expr e}:
+    => e
+
+reduce Union{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
+    => Union (Set(xs++ys) ++ rest)
+
+reduce Union{Set{Expr... xs},SetVal{Value... ys}, Expr... rest}:
+    => Union (Set(xs++ys) ++ rest)
+
+reduce Union{SetVal{Value... xs},SetVal{Value... ys}, Expr... rest}:
+    => Union (SetVal(xs++ys) ++ rest)
+
+reduce Union{Union{Expr... xs}, Expr... rest}:
+    => Union (xs ++ rest)
+
+// ====================================================================
 // List Expressions
 // ====================================================================
 
@@ -46,35 +91,6 @@ reduce IndexOf[List[Expr... ls], Num(real rdx)]:
 
 reduce Update[List[Expr... ls],Num(int idx),Expr val]:
     => ls[idx = val], if idx >= 0 && idx < |ls|
-
-// ====================================================================
-// Set Expressions
-// ====================================================================
-
-term Set{Expr...}
-term SetVal{Value...}
-term ElementOf[Expr,Expr] // lhs in rhs
-
-reduce Set{Value... xs}:
-    => SetVal(xs)
-
-reduce LengthOf(SetVal{Value... xs}):
-    => Num((real) |xs|)
-
-reduce ElementOf[Value e1, SetVal{Value... es}]:
-    => True, if e1 in es
-    => False
-
-reduce ElementOf[Expr e1, SetVal{Value... es}]:
-    => False, if |es| == 0
-    => let ns = { Equals{|e1,e2|} | e2 in es }
-       in Or(ns)
-
-reduce ElementOf[Expr e1, Set{Expr... es}]:
-    => True, if e1 in es
-    => False, if |es| == 0
-    => let ns = { Equals{|e1,e2|} | e2 in es }
-       in Or(ns)
 
 // ====================================================================
 // Tuple Expressions
@@ -121,4 +137,4 @@ reduce FieldOf[Record{[string f1, Expr e], * ...},string f2]:
 
 class Value as ListVal | SetVal | TupleVal | RecordVal | ...
 class BExpr as ElementOf | ...
-class Expr as ListVal | SetVal | TupleVal | RecordVal | Set | List | Tuple | Record | LengthOf | IndexOf | Update | ElementOf | FieldOf | ...
+class Expr as ListVal | SetVal | TupleVal | RecordVal | Set | List | Tuple | Record | LengthOf | IndexOf | Update | ElementOf | FieldOf | Union | ...
