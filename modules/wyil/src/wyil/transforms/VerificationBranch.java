@@ -27,16 +27,22 @@ package wyil.transforms;
 
 import static wyil.util.ConstraintSolver.And;
 import static wyil.util.ConstraintSolver.Equals;
+import static wyil.util.ConstraintSolver.Not;
 import static wyil.util.ConstraintSolver.Or;
+import static wyil.util.ConstraintSolver.SCHEMA;
 import static wyil.util.ConstraintSolver.Var;
+import static wyil.util.ConstraintSolver.infer;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
+import wyil.lang.Attribute;
 import wyil.lang.Block;
+import wyil.util.ConstraintSolver;
 import wyone.core.Automaton;
+import wyone.io.PrettyAutomataWriter;
 
 /**
  * <p>
@@ -257,6 +263,50 @@ public class VerificationBranch {
 	 */
 	public void assume(int constraint) {
 		constraints.add(constraint);
+	}
+	
+	/**
+	 * Assert that the given constraint holds.
+	 * 
+	 * @return
+	 */
+	public boolean assertTrue(int test, boolean debug) {
+		try {
+			Automaton tmp = new Automaton(automaton);
+			int root = And(tmp, constraints);
+			root = And(tmp, root, Not(tmp, test));
+			int mark = tmp.mark(root);
+
+			if (debug) {
+				Attribute.Source src = block.get(pc).attribute(
+						Attribute.Source.class);
+				System.err
+						.println("============================================");
+				if (src != null) {
+					System.err.print(src.line + ":");
+				}
+				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
+						.write(tmp);
+			}
+
+			infer(tmp);
+
+			if (debug) {
+				System.err.println("\n\n=> (" + ConstraintSolver.numSteps
+						+ " steps, " + ConstraintSolver.numInferences
+						+ " reductions, " + ConstraintSolver.numInferences
+						+ " inferences)\n");
+				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
+						.write(tmp);
+				System.err.println();
+			}
+
+			// assertion holds if a contradiction is shown.
+			return tmp.get(tmp.root(mark)).equals(ConstraintSolver.False);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 	
 	/**

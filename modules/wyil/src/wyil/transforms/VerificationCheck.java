@@ -181,7 +181,8 @@ public class VerificationCheck implements Transform {
 			branch = transform(true, branch, precondition);
 			branch.pc = 0; // must reset
 		} else {
-			branch =  new VerificationBranch(0,body.numSlots());
+			branch = new VerificationBranch("", new Automaton(
+					ConstraintSolver.SCHEMA), body);
 		}
 		
 		transform(false,branch,body);
@@ -451,13 +452,14 @@ public class VerificationCheck implements Transform {
 			boolean assume, VerificationBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
-		int test = buildTest(code.op, entry, code.leftOperand, code.rightOperand, branch);
-		
+		int test = buildTest(code.op, entry, code.leftOperand,
+				code.rightOperand, branch);
+
 		if (assume) {
-			branch.assume(test);			 
-		} else if(!assertTrue(test,entry)){
-			syntaxError(code.msg,filename,entry);
-		}		
+			branch.assume(test);
+		} else if (!branch.assertTrue(test, debug)) {
+			syntaxError(code.msg, filename, entry);
+		}
 	}
 	
 	protected void transform(Code.BinArithOp code, Block.Entry entry,
@@ -731,45 +733,7 @@ public class VerificationCheck implements Transform {
 		branch.write(code.target, result);		
 	}
 	
-	/**
-	 * Assert that the given constraint holds.
-	 * 
-	 * @return
-	 */
-	public boolean assertTrue(int test, Block.Entry entry) {
-		try {
-			Automaton tmp = new Automaton(automaton);
-			int root = And(tmp,constraints);
-			root = And(tmp,root,Not(tmp,test));
-			int mark = tmp.mark(root);
-			
-			if(debug) {
-				Attribute.Source src = entry.attribute(Attribute.Source.class);
-				System.err.println("============================================");
-				if(src != null) {
-					System.err.print(src.line + ":");
-				} 					
-				new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);		
-			}
-											
-			infer(tmp);
-			
-			if(debug) {
-				System.err.println("\n\n=> (" + ConstraintSolver.numSteps
-						+ " steps, " + ConstraintSolver.numInferences
-						+ " reductions, " + ConstraintSolver.numInferences
-						+ " inferences)\n");
-				new PrettyAutomataWriter(System.err,SCHEMA,"And","Or").write(tmp);
-				System.err.println();					
-			}
-			
-			// assertion holds if a constradiction is shown.
-			return tmp.get(tmp.root(mark)).equals(ConstraintSolver.False);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
+	
 	
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
