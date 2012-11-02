@@ -311,9 +311,10 @@ public class VerificationTransformer {
 				}
 				
 				// third, bind the return value to the target register
+				branch.invalidate(code.target); // annoying but necessary.
 				int target = branch.read(code.target);
-				constraint = automaton.substitute(constraint, Var(automaton, prefix + "0$0"),
-						target);
+				constraint = automaton.substitute(constraint,
+						Var(automaton, prefix + "0$0"), target);
 				
 				// finally, assume the post condition holds
 				branch.assume(constraint);
