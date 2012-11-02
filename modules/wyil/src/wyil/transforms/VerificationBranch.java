@@ -487,7 +487,7 @@ public class VerificationBranch {
 	 * is ommitted from the disjunction. Furthermore, we've added and assignment
 	 * <code>x$3 == </code> onto both sides of the disjunction to capture the
 	 * flow of variable <code>x</code> from both sides (since it was modified on
-	 * atleast one of the branches).
+	 * at least one of the branches).
 	 * </p>
 	 * <p>
 	 * One challenge is to determine constraints which are constant to both
@@ -501,12 +501,28 @@ public class VerificationBranch {
 	 *            --- The descendant branch which is being merged into this one.
 	 */
 	private void join(VerificationBranch incoming) {
-		// FIRST: determine new constraint sequence
+		// First, determine new constraint sequence
 		ArrayList<Integer> common = new ArrayList<Integer>();
 		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
 		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
 		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);
 		
+		
+		// Second, update environment
+		for (int i = 0; i != environment.length; ++i) {
+			int i_lhs = environment[i];
+			int i_rhs = incoming.environment[i];
+			if (i_lhs != i_rhs) {
+				int oldLhs = read(i_lhs);
+				int oldRhs = incoming.read(i_rhs);
+				invalidate(i_lhs);
+				int newLhs = read(i_lhs);
+				lhsConstraints.add(Equals(automaton, newLhs, oldLhs));
+				rhsConstraints.add(Equals(automaton, newLhs, oldRhs));
+			}
+		}
+		
+		// Finally, put it all together
 		int l = And(automaton, lhsConstraints);
 		int r = And(automaton, rhsConstraints);
 		
@@ -519,12 +535,6 @@ public class VerificationBranch {
 		constraints.addAll(common);
 		constraints.add(join);
 		
-		// SECOND: update environment
-		for(int i=0;i!=environment.length;++i) {
-			if(environment[i] != incoming.environment[i]) {
-				System.err.println("DIFFERING ENVIRONMENTS!!");
-			}
-		}
 	}
 
 	/**

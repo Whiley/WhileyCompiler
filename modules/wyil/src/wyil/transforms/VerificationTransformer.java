@@ -281,17 +281,15 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
+	
 		
-		// first, maps arguments
-		Type.FunctionOrMethod ft = code.type;
-		List<Type> ft_params = code.type.params();
-		int[] code_operands = code.operands;
-
-		// second, setup return value
 		if (code.target != Code.NULL_REG) {
+			int[] code_operands = code.operands;
 
 			// now deal with post-condition
-			Block postcondition = findPostcondition(code.name, ft, branch.entry());
+			Block postcondition = findPostcondition(code.name, code.type,
+					branch.entry());
+			
 			if (postcondition != null) {
 				Automaton automaton = branch.automaton();
 				String prefix = code.name + "@" + branch.pc() + ":";
@@ -305,21 +303,21 @@ public class VerificationTransformer {
 				// second, bind the operands to the invocation.
 				for (int i = 0; i != code_operands.length; ++i) {
 					int argument = branch.read(code_operands[i]);
-					int parameter = Var(automaton, prefix + (i+1) + "$0");
+					int parameter = Var(automaton, prefix + (i + 1) + "$0");
 					constraint = automaton.substitute(constraint, parameter,
 							argument);
 				}
-				
+
 				// third, bind the return value to the target register
 				branch.invalidate(code.target); // annoying but necessary.
 				int target = branch.read(code.target);
 				constraint = automaton.substitute(constraint,
 						Var(automaton, prefix + "0$0"), target);
-				
+
 				// finally, assume the post condition holds
 				branch.assume(constraint);
 			}
-			
+
 			// FIXME: assign target RHS representing function application.
 		}
 	}
