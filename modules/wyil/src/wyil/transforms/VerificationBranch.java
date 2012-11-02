@@ -389,26 +389,25 @@ public class VerificationBranch {
 				Code.If ifc = (Code.If) code;
 				VerificationBranch trueBranch = fork();	
 				transformer.transform(ifc,this,trueBranch);
-				pc++;
 				trueBranch.goTo(ifc.target);
 				children.add(trueBranch);
 			} else if(code instanceof Code.IfIs) {
 				Code.IfIs ifs = (Code.IfIs) code;
 				VerificationBranch trueBranch = fork();				
 				transformer.transform(ifs,this,trueBranch);
-				pc++;
 				trueBranch.goTo(ifs.target);
 				children.add(trueBranch);
 			} else if(code instanceof Code.Loop) {
 				transformer.transform((Code.Loop) code, this);
-				pc++; // proceed into the loop
 			} else if(code instanceof Code.Return) {
 				transformer.transform((Code.Return) code, this);
 				break; // we're done!!!
 			} else {
 				dispatch(transformer);
-				pc++;
 			}
+
+			// move on to next instruction.
+			pc = pc + 1;
 		}
 		
 		// Now, transform child branches!!!

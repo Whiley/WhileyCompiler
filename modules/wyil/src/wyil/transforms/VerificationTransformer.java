@@ -281,7 +281,7 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
-
+		
 		// first, maps arguments
 		Type.FunctionOrMethod ft = code.type;
 		List<Type> ft_params = code.type.params();
@@ -289,25 +289,37 @@ public class VerificationTransformer {
 
 		// second, setup return value
 		if (code.target != Code.NULL_REG) {
-			int target = branch.read(code.target);
-
-			// FIXME: assign target RHS representing function application.
 
 			// now deal with post-condition
 			Block postcondition = findPostcondition(code.name, ft, branch.entry());
 			if (postcondition != null) {
-				// FIXME:
-				// int[] saved = branch.binding;
-				// int[] binding = new int[postcondition.numSlots()];
-				// binding[0] = target;
-				// for (int i = 1; i != code_operands.length; ++i) {
-				// binding[i] = branch.read(code_operands[i]);
-				// }
-				// // FIXME: broken if numSlots exceeds num of arguments
-				// branch.binding = binding;
-				// branch = transform(true, branch, postcondition);
-				// branch.binding = saved;
+				Automaton automaton = branch.automaton();
+				String prefix = code.name + "@" + branch.pc() + ":";
+
+				// first, generate a constraint representing the post-condition.
+				VerificationBranch master = new VerificationBranch(prefix,
+						automaton, postcondition);
+				int constraint = master.transform(new VerificationTransformer(
+						builder, filename, true, debug));
+
+				// second, bind the operands to the invocation.
+				for (int i = 0; i != code_operands.length; ++i) {
+					int argument = branch.read(code_operands[i]);
+					int parameter = Var(automaton, prefix + (i+1) + "$0");
+					constraint = automaton.substitute(constraint, parameter,
+							argument);
+				}
+				
+				// third, bind the return value to the target register
+				int target = branch.read(code.target);
+				constraint = automaton.substitute(constraint, Var(automaton, prefix + "0$0"),
+						target);
+				
+				// finally, assume the post condition holds
+				branch.assume(constraint);
 			}
+			
+			// FIXME: assign target RHS representing function application.
 		}
 	}
 

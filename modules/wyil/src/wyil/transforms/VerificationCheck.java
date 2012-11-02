@@ -182,11 +182,7 @@ public class VerificationCheck implements Transform {
 					master.automaton(), precondition);
 			int constraint = precond.transform(new VerificationTransformer(
 					builder, filename, true, debug));
-			master.assume(constraint);
-			// invalidate all internal registers used by precondition to avoid
-			// any possible clashes with registers used in the main body.
-			master.invalidate(precondition.numInputs(),
-					Math.min(body.numSlots(), precondition.numSlots()));			
+			master.assume(constraint);			
 		}
 		
 		master.transform(new VerificationTransformer(builder, filename, false,
