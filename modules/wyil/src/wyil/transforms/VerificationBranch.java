@@ -290,6 +290,17 @@ public class VerificationBranch {
 	}
 	
 	/**
+	 * Terminate the current flow for a given register and begin a new one. In
+	 * terms of static-single assignment, this means simply change the index of
+	 * the register in question.
+	 * 
+	 * @param register
+	 */
+	public void invalidate(int register) {
+		environment[register] = allocateNewIndex(register);
+	}
+	
+	/**
 	 * Return a reference into the automaton which represents all of the
 	 * constraints that hold at this position in the branch.
 	 * 

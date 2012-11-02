@@ -177,11 +177,17 @@ public class VerificationCheck implements Transform {
 				ConstraintSolver.SCHEMA), body);
 		
 		if(precondition != null) {
-			VerificationBranch precond = new VerificationBranch("$",master.automaton(),precondition);
-			int constraint = transform(true,precond);
+			VerificationBranch precond = new VerificationBranch("",master.automaton(),precondition);
+			int constraint = apply(true,precond);
+			master.assume(constraint);
+			// invalidate all internal registers used by precondition to avoid
+			// any possible clashes with registers used in the main body. 
+			for (int i = precondition.numInputs(); i != precondition.numSlots(); ++i) {
+				master.invalidate(i);
+			}
 		} 
 		
-		transform(false,master);
+		apply(false,master);
 	}
 	
 	
@@ -221,7 +227,7 @@ public class VerificationCheck implements Transform {
 	 * @param branch
 	 * @return
 	 */
-	protected int transform(boolean assumes,
+	protected int apply(boolean assumes,
 			VerificationBranch branch) {
 		ArrayList<VerificationBranch> branches = new ArrayList<VerificationBranch>();
 
@@ -257,7 +263,7 @@ public class VerificationCheck implements Transform {
 				branch.goTo(g.target);					
 			} else if(code instanceof Code.If) {
 				Code.If ifgoto = (Code.If) code;
-				int test = buildTest(ifgoto.op, entry, ifgoto.leftOperand,
+				int test = buildTest(ifgoto.op, ifgoto.leftOperand,
 						ifgoto.rightOperand, branch);
 				VerificationBranch trueBranch = branch.fork();
 				trueBranch.goTo(ifgoto.target);
@@ -290,7 +296,7 @@ public class VerificationCheck implements Transform {
 				// we don't need to do anything for a return!
 				break;
 			} else {
-				transform(entry, assumes, branch);
+				transform(assumes, branch);
 			}			
 		} while(branch.next());
 		
@@ -358,111 +364,111 @@ public class VerificationCheck implements Transform {
 	 *            --- if true, indicates assumption mode.
 	 * @return
 	 */
-	protected void transform(Block.Entry entry, boolean assume, VerificationBranch branch) {
-		Code code = entry.code;		
+	protected void transform(boolean assume, VerificationBranch branch) {
+		Code code = branch.entry().code;		
 		try {
 			if(code instanceof Code.Assert) {
-				transform((Code.Assert)code,entry,assume,branch);
+				transform((Code.Assert)code,assume,branch);
 			} else if(code instanceof Code.BinArithOp) {
-				transform((Code.BinArithOp)code,entry,branch);
+				transform((Code.BinArithOp)code,branch);
 			} else if(code instanceof Code.Convert) {
-				transform((Code.Convert)code,entry,branch);
+				transform((Code.Convert)code,branch);
 			} else if(code instanceof Code.Const) {
-				transform((Code.Const)code,entry,branch);
+				transform((Code.Const)code,branch);
 			} else if(code instanceof Code.Debug) {
 				// skip
 			} else if(code instanceof Code.FieldLoad) {
-				transform((Code.FieldLoad)code,entry,branch);			
+				transform((Code.FieldLoad)code,branch);			
 			} else if(code instanceof Code.IndirectInvoke) {
-				transform((Code.IndirectInvoke)code,entry,branch);
+				transform((Code.IndirectInvoke)code,branch);
 			} else if(code instanceof Code.Invoke) {
-				transform((Code.Invoke)code,entry,branch);
+				transform((Code.Invoke)code,branch);
 			} else if(code instanceof Code.Invert) {
-				transform((Code.Invert)code,entry,branch);
+				transform((Code.Invert)code,branch);
 			} else if(code instanceof Code.Label) {
 				// skip			
 			} else if(code instanceof Code.BinListOp) {
-				transform((Code.BinListOp)code,entry,branch);
+				transform((Code.BinListOp)code,branch);
 			} else if(code instanceof Code.LengthOf) {
-				transform((Code.LengthOf)code,entry,branch);
+				transform((Code.LengthOf)code,branch);
 			} else if(code instanceof Code.SubList) {
-				transform((Code.SubList)code,entry,branch);
+				transform((Code.SubList)code,branch);
 			} else if(code instanceof Code.IndexOf) {
-				transform((Code.IndexOf)code,entry,branch);
+				transform((Code.IndexOf)code,branch);
 			} else if(code instanceof Code.Move) {
-				transform((Code.Move)code,entry,branch);
+				transform((Code.Move)code,branch);
 			} else if(code instanceof Code.Assign) {
-				transform((Code.Assign)code,entry,branch);
+				transform((Code.Assign)code,branch);
 			} else if(code instanceof Code.Update) {
-				transform((Code.Update)code,entry,branch);
+				transform((Code.Update)code,branch);
 			} else if(code instanceof Code.NewMap) {
-				transform((Code.NewMap)code,entry,branch);
+				transform((Code.NewMap)code,branch);
 			} else if(code instanceof Code.NewList) {
-				transform((Code.NewList)code,entry,branch);
+				transform((Code.NewList)code,branch);
 			} else if(code instanceof Code.NewRecord) {
-				transform((Code.NewRecord)code,entry,branch);
+				transform((Code.NewRecord)code,branch);
 			} else if(code instanceof Code.NewSet) {
-				transform((Code.NewSet)code,entry,branch);
+				transform((Code.NewSet)code,branch);
 			} else if(code instanceof Code.NewTuple) {
-				transform((Code.NewTuple)code,entry,branch);
+				transform((Code.NewTuple)code,branch);
 			} else if(code instanceof Code.UnArithOp) {
-				transform((Code.UnArithOp)code,entry,branch);
+				transform((Code.UnArithOp)code,branch);
 			} else if(code instanceof Code.Dereference) {
-				transform((Code.Dereference)code,entry,branch);
+				transform((Code.Dereference)code,branch);
 			} else if(code instanceof Code.Nop) {
 				// skip			
 			} else if(code instanceof Code.BinSetOp) {
-				transform((Code.BinSetOp)code,entry,branch);
+				transform((Code.BinSetOp)code,branch);
 			} else if(code instanceof Code.BinStringOp) {
-				transform((Code.BinStringOp)code,entry,branch);
+				transform((Code.BinStringOp)code,branch);
 			} else if(code instanceof Code.SubString) {
-				transform((Code.SubString)code,entry,branch);
+				transform((Code.SubString)code,branch);
 			} else if(code instanceof Code.NewObject) {
-				transform((Code.NewObject)code,entry,branch);
+				transform((Code.NewObject)code,branch);
 			} else if(code instanceof Code.Throw) {
-				transform((Code.Throw)code,entry,branch);
+				transform((Code.Throw)code,branch);
 			} else if(code instanceof Code.TupleLoad) {
-				transform((Code.TupleLoad)code,entry,branch);
+				transform((Code.TupleLoad)code,branch);
 			} else {			
-				internalFailure("unknown: " + code.getClass().getName(),filename,entry);			
+				internalFailure("unknown: " + code.getClass().getName(),
+						filename, branch.entry());			
 			}
 		} catch(InternalFailure e) {
 			throw e;
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable e) {
-			internalFailure(e.getMessage(),filename,entry,e);
+			internalFailure(e.getMessage(),filename,branch.entry(),e);
 		}
 	}
 	
-	protected void transform(Code.Assert code, Block.Entry entry,
-			boolean assume, VerificationBranch branch) {
+	protected void transform(Code.Assert code, boolean assume,
+			VerificationBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
-		int test = buildTest(code.op, entry, code.leftOperand,
-				code.rightOperand, branch);
+		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
+				branch);
 
 		if (assume) {
 			branch.assume(test);
 		} else if (!branch.assertTrue(test, debug)) {
-			syntaxError(code.msg, filename, entry);
+			syntaxError(code.msg, filename, branch.entry());
 		}
 	}
-	
-	protected void transform(Code.BinArithOp code, Block.Entry entry,
-			 VerificationBranch branch) {
+
+	protected void transform(Code.BinArithOp code, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
 		int lhs = branch.read(code.leftOperand);
 		int rhs = branch.read(code.rightOperand);
 		int result;
-		
-		switch(code.kind) {
+
+		switch (code.kind) {
 		case ADD:
 			result = Sum(automaton, automaton.add(new Automaton.Real(0)),
 					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
 		case SUB:
-			result = Sum(automaton, automaton.add(new Automaton.Real(0)), 
+			result = Sum(automaton, automaton.add(new Automaton.Real(0)),
 					automaton.add(new Automaton.Bag(lhs, Mul(automaton,
 							automaton.add(new Automaton.Real(-1)),
 							automaton.add(new Automaton.Bag(rhs))))));
@@ -472,40 +478,36 @@ public class VerificationCheck implements Transform {
 					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
 		case DIV:
-			result = Div(automaton, lhs, rhs);			
-			break;	
+			result = Div(automaton, lhs, rhs);
+			break;
 		default:
-			internalFailure("unknown binary operator",filename,entry);
+			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
-		
-		branch.write(code.target,result);
+
+		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.Convert code, Block.Entry entry,
-			VerificationBranch branch) {
+	protected void transform(Code.Convert code, VerificationBranch branch) {
 		int result = branch.read(code.operand);
 		// TODO: actually implement some or all coercions?
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.Const code, Block.Entry entry,
-			 VerificationBranch branch) {
-		int rhs = convert(code.constant, entry, branch);
+	protected void transform(Code.Const code, VerificationBranch branch) {
+		int rhs = convert(code.constant, branch);
 		branch.write(code.target, rhs);
 	}
 
-	protected void transform(Code.FieldLoad code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.IndirectInvoke code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.IndirectInvoke code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.Invoke code, Block.Entry entry, VerificationBranch branch)
+	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
 
 		// first, maps arguments
@@ -520,75 +522,65 @@ public class VerificationCheck implements Transform {
 			// FIXME: assign target RHS representing function application.
 
 			// now deal with post-condition
-			Block postcondition = findPostcondition(code.name, ft, entry);
+			Block postcondition = findPostcondition(code.name, ft, branch.entry());
 			if (postcondition != null) {
-				// FIXME: 
-//				int[] saved = branch.binding;
-//				int[] binding = new int[postcondition.numSlots()];
-//				binding[0] = target;
-//				for (int i = 1; i != code_operands.length; ++i) {
-//					binding[i] = branch.read(code_operands[i]);
-//				}
-//				// FIXME: broken if numSlots exceeds num of arguments
-//				branch.binding = binding;
-//				branch = transform(true, branch, postcondition);
-//				branch.binding = saved;
+				// FIXME:
+				// int[] saved = branch.binding;
+				// int[] binding = new int[postcondition.numSlots()];
+				// binding[0] = target;
+				// for (int i = 1; i != code_operands.length; ++i) {
+				// binding[i] = branch.read(code_operands[i]);
+				// }
+				// // FIXME: broken if numSlots exceeds num of arguments
+				// branch.binding = binding;
+				// branch = transform(true, branch, postcondition);
+				// branch.binding = saved;
 			}
 		}
 	}
 
-	protected void transform(Code.Invert code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.Invert code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.BinListOp code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.BinListOp code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.LengthOf code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.LengthOf code, VerificationBranch branch) {
 		int src = branch.read(code.operand);
 		int result = LengthOf(branch.automaton(), src);
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.SubList code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.SubList code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.IndexOf code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.IndexOf code, VerificationBranch branch) {
 		int src = branch.read(code.leftOperand);
 		int idx = branch.read(code.rightOperand);
 		int result = IndexOf(branch.automaton(), src, idx);
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.Move code, Block.Entry entry,
-			VerificationBranch branch) {
-		branch.write(code.target, branch.read(code.operand));
-	}
-	
-	protected void transform(Code.Assign code, Block.Entry entry,
-			VerificationBranch branch) {
+	protected void transform(Code.Move code, VerificationBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
 	}
 
-	protected void transform(Code.Update code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.Assign code, VerificationBranch branch) {
+		branch.write(code.target, branch.read(code.operand));
+	}
+
+	protected void transform(Code.Update code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.NewMap code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.NewMap code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.NewList code, Block.Entry entry,
-			VerificationBranch branch) {
+	protected void transform(Code.NewList code, VerificationBranch branch) {
 		int[] code_operands = code.operands;
 		int[] vals = new int[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
@@ -598,8 +590,7 @@ public class VerificationCheck implements Transform {
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.NewSet code, Block.Entry entry,
-			VerificationBranch branch) {
+	protected void transform(Code.NewSet code, VerificationBranch branch) {
 		int[] code_operands = code.operands;
 		int[] vals = new int[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
@@ -609,28 +600,25 @@ public class VerificationCheck implements Transform {
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.NewRecord code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.NewRecord code, VerificationBranch branch) {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
 		// TODO
 	}
 
-	protected void transform(Code.NewTuple code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.NewTuple code, VerificationBranch branch) {
 		int[] code_operands = code.operands;
 		int[] vals = new int[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
 		int result = Tuple(branch.automaton(), vals);
-		branch.write(code.target, result);		
+		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.UnArithOp code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.UnArithOp code, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
-		if(code.kind == Code.UnArithKind.NEG) {
+		if (code.kind == Code.UnArithKind.NEG) {
 			int result = Mul(automaton, automaton.add(new Automaton.Real(-1)),
 					automaton.add(new Automaton.Bag(branch.read(code.operand))));
 			branch.write(code.target, result);
@@ -639,12 +627,11 @@ public class VerificationCheck implements Transform {
 		}
 	}
 
-	protected void transform(Code.Dereference code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.Dereference code, VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.BinSetOp code, Block.Entry entry,
+	protected void transform(Code.BinSetOp code,
 			 VerificationBranch branch) {
 //		WVariable lhs = branch.read(code.leftOperand, environment);
 //		WVariable rhs = branch.read(code.rightOperand, environment);
@@ -692,35 +679,32 @@ public class VerificationCheck implements Transform {
 		// TODO
 	}
 	
-	protected void transform(Code.BinStringOp code, Block.Entry entry,
+	protected void transform(Code.BinStringOp code,
 			 VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.SubString code, Block.Entry entry,
+	protected void transform(Code.SubString code,
 			 VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.NewObject code, Block.Entry entry,
+	protected void transform(Code.NewObject code,
 			 VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.Throw code, Block.Entry entry,
+	protected void transform(Code.Throw code,
 			 VerificationBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.TupleLoad code, Block.Entry entry,
-			 VerificationBranch branch) {
+	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
 		int src = branch.read(code.operand);
 		int idx = branch.automaton().add(new Automaton.Int(code.index));
 		int result = IndexOf(branch.automaton(), src, idx);
-		branch.write(code.target, result);		
+		branch.write(code.target, result);
 	}
-	
-	
 	
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
@@ -748,57 +732,59 @@ public class VerificationCheck implements Transform {
 	 * @param value
 	 * @return
 	 */
-	private int convert(wyil.lang.Constant value, SyntacticElement elem, VerificationBranch branch) {
+	private int convert(wyil.lang.Constant value, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
 		
-		if(value instanceof wyil.lang.Constant.Bool) {
+		if (value instanceof wyil.lang.Constant.Bool) {
 			wyil.lang.Constant.Bool b = (wyil.lang.Constant.Bool) value;
 			return b.value ? automaton.add(True) : automaton.add(False);
-		} else if(value instanceof wyil.lang.Constant.Byte) {
+		} else if (value instanceof wyil.lang.Constant.Byte) {
 			wyil.lang.Constant.Byte v = (wyil.lang.Constant.Byte) value;
 			return Num(branch.automaton(), BigRational.valueOf(v.value));
-		} else if(value instanceof wyil.lang.Constant.Char) {
+		} else if (value instanceof wyil.lang.Constant.Char) {
 			wyil.lang.Constant.Char v = (wyil.lang.Constant.Char) value;
 			// Simple, but mostly good translation
 			return Num(branch.automaton(), v.value);
-		} else if(value instanceof wyil.lang.Constant.Map) {
+		} else if (value instanceof wyil.lang.Constant.Map) {
 			return automaton.add(False); // TODO
-		} else if(value instanceof wyil.lang.Constant.FunctionOrMethod) {
+		} else if (value instanceof wyil.lang.Constant.FunctionOrMethod) {
 			return automaton.add(False); // TODO
-		} else if(value instanceof wyil.lang.Constant.Integer) {
+		} else if (value instanceof wyil.lang.Constant.Integer) {
 			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
 			return Num(branch.automaton(), BigRational.valueOf(v.value));
-		} else if(value instanceof wyil.lang.Constant.Rational) {
+		} else if (value instanceof wyil.lang.Constant.Rational) {
 			wyil.lang.Constant.Rational v = (wyil.lang.Constant.Rational) value;
 			wyil.util.BigRational br = v.value;
-			return Num(branch.automaton(), new BigRational(br.numerator(),br.denominator()));
-		} else if(value instanceof wyil.lang.Constant.Null) {
+			return Num(branch.automaton(),
+					new BigRational(br.numerator(), br.denominator()));
+		} else if (value instanceof wyil.lang.Constant.Null) {
 			return automaton.add(False); // TODO
-		} else if(value instanceof wyil.lang.Constant.List) {
+		} else if (value instanceof wyil.lang.Constant.List) {
 			Constant.List vl = (Constant.List) value;
 			int[] vals = new int[vl.values.size()];
-			for(int i=0;i!=vals.length;++i) {				
-				vals[i] = convert(vl.values.get(i),elem,branch);
+			for (int i = 0; i != vals.length; ++i) {
+				vals[i] = convert(vl.values.get(i), branch);
 			}
 			return List(branch.automaton(), vals);
-		} else if(value instanceof wyil.lang.Constant.Set) {
-			Constant.Set vs = (Constant.Set) value;			
+		} else if (value instanceof wyil.lang.Constant.Set) {
+			Constant.Set vs = (Constant.Set) value;
 			int[] vals = new int[vs.values.size()];
-			int i=0;
-			for(Constant c : vs.values) {				
-				vals[i++] = convert(c,elem,branch);
+			int i = 0;
+			for (Constant c : vs.values) {
+				vals[i++] = convert(c, branch);
 			}
-			return Set(branch.automaton(),vals);
-		} else if(value instanceof wyil.lang.Constant.Record) {
+			return Set(branch.automaton(), vals);
+		} else if (value instanceof wyil.lang.Constant.Record) {
 			Constant.Record vt = (Constant.Record) value;
 			return automaton.add(False); // TODO
-		} else if(value instanceof wyil.lang.Constant.Strung) {
+		} else if (value instanceof wyil.lang.Constant.Strung) {
 			return automaton.add(False); // TODO
-		} else if(value instanceof wyil.lang.Constant.Tuple) {
+		} else if (value instanceof wyil.lang.Constant.Tuple) {
 			Constant.Tuple vt = (Constant.Tuple) value;
 			return automaton.add(False); // TODO
 		} else {
-			internalFailure("unknown value encountered (" + value + ")",filename,elem);
+			internalFailure("unknown value encountered (" + value + ")",
+					filename, branch.entry());
 			return -1;
 		}
 	}
@@ -812,9 +798,8 @@ public class VerificationCheck implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	private int buildTest(Code.Comparator op,
-			SyntacticElement elem, int leftOperand, int rightOperand,
-			VerificationBranch branch) {
+	private int buildTest(Code.Comparator op, int leftOperand,
+			int rightOperand, VerificationBranch branch) {
 		int lhs = branch.read(leftOperand);
 		int rhs = branch.read(rightOperand);
 		
@@ -840,7 +825,7 @@ public class VerificationCheck implements Transform {
 		case ELEMOF:
 			return ElementOf(branch.automaton(), lhs, rhs);
 		default:
-			internalFailure("unknown comparator (" + op + ")",filename,elem);
+			internalFailure("unknown comparator (" + op + ")",filename,branch.entry());
 			return -1;
 		}
 	}
