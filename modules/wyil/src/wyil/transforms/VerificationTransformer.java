@@ -49,26 +49,24 @@ import wyone.util.BigRational;
 public class VerificationTransformer {
 	private final Builder builder;
 	private final String filename;
+	private final boolean assume;
 	private final boolean debug;
+	
+	public VerificationTransformer(Builder builder, String filename,
+			boolean assume, boolean debug) {
+		this.builder = builder;
+		this.filename = filename;
+		this.assume = assume;
+		this.debug = debug;
+	}
 
 	public String filename() {
 		return filename;
 	}
-	
-	public VerificationTransformer(Builder builder, String filename,
-			boolean debug) {
-		this.builder = builder;
-		this.filename = filename;
-		this.debug = debug;
-	}
-	
+
 	public void exit(VerificationBranch.Scope scope, VerificationBranch branch) {
-//	int[] environment, ArrayList<Scope> scopes, int pc) {
-//
-//while (!scopes.isEmpty() && top(scopes).end <= pc) {
-//	// yes, we're exiting a scope
-//	Scope scope = pop(scopes);
-//	
+		System.err.println("LEAVING SCOPE");
+
 //	if(scope instanceof LoopScope) {
 //		LoopScope lscope = (LoopScope) scope;
 //
@@ -98,10 +96,6 @@ public class VerificationTransformer {
 //								.first().not()));						
 //			}
 //		}
-//	}			
-//}
-//
-//return constraint;
 	}
 	
 	/**
@@ -139,8 +133,7 @@ public class VerificationTransformer {
 	}
 		
 	
-	protected void transform(Code.Assert code, boolean assume,
-			VerificationBranch branch) {
+	protected void transform(Code.Assert code, VerificationBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
 		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
@@ -151,6 +144,10 @@ public class VerificationTransformer {
 		} else if (!branch.assertTrue(test, debug)) {
 			syntaxError(code.msg, filename, branch.entry());
 		}
+	}
+
+	protected void transform(Code.Assign code, VerificationBranch branch) {
+		branch.write(code.target, branch.read(code.operand));
 	}
 
 	protected void transform(Code.BinArithOp code, VerificationBranch branch) {
@@ -185,146 +182,7 @@ public class VerificationTransformer {
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.Convert code, VerificationBranch branch) {
-		int result = branch.read(code.operand);
-		// TODO: actually implement some or all coercions?
-		branch.write(code.target, result);
-	}
-
-	protected void transform(Code.Const code, VerificationBranch branch) {
-		int rhs = convert(code.constant, branch);
-		branch.write(code.target, rhs);
-	}
-
-	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
-		// TODO
-	}
-
-	protected void transform(Code.IndirectInvoke code, VerificationBranch branch) {
-		// TODO
-	}
-
-	protected void transform(Code.Invoke code, VerificationBranch branch)
-			throws Exception {
-
-		// first, maps arguments
-		Type.FunctionOrMethod ft = code.type;
-		List<Type> ft_params = code.type.params();
-		int[] code_operands = code.operands;
-
-		// second, setup return value
-		if (code.target != Code.NULL_REG) {
-			int target = branch.read(code.target);
-
-			// FIXME: assign target RHS representing function application.
-
-			// now deal with post-condition
-			Block postcondition = findPostcondition(code.name, ft, branch.entry());
-			if (postcondition != null) {
-				// FIXME:
-				// int[] saved = branch.binding;
-				// int[] binding = new int[postcondition.numSlots()];
-				// binding[0] = target;
-				// for (int i = 1; i != code_operands.length; ++i) {
-				// binding[i] = branch.read(code_operands[i]);
-				// }
-				// // FIXME: broken if numSlots exceeds num of arguments
-				// branch.binding = binding;
-				// branch = transform(true, branch, postcondition);
-				// branch.binding = saved;
-			}
-		}
-	}
-
-	protected void transform(Code.Invert code, VerificationBranch branch) {
-		// TODO
-	}
-
 	protected void transform(Code.BinListOp code, VerificationBranch branch) {
-		// TODO
-	}
-
-	protected void transform(Code.LengthOf code, VerificationBranch branch) {
-		int src = branch.read(code.operand);
-		int result = LengthOf(branch.automaton(), src);
-		branch.write(code.target, result);
-	}
-
-	protected void transform(Code.SubList code, VerificationBranch branch) {
-		// TODO
-	}
-
-	protected void transform(Code.IndexOf code, VerificationBranch branch) {
-		int src = branch.read(code.leftOperand);
-		int idx = branch.read(code.rightOperand);
-		int result = IndexOf(branch.automaton(), src, idx);
-		branch.write(code.target, result);
-	}
-
-	protected void transform(Code.Move code, VerificationBranch branch) {
-		branch.write(code.target, branch.read(code.operand));
-	}
-
-	protected void transform(Code.Assign code, VerificationBranch branch) {
-		branch.write(code.target, branch.read(code.operand));
-	}
-
-	protected void transform(Code.Update code, VerificationBranch branch) {
-		// TODO
-	}
-
-	protected void transform(Code.NewMap code, VerificationBranch branch) {
-		// TODO
-	}
-
-	protected void transform(Code.NewList code, VerificationBranch branch) {
-		int[] code_operands = code.operands;
-		int[] vals = new int[code_operands.length];
-		for (int i = 0; i != vals.length; ++i) {
-			vals[i] = branch.read(code_operands[i]);
-		}
-		int result = List(branch.automaton(), vals);
-		branch.write(code.target, result);
-	}
-
-	protected void transform(Code.NewSet code, VerificationBranch branch) {
-		int[] code_operands = code.operands;
-		int[] vals = new int[code_operands.length];
-		for (int i = 0; i != vals.length; ++i) {
-			vals[i] = branch.read(code_operands[i]);
-		}
-		int result = Set(branch.automaton(), vals);
-		branch.write(code.target, result);
-	}
-
-	protected void transform(Code.NewRecord code, VerificationBranch branch) {
-		Type.Record type = code.type;
-		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
-		// TODO
-	}
-
-	protected void transform(Code.NewTuple code, VerificationBranch branch) {
-		int[] code_operands = code.operands;
-		int[] vals = new int[code_operands.length];
-		for (int i = 0; i != vals.length; ++i) {
-			vals[i] = branch.read(code_operands[i]);
-		}
-		int result = Tuple(branch.automaton(), vals);
-		branch.write(code.target, result);
-	}
-
-	protected void transform(Code.UnArithOp code, VerificationBranch branch) {
-		Automaton automaton = branch.automaton();
-		if (code.kind == Code.UnArithKind.NEG) {
-			int result = Mul(automaton, automaton.add(new Automaton.Real(-1)),
-					automaton.add(new Automaton.Bag(branch.read(code.operand))));
-			branch.write(code.target, result);
-		} else {
-			// TODO
-		}
-	}
-
-	protected void transform(Code.Dereference code, VerificationBranch branch) {
 		// TODO
 	}
 
@@ -381,13 +239,173 @@ public class VerificationTransformer {
 		// TODO
 	}
 
-	protected void transform(Code.SubString code,
-			 VerificationBranch branch) {
+	protected void transform(Code.Convert code, VerificationBranch branch) {
+		int result = branch.read(code.operand);
+		// TODO: actually implement some or all coercions?
+		branch.write(code.target, result);
+	}
+
+	protected void transform(Code.Const code, VerificationBranch branch) {
+		int rhs = convert(code.constant, branch);
+		branch.write(code.target, rhs);
+	}
+
+	protected void transform(Code.Debug code, VerificationBranch branch) {
+		// do nout
+	}
+
+	protected void transform(Code.Dereference code, VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.If code, VerificationBranch falseBranch,
+			VerificationBranch trueBranch) {
+		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
+				trueBranch);
+		trueBranch.assume(test);
+		falseBranch.assume(Not(falseBranch.automaton(), test));
+	}
+
+	protected void transform(Code.IfIs code, VerificationBranch falseBranch,
+			VerificationBranch trueBranch) {
+		// TODO
+	}
+	
+	protected void transform(Code.IndirectInvoke code, VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.Invoke code, VerificationBranch branch)
+			throws Exception {
+
+		// first, maps arguments
+		Type.FunctionOrMethod ft = code.type;
+		List<Type> ft_params = code.type.params();
+		int[] code_operands = code.operands;
+
+		// second, setup return value
+		if (code.target != Code.NULL_REG) {
+			int target = branch.read(code.target);
+
+			// FIXME: assign target RHS representing function application.
+
+			// now deal with post-condition
+			Block postcondition = findPostcondition(code.name, ft, branch.entry());
+			if (postcondition != null) {
+				// FIXME:
+				// int[] saved = branch.binding;
+				// int[] binding = new int[postcondition.numSlots()];
+				// binding[0] = target;
+				// for (int i = 1; i != code_operands.length; ++i) {
+				// binding[i] = branch.read(code_operands[i]);
+				// }
+				// // FIXME: broken if numSlots exceeds num of arguments
+				// branch.binding = binding;
+				// branch = transform(true, branch, postcondition);
+				// branch.binding = saved;
+			}
+		}
+	}
+
+	protected void transform(Code.Invert code, VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.IndexOf code, VerificationBranch branch) {
+		int src = branch.read(code.leftOperand);
+		int idx = branch.read(code.rightOperand);
+		int result = IndexOf(branch.automaton(), src, idx);
+		branch.write(code.target, result);
+	}
+
+	protected void transform(Code.LengthOf code, VerificationBranch branch) {
+		int src = branch.read(code.operand);
+		int result = LengthOf(branch.automaton(), src);
+		branch.write(code.target, result);
+	}
+
+	protected void transform(Code.Loop code, VerificationBranch branch) {
+		// TODO
+		if (code instanceof Code.ForAll) {
+			Code.ForAll forall = (Code.ForAll) code;
+			// int end = findLabel(branch.pc(),forall.target,body);
+			int src = branch.read(forall.sourceOperand);
+			int var = branch.read(forall.indexOperand);
+
+			branch.assume(ElementOf(branch.automaton(), var, src));
+			// scopes.add(new ForScope(forall,end,src,var));
+		}
+		
+		// FIXME: assume loop invariant?
+	}
+	
+	protected void transform(Code.Move code, VerificationBranch branch) {
+		branch.write(code.target, branch.read(code.operand));
+	}
+
+	protected void transform(Code.NewMap code, VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.NewList code, VerificationBranch branch) {
+		int[] code_operands = code.operands;
+		int[] vals = new int[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = branch.read(code_operands[i]);
+		}
+		int result = List(branch.automaton(), vals);
+		branch.write(code.target, result);
+	}
+
+	protected void transform(Code.NewSet code, VerificationBranch branch) {
+		int[] code_operands = code.operands;
+		int[] vals = new int[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = branch.read(code_operands[i]);
+		}
+		int result = Set(branch.automaton(), vals);
+		branch.write(code.target, result);
+	}
+
+	protected void transform(Code.NewRecord code, VerificationBranch branch) {
+		Type.Record type = code.type;
+		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
 		// TODO
 	}
 
 	protected void transform(Code.NewObject code,
 			 VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.NewTuple code, VerificationBranch branch) {
+		int[] code_operands = code.operands;
+		int[] vals = new int[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = branch.read(code_operands[i]);
+		}
+		int result = Tuple(branch.automaton(), vals);
+		branch.write(code.target, result);
+	}
+
+	protected void transform(Code.Nop code, VerificationBranch branch) {
+		// do nout
+	}
+
+	protected void transform(Code.Return code, VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.SubString code,
+			 VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.SubList code, VerificationBranch branch) {
 		// TODO
 	}
 
@@ -402,7 +420,23 @@ public class VerificationTransformer {
 		int result = IndexOf(branch.automaton(), src, idx);
 		branch.write(code.target, result);
 	}
-	
+
+	protected void transform(Code.UnArithOp code, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
+		if (code.kind == Code.UnArithKind.NEG) {
+			int result = Mul(automaton, automaton.add(new Automaton.Real(-1)),
+					automaton.add(new Automaton.Bag(branch.read(code.operand))));
+			branch.write(code.target, result);
+		} else {
+			// TODO
+		}
+	}
+
+	protected void transform(Code.Update code, VerificationBranch branch) {
+		// TODO
+	}
+
+
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),

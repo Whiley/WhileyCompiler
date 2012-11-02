@@ -36,8 +36,6 @@ import static wyil.util.ConstraintSolver.infer;
 
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
 
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
@@ -243,39 +241,6 @@ public class VerificationBranch {
 	}
 
 	/**
-	 * Move the Program Counter (PC) to the next logical instruction in the
-	 * branch.
-	 * 
-	 * @return -- true if there is a next instruction, or false otherwise.
-	 */
-	public boolean next() {
-		this.pc++;
-		return this.pc < block.size();
-	}
-		
-	/**
-	 * Reposition the Program Counter (PC) for this branch to a given label in
-	 * the block.
-	 * 
-	 * @param label
-	 *            --- label to look for, which is assumed to occupy an index
-	 *            greater than the current PC (this follows the Wyil requirement
-	 *            that branches always go forward).
-	 */
-	public void goTo(String label) {
-		for (int i = pc; i != block.size(); ++i) {
-			Code code = block.get(i).code;
-			if (code instanceof Code.Label) {
-				Code.Label l = (Code.Label) code;
-				if (l.label.equals(label)) {
-					pc = i;
-					return;
-				}
-			}
-		}
-	}
-	
-	/**
 	 * Get the constraint variable which corresponds to the given Wyil bytecode
 	 * register at this point on this branch.
 	 * 
@@ -390,7 +355,70 @@ public class VerificationBranch {
 		}
 		return false;
 	}
-	
+
+
+	/**
+	 * Transform this branch into a single constraint representing that which is
+	 * known to hold at the end of the branch.
+	 * 
+	 * @param transformer
+	 *            --- responsible for transformining individual bytecodes into
+	 *            constraints capturing their semantics.
+	 * @return
+	 */
+	public int transform(VerificationTransformer transformer) {		
+		ArrayList<VerificationBranch> children = new ArrayList<VerificationBranch>();
+		
+		int blockSize = block.size();
+		while (pc < blockSize) {
+			// first, check whether we're departing a scope or not.
+			int top = scopes.size() - 1;
+			while (top >= 0 && scopes.get(top).end <= pc) {
+				// yes, we're leaving a scope ... so notify transformer.
+				transformer.exit(scopes.get(top), this);
+				scopes.remove(top);
+				top = top - 1;
+			}
+			
+			// second, continue to transform the given bytecode
+			Block.Entry entry = block.get(pc);
+			Code code = entry.code;
+			if(code instanceof Code.Goto) {				
+				goTo(((Code.Goto) code).target);
+			} else if(code instanceof Code.If) {
+				Code.If ifc = (Code.If) code;
+				VerificationBranch trueBranch = fork();	
+				transformer.transform(ifc,this,trueBranch);
+				pc++;
+				trueBranch.goTo(ifc.target);
+				children.add(trueBranch);
+			} else if(code instanceof Code.IfIs) {
+				Code.IfIs ifs = (Code.IfIs) code;
+				VerificationBranch trueBranch = fork();				
+				transformer.transform(ifs,this,trueBranch);
+				pc++;
+				trueBranch.goTo(ifs.target);
+				children.add(trueBranch);
+			} else if(code instanceof Code.Loop) {
+				transformer.transform((Code.Loop) code, this);
+			} else if(code instanceof Code.Return) {
+				transformer.transform((Code.Return) code, this);
+				break; // we're done!!!
+			} else {
+				dispatch(transformer);
+				pc++;
+			}
+		}
+		
+		// Now, transform child branches!!!
+		for(VerificationBranch child : children) {
+			child.transform(transformer);
+			join(child);
+		}
+		
+		return constraints();
+	}
+		
 	/**
 	 * <p>
 	 * Fork a child-branch from this branch. The child branch is (initially)
@@ -424,10 +452,10 @@ public class VerificationBranch {
 	 * 
 	 * @return --- The child branch which is forked off this branch.
 	 */
-	public VerificationBranch fork() {
+	private VerificationBranch fork() {
 		return new VerificationBranch(this);
 	}
-
+	
 	/**
 	 * <p>
 	 * Merge descendant (i.e. a child or child-of-child, etc) branch back into
@@ -472,7 +500,7 @@ public class VerificationBranch {
 	 * @param incoming
 	 *            --- The descendant branch which is being merged into this one.
 	 */
-	public void join(VerificationBranch incoming) {
+	private void join(VerificationBranch incoming) {
 		// FIRST: determine new constraint sequence
 		ArrayList<Integer> common = new ArrayList<Integer>();
 		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
@@ -532,11 +560,11 @@ public class VerificationBranch {
 	 * 
 	 * @return
 	 */
-	private void dispatch(boolean assume, VerificationTransformer transformer) {
+	private void dispatch(VerificationTransformer transformer) {
 		Code code = entry().code;		
 		try {
 			if(code instanceof Code.Assert) {
-				transformer.transform((Code.Assert)code,assume,this);
+				transformer.transform((Code.Assert)code,this);
 			} else if(code instanceof Code.BinArithOp) {
 				transformer.transform((Code.BinArithOp)code,this);
 			} else if(code instanceof Code.Convert) {
@@ -607,6 +635,29 @@ public class VerificationBranch {
 			throw e;
 		} catch(Throwable e) {
 			internalFailure(e.getMessage(), transformer.filename(), entry(), e);
+		}
+	}
+	
+
+	/**
+	 * Reposition the Program Counter (PC) for this branch to a given label in
+	 * the block.
+	 * 
+	 * @param label
+	 *            --- label to look for, which is assumed to occupy an index
+	 *            greater than the current PC (this follows the Wyil requirement
+	 *            that branches always go forward).
+	 */
+	private void goTo(String label) {
+		for (int i = pc; i != block.size(); ++i) {
+			Code code = block.get(i).code;
+			if (code instanceof Code.Label) {
+				Code.Label l = (Code.Label) code;
+				if (l.label.equals(label)) {
+					pc = i;
+					return;
+				}
+			}
 		}
 	}
 	

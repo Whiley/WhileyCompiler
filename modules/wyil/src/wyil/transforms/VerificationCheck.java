@@ -158,6 +158,7 @@ public class VerificationCheck implements Transform {
 				System.err.println("METHOD: " + fmt.ret() + " " + method.name() + "(" + paramString + ")");
 			}
 		}
+		
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
 		for(int i=paramStart;i!=fmm.params().size();++i) {
@@ -179,115 +180,16 @@ public class VerificationCheck implements Transform {
 		if (precondition != null) {
 			VerificationBranch precond = new VerificationBranch("",
 					master.automaton(), precondition);
-			int constraint = apply(true, precond);
+			int constraint = precond.transform(new VerificationTransformer(
+					builder, filename, true, debug));
 			master.assume(constraint);
 			// invalidate all internal registers used by precondition to avoid
 			// any possible clashes with registers used in the main body.
-			master.invalidate(precondition.numInputs(),precondition.numSlots());			
+			master.invalidate(precondition.numInputs(),
+					Math.min(body.numSlots(), precondition.numSlots()));			
 		}
 		
-		apply(false,master);
-	}
-	
-	
-	/**
-	 * Transform a given branch into a set of constraints (stored in the
-	 * automaton) which are known to hold at the end of that branch.
-	 * 
-	 * @param assumes
-	 * @param branch
-	 * @return
-	 */
-	protected int apply(boolean assumes,
-			VerificationBranch branch) {
-		ArrayList<VerificationBranch> branches = new ArrayList<VerificationBranch>();
-
-		// take initial branch
-		transform(assumes, branch, branches);
-
-		// continue any resulting branches
-		while (!branches.isEmpty()) {
-			int last = branches.size() - 1;
-			VerificationBranch b = branches.get(last);
-			branches.remove(last);
-			transform(assumes, b, branches);
-			branch.join(b);
-		}
-
-		return branch.constraints();
-	}
-	
-	protected VerificationBranch transform(boolean assumes,
-			VerificationBranch branch, ArrayList<VerificationBranch> branches) {
-	
-		Automaton constraint = branch.automaton();				
-		ArrayList<Scope> scopes = null;
-				
-		do {	
-			//constraint = exitScope(constraint,environment,scopes,i);
-			
-			Block.Entry entry = branch.entry();			
-			Code code = entry.code;
-			
-			if(code instanceof Code.Goto) {
-				Code.Goto g = (Code.Goto) code;
-				branch.goTo(g.target);					
-			} else if(code instanceof Code.If) {
-				Code.If ifgoto = (Code.If) code;
-				int test = buildTest(ifgoto.op, ifgoto.leftOperand,
-						ifgoto.rightOperand, branch);
-				VerificationBranch trueBranch = branch.fork();
-				trueBranch.goTo(ifgoto.target);
-				trueBranch.assume(test);
-				branches.add(trueBranch);
-				branch.assume(Not(constraint,test));
-			} else if(code instanceof Code.IfIs) {
-				// TODO: implement me!
-			} else if(code instanceof Code.ForAll) {
-				Code.ForAll forall = (Code.ForAll) code; 
-				//int end = findLabel(branch.pc(),forall.target,body);
-				int src = branch.read(forall.sourceOperand);
-				int var = branch.read(forall.indexOperand);
-
-//              FIXME!				
-//				constraint = WFormulas.and(constraint,
-//						WTypes.subtypeOf(var, convert(forall.type.element())));
-//				
-				branch.assume(ElementOf(branch.automaton(), var, src));
-				//scopes.add(new ForScope(forall,end,src,var));
-								
-				// FIXME: assume loop invariant?
-			} else if(code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) code; 
-				//int end = findLabel(branch.pc(), loop.target, body);
-				//scopes.add(new LoopScope(loop,end));
-				// FIXME: assume loop invariant?
-				// FIXME: assume condition?
-			} else if(code instanceof Code.Return) {
-				// we don't need to do anything for a return!
-				break;
-			} else {
-				transform(assumes, branch);
-			}			
-		} while(branch.next());
-		
-		return branch;
-	}
-	
-
-	
-	
-	
-	private static <T> T pop(ArrayList<T> stack) {
-		int last = stack.size()-1;
-		T c = stack.get(last);
-		stack.remove(last);
-		return c;
-	}
-	
-	private static <T> T top(ArrayList<T> stack) {
-		int last = stack.size()-1;
-		T c = stack.get(last);
-		return c;
+		master.transform(new VerificationTransformer(builder, filename, false,
+				debug));
 	}
 }
