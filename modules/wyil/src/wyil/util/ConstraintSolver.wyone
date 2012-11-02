@@ -6,7 +6,7 @@ include "solver/equations.wyone"
 include "solver/inequality.wyone"
 include "solver/collections.wyone"
 include "solver/constraints.wyone"
-
+include "solver/misc.wyone"
 
 
 

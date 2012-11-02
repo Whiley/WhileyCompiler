@@ -515,7 +515,7 @@ public class VerificationTransformer {
 			return Num(branch.automaton(),
 					new BigRational(br.numerator(), br.denominator()));
 		} else if (value instanceof wyil.lang.Constant.Null) {
-			return automaton.add(False); // TODO
+			return automaton.add(Null);
 		} else if (value instanceof wyil.lang.Constant.List) {
 			Constant.List vl = (Constant.List) value;
 			int[] vals = new int[vl.values.size()];
@@ -543,7 +543,8 @@ public class VerificationTransformer {
 			}			
 			return RecordVal(branch.automaton(),vals);
 		} else if (value instanceof wyil.lang.Constant.Strung) {
-			return automaton.add(False); // TODO
+			Constant.Strung vs = (Constant.Strung) value;
+			return String(branch.automaton(), vs.value);
 		} else if (value instanceof wyil.lang.Constant.Tuple) {
 			Constant.Tuple vt = (Constant.Tuple) value;
 			int[] vals = new int[vt.values.size()];
