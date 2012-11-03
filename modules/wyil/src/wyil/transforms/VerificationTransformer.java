@@ -450,6 +450,7 @@ public class VerificationTransformer {
 			if(lv instanceof Code.RecordLVal) {
 				Code.RecordLVal rlv = (Code.RecordLVal) lv; 
 				int field = branch.automaton().add(new Automaton.Strung(rlv.field));
+				// FIXME: use of source here is broken
 				result = FieldUpdate(branch.automaton(),source,field,result);
 			} else if(lv instanceof Code.ListLVal) {
 				
