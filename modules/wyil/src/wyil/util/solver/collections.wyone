@@ -121,6 +121,7 @@ reduce IndexOf[Tuple[Expr... ls], Num(real rdx)]:
 term Record{[string,Expr]...} // NOTE: a map might be better here
 term RecordVal{[string,Value]...}
 term FieldOf[Expr,string]
+term FieldUpdate[Expr,string,Expr] // src,field,val
 
 reduce Record{[string,Value]... fields}:
     => RecordVal(fields)
@@ -131,6 +132,16 @@ reduce FieldOf[RecordVal{[string f1, Value v], * ...},string f2]:
 reduce FieldOf[Record{[string f1, Expr e], * ...},string f2]:
     => e, if f1 == f2
 
+reduce FieldOf[FieldUpdate[Expr src, string f1, Expr e],string f2]:
+    => e, if f1 == f2
+    => FieldOf[src,f2]
+
+reduce FieldUpdate[RecordVal{[string f1, Value v], * ... rest}, string f2, Expr e]:
+    => Record ({[f1,e]} ++ rest), if f1 == f2
+
+reduce FieldUpdate[Record{[string f1, Expr e1], * ... rest}, string f2, Expr e2]:
+    => Record ({[f1,e2]} ++ rest), if f1 == f2
+
 // ====================================================================
 // Expressions & Values
 // ====================================================================
@@ -138,4 +149,4 @@ reduce FieldOf[Record{[string f1, Expr e], * ...},string f2]:
 class Value as ListVal | SetVal | TupleVal | RecordVal | ...
 class AExpr as LengthOf | IndexOf | FieldOf | ...
 class BExpr as ElementOf | IndexOf | FieldOf | ...
-class Expr as ListVal | SetVal | TupleVal | RecordVal | Set | List | Tuple | Record | LengthOf | IndexOf | Update | ElementOf | FieldOf | Union | ...
+class Expr as ListVal | SetVal | TupleVal | RecordVal | Set | List | Tuple | Record | LengthOf | IndexOf | Update | ElementOf | FieldOf | FieldUpdate | Union | ...

@@ -408,7 +408,7 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Return code, VerificationBranch branch) {
-		// TODO
+
 	}
 
 	protected void transform(Code.SubString code,
@@ -444,7 +444,24 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Update code, VerificationBranch branch) {
-		// TODO
+		int result = branch.read(code.operand);
+		int source = branch.read(code.target);	
+		for(Code.LVal lv : code) {
+			if(lv instanceof Code.RecordLVal) {
+				Code.RecordLVal rlv = (Code.RecordLVal) lv; 
+				int field = branch.automaton().add(new Automaton.Strung(rlv.field));
+				result = FieldUpdate(branch.automaton(),source,field,result);
+			} else if(lv instanceof Code.ListLVal) {
+				
+			} else if(lv instanceof Code.MapLVal) {
+				
+			} else if(lv instanceof Code.StringLVal) {
+				
+			} else {
+				// TODO
+			}
+		}
+		branch.write(code.target, result);
 	}
 
 
