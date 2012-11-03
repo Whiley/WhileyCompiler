@@ -27,12 +27,11 @@ reduce Not(ZeroLessThan(AExpr x)):
 
 // rearrange linear inequality
 // NOTE: must be inference rule to ensure Sums are maximally reduced
-// NOTE: can't do anything useful with non-variable terms :(
 // NOTE: requirement x2 < 0.0 && y2 > 0.0 ensures we are eliminating variables
-infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|Var v1|}], Expr... xs|}] s1) ieq1, 
-          ZeroLessThan(Sum[real y1, {|Mul[real y2, {|Var v2|}], Expr... ys|}] s2) ieq2, BExpr... rest}:
+infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|Expr e1|}], Expr... xs|}] s1) ieq1, 
+          ZeroLessThan(Sum[real y1, {|Mul[real y2, {|Expr e2|}], Expr... ys|}] s2) ieq2, BExpr... rest}:
      => let ieq3 = ZeroLessThan(Sum[0.0,{|s1,s2|}])
-        in And ({ieq1,ieq2,ieq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
+        in And ({ieq1,ieq2,ieq3} ++ rest), if e1 == e2 && x2 < 0.0 && y2 > 0.0
 
 // ====================================================================
 // Expressions & Values
