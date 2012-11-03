@@ -55,7 +55,7 @@ reduce Union{Union{Expr... xs}, Expr... rest}:
 term List[Expr...]
 term ListVal[Value...]
 term IndexOf[Expr,AExpr]
-term Update[Expr,AExpr,Expr]
+term ListUpdate[Expr,AExpr,Expr] // src index value
 
 reduce List[Value... xs]:
     => ListVal(xs)
@@ -89,8 +89,13 @@ reduce IndexOf[List[Expr... ls], Num(real rdx)]:
     => let idx = num rdx
        in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
 
-reduce Update[List[Expr... ls],Num(int idx),Expr val]:
-    => ls[idx = val], if idx >= 0 && idx < |ls|
+reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
+    => let idx = num rdx
+       in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
+
+reduce ListUpdate[ListVal[Value... ls],Num(real rdx),Expr e]:
+    => let idx = num rdx
+       in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
 
 // ====================================================================
 // Tuple Expressions
@@ -149,4 +154,4 @@ reduce FieldUpdate[Record{[string f1, Expr e1], * ... rest}, string f2, Expr e2]
 class Value as ListVal | SetVal | TupleVal | RecordVal | ...
 class AExpr as LengthOf | IndexOf | FieldOf | ...
 class BExpr as ElementOf | IndexOf | FieldOf | ...
-class Expr as ListVal | SetVal | TupleVal | RecordVal | Set | List | Tuple | Record | LengthOf | IndexOf | Update | ElementOf | FieldOf | FieldUpdate | Union | ...
+class Expr as ListVal | SetVal | TupleVal | RecordVal | Set | List | Tuple | Record | LengthOf | IndexOf | ListUpdate | ElementOf | FieldOf | FieldUpdate | Union | ...

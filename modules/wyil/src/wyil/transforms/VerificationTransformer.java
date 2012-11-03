@@ -32,6 +32,7 @@ import static wyil.util.ErrorMessages.errorMessage;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -445,27 +446,36 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Update code, VerificationBranch branch) {
 		int result = branch.read(code.operand);
-		int source = branch.read(code.target);	
-		for(Code.LVal lv : code) {
-			if(lv instanceof Code.RecordLVal) {
-				Code.RecordLVal rlv = (Code.RecordLVal) lv; 
-				int field = branch.automaton().add(new Automaton.Strung(rlv.field));
-				// FIXME: use of source here is broken
-				result = FieldUpdate(branch.automaton(),source,field,result);
-			} else if(lv instanceof Code.ListLVal) {
-				
-			} else if(lv instanceof Code.MapLVal) {
-				
-			} else if(lv instanceof Code.StringLVal) {
-				
-			} else {
-				// TODO
-			}
-		}
-		branch.write(code.target, result);
+		int source = branch.read(code.target);			
+		branch.write(code.target,
+				updateHelper(code.iterator(), source, result, branch));
 	}
 
-
+	protected int updateHelper(Iterator<Code.LVal> iter, int source, int result, VerificationBranch branch) {
+		if(!iter.hasNext()) {
+			return result;
+		} else {
+			Code.LVal lv = iter.next();
+			if(lv instanceof Code.RecordLVal) {				
+				Code.RecordLVal rlv = (Code.RecordLVal) lv;
+				int field = branch.automaton().add(new Automaton.Strung(rlv.field));
+				result = updateHelper(iter,FieldOf(branch.automaton(),source,field),result,branch);
+				return FieldUpdate(branch.automaton(),source,field,result);
+			} else if(lv instanceof Code.ListLVal) {
+				Code.ListLVal rlv = (Code.ListLVal) lv;
+				int index = branch.read(rlv.indexOperand);
+				result = updateHelper(iter,IndexOf(branch.automaton(),source,index),result,branch);
+				return ListUpdate(branch.automaton(),source,index,result);
+			} else if(lv instanceof Code.MapLVal) {
+				return source; // TODO
+			} else if(lv instanceof Code.StringLVal) {
+				return source; // TODO
+			} else {
+				return source; // TODO
+			}
+		}
+	}
+	
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),
