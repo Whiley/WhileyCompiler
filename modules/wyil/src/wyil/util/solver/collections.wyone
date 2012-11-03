@@ -97,6 +97,9 @@ reduce ListUpdate[ListVal[Value... ls],Num(real rdx),Expr e]:
     => let idx = num rdx
        in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
 
+reduce LengthOf(ListUpdate[Expr src, Expr idx, Expr val]):
+    => LengthOf(src)
+
 // ====================================================================
 // Tuple Expressions
 // ====================================================================
