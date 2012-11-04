@@ -52,16 +52,18 @@ import wyone.util.BigRational;
  */
 public class VerificationTransformer {
 	private final Builder builder;
+	private final WyilFile.Case method;
 	private final String filename;
 	private final boolean assume;
 	private final boolean debug;
-	
-	public VerificationTransformer(Builder builder, String filename,
-			boolean assume, boolean debug) {
+
+	public VerificationTransformer(Builder builder, WyilFile.Case method,
+			String filename, boolean assume, boolean debug) {
 		this.builder = builder;
 		this.filename = filename;
 		this.assume = assume;
 		this.debug = debug;
+		this.method = method;
 	}
 
 	public String filename() {
@@ -71,50 +73,51 @@ public class VerificationTransformer {
 	public void end(Code.ForAll fall, VerificationBranch branch) {
 		System.err.println("END FORALL");
 	}
-	
+
 	public void end(Code.Loop loop, VerificationBranch branch) {
-		System.err.println("END LOOP --- " + Arrays.toString(loop.modifiedOperands));	
+		System.err.println("END LOOP --- "
+				+ Arrays.toString(loop.modifiedOperands));
 	}
-	
+
 	public void exit(Code.ForAll fall, VerificationBranch branch) {
 		System.err.println("LEAVING FORALL");
 	}
-	
+
 	public void exit(Code.Loop loop, VerificationBranch branch) {
-		System.err.println("LEAVING LOOP --- " + Arrays.toString(loop.modifiedOperands));
-				
-//	if(scope instanceof LoopScope) {
-//		LoopScope lscope = (LoopScope) scope;
-//
-//		// trash modified variables
-//		for (int register : lscope.loop.modifiedOperands) {
-//			environment[register] = environment[register] + 1;
-//		}
-//		if(lscope instanceof ForScope) {
-//			ForScope fscope = (ForScope) lscope;
-//			// existing for all scope so existentially quantify generated
-//			// formula
-//			WVariable var = fscope.var;
-//			// Split for the formula into those bits which need to be
-//			// quantified, and those which don't
-//			Pair<WFormula, WFormula> split = splitFormula(var.name(),
-//					constraint);
-//			
-//			if(pc == fscope.end) { 						
-//				constraint = WFormulas.and(
-//						split.second(),
-//						new WBoundedForall(true, var, fscope.src, split
-//								.first()));
-//			} else {
-//				constraint = WFormulas.and(
-//						split.second(),
-//						new WBoundedForall(false, var, fscope.src, split
-//								.first().not()));						
-//			}
-//		}
+		System.err.println("LEAVING LOOP --- "
+				+ Arrays.toString(loop.modifiedOperands));
+
+		// if(scope instanceof LoopScope) {
+		// LoopScope lscope = (LoopScope) scope;
+		//
+		// // trash modified variables
+		// for (int register : lscope.loop.modifiedOperands) {
+		// environment[register] = environment[register] + 1;
+		// }
+		// if(lscope instanceof ForScope) {
+		// ForScope fscope = (ForScope) lscope;
+		// // existing for all scope so existentially quantify generated
+		// // formula
+		// WVariable var = fscope.var;
+		// // Split for the formula into those bits which need to be
+		// // quantified, and those which don't
+		// Pair<WFormula, WFormula> split = splitFormula(var.name(),
+		// constraint);
+		//
+		// if(pc == fscope.end) {
+		// constraint = WFormulas.and(
+		// split.second(),
+		// new WBoundedForall(true, var, fscope.src, split
+		// .first()));
+		// } else {
+		// constraint = WFormulas.and(
+		// split.second(),
+		// new WBoundedForall(false, var, fscope.src, split
+		// .first().not()));
+		// }
+		// }
 	}
-	
-	
+
 	protected void transform(Code.Assert code, VerificationBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
@@ -168,22 +171,21 @@ public class VerificationTransformer {
 		// TODO
 	}
 
-	protected void transform(Code.BinSetOp code,
-			 VerificationBranch branch) {
+	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
 		int lhs = branch.read(code.leftOperand);
 		int rhs = branch.read(code.rightOperand);
 		int result;
 
-		switch (code.kind) {		
+		switch (code.kind) {
 		case UNION:
-			result = Union(automaton,lhs,rhs);
+			result = Union(automaton, lhs, rhs);
 			break;
 		case LEFT_UNION:
-			result = Union(automaton,lhs,Set(automaton,rhs));
+			result = Union(automaton, lhs, Set(automaton, rhs));
 			break;
 		case RIGHT_UNION:
-			result = Union(automaton,Set(automaton,lhs),rhs);
+			result = Union(automaton, Set(automaton, lhs), rhs);
 			break;
 		case INTERSECTION:
 		case LEFT_INTERSECTION:
@@ -191,18 +193,17 @@ public class VerificationTransformer {
 		case LEFT_DIFFERENCE:
 		case DIFFERENCE:
 			// TODO:
-			return; 
+			return;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 
 		}
-		
+
 		branch.write(code.target, result);
 	}
-	
-	protected void transform(Code.BinStringOp code,
-			 VerificationBranch branch) {
+
+	protected void transform(Code.BinStringOp code, VerificationBranch branch) {
 		// TODO
 	}
 
@@ -244,47 +245,32 @@ public class VerificationTransformer {
 			VerificationBranch trueBranch) {
 		// TODO
 	}
-	
+
 	protected void transform(Code.IndirectInvoke code, VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
-	
-		
-		if (code.target != Code.NULL_REG) {
-			int[] code_operands = code.operands;
 
+		if (code.target != Code.NULL_REG) {
 			// now deal with post-condition
+			int[] code_operands = code.operands;
 			Block postcondition = findPostcondition(code.name, code.type,
 					branch.entry());
-			
+
 			if (postcondition != null) {
-				Automaton automaton = branch.automaton();
 				String prefix = code.name + "@" + branch.pc() + ":";
-
-				// first, generate a constraint representing the post-condition.
-				VerificationBranch master = new VerificationBranch(prefix,
-						automaton, postcondition);
-				int constraint = master.transform(new VerificationTransformer(
-						builder, filename, true, debug));
-
-				// second, bind the operands to the invocation.
+				int[] operands = new int[code_operands.length + 1];
 				for (int i = 0; i != code_operands.length; ++i) {
-					int argument = branch.read(code_operands[i]);
-					int parameter = Var(automaton, prefix + (i + 1) + "$0");
-					constraint = automaton.substitute(constraint, parameter,
-							argument);
+					operands[i + 1] = branch.read(code_operands[i]);
 				}
-
-				// third, bind the return value to the target register
-				branch.invalidate(code.target); // annoying but necessary.
-				int target = branch.read(code.target);
-				constraint = automaton.substitute(constraint,
-						Var(automaton, prefix + "0$0"), target);
-
-				// finally, assume the post condition holds
+				branch.invalidate(code.target); // SHOULD BE DONE WITH A BRANCH
+												// WRITE
+				operands[0] = branch.read(code.target);
+				int constraint = transformExternalBlock(postcondition, prefix,
+						operands, branch);
+				// assume the post condition holds
 				branch.assume(constraint);
 			}
 
@@ -318,10 +304,10 @@ public class VerificationTransformer {
 			int var = branch.read(forall.indexOperand);
 
 			branch.assume(ElementOf(branch.automaton(), var, src));
-		} 		
+		}
 		// FIXME: assume loop invariant?
 	}
-	
+
 	protected void transform(Code.Move code, VerificationBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
 	}
@@ -360,14 +346,13 @@ public class VerificationTransformer {
 			int k = branch.automaton().add(new Automaton.Strung(fields.get(i)));
 			int v = branch.read(code_operands[i]);
 			vals[i] = branch.automaton().add(new Automaton.List(k, v));
-		}			
-		
-		int result = Record(branch.automaton(),vals);
-		branch.write(code.target,result);
+		}
+
+		int result = Record(branch.automaton(), vals);
+		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.NewObject code,
-			 VerificationBranch branch) {
+	protected void transform(Code.NewObject code, VerificationBranch branch) {
 		// TODO
 	}
 
@@ -386,11 +371,23 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Return code, VerificationBranch branch) {
-
+		if (code.operand != Code.NULL_REG && method.postcondition() != null) {
+			Automaton automaton = branch.automaton();
+			String prefix = branch.pc() + "@";
+			int[] operands = new int[method.body().numInputs()];
+			operands[0] = branch.read(code.operand);
+			for (int i = 1; i != operands.length; ++i) {
+				operands[i] = Var(automaton,(i-1) + "$0");
+			}
+			int postcondition = transformExternalBlock(method.postcondition(),
+					prefix, operands, branch);
+			if(!branch.assertTrue(postcondition, debug)) {
+				syntaxError("postcondition not satisfied",filename,branch.entry());
+			}
+		}
 	}
 
-	protected void transform(Code.SubString code,
-			 VerificationBranch branch) {
+	protected void transform(Code.SubString code, VerificationBranch branch) {
 		// TODO
 	}
 
@@ -398,14 +395,13 @@ public class VerificationTransformer {
 		// TODO
 	}
 
-	protected void transform(Code.Throw code,
-			 VerificationBranch branch) {
+	protected void transform(Code.Throw code, VerificationBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
 		int src = branch.read(code.operand);
-		int idx = Num(branch.automaton(),code.index);
+		int idx = Num(branch.automaton(), code.index);
 		int result = IndexOf(branch.automaton(), src, idx);
 		branch.write(code.target, result);
 	}
@@ -423,36 +419,61 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Update code, VerificationBranch branch) {
 		int result = branch.read(code.operand);
-		int source = branch.read(code.target);			
+		int source = branch.read(code.target);
 		branch.write(code.target,
 				updateHelper(code.iterator(), source, result, branch));
 	}
 
-	protected int updateHelper(Iterator<Code.LVal> iter, int source, int result, VerificationBranch branch) {
-		if(!iter.hasNext()) {
+	protected int updateHelper(Iterator<Code.LVal> iter, int source,
+			int result, VerificationBranch branch) {
+		if (!iter.hasNext()) {
 			return result;
 		} else {
 			Code.LVal lv = iter.next();
-			if(lv instanceof Code.RecordLVal) {				
+			if (lv instanceof Code.RecordLVal) {
 				Code.RecordLVal rlv = (Code.RecordLVal) lv;
-				int field = branch.automaton().add(new Automaton.Strung(rlv.field));
-				result = updateHelper(iter,FieldOf(branch.automaton(),source,field),result,branch);
-				return FieldUpdate(branch.automaton(),source,field,result);
-			} else if(lv instanceof Code.ListLVal) {
+				int field = branch.automaton().add(
+						new Automaton.Strung(rlv.field));
+				result = updateHelper(iter,
+						FieldOf(branch.automaton(), source, field), result,
+						branch);
+				return FieldUpdate(branch.automaton(), source, field, result);
+			} else if (lv instanceof Code.ListLVal) {
 				Code.ListLVal rlv = (Code.ListLVal) lv;
 				int index = branch.read(rlv.indexOperand);
-				result = updateHelper(iter,IndexOf(branch.automaton(),source,index),result,branch);
-				return ListUpdate(branch.automaton(),source,index,result);
-			} else if(lv instanceof Code.MapLVal) {
+				result = updateHelper(iter,
+						IndexOf(branch.automaton(), source, index), result,
+						branch);
+				return ListUpdate(branch.automaton(), source, index, result);
+			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
-			} else if(lv instanceof Code.StringLVal) {
+			} else if (lv instanceof Code.StringLVal) {
 				return source; // TODO
 			} else {
 				return source; // TODO
 			}
 		}
 	}
-	
+
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
+			SyntacticElement elem) throws Exception {
+		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),
+				WyilFile.ContentType);
+		if (e == null) {
+			syntaxError(
+					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
+							.toString()), filename, elem);
+		}
+		WyilFile m = e.read();
+		WyilFile.MethodDeclaration method = m.method(name.name(), fun);
+
+		for (WyilFile.Case c : method.cases()) {
+			// FIXME: this is a hack for now
+			return c.precondition();
+		}
+		return null;
+	}
+
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),
@@ -471,6 +492,43 @@ public class VerificationTransformer {
 		}
 		return null;
 	}
+
+	/**
+	 * Generate a constraint representing an external block (e.g. a
+	 * pre/post-condition or invariant).
+	 * 
+	 * @param externalBlock
+	 *            --- the external block of code being translated.
+	 * @param prefix
+	 *            --- a prefix to use to ensure that local variables to the
+	 *            external block will not clash with variables in the branch.
+	 * @param operands
+	 *            --- operand register in containing branch which should map to
+	 *            the inputs of the block being translated.
+	 * @param branch
+	 *            --- branch into which the resulting constraint is to be
+	 *            placed.
+	 * @return
+	 */
+	protected int transformExternalBlock(Block externalBlock, String prefix,
+			int[] operands, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
+
+		// first, generate a constraint representing the post-condition.
+		VerificationBranch master = new VerificationBranch(prefix, automaton,
+				externalBlock);
+		int constraint = master.transform(new VerificationTransformer(builder,
+				method, filename, true, debug));
+
+		// second, bind the operands to the invocation.
+		for (int i = 0; i != operands.length; ++i) {
+			int parameter = Var(automaton, prefix + i + "$0");
+			constraint = automaton.substitute(constraint, parameter,
+					operands[i]);
+		}
+
+		return constraint;
+	}
 	
 	/**
 	 * Convert between a WYIL value and a WYONE value. Basically, this is really
@@ -481,7 +539,7 @@ public class VerificationTransformer {
 	 */
 	private int convert(wyil.lang.Constant value, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
-		
+
 		if (value instanceof wyil.lang.Constant.Bool) {
 			wyil.lang.Constant.Bool b = (wyil.lang.Constant.Bool) value;
 			return b.value ? automaton.add(True) : automaton.add(False);
@@ -529,9 +587,9 @@ public class VerificationTransformer {
 				int k = branch.automaton()
 						.add(new Automaton.Strung(e.getKey()));
 				int v = convert(e.getValue(), branch);
-				vals[i++] = branch.automaton().add(new Automaton.List(k,v));
-			}			
-			return RecordVal(branch.automaton(),vals);
+				vals[i++] = branch.automaton().add(new Automaton.List(k, v));
+			}
+			return RecordVal(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Strung) {
 			Constant.Strung vs = (Constant.Strung) value;
 			return String(branch.automaton(), vs.value);
@@ -548,7 +606,7 @@ public class VerificationTransformer {
 			return -1;
 		}
 	}
-		
+
 	/**
 	 * Generate a formula representing a condition from an Code.IfCode or
 	 * Code.Assert bytecodes.
@@ -562,30 +620,38 @@ public class VerificationTransformer {
 			int rightOperand, VerificationBranch branch) {
 		int lhs = branch.read(leftOperand);
 		int rhs = branch.read(rightOperand);
-		
-		switch(op) {
+
+		switch (op) {
 		case EQ:
 			return Equals(branch.automaton(), lhs, rhs);
 		case NEQ:
 			return Not(branch.automaton(), Equals(branch.automaton(), lhs, rhs));
 		case GTEQ:
-			return Or(branch.automaton(),LessThan(branch.automaton(), rhs, lhs),Equals(branch.automaton(), rhs, lhs));
+			return Or(branch.automaton(),
+					LessThan(branch.automaton(), rhs, lhs),
+					Equals(branch.automaton(), rhs, lhs));
 		case GT:
 			return LessThan(branch.automaton(), rhs, lhs);
 		case LTEQ:
-			// TODO: investigate whether better to represent LessThanEq explcitly in constraint solver
-			return Or(branch.automaton(),LessThan(branch.automaton(), lhs, rhs),Equals(branch.automaton(), lhs, rhs));
+			// TODO: investigate whether better to represent LessThanEq
+			// explcitly in constraint solver
+			return Or(branch.automaton(),
+					LessThan(branch.automaton(), lhs, rhs),
+					Equals(branch.automaton(), lhs, rhs));
 		case LT:
 			return LessThan(branch.automaton(), lhs, rhs);
 		case SUBSET:
 			return SubSet(branch.automaton(), lhs, rhs);
 		case SUBSETEQ:
-			// TODO: investigate whether better to represent SubSetEq explcitly in constraint solver
-			return Or(branch.automaton(),Equals(branch.automaton(), lhs, rhs),SubSet(branch.automaton(), lhs, rhs));
+			// TODO: investigate whether better to represent SubSetEq explcitly
+			// in constraint solver
+			return Or(branch.automaton(), Equals(branch.automaton(), lhs, rhs),
+					SubSet(branch.automaton(), lhs, rhs));
 		case ELEMOF:
 			return ElementOf(branch.automaton(), lhs, rhs);
 		default:
-			internalFailure("unknown comparator (" + op + ")",filename,branch.entry());
+			internalFailure("unknown comparator (" + op + ")", filename,
+					branch.entry());
 			return -1;
 		}
 	}

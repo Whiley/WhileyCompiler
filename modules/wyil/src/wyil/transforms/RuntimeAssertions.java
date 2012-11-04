@@ -83,18 +83,18 @@ public class RuntimeAssertions implements Transform {
 	}
 	
 	public void apply(WyilFile module) {
-		if(enabled) {
+		if (enabled) {
 			this.filename = module.filename();
 
-			for(WyilFile.Declaration d : module.declarations()) {
-				if(d instanceof WyilFile.TypeDeclaration) {
+			for (WyilFile.Declaration d : module.declarations()) {
+				if (d instanceof WyilFile.TypeDeclaration) {
 					WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
-					module.replace(td,transform(td));	
-				} else if(d instanceof WyilFile.MethodDeclaration) {
+					module.replace(td, transform(td));
+				} else if (d instanceof WyilFile.MethodDeclaration) {
 					WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
-					if(!md.isNative()) {
+					if (!md.isNative()) {
 						// native functions/methods don't have bodies
-						module.replace(md,transform(md));
+						module.replace(md, transform(md));
 					}
 				}
 			}

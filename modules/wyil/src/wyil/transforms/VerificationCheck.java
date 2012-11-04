@@ -181,7 +181,7 @@ public class VerificationCheck implements Transform {
 			VerificationBranch precond = new VerificationBranch("",
 					master.automaton(), precondition);
 			int constraint = precond.transform(new VerificationTransformer(
-					builder, filename, true, debug));
+					builder, methodCase, filename, true, debug));
 			master.assume(constraint);
 			// the following is necessary to avoid clashes between temporary
 			// variables used in the precondition and temporary variables used
@@ -190,7 +190,7 @@ public class VerificationCheck implements Transform {
 					Math.min(body.numSlots(), precondition.numSlots()));
 		}
 		
-		master.transform(new VerificationTransformer(builder, filename, false,
-				debug));
+		master.transform(new VerificationTransformer(builder, methodCase,
+				filename, false, debug));
 	}
 }
