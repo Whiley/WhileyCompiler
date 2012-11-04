@@ -399,6 +399,8 @@ public class VerificationBranch {
 				children.add(trueBranch);
 			} else if(code instanceof Code.Loop) {
 				transformer.transform((Code.Loop) code, this);
+			} else if(code instanceof Code.LoopEnd) {
+				break; // were done!!
 			} else if(code instanceof Code.Return) {
 				transformer.transform((Code.Return) code, this);
 				break; // we're done!!!
@@ -544,6 +546,7 @@ public class VerificationBranch {
 	 * @param scope
 	 */
 	public void push(Scope scope) {
+		scope.end = findLabelIndex(scope.label);
 		scopes.add(scope);
 	}
 	
@@ -556,10 +559,11 @@ public class VerificationBranch {
 	 * 
 	 */
 	public static class Scope {
-		public final int end;
+		public final String label;
+		public int end;
 		
-		public Scope(int end) {
-			this.end = end;
+		public Scope(String end) {
+			this.label = end;
 		}
 	}
 			
@@ -659,16 +663,27 @@ public class VerificationBranch {
 	 *            that branches always go forward).
 	 */
 	private void goTo(String label) {
+		pc = findLabelIndex(label);		
+	}
+	
+	/**
+	 * Find the bytecode index of a given label. If the label doesn't exist an
+	 * exception is thrown.
+	 * 
+	 * @param label
+	 * @return
+	 */
+	private int findLabelIndex(String label) {
 		for (int i = pc; i != block.size(); ++i) {
 			Code code = block.get(i).code;
 			if (code instanceof Code.Label) {
 				Code.Label l = (Code.Label) code;
 				if (l.label.equals(label)) {
-					pc = i;
-					return;
+					return i;
 				}
 			}
 		}
+		throw new IllegalArgumentException("unknown label --- " + label);
 	}
 	
 	/**

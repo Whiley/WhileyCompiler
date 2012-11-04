@@ -112,7 +112,7 @@ public class VerificationTransformer {
 			VerificationBranch.Scope {
 		public final T loop;
 
-		public LoopScope(T loop, int end) {
+		public LoopScope(T loop, String end) {
 			super(end);
 			this.loop = loop;
 		}
@@ -128,7 +128,7 @@ public class VerificationTransformer {
 		public final int src;
 		public final int var;
 
-		public ForScope(Code.ForAll forall, int end, int src, int var) {
+		public ForScope(Code.ForAll forall, String end, int src, int var) {
 			super(forall, end);
 			this.src = src;
 			this.var = var;
@@ -339,7 +339,9 @@ public class VerificationTransformer {
 			int var = branch.read(forall.indexOperand);
 
 			branch.assume(ElementOf(branch.automaton(), var, src));
-			// scopes.add(new ForScope(forall,end,src,var));
+			branch.push(new ForScope(forall,code.target,src,var));
+		} else {
+			branch.push(new LoopScope(code,code.target));
 		}
 		
 		// FIXME: assume loop invariant?
