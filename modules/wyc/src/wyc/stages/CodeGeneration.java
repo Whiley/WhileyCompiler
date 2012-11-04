@@ -589,6 +589,7 @@ public final class CodeGeneration {
 	private void generate(While s, LocalGenerator.Environment environment,
 			Block codes) {
 		String label = Block.freshLabel();
+		String exit = Block.freshLabel();
 
 		if (s.invariant != null) {
 			localGenerator.generateAssertion(
@@ -598,10 +599,10 @@ public final class CodeGeneration {
 
 		codes.append(Code.Loop(label, Collections.EMPTY_SET), attributes(s));
 
-		localGenerator.generateCondition(label, invert(s.condition),
+		localGenerator.generateCondition(exit, invert(s.condition),
 				environment, codes);
 
-		scopes.push(new BreakScope(label));
+		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes);
 		}
@@ -612,11 +613,13 @@ public final class CodeGeneration {
 					s.invariant, false, environment, codes);
 		}
 
-		codes.append(Code.LoopEnd(label));
+		codes.append(Code.LoopEnd(label), attributes(s));
+		codes.append(Code.Label(exit), attributes(s));
 	}
 
 	private void generate(DoWhile s, LocalGenerator.Environment environment, Block codes) {		
 		String label = Block.freshLabel();				
+		String exit = Block.freshLabel();
 		
 		if (s.invariant != null) {
 			localGenerator.generateAssertion(
@@ -627,7 +630,7 @@ public final class CodeGeneration {
 		codes.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
-		scopes.push(new BreakScope(label));	
+		scopes.push(new BreakScope(exit));	
 		for (Stmt st : s.body) {
 			generate(st, environment, codes);
 		}		
@@ -639,16 +642,18 @@ public final class CodeGeneration {
 					environment, codes);
 		}
 		
-		localGenerator.generateCondition(label, invert(s.condition),
+		localGenerator.generateCondition(exit, invert(s.condition),
 				environment, codes);
 		
-		codes.append(Code.LoopEnd(label));
+		codes.append(Code.LoopEnd(label), attributes(s));
+		codes.append(Code.Label(exit), attributes(s));
 	}
 	
 	private void generate(ForAll s, LocalGenerator.Environment environment,
 			Block codes) {
 		String label = Block.freshLabel();
-
+		String exit = Block.freshLabel();
+		
 		if (s.invariant != null) {
 			String invariantLabel = Block.freshLabel();
 			localGenerator.generateAssertion(
@@ -694,7 +699,7 @@ public final class CodeGeneration {
 		}
 
 		// FIXME: add a continue scope
-		scopes.push(new BreakScope(label));
+		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes);
 		}
@@ -705,6 +710,7 @@ public final class CodeGeneration {
 					s.invariant, false, environment, codes);
 		}
 		codes.append(Code.LoopEnd(label), attributes(s));
+		codes.append(Code.Label(exit), attributes(s));
 	}
 	
 	private static Expr invert(Expr e) {

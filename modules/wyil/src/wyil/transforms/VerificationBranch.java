@@ -373,9 +373,9 @@ public class VerificationBranch {
 		while (pc < blockSize) {
 			// first, check whether we're departing a scope or not.
 			int top = scopes.size() - 1;
-			while (top >= 0 && scopes.get(top).end <= pc) {
+			while (top >= 0 && scopes.get(top).end < pc) {
 				// yes, we're leaving a scope ... so notify transformer.
-				transformer.exit(scopes.get(top), this);
+				dispatchExit(scopes.get(top), transformer);
 				scopes.remove(top);
 				top = top - 1;
 			}
@@ -397,10 +397,26 @@ public class VerificationBranch {
 				transformer.transform(ifs,this,trueBranch);
 				trueBranch.goTo(ifs.target);
 				children.add(trueBranch);
+			} else if(code instanceof Code.ForAll) {
+				Code.ForAll fall = (Code.ForAll) code;
+				transformer.transform(fall, this);
+				scopes.add(new ForScope(fall,findLabelIndex(fall.target)));
 			} else if(code instanceof Code.Loop) {
-				transformer.transform((Code.Loop) code, this);
+				Code.Loop loop = (Code.Loop) code; 
+				transformer.transform(loop, this);
+				scopes.add(new LoopScope(loop,findLabelIndex(loop.target)));
 			} else if(code instanceof Code.LoopEnd) {
-				break; // were done!!
+				top = scopes.size() - 1;
+				LoopScope ls = (LoopScope) scopes.get(top);
+				scopes.remove(top);
+				if(ls instanceof ForScope) {
+					ForScope fs = (ForScope) ls;
+					transformer.end(fs.loop,this);
+				} else {
+					// normal loop, so the branch ends here
+					transformer.end(ls.loop,this);
+					break; 
+				}
 			} else if(code instanceof Code.Return) {
 				transformer.transform((Code.Return) code, this);
 				break; // we're done!!!
@@ -540,17 +556,6 @@ public class VerificationBranch {
 	}
 
 	/**
-	 * Push a scope onto the scopes stack. When the branch exits the scope, the
-	 * transformer will be notified.
-	 * 
-	 * @param scope
-	 */
-	public void push(Scope scope) {
-		scope.end = findLabelIndex(scope.label);
-		scopes.add(scope);
-	}
-	
-	/**
 	 * A region of bytecodes which requires special attention when the branch
 	 * exits the scope. For example, when a branch exits the body of a for-loop,
 	 * we must ensure that the appopriate loop-invariants hold, etc.
@@ -558,15 +563,43 @@ public class VerificationBranch {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Scope {
-		public final String label;
+	private static class Scope {
 		public int end;
 		
-		public Scope(String end) {
-			this.label = end;
+		public Scope(int end) {
+			this.end = end;
 		}
 	}
 			
+	/**
+	 * Represents the scope of a general loop bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 */
+	private static class LoopScope<T extends Code.Loop> extends
+			VerificationBranch.Scope {
+		public final T loop;
+
+		public LoopScope(T loop, int end) {
+			super(end);
+			this.loop = loop;
+		}
+	}
+	
+	/**
+	 * Represents the scope of a forall bytecode
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	private static class ForScope extends LoopScope<Code.ForAll> {
+		public ForScope(Code.ForAll forall, int end) {
+			super(forall, end);
+		}
+	}
+	
 	/**
 	 * Dispatch on the given bytecode to the appropriate method in transformer
 	 * for generating an appropriate constraint to capture the bytecodes
@@ -652,6 +685,23 @@ public class VerificationBranch {
 		}
 	}
 	
+	/**
+	 * Dispatch exit scope events to the transformer.
+	 * 
+	 * @param scope
+	 * @param transformer
+	 */
+	private void dispatchExit(Scope scope, VerificationTransformer transformer) {
+		if (scope instanceof LoopScope) {
+			if (scope instanceof ForScope) {
+				ForScope fs = (ForScope) scope;
+				transformer.exit(fs.loop, this);
+			} else {
+				LoopScope ls = (LoopScope) scope;
+				transformer.exit(ls.loop, this);
+			}
+		}
+	}
 
 	/**
 	 * Reposition the Program Counter (PC) for this branch to a given label in

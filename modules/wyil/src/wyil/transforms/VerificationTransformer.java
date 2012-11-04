@@ -31,6 +31,7 @@ import static wyil.util.ConstraintSolver.*;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -67,9 +68,21 @@ public class VerificationTransformer {
 		return filename;
 	}
 
-	public void exit(VerificationBranch.Scope scope, VerificationBranch branch) {
-		System.err.println("LEAVING SCOPE");
-
+	public void end(Code.ForAll fall, VerificationBranch branch) {
+		System.err.println("END FORALL");
+	}
+	
+	public void end(Code.Loop loop, VerificationBranch branch) {
+		System.err.println("END LOOP --- " + Arrays.toString(loop.modifiedOperands));	
+	}
+	
+	public void exit(Code.ForAll fall, VerificationBranch branch) {
+		System.err.println("LEAVING FORALL");
+	}
+	
+	public void exit(Code.Loop loop, VerificationBranch branch) {
+		System.err.println("LEAVING LOOP --- " + Arrays.toString(loop.modifiedOperands));
+				
 //	if(scope instanceof LoopScope) {
 //		LoopScope lscope = (LoopScope) scope;
 //
@@ -101,40 +114,6 @@ public class VerificationTransformer {
 //		}
 	}
 	
-	/**
-	 * Represents the scope of a general loop bytecode.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 * @param <T>
-	 */
-	private static class LoopScope<T extends Code.Loop> extends
-			VerificationBranch.Scope {
-		public final T loop;
-
-		public LoopScope(T loop, String end) {
-			super(end);
-			this.loop = loop;
-		}
-	}
-	
-	/**
-	 * Represents the scope of a forall bytecode
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	private static class ForScope extends LoopScope<Code.ForAll> {
-		public final int src;
-		public final int var;
-
-		public ForScope(Code.ForAll forall, String end, int src, int var) {
-			super(forall, end);
-			this.src = src;
-			this.var = var;
-		}
-	}
-		
 	
 	protected void transform(Code.Assert code, VerificationBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
@@ -339,11 +318,7 @@ public class VerificationTransformer {
 			int var = branch.read(forall.indexOperand);
 
 			branch.assume(ElementOf(branch.automaton(), var, src));
-			branch.push(new ForScope(forall,code.target,src,var));
-		} else {
-			branch.push(new LoopScope(code,code.target));
-		}
-		
+		} 		
 		// FIXME: assume loop invariant?
 	}
 	
