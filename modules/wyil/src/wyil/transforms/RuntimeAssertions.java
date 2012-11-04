@@ -45,7 +45,8 @@ import wyil.util.BigRational;
  * The purpose of this transform is two-fold:
  * <ol>
  * <li>To inline preconditions for method invocations.</li>
- * <li>To inline preconditions for division and list/dictionary access expressions</li>
+ * <li>To inline preconditions for division and list/dictionary access
+ * expressions</li>
  * <li>To inline postcondition checks. This involves generating the appropriate
  * shadows for local variables referenced in post-conditions</li>
  * <li>To inline dispatch choices into call-sites. This offers a useful
@@ -60,25 +61,44 @@ public class RuntimeAssertions implements Transform {
 	private final Builder builder;	
 	private String filename;
 	
+	/**
+	 * Determines whether verification is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
 	public RuntimeAssertions(Builder builder) {
 		this.builder = builder;
 	}
 	
+	public static String describeEnable() {
+		return "Enable/disable runtime assertions";
+	}
+	
+	public static boolean getEnable() {
+		return false; // default value
+	}
+	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+	
 	public void apply(WyilFile module) {
-		this.filename = module.filename();
-		
-		for(WyilFile.Declaration d : module.declarations()) {
-			if(d instanceof WyilFile.TypeDeclaration) {
-				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
-				module.replace(td,transform(td));	
-			} else if(d instanceof WyilFile.MethodDeclaration) {
-				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
-				if(!md.isNative()) {
-					// native functions/methods don't have bodies
-					module.replace(md,transform(md));
+		if(enabled) {
+			this.filename = module.filename();
+
+			for(WyilFile.Declaration d : module.declarations()) {
+				if(d instanceof WyilFile.TypeDeclaration) {
+					WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
+					module.replace(td,transform(td));	
+				} else if(d instanceof WyilFile.MethodDeclaration) {
+					WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+					if(!md.isNative()) {
+						// native functions/methods don't have bodies
+						module.replace(md,transform(md));
+					}
 				}
 			}
-		}			
+		}
 	}
 	
 	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
@@ -234,27 +254,29 @@ public class RuntimeAssertions implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
-			WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
-		
-		if(code.type != Type.T_VOID) {
+	public Block transform(Code.Return code, int freeSlot,
+			SyntacticElement elem, WyilFile.Case methodCase,
+			WyilFile.MethodDeclaration method) {
+
+		if (code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
-			if(postcondition != null) {
-				Block blk = new Block(0);												
-				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-				binding.put(0,code.operand);
-				Type.FunctionOrMethod mtype = method.type();	
+			if (postcondition != null) {
+				Block blk = new Block(0);
+				HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
+				binding.put(0, code.operand);
+				Type.FunctionOrMethod mtype = method.type();
 				int pIndex = 1;
 				int shadowIndex = methodCase.body().numSlots();
-				for(Type p : mtype.params()) {
+				for (Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
-				postcondition = Block.resource(postcondition,elem.attribute(Attribute.Source.class));
-				blk.importExternal(postcondition,binding);				
+				postcondition = Block.resource(postcondition,
+						elem.attribute(Attribute.Source.class));
+				blk.importExternal(postcondition, binding);
 				return blk;
 			}
 		}
-		
+
 		return null;
 	}
 
