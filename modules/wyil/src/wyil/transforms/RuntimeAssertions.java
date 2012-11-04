@@ -56,11 +56,11 @@ import wyil.util.BigRational;
  * @author David J. Pearce
  * 
  */
-public class ConstraintInline implements Transform {
+public class RuntimeAssertions implements Transform {
 	private final Builder builder;	
 	private String filename;
 	
-	public ConstraintInline(Builder builder) {
+	public RuntimeAssertions(Builder builder) {
 		this.builder = builder;
 	}
 	
