@@ -129,8 +129,8 @@ static char* wy_type_names[] = {
     /* a floating point number (long double) */
 #define Wy_Float		18
     "float",
-    /* a reference == an indirect pointer */
-#define Wy_Ref		19
+    /* a reference == an indirect pointer (upper or outer part) */
+#define Wy_Ref1		19
     "reference",
     /* a unicode string as wchar array */
 #define Wy_WString	20
@@ -144,7 +144,10 @@ static char* wy_type_names[] = {
     /* a reference to a FOM */
 #define Wy_FOM		23
     "FOM",
-#define Wy_Type_Max	23
+    /* a reference == an indirect pointer (lower or inner part) */
+#define Wy_Ref2		24
+    "reference",
+#define Wy_Type_Max	24
     (char *) NULL
 };
 
@@ -161,7 +164,8 @@ static char* wy_type_names[] = {
  * Wy_Bool
  * Wy_Int	ptr is long
  * Wy_Token	ptr is token
- * Wy_Ref	ptr is pointer to another wycc_obj.
+ * Wy_Ref1	ptr is pointer to another wycc_obj of type Wy_Ref2.
+ * Wy_Ref2	ptr is pointer to another wycc_obj.
  * Wy_CString
  * Wy_String	ptr to null terminated char[].
  * Wy_WString	ptr to null terminated wchar[].
@@ -1022,16 +1026,10 @@ wycc_obj* wycc_box_ref(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc_box_ref");
     wycc_obj* alt;
 
-    //ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
-    //ans->typ = Wy_Ref;
-    //ans->cnt = 1;
-    //ans->ptr = (void*) itm;
     itm->cnt++;
-    alt = wycc_cow_obj(itm);
-    itm->cnt--;
-    //return ans;
-    //return wycc_box_new(Wy_Ref, (void*) itm);
-    return wycc_box_new(Wy_Ref, (void*) alt);
+    //alt = wycc_box_new(Wy_Ref2, (void*) alt);
+    alt = wycc_box_new(Wy_Ref2, (void*) itm);
+    return wycc_box_new(Wy_Ref1, (void*) alt);
 }
 
 /*
@@ -3061,7 +3059,11 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     if (typ == Wy_Byte) {
 	return (wycc_obj *) NULL;
     };
-    if (typ == Wy_Ref) {
+    if (typ == Wy_Ref1) {
+	wycc_deref_box((wycc_obj *) ptr);
+	return (wycc_obj *) NULL;
+    };
+    if (typ == Wy_Ref2) {
 	wycc_deref_box((wycc_obj *) ptr);
 	return (wycc_obj *) NULL;
     };
@@ -3560,17 +3562,25 @@ wycc_obj* wycc_cow_obj(wycc_obj* itm) {
     if (itm->typ == Wy_Map) {
 	return wycc_cow_map(itm);
     };
-    if (itm->typ == Wy_Ref) {
-	return wycc_box_ref(itm->ptr);
+    if (itm->typ == Wy_Ref1) {
+	itm->cnt++;
+	return itm;		/* we really do not clone refs. */
     };
     WY_PANIC("Fail: wycc_cow_obj not yet supports type(%d).\n", itm->typ)
 }
 
+/*
+ * Clone a map
+ * **** needs to be written.
+ */
 wycc_obj* wycc_cow_map(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc_cow_map");
     WY_PANIC("Fail: wycc_cow_map not written yet.\n")
 }
 
+/*
+ * Clone a record
+ */
 wycc_obj* wycc_cow_record(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc_cow_record");
     //wycc_obj* ans;
@@ -3583,11 +3593,7 @@ wycc_obj* wycc_cow_record(wycc_obj* itm) {
     if (itm->typ != Wy_Record) {
 	WY_PANIC("Help needed in wycc_cow_record for type %d\n", itm->typ)
     };
-    //ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
-    //ans->typ = itm->typ;
     rcdrcd = (wycc_obj*) p[1];
-    //new = (void**) rcdrcd->ptr;
-    //nxt = (wycc_obj*) new[0];
     nxt = wycc_type_record_names((int) rcdrcd->ptr);
     tmp = 3 + wycc_length_of_list(nxt);
     new = (void**) calloc(tmp, sizeof(void *));
@@ -3600,9 +3606,6 @@ wycc_obj* wycc_cow_record(wycc_obj* itm) {
 	new[at] = (void *) nxt;
     }
     new[0] = (void *) (tmp-3);
-    //ans->ptr = (void *) new;
-    //ans->cnt = 1;
-    //return ans;
     return wycc_box_new(itm->typ, (void*) new);
 }
 
@@ -3635,8 +3638,6 @@ wycc_obj* wycc_cow_list(wycc_obj* lst) {
     if ((lst->typ != Wy_List) && (lst->typ != Wy_Tuple)) {
 	WY_PANIC("Help needed in wycc_cow_list for type %d\n", lst->typ)
     };
-    //ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
-    //ans->typ = Wy_List;
     tmp = (long) p[2];
     new = (void**) calloc(tmp, sizeof(void *));
     new[1] = p[1];
@@ -3873,6 +3874,9 @@ int wycc_compare(wycc_obj* lhs, wycc_obj* rhs, int rel){
     return 0;
 }
 
+/*
+ * given a list, produce a set.
+ */
 static wycc_obj *wycc_set_from_list(wycc_obj *lst) {
     WY_OBJ_SANE(lst, "wycc_set_from_list");
     void** p = lst->ptr;
@@ -3889,6 +3893,32 @@ static wycc_obj *wycc_set_from_list(wycc_obj *lst) {
     return ans;
 }
 
+/*
+ * given a ref1 update the underlying object.
+ * **** needs to be written
+ */
+void wycc_update_ref(wycc_obj *ref, wycc_obj *itm) {
+    WY_OBJ_SANE(ref, "wycc_update_list ref");
+    WY_OBJ_SANE(itm, "wycc_update_list itm");
+    wycc_obj* nxt;
+
+    if (ref->typ != Wy_Ref1) {
+	WY_PANIC("ERROR: ref in wycc_update_ref is type %d\n", ref->typ)
+    };
+    nxt = (wycc_obj *) ref->ptr;
+    if (nxt->typ != Wy_Ref2) {
+	WY_PANIC("ERROR: nxt in wycc_update_ref is type %d\n", nxt->typ)
+    };
+    nxt->ptr = (void *) itm;
+    return;
+	WY_PANIC("Help: wycc_update_ref unimplemented\n")
+
+}
+
+/*
+ * given a list, an item, and an offset, update the slot of the list at
+ * that offset using that item.
+ */
 wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx){
     WY_OBJ_SANE(lst, "wycc_update_list lst");
     WY_OBJ_SANE(rhs, "wycc_update_list rhs");
@@ -5357,10 +5387,14 @@ wycc_obj* wyil_dereference(wycc_obj* itm){
     WY_OBJ_SANE(itm, "wyil_dereference");
     wycc_obj* ans;
 
-    if (itm->typ != Wy_Ref) {
-	WY_PANIC("Help needed in wyil_dereference for type %d\n", itm->typ)
+    if (itm->typ != Wy_Ref1) {
+	WY_PANIC("Help needed in wyil_dereference 1 for type %d\n", itm->typ)
     };
     ans = (wycc_obj*) itm->ptr;
+    if (ans->typ != Wy_Ref2) {
+	WY_PANIC("Help needed in wyil_dereference 2 for type %d\n", ans->typ)
+    };
+    ans = (wycc_obj*) ans->ptr;
     ans->cnt++;
     return ans;
 }
