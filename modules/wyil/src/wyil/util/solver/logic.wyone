@@ -44,9 +44,7 @@ reduce And{Bool b, BExpr... xs}:
     => And (xs)
 
 reduce And{And{BExpr... xs}, BExpr... ys}:
-    => let zs = { Equals{|Var((*x)[0]),(*x)[1]|} | x in xs, x is Assign[string,Expr] },
-           ws = { x | x in xs, !(x is Assign) }
-       in And (ys ++ zs ++ ws)
+    => And (xs ++ ys)
 
 reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
     => False, if x == y
@@ -80,7 +78,6 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // ====================================================================
 
 term Equals{|Expr,Expr|}
-term Assign[string,Expr]
 
 reduce Equals{|Expr x, Expr y|}:
     => True, if x == y
@@ -88,9 +85,9 @@ reduce Equals{|Expr x, Expr y|}:
 reduce Equals{|Value x, Value y|}:
     => False, if x != y
 
-reduce And{Equals{|Var(string s) v,Expr e|},BExpr... xs}:
+reduce And{Equals{|Var(string s) v,Expr e|} eq, BExpr... xs}:
     => let ys = { x[v\e] | x in xs}
-       in And (Assign[s,e] ++ ys)
+       in And (eq ++ ys)
 
 // IS THIS RULE NECESSARY?
 // infer And{Equals{|Expr x, Expr y|} e1, Equals{|Expr u, Expr v|} e2, BExpr... rest}:
@@ -102,8 +99,7 @@ reduce And{Equals{|Var(string s) v,Expr e|},BExpr... xs}:
 // ====================================================================
 
 class Value as Bool | ...
-class BExpr as Bool | Var | Not | And | Or | Equals | Assign | ...
-// NOTE: Assign does *not* need to be a general expression
+class BExpr as Bool | Var | Not | And | Or | Equals | ...
 class Expr as Bool | Var | Not | And | Or | Equals | ...
 
 
