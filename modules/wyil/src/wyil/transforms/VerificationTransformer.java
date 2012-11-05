@@ -71,21 +71,21 @@ public class VerificationTransformer {
 	}
 
 	public void end(Code.ForAll fall, VerificationBranch branch) {
-		System.err.println("END FORALL");
+//		System.err.println("END FORALL");
 	}
 
 	public void end(Code.Loop loop, VerificationBranch branch) {
-		System.err.println("END LOOP --- "
-				+ Arrays.toString(loop.modifiedOperands));
+//		System.err.println("END LOOP --- "
+//				+ Arrays.toString(loop.modifiedOperands));
 	}
 
 	public void exit(Code.ForAll fall, VerificationBranch branch) {
-		System.err.println("LEAVING FORALL");
+//		System.err.println("LEAVING FORALL");
 	}
 
 	public void exit(Code.Loop loop, VerificationBranch branch) {
-		System.err.println("LEAVING LOOP --- "
-				+ Arrays.toString(loop.modifiedOperands));
+//		System.err.println("LEAVING LOOP --- "
+//				+ Arrays.toString(loop.modifiedOperands));
 
 		// if(scope instanceof LoopScope) {
 		// LoopScope lscope = (LoopScope) scope;
