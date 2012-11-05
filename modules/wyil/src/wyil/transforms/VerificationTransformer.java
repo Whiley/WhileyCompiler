@@ -252,10 +252,32 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
-
+		int[] code_operands = code.operands;
+		
+		// -------------------------------------------------------------
+		// PRE-CONDITION
+		// -------------------------------------------------------------
+		Block precondition = findPrecondition(code.name,code.type,branch.entry());
+		if(precondition != null) {
+			String prefix = code.name + "@" + branch.pc() + ":";
+			int[] operands = new int[code_operands.length + 1];
+			for (int i = 0; i != code_operands.length; ++i) {
+				operands[i] = branch.read(code_operands[i]);
+			}			
+			int constraint = transformExternalBlock(precondition, prefix,
+					operands, branch);
+			// assume the post condition holds
+			if(!branch.assertTrue(constraint,debug)) {
+				syntaxError("precondition not satisfied", filename,
+						branch.entry());
+			}
+		}
+		
+		// -------------------------------------------------------------
+		// POST-CONDITION
+		// -------------------------------------------------------------
 		if (code.target != Code.NULL_REG) {
 			// now deal with post-condition
-			int[] code_operands = code.operands;
 			Block postcondition = findPostcondition(code.name, code.type,
 					branch.entry());
 
