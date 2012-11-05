@@ -157,6 +157,12 @@ public class VerificationTransformer {
 					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
 		case DIV:
+			// Check for divide by zero
+			int constraint = Not(automaton,Equals(automaton,rhs,Num(automaton,0)));
+			if(!branch.assertTrue(constraint,debug)) {
+					syntaxError("division-by-zero is possible", filename,
+							branch.entry());
+			}
 			result = Div(automaton, lhs, rhs);
 			break;
 		default:
