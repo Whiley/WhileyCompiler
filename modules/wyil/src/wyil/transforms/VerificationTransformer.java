@@ -308,6 +308,20 @@ public class VerificationTransformer {
 		int src = branch.read(code.leftOperand);
 		int idx = branch.read(code.rightOperand);
 		int result = IndexOf(branch.automaton(), src, idx);
+		
+		// Check for index-out-of-bounds errors
+		Automaton automaton = branch.automaton();
+		int constraint = Or(automaton,
+				Equals(automaton, Num(automaton, 0), idx),
+				LessThan(automaton, Num(automaton, 0), idx));
+		if(!branch.assertTrue(constraint,debug)) {
+			syntaxError("negative index is possible",filename,branch.entry());
+		}
+		constraint = LessThan(automaton,idx,LengthOf(automaton,src));
+		if(!branch.assertTrue(constraint,debug)) {
+			syntaxError("index-out-of-bounds is possible",filename,branch.entry());
+		}
+		
 		branch.write(code.target, result);
 	}
 
