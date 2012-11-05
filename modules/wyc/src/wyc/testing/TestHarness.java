@@ -106,8 +106,8 @@ public class TestHarness {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", name);
+		int r = compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, "-X", "verification:enable=true", name);
 
 		if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
@@ -131,8 +131,8 @@ public class TestHarness {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", name);
+		int r = compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, "-X", "verification:enable=true", name);
 
 		if (r == WycMain.SUCCESS) {
 			fail("Test compiled when it shouldn't have!");

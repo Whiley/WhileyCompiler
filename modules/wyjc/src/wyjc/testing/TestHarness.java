@@ -84,7 +84,8 @@ public class TestHarness {
 	 */
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != WycMain.SUCCESS) {
+		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -107,8 +108,8 @@ public class TestHarness {
 	protected void verifyRunTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", filename) != WycMain.SUCCESS) {
+		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, "-X", "verification:enable=true", filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -132,7 +133,8 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, fullName) != WycMain.SUCCESS) { 
+		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, fullName) != WycMain.SUCCESS) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath,name);				
