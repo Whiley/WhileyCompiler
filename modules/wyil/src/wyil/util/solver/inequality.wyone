@@ -35,7 +35,8 @@ infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|Var v1|}], Mul... xs|}] s1)
         in And ({ieq1,ieq2,ieq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
 
 // eliminate variable from *linear* equation
-reduce And{Equation(Sum[real x1, {|Mul[real x2, {|Var v1|}], Mul... xs|}]) eq1, 
+// NOTE: must be inference rule to ensure Sums are maximally reduced
+infer And{Equation(Sum[real x1, {|Mul[real x2, {|Var v1|}], Mul... xs|}]) eq1, 
           ZeroLessThan(Sum[real, {|Mul[real, {|Var v2, Var...|}], Mul...|}]) eq2, 
 	  BExpr... rest}:
      => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[-x1,xs]|}]]
