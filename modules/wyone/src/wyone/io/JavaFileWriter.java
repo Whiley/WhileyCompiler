@@ -102,11 +102,11 @@ public class JavaFileWriter {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
 			String mangle = type2HexStr(type);
 			myOut(4,"");
-			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
+			myOut(4, "if(typeof_" + mangle + "(i,automaton) &&");
+			myOut(5, "reduce_" + mangle + "(i,automaton)) {");
 			typeTests.add(type);
-			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
-			// TODO: this is really inefficient!!!
 			myOut(5, "automaton.compact();");
+			myOut(5, "changed = true; i = 0; continue; // reset");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
@@ -132,9 +132,10 @@ public class JavaFileWriter {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
 			String mangle = type2HexStr(type);
 			myOut(4,"");
-			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
-			typeTests.add(type);			
-			myOut(5, "changed |= infer_" + mangle + "(i,automaton);");
+			myOut(4, "if(typeof_" + mangle + "(i,automaton) &&");
+			myOut(5, "infer_" + mangle + "(i,automaton)) {");
+			typeTests.add(type);
+			myOut(5, "changed = true; i = 0; continue; // reset");			
 			myOut(4, "}");
 		}
 		myOut(3,"}");

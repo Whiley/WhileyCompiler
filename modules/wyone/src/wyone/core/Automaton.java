@@ -145,11 +145,16 @@ public final class Automaton {
 	}
 	
 	/**
+	 * <p>
 	 * Add a new state into the automaton. If there is already an equivalent
 	 * state, then its index is returned. Or, if the state can be represented
 	 * "virtually", then a negative (but still valid) index will be returned.
 	 * Otherwise, the state is added onto the end of the states array and its
 	 * index is returned.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references valid prior to this call remain valid.
+	 * </p>
 	 * 
 	 * @param state
 	 * @return
@@ -194,13 +199,29 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Rewrite one state into another.
+	 * <p>
+	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This
+	 * means that all occurrences of <code>s1</code> are replaced with
+	 * <code>s2</code>. In the resulting automaton, there is guaranteed to be no
+	 * state equivalent to <code>s1</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may now be
+	 * invalidated. In order to preserve a reference through a rewrite, it is
+	 * necessary to use a marker.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> for various reasons, this operation does not support
+	 * rewriting from a virtual node (i.e. where an index < 0). This is a minor
+	 * limitation which shouldn't cause problems in the vast majority of cases.
+	 * </p>
+	 * 
 	 * 
 	 * @param from
-	 *            --- state being rewritten to look like target.
+	 *            --- (non-virtual) state being rewritten from.
 	 * @param to
-	 *            --- src is rewritten to look like target, which is then
-	 *            destroyed.
+	 *            --- state being rewritten to.
 	 * @return
 	 */
 	public void rewrite(int from, int to) {
@@ -223,9 +244,17 @@ public final class Automaton {
 	}
 	
 	/**
+	 * <p>
 	 * Clone the source object whilst replacing all reachable instances of the
 	 * search term with the replacement term. In the case of no matches, the
 	 * original source term is returned.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> all references valid prior to this call remain valid.
+	 * However, this call may result in garbage being left in the automaton
+	 * can be removed by calling <code>compact()</code>.
+	 * </p>
 	 * 
 	 * @param source
 	 *            --- term to be cloned and within which to matching search
@@ -338,7 +367,15 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Remove any null states and/or dangling states.
+	 * <p>
+	 * Remove all garbage from the automaton, and generally compact the
+	 * automaton's representation.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may now be
+	 * invalidated. In order to preserve a reference through a rewrite, it is
+	 * necessary to use a marker.
+	 * </p>
 	 */
 	public void compact() {
 		
