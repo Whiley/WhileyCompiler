@@ -53,10 +53,4 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 term Num(real)
 
 class Value as Num | ...
-class AExpr as Num | Var | Sum | Mul | ...
-   
-// ====================================================================
-// General Expressions
-// ====================================================================
-
-class Expr as AExpr | ...
+class AExpr as Num | Var | Sum | Mul

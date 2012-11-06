@@ -1,0 +1,71 @@
+include "logic.wyone"
+include "numerics.wyone"
+
+// ====================================================================
+// Set Expressions
+// ====================================================================
+
+term Set{Expr...}
+term SetVal{Value...}
+
+reduce Set{Value... xs}:
+    => SetVal(xs)
+
+// ====================================================================
+// LengthOf
+// ====================================================================
+
+term LengthOf(Expr)
+
+reduce LengthOf(SetVal{Value... xs}):
+    => Num((real) |xs|)
+
+// ====================================================================
+// ElementOf
+// ====================================================================
+
+term ElementOf[Expr,Expr] // lhs in rhs
+
+reduce ElementOf[Expr e1, SetVal{Value... es}]:
+    => True, if e1 is Value && e1 in es
+    => False, if |es| == 0 || e1 is Value
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in Or(ns)
+
+reduce And{Equals{|Var v2, Set{Expr... es}|},
+	   ElementOf[Expr v1, Var v2],
+	   BExpr... rest}:
+    => True, if v1 in es
+    => False, if |es| == 0
+    => let ns = { Equals{|v1,e2|} | e2 in es }
+       in Or(ns)
+
+// ====================================================================
+// Union
+// ====================================================================
+
+term Union{SExpr...}
+
+reduce Union{SetVal{Value... xs},SetVal{Value... ys}, Expr... rest}:
+    => Union (SetVal(xs++ys) ++ rest)
+
+reduce Union{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
+    => Union (Set(xs++ys) ++ rest)
+
+reduce Union{Set{Expr... xs},SetVal{Value... ys}, Expr... rest}:
+    => Union (Set(xs++ys) ++ rest)
+
+reduce Equals{|Var v1, Union{Expr e}|}:
+    => Equals{|v1, e|}
+
+reduce And{Equals{|Var v1, Union{Var v2, Expr... rest} |} eq1,
+           Equals{|Var v3, Set{Expr...} ss|} eq2}:
+    => Equals{|v1, Union (ss ++ rest)|}, if v2 == v3
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+class Value as SetVal | ...
+class SExpr as Var | SetVal | Set
+class BExpr as ElementOf | ...

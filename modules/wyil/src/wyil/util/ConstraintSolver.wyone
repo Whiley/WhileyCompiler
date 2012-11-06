@@ -6,7 +6,11 @@ include "solver/numerics.wyone"
 include "solver/equations.wyone"
 include "solver/inequality.wyone"
 include "solver/collections.wyone"
+include "solver/sets.wyone"
 include "solver/constraints.wyone"
+include "solver/lists.wyone"
+include "solver/tuples.wyone"
+include "solver/records.wyone"
 include "solver/misc.wyone"
 
 

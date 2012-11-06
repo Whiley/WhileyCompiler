@@ -1,5 +1,5 @@
 include "logic.wyone"
-include "collections.wyone" 
+include "sets.wyone" 
 
 // ====================================================================
 // Set Constraints
@@ -34,4 +34,4 @@ infer And{SubSet[* x, * y] s1,SubSet[* u, * v] s2, BExpr... rest}:
 // ====================================================================
 
 class BExpr as SubSet | ...
-class Expr as Set | SubSet | ...
+
