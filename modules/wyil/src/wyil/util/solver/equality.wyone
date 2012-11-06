@@ -10,10 +10,9 @@ reduce Equals{|Expr x, Expr y|}:
 reduce Equals{|Value x, Value y|}:
     => False, if x != y
 
-// IS THIS RULE NECESSARY?
-// infer And{Equals{|Expr x, Expr y|} e1, Equals{|Expr u, Expr v|} e2, BExpr... rest}:
-//     => let e3 = Equals{|x,v|}
-//        in And ({e1,e2,e3} ++ rest), if y == u && x != v
+reduce And{Equals{|Var v, Expr e|} b1, BExpr b2, BExpr... rest}:
+    => let b3 = b2[v \ e]
+       in And ({b1,b3} ++ rest), if b3 != b2 && !(e is Var(string) && *e <= *v)
 
 // ====================================================================
 // Expressions & Values

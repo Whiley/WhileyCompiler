@@ -360,11 +360,16 @@ public class TypeInference {
 			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
 				checkSubtype(Type.T_INT, lhs_t, bop);
 				checkSubtype(Type.T_INT, rhs_t, bop);
+			} else if(lhs_t instanceof Type.Real || rhs_t instanceof Type.Real){
+				checkSubtype(Type.T_REAL, lhs_t, bop);
+				checkSubtype(Type.T_REAL, rhs_t, bop);			
+			} else if(lhs_t instanceof Type.Strung || rhs_t instanceof Type.Strung) {
+				checkSubtype(Type.T_STRING, lhs_t, bop);
+				checkSubtype(Type.T_STRING, rhs_t, bop);
 			} else {
 				checkSubtype(Type.T_REAL, lhs_t, bop);
-				checkSubtype(Type.T_REAL, rhs_t, bop);
-			
-			}			
+				checkSubtype(Type.T_REAL, rhs_t, bop);			
+			}  		
 			result = Type.T_BOOL;
 			break;
 		}

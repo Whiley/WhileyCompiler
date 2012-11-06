@@ -1,6 +1,7 @@
 package wyil.util
 
 include "solver/logic.wyone"
+include "solver/equality.wyone"
 include "solver/numerics.wyone"
 include "solver/equations.wyone"
 include "solver/inequality.wyone"

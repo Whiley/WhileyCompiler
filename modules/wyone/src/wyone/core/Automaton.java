@@ -826,6 +826,10 @@ public final class Automaton {
 		public Strung(String value) {
 			super(K_STRING, value);
 		}
+		
+		public int compareTo(Strung rhs) {
+			return value.compareTo(rhs.value);
+		}
 	}
 	
 	/**
