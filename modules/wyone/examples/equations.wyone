@@ -1,24 +1,23 @@
 include "logic.wyone"
 include "numerics.wyone"
 
-term Equation(Sum)
+term Equation(AExpr)
 
 // reduce equalities involving arithmetic constructs to equations
-reduce Equals{|Sum[real n, {|AExpr... xs|}], AExpr y|}:
-    => Equation(Sum[n,xs ++ Mul[-1.0,{|y|}]])
+reduce Equals{|AExpr x, AExpr y|}:
+    => Equation(Sum[0.0,{|x,Mul[-1.0,{|y|}]|}]), if !(x is Var && y is Var)
 
 reduce Equation(Num(real n)):
     => True, if n == 0.0
     => False
 
 // rearrange linear equation
-// NOTE: must be inference rule to ensure Sums are maximally reduced
-// NOTE: can't do anything useful with non-variable terms :(
-
-// infer And{Equation(Sum[real n1, {|Mul[real n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
-//      => let nes = Mul[-1.0/n2,{|Sum[n1, es]|}],
-//             nrest = { r[v\nes] | r in rest }
-//         in And (Assign[s,nes] ++ nrest)
+// NOTE: requirement x2 < 0.0 && y2 > 0.0 ensures we are eliminating variables
+reduce And{Equation(Sum[real x1, {|Mul[real x2, {|Var v1|}], AExpr... xs|}]) eq1, 
+          Equation(Sum[real, {|Mul[real, {|Var v2, AExpr...|}], AExpr...|}]) eq2, 
+	  BExpr... rest}:
+     => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[-x1,xs]|}]]
+        in And ({eq1,eq3} ++ rest), if v1 == v2
 
 // ====================================================================
 // Expressions & Values

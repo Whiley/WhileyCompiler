@@ -333,18 +333,8 @@ public class TypeInference {
 		// Second, do the thing for each
 		
 		switch (bop.op) {
-		case ADD: {
-			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
-				checkSubtype(Type.T_INT, lhs_t, bop);
-				checkSubtype(Type.T_INT, rhs_t, bop);
-				result = Type.T_INT;
-			} else {
-				checkSubtype(Type.T_REAL, lhs_t, bop);
-				checkSubtype(Type.T_REAL, rhs_t, bop);
-				result = Type.T_REAL;				
-			}
-			break;
-		}
+		case ADD: 
+		case SUB: 
 		case DIV:
 		case MUL: {
 			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
@@ -357,7 +347,7 @@ public class TypeInference {
 				result = Type.T_REAL;				
 			}
 			break;
-		}
+		}		
 		case EQ:
 		case NEQ: {
 			result = Type.T_BOOL;
