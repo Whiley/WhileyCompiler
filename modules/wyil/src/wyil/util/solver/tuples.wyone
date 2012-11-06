@@ -14,11 +14,11 @@ reduce Tuple[Value... xs]:
 
 term TupleLoad[int,TExpr]
 
-reduce TupleLoad[int index, TupleVal[Value... ls]]:
-    => ls[index], if idx >= 0 && idx < |ls|
+reduce TupleLoad[int idx, TupleVal[Value... ls]]:
+    => ls[idx], if idx >= 0 && idx < |ls|
 
-reduce TupleLoad[int index, Tuple[Expr... ls]]:
-    => ls[index], if idx >= 0 && idx < |ls|
+reduce TupleLoad[int idx, Tuple[Expr... ls]]:
+    => ls[idx], if idx >= 0 && idx < |ls|
 
 // ====================================================================
 // Expressions & Values

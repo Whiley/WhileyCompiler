@@ -1,54 +1,6 @@
 include "logic.wyone"
 include "numerics.wyone"
 
-term LengthOf(Expr)
-
-// ====================================================================
-// Set Expressions
-// ====================================================================
-
-term Set{Expr...}
-term SetVal{Value...}
-term ElementOf[Expr,Expr] // lhs in rhs
-term Union{SExpr...}
-class SExpr as 
-
-reduce Set{Value... xs}:
-    => SetVal(xs)
-
-reduce LengthOf(SetVal{Value... xs}):
-    => Num((real) |xs|)
-
-reduce ElementOf[Expr e1, SetVal{Value... es}]:
-    => True, if e1 is Value && 		  e1 in es
-    => False, if |es| == 0 || e1 is Value
-    => let ns = { Equals{|e1,e2|} | e2 in es }
-       in Or(ns)
-
-reduce And{Equals{|Var v2, Set{Expr... es}|},
-	   ElementOf[Expr v1, Var v2],
-	   BExpr... rest}:
-    => True, if v1 in es
-    => False, if |es| == 0
-    => let ns = { Equals{|v1,e2|} | e2 in es }
-       in Or(ns)
-
-reduce Union{SetVal{Value... xs},SetVal{Value... ys}, Expr... rest}:
-    => Union (SetVal(xs++ys) ++ rest)
-
-reduce Union{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
-    => Union (Set(xs++ys) ++ rest)
-
-reduce Union{Set{Expr... xs},SetVal{Value... ys}, Expr... rest}:
-    => Union (Set(xs++ys) ++ rest)
-
-reduce Equals{|Var v1, Union{Expr e}|}:
-    => Equals{|v1, e|}
-
-reduce And{Equals{|Var v1, Union{Var v2, Expr... rest} |} eq1,
-           Equals{|Var v3, Set{Expr...} ss|} eq2}:
-    => Equals{|v1, Union (ss ++ rest)|}, if v2 == v3
-
 // ====================================================================
 // List Expressions
 // ====================================================================
@@ -102,58 +54,7 @@ reduce LengthOf(ListUpdate[Expr src, Expr idx, Expr val]):
     => LengthOf(src)
 
 // ====================================================================
-// Tuple Expressions
-// ====================================================================
-
-term Tuple[Expr...]
-term TupleVal[Value...]
-
-reduce Tuple[Value... xs]:
-    => TupleVal(xs)
-
-// NOTE: could improve this by having specific indexof operator for
-// the constant case.
-reduce IndexOf[TupleVal[Value... ls], Num(real rdx)]:
-    => let idx = num rdx
-       in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
-
-// NOTE: could improve this by having specific indexof operator for
-// the constant case.
-reduce IndexOf[Tuple[Expr... ls], Num(real rdx)]:
-    => let idx = num rdx
-       in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
-
-// ====================================================================
-// Record Expressions
-// ====================================================================
-
-term Record{[string,Expr]...} // NOTE: a map might be better here
-term RecordVal{[string,Value]...}
-term FieldOf[Expr,string]
-term FieldUpdate[Expr,string,Expr] // src,field,val
-
-reduce Record{[string,Value]... fields}:
-    => RecordVal(fields)
-
-reduce FieldOf[RecordVal{[string f1, Value v], * ...},string f2]:
-    => v, if f1 == f2
-
-reduce FieldOf[Record{[string f1, Expr e], * ...},string f2]:
-    => e, if f1 == f2
-
-reduce FieldOf[FieldUpdate[Expr src, string f1, Expr e],string f2]:
-    => e, if f1 == f2
-    => FieldOf[src,f2]
-
-reduce FieldUpdate[RecordVal{[string f1, Value v], * ... rest}, string f2, Expr e]:
-    => Record ({[f1,e]} ++ rest), if f1 == f2
-
-reduce FieldUpdate[Record{[string f1, Expr e1], * ... rest}, string f2, Expr e2]:
-    => Record ({[f1,e2]} ++ rest), if f1 == f2
-
-// ====================================================================
 // Expressions & Values
 // ====================================================================
 
-class Value as ListVal | SetVal | TupleVal | RecordVal | ...
-class BExpr as ElementOf | ...
+class Value as ListVal | ...
